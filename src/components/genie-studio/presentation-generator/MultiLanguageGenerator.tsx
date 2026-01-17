@@ -3,7 +3,7 @@
  * Generates separate presentations for each selected language in parallel
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +11,7 @@ import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { MultiSelectDropdown } from '@/components/ui/multi-select-dropdown';
 import {
   Globe,
   Languages,
@@ -22,6 +23,7 @@ import {
   Clock,
   FileText,
   Star,
+  ChevronDown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -47,30 +49,81 @@ export interface LanguageGenerationStatus {
 }
 
 export const SUPPORTED_LANGUAGES: LanguageConfig[] = [
+  // Major Global Languages
   { code: 'en', name: 'English', nativeName: 'English', flag: '🇺🇸' },
   { code: 'es', name: 'Spanish', nativeName: 'Español', flag: '🇪🇸' },
   { code: 'fr', name: 'French', nativeName: 'Français', flag: '🇫🇷' },
   { code: 'de', name: 'German', nativeName: 'Deutsch', flag: '🇩🇪' },
   { code: 'it', name: 'Italian', nativeName: 'Italiano', flag: '🇮🇹' },
   { code: 'pt', name: 'Portuguese', nativeName: 'Português', flag: '🇧🇷' },
-  { code: 'zh', name: 'Chinese', nativeName: '中文', flag: '🇨🇳' },
+  { code: 'pt-PT', name: 'Portuguese (Portugal)', nativeName: 'Português (Portugal)', flag: '🇵🇹' },
+  
+  // European Languages
+  { code: 'nl', name: 'Dutch', nativeName: 'Nederlands', flag: '🇳🇱' },
+  { code: 'pl', name: 'Polish', nativeName: 'Polski', flag: '🇵🇱' },
+  { code: 'ru', name: 'Russian', nativeName: 'Русский', flag: '🇷🇺' },
+  { code: 'uk', name: 'Ukrainian', nativeName: 'Українська', flag: '🇺🇦' },
+  { code: 'cs', name: 'Czech', nativeName: 'Čeština', flag: '🇨🇿' },
+  { code: 'sk', name: 'Slovak', nativeName: 'Slovenčina', flag: '🇸🇰' },
+  { code: 'hu', name: 'Hungarian', nativeName: 'Magyar', flag: '🇭🇺' },
+  { code: 'ro', name: 'Romanian', nativeName: 'Română', flag: '🇷🇴' },
+  { code: 'bg', name: 'Bulgarian', nativeName: 'Български', flag: '🇧🇬' },
+  { code: 'hr', name: 'Croatian', nativeName: 'Hrvatski', flag: '🇭🇷' },
+  { code: 'sr', name: 'Serbian', nativeName: 'Српски', flag: '🇷🇸' },
+  { code: 'sl', name: 'Slovenian', nativeName: 'Slovenščina', flag: '🇸🇮' },
+  { code: 'el', name: 'Greek', nativeName: 'Ελληνικά', flag: '🇬🇷' },
+  { code: 'sv', name: 'Swedish', nativeName: 'Svenska', flag: '🇸🇪' },
+  { code: 'da', name: 'Danish', nativeName: 'Dansk', flag: '🇩🇰' },
+  { code: 'no', name: 'Norwegian', nativeName: 'Norsk', flag: '🇳🇴' },
+  { code: 'fi', name: 'Finnish', nativeName: 'Suomi', flag: '🇫🇮' },
+  { code: 'et', name: 'Estonian', nativeName: 'Eesti', flag: '🇪🇪' },
+  { code: 'lv', name: 'Latvian', nativeName: 'Latviešu', flag: '🇱🇻' },
+  { code: 'lt', name: 'Lithuanian', nativeName: 'Lietuvių', flag: '🇱🇹' },
+  { code: 'is', name: 'Icelandic', nativeName: 'Íslenska', flag: '🇮🇸' },
+  { code: 'ga', name: 'Irish', nativeName: 'Gaeilge', flag: '🇮🇪' },
+  { code: 'cy', name: 'Welsh', nativeName: 'Cymraeg', flag: '🏴󠁧󠁢󠁷󠁬󠁳󠁿' },
+  { code: 'mt', name: 'Maltese', nativeName: 'Malti', flag: '🇲🇹' },
+  { code: 'sq', name: 'Albanian', nativeName: 'Shqip', flag: '🇦🇱' },
+  { code: 'mk', name: 'Macedonian', nativeName: 'Македонски', flag: '🇲🇰' },
+  { code: 'bs', name: 'Bosnian', nativeName: 'Bosanski', flag: '🇧🇦' },
+  { code: 'ca', name: 'Catalan', nativeName: 'Català', flag: '🇪🇸' },
+  { code: 'eu', name: 'Basque', nativeName: 'Euskara', flag: '🇪🇸' },
+  { code: 'gl', name: 'Galician', nativeName: 'Galego', flag: '🇪🇸' },
+  { code: 'be', name: 'Belarusian', nativeName: 'Беларуская', flag: '🇧🇾' },
+  
+  // Asian Languages
+  { code: 'zh', name: 'Chinese (Simplified)', nativeName: '简体中文', flag: '🇨🇳' },
+  { code: 'zh-TW', name: 'Chinese (Traditional)', nativeName: '繁體中文', flag: '🇹🇼' },
   { code: 'ja', name: 'Japanese', nativeName: '日本語', flag: '🇯🇵' },
   { code: 'ko', name: 'Korean', nativeName: '한국어', flag: '🇰🇷' },
-  { code: 'ar', name: 'Arabic', nativeName: 'العربية', flag: '🇸🇦', rtl: true },
   { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी', flag: '🇮🇳' },
   { code: 'te', name: 'Telugu', nativeName: 'తెలుగు', flag: '🇮🇳' },
   { code: 'ta', name: 'Tamil', nativeName: 'தமிழ்', flag: '🇮🇳' },
   { code: 'bn', name: 'Bengali', nativeName: 'বাংলা', flag: '🇮🇳' },
   { code: 'mr', name: 'Marathi', nativeName: 'मराठी', flag: '🇮🇳' },
-  { code: 'ru', name: 'Russian', nativeName: 'Русский', flag: '🇷🇺' },
-  { code: 'nl', name: 'Dutch', nativeName: 'Nederlands', flag: '🇳🇱' },
-  { code: 'pl', name: 'Polish', nativeName: 'Polski', flag: '🇵🇱' },
-  { code: 'tr', name: 'Turkish', nativeName: 'Türkçe', flag: '🇹🇷' },
+  { code: 'gu', name: 'Gujarati', nativeName: 'ગુજરાતી', flag: '🇮🇳' },
+  { code: 'kn', name: 'Kannada', nativeName: 'ಕನ್ನಡ', flag: '🇮🇳' },
+  { code: 'ml', name: 'Malayalam', nativeName: 'മലയാളം', flag: '🇮🇳' },
+  { code: 'pa', name: 'Punjabi', nativeName: 'ਪੰਜਾਬੀ', flag: '🇮🇳' },
+  { code: 'ur', name: 'Urdu', nativeName: 'اردو', flag: '🇵🇰', rtl: true },
   { code: 'vi', name: 'Vietnamese', nativeName: 'Tiếng Việt', flag: '🇻🇳' },
   { code: 'th', name: 'Thai', nativeName: 'ไทย', flag: '🇹🇭' },
   { code: 'id', name: 'Indonesian', nativeName: 'Bahasa Indonesia', flag: '🇮🇩' },
   { code: 'ms', name: 'Malay', nativeName: 'Bahasa Melayu', flag: '🇲🇾' },
-  { code: 'he', name: 'Hebrew', nativeName: 'עברית', flag: '🇮🇱', rtl: true }
+  { code: 'tl', name: 'Filipino', nativeName: 'Filipino', flag: '🇵🇭' },
+  { code: 'my', name: 'Burmese', nativeName: 'မြန်မာ', flag: '🇲🇲' },
+  { code: 'km', name: 'Khmer', nativeName: 'ខ្មែរ', flag: '🇰🇭' },
+  
+  // Middle Eastern Languages
+  { code: 'ar', name: 'Arabic', nativeName: 'العربية', flag: '🇸🇦', rtl: true },
+  { code: 'he', name: 'Hebrew', nativeName: 'עברית', flag: '🇮🇱', rtl: true },
+  { code: 'fa', name: 'Persian', nativeName: 'فارسی', flag: '🇮🇷', rtl: true },
+  { code: 'tr', name: 'Turkish', nativeName: 'Türkçe', flag: '🇹🇷' },
+  
+  // African Languages
+  { code: 'sw', name: 'Swahili', nativeName: 'Kiswahili', flag: '🇰🇪' },
+  { code: 'af', name: 'Afrikaans', nativeName: 'Afrikaans', flag: '🇿🇦' },
+  { code: 'am', name: 'Amharic', nativeName: 'አማርኛ', flag: '🇪🇹' },
 ];
 
 interface MultiLanguageGeneratorProps {
@@ -96,19 +149,37 @@ export function MultiLanguageGenerator({
   isGenerating,
   className
 }: MultiLanguageGeneratorProps) {
-  const [showAllLanguages, setShowAllLanguages] = useState(false);
 
-  const toggleLanguage = (code: string) => {
-    if (selectedLanguages.includes(code)) {
-      // Don't allow removing primary language
-      if (code === primaryLanguage) {
-        toast.error('Cannot remove primary language');
-        return;
-      }
-      onLanguagesChange(selectedLanguages.filter(l => l !== code));
-    } else {
-      onLanguagesChange([...selectedLanguages, code]);
+  // Prepare dropdown options
+  const languageOptions = useMemo(() => {
+    return SUPPORTED_LANGUAGES.map(lang => ({
+      id: lang.code,
+      label: `${lang.flag} ${lang.name}`,
+      value: lang.code,
+      description: lang.nativeName,
+      category: getLanguageCategory(lang.code),
+    }));
+  }, []);
+
+  function getLanguageCategory(code: string): string {
+    const european = ['en', 'es', 'fr', 'de', 'it', 'pt', 'pt-PT', 'nl', 'pl', 'ru', 'uk', 'cs', 'sk', 'hu', 'ro', 'bg', 'hr', 'sr', 'sl', 'el', 'sv', 'da', 'no', 'fi', 'et', 'lv', 'lt', 'is', 'ga', 'cy', 'mt', 'sq', 'mk', 'bs', 'ca', 'eu', 'gl', 'be'];
+    const asian = ['zh', 'zh-TW', 'ja', 'ko', 'hi', 'te', 'ta', 'bn', 'mr', 'gu', 'kn', 'ml', 'pa', 'ur', 'vi', 'th', 'id', 'ms', 'tl', 'my', 'km'];
+    const middleEastern = ['ar', 'he', 'fa', 'tr'];
+    const african = ['sw', 'af', 'am'];
+
+    if (european.includes(code)) return '🌍 European';
+    if (asian.includes(code)) return '🌏 Asian';
+    if (middleEastern.includes(code)) return '🌍 Middle Eastern';
+    if (african.includes(code)) return '🌍 African';
+    return '🌐 Other';
+  }
+
+  const handleLanguageSelection = (codes: string[]) => {
+    // Always include primary language
+    if (!codes.includes(primaryLanguage)) {
+      codes = [primaryLanguage, ...codes];
     }
+    onLanguagesChange(codes);
   };
 
   const selectAll = () => {
@@ -150,10 +221,6 @@ export function MultiLanguageGenerator({
   const completedCount = generationStatuses.filter(s => s.status === 'completed').length;
   const totalSelected = selectedLanguages.length;
 
-  const displayedLanguages = showAllLanguages 
-    ? SUPPORTED_LANGUAGES 
-    : SUPPORTED_LANGUAGES.slice(0, 8);
-
   return (
     <Card className={cn("border-muted", className)}>
       <CardHeader className="p-3 pb-2">
@@ -175,10 +242,10 @@ export function MultiLanguageGenerator({
           Each language generates a <strong>separate presentation</strong> - not mixed slides
         </div>
 
-        {/* Language Selection */}
-        <div className="space-y-2">
+        {/* Language Selection - Multi-Select Dropdown */}
+        <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <Label className="text-xs">Select Languages</Label>
+            <Label className="text-xs">Select Output Languages</Label>
             <div className="flex gap-1">
               <Button
                 variant="ghost"
@@ -199,74 +266,51 @@ export function MultiLanguageGenerator({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
-            {displayedLanguages.map(lang => {
-              const isSelected = selectedLanguages.includes(lang.code);
-              const isPrimary = lang.code === primaryLanguage;
-              
-              return (
-                <div
-                  key={lang.code}
-                  className={cn(
-                    "flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-all",
-                    isSelected 
-                      ? "border-primary bg-primary/10 shadow-sm" 
-                      : "border-muted hover:border-muted-foreground/40 hover:bg-muted/50",
-                    isPrimary && "ring-2 ring-primary/30"
-                  )}
-                  onClick={() => toggleLanguage(lang.code)}
-                >
-                  <Checkbox 
-                    checked={isSelected}
-                    className="h-4 w-4"
-                  />
-                  <span className="text-base">{lang.flag}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{lang.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">{lang.nativeName}</p>
-                  </div>
-                  {isSelected && (
-                    <Button
-                      variant={isPrimary ? "default" : "ghost"}
-                      size="sm"
+          <MultiSelectDropdown
+            options={languageOptions}
+            selectedValues={selectedLanguages}
+            onSelectionChange={handleLanguageSelection}
+            placeholder="Select languages to generate..."
+            searchable
+            groupByCategory
+          />
+
+          {/* Selected Languages Summary with Primary Indicator */}
+          {selectedLanguages.length > 0 && (
+            <div className="space-y-2">
+              <Label className="text-[10px] text-muted-foreground">Selected ({selectedLanguages.length}):</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {selectedLanguages.map(code => {
+                  const lang = SUPPORTED_LANGUAGES.find(l => l.code === code);
+                  const isPrimary = code === primaryLanguage;
+                  if (!lang) return null;
+                  
+                  return (
+                    <Badge
+                      key={code}
+                      variant={isPrimary ? "default" : "secondary"}
                       className={cn(
-                        "h-5 text-[9px] px-1.5",
-                        isPrimary 
-                          ? "bg-primary/20 text-primary border-0 pointer-events-none" 
-                          : "hover:bg-primary/10"
+                        "text-[10px] cursor-pointer gap-1",
+                        isPrimary && "bg-primary"
                       )}
-                      onClick={(e) => {
-                        e.stopPropagation();
+                      onClick={() => {
                         if (!isPrimary) {
-                          onPrimaryLanguageChange(lang.code);
+                          onPrimaryLanguageChange(code);
                           toast.success(`${lang.name} set as primary language`);
                         }
                       }}
                     >
-                      {isPrimary ? (
-                        <>
-                          <Star className="h-2.5 w-2.5 mr-0.5 fill-current" />
-                          Primary
-                        </>
-                      ) : (
-                        'Set Primary'
-                      )}
-                    </Button>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {SUPPORTED_LANGUAGES.length > 8 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full h-6 text-[10px]"
-              onClick={() => setShowAllLanguages(!showAllLanguages)}
-            >
-              {showAllLanguages ? 'Show less' : `Show ${SUPPORTED_LANGUAGES.length - 8} more languages`}
-            </Button>
+                      <span>{lang.flag}</span>
+                      <span>{lang.name}</span>
+                      {isPrimary && <Star className="h-2.5 w-2.5 fill-current" />}
+                    </Badge>
+                  );
+                })}
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                Click a language badge to set it as primary. Primary language: <strong>{SUPPORTED_LANGUAGES.find(l => l.code === primaryLanguage)?.name}</strong>
+              </p>
+            </div>
           )}
         </div>
 
