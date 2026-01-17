@@ -1506,9 +1506,9 @@ Respond helpfully, warmly, and with genuine care for their creative journey.
                         "rounded-2xl px-4 py-2.5 inline-block",
                         message.role === 'user' 
                           ? 'bg-primary text-primary-foreground rounded-tr-md' 
-                          : 'bg-muted rounded-tl-md'
+                          : 'bg-muted text-foreground rounded-tl-md border border-border/50'
                       )}>
-                        <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                        <p className="text-sm whitespace-pre-wrap leading-relaxed text-inherit">{message.content}</p>
                       </div>
                       {/* Show diagram if applicable */}
                       {message.showMermaid && showDiagram && (
