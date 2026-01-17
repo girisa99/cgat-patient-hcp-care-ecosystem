@@ -1086,43 +1086,59 @@ Respond helpfully, warmly, and with genuine care for their creative journey.
     }
   }, [handleSendMessage]);
 
-  // Floating trigger button - single clean design with clear logo
-  const TriggerButton = () => (
-    <motion.div
-      initial={{ scale: 0, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      whileHover={{ scale: 1.02 }}
-      className="fixed bottom-6 right-6 z-50"
-    >
-      <Button
-        onClick={() => setIsOpen(true)}
-        className="h-auto w-auto rounded-2xl shadow-2xl px-4 py-3 bg-white hover:bg-gray-50 border-2 border-purple-200 hover:border-purple-300 transition-all duration-300 group"
-        variant="ghost"
+  // Floating trigger button - shows product-specific branding when on product page
+  const TriggerButton = () => {
+    const isProductPage = product !== 'studio';
+    const currentProduct = isProductPage && GENIE_PRODUCTS[product as keyof typeof GENIE_PRODUCTS] 
+      ? GENIE_PRODUCTS[product as keyof typeof GENIE_PRODUCTS] 
+      : null;
+    
+    return (
+      <motion.div
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        whileHover={{ scale: 1.02 }}
+        className="fixed bottom-6 right-6 z-50"
       >
-        <div className="flex items-center gap-3">
-          {/* Clear Logo on White Background */}
-          <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-purple-100 to-violet-100 flex items-center justify-center shadow-inner overflow-hidden">
-            <img 
-              src={ASK_GENIE.logo}
-              alt={ASK_GENIE.name}
-              className="h-10 w-10 object-contain"
-            />
-          </div>
-          {/* Text */}
-          <div className="text-left pr-1">
-            <div className="font-bold text-base bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent flex items-center gap-1.5">
-              {ASK_GENIE.name} {ASK_GENIE.emoji}
+        <Button
+          onClick={() => setIsOpen(true)}
+          className={cn(
+            "h-auto w-auto rounded-2xl shadow-2xl px-4 py-3 bg-white hover:bg-gray-50 border-2 transition-all duration-300 group",
+            isProductPage ? "border-purple-300 hover:border-purple-400" : "border-purple-200 hover:border-purple-300"
+          )}
+          variant="ghost"
+        >
+          <div className="flex items-center gap-3">
+            {/* Product Logo */}
+            <div className={cn(
+              "h-12 w-12 rounded-xl flex items-center justify-center shadow-inner overflow-hidden",
+              isProductPage ? "bg-gradient-to-br from-purple-50 to-violet-50" : "bg-gradient-to-br from-purple-100 to-violet-100"
+            )}>
+              <img 
+                src={currentProduct?.logos.combined || ASK_GENIE.logo}
+                alt={currentProduct?.name || ASK_GENIE.name}
+                className="h-10 w-10 object-contain"
+              />
             </div>
-            <div className="text-xs text-muted-foreground italic">
-              {ASK_GENIE.tagline}
+            {/* Text - Show product name on product pages */}
+            <div className="text-left pr-1">
+              <div className={cn(
+                "font-bold text-base bg-clip-text text-transparent flex items-center gap-1.5",
+                isProductPage ? "bg-gradient-to-r from-purple-600 to-violet-600" : "bg-gradient-to-r from-violet-600 to-fuchsia-600"
+              )}>
+                {isProductPage ? `${productContext.name} ${productContext.emoji}` : `${ASK_GENIE.name} ${ASK_GENIE.emoji}`}
+              </div>
+              <div className="text-xs text-muted-foreground italic">
+                {isProductPage ? productContext.tagline : ASK_GENIE.tagline}
+              </div>
             </div>
           </div>
-        </div>
-        {/* Subtle pulse indicator */}
-        <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-green-500 animate-pulse shadow-lg" />
-      </Button>
-    </motion.div>
-  );
+          {/* Subtle pulse indicator */}
+          <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-green-500 animate-pulse shadow-lg" />
+        </Button>
+      </motion.div>
+    );
+  };
 
   // Main chat interface
   const ChatInterface = () => (
@@ -1138,42 +1154,45 @@ Respond helpfully, warmly, and with genuine care for their creative journey.
         className
       )}
     >
-      {/* Enhanced Header with Logo Banner */}
+      {/* Enhanced Header with Product-Specific Branding */}
       <div className={cn(
         "flex flex-col border-b overflow-hidden",
-        `bg-gradient-to-br ${ASK_GENIE.color}`
+        `bg-gradient-to-br ${product !== 'studio' ? productContext.color : ASK_GENIE.color}`
       )}>
-        {/* Hero Banner - Single Clear Logo Display */}
-        <div className="px-5 py-4 flex items-center gap-5">
-          {/* Large Clear Logo */}
-          <div className="h-20 w-20 rounded-2xl bg-white flex items-center justify-center overflow-hidden shadow-xl border-2 border-white/50 flex-shrink-0">
-            <img 
-              src={ASK_GENIE.logo} 
-              alt={ASK_GENIE.name} 
-              className="h-16 w-16 object-contain"
-            />
+        {/* Hero Banner - Show product branding when on specific product page */}
+        <div className="px-5 py-4 flex items-center gap-4">
+          {/* Large Product Logo */}
+          <div className="h-16 w-16 rounded-2xl bg-white flex items-center justify-center overflow-hidden shadow-xl border-2 border-white/50 flex-shrink-0">
+            {product !== 'studio' && GENIE_PRODUCTS[product as keyof typeof GENIE_PRODUCTS] ? (
+              <img 
+                src={GENIE_PRODUCTS[product as keyof typeof GENIE_PRODUCTS].logos.combined} 
+                alt={productContext.name} 
+                className="h-14 w-14 object-contain"
+              />
+            ) : (
+              <img 
+                src={ASK_GENIE.logo} 
+                alt={ASK_GENIE.name} 
+                className="h-14 w-14 object-contain"
+              />
+            )}
           </div>
-          {/* Name & Tagline */}
-          <div className="flex-1">
-            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-              {ASK_GENIE.name} {ASK_GENIE.emoji}
+          {/* Name & Tagline - Product specific when not studio */}
+          <div className="flex-1 min-w-0">
+            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+              {product !== 'studio' ? productContext.name : ASK_GENIE.name} {product !== 'studio' ? productContext.emoji : ASK_GENIE.emoji}
             </h2>
-            <p className="text-sm text-white/90 italic font-medium mt-1">"{ASK_GENIE.tagline}"</p>
-            <p className="text-xs text-white/70 mt-1.5 leading-relaxed line-clamp-2">
-              Your intelligent AI assistant for creative production workflows
+            <p className="text-sm text-white/90 italic font-medium mt-0.5">
+              "{product !== 'studio' ? productContext.tagline : ASK_GENIE.tagline}"
             </p>
+            <div className="flex items-center gap-2 mt-1.5">
+              <Badge variant="outline" className="text-[10px] bg-white/20 text-white border-white/30 px-2 py-0">
+                🧞 Ask Genie Assistant
+              </Badge>
+            </div>
           </div>
-        </div>
-        
-        {/* Context Bar */}
-        <div className="flex items-center justify-between px-4 py-2 bg-black/10">
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-xs bg-white/20 text-white border-white/30">
-              {productContext.emoji} {productContext.name}
-            </Badge>
-            <span className="text-xs text-white/70">{productContext.tagline}</span>
-          </div>
-          <div className="flex items-center gap-1">
+          {/* Controls */}
+          <div className="flex items-center gap-1 flex-shrink-0">
             <Button
               variant="ghost"
               size="icon"
