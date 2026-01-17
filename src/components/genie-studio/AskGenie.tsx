@@ -802,6 +802,105 @@ const MermaidDiagramDisplay: React.FC<{ diagram: { id: string; title: string; di
   );
 };
 
+// Fun animated thinking indicator with progress and messages
+const THINKING_MESSAGES = [
+  "Thinking of the best way to help... ✨",
+  "Consulting my magical knowledge... 🧞",
+  "Brewing up some ideas... ☕",
+  "Almost there, working my magic... 🪄",
+  "Digging deep for the perfect answer... 💎",
+  "Genie is thinking hard! 🤔✨"
+];
+
+const GenieThinkingIndicator: React.FC<{ productColor: string }> = ({ productColor }) => {
+  const [messageIndex, setMessageIndex] = useState(0);
+  const [progress, setProgress] = useState(0);
+  const [showLongWait, setShowLongWait] = useState(false);
+  
+  useEffect(() => {
+    // Rotate through messages every 2 seconds
+    const messageInterval = setInterval(() => {
+      setMessageIndex(prev => (prev + 1) % THINKING_MESSAGES.length);
+    }, 2000);
+    
+    // Animate progress bar
+    const progressInterval = setInterval(() => {
+      setProgress(prev => Math.min(prev + 2, 90)); // Max 90% until complete
+    }, 100);
+    
+    // Show "taking longer than expected" after 5 seconds
+    const longWaitTimer = setTimeout(() => {
+      setShowLongWait(true);
+    }, 5000);
+    
+    return () => {
+      clearInterval(messageInterval);
+      clearInterval(progressInterval);
+      clearTimeout(longWaitTimer);
+    };
+  }, []);
+  
+  return (
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="flex gap-3"
+      role="status"
+      aria-live="polite"
+      aria-label="Genie is thinking"
+    >
+      <div className={cn(
+        "h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0",
+        `bg-gradient-to-r ${productColor}`
+      )}>
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+        >
+          <Sparkles className="h-4 w-4 text-white" />
+        </motion.div>
+      </div>
+      <div className="bg-muted rounded-2xl rounded-tl-md px-4 py-3 flex-1 max-w-[280px]">
+        <div className="flex items-center gap-2 mb-2">
+          <motion.div 
+            className="flex gap-1"
+            animate={{ opacity: [0.4, 1, 0.4] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+          >
+            <span className="h-2 w-2 rounded-full bg-purple-500" />
+            <span className="h-2 w-2 rounded-full bg-violet-500" />
+            <span className="h-2 w-2 rounded-full bg-fuchsia-500" />
+          </motion.div>
+          <span className="text-sm text-muted-foreground">
+            {THINKING_MESSAGES[messageIndex]}
+          </span>
+        </div>
+        {/* Progress bar */}
+        <div className="h-1.5 bg-muted-foreground/20 rounded-full overflow-hidden">
+          <motion.div 
+            className="h-full bg-gradient-to-r from-purple-500 to-fuchsia-500 rounded-full"
+            initial={{ width: 0 }}
+            animate={{ width: `${progress}%` }}
+            transition={{ duration: 0.1 }}
+          />
+        </div>
+        {/* Show message if taking too long */}
+        <AnimatePresence>
+          {showLongWait && (
+            <motion.p
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              className="text-[10px] text-amber-600 dark:text-amber-400 mt-2"
+            >
+              Still working... complex questions take a bit longer! 🙏
+            </motion.p>
+          )}
+        </AnimatePresence>
+      </div>
+    </motion.div>
+  );
+};
+
 export const AskGenie: React.FC<AskGenieProps> = ({
   product = 'studio',
   currentTab,
@@ -1141,64 +1240,72 @@ Respond helpfully, warmly, and with genuine care for their creative journey.
       exit={{ opacity: 0, scale: 0.95, y: 20 }}
       className={cn(
         "flex flex-col bg-background border rounded-xl shadow-2xl overflow-hidden",
-        position === 'floating' && "fixed bottom-6 right-6 w-[420px] h-[600px] z-50",
+        // Mobile-first responsive sizing for floating mode
+        position === 'floating' && "fixed bottom-4 right-4 left-4 sm:left-auto sm:bottom-6 sm:right-6 sm:w-[420px] h-[85vh] sm:h-[600px] max-h-[700px] z-50",
         position === 'sidebar' && "h-full w-full",
         position === 'inline' && "w-full h-[500px]",
         className
       )}
+      role="dialog"
+      aria-labelledby="ask-genie-title"
+      aria-describedby="ask-genie-description"
     >
       {/* Header - Always show "Ask Genie" branding */}
       <div className={cn(
         "flex flex-col border-b overflow-hidden",
         `bg-gradient-to-br ${ASK_GENIE.color}`
       )}>
-        {/* Hero Banner - Always show Ask Genie branding */}
-        <div className="px-5 py-4 flex items-center gap-4">
-          {/* Always show Ask Genie Logo */}
-          <div className="h-16 w-16 rounded-2xl bg-white flex items-center justify-center overflow-hidden shadow-xl border-2 border-white/50 flex-shrink-0">
+        {/* Hero Banner - Always show Ask Genie branding, mobile optimized */}
+        <div className="px-3 sm:px-5 py-3 sm:py-4 flex items-center gap-3 sm:gap-4">
+          {/* Always show Ask Genie Logo - smaller on mobile */}
+          <div className="h-12 w-12 sm:h-16 sm:w-16 rounded-xl sm:rounded-2xl bg-white flex items-center justify-center overflow-hidden shadow-xl border-2 border-white/50 flex-shrink-0">
             <img 
               src={ASK_GENIE.logo} 
               alt={ASK_GENIE.name} 
-              className="h-14 w-14 object-contain"
+              className="h-10 w-10 sm:h-14 sm:w-14 object-contain"
             />
           </div>
           {/* Always show "Ask Genie" name and tagline */}
           <div className="flex-1 min-w-0">
-            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+            <h2 id="ask-genie-title" className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
               {ASK_GENIE.name} {ASK_GENIE.emoji}
             </h2>
-            <p className="text-sm text-white/90 italic font-medium mt-0.5">
+            <p id="ask-genie-description" className="text-xs sm:text-sm text-white/90 italic font-medium mt-0.5 truncate">
               "{ASK_GENIE.tagline}"
             </p>
-            <div className="flex items-center gap-2 mt-1.5">
-              <Badge variant="outline" className="text-[10px] bg-white/20 text-white border-white/30 px-2 py-0">
+            <div className="flex items-center gap-2 mt-1 sm:mt-1.5 flex-wrap">
+              <Badge variant="outline" className="text-[9px] sm:text-[10px] bg-white/20 text-white border-white/30 px-1.5 sm:px-2 py-0">
                 🧞 AI Assistant
               </Badge>
               {/* Show context indicator for which product we're helping with */}
               {product !== 'studio' && (
-                <Badge variant="outline" className="text-[10px] bg-white/10 text-white/90 border-white/20 px-2 py-0">
-                  Helping with: {productContext.name}
+                <Badge variant="outline" className="text-[9px] sm:text-[10px] bg-white/10 text-white/90 border-white/20 px-1.5 sm:px-2 py-0">
+                  Helping: {productContext.name}
                 </Badge>
               )}
             </div>
           </div>
-          {/* Controls */}
+          {/* Controls - touch-friendly sizing */}
           <div className="flex items-center gap-1 flex-shrink-0">
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 text-white hover:bg-white/20"
+              className="h-8 w-8 sm:h-7 sm:w-7 text-white hover:bg-white/20 touch-manipulation"
               onClick={() => setIsMinimized(!isMinimized)}
+              aria-label={isMinimized ? "Expand chat" : "Minimize chat"}
+              tabIndex={0}
             >
-              {isMinimized ? <Maximize2 className="h-3.5 w-3.5" /> : <Minimize2 className="h-3.5 w-3.5" />}
+              {isMinimized ? <Maximize2 className="h-4 w-4 sm:h-3.5 sm:w-3.5" /> : <Minimize2 className="h-4 w-4 sm:h-3.5 sm:w-3.5" />}
             </Button>
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 text-white hover:bg-white/20"
+              className="h-8 w-8 sm:h-7 sm:w-7 text-white hover:bg-white/20 touch-manipulation"
               onClick={handleClose}
+              aria-label="Close Ask Genie"
+              tabIndex={0}
             >
-              <X className="h-3.5 w-3.5" />
+              <X className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
             </Button>
           </div>
         </div>
@@ -1207,35 +1314,66 @@ Respond helpfully, warmly, and with genuine care for their creative journey.
       {!isMinimized && (
         <>
           {/* Messages */}
-          <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+          <ScrollArea className="flex-1 p-3 sm:p-4" ref={scrollRef}>
             {showWelcome && messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center">
-                {/* Feature Highlights - No duplicate logo */}
+                {/* Feature Highlights - Mobile optimized grid */}
                 <motion.div 
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="w-full rounded-xl p-4 mb-4 bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/30 dark:to-violet-950/30 border border-purple-200/50 dark:border-purple-800/30"
+                  className="w-full rounded-xl p-3 sm:p-4 mb-4 bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/30 dark:to-violet-950/30 border border-purple-200/50 dark:border-purple-800/30"
                 >
-                  <h4 className="text-sm font-semibold text-purple-800 dark:text-purple-200 mb-3 flex items-center justify-center gap-2">
-                    <Sparkles className="h-4 w-4" />
+                  <h4 className="text-xs sm:text-sm font-semibold text-purple-800 dark:text-purple-200 mb-2 sm:mb-3 flex items-center justify-center gap-2">
+                    <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     What I Can Help You With
                   </h4>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="bg-white/80 dark:bg-white/10 rounded-lg px-3 py-2.5 text-center shadow-sm">
-                      <Brain className="h-5 w-5 mx-auto text-purple-600 dark:text-purple-400 mb-1.5" />
-                      <span className="text-xs font-medium text-purple-900 dark:text-purple-100">Smart Context</span>
-                      <p className="text-[9px] text-muted-foreground mt-0.5">Understands your workflow</p>
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                    <div className="bg-white/80 dark:bg-white/10 rounded-lg px-2 sm:px-3 py-2 sm:py-2.5 text-center shadow-sm">
+                      <Brain className="h-4 w-4 sm:h-5 sm:w-5 mx-auto text-purple-600 dark:text-purple-400 mb-1 sm:mb-1.5" />
+                      <span className="text-[10px] sm:text-xs font-medium text-purple-900 dark:text-purple-100 block">Smart Context</span>
+                      <p className="text-[8px] sm:text-[9px] text-muted-foreground mt-0.5 hidden sm:block">Understands your workflow</p>
                     </div>
-                    <div className="bg-white/80 dark:bg-white/10 rounded-lg px-3 py-2.5 text-center shadow-sm">
-                      <Wand2 className="h-5 w-5 mx-auto text-purple-600 dark:text-purple-400 mb-1.5" />
-                      <span className="text-xs font-medium text-purple-900 dark:text-purple-100">Creative Help</span>
-                      <p className="text-[9px] text-muted-foreground mt-0.5">Generate & refine ideas</p>
+                    <div className="bg-white/80 dark:bg-white/10 rounded-lg px-2 sm:px-3 py-2 sm:py-2.5 text-center shadow-sm">
+                      <Wand2 className="h-4 w-4 sm:h-5 sm:w-5 mx-auto text-purple-600 dark:text-purple-400 mb-1 sm:mb-1.5" />
+                      <span className="text-[10px] sm:text-xs font-medium text-purple-900 dark:text-purple-100 block">Creative Help</span>
+                      <p className="text-[8px] sm:text-[9px] text-muted-foreground mt-0.5 hidden sm:block">Generate & refine ideas</p>
                     </div>
-                    <div className="bg-white/80 dark:bg-white/10 rounded-lg px-3 py-2.5 text-center shadow-sm">
-                      <Map className="h-5 w-5 mx-auto text-purple-600 dark:text-purple-400 mb-1.5" />
-                      <span className="text-xs font-medium text-purple-900 dark:text-purple-100">Visual Flows</span>
-                      <p className="text-[9px] text-muted-foreground mt-0.5">Build production maps</p>
+                    <div className="bg-white/80 dark:bg-white/10 rounded-lg px-2 sm:px-3 py-2 sm:py-2.5 text-center shadow-sm">
+                      <Map className="h-4 w-4 sm:h-5 sm:w-5 mx-auto text-purple-600 dark:text-purple-400 mb-1 sm:mb-1.5" />
+                      <span className="text-[10px] sm:text-xs font-medium text-purple-900 dark:text-purple-100 block">Visual Flows</span>
+                      <p className="text-[8px] sm:text-[9px] text-muted-foreground mt-0.5 hidden sm:block">Build production maps</p>
                     </div>
+                  </div>
+                </motion.div>
+                
+                {/* Example questions - Helpful hints section */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.15 }}
+                  className="w-full mb-4 px-1"
+                >
+                  <p className="text-[10px] sm:text-xs text-muted-foreground mb-2 flex items-center gap-1 justify-center">
+                    <HelpCircle className="h-3 w-3" />
+                    Try asking about...
+                  </p>
+                  <div className="flex flex-wrap gap-1.5 justify-center">
+                    {[
+                      "How do I get started?",
+                      "Create a script",
+                      "Record a video",
+                      "Show the workflow"
+                    ].map((hint, i) => (
+                      <Button
+                        key={i}
+                        variant="outline"
+                        size="sm"
+                        className="h-6 sm:h-7 text-[10px] sm:text-xs px-2 sm:px-3 rounded-full hover:bg-purple-50 dark:hover:bg-purple-950/30"
+                        onClick={() => handleSendMessage(hint)}
+                      >
+                        {hint}
+                      </Button>
+                    ))}
                   </div>
                 </motion.div>
                 
@@ -1245,8 +1383,8 @@ Respond helpfully, warmly, and with genuine care for their creative journey.
                   transition={{ delay: 0.2 }}
                   className="space-y-2 px-2"
                 >
-                  <h4 className="font-semibold text-base">{getRandomPhrase('greetings')}</h4>
-                  <p className="text-xs text-muted-foreground/70">
+                  <h4 className="font-semibold text-sm sm:text-base">{getRandomPhrase('greetings')}</h4>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground/70">
                     Currently helping you in <strong>{productContext.name}</strong> - "{productContext.tagline}"
                   </p>
                   
@@ -1374,32 +1512,13 @@ Respond helpfully, warmly, and with genuine care for their creative journey.
                     </div>
                   </motion.div>
                 ))}
-                {isLoading && (
-                  <motion.div 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex gap-3"
-                  >
-                    <div className={cn(
-                      "h-8 w-8 rounded-full flex items-center justify-center",
-                      `bg-gradient-to-r ${productContext.color}`
-                    )}>
-                      <Sparkles className="h-4 w-4 text-white" />
-                    </div>
-                    <div className="bg-muted rounded-2xl rounded-tl-md px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        <span className="text-sm text-muted-foreground">Thinking of the best way to help... ✨</span>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
+                {isLoading && <GenieThinkingIndicator productColor={productContext.color} />}
               </div>
             )}
           </ScrollArea>
 
-          {/* Input Area */}
-          <div className="p-4 border-t bg-muted/30">
+          {/* Input Area - Enhanced with ARIA labels and keyboard accessibility */}
+          <div className="p-3 sm:p-4 border-t bg-muted/30">
             <div className="flex gap-2">
               <Textarea
                 ref={inputRef}
@@ -1407,14 +1526,19 @@ Respond helpfully, warmly, and with genuine care for their creative journey.
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="flex-1 min-h-[44px] max-h-[100px] resize-none rounded-xl"
+                className="flex-1 min-h-[44px] max-h-[100px] resize-none rounded-xl text-sm sm:text-base"
                 disabled={isLoading}
+                aria-label="Type your message to Ask Genie"
+                aria-describedby="genie-input-hint"
+                tabIndex={0}
               />
               <Button
                 onClick={() => handleSendMessage()}
                 disabled={!input.trim() || isLoading}
                 size="icon"
-                className={cn("h-11 w-11 rounded-xl", `bg-gradient-to-r ${productContext.color} hover:opacity-90`)}
+                className={cn("h-11 w-11 sm:h-11 sm:w-11 rounded-xl touch-manipulation", `bg-gradient-to-r ${productContext.color} hover:opacity-90`)}
+                aria-label={isLoading ? "Genie is thinking..." : "Send message"}
+                tabIndex={0}
               >
                 {isLoading ? (
                   <Loader2 className="h-4 w-4 animate-spin text-white" />
@@ -1423,8 +1547,8 @@ Respond helpfully, warmly, and with genuine care for their creative journey.
                 )}
               </Button>
             </div>
-            <p className="text-[10px] text-muted-foreground mt-2 text-center">
-              Press Enter to send • I can show visual flows too! 📊
+            <p id="genie-input-hint" className="text-[10px] text-muted-foreground mt-2 text-center">
+              Press Enter to send • Tab to navigate • I can show visual flows too! 📊
             </p>
           </div>
         </>
