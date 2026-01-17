@@ -330,8 +330,12 @@ export function PresentationWizard({
   const [selectedImageStyles, setSelectedImageStyles] = useState<ImageStyleType[]>(['ai-realistic']);
   const [selectedTones, setSelectedTones] = useState<PresentationTone[]>(['balanced']);
   const [selectedEnhancements, setSelectedEnhancements] = useState<ContentEnhancement[]>([]);
+  const [selectedContentStyles, setSelectedContentStyles] = useState<string[]>([]);
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>(['en']);
   const [primaryLanguage, setPrimaryLanguage] = useState('en');
+  const [inputLanguage, setInputLanguage] = useState('en'); // Language user is typing in
+  const [autoTranslateFromEnglish, setAutoTranslateFromEnglish] = useState(true);
+  const [generateMultipleLanguages, setGenerateMultipleLanguages] = useState(false);
   const [targetAudience, setTargetAudience] = useState('');
   const [voiceProvider, setVoiceProvider] = useState<VoiceProviderType>('openai');
   const [includeInfographics, setIncludeInfographics] = useState(true);
@@ -389,6 +393,16 @@ export function PresentationWizard({
     { id: 'engagement', name: 'Engaging', bestFor: ['marketing', 'conference'] },
     { id: 'scientific', name: 'Scientific', bestFor: ['whitepaper', 'case-study'] },
     { id: 'inspirational', name: 'Inspirational', bestFor: ['conference', 'product-launch'] },
+  ];
+
+  // Content style options for generation (storytelling, empathy, etc.)
+  const contentStyleOptions = [
+    { id: 'storytelling', name: 'Storytelling', description: 'Narrative-driven, engaging flow' },
+    { id: 'empathy-focus', name: 'Empathy Focus', description: 'Compassionate, understanding tone' },
+    { id: 'emotional-hooks', name: 'Emotional Hooks', description: 'Engaging emotional connection' },
+    { id: 'data-driven', name: 'Data-Driven', description: 'Facts and statistics focused' },
+    { id: 'educational', name: 'Educational', description: 'Learning-oriented structure' },
+    { id: 'persuasive', name: 'Persuasive', description: 'Convincing call-to-action' },
   ];
 
   const enhancementOptions = [
@@ -610,9 +624,50 @@ export function PresentationWizard({
     setGenerationPhase('analyzing');
     setSlideStatuses([]);
 
+    // Build content with language and style instructions
+    let processedContent = inputContent;
+    
+    // Add content style instructions
+    if (selectedContentStyles.length > 0) {
+      const styleInstructions = selectedContentStyles.map(style => {
+        switch (style) {
+          case 'storytelling': return 'Use a narrative storytelling approach with a clear beginning, middle, and end';
+          case 'empathy-focus': return 'Emphasize empathy and emotional connection with the audience';
+          case 'emotional-hooks': return 'Include emotional hooks and engaging moments';
+          case 'data-driven': return 'Focus on facts, statistics, and evidence-based content';
+          case 'educational': return 'Structure content for learning with clear explanations';
+          case 'persuasive': return 'Use persuasive techniques with strong calls-to-action';
+          default: return '';
+        }
+      }).filter(Boolean).join('. ');
+      
+      processedContent = `[Content Style: ${styleInstructions}]\n\n${processedContent}`;
+    }
+
+    // Add translation instructions if needed
+    if (inputLanguage === 'en' && primaryLanguage !== 'en' && autoTranslateFromEnglish) {
+      const targetLang = SUPPORTED_LANGUAGES.find(l => l.code === primaryLanguage);
+      processedContent = `[Translate from English to ${targetLang?.name || primaryLanguage}]\n\n${processedContent}`;
+    } else if (inputLanguage !== 'en' && primaryLanguage !== inputLanguage) {
+      const sourceLang = SUPPORTED_LANGUAGES.find(l => l.code === inputLanguage);
+      const targetLang = SUPPORTED_LANGUAGES.find(l => l.code === primaryLanguage);
+      processedContent = `[Translate from ${sourceLang?.name || inputLanguage} to ${targetLang?.name || primaryLanguage}]\n\n${processedContent}`;
+    } else if (primaryLanguage !== 'en') {
+      const targetLang = SUPPORTED_LANGUAGES.find(l => l.code === primaryLanguage);
+      processedContent = `[Generate in ${targetLang?.name || primaryLanguage} (${targetLang?.nativeName || primaryLanguage})]\n\n${processedContent}`;
+    }
+
+    // Merge content styles into enhancements for the request
+    const allEnhancements = [
+      ...selectedEnhancements,
+      ...selectedContentStyles.filter(s => 
+        ['storytelling', 'empathy-focus', 'emotional-hooks'].includes(s)
+      ) as ContentEnhancement[]
+    ];
+
     const request = {
       inputSource,
-      content: inputContent,
+      content: processedContent,
       contentType: uploadedFile?.type,
       collateralType,
       outputFormat,
@@ -625,7 +680,9 @@ export function PresentationWizard({
       targetAudience: targetAudience || undefined,
       voiceProvider,
       tones: selectedTones,
-      contentEnhancements: selectedEnhancements,
+      contentEnhancements: allEnhancements,
+      languages: generateMultipleLanguages ? [primaryLanguage, ...selectedLanguages.filter(l => l !== primaryLanguage)] : [primaryLanguage],
+      primaryLanguage,
     } as PresentationRequest;
 
     // Simulate progress phases
@@ -780,14 +837,42 @@ export function PresentationWizard({
     await generateMultiLang(languages, async (langCode: string) => {
       const lang = SUPPORTED_LANGUAGES.find(l => l.code === langCode);
       
-      // Build content with language instruction
-      const languageInstruction = langCode === 'en' 
-        ? inputContent 
-        : `Generate this presentation in ${lang?.name || langCode} (${lang?.nativeName || langCode}):\n\n${inputContent}`;
+      // Build content with content style and language instructions
+      let processedContent = inputContent;
+      
+      // Add content style instructions
+      if (selectedContentStyles.length > 0) {
+        const styleInstructions = selectedContentStyles.map(style => {
+          switch (style) {
+            case 'storytelling': return 'Use a narrative storytelling approach';
+            case 'empathy-focus': return 'Emphasize empathy and emotional connection';
+            case 'emotional-hooks': return 'Include emotional hooks';
+            case 'data-driven': return 'Focus on facts and statistics';
+            case 'educational': return 'Structure content for learning';
+            case 'persuasive': return 'Use persuasive techniques';
+            default: return '';
+          }
+        }).filter(Boolean).join('. ');
+        
+        processedContent = `[Content Style: ${styleInstructions}]\n\n${processedContent}`;
+      }
+      
+      // Add language instruction
+      if (langCode !== 'en') {
+        processedContent = `Generate this presentation in ${lang?.name || langCode} (${lang?.nativeName || langCode}):\n\n${processedContent}`;
+      }
+
+      // Merge content styles into enhancements
+      const allEnhancements = [
+        ...selectedEnhancements,
+        ...selectedContentStyles.filter(s => 
+          ['storytelling', 'empathy-focus', 'emotional-hooks'].includes(s)
+        ) as ContentEnhancement[]
+      ];
 
       const request: PresentationRequest = {
         inputSource,
-        content: languageInstruction,
+        content: processedContent,
         contentType: uploadedFile?.type,
         collateralType,
         outputFormat,
@@ -800,7 +885,7 @@ export function PresentationWizard({
         targetAudience: targetAudience || undefined,
         voiceProvider,
         tones: selectedTones,
-        contentEnhancements: selectedEnhancements,
+        contentEnhancements: allEnhancements,
       };
 
       const result = await generatePresentation(request);
@@ -1055,6 +1140,162 @@ export function PresentationWizard({
                       {inputContent.length.toLocaleString()} characters ready
                     </div>
                   )}
+
+                  <Separator className="my-3" />
+
+                  {/* Content Style Options - Storytelling, Empathy, etc. */}
+                  <div className="space-y-3">
+                    <Label className="text-xs font-medium text-foreground flex items-center gap-2">
+                      <Sparkles className="h-3 w-3 text-primary" />
+                      Content Style (optional)
+                    </Label>
+                    <p className="text-[10px] text-muted-foreground -mt-1">
+                      Choose the narrative approach for your presentation
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {contentStyleOptions.map(style => {
+                        const isSelected = selectedContentStyles.includes(style.id);
+                        return (
+                          <div
+                            key={style.id}
+                            onClick={() => {
+                              setSelectedContentStyles(prev => 
+                                isSelected 
+                                  ? prev.filter(s => s !== style.id)
+                                  : [...prev, style.id]
+                              );
+                            }}
+                            className={cn(
+                              "p-2 rounded-lg border cursor-pointer transition-all",
+                              isSelected 
+                                ? "border-primary bg-primary/10 ring-1 ring-primary/30" 
+                                : "border-border hover:border-muted-foreground/40 hover:bg-muted/50"
+                            )}
+                          >
+                            <div className="flex items-center gap-2">
+                              {isSelected && <Check className="h-3 w-3 text-primary" />}
+                              <span className="text-xs font-medium">{style.name}</span>
+                            </div>
+                            <p className="text-[10px] text-muted-foreground mt-0.5">{style.description}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <Separator className="my-3" />
+
+                  {/* Language Input & Translation Options */}
+                  <div className="space-y-3">
+                    <Label className="text-xs font-medium text-foreground flex items-center gap-2">
+                      <Globe className="h-3 w-3 text-primary" />
+                      Language Settings
+                    </Label>
+                    
+                    {/* Input Language Selection */}
+                    <div className="space-y-2">
+                      <Label className="text-[10px] text-muted-foreground">You're typing in:</Label>
+                      <Select value={inputLanguage} onValueChange={setInputLanguage}>
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-[200px]">
+                          {SUPPORTED_LANGUAGES.map(lang => (
+                            <SelectItem key={lang.code} value={lang.code} className="text-xs">
+                              <span className="mr-2">{lang.flag}</span>
+                              {lang.name} ({lang.nativeName})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Primary Output Language */}
+                    <div className="space-y-2">
+                      <Label className="text-[10px] text-muted-foreground">Generate presentation in:</Label>
+                      <Select value={primaryLanguage} onValueChange={setPrimaryLanguage}>
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-[200px]">
+                          {SUPPORTED_LANGUAGES.map(lang => (
+                            <SelectItem key={lang.code} value={lang.code} className="text-xs">
+                              <span className="mr-2">{lang.flag}</span>
+                              {lang.name} ({lang.nativeName})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Auto-translate toggle */}
+                    {inputLanguage === 'en' && primaryLanguage !== 'en' && (
+                      <div className="flex items-center justify-between p-2 rounded-lg border bg-muted/30">
+                        <div className="space-y-0.5">
+                          <Label className="text-xs">Auto-translate from English</Label>
+                          <p className="text-[10px] text-muted-foreground">
+                            Content will be translated to {SUPPORTED_LANGUAGES.find(l => l.code === primaryLanguage)?.name}
+                          </p>
+                        </div>
+                        <Switch checked={autoTranslateFromEnglish} onCheckedChange={setAutoTranslateFromEnglish} />
+                      </div>
+                    )}
+
+                    {/* Generate in multiple languages toggle */}
+                    <div className="flex items-center justify-between p-2 rounded-lg border bg-gradient-to-r from-primary/5 to-accent/5">
+                      <div className="space-y-0.5">
+                        <Label className="text-xs flex items-center gap-1">
+                          <Languages className="h-3 w-3" />
+                          Generate in multiple languages
+                        </Label>
+                        <p className="text-[10px] text-muted-foreground">
+                          Create separate presentations for each language
+                        </p>
+                      </div>
+                      <Switch checked={generateMultipleLanguages} onCheckedChange={setGenerateMultipleLanguages} />
+                    </div>
+
+                    {/* Multi-language selection */}
+                    {generateMultipleLanguages && (
+                      <div className="space-y-2 p-3 rounded-lg border bg-muted/20">
+                        <Label className="text-[10px] text-muted-foreground">Additional output languages:</Label>
+                        <div className="grid grid-cols-3 gap-1.5 max-h-32 overflow-y-auto">
+                          {SUPPORTED_LANGUAGES.filter(l => l.code !== primaryLanguage).map(lang => {
+                            const isSelected = selectedLanguages.includes(lang.code);
+                            return (
+                              <div
+                                key={lang.code}
+                                onClick={() => {
+                                  setSelectedLanguages(prev => 
+                                    isSelected 
+                                      ? prev.filter(c => c !== lang.code)
+                                      : [...prev, lang.code]
+                                  );
+                                }}
+                                className={cn(
+                                  "flex items-center gap-1 p-1.5 rounded border cursor-pointer transition-all text-xs",
+                                  isSelected 
+                                    ? "border-primary bg-primary/10" 
+                                    : "border-border hover:bg-muted/50"
+                                )}
+                              >
+                                {isSelected && <Check className="h-2.5 w-2.5 text-primary flex-shrink-0" />}
+                                <span>{lang.flag}</span>
+                                <span className="truncate">{lang.name}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        {selectedLanguages.length > 0 && (
+                          <p className="text-[10px] text-muted-foreground">
+                            Will generate: {[primaryLanguage, ...selectedLanguages.filter(l => l !== primaryLanguage)].map(c => 
+                              SUPPORTED_LANGUAGES.find(l => l.code === c)?.name
+                            ).join(', ')}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             )}
@@ -1578,24 +1819,60 @@ export function PresentationWizard({
 
                     <Separator className="my-2" />
 
+                    {/* Content Styles */}
+                    {selectedContentStyles.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Content Styles</p>
+                        <div className="flex flex-wrap gap-1">
+                          {selectedContentStyles.map(style => (
+                            <Badge key={style} variant="default" className="text-[10px] px-1.5 py-0 bg-primary/20">
+                              {contentStyleOptions.find(s => s.id === style)?.name || style}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedContentStyles.length > 0 && <Separator className="my-2" />}
+
                     {/* Languages */}
                     <div className="space-y-2">
                       <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Languages</p>
-                      <div className="flex flex-wrap gap-1">
-                        {selectedLanguages.map(lang => {
-                          const langInfo = SUPPORTED_LANGUAGES.find(l => l.code === lang);
-                          return (
-                            <Badge 
-                              key={lang} 
-                              variant={lang === primaryLanguage ? 'default' : 'secondary'} 
-                              className="text-[10px] px-1.5 py-0"
-                            >
-                              {langInfo?.flag} {langInfo?.name || lang}
-                              {lang === primaryLanguage && ' (Primary)'}
-                            </Badge>
-                          );
-                        })}
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                        <div className="text-muted-foreground">Input Language:</div>
+                        <div className="font-medium">
+                          {SUPPORTED_LANGUAGES.find(l => l.code === inputLanguage)?.flag} {SUPPORTED_LANGUAGES.find(l => l.code === inputLanguage)?.name}
+                        </div>
+                        <div className="text-muted-foreground">Output Language:</div>
+                        <div className="font-medium">
+                          {SUPPORTED_LANGUAGES.find(l => l.code === primaryLanguage)?.flag} {SUPPORTED_LANGUAGES.find(l => l.code === primaryLanguage)?.name}
+                        </div>
+                        {inputLanguage !== primaryLanguage && autoTranslateFromEnglish && (
+                          <>
+                            <div className="text-muted-foreground">Translation:</div>
+                            <div className="font-medium text-green-600">Auto-translate enabled</div>
+                          </>
+                        )}
                       </div>
+                      {generateMultipleLanguages && selectedLanguages.filter(l => l !== primaryLanguage).length > 0 && (
+                        <div className="mt-2">
+                          <p className="text-[10px] text-muted-foreground mb-1">Additional languages:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {selectedLanguages.filter(l => l !== primaryLanguage).map(lang => {
+                              const langInfo = SUPPORTED_LANGUAGES.find(l => l.code === lang);
+                              return (
+                                <Badge 
+                                  key={lang} 
+                                  variant="secondary" 
+                                  className="text-[10px] px-1.5 py-0"
+                                >
+                                  {langInfo?.flag} {langInfo?.name || lang}
+                                </Badge>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <Separator className="my-2" />
