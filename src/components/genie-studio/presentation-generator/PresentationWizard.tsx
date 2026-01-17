@@ -330,7 +330,7 @@ export function PresentationWizard({
   const [selectedImageStyles, setSelectedImageStyles] = useState<ImageStyleType[]>(['ai-realistic']);
   const [selectedTones, setSelectedTones] = useState<PresentationTone[]>(['balanced']);
   const [selectedEnhancements, setSelectedEnhancements] = useState<ContentEnhancement[]>([]);
-  const [selectedContentStyles, setSelectedContentStyles] = useState<string[]>([]);
+  
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>(['en']);
   const [primaryLanguage, setPrimaryLanguage] = useState('en');
   const [inputLanguage, setInputLanguage] = useState('en'); // Language user is typing in
@@ -393,16 +393,11 @@ export function PresentationWizard({
     { id: 'engagement', name: 'Engaging', bestFor: ['marketing', 'conference'] },
     { id: 'scientific', name: 'Scientific', bestFor: ['whitepaper', 'case-study'] },
     { id: 'inspirational', name: 'Inspirational', bestFor: ['conference', 'product-launch'] },
-  ];
-
-  // Content style options for generation (storytelling, empathy, etc.)
-  const contentStyleOptions = [
-    { id: 'storytelling', name: 'Storytelling', description: 'Narrative-driven, engaging flow' },
-    { id: 'empathy-focus', name: 'Empathy Focus', description: 'Compassionate, understanding tone' },
-    { id: 'emotional-hooks', name: 'Emotional Hooks', description: 'Engaging emotional connection' },
-    { id: 'data-driven', name: 'Data-Driven', description: 'Facts and statistics focused' },
-    { id: 'educational', name: 'Educational', description: 'Learning-oriented structure' },
-    { id: 'persuasive', name: 'Persuasive', description: 'Convincing call-to-action' },
+    { id: 'storytelling', name: 'Storytelling', bestFor: ['marketing', 'training', 'conference'] },
+    { id: 'empathetic', name: 'Empathetic', bestFor: ['healthcare', 'training', 'case-study'] },
+    { id: 'conversational', name: 'Conversational', bestFor: ['marketing', 'training'] },
+    { id: 'persuasive', name: 'Persuasive', bestFor: ['sales', 'investor', 'marketing'] },
+    { id: 'educational', name: 'Educational', bestFor: ['training', 'whitepaper'] },
   ];
 
   const enhancementOptions = [
@@ -627,21 +622,23 @@ export function PresentationWizard({
     // Build content with language and style instructions
     let processedContent = inputContent;
     
-    // Add content style instructions
-    if (selectedContentStyles.length > 0) {
-      const styleInstructions = selectedContentStyles.map(style => {
-        switch (style) {
+    // Add tone/style instructions to content
+    const styleTones = selectedTones.filter(t => 
+      ['storytelling', 'empathetic', 'persuasive', 'educational', 'conversational'].includes(t)
+    );
+    if (styleTones.length > 0) {
+      const toneInstructions = styleTones.map(tone => {
+        switch (tone) {
           case 'storytelling': return 'Use a narrative storytelling approach with a clear beginning, middle, and end';
-          case 'empathy-focus': return 'Emphasize empathy and emotional connection with the audience';
-          case 'emotional-hooks': return 'Include emotional hooks and engaging moments';
-          case 'data-driven': return 'Focus on facts, statistics, and evidence-based content';
-          case 'educational': return 'Structure content for learning with clear explanations';
+          case 'empathetic': return 'Emphasize empathy and emotional connection with the audience';
           case 'persuasive': return 'Use persuasive techniques with strong calls-to-action';
+          case 'educational': return 'Structure content for learning with clear explanations';
+          case 'conversational': return 'Use a conversational, friendly tone';
           default: return '';
         }
       }).filter(Boolean).join('. ');
       
-      processedContent = `[Content Style: ${styleInstructions}]\n\n${processedContent}`;
+      processedContent = `[Tone & Style: ${toneInstructions}]\n\n${processedContent}`;
     }
 
     // Add translation instructions if needed
@@ -657,13 +654,8 @@ export function PresentationWizard({
       processedContent = `[Generate in ${targetLang?.name || primaryLanguage} (${targetLang?.nativeName || primaryLanguage})]\n\n${processedContent}`;
     }
 
-    // Merge content styles into enhancements for the request
-    const allEnhancements = [
-      ...selectedEnhancements,
-      ...selectedContentStyles.filter(s => 
-        ['storytelling', 'empathy-focus', 'emotional-hooks'].includes(s)
-      ) as ContentEnhancement[]
-    ];
+    // Use enhancements directly (no content styles to merge anymore)
+    const allEnhancements = selectedEnhancements;
 
     const request = {
       inputSource,
@@ -837,24 +829,26 @@ export function PresentationWizard({
     await generateMultiLang(languages, async (langCode: string) => {
       const lang = SUPPORTED_LANGUAGES.find(l => l.code === langCode);
       
-      // Build content with content style and language instructions
+      // Build content with tone and language instructions
       let processedContent = inputContent;
       
-      // Add content style instructions
-      if (selectedContentStyles.length > 0) {
-        const styleInstructions = selectedContentStyles.map(style => {
-          switch (style) {
+      // Add tone/style instructions based on selected tones
+      const styleTones = selectedTones.filter(t => 
+        ['storytelling', 'empathetic', 'persuasive', 'educational', 'conversational'].includes(t)
+      );
+      if (styleTones.length > 0) {
+        const toneInstructions = styleTones.map(tone => {
+          switch (tone) {
             case 'storytelling': return 'Use a narrative storytelling approach';
-            case 'empathy-focus': return 'Emphasize empathy and emotional connection';
-            case 'emotional-hooks': return 'Include emotional hooks';
-            case 'data-driven': return 'Focus on facts and statistics';
-            case 'educational': return 'Structure content for learning';
+            case 'empathetic': return 'Emphasize empathy and emotional connection';
             case 'persuasive': return 'Use persuasive techniques';
+            case 'educational': return 'Structure content for learning';
+            case 'conversational': return 'Use a conversational, friendly tone';
             default: return '';
           }
         }).filter(Boolean).join('. ');
         
-        processedContent = `[Content Style: ${styleInstructions}]\n\n${processedContent}`;
+        processedContent = `[Tone & Style: ${toneInstructions}]\n\n${processedContent}`;
       }
       
       // Add language instruction
@@ -862,13 +856,8 @@ export function PresentationWizard({
         processedContent = `Generate this presentation in ${lang?.name || langCode} (${lang?.nativeName || langCode}):\n\n${processedContent}`;
       }
 
-      // Merge content styles into enhancements
-      const allEnhancements = [
-        ...selectedEnhancements,
-        ...selectedContentStyles.filter(s => 
-          ['storytelling', 'empathy-focus', 'emotional-hooks'].includes(s)
-        ) as ContentEnhancement[]
-      ];
+      // Use enhancements directly
+      const allEnhancements = selectedEnhancements;
 
       const request: PresentationRequest = {
         inputSource,
@@ -1140,48 +1129,6 @@ export function PresentationWizard({
                       {inputContent.length.toLocaleString()} characters ready
                     </div>
                   )}
-
-                  <Separator className="my-3" />
-
-                  {/* Content Style Options - Storytelling, Empathy, etc. */}
-                  <div className="space-y-3">
-                    <Label className="text-xs font-medium text-foreground flex items-center gap-2">
-                      <Sparkles className="h-3 w-3 text-primary" />
-                      Content Style (optional)
-                    </Label>
-                    <p className="text-[10px] text-muted-foreground -mt-1">
-                      Choose the narrative approach for your presentation
-                    </p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {contentStyleOptions.map(style => {
-                        const isSelected = selectedContentStyles.includes(style.id);
-                        return (
-                          <div
-                            key={style.id}
-                            onClick={() => {
-                              setSelectedContentStyles(prev => 
-                                isSelected 
-                                  ? prev.filter(s => s !== style.id)
-                                  : [...prev, style.id]
-                              );
-                            }}
-                            className={cn(
-                              "p-2 rounded-lg border cursor-pointer transition-all",
-                              isSelected 
-                                ? "border-primary bg-primary/10 ring-1 ring-primary/30" 
-                                : "border-border hover:border-muted-foreground/40 hover:bg-muted/50"
-                            )}
-                          >
-                            <div className="flex items-center gap-2">
-                              {isSelected && <Check className="h-3 w-3 text-primary" />}
-                              <span className="text-xs font-medium">{style.name}</span>
-                            </div>
-                            <p className="text-[10px] text-muted-foreground mt-0.5">{style.description}</p>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
 
                   <Separator className="my-3" />
 
@@ -1818,22 +1765,6 @@ export function PresentationWizard({
                     </div>
 
                     <Separator className="my-2" />
-
-                    {/* Content Styles */}
-                    {selectedContentStyles.length > 0 && (
-                      <div className="space-y-2">
-                        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Content Styles</p>
-                        <div className="flex flex-wrap gap-1">
-                          {selectedContentStyles.map(style => (
-                            <Badge key={style} variant="default" className="text-[10px] px-1.5 py-0 bg-primary/20">
-                              {contentStyleOptions.find(s => s.id === style)?.name || style}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {selectedContentStyles.length > 0 && <Separator className="my-2" />}
 
                     {/* Languages */}
                     <div className="space-y-2">

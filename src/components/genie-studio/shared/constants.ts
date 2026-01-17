@@ -119,6 +119,10 @@ export const TONE_OPTIONS: ToneOption[] = [
   { value: 'inspirational', label: 'Inspirational' },
   { value: 'dramatic', label: 'Dramatic' },
   { value: 'informative', label: 'Informative' },
+  { value: 'storytelling', label: 'Storytelling' },
+  { value: 'empathetic', label: 'Empathetic' },
+  { value: 'persuasive', label: 'Persuasive' },
+  { value: 'conversational', label: 'Conversational' },
 ];
 
 export const DURATION_OPTIONS: DurationOption[] = [
