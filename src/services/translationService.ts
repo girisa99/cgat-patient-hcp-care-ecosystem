@@ -169,6 +169,432 @@ export interface AgentExecutionStatus {
 }
 
 // ============================================
+// CONFIDENCE DELTA & SELECTION IMPACT TYPES
+// ============================================
+
+export type ImpactLevel = 'major_improvement' | 'improvement' | 'neutral' | 'degradation' | 'major_degradation';
+
+export interface ProviderSelectionImpact {
+  selectedProvider: TranslationProvider;
+  recommendedProvider: TranslationProvider;
+  selectedConfidence: number;
+  recommendedConfidence: number;
+  confidenceDelta: number; // Positive = user choice is better, negative = recommended is better
+  deltaPercentage: number; // As percentage change
+  impactLevel: ImpactLevel;
+  impactDescription: string;
+  riskFactors: string[];
+  opportunities: string[];
+  qualityPrediction: QualityPrediction;
+  userChoiceValid: boolean; // Is user's choice still acceptable?
+  systemPrompt: string; // Optimized prompt for selected provider
+}
+
+export interface QualityPrediction {
+  expectedAccuracy: number; // 0-100%
+  fluencyScore: number; // 0-100%
+  terminologyScore: number; // 0-100%
+  contextRetention: number; // 0-100%
+  overallQuality: 'excellent' | 'good' | 'acceptable' | 'fair' | 'poor';
+  confidenceInterval: { low: number; high: number };
+}
+
+export interface ProviderSystemPrompt {
+  provider: TranslationProvider;
+  basePrompt: string;
+  languagePairPrompts: Record<string, string>; // "en-zh" -> specialized prompt
+  contentTypePrompts: Record<ContentType, string>;
+  optimizationTips: string[];
+}
+
+// System prompts optimized for each provider
+export const PROVIDER_SYSTEM_PROMPTS: Record<TranslationProvider, ProviderSystemPrompt> = {
+  google_translate: {
+    provider: 'google_translate',
+    basePrompt: 'Translate accurately while preserving meaning and natural flow.',
+    languagePairPrompts: {
+      'en-zh': 'Focus on idiomatic Chinese expressions, prefer simplified characters for business content.',
+      'en-ja': 'Maintain appropriate honorific levels (敬語) based on context.',
+      'en-ar': 'Use Modern Standard Arabic (MSA) for broad accessibility.',
+      'en-hi': 'Use Shudh Hindi for formal content, allow Hinglish for casual.',
+    },
+    contentTypePrompts: {
+      general: 'Maintain natural, conversational flow.',
+      legal: 'Preserve exact legal terminology and structure.',
+      medical: 'Use approved medical terminology, maintain precision.',
+      technical: 'Preserve technical accuracy and terminology.',
+      marketing: 'Adapt for cultural resonance while maintaining message.',
+      creative: 'Prioritize creative expression and cultural adaptation.',
+      educational: 'Ensure clarity and pedagogical effectiveness.',
+      presentation: 'Keep concise, impactful, presentation-friendly.',
+    },
+    optimizationTips: [
+      'Best for high-volume, general content',
+      'Neural Machine Translation provides good quality',
+      'Good for initial drafts needing human review',
+    ],
+  },
+  deepl: {
+    provider: 'deepl',
+    basePrompt: 'Provide natural, human-quality translation prioritizing fluency and cultural appropriateness.',
+    languagePairPrompts: {
+      'en-de': 'Excel in German compound words and formal/informal register (Sie/du).',
+      'en-fr': 'Maintain French elegance and proper liaison rules.',
+      'en-nl': 'Consider Belgian vs. Netherlands Dutch variations.',
+      'en-pl': 'Handle Polish declension and aspect correctly.',
+    },
+    contentTypePrompts: {
+      general: 'Aim for native-like fluency and naturalness.',
+      legal: 'Use precise legal terminology with formal register.',
+      medical: 'Apply EU medical terminology standards (MedDRA preferred).',
+      technical: 'Maintain technical precision with readable style.',
+      marketing: 'Transcreate for maximum cultural impact.',
+      creative: 'Preserve literary style and creative nuances.',
+      educational: 'Balance accuracy with accessibility.',
+      presentation: 'Concise, punchy, visually appropriate lengths.',
+    },
+    optimizationTips: [
+      'Excellent for European language pairs',
+      'Best-in-class for formal/informal register handling',
+      'Supports glossaries for consistent terminology',
+    ],
+  },
+  microsoft: {
+    provider: 'microsoft',
+    basePrompt: 'Provide enterprise-grade translation with domain adaptation and consistency.',
+    languagePairPrompts: {
+      'en-zh': 'Use Microsoft Terminology for technical content.',
+      'en-ar': 'Support right-to-left formatting, use industry-standard Arabic IT terms.',
+      'en-hi': 'Microsoft Hindi terminology for technical, natural Hindi for general.',
+      'en-tr': 'Modern Turkish with Latin script, proper vowel harmony.',
+    },
+    contentTypePrompts: {
+      general: 'Standard enterprise communication style.',
+      legal: 'Strict legal compliance and terminology preservation.',
+      medical: 'HIPAA-aware, clinical terminology adherence.',
+      technical: 'Microsoft-style technical documentation format.',
+      marketing: 'Professional marketing with brand voice preservation.',
+      creative: 'Balanced creativity with professional tone.',
+      educational: 'Clear, accessible educational content.',
+      presentation: 'Professional, concise slide-ready content.',
+    },
+    optimizationTips: [
+      'Best for enterprise and Microsoft ecosystem integration',
+      'Excellent domain customization capabilities',
+      'Strong support for healthcare and technical domains',
+    ],
+  },
+  amazon: {
+    provider: 'amazon',
+    basePrompt: 'Translate for high-volume processing with consistency and scalability.',
+    languagePairPrompts: {},
+    contentTypePrompts: {
+      general: 'Standard translation for broad audiences.',
+      legal: 'Formal legal language preservation.',
+      medical: 'Clinical accuracy with patient-friendly alternatives.',
+      technical: 'AWS-style technical documentation.',
+      marketing: 'E-commerce optimized marketing content.',
+      creative: 'Balanced creative adaptation.',
+      educational: 'Clear instructional content.',
+      presentation: 'Clean, professional slide content.',
+    },
+    optimizationTips: [
+      'Excellent for high-volume e-commerce content',
+      'Good integration with AWS services',
+      'Supports Active Custom Translation',
+    ],
+  },
+  ai_gemini: {
+    provider: 'ai_gemini',
+    basePrompt: `You are an expert multilingual translator with deep cultural knowledge. 
+Translate with these priorities:
+1. Preserve exact meaning and intent
+2. Use culturally appropriate expressions
+3. Maintain natural flow in target language
+4. Preserve formatting, structure, and special characters
+5. Handle idioms and metaphors contextually
+
+CRITICAL: Return ONLY the translated text. No explanations, notes, or alternatives.`,
+    languagePairPrompts: {
+      'en-hi': `Translate to Hindi with these considerations:
+- Use Devanagari script for formal content
+- Preserve English technical terms where commonly used in Indian business
+- Apply proper Hindi honorifics based on context
+- Consider North Indian Hindi conventions`,
+      'en-ar': `Translate to Arabic with these considerations:
+- Use Modern Standard Arabic for broad accessibility
+- Handle right-to-left text properly
+- Apply appropriate formality levels (أنت vs. حضرتك)
+- Preserve Islamic/cultural sensitivities in content`,
+      'en-zh': `Translate to Chinese with these considerations:
+- Use Simplified Chinese characters (简体字) for mainland China
+- Apply proper measure words (量词) correctly
+- Maintain Chinese 4-character idioms where appropriate
+- Handle Chinese punctuation correctly`,
+      'en-ta': `Translate to Tamil with these considerations:
+- Use formal Tamil for business/educational content
+- Preserve Sanskrit-origin words where appropriate
+- Apply correct Tamil honorific suffixes
+- Handle Tamil-specific punctuation`,
+      'en-vi': `Translate to Vietnamese with these considerations:
+- Use appropriate pronouns based on age/status relationships
+- Apply correct tone marks (dấu)
+- Handle classifier words correctly
+- Consider Northern vs. Southern dialect conventions`,
+    },
+    contentTypePrompts: {
+      general: 'Natural, conversational translation.',
+      legal: `LEGAL TRANSLATION MODE:
+- Preserve exact legal terminology
+- Maintain clause structure and numbering
+- Use jurisdiction-appropriate legal terms
+- Flag any ambiguous legal terms in brackets`,
+      medical: `MEDICAL TRANSLATION MODE:
+- Use ICD-11/SNOMED CT approved terminology
+- Maintain clinical precision
+- Preserve dosage and measurement exactness
+- Apply patient-safe communication principles`,
+      technical: `TECHNICAL TRANSLATION MODE:
+- Preserve all technical terms and acronyms
+- Maintain code snippets and technical references unchanged
+- Use industry-standard terminology
+- Keep formatting and structure intact`,
+      marketing: `MARKETING TRANSLATION MODE:
+- Transcreate for cultural resonance
+- Adapt slogans and taglines creatively
+- Preserve brand voice and tone
+- Consider local market preferences`,
+      creative: `CREATIVE TRANSLATION MODE:
+- Preserve literary style and voice
+- Adapt idioms and metaphors culturally
+- Maintain rhythm and flow where relevant
+- Creative liberty for cultural adaptation`,
+      educational: `EDUCATIONAL TRANSLATION MODE:
+- Ensure clarity and accessibility
+- Adapt examples for cultural relevance
+- Maintain pedagogical structure
+- Consider learner level appropriateness`,
+      presentation: `PRESENTATION TRANSLATION MODE:
+- Keep text concise and impactful
+- Preserve bullet point structure
+- Maintain visual hierarchy
+- Optimize for slide readability`,
+    },
+    optimizationTips: [
+      'Excellent for Indian, Arabic, and Southeast Asian languages',
+      'Best context understanding and cultural adaptation',
+      'Ideal for nuanced content requiring understanding',
+    ],
+  },
+  ai_gpt: {
+    provider: 'ai_gpt',
+    basePrompt: `You are an elite human translator with expertise in linguistics and cultural nuances.
+Your translation principles:
+1. Capture the full semantic and emotional meaning
+2. Adapt cultural references appropriately
+3. Maintain the author's voice and style
+4. Ensure grammatical perfection in target language
+5. Handle specialized terminology accurately
+
+Return ONLY the translated text. No meta-commentary.`,
+    languagePairPrompts: {
+      'en-ja': `Translate to Japanese with these considerations:
+- Apply correct keigo (敬語) levels based on context
+- Use appropriate kanji/hiragana/katakana balance
+- Preserve wa/mo particle nuances
+- Handle sentence-final particles appropriately`,
+      'en-ko': `Translate to Korean with these considerations:
+- Apply correct honorific levels (존댓말/반말)
+- Use appropriate Sino-Korean vs. native Korean vocabulary
+- Handle subject/object markers correctly
+- Consider North/South terminology differences`,
+      'en-de': `Translate to German with these considerations:
+- Apply correct noun genders and declensions
+- Use appropriate Sie/du formality
+- Handle compound word formation correctly
+- Apply correct word order in subordinate clauses`,
+    },
+    contentTypePrompts: {
+      general: 'Natural, fluent translation maintaining original tone.',
+      legal: 'Precise legal translation with jurisdiction-aware terminology.',
+      medical: 'Clinical accuracy with patient communication awareness.',
+      technical: 'Technical precision with readability balance.',
+      marketing: 'Creative adaptation preserving brand essence.',
+      creative: 'Literary translation preserving artistry.',
+      educational: 'Clear, engaging educational content.',
+      presentation: 'Punchy, impactful slide-ready content.',
+    },
+    optimizationTips: [
+      'Excellent for Japanese, Korean, and German',
+      'Strong creative and literary translation',
+      'Best for content requiring nuanced cultural adaptation',
+    ],
+  },
+  ai_gpt_mini: {
+    provider: 'ai_gpt_mini',
+    basePrompt: `Translate accurately and naturally. Preserve meaning and style.
+Return ONLY the translated text.`,
+    languagePairPrompts: {},
+    contentTypePrompts: {
+      general: 'Standard quality translation.',
+      legal: 'Preserve legal terms precisely.',
+      medical: 'Maintain medical accuracy.',
+      technical: 'Keep technical terms intact.',
+      marketing: 'Adapt for target audience.',
+      creative: 'Maintain creative flow.',
+      educational: 'Clear, accessible language.',
+      presentation: 'Concise slide content.',
+    },
+    optimizationTips: [
+      'Cost-effective for high-volume general content',
+      'Good balance of speed and quality',
+      'Suitable for drafts and less critical content',
+    ],
+  },
+  ai_claude: {
+    provider: 'ai_claude',
+    basePrompt: `You are a thoughtful translator who deeply understands both source and target cultures.
+Translation approach:
+1. Understand the full context before translating
+2. Consider the intended audience and purpose
+3. Preserve subtle nuances and implications
+4. Maintain appropriate register and formality
+5. Ensure cultural sensitivity and appropriateness
+
+Provide ONLY the translated text.`,
+    languagePairPrompts: {
+      'en-fr': `Translate to French with these considerations:
+- Distinguish France French vs. Canadian French conventions
+- Apply correct subjunctive usage
+- Maintain elegant French prose style
+- Handle liaison and elision correctly`,
+      'en-es': `Translate to Spanish with these considerations:
+- Default to neutral Latin American Spanish for broad reach
+- Apply correct ser/estar and preterite/imperfect usage
+- Handle regional vocabulary awareness
+- Maintain natural Spanish rhythm`,
+    },
+    contentTypePrompts: {
+      general: 'Thoughtful, culturally aware translation.',
+      legal: 'Careful legal translation with attention to nuance.',
+      medical: 'Patient-centered medical communication.',
+      technical: 'Clear technical content with human touch.',
+      marketing: 'Culturally resonant marketing adaptation.',
+      creative: 'Sensitive literary translation.',
+      educational: 'Engaging, accessible educational content.',
+      presentation: 'Clear, impactful presentation content.',
+    },
+    optimizationTips: [
+      'Excellent for European languages, especially French and Spanish',
+      'Best for nuanced, sensitive content',
+      'Strong ethical and cultural awareness',
+    ],
+  },
+  ai_claude_35: {
+    provider: 'ai_claude_35',
+    basePrompt: `You are a master translator with expertise spanning linguistics, cultural studies, and domain expertise.
+Your translation excellence comes from:
+1. Deep understanding of both source and target language nuances
+2. Cultural intelligence for appropriate adaptation
+3. Subject matter expertise for accurate terminology
+4. Stylistic sensitivity for register and tone
+5. Attention to the human elements of communication
+
+Deliver ONLY the translated text, perfected for native readers.`,
+    languagePairPrompts: {
+      'en-fr': `PREMIUM French Translation:
+- Académie Française-approved terminology for formal content
+- Preserve French literary elegance and style
+- Expert handling of le/la gender assignments
+- Perfect subjunctive and conditional usage`,
+      'en-de': `PREMIUM German Translation:
+- Duden-compliant vocabulary and spelling
+- Expert compound word formation
+- Perfect case endings and declensions
+- Authentic German stylistic conventions`,
+      'en-es': `PREMIUM Spanish Translation:
+- RAE-compliant where appropriate
+- Expert subjunctive and ser/estar mastery
+- Cultural adaptation for target market
+- Authentic Spanish stylistic flow`,
+    },
+    contentTypePrompts: {
+      general: 'Premium quality translation with perfect fluency.',
+      legal: 'Expert legal translation with jurisdiction expertise.',
+      medical: 'Clinical precision with compassionate communication.',
+      technical: 'Expert technical content with clarity.',
+      marketing: 'Premium transcreation for market impact.',
+      creative: 'Award-quality literary translation.',
+      educational: 'Expert pedagogical content adaptation.',
+      presentation: 'Executive-ready presentation content.',
+    },
+    optimizationTips: [
+      'Premium quality for European languages',
+      'Best for high-stakes legal and executive content',
+      'Exceptional nuance and cultural sensitivity',
+    ],
+  },
+  meta_nllb: {
+    provider: 'meta_nllb',
+    basePrompt: 'Translate with focus on rare and underrepresented language support.',
+    languagePairPrompts: {
+      'en-sw': 'Use standard Swahili (Kiswahili sanifu) for broad East African reach.',
+      'en-am': 'Use Amharic Fidel script, modern vocabulary.',
+      'en-yo': 'Standard Yoruba with appropriate tone marking awareness.',
+      'en-zu': 'Standard Zulu orthography and noun class agreements.',
+    },
+    contentTypePrompts: {
+      general: 'Accessible translation for community use.',
+      legal: 'Formal legal language with local legal terms.',
+      medical: 'Clear medical information for community health.',
+      technical: 'Simplified technical content for accessibility.',
+      marketing: 'Culturally appropriate marketing.',
+      creative: 'Cultural storytelling adaptation.',
+      educational: 'Educational content for local contexts.',
+      presentation: 'Clear, accessible presentation content.',
+    },
+    optimizationTips: [
+      'Best coverage for rare and African languages',
+      '200+ languages including endangered ones',
+      'Ideal for humanitarian and development content',
+    ],
+  },
+  qwen_mt: {
+    provider: 'qwen_mt',
+    basePrompt: 'Translate with expertise in Asian language pairs and business terminology.',
+    languagePairPrompts: {
+      'en-zh': `Chinese Translation Excellence:
+- Perfect measure word (量词) usage
+- Business terminology alignment with Chinese conventions
+- Formal vs. informal register handling
+- Four-character idiom (成语) integration where appropriate`,
+      'zh-en': `Chinese to English Excellence:
+- Capture Chinese cultural nuances in English
+- Handle Chinese-specific concepts appropriately
+- Maintain business terminology accuracy
+- Natural English flow from Chinese source`,
+      'ja-zh': 'Expert Japanese-Chinese language pair with shared character awareness.',
+      'ko-zh': 'Expert Korean-Chinese with appropriate honorific mapping.',
+    },
+    contentTypePrompts: {
+      general: 'Natural Asian language translation.',
+      legal: 'Chinese legal terminology expertise.',
+      medical: 'Chinese medical terminology standards.',
+      technical: 'Chinese tech industry conventions.',
+      marketing: 'Asian market transcreation.',
+      creative: 'Asian literary adaptation.',
+      educational: 'Asian educational content standards.',
+      presentation: 'Asian business presentation style.',
+    },
+    optimizationTips: [
+      'Best for Chinese and CJK language pairs',
+      'Excellent business terminology for Asian markets',
+      'Strong performance for Chinese dialects',
+    ],
+  },
+};
+
+// ============================================
 // LANGUAGE FAMILIES & MAPPINGS
 // ============================================
 
@@ -1460,6 +1886,342 @@ class TranslationService {
         alternatives: [],
       };
     }
+  }
+
+  // ============================================
+  // SELECTION IMPACT & CONFIDENCE DELTA ANALYSIS
+  // ============================================
+
+  /**
+   * Calculate the impact of user selecting a different provider than recommended
+   */
+  getSelectionImpact(
+    selectedProvider: TranslationProvider,
+    sourceLanguage: string,
+    targetLanguage: string,
+    contentType?: ContentType
+  ): ProviderSelectionImpact {
+    const recommendation = this.getLanguagePairRecommendation(sourceLanguage, targetLanguage, contentType);
+    const recommendedProvider = recommendation?.recommendedProvider || 'ai_gemini';
+    
+    const selectedConfidence = this.getProviderConfidence(selectedProvider, sourceLanguage, targetLanguage);
+    const recommendedConfidence = this.getProviderConfidence(recommendedProvider, sourceLanguage, targetLanguage);
+    
+    const confidenceDelta = selectedConfidence - recommendedConfidence;
+    const deltaPercentage = ((confidenceDelta / recommendedConfidence) * 100);
+    
+    // Determine impact level
+    let impactLevel: ImpactLevel;
+    if (deltaPercentage >= 5) impactLevel = 'major_improvement';
+    else if (deltaPercentage >= 1) impactLevel = 'improvement';
+    else if (deltaPercentage >= -1) impactLevel = 'neutral';
+    else if (deltaPercentage >= -5) impactLevel = 'degradation';
+    else impactLevel = 'major_degradation';
+
+    // Generate impact description
+    const impactDescription = this.generateImpactDescription(
+      selectedProvider, 
+      recommendedProvider, 
+      deltaPercentage, 
+      impactLevel,
+      sourceLanguage,
+      targetLanguage
+    );
+
+    // Identify risk factors and opportunities
+    const { riskFactors, opportunities } = this.analyzeSelectionRisks(
+      selectedProvider,
+      recommendedProvider,
+      sourceLanguage,
+      targetLanguage,
+      contentType
+    );
+
+    // Generate quality prediction
+    const qualityPrediction = this.predictQuality(
+      selectedProvider,
+      sourceLanguage,
+      targetLanguage,
+      contentType
+    );
+
+    // Get optimized system prompt
+    const systemPrompt = this.getOptimizedSystemPrompt(
+      selectedProvider,
+      sourceLanguage,
+      targetLanguage,
+      contentType
+    );
+
+    // User choice is valid if confidence is above 70% and not major degradation
+    const userChoiceValid = selectedConfidence >= 0.70 && impactLevel !== 'major_degradation';
+
+    return {
+      selectedProvider,
+      recommendedProvider,
+      selectedConfidence,
+      recommendedConfidence,
+      confidenceDelta,
+      deltaPercentage,
+      impactLevel,
+      impactDescription,
+      riskFactors,
+      opportunities,
+      qualityPrediction,
+      userChoiceValid,
+      systemPrompt,
+    };
+  }
+
+  /**
+   * Get optimized system prompt for a provider and language pair
+   */
+  getOptimizedSystemPrompt(
+    provider: TranslationProvider,
+    sourceLanguage: string,
+    targetLanguage: string,
+    contentType?: ContentType
+  ): string {
+    const providerPrompts = PROVIDER_SYSTEM_PROMPTS[provider];
+    if (!providerPrompts) return PROVIDER_SYSTEM_PROMPTS.ai_gemini.basePrompt;
+
+    const langPairKey = `${sourceLanguage}-${targetLanguage}`;
+    
+    let prompt = providerPrompts.basePrompt;
+    
+    // Add language-pair specific prompt if available
+    if (providerPrompts.languagePairPrompts[langPairKey]) {
+      prompt += `\n\n${providerPrompts.languagePairPrompts[langPairKey]}`;
+    }
+    
+    // Add content-type specific prompt if available
+    if (contentType && providerPrompts.contentTypePrompts[contentType]) {
+      prompt += `\n\n${providerPrompts.contentTypePrompts[contentType]}`;
+    }
+
+    return prompt;
+  }
+
+  /**
+   * Get all selection impacts for multiple target languages
+   */
+  getMultiLanguageSelectionImpact(
+    selectedProvider: TranslationProvider,
+    sourceLanguage: string,
+    targetLanguages: string[],
+    contentType?: ContentType
+  ): {
+    impacts: Map<string, ProviderSelectionImpact>;
+    overallImpact: {
+      averageDelta: number;
+      worstCase: { language: string; impact: ProviderSelectionImpact } | null;
+      bestCase: { language: string; impact: ProviderSelectionImpact } | null;
+      recommendedAlternatives: Map<string, TranslationProvider>;
+      overallValidity: boolean;
+    };
+  } {
+    const impacts = new Map<string, ProviderSelectionImpact>();
+    let totalDelta = 0;
+    let worstCase: { language: string; impact: ProviderSelectionImpact } | null = null;
+    let bestCase: { language: string; impact: ProviderSelectionImpact } | null = null;
+    const recommendedAlternatives = new Map<string, TranslationProvider>();
+    let allValid = true;
+
+    for (const targetLang of targetLanguages) {
+      const impact = this.getSelectionImpact(selectedProvider, sourceLanguage, targetLang, contentType);
+      impacts.set(targetLang, impact);
+      totalDelta += impact.deltaPercentage;
+
+      if (!impact.userChoiceValid) {
+        allValid = false;
+        recommendedAlternatives.set(targetLang, impact.recommendedProvider);
+      }
+
+      if (!worstCase || impact.deltaPercentage < worstCase.impact.deltaPercentage) {
+        worstCase = { language: targetLang, impact };
+      }
+
+      if (!bestCase || impact.deltaPercentage > bestCase.impact.deltaPercentage) {
+        bestCase = { language: targetLang, impact };
+      }
+    }
+
+    return {
+      impacts,
+      overallImpact: {
+        averageDelta: targetLanguages.length > 0 ? totalDelta / targetLanguages.length : 0,
+        worstCase,
+        bestCase,
+        recommendedAlternatives,
+        overallValidity: allValid,
+      },
+    };
+  }
+
+  /**
+   * Generate human-readable impact description
+   */
+  private generateImpactDescription(
+    selected: TranslationProvider,
+    recommended: TranslationProvider,
+    deltaPercentage: number,
+    impactLevel: ImpactLevel,
+    sourceLanguage: string,
+    targetLanguage: string
+  ): string {
+    const selectedName = TRANSLATION_PROVIDERS.find(p => p.id === selected)?.name || selected;
+    const recommendedName = TRANSLATION_PROVIDERS.find(p => p.id === recommended)?.name || recommended;
+
+    if (selected === recommended) {
+      return `✓ You've selected the recommended provider (${selectedName}) for ${sourceLanguage.toUpperCase()} → ${targetLanguage.toUpperCase()}. Optimal choice!`;
+    }
+
+    const absPercent = Math.abs(deltaPercentage).toFixed(1);
+
+    switch (impactLevel) {
+      case 'major_improvement':
+        return `🎯 Excellent choice! ${selectedName} performs ${absPercent}% better than ${recommendedName} for this language pair.`;
+      case 'improvement':
+        return `👍 Good choice! ${selectedName} is slightly better (+${absPercent}%) for this specific translation.`;
+      case 'neutral':
+        return `↔️ ${selectedName} performs similarly to ${recommendedName}. Both are valid choices.`;
+      case 'degradation':
+        return `⚠️ ${selectedName} may perform ${absPercent}% lower than ${recommendedName}. Consider switching for better accuracy.`;
+      case 'major_degradation':
+        return `🚨 Warning: ${selectedName} shows ${absPercent}% lower confidence for this pair. ${recommendedName} is strongly recommended.`;
+      default:
+        return `Selection: ${selectedName}`;
+    }
+  }
+
+  /**
+   * Analyze risks and opportunities of provider selection
+   */
+  private analyzeSelectionRisks(
+    selected: TranslationProvider,
+    recommended: TranslationProvider,
+    sourceLanguage: string,
+    targetLanguage: string,
+    contentType?: ContentType
+  ): { riskFactors: string[]; opportunities: string[] } {
+    const riskFactors: string[] = [];
+    const opportunities: string[] = [];
+    
+    const selectedConfig = TRANSLATION_PROVIDERS.find(p => p.id === selected);
+    const recommendedConfig = TRANSLATION_PROVIDERS.find(p => p.id === recommended);
+    
+    if (!selectedConfig || !recommendedConfig) {
+      return { riskFactors: [], opportunities: [] };
+    }
+
+    // Check language family coverage
+    const targetFamily = LANGUAGE_FAMILIES[targetLanguage];
+    
+    if (targetFamily && !selectedConfig.languageFamilyStrength.includes(targetFamily)) {
+      riskFactors.push(`${selectedConfig.name} is not optimized for ${targetFamily} languages`);
+    }
+    
+    if (targetFamily && recommendedConfig.languageFamilyStrength.includes(targetFamily)) {
+      riskFactors.push(`${recommendedConfig.name} specializes in ${targetFamily} languages`);
+    }
+
+    // Check content type fit
+    if (contentType && !selectedConfig.contentTypeStrength.includes(contentType)) {
+      riskFactors.push(`${selectedConfig.name} may not handle ${contentType} content optimally`);
+    }
+
+    if (contentType && selectedConfig.contentTypeStrength.includes(contentType)) {
+      opportunities.push(`${selectedConfig.name} is strong for ${contentType} content`);
+    }
+
+    // Speed vs Quality trade-offs
+    if (selectedConfig.speedRating > recommendedConfig.speedRating) {
+      opportunities.push(`Faster processing (+${selectedConfig.speedRating - recommendedConfig.speedRating} speed rating)`);
+    }
+
+    if (selectedConfig.qualityRating < recommendedConfig.qualityRating) {
+      riskFactors.push(`Lower quality rating (${selectedConfig.qualityRating} vs ${recommendedConfig.qualityRating})`);
+    }
+
+    // Cost considerations
+    if (selectedConfig.costPerChar < recommendedConfig.costPerChar) {
+      opportunities.push(`More cost-effective (${((1 - selectedConfig.costPerChar / recommendedConfig.costPerChar) * 100).toFixed(0)}% cheaper)`);
+    }
+
+    // Feature availability
+    if (selectedConfig.features.contextAware && !recommendedConfig.features.contextAware) {
+      opportunities.push('Better context understanding');
+    }
+
+    if (selectedConfig.features.glossary && contentType === 'technical') {
+      opportunities.push('Supports custom glossaries for technical terms');
+    }
+
+    if (selectedConfig.features.rareLangSupport && !recommendedConfig.features.rareLangSupport) {
+      opportunities.push('Better rare language support');
+    }
+
+    return { riskFactors, opportunities };
+  }
+
+  /**
+   * Predict quality metrics for a provider selection
+   */
+  private predictQuality(
+    provider: TranslationProvider,
+    sourceLanguage: string,
+    targetLanguage: string,
+    contentType?: ContentType
+  ): QualityPrediction {
+    const config = TRANSLATION_PROVIDERS.find(p => p.id === provider);
+    const baseConfidence = this.getProviderConfidence(provider, sourceLanguage, targetLanguage);
+    
+    if (!config) {
+      return {
+        expectedAccuracy: 75,
+        fluencyScore: 75,
+        terminologyScore: 75,
+        contextRetention: 75,
+        overallQuality: 'acceptable',
+        confidenceInterval: { low: 70, high: 80 },
+      };
+    }
+
+    // Calculate component scores
+    let expectedAccuracy = baseConfidence * 100;
+    let fluencyScore = (baseConfidence - 0.02) * 100;
+    let terminologyScore = config.features.glossary ? baseConfidence * 100 + 5 : baseConfidence * 100 - 3;
+    let contextRetention = config.features.contextAware ? baseConfidence * 100 + 3 : baseConfidence * 100 - 5;
+
+    // Adjust for content type
+    if (contentType && config.contentTypeStrength.includes(contentType)) {
+      expectedAccuracy += 3;
+      terminologyScore += 5;
+    }
+
+    // Determine overall quality rating
+    const avgScore = (expectedAccuracy + fluencyScore + terminologyScore + contextRetention) / 4;
+    let overallQuality: QualityPrediction['overallQuality'];
+    if (avgScore >= 92) overallQuality = 'excellent';
+    else if (avgScore >= 85) overallQuality = 'good';
+    else if (avgScore >= 75) overallQuality = 'acceptable';
+    else if (avgScore >= 65) overallQuality = 'fair';
+    else overallQuality = 'poor';
+
+    // Calculate confidence interval (narrower for specialized providers)
+    const uncertainty = config.tier === 'specialized' ? 3 : 5;
+    
+    return {
+      expectedAccuracy: Math.min(100, Math.max(0, expectedAccuracy)),
+      fluencyScore: Math.min(100, Math.max(0, fluencyScore)),
+      terminologyScore: Math.min(100, Math.max(0, terminologyScore)),
+      contextRetention: Math.min(100, Math.max(0, contextRetention)),
+      overallQuality,
+      confidenceInterval: {
+        low: Math.max(0, avgScore - uncertainty),
+        high: Math.min(100, avgScore + uncertainty),
+      },
+    };
   }
 
   // ============================================
