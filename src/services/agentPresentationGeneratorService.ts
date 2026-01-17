@@ -448,11 +448,12 @@ Respond with JSON:
 }`;
 
     try {
+      // Use Lovable AI Gateway for text generation
       const { data: aiData, error: aiError } = await supabase.functions.invoke('ai-universal-processor', {
         body: {
-          provider: 'gemini',
-          model: modelConfig.textModel,
-          systemPrompt: 'You are a presentation content expert. Generate compelling slide content.',
+          provider: 'lovable',
+          model: modelConfig.textModel || 'google/gemini-3-flash-preview',
+          systemPrompt: 'You are a presentation content expert. Generate compelling slide content. Always respond with valid JSON.',
           prompt: slidePrompt,
         },
       });
@@ -461,7 +462,9 @@ Respond with JSON:
 
       let slideData;
       try {
-        const jsonMatch = aiData.response?.match(/\{[\s\S]*\}/);
+        // Handle both content and response fields from the edge function
+        const responseContent = aiData?.content || aiData?.response || '';
+        const jsonMatch = responseContent.match(/\{[\s\S]*\}/);
         slideData = jsonMatch ? JSON.parse(jsonMatch[0]) : { title: 'Slide ' + slideNumber, bullets: [] };
       } catch {
         slideData = { title: 'Slide ' + slideNumber, bullets: [] };
@@ -501,18 +504,24 @@ Respond with JSON:
         const imagePrompt = slideData.imagePrompt || `Professional ${contentDecision.contentType} for: ${slide.title}`;
         
         try {
+          // Use Lovable AI Gateway for image generation with proper image model
           const { data: imageData } = await supabase.functions.invoke('ai-universal-processor', {
             body: {
-              provider: 'gemini',
-              model: modelConfig.imageModel,
-              prompt: imagePrompt,
-              task: 'image_generation',
+              provider: 'lovable',
+              model: 'google/gemini-2.5-flash-image',
+              prompt: `Create a professional ${contentDecision.contentType} image: ${imagePrompt}. Style: modern, clean, corporate. Safe for all audiences.`,
+              imageGeneration: true,
+              aspectRatio: '16:9',
+              style: contentDecision.contentType === 'infographic' ? 'infographic' : 'professional',
             },
           });
 
-          if (imageData?.imageUrl) {
+          // Extract image URL from various response formats
+          const imageUrl = imageData?.imageUrl || imageData?.content || imageData?.image;
+          
+          if (imageUrl && typeof imageUrl === 'string' && (imageUrl.startsWith('http') || imageUrl.startsWith('data:'))) {
             slide.image = {
-              url: imageData.imageUrl,
+              url: imageUrl,
               alt: slide.title,
               type: contentDecision.contentType === 'infographic' ? 'infographic' : 'illustration',
               prompt: imagePrompt,
@@ -526,6 +535,8 @@ Respond with JSON:
               progress: ((slideNumber - 0.25) / totalSlides) * 100,
               timestamp: new Date(),
             });
+          } else {
+            console.warn(`[AgentGenerator] No valid image URL in response for slide ${slideNumber}`);
           }
         } catch (imgError) {
           console.warn(`[AgentGenerator] Image generation failed for slide ${slideNumber}:`, imgError);
