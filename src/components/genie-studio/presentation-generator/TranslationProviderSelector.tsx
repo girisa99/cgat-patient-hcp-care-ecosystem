@@ -66,9 +66,12 @@ import {
   IndustrySegment,
   IndustryRecommendation,
   LanguagePairRecommendation,
+  ContentType,
   translationService,
 } from '@/services/translationService';
 import { SUPPORTED_LANGUAGES } from './MultiLanguageGenerator';
+
+import { SelectionImpactPanel } from './SelectionImpactPanel';
 
 interface TranslationProviderSelectorProps {
   sourceLanguage: string;
@@ -76,8 +79,10 @@ interface TranslationProviderSelectorProps {
   selectedProvider: TranslationProvider;
   onProviderChange: (provider: TranslationProvider) => void;
   showConfidenceScores?: boolean;
+  showSelectionImpact?: boolean;
   industrySegment?: IndustrySegment;
   onIndustryChange?: (segment: IndustrySegment) => void;
+  contentType?: ContentType;
   className?: string;
 }
 
@@ -714,11 +719,13 @@ export function TranslationProviderSelector({
   selectedProvider,
   onProviderChange,
   showConfidenceScores = true,
+  showSelectionImpact = true,
   industrySegment,
   onIndustryChange,
+  contentType,
   className,
 }: TranslationProviderSelectorProps) {
-  const [viewMode, setViewMode] = useState<'cards' | 'matrix' | 'recommendations' | 'industry'>('recommendations');
+  const [viewMode, setViewMode] = useState<'cards' | 'matrix' | 'recommendations' | 'industry' | 'impact'>('recommendations');
 
   // Calculate average confidence for each provider
   const providerConfidences = useMemo(() => {
@@ -801,14 +808,27 @@ export function TranslationProviderSelector({
                 Cards
               </Button>
               {targetLanguages.length > 0 && (
-                <Button
-                  variant={viewMode === 'matrix' ? 'secondary' : 'ghost'}
-                  size="sm"
-                  className="h-7 text-xs"
-                  onClick={() => setViewMode('matrix')}
-                >
-                  Matrix
-                </Button>
+                <>
+                  <Button
+                    variant={viewMode === 'matrix' ? 'secondary' : 'ghost'}
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => setViewMode('matrix')}
+                  >
+                    Matrix
+                  </Button>
+                  {showSelectionImpact && (
+                    <Button
+                      variant={viewMode === 'impact' ? 'secondary' : 'ghost'}
+                      size="sm"
+                      className="h-7 text-xs"
+                      onClick={() => setViewMode('impact')}
+                    >
+                      <Shield className="h-3 w-3 mr-1" />
+                      Impact
+                    </Button>
+                  )}
+                </>
               )}
             </div>
           )}
@@ -834,6 +854,14 @@ export function TranslationProviderSelector({
           <ConfidenceMatrix
             sourceLanguage={sourceLanguage}
             targetLanguages={targetLanguages}
+          />
+        ) : viewMode === 'impact' && targetLanguages.length > 0 ? (
+          <SelectionImpactPanel
+            selectedProvider={selectedProvider}
+            sourceLanguage={sourceLanguage}
+            targetLanguages={targetLanguages}
+            contentType={contentType}
+            onUseRecommended={onProviderChange}
           />
         ) : (
           <Tabs defaultValue="api" className="w-full">

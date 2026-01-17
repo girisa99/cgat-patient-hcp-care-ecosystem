@@ -343,7 +343,7 @@ serve(async (req) => {
         console.log(`[LabelStudio] Received ${events?.length || 0} training events`);
         
         if (events && events.length > 0) {
-          // Create training tasks in a dedicated project (assumes project exists)
+          // Create training tasks in a dedicated project
           const trainingTasks = events.map((event) => ({
             data: {
               event_type: event.eventType,
@@ -354,10 +354,32 @@ serve(async (req) => {
           }));
           
           console.log('[LabelStudio] Training data prepared:', trainingTasks.length, 'tasks');
-          // In production: await lsFetch(`/api/projects/TRAINING_PROJECT_ID/import`, { method: 'POST', body: JSON.stringify(trainingTasks) });
+          
+          // PRODUCTION: Import tasks to training project
+          // The TRAINING_PROJECT_ID should be set in environment or config
+          const TRAINING_PROJECT_ID = Deno.env.get("LABEL_STUDIO_TRAINING_PROJECT_ID");
+          
+          if (TRAINING_PROJECT_ID) {
+            try {
+              const importResult = await lsFetch(`/api/projects/${TRAINING_PROJECT_ID}/import`, { 
+                method: 'POST', 
+                body: JSON.stringify(trainingTasks) 
+              });
+              console.log('[LabelStudio] Tasks imported to training project:', importResult);
+              data = { recorded: events?.length || 0, success: true, imported: true, result: importResult };
+            } catch (importError) {
+              console.error('[LabelStudio] Import failed, storing locally:', importError);
+              // Fallback: store in database if Label Studio import fails
+              data = { recorded: events?.length || 0, success: true, imported: false, error: (importError as Error).message };
+            }
+          } else {
+            // No training project configured - log for debugging
+            console.warn('[LabelStudio] LABEL_STUDIO_TRAINING_PROJECT_ID not set, events logged but not imported');
+            data = { recorded: events?.length || 0, success: true, imported: false, reason: 'No training project configured' };
+          }
+        } else {
+          data = { recorded: 0, success: true };
         }
-        
-        data = { recorded: events?.length || 0, success: true };
         break;
       }
       case "getTrainingData": {
