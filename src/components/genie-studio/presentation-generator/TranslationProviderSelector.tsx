@@ -62,6 +62,9 @@ import {
   TranslationProviderConfig,
   TRANSLATION_PROVIDERS,
   LANGUAGE_PAIR_RECOMMENDATIONS,
+  INDUSTRY_RECOMMENDATIONS,
+  IndustrySegment,
+  IndustryRecommendation,
   LanguagePairRecommendation,
   translationService,
 } from '@/services/translationService';
@@ -73,6 +76,8 @@ interface TranslationProviderSelectorProps {
   selectedProvider: TranslationProvider;
   onProviderChange: (provider: TranslationProvider) => void;
   showConfidenceScores?: boolean;
+  industrySegment?: IndustrySegment;
+  onIndustryChange?: (segment: IndustrySegment) => void;
   className?: string;
 }
 
@@ -596,15 +601,124 @@ const ArrowRight = ({ className }: { className?: string }) => (
   </svg>
 );
 
+// Industry Segment Selector Component
+function IndustrySegmentSelector({
+  selectedSegment,
+  onSegmentChange,
+  selectedProvider,
+  onProviderChange,
+}: {
+  selectedSegment?: IndustrySegment;
+  onSegmentChange?: (segment: IndustrySegment) => void;
+  selectedProvider: TranslationProvider;
+  onProviderChange: (provider: TranslationProvider) => void;
+}) {
+  const [showAll, setShowAll] = useState(false);
+  const displayedSegments = showAll ? INDUSTRY_RECOMMENDATIONS : INDUSTRY_RECOMMENDATIONS.slice(0, 6);
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-sm font-medium">
+          <Building2 className="h-4 w-4 text-primary" />
+          Industry-Specific Recommendations
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-6 text-[10px]"
+          onClick={() => setShowAll(!showAll)}
+        >
+          {showAll ? 'Show Less' : `Show All (${INDUSTRY_RECOMMENDATIONS.length})`}
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
+        {displayedSegments.map((industry) => {
+          const isSelected = selectedSegment === industry.segment;
+          const providerConfig = TRANSLATION_PROVIDERS.find(p => p.id === industry.primaryProvider);
+          const Icon = providerIcons[industry.primaryProvider];
+
+          return (
+            <div
+              key={industry.segment}
+              className={cn(
+                "p-3 rounded-lg border cursor-pointer transition-all hover:border-primary/50",
+                isSelected && "bg-primary/5 border-primary ring-1 ring-primary"
+              )}
+              onClick={() => {
+                onSegmentChange?.(industry.segment);
+                onProviderChange(industry.primaryProvider);
+              }}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-lg">{industry.icon}</span>
+                <span className="text-xs font-medium">{industry.name}</span>
+              </div>
+              
+              <div className="flex items-center gap-1.5 mb-1">
+                {Icon && <Icon className="h-3 w-3 text-muted-foreground" />}
+                <span className="text-[10px] text-muted-foreground">
+                  {providerConfig?.name}
+                </span>
+              </div>
+
+              <p className="text-[9px] text-muted-foreground line-clamp-2">
+                {industry.reasoning}
+              </p>
+
+              {industry.considerations.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {industry.considerations.slice(0, 2).map((c, i) => (
+                    <Badge key={i} variant="secondary" className="text-[7px] px-1 py-0">
+                      {c}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+
+              {isSelected && Object.keys(industry.languageOverrides).length > 0 && (
+                <div className="mt-2 pt-2 border-t border-dashed">
+                  <span className="text-[8px] text-muted-foreground">Language overrides:</span>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {Object.entries(industry.languageOverrides).map(([lang, provider]) => {
+                      const overrideProvider = TRANSLATION_PROVIDERS.find(p => p.id === provider);
+                      return (
+                        <Badge 
+                          key={lang}
+                          variant="outline" 
+                          className="text-[7px] px-1 cursor-pointer hover:bg-primary/10"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onProviderChange(provider);
+                          }}
+                        >
+                          {lang.toUpperCase()}: {overrideProvider?.name?.split(' ')[0]}
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export function TranslationProviderSelector({
   sourceLanguage,
   targetLanguages,
   selectedProvider,
   onProviderChange,
   showConfidenceScores = true,
+  industrySegment,
+  onIndustryChange,
   className,
 }: TranslationProviderSelectorProps) {
-  const [viewMode, setViewMode] = useState<'cards' | 'matrix' | 'recommendations'>('recommendations');
+  const [viewMode, setViewMode] = useState<'cards' | 'matrix' | 'recommendations' | 'industry'>('recommendations');
 
   // Calculate average confidence for each provider
   const providerConfidences = useMemo(() => {
@@ -659,7 +773,7 @@ export function TranslationProviderSelector({
             </CardDescription>
           </div>
           {showConfidenceScores && (
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 flex-wrap">
               <Button
                 variant={viewMode === 'recommendations' ? 'secondary' : 'ghost'}
                 size="sm"
@@ -667,7 +781,16 @@ export function TranslationProviderSelector({
                 onClick={() => setViewMode('recommendations')}
               >
                 <TrendingUp className="h-3 w-3 mr-1" />
-                Recommendations
+                Languages
+              </Button>
+              <Button
+                variant={viewMode === 'industry' ? 'secondary' : 'ghost'}
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => setViewMode('industry')}
+              >
+                <Building2 className="h-3 w-3 mr-1" />
+                Industry
               </Button>
               <Button
                 variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
@@ -693,7 +816,14 @@ export function TranslationProviderSelector({
       </CardHeader>
 
       <CardContent className="p-4 pt-2">
-        {viewMode === 'recommendations' && targetLanguages.length > 0 ? (
+        {viewMode === 'industry' ? (
+          <IndustrySegmentSelector
+            selectedSegment={industrySegment}
+            onSegmentChange={onIndustryChange}
+            selectedProvider={selectedProvider}
+            onProviderChange={onProviderChange}
+          />
+        ) : viewMode === 'recommendations' && targetLanguages.length > 0 ? (
           <LanguagePairRecommendationsPanel
             sourceLanguage={sourceLanguage}
             targetLanguages={targetLanguages}
