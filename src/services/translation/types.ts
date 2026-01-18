@@ -18,7 +18,8 @@ export type TranslationProvider =
   | 'ai_claude'
   | 'ai_claude_35'
   | 'meta_nllb'
-  | 'qwen_mt';
+  | 'qwen_mt'
+  | 'deepseek';  // DeepSeek - excellent for Chinese, code-mixed content
 
 export type ContentType = 
   | 'general' 

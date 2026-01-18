@@ -55,6 +55,7 @@ import {
   Languages,
   Shield,
   BookOpen,
+  Brain,  // Added for DeepSeek
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -98,6 +99,7 @@ const providerIcons: Record<TranslationProvider, React.ElementType> = {
   ai_claude_35: Crown,
   meta_nllb: Globe,
   qwen_mt: Languages,
+  deepseek: Brain,  // DeepSeek - technical/Chinese specialist
 };
 
 const tierColors: Record<string, string> = {
