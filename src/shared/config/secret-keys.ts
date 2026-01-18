@@ -32,8 +32,11 @@ export const AI_PROVIDER_KEYS = {
   GOOGLE: 'GOOGLE_API_KEY',           // Google services (TTS, etc.)
   LOVABLE: 'LOVABLE_API_KEY',         // Lovable AI (managed by connector)
   
-  // Alibaba DashScope - UNIFIED key for ALL services (text, voice, video)
-  ALIBABA: 'ALIBABA_API_KEY',         // Qwen LLM, Qwen-MT, Voice TTS/STT, Video Generation
+  // Alibaba DashScope - UNIFIED key for ALL services (text, voice, video, image, OCR)
+  ALIBABA: 'ALIBABA_API_KEY',         // Qwen LLM, Qwen-MT, Voice TTS/STT, Video Gen, Wanx Image, Qwen-VL OCR
+  
+  // DeepSeek - Technical/Chinese specialist
+  DEEPSEEK: 'DEEPSEEK_API_KEY',       // DeepSeek Coder, DeepSeek Math, Translation
   
   // Voice & Media Keys
   ELEVENLABS: 'ELEVENLABS_API_KEY',

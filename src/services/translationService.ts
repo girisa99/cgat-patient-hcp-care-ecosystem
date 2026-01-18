@@ -36,7 +36,8 @@ export type TranslationProvider =
   | 'ai_claude'
   | 'ai_claude_35'
   | 'meta_nllb'
-  | 'qwen_mt';
+  | 'qwen_mt'
+  | 'deepseek';  // DeepSeek - excellent for Chinese, code-mixed content, technical docs
 
 export type ContentType = 
   | 'general' 
@@ -592,6 +593,46 @@ Deliver ONLY the translated text, perfected for native readers.`,
       'Strong performance for Chinese dialects',
     ],
   },
+  deepseek: {
+    provider: 'deepseek',
+    basePrompt: `You are DeepSeek, an expert translator specializing in:
+1. Chinese language pairs with exceptional accuracy
+2. Technical and code-mixed content translation
+3. Academic and research documentation
+4. Precise terminology handling
+
+Return ONLY the translated text without meta-commentary.`,
+    languagePairPrompts: {
+      'en-zh': `Chinese Translation with DeepSeek Excellence:
+- Maintain perfect measure word (量词) accuracy
+- Handle technical terms with Chinese conventions
+- Preserve code snippets and technical references
+- Apply appropriate simplified/traditional character usage`,
+      'zh-en': `Chinese to English with DeepSeek:
+- Capture technical Chinese accurately in English
+- Handle code-mixed content preservation
+- Maintain academic tone and precision
+- Natural English with Chinese context awareness`,
+      'en-ja': 'Technical Japanese with proper honorifics and technical term handling.',
+      'en-ko': 'Technical Korean with correct formality and IT terminology.',
+    },
+    contentTypePrompts: {
+      general: 'Natural, accurate translation with attention to detail.',
+      legal: 'Precise legal terminology with jurisdiction awareness.',
+      medical: 'Clinical accuracy with proper medical terminology.',
+      technical: 'Expert technical translation with code preservation.',
+      marketing: 'Professional marketing adaptation for Asian markets.',
+      creative: 'Thoughtful creative translation preserving nuance.',
+      educational: 'Clear, pedagogically effective educational content.',
+      presentation: 'Professional, concise slide-ready technical content.',
+    },
+    optimizationTips: [
+      'Excellent for Chinese ↔ English technical content',
+      'Best for code-mixed and developer documentation',
+      'Strong academic and research paper translation',
+      'Handles complex technical terminology accurately',
+    ],
+  },
 };
 
 // ============================================
@@ -929,6 +970,36 @@ export const TRANSLATION_PROVIDERS: TranslationProviderConfig[] = [
     languageFamilyStrength: ['asian_cjk', 'asian_sea'],
     contentTypeStrength: ['technical', 'general', 'marketing'],
     languagePairs: { source: ['*'], target: ['*'] },
+  },
+  {
+    id: 'deepseek',
+    name: 'DeepSeek',
+    description: 'Technical translation specialist. Excellent for Chinese and code-mixed content.',
+    icon: '🧠',
+    tier: 'specialized',
+    supportedLanguages: 50,
+    strengths: ['Best for technical Chinese', 'Code-mixed content', 'Academic papers', 'Developer docs'],
+    weaknesses: ['Less strong for creative content', 'Fewer rare languages'],
+    costPerChar: 0.00002,
+    avgConfidence: 0.89,
+    speedRating: 4,
+    qualityRating: 5,
+    features: {
+      formality: true,
+      glossary: true,
+      domainAdaptation: true,
+      contextAware: true,
+      batchSupport: true,
+      realtime: true,
+      rareLangSupport: false,
+    },
+    bestFor: ['Technical docs', 'Chinese ↔ English', 'Code documentation', 'Academic research'],
+    languageFamilyStrength: ['asian_cjk', 'european'],
+    contentTypeStrength: ['technical', 'educational', 'medical'],
+    languagePairs: { 
+      source: ['en', 'zh', 'ja', 'ko', 'de', 'fr', 'es', 'ru'],
+      target: ['en', 'zh', 'ja', 'ko', 'de', 'fr', 'es', 'ru', 'it', 'pt', 'ar', 'hi'],
+    },
   },
 ];
 
@@ -1645,6 +1716,13 @@ const PROVIDER_LANGUAGE_CONFIDENCE: Record<TranslationProvider, Record<string, R
     ja: { en: 0.86, zh: 0.85, ko: 0.84 },
     ko: { en: 0.87, zh: 0.85, ja: 0.84 },
   },
+  deepseek: {
+    en: { de: 0.87, fr: 0.86, es: 0.87, it: 0.85, pt: 0.85, zh: 0.94, ja: 0.89, ko: 0.88, vi: 0.84, th: 0.83, id: 0.83 },
+    zh: { en: 0.95, ja: 0.89, ko: 0.88, de: 0.86, fr: 0.85 },
+    ja: { en: 0.88, zh: 0.86, ko: 0.85 },
+    ko: { en: 0.87, zh: 0.86, ja: 0.85 },
+    de: { en: 0.87, zh: 0.84 },
+  },
 };
 
 // ============================================
@@ -1750,6 +1828,9 @@ class TranslationService {
       qwen_mt: { required: ['ALIBABA_API_KEY'], name: 'Alibaba Qwen-MT' },
       alibaba_voice: { required: ['ALIBABA_API_KEY'], name: 'Alibaba Voice (TTS/STT)' },
       alibaba_video: { required: ['ALIBABA_API_KEY'], name: 'Alibaba Video Generation' },
+      alibaba_image: { required: ['ALIBABA_API_KEY'], name: 'Alibaba Wanx (Image Gen)' },
+      alibaba_ocr: { required: ['ALIBABA_API_KEY'], name: 'Alibaba Qwen-VL (OCR)' },
+      deepseek: { required: ['DEEPSEEK_API_KEY'], name: 'DeepSeek' },
     };
 
     const config = providerSecrets[provider];
@@ -1757,13 +1838,14 @@ class TranslationService {
       return { available: false, reason: 'Unknown provider' };
     }
 
-    // Updated list with ALIBABA_API_KEY now configured
+    // Updated list with all configured API keys
     const knownConfigured = [
       'GOOGLE_API_KEY', 
       'DEEPL_API_KEY', 
       'MICROSOFT_TRANSLATE_API_KEY', 
       'HUGGING_FACE_ACCESS_TOKEN',
-      'ALIBABA_API_KEY'  // Unified key for all Alibaba DashScope services
+      'ALIBABA_API_KEY',   // Unified key for all Alibaba DashScope services
+      'DEEPSEEK_API_KEY'   // DeepSeek for Chinese & technical translation
     ];
     const knownUnconfigured = ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY'];
     
