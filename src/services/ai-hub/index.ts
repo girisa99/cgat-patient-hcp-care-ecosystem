@@ -10,6 +10,9 @@ export * from './types';
 // Provider Registry
 export * from './providerRegistry';
 
+// Configured Providers (status based on secrets)
+export * from './configuredProviders';
+
 // Main Hub
 export { 
   UniversalAIHub, 

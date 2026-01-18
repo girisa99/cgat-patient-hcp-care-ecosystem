@@ -97,6 +97,114 @@ serve(async (req) => {
       });
     }
 
+    // ============================================
+    // TRANSLATION ACTION
+    // ============================================
+    if (action === 'translate') {
+      const { text, sourceLanguage, targetLanguage, formality, domain, glossary } = await req.json().catch(() => ({})) as any;
+      console.log(`[UniversalAI] Translation: ${sourceLanguage} -> ${targetLanguage}, provider: ${provider}`);
+      
+      const translationResult = await handleTranslation({
+        text: text || prompt,
+        sourceLanguage: sourceLanguage || 'auto',
+        targetLanguage: targetLanguage || 'en',
+        formality,
+        domain,
+        glossary,
+        provider: provider || 'deepl',
+      });
+      
+      return new Response(JSON.stringify(translationResult), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // ============================================
+    // TTS ACTION (Text-to-Speech)
+    // ============================================
+    if (action === 'tts') {
+      const { text: ttsText, voice, language, speed, pitch, style, outputFormat } = await req.json().catch(() => ({})) as any;
+      console.log(`[UniversalAI] TTS: provider=${provider}, voice=${voice}`);
+      
+      const ttsResult = await handleTTS({
+        text: ttsText || prompt,
+        voice: voice || 'default',
+        language: language || 'en',
+        speed,
+        pitch,
+        style,
+        outputFormat: outputFormat || 'mp3',
+        provider: provider || 'elevenlabs',
+      });
+      
+      return new Response(JSON.stringify(ttsResult), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // ============================================
+    // STT ACTION (Speech-to-Text)
+    // ============================================
+    if (action === 'stt') {
+      const { audio, inputType, language: sttLanguage, options: sttOptions } = await req.json().catch(() => ({})) as any;
+      console.log(`[UniversalAI] STT: provider=${provider}`);
+      
+      const sttResult = await handleSTT({
+        audio,
+        inputType: inputType || 'base64',
+        language: sttLanguage,
+        options: sttOptions,
+        provider: provider || 'openai',
+      });
+      
+      return new Response(JSON.stringify(sttResult), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // ============================================
+    // NLP ACTION (Entity Extraction, Sentiment, etc.)
+    // ============================================
+    if (action === 'nlp') {
+      const { text: nlpText, operations, domain: nlpDomain } = await req.json().catch(() => ({})) as any;
+      console.log(`[UniversalAI] NLP: operations=${operations?.join(',')}, provider=${provider}`);
+      
+      const nlpResult = await handleNLP({
+        text: nlpText || prompt,
+        operations: operations || ['entity_extraction'],
+        domain: nlpDomain,
+        provider: provider || 'openai',
+      });
+      
+      return new Response(JSON.stringify(nlpResult), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // ============================================
+    // IMAGE GENERATION ACTION (Gemini via Lovable AI)
+    // ============================================
+    if (action === 'image_generation') {
+      console.log(`[UniversalAI] Image generation via Lovable AI`);
+      
+      const imageResult = await callLovableAI(
+        model || 'google/gemini-2.5-flash-image-preview',
+        prompt,
+        systemPrompt,
+        true, // imageGeneration flag
+        aspectRatio,
+        style
+      );
+      
+      return new Response(JSON.stringify({
+        ...imageResult,
+        images: imageResult.imageUrl ? [{ image_url: { url: imageResult.imageUrl } }] : [],
+        timestamp: new Date().toISOString(),
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // Validate required parameters for generation requests
     if (!provider || !prompt) {
       throw new Error('Missing required parameters: provider or prompt');
@@ -888,5 +996,463 @@ async function callLovableAIVision(model: string, prompt: string, systemPrompt: 
   return {
     content: data.choices?.[0]?.message?.content || '',
     usage: data.usage
+  };
+}
+
+// ============================================
+// TRANSLATION HANDLER
+// ============================================
+
+interface TranslationParams {
+  text: string;
+  sourceLanguage: string;
+  targetLanguage: string;
+  formality?: string;
+  domain?: string;
+  glossary?: Record<string, string>;
+  provider: string;
+}
+
+async function handleTranslation(params: TranslationParams) {
+  const { text, sourceLanguage, targetLanguage, formality, domain, glossary, provider } = params;
+  
+  // Route to appropriate translation provider
+  switch (provider) {
+    case 'deepl':
+      return await translateWithDeepL(text, sourceLanguage, targetLanguage, formality);
+    case 'google':
+      return await translateWithGoogle(text, sourceLanguage, targetLanguage);
+    case 'microsoft':
+      return await translateWithMicrosoft(text, sourceLanguage, targetLanguage);
+    case 'claude':
+    case 'openai':
+    case 'gemini':
+    default:
+      // Use LLM for translation
+      return await translateWithLLM(text, sourceLanguage, targetLanguage, formality, domain, provider);
+  }
+}
+
+async function translateWithDeepL(text: string, source: string, target: string, formality?: string) {
+  const apiKey = Deno.env.get('DEEPL_API_KEY');
+  if (!apiKey) throw new Error('DEEPL_API_KEY not configured');
+
+  const response = await fetch('https://api-free.deepl.com/v2/translate', {
+    method: 'POST',
+    headers: {
+      'Authorization': `DeepL-Auth-Key ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      text: [text],
+      source_lang: source !== 'auto' ? source.toUpperCase() : undefined,
+      target_lang: target.toUpperCase(),
+      formality: formality || 'default',
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`DeepL error: ${err}`);
+  }
+
+  const data = await response.json();
+  return {
+    translatedText: data.translations?.[0]?.text || '',
+    detectedLanguage: data.translations?.[0]?.detected_source_language,
+    confidence: 0.95,
+    provider: 'deepl',
+    timestamp: new Date().toISOString(),
+  };
+}
+
+async function translateWithGoogle(text: string, source: string, target: string) {
+  const apiKey = Deno.env.get('GOOGLE_API_KEY');
+  if (!apiKey) throw new Error('GOOGLE_API_KEY not configured');
+
+  const response = await fetch(`https://translation.googleapis.com/language/translate/v2?key=${apiKey}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      q: text,
+      source: source !== 'auto' ? source : undefined,
+      target: target,
+      format: 'text',
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`Google Translate error: ${err}`);
+  }
+
+  const data = await response.json();
+  return {
+    translatedText: data.data?.translations?.[0]?.translatedText || '',
+    detectedLanguage: data.data?.translations?.[0]?.detectedSourceLanguage,
+    confidence: 0.9,
+    provider: 'google',
+    timestamp: new Date().toISOString(),
+  };
+}
+
+async function translateWithMicrosoft(text: string, source: string, target: string) {
+  const apiKey = Deno.env.get('MICROSOFT_TRANSLATE_API_KEY');
+  const region = Deno.env.get('MICROSOFT_TRANSLATE_REGION') || 'global';
+  if (!apiKey) throw new Error('MICROSOFT_TRANSLATE_API_KEY not configured');
+
+  const endpoint = 'https://api.cognitive.microsofttranslator.com/translate';
+  const params = new URLSearchParams({
+    'api-version': '3.0',
+    to: target,
+    ...(source !== 'auto' && { from: source }),
+  });
+
+  const response = await fetch(`${endpoint}?${params}`, {
+    method: 'POST',
+    headers: {
+      'Ocp-Apim-Subscription-Key': apiKey,
+      'Ocp-Apim-Subscription-Region': region,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify([{ text }]),
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`Microsoft Translate error: ${err}`);
+  }
+
+  const data = await response.json();
+  return {
+    translatedText: data[0]?.translations?.[0]?.text || '',
+    detectedLanguage: data[0]?.detectedLanguage?.language,
+    confidence: data[0]?.detectedLanguage?.score || 0.9,
+    provider: 'microsoft',
+    timestamp: new Date().toISOString(),
+  };
+}
+
+async function translateWithLLM(text: string, source: string, target: string, formality?: string, domain?: string, provider?: string) {
+  const systemPrompt = `You are a professional translator. Translate the following text from ${source === 'auto' ? 'the detected language' : source} to ${target}.
+${formality ? `Use ${formality} register.` : ''}
+${domain ? `This is ${domain} content.` : ''}
+Return ONLY the translated text, no explanations.`;
+
+  let result;
+  switch (provider) {
+    case 'claude':
+      result = await callClaude('claude-3-5-haiku-20241022', text, systemPrompt, 0.3, 4000);
+      break;
+    case 'openai':
+      result = await callOpenAI('gpt-4o-mini', text, systemPrompt, 0.3, 4000);
+      break;
+    case 'gemini':
+    default:
+      result = await callLovableAI('google/gemini-2.5-flash', text, systemPrompt, false);
+  }
+
+  return {
+    translatedText: result.content,
+    confidence: 0.85,
+    provider: provider || 'gemini',
+    timestamp: new Date().toISOString(),
+  };
+}
+
+// ============================================
+// TTS HANDLER
+// ============================================
+
+interface TTSParams {
+  text: string;
+  voice: string;
+  language: string;
+  speed?: number;
+  pitch?: number;
+  style?: string;
+  outputFormat: string;
+  provider: string;
+}
+
+async function handleTTS(params: TTSParams) {
+  const { text, voice, language, speed, provider } = params;
+  
+  switch (provider) {
+    case 'elevenlabs':
+      return await ttsWithElevenLabs(text, voice);
+    case 'openai':
+      return await ttsWithOpenAI(text, voice, speed);
+    case 'google':
+      return await ttsWithGoogle(text, language, voice);
+    default:
+      // Default to ElevenLabs
+      return await ttsWithElevenLabs(text, voice);
+  }
+}
+
+async function ttsWithElevenLabs(text: string, voice: string) {
+  const apiKey = Deno.env.get('ELEVENLABS_API_KEY');
+  if (!apiKey) throw new Error('ELEVENLABS_API_KEY not configured');
+
+  // Default voice if not specified
+  const voiceId = voice === 'default' ? 'EXAVITQu4vr4xnSDxMaL' : voice; // Sarah voice
+
+  const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+    method: 'POST',
+    headers: {
+      'xi-api-key': apiKey,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      text,
+      model_id: 'eleven_multilingual_v2',
+      voice_settings: {
+        stability: 0.5,
+        similarity_boost: 0.75,
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`ElevenLabs TTS error: ${err}`);
+  }
+
+  // Convert audio to base64
+  const arrayBuffer = await response.arrayBuffer();
+  const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+
+  return {
+    audioUrl: `data:audio/mpeg;base64,${base64}`,
+    duration: text.length / 15, // Rough estimate
+    voice: voiceId,
+    provider: 'elevenlabs',
+    timestamp: new Date().toISOString(),
+  };
+}
+
+async function ttsWithOpenAI(text: string, voice: string, speed?: number) {
+  const apiKey = Deno.env.get('OPENAI_API_KEY');
+  if (!apiKey) throw new Error('OPENAI_API_KEY not configured');
+
+  const voiceName = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'].includes(voice) 
+    ? voice : 'nova';
+
+  const response = await fetch('https://api.openai.com/v1/audio/speech', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'tts-1',
+      input: text,
+      voice: voiceName,
+      speed: speed || 1.0,
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`OpenAI TTS error: ${err}`);
+  }
+
+  const arrayBuffer = await response.arrayBuffer();
+  const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+
+  return {
+    audioUrl: `data:audio/mpeg;base64,${base64}`,
+    duration: text.length / 15,
+    voice: voiceName,
+    provider: 'openai',
+    timestamp: new Date().toISOString(),
+  };
+}
+
+async function ttsWithGoogle(text: string, language: string, voice: string) {
+  const apiKey = Deno.env.get('GOOGLE_API_KEY');
+  if (!apiKey) throw new Error('GOOGLE_API_KEY not configured');
+
+  const response = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      input: { text },
+      voice: {
+        languageCode: language || 'en-US',
+        name: voice !== 'default' ? voice : undefined,
+      },
+      audioConfig: { audioEncoding: 'MP3' },
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`Google TTS error: ${err}`);
+  }
+
+  const data = await response.json();
+  return {
+    audioUrl: `data:audio/mpeg;base64,${data.audioContent}`,
+    duration: text.length / 15,
+    voice: voice,
+    provider: 'google',
+    timestamp: new Date().toISOString(),
+  };
+}
+
+// ============================================
+// STT HANDLER
+// ============================================
+
+interface STTParams {
+  audio: string;
+  inputType: string;
+  language?: string;
+  options?: any;
+  provider: string;
+}
+
+async function handleSTT(params: STTParams) {
+  const { audio, language, provider } = params;
+  
+  switch (provider) {
+    case 'openai':
+      return await sttWithOpenAI(audio, language);
+    case 'google':
+      return await sttWithGoogle(audio, language);
+    default:
+      return await sttWithOpenAI(audio, language);
+  }
+}
+
+async function sttWithOpenAI(audio: string, language?: string) {
+  const apiKey = Deno.env.get('OPENAI_API_KEY');
+  if (!apiKey) throw new Error('OPENAI_API_KEY not configured');
+
+  // Convert base64 to blob
+  const binaryString = atob(audio.replace(/^data:audio\/\w+;base64,/, ''));
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+
+  const formData = new FormData();
+  formData.append('file', new Blob([bytes], { type: 'audio/webm' }), 'audio.webm');
+  formData.append('model', 'whisper-1');
+  if (language) formData.append('language', language);
+
+  const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${apiKey}` },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`OpenAI STT error: ${err}`);
+  }
+
+  const data = await response.json();
+  return {
+    text: data.text,
+    confidence: 0.95,
+    language: language || 'en',
+    provider: 'openai',
+    timestamp: new Date().toISOString(),
+  };
+}
+
+async function sttWithGoogle(audio: string, language?: string) {
+  const apiKey = Deno.env.get('GOOGLE_API_KEY');
+  if (!apiKey) throw new Error('GOOGLE_API_KEY not configured');
+
+  const audioContent = audio.replace(/^data:audio\/\w+;base64,/, '');
+
+  const response = await fetch(`https://speech.googleapis.com/v1/speech:recognize?key=${apiKey}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      config: {
+        encoding: 'WEBM_OPUS',
+        sampleRateHertz: 48000,
+        languageCode: language || 'en-US',
+        enableAutomaticPunctuation: true,
+      },
+      audio: { content: audioContent },
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`Google STT error: ${err}`);
+  }
+
+  const data = await response.json();
+  const transcript = data.results?.map((r: any) => r.alternatives?.[0]?.transcript).join(' ') || '';
+
+  return {
+    text: transcript,
+    confidence: data.results?.[0]?.alternatives?.[0]?.confidence || 0.9,
+    language: language || 'en',
+    provider: 'google',
+    timestamp: new Date().toISOString(),
+  };
+}
+
+// ============================================
+// NLP HANDLER
+// ============================================
+
+interface NLPParams {
+  text: string;
+  operations: string[];
+  domain?: string;
+  provider: string;
+}
+
+async function handleNLP(params: NLPParams) {
+  const { text, operations, domain, provider } = params;
+  
+  const systemPrompt = `You are an NLP expert. Analyze the following text and provide:
+${operations.includes('entity_extraction') ? '- entities: Array of {name, type, confidence}' : ''}
+${operations.includes('sentiment_analysis') ? '- sentiment: {label: positive/negative/neutral, score: 0-1}' : ''}
+${operations.includes('summarization') ? '- summary: A concise summary (2-3 sentences)' : ''}
+${operations.includes('keywords') ? '- keywords: Array of important keywords' : ''}
+${domain ? `Context: This is ${domain} content.` : ''}
+Return as JSON.`;
+
+  let result;
+  switch (provider) {
+    case 'claude':
+      result = await callClaude('claude-3-5-haiku-20241022', text, systemPrompt, 0.3, 4000);
+      break;
+    case 'openai':
+      result = await callOpenAI('gpt-4o-mini', text, systemPrompt, 0.3, 4000);
+      break;
+    case 'gemini':
+    default:
+      result = await callLovableAI('google/gemini-2.5-flash', text, systemPrompt, false);
+  }
+
+  // Try to parse JSON from response
+  let parsed: any = {};
+  try {
+    const jsonMatch = result.content.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      parsed = JSON.parse(jsonMatch[0]);
+    }
+  } catch (e) {
+    console.warn('[NLP] Failed to parse JSON response:', e);
+  }
+
+  return {
+    entities: parsed.entities || [],
+    sentiment: parsed.sentiment,
+    summary: parsed.summary,
+    keywords: parsed.keywords,
+    provider,
+    timestamp: new Date().toISOString(),
   };
 }
