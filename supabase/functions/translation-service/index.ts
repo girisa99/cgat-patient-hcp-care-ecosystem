@@ -307,10 +307,12 @@ async function translateWithAI(
   context?: string,
   formality?: 'formal' | 'informal' | 'neutral'
 ): Promise<TranslationResponse> {
-  const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+  // Use Universal AI system instead of Lovable AI - routes to Claude, OpenAI, or Gemini
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
   
-  if (!lovableApiKey) {
-    throw new Error('LOVABLE_API_KEY is not configured');
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error('Supabase configuration is missing');
   }
 
   const languageNames: Record<string, string> = {
@@ -341,38 +343,41 @@ CRITICAL INSTRUCTIONS:
 5. Do NOT include explanations, notes, or the original text`;
 
   try {
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    // Call Universal AI processor - defaults to gemini for best translation quality
+    const response = await fetch(`${supabaseUrl}/functions/v1/ai-universal-processor`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${lovableApiKey}`,
+        'Authorization': `Bearer ${supabaseAnonKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-3-flash-preview',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: text },
-        ],
+        provider: 'gemini',  // Use Gemini for translation (Claude/OpenAI also available)
+        model: 'gemini-2.0-flash',
+        prompt: text,
+        systemPrompt: systemPrompt,
         temperature: 0.3,
-        max_tokens: Math.max(1000, text.length * 2),
+        maxTokens: Math.max(1000, text.length * 2),
+        action: 'generate',
       }),
     });
 
     if (!response.ok) {
       const error = await response.text();
-      console.error('[TranslationService] AI translation error:', error);
-      throw new Error(`AI translation failed: ${response.status}`);
+      console.error('[TranslationService] Universal AI translation error:', error);
+      throw new Error(`Universal AI translation failed: ${response.status}`);
     }
 
     const data = await response.json();
-    const translatedText = data.choices?.[0]?.message?.content || '';
+    const translatedText = data.content || '';
+
+    console.log('[TranslationService] Universal AI translation successful via', data.provider, data.model);
 
     return {
       translatedText: translatedText.trim(),
       confidence: 0.88,
     };
   } catch (error) {
-    console.error('[TranslationService] AI translation error:', error);
+    console.error('[TranslationService] Universal AI translation error:', error);
     throw error;
   }
 }
@@ -384,29 +389,28 @@ async function handleLanguageDetection(request: TranslationRequest): Promise<Tra
     throw new Error('Missing required field: text');
   }
 
-  const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+  // Use Universal AI system for language detection
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
   
-  if (!lovableApiKey) {
-    throw new Error('LOVABLE_API_KEY is not configured');
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error('Supabase configuration is missing');
   }
 
   try {
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    const response = await fetch(`${supabaseUrl}/functions/v1/ai-universal-processor`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${lovableApiKey}`,
+        'Authorization': `Bearer ${supabaseAnonKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-3-flash-preview',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a language detection expert. Analyze the text and return ONLY a JSON object with the detected language code (ISO 639-1) and confidence score between 0 and 1. Example: {"language": "en", "confidence": 0.95, "alternatives": [{"language": "de", "confidence": 0.03}]}',
-          },
-          { role: 'user', content: text.slice(0, 500) },
-        ],
+        provider: 'gemini',
+        model: 'gemini-2.0-flash',
+        prompt: text.slice(0, 500),
+        systemPrompt: 'You are a language detection expert. Analyze the text and return ONLY a JSON object with the detected language code (ISO 639-1) and confidence score between 0 and 1. Example: {"language": "en", "confidence": 0.95, "alternatives": [{"language": "de", "confidence": 0.03}]}',
         temperature: 0.1,
+        action: 'generate',
       }),
     });
 
@@ -415,12 +419,13 @@ async function handleLanguageDetection(request: TranslationRequest): Promise<Tra
     }
 
     const data = await response.json();
-    const content = data.choices?.[0]?.message?.content || '';
+    const content = data.content || '';
     
     // Parse the JSON response
     const jsonMatch = content.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
+      console.log('[TranslationService] Language detected via Universal AI:', parsed.language);
       return {
         detectedLanguage: parsed.language,
         confidence: parsed.confidence,
