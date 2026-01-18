@@ -12,6 +12,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { MultiSelectDropdown } from '@/components/ui/multi-select-dropdown';
+import { translationService } from '@/services/translationService';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import {
   Globe,
   Languages,
@@ -135,8 +137,20 @@ interface MultiLanguageGeneratorProps {
   generationStatuses: LanguageGenerationStatus[];
   onDownload: (languageCode: string) => void;
   isGenerating: boolean;
+  sourceLanguage?: string; // Added for translation pairing
   className?: string;
 }
+
+// Provider name mapping
+const PROVIDER_NAMES: Record<string, string> = {
+  google_translate: 'Google',
+  deepl: 'DeepL',
+  azure_translator: 'Azure',
+  amazon_translate: 'Amazon',
+  qwen_mt: 'Qwen-MT',
+  meta_nllb: 'NLLB',
+  universal_ai: 'Universal AI',
+};
 
 export function MultiLanguageGenerator({
   selectedLanguages,
@@ -147,6 +161,7 @@ export function MultiLanguageGenerator({
   generationStatuses,
   onDownload,
   isGenerating,
+  sourceLanguage = 'en',
   className
 }: MultiLanguageGeneratorProps) {
 
