@@ -1,14 +1,33 @@
 /**
  * useUniversalAIHub Hook
  * 
- * Single React hook for ALL AI capabilities across the Genie Suite.
+ * SINGLE SOURCE OF TRUTH for ALL AI capabilities across the Genie Suite.
  * Consolidates: LLM, Translation, Vision/OCR, TTS/STT, Image/Video Gen, Music/SFX, NLP
+ * 
+ * Integrates with useContextualAIProviders for dynamic provider selection
+ * based on Genie product context (Deck, Spark, Mind, Vibe, Arc, Ask Genie).
+ * 
+ * @example
+ * // In Genie Deck (presentation generation)
+ * const ai = useUniversalAIHub({ product: 'deck' });
+ * const { recommendations } = ai.contextualProviders; // Get best providers for Deck
+ * 
+ * @example
+ * // In Genie Vibe (recording studio)
+ * const ai = useUniversalAIHub({ product: 'vibe', scenario: 'tts' });
+ * await ai.generateSpeech({ text: "Hello", voice: "nova" });
  */
 
 import { useState, useCallback, useMemo } from 'react';
 import { useMasterToast } from '@/hooks/useMasterToast';
 import { UniversalAIHub, getUniversalAIHub } from '@/services/ai-hub/UniversalAIHub';
 import { getProvidersForCapability } from '@/services/ai-hub/providerRegistry';
+import { 
+  useContextualAIProviders, 
+  type GenieProduct as ContextualGenieProduct,
+  type TaskScenario,
+  type ProviderRecommendation 
+} from '@/hooks/useContextualAIProviders';
 import type {
   AICapability,
   AIProviderKey,
@@ -36,6 +55,8 @@ import type {
 
 export interface UseUniversalAIHubOptions {
   product?: GenieProduct;
+  /** Optional scenario to filter providers (e.g., 'tts', 'translate', 'image-gen') */
+  scenario?: TaskScenario;
   config?: Partial<AIHubConfig>;
   preferredProviders?: Partial<Record<AICapability, AIProviderKey>>;
   costSensitive?: boolean;
@@ -49,6 +70,7 @@ export interface UseUniversalAIHubOptions {
 export function useUniversalAIHub(options: UseUniversalAIHubOptions = {}) {
   const { 
     product = 'spark', 
+    scenario,
     config, 
     preferredProviders,
     costSensitive = false,
@@ -56,6 +78,12 @@ export function useUniversalAIHub(options: UseUniversalAIHubOptions = {}) {
   } = options;
   
   const { showError, showSuccess, showInfo } = useMasterToast();
+
+  // Integrate contextual provider selection
+  const contextualProviders = useContextualAIProviders(
+    product as ContextualGenieProduct,
+    scenario
+  );
 
   const [state, setState] = useState<AIHubState>({
     isLoading: false,
@@ -394,7 +422,19 @@ export function useUniversalAIHub(options: UseUniversalAIHubOptions = {}) {
     setPreferredProvider,
     getConfig: () => hub.getConfig(),
     getProviderRegistry: () => hub.getProviderRegistry(),
+    
+    // Contextual Provider Selection (integrated from useContextualAIProviders)
+    contextualProviders,
+    recommendations: contextualProviders.recommendations,
+    primaryProvider: contextualProviders.primaryProvider,
+    fallbackChain: contextualProviders.fallbackChain,
+    getBestProvider: contextualProviders.getBestProvider,
+    hasCapability: contextualProviders.hasCapability,
   };
 }
+
+// Re-export types for convenience
+export type { TaskScenario, ProviderRecommendation };
+export { useContextualAIProviders };
 
 export default useUniversalAIHub;
