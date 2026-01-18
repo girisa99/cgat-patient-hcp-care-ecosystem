@@ -1729,11 +1729,116 @@ class TranslationService {
   }
 
   /**
-   * Get recommended provider for a language pair (simple version)
+   * Check if a provider is available (has required API keys configured)
+   * This is a simple check based on known provider requirements
+   */
+  isProviderAvailable(provider: TranslationProvider): { available: boolean; reason?: string } {
+    // AI providers use Universal AI which is always available
+    const aiProviders: TranslationProvider[] = ['ai_gemini', 'ai_gpt', 'ai_gpt_mini', 'ai_claude', 'ai_claude_35'];
+    if (aiProviders.includes(provider)) {
+      return { available: true };
+    }
+
+    // Map providers to their required secrets
+    const providerSecrets: Record<string, { required: string[]; name: string }> = {
+      google_translate: { required: ['GOOGLE_API_KEY'], name: 'Google Translate' },
+      deepl: { required: ['DEEPL_API_KEY'], name: 'DeepL' },
+      microsoft: { required: ['MICROSOFT_TRANSLATE_API_KEY'], name: 'Microsoft Translator' },
+      amazon: { required: ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY'], name: 'Amazon Translate' },
+      meta_nllb: { required: ['HUGGING_FACE_ACCESS_TOKEN'], name: 'Meta NLLB' },
+      qwen_mt: { required: ['QWEN_API_KEY'], name: 'Qwen-MT' },
+    };
+
+    const config = providerSecrets[provider];
+    if (!config) {
+      return { available: false, reason: 'Unknown provider' };
+    }
+
+    // For now, we assume certain providers are configured based on what we know
+    // In production, this would check against actual secret availability
+    const knownConfigured = ['GOOGLE_API_KEY', 'DEEPL_API_KEY', 'MICROSOFT_TRANSLATE_API_KEY', 'HUGGING_FACE_ACCESS_TOKEN'];
+    const knownUnconfigured = ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'QWEN_API_KEY'];
+    
+    const hasRequiredSecrets = config.required.every(s => knownConfigured.includes(s));
+    const isMissing = config.required.some(s => knownUnconfigured.includes(s));
+
+    if (isMissing) {
+      return { available: false, reason: `${config.name} API keys not configured` };
+    }
+
+    return { available: hasRequiredSecrets };
+  }
+
+  /**
+   * Get recommended provider for a language pair with availability check
    */
   getRecommendedProvider(sourceLanguage: string, targetLanguage: string): TranslationProvider {
     const recommendation = this.getLanguagePairRecommendation(sourceLanguage, targetLanguage);
-    return recommendation?.recommendedProvider || 'ai_gemini';
+    const recommended = recommendation?.recommendedProvider || 'ai_gemini';
+    
+    // Check if recommended provider is available
+    const availability = this.isProviderAvailable(recommended);
+    if (availability.available) {
+      return recommended;
+    }
+
+    // Try alternatives
+    if (recommendation?.alternativeProviders) {
+      for (const alt of recommendation.alternativeProviders) {
+        const altAvailability = this.isProviderAvailable(alt);
+        if (altAvailability.available) {
+          return alt;
+        }
+      }
+    }
+
+    // Fall back to Universal AI (always available)
+    return 'ai_gemini';
+  }
+
+  /**
+   * Get recommended provider with detailed info including availability and fallback
+   */
+  getRecommendedProviderWithDetails(sourceLanguage: string, targetLanguage: string): {
+    provider: TranslationProvider;
+    originalRecommended: TranslationProvider;
+    isFallback: boolean;
+    fallbackReason?: string;
+    confidence: number;
+  } {
+    const recommendation = this.getLanguagePairRecommendation(sourceLanguage, targetLanguage);
+    const originalRecommended = recommendation?.recommendedProvider || 'ai_gemini';
+    
+    const availability = this.isProviderAvailable(originalRecommended);
+    
+    if (availability.available) {
+      return {
+        provider: originalRecommended,
+        originalRecommended,
+        isFallback: false,
+        confidence: this.getProviderConfidence(originalRecommended, sourceLanguage, targetLanguage),
+      };
+    }
+
+    // Find available alternative
+    let usedProvider: TranslationProvider = 'ai_gemini';
+    if (recommendation?.alternativeProviders) {
+      for (const alt of recommendation.alternativeProviders) {
+        const altAvailability = this.isProviderAvailable(alt);
+        if (altAvailability.available) {
+          usedProvider = alt;
+          break;
+        }
+      }
+    }
+
+    return {
+      provider: usedProvider,
+      originalRecommended,
+      isFallback: true,
+      fallbackReason: availability.reason,
+      confidence: this.getProviderConfidence(usedProvider, sourceLanguage, targetLanguage),
+    };
   }
 
   /**

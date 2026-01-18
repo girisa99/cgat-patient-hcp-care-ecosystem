@@ -1200,27 +1200,53 @@ export function PresentationWizard({
                         <div className="flex items-start gap-2">
                           <Languages className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />
                           <div className="flex-1 min-w-0 space-y-1">
-                            <div className="flex items-center gap-2">
-                              <span className="text-[10px] font-medium text-foreground">Recommended Translation Provider:</span>
-                              <Badge variant="outline" className="text-[9px] px-1.5 py-0 bg-primary/10 text-primary border-primary/30">
-                                {(() => {
-                                  const provider = translationService.getRecommendedProvider(inputLanguage, primaryLanguage);
-                                  const providerNames: Record<string, string> = {
-                                    google_translate: 'Google Translate',
-                                    deepl: 'DeepL',
-                                    azure_translator: 'Microsoft Azure',
-                                    amazon_translate: 'Amazon Translate',
-                                    qwen_mt: 'Qwen-MT (Asian)',
-                                    meta_nllb: 'Meta NLLB',
-                                    universal_ai: 'Universal AI',
-                                  };
-                                  return providerNames[provider] || provider;
-                                })()}
-                              </Badge>
-                            </div>
-                            <p className="text-[9px] text-muted-foreground">
-                              {SUPPORTED_LANGUAGES.find(l => l.code === inputLanguage)?.name} → {SUPPORTED_LANGUAGES.find(l => l.code === primaryLanguage)?.name}
-                            </p>
+                            {(() => {
+                              const providerDetails = translationService.getRecommendedProviderWithDetails(inputLanguage, primaryLanguage);
+                              const providerNames: Record<string, string> = {
+                                google_translate: 'Google Translate',
+                                deepl: 'DeepL',
+                                microsoft: 'Microsoft Azure',
+                                amazon: 'Amazon Translate',
+                                qwen_mt: 'Qwen-MT (Asian)',
+                                meta_nllb: 'Meta NLLB',
+                                ai_gemini: 'Gemini AI',
+                                ai_gpt: 'GPT AI',
+                                ai_claude: 'Claude AI',
+                              };
+                              
+                              return (
+                                <>
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-[10px] font-medium text-foreground">Translation Provider:</span>
+                                    <Badge 
+                                      variant="outline" 
+                                      className={cn(
+                                        "text-[9px] px-1.5 py-0",
+                                        providerDetails.isFallback 
+                                          ? "bg-amber-500/10 text-amber-600 border-amber-500/30" 
+                                          : "bg-primary/10 text-primary border-primary/30"
+                                      )}
+                                    >
+                                      {providerNames[providerDetails.provider] || providerDetails.provider}
+                                    </Badge>
+                                    {providerDetails.isFallback && (
+                                      <Badge variant="outline" className="text-[8px] px-1 py-0 bg-amber-500/5 text-amber-600 border-amber-500/20">
+                                        Fallback
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  {providerDetails.isFallback && (
+                                    <p className="text-[9px] text-amber-600">
+                                      ⚠️ {providerDetails.fallbackReason} - Using {providerNames[providerDetails.provider]} instead
+                                    </p>
+                                  )}
+                                  <p className="text-[9px] text-muted-foreground">
+                                    {SUPPORTED_LANGUAGES.find(l => l.code === inputLanguage)?.name} → {SUPPORTED_LANGUAGES.find(l => l.code === primaryLanguage)?.name} • 
+                                    Confidence: {Math.round(providerDetails.confidence * 100)}%
+                                  </p>
+                                </>
+                              );
+                            })()}
                           </div>
                         </div>
                       </div>

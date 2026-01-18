@@ -141,15 +141,17 @@ interface MultiLanguageGeneratorProps {
   className?: string;
 }
 
-// Provider name mapping
-const PROVIDER_NAMES: Record<string, string> = {
-  google_translate: 'Google',
-  deepl: 'DeepL',
-  azure_translator: 'Azure',
-  amazon_translate: 'Amazon',
-  qwen_mt: 'Qwen-MT',
-  meta_nllb: 'NLLB',
-  universal_ai: 'Universal AI',
+// Provider name mapping with icons
+const PROVIDER_INFO: Record<string, { name: string; icon: string; color: string }> = {
+  google_translate: { name: 'Google', icon: '🔵', color: 'text-blue-600' },
+  deepl: { name: 'DeepL', icon: '🟢', color: 'text-green-600' },
+  microsoft: { name: 'Azure', icon: '🔷', color: 'text-cyan-600' },
+  amazon: { name: 'Amazon', icon: '🟠', color: 'text-orange-600' },
+  qwen_mt: { name: 'Qwen-MT', icon: '🟣', color: 'text-purple-600' },
+  meta_nllb: { name: 'NLLB', icon: '🔴', color: 'text-red-600' },
+  ai_gemini: { name: 'Gemini AI', icon: '✨', color: 'text-primary' },
+  ai_gpt: { name: 'GPT AI', icon: '🤖', color: 'text-emerald-600' },
+  ai_claude: { name: 'Claude AI', icon: '🧠', color: 'text-amber-600' },
 };
 
 export function MultiLanguageGenerator({
@@ -290,40 +292,81 @@ export function MultiLanguageGenerator({
             groupByCategory
           />
 
-          {/* Selected Languages Summary with Primary Indicator */}
+          {/* Selected Languages Summary with Primary Indicator and Provider Pairing */}
           {selectedLanguages.length > 0 && (
             <div className="space-y-2">
-              <Label className="text-[10px] text-muted-foreground">Selected ({selectedLanguages.length}):</Label>
+              <Label className="text-[10px] text-muted-foreground">Selected ({selectedLanguages.length}) with Translation Providers:</Label>
               <div className="flex flex-wrap gap-1.5">
                 {selectedLanguages.map(code => {
                   const lang = SUPPORTED_LANGUAGES.find(l => l.code === code);
                   const isPrimary = code === primaryLanguage;
                   if (!lang) return null;
                   
+                  // Get provider recommendation with availability check
+                  const providerDetails = code !== sourceLanguage 
+                    ? translationService.getRecommendedProviderWithDetails(sourceLanguage, code)
+                    : null;
+                  const providerInfo = providerDetails ? PROVIDER_INFO[providerDetails.provider] : null;
+                  
                   return (
-                    <Badge
-                      key={code}
-                      variant={isPrimary ? "default" : "secondary"}
-                      className={cn(
-                        "text-[10px] cursor-pointer gap-1",
-                        isPrimary && "bg-primary"
-                      )}
-                      onClick={() => {
-                        if (!isPrimary) {
-                          onPrimaryLanguageChange(code);
-                          toast.success(`${lang.name} set as primary language`);
-                        }
-                      }}
-                    >
-                      <span>{lang.flag}</span>
-                      <span>{lang.name}</span>
-                      {isPrimary && <Star className="h-2.5 w-2.5 fill-current" />}
-                    </Badge>
+                    <TooltipProvider key={code}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge
+                            variant={isPrimary ? "default" : "secondary"}
+                            className={cn(
+                              "text-[10px] cursor-pointer gap-1",
+                              isPrimary && "bg-primary"
+                            )}
+                            onClick={() => {
+                              if (!isPrimary) {
+                                onPrimaryLanguageChange(code);
+                                toast.success(`${lang.name} set as primary language`);
+                              }
+                            }}
+                          >
+                            <span>{lang.flag}</span>
+                            <span>{lang.name}</span>
+                            {isPrimary && <Star className="h-2.5 w-2.5 fill-current" />}
+                            {providerInfo && (
+                              <span className={cn("text-[8px] font-normal ml-0.5", providerDetails?.isFallback ? "text-amber-500" : providerInfo.color)}>
+                                {providerInfo.icon}
+                              </span>
+                            )}
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-[200px]">
+                          <div className="text-[10px] space-y-1">
+                            <p className="font-medium">{lang.name} ({lang.nativeName})</p>
+                            {isPrimary && <p className="text-primary">★ Primary language</p>}
+                            {providerDetails && (
+                              <>
+                                <p className="flex items-center gap-1">
+                                  <span>Provider:</span>
+                                  <span className={providerInfo?.color}>{providerInfo?.name}</span>
+                                </p>
+                                {providerDetails.isFallback && (
+                                  <p className="text-amber-500">
+                                    ⚠️ Fallback: {providerDetails.fallbackReason}
+                                  </p>
+                                )}
+                                <p className="text-muted-foreground">
+                                  Confidence: {Math.round(providerDetails.confidence * 100)}%
+                                </p>
+                              </>
+                            )}
+                            {code === sourceLanguage && (
+                              <p className="text-muted-foreground">Source language (no translation)</p>
+                            )}
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   );
                 })}
               </div>
               <p className="text-[10px] text-muted-foreground">
-                Click a language badge to set it as primary. Primary language: <strong>{SUPPORTED_LANGUAGES.find(l => l.code === primaryLanguage)?.name}</strong>
+                Click a language badge to set it as primary. Hover to see translation provider details.
               </p>
             </div>
           )}
