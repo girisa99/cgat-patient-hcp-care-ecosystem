@@ -289,7 +289,7 @@ export function AgentCard({ agentKey, agent, isSelected, config, onClick }: Agen
     <div
       onClick={onClick}
       className={cn(
-        "p-3 rounded-lg border cursor-pointer transition-all hover:shadow-md",
+        "p-3 rounded-lg border cursor-pointer transition-all hover:shadow-md overflow-hidden",
         isSelected
           ? "bg-primary/10 border-primary/50 ring-1 ring-primary/30"
           : "bg-card hover:bg-muted/50 border-border"
@@ -302,21 +302,21 @@ export function AgentCard({ agentKey, agent, isSelected, config, onClick }: Agen
         )}>
           {icon}
         </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5">
+        <div className="flex-1 min-w-0 overflow-hidden">
+          <div className="flex items-center gap-1.5 min-w-0">
             {isSelected && <Check className="h-3.5 w-3.5 text-primary flex-shrink-0" />}
-            <span className="font-medium text-sm truncate">{agent.name}</span>
+            <span className="font-medium text-sm truncate block">{agent.name}</span>
           </div>
-          <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">
+          <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2 break-words">
             {agent.description}
           </p>
           {isSelected && (
-            <div className="flex items-center gap-1 mt-1.5">
-              <Badge variant="outline" className="text-[9px] px-1.5 py-0">
+            <div className="flex flex-wrap items-center gap-1 mt-1.5">
+              <Badge variant="outline" className="text-[8px] px-1 py-0 max-w-full truncate">
                 {modelName}
               </Badge>
               {agent.supportsStreaming && (
-                <Badge variant="outline" className="text-[9px] px-1.5 py-0 text-green-600 border-green-500/30">
+                <Badge variant="outline" className="text-[8px] px-1 py-0 text-green-600 border-green-500/30 flex-shrink-0">
                   <Zap className="h-2 w-2 mr-0.5" />
                   Stream
                 </Badge>

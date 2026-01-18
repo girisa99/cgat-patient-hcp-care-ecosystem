@@ -88,6 +88,8 @@ import { usePresentationSession, PresentationSessionConfig } from '@/hooks/usePr
 import { ImageModelSelector, ImageModelType, VideoModelSelector, VideoModelType, IMAGE_MODELS, VIDEO_MODELS } from '../ImageModelSelector';
 import { LanguageSelector } from './LanguageSelector';
 import { MultiSelectDropdown } from '@/components/ui/multi-select-dropdown';
+import { SearchableSelect } from '@/components/ui/searchable-select';
+import { translationService } from '@/services/translationService';
 import { SlideCard } from './SlideCard';
 import { ComplianceChecker } from './ComplianceChecker';
 import { TemplateThemeSelector, TEMPLATES } from './TemplateThemeSelector';
@@ -189,6 +191,20 @@ const WIZARD_STEPS = [
   { id: 'languages', label: 'Languages', icon: Languages, description: 'Enable multi-language output' },
   { id: 'generate', label: 'Create', icon: Wand2, description: 'Generate your presentation' },
 ];
+
+// Helper to categorize languages for searchable dropdown
+const getLanguageCategory = (code: string): string => {
+  const european = ['en', 'es', 'fr', 'de', 'it', 'pt', 'pt-PT', 'nl', 'pl', 'ru', 'uk', 'cs', 'sk', 'hu', 'ro', 'bg', 'hr', 'sr', 'sl', 'el', 'sv', 'da', 'no', 'fi', 'et', 'lv', 'lt', 'is', 'ga', 'cy', 'mt', 'sq', 'mk', 'bs', 'ca', 'eu', 'gl', 'be'];
+  const asian = ['zh', 'zh-TW', 'ja', 'ko', 'hi', 'te', 'ta', 'bn', 'mr', 'gu', 'kn', 'ml', 'pa', 'ur', 'vi', 'th', 'id', 'ms', 'tl', 'my', 'km'];
+  const middleEastern = ['ar', 'he', 'fa', 'tr'];
+  const african = ['sw', 'af', 'am'];
+
+  if (european.includes(code)) return '🌍 European';
+  if (asian.includes(code)) return '🌏 Asian';
+  if (middleEastern.includes(code)) return '🌍 Middle Eastern';
+  if (african.includes(code)) return '🌍 African';
+  return '🌐 Other';
+};
 
 // Convert slide to layout elements for drag-and-drop
 const slideToLayoutElements = (slide: PresentationSlide): import('./DraggableSlideLayout').LayoutElement[] => {
@@ -1142,41 +1158,73 @@ export function PresentationWizard({
                       Language Settings
                     </Label>
                     
-                    {/* Input Language Selection */}
+                    {/* Input Language Selection - Now Searchable */}
                     <div className="space-y-2">
                       <Label className="text-[10px] text-muted-foreground">You're typing in:</Label>
-                      <Select value={inputLanguage} onValueChange={setInputLanguage}>
-                        <SelectTrigger className="h-8 text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="max-h-[200px]">
-                          {SUPPORTED_LANGUAGES.map(lang => (
-                            <SelectItem key={lang.code} value={lang.code} className="text-xs">
-                              <span className="mr-2">{lang.flag}</span>
-                              {lang.name} ({lang.nativeName})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <SearchableSelect
+                        value={inputLanguage}
+                        onValueChange={setInputLanguage}
+                        placeholder="Search languages..."
+                        groupByCategory
+                        options={SUPPORTED_LANGUAGES.map(lang => ({
+                          value: lang.code,
+                          label: `${lang.flag} ${lang.name}`,
+                          description: lang.nativeName,
+                          icon: <span>{lang.flag}</span>,
+                          category: getLanguageCategory(lang.code),
+                        }))}
+                      />
                     </div>
 
-                    {/* Primary Output Language */}
+                    {/* Primary Output Language - Now Searchable */}
                     <div className="space-y-2">
                       <Label className="text-[10px] text-muted-foreground">Generate presentation in:</Label>
-                      <Select value={primaryLanguage} onValueChange={setPrimaryLanguage}>
-                        <SelectTrigger className="h-8 text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="max-h-[200px]">
-                          {SUPPORTED_LANGUAGES.map(lang => (
-                            <SelectItem key={lang.code} value={lang.code} className="text-xs">
-                              <span className="mr-2">{lang.flag}</span>
-                              {lang.name} ({lang.nativeName})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <SearchableSelect
+                        value={primaryLanguage}
+                        onValueChange={setPrimaryLanguage}
+                        placeholder="Search languages..."
+                        groupByCategory
+                        options={SUPPORTED_LANGUAGES.map(lang => ({
+                          value: lang.code,
+                          label: `${lang.flag} ${lang.name}`,
+                          description: lang.nativeName,
+                          icon: <span>{lang.flag}</span>,
+                          category: getLanguageCategory(lang.code),
+                        }))}
+                      />
                     </div>
+
+                    {/* Translation Provider Pairing - Shows when languages differ */}
+                    {inputLanguage !== primaryLanguage && (
+                      <div className="p-2.5 rounded-lg border bg-gradient-to-r from-blue-500/5 to-purple-500/5">
+                        <div className="flex items-start gap-2">
+                          <Languages className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />
+                          <div className="flex-1 min-w-0 space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] font-medium text-foreground">Recommended Translation Provider:</span>
+                              <Badge variant="outline" className="text-[9px] px-1.5 py-0 bg-primary/10 text-primary border-primary/30">
+                                {(() => {
+                                  const provider = translationService.getRecommendedProvider(inputLanguage, primaryLanguage);
+                                  const providerNames: Record<string, string> = {
+                                    google_translate: 'Google Translate',
+                                    deepl: 'DeepL',
+                                    azure_translator: 'Microsoft Azure',
+                                    amazon_translate: 'Amazon Translate',
+                                    qwen_mt: 'Qwen-MT (Asian)',
+                                    meta_nllb: 'Meta NLLB',
+                                    universal_ai: 'Universal AI',
+                                  };
+                                  return providerNames[provider] || provider;
+                                })()}
+                              </Badge>
+                            </div>
+                            <p className="text-[9px] text-muted-foreground">
+                              {SUPPORTED_LANGUAGES.find(l => l.code === inputLanguage)?.name} → {SUPPORTED_LANGUAGES.find(l => l.code === primaryLanguage)?.name}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Auto-translate toggle */}
                     {inputLanguage === 'en' && primaryLanguage !== 'en' && (
