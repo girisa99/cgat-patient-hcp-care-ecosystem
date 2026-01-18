@@ -1740,13 +1740,16 @@ class TranslationService {
     }
 
     // Map providers to their required secrets
+    // ALIBABA_API_KEY is unified for all Alibaba DashScope services (text, voice, video)
     const providerSecrets: Record<string, { required: string[]; name: string }> = {
       google_translate: { required: ['GOOGLE_API_KEY'], name: 'Google Translate' },
       deepl: { required: ['DEEPL_API_KEY'], name: 'DeepL' },
       microsoft: { required: ['MICROSOFT_TRANSLATE_API_KEY'], name: 'Microsoft Translator' },
       amazon: { required: ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY'], name: 'Amazon Translate' },
       meta_nllb: { required: ['HUGGING_FACE_ACCESS_TOKEN'], name: 'Meta NLLB' },
-      qwen_mt: { required: ['QWEN_API_KEY'], name: 'Qwen-MT' },
+      qwen_mt: { required: ['ALIBABA_API_KEY'], name: 'Alibaba Qwen-MT' },
+      alibaba_voice: { required: ['ALIBABA_API_KEY'], name: 'Alibaba Voice (TTS/STT)' },
+      alibaba_video: { required: ['ALIBABA_API_KEY'], name: 'Alibaba Video Generation' },
     };
 
     const config = providerSecrets[provider];
@@ -1754,10 +1757,15 @@ class TranslationService {
       return { available: false, reason: 'Unknown provider' };
     }
 
-    // For now, we assume certain providers are configured based on what we know
-    // In production, this would check against actual secret availability
-    const knownConfigured = ['GOOGLE_API_KEY', 'DEEPL_API_KEY', 'MICROSOFT_TRANSLATE_API_KEY', 'HUGGING_FACE_ACCESS_TOKEN'];
-    const knownUnconfigured = ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'QWEN_API_KEY'];
+    // Updated list with ALIBABA_API_KEY now configured
+    const knownConfigured = [
+      'GOOGLE_API_KEY', 
+      'DEEPL_API_KEY', 
+      'MICROSOFT_TRANSLATE_API_KEY', 
+      'HUGGING_FACE_ACCESS_TOKEN',
+      'ALIBABA_API_KEY'  // Unified key for all Alibaba DashScope services
+    ];
+    const knownUnconfigured = ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY'];
     
     const hasRequiredSecrets = config.required.every(s => knownConfigured.includes(s));
     const isMissing = config.required.some(s => knownUnconfigured.includes(s));
