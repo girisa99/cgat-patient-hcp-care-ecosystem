@@ -1,6 +1,9 @@
 /**
  * Genie Studio Hooks - Barrel Export
  * Re-exports all Genie Studio-specific hooks
+ * 
+ * For AI capabilities, use useUniversalAIHub which is the single source of truth
+ * and includes contextual provider selection via useContextualAIProviders.
  */
 
 // Core Genie Studio hooks from components folder
@@ -28,3 +31,9 @@ export { useVibeProductionSync } from '@/hooks/useVibeProductionSync';
 export { useVibeRecordingPersistence } from '@/hooks/useVibeRecordingPersistence';
 export { useVibeSocialPublish } from '@/hooks/useVibeSocialPublish';
 export { useVibeThumbnails } from '@/hooks/useVibeThumbnails';
+
+// AI Hub - Single Source of Truth for all AI operations
+export { 
+  useUniversalAIHub,
+  useContextualAIProviders,
+} from '@/hooks/useUniversalAIHub';

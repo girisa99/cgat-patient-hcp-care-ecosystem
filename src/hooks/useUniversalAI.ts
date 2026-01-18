@@ -1,3 +1,15 @@
+/**
+ * useUniversalAI Hook
+ * 
+ * @deprecated This hook is maintained for backward compatibility.
+ * For new code, use useUniversalAIHub from '@/hooks/useUniversalAIHub' which:
+ * - Consolidates ALL AI capabilities (LLM, Translation, TTS/STT, Vision, Image/Video Gen, NLP)
+ * - Includes contextual provider selection via useContextualAIProviders
+ * - Provides smart fallback chains across all configured providers
+ * 
+ * @see useUniversalAIHub for the single source of truth
+ */
+
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { AIProvider, AIRequest, AIResponse, UniversalAIProviderType } from '@/services/aiProviderService';

@@ -16,9 +16,10 @@ export { useSubscription } from '@/hooks/useSubscription';
 export { useMasterData } from '@/hooks/useMasterData';
 export { useRealtime } from '@/hooks/useRealtime';
 
-// AI & Credits
+// AI & Credits - Single Source of Truth
 export { useAICredits } from '@/hooks/useAICredits';
-export { useUniversalAI } from '@/hooks/useUniversalAI';
+export { useUniversalAIHub, useContextualAIProviders } from '@/hooks/useUniversalAIHub';
+export { useUniversalAI } from '@/hooks/useUniversalAI'; // Legacy - use useUniversalAIHub instead
 export { useRAGContext } from '@/hooks/useRAGContext';
 
 // Agents Core
