@@ -230,13 +230,20 @@ async function translateWithMicrosoft(
   targetLanguage: string,
   category?: string
 ): Promise<TranslationResponse> {
-  const apiKey = Deno.env.get('MICROSOFT_TRANSLATOR_KEY') || Deno.env.get('AZURE_TRANSLATOR_KEY');
-  const region = Deno.env.get('MICROSOFT_TRANSLATOR_REGION') || 'global';
+  // Check for Azure/Microsoft Translator API key with multiple fallbacks
+  const apiKey = Deno.env.get('MICROSOFT_TRANSLATE_API_KEY') || 
+                 Deno.env.get('MICROSOFT_TRANSLATOR_KEY') || 
+                 Deno.env.get('AZURE_TRANSLATOR_KEY');
+  const region = Deno.env.get('MICROSOFT_TRANSLATE_REGION') || 
+                 Deno.env.get('MICROSOFT_TRANSLATOR_REGION') || 
+                 'global';
   
   if (!apiKey) {
-    console.log('[TranslationService] Microsoft Translator API key not found, falling back to AI translation');
+    console.log('[TranslationService] Microsoft/Azure Translator API key not found, falling back to AI translation');
     return translateWithAI(text, sourceLanguage, targetLanguage);
   }
+  
+  console.log('[TranslationService] Using Microsoft/Azure Translator with region:', region);
 
   try {
     const endpoint = 'https://api.cognitive.microsofttranslator.com/translate';
