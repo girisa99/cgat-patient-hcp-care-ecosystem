@@ -71,3 +71,9 @@ export {
   type AgentMessage,
   type AgentExecutionContext,
 } from './AgentArchitecture';
+
+// Template Repository
+export { TemplateRepository } from './TemplateRepository';
+export { VoiceAudioConfigPanel } from './VoiceAudioConfigPanel';
+export { ContentContextPanel } from './ContentContextPanel';
+export { AgentLanguageConfigPanel } from './AgentLanguageConfigPanel';

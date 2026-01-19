@@ -13315,6 +13315,105 @@ export type Database = {
           },
         ]
       }
+      presentation_templates: {
+        Row: {
+          accent_color: string
+          body_font: string | null
+          category: string
+          content_types: string[] | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          downloads_count: number | null
+          features: string[] | null
+          heading_font: string | null
+          id: string
+          industry: string | null
+          is_ai_generated: boolean | null
+          is_premium: boolean | null
+          is_public: boolean | null
+          is_system_template: boolean | null
+          likes_count: number | null
+          name: string
+          preview_gradient: string | null
+          preview_image_url: string | null
+          primary_color: string
+          rating: number | null
+          secondary_color: string
+          segment: string | null
+          slide_count: number | null
+          tags: string[] | null
+          template_data: Json
+          theme_data: Json | null
+          updated_at: string
+          views_count: number | null
+        }
+        Insert: {
+          accent_color?: string
+          body_font?: string | null
+          category?: string
+          content_types?: string[] | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          downloads_count?: number | null
+          features?: string[] | null
+          heading_font?: string | null
+          id?: string
+          industry?: string | null
+          is_ai_generated?: boolean | null
+          is_premium?: boolean | null
+          is_public?: boolean | null
+          is_system_template?: boolean | null
+          likes_count?: number | null
+          name: string
+          preview_gradient?: string | null
+          preview_image_url?: string | null
+          primary_color?: string
+          rating?: number | null
+          secondary_color?: string
+          segment?: string | null
+          slide_count?: number | null
+          tags?: string[] | null
+          template_data?: Json
+          theme_data?: Json | null
+          updated_at?: string
+          views_count?: number | null
+        }
+        Update: {
+          accent_color?: string
+          body_font?: string | null
+          category?: string
+          content_types?: string[] | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          downloads_count?: number | null
+          features?: string[] | null
+          heading_font?: string | null
+          id?: string
+          industry?: string | null
+          is_ai_generated?: boolean | null
+          is_premium?: boolean | null
+          is_public?: boolean | null
+          is_system_template?: boolean | null
+          likes_count?: number | null
+          name?: string
+          preview_gradient?: string | null
+          preview_image_url?: string | null
+          primary_color?: string
+          rating?: number | null
+          secondary_color?: string
+          segment?: string | null
+          slide_count?: number | null
+          tags?: string[] | null
+          template_data?: Json
+          theme_data?: Json | null
+          updated_at?: string
+          views_count?: number | null
+        }
+        Relationships: []
+      }
       presentation_versions: {
         Row: {
           confidence_scores: Json | null
@@ -17929,6 +18028,35 @@ export type Database = {
             columns: ["role_id"]
             isOneToOne: false
             referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_saved_templates: {
+        Row: {
+          id: string
+          saved_at: string
+          template_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          saved_at?: string
+          template_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          saved_at?: string
+          template_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_saved_templates_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "presentation_templates"
             referencedColumns: ["id"]
           },
         ]

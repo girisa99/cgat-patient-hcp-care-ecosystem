@@ -1541,6 +1541,9 @@ export function PresentationWizard({
                 onIncludeTablesChange={setIncludeTables}
                 includeCharts={includeCharts}
                 onIncludeChartsChange={setIncludeCharts}
+                industryFilter={workflowConfig?.industryCategory}
+                segmentFilter={workflowConfig?.segment}
+                contentTypeFilter={selectedContentTypes}
               />
             )}
 
