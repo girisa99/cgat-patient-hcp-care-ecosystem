@@ -1,13 +1,10 @@
 /**
- * AIModelConfigPanel - Clean, enterprise-grade AI model selection
- * 
- * Features:
- * - Auto-select based on context
- * - Clean 2x2 grid with proper text alignment
- * - No overflow issues
+ * AIModelConfigPanel - Clean AI model selection grid
+ * No overflow, proper alignment
  */
 
 import React, { useMemo, useEffect } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -24,14 +21,13 @@ import {
   Image as ImageIcon,
   Mic,
   Languages,
-  Info,
-  Check,
   Wand2,
+  Check,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { FinalWorkflowConfig } from './EnhancedTemplateWorkflow';
 
-// Provider configurations
+// Provider configurations with short display names
 const TEXT_PROVIDERS = [
   { id: 'google/gemini-3-flash-preview', name: 'Gemini 3 Flash', short: 'Gemini Flash' },
   { id: 'google/gemini-2.5-pro', name: 'Gemini 2.5 Pro', short: 'Gemini Pro' },
@@ -46,7 +42,6 @@ const IMAGE_PROVIDERS = [
   { id: 'modelslab', name: 'ModelsLab', short: 'ModelsLab' },
   { id: 'flux-pro', name: 'Flux Pro', short: 'Flux Pro' },
   { id: 'flux-schnell', name: 'Flux Schnell', short: 'Flux Fast' },
-  { id: 'gemini-image', name: 'Gemini Image', short: 'Gemini' },
   { id: 'dall-e-3', name: 'DALL-E 3', short: 'DALL-E 3' },
   { id: 'stability', name: 'Stability AI', short: 'Stability' },
   { id: 'stock', name: 'Stock Images', short: 'Stock' },
@@ -54,20 +49,18 @@ const IMAGE_PROVIDERS = [
 
 const VOICE_PROVIDERS = [
   { id: 'elevenlabs-multilingual', name: 'ElevenLabs', short: 'ElevenLabs' },
-  { id: 'openai-tts-hd', name: 'OpenAI TTS HD', short: 'OpenAI TTS' },
+  { id: 'openai-tts-hd', name: 'OpenAI TTS', short: 'OpenAI' },
   { id: 'google-wavenet', name: 'Google WaveNet', short: 'WaveNet' },
   { id: 'azure-neural', name: 'Azure Neural', short: 'Azure' },
   { id: 'aws-polly', name: 'AWS Polly', short: 'Polly' },
-  { id: 'alibaba-tts', name: 'Alibaba TTS', short: 'Alibaba' },
 ];
 
 const TRANSLATION_PROVIDERS = [
   { id: 'deepl', name: 'DeepL', short: 'DeepL' },
-  { id: 'google-translate', name: 'Google Translate', short: 'Google' },
-  { id: 'qwen-mt', name: 'Qwen-MT', short: 'Qwen-MT' },
-  { id: 'azure', name: 'Azure Translator', short: 'Azure' },
-  { id: 'nllb', name: 'NLLB (Meta)', short: 'NLLB' },
-  { id: 'alibaba', name: 'Alibaba', short: 'Alibaba' },
+  { id: 'google-translate', name: 'Google', short: 'Google' },
+  { id: 'qwen-mt', name: 'Qwen-MT', short: 'Qwen' },
+  { id: 'azure', name: 'Azure', short: 'Azure' },
+  { id: 'nllb', name: 'NLLB', short: 'NLLB' },
 ];
 
 interface AIModelConfigPanelProps {
@@ -94,59 +87,23 @@ export const AIModelConfigPanel: React.FC<AIModelConfigPanelProps> = ({
   setIsAutoSelect,
   contentCategory = 'ai-generated',
 }) => {
-  // Auto-select logic
+  // Auto-select recommendations
   const recommendations = useMemo(() => {
     const industry = workflowConfig?.industryCategory || '';
     const hasAsianLangs = selectedLanguages.some(l => ['zh', 'ja', 'ko', 'th', 'vi'].includes(l));
-    const hasRareLangs = selectedLanguages.some(l => ['sw', 'hi', 'bn', 'ta'].includes(l));
     
     let text = 'google/gemini-3-flash-preview';
-    let textReason = 'Fast & multilingual';
+    if (['healthcare', 'pharma', 'legal'].includes(industry)) text = 'claude-3-5-sonnet';
+    else if (['consulting'].includes(industry)) text = 'openai/gpt-5';
+    else if (hasAsianLangs) text = 'alibaba/qwen-2.5';
     
-    if (['healthcare', 'pharma', 'legal'].includes(industry)) {
-      text = 'claude-3-5-sonnet';
-      textReason = 'High accuracy';
-    } else if (['consulting'].includes(industry)) {
-      text = 'openai/gpt-5';
-      textReason = 'Premium quality';
-    } else if (hasAsianLangs) {
-      text = 'alibaba/qwen-2.5';
-      textReason = 'CJK optimized';
-    }
-    
-    let image = 'flux-pro';
-    let imageReason = 'High quality';
-    if (contentCategory === 'visual') {
-      image = 'modelslab';
-      imageReason = 'Artistic styles';
-    } else if (contentCategory === 'business') {
-      image = 'stock';
-      imageReason = 'Professional';
-    }
-    
-    let voice = 'elevenlabs-multilingual';
-    let voiceReason = 'Natural voices';
-    if (hasAsianLangs) {
-      voice = 'alibaba-tts';
-      voiceReason = 'Asian languages';
-    } else if (selectedLanguages.length > 5) {
-      voice = 'google-wavenet';
-      voiceReason = 'Wide coverage';
-    }
-    
-    let translation = 'deepl';
-    let translationReason = 'Native quality';
-    if (hasAsianLangs) {
-      translation = 'qwen-mt';
-      translationReason = 'CJK languages';
-    } else if (hasRareLangs) {
-      translation = 'nllb';
-      translationReason = 'Rare languages';
-    }
+    let image = contentCategory === 'visual' ? 'modelslab' : 'flux-pro';
+    let voice = hasAsianLangs ? 'google-wavenet' : 'elevenlabs-multilingual';
+    let translation = hasAsianLangs ? 'qwen-mt' : 'deepl';
     
     const confidence = Math.min(98, 75 + (industry ? 10 : 0) + (selectedLanguages.length > 0 ? 8 : 0));
     
-    return { text, textReason, image, imageReason, voice, voiceReason, translation, translationReason, confidence };
+    return { text, image, voice, translation, confidence };
   }, [workflowConfig, selectedLanguages, contentCategory]);
 
   // Apply auto-select
@@ -175,155 +132,139 @@ export const AIModelConfigPanel: React.FC<AIModelConfigPanelProps> = ({
     translation: isAutoSelect ? recommendations.translation : (workflowConfig?.aiRecommendation?.translationModel || 'deepl'),
   };
 
-  const getProviderName = (id: string, list: typeof TEXT_PROVIDERS) => 
-    list.find(p => p.id === id)?.short || id;
-
   return (
-    <div className="space-y-4">
-      {/* Header with Auto Toggle */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Wand2 className="h-4 w-4 text-primary" />
-          <span className="text-sm font-medium">AI Models</span>
-          <Badge 
-            variant="outline" 
-            className={cn(
-              "text-[10px]",
-              recommendations.confidence >= 90 ? "bg-green-500/10 text-green-600" :
-              recommendations.confidence >= 80 ? "bg-blue-500/10 text-blue-600" :
-              "bg-amber-500/10 text-amber-600"
-            )}
-          >
-            {recommendations.confidence}% match
-          </Badge>
+    <Card>
+      <CardContent className="p-4 space-y-4">
+        {/* Header with Auto Toggle */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Wand2 className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium">AI Models</span>
+            <Badge 
+              variant="outline" 
+              className={cn(
+                "text-[10px]",
+                recommendations.confidence >= 90 ? "bg-green-500/10 text-green-600 border-green-200" :
+                recommendations.confidence >= 80 ? "bg-blue-500/10 text-blue-600 border-blue-200" :
+                "bg-amber-500/10 text-amber-600 border-amber-200"
+              )}
+            >
+              {recommendations.confidence}% match
+            </Badge>
+          </div>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="auto-models" className="text-xs text-muted-foreground">Auto</Label>
+            <Switch
+              id="auto-models"
+              checked={isAutoSelect}
+              onCheckedChange={setIsAutoSelect}
+            />
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Label htmlFor="auto-models" className="text-xs text-muted-foreground">Auto</Label>
-          <Switch
-            id="auto-models"
-            checked={isAutoSelect}
-            onCheckedChange={setIsAutoSelect}
+
+        {/* Auto-select info */}
+        {isAutoSelect && (
+          <div className="flex items-center gap-2 p-2 rounded-md bg-primary/5 border border-primary/20">
+            <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
+            <p className="text-[11px] text-muted-foreground">
+              <span className="text-foreground font-medium">Auto-optimized</span> for {workflowConfig?.industryCategory || 'your context'}
+            </p>
+          </div>
+        )}
+
+        {/* Model Grid - 2x2 Clean Layout */}
+        <div className="grid grid-cols-2 gap-3">
+          {/* Text Model */}
+          <ModelCard
+            icon={<Type className="h-3.5 w-3.5" />}
+            label="Text"
+            value={current.text}
+            providers={TEXT_PROVIDERS}
+            disabled={isAutoSelect}
+            onChange={(val) => {
+              if (!isAutoSelect && workflowConfig) {
+                setWorkflowConfig({
+                  ...workflowConfig,
+                  aiRecommendation: { ...workflowConfig.aiRecommendation!, textModel: val }
+                });
+                setSelectedAIModel(val);
+              }
+            }}
+          />
+
+          {/* Image Model */}
+          <ModelCard
+            icon={<ImageIcon className="h-3.5 w-3.5" />}
+            label="Image"
+            value={current.image}
+            providers={IMAGE_PROVIDERS}
+            disabled={isAutoSelect}
+            onChange={(val) => {
+              if (!isAutoSelect && workflowConfig) {
+                setWorkflowConfig({
+                  ...workflowConfig,
+                  aiRecommendation: { ...workflowConfig.aiRecommendation!, imageModel: val }
+                });
+                setImageModel(val as any);
+              }
+            }}
+          />
+
+          {/* Voice Model */}
+          <ModelCard
+            icon={<Mic className="h-3.5 w-3.5" />}
+            label="Voice"
+            value={current.voice}
+            providers={VOICE_PROVIDERS}
+            disabled={isAutoSelect}
+            onChange={(val) => {
+              if (!isAutoSelect && workflowConfig) {
+                setWorkflowConfig({
+                  ...workflowConfig,
+                  aiRecommendation: { ...workflowConfig.aiRecommendation!, voiceModel: val }
+                });
+              }
+            }}
+          />
+
+          {/* Translation Model */}
+          <ModelCard
+            icon={<Languages className="h-3.5 w-3.5" />}
+            label="Translation"
+            value={current.translation}
+            providers={TRANSLATION_PROVIDERS}
+            disabled={isAutoSelect}
+            onChange={(val) => {
+              if (!isAutoSelect && workflowConfig) {
+                setWorkflowConfig({
+                  ...workflowConfig,
+                  aiRecommendation: { ...workflowConfig.aiRecommendation!, translationModel: val }
+                });
+              }
+            }}
           />
         </div>
-      </div>
-
-      {/* Auto-select info */}
-      {isAutoSelect && (
-        <div className="flex items-start gap-2 p-2.5 rounded-md bg-primary/5 border border-primary/20">
-          <Sparkles className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
-          <p className="text-[11px] text-muted-foreground">
-            <span className="text-foreground font-medium">Auto-optimized</span> for {workflowConfig?.industryCategory || 'your context'}
-            {selectedLanguages.length > 1 && ` • ${selectedLanguages.length} languages`}
-          </p>
-        </div>
-      )}
-
-      {/* Model Grid - 2x2 */}
-      <div className="grid grid-cols-2 gap-3">
-        {/* Text Model */}
-        <ModelSelector
-          icon={<Type className="h-3.5 w-3.5" />}
-          label="Text"
-          value={current.text}
-          providers={TEXT_PROVIDERS}
-          disabled={isAutoSelect}
-          reason={isAutoSelect ? recommendations.textReason : undefined}
-          onChange={(val) => {
-            if (!isAutoSelect && workflowConfig) {
-              setWorkflowConfig({
-                ...workflowConfig,
-                aiRecommendation: { ...workflowConfig.aiRecommendation!, textModel: val }
-              });
-              setSelectedAIModel(val);
-            }
-          }}
-        />
-
-        {/* Image Model */}
-        <ModelSelector
-          icon={<ImageIcon className="h-3.5 w-3.5" />}
-          label="Image"
-          value={current.image}
-          providers={IMAGE_PROVIDERS}
-          disabled={isAutoSelect}
-          reason={isAutoSelect ? recommendations.imageReason : undefined}
-          onChange={(val) => {
-            if (!isAutoSelect && workflowConfig) {
-              setWorkflowConfig({
-                ...workflowConfig,
-                aiRecommendation: { ...workflowConfig.aiRecommendation!, imageModel: val }
-              });
-              setImageModel(val as any);
-            }
-          }}
-        />
-
-        {/* Voice Model */}
-        <ModelSelector
-          icon={<Mic className="h-3.5 w-3.5" />}
-          label="Voice"
-          value={current.voice}
-          providers={VOICE_PROVIDERS}
-          disabled={isAutoSelect}
-          reason={isAutoSelect ? recommendations.voiceReason : undefined}
-          onChange={(val) => {
-            if (!isAutoSelect && workflowConfig) {
-              setWorkflowConfig({
-                ...workflowConfig,
-                aiRecommendation: { ...workflowConfig.aiRecommendation!, voiceModel: val }
-              });
-            }
-          }}
-        />
-
-        {/* Translation Model */}
-        <ModelSelector
-          icon={<Languages className="h-3.5 w-3.5" />}
-          label="Translation"
-          value={current.translation}
-          providers={TRANSLATION_PROVIDERS}
-          disabled={isAutoSelect}
-          reason={isAutoSelect ? recommendations.translationReason : undefined}
-          onChange={(val) => {
-            if (!isAutoSelect && workflowConfig) {
-              setWorkflowConfig({
-                ...workflowConfig,
-                aiRecommendation: { ...workflowConfig.aiRecommendation!, translationModel: val }
-              });
-            }
-          }}
-        />
-      </div>
-
-      {/* Manual mode hint */}
-      {!isAutoSelect && (
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Info className="h-3 w-3 shrink-0" />
-          <span>Manual mode - enable Auto for AI-optimized selection</span>
-        </div>
-      )}
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 
-// Clean model selector component
-interface ModelSelectorProps {
+// Clean model card component
+interface ModelCardProps {
   icon: React.ReactNode;
   label: string;
   value: string;
   providers: { id: string; name: string; short: string }[];
   disabled: boolean;
-  reason?: string;
   onChange: (value: string) => void;
 }
 
-const ModelSelector: React.FC<ModelSelectorProps> = ({
+const ModelCard: React.FC<ModelCardProps> = ({
   icon,
   label,
   value,
   providers,
   disabled,
-  reason,
   onChange,
 }) => {
   const currentProvider = providers.find(p => p.id === value);
@@ -337,11 +278,11 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
       </div>
       <Select value={value} onValueChange={onChange} disabled={disabled}>
         <SelectTrigger className={cn(
-          "h-9 text-xs",
+          "h-8 text-xs",
           disabled && "opacity-70 bg-muted/30"
         )}>
           <SelectValue>
-            <span className="truncate">{currentProvider?.short || value}</span>
+            <span className="truncate block max-w-[100px]">{currentProvider?.short || value}</span>
           </SelectValue>
         </SelectTrigger>
         <SelectContent className="max-h-48">
@@ -352,9 +293,6 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
           ))}
         </SelectContent>
       </Select>
-      {reason && (
-        <p className="text-[10px] text-muted-foreground truncate">{reason}</p>
-      )}
     </div>
   );
 };
