@@ -111,14 +111,63 @@ export interface ContentTypeConfig {
 
 // Add new content types here - system auto-adapts
 export const CONTENT_TYPE_REGISTRY: ContentTypeConfig[] = [
-  // Strategic
-  { id: 'strategic', name: 'Strategic', boostConsulting: 30, boostVisual: -10, boostData: 20, suggestedFrameworks: ['SWOT', 'Porter\'s Five Forces', 'BCG Matrix', 'Ansoff Matrix', 'Value Chain'] },
+  // Strategic - WITH SUB-OPTIONS
+  { 
+    id: 'strategic', 
+    name: 'Strategic', 
+    boostConsulting: 30, 
+    boostVisual: -10, 
+    boostData: 20, 
+    suggestedFrameworks: ['SWOT', 'Porter\'s Five Forces', 'BCG Matrix', 'Ansoff Matrix', 'Value Chain'],
+    subOptions: [
+      { id: 'strategic-corporate', label: 'Corporate Strategy', description: 'Enterprise-level strategy' },
+      { id: 'strategic-it', label: 'IT Strategy', description: 'Technology roadmap & planning' },
+      { id: 'strategic-digital', label: 'Digital Transformation', description: 'Digital strategy & roadmap' },
+      { id: 'strategic-growth', label: 'Growth Strategy', description: 'Business expansion planning' },
+      { id: 'strategic-operations', label: 'Operations Strategy', description: 'Operational excellence plan' },
+      { id: 'strategic-market-entry', label: 'Market Entry', description: 'New market expansion' },
+      { id: 'strategic-ma', label: 'M&A Strategy', description: 'Merger & acquisition planning' },
+      { id: 'strategic-turnaround', label: 'Turnaround Plan', description: 'Business recovery strategy' }
+    ]
+  },
   
-  // Marketing
-  { id: 'marketing', name: 'Marketing', boostConsulting: -10, boostVisual: 30, boostData: 10, suggestedFrameworks: ['4Ps', 'Customer Journey', 'Brand Funnel', 'AIDA', 'STP'] },
+  // Marketing - WITH SUB-OPTIONS
+  { 
+    id: 'marketing', 
+    name: 'Marketing', 
+    boostConsulting: -10, 
+    boostVisual: 30, 
+    boostData: 10, 
+    suggestedFrameworks: ['4Ps', 'Customer Journey', 'Brand Funnel', 'AIDA', 'STP'],
+    subOptions: [
+      { id: 'marketing-campaign', label: 'Campaign Deck', description: 'Marketing campaign overview' },
+      { id: 'marketing-brand', label: 'Brand Guidelines', description: 'Brand identity & standards' },
+      { id: 'marketing-launch', label: 'Product Launch', description: 'Go-to-market strategy' },
+      { id: 'marketing-content', label: 'Content Strategy', description: 'Content planning & calendar' },
+      { id: 'marketing-social', label: 'Social Media Strategy', description: 'Social media planning' },
+      { id: 'marketing-performance', label: 'Performance Report', description: 'Campaign metrics & ROI' },
+      { id: 'marketing-partner', label: 'Partner/Co-Marketing', description: 'Partnership marketing deck' }
+    ]
+  },
   
-  // Research
-  { id: 'research', name: 'Research', boostConsulting: 20, boostVisual: 0, boostData: 40, suggestedFrameworks: ['Literature Review', 'Methodology', 'Findings Matrix', 'Statistical Analysis'] },
+  // Research - WITH SUB-OPTIONS
+  { 
+    id: 'research', 
+    name: 'Research', 
+    boostConsulting: 20, 
+    boostVisual: 0, 
+    boostData: 40, 
+    suggestedFrameworks: ['Literature Review', 'Methodology', 'Findings Matrix', 'Statistical Analysis'],
+    subOptions: [
+      { id: 'research-market', label: 'Market Research', description: 'Market analysis & sizing' },
+      { id: 'research-competitive', label: 'Competitive Analysis', description: 'Competitor landscape study' },
+      { id: 'research-user', label: 'User Research', description: 'User insights & personas' },
+      { id: 'research-data', label: 'Data Analysis Report', description: 'Statistical findings & insights' },
+      { id: 'research-academic', label: 'Academic Research', description: 'Literature review & methodology' },
+      { id: 'research-industry', label: 'Industry Report', description: 'Industry trends & outlook' },
+      { id: 'research-feasibility', label: 'Feasibility Study', description: 'Project viability analysis' }
+    ]
+  },
   
   // Training - WITH SUB-OPTIONS
   { 
@@ -134,11 +183,12 @@ export const CONTENT_TYPE_REGISTRY: ContentTypeConfig[] = [
       { id: 'training-quickref', label: 'Quick Reference Guide', description: 'Condensed key points for easy reference' },
       { id: 'training-workshop', label: 'Workshop Materials', description: 'Interactive session materials' },
       { id: 'training-elearning', label: 'E-Learning Module', description: 'Self-paced online course content' },
-      { id: 'training-certification', label: 'Certification Program', description: 'Formal certification materials' }
+      { id: 'training-certification', label: 'Certification Program', description: 'Formal certification materials' },
+      { id: 'training-onboarding', label: 'Onboarding Guide', description: 'New employee/customer onboarding' }
     ]
   },
   
-  // Storytelling - NEW
+  // Storytelling - WITH SUB-OPTIONS
   { 
     id: 'storytelling', 
     name: 'Storytelling', 
@@ -150,11 +200,13 @@ export const CONTENT_TYPE_REGISTRY: ContentTypeConfig[] = [
       { id: 'story-case', label: 'Case Study Narrative', description: 'Customer success story format' },
       { id: 'story-origin', label: 'Origin Story', description: 'Company/product founding narrative' },
       { id: 'story-vision', label: 'Vision Story', description: 'Future state narrative' },
-      { id: 'story-transformation', label: 'Transformation Story', description: 'Change journey narrative' }
+      { id: 'story-transformation', label: 'Transformation Story', description: 'Change journey narrative' },
+      { id: 'story-testimonial', label: 'Testimonial Compilation', description: 'Customer testimonial stories' },
+      { id: 'story-impact', label: 'Impact Report', description: 'Social/business impact narrative' }
     ]
   },
   
-  // Investor/VC - NEW
+  // Investor/VC - WITH SUB-OPTIONS
   { 
     id: 'investor', 
     name: 'Investor & VC', 
@@ -166,11 +218,13 @@ export const CONTENT_TYPE_REGISTRY: ContentTypeConfig[] = [
       { id: 'investor-seed', label: 'Seed Round Pitch', description: 'Early-stage funding pitch' },
       { id: 'investor-series', label: 'Series A/B Pitch', description: 'Growth-stage investment deck' },
       { id: 'investor-update', label: 'Investor Update', description: 'Monthly/quarterly progress report' },
-      { id: 'investor-due-diligence', label: 'Due Diligence Package', description: 'Comprehensive investor materials' }
+      { id: 'investor-due-diligence', label: 'Due Diligence Package', description: 'Comprehensive investor materials' },
+      { id: 'investor-board', label: 'Board Deck', description: 'Board meeting presentation' },
+      { id: 'investor-exit', label: 'Exit Strategy', description: 'M&A or IPO presentation' }
     ]
   },
   
-  // Business
+  // Business - WITH SUB-OPTIONS
   { 
     id: 'business', 
     name: 'Business', 
@@ -181,11 +235,14 @@ export const CONTENT_TYPE_REGISTRY: ContentTypeConfig[] = [
     subOptions: [
       { id: 'business-plan', label: 'Business Plan', description: 'Comprehensive business strategy' },
       { id: 'business-proposal', label: 'Business Proposal', description: 'Client/partner proposal' },
-      { id: 'business-review', label: 'Business Review', description: 'Quarterly/annual performance review' }
+      { id: 'business-review', label: 'Business Review', description: 'Quarterly/annual performance review' },
+      { id: 'business-case', label: 'Business Case', description: 'Investment justification' },
+      { id: 'business-update', label: 'Status Update', description: 'Project/business status' },
+      { id: 'business-executive', label: 'Executive Summary', description: 'C-suite briefing deck' }
     ]
   },
   
-  // Compliance
+  // Compliance - WITH SUB-OPTIONS
   { 
     id: 'compliance', 
     name: 'Compliance', 
@@ -196,8 +253,110 @@ export const CONTENT_TYPE_REGISTRY: ContentTypeConfig[] = [
     subOptions: [
       { id: 'compliance-policy', label: 'Policy Document', description: 'Formal policy presentation' },
       { id: 'compliance-audit', label: 'Audit Report', description: 'Compliance audit findings' },
-      { id: 'compliance-training', label: 'Compliance Training', description: 'Regulatory training materials' }
+      { id: 'compliance-training', label: 'Compliance Training', description: 'Regulatory training materials' },
+      { id: 'compliance-hipaa', label: 'HIPAA Compliance', description: 'Healthcare privacy compliance' },
+      { id: 'compliance-gdpr', label: 'GDPR/Privacy', description: 'Data privacy compliance' },
+      { id: 'compliance-sox', label: 'SOX Compliance', description: 'Financial compliance' },
+      { id: 'compliance-security', label: 'Security Compliance', description: 'Cybersecurity standards' }
     ]
+  },
+  
+  // Narrative
+  { 
+    id: 'narrative', 
+    name: 'Narrative', 
+    boostConsulting: -15, 
+    boostVisual: 50, 
+    boostData: -20, 
+    suggestedFrameworks: ['Story Arc', 'Visual Narrative', 'Emotional Journey'],
+    subOptions: [
+      { id: 'narrative-keynote', label: 'Keynote Speech', description: 'Keynote presentation format' },
+      { id: 'narrative-ted', label: 'TED-Style Talk', description: 'Idea-driven presentation' },
+      { id: 'narrative-story', label: 'Story Presentation', description: 'Narrative-driven format' }
+    ]
+  },
+  
+  // Visual
+  { 
+    id: 'visual', 
+    name: 'Visual', 
+    boostConsulting: -20, 
+    boostVisual: 60, 
+    boostData: 10, 
+    suggestedFrameworks: ['Infographics', 'Data Viz', 'Icon Story'],
+    subOptions: [
+      { id: 'visual-infographic', label: 'Infographic Deck', description: 'Data visualization focus' },
+      { id: 'visual-photo', label: 'Photo Essay', description: 'Image-driven storytelling' },
+      { id: 'visual-diagram', label: 'Diagram Collection', description: 'Technical diagrams & flows' },
+      { id: 'visual-chart', label: 'Chart Gallery', description: 'Charts & graphs focus' }
+    ]
+  },
+  
+  // Creative
+  { 
+    id: 'creative', 
+    name: 'Creative', 
+    boostConsulting: -25, 
+    boostVisual: 70, 
+    boostData: -15, 
+    suggestedFrameworks: ['Mood Board', 'Brand Story', 'Concept Exploration'],
+    subOptions: [
+      { id: 'creative-concept', label: 'Concept Deck', description: 'Creative concepts & ideas' },
+      { id: 'creative-mood', label: 'Mood Board', description: 'Visual inspiration board' },
+      { id: 'creative-portfolio', label: 'Portfolio Showcase', description: 'Work samples & projects' },
+      { id: 'creative-campaign', label: 'Creative Campaign', description: 'Ad campaign concepts' },
+      { id: 'creative-brand', label: 'Brand Story', description: 'Brand narrative & identity' }
+    ]
+  },
+  
+  // Technical
+  { 
+    id: 'technical', 
+    name: 'Technical', 
+    boostConsulting: 10, 
+    boostVisual: 15, 
+    boostData: 45, 
+    suggestedFrameworks: ['Architecture Diagram', 'Process Flow', 'Technical Specs', 'API Documentation'],
+    subOptions: [
+      { id: 'technical-architecture', label: 'Architecture Overview', description: 'System architecture documentation' },
+      { id: 'technical-api', label: 'API Documentation', description: 'API reference & usage' },
+      { id: 'technical-specs', label: 'Technical Specifications', description: 'Detailed technical specs' },
+      { id: 'technical-integration', label: 'Integration Guide', description: 'System integration documentation' }
+    ]
+  },
+  
+  // Proposal
+  { 
+    id: 'proposal', 
+    name: 'Proposal', 
+    boostConsulting: 20, 
+    boostVisual: 20, 
+    boostData: 25, 
+    suggestedFrameworks: ['Executive Summary', 'Solution Architecture', 'Timeline', 'Pricing Model'],
+    subOptions: [
+      { id: 'proposal-rfp', label: 'RFP Response', description: 'Request for proposal response' },
+      { id: 'proposal-sales', label: 'Sales Proposal', description: 'Sales pitch & pricing' },
+      { id: 'proposal-partnership', label: 'Partnership Proposal', description: 'Strategic partnership pitch' },
+      { id: 'proposal-project', label: 'Project Proposal', description: 'Project scope & timeline' }
+    ]
+  },
+  
+  // Operational
+  { 
+    id: 'operational', 
+    name: 'Operational', 
+    boostConsulting: 15, 
+    boostVisual: 0, 
+    boostData: 30, 
+    suggestedFrameworks: ['Process Map', 'RACI', 'KPIs Dashboard', 'Gantt Chart', 'Workflow'],
+    subOptions: [
+      { id: 'operational-process', label: 'Process Documentation', description: 'Process flows & procedures' },
+      { id: 'operational-sop', label: 'Standard Operating Procedures', description: 'SOPs & guidelines' },
+      { id: 'operational-dashboard', label: 'Operations Dashboard', description: 'KPIs & metrics' },
+      { id: 'operational-report', label: 'Operations Report', description: 'Performance & efficiency report' }
+    ]
+  },
+];
   },
   
   // Narrative
