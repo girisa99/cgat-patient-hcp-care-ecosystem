@@ -54,6 +54,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { PresentationTemplate, PresentationTheme } from './types';
+import { TemplateRepository } from './TemplateRepository';
 
 // Template Categories
 const TEMPLATE_CATEGORIES = [
@@ -269,6 +270,9 @@ interface TemplateBrandingPanelProps {
   onIncludeTablesChange: (value: boolean) => void;
   includeCharts: boolean;
   onIncludeChartsChange: (value: boolean) => void;
+  industryFilter?: string;
+  segmentFilter?: string;
+  contentTypeFilter?: string[];
   className?: string;
 }
 
@@ -287,9 +291,12 @@ export function TemplateBrandingPanel({
   onIncludeTablesChange,
   includeCharts,
   onIncludeChartsChange,
+  industryFilter,
+  segmentFilter,
+  contentTypeFilter,
   className
 }: TemplateBrandingPanelProps) {
-  const [activeTab, setActiveTab] = useState<'templates' | 'branding' | 'features'>('templates');
+  const [activeTab, setActiveTab] = useState<'templates' | 'repository' | 'branding' | 'features'>('templates');
   const [activeCategory, setActiveCategory] = useState('all');
   const [isAIDefault, setIsAIDefault] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -470,6 +477,7 @@ export function TemplateBrandingPanel({
       <div className="flex gap-1 p-1 bg-muted/50 rounded-xl">
         {[
           { id: 'templates', label: 'Templates', icon: Layout },
+          { id: 'repository', label: 'Repository', icon: Layers },
           { id: 'branding', label: 'Branding', icon: Upload },
           { id: 'features', label: 'Features', icon: Settings2 }
         ].map(tab => {
@@ -791,6 +799,32 @@ export function TemplateBrandingPanel({
             })}
           </div>
         </div>
+      )}
+
+      {/* Repository Tab - Community Templates */}
+      {activeTab === 'repository' && (
+        <TemplateRepository
+          onSelectTemplate={(template) => {
+            onTemplateChange(template);
+            onThemeChange(template.theme);
+            if (template.theme?.colors) {
+              onBrandConfigChange({
+                ...brandConfig,
+                colors: {
+                  primary: template.theme.colors.primary,
+                  secondary: template.theme.colors.secondary,
+                  accent: template.theme.colors.accent
+                }
+              });
+            }
+            setIsAIDefault(false);
+            toast.success(`Selected: ${template.name}`);
+          }}
+          currentTemplate={selectedTemplate}
+          industryFilter={industryFilter}
+          segmentFilter={segmentFilter}
+          contentTypeFilter={contentTypeFilter}
+        />
       )}
 
       {/* Branding Tab */}

@@ -5,6 +5,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import type { Json } from '@/integrations/supabase/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -101,6 +102,9 @@ interface TemplateRepositoryProps {
   onSelectTemplate: (template: PresentationTemplate) => void;
   onSaveTemplate?: (template: PresentationTemplate, isPublic: boolean) => void;
   currentTemplate?: PresentationTemplate | null;
+  industryFilter?: string;
+  segmentFilter?: string;
+  contentTypeFilter?: string[];
   className?: string;
 }
 
@@ -108,6 +112,9 @@ export function TemplateRepository({
   onSelectTemplate,
   onSaveTemplate,
   currentTemplate,
+  industryFilter,
+  segmentFilter,
+  contentTypeFilter,
   className
 }: TemplateRepositoryProps) {
   const [activeCategory, setActiveCategory] = useState('all');
@@ -124,146 +131,126 @@ export function TemplateRepository({
     isPublic: true
   });
 
-  // Mock community templates (would come from database)
-  const mockTemplates: CommunityTemplate[] = [
-    {
-      id: 'community-1',
-      name: 'Modern Pitch Deck',
-      description: 'Clean, investor-ready presentation with data-driven layouts',
-      category: 'business',
-      preview: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      colors: { primary: '#667eea', secondary: '#764ba2', accent: '#f093fb' },
-      slides: 12,
-      features: ['Charts', 'Timeline', 'Stats'],
-      author: { name: 'GenieAI', isPremium: true },
-      stats: { views: 12500, downloads: 3200, likes: 890 },
-      tags: ['pitch', 'investor', 'startup'],
-      isAIGenerated: true,
-      isPremium: false,
-      isPublic: true,
-      createdAt: '2025-01-15',
-      templateData: {
-        id: 'community-1',
-        name: 'Modern Pitch Deck',
-        description: 'Clean, investor-ready presentation',
-        category: 'business',
-        theme: {
-          id: 'pitch-theme',
-          name: 'Modern Pitch',
-          colors: { primary: '#667eea', secondary: '#764ba2', accent: '#f093fb', background: '#fff', foreground: '#1a1a2e', muted: '#f4f4f5', card: '#fff', cardForeground: '#1a1a2e', border: '#e4e4e7' },
-          fonts: { heading: { family: 'Inter', weight: 700 }, body: { family: 'Inter', weight: 400 }, accent: { family: 'Inter', weight: 600 } },
-          spacing: 'normal',
-          borderRadius: 'medium',
-          shadows: true
-        },
-        slideLayouts: []
+  // Fetch templates from database
+  const fetchTemplates = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      let query = supabase
+        .from('presentation_templates')
+        .select('*')
+        .or('is_public.eq.true,is_system_template.eq.true');
+      
+      // Apply industry filter
+      if (industryFilter) {
+        query = query.eq('industry', industryFilter);
       }
-    },
-    {
-      id: 'community-2',
-      name: 'Healthcare Essentials',
-      description: 'HIPAA-ready medical presentation template',
-      category: 'healthcare',
-      preview: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
-      colors: { primary: '#11998e', secondary: '#38ef7d', accent: '#06b6d4' },
-      slides: 14,
-      features: ['HIPAA Ready', 'Data Charts', 'Patient Journey'],
-      author: { name: 'MedTech Pro', isPremium: true },
-      stats: { views: 8900, downloads: 2100, likes: 650 },
-      tags: ['healthcare', 'medical', 'hipaa'],
-      isAIGenerated: true,
-      isPremium: true,
-      isPublic: true,
-      createdAt: '2025-01-14',
-      templateData: {
-        id: 'community-2',
-        name: 'Healthcare Essentials',
-        description: 'HIPAA-ready medical template',
-        category: 'healthcare',
-        theme: {
-          id: 'healthcare-theme',
-          name: 'Healthcare',
-          colors: { primary: '#11998e', secondary: '#38ef7d', accent: '#06b6d4', background: '#f0fdfa', foreground: '#134e4a', muted: '#ccfbf1', card: '#fff', cardForeground: '#134e4a', border: '#99f6e4' },
-          fonts: { heading: { family: 'Inter', weight: 700 }, body: { family: 'Inter', weight: 400 }, accent: { family: 'Inter', weight: 600 } },
-          spacing: 'normal',
-          borderRadius: 'medium',
-          shadows: true
-        },
-        slideLayouts: []
+      
+      // Apply segment filter
+      if (segmentFilter) {
+        query = query.eq('segment', segmentFilter);
       }
-    },
-    {
-      id: 'community-3',
-      name: 'Creative Agency',
-      description: 'Bold, vibrant designs for creative professionals',
-      category: 'creative',
-      preview: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-      colors: { primary: '#f093fb', secondary: '#f5576c', accent: '#4facfe' },
-      slides: 10,
-      features: ['Animations', 'Portfolio', 'Case Study'],
-      author: { name: 'DesignHub' },
-      stats: { views: 15200, downloads: 4500, likes: 1200 },
-      tags: ['creative', 'agency', 'portfolio'],
-      isAIGenerated: false,
-      isPremium: false,
-      isPublic: true,
-      createdAt: '2025-01-13',
-      templateData: {
-        id: 'community-3',
-        name: 'Creative Agency',
-        description: 'Bold creative designs',
-        category: 'creative',
-        theme: {
-          id: 'creative-theme',
-          name: 'Creative',
-          colors: { primary: '#f093fb', secondary: '#f5576c', accent: '#4facfe', background: '#fff', foreground: '#1a1a2e', muted: '#fdf4ff', card: '#fff', cardForeground: '#1a1a2e', border: '#f5d0fe' },
-          fonts: { heading: { family: 'Playfair Display', weight: 700 }, body: { family: 'Inter', weight: 400 }, accent: { family: 'Inter', weight: 600 } },
-          spacing: 'relaxed',
-          borderRadius: 'large',
-          shadows: true
-        },
-        slideLayouts: []
+      
+      // Apply content type filter
+      if (contentTypeFilter && contentTypeFilter.length > 0) {
+        query = query.overlaps('content_types', contentTypeFilter);
       }
-    },
-    {
-      id: 'community-4',
-      name: 'Tech Startup',
-      description: 'Futuristic dark theme for tech companies',
-      category: 'tech',
-      preview: 'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)',
-      colors: { primary: '#6366f1', secondary: '#8b5cf6', accent: '#22d3ee' },
-      slides: 12,
-      features: ['Dark Mode', 'Code Blocks', 'Tech Icons'],
-      author: { name: 'TechVision', isPremium: true },
-      stats: { views: 11000, downloads: 3800, likes: 980 },
-      tags: ['tech', 'startup', 'dark'],
-      isAIGenerated: true,
-      isPremium: false,
-      isPublic: true,
-      createdAt: '2025-01-12',
-      templateData: {
-        id: 'community-4',
-        name: 'Tech Startup',
-        description: 'Futuristic dark theme',
-        category: 'tech',
-        theme: {
-          id: 'tech-theme',
-          name: 'Tech Dark',
-          colors: { primary: '#6366f1', secondary: '#8b5cf6', accent: '#22d3ee', background: '#0f0c29', foreground: '#e2e8f0', muted: '#1e1b4b', card: '#1e1b4b', cardForeground: '#e2e8f0', border: '#3730a3' },
-          fonts: { heading: { family: 'Inter', weight: 700 }, body: { family: 'Inter', weight: 400 }, accent: { family: 'Fira Code', weight: 500 } },
-          spacing: 'normal',
-          borderRadius: 'medium',
-          shadows: true
+      
+      const { data, error } = await query.order('downloads_count', { ascending: false });
+      
+      if (error) throw error;
+      
+      // Transform database records to CommunityTemplate format
+      const transformed: CommunityTemplate[] = (data || []).map(row => ({
+        id: row.id,
+        name: row.name,
+        description: row.description || '',
+        category: row.category,
+        preview: row.preview_gradient || 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)',
+        colors: {
+          primary: row.primary_color,
+          secondary: row.secondary_color,
+          accent: row.accent_color
         },
-        slideLayouts: []
-      }
+        slides: row.slide_count || 10,
+        features: row.features || [],
+        author: {
+          name: row.is_system_template ? 'Genie AI' : 'Community',
+          isPremium: row.is_premium
+        },
+        stats: {
+          views: row.views_count || 0,
+          downloads: row.downloads_count || 0,
+          likes: row.likes_count || 0
+        },
+        tags: row.tags || [],
+        isAIGenerated: row.is_ai_generated || false,
+        isPremium: row.is_premium || false,
+        isPublic: row.is_public || true,
+        createdAt: row.created_at,
+        templateData: {
+          id: row.id,
+          name: row.name,
+          description: row.description || '',
+          category: (row.category as 'business' | 'creative' | 'education' | 'healthcare' | 'minimal' | 'tech') || 'business',
+          theme: {
+            id: `${row.id}-theme`,
+            name: row.name,
+            colors: {
+              primary: row.primary_color,
+              secondary: row.secondary_color,
+              accent: row.accent_color,
+              background: '#ffffff',
+              foreground: '#1f2937',
+              muted: '#f3f4f6',
+              card: '#ffffff',
+              cardForeground: '#1f2937',
+              border: '#e5e7eb'
+            },
+            fonts: {
+              heading: { family: row.heading_font || 'Inter', weight: 700 },
+              body: { family: row.body_font || 'Inter', weight: 400 },
+              accent: { family: row.heading_font || 'Inter', weight: 600 }
+            },
+            spacing: 'normal',
+            borderRadius: 'medium',
+            shadows: true
+          },
+          slideLayouts: []
+        }
+      }));
+      
+      setTemplates(transformed);
+    } catch (error) {
+      console.error('Failed to fetch templates:', error);
+      toast.error('Failed to load templates');
+    } finally {
+      setIsLoading(false);
     }
-  ];
+  }, [industryFilter, segmentFilter, contentTypeFilter]);
+
+  // Fetch user's saved templates
+  const fetchSavedTemplates = useCallback(async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      
+      const { data } = await supabase
+        .from('user_saved_templates')
+        .select('template_id')
+        .eq('user_id', user.id);
+      
+      if (data) {
+        setSavedTemplates(data.map(d => d.template_id));
+      }
+    } catch (error) {
+      console.error('Failed to fetch saved templates:', error);
+    }
+  }, []);
 
   useEffect(() => {
-    // Load templates (mock for now)
-    setTemplates(mockTemplates);
-  }, []);
+    fetchTemplates();
+    fetchSavedTemplates();
+  }, [fetchTemplates, fetchSavedTemplates]);
 
   const filteredTemplates = templates.filter(t => {
     const matchesCategory = activeCategory === 'all' || 
@@ -292,29 +279,83 @@ export function TemplateRepository({
 
     setIsLoading(true);
     try {
-      // Would save to database here
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('Please sign in to save templates');
+        return;
+      }
+
+      const insertData = {
+        name: saveConfig.name.trim(),
+        description: saveConfig.description.trim(),
+        category: currentTemplate.category || 'business',
+        industry: industryFilter || null,
+        segment: segmentFilter || null,
+        content_types: contentTypeFilter || [],
+        primary_color: currentTemplate.theme?.colors?.primary || '#3b82f6',
+        secondary_color: currentTemplate.theme?.colors?.secondary || '#8b5cf6',
+        accent_color: currentTemplate.theme?.colors?.accent || '#f59e0b',
+        heading_font: currentTemplate.theme?.fonts?.heading?.family || 'Inter',
+        body_font: currentTemplate.theme?.fonts?.body?.family || 'Inter',
+        features: [] as string[],
+        template_data: JSON.parse(JSON.stringify(currentTemplate)) as Json,
+        theme_data: JSON.parse(JSON.stringify(currentTemplate.theme || {})) as Json,
+        tags: saveConfig.tags.split(',').map(t => t.trim()).filter(Boolean),
+        is_ai_generated: true,
+        is_public: saveConfig.isPublic,
+        is_premium: false,
+        created_by: user.id
+      };
+
+      const { error } = await supabase.from('presentation_templates').insert([insertData]);
+
+      if (error) throw error;
+
       toast.success(`Template "${saveConfig.name}" saved to repository!`);
       setShowSaveDialog(false);
       setSaveConfig({ name: '', description: '', tags: '', isPublic: true });
+      fetchTemplates(); // Refresh list
       
       if (onSaveTemplate) {
         onSaveTemplate(currentTemplate, saveConfig.isPublic);
       }
     } catch (error) {
+      console.error('Failed to save template:', error);
       toast.error('Failed to save template');
     } finally {
       setIsLoading(false);
     }
-  }, [currentTemplate, saveConfig, onSaveTemplate]);
+  }, [currentTemplate, saveConfig, onSaveTemplate, industryFilter, segmentFilter, contentTypeFilter, fetchTemplates]);
 
-  const toggleSaved = (templateId: string) => {
-    setSavedTemplates(prev => 
-      prev.includes(templateId) 
-        ? prev.filter(id => id !== templateId)
-        : [...prev, templateId]
-    );
-    toast.success(savedTemplates.includes(templateId) ? 'Removed from saved' : 'Added to saved');
-  };
+  const toggleSaved = useCallback(async (templateId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('Please sign in to save templates');
+        return;
+      }
+
+      const isSaved = savedTemplates.includes(templateId);
+      
+      if (isSaved) {
+        await supabase
+          .from('user_saved_templates')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('template_id', templateId);
+        setSavedTemplates(prev => prev.filter(id => id !== templateId));
+        toast.success('Removed from saved');
+      } else {
+        await supabase
+          .from('user_saved_templates')
+          .insert({ user_id: user.id, template_id: templateId });
+        setSavedTemplates(prev => [...prev, templateId]);
+        toast.success('Added to saved');
+      }
+    } catch (error) {
+      toast.error('Failed to update saved templates');
+    }
+  }, [savedTemplates]);
 
   const formatNumber = (num: number) => {
     if (num >= 1000) return `${(num / 1000).toFixed(1)}k`;
