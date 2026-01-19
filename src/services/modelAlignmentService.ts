@@ -29,7 +29,31 @@ export type ContentCategory =
   | 'investor-pitch'
   | 'conference'
   | 'training'
-  | 'internal';
+  | 'internal'
+  // EXPANDED CATEGORIES
+  | 'oil-gas'
+  | 'pharma'
+  | 'biotech'
+  | 'startup'
+  | 'travel'
+  | 'hospitality'
+  | 'veterinary'
+  | 'pets'
+  | 'hospitals'
+  | 'clinics'
+  | 'nursing'
+  | 'manufacturing'
+  | 'retail'
+  | 'logistics'
+  | 'real-estate'
+  | 'legal'
+  | 'government'
+  | 'nonprofit'
+  | 'energy'
+  | 'automotive'
+  | 'aerospace'
+  | 'agriculture'
+  | 'consulting';
 
 export type ContentSegment = 
   | 'executive'
@@ -611,6 +635,160 @@ export const TEMPLATE_CATEGORIES: TemplateCategory[] = [
         fontPairing: { heading: 'JetBrains Mono', body: 'Inter' },
         isPremium: true,
         tags: ['API', 'documentation', 'developer']
+      }
+    ]
+  },
+  // ==================== CONSULTING STYLE TEMPLATES ====================
+  {
+    id: 'consulting',
+    name: 'Consulting & Strategy',
+    description: 'McKinsey, BCG, Bain-style strategic templates',
+    icon: '📈',
+    templates: [
+      {
+        id: 'swot-analysis',
+        name: 'SWOT Analysis',
+        category: 'consulting',
+        segment: 'executive',
+        description: 'Strengths, Weaknesses, Opportunities, Threats',
+        slideCount: 8,
+        structure: [
+          { type: 'title', layout: 'full', hasImage: false, hasChart: false, hasTable: false },
+          { type: 'data', layout: 'grid', hasImage: false, hasChart: true, hasTable: false },
+        ],
+        dataTypes: ['comparison-matrix', 'bar-chart'],
+        colorScheme: 'corporate',
+        fontPairing: { heading: 'Montserrat', body: 'Open Sans' },
+        isPremium: true,
+        tags: ['swot', 'analysis', 'strategy', 'mckinsey']
+      },
+      {
+        id: 'funnel-analysis',
+        name: 'Funnel Analysis',
+        category: 'consulting',
+        segment: 'executive',
+        description: 'Sales/conversion funnel visualization',
+        slideCount: 10,
+        structure: [
+          { type: 'title', layout: 'full', hasImage: false, hasChart: false, hasTable: false },
+          { type: 'data', layout: 'full', hasImage: false, hasChart: true, hasTable: false },
+        ],
+        dataTypes: ['funnel', 'bar-chart', 'line-chart'],
+        colorScheme: 'professional',
+        fontPairing: { heading: 'DM Sans', body: 'Inter' },
+        isPremium: true,
+        tags: ['funnel', 'sales', 'conversion', 'bcg']
+      },
+      {
+        id: 'pyramid-framework',
+        name: 'Pyramid Framework',
+        category: 'consulting',
+        segment: 'executive',
+        description: 'Hierarchical pyramid diagrams',
+        slideCount: 8,
+        structure: [
+          { type: 'title', layout: 'full', hasImage: false, hasChart: false, hasTable: false },
+          { type: 'data', layout: 'full', hasImage: false, hasChart: true, hasTable: false },
+        ],
+        dataTypes: ['infographic', 'process-flow'],
+        colorScheme: 'corporate',
+        fontPairing: { heading: 'Inter', body: 'Inter' },
+        isPremium: true,
+        tags: ['pyramid', 'framework', 'hierarchy', 'bain']
+      },
+      {
+        id: 'gartner-quadrant',
+        name: 'Gartner Magic Quadrant',
+        category: 'consulting',
+        segment: 'executive',
+        description: 'Market positioning quadrant analysis',
+        slideCount: 6,
+        structure: [
+          { type: 'title', layout: 'full', hasImage: false, hasChart: false, hasTable: false },
+          { type: 'data', layout: 'grid', hasImage: false, hasChart: true, hasTable: false },
+        ],
+        dataTypes: ['scatter-plot', 'comparison-matrix'],
+        colorScheme: 'minimal',
+        fontPairing: { heading: 'IBM Plex Sans', body: 'IBM Plex Sans' },
+        isPremium: true,
+        tags: ['gartner', 'quadrant', 'positioning', 'market']
+      }
+    ]
+  },
+  // ==================== INDUSTRY SPECIFIC ====================
+  {
+    id: 'industry',
+    name: 'Industry Specific',
+    description: 'Oil & Gas, Pharma, Biotech, Travel, Hospitality',
+    icon: '🏭',
+    templates: [
+      {
+        id: 'oil-gas-report',
+        name: 'Oil & Gas Report',
+        category: 'oil-gas',
+        segment: 'executive',
+        description: 'Energy sector presentations',
+        slideCount: 15,
+        structure: [
+          { type: 'title', layout: 'full', hasImage: true, hasChart: false, hasTable: false },
+          { type: 'data', layout: 'full', hasImage: false, hasChart: true, hasTable: true },
+        ],
+        dataTypes: ['line-chart', 'bar-chart', 'map', 'table'],
+        colorScheme: 'corporate',
+        fontPairing: { heading: 'Roboto', body: 'Roboto' },
+        isPremium: false,
+        tags: ['oil', 'gas', 'energy', 'petroleum']
+      },
+      {
+        id: 'pharma-biotech',
+        name: 'Pharma & Biotech',
+        category: 'pharma',
+        segment: 'healthcare-professional',
+        description: 'Drug development and research presentations',
+        slideCount: 18,
+        structure: [
+          { type: 'title', layout: 'full', hasImage: true, hasChart: false, hasTable: false },
+          { type: 'data', layout: 'full', hasImage: false, hasChart: true, hasTable: true },
+        ],
+        dataTypes: ['timeline', 'bar-chart', 'line-chart', 'table'],
+        colorScheme: 'medical',
+        fontPairing: { heading: 'Lato', body: 'Open Sans' },
+        isPremium: true,
+        tags: ['pharma', 'biotech', 'drug', 'clinical']
+      },
+      {
+        id: 'travel-hospitality',
+        name: 'Travel & Hospitality',
+        category: 'travel',
+        segment: 'general-audience',
+        description: 'Hotels, tourism, travel industry',
+        slideCount: 12,
+        structure: [
+          { type: 'title', layout: 'full', hasImage: true, hasChart: false, hasTable: false },
+          { type: 'content', layout: 'split', hasImage: true, hasChart: false, hasTable: false },
+        ],
+        dataTypes: ['infographic', 'map', 'bar-chart'],
+        colorScheme: 'warm',
+        fontPairing: { heading: 'Poppins', body: 'Open Sans' },
+        isPremium: false,
+        tags: ['travel', 'hospitality', 'hotel', 'tourism']
+      },
+      {
+        id: 'veterinary-pets',
+        name: 'Veterinary & Pets',
+        category: 'veterinary',
+        segment: 'general-audience',
+        description: 'Animal care and veterinary presentations',
+        slideCount: 10,
+        structure: [
+          { type: 'title', layout: 'full', hasImage: true, hasChart: false, hasTable: false },
+          { type: 'content', layout: 'split', hasImage: true, hasChart: false, hasTable: false },
+        ],
+        dataTypes: ['infographic', 'process-flow'],
+        colorScheme: 'nature',
+        fontPairing: { heading: 'Nunito', body: 'Open Sans' },
+        isPremium: false,
+        tags: ['veterinary', 'pets', 'animal', 'care']
       }
     ]
   }
