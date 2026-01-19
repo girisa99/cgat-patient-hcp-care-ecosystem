@@ -43,6 +43,22 @@ export { SlideEnhancerPanel } from './SlideEnhancerPanel';
 export type { SlideEnhancementType } from './SlideEnhancerPanel';
 export { RealTimeSlideStreamer } from './RealTimeSlideStreamer';
 
+// Enhanced Template Workflow
+export { 
+  EnhancedTemplateWorkflow,
+  COLLATERAL_TYPES,
+  INDUSTRY_CATEGORIES,
+  CONSULTING_TEMPLATES,
+  AI_MODELS,
+  THEME_PRESETS,
+  type CollateralType,
+  type IndustryCategory,
+  type ConsultingTemplate,
+  type BrandConfig,
+  type AIModelConfig,
+  type FinalWorkflowConfig,
+} from './EnhancedTemplateWorkflow';
+
 // Agent architecture definitions
 export { 
   AGENT_TYPES, 
