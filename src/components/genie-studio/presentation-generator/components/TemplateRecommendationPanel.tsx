@@ -64,14 +64,21 @@ const STYLE_ICONS: Record<TemplateStyle, React.ElementType> = {
   'mixed-adaptive': Sparkles,
 };
 
-// Firm colors
-const FIRM_COLORS: Record<string, string> = {
-  mckinsey: 'bg-blue-500/10 text-blue-600 border-blue-200',
-  bcg: 'bg-green-500/10 text-green-600 border-green-200',
-  bain: 'bg-red-500/10 text-red-600 border-red-200',
-  deloitte: 'bg-emerald-500/10 text-emerald-600 border-emerald-200',
-  kpmg: 'bg-purple-500/10 text-purple-600 border-purple-200',
-  generic: 'bg-gray-500/10 text-gray-600 border-gray-200',
+// Framework category colors (using generic names)
+const FRAMEWORK_COLORS: Record<string, string> = {
+  'tier1-strategy': 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-700',
+  'tier1-growth': 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-700',
+  'tier1-operations': 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-700',
+  'universal': 'bg-violet-500/10 text-violet-700 dark:text-violet-400 border-violet-200 dark:border-violet-700',
+  'custom': 'bg-slate-500/10 text-slate-700 dark:text-slate-400 border-slate-200 dark:border-slate-700',
+};
+
+// Framework category labels
+const FRAMEWORK_LABELS: Record<string, { name: string; description: string }> = {
+  'tier1-strategy': { name: 'Strategy Frameworks', description: 'Strategic alignment & planning' },
+  'tier1-growth': { name: 'Growth Frameworks', description: 'Portfolio & competitive analysis' },
+  'tier1-operations': { name: 'Operations Frameworks', description: 'Customer & execution focus' },
+  'universal': { name: 'Universal Frameworks', description: 'Industry-standard methodologies' },
 };
 
 interface TemplateRecommendationPanelProps {
@@ -251,7 +258,7 @@ export const TemplateRecommendationPanel: React.FC<TemplateRecommendationPanelPr
           <div className="grid grid-cols-1 gap-2 max-h-[200px] overflow-y-auto">
             {recommendation.templates.map(template => {
               const isSelected = selectedTemplateId === template.id;
-              const firmColor = FIRM_COLORS[template.subCategory || template.category] || FIRM_COLORS.generic;
+              const categoryColor = FRAMEWORK_COLORS[template.subCategory || template.category] || FRAMEWORK_COLORS.universal;
               
               return (
                 <div
@@ -263,12 +270,12 @@ export const TemplateRecommendationPanel: React.FC<TemplateRecommendationPanelPr
                   )}
                   onClick={() => handleTemplateClick(template)}
                 >
-                  <div className={cn("p-2 rounded-md border", firmColor)}>
+                  <div className={cn("p-2 rounded-md border", categoryColor)}>
                     <PieChart className="h-4 w-4" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium truncate">{template.name}</p>
+                      <p className="text-sm font-medium truncate text-foreground">{template.name}</p>
                       <Badge variant="outline" className="text-[9px] shrink-0">
                         {template.matchScore}% match
                       </Badge>
@@ -288,38 +295,41 @@ export const TemplateRecommendationPanel: React.FC<TemplateRecommendationPanelPr
           </div>
         </div>
 
-        {/* Consulting Frameworks Section */}
+        {/* Framework Library Section - Using Generic Names */}
         {(recommendation.style === 'pure-consulting' || recommendation.style === 'consulting-hybrid') && (
           <>
             <Separator />
             <div className="space-y-2">
-              <p className="text-xs font-medium">Consulting Frameworks Library</p>
+              <p className="text-xs font-medium text-foreground">Framework Library</p>
               <div className="grid grid-cols-2 gap-2">
-                {['mckinsey', 'bcg', 'bain', 'generic'].map(firm => {
-                  const firmFrameworks = CONSULTING_FRAMEWORKS.filter(f => f.firm === firm);
-                  const firmColor = FIRM_COLORS[firm];
+                {Object.entries(FRAMEWORK_LABELS).map(([firmKey, { name, description }]) => {
+                  const firmFrameworks = CONSULTING_FRAMEWORKS.filter(f => f.firm === firmKey);
+                  const firmColor = FRAMEWORK_COLORS[firmKey];
+                  
+                  if (firmFrameworks.length === 0) return null;
                   
                   return (
-                    <Dialog key={firm}>
+                    <Dialog key={firmKey}>
                       <DialogTrigger asChild>
                         <Button
                           variant="outline"
                           size="sm"
                           className={cn("h-auto py-2 flex-col items-start gap-1", firmColor)}
                         >
-                          <span className="text-xs font-medium capitalize">{firm}</span>
-                          <span className="text-[10px] opacity-70">{firmFrameworks.length} frameworks</span>
+                          <span className="text-xs font-medium">{name}</span>
+                          <span className="text-[10px] opacity-80">{firmFrameworks.length} templates</span>
                         </Button>
                       </DialogTrigger>
                       <DialogContent className="max-w-md">
                         <DialogHeader>
-                          <DialogTitle className="capitalize">{firm} Frameworks</DialogTitle>
+                          <DialogTitle>{name}</DialogTitle>
+                          <p className="text-xs text-muted-foreground">{description}</p>
                         </DialogHeader>
                         <div className="space-y-2 max-h-[400px] overflow-y-auto">
                           {firmFrameworks.map(framework => (
                             <div
                               key={framework.id}
-                              className="p-3 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors"
+                              className="p-3 rounded-lg border border-border bg-card hover:bg-muted/50 cursor-pointer transition-colors"
                               onClick={() => {
                                 handleTemplateClick({
                                   id: framework.id,
@@ -333,14 +343,14 @@ export const TemplateRecommendationPanel: React.FC<TemplateRecommendationPanelPr
                               }}
                             >
                               <div className="flex items-center justify-between mb-2">
-                                <p className="font-medium text-sm">{framework.name}</p>
+                                <p className="font-medium text-sm text-foreground">{framework.name}</p>
                                 <Badge variant="outline" className="text-[10px]">
                                   {framework.visualStyle}
                                 </Badge>
                               </div>
                               <div className="flex flex-wrap gap-1">
                                 {framework.frameworks.map(f => (
-                                  <Badge key={f} variant="secondary" className="text-[10px]">
+                                  <Badge key={f} variant="secondary" className="text-[10px] text-foreground">
                                     {f}
                                   </Badge>
                                 ))}
@@ -357,23 +367,30 @@ export const TemplateRecommendationPanel: React.FC<TemplateRecommendationPanelPr
           </>
         )}
 
-        {/* Sub-Options for Training, etc. */}
+        {/* Sub-Options with IMPROVED STYLING */}
         {recommendation.subOptions && recommendation.subOptions.length > 0 && (
           <>
             <Separator />
-            <div className="space-y-2">
-              <p className="text-xs font-medium">Output Format Options</p>
-              <div className="flex flex-wrap gap-1.5">
+            <div className="space-y-3">
+              <p className="text-xs font-medium text-foreground">Output Format Options</p>
+              <div className="grid grid-cols-2 gap-2">
                 {recommendation.subOptions.map(option => (
-                  <Badge
+                  <div
                     key={option.id}
-                    variant="outline"
-                    className="cursor-pointer hover:bg-primary/10 text-[10px] py-1"
+                    className={cn(
+                      "flex items-center gap-2 p-2.5 rounded-lg border border-border bg-card",
+                      "cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-all"
+                    )}
                     onClick={() => toast.info(`Selected: ${option.label}`)}
                   >
-                    {option.label}
-                    <ChevronRight className="h-2.5 w-2.5 ml-1" />
-                  </Badge>
+                    <div className="p-1.5 rounded-md bg-primary/10">
+                      <ChevronRight className="h-3 w-3 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-foreground truncate">{option.label}</p>
+                      <p className="text-[10px] text-muted-foreground truncate">{option.description}</p>
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
