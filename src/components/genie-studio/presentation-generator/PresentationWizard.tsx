@@ -1301,10 +1301,10 @@ export function PresentationWizard({
                       setBrandConfig(config.brandConfig);
                     }
                     if (config.aiRecommendation) {
-                      // Apply AI recommendations
-                      setSelectedAIModel(config.aiRecommendation.textModel.id);
+                      // Apply AI recommendations - textModel/imageModel are strings
+                      setSelectedAIModel(config.aiRecommendation.textModel);
                       if (config.aiRecommendation.imageModel) {
-                        setImageModel(config.aiRecommendation.imageModel.id as any);
+                        setImageModel(config.aiRecommendation.imageModel as any);
                       }
                     }
                     // Map collateral type
