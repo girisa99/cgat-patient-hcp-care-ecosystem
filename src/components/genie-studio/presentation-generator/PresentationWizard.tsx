@@ -1343,24 +1343,26 @@ export function PresentationWizard({
               </Card>
             )}
 
-            {/* Step 1: Industry, Segment & Collateral Type - Redesigned */}
+            {/* Step 1: Industry, Segment & Collateral Type */}
             {currentStep === 1 && (
-              <div className="space-y-6">
+              <div className="space-y-4">
                 {/* Step Header */}
                 <div className="flex items-center gap-3 p-4 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20">
-                  <div className="p-2.5 rounded-lg bg-primary/10">
+                  <div className="p-2 rounded-lg bg-primary/10">
                     <Presentation className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-base">Configure Your Presentation</h3>
-                    <p className="text-sm text-muted-foreground">
+                    <h3 className="font-semibold text-sm">Configure Your Presentation</h3>
+                    <p className="text-xs text-muted-foreground">
                       AI models will be optimized based on your selections
                     </p>
                   </div>
                 </div>
 
-                {/* Two Column Layout for Dropdowns */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Industry & Segment Card */}
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Industry Dropdown */}
                   <div className="space-y-2">
                     <Label className="text-sm font-medium flex items-center gap-2">
@@ -1475,9 +1477,11 @@ export function PresentationWizard({
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
+                    </div>
+                  </CardContent>
+                </Card>
 
-                {/* Content Type Selection - New Component */}
+                {/* Content Type Selection */}
                 <ContentTypeSelector
                   contentCategory={contentCategory}
                   setContentCategory={setContentCategory}
