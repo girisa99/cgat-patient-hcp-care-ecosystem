@@ -150,6 +150,35 @@ export const AGENT_TYPES = {
 
 export type AgentType = typeof AGENT_TYPES[keyof typeof AGENT_TYPES];
 
+// Architecture types for agent classification
+export type AgentArchitectureType = 'single' | 'agentic' | 'a2a';
+
+export const ARCHITECTURE_TYPE_INFO: Record<AgentArchitectureType, {
+  label: string;
+  description: string;
+  color: string;
+  icon: string;
+}> = {
+  single: {
+    label: 'Single Agent',
+    description: 'Simple task execution without complex reasoning',
+    color: 'bg-blue-500/20 text-blue-600 border-blue-500/30',
+    icon: 'bot',
+  },
+  agentic: {
+    label: 'Agentic AI',
+    description: 'Autonomous reasoning with tool use capabilities',
+    color: 'bg-purple-500/20 text-purple-600 border-purple-500/30',
+    icon: 'brain',
+  },
+  a2a: {
+    label: 'A2A Protocol',
+    description: 'Agent-to-Agent communication and orchestration',
+    color: 'bg-orange-500/20 text-orange-600 border-orange-500/30',
+    icon: 'network',
+  },
+};
+
 export interface AgentConfig {
   type: AgentType;
   name: string;
@@ -157,6 +186,8 @@ export interface AgentConfig {
   capabilities: string[];
   defaultModel: string;
   supportsStreaming: boolean;
+  architectureType: AgentArchitectureType;
+  providers?: string[]; // Which AI providers this agent can use
 }
 
 export const AGENT_CATALOG: Record<AgentType, AgentConfig> = {
@@ -167,6 +198,8 @@ export const AGENT_CATALOG: Record<AgentType, AgentConfig> = {
     capabilities: ['task_distribution', 'progress_tracking', 'error_recovery', 'parallel_execution'],
     defaultModel: 'google/gemini-3-flash-preview',
     supportsStreaming: false,
+    architectureType: 'a2a',
+    providers: ['gemini', 'openai', 'claude'],
   },
   [AGENT_TYPES.CONTENT_GENERATOR]: {
     type: 'slide_generator',
@@ -175,6 +208,8 @@ export const AGENT_CATALOG: Record<AgentType, AgentConfig> = {
     capabilities: ['text_generation', 'slide_structure', 'speaker_notes', 'topic_segmentation'],
     defaultModel: 'google/gemini-3-flash-preview',
     supportsStreaming: true,
+    architectureType: 'agentic',
+    providers: ['gemini', 'openai', 'claude', 'deepseek'],
   },
   [AGENT_TYPES.IMAGE_GENERATOR]: {
     type: 'image_generator',
@@ -183,6 +218,8 @@ export const AGENT_CATALOG: Record<AgentType, AgentConfig> = {
     capabilities: ['ai_images', 'infographics', 'charts', 'journey_maps', 'content_type_decision'],
     defaultModel: 'google/gemini-2.5-flash-image-preview',
     supportsStreaming: false,
+    architectureType: 'agentic',
+    providers: ['gemini', 'openai', 'stability', 'replicate'],
   },
   [AGENT_TYPES.TRANSLATOR]: {
     type: 'translator',
@@ -191,6 +228,8 @@ export const AGENT_CATALOG: Record<AgentType, AgentConfig> = {
     capabilities: ['translation', 'cultural_adaptation', 'rtl_support', 'terminology_consistency'],
     defaultModel: 'google/gemini-3-flash-preview',
     supportsStreaming: true,
+    architectureType: 'agentic',
+    providers: ['gemini', 'openai', 'deepl', 'google_translate'],
   },
   [AGENT_TYPES.ANALYZER]: {
     type: 'content_analyzer',
@@ -199,6 +238,8 @@ export const AGENT_CATALOG: Record<AgentType, AgentConfig> = {
     capabilities: ['quality_scoring', 'confidence_calculation', 'comparison_analysis', 'issue_detection'],
     defaultModel: 'google/gemini-3-flash-preview',
     supportsStreaming: false,
+    architectureType: 'single',
+    providers: ['gemini', 'openai'],
   },
   [AGENT_TYPES.ENHANCER]: {
     type: 'enhancer',
@@ -207,14 +248,18 @@ export const AGENT_CATALOG: Record<AgentType, AgentConfig> = {
     capabilities: ['rewrite', 'expand', 'summarize', 'polish', 'transitions', 'brand_voice'],
     defaultModel: 'google/gemini-3-flash-preview',
     supportsStreaming: true,
+    architectureType: 'agentic',
+    providers: ['gemini', 'openai', 'claude'],
   },
   [AGENT_TYPES.VOICEOVER]: {
     type: 'voiceover',
     name: 'Voiceover Agent',
     description: 'Generates AI voiceovers for presentations',
     capabilities: ['tts_generation', 'voice_selection', 'pacing_control', 'multi_language'],
-    defaultModel: 'openai',
+    defaultModel: 'elevenlabs',
     supportsStreaming: false,
+    architectureType: 'single',
+    providers: ['elevenlabs', 'openai', 'google', 'azure', 'aws'],
   },
 };
 
