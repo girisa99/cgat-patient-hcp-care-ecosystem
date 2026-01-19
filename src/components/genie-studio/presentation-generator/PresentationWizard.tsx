@@ -93,7 +93,7 @@ import { translationService } from '@/services/translationService';
 import { SlideCard } from './SlideCard';
 import { ComplianceChecker } from './ComplianceChecker';
 import { TemplateThemeSelector, TEMPLATES } from './TemplateThemeSelector';
-import { BrandingCustomizer, BrandConfig, DEFAULT_BRAND_CONFIG } from './BrandingCustomizer';
+import { BrandingCustomizer, DEFAULT_BRAND_CONFIG } from './BrandingCustomizer';
 import { MultiLanguageGenerator, useMultiLanguageGeneration, SUPPORTED_LANGUAGES, LanguageGenerationStatus } from './MultiLanguageGenerator';
 import { TableEditor, ChartEditor } from './TableChartEditor';
 import { DraggableSlideLayout, LayoutElement } from './DraggableSlideLayout';
@@ -107,6 +107,17 @@ import { RealTimeSlideStreamer } from './RealTimeSlideStreamer';
 import { useAgentPresentationGenerator, LanguageGenerationState } from '@/hooks/useAgentPresentationGenerator';
 import { LanguageModelConfig } from '@/services/agentPresentationGeneratorService';
 import { AGENT_CATALOG, AGENT_TYPES } from './AgentArchitecture';
+import { 
+  EnhancedTemplateWorkflow,
+  COLLATERAL_TYPES,
+  INDUSTRY_CATEGORIES,
+  CONSULTING_TEMPLATES,
+  SEGMENTS,
+  getRecommendedProviders,
+  type FinalWorkflowConfig,
+  type AIModelConfig,
+} from './EnhancedTemplateWorkflow';
+import { BrandConfig } from './BrandingCustomizer';
 import { AgentSelectorDialog, AgentCard, AgentModelConfig } from './AgentSelectorDialog';
 import { InlineTrainAIFeedback } from '../InlineTrainAIFeedback';
 import { 
