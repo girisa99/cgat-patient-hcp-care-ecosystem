@@ -166,79 +166,76 @@ export const TemplateRecommendationPanel: React.FC<TemplateRecommendationPanelPr
   return (
     <Card className="border-primary/20">
       <CardHeader className="pb-3">
-        <CardTitle className="text-sm flex items-center gap-2">
-          <Wand2 className="h-4 w-4 text-primary" />
-          AI Template Recommendations
-          <Badge variant="outline" className="ml-auto text-[10px]">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Wand2 className="h-4 w-4 text-primary" />
+            AI Template Recommendations
+          </CardTitle>
+          <Badge variant="outline" className="text-xs">
             {recommendation.confidence}% confidence
           </Badge>
-        </CardTitle>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Reasoning */}
-        <div className="p-3 rounded-lg bg-muted/50 border border-dashed">
-          <div className="flex items-start gap-2">
-            <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-            <p className="text-xs text-muted-foreground">{recommendation.reasoning}</p>
+        {/* Reasoning - Clean Card */}
+        <div className="p-4 rounded-xl bg-muted/50 border">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-lg bg-primary/10 shrink-0">
+              <Info className="h-4 w-4 text-primary" />
+            </div>
+            <p className="text-sm text-muted-foreground leading-relaxed">{recommendation.reasoning}</p>
           </div>
         </div>
 
-        {/* Weight Visualization */}
-        <div className="grid grid-cols-3 gap-3">
-          <div className="space-y-1">
-            <div className="flex items-center justify-between text-[10px]">
-              <span className="text-muted-foreground">Consulting</span>
-              <span className="font-medium">{recommendation.consultingWeight}%</span>
+        {/* Weight Visualization - Clean Grid */}
+        <div className="grid grid-cols-3 gap-4 p-4 rounded-xl bg-card border">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-muted-foreground">Consulting</span>
+              <span className="text-sm font-semibold text-foreground">{recommendation.consultingWeight}%</span>
             </div>
-            <Progress value={recommendation.consultingWeight} className="h-1.5" />
+            <Progress value={recommendation.consultingWeight} className="h-2" />
           </div>
-          <div className="space-y-1">
-            <div className="flex items-center justify-between text-[10px]">
-              <span className="text-muted-foreground">Visual</span>
-              <span className="font-medium">{recommendation.visualWeight}%</span>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-muted-foreground">Visual</span>
+              <span className="text-sm font-semibold text-foreground">{recommendation.visualWeight}%</span>
             </div>
-            <Progress value={recommendation.visualWeight} className="h-1.5" />
+            <Progress value={recommendation.visualWeight} className="h-2" />
           </div>
-          <div className="space-y-1">
-            <div className="flex items-center justify-between text-[10px]">
-              <span className="text-muted-foreground">Data</span>
-              <span className="font-medium">{recommendation.dataWeight}%</span>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-muted-foreground">Data</span>
+              <span className="text-sm font-semibold text-foreground">{recommendation.dataWeight}%</span>
             </div>
-            <Progress value={recommendation.dataWeight} className="h-1.5" />
+            <Progress value={recommendation.dataWeight} className="h-2" />
           </div>
         </div>
 
-        {/* Quick Style Selector */}
-        <div className="space-y-2">
-          <p className="text-xs font-medium">Quick Style Selection</p>
-          <div className="flex flex-wrap gap-1.5">
+        {/* Quick Style Selector - Clean Grid */}
+        <div className="space-y-3">
+          <p className="text-sm font-semibold text-foreground">Style Selection</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {quickStyles.map(({ style, label, description }) => {
               const Icon = STYLE_ICONS[style];
               const isActive = recommendation.style === style;
               
               return (
-                <TooltipProvider key={style}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant={isActive ? "default" : "outline"}
-                        size="sm"
-                        className={cn(
-                          "h-7 text-[11px] gap-1",
-                          isActive && "bg-primary"
-                        )}
-                        onClick={() => handleStyleClick(style)}
-                      >
-                        <Icon className="h-3 w-3" />
-                        {label}
-                        {isActive && <Check className="h-3 w-3 ml-1" />}
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="text-xs">{description}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <Button
+                  key={style}
+                  variant={isActive ? "default" : "outline"}
+                  size="sm"
+                  className={cn(
+                    "h-auto py-3 flex flex-col items-center gap-2",
+                    isActive && "shadow-md"
+                  )}
+                  onClick={() => handleStyleClick(style)}
+                  title={description}
+                >
+                  <Icon className="h-5 w-5" />
+                  <span className="text-xs font-medium">{label}</span>
+                  {isActive && <Check className="h-3 w-3" />}
+                </Button>
               );
             })}
           </div>
@@ -246,16 +243,16 @@ export const TemplateRecommendationPanel: React.FC<TemplateRecommendationPanelPr
 
         <Separator />
 
-        {/* Recommended Templates */}
-        <div className="space-y-2">
+        {/* Recommended Templates - Clean Card List */}
+        <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-medium">Recommended Templates</p>
-            <Badge variant="secondary" className="text-[10px]">
+            <p className="text-sm font-semibold text-foreground">Recommended Templates</p>
+            <Badge variant="secondary" className="text-xs">
               {recommendation.templates.length} matches
             </Badge>
           </div>
           
-          <div className="grid grid-cols-1 gap-2 max-h-[200px] overflow-y-auto">
+          <div className="space-y-2">
             {recommendation.templates.map(template => {
               const isSelected = selectedTemplateId === template.id;
               const categoryColor = FRAMEWORK_COLORS[template.subCategory || template.category] || FRAMEWORK_COLORS.universal;
@@ -264,31 +261,31 @@ export const TemplateRecommendationPanel: React.FC<TemplateRecommendationPanelPr
                 <div
                   key={template.id}
                   className={cn(
-                    "flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition-all",
+                    "flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all",
                     "hover:border-primary/50 hover:bg-primary/5",
-                    isSelected && "border-primary bg-primary/5 ring-1 ring-primary/20"
+                    isSelected && "border-primary bg-primary/5 shadow-sm"
                   )}
                   onClick={() => handleTemplateClick(template)}
                 >
-                  <div className={cn("p-2 rounded-md border", categoryColor)}>
-                    <PieChart className="h-4 w-4" />
+                  <div className={cn("p-3 rounded-lg border", categoryColor)}>
+                    <PieChart className="h-5 w-5" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium truncate text-foreground">{template.name}</p>
-                      <Badge variant="outline" className="text-[9px] shrink-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="text-sm font-semibold text-foreground">{template.name}</p>
+                      <Badge variant="outline" className="text-xs">
                         {template.matchScore}% match
                       </Badge>
                     </div>
-                    <div className="flex gap-1 mt-1">
-                      {template.tags.slice(0, 3).map(tag => (
-                        <Badge key={tag} variant="secondary" className="text-[9px] py-0">
+                    <div className="flex flex-wrap gap-1.5">
+                      {template.tags.slice(0, 4).map(tag => (
+                        <Badge key={tag} variant="secondary" className="text-xs">
                           {tag}
                         </Badge>
                       ))}
                     </div>
                   </div>
-                  {isSelected && <Check className="h-4 w-4 text-primary shrink-0" />}
+                  {isSelected && <Check className="h-5 w-5 text-primary shrink-0" />}
                 </div>
               );
             })}
