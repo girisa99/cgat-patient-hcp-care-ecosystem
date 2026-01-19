@@ -455,7 +455,7 @@ export function TemplateBrandingPanel({
 
   return (
     <div className={cn("space-y-4", className)}>
-      {/* Header */}
+      {/* Header - Consistent with ContentContextPanel */}
       <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5 border">
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-xl bg-primary/10">
@@ -463,43 +463,42 @@ export function TemplateBrandingPanel({
           </div>
           <div>
             <h3 className="font-semibold text-foreground">Template & Branding</h3>
-            <p className="text-sm text-muted-foreground">Choose a template and customize your brand</p>
+            <p className="text-sm text-muted-foreground">Choose template and customize branding</p>
           </div>
         </div>
-        {/* AI Default status badge */}
         {isAIDefault && (
-          <Badge variant="default" className="bg-primary gap-1">
+          <Badge variant="default" className="gap-1">
             <Bot className="h-3 w-3" />
             AI Mode
           </Badge>
         )}
       </div>
 
-      {/* Tab Navigation - Responsive Grid */}
-      <div className="grid grid-cols-3 md:grid-cols-5 gap-1 p-1.5 bg-muted/50 rounded-xl">
+      {/* Tab Navigation - Clean Grid Layout (matches category pills) */}
+      <div className="grid grid-cols-5 gap-2">
         {[
-          { id: 'ai-recommendations', label: 'AI Recommend', shortLabel: 'AI', icon: Wand2 },
-          { id: 'templates', label: 'Templates', shortLabel: 'Templates', icon: Layout },
-          { id: 'repository', label: 'Repository', shortLabel: 'Saved', icon: Layers },
-          { id: 'branding', label: 'Branding', shortLabel: 'Brand', icon: Upload },
-          { id: 'features', label: 'Features', shortLabel: 'Features', icon: Settings2 }
+          { id: 'ai-recommendations', label: 'AI Recommend', icon: Wand2 },
+          { id: 'templates', label: 'Templates', icon: Layout },
+          { id: 'repository', label: 'Saved', icon: Layers },
+          { id: 'branding', label: 'Branding', icon: Upload },
+          { id: 'features', label: 'Features', icon: Settings2 }
         ].map(tab => {
           const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
           return (
-            <button
+            <Button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as typeof activeTab)}
+              variant={isActive ? "default" : "outline"}
+              size="sm"
               className={cn(
-                "flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 px-2 sm:px-3 rounded-lg text-xs sm:text-sm font-medium transition-all",
-                activeTab === tab.id
-                  ? "bg-background text-foreground shadow-md border"
-                  : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+                "h-auto py-2.5 flex flex-col items-center gap-1.5",
+                isActive && "shadow-md"
               )}
+              onClick={() => setActiveTab(tab.id as typeof activeTab)}
             >
               <Icon className="h-4 w-4" />
-              <span className="hidden md:inline">{tab.label}</span>
-              <span className="md:hidden text-[10px]">{tab.shortLabel}</span>
-            </button>
+              <span className="text-[10px] sm:text-xs font-medium">{tab.label}</span>
+            </Button>
           );
         })}
       </div>
