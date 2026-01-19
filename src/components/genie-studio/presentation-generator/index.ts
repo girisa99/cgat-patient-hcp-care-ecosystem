@@ -27,7 +27,6 @@ export { AIProviderPanel } from './AIProviderPanel';
 export { GenerationProgressPanel } from './GenerationProgressPanel';
 export { TemplateThemeSelector, TEMPLATES, COLOR_PALETTES, FONT_OPTIONS } from './TemplateThemeSelector';
 export { BrandingCustomizer, DEFAULT_BRAND_CONFIG } from './BrandingCustomizer';
-export type { BrandConfig } from './BrandingCustomizer';
 export { TableEditor, ChartEditor } from './TableChartEditor';
 export { MultiLanguageGenerator, useMultiLanguageGeneration, SUPPORTED_LANGUAGES } from './MultiLanguageGenerator';
 export type { LanguageConfig, LanguageGenerationStatus } from './MultiLanguageGenerator';
