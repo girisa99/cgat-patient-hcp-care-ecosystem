@@ -7,6 +7,7 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { 
   Sparkles, 
   Check,
@@ -29,16 +30,94 @@ import {
   PenTool,
   ChevronDown,
   ChevronRight,
-  DollarSign,
-  PresentationIcon,
   BookMarked,
   Award,
   AlertCircle,
+  Plus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { COLLATERAL_TYPES } from './EnhancedTemplateWorkflow';
 import { FinalWorkflowConfig } from './EnhancedTemplateWorkflow';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { toast } from 'sonner';
+
+// ==========================================
+// CUSTOM OPTION INPUT COMPONENT
+// ==========================================
+
+interface CustomOptionInputProps {
+  categoryId: string;
+  onAdd: (option: { id: string; label: string; description: string }) => void;
+}
+
+const CustomOptionInput: React.FC<CustomOptionInputProps> = ({ categoryId, onAdd }) => {
+  const [isAdding, setIsAdding] = useState(false);
+  const [customLabel, setCustomLabel] = useState('');
+  
+  const handleAdd = () => {
+    if (customLabel.trim()) {
+      onAdd({
+        id: `custom-${categoryId}-${Date.now()}`,
+        label: customLabel.trim(),
+        description: 'Custom user-defined option'
+      });
+      setCustomLabel('');
+      setIsAdding(false);
+    }
+  };
+  
+  if (!isAdding) {
+    return (
+      <div
+        className="flex items-center gap-2 p-2 rounded-md border border-dashed border-primary/40 cursor-pointer hover:bg-primary/5 transition-colors col-span-2"
+        onClick={() => setIsAdding(true)}
+      >
+        <div className="p-1.5 rounded bg-primary/10 text-primary">
+          <Plus className="h-3 w-3" />
+        </div>
+        <div className="flex-1">
+          <p className="text-xs font-medium text-primary">Add Custom Option</p>
+          <p className="text-[10px] text-muted-foreground">Missing something? Add your own</p>
+        </div>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="col-span-2 p-2 rounded-md border border-primary/40 bg-primary/5 space-y-2">
+      <Input
+        placeholder="Enter custom option name..."
+        value={customLabel}
+        onChange={(e) => setCustomLabel(e.target.value)}
+        className="h-7 text-xs"
+        autoFocus
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') handleAdd();
+          if (e.key === 'Escape') { setIsAdding(false); setCustomLabel(''); }
+        }}
+      />
+      <div className="flex gap-2 justify-end">
+        <Button 
+          size="sm" 
+          variant="ghost" 
+          className="h-6 text-[10px]"
+          onClick={() => { setIsAdding(false); setCustomLabel(''); }}
+        >
+          Cancel
+        </Button>
+        <Button 
+          size="sm" 
+          className="h-6 text-[10px]"
+          onClick={handleAdd}
+          disabled={!customLabel.trim()}
+        >
+          <Plus className="h-3 w-3 mr-1" />
+          Add
+        </Button>
+      </div>
+    </div>
+  );
+};
 
 // ==========================================
 // DYNAMIC CONTENT CATEGORIES (Extensible)
@@ -60,7 +139,7 @@ export const CONTENT_CATEGORIES = [
 ];
 
 // ==========================================
-// SUB-OPTIONS FOR SPECIFIC CATEGORIES
+// SUB-OPTIONS FOR ALL CATEGORIES (Comprehensive)
 // ==========================================
 
 export const CATEGORY_SUB_OPTIONS: Record<string, Array<{
@@ -69,31 +148,116 @@ export const CATEGORY_SUB_OPTIONS: Record<string, Array<{
   description: string;
   icon: React.ElementType;
   suggestedSlides: number;
+  tags?: string[];
 }>> = {
+  // Training Options
   'training': [
-    { id: 'training-video', label: 'Training Video', description: 'Video-based learning with voiceover', icon: Video, suggestedSlides: 15 },
-    { id: 'training-manual', label: 'Training Manual', description: 'Comprehensive documentation', icon: FileText, suggestedSlides: 30 },
-    { id: 'training-quickref', label: 'Quick Reference', description: 'Condensed key points', icon: BookMarked, suggestedSlides: 8 },
-    { id: 'training-workshop', label: 'Workshop Materials', description: 'Interactive session content', icon: Users, suggestedSlides: 20 },
-    { id: 'training-elearning', label: 'E-Learning Module', description: 'Self-paced online course', icon: GraduationCap, suggestedSlides: 25 },
-    { id: 'training-certification', label: 'Certification', description: 'Formal certification program', icon: Award, suggestedSlides: 35 },
+    { id: 'training-video', label: 'Training Video', description: 'Video-based learning with voiceover', icon: Video, suggestedSlides: 15, tags: ['video', 'voiceover'] },
+    { id: 'training-manual', label: 'Training Manual', description: 'Comprehensive documentation', icon: FileText, suggestedSlides: 30, tags: ['document', 'detailed'] },
+    { id: 'training-quickref', label: 'Quick Reference', description: 'Condensed key points', icon: BookMarked, suggestedSlides: 8, tags: ['summary', 'quick'] },
+    { id: 'training-workshop', label: 'Workshop Materials', description: 'Interactive session content', icon: Users, suggestedSlides: 20, tags: ['interactive', 'hands-on'] },
+    { id: 'training-elearning', label: 'E-Learning Module', description: 'Self-paced online course', icon: GraduationCap, suggestedSlides: 25, tags: ['online', 'self-paced'] },
+    { id: 'training-certification', label: 'Certification Program', description: 'Formal certification materials', icon: Award, suggestedSlides: 35, tags: ['certification', 'formal'] },
+    { id: 'training-onboarding', label: 'Onboarding Guide', description: 'New employee/customer onboarding', icon: Users, suggestedSlides: 18, tags: ['onboarding', 'new-hire'] },
   ],
+  
+  // Investor & VC Options
   'investor': [
-    { id: 'investor-seed', label: 'Seed Pitch', description: 'Early-stage funding deck', icon: Rocket, suggestedSlides: 12 },
-    { id: 'investor-series', label: 'Series A/B Pitch', description: 'Growth-stage investment', icon: TrendingUp, suggestedSlides: 18 },
-    { id: 'investor-update', label: 'Investor Update', description: 'Monthly/quarterly report', icon: BarChart3, suggestedSlides: 10 },
-    { id: 'investor-due-diligence', label: 'Due Diligence', description: 'Comprehensive materials', icon: FileText, suggestedSlides: 40 },
+    { id: 'investor-seed', label: 'Seed Pitch', description: 'Early-stage funding deck', icon: Rocket, suggestedSlides: 12, tags: ['seed', 'early-stage'] },
+    { id: 'investor-series', label: 'Series A/B Pitch', description: 'Growth-stage investment', icon: TrendingUp, suggestedSlides: 18, tags: ['growth', 'series'] },
+    { id: 'investor-update', label: 'Investor Update', description: 'Monthly/quarterly progress report', icon: BarChart3, suggestedSlides: 10, tags: ['update', 'progress'] },
+    { id: 'investor-due-diligence', label: 'Due Diligence Package', description: 'Comprehensive investor materials', icon: FileText, suggestedSlides: 40, tags: ['due-diligence', 'comprehensive'] },
+    { id: 'investor-board', label: 'Board Deck', description: 'Board meeting presentation', icon: Users, suggestedSlides: 15, tags: ['board', 'governance'] },
+    { id: 'investor-exit', label: 'Exit Strategy', description: 'M&A or IPO presentation', icon: TrendingUp, suggestedSlides: 20, tags: ['exit', 'ma', 'ipo'] },
   ],
+  
+  // Storytelling Options
   'storytelling': [
-    { id: 'story-case', label: 'Case Study', description: 'Customer success narrative', icon: Users, suggestedSlides: 15 },
-    { id: 'story-origin', label: 'Origin Story', description: 'Company founding narrative', icon: Rocket, suggestedSlides: 12 },
-    { id: 'story-vision', label: 'Vision Story', description: 'Future state narrative', icon: Lightbulb, suggestedSlides: 10 },
-    { id: 'story-transformation', label: 'Transformation', description: 'Change journey story', icon: Zap, suggestedSlides: 18 },
+    { id: 'story-case', label: 'Case Study', description: 'Customer success narrative', icon: Users, suggestedSlides: 15, tags: ['customer', 'success'] },
+    { id: 'story-origin', label: 'Origin Story', description: 'Company founding narrative', icon: Rocket, suggestedSlides: 12, tags: ['founding', 'history'] },
+    { id: 'story-vision', label: 'Vision Story', description: 'Future state narrative', icon: Lightbulb, suggestedSlides: 10, tags: ['vision', 'future'] },
+    { id: 'story-transformation', label: 'Transformation Journey', description: 'Change journey story', icon: Zap, suggestedSlides: 18, tags: ['change', 'journey'] },
+    { id: 'story-testimonial', label: 'Testimonial Compilation', description: 'Customer testimonial stories', icon: Users, suggestedSlides: 12, tags: ['testimonial', 'social-proof'] },
+    { id: 'story-impact', label: 'Impact Report', description: 'Social/business impact narrative', icon: Target, suggestedSlides: 20, tags: ['impact', 'results'] },
   ],
+  
+  // Research Options
+  'research': [
+    { id: 'research-market', label: 'Market Research', description: 'Market analysis & sizing', icon: BarChart3, suggestedSlides: 25, tags: ['market', 'analysis'] },
+    { id: 'research-competitive', label: 'Competitive Analysis', description: 'Competitor landscape study', icon: Target, suggestedSlides: 18, tags: ['competitive', 'landscape'] },
+    { id: 'research-user', label: 'User Research', description: 'User insights & personas', icon: Users, suggestedSlides: 20, tags: ['user', 'ux', 'personas'] },
+    { id: 'research-data', label: 'Data Analysis Report', description: 'Statistical findings & insights', icon: BarChart3, suggestedSlides: 22, tags: ['data', 'statistics'] },
+    { id: 'research-academic', label: 'Academic Research', description: 'Literature review & methodology', icon: BookMarked, suggestedSlides: 30, tags: ['academic', 'methodology'] },
+    { id: 'research-industry', label: 'Industry Report', description: 'Industry trends & outlook', icon: TrendingUp, suggestedSlides: 25, tags: ['industry', 'trends'] },
+    { id: 'research-feasibility', label: 'Feasibility Study', description: 'Project viability analysis', icon: Target, suggestedSlides: 20, tags: ['feasibility', 'viability'] },
+  ],
+  
+  // Marketing Options
+  'marketing': [
+    { id: 'marketing-campaign', label: 'Campaign Deck', description: 'Marketing campaign overview', icon: Megaphone, suggestedSlides: 18, tags: ['campaign', 'advertising'] },
+    { id: 'marketing-brand', label: 'Brand Guidelines', description: 'Brand identity & standards', icon: PenTool, suggestedSlides: 25, tags: ['brand', 'identity'] },
+    { id: 'marketing-launch', label: 'Product Launch', description: 'Go-to-market strategy', icon: Rocket, suggestedSlides: 20, tags: ['launch', 'gtm'] },
+    { id: 'marketing-content', label: 'Content Strategy', description: 'Content planning & calendar', icon: LayoutGrid, suggestedSlides: 15, tags: ['content', 'planning'] },
+    { id: 'marketing-social', label: 'Social Media Strategy', description: 'Social media planning', icon: Users, suggestedSlides: 12, tags: ['social', 'digital'] },
+    { id: 'marketing-performance', label: 'Performance Report', description: 'Campaign metrics & ROI', icon: BarChart3, suggestedSlides: 15, tags: ['metrics', 'roi'] },
+    { id: 'marketing-partner', label: 'Partner/Co-Marketing', description: 'Partnership marketing deck', icon: Users, suggestedSlides: 18, tags: ['partner', 'collaboration'] },
+  ],
+  
+  // Strategic Options
+  'strategic': [
+    { id: 'strategic-corporate', label: 'Corporate Strategy', description: 'Enterprise-level strategy', icon: Briefcase, suggestedSlides: 25, tags: ['corporate', 'enterprise'] },
+    { id: 'strategic-it', label: 'IT Strategy', description: 'Technology roadmap & planning', icon: Target, suggestedSlides: 20, tags: ['it', 'technology'] },
+    { id: 'strategic-digital', label: 'Digital Transformation', description: 'Digital strategy & roadmap', icon: Zap, suggestedSlides: 22, tags: ['digital', 'transformation'] },
+    { id: 'strategic-growth', label: 'Growth Strategy', description: 'Business expansion planning', icon: TrendingUp, suggestedSlides: 18, tags: ['growth', 'expansion'] },
+    { id: 'strategic-operations', label: 'Operations Strategy', description: 'Operational excellence plan', icon: Target, suggestedSlides: 20, tags: ['operations', 'efficiency'] },
+    { id: 'strategic-market-entry', label: 'Market Entry', description: 'New market expansion', icon: Rocket, suggestedSlides: 22, tags: ['market-entry', 'expansion'] },
+    { id: 'strategic-m&a', label: 'M&A Strategy', description: 'Merger & acquisition planning', icon: Briefcase, suggestedSlides: 25, tags: ['ma', 'acquisition'] },
+    { id: 'strategic-turnaround', label: 'Turnaround Plan', description: 'Business recovery strategy', icon: Zap, suggestedSlides: 20, tags: ['turnaround', 'recovery'] },
+  ],
+  
+  // Compliance Options
   'compliance': [
-    { id: 'compliance-policy', label: 'Policy Document', description: 'Formal policy presentation', icon: FileText, suggestedSlides: 20 },
-    { id: 'compliance-audit', label: 'Audit Report', description: 'Compliance findings', icon: AlertCircle, suggestedSlides: 25 },
-    { id: 'compliance-training', label: 'Compliance Training', description: 'Regulatory training', icon: GraduationCap, suggestedSlides: 30 },
+    { id: 'compliance-policy', label: 'Policy Document', description: 'Formal policy presentation', icon: FileText, suggestedSlides: 20, tags: ['policy', 'formal'] },
+    { id: 'compliance-audit', label: 'Audit Report', description: 'Compliance audit findings', icon: AlertCircle, suggestedSlides: 25, tags: ['audit', 'findings'] },
+    { id: 'compliance-training', label: 'Compliance Training', description: 'Regulatory training materials', icon: GraduationCap, suggestedSlides: 30, tags: ['training', 'regulatory'] },
+    { id: 'compliance-hipaa', label: 'HIPAA Compliance', description: 'Healthcare privacy compliance', icon: HeartPulse, suggestedSlides: 28, tags: ['hipaa', 'healthcare'] },
+    { id: 'compliance-gdpr', label: 'GDPR/Privacy', description: 'Data privacy compliance', icon: Scale, suggestedSlides: 22, tags: ['gdpr', 'privacy'] },
+    { id: 'compliance-sox', label: 'SOX Compliance', description: 'Financial compliance', icon: BarChart3, suggestedSlides: 25, tags: ['sox', 'financial'] },
+    { id: 'compliance-security', label: 'Security Compliance', description: 'Cybersecurity standards', icon: AlertCircle, suggestedSlides: 20, tags: ['security', 'cyber'] },
+  ],
+  
+  // Business Options
+  'business': [
+    { id: 'business-plan', label: 'Business Plan', description: 'Comprehensive business strategy', icon: Briefcase, suggestedSlides: 30, tags: ['plan', 'strategy'] },
+    { id: 'business-proposal', label: 'Business Proposal', description: 'Client/partner proposal', icon: FileText, suggestedSlides: 18, tags: ['proposal', 'client'] },
+    { id: 'business-review', label: 'Business Review', description: 'Quarterly/annual performance', icon: BarChart3, suggestedSlides: 20, tags: ['review', 'performance'] },
+    { id: 'business-case', label: 'Business Case', description: 'Investment justification', icon: Target, suggestedSlides: 15, tags: ['case', 'justification'] },
+    { id: 'business-update', label: 'Status Update', description: 'Project/business status', icon: Zap, suggestedSlides: 10, tags: ['status', 'update'] },
+    { id: 'business-executive', label: 'Executive Summary', description: 'C-suite briefing deck', icon: Briefcase, suggestedSlides: 12, tags: ['executive', 'summary'] },
+  ],
+  
+  // Creative Options
+  'creative': [
+    { id: 'creative-concept', label: 'Concept Deck', description: 'Creative concepts & ideas', icon: Lightbulb, suggestedSlides: 15, tags: ['concept', 'ideas'] },
+    { id: 'creative-mood', label: 'Mood Board', description: 'Visual inspiration board', icon: PenTool, suggestedSlides: 10, tags: ['mood', 'inspiration'] },
+    { id: 'creative-portfolio', label: 'Portfolio Showcase', description: 'Work samples & projects', icon: LayoutGrid, suggestedSlides: 20, tags: ['portfolio', 'showcase'] },
+    { id: 'creative-campaign', label: 'Creative Campaign', description: 'Ad campaign concepts', icon: Megaphone, suggestedSlides: 18, tags: ['campaign', 'advertising'] },
+    { id: 'creative-brand', label: 'Brand Story', description: 'Brand narrative & identity', icon: BookOpen, suggestedSlides: 15, tags: ['brand', 'story'] },
+  ],
+  
+  // Visual Options
+  'visual': [
+    { id: 'visual-infographic', label: 'Infographic Deck', description: 'Data visualization focus', icon: BarChart3, suggestedSlides: 12, tags: ['infographic', 'data-viz'] },
+    { id: 'visual-photo', label: 'Photo Essay', description: 'Image-driven storytelling', icon: LayoutGrid, suggestedSlides: 15, tags: ['photo', 'visual'] },
+    { id: 'visual-diagram', label: 'Diagram Collection', description: 'Technical diagrams & flows', icon: Target, suggestedSlides: 18, tags: ['diagram', 'technical'] },
+    { id: 'visual-chart', label: 'Chart Gallery', description: 'Charts & graphs focus', icon: BarChart3, suggestedSlides: 15, tags: ['charts', 'graphs'] },
+  ],
+  
+  // Narrative Options
+  'narrative': [
+    { id: 'narrative-keynote', label: 'Keynote Speech', description: 'Keynote presentation format', icon: Users, suggestedSlides: 20, tags: ['keynote', 'speech'] },
+    { id: 'narrative-ted', label: 'TED-Style Talk', description: 'Idea-driven presentation', icon: Lightbulb, suggestedSlides: 15, tags: ['ted', 'ideas'] },
+    { id: 'narrative-story', label: 'Story Presentation', description: 'Narrative-driven format', icon: BookOpen, suggestedSlides: 18, tags: ['story', 'narrative'] },
   ],
 };
 
@@ -259,7 +423,7 @@ export const ContentTypeSelector: React.FC<ContentTypeSelectorProps> = ({
           </div>
         )}
 
-        {/* Sub-Options Panel (for Training, Investor, etc.) */}
+        {/* Sub-Options Panel (for All Categories with sub-options) */}
         {contentCategory !== 'ai-generated' && hasSubOptions && (
           <Collapsible open={expandedSubOptions} onOpenChange={setExpandedSubOptions}>
             <CollapsibleTrigger asChild>
@@ -277,7 +441,7 @@ export const ContentTypeSelector: React.FC<ContentTypeSelectorProps> = ({
               </Button>
             </CollapsibleTrigger>
             <CollapsibleContent className="pt-2">
-              <div className="grid grid-cols-2 gap-2 p-2 rounded-lg bg-muted/30 border">
+              <div className="grid grid-cols-2 gap-2 p-2 rounded-lg bg-muted/30 border max-h-[240px] overflow-y-auto">
                 {currentSubOptions.map(option => {
                   const isSelected = selectedSubOptions.includes(option.id);
                   const IconComponent = option.icon;
@@ -309,6 +473,15 @@ export const ContentTypeSelector: React.FC<ContentTypeSelectorProps> = ({
                     </div>
                   );
                 })}
+                
+                {/* Custom Option - Add Your Own */}
+                <CustomOptionInput 
+                  categoryId={contentCategory}
+                  onAdd={(customOption) => {
+                    handleSubOptionToggle(customOption.id);
+                    toast.success(`Added: ${customOption.label}`);
+                  }}
+                />
               </div>
             </CollapsibleContent>
           </Collapsible>

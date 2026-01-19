@@ -55,6 +55,8 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { PresentationTemplate, PresentationTheme } from './types';
 import { TemplateRepository } from './TemplateRepository';
+import { TemplateRecommendationPanel } from './components/TemplateRecommendationPanel';
+import { RecommendedTemplate } from './services/templateRecommendationService';
 
 // Template Categories
 const TEMPLATE_CATEGORIES = [
@@ -296,7 +298,7 @@ export function TemplateBrandingPanel({
   contentTypeFilter,
   className
 }: TemplateBrandingPanelProps) {
-  const [activeTab, setActiveTab] = useState<'templates' | 'repository' | 'branding' | 'features'>('templates');
+  const [activeTab, setActiveTab] = useState<'ai-recommendations' | 'templates' | 'repository' | 'branding' | 'features'>('ai-recommendations');
   const [activeCategory, setActiveCategory] = useState('all');
   const [isAIDefault, setIsAIDefault] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -474,8 +476,9 @@ export function TemplateBrandingPanel({
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex gap-1 p-1 bg-muted/50 rounded-xl">
+      <div className="flex gap-1 p-1 bg-muted/50 rounded-xl overflow-x-auto">
         {[
+          { id: 'ai-recommendations', label: 'AI Recommend', icon: Wand2 },
           { id: 'templates', label: 'Templates', icon: Layout },
           { id: 'repository', label: 'Repository', icon: Layers },
           { id: 'branding', label: 'Branding', icon: Upload },
@@ -487,18 +490,86 @@ export function TemplateBrandingPanel({
               key={tab.id}
               onClick={() => setActiveTab(tab.id as typeof activeTab)}
               className={cn(
-                "flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all",
+                "flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-sm font-medium transition-all whitespace-nowrap",
                 activeTab === tab.id
                   ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground hover:bg-background/50"
               )}
             >
               <Icon className="h-4 w-4" />
-              {tab.label}
+              <span className="hidden sm:inline">{tab.label}</span>
             </button>
           );
         })}
       </div>
+
+      {/* AI Recommendations Tab - NEW */}
+      {activeTab === 'ai-recommendations' && (
+        <div className="space-y-4">
+          <TemplateRecommendationPanel
+            industry={industryFilter || 'general'}
+            segment={segmentFilter || 'general'}
+            contentTypes={contentTypeFilter || []}
+            audienceLevel="general"
+            selectedTemplateId={selectedTemplate?.id}
+            onTemplateSelect={(template: RecommendedTemplate) => {
+              // Convert recommended template to full template
+              const matchingTemplate = TEMPLATES.find(t => 
+                t.name.toLowerCase().includes(template.name.toLowerCase().split(' ')[0]) ||
+                template.tags.some(tag => t.name.toLowerCase().includes(tag))
+              );
+              
+              if (matchingTemplate) {
+                handleTemplateSelect(matchingTemplate);
+              } else {
+                // Use first template as fallback with recommended colors
+                const fallbackTemplate = TEMPLATES[0];
+                handleTemplateSelect(fallbackTemplate);
+                toast.success(`Applied: ${template.name} framework`);
+              }
+            }}
+            onStyleSelect={(style) => {
+              // Auto-select template based on style
+              const styleTemplateMap: Record<string, string> = {
+                'pure-consulting': 'business',
+                'consulting-hybrid': 'business',
+                'data-analytical': 'tech',
+                'creative-narrative': 'creative',
+                'educational': 'education',
+                'investor-pitch': 'business',
+                'storytelling': 'creative',
+                'industry-focused': 'healthcare',
+                'mixed-adaptive': 'all'
+              };
+              
+              const targetCategory = styleTemplateMap[style] || 'all';
+              setActiveCategory(targetCategory);
+              
+              const matchingTemplate = TEMPLATES.find(t => t.category === targetCategory);
+              if (matchingTemplate) {
+                handleTemplateSelect(matchingTemplate);
+              }
+            }}
+          />
+          
+          {/* Quick Actions */}
+          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border">
+            <div className="flex items-center gap-2 text-sm">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <span>Need more control?</span>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-xs"
+              onClick={() => setActiveTab('templates')}
+            >
+              Browse All Templates
+              <ChevronRight className="h-3 w-3 ml-1" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Templates Tab */}
       {activeTab === 'templates' && (
