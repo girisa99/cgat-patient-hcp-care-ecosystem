@@ -1,6 +1,6 @@
 /**
- * AIModelConfigPanel - Clean AI model selection grid
- * No overflow, proper alignment
+ * AIModelConfigPanel - Clean AI model selection with working dropdowns
+ * Dropdowns are fully selectable when Auto mode is OFF
  */
 
 import React, { useMemo, useEffect } from 'react';
@@ -23,6 +23,7 @@ import {
   Languages,
   Wand2,
   Check,
+  Lock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { FinalWorkflowConfig } from './EnhancedTemplateWorkflow';
@@ -48,8 +49,8 @@ const IMAGE_PROVIDERS = [
 ];
 
 const VOICE_PROVIDERS = [
-  { id: 'elevenlabs-multilingual', name: 'ElevenLabs', short: 'ElevenLabs' },
-  { id: 'openai-tts-hd', name: 'OpenAI TTS', short: 'OpenAI' },
+  { id: 'elevenlabs-multilingual', name: 'ElevenLabs Multilingual', short: 'ElevenLabs' },
+  { id: 'openai-tts-hd', name: 'OpenAI TTS HD', short: 'OpenAI' },
   { id: 'google-wavenet', name: 'Google WaveNet', short: 'WaveNet' },
   { id: 'azure-neural', name: 'Azure Neural', short: 'Azure' },
   { id: 'aws-polly', name: 'AWS Polly', short: 'Polly' },
@@ -57,9 +58,9 @@ const VOICE_PROVIDERS = [
 
 const TRANSLATION_PROVIDERS = [
   { id: 'deepl', name: 'DeepL', short: 'DeepL' },
-  { id: 'google-translate', name: 'Google', short: 'Google' },
+  { id: 'google-translate', name: 'Google Translate', short: 'Google' },
   { id: 'qwen-mt', name: 'Qwen-MT', short: 'Qwen' },
-  { id: 'azure', name: 'Azure', short: 'Azure' },
+  { id: 'azure', name: 'Azure Translator', short: 'Azure' },
   { id: 'nllb', name: 'NLLB', short: 'NLLB' },
 ];
 
@@ -125,11 +126,32 @@ export const AIModelConfigPanel: React.FC<AIModelConfigPanelProps> = ({
     }
   }, [isAutoSelect, recommendations]);
 
-  const current = {
+  // Current selected values
+  const current = useMemo(() => ({
     text: isAutoSelect ? recommendations.text : (workflowConfig?.aiRecommendation?.textModel || 'google/gemini-3-flash-preview'),
     image: isAutoSelect ? recommendations.image : (workflowConfig?.aiRecommendation?.imageModel || 'flux-pro'),
     voice: isAutoSelect ? recommendations.voice : (workflowConfig?.aiRecommendation?.voiceModel || 'elevenlabs-multilingual'),
     translation: isAutoSelect ? recommendations.translation : (workflowConfig?.aiRecommendation?.translationModel || 'deepl'),
+  }), [isAutoSelect, recommendations, workflowConfig]);
+
+  // Update handler for manual selection
+  const handleModelChange = (type: 'text' | 'image' | 'voice' | 'translation', value: string) => {
+    if (isAutoSelect) return; // Prevent changes when auto is on
+    
+    if (workflowConfig) {
+      const key = `${type}Model` as keyof typeof workflowConfig.aiRecommendation;
+      setWorkflowConfig({
+        ...workflowConfig,
+        aiRecommendation: { 
+          ...workflowConfig.aiRecommendation!, 
+          [key]: value 
+        }
+      });
+      
+      // Update external state
+      if (type === 'text') setSelectedAIModel(value);
+      if (type === 'image') setImageModel(value as any);
+    }
   };
 
   return (
@@ -139,7 +161,7 @@ export const AIModelConfigPanel: React.FC<AIModelConfigPanelProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Wand2 className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium">AI Models</span>
+            <span className="text-sm font-semibold text-foreground">AI Models</span>
             <Badge 
               variant="outline" 
               className={cn(
@@ -164,136 +186,162 @@ export const AIModelConfigPanel: React.FC<AIModelConfigPanelProps> = ({
 
         {/* Auto-select info */}
         {isAutoSelect && (
-          <div className="flex items-center gap-2 p-2 rounded-md bg-primary/5 border border-primary/20">
-            <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
-            <p className="text-[11px] text-muted-foreground">
+          <div className="flex items-center gap-2 p-2.5 rounded-lg bg-primary/5 border border-primary/20">
+            <Sparkles className="h-4 w-4 text-primary shrink-0" />
+            <p className="text-xs text-muted-foreground">
               <span className="text-foreground font-medium">Auto-optimized</span> for {workflowConfig?.industryCategory || 'your context'}
             </p>
           </div>
         )}
 
         {/* Model Grid - 2x2 Clean Layout */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-4">
           {/* Text Model */}
-          <ModelCard
-            icon={<Type className="h-3.5 w-3.5" />}
-            label="Text"
-            value={current.text}
-            providers={TEXT_PROVIDERS}
-            disabled={isAutoSelect}
-            onChange={(val) => {
-              if (!isAutoSelect && workflowConfig) {
-                setWorkflowConfig({
-                  ...workflowConfig,
-                  aiRecommendation: { ...workflowConfig.aiRecommendation!, textModel: val }
-                });
-                setSelectedAIModel(val);
-              }
-            }}
-          />
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Type className="h-4 w-4 text-primary" />
+              <Label className="text-xs font-medium text-foreground">Text Model</Label>
+              {isAutoSelect && <Lock className="h-3 w-3 text-muted-foreground" />}
+            </div>
+            <Select 
+              value={current.text} 
+              onValueChange={(val) => handleModelChange('text', val)}
+              disabled={isAutoSelect}
+            >
+              <SelectTrigger className={cn(
+                "h-10 bg-background",
+                isAutoSelect && "opacity-60 cursor-not-allowed"
+              )}>
+                <SelectValue>
+                  <span className="truncate">
+                    {TEXT_PROVIDERS.find(p => p.id === current.text)?.short || current.text}
+                  </span>
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent className="z-50 bg-popover border shadow-lg">
+                {TEXT_PROVIDERS.map(p => (
+                  <SelectItem key={p.id} value={p.id}>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{p.name}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
           {/* Image Model */}
-          <ModelCard
-            icon={<ImageIcon className="h-3.5 w-3.5" />}
-            label="Image"
-            value={current.image}
-            providers={IMAGE_PROVIDERS}
-            disabled={isAutoSelect}
-            onChange={(val) => {
-              if (!isAutoSelect && workflowConfig) {
-                setWorkflowConfig({
-                  ...workflowConfig,
-                  aiRecommendation: { ...workflowConfig.aiRecommendation!, imageModel: val }
-                });
-                setImageModel(val as any);
-              }
-            }}
-          />
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <ImageIcon className="h-4 w-4 text-primary" />
+              <Label className="text-xs font-medium text-foreground">Image Model</Label>
+              {isAutoSelect && <Lock className="h-3 w-3 text-muted-foreground" />}
+            </div>
+            <Select 
+              value={current.image} 
+              onValueChange={(val) => handleModelChange('image', val)}
+              disabled={isAutoSelect}
+            >
+              <SelectTrigger className={cn(
+                "h-10 bg-background",
+                isAutoSelect && "opacity-60 cursor-not-allowed"
+              )}>
+                <SelectValue>
+                  <span className="truncate">
+                    {IMAGE_PROVIDERS.find(p => p.id === current.image)?.short || current.image}
+                  </span>
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent className="z-50 bg-popover border shadow-lg">
+                {IMAGE_PROVIDERS.map(p => (
+                  <SelectItem key={p.id} value={p.id}>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{p.name}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
           {/* Voice Model */}
-          <ModelCard
-            icon={<Mic className="h-3.5 w-3.5" />}
-            label="Voice"
-            value={current.voice}
-            providers={VOICE_PROVIDERS}
-            disabled={isAutoSelect}
-            onChange={(val) => {
-              if (!isAutoSelect && workflowConfig) {
-                setWorkflowConfig({
-                  ...workflowConfig,
-                  aiRecommendation: { ...workflowConfig.aiRecommendation!, voiceModel: val }
-                });
-              }
-            }}
-          />
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Mic className="h-4 w-4 text-primary" />
+              <Label className="text-xs font-medium text-foreground">Voice Model</Label>
+              {isAutoSelect && <Lock className="h-3 w-3 text-muted-foreground" />}
+            </div>
+            <Select 
+              value={current.voice} 
+              onValueChange={(val) => handleModelChange('voice', val)}
+              disabled={isAutoSelect}
+            >
+              <SelectTrigger className={cn(
+                "h-10 bg-background",
+                isAutoSelect && "opacity-60 cursor-not-allowed"
+              )}>
+                <SelectValue>
+                  <span className="truncate">
+                    {VOICE_PROVIDERS.find(p => p.id === current.voice)?.short || current.voice}
+                  </span>
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent className="z-50 bg-popover border shadow-lg">
+                {VOICE_PROVIDERS.map(p => (
+                  <SelectItem key={p.id} value={p.id}>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{p.name}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
           {/* Translation Model */}
-          <ModelCard
-            icon={<Languages className="h-3.5 w-3.5" />}
-            label="Translation"
-            value={current.translation}
-            providers={TRANSLATION_PROVIDERS}
-            disabled={isAutoSelect}
-            onChange={(val) => {
-              if (!isAutoSelect && workflowConfig) {
-                setWorkflowConfig({
-                  ...workflowConfig,
-                  aiRecommendation: { ...workflowConfig.aiRecommendation!, translationModel: val }
-                });
-              }
-            }}
-          />
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Languages className="h-4 w-4 text-primary" />
+              <Label className="text-xs font-medium text-foreground">Translation</Label>
+              {isAutoSelect && <Lock className="h-3 w-3 text-muted-foreground" />}
+            </div>
+            <Select 
+              value={current.translation} 
+              onValueChange={(val) => handleModelChange('translation', val)}
+              disabled={isAutoSelect}
+            >
+              <SelectTrigger className={cn(
+                "h-10 bg-background",
+                isAutoSelect && "opacity-60 cursor-not-allowed"
+              )}>
+                <SelectValue>
+                  <span className="truncate">
+                    {TRANSLATION_PROVIDERS.find(p => p.id === current.translation)?.short || current.translation}
+                  </span>
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent className="z-50 bg-popover border shadow-lg">
+                {TRANSLATION_PROVIDERS.map(p => (
+                  <SelectItem key={p.id} value={p.id}>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{p.name}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
+
+        {/* Hint for manual mode */}
+        {!isAutoSelect && (
+          <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+            <Check className="h-3 w-3 text-green-500" />
+            Manual mode: Select your preferred models from each dropdown
+          </p>
+        )}
       </CardContent>
     </Card>
-  );
-};
-
-// Clean model card component
-interface ModelCardProps {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  providers: { id: string; name: string; short: string }[];
-  disabled: boolean;
-  onChange: (value: string) => void;
-}
-
-const ModelCard: React.FC<ModelCardProps> = ({
-  icon,
-  label,
-  value,
-  providers,
-  disabled,
-  onChange,
-}) => {
-  const currentProvider = providers.find(p => p.id === value);
-  
-  return (
-    <div className="space-y-1.5">
-      <div className="flex items-center gap-1.5">
-        <span className="text-primary">{icon}</span>
-        <Label className="text-xs font-medium">{label}</Label>
-        {disabled && <Check className="h-3 w-3 text-green-500" />}
-      </div>
-      <Select value={value} onValueChange={onChange} disabled={disabled}>
-        <SelectTrigger className={cn(
-          "h-8 text-xs",
-          disabled && "opacity-70 bg-muted/30"
-        )}>
-          <SelectValue>
-            <span className="truncate block max-w-[100px]">{currentProvider?.short || value}</span>
-          </SelectValue>
-        </SelectTrigger>
-        <SelectContent className="max-h-48">
-          {providers.map(p => (
-            <SelectItem key={p.id} value={p.id} className="text-xs">
-              {p.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
   );
 };
 
