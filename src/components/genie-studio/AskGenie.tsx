@@ -58,7 +58,7 @@ import { cn } from '@/lib/utils';
 import { InlineTrainAIFeedback } from './InlineTrainAIFeedback';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUniversalAI } from '@/hooks/useUniversalAI';
-import { useAskGenieVoice, LANGUAGE_VOICE_PAIRINGS } from '@/hooks/useAskGenieVoice';
+import { useAskGenieVoice, LANGUAGE_VOICE_PAIRINGS, REGION_LABELS, getLanguagesByRegion, detectCountryFromIP } from '@/hooks/useAskGenieVoice';
 import { toast } from 'sonner';
 import { useRalphWiggumGlobal } from '@/contexts/RalphWiggumContext';
 import { useLabelStudioBackground } from '@/services/labelStudioBackgroundService';
@@ -984,6 +984,17 @@ export const AskGenie: React.FC<AskGenieProps> = ({
       // Could trigger follow-up actions
     }
   });
+  
+  // Auto-detect language from IP/country on mount
+  useEffect(() => {
+    detectCountryFromIP().then(result => {
+      if (result?.language) {
+        voice.setLanguage(result.language);
+        console.log('[AskGenie] Auto-detected language from IP:', result.country, '->', result.language);
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   
   // State for inline hints from Label Studio
   const [inlineHints, setInlineHints] = useState<Array<{ id: string; type: string; message: string; confidence: number; dismissable: boolean }>>([]); 
