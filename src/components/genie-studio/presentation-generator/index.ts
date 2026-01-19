@@ -26,7 +26,7 @@ export { RichSlideEditor } from './RichSlideEditor';
 export { AIProviderPanel } from './AIProviderPanel';
 export { GenerationProgressPanel } from './GenerationProgressPanel';
 export { TemplateThemeSelector, TEMPLATES, COLOR_PALETTES, FONT_OPTIONS } from './TemplateThemeSelector';
-export { BrandingCustomizer, DEFAULT_BRAND_CONFIG } from './BrandingCustomizer';
+export { BrandingCustomizer, DEFAULT_BRAND_CONFIG, type BrandConfig } from './BrandingCustomizer';
 export { TableEditor, ChartEditor } from './TableChartEditor';
 export { MultiLanguageGenerator, useMultiLanguageGeneration, SUPPORTED_LANGUAGES } from './MultiLanguageGenerator';
 export type { LanguageConfig, LanguageGenerationStatus } from './MultiLanguageGenerator';
@@ -55,7 +55,6 @@ export {
   type CollateralType,
   type IndustryCategory,
   type ConsultingTemplate,
-  type BrandConfig,
   type AIModelConfig,
   type FinalWorkflowConfig,
   type Segment,

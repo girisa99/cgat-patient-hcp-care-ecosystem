@@ -104,6 +104,7 @@ import {
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
+import { BrandConfig, DEFAULT_BRAND_CONFIG } from './BrandingCustomizer';
 
 // ==================== TYPES ====================
 
@@ -128,7 +129,7 @@ export interface ConsultingTemplate {
   id: string;
   name: string;
   description: string;
-  source: string; // McKinsey, BCG, Bain, etc.
+  source: string; // Framework, Diagram, Analysis, etc.
   type: 'framework' | 'diagram' | 'analysis' | 'comparison';
   previewLayout: SlideLayout[];
   dataTypes: string[];
@@ -145,16 +146,6 @@ export interface LayoutZone {
   type: 'text' | 'image' | 'chart' | 'icon' | 'bullet-list';
   position: { x: number; y: number; width: number; height: number };
   placeholder?: string;
-}
-
-export interface BrandConfig {
-  logoUrl?: string;
-  extractedColors: string[];
-  primaryColor: string;
-  secondaryColor: string;
-  accentColor: string;
-  tagline: string;
-  fontFamily: string;
 }
 
 export interface AIModelConfig {
@@ -870,15 +861,11 @@ export function EnhancedTemplateWorkflow({
   // AI provider recommendation
   const [aiRecommendation, setAiRecommendation] = useState<AIProviderRecommendation | null>(null);
   
-  // Brand configuration
-  const [brandConfig, setBrandConfig] = useState<BrandConfig>({
-    extractedColors: [],
-    primaryColor: '#1e40af',
-    secondaryColor: '#3b82f6',
-    accentColor: '#f59e0b',
-    tagline: '',
-    fontFamily: 'Inter'
-  });
+  // Brand configuration - use the shared type from BrandingCustomizer
+  const [brandConfig, setBrandConfig] = useState<BrandConfig>(DEFAULT_BRAND_CONFIG);
+  
+  // Extracted colors for color picker UI
+  const [extractedColors, setExtractedColors] = useState<string[]>([]);
   
   // AI model configuration
   const [aiModels, setAiModels] = useState<AIModelConfig>({
@@ -916,12 +903,15 @@ export function EnhancedTemplateWorkflow({
       setIsExtractingColors(true);
       try {
         const colors = await extractColorsFromImage(dataUrl);
+        setExtractedColors(colors);
         setBrandConfig(prev => ({
           ...prev,
-          extractedColors: colors,
-          primaryColor: colors[0] || prev.primaryColor,
-          secondaryColor: colors[1] || prev.secondaryColor,
-          accentColor: colors[2] || prev.accentColor
+          colors: {
+            ...prev.colors,
+            primary: colors[0] || prev.colors.primary,
+            secondary: colors[1] || prev.colors.secondary,
+            accent: colors[2] || prev.colors.accent
+          }
         }));
         toast.success('Colors extracted from logo!');
       } catch (error) {
@@ -1413,19 +1403,19 @@ export function EnhancedTemplateWorkflow({
                         </div>
                       )}
                       
-                      {brandConfig.extractedColors.length > 0 && (
+                      {extractedColors.length > 0 && (
                         <div className="mt-4">
                           <Label className="text-xs">Extracted Colors</Label>
                           <div className="flex gap-2 mt-2">
-                            {brandConfig.extractedColors.map((color, i) => (
+                            {extractedColors.map((color, i) => (
                               <div
                                 key={i}
                                 className="w-8 h-8 rounded cursor-pointer ring-offset-2 hover:ring-2 ring-primary"
                                 style={{ backgroundColor: color }}
                                 onClick={() => {
-                                  if (i === 0) setBrandConfig(prev => ({ ...prev, primaryColor: color }));
-                                  else if (i === 1) setBrandConfig(prev => ({ ...prev, secondaryColor: color }));
-                                  else setBrandConfig(prev => ({ ...prev, accentColor: color }));
+                                  if (i === 0) setBrandConfig(prev => ({ ...prev, colors: { ...prev.colors, primary: color } }));
+                                  else if (i === 1) setBrandConfig(prev => ({ ...prev, colors: { ...prev.colors, secondary: color } }));
+                                  else setBrandConfig(prev => ({ ...prev, colors: { ...prev.colors, accent: color } }));
                                 }}
                                 title={color}
                               />
@@ -1449,13 +1439,13 @@ export function EnhancedTemplateWorkflow({
                           <div className="flex items-center gap-2 mt-1">
                             <input
                               type="color"
-                              value={brandConfig.primaryColor}
-                              onChange={(e) => setBrandConfig(prev => ({ ...prev, primaryColor: e.target.value }))}
+                              value={brandConfig.colors.primary}
+                              onChange={(e) => setBrandConfig(prev => ({ ...prev, colors: { ...prev.colors, primary: e.target.value } }))}
                               className="w-8 h-8 rounded cursor-pointer"
                             />
                             <Input
-                              value={brandConfig.primaryColor}
-                              onChange={(e) => setBrandConfig(prev => ({ ...prev, primaryColor: e.target.value }))}
+                              value={brandConfig.colors.primary}
+                              onChange={(e) => setBrandConfig(prev => ({ ...prev, colors: { ...prev.colors, primary: e.target.value } }))}
                               className="text-xs h-8"
                             />
                           </div>
@@ -1465,13 +1455,13 @@ export function EnhancedTemplateWorkflow({
                           <div className="flex items-center gap-2 mt-1">
                             <input
                               type="color"
-                              value={brandConfig.secondaryColor}
-                              onChange={(e) => setBrandConfig(prev => ({ ...prev, secondaryColor: e.target.value }))}
+                              value={brandConfig.colors.secondary}
+                              onChange={(e) => setBrandConfig(prev => ({ ...prev, colors: { ...prev.colors, secondary: e.target.value } }))}
                               className="w-8 h-8 rounded cursor-pointer"
                             />
                             <Input
-                              value={brandConfig.secondaryColor}
-                              onChange={(e) => setBrandConfig(prev => ({ ...prev, secondaryColor: e.target.value }))}
+                              value={brandConfig.colors.secondary}
+                              onChange={(e) => setBrandConfig(prev => ({ ...prev, colors: { ...prev.colors, secondary: e.target.value } }))}
                               className="text-xs h-8"
                             />
                           </div>
@@ -1481,13 +1471,13 @@ export function EnhancedTemplateWorkflow({
                           <div className="flex items-center gap-2 mt-1">
                             <input
                               type="color"
-                              value={brandConfig.accentColor}
-                              onChange={(e) => setBrandConfig(prev => ({ ...prev, accentColor: e.target.value }))}
+                              value={brandConfig.colors.accent}
+                              onChange={(e) => setBrandConfig(prev => ({ ...prev, colors: { ...prev.colors, accent: e.target.value } }))}
                               className="w-8 h-8 rounded cursor-pointer"
                             />
                             <Input
-                              value={brandConfig.accentColor}
-                              onChange={(e) => setBrandConfig(prev => ({ ...prev, accentColor: e.target.value }))}
+                              value={brandConfig.colors.accent}
+                              onChange={(e) => setBrandConfig(prev => ({ ...prev, colors: { ...prev.colors, accent: e.target.value } }))}
                               className="text-xs h-8"
                             />
                           </div>
