@@ -33,8 +33,12 @@ import {
   Check,
   Settings2,
   Zap,
+  Bot,
+  Network,
+  CircleDot,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ARCHITECTURE_TYPE_INFO, type AgentArchitectureType } from './AgentArchitecture';
 
 // AI Models available for selection (matching Lovable AI gateway)
 export const AI_MODEL_OPTIONS = [
@@ -97,10 +101,13 @@ export const IMAGE_MODEL_OPTIONS = [
   { id: 'dall-e-2', name: 'DALL-E 2', description: 'Fast OpenAI images' },
 ];
 
-// Voice models for voiceover agent
+// Voice models for voiceover agent - Expanded with all providers
 export const VOICE_MODEL_OPTIONS = [
-  { id: 'openai', name: 'OpenAI TTS', description: 'High quality voices' },
-  { id: 'elevenlabs', name: 'ElevenLabs', description: 'Premium natural voices' },
+  { id: 'elevenlabs', name: 'ElevenLabs', description: 'Premium natural voices', provider: 'elevenlabs', tier: 'premium', quality: 98 },
+  { id: 'openai', name: 'OpenAI TTS', description: 'High quality voices', provider: 'openai', tier: 'balanced', quality: 88 },
+  { id: 'google', name: 'Google Cloud TTS', description: 'Wide language support', provider: 'google', tier: 'balanced', quality: 85 },
+  { id: 'azure', name: 'Azure Neural TTS', description: 'Enterprise grade', provider: 'azure', tier: 'premium', quality: 92 },
+  { id: 'aws', name: 'Amazon Polly', description: 'Low latency', provider: 'aws', tier: 'fast', quality: 80 },
 ];
 
 export interface AgentConfig {
@@ -110,6 +117,8 @@ export interface AgentConfig {
   capabilities: string[];
   defaultModel: string;
   supportsStreaming: boolean;
+  architectureType?: AgentArchitectureType;
+  providers?: string[];
 }
 
 export interface AgentModelConfig {
@@ -285,6 +294,17 @@ export function AgentCard({ agentKey, agent, isSelected, config, onClick }: Agen
       config.model
     : 'Default';
 
+  // Get architecture type info
+  const archType = agent.architectureType || 'single';
+  const archInfo = ARCHITECTURE_TYPE_INFO[archType];
+  
+  // Architecture type icons
+  const archIcons: Record<string, React.ReactNode> = {
+    single: <Bot className="h-2.5 w-2.5" />,
+    agentic: <Brain className="h-2.5 w-2.5" />,
+    a2a: <Network className="h-2.5 w-2.5" />,
+  };
+
   return (
     <div
       onClick={onClick}
@@ -307,22 +327,51 @@ export function AgentCard({ agentKey, agent, isSelected, config, onClick }: Agen
             {isSelected && <Check className="h-3.5 w-3.5 text-primary flex-shrink-0" />}
             <span className="font-medium text-sm truncate block">{agent.name}</span>
           </div>
-          <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2 break-words">
+          <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1 break-words">
             {agent.description}
           </p>
-          {isSelected && (
-            <div className="flex flex-wrap items-center gap-1 mt-1.5">
-              <Badge variant="outline" className="text-[8px] px-1 py-0 max-w-full truncate">
-                {modelName}
-              </Badge>
-              {agent.supportsStreaming && (
-                <Badge variant="outline" className="text-[8px] px-1 py-0 text-green-600 border-green-500/30 flex-shrink-0">
-                  <Zap className="h-2 w-2 mr-0.5" />
-                  Stream
+          
+          {/* Architecture Type Badge - Always visible */}
+          <div className="flex flex-wrap items-center gap-1 mt-1.5">
+            <Badge 
+              variant="outline" 
+              className={cn("text-[8px] px-1 py-0 gap-0.5", archInfo.color)}
+              title={archInfo.description}
+            >
+              {archIcons[archType]}
+              {archInfo.label}
+            </Badge>
+            
+            {isSelected && (
+              <>
+                <Badge variant="outline" className="text-[8px] px-1 py-0 max-w-full truncate">
+                  {modelName}
                 </Badge>
-              )}
-            </div>
-          )}
+                {agent.supportsStreaming && (
+                  <Badge variant="outline" className="text-[8px] px-1 py-0 text-green-600 border-green-500/30 flex-shrink-0">
+                    <Zap className="h-2 w-2 mr-0.5" />
+                    Stream
+                  </Badge>
+                )}
+              </>
+            )}
+            
+            {/* Provider indicators */}
+            {isSelected && agent.providers && agent.providers.length > 0 && (
+              <div className="flex items-center gap-0.5 ml-auto">
+                {agent.providers.slice(0, 3).map(provider => (
+                  <CircleDot 
+                    key={provider} 
+                    className="h-2 w-2 text-muted-foreground" 
+                    title={provider}
+                  />
+                ))}
+                {agent.providers.length > 3 && (
+                  <span className="text-[8px] text-muted-foreground">+{agent.providers.length - 3}</span>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
