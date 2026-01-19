@@ -630,29 +630,43 @@ export function TemplateBrandingPanel({
             </CardContent>
           </Card>
 
-          {/* Divider with explanation */}
-          <div className="flex items-center gap-3">
-            <div className="flex-1 border-t border-muted" />
-            <span className="text-xs text-muted-foreground">
-              {isAIDefault ? 'Or select manually to override AI' : 'Choose a template'}
-            </span>
-            <div className="flex-1 border-t border-muted" />
-          </div>
+          {/* AI Locked Notice */}
+          {isAIDefault && (
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/10 border border-primary/20">
+              <Bot className="h-4 w-4 text-primary" />
+              <p className="text-xs text-primary flex-1">
+                <span className="font-medium">AI Mode Active:</span> Template & colors locked. Only features can be customized above.
+              </p>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-xs"
+                onClick={() => setIsAIDefault(false)}
+              >
+                Switch to Manual
+              </Button>
+            </div>
+          )}
 
           {/* Category Pills - Horizontal */}
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+          <div className={cn(
+            "flex gap-2 overflow-x-auto pb-2 scrollbar-hide",
+            isAIDefault && "opacity-50 pointer-events-none"
+          )}>
             {TEMPLATE_CATEGORIES.map(cat => {
               const Icon = cat.icon;
               const isActive = activeCategory === cat.id;
               return (
                 <button
                   key={cat.id}
-                  onClick={() => setActiveCategory(cat.id)}
+                  onClick={() => !isAIDefault && setActiveCategory(cat.id)}
+                  disabled={isAIDefault}
                   className={cn(
                     "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all",
                     isActive
                       ? "bg-primary text-primary-foreground shadow-sm"
-                      : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                      : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground",
+                    isAIDefault && "cursor-not-allowed"
                   )}
                 >
                   <Icon className="h-4 w-4" />
@@ -665,8 +679,14 @@ export function TemplateBrandingPanel({
             })}
           </div>
 
-          {/* Template Grid - Always visible and selectable */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {/* Template Grid - Locked when AI Default is active */}
+          <div className={cn(
+            "grid grid-cols-1 md:grid-cols-2 gap-3 relative",
+            isAIDefault && "opacity-60"
+          )}>
+            {isAIDefault && (
+              <div className="absolute inset-0 z-10 cursor-not-allowed" />
+            )}
             {filteredTemplates.map(template => {
               const isSelected = selectedTemplate?.id === template.id;
               const isPreview = selectedPreview?.id === template.id;
@@ -676,18 +696,19 @@ export function TemplateBrandingPanel({
                 <Card
                   key={template.id}
                   className={cn(
-                    "transition-all cursor-pointer overflow-hidden group",
+                    "transition-all overflow-hidden group",
                     isSelected && "ring-2 ring-primary border-primary",
                     isPreview && !isSelected && "ring-1 ring-primary/50",
-                    isAIRecommended && "relative"
+                    isAIRecommended && "relative",
+                    !isAIDefault && "cursor-pointer"
                   )}
-                  onClick={() => setSelectedPreview(isPreview ? null : template)}
+                  onClick={() => !isAIDefault && setSelectedPreview(isPreview ? null : template)}
                 >
                   {/* AI Recommended Badge */}
                   {isAIRecommended && (
                     <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground text-[10px] font-medium py-0.5 px-2 flex items-center justify-center gap-1 z-10">
                       <Sparkles className="h-3 w-3" />
-                      AI Recommended
+                      AI Selected
                     </div>
                   )}
                   
@@ -712,7 +733,7 @@ export function TemplateBrandingPanel({
                         ))}
                       </div>
                     </div>
-                    {isSelected && !isAIRecommended && (
+                    {isSelected && (
                       <div className="absolute top-2 right-2 p-1.5 rounded-full bg-primary text-primary-foreground">
                         <Check className="h-3 w-3" />
                       </div>
@@ -730,23 +751,24 @@ export function TemplateBrandingPanel({
                           </Badge>
                         ))}
                       </div>
-                      <Button
-                        size="sm"
-                        variant={isSelected ? "default" : "outline"}
-                        className="h-7 text-xs px-2"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleTemplateSelect(template);
-                          setIsAIDefault(false); // Turn off AI Default when manually selecting
-                        }}
-                      >
-                        {isSelected ? <Check className="h-3 w-3" /> : 'Select'}
-                      </Button>
+                      {!isAIDefault && (
+                        <Button
+                          size="sm"
+                          variant={isSelected ? "default" : "outline"}
+                          className="h-7 text-xs px-2"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleTemplateSelect(template);
+                          }}
+                        >
+                          {isSelected ? <Check className="h-3 w-3" /> : 'Select'}
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
 
-                  {/* Expanded Preview */}
-                  {isPreview && (
+                  {/* Expanded Preview - only when not AI Default */}
+                  {isPreview && !isAIDefault && (
                     <div className="border-t bg-muted/30 p-3">
                       <div className="grid grid-cols-3 gap-2 text-center mb-2">
                         <div className="p-2 rounded-lg bg-background">
@@ -781,6 +803,25 @@ export function TemplateBrandingPanel({
       {/* Branding Tab */}
       {activeTab === 'branding' && (
         <div className="space-y-3">
+          {/* AI Locked Notice for Branding */}
+          {isAIDefault && (
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/10 border border-primary/20">
+              <Bot className="h-4 w-4 text-primary" />
+              <p className="text-xs text-primary flex-1">
+                <span className="font-medium">AI Mode Active:</span> Branding is auto-configured. Switch to manual mode to customize.
+              </p>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-xs"
+                onClick={() => setIsAIDefault(false)}
+              >
+                Switch to Manual
+              </Button>
+            </div>
+          )}
+          
+          <div className={cn(isAIDefault && "opacity-50 pointer-events-none")}>
           {/* Logo Upload */}
           <Card>
             <CardHeader className="py-3 px-4">
@@ -1017,6 +1058,7 @@ export function TemplateBrandingPanel({
               </CollapsibleContent>
             </Card>
           </Collapsible>
+          </div>
         </div>
       )}
 
