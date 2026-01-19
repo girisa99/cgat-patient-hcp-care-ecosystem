@@ -357,26 +357,6 @@ export const CONTENT_TYPE_REGISTRY: ContentTypeConfig[] = [
     ]
   },
 ];
-  },
-  
-  // Narrative
-  { id: 'narrative', name: 'Narrative', boostConsulting: -15, boostVisual: 50, boostData: -20, suggestedFrameworks: ['Story Arc', 'Visual Narrative', 'Emotional Journey'] },
-  
-  // Visual
-  { id: 'visual', name: 'Visual', boostConsulting: -20, boostVisual: 60, boostData: 10, suggestedFrameworks: ['Infographics', 'Data Viz', 'Icon Story'] },
-  
-  // Creative
-  { id: 'creative', name: 'Creative', boostConsulting: -25, boostVisual: 70, boostData: -15, suggestedFrameworks: ['Mood Board', 'Brand Story', 'Concept Exploration'] },
-  
-  // Technical
-  { id: 'technical', name: 'Technical', boostConsulting: 10, boostVisual: 15, boostData: 45, suggestedFrameworks: ['Architecture Diagram', 'Process Flow', 'Technical Specs', 'API Documentation'] },
-  
-  // Proposal
-  { id: 'proposal', name: 'Proposal', boostConsulting: 20, boostVisual: 20, boostData: 25, suggestedFrameworks: ['Executive Summary', 'Solution Architecture', 'Timeline', 'Pricing Model'] },
-  
-  // Operational
-  { id: 'operational', name: 'Operational', boostConsulting: 15, boostVisual: 0, boostData: 30, suggestedFrameworks: ['Process Map', 'RACI', 'KPIs Dashboard', 'Gantt Chart', 'Workflow'] },
-];
 
 // ==========================================
 // CONSULTING FRAMEWORK TEMPLATES (Dynamic)
