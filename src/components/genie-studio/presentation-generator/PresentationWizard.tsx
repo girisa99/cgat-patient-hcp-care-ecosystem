@@ -1711,6 +1711,10 @@ export function PresentationWizard({
                     <LanguageSelector
                       selectedLanguages={selectedLanguages}
                       onLanguagesChange={setSelectedLanguages}
+                      primaryLanguage={primaryLanguage}
+                      onPrimaryLanguageChange={setPrimaryLanguage}
+                      includeVoiceover={includeVoiceover}
+                      onIncludeVoiceoverChange={setIncludeVoiceover}
                     />
                   </CardContent>
                 </Card>
