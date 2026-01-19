@@ -1707,23 +1707,23 @@ export function PresentationWizard({
 
                 {/* Tabbed Interface for Template & Branding */}
                 <Tabs defaultValue="framework" className="w-full">
-                  <TabsList className="grid w-full grid-cols-3 h-9">
-                    <TabsTrigger value="framework" className="text-xs gap-1.5">
+                  <TabsList level="child" className="w-full grid grid-cols-3 gap-1 p-1 bg-muted/50 rounded-lg h-auto">
+                    <TabsTrigger value="framework" level="child" className="flex items-center justify-center gap-1.5 py-2 text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm">
                       <Layout className="h-3.5 w-3.5" />
                       Framework
                     </TabsTrigger>
-                    <TabsTrigger value="branding" className="text-xs gap-1.5">
+                    <TabsTrigger value="branding" level="child" className="flex items-center justify-center gap-1.5 py-2 text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm">
                       <Palette className="h-3.5 w-3.5" />
                       Branding
                     </TabsTrigger>
-                    <TabsTrigger value="visual" className="text-xs gap-1.5">
+                    <TabsTrigger value="visual" level="child" className="flex items-center justify-center gap-1.5 py-2 text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm">
                       <ImageIcon className="h-3.5 w-3.5" />
                       Visual
                     </TabsTrigger>
                   </TabsList>
 
                   {/* Framework Tab */}
-                  <TabsContent value="framework" className="mt-4 space-y-4">
+                  <TabsContent value="framework" level="child" className="mt-3 p-0 border-0 shadow-none bg-transparent space-y-3">
                     {/* Category Filter Pills */}
                     <div className="flex flex-wrap gap-1.5">
                       {[
@@ -1749,7 +1749,7 @@ export function PresentationWizard({
                     </div>
 
                     {/* Framework Cards Grid */}
-                    <ScrollArea className="h-[280px] pr-3">
+                    <ScrollArea className="h-[220px] pr-2">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {CONSULTING_TEMPLATES.filter(t => t.type === frameworkCategory).map(template => (
                           <Card
@@ -1826,7 +1826,7 @@ export function PresentationWizard({
                   </TabsContent>
 
                   {/* Branding Tab */}
-                  <TabsContent value="branding" className="mt-4 space-y-4">
+                  <TabsContent value="branding" level="child" className="mt-3 p-0 border-0 shadow-none bg-transparent space-y-3">
                     {/* Logo Upload */}
                     <div className="space-y-2">
                       <Label className="text-sm font-medium flex items-center gap-2">
@@ -1985,7 +1985,7 @@ export function PresentationWizard({
                   </TabsContent>
 
                   {/* Visual Tab */}
-                  <TabsContent value="visual" className="mt-4 space-y-4">
+                  <TabsContent value="visual" level="child" className="mt-3 p-0 border-0 shadow-none bg-transparent space-y-3">
                     {/* Image Source */}
                     <div className="space-y-2">
                       <Label className="text-sm font-medium flex items-center gap-2">
