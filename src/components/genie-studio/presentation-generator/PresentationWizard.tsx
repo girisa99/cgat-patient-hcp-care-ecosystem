@@ -88,6 +88,7 @@ import {
   GitBranch,
   Columns,
   Grid3X3,
+  Layers,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -1562,7 +1563,7 @@ export function PresentationWizard({
                   </div>
                 </div>
 
-                {/* AI Recommendation Preview - Enhanced */}
+                {/* AI Recommendation Preview - Enhanced with Clickable Models */}
                 {workflowConfig?.aiRecommendation && workflowConfig?.collateralType && (
                   <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-accent/5">
                     <CardContent className="p-4">
@@ -1570,9 +1571,9 @@ export function PresentationWizard({
                         <div className="p-2 rounded-lg bg-primary/10">
                           <Sparkles className="h-5 w-5 text-primary" />
                         </div>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between gap-2 mb-1">
-                            <span className="text-sm font-medium text-foreground">AI Recommendation</span>
+                        <div className="flex-1 space-y-3">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-sm font-medium text-foreground">AI Model Configuration</span>
                             <Badge 
                               variant="outline" 
                               className={cn(
@@ -1587,37 +1588,104 @@ export function PresentationWizard({
                               {workflowConfig.aiRecommendation.confidence}% confidence
                             </Badge>
                           </div>
-                          <p className="text-xs text-muted-foreground mb-3">
+                          <p className="text-xs text-muted-foreground">
                             {workflowConfig.aiRecommendation.reason}
                           </p>
                           
-                          {/* Provider Badges - Clear horizontal layout */}
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                            <div className="flex items-center gap-1.5 p-2 rounded bg-background border">
-                              <Type className="h-3.5 w-3.5 text-muted-foreground" />
-                              <span className="text-[11px] font-medium truncate">
-                                {workflowConfig.aiRecommendation.textModel.split('/').pop()}
-                              </span>
+                          {/* Provider Badges - Clear clickable cards with full model names */}
+                          <div className="grid grid-cols-2 gap-2">
+                            {/* Text Model */}
+                            <div 
+                              className="flex items-center gap-2 p-2.5 rounded-lg bg-background border hover:border-primary/50 cursor-pointer transition-colors"
+                              onClick={() => {
+                                // Could open a model selector dialog here
+                                toast.info(`Text Model: ${workflowConfig.aiRecommendation?.textModel}`);
+                              }}
+                            >
+                              <div className="p-1.5 rounded bg-blue-100 dark:bg-blue-900/30">
+                                <Type className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-[10px] text-muted-foreground">Text</p>
+                                <p className="text-xs font-medium truncate">{workflowConfig.aiRecommendation.textModel.split('/').pop()}</p>
+                              </div>
+                              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
                             </div>
-                            <div className="flex items-center gap-1.5 p-2 rounded bg-background border">
-                              <ImageIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                              <span className="text-[11px] font-medium truncate">
-                                {workflowConfig.aiRecommendation.imageModel}
-                              </span>
+                            
+                            {/* Image Model */}
+                            <div 
+                              className="flex items-center gap-2 p-2.5 rounded-lg bg-background border hover:border-primary/50 cursor-pointer transition-colors"
+                              onClick={() => toast.info(`Image Model: ${workflowConfig.aiRecommendation?.imageModel}`)}
+                            >
+                              <div className="p-1.5 rounded bg-purple-100 dark:bg-purple-900/30">
+                                <ImageIcon className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-[10px] text-muted-foreground">Image</p>
+                                <p className="text-xs font-medium truncate">{workflowConfig.aiRecommendation.imageModel}</p>
+                              </div>
+                              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
                             </div>
-                            <div className="flex items-center gap-1.5 p-2 rounded bg-background border">
-                              <Mic className="h-3.5 w-3.5 text-muted-foreground" />
-                              <span className="text-[11px] font-medium truncate">
-                                {workflowConfig.aiRecommendation.voiceModel}
-                              </span>
+                            
+                            {/* Voice Model */}
+                            <div 
+                              className="flex items-center gap-2 p-2.5 rounded-lg bg-background border hover:border-primary/50 cursor-pointer transition-colors"
+                              onClick={() => toast.info(`Voice Model: ${workflowConfig.aiRecommendation?.voiceModel}`)}
+                            >
+                              <div className="p-1.5 rounded bg-green-100 dark:bg-green-900/30">
+                                <Mic className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-[10px] text-muted-foreground">Voice</p>
+                                <p className="text-xs font-medium truncate">{workflowConfig.aiRecommendation.voiceModel}</p>
+                              </div>
+                              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
                             </div>
-                            <div className="flex items-center gap-1.5 p-2 rounded bg-background border">
-                              <Languages className="h-3.5 w-3.5 text-muted-foreground" />
-                              <span className="text-[11px] font-medium truncate">
-                                {workflowConfig.aiRecommendation.translationModel}
-                              </span>
+                            
+                            {/* Translation Model */}
+                            <div 
+                              className="flex items-center gap-2 p-2.5 rounded-lg bg-background border hover:border-primary/50 cursor-pointer transition-colors"
+                              onClick={() => toast.info(`Translation Model: ${workflowConfig.aiRecommendation?.translationModel}`)}
+                            >
+                              <div className="p-1.5 rounded bg-orange-100 dark:bg-orange-900/30">
+                                <Languages className="h-3.5 w-3.5 text-orange-600 dark:text-orange-400" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-[10px] text-muted-foreground">Translation</p>
+                                <p className="text-xs font-medium truncate">{workflowConfig.aiRecommendation.translationModel}</p>
+                              </div>
+                              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
                             </div>
                           </div>
+
+                          {/* Alternative Models */}
+                          {(workflowConfig.aiRecommendation.alternativeTextModels?.length || 0) > 0 && (
+                            <div className="pt-2 border-t">
+                              <p className="text-[10px] text-muted-foreground mb-1.5">Alternative Text Models:</p>
+                              <div className="flex flex-wrap gap-1">
+                                {workflowConfig.aiRecommendation.alternativeTextModels?.map(model => (
+                                  <Badge 
+                                    key={model} 
+                                    variant="outline" 
+                                    className="text-[10px] cursor-pointer hover:bg-primary/10"
+                                    onClick={() => {
+                                      setSelectedAIModel(model);
+                                      setWorkflowConfig(prev => prev ? {
+                                        ...prev,
+                                        aiRecommendation: {
+                                          ...prev.aiRecommendation!,
+                                          textModel: model
+                                        }
+                                      } : null);
+                                      toast.success(`Switched to ${model.split('/').pop()}`);
+                                    }}
+                                  >
+                                    {model.split('/').pop()}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </CardContent>
@@ -1628,7 +1696,7 @@ export function PresentationWizard({
 
             {/* Step 2: Template & Branding */}
             {currentStep === 2 && (
-              <div className="space-y-5">
+              <div className="space-y-4">
                 {/* Step description */}
                 <div className="bg-muted/30 rounded-lg p-3 border">
                   <p className="text-sm text-foreground font-medium">Template & Branding</p>
@@ -1637,269 +1705,359 @@ export function PresentationWizard({
                   </p>
                 </div>
 
-                {/* Professional Framework Selection - Simplified */}
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium flex items-center gap-2">
-                    <Layout className="h-4 w-4 text-primary" />
-                    Professional Framework
-                    <span className="text-xs font-normal text-muted-foreground">(Optional)</span>
-                  </Label>
-                  
-                  {/* Category Filter Pills - Consistent with Content Type */}
-                  <div className="flex flex-wrap gap-1.5">
-                    {[
-                      { id: 'framework', label: 'Frameworks', icon: <Triangle className="h-3 w-3" /> },
-                      { id: 'analysis', label: 'Analysis', icon: <BarChart3 className="h-3 w-3" /> },
-                      { id: 'diagram', label: 'Diagrams', icon: <GitBranch className="h-3 w-3" /> },
-                      { id: 'comparison', label: 'Comparison', icon: <Columns className="h-3 w-3" /> },
-                    ].map(cat => (
-                      <Button
-                        key={cat.id}
-                        variant={frameworkCategory === cat.id ? "default" : "outline"}
-                        size="sm"
-                        className="h-7 text-xs px-3 gap-1.5"
-                        onClick={() => setFrameworkCategory(cat.id)}
-                      >
-                        {cat.icon}
-                        {cat.label}
-                      </Button>
-                    ))}
-                  </div>
+                {/* Tabbed Interface for Template & Branding */}
+                <Tabs defaultValue="framework" className="w-full">
+                  <TabsList className="grid w-full grid-cols-3 h-9">
+                    <TabsTrigger value="framework" className="text-xs gap-1.5">
+                      <Layout className="h-3.5 w-3.5" />
+                      Framework
+                    </TabsTrigger>
+                    <TabsTrigger value="branding" className="text-xs gap-1.5">
+                      <Palette className="h-3.5 w-3.5" />
+                      Branding
+                    </TabsTrigger>
+                    <TabsTrigger value="visual" className="text-xs gap-1.5">
+                      <ImageIcon className="h-3.5 w-3.5" />
+                      Visual
+                    </TabsTrigger>
+                  </TabsList>
 
-                  {/* Framework Cards - Compact Horizontal Layout */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {CONSULTING_TEMPLATES.filter(t => t.type === frameworkCategory).map(template => (
-                      <Card
-                        key={template.id}
-                        className={cn(
-                          "cursor-pointer transition-all hover:border-primary/50 hover:shadow-sm",
-                          workflowConfig?.consultingTemplate?.id === template.id && "border-primary ring-2 ring-primary/20 bg-primary/5"
-                        )}
-                        onClick={() => {
-                          setWorkflowConfig(prev => ({
-                            ...prev!,
-                            consultingTemplate: template,
-                          }));
-                        }}
-                      >
-                        <CardContent className="p-2.5 flex items-center gap-2.5">
-                          <div className={cn(
-                            "w-10 h-8 rounded border flex items-center justify-center shrink-0",
-                            workflowConfig?.consultingTemplate?.id === template.id 
-                              ? "bg-primary/10 border-primary/30" 
-                              : "bg-muted/50 border-border"
-                          )}>
-                            {frameworkCategory === 'framework' && <Triangle className="h-4 w-4 text-muted-foreground" />}
-                            {frameworkCategory === 'analysis' && <Grid3X3 className="h-4 w-4 text-muted-foreground" />}
-                            {frameworkCategory === 'diagram' && <GitBranch className="h-4 w-4 text-muted-foreground" />}
-                            {frameworkCategory === 'comparison' && <Columns className="h-4 w-4 text-muted-foreground" />}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between gap-1">
-                              <h4 className="font-medium text-xs truncate">{template.name}</h4>
-                              <Badge variant="outline" className="text-[9px] shrink-0">{template.source}</Badge>
-                            </div>
-                            <p className="text-[10px] text-muted-foreground truncate">{template.description}</p>
-                          </div>
-                          {workflowConfig?.consultingTemplate?.id === template.id && (
-                            <Check className="h-3.5 w-3.5 text-primary shrink-0" />
-                          )}
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                  
-                  {/* Selected Framework Indicator */}
-                  {workflowConfig?.consultingTemplate ? (
-                    <div className="flex items-center justify-between p-2 rounded-lg bg-primary/5 border border-primary/20">
-                      <div className="flex items-center gap-2">
-                        <Check className="h-3.5 w-3.5 text-primary" />
-                        <span className="text-xs font-medium">{workflowConfig.consultingTemplate.name}</span>
-                      </div>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-6 text-xs"
-                        onClick={() => setWorkflowConfig(prev => ({ ...prev!, consultingTemplate: undefined }))}
-                      >
-                        Clear
-                      </Button>
-                    </div>
-                  ) : (
-                    <p className="text-[10px] text-muted-foreground flex items-center gap-1">
-                      <Check className="h-3 w-3" /> 
-                      Optional — AI creates an optimal layout if skipped
-                    </p>
-                  )}
-                </div>
-
-                <Separator />
-
-                {/* Branding & Colors - Simplified consistent layout */}
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium flex items-center gap-2">
-                    <Palette className="h-4 w-4 text-primary" />
-                    Branding & Colors
-                  </Label>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Logo Upload */}
-                    <div className="space-y-2">
-                      <Label className="text-xs text-muted-foreground">Logo (optional)</Label>
-                      <div className="flex items-center gap-2">
-                        <Input
-                          type="file"
-                          accept="image/*"
-                          className="text-xs h-8 flex-1"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              const reader = new FileReader();
-                              reader.onload = () => {
-                                setBrandConfig(prev => ({ 
-                                  ...prev, 
-                                  logo: { 
-                                    url: reader.result as string, 
-                                    position: prev.logo?.position || 'top-left', 
-                                    size: prev.logo?.size || 'medium' 
-                                  } 
-                                }));
-                              };
-                              reader.readAsDataURL(file);
-                            }
-                          }}
-                        />
-                        {brandConfig.logo?.url && (
-                          <img src={brandConfig.logo.url} alt="Logo" className="h-8 w-8 object-contain rounded border" />
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Brand Colors - Inline */}
-                    <div className="space-y-2">
-                      <Label className="text-xs text-muted-foreground">Colors</Label>
-                      <div className="flex gap-2">
-                        <div className="flex items-center gap-1 flex-1">
-                          <input
-                            type="color"
-                            value={brandConfig.colors.primary}
-                            onChange={(e) => setBrandConfig(prev => ({ ...prev, colors: { ...prev.colors, primary: e.target.value } }))}
-                            className="w-7 h-7 rounded cursor-pointer border-0"
-                          />
-                          <Input
-                            value={brandConfig.colors.primary}
-                            onChange={(e) => setBrandConfig(prev => ({ ...prev, colors: { ...prev.colors, primary: e.target.value } }))}
-                            className="text-[10px] h-7 flex-1"
-                            placeholder="Primary"
-                          />
-                        </div>
-                        <div className="flex items-center gap-1 flex-1">
-                          <input
-                            type="color"
-                            value={brandConfig.colors.secondary}
-                            onChange={(e) => setBrandConfig(prev => ({ ...prev, colors: { ...prev.colors, secondary: e.target.value } }))}
-                            className="w-7 h-7 rounded cursor-pointer border-0"
-                          />
-                          <Input
-                            value={brandConfig.colors.secondary}
-                            onChange={(e) => setBrandConfig(prev => ({ ...prev, colors: { ...prev.colors, secondary: e.target.value } }))}
-                            className="text-[10px] h-7 flex-1"
-                            placeholder="Secondary"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Theme Presets - Compact */}
-                  <div className="space-y-2">
-                    <Label className="text-xs text-muted-foreground">Theme Presets</Label>
-                    <div className="grid grid-cols-4 md:grid-cols-6 gap-1.5">
-                      {THEME_PRESETS.map(theme => (
-                        <div
-                          key={theme.id}
-                          className={cn(
-                            "cursor-pointer transition-all p-1.5 rounded border hover:border-primary/50",
-                            workflowConfig?.theme?.id === theme.id && "border-primary ring-1 ring-primary/20 bg-primary/5"
-                          )}
-                          onClick={() => {
-                            setWorkflowConfig(prev => ({
-                              ...prev!,
-                              theme: theme,
-                            }));
-                          }}
+                  {/* Framework Tab */}
+                  <TabsContent value="framework" className="mt-4 space-y-4">
+                    {/* Category Filter Pills */}
+                    <div className="flex flex-wrap gap-1.5">
+                      {[
+                        { id: 'framework', label: 'Frameworks', icon: <Triangle className="h-3 w-3" />, count: CONSULTING_TEMPLATES.filter(t => t.type === 'framework').length },
+                        { id: 'analysis', label: 'Analysis', icon: <BarChart3 className="h-3 w-3" />, count: CONSULTING_TEMPLATES.filter(t => t.type === 'analysis').length },
+                        { id: 'diagram', label: 'Diagrams', icon: <GitBranch className="h-3 w-3" />, count: CONSULTING_TEMPLATES.filter(t => t.type === 'diagram').length },
+                        { id: 'comparison', label: 'Comparison', icon: <Columns className="h-3 w-3" />, count: CONSULTING_TEMPLATES.filter(t => t.type === 'comparison').length },
+                      ].map(cat => (
+                        <Button
+                          key={cat.id}
+                          variant={frameworkCategory === cat.id ? "default" : "outline"}
+                          size="sm"
+                          className="h-8 text-xs px-3 gap-1.5"
+                          onClick={() => setFrameworkCategory(cat.id)}
                         >
-                          <div className="flex gap-0.5 mb-1">
-                            {Object.values(theme.colors).slice(0, 4).map((color, i) => (
-                              <div key={i} className="flex-1 h-2 rounded-sm" style={{ backgroundColor: color }} />
-                            ))}
-                          </div>
-                          <p className="text-[9px] font-medium text-center truncate">{theme.name}</p>
-                        </div>
+                          {cat.icon}
+                          {cat.label}
+                          <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">
+                            {cat.count}
+                          </Badge>
+                        </Button>
                       ))}
                     </div>
-                  </div>
 
-                  {/* Tagline - Compact */}
-                  <div className="flex items-center gap-2">
-                    <Label className="text-xs text-muted-foreground shrink-0">Tagline</Label>
-                    <Input
-                      value={brandConfig.tagline}
-                      onChange={(e) => setBrandConfig(prev => ({ ...prev, tagline: e.target.value }))}
-                      placeholder="Your company tagline..."
-                      className="h-7 text-xs flex-1"
-                    />
-                  </div>
-                </div>
+                    {/* Framework Cards Grid */}
+                    <ScrollArea className="h-[280px] pr-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {CONSULTING_TEMPLATES.filter(t => t.type === frameworkCategory).map(template => (
+                          <Card
+                            key={template.id}
+                            className={cn(
+                              "cursor-pointer transition-all hover:border-primary/50 hover:shadow-sm",
+                              workflowConfig?.consultingTemplate?.id === template.id && "border-primary ring-2 ring-primary/20 bg-primary/5"
+                            )}
+                            onClick={() => {
+                              setWorkflowConfig(prev => ({
+                                ...prev!,
+                                consultingTemplate: template,
+                              }));
+                            }}
+                          >
+                            <CardContent className="p-3">
+                              <div className="flex items-start gap-3">
+                                <div className={cn(
+                                  "w-10 h-10 rounded-lg border flex items-center justify-center shrink-0",
+                                  workflowConfig?.consultingTemplate?.id === template.id 
+                                    ? "bg-primary/10 border-primary/30" 
+                                    : "bg-muted/50 border-border"
+                                )}>
+                                  {frameworkCategory === 'framework' && <Triangle className="h-5 w-5 text-primary/70" />}
+                                  {frameworkCategory === 'analysis' && <Grid3X3 className="h-5 w-5 text-primary/70" />}
+                                  {frameworkCategory === 'diagram' && <GitBranch className="h-5 w-5 text-primary/70" />}
+                                  {frameworkCategory === 'comparison' && <Columns className="h-5 w-5 text-primary/70" />}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <h4 className="font-medium text-sm text-foreground">{template.name}</h4>
+                                    {workflowConfig?.consultingTemplate?.id === template.id && (
+                                      <Check className="h-4 w-4 text-primary shrink-0" />
+                                    )}
+                                  </div>
+                                  <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{template.description}</p>
+                                  <div className="flex items-center gap-2 mt-2">
+                                    <Badge variant="outline" className="text-[10px]">{template.source}</Badge>
+                                    {template.dataTypes.slice(0, 2).map(dt => (
+                                      <Badge key={dt} variant="secondary" className="text-[10px]">{dt}</Badge>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </ScrollArea>
 
-                <Separator />
+                    {/* Selected Framework Indicator */}
+                    {workflowConfig?.consultingTemplate ? (
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-primary/5 border border-primary/20">
+                        <div className="flex items-center gap-2">
+                          <Check className="h-4 w-4 text-primary" />
+                          <span className="text-sm font-medium">{workflowConfig.consultingTemplate.name}</span>
+                          <Badge variant="outline" className="text-[10px]">{workflowConfig.consultingTemplate.source}</Badge>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-7 text-xs"
+                          onClick={() => setWorkflowConfig(prev => ({ ...prev!, consultingTemplate: undefined }))}
+                        >
+                          Clear
+                        </Button>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground flex items-center gap-1.5 p-2 bg-muted/30 rounded">
+                        <Sparkles className="h-3.5 w-3.5 text-primary" /> 
+                        Optional — AI will create an optimal layout if no framework is selected
+                      </p>
+                    )}
+                  </TabsContent>
 
-                {/* Visual Configuration - Simplified */}
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium flex items-center gap-2">
-                    <ImageIcon className="h-4 w-4 text-primary" />
-                    Visual Configuration
-                  </Label>
-                  
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground">Image Source</Label>
-                      <Select value={imageSource} onValueChange={(v) => setImageSource(v as ImageSourceType)}>
-                        <SelectTrigger className="h-8 text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="ai-generated">AI Generated</SelectItem>
-                          <SelectItem value="stock-upload">Upload Stock</SelectItem>
-                          <SelectItem value="placeholder">Placeholders</SelectItem>
-                          <SelectItem value="mixed">Mixed (AI + Upload)</SelectItem>
-                        </SelectContent>
-                      </Select>
+                  {/* Branding Tab */}
+                  <TabsContent value="branding" className="mt-4 space-y-4">
+                    {/* Logo Upload */}
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium flex items-center gap-2">
+                        <Upload className="h-4 w-4 text-primary" />
+                        Logo Upload
+                      </Label>
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1">
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            className="text-xs"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onload = () => {
+                                  setBrandConfig(prev => ({ 
+                                    ...prev, 
+                                    logo: { 
+                                      url: reader.result as string, 
+                                      position: prev.logo?.position || 'top-left', 
+                                      size: prev.logo?.size || 'medium' 
+                                    } 
+                                  }));
+                                };
+                                reader.readAsDataURL(file);
+                              }
+                            }}
+                          />
+                        </div>
+                        {brandConfig.logo?.url && (
+                          <div className="flex items-center gap-2">
+                            <img src={brandConfig.logo.url} alt="Logo" className="h-10 w-10 object-contain rounded border" />
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-8 text-xs"
+                              onClick={() => setBrandConfig(prev => ({ ...prev, logo: undefined }))}
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                        )}
+                      </div>
                     </div>
+
+                    {/* Brand Colors */}
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Brand Colors</Label>
+                      <div className="grid grid-cols-3 gap-3">
+                        {/* Primary Color */}
+                        <div className="space-y-1.5">
+                          <Label className="text-xs text-muted-foreground">Primary</Label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="color"
+                              value={brandConfig.colors.primary}
+                              onChange={(e) => setBrandConfig(prev => ({ ...prev, colors: { ...prev.colors, primary: e.target.value } }))}
+                              className="w-8 h-8 rounded cursor-pointer border"
+                            />
+                            <Input
+                              value={brandConfig.colors.primary}
+                              onChange={(e) => setBrandConfig(prev => ({ ...prev, colors: { ...prev.colors, primary: e.target.value } }))}
+                              className="text-xs h-8 flex-1"
+                            />
+                          </div>
+                        </div>
+                        {/* Secondary Color */}
+                        <div className="space-y-1.5">
+                          <Label className="text-xs text-muted-foreground">Secondary</Label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="color"
+                              value={brandConfig.colors.secondary}
+                              onChange={(e) => setBrandConfig(prev => ({ ...prev, colors: { ...prev.colors, secondary: e.target.value } }))}
+                              className="w-8 h-8 rounded cursor-pointer border"
+                            />
+                            <Input
+                              value={brandConfig.colors.secondary}
+                              onChange={(e) => setBrandConfig(prev => ({ ...prev, colors: { ...prev.colors, secondary: e.target.value } }))}
+                              className="text-xs h-8 flex-1"
+                            />
+                          </div>
+                        </div>
+                        {/* Accent Color */}
+                        <div className="space-y-1.5">
+                          <Label className="text-xs text-muted-foreground">Accent</Label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="color"
+                              value={brandConfig.colors.accent}
+                              onChange={(e) => setBrandConfig(prev => ({ ...prev, colors: { ...prev.colors, accent: e.target.value } }))}
+                              className="w-8 h-8 rounded cursor-pointer border"
+                            />
+                            <Input
+                              value={brandConfig.colors.accent}
+                              onChange={(e) => setBrandConfig(prev => ({ ...prev, colors: { ...prev.colors, accent: e.target.value } }))}
+                              className="text-xs h-8 flex-1"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Theme Presets */}
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Theme Presets</Label>
+                      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                        {THEME_PRESETS.map(theme => (
+                          <div
+                            key={theme.id}
+                            className={cn(
+                              "cursor-pointer transition-all p-2 rounded-lg border hover:border-primary/50 hover:shadow-sm",
+                              workflowConfig?.theme?.id === theme.id && "border-primary ring-2 ring-primary/20 bg-primary/5"
+                            )}
+                            onClick={() => {
+                              setWorkflowConfig(prev => ({
+                                ...prev!,
+                                theme: theme,
+                              }));
+                              // Apply theme colors to brand config
+                              setBrandConfig(prev => ({
+                                ...prev,
+                                colors: {
+                                  ...prev.colors,
+                                  primary: theme.colors.primary,
+                                  secondary: theme.colors.secondary,
+                                  accent: theme.colors.accent,
+                                  background: theme.colors.background,
+                                }
+                              }));
+                            }}
+                          >
+                            <div className="flex gap-0.5 mb-1.5">
+                              {Object.values(theme.colors).slice(0, 4).map((color, i) => (
+                                <div key={i} className="flex-1 h-3 rounded-sm" style={{ backgroundColor: color }} />
+                              ))}
+                            </div>
+                            <p className="text-[10px] font-medium text-center truncate">{theme.name}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Tagline */}
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Company Tagline</Label>
+                      <Input
+                        value={brandConfig.tagline}
+                        onChange={(e) => setBrandConfig(prev => ({ ...prev, tagline: e.target.value }))}
+                        placeholder="Enter your company tagline..."
+                        className="text-sm"
+                      />
+                    </div>
+                  </TabsContent>
+
+                  {/* Visual Tab */}
+                  <TabsContent value="visual" className="mt-4 space-y-4">
+                    {/* Image Source */}
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium flex items-center gap-2">
+                        <ImageIcon className="h-4 w-4 text-primary" />
+                        Image Source
+                      </Label>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {[
+                          { id: 'ai-generated', label: 'AI Generated', icon: <Sparkles className="h-4 w-4" /> },
+                          { id: 'stock-upload', label: 'Upload Stock', icon: <Upload className="h-4 w-4" /> },
+                          { id: 'placeholder', label: 'Placeholders', icon: <ImageIcon className="h-4 w-4" /> },
+                          { id: 'mixed', label: 'Mixed', icon: <Layers className="h-4 w-4" /> },
+                        ].map(src => (
+                          <Card
+                            key={src.id}
+                            className={cn(
+                              "cursor-pointer transition-all hover:border-primary/50",
+                              imageSource === src.id && "border-primary ring-2 ring-primary/20 bg-primary/5"
+                            )}
+                            onClick={() => setImageSource(src.id as ImageSourceType)}
+                          >
+                            <CardContent className="p-3 flex flex-col items-center gap-2">
+                              <div className={cn(
+                                "p-2 rounded-lg",
+                                imageSource === src.id ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+                              )}>
+                                {src.icon}
+                              </div>
+                              <span className="text-xs font-medium">{src.label}</span>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Image Model Selector */}
                     {imageSource !== 'placeholder' && (
-                      <div className="space-y-1.5">
-                        <Label className="text-xs text-muted-foreground">Image Model</Label>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Image Model</Label>
                         <ImageModelSelector selectedModel={imageModel} onModelChange={setImageModel} showLabel={false} />
                       </div>
                     )}
-                  </div>
 
-                  {/* Visual Toggles - Inline */}
-                  <div className="flex flex-wrap gap-4">
-                    <div className="flex items-center gap-1.5">
-                      <Switch checked={includeInfographics} onCheckedChange={setIncludeInfographics} className="scale-90" />
-                      <Label className="text-xs">Infographics</Label>
+                    {/* Visual Toggles */}
+                    <div className="space-y-3">
+                      <Label className="text-sm font-medium">Visual Elements</Label>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div className="flex items-center justify-between p-3 rounded-lg border bg-background">
+                          <div className="flex items-center gap-2">
+                            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm">Infographics</span>
+                          </div>
+                          <Switch checked={includeInfographics} onCheckedChange={setIncludeInfographics} />
+                        </div>
+                        <div className="flex items-center justify-between p-3 rounded-lg border bg-background">
+                          <div className="flex items-center gap-2">
+                            <GitBranch className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm">Journey Maps</span>
+                          </div>
+                          <Switch checked={includeJourneyMaps} onCheckedChange={setIncludeJourneyMaps} />
+                        </div>
+                        <div className="flex items-center justify-between p-3 rounded-lg border bg-background">
+                          <div className="flex items-center gap-2">
+                            <Video className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm">Video Clips</span>
+                          </div>
+                          <Switch checked={includeVideo} onCheckedChange={setIncludeVideo} />
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <Switch checked={includeJourneyMaps} onCheckedChange={setIncludeJourneyMaps} className="scale-90" />
-                      <Label className="text-xs">Journey Maps</Label>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <Switch checked={includeVideo} onCheckedChange={setIncludeVideo} className="scale-90" />
-                      <Label className="text-xs">Video Clips</Label>
-                    </div>
-                  </div>
-                </div>
+                  </TabsContent>
+                </Tabs>
               </div>
             )}
 
