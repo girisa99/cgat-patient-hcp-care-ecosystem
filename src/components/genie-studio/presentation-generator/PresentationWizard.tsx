@@ -1557,15 +1557,22 @@ export function PresentationWizard({
                               if (file) {
                                 const reader = new FileReader();
                                 reader.onload = () => {
-                                  setBrandConfig(prev => ({ ...prev, logoUrl: reader.result as string }));
+                                  setBrandConfig(prev => ({ 
+                                    ...prev, 
+                                    logo: { 
+                                      url: reader.result as string, 
+                                      position: prev.logo?.position || 'top-left', 
+                                      size: prev.logo?.size || 'medium' 
+                                    } 
+                                  }));
                                 };
                                 reader.readAsDataURL(file);
                               }
                             }}
                           />
                         </div>
-                        {brandConfig.logoUrl && (
-                          <img src={brandConfig.logoUrl} alt="Logo" className="h-12 object-contain rounded" />
+                        {brandConfig.logo?.url && (
+                          <img src={brandConfig.logo.url} alt="Logo" className="h-12 object-contain rounded" />
                         )}
                       </div>
 
