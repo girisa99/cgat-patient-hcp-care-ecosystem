@@ -531,16 +531,10 @@ export function TemplateBrandingPanel({
                     )}
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Let AI choose the best template based on your content, industry, and branding
+                    AI selects optimal template, colors & features based on your content
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  {isAIDefault && (
-                    <div className="flex items-center gap-1 text-sm text-primary">
-                      <Lightbulb className="h-4 w-4" />
-                      <span>AI Optimized</span>
-                    </div>
-                  )}
                   <Switch 
                     checked={isAIDefault} 
                     onCheckedChange={(checked) => {
@@ -551,8 +545,99 @@ export function TemplateBrandingPanel({
                   />
                 </div>
               </div>
+              
+              {/* AI Selection Summary - shown when active */}
+              {isAIDefault && (
+                <div className="mt-4 pt-4 border-t border-primary/20 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-foreground">AI Recommendations</span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 text-xs"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAutoTemplate();
+                      }}
+                    >
+                      <RefreshCw className="h-3 w-3 mr-1" />
+                      Regenerate
+                    </Button>
+                  </div>
+                  
+                  <div className="grid grid-cols-3 gap-2">
+                    {/* Template Preview */}
+                    <div className="p-2 rounded-lg bg-background border">
+                      <p className="text-[10px] text-muted-foreground mb-1">Template</p>
+                      <p className="text-xs font-medium truncate">{selectedTemplate?.name || 'Corporate Pro'}</p>
+                    </div>
+                    {/* Colors Preview */}
+                    <div className="p-2 rounded-lg bg-background border">
+                      <p className="text-[10px] text-muted-foreground mb-1">Colors</p>
+                      <div className="flex gap-1">
+                        <div className="w-4 h-4 rounded-full border" style={{ backgroundColor: brandConfig.colors.primary }} />
+                        <div className="w-4 h-4 rounded-full border" style={{ backgroundColor: brandConfig.colors.secondary }} />
+                        <div className="w-4 h-4 rounded-full border" style={{ backgroundColor: brandConfig.colors.accent }} />
+                      </div>
+                    </div>
+                    {/* Features Preview */}
+                    <div className="p-2 rounded-lg bg-background border">
+                      <p className="text-[10px] text-muted-foreground mb-1">Features</p>
+                      <p className="text-xs font-medium">{Object.values(extendedFeatures).filter(Boolean).length} selected</p>
+                    </div>
+                  </div>
+
+                  {/* Feature Selection for AI Default */}
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground">Select features for AI template:</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {VISUAL_FEATURES.map(feature => {
+                        const IconComponent = feature.iconType === 'barChart' ? BarChart3 
+                          : feature.iconType === 'gitBranch' ? GitBranch
+                          : feature.iconType === 'table' ? Table
+                          : feature.iconType === 'pieChart' ? PieChart
+                          : feature.iconType === 'calendar' ? Calendar
+                          : feature.iconType === 'shapes' ? Shapes
+                          : feature.iconType === 'quote' ? Quote
+                          : Sparkles;
+                        const isActive = extendedFeatures[feature.key] === true;
+                        return (
+                          <button
+                            key={feature.key}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setExtendedFeatures(prev => ({
+                                ...prev,
+                                [feature.key]: !prev[feature.key]
+                              }));
+                            }}
+                            className={cn(
+                              "flex items-center gap-1 px-2 py-1 rounded-full text-[10px] transition-all",
+                              isActive 
+                                ? "bg-primary text-primary-foreground" 
+                                : "bg-muted text-muted-foreground hover:bg-muted/80"
+                            )}
+                          >
+                            <IconComponent className="h-3 w-3" />
+                            {feature.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
+
+          {/* Divider with explanation */}
+          <div className="flex items-center gap-3">
+            <div className="flex-1 border-t border-muted" />
+            <span className="text-xs text-muted-foreground">
+              {isAIDefault ? 'Or select manually to override AI' : 'Choose a template'}
+            </span>
+            <div className="flex-1 border-t border-muted" />
+          </div>
 
           {/* Category Pills - Horizontal */}
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
@@ -580,11 +665,12 @@ export function TemplateBrandingPanel({
             })}
           </div>
 
-          {/* Template Grid - 2 columns */}
+          {/* Template Grid - Always visible and selectable */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {filteredTemplates.map(template => {
               const isSelected = selectedTemplate?.id === template.id;
               const isPreview = selectedPreview?.id === template.id;
+              const isAIRecommended = isAIDefault && isSelected;
               
               return (
                 <Card
@@ -592,13 +678,22 @@ export function TemplateBrandingPanel({
                   className={cn(
                     "transition-all cursor-pointer overflow-hidden group",
                     isSelected && "ring-2 ring-primary border-primary",
-                    isPreview && !isSelected && "ring-1 ring-primary/50"
+                    isPreview && !isSelected && "ring-1 ring-primary/50",
+                    isAIRecommended && "relative"
                   )}
                   onClick={() => setSelectedPreview(isPreview ? null : template)}
                 >
+                  {/* AI Recommended Badge */}
+                  {isAIRecommended && (
+                    <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground text-[10px] font-medium py-0.5 px-2 flex items-center justify-center gap-1 z-10">
+                      <Sparkles className="h-3 w-3" />
+                      AI Recommended
+                    </div>
+                  )}
+                  
                   {/* Preview Banner */}
                   <div 
-                    className="h-20 relative"
+                    className={cn("h-20 relative", isAIRecommended && "mt-5")}
                     style={{ background: template.preview }}
                   >
                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
@@ -617,7 +712,7 @@ export function TemplateBrandingPanel({
                         ))}
                       </div>
                     </div>
-                    {isSelected && (
+                    {isSelected && !isAIRecommended && (
                       <div className="absolute top-2 right-2 p-1.5 rounded-full bg-primary text-primary-foreground">
                         <Check className="h-3 w-3" />
                       </div>
@@ -642,7 +737,7 @@ export function TemplateBrandingPanel({
                         onClick={(e) => {
                           e.stopPropagation();
                           handleTemplateSelect(template);
-                          setIsAIDefault(false);
+                          setIsAIDefault(false); // Turn off AI Default when manually selecting
                         }}
                       >
                         {isSelected ? <Check className="h-3 w-3" /> : 'Select'}
