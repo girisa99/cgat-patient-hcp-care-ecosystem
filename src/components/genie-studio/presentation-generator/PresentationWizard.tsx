@@ -14,7 +14,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { SocialPublisher } from '@/components/publish/SocialPublisher';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -83,6 +83,11 @@ import {
   Video,
   Building2,
   Target,
+  Mic,
+  Triangle,
+  GitBranch,
+  Columns,
+  Grid3X3,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -1549,6 +1554,8 @@ export function PresentationWizard({
               </div>
             )}
 
+            {/* Step 2: Template & Branding */}
+            {currentStep === 2 && (
               <div className="space-y-6">
                 {/* Step description */}
                 <div className="bg-muted/30 rounded-lg p-3 border">
