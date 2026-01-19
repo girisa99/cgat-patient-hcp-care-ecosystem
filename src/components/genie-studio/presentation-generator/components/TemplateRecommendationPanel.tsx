@@ -367,29 +367,35 @@ export const TemplateRecommendationPanel: React.FC<TemplateRecommendationPanelPr
           </>
         )}
 
-        {/* Sub-Options with IMPROVED STYLING */}
+        {/* Sub-Options with IMPROVED STYLING - Full Readable Cards */}
         {recommendation.subOptions && recommendation.subOptions.length > 0 && (
           <>
             <Separator />
             <div className="space-y-3">
-              <p className="text-xs font-medium text-foreground">Output Format Options</p>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold text-foreground">Select Output Format</p>
+                <Badge variant="outline" className="text-[10px]">
+                  {recommendation.subOptions.length} options
+                </Badge>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {recommendation.subOptions.map(option => (
                   <div
                     key={option.id}
                     className={cn(
-                      "flex items-center gap-2 p-2.5 rounded-lg border border-border bg-card",
-                      "cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-all"
+                      "flex items-start gap-3 p-4 rounded-xl border-2 bg-card",
+                      "cursor-pointer hover:border-primary hover:bg-primary/5 hover:shadow-md transition-all"
                     )}
                     onClick={() => toast.info(`Selected: ${option.label}`)}
                   >
-                    <div className="p-1.5 rounded-md bg-primary/10">
-                      <ChevronRight className="h-3 w-3 text-primary" />
+                    <div className="p-2 rounded-lg bg-primary/10 shrink-0">
+                      <BookOpen className="h-4 w-4 text-primary" />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-foreground truncate">{option.label}</p>
-                      <p className="text-[10px] text-muted-foreground truncate">{option.description}</p>
+                    <div className="flex-1 space-y-1">
+                      <p className="text-sm font-semibold text-foreground">{option.label}</p>
+                      <p className="text-xs text-muted-foreground leading-relaxed">{option.description}</p>
                     </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-1" />
                   </div>
                 ))}
               </div>

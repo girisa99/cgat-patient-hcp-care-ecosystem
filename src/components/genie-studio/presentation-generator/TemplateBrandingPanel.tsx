@@ -475,14 +475,14 @@ export function TemplateBrandingPanel({
         )}
       </div>
 
-      {/* Tab Navigation */}
-      <div className="flex gap-1 p-1 bg-muted/50 rounded-xl overflow-x-auto">
+      {/* Tab Navigation - Responsive Grid */}
+      <div className="grid grid-cols-3 md:grid-cols-5 gap-1 p-1.5 bg-muted/50 rounded-xl">
         {[
-          { id: 'ai-recommendations', label: 'AI Recommend', icon: Wand2 },
-          { id: 'templates', label: 'Templates', icon: Layout },
-          { id: 'repository', label: 'Repository', icon: Layers },
-          { id: 'branding', label: 'Branding', icon: Upload },
-          { id: 'features', label: 'Features', icon: Settings2 }
+          { id: 'ai-recommendations', label: 'AI Recommend', shortLabel: 'AI', icon: Wand2 },
+          { id: 'templates', label: 'Templates', shortLabel: 'Templates', icon: Layout },
+          { id: 'repository', label: 'Repository', shortLabel: 'Saved', icon: Layers },
+          { id: 'branding', label: 'Branding', shortLabel: 'Brand', icon: Upload },
+          { id: 'features', label: 'Features', shortLabel: 'Features', icon: Settings2 }
         ].map(tab => {
           const Icon = tab.icon;
           return (
@@ -490,14 +490,15 @@ export function TemplateBrandingPanel({
               key={tab.id}
               onClick={() => setActiveTab(tab.id as typeof activeTab)}
               className={cn(
-                "flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-sm font-medium transition-all whitespace-nowrap",
+                "flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 px-2 sm:px-3 rounded-lg text-xs sm:text-sm font-medium transition-all",
                 activeTab === tab.id
-                  ? "bg-background text-foreground shadow-sm"
+                  ? "bg-background text-foreground shadow-md border"
                   : "text-muted-foreground hover:text-foreground hover:bg-background/50"
               )}
             >
               <Icon className="h-4 w-4" />
-              <span className="hidden sm:inline">{tab.label}</span>
+              <span className="hidden md:inline">{tab.label}</span>
+              <span className="md:hidden text-[10px]">{tab.shortLabel}</span>
             </button>
           );
         })}

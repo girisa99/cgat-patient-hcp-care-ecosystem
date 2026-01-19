@@ -69,27 +69,27 @@ const CustomOptionInput: React.FC<CustomOptionInputProps> = ({ categoryId, onAdd
   if (!isAdding) {
     return (
       <div
-        className="flex items-center gap-2 p-2 rounded-md border border-dashed border-primary/40 cursor-pointer hover:bg-primary/5 transition-colors col-span-2"
+        className="flex items-center gap-3 p-4 rounded-xl border-2 border-dashed border-primary/40 cursor-pointer hover:bg-primary/5 hover:border-primary transition-all"
         onClick={() => setIsAdding(true)}
       >
-        <div className="p-1.5 rounded bg-primary/10 text-primary">
-          <Plus className="h-3 w-3" />
+        <div className="p-2 rounded-lg bg-primary/10 text-primary">
+          <Plus className="h-4 w-4" />
         </div>
         <div className="flex-1">
-          <p className="text-xs font-medium text-primary">Add Custom Option</p>
-          <p className="text-[10px] text-muted-foreground">Missing something? Add your own</p>
+          <p className="text-sm font-semibold text-primary">Add Custom Option</p>
+          <p className="text-xs text-muted-foreground">Missing something? Add your own</p>
         </div>
       </div>
     );
   }
   
   return (
-    <div className="col-span-2 p-2 rounded-md border border-primary/40 bg-primary/5 space-y-2">
+    <div className="p-4 rounded-xl border-2 border-primary/40 bg-primary/5 space-y-3">
       <Input
         placeholder="Enter custom option name..."
         value={customLabel}
         onChange={(e) => setCustomLabel(e.target.value)}
-        className="h-7 text-xs"
+        className="h-9 text-sm"
         autoFocus
         onKeyDown={(e) => {
           if (e.key === 'Enter') handleAdd();
@@ -100,19 +100,19 @@ const CustomOptionInput: React.FC<CustomOptionInputProps> = ({ categoryId, onAdd
         <Button 
           size="sm" 
           variant="ghost" 
-          className="h-6 text-[10px]"
+          className="h-8 text-xs"
           onClick={() => { setIsAdding(false); setCustomLabel(''); }}
         >
           Cancel
         </Button>
         <Button 
           size="sm" 
-          className="h-6 text-[10px]"
+          className="h-8 text-xs"
           onClick={handleAdd}
           disabled={!customLabel.trim()}
         >
           <Plus className="h-3 w-3 mr-1" />
-          Add
+          Add Option
         </Button>
       </div>
     </div>
@@ -357,16 +357,17 @@ export const ContentTypeSelector: React.FC<ContentTypeSelectorProps> = ({
           </Badge>
         </div>
 
-        {/* Category Pills - Compact Wrap with Scroll */}
-        <div className="flex flex-wrap gap-1 max-h-[120px] overflow-y-auto">
+        {/* Category Pills - Responsive Grid (No Scroll) */}
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
           {CONTENT_CATEGORIES.map(category => (
             <Button
               key={category.id}
               variant={contentCategory === category.id ? "default" : "outline"}
               size="sm"
               className={cn(
-                "h-7 text-[11px] px-2 gap-1 shrink-0",
-                category.isAI && contentCategory === category.id && "bg-gradient-to-r from-primary to-primary/80"
+                "h-auto py-2 px-2 flex flex-col items-center gap-1 text-[10px] sm:text-xs",
+                category.isAI && contentCategory === category.id && "bg-gradient-to-r from-primary to-primary/80",
+                contentCategory === category.id && "shadow-md"
               )}
               onClick={() => {
                 setContentCategory(category.id);
@@ -380,8 +381,8 @@ export const ContentTypeSelector: React.FC<ContentTypeSelectorProps> = ({
               }}
               title={category.description}
             >
-              <category.icon className="h-3 w-3" />
-              {category.label}
+              <category.icon className="h-4 w-4" />
+              <span className="text-center leading-tight">{category.label}</span>
             </Button>
           ))}
         </div>
@@ -440,8 +441,8 @@ export const ContentTypeSelector: React.FC<ContentTypeSelectorProps> = ({
                 {expandedSubOptions ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
               </Button>
             </CollapsibleTrigger>
-            <CollapsibleContent className="pt-2">
-              <div className="grid grid-cols-2 gap-2 p-2 rounded-lg bg-muted/30 border max-h-[240px] overflow-y-auto">
+            <CollapsibleContent className="pt-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 rounded-xl bg-card border border-border">
                 {currentSubOptions.map(option => {
                   const isSelected = selectedSubOptions.includes(option.id);
                   const IconComponent = option.icon;
@@ -450,26 +451,33 @@ export const ContentTypeSelector: React.FC<ContentTypeSelectorProps> = ({
                     <div
                       key={option.id}
                       className={cn(
-                        "flex items-center gap-2 p-2 rounded-md border cursor-pointer transition-all",
+                        "flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all",
                         "hover:border-primary/50 hover:bg-primary/5",
-                        isSelected && "border-primary bg-primary/10 ring-1 ring-primary/20"
+                        isSelected 
+                          ? "border-primary bg-primary/5 shadow-sm" 
+                          : "border-transparent bg-muted/50"
                       )}
                       onClick={() => handleSubOptionToggle(option.id)}
                     >
                       <div className={cn(
-                        "p-1.5 rounded shrink-0",
-                        isSelected ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
+                        "p-2 rounded-lg shrink-0",
+                        isSelected ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground border"
                       )}>
-                        <IconComponent className="h-3 w-3" />
+                        <IconComponent className="h-4 w-4" />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium truncate">{option.label}</p>
-                        <p className="text-[10px] text-muted-foreground truncate">{option.description}</p>
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className={cn(
+                            "text-sm font-semibold",
+                            isSelected ? "text-primary" : "text-foreground"
+                          )}>{option.label}</p>
+                          {isSelected && <Check className="h-4 w-4 text-primary shrink-0" />}
+                        </div>
+                        <p className="text-xs text-muted-foreground leading-relaxed">{option.description}</p>
+                        <Badge variant="secondary" className="text-[10px] mt-1">
+                          {option.suggestedSlides} slides
+                        </Badge>
                       </div>
-                      <div className="text-right shrink-0">
-                        <span className="text-[10px] text-muted-foreground">{option.suggestedSlides} slides</span>
-                      </div>
-                      {isSelected && <Check className="h-3 w-3 text-primary shrink-0" />}
                     </div>
                   );
                 })}
