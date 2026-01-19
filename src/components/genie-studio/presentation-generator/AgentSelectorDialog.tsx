@@ -360,11 +360,9 @@ export function AgentCard({ agentKey, agent, isSelected, config, onClick }: Agen
             {isSelected && agent.providers && agent.providers.length > 0 && (
               <div className="flex items-center gap-0.5 ml-auto">
                 {agent.providers.slice(0, 3).map(provider => (
-                  <CircleDot 
-                    key={provider} 
-                    className="h-2 w-2 text-muted-foreground" 
-                    title={provider}
-                  />
+                  <span key={provider} title={provider}>
+                    <CircleDot className="h-2 w-2 text-muted-foreground" />
+                  </span>
                 ))}
                 {agent.providers.length > 3 && (
                   <span className="text-[8px] text-muted-foreground">+{agent.providers.length - 3}</span>
