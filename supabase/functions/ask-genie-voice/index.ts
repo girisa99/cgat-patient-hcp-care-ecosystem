@@ -22,12 +22,16 @@ const PROVIDERS = {
   elevenlabs: 'https://api.elevenlabs.io/v1/text-to-speech',
   openai_tts: 'https://api.openai.com/v1/audio/speech',
   google_tts: 'https://texttospeech.googleapis.com/v1/text:synthesize',
-  azure_tts: 'tts.speech.microsoft.com',
+  azure_tts: 'https://{region}.tts.speech.microsoft.com/cognitiveservices/v1',
+  aws_polly: 'https://polly.{region}.amazonaws.com',
+  alibaba_tts: 'https://nls-gateway.cn-shanghai.aliyuncs.com/stream/v1/tts',
   
   // STT
   whisper: 'https://api.openai.com/v1/audio/transcriptions',
   google_stt: 'https://speech.googleapis.com/v1/speech:recognize',
+  azure_stt: 'https://{region}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1',
   elevenlabs_stt: 'https://api.elevenlabs.io/v1/speech-to-text',
+  deepgram_stt: 'https://api.deepgram.com/v1/listen',
 };
 
 // Language code mappings
@@ -363,7 +367,18 @@ serve(async (req) => {
               audioBuffer = await speakWithGoogle(text, language, voiceId);
               break;
             case 'azure':
-              // Fallback to ElevenLabs for now
+              // Azure fallback to Google for now (requires region config)
+              console.log('[ask-genie-voice] Azure TTS requested, falling back to Google');
+              audioBuffer = await speakWithGoogle(text, language, voiceId);
+              break;
+            case 'aws':
+              // AWS Polly fallback to OpenAI for now
+              console.log('[ask-genie-voice] AWS Polly requested, falling back to OpenAI');
+              audioBuffer = await speakWithOpenAI(text, voiceId);
+              break;
+            case 'alibaba':
+              // Alibaba fallback to ElevenLabs for now (best for CJK)
+              console.log('[ask-genie-voice] Alibaba TTS requested, falling back to ElevenLabs');
               audioBuffer = await speakWithElevenLabs(text, voiceId);
               break;
             default:
