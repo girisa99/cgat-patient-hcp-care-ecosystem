@@ -123,14 +123,14 @@ export const TEXT_PROVIDERS: TextProvider[] = [
     name: 'GPT-5', 
     model: 'openai/gpt-5',
     strengths: ['Premium quality', 'Nuance', 'Creative'],
-    bestFor: ['creative', 'investor-pitch', 'executive']
+    bestFor: ['creative', 'investor-pitch', 'business']
   },
   { 
     id: 'gpt-5-mini', 
     name: 'GPT-5 Mini', 
     model: 'openai/gpt-5-mini',
     strengths: ['Balanced', 'Cost-effective', 'Fast'],
-    bestFor: ['training', 'internal', 'general']
+    bestFor: ['training', 'internal', 'education']
   },
   { 
     id: 'claude-3.5', 
