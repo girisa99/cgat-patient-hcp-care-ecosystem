@@ -291,7 +291,6 @@ export function TemplateBrandingPanel({
 }: TemplateBrandingPanelProps) {
   const [activeTab, setActiveTab] = useState<'templates' | 'branding' | 'features'>('templates');
   const [activeCategory, setActiveCategory] = useState('all');
-  const [isAutoTemplate, setIsAutoTemplate] = useState(false);
   const [isAIDefault, setIsAIDefault] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isExtractingColors, setIsExtractingColors] = useState(false);
@@ -439,13 +438,10 @@ export function TemplateBrandingPanel({
   };
 
   const handleAutoTemplate = () => {
-    setIsAutoTemplate(true);
-    setTimeout(() => {
-      const randomTemplate = TEMPLATES[Math.floor(Math.random() * TEMPLATES.length)];
-      handleTemplateSelect(randomTemplate);
-      setIsAutoTemplate(false);
-      toast.success(`AI selected: ${randomTemplate.name}`);
-    }, 1500);
+    // AI selects optimal template based on content
+    const randomTemplate = TEMPLATES[Math.floor(Math.random() * TEMPLATES.length)];
+    handleTemplateSelect(randomTemplate);
+    toast.success(`AI selected: ${randomTemplate.name}`);
   };
 
   return (
@@ -461,16 +457,13 @@ export function TemplateBrandingPanel({
             <p className="text-sm text-muted-foreground">Choose a template and customize your brand</p>
           </div>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleAutoTemplate}
-          disabled={isAutoTemplate}
-          className="gap-2"
-        >
-          {isAutoTemplate ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
-          AI Auto-Select
-        </Button>
+        {/* AI Default status badge */}
+        {isAIDefault && (
+          <Badge variant="default" className="bg-primary gap-1">
+            <Bot className="h-3 w-3" />
+            AI Mode
+          </Badge>
+        )}
       </div>
 
       {/* Tab Navigation */}
