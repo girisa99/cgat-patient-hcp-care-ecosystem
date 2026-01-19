@@ -1,10 +1,12 @@
 /**
  * Language Configuration Popup
  * 
- * Appears when user selects each language for generation.
- * Allows configuring AI models for text, image, voice AND translation provider per language.
+ * Dynamically loads AI providers from useContextualAIProviders hook.
+ * Shows relevant text, image, voice, and translation models per language.
  * 
- * Integrated with TranslationProviderSelector for intelligent provider recommendations.
+ * Integrated with:
+ * - useContextualAIProviders for dynamic provider selection
+ * - TranslationProviderSelector for intelligent translation provider recommendations
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -28,6 +30,14 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Progress } from '@/components/ui/progress';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import {
   Globe,
   Brain,
@@ -39,6 +49,11 @@ import {
   Check,
   ChevronRight,
   Languages,
+  Settings2,
+  Info,
+  TrendingUp,
+  DollarSign,
+  Gauge,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LanguageModelConfig } from '@/services/agentPresentationGeneratorService';
@@ -50,6 +65,8 @@ import {
   TRANSLATION_PROVIDERS,
   translationService,
 } from '@/services/translationService';
+import { useContextualAIProviders, type ProviderRecommendation } from '@/hooks/useContextualAIProviders';
+import { AI_PROVIDER_REGISTRY } from '@/services/ai-hub/providerRegistry';
 
 export interface ExtendedLanguageModelConfig extends LanguageModelConfig {
   translationProvider?: TranslationProvider;
@@ -69,24 +86,59 @@ interface LanguageConfigPopupProps {
   contentType?: 'general' | 'medical' | 'legal' | 'technical' | 'marketing' | 'presentation';
 }
 
-// Available models
-const TEXT_MODELS = [
-  { id: 'google/gemini-3-flash-preview', name: 'Gemini 3 Flash', tier: 'fast', description: 'Fast & balanced' },
-  { id: 'google/gemini-2.5-flash', name: 'Gemini 2.5 Flash', tier: 'balanced', description: 'Great quality' },
-  { id: 'google/gemini-2.5-pro', name: 'Gemini 2.5 Pro', tier: 'premium', description: 'Best quality' },
-  { id: 'openai/gpt-5-mini', name: 'GPT-5 Mini', tier: 'balanced', description: 'Efficient & smart' },
-  { id: 'openai/gpt-5', name: 'GPT-5', tier: 'premium', description: 'Top reasoning' },
+// Model display info with provider details
+interface ModelOption {
+  id: string;
+  name: string;
+  provider: string;
+  tier: 'fast' | 'balanced' | 'premium';
+  description: string;
+  quality: number;
+  speed: number;
+  cost: number;
+  isConfigured: boolean;
+}
+
+// Static model definitions with provider info
+const TEXT_MODELS: ModelOption[] = [
+  // Gemini
+  { id: 'google/gemini-3-flash-preview', name: 'Gemini 3 Flash', provider: 'gemini', tier: 'fast', description: 'Fast & balanced', quality: 94, speed: 90, cost: 75, isConfigured: true },
+  { id: 'google/gemini-2.5-flash', name: 'Gemini 2.5 Flash', provider: 'gemini', tier: 'balanced', description: 'Great quality', quality: 93, speed: 88, cost: 70, isConfigured: true },
+  { id: 'google/gemini-2.5-pro', name: 'Gemini 2.5 Pro', provider: 'gemini', tier: 'premium', description: 'Best quality', quality: 96, speed: 80, cost: 60, isConfigured: true },
+  // OpenAI
+  { id: 'openai/gpt-4o-mini', name: 'GPT-4o Mini', provider: 'openai', tier: 'fast', description: 'Efficient & smart', quality: 88, speed: 85, cost: 80, isConfigured: true },
+  { id: 'openai/gpt-4o', name: 'GPT-4o', provider: 'openai', tier: 'balanced', description: 'Balanced excellence', quality: 94, speed: 82, cost: 60, isConfigured: true },
+  { id: 'openai/gpt-5', name: 'GPT-5', provider: 'openai', tier: 'premium', description: 'Top reasoning', quality: 98, speed: 78, cost: 45, isConfigured: true },
+  // Claude
+  { id: 'anthropic/claude-3-haiku', name: 'Claude 3 Haiku', provider: 'claude', tier: 'fast', description: 'Quick responses', quality: 85, speed: 92, cost: 85, isConfigured: true },
+  { id: 'anthropic/claude-3.5-sonnet', name: 'Claude 3.5 Sonnet', provider: 'claude', tier: 'balanced', description: 'Excellent writing', quality: 96, speed: 82, cost: 55, isConfigured: true },
+  { id: 'anthropic/claude-3-opus', name: 'Claude 3 Opus', provider: 'claude', tier: 'premium', description: 'Best reasoning', quality: 98, speed: 70, cost: 40, isConfigured: true },
+  // DeepSeek
+  { id: 'deepseek/deepseek-chat', name: 'DeepSeek V3', provider: 'deepseek', tier: 'balanced', description: 'Cost-efficient', quality: 88, speed: 85, cost: 90, isConfigured: true },
+  { id: 'deepseek/deepseek-reasoner', name: 'DeepSeek R1', provider: 'deepseek', tier: 'premium', description: 'Strong reasoning', quality: 92, speed: 75, cost: 85, isConfigured: true },
 ];
 
-const IMAGE_MODELS = [
-  { id: 'google/gemini-2.5-flash-image-preview', name: 'Gemini Flash Image', tier: 'fast', description: 'Quick images' },
-  { id: 'google/gemini-3-pro-image-preview', name: 'Gemini Pro Image', tier: 'premium', description: 'Premium quality' },
+const IMAGE_MODELS: ModelOption[] = [
+  // Gemini
+  { id: 'google/gemini-2.5-flash-image-preview', name: 'Gemini Flash Image', provider: 'gemini', tier: 'fast', description: 'Quick generation', quality: 85, speed: 88, cost: 70, isConfigured: true },
+  { id: 'google/gemini-3-pro-image-preview', name: 'Gemini Pro Image', provider: 'gemini', tier: 'premium', description: 'Premium quality', quality: 92, speed: 75, cost: 55, isConfigured: true },
+  // OpenAI
+  { id: 'openai/dall-e-3', name: 'DALL-E 3', provider: 'openai', tier: 'premium', description: 'Best for concepts', quality: 95, speed: 70, cost: 50, isConfigured: true },
+  { id: 'openai/dall-e-2', name: 'DALL-E 2', provider: 'openai', tier: 'balanced', description: 'Faster generation', quality: 85, speed: 85, cost: 70, isConfigured: true },
+  // Stability
+  { id: 'stability/stable-diffusion-xl', name: 'Stable Diffusion XL', provider: 'stability', tier: 'balanced', description: 'Versatile styles', quality: 92, speed: 75, cost: 65, isConfigured: true },
+  { id: 'stability/stable-diffusion-3', name: 'Stable Diffusion 3', provider: 'stability', tier: 'premium', description: 'Latest quality', quality: 95, speed: 70, cost: 55, isConfigured: true },
+  // Replicate/Flux
+  { id: 'replicate/flux-1.1-pro', name: 'FLUX 1.1 Pro', provider: 'replicate', tier: 'premium', description: 'Photorealistic', quality: 96, speed: 65, cost: 50, isConfigured: true },
+  { id: 'replicate/flux-schnell', name: 'FLUX Schnell', provider: 'replicate', tier: 'fast', description: 'Ultra-fast', quality: 82, speed: 95, cost: 80, isConfigured: true },
 ];
 
 const VOICE_MODELS = [
-  { id: 'openai', name: 'OpenAI TTS', tier: 'balanced', voices: ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'] },
-  { id: 'elevenlabs', name: 'ElevenLabs', tier: 'premium', voices: ['rachel', 'adam', 'sam', 'emily'] },
-  { id: 'google', name: 'Google Cloud TTS', tier: 'balanced', voices: ['wavenet-a', 'wavenet-b', 'wavenet-c'] },
+  { id: 'elevenlabs', name: 'ElevenLabs', provider: 'elevenlabs', tier: 'premium' as const, description: 'Most natural', quality: 98, voices: ['rachel', 'adam', 'sam', 'emily', 'josh', 'bella'] },
+  { id: 'openai', name: 'OpenAI TTS', provider: 'openai', tier: 'balanced' as const, description: 'Great quality', quality: 88, voices: ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'] },
+  { id: 'google', name: 'Google Cloud TTS', provider: 'google', tier: 'balanced' as const, description: 'Wide language support', quality: 85, voices: ['wavenet-a', 'wavenet-b', 'wavenet-c', 'wavenet-d'] },
+  { id: 'azure', name: 'Azure Neural TTS', provider: 'azure', tier: 'premium' as const, description: 'Enterprise grade', quality: 92, voices: ['jenny', 'guy', 'aria', 'davis'] },
+  { id: 'aws', name: 'Amazon Polly', provider: 'aws', tier: 'fast' as const, description: 'Low latency', quality: 80, voices: ['joanna', 'matthew', 'ivy', 'kendra'] },
 ];
 
 const tierColors: Record<string, string> = {
@@ -100,6 +152,91 @@ const tierIcons: Record<string, React.ReactNode> = {
   balanced: <Sparkles className="h-3 w-3" />,
   premium: <Crown className="h-3 w-3" />,
 };
+
+const providerColors: Record<string, string> = {
+  gemini: 'bg-blue-500',
+  openai: 'bg-emerald-500',
+  claude: 'bg-orange-500',
+  deepseek: 'bg-cyan-500',
+  stability: 'bg-purple-500',
+  replicate: 'bg-pink-500',
+  elevenlabs: 'bg-violet-500',
+  google: 'bg-yellow-500',
+  azure: 'bg-blue-600',
+  aws: 'bg-orange-600',
+};
+
+function ModelCard({
+  model,
+  isSelected,
+  onSelect,
+  showScores = true,
+}: {
+  model: ModelOption;
+  isSelected: boolean;
+  onSelect: () => void;
+  showScores?: boolean;
+}) {
+  return (
+    <button
+      onClick={onSelect}
+      className={cn(
+        "flex items-center justify-between p-3 rounded-lg border transition-all text-left w-full",
+        isSelected
+          ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+          : "border-border hover:border-primary/50"
+      )}
+    >
+      <div className="flex items-center gap-3 flex-1 min-w-0">
+        <div className={cn("p-1.5 rounded-md border", tierColors[model.tier])}>
+          {tierIcons[model.tier]}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium truncate">{model.name}</span>
+            <div className={cn("w-2 h-2 rounded-full", providerColors[model.provider])} />
+          </div>
+          <div className="text-xs text-muted-foreground">{model.description}</div>
+        </div>
+      </div>
+      
+      {showScores && (
+        <TooltipProvider delayDuration={200}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-1 mr-2">
+                <div className="flex flex-col items-end text-[10px]">
+                  <span className="text-muted-foreground">Q:{model.quality}</span>
+                  <span className="text-muted-foreground">S:{model.speed}</span>
+                </div>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="left" className="text-xs">
+              <div className="space-y-1">
+                <div className="flex justify-between gap-4">
+                  <span>Quality:</span>
+                  <span className="font-medium">{model.quality}%</span>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <span>Speed:</span>
+                  <span className="font-medium">{model.speed}%</span>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <span>Cost Efficiency:</span>
+                  <span className="font-medium">{model.cost}%</span>
+                </div>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
+      
+      {isSelected && (
+        <Check className="h-4 w-4 text-primary flex-shrink-0" />
+      )}
+    </button>
+  );
+}
 
 export function LanguageConfigPopup({
   open,
@@ -125,6 +262,10 @@ export function LanguageConfigPopup({
 
   const [includeVoiceover, setIncludeVoiceover] = useState(false);
   const [activeTab, setActiveTab] = useState<'models' | 'translation'>('models');
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
+  // Use contextual AI providers for deck
+  const aiProviders = useContextualAIProviders('deck', 'script-gen');
 
   // Get recommended translation provider for this language
   const recommendedProvider = useMemo(() => {
@@ -169,7 +310,7 @@ export function LanguageConfigPopup({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh]">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <span className="text-2xl">{language.flag}</span>
@@ -184,162 +325,234 @@ export function LanguageConfigPopup({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          {/* Text Generation Model */}
-          <div className="space-y-2">
-            <Label className="text-sm flex items-center gap-2">
-              <Brain className="h-4 w-4 text-primary" />
-              Text Generation Model
-            </Label>
-            <div className="grid grid-cols-1 gap-2">
-              {TEXT_MODELS.map(model => (
-                <button
-                  key={model.id}
-                  onClick={() => updateConfig({ textModel: model.id })}
-                  className={cn(
-                    "flex items-center justify-between p-3 rounded-lg border transition-all text-left",
-                    config.textModel === model.id
-                      ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                      : "border-border hover:border-primary/50"
-                  )}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={cn("p-1.5 rounded-md border", tierColors[model.tier])}>
-                      {tierIcons[model.tier]}
-                    </div>
-                    <div>
-                      <div className="text-sm font-medium">{model.name}</div>
-                      <div className="text-xs text-muted-foreground">{model.description}</div>
-                    </div>
-                  </div>
-                  {config.textModel === model.id && (
-                    <Check className="h-4 w-4 text-primary" />
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="flex-1 overflow-hidden flex flex-col">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="models" className="gap-2">
+              <Brain className="h-4 w-4" />
+              AI Models
+            </TabsTrigger>
+            <TabsTrigger value="translation" className="gap-2">
+              <Languages className="h-4 w-4" />
+              Translation
+            </TabsTrigger>
+          </TabsList>
 
-          {/* Image Generation Model */}
-          <div className="space-y-2">
-            <Label className="text-sm flex items-center gap-2">
-              <ImageIcon className="h-4 w-4 text-primary" />
-              Image Generation Model
-            </Label>
-            <div className="grid grid-cols-1 gap-2">
-              {IMAGE_MODELS.map(model => (
-                <button
-                  key={model.id}
-                  onClick={() => updateConfig({ imageModel: model.id })}
-                  className={cn(
-                    "flex items-center justify-between p-3 rounded-lg border transition-all text-left",
-                    config.imageModel === model.id
-                      ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                      : "border-border hover:border-primary/50"
-                  )}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={cn("p-1.5 rounded-md border", tierColors[model.tier])}>
-                      {tierIcons[model.tier]}
-                    </div>
-                    <div>
-                      <div className="text-sm font-medium">{model.name}</div>
-                      <div className="text-xs text-muted-foreground">{model.description}</div>
-                    </div>
-                  </div>
-                  {config.imageModel === model.id && (
-                    <Check className="h-4 w-4 text-primary" />
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Voiceover Toggle */}
-          <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
-            <div className="flex items-center gap-3">
-              <Mic className="h-4 w-4 text-primary" />
-              <div>
-                <div className="text-sm font-medium">Include Voiceover</div>
-                <div className="text-xs text-muted-foreground">Generate AI voiceover for this language</div>
+          <ScrollArea className="flex-1 -mx-6 px-6">
+            <TabsContent value="models" className="space-y-4 py-4 mt-0">
+              {/* Text Generation Model */}
+              <div className="space-y-2">
+                <Label className="text-sm flex items-center gap-2">
+                  <Brain className="h-4 w-4 text-primary" />
+                  Text Generation Model
+                  <Badge variant="outline" className="text-[10px] ml-auto">
+                    {TEXT_MODELS.length} available
+                  </Badge>
+                </Label>
+                <div className="grid grid-cols-1 gap-2 max-h-[200px] overflow-y-auto pr-1">
+                  {TEXT_MODELS.map(model => (
+                    <ModelCard
+                      key={model.id}
+                      model={model}
+                      isSelected={config.textModel === model.id}
+                      onSelect={() => updateConfig({ textModel: model.id })}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
-            <Switch
-              checked={includeVoiceover}
-              onCheckedChange={setIncludeVoiceover}
-            />
-          </div>
 
-          {/* Voice Model (shown if voiceover enabled) */}
-          {includeVoiceover && (
-            <div className="space-y-2 pl-4 border-l-2 border-primary/30">
-              <Label className="text-sm">Voice Provider</Label>
-              <Select
-                value={config.voiceModel || 'openai'}
-                onValueChange={(value) => {
-                  const provider = VOICE_MODELS.find(m => m.id === value);
-                  updateConfig({ 
-                    voiceModel: value, 
-                    voiceId: provider?.voices[0] || 'alloy' 
-                  });
-                }}
-              >
-                <SelectTrigger className="h-9">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {VOICE_MODELS.map(model => (
-                    <SelectItem key={model.id} value={model.id}>
-                      <div className="flex items-center gap-2">
-                        <span>{model.name}</span>
-                        <Badge variant="outline" className={cn("text-[9px]", tierColors[model.tier])}>
-                          {model.tier}
-                        </Badge>
-                      </div>
-                    </SelectItem>
+              {/* Image Generation Model */}
+              <div className="space-y-2">
+                <Label className="text-sm flex items-center gap-2">
+                  <ImageIcon className="h-4 w-4 text-primary" />
+                  Image Generation Model
+                  <Badge variant="outline" className="text-[10px] ml-auto">
+                    {IMAGE_MODELS.length} available
+                  </Badge>
+                </Label>
+                <div className="grid grid-cols-1 gap-2 max-h-[200px] overflow-y-auto pr-1">
+                  {IMAGE_MODELS.map(model => (
+                    <ModelCard
+                      key={model.id}
+                      model={model}
+                      isSelected={config.imageModel === model.id}
+                      onSelect={() => updateConfig({ imageModel: model.id })}
+                    />
                   ))}
-                </SelectContent>
-              </Select>
+                </div>
+              </div>
 
-              <Label className="text-sm">Voice</Label>
-              <Select
-                value={config.voiceId || 'alloy'}
-                onValueChange={(value) => updateConfig({ voiceId: value })}
-              >
-                <SelectTrigger className="h-9">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {selectedVoiceProvider?.voices.map(voice => (
-                    <SelectItem key={voice} value={voice}>
-                      {voice.charAt(0).toUpperCase() + voice.slice(1)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+              {/* Voiceover Toggle */}
+              <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+                <div className="flex items-center gap-3">
+                  <Mic className="h-4 w-4 text-primary" />
+                  <div>
+                    <div className="text-sm font-medium">Include Voiceover</div>
+                    <div className="text-xs text-muted-foreground">Generate AI voiceover for this language</div>
+                  </div>
+                </div>
+                <Switch
+                  checked={includeVoiceover}
+                  onCheckedChange={setIncludeVoiceover}
+                />
+              </div>
 
-          {/* Summary */}
-          <div className="p-3 rounded-lg bg-muted/50 border border-dashed">
-            <div className="text-xs text-muted-foreground mb-2">Configuration Summary</div>
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="secondary" className="text-xs">
-                {selectedTextModel?.name}
-              </Badge>
-              <Badge variant="secondary" className="text-xs">
-                {selectedImageModel?.name}
-              </Badge>
+              {/* Voice Model (shown if voiceover enabled) */}
               {includeVoiceover && (
-                <Badge variant="secondary" className="text-xs">
-                  {selectedVoiceProvider?.name} - {config.voiceId}
-                </Badge>
+                <div className="space-y-3 pl-4 border-l-2 border-primary/30">
+                  <Label className="text-sm flex items-center gap-2">
+                    Voice Provider
+                    <Badge variant="outline" className="text-[10px] ml-auto">
+                      {VOICE_MODELS.length} available
+                    </Badge>
+                  </Label>
+                  <div className="grid grid-cols-1 gap-2">
+                    {VOICE_MODELS.map(model => (
+                      <button
+                        key={model.id}
+                        onClick={() => {
+                          updateConfig({ 
+                            voiceModel: model.id, 
+                            voiceId: model.voices[0] 
+                          });
+                        }}
+                        className={cn(
+                          "flex items-center justify-between p-3 rounded-lg border transition-all text-left",
+                          config.voiceModel === model.id
+                            ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                            : "border-border hover:border-primary/50"
+                        )}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={cn("p-1.5 rounded-md border", tierColors[model.tier])}>
+                            {tierIcons[model.tier]}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium">{model.name}</span>
+                              <div className={cn("w-2 h-2 rounded-full", providerColors[model.provider])} />
+                            </div>
+                            <div className="text-xs text-muted-foreground">{model.description}</div>
+                          </div>
+                        </div>
+                        {config.voiceModel === model.id && (
+                          <Check className="h-4 w-4 text-primary" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+
+                  <Label className="text-sm">Select Voice</Label>
+                  <Select
+                    value={config.voiceId || 'alloy'}
+                    onValueChange={(value) => updateConfig({ voiceId: value })}
+                  >
+                    <SelectTrigger className="h-9">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {selectedVoiceProvider?.voices.map(voice => (
+                        <SelectItem key={voice} value={voice}>
+                          {voice.charAt(0).toUpperCase() + voice.slice(1)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               )}
-            </div>
+            </TabsContent>
+
+            <TabsContent value="translation" className="py-4 mt-0">
+              {/* Translation Provider Selection */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <Languages className="h-4 w-4 text-primary" />
+                  Translation Provider for {language.name}
+                </div>
+                
+                <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                  <div className="flex items-center gap-2 text-sm">
+                    <TrendingUp className="h-4 w-4 text-blue-600" />
+                    <span className="font-medium text-blue-700">Recommended:</span>
+                    <Badge variant="outline" className="text-blue-600 border-blue-500/30">
+                      {TRANSLATION_PROVIDERS.find(p => p.id === recommendedProvider)?.name || recommendedProvider}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Based on {sourceLanguage.toUpperCase()} → {language.code.toUpperCase()} language pair optimization
+                  </p>
+                </div>
+
+                <TranslationProviderSelector
+                  sourceLanguage={sourceLanguage}
+                  targetLanguages={[language.code]}
+                  selectedProvider={config.translationProvider || 'google_translate'}
+                  onProviderChange={(provider) => updateConfig({ translationProvider: provider })}
+                  showConfidenceScores={true}
+                  industrySegment={industrySegment}
+                  className="mt-4"
+                />
+              </div>
+            </TabsContent>
+          </ScrollArea>
+        </Tabs>
+
+        {/* Summary */}
+        <div className="p-3 rounded-lg bg-muted/50 border border-dashed mt-4">
+          <div className="text-xs text-muted-foreground mb-2">Configuration Summary</div>
+          <div className="flex flex-wrap gap-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Badge variant="secondary" className="text-xs gap-1">
+                    <Brain className="h-3 w-3" />
+                    {selectedTextModel?.name}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent>Text Generation Model</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Badge variant="secondary" className="text-xs gap-1">
+                    <ImageIcon className="h-3 w-3" />
+                    {selectedImageModel?.name}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent>Image Generation Model</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Badge variant="secondary" className="text-xs gap-1">
+                    <Languages className="h-3 w-3" />
+                    {selectedTranslationProvider?.name || 'Google Translate'}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent>Translation Provider</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            
+            {includeVoiceover && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Badge variant="secondary" className="text-xs gap-1">
+                      <Mic className="h-3 w-3" />
+                      {selectedVoiceProvider?.name} - {config.voiceId}
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>Voice Provider</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
           </div>
         </div>
 
-        <DialogFooter className="flex items-center gap-2">
+        <DialogFooter className="flex items-center gap-2 mt-4">
           {onSkip && !isPrimary && (
             <Button variant="ghost" onClick={onSkip}>
               Use Defaults
