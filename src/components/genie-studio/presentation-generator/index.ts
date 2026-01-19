@@ -50,12 +50,16 @@ export {
   CONSULTING_TEMPLATES,
   AI_MODELS,
   THEME_PRESETS,
+  SEGMENTS,
+  getRecommendedProviders,
   type CollateralType,
   type IndustryCategory,
   type ConsultingTemplate,
   type BrandConfig,
   type AIModelConfig,
   type FinalWorkflowConfig,
+  type Segment,
+  type AIProviderRecommendation,
 } from './EnhancedTemplateWorkflow';
 
 // Agent architecture definitions

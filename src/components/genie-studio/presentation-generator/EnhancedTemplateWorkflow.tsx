@@ -411,110 +411,107 @@ export const INDUSTRY_CATEGORIES: IndustryCategory[] = [
   },
 ];
 
-// ==================== CONSULTING TEMPLATES ====================
+// ==================== FRAMEWORK TEMPLATES (Generic - No Branded Names) ====================
 
 export const CONSULTING_TEMPLATES: ConsultingTemplate[] = [
-  // McKinsey Style
+  // Strategy Frameworks
   {
-    id: 'mckinsey-7s',
-    name: 'McKinsey 7S Framework',
-    description: 'Organizational effectiveness analysis',
-    source: 'McKinsey',
+    id: 'seven-elements',
+    name: '7 Elements Framework',
+    description: 'Organizational effectiveness analysis with strategy, structure, systems, style, staff, skills, and shared values',
+    source: 'Strategy',
     type: 'framework',
     previewLayout: [],
     dataTypes: ['diagram', 'comparison']
   },
   {
-    id: 'mece',
+    id: 'mece-structure',
     name: 'MECE Structure',
-    description: 'Mutually exclusive, collectively exhaustive',
-    source: 'McKinsey',
+    description: 'Mutually exclusive, collectively exhaustive problem breakdown',
+    source: 'Strategy',
     type: 'framework',
     previewLayout: [],
     dataTypes: ['tree', 'hierarchy']
   },
-  // BCG Style
   {
-    id: 'bcg-matrix',
-    name: 'BCG Growth-Share Matrix',
-    description: 'Portfolio analysis quadrant',
-    source: 'BCG',
+    id: 'pyramid-principle',
+    name: 'Pyramid Principle',
+    description: 'Top-down communication with key message first, supporting points below',
+    source: 'Strategy',
+    type: 'framework',
+    previewLayout: [],
+    dataTypes: ['pyramid', 'hierarchy']
+  },
+  // Analysis Templates
+  {
+    id: 'growth-share-matrix',
+    name: 'Growth-Share Matrix',
+    description: 'Portfolio analysis with 4 quadrants: Stars, Cash Cows, Question Marks, Dogs',
+    source: 'Analysis',
     type: 'analysis',
     previewLayout: [],
     dataTypes: ['quadrant', 'scatter']
   },
   {
-    id: 'bcg-pyramid',
-    name: 'Pyramid Principle',
-    description: 'Top-down communication structure',
-    source: 'BCG',
-    type: 'framework',
-    previewLayout: [],
-    dataTypes: ['pyramid', 'hierarchy']
-  },
-  // Bain Style
-  {
     id: 'swot-analysis',
     name: 'SWOT Analysis',
-    description: 'Strengths, weaknesses, opportunities, threats',
-    source: 'Bain',
+    description: 'Strengths, weaknesses, opportunities, threats assessment',
+    source: 'Analysis',
     type: 'analysis',
     previewLayout: [],
     dataTypes: ['quadrant', 'comparison']
   },
   {
-    id: 'value-chain',
-    name: 'Value Chain Analysis',
-    description: 'Porter\'s value chain framework',
-    source: 'Bain',
-    type: 'framework',
-    previewLayout: [],
-    dataTypes: ['flow', 'process']
-  },
-  // Deloitte/EY Style
-  {
-    id: 'roadmap',
-    name: 'Strategic Roadmap',
-    description: 'Timeline-based strategy execution',
-    source: 'Deloitte',
-    type: 'diagram',
-    previewLayout: [],
-    dataTypes: ['timeline', 'gantt']
-  },
-  {
-    id: 'maturity-model',
-    name: 'Maturity Model',
-    description: 'Capability maturity assessment',
-    source: 'Deloitte',
-    type: 'framework',
-    previewLayout: [],
-    dataTypes: ['levels', 'progression']
-  },
-  // Gartner Style
-  {
-    id: 'gartner-quadrant',
-    name: 'Gartner Magic Quadrant',
-    description: 'Market positioning analysis',
-    source: 'Gartner',
+    id: 'market-quadrant',
+    name: 'Market Quadrant',
+    description: 'Market positioning with leaders, challengers, visionaries, niche players',
+    source: 'Analysis',
     type: 'analysis',
     previewLayout: [],
     dataTypes: ['quadrant', 'scatter']
   },
   {
-    id: 'hype-cycle',
-    name: 'Hype Cycle',
-    description: 'Technology adoption lifecycle',
-    source: 'Gartner',
+    id: 'maturity-assessment',
+    name: 'Maturity Assessment',
+    description: 'Capability maturity levels from initial to optimized',
+    source: 'Analysis',
+    type: 'analysis',
+    previewLayout: [],
+    dataTypes: ['levels', 'progression']
+  },
+  // Diagram Templates
+  {
+    id: 'value-chain',
+    name: 'Value Chain',
+    description: 'Primary and support activities for competitive advantage',
+    source: 'Diagram',
+    type: 'diagram',
+    previewLayout: [],
+    dataTypes: ['flow', 'process']
+  },
+  {
+    id: 'strategic-roadmap',
+    name: 'Strategic Roadmap',
+    description: 'Timeline-based strategy execution with milestones',
+    source: 'Diagram',
+    type: 'diagram',
+    previewLayout: [],
+    dataTypes: ['timeline', 'gantt']
+  },
+  {
+    id: 'technology-lifecycle',
+    name: 'Technology Lifecycle',
+    description: 'Innovation trigger through plateau of productivity',
+    source: 'Diagram',
     type: 'diagram',
     previewLayout: [],
     dataTypes: ['curve', 'timeline']
   },
-  // Generic Consulting
   {
     id: 'funnel-analysis',
     name: 'Funnel Analysis',
-    description: 'Conversion funnel visualization',
-    source: 'Generic',
+    description: 'Conversion stages from awareness to action',
+    source: 'Diagram',
     type: 'diagram',
     previewLayout: [],
     dataTypes: ['funnel', 'flow']
@@ -522,67 +519,261 @@ export const CONSULTING_TEMPLATES: ConsultingTemplate[] = [
   {
     id: 'gear-diagram',
     name: 'Gear Diagram',
-    description: 'Interconnected processes',
-    source: 'Generic',
+    description: 'Interconnected processes and dependencies',
+    source: 'Diagram',
     type: 'diagram',
     previewLayout: [],
     dataTypes: ['gears', 'process']
   },
   {
-    id: 'comparison-table',
+    id: 'circular-flow',
+    name: 'Circular Flow',
+    description: 'Continuous improvement cycle or feedback loop',
+    source: 'Diagram',
+    type: 'diagram',
+    previewLayout: [],
+    dataTypes: ['cycle', 'circular']
+  },
+  // Comparison Templates
+  {
+    id: 'comparison-matrix',
     name: 'Comparison Matrix',
-    description: 'Side-by-side feature comparison',
-    source: 'Generic',
+    description: 'Side-by-side feature or option comparison',
+    source: 'Comparison',
     type: 'comparison',
     previewLayout: [],
     dataTypes: ['table', 'comparison']
   },
   {
-    id: 'stacked-bar',
+    id: 'stacked-analysis',
     name: 'Stacked Analysis',
-    description: 'Multi-variable breakdown',
-    source: 'Generic',
+    description: 'Multi-variable breakdown with waterfall or stacked bars',
+    source: 'Comparison',
     type: 'analysis',
     previewLayout: [],
     dataTypes: ['stacked-bar', 'waterfall']
   },
+  {
+    id: 'pros-cons',
+    name: 'Pros & Cons',
+    description: 'Two-column advantages and disadvantages layout',
+    source: 'Comparison',
+    type: 'comparison',
+    previewLayout: [],
+    dataTypes: ['two-column', 'list']
+  },
+  {
+    id: 'timeline-comparison',
+    name: 'Timeline Comparison',
+    description: 'Before/after or phased comparison over time',
+    source: 'Comparison',
+    type: 'comparison',
+    previewLayout: [],
+    dataTypes: ['timeline', 'before-after']
+  },
 ];
 
-// ==================== AI MODELS ====================
+// ==================== SEGMENTS ====================
+
+export interface Segment {
+  id: string;
+  name: string;
+  description: string;
+}
+
+export const SEGMENTS: Record<string, Segment[]> = {
+  healthcare: [
+    { id: 'hospitals', name: 'Hospitals', description: 'Acute care facilities' },
+    { id: 'clinics', name: 'Clinics', description: 'Outpatient care centers' },
+    { id: 'nursing', name: 'Nursing', description: 'Long-term care facilities' },
+    { id: 'pharma', name: 'Pharma', description: 'Pharmaceutical companies' },
+    { id: 'biotech', name: 'Biotech', description: 'Biotechnology research' },
+    { id: 'medtech', name: 'MedTech', description: 'Medical devices and technology' },
+    { id: 'telehealth', name: 'Telehealth', description: 'Remote healthcare services' },
+  ],
+  energy: [
+    { id: 'oil-gas', name: 'Oil & Gas', description: 'Upstream, midstream, downstream' },
+    { id: 'renewable', name: 'Renewable', description: 'Solar, wind, hydro energy' },
+    { id: 'utilities', name: 'Utilities', description: 'Electric and gas utilities' },
+    { id: 'mining', name: 'Mining', description: 'Resource extraction' },
+    { id: 'nuclear', name: 'Nuclear', description: 'Nuclear power generation' },
+  ],
+  finance: [
+    { id: 'banking', name: 'Banking', description: 'Retail and commercial banking' },
+    { id: 'insurance', name: 'Insurance', description: 'Life, health, property insurance' },
+    { id: 'investment', name: 'Investment', description: 'Asset management and trading' },
+    { id: 'fintech', name: 'Fintech', description: 'Financial technology startups' },
+    { id: 'crypto', name: 'Crypto', description: 'Blockchain and cryptocurrency' },
+  ],
+  technology: [
+    { id: 'saas', name: 'SaaS', description: 'Software as a service' },
+    { id: 'ai-ml', name: 'AI/ML', description: 'Artificial intelligence and machine learning' },
+    { id: 'cybersecurity', name: 'Cybersecurity', description: 'Security solutions' },
+    { id: 'cloud', name: 'Cloud', description: 'Cloud infrastructure and services' },
+    { id: 'hardware', name: 'Hardware', description: 'Consumer and enterprise hardware' },
+  ],
+  startup: [
+    { id: 'seed', name: 'Seed Stage', description: 'Pre-product or early MVP' },
+    { id: 'series-a', name: 'Series A', description: 'Product-market fit stage' },
+    { id: 'series-b', name: 'Series B', description: 'Scaling operations' },
+    { id: 'series-c', name: 'Series C+', description: 'Late-stage growth' },
+    { id: 'accelerator', name: 'Accelerator', description: 'Accelerator or incubator' },
+  ],
+  travel: [
+    { id: 'airlines', name: 'Airlines', description: 'Commercial aviation' },
+    { id: 'hotels', name: 'Hotels', description: 'Hospitality and lodging' },
+    { id: 'tourism', name: 'Tourism', description: 'Tour operators and destinations' },
+    { id: 'cruise', name: 'Cruise', description: 'Cruise lines and maritime' },
+    { id: 'events', name: 'Events', description: 'Conferences and events' },
+  ],
+  manufacturing: [
+    { id: 'automotive', name: 'Automotive', description: 'Vehicle manufacturing' },
+    { id: 'aerospace', name: 'Aerospace', description: 'Aviation and space' },
+    { id: 'electronics', name: 'Electronics', description: 'Consumer and industrial electronics' },
+    { id: 'industrial', name: 'Industrial', description: 'Heavy machinery and equipment' },
+  ],
+  veterinary: [
+    { id: 'vet-clinics', name: 'Vet Clinics', description: 'Veterinary practices' },
+    { id: 'pet-products', name: 'Pet Products', description: 'Pet food and supplies' },
+    { id: 'animal-health', name: 'Animal Health', description: 'Animal pharmaceuticals' },
+  ],
+  consulting: [
+    { id: 'strategy', name: 'Strategy', description: 'Strategic advisory' },
+    { id: 'management', name: 'Management', description: 'Operations and organization' },
+    { id: 'technology-consulting', name: 'Technology', description: 'IT and digital transformation' },
+    { id: 'hr-consulting', name: 'HR', description: 'Human resources and talent' },
+  ],
+  education: [
+    { id: 'k12', name: 'K-12', description: 'Primary and secondary education' },
+    { id: 'higher-ed', name: 'Higher Ed', description: 'Universities and colleges' },
+    { id: 'edtech', name: 'EdTech', description: 'Educational technology' },
+    { id: 'corporate-training', name: 'Corporate Training', description: 'Enterprise learning' },
+  ],
+};
+
+// ==================== AI PROVIDER RECOMMENDATIONS ====================
+
+export interface AIProviderRecommendation {
+  textModel: string;
+  imageModel: string;
+  voiceModel: string;
+  translationModel: string;
+  reason: string;
+}
+
+export function getRecommendedProviders(
+  industry: string,
+  segment: string,
+  collateralType: string,
+  languages: string[]
+): AIProviderRecommendation {
+  // Default recommendations
+  let recommendation: AIProviderRecommendation = {
+    textModel: 'gemini-1.5-pro',
+    imageModel: 'flux-pro',
+    voiceModel: 'elevenlabs-multilingual',
+    translationModel: 'deepl',
+    reason: 'Balanced quality and speed'
+  };
+
+  // Healthcare/Pharma/Biotech - prioritize accuracy
+  if (['healthcare', 'pharma', 'biotech'].includes(industry) || 
+      ['pharma', 'biotech', 'hospitals', 'clinics'].includes(segment)) {
+    recommendation = {
+      textModel: 'claude-3.5-sonnet',
+      imageModel: 'flux-pro',
+      voiceModel: 'elevenlabs-multilingual',
+      translationModel: 'deepl',
+      reason: 'High accuracy for medical content'
+    };
+  }
+
+  // Investor pitch - prioritize persuasive content
+  if (['startup', 'investor-pitch'].includes(industry) || collateralType === 'investor-pitch') {
+    recommendation = {
+      textModel: 'gpt-4o',
+      imageModel: 'dall-e-3',
+      voiceModel: 'elevenlabs-multilingual',
+      translationModel: 'deepl',
+      reason: 'Optimized for persuasive business content'
+    };
+  }
+
+  // Training/Education - prioritize clarity
+  if (['education', 'training-module', 'workshop'].includes(industry) || 
+      ['training-module', 'onboarding', 'workshop'].includes(collateralType)) {
+    recommendation = {
+      textModel: 'gemini-1.5-pro',
+      imageModel: 'flux-schnell',
+      voiceModel: 'google-wavenet',
+      translationModel: 'google-translate',
+      reason: 'Clear and educational tone'
+    };
+  }
+
+  // Multi-language support - prioritize translation quality
+  if (languages.length > 3) {
+    recommendation.translationModel = 'deepl';
+    recommendation.reason += ' + DeepL for multi-language accuracy';
+  }
+
+  // CJK languages - use specialized providers
+  const hasCJK = languages.some(l => ['zh', 'zh-TW', 'ja', 'ko'].includes(l));
+  if (hasCJK) {
+    recommendation.translationModel = 'qwen-mt';
+    recommendation.voiceModel = 'azure-neural';
+    recommendation.reason += ' + CJK-optimized providers';
+  }
+
+  // Indian languages
+  const hasIndian = languages.some(l => ['hi', 'te', 'ta', 'bn', 'mr', 'gu', 'kn', 'ml', 'pa'].includes(l));
+  if (hasIndian) {
+    recommendation.voiceModel = 'azure-neural';
+    recommendation.reason += ' + Indian language support';
+  }
+
+  // Arabic
+  const hasArabic = languages.some(l => l.startsWith('ar'));
+  if (hasArabic) {
+    recommendation.voiceModel = 'azure-neural';
+    recommendation.translationModel = 'azure-translator';
+    recommendation.reason += ' + Arabic RTL support';
+  }
+
+  return recommendation;
+}
+
+// ==================== AI MODELS (Lovable AI Compatible) ====================
 
 export const AI_MODELS = {
   text: [
-    { id: 'gpt-4o', name: 'GPT-4o', provider: 'OpenAI', tier: 'premium' },
-    { id: 'gpt-4o-mini', name: 'GPT-4o Mini', provider: 'OpenAI', tier: 'standard' },
-    { id: 'claude-3.5-sonnet', name: 'Claude 3.5 Sonnet', provider: 'Anthropic', tier: 'premium' },
-    { id: 'claude-3-haiku', name: 'Claude 3 Haiku', provider: 'Anthropic', tier: 'standard' },
-    { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', provider: 'Google', tier: 'premium' },
-    { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', provider: 'Google', tier: 'standard' },
-    { id: 'deepseek-v3', name: 'DeepSeek V3', provider: 'DeepSeek', tier: 'standard' },
-    { id: 'qwen-max', name: 'Qwen Max', provider: 'Alibaba', tier: 'premium' },
+    { id: 'google/gemini-3-flash-preview', name: 'Gemini 3 Flash', provider: 'Google', tier: 'standard', recommended: true },
+    { id: 'google/gemini-2.5-pro', name: 'Gemini 2.5 Pro', provider: 'Google', tier: 'premium' },
+    { id: 'google/gemini-2.5-flash', name: 'Gemini 2.5 Flash', provider: 'Google', tier: 'standard' },
+    { id: 'openai/gpt-5', name: 'GPT-5', provider: 'OpenAI', tier: 'premium' },
+    { id: 'openai/gpt-5-mini', name: 'GPT-5 Mini', provider: 'OpenAI', tier: 'standard' },
+    { id: 'openai/gpt-5-nano', name: 'GPT-5 Nano', provider: 'OpenAI', tier: 'economy' },
   ],
   image: [
-    { id: 'dall-e-3', name: 'DALL-E 3', provider: 'OpenAI', tier: 'premium' },
-    { id: 'imagen-3', name: 'Imagen 3', provider: 'Google', tier: 'premium' },
-    { id: 'flux-pro', name: 'Flux Pro', provider: 'Black Forest', tier: 'premium' },
+    { id: 'flux-pro', name: 'Flux Pro', provider: 'Black Forest', tier: 'premium', recommended: true },
     { id: 'flux-schnell', name: 'Flux Schnell', provider: 'Black Forest', tier: 'standard' },
+    { id: 'dall-e-3', name: 'DALL-E 3', provider: 'OpenAI', tier: 'premium' },
     { id: 'stable-diffusion-xl', name: 'Stable Diffusion XL', provider: 'Stability AI', tier: 'standard' },
     { id: 'modelslab-realvision', name: 'RealVision', provider: 'ModelsLab', tier: 'standard' },
   ],
   voice: [
-    { id: 'elevenlabs-multilingual', name: 'ElevenLabs Multilingual', provider: 'ElevenLabs', tier: 'premium' },
+    { id: 'elevenlabs-multilingual', name: 'ElevenLabs Multilingual', provider: 'ElevenLabs', tier: 'premium', recommended: true },
     { id: 'elevenlabs-turbo', name: 'ElevenLabs Turbo', provider: 'ElevenLabs', tier: 'standard' },
     { id: 'google-wavenet', name: 'Google WaveNet', provider: 'Google', tier: 'premium' },
     { id: 'azure-neural', name: 'Azure Neural', provider: 'Microsoft', tier: 'premium' },
     { id: 'openai-tts-hd', name: 'OpenAI TTS HD', provider: 'OpenAI', tier: 'premium' },
-    { id: 'openai-tts', name: 'OpenAI TTS', provider: 'OpenAI', tier: 'standard' },
   ],
   translation: [
-    { id: 'deepl', name: 'DeepL', provider: 'DeepL', tier: 'premium' },
+    { id: 'deepl', name: 'DeepL', provider: 'DeepL', tier: 'premium', recommended: true },
     { id: 'google-translate', name: 'Google Translate', provider: 'Google', tier: 'standard' },
     { id: 'azure-translator', name: 'Azure Translator', provider: 'Microsoft', tier: 'premium' },
     { id: 'qwen-mt', name: 'Qwen MT', provider: 'Alibaba', tier: 'standard' },
-    { id: 'nllb', name: 'NLLB', provider: 'Meta', tier: 'standard' },
+    { id: 'nllb', name: 'NLLB', provider: 'Meta', tier: 'economy' },
   ],
 };
 
@@ -643,6 +834,7 @@ interface EnhancedTemplateWorkflowProps {
 export interface FinalWorkflowConfig {
   collateralType: CollateralType;
   industryCategory: string;
+  segment?: string;
   consultingTemplate?: ConsultingTemplate;
   languages: string[];
   brand: BrandConfig;
@@ -651,6 +843,7 @@ export interface FinalWorkflowConfig {
   slideCount: number;
   includeNotes: boolean;
   includeVoiceover: boolean;
+  aiRecommendation?: AIProviderRecommendation;
 }
 
 // ==================== MAIN COMPONENT ====================
@@ -669,9 +862,13 @@ export function EnhancedTemplateWorkflow({
   const [selectedCollateral, setSelectedCollateral] = useState<CollateralType | null>(null);
   const [selectedIndustry, setSelectedIndustry] = useState<IndustryCategory | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
+  const [selectedSegment, setSelectedSegment] = useState<string | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<ConsultingTemplate | null>(null);
   const [selectedTheme, setSelectedTheme] = useState<ThemeConfig>(THEME_PRESETS[1]);
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>(['en']);
+  
+  // AI provider recommendation
+  const [aiRecommendation, setAiRecommendation] = useState<AIProviderRecommendation | null>(null);
   
   // Brand configuration
   const [brandConfig, setBrandConfig] = useState<BrandConfig>({
@@ -972,12 +1169,12 @@ export function EnhancedTemplateWorkflow({
               </div>
             )}
             
-            {/* Step 1: Industry Category */}
+            {/* Step 1: Industry Category & Segment */}
             {currentStep === 1 && (
               <div className="space-y-6">
                 <div>
-                  <h2 className="text-xl font-semibold mb-2">Select your industry</h2>
-                  <p className="text-muted-foreground">This helps us choose the right tone, terminology, and templates</p>
+                  <h2 className="text-xl font-semibold mb-2">Select your industry & segment</h2>
+                  <p className="text-muted-foreground">This helps us choose the right tone, terminology, templates, and AI providers</p>
                 </div>
                 
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
@@ -991,6 +1188,21 @@ export function EnhancedTemplateWorkflow({
                       onClick={() => {
                         setSelectedIndustry(industry);
                         setSelectedSubcategory(null);
+                        setSelectedSegment(null);
+                        // Update AI recommendations when industry changes
+                        const rec = getRecommendedProviders(
+                          industry.id,
+                          '',
+                          selectedCollateral?.id || '',
+                          selectedLanguages
+                        );
+                        setAiRecommendation(rec);
+                        setAiModels({
+                          textModel: rec.textModel,
+                          imageModel: rec.imageModel,
+                          voiceModel: rec.voiceModel,
+                          translationModel: rec.translationModel,
+                        });
                       }}
                     >
                       <CardContent className="p-4 text-center">
@@ -1006,23 +1218,76 @@ export function EnhancedTemplateWorkflow({
                   ))}
                 </div>
                 
-                {/* Subcategories */}
-                {selectedIndustry && (
+                {/* Segments - Industry specific */}
+                {selectedIndustry && SEGMENTS[selectedIndustry.id] && (
                   <div className="space-y-3">
-                    <Label>Subcategory (optional)</Label>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedIndustry.subcategories.map(sub => (
-                        <Badge
-                          key={sub}
-                          variant={selectedSubcategory === sub ? "default" : "outline"}
-                          className="cursor-pointer"
-                          onClick={() => setSelectedSubcategory(sub === selectedSubcategory ? null : sub)}
+                    <Label className="flex items-center gap-2">
+                      <Target className="h-4 w-4" />
+                      Select Segment
+                    </Label>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {SEGMENTS[selectedIndustry.id].map(segment => (
+                        <Card
+                          key={segment.id}
+                          className={cn(
+                            "cursor-pointer transition-all hover:border-primary/50 p-3",
+                            selectedSegment === segment.id && "border-primary ring-2 ring-primary/20"
+                          )}
+                          onClick={() => {
+                            setSelectedSegment(segment.id === selectedSegment ? null : segment.id);
+                            // Update AI recommendations when segment changes
+                            const rec = getRecommendedProviders(
+                              selectedIndustry.id,
+                              segment.id,
+                              selectedCollateral?.id || '',
+                              selectedLanguages
+                            );
+                            setAiRecommendation(rec);
+                            setAiModels({
+                              textModel: rec.textModel,
+                              imageModel: rec.imageModel,
+                              voiceModel: rec.voiceModel,
+                              translationModel: rec.translationModel,
+                            });
+                          }}
                         >
-                          {sub}
-                        </Badge>
+                          <h5 className="font-medium text-sm">{segment.name}</h5>
+                          <p className="text-xs text-muted-foreground mt-1">{segment.description}</p>
+                        </Card>
                       ))}
                     </div>
                   </div>
+                )}
+                
+                {/* AI Recommendation Preview */}
+                {aiRecommendation && (
+                  <Card className="bg-primary/5 border-primary/20">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Sparkles className="h-4 w-4 text-primary" />
+                        <span className="font-medium text-sm">AI Provider Recommendation</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-3">{aiRecommendation.reason}</p>
+                      <div className="flex flex-wrap gap-2">
+                        <Badge variant="secondary" className="text-xs">
+                          <Type className="h-3 w-3 mr-1" />
+                          {AI_MODELS.text.find(m => m.id === aiRecommendation.textModel)?.name || aiRecommendation.textModel}
+                        </Badge>
+                        <Badge variant="secondary" className="text-xs">
+                          <ImageIcon className="h-3 w-3 mr-1" />
+                          {AI_MODELS.image.find(m => m.id === aiRecommendation.imageModel)?.name || aiRecommendation.imageModel}
+                        </Badge>
+                        <Badge variant="secondary" className="text-xs">
+                          <Mic className="h-3 w-3 mr-1" />
+                          {AI_MODELS.voice.find(m => m.id === aiRecommendation.voiceModel)?.name || aiRecommendation.voiceModel}
+                        </Badge>
+                        <Badge variant="secondary" className="text-xs">
+                          <Globe className="h-3 w-3 mr-1" />
+                          {AI_MODELS.translation.find(m => m.id === aiRecommendation.translationModel)?.name || aiRecommendation.translationModel}
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
                 )}
               </div>
             )}
