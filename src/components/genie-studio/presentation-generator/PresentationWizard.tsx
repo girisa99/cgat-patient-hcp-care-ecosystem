@@ -81,6 +81,8 @@ import {
   Youtube,
   Film,
   Video,
+  Building2,
+  Target,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -375,6 +377,7 @@ export function PresentationWizard({
   const [includeCharts, setIncludeCharts] = useState(false);
   const [selectedAIModel, setSelectedAIModel] = useState('auto');
   const [showComplianceCheck, setShowComplianceCheck] = useState(false);
+  const [contentCategory, setContentCategory] = useState<string>('narrative');
 
   // Template and branding state
   const [selectedTemplate, setSelectedTemplate] = useState<PresentationTemplate | undefined>(TEMPLATES[0]);
@@ -1291,189 +1294,200 @@ export function PresentationWizard({
               </Card>
             )}
 
-            {/* Step 1: Industry, Segment & Collateral Type */}
+            {/* Step 1: Industry, Segment & Collateral Type - Redesigned */}
             {currentStep === 1 && (
-              <div className="space-y-4">
-                {/* Step Description */}
-                <Card className="bg-gradient-to-r from-primary/5 to-accent/5 border-primary/20">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-primary/10">
-                        <Presentation className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-medium">Select Your Industry & Content Type</p>
-                        <p className="text-xs text-muted-foreground">
-                          AI will automatically recommend optimal models for text, images, voice, and translation based on your selection.
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+              <div className="space-y-6">
+                {/* Step Header */}
+                <div className="flex items-center gap-3 p-4 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20">
+                  <div className="p-2.5 rounded-lg bg-primary/10">
+                    <Presentation className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-base">Configure Your Presentation</h3>
+                    <p className="text-sm text-muted-foreground">
+                      AI models will be optimized based on your selections
+                    </p>
+                  </div>
+                </div>
 
-                {/* Collateral Type Selection */}
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-primary" />
-                      What type of content are you creating?
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <Tabs defaultValue="narrative" className="w-full">
-                      <TabsList className="grid grid-cols-5 w-full mb-4">
-                        <TabsTrigger value="narrative" className="text-xs">Narrative</TabsTrigger>
-                        <TabsTrigger value="business" className="text-xs">Business</TabsTrigger>
-                        <TabsTrigger value="training" className="text-xs">Training</TabsTrigger>
-                        <TabsTrigger value="research" className="text-xs">Research</TabsTrigger>
-                        <TabsTrigger value="visual" className="text-xs">Visual</TabsTrigger>
-                      </TabsList>
-                      {['narrative', 'business', 'training', 'research', 'visual'].map(category => (
-                        <TabsContent key={category} value={category}>
-                          <div className="grid grid-cols-2 gap-3">
-                            {COLLATERAL_TYPES.filter(c => c.category === category).map(ct => (
-                              <Card
-                                key={ct.id}
-                                className={cn(
-                                  "cursor-pointer transition-all hover:border-primary/50 p-3",
-                                  workflowConfig?.collateralType?.id === ct.id && "border-primary ring-2 ring-primary/20"
-                                )}
-                                onClick={() => {
-                                  setWorkflowConfig(prev => ({
-                                    ...prev!,
-                                    collateralType: ct,
-                                    slideCount: ct.suggestedSlides,
-                                  }));
-                                }}
-                              >
-                                <div className="flex items-start gap-2">
-                                  <div className={cn(
-                                    "p-1.5 rounded-lg",
-                                    workflowConfig?.collateralType?.id === ct.id ? "bg-primary/10 text-primary" : "bg-muted"
-                                  )}>
-                                    {ct.icon}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <h4 className="font-medium text-sm">{ct.name}</h4>
-                                    <p className="text-xs text-muted-foreground line-clamp-1">{ct.description}</p>
-                                    <Badge variant="secondary" className="text-[10px] mt-1">~{ct.suggestedSlides} slides</Badge>
-                                  </div>
-                                </div>
-                              </Card>
-                            ))}
-                          </div>
-                        </TabsContent>
-                      ))}
-                    </Tabs>
-                  </CardContent>
-                </Card>
-
-                {/* Industry Selection */}
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Presentation className="h-4 w-4 text-primary" />
-                      Select your industry
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
-                      {INDUSTRY_CATEGORIES.map(industry => (
-                        <Card
-                          key={industry.id}
-                          className={cn(
-                            "cursor-pointer transition-all hover:border-primary/50 p-2",
-                            workflowConfig?.industryCategory === industry.id && "border-primary ring-2 ring-primary/20"
-                          )}
-                          onClick={() => {
-                            const rec = getRecommendedProviders(
-                              industry.id,
-                              workflowConfig?.segment || '',
-                              workflowConfig?.collateralType?.id || '',
-                              selectedLanguages
-                            );
-                            setWorkflowConfig(prev => ({
-                              ...prev!,
-                              industryCategory: industry.id,
-                              aiRecommendation: rec,
-                            }));
-                            setSelectedAIModel(rec.textModel);
-                            setImageModel(rec.imageModel as any);
-                          }}
-                        >
-                          <div className="text-center">
-                            <div className={cn(
-                              "mx-auto p-2 rounded-full w-10 h-10 flex items-center justify-center mb-1",
-                              workflowConfig?.industryCategory === industry.id ? "bg-primary/10 text-primary" : "bg-muted"
-                            )}>
-                              {industry.icon}
+                {/* Two Column Layout for Dropdowns */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Industry Dropdown */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium flex items-center gap-2">
+                      <Building2 className="h-4 w-4 text-primary" />
+                      Industry
+                    </Label>
+                    <Select
+                      value={workflowConfig?.industryCategory || ''}
+                      onValueChange={(value) => {
+                        const rec = getRecommendedProviders(
+                          value,
+                          '',
+                          workflowConfig?.collateralType?.id || '',
+                          selectedLanguages
+                        );
+                        setWorkflowConfig(prev => ({
+                          ...prev!,
+                          industryCategory: value,
+                          segment: '', // Reset segment when industry changes
+                          aiRecommendation: rec,
+                        }));
+                        setSelectedAIModel(rec.textModel);
+                        setImageModel(rec.imageModel as any);
+                      }}
+                    >
+                      <SelectTrigger className="h-11">
+                        <SelectValue placeholder="Select your industry..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {INDUSTRY_CATEGORIES.map(industry => (
+                          <SelectItem key={industry.id} value={industry.id}>
+                            <div className="flex items-center gap-2">
+                              <span className="text-primary">{industry.icon}</span>
+                              <span>{industry.name}</span>
                             </div>
-                            <h4 className="font-medium text-xs">{industry.name}</h4>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Segment Dropdown - Only shows when industry is selected */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium flex items-center gap-2">
+                      <Target className="h-4 w-4 text-primary" />
+                      Segment
+                      <span className="text-xs text-muted-foreground font-normal">(Optional)</span>
+                    </Label>
+                    <Select
+                      value={workflowConfig?.segment || ''}
+                      onValueChange={(value) => {
+                        const rec = getRecommendedProviders(
+                          workflowConfig?.industryCategory || '',
+                          value,
+                          workflowConfig?.collateralType?.id || '',
+                          selectedLanguages
+                        );
+                        setWorkflowConfig(prev => ({
+                          ...prev!,
+                          segment: value,
+                          aiRecommendation: rec,
+                        }));
+                        setSelectedAIModel(rec.textModel);
+                        setImageModel(rec.imageModel as any);
+                      }}
+                      disabled={!workflowConfig?.industryCategory || !SEGMENTS[workflowConfig.industryCategory]}
+                    >
+                      <SelectTrigger className="h-11">
+                        <SelectValue placeholder={workflowConfig?.industryCategory ? "Select segment..." : "Select industry first"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {workflowConfig?.industryCategory && SEGMENTS[workflowConfig.industryCategory]?.map(segment => (
+                          <SelectItem key={segment.id} value={segment.id}>
+                            <div className="flex flex-col">
+                              <span>{segment.name}</span>
+                              <span className="text-xs text-muted-foreground">{segment.description}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Content Type Selection - Clean Card Grid */}
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-primary" />
+                    Content Type
+                  </Label>
+                  
+                  {/* Category Filter Pills */}
+                  <div className="flex flex-wrap gap-2">
+                    {['narrative', 'business', 'training', 'research', 'visual'].map(category => (
+                      <Button
+                        key={category}
+                        variant={contentCategory === category ? "default" : "outline"}
+                        size="sm"
+                        className="capitalize"
+                        onClick={() => setContentCategory(category)}
+                      >
+                        {category}
+                      </Button>
+                    ))}
+                  </div>
+
+                  {/* Content Type Cards */}
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mt-3">
+                    {COLLATERAL_TYPES.filter(c => c.category === contentCategory).map(ct => (
+                      <Card
+                        key={ct.id}
+                        className={cn(
+                          "cursor-pointer transition-all hover:border-primary/50 hover:shadow-sm p-3",
+                          workflowConfig?.collateralType?.id === ct.id && "border-primary ring-2 ring-primary/20 bg-primary/5"
+                        )}
+                        onClick={() => {
+                          const rec = getRecommendedProviders(
+                            workflowConfig?.industryCategory || '',
+                            workflowConfig?.segment || '',
+                            ct.id,
+                            selectedLanguages
+                          );
+                          setWorkflowConfig(prev => ({
+                            ...prev!,
+                            collateralType: ct,
+                            slideCount: ct.suggestedSlides,
+                            aiRecommendation: rec,
+                          }));
+                          setSelectedAIModel(rec.textModel);
+                          setImageModel(rec.imageModel as any);
+                        }}
+                      >
+                        <div className="flex flex-col items-center text-center gap-2">
+                          <div className={cn(
+                            "p-2 rounded-lg",
+                            workflowConfig?.collateralType?.id === ct.id ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+                          )}>
+                            {ct.icon}
                           </div>
-                        </Card>
-                      ))}
-                    </div>
-
-                    {/* Segments - Industry specific */}
-                    {workflowConfig?.industryCategory && SEGMENTS[workflowConfig.industryCategory] && (
-                      <div className="mt-4 space-y-2">
-                        <Label className="text-xs text-muted-foreground">Select Segment (Optional)</Label>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                          {SEGMENTS[workflowConfig.industryCategory].map(segment => (
-                            <Card
-                              key={segment.id}
-                              className={cn(
-                                "cursor-pointer transition-all hover:border-primary/50 p-2",
-                                workflowConfig?.segment === segment.id && "border-primary ring-2 ring-primary/20"
-                              )}
-                              onClick={() => {
-                                const rec = getRecommendedProviders(
-                                  workflowConfig.industryCategory,
-                                  segment.id,
-                                  workflowConfig?.collateralType?.id || '',
-                                  selectedLanguages
-                                );
-                                setWorkflowConfig(prev => ({
-                                  ...prev!,
-                                  segment: segment.id,
-                                  aiRecommendation: rec,
-                                }));
-                                setSelectedAIModel(rec.textModel);
-                                setImageModel(rec.imageModel as any);
-                              }}
-                            >
-                              <h5 className="font-medium text-xs">{segment.name}</h5>
-                              <p className="text-[10px] text-muted-foreground">{segment.description}</p>
-                            </Card>
-                          ))}
+                          <div>
+                            <h4 className="font-medium text-sm">{ct.name}</h4>
+                            <p className="text-[10px] text-muted-foreground line-clamp-2 mt-0.5">{ct.description}</p>
+                          </div>
+                          <Badge variant="secondary" className="text-[10px]">~{ct.suggestedSlides} slides</Badge>
                         </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
 
-                {/* AI Recommendation Preview */}
+                {/* AI Recommendation Preview - Compact */}
                 {workflowConfig?.aiRecommendation && (
                   <Card className="bg-gradient-to-r from-purple-500/5 to-blue-500/5 border-purple-500/20">
                     <CardContent className="p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Sparkles className="h-4 w-4 text-purple-500" />
-                        <span className="font-medium text-sm">AI Provider Recommendation</span>
-                      </div>
-                      <p className="text-xs text-muted-foreground mb-3">{workflowConfig.aiRecommendation.reason}</p>
-                      <div className="flex flex-wrap gap-2">
-                        <Badge variant="secondary" className="text-xs">
-                          <Type className="h-3 w-3 mr-1" />
-                          {workflowConfig.aiRecommendation.textModel}
-                        </Badge>
-                        <Badge variant="secondary" className="text-xs">
-                          <ImageIcon className="h-3 w-3 mr-1" />
-                          {workflowConfig.aiRecommendation.imageModel}
-                        </Badge>
-                        <Badge variant="secondary" className="text-xs">
-                          <Languages className="h-3 w-3 mr-1" />
-                          {workflowConfig.aiRecommendation.translationModel}
-                        </Badge>
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 rounded-lg bg-purple-500/10">
+                          <Sparkles className="h-4 w-4 text-purple-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-sm mb-1">AI Provider Recommendation</h4>
+                          <p className="text-xs text-muted-foreground mb-3">{workflowConfig.aiRecommendation.reason}</p>
+                          <div className="flex flex-wrap gap-2">
+                            <Badge variant="secondary" className="text-xs">
+                              <Type className="h-3 w-3 mr-1" />
+                              {workflowConfig.aiRecommendation.textModel}
+                            </Badge>
+                            <Badge variant="secondary" className="text-xs">
+                              <ImageIcon className="h-3 w-3 mr-1" />
+                              {workflowConfig.aiRecommendation.imageModel}
+                            </Badge>
+                            <Badge variant="secondary" className="text-xs">
+                              <Languages className="h-3 w-3 mr-1" />
+                              {workflowConfig.aiRecommendation.translationModel}
+                            </Badge>
+                          </div>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
