@@ -383,8 +383,47 @@ export function PresentationWizard({
   const [includeCharts, setIncludeCharts] = useState(false);
   const [selectedAIModel, setSelectedAIModel] = useState('auto');
   const [showComplianceCheck, setShowComplianceCheck] = useState(false);
-  const [contentCategory, setContentCategory] = useState<string>('narrative');
+  const [contentCategory, setContentCategory] = useState<string>('ai-generated');
   const [frameworkCategory, setFrameworkCategory] = useState<string>('framework');
+  const [selectedContentTypes, setSelectedContentTypes] = useState<string[]>([]);
+  
+  // All available providers from modelAlignmentService
+  const ALL_TEXT_PROVIDERS = [
+    { id: 'google/gemini-3-flash-preview', name: 'Gemini 3 Flash', strengths: ['Speed', 'Multilingual'] },
+    { id: 'google/gemini-2.5-pro', name: 'Gemini 2.5 Pro', strengths: ['Complex reasoning', 'Long context'] },
+    { id: 'openai/gpt-5', name: 'GPT-5', strengths: ['Premium quality', 'Nuance'] },
+    { id: 'openai/gpt-5-mini', name: 'GPT-5 Mini', strengths: ['Balanced', 'Cost-effective'] },
+    { id: 'claude-3-5-sonnet', name: 'Claude 3.5 Sonnet', strengths: ['Nuanced writing', 'Safety'] },
+    { id: 'deepseek/deepseek-chat', name: 'DeepSeek', strengths: ['Technical', 'Reasoning'] },
+  ];
+  
+  const ALL_IMAGE_PROVIDERS = [
+    { id: 'modelslab', name: 'ModelsLab', styles: ['photorealistic', 'artistic', 'corporate'] },
+    { id: 'flux-pro', name: 'Flux Pro', styles: ['photorealistic', 'artistic'] },
+    { id: 'flux-schnell', name: 'Flux Schnell', styles: ['fast', 'artistic'] },
+    { id: 'gemini-image', name: 'Gemini Image', styles: ['balanced', 'professional'] },
+    { id: 'dall-e-3', name: 'DALL-E 3', styles: ['photorealistic', 'infographic'] },
+    { id: 'stability', name: 'Stability AI', styles: ['artistic', 'abstract'] },
+    { id: 'stock', name: 'Stock Images', styles: ['professional', 'corporate'] },
+  ];
+  
+  const ALL_VOICE_PROVIDERS = [
+    { id: 'elevenlabs-multilingual', name: 'ElevenLabs', quality: 'premium', languages: 100 },
+    { id: 'openai-tts-hd', name: 'OpenAI TTS HD', quality: 'neural', languages: 9 },
+    { id: 'google-wavenet', name: 'Google WaveNet', quality: 'neural', languages: 200 },
+    { id: 'azure-neural', name: 'Azure Neural', quality: 'premium', languages: 300 },
+    { id: 'aws-polly', name: 'AWS Polly', quality: 'neural', languages: 60 },
+    { id: 'alibaba-tts', name: 'Alibaba TTS', quality: 'neural', languages: 50 },
+  ];
+  
+  const ALL_TRANSLATION_PROVIDERS = [
+    { id: 'deepl', name: 'DeepL', regions: ['Europe', 'Americas'], quality: 'native' },
+    { id: 'google-translate', name: 'Google Translate', regions: ['Global'], quality: 'high' },
+    { id: 'qwen-mt', name: 'Qwen-MT', regions: ['Asia', 'China'], quality: 'native' },
+    { id: 'azure', name: 'Azure Translator', regions: ['Global'], quality: 'high' },
+    { id: 'nllb', name: 'NLLB (Meta)', regions: ['Africa', 'India'], quality: 'high' },
+    { id: 'alibaba', name: 'Alibaba Translation', regions: ['Asia'], quality: 'high' },
+  ];
 
   // Template and branding state
   const [selectedTemplate, setSelectedTemplate] = useState<PresentationTemplate | undefined>(TEMPLATES[0]);
@@ -1442,9 +1481,10 @@ export function PresentationWizard({
                     Content Type
                   </Label>
                   
-                  {/* Category Filter Pills with count */}
+                  {/* Category Filter Pills with AI Generated default */}
                   <div className="flex flex-wrap gap-1.5">
                     {[
+                      { id: 'ai-generated', label: '✨ AI Generated', count: 0, isAI: true },
                       { id: 'narrative', label: 'Narrative', count: COLLATERAL_TYPES.filter(c => c.category === 'narrative').length },
                       { id: 'business', label: 'Business', count: COLLATERAL_TYPES.filter(c => c.category === 'business').length },
                       { id: 'training', label: 'Training', count: COLLATERAL_TYPES.filter(c => c.category === 'training').length },
@@ -1455,16 +1495,67 @@ export function PresentationWizard({
                         key={category.id}
                         variant={contentCategory === category.id ? "default" : "outline"}
                         size="sm"
-                        className="h-8 text-xs px-3 gap-1.5"
-                        onClick={() => setContentCategory(category.id)}
+                        className={cn(
+                          "h-8 text-xs px-3 gap-1.5",
+                          (category as any).isAI && contentCategory === category.id && "bg-gradient-to-r from-primary to-accent"
+                        )}
+                        onClick={() => {
+                          setContentCategory(category.id);
+                          if (category.id === 'ai-generated') {
+                            setSelectedContentTypes([]);
+                          }
+                        }}
                       >
                         {category.label}
-                        <Badge variant="secondary" className="text-[9px] px-1 py-0 ml-0.5">
-                          {category.count}
-                        </Badge>
+                        {!(category as any).isAI && (
+                          <Badge variant="secondary" className="text-[9px] px-1 py-0 ml-0.5">
+                            {category.count}
+                          </Badge>
+                        )}
                       </Button>
                     ))}
                   </div>
+                  
+                  {/* AI Generated Mode - Auto combination */}
+                  {contentCategory === 'ai-generated' && (
+                    <Card className="border-dashed border-primary/30 bg-primary/5">
+                      <CardContent className="p-3">
+                        <div className="flex items-center gap-3">
+                          <Sparkles className="h-5 w-5 text-primary" />
+                          <div className="flex-1">
+                            <p className="text-sm font-medium">AI will auto-select optimal content types</p>
+                            <p className="text-xs text-muted-foreground">Based on your industry, segment, and topic</p>
+                          </div>
+                          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
+                            Recommended
+                          </Badge>
+                        </div>
+                        
+                        {/* Optional: Multi-select specific types */}
+                        <div className="mt-3 pt-3 border-t border-primary/20">
+                          <p className="text-xs text-muted-foreground mb-2">Or select specific combinations:</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {COLLATERAL_TYPES.slice(0, 8).map(ct => (
+                              <Badge
+                                key={ct.id}
+                                variant={selectedContentTypes.includes(ct.id) ? "default" : "outline"}
+                                className="cursor-pointer text-[10px] py-0.5"
+                                onClick={() => {
+                                  setSelectedContentTypes(prev => 
+                                    prev.includes(ct.id) 
+                                      ? prev.filter(id => id !== ct.id)
+                                      : [...prev, ct.id]
+                                  );
+                                }}
+                              >
+                                {ct.name}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
 
                   {/* Content Type Cards - Readable & Clickable */}
                   <div className="grid grid-cols-1 gap-2">
@@ -1592,851 +1683,131 @@ export function PresentationWizard({
                             {workflowConfig.aiRecommendation.reason}
                           </p>
                           
-                          {/* Provider Badges - Clear clickable cards with full model names */}
+                          {/* Provider Selection Grid with Dropdowns */}
                           <div className="grid grid-cols-2 gap-2">
-                            {/* Text Model */}
-                            <div 
-                              className="flex items-center gap-2 p-2.5 rounded-lg bg-background border hover:border-primary/50 cursor-pointer transition-colors"
-                              onClick={() => {
-                                // Could open a model selector dialog here
-                                toast.info(`Text Model: ${workflowConfig.aiRecommendation?.textModel}`);
-                              }}
-                            >
-                              <div className="p-1.5 rounded bg-blue-100 dark:bg-blue-900/30">
-                                <Type className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-[10px] text-muted-foreground">Text</p>
-                                <p className="text-xs font-medium truncate">{workflowConfig.aiRecommendation.textModel.split('/').pop()}</p>
-                              </div>
-                              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                            {/* Text Model Selector */}
+                            <div className="space-y-1">
+                              <Label className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                <Type className="h-3 w-3" /> Text Model
+                              </Label>
+                              <Select
+                                value={workflowConfig.aiRecommendation?.textModel || 'google/gemini-3-flash-preview'}
+                                onValueChange={(val) => {
+                                  setWorkflowConfig(prev => prev ? {
+                                    ...prev,
+                                    aiRecommendation: { ...prev.aiRecommendation!, textModel: val }
+                                  } : null);
+                                  setSelectedAIModel(val);
+                                }}
+                              >
+                                <SelectTrigger className="h-9 text-xs bg-background">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="bg-background">
+                                  {ALL_TEXT_PROVIDERS.map(p => (
+                                    <SelectItem key={p.id} value={p.id} className="text-xs">
+                                      <div className="flex flex-col">
+                                        <span>{p.name}</span>
+                                        <span className="text-[10px] text-muted-foreground">{p.strengths.join(', ')}</span>
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                             </div>
                             
-                            {/* Image Model */}
-                            <div 
-                              className="flex items-center gap-2 p-2.5 rounded-lg bg-background border hover:border-primary/50 cursor-pointer transition-colors"
-                              onClick={() => toast.info(`Image Model: ${workflowConfig.aiRecommendation?.imageModel}`)}
-                            >
-                              <div className="p-1.5 rounded bg-purple-100 dark:bg-purple-900/30">
-                                <ImageIcon className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-[10px] text-muted-foreground">Image</p>
-                                <p className="text-xs font-medium truncate">{workflowConfig.aiRecommendation.imageModel}</p>
-                              </div>
-                              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                            {/* Image Model Selector */}
+                            <div className="space-y-1">
+                              <Label className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                <ImageIcon className="h-3 w-3" /> Image Model
+                              </Label>
+                              <Select
+                                value={workflowConfig.aiRecommendation?.imageModel || 'flux-pro'}
+                                onValueChange={(val) => {
+                                  setWorkflowConfig(prev => prev ? {
+                                    ...prev,
+                                    aiRecommendation: { ...prev.aiRecommendation!, imageModel: val }
+                                  } : null);
+                                  setImageModel(val as any);
+                                }}
+                              >
+                                <SelectTrigger className="h-9 text-xs bg-background">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="bg-background">
+                                  {ALL_IMAGE_PROVIDERS.map(p => (
+                                    <SelectItem key={p.id} value={p.id} className="text-xs">
+                                      <div className="flex flex-col">
+                                        <span>{p.name}</span>
+                                        <span className="text-[10px] text-muted-foreground">{p.styles.slice(0,2).join(', ')}</span>
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                             </div>
                             
-                            {/* Voice Model */}
-                            <div 
-                              className="flex items-center gap-2 p-2.5 rounded-lg bg-background border hover:border-primary/50 cursor-pointer transition-colors"
-                              onClick={() => toast.info(`Voice Model: ${workflowConfig.aiRecommendation?.voiceModel}`)}
-                            >
-                              <div className="p-1.5 rounded bg-green-100 dark:bg-green-900/30">
-                                <Mic className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-[10px] text-muted-foreground">Voice</p>
-                                <p className="text-xs font-medium truncate">{workflowConfig.aiRecommendation.voiceModel}</p>
-                              </div>
-                              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                            {/* Voice Model Selector */}
+                            <div className="space-y-1">
+                              <Label className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                <Mic className="h-3 w-3" /> Voice Model
+                              </Label>
+                              <Select
+                                value={workflowConfig.aiRecommendation?.voiceModel || 'elevenlabs-multilingual'}
+                                onValueChange={(val) => {
+                                  setWorkflowConfig(prev => prev ? {
+                                    ...prev,
+                                    aiRecommendation: { ...prev.aiRecommendation!, voiceModel: val }
+                                  } : null);
+                                }}
+                              >
+                                <SelectTrigger className="h-9 text-xs bg-background">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="bg-background">
+                                  {ALL_VOICE_PROVIDERS.map(p => (
+                                    <SelectItem key={p.id} value={p.id} className="text-xs">
+                                      <div className="flex flex-col">
+                                        <span>{p.name}</span>
+                                        <span className="text-[10px] text-muted-foreground">{p.quality} • {p.languages} voices</span>
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                             </div>
                             
-                            {/* Translation Model */}
-                            <div 
-                              className="flex items-center gap-2 p-2.5 rounded-lg bg-background border hover:border-primary/50 cursor-pointer transition-colors"
-                              onClick={() => toast.info(`Translation Model: ${workflowConfig.aiRecommendation?.translationModel}`)}
-                            >
-                              <div className="p-1.5 rounded bg-orange-100 dark:bg-orange-900/30">
-                                <Languages className="h-3.5 w-3.5 text-orange-600 dark:text-orange-400" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-[10px] text-muted-foreground">Translation</p>
-                                <p className="text-xs font-medium truncate">{workflowConfig.aiRecommendation.translationModel}</p>
-                              </div>
-                              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                            {/* Translation Model Selector */}
+                            <div className="space-y-1">
+                              <Label className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                <Languages className="h-3 w-3" /> Translation
+                              </Label>
+                              <Select
+                                value={workflowConfig.aiRecommendation?.translationModel || 'deepl'}
+                                onValueChange={(val) => {
+                                  setWorkflowConfig(prev => prev ? {
+                                    ...prev,
+                                    aiRecommendation: { ...prev.aiRecommendation!, translationModel: val }
+                                  } : null);
+                                }}
+                              >
+                                <SelectTrigger className="h-9 text-xs bg-background">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="bg-background">
+                                  {ALL_TRANSLATION_PROVIDERS.map(p => (
+                                    <SelectItem key={p.id} value={p.id} className="text-xs">
+                                      <div className="flex flex-col">
+                                        <span>{p.name}</span>
+                                        <span className="text-[10px] text-muted-foreground">{p.regions.join(', ')} • {p.quality}</span>
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                             </div>
                           </div>
-
-                          {/* Alternative Models */}
-                          {(workflowConfig.aiRecommendation.alternativeTextModels?.length || 0) > 0 && (
-                            <div className="pt-2 border-t">
-                              <p className="text-[10px] text-muted-foreground mb-1.5">Alternative Text Models:</p>
-                              <div className="flex flex-wrap gap-1">
-                                {workflowConfig.aiRecommendation.alternativeTextModels?.map(model => (
-                                  <Badge 
-                                    key={model} 
-                                    variant="outline" 
-                                    className="text-[10px] cursor-pointer hover:bg-primary/10"
-                                    onClick={() => {
-                                      setSelectedAIModel(model);
-                                      setWorkflowConfig(prev => prev ? {
-                                        ...prev,
-                                        aiRecommendation: {
-                                          ...prev.aiRecommendation!,
-                                          textModel: model
-                                        }
-                                      } : null);
-                                      toast.success(`Switched to ${model.split('/').pop()}`);
-                                    }}
-                                  >
-                                    {model.split('/').pop()}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
-                          )}
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            )}
-
-            {/* Step 2: Template & Branding */}
-            {currentStep === 2 && (
-              <div className="space-y-4">
-                {/* Step description */}
-                <div className="bg-muted/30 rounded-lg p-3 border">
-                  <p className="text-sm text-foreground font-medium">Template & Branding</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Select a professional framework and customize your brand identity.
-                  </p>
-                </div>
-
-                {/* Tabbed Interface for Template & Branding */}
-                <Tabs defaultValue="framework" className="w-full">
-                  <TabsList level="child" className="w-full grid grid-cols-3 gap-1 p-1 bg-muted/50 rounded-lg h-auto">
-                    <TabsTrigger value="framework" level="child" className="flex items-center justify-center gap-1.5 py-2 text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm">
-                      <Layout className="h-3.5 w-3.5" />
-                      Framework
-                    </TabsTrigger>
-                    <TabsTrigger value="branding" level="child" className="flex items-center justify-center gap-1.5 py-2 text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm">
-                      <Palette className="h-3.5 w-3.5" />
-                      Branding
-                    </TabsTrigger>
-                    <TabsTrigger value="visual" level="child" className="flex items-center justify-center gap-1.5 py-2 text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm">
-                      <ImageIcon className="h-3.5 w-3.5" />
-                      Visual
-                    </TabsTrigger>
-                  </TabsList>
-
-                  {/* Framework Tab */}
-                  <TabsContent value="framework" level="child" className="mt-3 p-0 border-0 shadow-none bg-transparent space-y-3">
-                    {/* Category Filter Pills */}
-                    <div className="flex flex-wrap gap-1.5">
-                      {[
-                        { id: 'framework', label: 'Frameworks', icon: <Triangle className="h-3 w-3" />, count: CONSULTING_TEMPLATES.filter(t => t.type === 'framework').length },
-                        { id: 'analysis', label: 'Analysis', icon: <BarChart3 className="h-3 w-3" />, count: CONSULTING_TEMPLATES.filter(t => t.type === 'analysis').length },
-                        { id: 'diagram', label: 'Diagrams', icon: <GitBranch className="h-3 w-3" />, count: CONSULTING_TEMPLATES.filter(t => t.type === 'diagram').length },
-                        { id: 'comparison', label: 'Comparison', icon: <Columns className="h-3 w-3" />, count: CONSULTING_TEMPLATES.filter(t => t.type === 'comparison').length },
-                      ].map(cat => (
-                        <Button
-                          key={cat.id}
-                          variant={frameworkCategory === cat.id ? "default" : "outline"}
-                          size="sm"
-                          className="h-8 text-xs px-3 gap-1.5"
-                          onClick={() => setFrameworkCategory(cat.id)}
-                        >
-                          {cat.icon}
-                          {cat.label}
-                          <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">
-                            {cat.count}
-                          </Badge>
-                        </Button>
-                      ))}
-                    </div>
-
-                    {/* Framework Cards Grid */}
-                    <ScrollArea className="h-[220px] pr-2">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {CONSULTING_TEMPLATES.filter(t => t.type === frameworkCategory).map(template => (
-                          <Card
-                            key={template.id}
-                            className={cn(
-                              "cursor-pointer transition-all hover:border-primary/50 hover:shadow-sm",
-                              workflowConfig?.consultingTemplate?.id === template.id && "border-primary ring-2 ring-primary/20 bg-primary/5"
-                            )}
-                            onClick={() => {
-                              setWorkflowConfig(prev => ({
-                                ...prev!,
-                                consultingTemplate: template,
-                              }));
-                            }}
-                          >
-                            <CardContent className="p-3">
-                              <div className="flex items-start gap-3">
-                                <div className={cn(
-                                  "w-10 h-10 rounded-lg border flex items-center justify-center shrink-0",
-                                  workflowConfig?.consultingTemplate?.id === template.id 
-                                    ? "bg-primary/10 border-primary/30" 
-                                    : "bg-muted/50 border-border"
-                                )}>
-                                  {frameworkCategory === 'framework' && <Triangle className="h-5 w-5 text-primary/70" />}
-                                  {frameworkCategory === 'analysis' && <Grid3X3 className="h-5 w-5 text-primary/70" />}
-                                  {frameworkCategory === 'diagram' && <GitBranch className="h-5 w-5 text-primary/70" />}
-                                  {frameworkCategory === 'comparison' && <Columns className="h-5 w-5 text-primary/70" />}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center justify-between gap-2">
-                                    <h4 className="font-medium text-sm text-foreground">{template.name}</h4>
-                                    {workflowConfig?.consultingTemplate?.id === template.id && (
-                                      <Check className="h-4 w-4 text-primary shrink-0" />
-                                    )}
-                                  </div>
-                                  <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{template.description}</p>
-                                  <div className="flex items-center gap-2 mt-2">
-                                    <Badge variant="outline" className="text-[10px]">{template.source}</Badge>
-                                    {template.dataTypes.slice(0, 2).map(dt => (
-                                      <Badge key={dt} variant="secondary" className="text-[10px]">{dt}</Badge>
-                                    ))}
-                                  </div>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                    </ScrollArea>
-
-                    {/* Selected Framework Indicator */}
-                    {workflowConfig?.consultingTemplate ? (
-                      <div className="flex items-center justify-between p-3 rounded-lg bg-primary/5 border border-primary/20">
-                        <div className="flex items-center gap-2">
-                          <Check className="h-4 w-4 text-primary" />
-                          <span className="text-sm font-medium">{workflowConfig.consultingTemplate.name}</span>
-                          <Badge variant="outline" className="text-[10px]">{workflowConfig.consultingTemplate.source}</Badge>
-                        </div>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-7 text-xs"
-                          onClick={() => setWorkflowConfig(prev => ({ ...prev!, consultingTemplate: undefined }))}
-                        >
-                          Clear
-                        </Button>
-                      </div>
-                    ) : (
-                      <p className="text-xs text-muted-foreground flex items-center gap-1.5 p-2 bg-muted/30 rounded">
-                        <Sparkles className="h-3.5 w-3.5 text-primary" /> 
-                        Optional — AI will create an optimal layout if no framework is selected
-                      </p>
-                    )}
-                  </TabsContent>
-
-                  {/* Branding Tab */}
-                  <TabsContent value="branding" level="child" className="mt-3 p-0 border-0 shadow-none bg-transparent space-y-3">
-                    {/* Logo Upload */}
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium flex items-center gap-2">
-                        <Upload className="h-4 w-4 text-primary" />
-                        Logo Upload
-                      </Label>
-                      <div className="flex items-center gap-3">
-                        <div className="flex-1">
-                          <Input
-                            type="file"
-                            accept="image/*"
-                            className="text-xs"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) {
-                                const reader = new FileReader();
-                                reader.onload = () => {
-                                  setBrandConfig(prev => ({ 
-                                    ...prev, 
-                                    logo: { 
-                                      url: reader.result as string, 
-                                      position: prev.logo?.position || 'top-left', 
-                                      size: prev.logo?.size || 'medium' 
-                                    } 
-                                  }));
-                                };
-                                reader.readAsDataURL(file);
-                              }
-                            }}
-                          />
-                        </div>
-                        {brandConfig.logo?.url && (
-                          <div className="flex items-center gap-2">
-                            <img src={brandConfig.logo.url} alt="Logo" className="h-10 w-10 object-contain rounded border" />
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="h-8 text-xs"
-                              onClick={() => setBrandConfig(prev => ({ ...prev, logo: undefined }))}
-                            >
-                              Remove
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Brand Colors */}
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">Brand Colors</Label>
-                      <div className="grid grid-cols-3 gap-3">
-                        {/* Primary Color */}
-                        <div className="space-y-1.5">
-                          <Label className="text-xs text-muted-foreground">Primary</Label>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="color"
-                              value={brandConfig.colors.primary}
-                              onChange={(e) => setBrandConfig(prev => ({ ...prev, colors: { ...prev.colors, primary: e.target.value } }))}
-                              className="w-8 h-8 rounded cursor-pointer border"
-                            />
-                            <Input
-                              value={brandConfig.colors.primary}
-                              onChange={(e) => setBrandConfig(prev => ({ ...prev, colors: { ...prev.colors, primary: e.target.value } }))}
-                              className="text-xs h-8 flex-1"
-                            />
-                          </div>
-                        </div>
-                        {/* Secondary Color */}
-                        <div className="space-y-1.5">
-                          <Label className="text-xs text-muted-foreground">Secondary</Label>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="color"
-                              value={brandConfig.colors.secondary}
-                              onChange={(e) => setBrandConfig(prev => ({ ...prev, colors: { ...prev.colors, secondary: e.target.value } }))}
-                              className="w-8 h-8 rounded cursor-pointer border"
-                            />
-                            <Input
-                              value={brandConfig.colors.secondary}
-                              onChange={(e) => setBrandConfig(prev => ({ ...prev, colors: { ...prev.colors, secondary: e.target.value } }))}
-                              className="text-xs h-8 flex-1"
-                            />
-                          </div>
-                        </div>
-                        {/* Accent Color */}
-                        <div className="space-y-1.5">
-                          <Label className="text-xs text-muted-foreground">Accent</Label>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="color"
-                              value={brandConfig.colors.accent}
-                              onChange={(e) => setBrandConfig(prev => ({ ...prev, colors: { ...prev.colors, accent: e.target.value } }))}
-                              className="w-8 h-8 rounded cursor-pointer border"
-                            />
-                            <Input
-                              value={brandConfig.colors.accent}
-                              onChange={(e) => setBrandConfig(prev => ({ ...prev, colors: { ...prev.colors, accent: e.target.value } }))}
-                              className="text-xs h-8 flex-1"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Theme Presets */}
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">Theme Presets</Label>
-                      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                        {THEME_PRESETS.map(theme => (
-                          <div
-                            key={theme.id}
-                            className={cn(
-                              "cursor-pointer transition-all p-2 rounded-lg border hover:border-primary/50 hover:shadow-sm",
-                              workflowConfig?.theme?.id === theme.id && "border-primary ring-2 ring-primary/20 bg-primary/5"
-                            )}
-                            onClick={() => {
-                              setWorkflowConfig(prev => ({
-                                ...prev!,
-                                theme: theme,
-                              }));
-                              // Apply theme colors to brand config
-                              setBrandConfig(prev => ({
-                                ...prev,
-                                colors: {
-                                  ...prev.colors,
-                                  primary: theme.colors.primary,
-                                  secondary: theme.colors.secondary,
-                                  accent: theme.colors.accent,
-                                  background: theme.colors.background,
-                                }
-                              }));
-                            }}
-                          >
-                            <div className="flex gap-0.5 mb-1.5">
-                              {Object.values(theme.colors).slice(0, 4).map((color, i) => (
-                                <div key={i} className="flex-1 h-3 rounded-sm" style={{ backgroundColor: color }} />
-                              ))}
-                            </div>
-                            <p className="text-[10px] font-medium text-center truncate">{theme.name}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Tagline */}
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">Company Tagline</Label>
-                      <Input
-                        value={brandConfig.tagline}
-                        onChange={(e) => setBrandConfig(prev => ({ ...prev, tagline: e.target.value }))}
-                        placeholder="Enter your company tagline..."
-                        className="text-sm"
-                      />
-                    </div>
-                  </TabsContent>
-
-                  {/* Visual Tab */}
-                  <TabsContent value="visual" level="child" className="mt-3 p-0 border-0 shadow-none bg-transparent space-y-3">
-                    {/* Image Source */}
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium flex items-center gap-2">
-                        <ImageIcon className="h-4 w-4 text-primary" />
-                        Image Source
-                      </Label>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                        {[
-                          { id: 'ai-generated', label: 'AI Generated', icon: <Sparkles className="h-4 w-4" /> },
-                          { id: 'stock-upload', label: 'Upload Stock', icon: <Upload className="h-4 w-4" /> },
-                          { id: 'placeholder', label: 'Placeholders', icon: <ImageIcon className="h-4 w-4" /> },
-                          { id: 'mixed', label: 'Mixed', icon: <Layers className="h-4 w-4" /> },
-                        ].map(src => (
-                          <Card
-                            key={src.id}
-                            className={cn(
-                              "cursor-pointer transition-all hover:border-primary/50",
-                              imageSource === src.id && "border-primary ring-2 ring-primary/20 bg-primary/5"
-                            )}
-                            onClick={() => setImageSource(src.id as ImageSourceType)}
-                          >
-                            <CardContent className="p-3 flex flex-col items-center gap-2">
-                              <div className={cn(
-                                "p-2 rounded-lg",
-                                imageSource === src.id ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
-                              )}>
-                                {src.icon}
-                              </div>
-                              <span className="text-xs font-medium">{src.label}</span>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Image Model Selector */}
-                    {imageSource !== 'placeholder' && (
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium">Image Model</Label>
-                        <ImageModelSelector selectedModel={imageModel} onModelChange={setImageModel} showLabel={false} />
-                      </div>
-                    )}
-
-                    {/* Visual Toggles */}
-                    <div className="space-y-3">
-                      <Label className="text-sm font-medium">Visual Elements</Label>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div className="flex items-center justify-between p-3 rounded-lg border bg-background">
-                          <div className="flex items-center gap-2">
-                            <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm">Infographics</span>
-                          </div>
-                          <Switch checked={includeInfographics} onCheckedChange={setIncludeInfographics} />
-                        </div>
-                        <div className="flex items-center justify-between p-3 rounded-lg border bg-background">
-                          <div className="flex items-center gap-2">
-                            <GitBranch className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm">Journey Maps</span>
-                          </div>
-                          <Switch checked={includeJourneyMaps} onCheckedChange={setIncludeJourneyMaps} />
-                        </div>
-                        <div className="flex items-center justify-between p-3 rounded-lg border bg-background">
-                          <div className="flex items-center gap-2">
-                            <Video className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm">Video Clips</span>
-                          </div>
-                          <Switch checked={includeVideo} onCheckedChange={setIncludeVideo} />
-                        </div>
-                      </div>
-                    </div>
-                  </TabsContent>
-                </Tabs>
-              </div>
-            )}
-
-            {/* Step 3: Languages - Multi-Language Generation */}
-            {currentStep === 3 && (
-              <div className="space-y-4">
-                {/* Step description */}
-                <div className="bg-muted/30 rounded-lg p-3 border">
-                  <p className="text-sm text-foreground font-medium">Multi-Language Support</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Generate your presentation in multiple languages simultaneously. Select your primary language and any additional translations needed.
-                  </p>
-                </div>
-                
-                {/* Agentic Generation Toggle */}
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Brain className="h-4 w-4 text-primary" />
-                      <span>AI Generation Mode</span>
-                      <span className="text-xs font-normal text-muted-foreground ml-1">
-                        — Choose how slides are generated
-                      </span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex items-center justify-between p-3 rounded-lg border bg-gradient-to-r from-primary/5 to-accent/5">
-                      <div className="space-y-0.5">
-                        <Label className="text-xs font-medium">Use Agentic AI Generation</Label>
-                        <p className="text-[10px] text-muted-foreground">
-                          Parallel agents with real-time streaming & per-language model selection
-                        </p>
-                      </div>
-                      <Switch checked={useAgenticGeneration} onCheckedChange={setUseAgenticGeneration} />
-                    </div>
-                    
-                    {useAgenticGeneration && (
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <Label className="text-xs text-muted-foreground">
-                            Click any agent to configure its AI model
-                          </Label>
-                          <Badge variant="outline" className="text-[10px]">
-                            {selectedAgents.length}/{Object.keys(AGENT_CATALOG).length} active
-                          </Badge>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2.5">
-                          {Object.entries(AGENT_CATALOG).map(([key, agent]) => {
-                            const isSelected = selectedAgents.includes(key);
-                            const config = agentModelConfigs.find(c => c.agentKey === key);
-                            return (
-                              <AgentCard
-                                key={key}
-                                agentKey={key}
-                                agent={agent}
-                                isSelected={isSelected}
-                                config={config}
-                                onClick={() => setShowAgentConfigDialog(key)}
-                              />
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Agent Config Dialog */}
-                    <AgentSelectorDialog
-                      open={!!showAgentConfigDialog}
-                      onOpenChange={(open) => !open && setShowAgentConfigDialog(null)}
-                      agent={showAgentConfigDialog ? AGENT_CATALOG[showAgentConfigDialog as keyof typeof AGENT_CATALOG] : null}
-                      agentKey={showAgentConfigDialog || ''}
-                      config={agentModelConfigs.find(c => c.agentKey === showAgentConfigDialog)}
-                      onConfirm={(config) => {
-                        // Update agent model config
-                        setAgentModelConfigs(prev => {
-                          const existing = prev.findIndex(c => c.agentKey === config.agentKey);
-                          if (existing >= 0) {
-                            const updated = [...prev];
-                            updated[existing] = config;
-                            return updated;
-                          }
-                          return [...prev, config];
-                        });
-                        // Update selected agents based on enabled state
-                        if (config.enabled) {
-                          setSelectedAgents(prev => 
-                            prev.includes(config.agentKey) ? prev : [...prev, config.agentKey]
-                          );
-                        } else {
-                          setSelectedAgents(prev => prev.filter(a => a !== config.agentKey));
-                        }
-                      }}
-                    />
-                  </CardContent>
-                </Card>
-
-                <MultiLanguageGenerator
-                  selectedLanguages={selectedLanguages}
-                  onLanguagesChange={setSelectedLanguages}
-                  primaryLanguage={primaryLanguage}
-                  onPrimaryLanguageChange={setPrimaryLanguage}
-                  onGenerateAll={handleMultiLanguageGenerate}
-                  generationStatuses={useAgenticGeneration 
-                    ? Array.from(agentGenerator.languageStates.entries()).map(([code, state]) => ({
-                        languageCode: code,
-                        status: (state.status === 'complete' ? 'completed' : state.status) as 'completed' | 'error' | 'generating' | 'pending',
-                        progress: state.progress,
-                        fileName: state.fileName,
-                        downloadUrl: state.downloadUrl,
-                      }))
-                    : Object.entries(languageStatuses).map(([code, status]) => ({
-                        languageCode: code,
-                        ...status,
-                      }))}
-                  onDownload={handleLanguageDownload}
-                  isGenerating={useAgenticGeneration ? agentGenerator.isGenerating : isMultiLangGenerating}
-                />
-
-                {/* Per-Language Model Configuration */}
-                {useAgenticGeneration && selectedLanguages.length > 0 && (
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm flex items-center gap-2">
-                        <Settings2 className="h-4 w-4" />
-                        Per-Language Model Config
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                      {selectedLanguages.map(langCode => {
-                        const lang = SUPPORTED_LANGUAGES.find(l => l.code === langCode);
-                        const config = languageModelConfigs.find(c => c.languageCode === langCode);
-                        return (
-                          <div 
-                            key={langCode}
-                            className="flex items-center justify-between p-2 rounded border bg-muted/20 hover:bg-muted/40 cursor-pointer"
-                            onClick={() => setShowLanguageConfigPopup(langCode)}
-                          >
-                            <div className="flex items-center gap-2">
-                              <span className="text-lg">{lang?.flag}</span>
-                              <span className="text-sm font-medium">{lang?.name}</span>
-                              {langCode === primaryLanguage && (
-                                <Badge variant="default" className="text-[10px]">Primary</Badge>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs text-muted-foreground">
-                                {config?.textModel?.split('/').pop() || 'Default Model'}
-                              </span>
-                              <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Advanced Tone & Enhancements */}
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Settings2 className="h-4 w-4" />
-                      Advanced Options
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label className="text-xs">Tone & Style</Label>
-                      <MultiSelectDropdown
-                        options={toneOptions.map(tone => ({
-                          id: tone.id,
-                          label: tone.name,
-                          value: tone.id,
-                          description: tone.bestFor.includes(collateralType) 
-                            ? `Good for ${collateralType}` 
-                            : undefined
-                        }))}
-                        selectedValues={selectedTones}
-                        onSelectionChange={(values) => setSelectedTones(values as PresentationTone[])}
-                        placeholder="Select tone..."
-                        searchable
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-xs">Content Enhancements</Label>
-                      <MultiSelectDropdown
-                        options={enhancementOptions.map(e => ({
-                          id: e.id,
-                          label: e.name,
-                          value: e.id,
-                        }))}
-                        selectedValues={selectedEnhancements}
-                        onSelectionChange={(values) => setSelectedEnhancements(values as ContentEnhancement[])}
-                        placeholder="Select enhancements..."
-                        searchable
-                      />
-                    </div>
-
-                    <Separator />
-
-                    <div className="space-y-2">
-                      <Label className="text-xs">Target Audience</Label>
-                      <Input
-                        placeholder="e.g., Healthcare executives"
-                        value={targetAudience}
-                        onChange={(e) => setTargetAudience(e.target.value)}
-                        className="h-8 text-sm"
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
-                      <div className="flex items-center gap-2">
-                        <Shield className="h-4 w-4 text-primary" />
-                        <Label className="text-xs">Run Compliance Check</Label>
-                      </div>
-                      <Switch checked={showComplianceCheck} onCheckedChange={setShowComplianceCheck} />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Language Config Popup */}
-                <LanguageConfigPopup
-                  open={!!showLanguageConfigPopup}
-                  onOpenChange={(open) => !open && setShowLanguageConfigPopup(null)}
-                  language={showLanguageConfigPopup ? SUPPORTED_LANGUAGES.find(l => l.code === showLanguageConfigPopup) || null : null}
-                  isPrimary={showLanguageConfigPopup === primaryLanguage}
-                  existingConfig={showLanguageConfigPopup ? languageModelConfigs.find(c => c.languageCode === showLanguageConfigPopup) : undefined}
-                  onConfirm={(config) => {
-                    if (showLanguageConfigPopup) {
-                      handleLanguageConfigUpdate(showLanguageConfigPopup, config);
-                    }
-                  }}
-                  onSkip={() => setShowLanguageConfigPopup(null)}
-                />
-              </div>
-            )}
-
-            {/* Step 4: Generate */}
-            {currentStep === 4 && (
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <Wand2 className="h-4 w-4 text-primary" />
-                    <span>Create Your Presentation</span>
-                    <span className="text-xs font-normal text-muted-foreground ml-1">
-                      — Review and generate
-                    </span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Step description */}
-                  <div className="bg-green-50 dark:bg-green-950/20 rounded-lg p-3 border border-green-200 dark:border-green-800">
-                    <p className="text-sm text-green-800 dark:text-green-200 font-medium">Ready to Generate!</p>
-                    <p className="text-xs text-green-700 dark:text-green-300 mt-1">
-                      Review your settings below, then click "Generate" to create your presentation. This typically takes 1-3 minutes depending on length and options selected.
-                    </p>
-                  </div>
-                  
-                  {/* Comprehensive Options Summary */}
-                  <div className="p-4 rounded-lg bg-muted/50 space-y-3">
-                    <h4 className="text-sm font-medium flex items-center gap-2">
-                      <Settings2 className="h-4 w-4" />
-                      Your Configuration Summary
-                    </h4>
-                    
-                    {/* Basic Settings */}
-                    <div className="space-y-2">
-                      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Presentation</p>
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-                        <div className="text-muted-foreground">Type:</div>
-                        <div className="font-medium capitalize">{collateralType}</div>
-                        <div className="text-muted-foreground">Format:</div>
-                        <div className="font-medium uppercase">{outputFormat}</div>
-                        <div className="text-muted-foreground">Length:</div>
-                        <div className="font-medium capitalize">{length}</div>
-                        {targetAudience && (
-                          <>
-                            <div className="text-muted-foreground">Audience:</div>
-                            <div className="font-medium">{targetAudience}</div>
-                          </>
-                        )}
-                      </div>
-                    </div>
-
-                    <Separator className="my-2" />
-
-                    {/* Image Settings */}
-                    <div className="space-y-2">
-                      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Images</p>
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-                        <div className="text-muted-foreground">Source:</div>
-                        <div className="font-medium capitalize">{imageSource.replace('-', ' ')}</div>
-                        <div className="text-muted-foreground">Model:</div>
-                        <div className="font-medium">{IMAGE_MODELS.find(m => m.id === imageModel)?.name || 'Auto'}</div>
-                        {selectedImageStyles.length > 0 && (
-                          <>
-                            <div className="text-muted-foreground">Styles:</div>
-                            <div className="font-medium">
-                              <div className="flex flex-wrap gap-1">
-                                {selectedImageStyles.map(style => (
-                                  <Badge key={style} variant="secondary" className="text-[10px] px-1.5 py-0">
-                                    {imageStyleOptions.find(s => s.id === style)?.name || style}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </div>
-
-                    <Separator className="my-2" />
-
-                    {/* Languages */}
-                    <div className="space-y-2">
-                      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Languages</p>
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-                        <div className="text-muted-foreground">Input Language:</div>
-                        <div className="font-medium">
-                          {SUPPORTED_LANGUAGES.find(l => l.code === inputLanguage)?.flag} {SUPPORTED_LANGUAGES.find(l => l.code === inputLanguage)?.name}
-                        </div>
-                        <div className="text-muted-foreground">Output Language:</div>
-                        <div className="font-medium">
-                          {SUPPORTED_LANGUAGES.find(l => l.code === primaryLanguage)?.flag} {SUPPORTED_LANGUAGES.find(l => l.code === primaryLanguage)?.name}
-                        </div>
-                        {inputLanguage !== primaryLanguage && autoTranslateFromEnglish && (
-                          <>
-                            <div className="text-muted-foreground">Translation:</div>
-                            <div className="font-medium text-green-600">Auto-translate enabled</div>
-                          </>
-                        )}
-                      </div>
-                      {generateMultipleLanguages && selectedLanguages.filter(l => l !== primaryLanguage).length > 0 && (
-                        <div className="mt-2">
-                          <p className="text-[10px] text-muted-foreground mb-1">Additional languages:</p>
-                          <div className="flex flex-wrap gap-1">
-                            {selectedLanguages.filter(l => l !== primaryLanguage).map(lang => {
-                              const langInfo = SUPPORTED_LANGUAGES.find(l => l.code === lang);
-                              return (
-                                <Badge 
-                                  key={lang} 
-                                  variant="secondary" 
-                                  className="text-[10px] px-1.5 py-0"
-                                >
-                                  {langInfo?.flag} {langInfo?.name || lang}
-                                </Badge>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    <Separator className="my-2" />
-
-                    {/* Tone & Enhancements */}
-                    <div className="space-y-2">
-                      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Tone & Enhancements</p>
-                      <div className="space-y-1">
-                        {selectedTones.length > 0 && (
-                          <div className="flex flex-wrap gap-1">
-                            {selectedTones.map(tone => (
-                              <Badge key={tone} variant="outline" className="text-[10px] px-1.5 py-0">
-                                {toneOptions.find(t => t.id === tone)?.name || tone}
-                              </Badge>
-                            ))}
-                          </div>
-                        )}
-                        {selectedEnhancements.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {selectedEnhancements.map(enh => (
-                              <Badge key={enh} variant="outline" className="text-[10px] px-1.5 py-0 border-primary/30">
-                                {enhancementOptions.find(e => e.id === enh)?.name || enh}
-                              </Badge>
-                            ))}
-                          </div>
-                        )}
-                      </div>
                     </div>
 
                     <Separator className="my-2" />
