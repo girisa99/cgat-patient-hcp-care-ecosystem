@@ -113,6 +113,7 @@ import {
   INDUSTRY_CATEGORIES,
   CONSULTING_TEMPLATES,
   SEGMENTS,
+  THEME_PRESETS,
   getRecommendedProviders,
   type FinalWorkflowConfig,
   type AIModelConfig as WorkflowAIModelConfig,
@@ -195,13 +196,13 @@ const getConfidenceColor = (score: number): string => {
   return 'text-red-500 bg-red-500/10';
 };
 
-// Wizard Steps - Extended with branding and clear descriptions
+// Wizard Steps - Restructured for unified workflow with A2A integration
 const WIZARD_STEPS = [
   { id: 'input', label: 'Content', icon: Type, description: 'Add your source material to transform into slides' },
-  { id: 'branding', label: 'Style', icon: Palette, description: 'Choose templates, colors, and branding' },
-  { id: 'images', label: 'Visuals', icon: ImageIcon, description: 'Configure how images are generated' },
-  { id: 'languages', label: 'Languages', icon: Languages, description: 'Enable multi-language output' },
-  { id: 'generate', label: 'Create', icon: Wand2, description: 'Generate your presentation' },
+  { id: 'industry', label: 'Industry', icon: Presentation, description: 'Select industry, segment & collateral type' },
+  { id: 'template', label: 'Template', icon: Layout, description: 'Choose templates and branding' },
+  { id: 'agents', label: 'AI Agents', icon: Brain, description: 'Configure A2A agents and languages' },
+  { id: 'generate', label: 'Generate', icon: Wand2, description: 'Review and create your presentation' },
 ];
 
 // Helper to categorize languages for searchable dropdown
@@ -1290,146 +1291,415 @@ export function PresentationWizard({
               </Card>
             )}
 
-            {/* Step 1: Industry, Segment, Template & Branding */}
+            {/* Step 1: Industry, Segment & Collateral Type */}
             {currentStep === 1 && (
               <div className="space-y-4">
-                <EnhancedTemplateWorkflow
-                  onConfigComplete={(config) => {
-                    setWorkflowConfig(config);
-                    // Sync relevant settings to existing state
-                    if (config.brandConfig) {
-                      setBrandConfig(config.brandConfig);
-                    }
-                    if (config.aiRecommendation) {
-                      // Apply AI recommendations - textModel/imageModel are strings
-                      setSelectedAIModel(config.aiRecommendation.textModel);
-                      if (config.aiRecommendation.imageModel) {
-                        setImageModel(config.aiRecommendation.imageModel as any);
-                      }
-                    }
-                    // Map collateral type
-                    const collateralMap: Record<string, CollateralType> = {
-                      'storytelling': 'presentation',
-                      'investor-pitch': 'investor',
-                      'sales-enablement': 'sales',
-                      'training': 'training',
-                      'internal-comms': 'presentation',
-                      'product-launch': 'marketing',
-                      'marketing': 'marketing',
-                      'research': 'whitepaper',
-                      'case-study': 'case-study',
-                    };
-                    // config.collateralType is an object with id property
-                    const collateralObj = config.collateralType as { id: string } | null;
-                    if (collateralObj?.id && collateralMap[collateralObj.id]) {
-                      setCollateralType(collateralMap[collateralObj.id]);
-                    }
-                    toast.success('Workflow configured! Proceed to Visuals.');
-                  }}
-                  selectedLanguages={selectedLanguages}
-                />
+                {/* Step Description */}
+                <Card className="bg-gradient-to-r from-primary/5 to-accent/5 border-primary/20">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-primary/10">
+                        <Presentation className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Select Your Industry & Content Type</p>
+                        <p className="text-xs text-muted-foreground">
+                          AI will automatically recommend optimal models for text, images, voice, and translation based on your selection.
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Collateral Type Selection */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-primary" />
+                      What type of content are you creating?
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Tabs defaultValue="narrative" className="w-full">
+                      <TabsList className="grid grid-cols-5 w-full mb-4">
+                        <TabsTrigger value="narrative" className="text-xs">Narrative</TabsTrigger>
+                        <TabsTrigger value="business" className="text-xs">Business</TabsTrigger>
+                        <TabsTrigger value="training" className="text-xs">Training</TabsTrigger>
+                        <TabsTrigger value="research" className="text-xs">Research</TabsTrigger>
+                        <TabsTrigger value="visual" className="text-xs">Visual</TabsTrigger>
+                      </TabsList>
+                      {['narrative', 'business', 'training', 'research', 'visual'].map(category => (
+                        <TabsContent key={category} value={category}>
+                          <div className="grid grid-cols-2 gap-3">
+                            {COLLATERAL_TYPES.filter(c => c.category === category).map(ct => (
+                              <Card
+                                key={ct.id}
+                                className={cn(
+                                  "cursor-pointer transition-all hover:border-primary/50 p-3",
+                                  workflowConfig?.collateralType?.id === ct.id && "border-primary ring-2 ring-primary/20"
+                                )}
+                                onClick={() => {
+                                  setWorkflowConfig(prev => ({
+                                    ...prev!,
+                                    collateralType: ct,
+                                    slideCount: ct.suggestedSlides,
+                                  }));
+                                }}
+                              >
+                                <div className="flex items-start gap-2">
+                                  <div className={cn(
+                                    "p-1.5 rounded-lg",
+                                    workflowConfig?.collateralType?.id === ct.id ? "bg-primary/10 text-primary" : "bg-muted"
+                                  )}>
+                                    {ct.icon}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <h4 className="font-medium text-sm">{ct.name}</h4>
+                                    <p className="text-xs text-muted-foreground line-clamp-1">{ct.description}</p>
+                                    <Badge variant="secondary" className="text-[10px] mt-1">~{ct.suggestedSlides} slides</Badge>
+                                  </div>
+                                </div>
+                              </Card>
+                            ))}
+                          </div>
+                        </TabsContent>
+                      ))}
+                    </Tabs>
+                  </CardContent>
+                </Card>
+
+                {/* Industry Selection */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Presentation className="h-4 w-4 text-primary" />
+                      Select your industry
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
+                      {INDUSTRY_CATEGORIES.map(industry => (
+                        <Card
+                          key={industry.id}
+                          className={cn(
+                            "cursor-pointer transition-all hover:border-primary/50 p-2",
+                            workflowConfig?.industryCategory === industry.id && "border-primary ring-2 ring-primary/20"
+                          )}
+                          onClick={() => {
+                            const rec = getRecommendedProviders(
+                              industry.id,
+                              workflowConfig?.segment || '',
+                              workflowConfig?.collateralType?.id || '',
+                              selectedLanguages
+                            );
+                            setWorkflowConfig(prev => ({
+                              ...prev!,
+                              industryCategory: industry.id,
+                              aiRecommendation: rec,
+                            }));
+                            setSelectedAIModel(rec.textModel);
+                            setImageModel(rec.imageModel as any);
+                          }}
+                        >
+                          <div className="text-center">
+                            <div className={cn(
+                              "mx-auto p-2 rounded-full w-10 h-10 flex items-center justify-center mb-1",
+                              workflowConfig?.industryCategory === industry.id ? "bg-primary/10 text-primary" : "bg-muted"
+                            )}>
+                              {industry.icon}
+                            </div>
+                            <h4 className="font-medium text-xs">{industry.name}</h4>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+
+                    {/* Segments - Industry specific */}
+                    {workflowConfig?.industryCategory && SEGMENTS[workflowConfig.industryCategory] && (
+                      <div className="mt-4 space-y-2">
+                        <Label className="text-xs text-muted-foreground">Select Segment (Optional)</Label>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                          {SEGMENTS[workflowConfig.industryCategory].map(segment => (
+                            <Card
+                              key={segment.id}
+                              className={cn(
+                                "cursor-pointer transition-all hover:border-primary/50 p-2",
+                                workflowConfig?.segment === segment.id && "border-primary ring-2 ring-primary/20"
+                              )}
+                              onClick={() => {
+                                const rec = getRecommendedProviders(
+                                  workflowConfig.industryCategory,
+                                  segment.id,
+                                  workflowConfig?.collateralType?.id || '',
+                                  selectedLanguages
+                                );
+                                setWorkflowConfig(prev => ({
+                                  ...prev!,
+                                  segment: segment.id,
+                                  aiRecommendation: rec,
+                                }));
+                                setSelectedAIModel(rec.textModel);
+                                setImageModel(rec.imageModel as any);
+                              }}
+                            >
+                              <h5 className="font-medium text-xs">{segment.name}</h5>
+                              <p className="text-[10px] text-muted-foreground">{segment.description}</p>
+                            </Card>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* AI Recommendation Preview */}
+                {workflowConfig?.aiRecommendation && (
+                  <Card className="bg-gradient-to-r from-purple-500/5 to-blue-500/5 border-purple-500/20">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Sparkles className="h-4 w-4 text-purple-500" />
+                        <span className="font-medium text-sm">AI Provider Recommendation</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-3">{workflowConfig.aiRecommendation.reason}</p>
+                      <div className="flex flex-wrap gap-2">
+                        <Badge variant="secondary" className="text-xs">
+                          <Type className="h-3 w-3 mr-1" />
+                          {workflowConfig.aiRecommendation.textModel}
+                        </Badge>
+                        <Badge variant="secondary" className="text-xs">
+                          <ImageIcon className="h-3 w-3 mr-1" />
+                          {workflowConfig.aiRecommendation.imageModel}
+                        </Badge>
+                        <Badge variant="secondary" className="text-xs">
+                          <Languages className="h-3 w-3 mr-1" />
+                          {workflowConfig.aiRecommendation.translationModel}
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             )}
 
-            {/* Step 2: Image Settings */}
+            {/* Step 2: Template & Branding */}
             {currentStep === 2 && (
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <ImageIcon className="h-4 w-4 text-primary" />
-                    <span>Visual Configuration</span>
-                    <span className="text-xs font-normal text-muted-foreground ml-1">
-                      — Set up how images appear in your slides
-                    </span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Step description */}
-                  <div className="bg-muted/30 rounded-lg p-3 border">
-                    <p className="text-xs text-muted-foreground">
-                      Choose whether to use AI-generated images, upload your own, or use placeholders. Configure the visual style for consistency.
+              <div className="space-y-4">
+                {/* Template Selection */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Layout className="h-4 w-4 text-primary" />
+                      Choose a professional framework
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Tabs defaultValue="framework">
+                      <TabsList className="mb-4">
+                        <TabsTrigger value="framework" className="text-xs">Frameworks</TabsTrigger>
+                        <TabsTrigger value="analysis" className="text-xs">Analysis</TabsTrigger>
+                        <TabsTrigger value="diagram" className="text-xs">Diagrams</TabsTrigger>
+                        <TabsTrigger value="comparison" className="text-xs">Comparison</TabsTrigger>
+                      </TabsList>
+                      {['framework', 'analysis', 'diagram', 'comparison'].map(type => (
+                        <TabsContent key={type} value={type}>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            {CONSULTING_TEMPLATES.filter(t => t.type === type).map(template => (
+                              <Card
+                                key={template.id}
+                                className={cn(
+                                  "cursor-pointer transition-all hover:border-primary/50 p-3",
+                                  workflowConfig?.consultingTemplate?.id === template.id && "border-primary ring-2 ring-primary/20"
+                                )}
+                                onClick={() => {
+                                  setWorkflowConfig(prev => ({
+                                    ...prev!,
+                                    consultingTemplate: template,
+                                  }));
+                                }}
+                              >
+                                <div className="flex items-center justify-between mb-1">
+                                  <h4 className="font-medium text-sm">{template.name}</h4>
+                                  <Badge variant="secondary" className="text-[10px]">{template.source}</Badge>
+                                </div>
+                                <p className="text-xs text-muted-foreground line-clamp-2">{template.description}</p>
+                              </Card>
+                            ))}
+                          </div>
+                        </TabsContent>
+                      ))}
+                    </Tabs>
+                    <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1">
+                      <Check className="h-3 w-3" /> Template selection is optional - AI will create an optimal layout if skipped
                     </p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs">Image Source</Label>
-                    <Select value={imageSource} onValueChange={(v) => setImageSource(v as ImageSourceType)}>
-                      <SelectTrigger className="h-9 text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="ai-generated">AI Generated</SelectItem>
-                        <SelectItem value="stock-upload">Upload Stock</SelectItem>
-                        <SelectItem value="placeholder">Placeholders</SelectItem>
-                        <SelectItem value="mixed">Mixed (AI + Upload)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  </CardContent>
+                </Card>
 
-                  {imageSource !== 'placeholder' && (
-                    <>
-                      <div className="space-y-2">
-                        <Label className="text-xs flex items-center gap-1">
-                          <Brain className="h-3 w-3" />
-                          Image Generation Model
-                        </Label>
-                        <ImageModelSelector
-                          selectedModel={imageModel}
-                          onModelChange={setImageModel}
-                          showLabel={false}
-                        />
+                {/* Branding & Theme */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Palette className="h-4 w-4 text-primary" />
+                      Branding & Colors
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Logo & Color Extraction */}
+                      <div className="space-y-3">
+                        <Label className="text-xs">Logo (optional - extracts brand colors)</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            className="text-xs"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onload = () => {
+                                  setBrandConfig(prev => ({ ...prev, logoUrl: reader.result as string }));
+                                };
+                                reader.readAsDataURL(file);
+                              }
+                            }}
+                          />
+                        </div>
+                        {brandConfig.logoUrl && (
+                          <img src={brandConfig.logoUrl} alt="Logo" className="h-12 object-contain rounded" />
+                        )}
                       </div>
 
-                      <div className="space-y-2">
-                        <Label className="text-xs">Image Styles</Label>
-                        <MultiSelectDropdown
-                          options={imageStyleOptions.map(style => ({
-                            id: style.id,
-                            label: style.name,
-                            value: style.id,
-                            description: style.bestFor.includes(collateralType) 
-                              ? `✓ Recommended` 
-                              : undefined
-                          }))}
-                          selectedValues={selectedImageStyles}
-                          onSelectionChange={(values) => setSelectedImageStyles(values as ImageStyleType[])}
-                          placeholder="Select image styles..."
-                          searchable
-                        />
+                      {/* Manual Color Selection */}
+                      <div className="space-y-3">
+                        <Label className="text-xs">Brand Colors</Label>
+                        <div className="flex gap-3">
+                          <div className="flex-1">
+                            <Label className="text-[10px] text-muted-foreground">Primary</Label>
+                            <div className="flex items-center gap-1 mt-1">
+                              <input
+                                type="color"
+                                value={brandConfig.colors.primary}
+                                onChange={(e) => setBrandConfig(prev => ({ ...prev, colors: { ...prev.colors, primary: e.target.value } }))}
+                                className="w-8 h-8 rounded cursor-pointer"
+                              />
+                              <Input
+                                value={brandConfig.colors.primary}
+                                onChange={(e) => setBrandConfig(prev => ({ ...prev, colors: { ...prev.colors, primary: e.target.value } }))}
+                                className="text-[10px] h-8 flex-1"
+                              />
+                            </div>
+                          </div>
+                          <div className="flex-1">
+                            <Label className="text-[10px] text-muted-foreground">Secondary</Label>
+                            <div className="flex items-center gap-1 mt-1">
+                              <input
+                                type="color"
+                                value={brandConfig.colors.secondary}
+                                onChange={(e) => setBrandConfig(prev => ({ ...prev, colors: { ...prev.colors, secondary: e.target.value } }))}
+                                className="w-8 h-8 rounded cursor-pointer"
+                              />
+                              <Input
+                                value={brandConfig.colors.secondary}
+                                onChange={(e) => setBrandConfig(prev => ({ ...prev, colors: { ...prev.colors, secondary: e.target.value } }))}
+                                className="text-[10px] h-8 flex-1"
+                              />
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    </>
-                  )}
+                    </div>
 
-                  <div className="flex flex-col gap-3">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs">Include Infographics</Label>
-                      <Switch checked={includeInfographics} onCheckedChange={setIncludeInfographics} />
+                    {/* Theme Presets */}
+                    <div className="space-y-2">
+                      <Label className="text-xs">Theme Presets</Label>
+                      <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+                        {THEME_PRESETS.map(theme => (
+                          <Card
+                            key={theme.id}
+                            className={cn(
+                              "cursor-pointer transition-all hover:border-primary/50 p-2",
+                              workflowConfig?.theme?.id === theme.id && "border-primary ring-2 ring-primary/20"
+                            )}
+                            onClick={() => {
+                              setWorkflowConfig(prev => ({
+                                ...prev!,
+                                theme: theme,
+                              }));
+                            }}
+                          >
+                            <div className="flex gap-0.5 mb-1">
+                              {Object.values(theme.colors).slice(0, 4).map((color, i) => (
+                                <div key={i} className="flex-1 h-3 rounded-sm" style={{ backgroundColor: color }} />
+                              ))}
+                            </div>
+                            <p className="text-[10px] font-medium text-center">{theme.name}</p>
+                          </Card>
+                        ))}
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs">Include Journey Maps</Label>
-                      <Switch checked={includeJourneyMaps} onCheckedChange={setIncludeJourneyMaps} />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs">Include Video Clips</Label>
-                      <Switch checked={includeVideo} onCheckedChange={setIncludeVideo} />
-                    </div>
-                  </div>
 
-                  {/* Video Model Selector */}
-                  {includeVideo && (
-                    <div className="space-y-2 pt-2 border-t">
-                      <Label className="text-xs flex items-center gap-1">
-                        <Film className="h-3 w-3" />
-                        Video Generation Model
-                      </Label>
-                      <VideoModelSelector
-                        selectedModel={videoModel}
-                        onModelChange={setVideoModel}
-                        showLabel={false}
+                    {/* Tagline */}
+                    <div className="space-y-2">
+                      <Label className="text-xs">Tagline (appears on title slide)</Label>
+                      <Input
+                        value={brandConfig.tagline}
+                        onChange={(e) => setBrandConfig(prev => ({ ...prev, tagline: e.target.value }))}
+                        placeholder="Your company tagline..."
+                        className="h-8 text-sm"
                       />
                     </div>
-                  )}
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+
+                {/* Visual Configuration */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <ImageIcon className="h-4 w-4 text-primary" />
+                      Visual Configuration
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-xs">Image Source</Label>
+                        <Select value={imageSource} onValueChange={(v) => setImageSource(v as ImageSourceType)}>
+                          <SelectTrigger className="h-8 text-sm">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="ai-generated">AI Generated</SelectItem>
+                            <SelectItem value="stock-upload">Upload Stock</SelectItem>
+                            <SelectItem value="placeholder">Placeholders</SelectItem>
+                            <SelectItem value="mixed">Mixed (AI + Upload)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {imageSource !== 'placeholder' && (
+                        <div className="space-y-2">
+                          <Label className="text-xs">Image Model</Label>
+                          <ImageModelSelector selectedModel={imageModel} onModelChange={setImageModel} showLabel={false} />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap gap-4">
+                      <div className="flex items-center gap-2">
+                        <Switch checked={includeInfographics} onCheckedChange={setIncludeInfographics} />
+                        <Label className="text-xs">Infographics</Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Switch checked={includeJourneyMaps} onCheckedChange={setIncludeJourneyMaps} />
+                        <Label className="text-xs">Journey Maps</Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Switch checked={includeVideo} onCheckedChange={setIncludeVideo} />
+                        <Label className="text-xs">Video Clips</Label>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             )}
 
             {/* Step 3: Languages - Multi-Language Generation */}
