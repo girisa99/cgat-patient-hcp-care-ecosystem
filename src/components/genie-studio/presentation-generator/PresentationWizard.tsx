@@ -131,6 +131,7 @@ import { ContentTypeSelector, CONTENT_CATEGORIES, EXTENDED_COLLATERAL_TYPES } fr
 import { AIModelConfigPanel } from './AIModelConfigPanel';
 import { TemplateBrandingPanel, BrandConfig } from './TemplateBrandingPanel';
 import { AgentSelectorDialog, AgentCard, AgentModelConfig } from './AgentSelectorDialog';
+import { AgentLanguageConfigPanel } from './AgentLanguageConfigPanel';
 import { InlineTrainAIFeedback } from '../InlineTrainAIFeedback';
 import { 
   PresentationRequest,
@@ -1543,129 +1544,22 @@ export function PresentationWizard({
               />
             )}
 
-            {/* Step 3: AI Agents & Multi-Language */}
+            {/* Step 3: AI Agents & Multi-Language - Enhanced Panel */}
             {currentStep === 3 && (
-              <div className="space-y-6">
-                {/* Step Header */}
-                <div className="flex items-center gap-3 p-4 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20">
-                  <div className="p-2.5 rounded-lg bg-primary/10">
-                    <Brain className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-base">AI Agents & Languages</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Configure agent architecture and multi-language generation
-                    </p>
-                  </div>
-                </div>
-
-                {/* Agent Architecture Selection */}
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Brain className="h-4 w-4 text-primary" />
-                      Agent Architecture
-                    </CardTitle>
-                    <CardDescription className="text-xs">
-                      Choose how AI agents collaborate to generate your presentation
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between p-3 rounded-lg border bg-background">
-                      <div>
-                        <p className="text-sm font-medium">Use Agentic Generation</p>
-                        <p className="text-xs text-muted-foreground">
-                          Multi-agent collaboration for higher quality output
-                        </p>
-                      </div>
-                      <Switch checked={useAgenticGeneration} onCheckedChange={setUseAgenticGeneration} />
-                    </div>
-
-                    {useAgenticGeneration && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {Object.entries(AGENT_CATALOG).slice(0, 4).map(([key, agent]) => (
-                          <Card 
-                            key={key}
-                            className={cn(
-                              "cursor-pointer transition-all hover:border-primary/50",
-                              selectedAgents.includes(key) && "border-primary ring-2 ring-primary/20"
-                            )}
-                            onClick={() => {
-                              setSelectedAgents(prev => 
-                                prev.includes(key) 
-                                  ? prev.filter(a => a !== key)
-                                  : [...prev, key]
-                              );
-                            }}
-                          >
-                            <CardContent className="p-3">
-                              <div className="flex items-center gap-3">
-                                <div className={cn(
-                                  "p-2 rounded-lg",
-                                  selectedAgents.includes(key) ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
-                                )}>
-                                  <Brain className="h-4 w-4" />
-                                </div>
-                                <div className="flex-1">
-                                  <p className="text-sm font-medium">{agent.name}</p>
-                                  <p className="text-xs text-muted-foreground">{agent.description}</p>
-                                </div>
-                                {selectedAgents.includes(key) && (
-                                  <Check className="h-4 w-4 text-primary" />
-                                )}
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Multi-Language Configuration */}
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Languages className="h-4 w-4 text-primary" />
-                      Multi-Language Generation
-                    </CardTitle>
-                    <CardDescription className="text-xs">
-                      Select languages for parallel generation
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <LanguageSelector
-                      selectedLanguages={selectedLanguages}
-                      onLanguagesChange={setSelectedLanguages}
-                      primaryLanguage={primaryLanguage}
-                      onPrimaryLanguageChange={setPrimaryLanguage}
-                      includeVoiceover={includeVoiceover}
-                      onIncludeVoiceoverChange={setIncludeVoiceover}
-                    />
-                  </CardContent>
-                </Card>
-
-                {/* Voiceover Option */}
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Mic className="h-4 w-4 text-primary" />
-                      Audio & Voiceover
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center justify-between p-3 rounded-lg border bg-background">
-                      <div>
-                        <p className="text-sm font-medium">Include AI Voiceover</p>
-                        <p className="text-xs text-muted-foreground">
-                          Generate natural voice narration for each slide using {workflowConfig?.aiRecommendation?.voiceModel || 'ElevenLabs'}
-                        </p>
-                      </div>
-                      <Switch checked={includeVoiceover} onCheckedChange={setIncludeVoiceover} />
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+              <AgentLanguageConfigPanel
+                useAgenticGeneration={useAgenticGeneration}
+                onUseAgenticGenerationChange={setUseAgenticGeneration}
+                selectedAgents={selectedAgents}
+                onSelectedAgentsChange={setSelectedAgents}
+                agentModelConfigs={agentModelConfigs}
+                onAgentModelConfigsChange={setAgentModelConfigs}
+                selectedLanguages={selectedLanguages}
+                onSelectedLanguagesChange={setSelectedLanguages}
+                primaryLanguage={primaryLanguage}
+                onPrimaryLanguageChange={setPrimaryLanguage}
+                includeVoiceover={includeVoiceover}
+                onIncludeVoiceoverChange={setIncludeVoiceover}
+              />
             )}
 
             {/* Step 4: Review & Generate */}
