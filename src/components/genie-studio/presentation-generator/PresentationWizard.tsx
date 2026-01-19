@@ -129,7 +129,7 @@ import {
 } from './EnhancedTemplateWorkflow';
 import { ContentTypeSelector, CONTENT_CATEGORIES, EXTENDED_COLLATERAL_TYPES } from './ContentTypeSelector';
 import { AIModelConfigPanel } from './AIModelConfigPanel';
-import { BrandConfig } from './BrandingCustomizer';
+import { TemplateBrandingPanel, BrandConfig } from './TemplateBrandingPanel';
 import { AgentSelectorDialog, AgentCard, AgentModelConfig } from './AgentSelectorDialog';
 import { InlineTrainAIFeedback } from '../InlineTrainAIFeedback';
 import { 
@@ -1521,100 +1521,22 @@ export function PresentationWizard({
 
             {/* Step 2: Template & Branding */}
             {currentStep === 2 && (
-              <div className="space-y-6">
-                {/* Step Header */}
-                <div className="flex items-center gap-3 p-4 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20">
-                  <div className="p-2.5 rounded-lg bg-primary/10">
-                    <Layout className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-base">Template & Branding</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Choose a professional template and customize your brand colors
-                    </p>
-                  </div>
-                </div>
-
-                {/* Template Selection - Simplified */}
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Palette className="h-4 w-4 text-primary" />
-                      Template & Branding
-                    </CardTitle>
-                    <CardDescription className="text-xs">
-                      Choose a template style and customize your branding
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      {TEMPLATES.slice(0, 6).map(template => (
-                        <Card
-                          key={template.id}
-                          className={cn(
-                            "cursor-pointer transition-all hover:border-primary/50",
-                            selectedTemplate?.id === template.id && "border-primary ring-2 ring-primary/20"
-                          )}
-                          onClick={() => {
-                            setSelectedTemplate(template);
-                            setSelectedTheme(template.theme);
-                          }}
-                        >
-                          <CardContent className="p-3 text-center">
-                            <div 
-                              className="w-full h-16 rounded-md mb-2"
-                              style={{ background: `linear-gradient(135deg, ${template.theme.colors.primary}, ${template.theme.colors.secondary})` }}
-                            />
-                            <p className="text-xs font-medium">{template.name}</p>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Visual Features */}
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Settings2 className="h-4 w-4 text-primary" />
-                      Visual Features
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="flex items-center justify-between p-3 rounded-lg border bg-background">
-                        <div className="flex items-center gap-2">
-                          <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">Infographics</span>
-                        </div>
-                        <Switch checked={includeInfographics} onCheckedChange={setIncludeInfographics} />
-                      </div>
-                      <div className="flex items-center justify-between p-3 rounded-lg border bg-background">
-                        <div className="flex items-center gap-2">
-                          <GitBranch className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">Journey Maps</span>
-                        </div>
-                        <Switch checked={includeJourneyMaps} onCheckedChange={setIncludeJourneyMaps} />
-                      </div>
-                      <div className="flex items-center justify-between p-3 rounded-lg border bg-background">
-                        <div className="flex items-center gap-2">
-                          <Table className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">Tables</span>
-                        </div>
-                        <Switch checked={includeTables} onCheckedChange={setIncludeTables} />
-                      </div>
-                      <div className="flex items-center justify-between p-3 rounded-lg border bg-background">
-                        <div className="flex items-center gap-2">
-                          <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">Charts</span>
-                        </div>
-                        <Switch checked={includeCharts} onCheckedChange={setIncludeCharts} />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+              <TemplateBrandingPanel
+                selectedTemplate={selectedTemplate}
+                onTemplateChange={setSelectedTemplate}
+                selectedTheme={selectedTheme}
+                onThemeChange={setSelectedTheme}
+                brandConfig={brandConfig}
+                onBrandConfigChange={setBrandConfig}
+                includeInfographics={includeInfographics}
+                onIncludeInfographicsChange={setIncludeInfographics}
+                includeJourneyMaps={includeJourneyMaps}
+                onIncludeJourneyMapsChange={setIncludeJourneyMaps}
+                includeTables={includeTables}
+                onIncludeTablesChange={setIncludeTables}
+                includeCharts={includeCharts}
+                onIncludeChartsChange={setIncludeCharts}
+              />
             )}
 
             {/* Step 3: AI Agents & Multi-Language */}
