@@ -281,3 +281,6 @@ verify_jwt = false
 
 [functions.modelslab-media]
 verify_jwt = false
+
+[functions.ask-genie-voice]
+verify_jwt = false

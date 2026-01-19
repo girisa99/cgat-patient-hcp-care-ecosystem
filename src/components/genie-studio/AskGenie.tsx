@@ -47,15 +47,27 @@ import {
   Hand,
   Map,
   ThumbsUp,
-  ThumbsDown
+  ThumbsDown,
+  Mic,
+  MicOff,
+  Volume2,
+  VolumeX,
+  Globe
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { InlineTrainAIFeedback } from './InlineTrainAIFeedback';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUniversalAI } from '@/hooks/useUniversalAI';
+import { useAskGenieVoice, LANGUAGE_VOICE_PAIRINGS } from '@/hooks/useAskGenieVoice';
 import { toast } from 'sonner';
 import { useRalphWiggumGlobal } from '@/contexts/RalphWiggumContext';
 import { useLabelStudioBackground } from '@/services/labelStudioBackgroundService';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 // Import centralized product definitions - SINGLE SOURCE OF TRUTH
 import { 
@@ -157,6 +169,12 @@ const PERSONALITY = {
     "If creativity were a superpower, you'd be an Avenger by now! 🦸‍♂️",
     "Let's make something so good, even the internet will be impressed! 🌐",
     "Ready to create content that'll make your future self say 'Wow, I made that!'? 🚀"
+  ],
+  voiceIntros: [
+    "Hey there! 🎤 I can actually talk to you! Just tap the mic button and speak to me, or tap the speaker button and I'll read my responses aloud. Pretty cool, right?",
+    "Psst... 🎙️ Did you know I can speak? Hit the microphone to chat with your voice, or I can read my answers out loud! Let's have a real conversation!",
+    "Voice mode unlocked! 🔊 You can speak to me anytime by tapping the mic. I speak 20+ languages too - just pick yours from the globe icon!",
+    "Hello friend! 👋 Fun fact: I'm not just a text bot - I can hear you AND speak back! Try the mic button to talk, or the speaker to hear me. It's like having a real chat! 🗣️"
   ]
 };
 
@@ -947,8 +965,28 @@ export const AskGenie: React.FC<AskGenieProps> = ({
   const labelStudioService = useLabelStudioBackground();
   const productContext = PRODUCT_CONTEXTS[product];
   
+  // Voice integration for bidirectional conversation
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const [autoSpeak, setAutoSpeak] = useState(false);
+  const [hasIntroducedVoice, setHasIntroducedVoice] = useState(false);
+  
+  const voice = useAskGenieVoice({
+    autoDetectLanguage: true,
+    preferredVoiceGender: 'female',
+    onTranscript: (text) => {
+      if (text.trim()) {
+        setInput(text);
+        // Auto-send after voice input
+        setTimeout(() => handleSendMessage(text), 300);
+      }
+    },
+    onSpeakingEnd: () => {
+      // Could trigger follow-up actions
+    }
+  });
+  
   // State for inline hints from Label Studio
-  const [inlineHints, setInlineHints] = useState<Array<{ id: string; type: string; message: string; confidence: number; dismissable: boolean }>>([]);
+  const [inlineHints, setInlineHints] = useState<Array<{ id: string; type: string; message: string; confidence: number; dismissable: boolean }>>([]); 
   
   // Get Ralph Wiggum context to report when Ask Genie is open
   // Only destructure what we need to avoid re-render cycles
@@ -1163,6 +1201,17 @@ Respond helpfully, warmly, and with genuine care for their creative journey.
         setShowDiagram(diagram);
       }
       
+      // Auto-speak response if enabled
+      if (autoSpeak && responseContent) {
+        // Strip markdown and emojis for cleaner TTS
+        const cleanText = responseContent
+          .replace(/\*\*([^*]+)\*\*/g, '$1')  // Remove bold
+          .replace(/\*([^*]+)\*/g, '$1')       // Remove italic
+          .replace(/📊|📝|🎬|🎤|✨|💜|🔊|🎙️|💪|🚀|🌟|🎉|🤔|👋|🤝|💫|🎨|⭐|🔥|🏆|🎸|🌈|💙|😊|📈|🦸‍♂️|🌐|☕|🪄|💎|🙏/g, '')  // Remove emojis
+          .slice(0, 500);  // Limit length for TTS
+        voice.speak(cleanText, voice.userLanguage);
+      }
+      
       // Record training event for ML improvement (invisible to user)
       labelStudioService.recordEvent({
         eventType: 'script_enhancement_accepted',
@@ -1190,7 +1239,7 @@ Respond helpfully, warmly, and with genuine care for their creative journey.
     } finally {
       setIsLoading(false);
     }
-  }, [input, isLoading, product, productContext, currentTab, sessionData, subscriptionTier, generateResponse, labelStudioService]);
+  }, [input, isLoading, product, productContext, currentTab, sessionData, subscriptionTier, generateResponse, labelStudioService, autoSpeak, voice]);
 
   const handleClose = useCallback(() => {
     setIsOpen(false);
@@ -1537,26 +1586,123 @@ Respond helpfully, warmly, and with genuine care for their creative journey.
             )}
           </ScrollArea>
 
-          {/* Input Area - Enhanced with ARIA labels and keyboard accessibility */}
+          {/* Input Area - Enhanced with voice controls */}
           <div className="p-3 sm:p-4 border-t bg-muted/30">
-            <div className="flex gap-2">
+            {/* Voice Status Indicator */}
+            <AnimatePresence>
+              {(voice.isListening || voice.isSpeaking || voice.isProcessing) && (
+                <motion.div 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="mb-2"
+                >
+                  <div className={cn(
+                    "flex items-center gap-2 px-3 py-2 rounded-lg text-sm",
+                    voice.isListening && "bg-red-500/10 text-red-600 dark:text-red-400",
+                    voice.isSpeaking && "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+                    voice.isProcessing && "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                  )}>
+                    {voice.isListening && (
+                      <>
+                        <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                        <span>🎤 Listening... Speak now!</span>
+                      </>
+                    )}
+                    {voice.isProcessing && (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>Processing your voice...</span>
+                      </>
+                    )}
+                    {voice.isSpeaking && (
+                      <>
+                        <Volume2 className="h-4 w-4 animate-pulse" />
+                        <span>🔊 Speaking...</span>
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="h-6 px-2 text-xs"
+                          onClick={() => voice.stopSpeaking()}
+                        >
+                          Stop
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <div className="flex gap-2 items-center">
+              {/* Language Selector */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    size="icon" 
+                    variant="ghost"
+                    className="h-11 w-11 rounded-xl shrink-0"
+                    title={`Language: ${voice.currentPairing?.languageName || 'English'}`}
+                  >
+                    <Globe className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="max-h-[300px] overflow-auto">
+                  {LANGUAGE_VOICE_PAIRINGS.slice(0, 15).map((lang) => (
+                    <DropdownMenuItem 
+                      key={lang.languageCode}
+                      onClick={() => voice.setLanguage(lang.languageCode)}
+                      className={cn(
+                        "flex items-center gap-2",
+                        voice.userLanguage.startsWith(lang.languageCode) && "bg-primary/10"
+                      )}
+                    >
+                      <span>{lang.nativeName}</span>
+                      <span className="text-muted-foreground text-xs">({lang.languageName})</span>
+                      {lang.quality === 'excellent' && <Badge variant="outline" className="text-[10px] h-4">Best</Badge>}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Mic Button - Hold or Toggle */}
+              <Button
+                size="icon"
+                variant={voice.isListening ? "destructive" : "outline"}
+                className={cn(
+                  "h-11 w-11 rounded-xl shrink-0 transition-all",
+                  voice.isListening && "ring-2 ring-red-500 ring-offset-2"
+                )}
+                onClick={() => voice.toggleListening()}
+                disabled={voice.isProcessing || voice.isSpeaking}
+                title={voice.isListening ? "Stop listening" : "Start voice input"}
+              >
+                {voice.isListening ? (
+                  <MicOff className="h-4 w-4" />
+                ) : (
+                  <Mic className="h-4 w-4" />
+                )}
+              </Button>
+
               <Textarea
                 ref={inputRef}
-                placeholder="Ask me anything... I'm here to help! 💜"
+                placeholder={voice.isListening ? "Listening..." : "Ask me anything... or tap 🎤 to speak! 💜"}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 className="flex-1 min-h-[44px] max-h-[100px] resize-none rounded-xl text-sm sm:text-base"
-                disabled={isLoading}
+                disabled={isLoading || voice.isListening}
                 aria-label="Type your message to Ask Genie"
                 aria-describedby="genie-input-hint"
                 tabIndex={0}
               />
+
+              {/* Send Button */}
               <Button
                 onClick={() => handleSendMessage()}
                 disabled={!input.trim() || isLoading}
                 size="icon"
-                className={cn("h-11 w-11 sm:h-11 sm:w-11 rounded-xl touch-manipulation", `bg-gradient-to-r ${productContext.color} hover:opacity-90`)}
+                className={cn("h-11 w-11 rounded-xl shrink-0 touch-manipulation", `bg-gradient-to-r ${productContext.color} hover:opacity-90`)}
                 aria-label={isLoading ? "Genie is thinking..." : "Send message"}
                 tabIndex={0}
               >
@@ -1566,9 +1712,35 @@ Respond helpfully, warmly, and with genuine care for their creative journey.
                   <Send className="h-4 w-4 text-white" />
                 )}
               </Button>
+
+              {/* Speaker Toggle - Read responses aloud */}
+              <Button
+                size="icon"
+                variant={autoSpeak ? "default" : "outline"}
+                className={cn(
+                  "h-11 w-11 rounded-xl shrink-0",
+                  autoSpeak && `bg-gradient-to-r ${productContext.color}`
+                )}
+                onClick={() => {
+                  setAutoSpeak(!autoSpeak);
+                  if (!autoSpeak) {
+                    toast.success("🔊 I'll read my responses aloud now!");
+                  } else {
+                    toast.info("🔇 Voice responses turned off");
+                  }
+                }}
+                title={autoSpeak ? "Voice responses ON" : "Voice responses OFF"}
+              >
+                {autoSpeak ? (
+                  <Volume2 className="h-4 w-4 text-white" />
+                ) : (
+                  <VolumeX className="h-4 w-4" />
+                )}
+              </Button>
             </div>
+            
             <p id="genie-input-hint" className="text-[10px] text-muted-foreground mt-2 text-center">
-              Press Enter to send • Tab to navigate • I can show visual flows too! 📊
+              🎤 Tap mic to speak • 🔊 Toggle speaker for voice replies • Supports {LANGUAGE_VOICE_PAIRINGS.length}+ languages! 🌍
             </p>
           </div>
         </>
