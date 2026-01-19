@@ -185,7 +185,7 @@ export function SlideEditorPanel({
     if (selectedSlideIndex === null || !selectedSlide?.content?.bullets) return;
     
     const newBullets = [...selectedSlide.content.bullets];
-    newBullets[bulletIndex] = { text: value, level: 0 };
+    newBullets[bulletIndex] = { id: `bullet-${Date.now()}-${bulletIndex}`, text: value };
     
     onSlideUpdate(selectedSlideIndex, { 
       content: { ...selectedSlide.content, bullets: newBullets }
@@ -440,7 +440,7 @@ export function SlideEditorPanel({
                     size="sm"
                     className="w-full"
                     onClick={() => {
-                      const newBullets = [...(selectedSlide.content?.bullets || []), { text: '', level: 0 }];
+                      const newBullets = [...(selectedSlide.content?.bullets || []), { id: `bullet-${Date.now()}`, text: '' }];
                       onSlideUpdate(selectedSlideIndex!, { content: { ...selectedSlide.content, bullets: newBullets } });
                     }}
                   >
