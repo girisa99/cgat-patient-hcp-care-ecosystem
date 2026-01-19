@@ -1,6 +1,6 @@
 /**
  * Enterprise Template & Branding Panel
- * Comprehensive template selection with branding customization
+ * Redesigned with horizontal layouts, clear details, and proper alignment
  */
 
 import React, { useState, useRef, useCallback } from 'react';
@@ -11,7 +11,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Briefcase,
   Paintbrush,
@@ -32,7 +31,17 @@ import {
   Layers,
   Wand2,
   Settings2,
-  RefreshCw
+  RefreshCw,
+  ChevronRight,
+  X,
+  Layout,
+  Monitor,
+  Smartphone,
+  FileImage,
+  GraduationCap,
+  Stethoscope,
+  Code2,
+  PenTool
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -40,19 +49,19 @@ import { PresentationTemplate, PresentationTheme } from './types';
 
 // Template Categories
 const TEMPLATE_CATEGORIES = [
-  { id: 'all', name: 'All', icon: Layers },
-  { id: 'business', name: 'Professional', icon: Briefcase },
-  { id: 'minimal', name: 'Minimal', icon: Paintbrush },
-  { id: 'healthcare', name: 'Healthcare', icon: Heart },
-  { id: 'tech', name: 'Tech Modern', icon: Zap },
-  { id: 'creative', name: 'Creative', icon: Sparkles },
-  { id: 'education', name: 'Education', icon: BookOpen }
+  { id: 'all', name: 'All', icon: Layers, count: 12 },
+  { id: 'business', name: 'Professional', icon: Briefcase, count: 2 },
+  { id: 'minimal', name: 'Minimal', icon: Paintbrush, count: 2 },
+  { id: 'healthcare', name: 'Healthcare', icon: Stethoscope, count: 2 },
+  { id: 'tech', name: 'Tech Modern', icon: Code2, count: 2 },
+  { id: 'creative', name: 'Creative', icon: PenTool, count: 2 },
+  { id: 'education', name: 'Education', icon: GraduationCap, count: 2 }
 ];
 
 // Template category type
 type TemplateCategory = 'business' | 'creative' | 'minimal' | 'healthcare' | 'tech' | 'education';
 
-// Predefined Templates
+// Enhanced Templates with slide preview images
 const TEMPLATES: Array<{
   id: string;
   name: string;
@@ -60,113 +69,139 @@ const TEMPLATES: Array<{
   category: TemplateCategory;
   colors: { primary: string; secondary: string; accent: string };
   preview: string;
+  slides: number;
+  features: string[];
 }> = [
   {
     id: 'corporate-blue',
     name: 'Corporate Blue',
-    description: 'Professional business presentation',
+    description: 'Clean, professional business presentation with modern layouts',
     category: 'business',
     colors: { primary: '#1e40af', secondary: '#3b82f6', accent: '#f59e0b' },
-    preview: 'linear-gradient(135deg, #1e40af, #3b82f6)'
+    preview: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%)',
+    slides: 12,
+    features: ['Charts', 'Tables', 'Icons']
   },
   {
     id: 'executive-dark',
     name: 'Executive Dark',
-    description: 'Elegant dark theme for executives',
+    description: 'Elegant dark theme perfect for C-suite presentations',
     category: 'business',
     colors: { primary: '#1f2937', secondary: '#374151', accent: '#f59e0b' },
-    preview: 'linear-gradient(135deg, #1f2937, #374151)'
+    preview: 'linear-gradient(135deg, #1f2937 0%, #374151 50%, #4b5563 100%)',
+    slides: 10,
+    features: ['Infographics', 'Timeline', 'Stats']
   },
   {
     id: 'clean-slate',
     name: 'Clean Slate',
-    description: 'Minimalist design with focus on content',
+    description: 'Minimalist design focusing on content clarity',
     category: 'minimal',
     colors: { primary: '#18181b', secondary: '#71717a', accent: '#a1a1aa' },
-    preview: 'linear-gradient(135deg, #18181b, #71717a)'
+    preview: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)',
+    slides: 8,
+    features: ['Typography', 'Whitespace', 'Clean']
   },
   {
     id: 'soft-gray',
     name: 'Soft Gray',
-    description: 'Light and airy minimal style',
+    description: 'Light and airy minimal style for readability',
     category: 'minimal',
     colors: { primary: '#6b7280', secondary: '#9ca3af', accent: '#d1d5db' },
-    preview: 'linear-gradient(135deg, #f9fafb, #e5e7eb)'
+    preview: 'linear-gradient(135deg, #f9fafb 0%, #f3f4f6 50%, #e5e7eb 100%)',
+    slides: 8,
+    features: ['Simple', 'Elegant', 'Focus']
   },
   {
     id: 'medical-teal',
     name: 'Medical Teal',
-    description: 'Trust-inspiring healthcare design',
+    description: 'Trust-inspiring healthcare design with clinical aesthetics',
     category: 'healthcare',
     colors: { primary: '#0891b2', secondary: '#06b6d4', accent: '#14b8a6' },
-    preview: 'linear-gradient(135deg, #0891b2, #06b6d4)'
+    preview: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 50%, #22d3ee 100%)',
+    slides: 14,
+    features: ['HIPAA Ready', 'Charts', 'Icons']
   },
   {
     id: 'clinical-white',
     name: 'Clinical White',
-    description: 'Clean clinical presentation',
+    description: 'Clean clinical presentation for medical professionals',
     category: 'healthcare',
     colors: { primary: '#0d9488', secondary: '#2dd4bf', accent: '#5eead4' },
-    preview: 'linear-gradient(135deg, #0d9488, #2dd4bf)'
+    preview: 'linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 50%, #99f6e4 100%)',
+    slides: 12,
+    features: ['Clean', 'Professional', 'Data']
   },
   {
     id: 'neon-future',
     name: 'Neon Future',
-    description: 'Cutting-edge tech aesthetic',
+    description: 'Cutting-edge tech aesthetic for innovation presentations',
     category: 'tech',
     colors: { primary: '#7c3aed', secondary: '#8b5cf6', accent: '#06b6d4' },
-    preview: 'linear-gradient(135deg, #7c3aed, #06b6d4)'
+    preview: 'linear-gradient(135deg, #7c3aed 0%, #8b5cf6 50%, #a78bfa 100%)',
+    slides: 10,
+    features: ['Animations', 'Modern', 'Bold']
   },
   {
     id: 'cyber-dark',
     name: 'Cyber Dark',
-    description: 'Modern dark tech theme',
+    description: 'Modern dark tech theme for product launches',
     category: 'tech',
     colors: { primary: '#0f172a', secondary: '#1e293b', accent: '#22d3ee' },
-    preview: 'linear-gradient(135deg, #0f172a, #22d3ee)'
+    preview: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)',
+    slides: 12,
+    features: ['Dark Mode', 'Tech', 'Sharp']
   },
   {
     id: 'vibrant-splash',
     name: 'Vibrant Splash',
-    description: 'Bold and colorful creative design',
+    description: 'Bold and colorful creative design for marketing',
     category: 'creative',
     colors: { primary: '#ec4899', secondary: '#f97316', accent: '#fbbf24' },
-    preview: 'linear-gradient(135deg, #ec4899, #f97316)'
+    preview: 'linear-gradient(135deg, #ec4899 0%, #f97316 50%, #fbbf24 100%)',
+    slides: 10,
+    features: ['Colorful', 'Dynamic', 'Fun']
   },
   {
     id: 'artistic-gradient',
     name: 'Artistic Gradient',
-    description: 'Artistic multi-color theme',
+    description: 'Artistic multi-color theme for creative agencies',
     category: 'creative',
     colors: { primary: '#8b5cf6', secondary: '#ec4899', accent: '#06b6d4' },
-    preview: 'linear-gradient(135deg, #8b5cf6, #ec4899, #06b6d4)'
+    preview: 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 50%, #f43f5e 100%)',
+    slides: 8,
+    features: ['Artistic', 'Vibrant', 'Modern']
   },
   {
     id: 'academic-navy',
     name: 'Academic Navy',
-    description: 'Traditional educational style',
+    description: 'Traditional educational style for institutions',
     category: 'education',
     colors: { primary: '#1e3a5f', secondary: '#2563eb', accent: '#fbbf24' },
-    preview: 'linear-gradient(135deg, #1e3a5f, #2563eb)'
+    preview: 'linear-gradient(135deg, #1e3a5f 0%, #1e40af 50%, #2563eb 100%)',
+    slides: 14,
+    features: ['Academic', 'Structured', 'Clear']
   },
   {
     id: 'learning-green',
     name: 'Learning Green',
-    description: 'Fresh and engaging for learners',
+    description: 'Fresh and engaging theme for training materials',
     category: 'education',
     colors: { primary: '#166534', secondary: '#22c55e', accent: '#fbbf24' },
-    preview: 'linear-gradient(135deg, #166534, #22c55e)'
+    preview: 'linear-gradient(135deg, #166534 0%, #22c55e 50%, #4ade80 100%)',
+    slides: 12,
+    features: ['Engaging', 'Fresh', 'Friendly']
   }
 ];
 
 // Font Options
 const FONT_OPTIONS = [
-  { id: 'inter', name: 'Inter', category: 'Modern' },
-  { id: 'helvetica', name: 'Helvetica', category: 'Classic' },
-  { id: 'roboto', name: 'Roboto', category: 'Modern' },
-  { id: 'playfair', name: 'Playfair', category: 'Elegant' },
-  { id: 'georgia', name: 'Georgia', category: 'Classic' },
-  { id: 'lato', name: 'Lato', category: 'Modern' }
+  { id: 'inter', name: 'Inter', category: 'Modern', preview: 'Aa' },
+  { id: 'helvetica', name: 'Helvetica', category: 'Classic', preview: 'Aa' },
+  { id: 'roboto', name: 'Roboto', category: 'Modern', preview: 'Aa' },
+  { id: 'playfair', name: 'Playfair', category: 'Elegant', preview: 'Aa' },
+  { id: 'georgia', name: 'Georgia', category: 'Classic', preview: 'Aa' },
+  { id: 'lato', name: 'Lato', category: 'Modern', preview: 'Aa' }
 ];
 
 // Preset Color Palettes
@@ -202,7 +237,6 @@ interface TemplateBrandingPanelProps {
   onThemeChange: (theme: PresentationTheme | null) => void;
   brandConfig: BrandConfig;
   onBrandConfigChange: (config: BrandConfig) => void;
-  // Visual features
   includeInfographics: boolean;
   onIncludeInfographicsChange: (value: boolean) => void;
   includeJourneyMaps: boolean;
@@ -231,10 +265,12 @@ export function TemplateBrandingPanel({
   onIncludeChartsChange,
   className
 }: TemplateBrandingPanelProps) {
+  const [activeTab, setActiveTab] = useState<'templates' | 'branding' | 'features'>('templates');
   const [activeCategory, setActiveCategory] = useState('all');
   const [isAutoTemplate, setIsAutoTemplate] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isExtractingColors, setIsExtractingColors] = useState(false);
+  const [selectedPreview, setSelectedPreview] = useState<typeof TEMPLATES[0] | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const filteredTemplates = activeCategory === 'all' 
@@ -242,7 +278,6 @@ export function TemplateBrandingPanel({
     : TEMPLATES.filter(t => t.category === activeCategory);
 
   const handleTemplateSelect = (template: typeof TEMPLATES[0]) => {
-    // Create a proper PresentationTemplate object
     const fullTemplate: PresentationTemplate = {
       id: template.id,
       name: template.name,
@@ -276,12 +311,12 @@ export function TemplateBrandingPanel({
     
     onTemplateChange(fullTemplate);
     onThemeChange(fullTemplate.theme);
-    
-    // Update brand colors to match template
     onBrandConfigChange({
       ...brandConfig,
       colors: template.colors
     });
+    setSelectedPreview(null);
+    toast.success(`Selected: ${template.name}`);
   };
 
   const handleLogoUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -307,14 +342,9 @@ export function TemplateBrandingPanel({
         
         onBrandConfigChange({
           ...brandConfig,
-          logo: {
-            url: logoUrl,
-            position: 'top-left',
-            size: 'medium'
-          }
+          logo: { url: logoUrl, position: 'top-left', size: 'medium' }
         });
 
-        // Extract colors from logo
         setIsExtractingColors(true);
         try {
           const img = new Image();
@@ -331,16 +361,8 @@ export function TemplateBrandingPanel({
               if (colors.length >= 3) {
                 onBrandConfigChange({
                   ...brandConfig,
-                  logo: {
-                    url: logoUrl,
-                    position: 'top-left',
-                    size: 'medium'
-                  },
-                  colors: {
-                    primary: colors[0],
-                    secondary: colors[1],
-                    accent: colors[2]
-                  }
+                  logo: { url: logoUrl, position: 'top-left', size: 'medium' },
+                  colors: { primary: colors[0], secondary: colors[1], accent: colors[2] }
                 });
                 toast.success('Colors extracted from logo!');
               }
@@ -349,7 +371,6 @@ export function TemplateBrandingPanel({
           };
           img.src = logoUrl;
         } catch (err) {
-          console.error('Error extracting colors:', err);
           setIsExtractingColors(false);
         }
 
@@ -358,23 +379,21 @@ export function TemplateBrandingPanel({
       };
       reader.readAsDataURL(file);
     } catch (error) {
-      console.error('Error uploading logo:', error);
       toast.error('Failed to upload logo');
       setIsUploading(false);
     }
   }, [brandConfig, onBrandConfigChange]);
 
-  // Simple color extraction helper
   const extractDominantColors = (data: Uint8ClampedArray): string[] => {
     const colors: Record<string, number> = {};
     
-    for (let i = 0; i < data.length; i += 16) { // Sample every 4th pixel
+    for (let i = 0; i < data.length; i += 16) {
       const r = Math.round(data[i] / 32) * 32;
       const g = Math.round(data[i + 1] / 32) * 32;
       const b = Math.round(data[i + 2] / 32) * 32;
       const a = data[i + 3];
       
-      if (a > 200) { // Only non-transparent pixels
+      if (a > 200) {
         const hex = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
         colors[hex] = (colors[hex] || 0) + 1;
       }
@@ -388,7 +407,6 @@ export function TemplateBrandingPanel({
 
   const handleAutoTemplate = () => {
     setIsAutoTemplate(true);
-    // Simulate AI selection
     setTimeout(() => {
       const randomTemplate = TEMPLATES[Math.floor(Math.random() * TEMPLATES.length)];
       handleTemplateSelect(randomTemplate);
@@ -399,16 +417,16 @@ export function TemplateBrandingPanel({
 
   return (
     <div className={cn("space-y-4", className)}>
-      {/* Step Header */}
-      <div className="flex items-center gap-3 p-4 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20">
-        <div className="p-2.5 rounded-lg bg-primary/10">
-          <Palette className="h-5 w-5 text-primary" />
-        </div>
-        <div className="flex-1">
-          <h3 className="font-semibold text-base">Template & Branding</h3>
-          <p className="text-sm text-muted-foreground">
-            Choose a professional template and customize your brand identity
-          </p>
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5 border">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-primary/10">
+            <Palette className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-foreground">Template & Branding</h3>
+            <p className="text-sm text-muted-foreground">Choose a template and customize your brand</p>
+          </div>
         </div>
         <Button
           variant="outline"
@@ -417,124 +435,241 @@ export function TemplateBrandingPanel({
           disabled={isAutoTemplate}
           className="gap-2"
         >
-          {isAutoTemplate ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Wand2 className="h-4 w-4" />
-          )}
-          <span className="hidden sm:inline">AI Auto-Select</span>
+          {isAutoTemplate ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+          AI Auto-Select
         </Button>
       </div>
 
-      <Tabs defaultValue="templates" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 h-9">
-          <TabsTrigger value="templates" className="text-xs gap-1.5">
-            <Layers className="h-3.5 w-3.5" />
-            Templates
-          </TabsTrigger>
-          <TabsTrigger value="branding" className="text-xs gap-1.5">
-            <Upload className="h-3.5 w-3.5" />
-            Branding
-          </TabsTrigger>
-          <TabsTrigger value="features" className="text-xs gap-1.5">
-            <Settings2 className="h-3.5 w-3.5" />
-            Features
-          </TabsTrigger>
-        </TabsList>
+      {/* Tab Navigation */}
+      <div className="flex gap-1 p-1 bg-muted/50 rounded-xl">
+        {[
+          { id: 'templates', label: 'Templates', icon: Layout },
+          { id: 'branding', label: 'Branding', icon: Upload },
+          { id: 'features', label: 'Features', icon: Settings2 }
+        ].map(tab => {
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as typeof activeTab)}
+              className={cn(
+                "flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all",
+                activeTab === tab.id
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+              )}
+            >
+              <Icon className="h-4 w-4" />
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
 
-        {/* Templates Tab */}
-        <TabsContent value="templates" className="mt-4 space-y-4">
-          {/* Category Pills */}
-          <div className="flex flex-wrap gap-1.5">
+      {/* Templates Tab */}
+      {activeTab === 'templates' && (
+        <div className="space-y-4">
+          {/* Category Pills - Horizontal */}
+          <div className="flex gap-2 overflow-x-auto pb-2">
             {TEMPLATE_CATEGORIES.map(cat => {
               const Icon = cat.icon;
+              const isActive = activeCategory === cat.id;
               return (
-                <Button
+                <button
                   key={cat.id}
-                  variant={activeCategory === cat.id ? 'default' : 'outline'}
-                  size="sm"
                   onClick={() => setActiveCategory(cat.id)}
-                  className="h-7 text-xs gap-1.5"
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all",
+                    isActive
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                  )}
                 >
-                  <Icon className="h-3 w-3" />
+                  <Icon className="h-4 w-4" />
                   {cat.name}
-                </Button>
+                  <Badge variant={isActive ? "secondary" : "outline"} className="h-5 text-xs">
+                    {cat.count}
+                  </Badge>
+                </button>
               );
             })}
           </div>
 
-          {/* Template Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {filteredTemplates.map(template => (
-              <Card
-                key={template.id}
-                className={cn(
-                  "cursor-pointer transition-all hover:border-primary/50 group overflow-hidden",
-                  selectedTemplate?.id === template.id && "border-primary ring-2 ring-primary/20"
-                )}
-                onClick={() => handleTemplateSelect(template)}
-              >
-                <div className="relative">
-                  <div 
-                    className="w-full h-20 transition-transform group-hover:scale-105"
-                    style={{ background: template.preview }}
-                  />
-                  {selectedTemplate?.id === template.id && (
-                    <div className="absolute top-2 right-2 p-1 rounded-full bg-primary text-primary-foreground">
-                      <Check className="h-3 w-3" />
-                    </div>
+          {/* Template Cards - Horizontal List */}
+          <div className="space-y-3">
+            {filteredTemplates.map(template => {
+              const isSelected = selectedTemplate?.id === template.id;
+              const isPreview = selectedPreview?.id === template.id;
+              
+              return (
+                <Card
+                  key={template.id}
+                  className={cn(
+                    "transition-all cursor-pointer overflow-hidden",
+                    isSelected && "ring-2 ring-primary border-primary",
+                    isPreview && !isSelected && "ring-1 ring-primary/50 border-primary/50"
                   )}
-                </div>
-                <CardContent className="p-2.5">
-                  <p className="text-xs font-medium truncate">{template.name}</p>
-                  <p className="text-[10px] text-muted-foreground truncate">{template.description}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  onClick={() => setSelectedPreview(template)}
+                >
+                  <div className="flex items-stretch">
+                    {/* Preview Thumbnail */}
+                    <div 
+                      className="w-28 sm:w-36 flex-shrink-0 relative"
+                      style={{ background: template.preview }}
+                    >
+                      {/* Slide mockup overlay */}
+                      <div className="absolute inset-2 bg-white/20 backdrop-blur-sm rounded-md flex items-center justify-center">
+                        <div className="text-white/80 text-center">
+                          <Monitor className="h-6 w-6 mx-auto mb-1" />
+                          <span className="text-xs font-medium">{template.slides} slides</span>
+                        </div>
+                      </div>
+                      {isSelected && (
+                        <div className="absolute top-2 left-2 p-1 rounded-full bg-primary text-primary-foreground">
+                          <Check className="h-3 w-3" />
+                        </div>
+                      )}
+                    </div>
 
-          {/* Selected Template Preview */}
-          {selectedTemplate && (
-            <Card className="border-primary/20">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-4">
-                  <div 
-                    className="w-16 h-16 rounded-lg flex-shrink-0"
-                    style={{ background: `linear-gradient(135deg, ${brandConfig.colors.primary}, ${brandConfig.colors.secondary})` }}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium">{selectedTemplate.name}</p>
-                    <p className="text-xs text-muted-foreground">{selectedTemplate.description}</p>
-                    <div className="flex gap-2 mt-2">
-                      {[brandConfig.colors.primary, brandConfig.colors.secondary, brandConfig.colors.accent].map((color, idx) => (
-                        <div 
-                          key={idx}
-                          className="w-6 h-6 rounded-full border-2 border-background shadow-sm"
-                          style={{ backgroundColor: color }}
-                        />
-                      ))}
+                    {/* Template Info */}
+                    <div className="flex-1 p-4 flex flex-col justify-between min-w-0">
+                      <div>
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                          <h4 className="font-semibold text-foreground truncate">{template.name}</h4>
+                          <Badge variant="outline" className="text-xs flex-shrink-0 capitalize">
+                            {template.category}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground line-clamp-2">{template.description}</p>
+                      </div>
+                      
+                      <div className="flex items-center justify-between mt-3">
+                        <div className="flex items-center gap-2">
+                          {/* Color preview */}
+                          <div className="flex -space-x-1">
+                            {[template.colors.primary, template.colors.secondary, template.colors.accent].map((color, idx) => (
+                              <div 
+                                key={idx}
+                                className="w-5 h-5 rounded-full border-2 border-background"
+                                style={{ backgroundColor: color }}
+                              />
+                            ))}
+                          </div>
+                          {/* Features */}
+                          <div className="hidden sm:flex gap-1">
+                            {template.features.slice(0, 2).map(feature => (
+                              <Badge key={feature} variant="secondary" className="text-xs">
+                                {feature}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                        
+                        <Button
+                          size="sm"
+                          variant={isSelected ? "default" : "outline"}
+                          className="gap-1 h-8"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleTemplateSelect(template);
+                          }}
+                        >
+                          {isSelected ? (
+                            <>
+                              <Check className="h-3.5 w-3.5" />
+                              Selected
+                            </>
+                          ) : (
+                            <>
+                              Select
+                              <ChevronRight className="h-3.5 w-3.5" />
+                            </>
+                          )}
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
 
-        {/* Branding Tab */}
-        <TabsContent value="branding" className="mt-4 space-y-4">
+                  {/* Expanded Preview */}
+                  {isPreview && (
+                    <div className="border-t bg-muted/30 p-4">
+                      <div className="flex items-start gap-4">
+                        {/* Large Preview */}
+                        <div 
+                          className="w-48 h-28 rounded-lg flex-shrink-0 relative overflow-hidden"
+                          style={{ background: template.preview }}
+                        >
+                          <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent" />
+                          <div className="absolute bottom-2 left-2 right-2 bg-white/20 backdrop-blur-sm rounded p-2">
+                            <div className="h-2 w-3/4 bg-white/60 rounded mb-1" />
+                            <div className="h-1.5 w-1/2 bg-white/40 rounded" />
+                          </div>
+                        </div>
+
+                        {/* Template Details */}
+                        <div className="flex-1 min-w-0">
+                          <h5 className="font-medium text-foreground mb-2">Template Features</h5>
+                          <div className="flex flex-wrap gap-1.5 mb-3">
+                            {template.features.map(feature => (
+                              <Badge key={feature} variant="secondary" className="text-xs">
+                                {feature}
+                              </Badge>
+                            ))}
+                          </div>
+                          
+                          <div className="grid grid-cols-3 gap-3 text-center">
+                            <div className="p-2 rounded-lg bg-background">
+                              <p className="text-lg font-bold text-foreground">{template.slides}</p>
+                              <p className="text-xs text-muted-foreground">Slides</p>
+                            </div>
+                            <div className="p-2 rounded-lg bg-background">
+                              <p className="text-lg font-bold text-foreground">4</p>
+                              <p className="text-xs text-muted-foreground">Layouts</p>
+                            </div>
+                            <div className="p-2 rounded-lg bg-background">
+                              <p className="text-lg font-bold text-foreground">3</p>
+                              <p className="text-xs text-muted-foreground">Colors</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Close Preview */}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 flex-shrink-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedPreview(null);
+                          }}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Branding Tab */}
+      {activeTab === 'branding' && (
+        <div className="space-y-4">
           {/* Logo Upload */}
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm flex items-center gap-2">
-                <ImageIcon className="h-4 w-4 text-primary" />
+                <FileImage className="h-4 w-4 text-primary" />
                 Logo Upload
               </CardTitle>
               <CardDescription className="text-xs">
                 Upload your logo to auto-extract brand colors
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -544,44 +679,60 @@ export function TemplateBrandingPanel({
               />
               
               {brandConfig.logo?.url ? (
-                <div className="flex items-center gap-4 p-3 rounded-lg border bg-muted/30">
-                  <img 
-                    src={brandConfig.logo.url} 
-                    alt="Logo" 
-                    className="h-12 w-auto object-contain"
-                  />
+                <div className="flex items-center gap-4 p-4 rounded-xl border bg-muted/30">
+                  <div className="w-16 h-16 rounded-lg bg-background flex items-center justify-center overflow-hidden border">
+                    <img 
+                      src={brandConfig.logo.url} 
+                      alt="Logo" 
+                      className="max-h-14 max-w-14 object-contain"
+                    />
+                  </div>
                   <div className="flex-1">
-                    <p className="text-xs font-medium">Logo uploaded</p>
-                    <p className="text-[10px] text-muted-foreground">Colors extracted automatically</p>
+                    <p className="text-sm font-medium text-foreground">Logo uploaded</p>
+                    <p className="text-xs text-muted-foreground">Colors extracted automatically</p>
+                    <div className="flex gap-1 mt-2">
+                      {[brandConfig.colors.primary, brandConfig.colors.secondary, brandConfig.colors.accent].map((color, idx) => (
+                        <div 
+                          key={idx}
+                          className="w-5 h-5 rounded-full border-2 border-background"
+                          style={{ backgroundColor: color }}
+                        />
+                      ))}
+                    </div>
                   </div>
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
                     onClick={() => onBrandConfigChange({ ...brandConfig, logo: undefined })}
-                    className="h-8"
+                    className="gap-1"
                   >
                     <RefreshCw className="h-3.5 w-3.5" />
+                    Replace
                   </Button>
                 </div>
               ) : (
-                <Button
-                  variant="outline"
-                  className="w-full h-20 border-dashed"
+                <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isUploading}
+                  className="w-full p-8 border-2 border-dashed rounded-xl hover:border-primary/50 hover:bg-muted/30 transition-all flex flex-col items-center gap-2"
                 >
                   {isUploading ? (
-                    <div className="flex flex-col items-center gap-1">
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                      <span className="text-xs">Uploading...</span>
-                    </div>
+                    <>
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                      <span className="text-sm text-muted-foreground">Uploading...</span>
+                    </>
                   ) : (
-                    <div className="flex flex-col items-center gap-1">
-                      <Upload className="h-5 w-5 text-muted-foreground" />
-                      <span className="text-xs">Click to upload logo</span>
-                    </div>
+                    <>
+                      <div className="p-3 rounded-full bg-primary/10">
+                        <Upload className="h-6 w-6 text-primary" />
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm font-medium text-foreground">Click to upload logo</p>
+                        <p className="text-xs text-muted-foreground">PNG, JPG, SVG up to 5MB</p>
+                      </div>
+                    </>
                   )}
-                </Button>
+                </button>
               )}
             </CardContent>
           </Card>
@@ -591,27 +742,27 @@ export function TemplateBrandingPanel({
             <CardHeader className="pb-3">
               <CardTitle className="text-sm flex items-center gap-2">
                 <Type className="h-4 w-4 text-primary" />
-                Company Info
+                Company Information
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Company Name</Label>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm">Company Name</Label>
                   <Input
                     placeholder="Your Company"
                     value={brandConfig.companyName || ''}
                     onChange={(e) => onBrandConfigChange({ ...brandConfig, companyName: e.target.value })}
-                    className="h-9 text-sm"
+                    className="h-10"
                   />
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Tagline</Label>
+                <div className="space-y-2">
+                  <Label className="text-sm">Tagline</Label>
                   <Input
                     placeholder="Your tagline here"
                     value={brandConfig.tagline || ''}
                     onChange={(e) => onBrandConfigChange({ ...brandConfig, tagline: e.target.value })}
-                    className="h-9 text-sm"
+                    className="h-10"
                   />
                 </div>
               </div>
@@ -625,39 +776,39 @@ export function TemplateBrandingPanel({
                 <Palette className="h-4 w-4 text-primary" />
                 Color Palette
               </CardTitle>
-              <CardDescription className="text-xs">
-                Quick presets or customize your own
-              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-4">
               {/* Preset Palettes */}
-              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                {COLOR_PALETTES.map(palette => (
-                  <button
-                    key={palette.name}
-                    onClick={() => onBrandConfigChange({ ...brandConfig, colors: palette })}
-                    className={cn(
-                      "flex flex-col items-center gap-1 p-2 rounded-lg border transition-all hover:border-primary/50",
-                      JSON.stringify(brandConfig.colors) === JSON.stringify(palette) && "border-primary ring-1 ring-primary/20"
-                    )}
-                  >
-                    <div className="flex gap-0.5">
-                      <div className="w-4 h-4 rounded-full" style={{ backgroundColor: palette.primary }} />
-                      <div className="w-4 h-4 rounded-full" style={{ backgroundColor: palette.secondary }} />
-                      <div className="w-4 h-4 rounded-full" style={{ backgroundColor: palette.accent }} />
-                    </div>
-                    <span className="text-[10px] text-muted-foreground">{palette.name}</span>
-                  </button>
-                ))}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+                {COLOR_PALETTES.map(palette => {
+                  const isSelected = JSON.stringify(brandConfig.colors) === JSON.stringify(palette);
+                  return (
+                    <button
+                      key={palette.name}
+                      onClick={() => onBrandConfigChange({ ...brandConfig, colors: palette })}
+                      className={cn(
+                        "p-3 rounded-xl border-2 transition-all hover:border-primary/50",
+                        isSelected ? "border-primary ring-2 ring-primary/20" : "border-border"
+                      )}
+                    >
+                      <div className="flex justify-center gap-1 mb-2">
+                        <div className="w-5 h-5 rounded-full" style={{ backgroundColor: palette.primary }} />
+                        <div className="w-5 h-5 rounded-full" style={{ backgroundColor: palette.secondary }} />
+                        <div className="w-5 h-5 rounded-full" style={{ backgroundColor: palette.accent }} />
+                      </div>
+                      <p className="text-xs font-medium text-center text-foreground">{palette.name}</p>
+                    </button>
+                  );
+                })}
               </div>
 
               <Separator />
 
               {/* Custom Colors */}
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-4">
                 {(['primary', 'secondary', 'accent'] as const).map(colorType => (
-                  <div key={colorType} className="space-y-1.5">
-                    <Label className="text-xs capitalize">{colorType}</Label>
+                  <div key={colorType} className="space-y-2">
+                    <Label className="text-xs capitalize text-muted-foreground">{colorType}</Label>
                     <div className="flex items-center gap-2">
                       <input
                         type="color"
@@ -666,7 +817,7 @@ export function TemplateBrandingPanel({
                           ...brandConfig,
                           colors: { ...brandConfig.colors, [colorType]: e.target.value }
                         })}
-                        className="w-8 h-8 rounded cursor-pointer border-0"
+                        className="w-10 h-10 rounded-lg cursor-pointer border-0 p-0"
                       />
                       <Input
                         value={brandConfig.colors[colorType]}
@@ -674,7 +825,7 @@ export function TemplateBrandingPanel({
                           ...brandConfig,
                           colors: { ...brandConfig.colors, [colorType]: e.target.value }
                         })}
-                        className="h-8 text-xs font-mono flex-1"
+                        className="h-10 text-xs font-mono"
                       />
                     </div>
                   </div>
@@ -692,27 +843,35 @@ export function TemplateBrandingPanel({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                {FONT_OPTIONS.map(font => (
-                  <button
-                    key={font.id}
-                    onClick={() => onBrandConfigChange({ ...brandConfig, font: font.id })}
-                    className={cn(
-                      "p-2 rounded-lg border text-center transition-all hover:border-primary/50",
-                      brandConfig.font === font.id && "border-primary ring-1 ring-primary/20"
-                    )}
-                  >
-                    <p className="text-xs font-medium truncate" style={{ fontFamily: font.name }}>{font.name}</p>
-                    <p className="text-[10px] text-muted-foreground">{font.category}</p>
-                  </button>
-                ))}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+                {FONT_OPTIONS.map(font => {
+                  const isSelected = brandConfig.font === font.id;
+                  return (
+                    <button
+                      key={font.id}
+                      onClick={() => onBrandConfigChange({ ...brandConfig, font: font.id })}
+                      className={cn(
+                        "p-3 rounded-xl border-2 transition-all hover:border-primary/50",
+                        isSelected ? "border-primary ring-2 ring-primary/20" : "border-border"
+                      )}
+                    >
+                      <p className="text-lg font-bold text-center text-foreground mb-1" style={{ fontFamily: font.name }}>
+                        {font.preview}
+                      </p>
+                      <p className="text-xs font-medium text-center text-foreground">{font.name}</p>
+                      <p className="text-xs text-center text-muted-foreground">{font.category}</p>
+                    </button>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
+        </div>
+      )}
 
-        {/* Features Tab */}
-        <TabsContent value="features" className="mt-4 space-y-4">
+      {/* Features Tab */}
+      {activeTab === 'features' && (
+        <div className="space-y-4">
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm flex items-center gap-2">
@@ -720,88 +879,70 @@ export function TemplateBrandingPanel({
                 Visual Features
               </CardTitle>
               <CardDescription className="text-xs">
-                Toggle visual elements for your presentation
+                Enable visual elements for your presentation
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex items-center justify-between p-3 rounded-lg border bg-background">
-                  <div className="flex items-center gap-2.5">
-                    <div className="p-1.5 rounded bg-primary/10">
-                      <BarChart3 className="h-3.5 w-3.5 text-primary" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {[
+                  { key: 'infographics', label: 'Infographics', desc: 'Visual data representations', icon: BarChart3, checked: includeInfographics, onChange: onIncludeInfographicsChange },
+                  { key: 'journeyMaps', label: 'Journey Maps', desc: 'Process flow visuals', icon: GitBranch, checked: includeJourneyMaps, onChange: onIncludeJourneyMapsChange },
+                  { key: 'tables', label: 'Data Tables', desc: 'Structured data display', icon: Table, checked: includeTables, onChange: onIncludeTablesChange },
+                  { key: 'charts', label: 'Charts', desc: 'Bar, line, pie charts', icon: BarChart3, checked: includeCharts, onChange: onIncludeChartsChange }
+                ].map(feature => {
+                  const Icon = feature.icon;
+                  return (
+                    <div
+                      key={feature.key}
+                      className={cn(
+                        "flex items-center justify-between p-4 rounded-xl border-2 transition-all",
+                        feature.checked ? "border-primary/50 bg-primary/5" : "border-border"
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={cn(
+                          "p-2 rounded-lg",
+                          feature.checked ? "bg-primary/10" : "bg-muted"
+                        )}>
+                          <Icon className={cn("h-4 w-4", feature.checked ? "text-primary" : "text-muted-foreground")} />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{feature.label}</p>
+                          <p className="text-xs text-muted-foreground">{feature.desc}</p>
+                        </div>
+                      </div>
+                      <Switch checked={feature.checked} onCheckedChange={feature.onChange} />
                     </div>
-                    <div>
-                      <span className="text-sm font-medium">Infographics</span>
-                      <p className="text-[10px] text-muted-foreground">Visual data representations</p>
-                    </div>
-                  </div>
-                  <Switch checked={includeInfographics} onCheckedChange={onIncludeInfographicsChange} />
-                </div>
-                
-                <div className="flex items-center justify-between p-3 rounded-lg border bg-background">
-                  <div className="flex items-center gap-2.5">
-                    <div className="p-1.5 rounded bg-primary/10">
-                      <GitBranch className="h-3.5 w-3.5 text-primary" />
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium">Journey Maps</span>
-                      <p className="text-[10px] text-muted-foreground">Process flow visuals</p>
-                    </div>
-                  </div>
-                  <Switch checked={includeJourneyMaps} onCheckedChange={onIncludeJourneyMapsChange} />
-                </div>
-                
-                <div className="flex items-center justify-between p-3 rounded-lg border bg-background">
-                  <div className="flex items-center gap-2.5">
-                    <div className="p-1.5 rounded bg-primary/10">
-                      <Table className="h-3.5 w-3.5 text-primary" />
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium">Data Tables</span>
-                      <p className="text-[10px] text-muted-foreground">Structured data display</p>
-                    </div>
-                  </div>
-                  <Switch checked={includeTables} onCheckedChange={onIncludeTablesChange} />
-                </div>
-                
-                <div className="flex items-center justify-between p-3 rounded-lg border bg-background">
-                  <div className="flex items-center gap-2.5">
-                    <div className="p-1.5 rounded bg-primary/10">
-                      <BarChart3 className="h-3.5 w-3.5 text-primary" />
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium">Charts</span>
-                      <p className="text-[10px] text-muted-foreground">Bar, line, pie charts</p>
-                    </div>
-                  </div>
-                  <Switch checked={includeCharts} onCheckedChange={onIncludeChartsChange} />
-                </div>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
 
-          {/* Quick Preview */}
+          {/* Summary */}
           <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-accent/5">
             <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <Eye className="h-5 w-5 text-primary" />
+              <div className="flex items-center gap-4">
+                <div className="p-2.5 rounded-xl bg-primary/10">
+                  <Eye className="h-5 w-5 text-primary" />
+                </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium">Features Summary</p>
-                  <div className="flex flex-wrap gap-1.5 mt-1.5">
-                    {includeInfographics && <Badge variant="secondary" className="text-[10px]">Infographics</Badge>}
-                    {includeJourneyMaps && <Badge variant="secondary" className="text-[10px]">Journey Maps</Badge>}
-                    {includeTables && <Badge variant="secondary" className="text-[10px]">Tables</Badge>}
-                    {includeCharts && <Badge variant="secondary" className="text-[10px]">Charts</Badge>}
+                  <p className="text-sm font-medium text-foreground">Features Summary</p>
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {includeInfographics && <Badge variant="secondary">Infographics</Badge>}
+                    {includeJourneyMaps && <Badge variant="secondary">Journey Maps</Badge>}
+                    {includeTables && <Badge variant="secondary">Tables</Badge>}
+                    {includeCharts && <Badge variant="secondary">Charts</Badge>}
                     {!includeInfographics && !includeJourneyMaps && !includeTables && !includeCharts && (
-                      <span className="text-xs text-muted-foreground">No visual features selected</span>
+                      <span className="text-sm text-muted-foreground">No visual features selected</span>
                     )}
                   </div>
                 </div>
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+        </div>
+      )}
     </div>
   );
 }
