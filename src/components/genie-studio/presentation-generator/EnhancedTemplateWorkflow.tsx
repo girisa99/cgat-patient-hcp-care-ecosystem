@@ -812,8 +812,10 @@ export const THEME_PRESETS: ThemeConfig[] = [
 // ==================== COMPONENT PROPS ====================
 
 interface EnhancedTemplateWorkflowProps {
-  onComplete: (config: FinalWorkflowConfig) => void;
-  onCancel: () => void;
+  onComplete?: (config: FinalWorkflowConfig) => void;
+  onCancel?: () => void;
+  onConfigComplete?: (config: FinalWorkflowConfig) => void;
+  selectedLanguages?: string[];
   initialInput?: {
     content?: string;
     url?: string;
@@ -823,12 +825,12 @@ interface EnhancedTemplateWorkflowProps {
 }
 
 export interface FinalWorkflowConfig {
-  collateralType: CollateralType;
+  collateralType: CollateralType | null;
   industryCategory: string;
   segment?: string;
   consultingTemplate?: ConsultingTemplate;
   languages: string[];
-  brand: BrandConfig;
+  brandConfig: BrandConfig;
   theme: ThemeConfig;
   aiModels: AIModelConfig;
   slideCount: number;
@@ -842,6 +844,8 @@ export interface FinalWorkflowConfig {
 export function EnhancedTemplateWorkflow({
   onComplete,
   onCancel,
+  onConfigComplete,
+  selectedLanguages: initialLanguages,
   initialInput,
   className
 }: EnhancedTemplateWorkflowProps) {
@@ -1017,19 +1021,24 @@ export function EnhancedTemplateWorkflow({
       return;
     }
     
-    onComplete({
+    const config: FinalWorkflowConfig = {
       collateralType: selectedCollateral,
       industryCategory: selectedIndustry?.id || 'general',
+      segment: selectedSegment || undefined,
       consultingTemplate: selectedTemplate || undefined,
       languages: selectedLanguages,
-      brand: brandConfig,
+      brandConfig: brandConfig,
       theme: selectedTheme,
       aiModels,
       slideCount,
       includeNotes,
-      includeVoiceover
-    });
-  }, [selectedCollateral, selectedIndustry, selectedTemplate, selectedLanguages, brandConfig, selectedTheme, aiModels, slideCount, includeNotes, includeVoiceover, onComplete]);
+      includeVoiceover,
+      aiRecommendation: aiRecommendation || undefined,
+    };
+    
+    onComplete?.(config);
+    onConfigComplete?.(config);
+  }, [selectedCollateral, selectedIndustry, selectedSegment, selectedTemplate, selectedLanguages, brandConfig, selectedTheme, aiModels, slideCount, includeNotes, includeVoiceover, aiRecommendation, onComplete, onConfigComplete]);
   
   // Navigation
   const canProceed = useMemo(() => {

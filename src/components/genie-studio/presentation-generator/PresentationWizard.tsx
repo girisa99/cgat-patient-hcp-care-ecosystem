@@ -115,7 +115,8 @@ import {
   SEGMENTS,
   getRecommendedProviders,
   type FinalWorkflowConfig,
-  type AIModelConfig,
+  type AIModelConfig as WorkflowAIModelConfig,
+  type CollateralType as WorkflowCollateralType,
 } from './EnhancedTemplateWorkflow';
 import { BrandConfig } from './BrandingCustomizer';
 import { AgentSelectorDialog, AgentCard, AgentModelConfig } from './AgentSelectorDialog';
@@ -378,6 +379,9 @@ export function PresentationWizard({
   const [selectedTemplate, setSelectedTemplate] = useState<PresentationTemplate | undefined>(TEMPLATES[0]);
   const [selectedTheme, setSelectedTheme] = useState<PresentationTheme | undefined>(TEMPLATES[0].theme);
   const [brandConfig, setBrandConfig] = useState<BrandConfig>(DEFAULT_BRAND_CONFIG);
+  
+  // Enhanced workflow config (industry, segment, AI recommendations)
+  const [workflowConfig, setWorkflowConfig] = useState<FinalWorkflowConfig | null>(null);
 
   // Slides state
   const [slides, setSlides] = useState<PresentationSlide[]>([]);
@@ -1286,136 +1290,44 @@ export function PresentationWizard({
               </Card>
             )}
 
-            {/* Step 1: Brand & Style */}
+            {/* Step 1: Industry, Segment, Template & Branding */}
             {currentStep === 1 && (
               <div className="space-y-4">
-                {/* Step description */}
-                <div className="bg-muted/30 rounded-lg p-3 border">
-                  <p className="text-sm text-foreground font-medium">Customize Your Look</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Select a template and customize colors to match your brand identity.
-                  </p>
-                </div>
-                
-                {/* Template & Theme */}
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Layout className="h-4 w-4 text-primary" />
-                      <span>Template & Theme</span>
-                      <span className="text-xs font-normal text-muted-foreground ml-1">
-                        — Choose your base design
-                      </span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-3 pt-0">
-                    <TemplateThemeSelector
-                      selectedTemplate={selectedTemplate}
-                      selectedTheme={selectedTheme}
-                      onTemplateChange={(template) => {
-                        setSelectedTemplate(template);
-                        setSelectedTheme(template.theme);
-                      }}
-                      onThemeChange={(theme) => setSelectedTheme(prev => prev ? { ...prev, ...theme } : prev)}
-                      onColorsChange={(colors) => setSelectedTheme(prev => prev ? { ...prev, colors: { ...prev.colors, ...colors } } : prev)}
-                      onFontsChange={(fonts) => setSelectedTheme(prev => prev ? { ...prev, fonts: { ...prev.fonts, ...fonts } } : prev)}
-                    />
-                  </CardContent>
-                </Card>
-
-                {/* Branding */}
-                <BrandingCustomizer
-                  brandConfig={brandConfig}
-                  onBrandConfigChange={setBrandConfig}
+                <EnhancedTemplateWorkflow
+                  onConfigComplete={(config) => {
+                    setWorkflowConfig(config);
+                    // Sync relevant settings to existing state
+                    if (config.brandConfig) {
+                      setBrandConfig(config.brandConfig);
+                    }
+                    if (config.aiRecommendation) {
+                      // Apply AI recommendations
+                      setSelectedAIModel(config.aiRecommendation.textModel.id);
+                      if (config.aiRecommendation.imageModel) {
+                        setImageModel(config.aiRecommendation.imageModel.id as any);
+                      }
+                    }
+                    // Map collateral type
+                    const collateralMap: Record<string, CollateralType> = {
+                      'storytelling': 'presentation',
+                      'investor-pitch': 'investor',
+                      'sales-enablement': 'sales',
+                      'training': 'training',
+                      'internal-comms': 'presentation',
+                      'product-launch': 'marketing',
+                      'marketing': 'marketing',
+                      'research': 'whitepaper',
+                      'case-study': 'case-study',
+                    };
+                    // config.collateralType is an object with id property
+                    const collateralObj = config.collateralType as { id: string } | null;
+                    if (collateralObj?.id && collateralMap[collateralObj.id]) {
+                      setCollateralType(collateralMap[collateralObj.id]);
+                    }
+                    toast.success('Workflow configured! Proceed to Visuals.');
+                  }}
+                  selectedLanguages={selectedLanguages}
                 />
-
-                {/* Output Settings */}
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Presentation className="h-4 w-4" />
-                      Output Settings
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label className="text-[10px] text-muted-foreground">Collateral Type</Label>
-                        <Select value={collateralType} onValueChange={(v) => setCollateralType(v as CollateralType)}>
-                          <SelectTrigger className="h-8 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {['presentation', 'marketing', 'investor', 'sales', 'training', 'whitepaper', 'case-study'].map(type => (
-                              <SelectItem key={type} value={type} className="text-xs capitalize">{type}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-[10px] text-muted-foreground">Format</Label>
-                        <Select value={outputFormat} onValueChange={(v) => setOutputFormat(v as OutputFormat)}>
-                          <SelectTrigger className="h-8 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="pptx" className="text-xs">PowerPoint (16:9)</SelectItem>
-                            <SelectItem value="social" className="text-xs">Social (1:1)</SelectItem>
-                            <SelectItem value="infographic" className="text-xs">Infographic</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label className="text-[10px] text-muted-foreground">Length</Label>
-                        <Select value={length} onValueChange={(v) => setLength(v as PresentationLength)}>
-                          <SelectTrigger className="h-8 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="short" className="text-xs">Short (5-8)</SelectItem>
-                            <SelectItem value="standard" className="text-xs">Standard (10-15)</SelectItem>
-                            <SelectItem value="long" className="text-xs">Long (18-25)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-[10px] text-muted-foreground">AI Model</Label>
-                        <Select value={selectedAIModel} onValueChange={setSelectedAIModel}>
-                          <SelectTrigger className="h-8 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {AI_MODELS.map(model => (
-                              <SelectItem key={model.id} value={model.id} className="text-xs">{model.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    
-                    {/* Content options */}
-                    <div className="grid grid-cols-2 gap-2 pt-2">
-                      <div className="flex items-center justify-between">
-                        <Label className="text-[10px]">Include Tables</Label>
-                        <Switch checked={includeTables} onCheckedChange={setIncludeTables} />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <Label className="text-[10px]">Include Charts</Label>
-                        <Switch checked={includeCharts} onCheckedChange={setIncludeCharts} />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <Label className="text-[10px]">Infographics</Label>
-                        <Switch checked={includeInfographics} onCheckedChange={setIncludeInfographics} />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <Label className="text-[10px]">Journey Maps</Label>
-                        <Switch checked={includeJourneyMaps} onCheckedChange={setIncludeJourneyMaps} />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
               </div>
             )}
 
