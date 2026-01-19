@@ -649,7 +649,11 @@ export interface AIProviderRecommendation {
   imageModel: string;
   voiceModel: string;
   translationModel: string;
+  videoModel?: string;
   reason: string;
+  confidence: number;
+  alternativeTextModels?: string[];
+  alternativeImageModels?: string[];
 }
 
 export function getRecommendedProviders(
@@ -658,54 +662,174 @@ export function getRecommendedProviders(
   collateralType: string,
   languages: string[]
 ): AIProviderRecommendation {
-  // Default recommendations
+  // Base recommendation with all available providers
   let recommendation: AIProviderRecommendation = {
-    textModel: 'gemini-1.5-pro',
+    textModel: 'google/gemini-3-flash-preview',
     imageModel: 'flux-pro',
     voiceModel: 'elevenlabs-multilingual',
     translationModel: 'deepl',
-    reason: 'Balanced quality and speed'
+    videoModel: 'runway',
+    reason: 'Balanced quality and speed',
+    confidence: 85,
+    alternativeTextModels: ['openai/gpt-5-mini', 'google/gemini-2.5-flash'],
+    alternativeImageModels: ['stable-diffusion-xl', 'dall-e-3'],
   };
 
-  // Healthcare/Pharma/Biotech - prioritize accuracy
+  // Healthcare/Pharma/Biotech - prioritize accuracy and compliance
   if (['healthcare', 'pharma', 'biotech'].includes(industry) || 
-      ['pharma', 'biotech', 'hospitals', 'clinics'].includes(segment)) {
+      ['pharma', 'biotech', 'hospitals', 'clinics', 'nursing', 'medtech', 'telehealth'].includes(segment)) {
     recommendation = {
-      textModel: 'claude-3.5-sonnet',
+      textModel: 'openai/gpt-5',
       imageModel: 'flux-pro',
       voiceModel: 'elevenlabs-multilingual',
       translationModel: 'deepl',
-      reason: 'High accuracy for medical content'
+      videoModel: 'runway',
+      reason: 'High accuracy for medical content with compliance focus',
+      confidence: 92,
+      alternativeTextModels: ['google/gemini-2.5-pro', 'anthropic/claude-3.5-sonnet'],
+      alternativeImageModels: ['dall-e-3', 'modelslab-realvision'],
     };
   }
 
-  // Investor pitch - prioritize persuasive content
-  if (['startup', 'investor-pitch'].includes(industry) || collateralType === 'investor-pitch') {
+  // Energy/Manufacturing - prioritize technical accuracy
+  if (['energy', 'manufacturing'].includes(industry) || 
+      ['oil-gas', 'renewable', 'automotive', 'aerospace', 'industrial'].includes(segment)) {
     recommendation = {
-      textModel: 'gpt-4o',
+      textModel: 'google/gemini-2.5-pro',
+      imageModel: 'flux-pro',
+      voiceModel: 'azure-neural',
+      translationModel: 'deepl',
+      videoModel: 'modelslab-video',
+      reason: 'Technical content with industry-specific terminology',
+      confidence: 88,
+      alternativeTextModels: ['openai/gpt-5', 'google/gemini-3-flash-preview'],
+      alternativeImageModels: ['stable-diffusion-xl', 'flux-schnell'],
+    };
+  }
+
+  // Finance/Fintech - prioritize precision and data visualization
+  if (['finance'].includes(industry) || 
+      ['banking', 'insurance', 'investment', 'fintech', 'crypto'].includes(segment)) {
+    recommendation = {
+      textModel: 'openai/gpt-5',
       imageModel: 'dall-e-3',
       voiceModel: 'elevenlabs-multilingual',
       translationModel: 'deepl',
-      reason: 'Optimized for persuasive business content'
+      videoModel: 'runway',
+      reason: 'Precision for financial data and regulatory content',
+      confidence: 90,
+      alternativeTextModels: ['google/gemini-2.5-pro', 'anthropic/claude-3.5-sonnet'],
+      alternativeImageModels: ['flux-pro', 'stable-diffusion-xl'],
     };
   }
 
-  // Training/Education - prioritize clarity
-  if (['education', 'training-module', 'workshop'].includes(industry) || 
+  // Startup/VC - prioritize persuasive and visually compelling content
+  if (['startup'].includes(industry) || collateralType === 'investor-pitch') {
+    recommendation = {
+      textModel: 'openai/gpt-5',
+      imageModel: 'dall-e-3',
+      voiceModel: 'elevenlabs-multilingual',
+      translationModel: 'deepl',
+      videoModel: 'runway',
+      reason: 'Optimized for persuasive business content and investor engagement',
+      confidence: 91,
+      alternativeTextModels: ['google/gemini-2.5-pro', 'anthropic/claude-3.5-sonnet'],
+      alternativeImageModels: ['flux-pro', 'midjourney'],
+    };
+  }
+
+  // Technology/AI - prioritize latest models and technical accuracy
+  if (['technology'].includes(industry) || 
+      ['saas', 'ai-ml', 'cybersecurity', 'cloud'].includes(segment)) {
+    recommendation = {
+      textModel: 'google/gemini-3-flash-preview',
+      imageModel: 'flux-pro',
+      voiceModel: 'openai-tts-hd',
+      translationModel: 'deepl',
+      videoModel: 'runway',
+      reason: 'Latest models for tech-savvy audiences',
+      confidence: 89,
+      alternativeTextModels: ['openai/gpt-5', 'google/gemini-2.5-pro'],
+      alternativeImageModels: ['dall-e-3', 'stable-diffusion-xl'],
+    };
+  }
+
+  // Training/Education - prioritize clarity and engagement
+  if (['education'].includes(industry) || 
       ['training-module', 'onboarding', 'workshop'].includes(collateralType)) {
     recommendation = {
-      textModel: 'gemini-1.5-pro',
+      textModel: 'google/gemini-2.5-flash',
       imageModel: 'flux-schnell',
       voiceModel: 'google-wavenet',
       translationModel: 'google-translate',
-      reason: 'Clear and educational tone'
+      videoModel: 'modelslab-video',
+      reason: 'Clear and educational tone with fast generation',
+      confidence: 87,
+      alternativeTextModels: ['openai/gpt-5-mini', 'google/gemini-3-flash-preview'],
+      alternativeImageModels: ['flux-pro', 'stable-diffusion-xl'],
     };
+  }
+
+  // Consulting - prioritize frameworks and professional styling
+  if (['consulting'].includes(industry) || 
+      ['strategy', 'management'].includes(segment)) {
+    recommendation = {
+      textModel: 'openai/gpt-5',
+      imageModel: 'dall-e-3',
+      voiceModel: 'elevenlabs-multilingual',
+      translationModel: 'deepl',
+      videoModel: 'runway',
+      reason: 'Professional consulting frameworks with polished output',
+      confidence: 92,
+      alternativeTextModels: ['google/gemini-2.5-pro', 'anthropic/claude-3.5-sonnet'],
+      alternativeImageModels: ['flux-pro', 'modelslab-realvision'],
+    };
+  }
+
+  // Travel/Hospitality - prioritize visual appeal
+  if (['travel'].includes(industry) || 
+      ['airlines', 'hotels', 'tourism', 'cruise'].includes(segment)) {
+    recommendation = {
+      textModel: 'google/gemini-3-flash-preview',
+      imageModel: 'flux-pro',
+      voiceModel: 'elevenlabs-multilingual',
+      translationModel: 'deepl',
+      videoModel: 'runway',
+      reason: 'Visually stunning content for travel and hospitality',
+      confidence: 88,
+      alternativeTextModels: ['openai/gpt-5-mini', 'google/gemini-2.5-flash'],
+      alternativeImageModels: ['dall-e-3', 'stable-diffusion-xl'],
+    };
+  }
+
+  // Research/Whitepaper - prioritize accuracy and citations
+  if (['research-report', 'whitepaper', 'market-analysis'].includes(collateralType)) {
+    recommendation = {
+      textModel: 'google/gemini-2.5-pro',
+      imageModel: 'flux-pro',
+      voiceModel: 'azure-neural',
+      translationModel: 'deepl',
+      videoModel: 'modelslab-video',
+      reason: 'Research-grade accuracy with data visualization focus',
+      confidence: 90,
+      alternativeTextModels: ['openai/gpt-5', 'anthropic/claude-3.5-sonnet'],
+      alternativeImageModels: ['stable-diffusion-xl', 'dall-e-3'],
+    };
+  }
+
+  // Visual content types - prioritize image quality
+  if (['infographic-deck', 'product-showcase', 'portfolio'].includes(collateralType)) {
+    recommendation.imageModel = 'dall-e-3';
+    recommendation.alternativeImageModels = ['flux-pro', 'midjourney', 'stable-diffusion-xl'];
+    recommendation.reason += ' + Premium image generation';
+    recommendation.confidence = Math.min(recommendation.confidence + 3, 95);
   }
 
   // Multi-language support - prioritize translation quality
   if (languages.length > 3) {
     recommendation.translationModel = 'deepl';
     recommendation.reason += ' + DeepL for multi-language accuracy';
+    recommendation.confidence = Math.min(recommendation.confidence + 2, 95);
   }
 
   // CJK languages - use specialized providers
@@ -720,6 +844,7 @@ export function getRecommendedProviders(
   const hasIndian = languages.some(l => ['hi', 'te', 'ta', 'bn', 'mr', 'gu', 'kn', 'ml', 'pa'].includes(l));
   if (hasIndian) {
     recommendation.voiceModel = 'azure-neural';
+    recommendation.translationModel = 'google-translate';
     recommendation.reason += ' + Indian language support';
   }
 

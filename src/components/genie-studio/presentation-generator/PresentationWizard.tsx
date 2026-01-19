@@ -1462,31 +1462,85 @@ export function PresentationWizard({
                   </div>
                 </div>
 
-                {/* AI Recommendation Preview - Compact */}
+                {/* Enhanced AI Recommendation Preview */}
                 {workflowConfig?.aiRecommendation && (
                   <Card className="bg-gradient-to-r from-purple-500/5 to-blue-500/5 border-purple-500/20">
                     <CardContent className="p-4">
                       <div className="flex items-start gap-3">
-                        <div className="p-2 rounded-lg bg-purple-500/10">
+                        <div className="p-2 rounded-lg bg-purple-500/10 shrink-0">
                           <Sparkles className="h-4 w-4 text-purple-500" />
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-sm mb-1">AI Provider Recommendation</h4>
-                          <p className="text-xs text-muted-foreground mb-3">{workflowConfig.aiRecommendation.reason}</p>
-                          <div className="flex flex-wrap gap-2">
-                            <Badge variant="secondary" className="text-xs">
-                              <Type className="h-3 w-3 mr-1" />
-                              {workflowConfig.aiRecommendation.textModel}
-                            </Badge>
-                            <Badge variant="secondary" className="text-xs">
-                              <ImageIcon className="h-3 w-3 mr-1" />
-                              {workflowConfig.aiRecommendation.imageModel}
-                            </Badge>
-                            <Badge variant="secondary" className="text-xs">
-                              <Languages className="h-3 w-3 mr-1" />
-                              {workflowConfig.aiRecommendation.translationModel}
-                            </Badge>
+                        <div className="flex-1 min-w-0 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-medium text-sm">AI Provider Recommendation</h4>
+                            {workflowConfig.aiRecommendation.confidence && (
+                              <Badge variant="outline" className="text-[10px] bg-green-50 text-green-700 border-green-200">
+                                {workflowConfig.aiRecommendation.confidence}% confidence
+                              </Badge>
+                            )}
                           </div>
+                          <p className="text-xs text-muted-foreground">{workflowConfig.aiRecommendation.reason}</p>
+                          
+                          {/* Primary Providers */}
+                          <div className="space-y-2">
+                            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Primary Providers</p>
+                            <div className="flex flex-wrap gap-2">
+                              <Badge variant="secondary" className="text-xs gap-1">
+                                <Type className="h-3 w-3" />
+                                <span className="font-medium">Text:</span> {workflowConfig.aiRecommendation.textModel.split('/').pop()}
+                              </Badge>
+                              <Badge variant="secondary" className="text-xs gap-1">
+                                <ImageIcon className="h-3 w-3" />
+                                <span className="font-medium">Image:</span> {workflowConfig.aiRecommendation.imageModel}
+                              </Badge>
+                              <Badge variant="secondary" className="text-xs gap-1">
+                                <Mic className="h-3 w-3" />
+                                <span className="font-medium">Voice:</span> {workflowConfig.aiRecommendation.voiceModel}
+                              </Badge>
+                              <Badge variant="secondary" className="text-xs gap-1">
+                                <Languages className="h-3 w-3" />
+                                <span className="font-medium">Translation:</span> {workflowConfig.aiRecommendation.translationModel}
+                              </Badge>
+                              {workflowConfig.aiRecommendation.videoModel && (
+                                <Badge variant="secondary" className="text-xs gap-1">
+                                  <Video className="h-3 w-3" />
+                                  <span className="font-medium">Video:</span> {workflowConfig.aiRecommendation.videoModel}
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          
+                          {/* Alternative Providers */}
+                          {(workflowConfig.aiRecommendation.alternativeTextModels?.length || workflowConfig.aiRecommendation.alternativeImageModels?.length) && (
+                            <Collapsible>
+                              <CollapsibleTrigger className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors">
+                                <ChevronRight className="h-3 w-3" />
+                                View alternative providers
+                              </CollapsibleTrigger>
+                              <CollapsibleContent className="pt-2 space-y-2">
+                                {workflowConfig.aiRecommendation.alternativeTextModels?.length > 0 && (
+                                  <div className="flex flex-wrap gap-1.5">
+                                    <span className="text-[10px] text-muted-foreground">Text:</span>
+                                    {workflowConfig.aiRecommendation.alternativeTextModels.map(model => (
+                                      <Badge key={model} variant="outline" className="text-[10px] py-0">
+                                        {model.split('/').pop()}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                )}
+                                {workflowConfig.aiRecommendation.alternativeImageModels?.length > 0 && (
+                                  <div className="flex flex-wrap gap-1.5">
+                                    <span className="text-[10px] text-muted-foreground">Image:</span>
+                                    {workflowConfig.aiRecommendation.alternativeImageModels.map(model => (
+                                      <Badge key={model} variant="outline" className="text-[10px] py-0">
+                                        {model}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                )}
+                              </CollapsibleContent>
+                            </Collapsible>
+                          )}
                         </div>
                       </div>
                     </CardContent>
@@ -1495,77 +1549,155 @@ export function PresentationWizard({
               </div>
             )}
 
-            {/* Step 2: Template & Branding */}
-            {currentStep === 2 && (
-              <div className="space-y-4">
-                {/* Template Selection */}
+              <div className="space-y-6">
+                {/* Step description */}
+                <div className="bg-muted/30 rounded-lg p-3 border">
+                  <p className="text-sm text-foreground font-medium">Template & Branding</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Select a professional framework for your presentation structure and customize your brand identity.
+                  </p>
+                </div>
+
+                {/* Professional Framework Selection - Redesigned */}
                 <Card>
-                  <CardHeader className="pb-2">
+                  <CardHeader className="pb-3">
                     <CardTitle className="text-sm flex items-center gap-2">
                       <Layout className="h-4 w-4 text-primary" />
-                      Choose a professional framework
+                      Professional Framework
+                      <span className="text-xs font-normal text-muted-foreground">(Optional)</span>
                     </CardTitle>
+                    <CardDescription className="text-xs">
+                      Choose a consulting framework to structure your content
+                    </CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <Tabs defaultValue="framework">
-                      <TabsList className="mb-4">
-                        <TabsTrigger value="framework" className="text-xs">Frameworks</TabsTrigger>
-                        <TabsTrigger value="analysis" className="text-xs">Analysis</TabsTrigger>
-                        <TabsTrigger value="diagram" className="text-xs">Diagrams</TabsTrigger>
-                        <TabsTrigger value="comparison" className="text-xs">Comparison</TabsTrigger>
+                  <CardContent className="space-y-4">
+                    <Tabs defaultValue="framework" className="w-full">
+                      <TabsList className="w-full grid grid-cols-4 h-9">
+                        <TabsTrigger value="framework" className="text-xs">
+                          <Triangle className="h-3 w-3 mr-1.5" />
+                          Frameworks
+                        </TabsTrigger>
+                        <TabsTrigger value="analysis" className="text-xs">
+                          <BarChart3 className="h-3 w-3 mr-1.5" />
+                          Analysis
+                        </TabsTrigger>
+                        <TabsTrigger value="diagram" className="text-xs">
+                          <GitBranch className="h-3 w-3 mr-1.5" />
+                          Diagrams
+                        </TabsTrigger>
+                        <TabsTrigger value="comparison" className="text-xs">
+                          <Columns className="h-3 w-3 mr-1.5" />
+                          Comparison
+                        </TabsTrigger>
                       </TabsList>
+                      
                       {['framework', 'analysis', 'diagram', 'comparison'].map(type => (
-                        <TabsContent key={type} value={type}>
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            {CONSULTING_TEMPLATES.filter(t => t.type === type).map(template => (
-                              <Card
-                                key={template.id}
-                                className={cn(
-                                  "cursor-pointer transition-all hover:border-primary/50 p-3",
-                                  workflowConfig?.consultingTemplate?.id === template.id && "border-primary ring-2 ring-primary/20"
-                                )}
-                                onClick={() => {
-                                  setWorkflowConfig(prev => ({
-                                    ...prev!,
-                                    consultingTemplate: template,
-                                  }));
-                                }}
-                              >
-                                <div className="flex items-center justify-between mb-1">
-                                  <h4 className="font-medium text-sm">{template.name}</h4>
-                                  <Badge variant="secondary" className="text-[10px]">{template.source}</Badge>
-                                </div>
-                                <p className="text-xs text-muted-foreground line-clamp-2">{template.description}</p>
-                              </Card>
-                            ))}
-                          </div>
+                        <TabsContent key={type} value={type} className="mt-4">
+                          <ScrollArea className="h-[200px] pr-2">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              {CONSULTING_TEMPLATES.filter(t => t.type === type).map(template => (
+                                <Card
+                                  key={template.id}
+                                  className={cn(
+                                    "cursor-pointer transition-all hover:border-primary/50 hover:shadow-sm",
+                                    workflowConfig?.consultingTemplate?.id === template.id && "border-primary ring-2 ring-primary/20 bg-primary/5"
+                                  )}
+                                  onClick={() => {
+                                    setWorkflowConfig(prev => ({
+                                      ...prev!,
+                                      consultingTemplate: template,
+                                    }));
+                                  }}
+                                >
+                                  <CardContent className="p-3">
+                                    <div className="flex items-start gap-3">
+                                      {/* Template Preview Thumbnail */}
+                                      <div className={cn(
+                                        "w-14 h-10 rounded border flex items-center justify-center shrink-0",
+                                        workflowConfig?.consultingTemplate?.id === template.id 
+                                          ? "bg-primary/10 border-primary/30" 
+                                          : "bg-muted/50 border-border"
+                                      )}>
+                                        {type === 'framework' && <Triangle className="h-5 w-5 text-muted-foreground" />}
+                                        {type === 'analysis' && <Grid3X3 className="h-5 w-5 text-muted-foreground" />}
+                                        {type === 'diagram' && <GitBranch className="h-5 w-5 text-muted-foreground" />}
+                                        {type === 'comparison' && <Columns className="h-5 w-5 text-muted-foreground" />}
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center justify-between gap-2">
+                                          <h4 className="font-medium text-sm truncate">{template.name}</h4>
+                                          <Badge variant="outline" className="text-[10px] shrink-0">{template.source}</Badge>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{template.description}</p>
+                                        {template.dataTypes && (
+                                          <div className="flex gap-1 mt-2">
+                                            {template.dataTypes.slice(0, 2).map(dt => (
+                                              <Badge key={dt} variant="secondary" className="text-[9px] px-1.5 py-0">{dt}</Badge>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              ))}
+                            </div>
+                          </ScrollArea>
+                          {CONSULTING_TEMPLATES.filter(t => t.type === type).length === 0 && (
+                            <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                              <Layout className="h-8 w-8 mb-2 opacity-50" />
+                              <p className="text-sm">No templates in this category</p>
+                            </div>
+                          )}
                         </TabsContent>
                       ))}
                     </Tabs>
-                    <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1">
-                      <Check className="h-3 w-3" /> Template selection is optional - AI will create an optimal layout if skipped
+                    
+                    {workflowConfig?.consultingTemplate && (
+                      <div className="flex items-center justify-between p-2 rounded-lg bg-primary/5 border border-primary/20">
+                        <div className="flex items-center gap-2">
+                          <Check className="h-4 w-4 text-primary" />
+                          <span className="text-sm font-medium">{workflowConfig.consultingTemplate.name}</span>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-6 text-xs"
+                          onClick={() => setWorkflowConfig(prev => ({ ...prev!, consultingTemplate: undefined }))}
+                        >
+                          Clear
+                        </Button>
+                      </div>
+                    )}
+                    
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Check className="h-3 w-3" /> 
+                      Template selection is optional — AI will create an optimal layout if skipped
                     </p>
                   </CardContent>
                 </Card>
 
                 {/* Branding & Theme */}
                 <Card>
-                  <CardHeader className="pb-2">
+                  <CardHeader className="pb-3">
                     <CardTitle className="text-sm flex items-center gap-2">
                       <Palette className="h-4 w-4 text-primary" />
                       Branding & Colors
                     </CardTitle>
+                    <CardDescription className="text-xs">
+                      Upload your logo and customize brand colors
+                    </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {/* Logo & Color Extraction */}
                       <div className="space-y-3">
-                        <Label className="text-xs">Logo (optional - extracts brand colors)</Label>
+                        <Label className="text-xs font-medium">Logo (optional - extracts brand colors)</Label>
                         <div className="flex gap-2">
                           <Input
                             type="file"
                             accept="image/*"
-                            className="text-xs"
+                            className="text-xs h-9"
                             onChange={(e) => {
                               const file = e.target.files?.[0];
                               if (file) {
@@ -1586,7 +1718,10 @@ export function PresentationWizard({
                           />
                         </div>
                         {brandConfig.logo?.url && (
-                          <img src={brandConfig.logo.url} alt="Logo" className="h-12 object-contain rounded" />
+                          <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 border">
+                            <img src={brandConfig.logo.url} alt="Logo" className="h-10 object-contain rounded" />
+                            <span className="text-xs text-muted-foreground">Logo uploaded</span>
+                          </div>
                         )}
                       </div>
 
