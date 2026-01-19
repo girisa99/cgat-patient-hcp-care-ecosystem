@@ -1808,84 +1808,14 @@ export function PresentationWizard({
                             </div>
                           </div>
                         </div>
-                    </div>
-
-                    <Separator className="my-2" />
-
-                    {/* Features */}
-                    <div className="space-y-2">
-                      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Features</p>
-                      <div className="flex flex-wrap gap-1">
-                        {includeInfographics && (
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-green-500/10 text-green-700 dark:text-green-400">
-                            ✓ Infographics
-                          </Badge>
-                        )}
-                        {includeJourneyMaps && (
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-green-500/10 text-green-700 dark:text-green-400">
-                            ✓ Journey Maps
-                          </Badge>
-                        )}
-                        {showComplianceCheck && (
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-green-500/10 text-green-700 dark:text-green-400">
-                            ✓ Compliance Check
-                          </Badge>
-                        )}
-                        {!includeInfographics && !includeJourneyMaps && !showComplianceCheck && (
-                          <span className="text-xs text-muted-foreground">No additional features selected</span>
-                        )}
                       </div>
-                    </div>
-
-                    {/* Template/Branding */}
-                    {selectedTemplate && (
-                      <>
-                        <Separator className="my-2" />
-                        <div className="space-y-2">
-                          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Template</p>
-                          <div className="flex items-center gap-2">
-                            <div 
-                              className="w-4 h-4 rounded" 
-                              style={{ backgroundColor: selectedTheme?.colors?.primary || selectedTemplate.theme.colors.primary }}
-                            />
-                            <span className="text-xs font-medium">{selectedTemplate.name}</span>
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  {showComplianceCheck && (
-                    <ComplianceChecker
-                      content={inputContent || 'No content to check yet.'}
-                      contentType="document"
-                      industry="healthcare"
-                    />
-                  )}
-
-                  <Button
-                    onClick={handleGenerate}
-                    disabled={isGenerating || !inputContent.trim()}
-                    className="w-full"
-                    size="lg"
-                  >
-                    {isGenerating ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Generating...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="h-4 w-4 mr-2" />
-                        Generate Presentation
-                      </>
-                    )}
-                  </Button>
-                </CardContent>
-              </Card>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
             )}
-            </div>
           </div>
+        </div>
         </div>
 
         {/* Navigation Footer with Download & Publish */}
