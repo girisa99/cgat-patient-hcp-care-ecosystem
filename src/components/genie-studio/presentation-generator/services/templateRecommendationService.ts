@@ -365,36 +365,40 @@ export const CONTENT_TYPE_REGISTRY: ContentTypeConfig[] = [
 export interface ConsultingFramework {
   id: string;
   name: string;
-  firm: 'mckinsey' | 'bcg' | 'bain' | 'deloitte' | 'kpmg' | 'generic';
+  firm: 'tier1-strategy' | 'tier1-growth' | 'tier1-operations' | 'universal' | 'custom';
   frameworks: string[];
   tags: string[];
   useCase: string[];
   visualStyle: 'minimal' | 'data-heavy' | 'balanced';
 }
 
+// Generic consulting frameworks - NO TRADEMARKED NAMES
+// Using descriptive names that represent the methodology, not specific firms
 export const CONSULTING_FRAMEWORKS: ConsultingFramework[] = [
-  // McKinsey
-  { id: 'mckinsey-7s', name: 'McKinsey 7S Framework', firm: 'mckinsey', frameworks: ['7S Model', 'MECE', 'Pyramid Principle'], tags: ['organization', 'alignment', 'strategy'], useCase: ['strategic', 'business'], visualStyle: 'minimal' },
-  { id: 'mckinsey-horizon', name: 'Three Horizons of Growth', firm: 'mckinsey', frameworks: ['Horizon Model', 'Growth Strategy'], tags: ['growth', 'innovation', 'planning'], useCase: ['strategic', 'investor'], visualStyle: 'balanced' },
-  { id: 'mckinsey-influence', name: 'Influence Model', firm: 'mckinsey', frameworks: ['Change Management', 'Leadership'], tags: ['change', 'transformation'], useCase: ['training', 'business'], visualStyle: 'minimal' },
+  // Tier 1 Strategy Frameworks (Similar to top consulting firm methodologies)
+  { id: 'org-7-elements', name: '7-Element Alignment Model', firm: 'tier1-strategy', frameworks: ['Organizational Alignment', 'MECE Principle', 'Pyramid Structure'], tags: ['organization', 'alignment', 'strategy'], useCase: ['strategic', 'business'], visualStyle: 'minimal' },
+  { id: 'three-horizons', name: 'Three Horizons Growth Model', firm: 'tier1-strategy', frameworks: ['Horizon Planning', 'Growth Strategy'], tags: ['growth', 'innovation', 'planning'], useCase: ['strategic', 'investor'], visualStyle: 'balanced' },
+  { id: 'change-influence', name: 'Change Influence Framework', firm: 'tier1-strategy', frameworks: ['Change Management', 'Leadership Alignment'], tags: ['change', 'transformation'], useCase: ['training', 'business'], visualStyle: 'minimal' },
   
-  // BCG
-  { id: 'bcg-matrix', name: 'BCG Growth-Share Matrix', firm: 'bcg', frameworks: ['BCG Matrix', 'Portfolio Analysis', 'Experience Curve'], tags: ['portfolio', 'growth', 'investment'], useCase: ['strategic', 'investor'], visualStyle: 'data-heavy' },
-  { id: 'bcg-advantage', name: 'BCG Advantage Matrix', firm: 'bcg', frameworks: ['Competitive Advantage', 'Market Position'], tags: ['competition', 'strategy'], useCase: ['strategic'], visualStyle: 'balanced' },
-  { id: 'bcg-digital', name: 'Digital Acceleration Index', firm: 'bcg', frameworks: ['Digital Maturity', 'Transformation'], tags: ['digital', 'technology'], useCase: ['technical', 'business'], visualStyle: 'data-heavy' },
+  // Tier 1 Growth Frameworks
+  { id: 'growth-share-matrix', name: 'Growth-Share Portfolio Matrix', firm: 'tier1-growth', frameworks: ['Portfolio Analysis', 'Experience Curve', 'Market Share'], tags: ['portfolio', 'growth', 'investment'], useCase: ['strategic', 'investor'], visualStyle: 'data-heavy' },
+  { id: 'competitive-advantage', name: 'Competitive Advantage Matrix', firm: 'tier1-growth', frameworks: ['Competitive Position', 'Market Dynamics'], tags: ['competition', 'strategy'], useCase: ['strategic'], visualStyle: 'balanced' },
+  { id: 'digital-maturity', name: 'Digital Maturity Index', firm: 'tier1-growth', frameworks: ['Digital Transformation', 'Technology Adoption'], tags: ['digital', 'technology'], useCase: ['technical', 'business'], visualStyle: 'data-heavy' },
   
-  // Bain
-  { id: 'bain-nps', name: 'Bain Net Promoter System', firm: 'bain', frameworks: ['NPS', 'Customer Loyalty', 'Results Delivery'], tags: ['customer', 'loyalty', 'metrics'], useCase: ['marketing', 'business'], visualStyle: 'data-heavy' },
-  { id: 'bain-diamond', name: 'Bain Strategy Diamond', firm: 'bain', frameworks: ['Strategic Choices', 'Execution'], tags: ['strategy', 'execution'], useCase: ['strategic'], visualStyle: 'minimal' },
+  // Tier 1 Operations Frameworks
+  { id: 'loyalty-promoter', name: 'Customer Loyalty & Promoter System', firm: 'tier1-operations', frameworks: ['Customer Loyalty', 'Results Delivery', 'NPS Methodology'], tags: ['customer', 'loyalty', 'metrics'], useCase: ['marketing', 'business'], visualStyle: 'data-heavy' },
+  { id: 'strategy-diamond', name: 'Strategic Choice Diamond', firm: 'tier1-operations', frameworks: ['Strategic Choices', 'Execution Planning'], tags: ['strategy', 'execution'], useCase: ['strategic'], visualStyle: 'minimal' },
   
-  // Generic/Universal
-  { id: 'porter-five-forces', name: 'Porter\'s Five Forces', firm: 'generic', frameworks: ['Five Forces', 'Competitive Analysis', 'Industry Analysis'], tags: ['competition', 'industry', 'analysis'], useCase: ['strategic', 'research'], visualStyle: 'balanced' },
-  { id: 'swot-analysis', name: 'SWOT Analysis', firm: 'generic', frameworks: ['SWOT', 'Strategic Planning'], tags: ['analysis', 'planning'], useCase: ['strategic', 'proposal'], visualStyle: 'minimal' },
-  { id: 'pestle-analysis', name: 'PESTLE Analysis', firm: 'generic', frameworks: ['PESTLE', 'Macro Environment'], tags: ['environment', 'external'], useCase: ['strategic', 'research'], visualStyle: 'balanced' },
-  { id: 'value-chain', name: 'Value Chain Analysis', firm: 'generic', frameworks: ['Value Chain', 'Operations'], tags: ['operations', 'value'], useCase: ['operational', 'strategic'], visualStyle: 'data-heavy' },
-  { id: 'balanced-scorecard', name: 'Balanced Scorecard', firm: 'generic', frameworks: ['KPIs', 'Performance Management'], tags: ['performance', 'metrics'], useCase: ['business', 'operational'], visualStyle: 'data-heavy' },
-  { id: 'ansoff-matrix', name: 'Ansoff Growth Matrix', firm: 'generic', frameworks: ['Growth Strategy', 'Market Expansion'], tags: ['growth', 'market'], useCase: ['strategic', 'investor'], visualStyle: 'minimal' },
-  { id: 'blue-ocean', name: 'Blue Ocean Strategy', firm: 'generic', frameworks: ['Value Innovation', 'Strategy Canvas'], tags: ['innovation', 'differentiation'], useCase: ['strategic', 'creative'], visualStyle: 'balanced' },
+  // Universal/Generic Frameworks
+  { id: 'five-forces', name: 'Five Forces Industry Analysis', firm: 'universal', frameworks: ['Industry Analysis', 'Competitive Dynamics', 'Market Structure'], tags: ['competition', 'industry', 'analysis'], useCase: ['strategic', 'research'], visualStyle: 'balanced' },
+  { id: 'swot-analysis', name: 'SWOT Strategic Analysis', firm: 'universal', frameworks: ['SWOT', 'Strategic Planning'], tags: ['analysis', 'planning'], useCase: ['strategic', 'proposal'], visualStyle: 'minimal' },
+  { id: 'pestle-macro', name: 'PESTLE Macro Analysis', firm: 'universal', frameworks: ['PESTLE', 'External Environment'], tags: ['environment', 'external'], useCase: ['strategic', 'research'], visualStyle: 'balanced' },
+  { id: 'value-chain', name: 'Value Chain Analysis', firm: 'universal', frameworks: ['Value Chain', 'Operations Mapping'], tags: ['operations', 'value'], useCase: ['operational', 'strategic'], visualStyle: 'data-heavy' },
+  { id: 'balanced-scorecard', name: 'Balanced Scorecard KPIs', firm: 'universal', frameworks: ['KPIs', 'Performance Management'], tags: ['performance', 'metrics'], useCase: ['business', 'operational'], visualStyle: 'data-heavy' },
+  { id: 'growth-matrix', name: 'Market-Product Growth Matrix', firm: 'universal', frameworks: ['Growth Strategy', 'Market Expansion'], tags: ['growth', 'market'], useCase: ['strategic', 'investor'], visualStyle: 'minimal' },
+  { id: 'blue-ocean', name: 'Blue Ocean Value Innovation', firm: 'universal', frameworks: ['Value Innovation', 'Strategy Canvas'], tags: ['innovation', 'differentiation'], useCase: ['strategic', 'creative'], visualStyle: 'balanced' },
+  { id: 'okr-framework', name: 'OKR Goal Framework', firm: 'universal', frameworks: ['Objectives', 'Key Results', 'Alignment'], tags: ['goals', 'performance'], useCase: ['business', 'operational'], visualStyle: 'minimal' },
+  { id: 'business-model-canvas', name: 'Business Model Canvas', firm: 'universal', frameworks: ['Value Proposition', 'Revenue Model', 'Customer Segments'], tags: ['business-model', 'startup'], useCase: ['investor', 'strategic'], visualStyle: 'balanced' },
 ];
 
 // ==========================================
