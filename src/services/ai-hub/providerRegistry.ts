@@ -35,7 +35,8 @@ export type AIProviderKey =
   | 'google'
   | 'replicate'
   | 'stability'
-  | 'huggingface';
+  | 'huggingface'
+  | 'modelslab';  // Unified hub for Image/Video/Audio/3D/Training
 
 // ============================================
 // PROVIDER DEFINITION
@@ -745,6 +746,70 @@ export const AI_PROVIDER_REGISTRY: Record<AIProviderKey, AIProviderDefinition> =
         strengths: ['Free', 'Fast', 'Specialized models'],
         weaknesses: ['Less capable than LLMs'],
         priority: 7,
+        costPerUnit: 0.0001,
+      },
+    },
+  },
+
+  // ============================================
+  // MODELSLAB - UNIFIED MULTI-MODAL HUB
+  // ============================================
+  modelslab: {
+    id: 'modelslab',
+    name: 'ModelsLab',
+    description: 'Unified hub for Image/Video/Audio/3D/Training - hosts Stable Diffusion, FLUX, Midjourney-style, CivitAI models',
+    secretKeys: ['MODELSLAB_API_KEY'],
+    capabilities: ['image_gen', 'video_gen', 'music_gen', 'sfx_gen', 'tts', 'llm'],
+    priority: 2,
+    costTier: 'low',
+    status: 'active',
+    capabilityDetails: {
+      image_gen: {
+        models: [
+          'stable-diffusion-xl', 'stable-diffusion-3', 'sd-turbo',
+          'flux-schnell', 'flux-dev', 'flux-pro',
+          'midjourney-style', 'realistic-vision', 'dreamshaper',
+          'anything-v5', 'deliberate', 'protogen'
+        ],
+        strengths: ['10,000+ models', 'CivitAI integration', 'Midjourney-style', 'ControlNet', 'Inpainting', 'Low cost'],
+        weaknesses: ['API complexity for advanced features'],
+        priority: 1, // Primary for image generation
+        costPerUnit: 0.002,
+        notes: 'Best unified option - replaces Stability AI direct, Midjourney needs, Ideogram, Leonardo',
+      },
+      video_gen: {
+        models: ['animatediff', 'stable-video-diffusion', 'text2video', 'img2video'],
+        strengths: ['Multiple approaches', 'AnimateDiff support', 'Low cost'],
+        weaknesses: ['Shorter clips than Sora'],
+        priority: 1, // Primary for video
+        costPerUnit: 0.01,
+      },
+      music_gen: {
+        models: ['musicgen', 'riffusion', 'audioldm'],
+        strengths: ['Music generation', 'Sound effects', 'Affordable'],
+        weaknesses: ['Not as refined as Suno'],
+        priority: 2,
+        costPerUnit: 0.005,
+      },
+      sfx_gen: {
+        models: ['audioldm', 'bark'],
+        strengths: ['Sound effects', 'Ambient sounds'],
+        weaknesses: ['Limited compared to dedicated services'],
+        priority: 2,
+        costPerUnit: 0.003,
+      },
+      tts: {
+        models: ['voice-clone', 'bark-tts', 'tortoise-tts'],
+        strengths: ['Voice cloning', 'Multiple styles'],
+        weaknesses: ['Not as polished as ElevenLabs'],
+        priority: 4, // ElevenLabs is preferred for TTS
+        costPerUnit: 0.002,
+      },
+      llm: {
+        models: ['llama-3', 'mistral', 'qwen'],
+        strengths: ['Open models', 'Fine-tuning available'],
+        weaknesses: ['Smaller than GPT-5/Claude'],
+        priority: 6,
         costPerUnit: 0.0001,
       },
     },

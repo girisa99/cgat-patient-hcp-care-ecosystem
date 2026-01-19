@@ -278,3 +278,6 @@ verify_jwt = false
 
 [functions.translation-service]
 verify_jwt = false
+
+[functions.modelslab-media]
+verify_jwt = false

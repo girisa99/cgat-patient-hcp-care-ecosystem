@@ -35,6 +35,7 @@ export const PROVIDER_SECRET_REQUIREMENTS: Record<AIProviderKey, string[]> = {
   replicate: ['REPLICATE_API_TOKEN'],
   stability: ['STABILITY_API_KEY'],
   huggingface: ['HUGGING_FACE_ACCESS_TOKEN'],
+  modelslab: ['MODELSLAB_API_KEY'], // Unified hub for Image/Video/Audio/3D/Training
 };
 
 // Known configured secrets from the project
@@ -51,6 +52,7 @@ export const KNOWN_CONFIGURED_SECRETS = new Set([
   'HUGGING_FACE_ACCESS_TOKEN',
   'LOVABLE_API_KEY',
   'MICROSOFT_TRANSLATE_API_KEY',
+  'MODELSLAB_API_KEY', // Unified hub for Image/Video/Audio/3D/Training
   'OPENAI_API_KEY',
   'REPLICATE_API_TOKEN',
 ]);
@@ -157,6 +159,16 @@ export function getProvidersConfigurationStatus(): ProviderConfig[] {
       notes: 'Open-source models, free tier available',
     },
     
+    // ModelsLab - Unified Hub (Now Configured)
+    {
+      providerId: 'modelslab',
+      name: 'ModelsLab',
+      status: 'configured',
+      missingSecrets: [],
+      availableCapabilities: ['image_gen', 'video_gen', 'music_gen', 'sfx_gen', 'tts', 'llm'],
+      notes: 'Unified hub: Stable Diffusion, FLUX, Midjourney-style, AnimateDiff, CivitAI models, 3D gen, voice clone',
+    },
+
     // Not Configured Providers
     {
       providerId: 'azure',
@@ -180,7 +192,7 @@ export function getProvidersConfigurationStatus(): ProviderConfig[] {
       status: 'not_configured',
       missingSecrets: ['STABILITY_API_KEY'],
       availableCapabilities: [],
-      notes: 'ControlNet, advanced image editing',
+      notes: 'Use ModelsLab instead - hosts same models at lower cost',
     },
   ];
 }
@@ -206,15 +218,15 @@ export function getConfiguredProvidersForCapability(capability: AICapability): P
  */
 export function getConfiguredFallbackChain(capability: AICapability): AIProviderKey[] {
   const fallbackOrders: Record<AICapability, AIProviderKey[]> = {
-    llm: ['openai', 'claude', 'gemini', 'deepseek', 'alibaba', 'huggingface'],
+    llm: ['openai', 'claude', 'gemini', 'deepseek', 'alibaba', 'huggingface', 'modelslab'],
     translation: ['deepl', 'claude', 'google', 'openai', 'alibaba', 'deepseek'],
     ocr: ['gemini', 'google', 'claude', 'deepseek', 'alibaba'],
-    tts: ['elevenlabs', 'openai', 'google', 'alibaba'],
+    tts: ['elevenlabs', 'openai', 'google', 'alibaba', 'modelslab'],
     stt: ['openai', 'google', 'alibaba'],
-    image_gen: ['openai', 'gemini', 'replicate', 'alibaba', 'huggingface'],
-    video_gen: ['replicate', 'alibaba'],
-    music_gen: ['elevenlabs'],
-    sfx_gen: ['elevenlabs'],
+    image_gen: ['modelslab', 'openai', 'gemini', 'replicate', 'alibaba', 'huggingface'], // ModelsLab first for image
+    video_gen: ['modelslab', 'replicate', 'alibaba'], // ModelsLab first for video
+    music_gen: ['elevenlabs', 'modelslab'],
+    sfx_gen: ['elevenlabs', 'modelslab'],
     vision: ['gemini', 'openai', 'claude', 'google', 'deepseek', 'alibaba'],
     nlp: ['openai', 'claude', 'gemini', 'google', 'deepseek', 'alibaba'],
   };

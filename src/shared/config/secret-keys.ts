@@ -43,6 +43,11 @@ export const AI_PROVIDER_KEYS = {
   REPLICATE: 'REPLICATE_API_TOKEN',
   HUGGINGFACE: 'HUGGING_FACE_ACCESS_TOKEN',
   
+  // ModelsLab - UNIFIED HUB for Image/Video/Audio/3D/Training
+  // Includes: Stable Diffusion, FLUX, Midjourney-style, AnimateDiff, Voice Clone, 3D Gen
+  // Also hosts CivitAI community models
+  MODELSLAB: 'MODELSLAB_API_KEY',
+  
   // Translation Keys
   MICROSOFT_TRANSLATE: 'MICROSOFT_TRANSLATE_API_KEY',
   MICROSOFT_TRANSLATE_REGION: 'MICROSOFT_TRANSLATE_REGION',
