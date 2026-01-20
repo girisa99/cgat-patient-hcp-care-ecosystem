@@ -155,39 +155,63 @@ export function VisualFeaturesDropdown({
   const [open, setOpen] = useState(false);
   const [expandedFeatures, setExpandedFeatures] = useState<string[]>([]);
 
-  const toggleFeature = (featureId: string) => {
+  const toggleFeature = (featureId: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
     const existing = value.find(v => v.featureId === featureId);
     if (existing) {
-      onChange(value.filter(v => v.featureId !== featureId));
-      // Collapse when deselecting
+      // Deselecting: remove from value and collapse
+      const newValue = value.filter(v => v.featureId !== featureId);
+      onChange(newValue);
       setExpandedFeatures(prev => prev.filter(f => f !== featureId));
     } else {
-      onChange([...value, { featureId, subOptions: [] }]);
-      // Auto-expand when selecting to show sub-options
+      // Selecting: add to value and auto-expand
+      const newValue = [...value, { featureId, subOptions: [] }];
+      onChange(newValue);
       if (!expandedFeatures.includes(featureId)) {
         setExpandedFeatures(prev => [...prev, featureId]);
       }
     }
   };
 
-  const toggleSubOption = (featureId: string, subOptionId: string) => {
-    const existing = value.find(v => v.featureId === featureId);
-    if (existing) {
+  const toggleSubOption = (featureId: string, subOptionId: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
+    // Create a new copy of value to avoid mutation
+    const newValue = [...value];
+    const existingIndex = newValue.findIndex(v => v.featureId === featureId);
+    
+    if (existingIndex >= 0) {
+      // Feature already selected - toggle the sub-option
+      const existing = newValue[existingIndex];
       const hasSubOption = existing.subOptions.includes(subOptionId);
       const newSubOptions = hasSubOption
         ? existing.subOptions.filter(s => s !== subOptionId)
         : [...existing.subOptions, subOptionId];
-      onChange(
-        value.map(v =>
-          v.featureId === featureId ? { ...v, subOptions: newSubOptions } : v
-        )
-      );
+      
+      newValue[existingIndex] = { ...existing, subOptions: newSubOptions };
+      onChange(newValue);
     } else {
-      onChange([...value, { featureId, subOptions: [subOptionId] }]);
+      // Feature not selected yet - add it with this sub-option
+      onChange([...newValue, { featureId, subOptions: [subOptionId] }]);
+      // Also expand the feature
+      if (!expandedFeatures.includes(featureId)) {
+        setExpandedFeatures(prev => [...prev, featureId]);
+      }
     }
   };
 
-  const toggleExpandFeature = (featureId: string) => {
+  const toggleExpandFeature = (featureId: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     setExpandedFeatures(prev =>
       prev.includes(featureId)
         ? prev.filter(f => f !== featureId)
@@ -204,11 +228,16 @@ export function VisualFeaturesDropdown({
   };
 
   const getSelectionCount = () => {
-    return value.reduce((acc, v) => acc + (v.subOptions.length || 1), 0);
+    return value.reduce((acc, v) => acc + Math.max(v.subOptions.length, 1), 0);
   };
 
-  const clearAll = () => {
+  const clearAll = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     onChange([]);
+    setExpandedFeatures([]);
   };
 
   const displayText =
@@ -243,7 +272,7 @@ export function VisualFeaturesDropdown({
               variant="ghost"
               size="sm"
               className="h-6 text-xs text-muted-foreground"
-              onClick={clearAll}
+              onClick={(e) => clearAll(e)}
             >
               Clear All
             </Button>
@@ -262,21 +291,26 @@ export function VisualFeaturesDropdown({
                 <div key={feature.id} className="space-y-1">
                   <div
                     className={cn(
-                      'flex items-center gap-2 p-2 rounded-md transition-colors',
+                      'flex items-center gap-2 p-2 rounded-md transition-colors cursor-pointer',
                       isSelected
                         ? 'bg-primary/10 border border-primary/30'
                         : 'hover:bg-muted border border-transparent'
                     )}
                   >
-                    <Checkbox
-                      checked={isSelected}
-                      onCheckedChange={() => toggleFeature(feature.id)}
-                      className="pointer-events-auto"
-                    />
+                    <div 
+                      className="shrink-0"
+                      onClick={(e) => toggleFeature(feature.id, e)}
+                    >
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={() => {}}
+                        className="pointer-events-none"
+                      />
+                    </div>
                     <Icon className="h-4 w-4 text-primary shrink-0" />
                     <div
                       className="flex-1 min-w-0 cursor-pointer"
-                      onClick={() => toggleFeature(feature.id)}
+                      onClick={(e) => toggleFeature(feature.id, e)}
                     >
                       <div className="flex items-center gap-2">
                         <p className="text-sm font-medium truncate">{feature.name}</p>
@@ -294,10 +328,7 @@ export function VisualFeaturesDropdown({
                       variant="ghost"
                       size="sm"
                       className="h-6 w-6 p-0 shrink-0"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleExpandFeature(feature.id);
-                      }}
+                      onClick={(e) => toggleExpandFeature(feature.id, e)}
                     >
                       {isExpanded ? (
                         <ChevronDown className="h-3 w-3" />
@@ -320,20 +351,21 @@ export function VisualFeaturesDropdown({
                                 ? 'bg-primary/10 border border-primary/30'
                                 : 'hover:bg-muted/50 border border-transparent'
                             )}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              toggleSubOption(feature.id, subOption.id);
-                            }}
+                            onClick={(e) => toggleSubOption(feature.id, subOption.id, e)}
                           >
-                            <Checkbox
-                              checked={isChecked}
-                              onCheckedChange={() => toggleSubOption(feature.id, subOption.id)}
-                              className="pointer-events-auto"
-                            />
+                            <div 
+                              className="shrink-0"
+                              onClick={(e) => toggleSubOption(feature.id, subOption.id, e)}
+                            >
+                              <Checkbox
+                                checked={isChecked}
+                                onCheckedChange={() => {}}
+                                className="pointer-events-none"
+                              />
+                            </div>
                             <span className="text-sm flex-1">{subOption.name}</span>
                             {isChecked && (
-                              <Check className="h-3 w-3 text-primary" />
+                              <Check className="h-3 w-3 text-primary shrink-0" />
                             )}
                           </div>
                         );

@@ -62,7 +62,7 @@ import { toast } from 'sonner';
 import { PresentationTemplate, PresentationTheme } from './types';
 import useTemplateLibrary from '@/hooks/useTemplateLibrary';
 import { CreateTemplateDialog } from './components/CreateTemplateDialog';
-import { VisualFeaturesDropdown, VisualFeatureSelection, VISUAL_FEATURES } from './components/VisualFeaturesDropdown';
+import { VisualFeaturesDropdown, VisualFeatureSelection } from './components/VisualFeaturesDropdown';
 import {
   getTemplateRecommendations,
   CONSULTING_FRAMEWORKS,
@@ -238,6 +238,65 @@ export function TemplateBrandingPanelV2({
       contentTypes: contentTypeFilter || [],
     });
   }, [industryFilter, segmentFilter, contentTypeFilter]);
+
+  // Auto-select frameworks and branding in AI mode based on context
+  const aiAutoSelection = useMemo(() => {
+    // Determine best framework category based on industry
+    let recommendedCategory = 'strategy';
+    let recommendedFrameworks: string[] = [];
+    
+    if (industryFilter === 'healthcare' || industryFilter === 'pharma') {
+      recommendedCategory = 'operations';
+      recommendedFrameworks = ['value-chain', 'balanced-scorecard'];
+    } else if (industryFilter === 'technology' || industryFilter === 'startup') {
+      recommendedCategory = 'growth';
+      recommendedFrameworks = ['blue-ocean', 'market-entry'];
+    } else if (industryFilter === 'finance') {
+      recommendedCategory = 'analysis';
+      recommendedFrameworks = ['pestle', 'stakeholder-mapping'];
+    } else if (industryFilter === 'consulting') {
+      recommendedCategory = 'strategy';
+      recommendedFrameworks = ['seven-element', 'three-horizons'];
+    } else if (industryFilter === 'manufacturing' || industryFilter === 'energy') {
+      recommendedCategory = 'operations';
+      recommendedFrameworks = ['lean-six-sigma', 'raci-matrix'];
+    } else {
+      recommendedCategory = 'universal';
+      recommendedFrameworks = ['business-model-canvas', 'customer-journey'];
+    }
+    
+    // Determine best template based on industry
+    let recommendedTemplate = 'corporate-blue';
+    if (industryFilter === 'healthcare') recommendedTemplate = 'medical-teal';
+    else if (industryFilter === 'technology' || industryFilter === 'startup') recommendedTemplate = 'tech-gradient';
+    else if (industryFilter === 'finance') recommendedTemplate = 'finance-navy';
+    else if (industryFilter === 'consulting') recommendedTemplate = 'executive-dark';
+    
+    return {
+      category: recommendedCategory,
+      frameworks: recommendedFrameworks,
+      template: recommendedTemplate,
+    };
+  }, [industryFilter]);
+
+  // Apply AI auto-selection when mode is 'ai' and context changes
+  React.useEffect(() => {
+    if (mode === 'ai') {
+      // Auto-select template
+      const template = TEMPLATES.find(t => t.id === aiAutoSelection.template);
+      if (template && selectedTemplateId !== template.id) {
+        handleTemplateSelect(template);
+      }
+      
+      // Auto-select framework category and frameworks
+      if (selectedFrameworkCategories.length === 0 || !selectedFrameworkCategories.includes(aiAutoSelection.category)) {
+        setSelectedFrameworkCategories([aiAutoSelection.category]);
+      }
+      if (selectedFrameworkIds.length === 0 && aiAutoSelection.frameworks.length > 0) {
+        setSelectedFrameworkIds(aiAutoSelection.frameworks);
+      }
+    }
+  }, [mode, aiAutoSelection]);
 
   // Get frameworks for selected categories - map categories to firm types
   const frameworksForCategories = useMemo(() => {
@@ -478,6 +537,67 @@ export function TemplateBrandingPanelV2({
               </div>
             </div>
           )}
+
+          {/* AI Auto-Selected Framework */}
+          {selectedFrameworkIds.length > 0 && (
+            <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-primary/10 shrink-0">
+                  <Briefcase className="h-4 w-4 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground">Framework Selection</p>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Category: {FRAMEWORK_CATEGORIES.find(c => c.id === selectedFrameworkCategories[0])?.label || 'Universal'}
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {selectedFrameworkIds.map(fwId => {
+                      const fw = CONSULTING_FRAMEWORKS.find(f => f.id === fwId);
+                      return fw ? (
+                        <Badge key={fwId} variant="secondary" className="text-[10px]">
+                          {fw.name}
+                        </Badge>
+                      ) : null;
+                    })}
+                  </div>
+                </div>
+                <Badge variant="default" className="shrink-0">
+                  <Bot className="h-3 w-3 mr-1" />
+                  AI
+                </Badge>
+              </div>
+            </div>
+          )}
+
+          {/* AI Auto-Selected Branding */}
+          <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10 shrink-0">
+                <Palette className="h-4 w-4 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground">Brand Colors</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="flex -space-x-1">
+                    {[brandConfig.colors.primary, brandConfig.colors.secondary, brandConfig.colors.accent].map((color, idx) => (
+                      <div 
+                        key={idx}
+                        className="w-4 h-4 rounded-full border-2 border-background"
+                        style={{ backgroundColor: color }}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {brandConfig.logo ? 'Extracted from logo' : 'Based on template'}
+                  </span>
+                </div>
+              </div>
+              <Badge variant="default" className="shrink-0">
+                <Bot className="h-3 w-3 mr-1" />
+                AI
+              </Badge>
+            </div>
+          </div>
 
           {/* Quick Switch to Custom */}
           <Button
