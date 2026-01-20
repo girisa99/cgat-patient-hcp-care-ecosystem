@@ -1642,7 +1642,6 @@ export function PresentationWizard({
                       imageModel: workflowConfig?.aiModels?.imageModel || workflowConfig?.aiRecommendation?.imageModel || 'Auto',
                       voiceModel: workflowConfig?.aiModels?.voiceModel || workflowConfig?.aiRecommendation?.voiceModel || 'Auto',
                       translationModel: workflowConfig?.aiModels?.translationModel || workflowConfig?.aiRecommendation?.translationModel || 'Auto',
-                      videoModel: workflowConfig?.aiModels?.videoModel || workflowConfig?.aiRecommendation?.videoModel,
                     },
                     
                     // NEW: Pass full AI recommendation for confidence scores and reasoning
@@ -1651,7 +1650,6 @@ export function PresentationWizard({
                       imageModel: workflowConfig.aiRecommendation.imageModel,
                       voiceModel: workflowConfig.aiRecommendation.voiceModel,
                       translationModel: workflowConfig.aiRecommendation.translationModel,
-                      videoModel: workflowConfig.aiRecommendation.videoModel,
                       reason: workflowConfig.aiRecommendation.reason,
                       confidence: workflowConfig.aiRecommendation.confidence,
                       alternativeTextModels: workflowConfig.aiRecommendation.alternativeTextModels,
