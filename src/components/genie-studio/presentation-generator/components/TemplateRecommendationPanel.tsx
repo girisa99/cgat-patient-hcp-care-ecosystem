@@ -19,20 +19,17 @@ import {
   Target,
   GraduationCap,
   Check,
-  ChevronRight,
   Info,
   Layers,
   Wand2,
   PieChart,
-  Eye,
+  ChevronRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import {
   getTemplateRecommendations,
-  getQuickStyleSuggestions,
   getTemplatesForStyle,
-  TemplateRecommendation,
   TemplateStyle,
   RecommendedTemplate,
   CONSULTING_FRAMEWORKS,
@@ -45,12 +42,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 
 // Style icons mapping
 const STYLE_ICONS: Record<TemplateStyle, React.ElementType> = {
@@ -64,6 +55,32 @@ const STYLE_ICONS: Record<TemplateStyle, React.ElementType> = {
   'storytelling': BookOpen,
   'mixed-adaptive': Sparkles,
 };
+
+// Simplified 2-style options for UI
+type SimplifiedStyle = 'with-consulting' | 'industry-only';
+
+const SIMPLIFIED_STYLES: Array<{
+  id: SimplifiedStyle;
+  label: string;
+  description: string;
+  icon: React.ElementType;
+  mapsToStyles: TemplateStyle[];
+}> = [
+  {
+    id: 'with-consulting',
+    label: 'With Consulting Frameworks',
+    description: 'McKinsey, BCG, Bain-style frameworks combined with your industry',
+    icon: Briefcase,
+    mapsToStyles: ['pure-consulting', 'consulting-hybrid', 'investor-pitch'],
+  },
+  {
+    id: 'industry-only',
+    label: 'Industry-Focused',
+    description: 'Templates tailored specifically to your sector without consulting frameworks',
+    icon: Target,
+    mapsToStyles: ['industry-focused', 'creative-narrative', 'data-analytical', 'educational', 'storytelling', 'mixed-adaptive'],
+  },
+];
 
 // Framework category colors (using generic names)
 const FRAMEWORK_COLORS: Record<string, string> = {
@@ -89,10 +106,13 @@ interface TemplateRecommendationPanelProps {
   userPrompt?: string;
   audienceLevel?: 'executive' | 'manager' | 'technical' | 'general' | 'investor' | 'student';
   onTemplateSelect?: (template: RecommendedTemplate) => void;
+  onTemplatesChange?: (templates: RecommendedTemplate[]) => void; // Multi-select
   onStyleSelect?: (style: TemplateStyle) => void;
   selectedTemplateId?: string;
+  selectedTemplateIds?: string[]; // Multi-select
   selectedStyle?: TemplateStyle;
   compact?: boolean;
+  multiSelect?: boolean; // Enable multi-select mode
 }
 
 export const TemplateRecommendationPanel: React.FC<TemplateRecommendationPanelProps> = ({
@@ -102,14 +122,46 @@ export const TemplateRecommendationPanel: React.FC<TemplateRecommendationPanelPr
   userPrompt,
   audienceLevel,
   onTemplateSelect,
+  onTemplatesChange,
   onStyleSelect,
   selectedTemplateId,
+  selectedTemplateIds = [],
   selectedStyle: externalSelectedStyle,
   compact = false,
+  multiSelect = true, // Default to multi-select
 }) => {
   const [showFrameworkDetails, setShowFrameworkDetails] = useState(false);
   const [selectedFramework, setSelectedFramework] = useState<ConsultingFramework | null>(null);
-  const [internalSelectedStyle, setInternalSelectedStyle] = useState<TemplateStyle | null>(null);
+  const [simplifiedStyle, setSimplifiedStyle] = useState<SimplifiedStyle>('with-consulting');
+  const [internalSelectedTemplates, setInternalSelectedTemplates] = useState<string[]>([]);
+
+  // Track selected templates (internal or external)
+  const selectedIds = selectedTemplateIds.length > 0 ? selectedTemplateIds : internalSelectedTemplates;
+
+  // Determine the TemplateStyle based on simplified selection
+  const activeStyle: TemplateStyle = useMemo(() => {
+    if (externalSelectedStyle) return externalSelectedStyle;
+    
+    // Map simplified style to actual TemplateStyle based on context
+    if (simplifiedStyle === 'with-consulting') {
+      // Choose between pure-consulting and consulting-hybrid based on industry
+      const industryLower = industry.toLowerCase();
+      if (industryLower.includes('consult') || industryLower.includes('strategy')) {
+        return 'pure-consulting';
+      }
+      return 'consulting-hybrid';
+    } else {
+      // Choose industry-focused style based on content types
+      const hasData = contentTypes.some(ct => ct.toLowerCase().includes('data') || ct.toLowerCase().includes('analytic'));
+      const hasTraining = contentTypes.some(ct => ct.toLowerCase().includes('training') || ct.toLowerCase().includes('education'));
+      const hasCreative = contentTypes.some(ct => ct.toLowerCase().includes('creative') || ct.toLowerCase().includes('story'));
+      
+      if (hasData) return 'data-analytical';
+      if (hasTraining) return 'educational';
+      if (hasCreative) return 'creative-narrative';
+      return 'industry-focused';
+    }
+  }, [externalSelectedStyle, simplifiedStyle, industry, contentTypes]);
 
   // Get AI recommendations (initial)
   const recommendation = useMemo(() => {
@@ -122,21 +174,8 @@ export const TemplateRecommendationPanel: React.FC<TemplateRecommendationPanelPr
     });
   }, [industry, segment, contentTypes, userPrompt, audienceLevel]);
 
-  // Get quick style suggestions
-  const quickStyles = useMemo(() => {
-    return getQuickStyleSuggestions(industry);
-  }, [industry]);
-
-  // Use external or internal selected style, fallback to AI recommendation
-  const activeStyle = externalSelectedStyle || internalSelectedStyle || recommendation.style;
-
   // Get templates based on active style (regenerates when style changes)
   const activeTemplates = useMemo(() => {
-    if (activeStyle === recommendation.style) {
-      // Use AI-generated templates
-      return recommendation.templates;
-    }
-    // Regenerate templates for manually selected style
     return getTemplatesForStyle(activeStyle, {
       industry,
       segment,
@@ -144,22 +183,36 @@ export const TemplateRecommendationPanel: React.FC<TemplateRecommendationPanelPr
       userPrompt,
       audienceLevel,
     });
-  }, [activeStyle, recommendation, industry, segment, contentTypes, userPrompt, audienceLevel]);
+  }, [activeStyle, industry, segment, contentTypes, userPrompt, audienceLevel]);
 
   const handleTemplateClick = (template: RecommendedTemplate) => {
-    onTemplateSelect?.(template);
-    toast.success(`Selected: ${template.name}`);
+    if (multiSelect) {
+      // Toggle selection
+      const isSelected = selectedIds.includes(template.id);
+      const newSelection = isSelected
+        ? selectedIds.filter(id => id !== template.id)
+        : [...selectedIds, template.id];
+      
+      setInternalSelectedTemplates(newSelection);
+      
+      // Notify parent with full template objects
+      const selectedTemplates = activeTemplates.filter(t => newSelection.includes(t.id));
+      onTemplatesChange?.(selectedTemplates);
+    } else {
+      // Single select mode
+      onTemplateSelect?.(template);
+    }
   };
 
-  const handleStyleClick = (style: TemplateStyle) => {
-    setInternalSelectedStyle(style);
-    onStyleSelect?.(style);
-    toast.info(`Style changed to: ${style.replace(/-/g, ' ')}`);
-  };
-
-  const handleFrameworkPreview = (framework: ConsultingFramework) => {
-    setSelectedFramework(framework);
-    setShowFrameworkDetails(true);
+  const handleSimplifiedStyleChange = (style: SimplifiedStyle) => {
+    setSimplifiedStyle(style);
+    // Clear template selection when style changes
+    setInternalSelectedTemplates([]);
+    onTemplatesChange?.([]);
+    
+    // Map to actual TemplateStyle and notify parent
+    const mappedStyle = SIMPLIFIED_STYLES.find(s => s.id === style)?.mapsToStyles[0] || 'mixed-adaptive';
+    onStyleSelect?.(mappedStyle);
   };
 
   const StyleIcon = STYLE_ICONS[activeStyle];
@@ -236,61 +289,82 @@ export const TemplateRecommendationPanel: React.FC<TemplateRecommendationPanelPr
           </div>
         </div>
 
-        {/* Quick Style Selector - Clean Grid with text truncation */}
+        {/* Simplified 2-Style Selector */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <p className="text-sm font-semibold text-foreground">Style Selection</p>
-            {internalSelectedStyle && internalSelectedStyle !== recommendation.style && (
-              <Badge variant="outline" className="text-[10px]">
-                Manual Override
-              </Badge>
-            )}
+            <Badge variant="outline" className="text-[10px]">
+              {simplifiedStyle === 'with-consulting' ? 'Consulting Mode' : 'Industry Mode'}
+            </Badge>
           </div>
-          <div className="grid grid-cols-3 gap-2">
-            {quickStyles.map(({ style, label, description }) => {
-              const Icon = STYLE_ICONS[style];
-              const isActive = activeStyle === style;
-              const isAIRecommended = recommendation.style === style;
+          <div className="grid grid-cols-2 gap-3">
+            {SIMPLIFIED_STYLES.map((styleOption) => {
+              const Icon = styleOption.icon;
+              const isActive = simplifiedStyle === styleOption.id;
               
               return (
                 <Button
-                  key={style}
+                  key={styleOption.id}
                   variant={isActive ? "default" : "outline"}
                   size="sm"
                   className={cn(
-                    "h-auto py-2.5 px-2 flex flex-col items-center gap-1.5 min-w-0 relative",
-                    isActive && "shadow-md",
-                    !isActive && isAIRecommended && "border-primary/50"
+                    "h-auto py-4 px-3 flex flex-col items-center gap-2 min-w-0 relative",
+                    isActive && "shadow-md ring-2 ring-primary/20"
                   )}
-                  onClick={() => handleStyleClick(style)}
-                  title={description}
+                  onClick={() => handleSimplifiedStyleChange(styleOption.id)}
+                  title={styleOption.description}
                 >
-                  {isAIRecommended && !isActive && (
-                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full" />
-                  )}
-                  <Icon className="h-4 w-4 shrink-0" />
-                  <span className="text-[10px] font-medium truncate w-full text-center leading-tight">{label}</span>
-                  {isActive && <Check className="h-3 w-3 shrink-0" />}
+                  <Icon className="h-5 w-5 shrink-0" />
+                  <span className="text-xs font-medium text-center leading-tight">{styleOption.label}</span>
+                  {isActive && <Check className="h-4 w-4 shrink-0 absolute top-2 right-2" />}
                 </Button>
               );
             })}
           </div>
+          <p className="text-xs text-muted-foreground text-center">
+            {simplifiedStyle === 'with-consulting' 
+              ? 'Uses consulting frameworks (McKinsey, BCG style) adapted to your industry'
+              : 'Templates tailored to your specific industry without consulting overlays'
+            }
+          </p>
         </div>
 
         <Separator />
 
-        {/* Recommended Templates - Clean Card List */}
+        {/* Recommended Templates - Multi-Select Card List */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-foreground">Recommended Templates</p>
-            <Badge variant="secondary" className="text-xs">
-              {activeTemplates.length} matches
-            </Badge>
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-semibold text-foreground">Recommended Templates</p>
+              {multiSelect && (
+                <Badge variant="outline" className="text-[10px]">
+                  Multi-select
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {selectedIds.length > 0 && (
+                <Badge variant="default" className="text-xs">
+                  {selectedIds.length} selected
+                </Badge>
+              )}
+              <Badge variant="secondary" className="text-xs">
+                {activeTemplates.length} available
+              </Badge>
+            </div>
           </div>
+          
+          {multiSelect && selectedIds.length > 0 && (
+            <p className="text-xs text-muted-foreground">
+              Selected templates will be combined for a mixed-style presentation
+            </p>
+          )}
           
           <div className="space-y-2">
             {activeTemplates.map(template => {
-              const isSelected = selectedTemplateId === template.id;
+              const isSelected = multiSelect 
+                ? selectedIds.includes(template.id)
+                : selectedTemplateId === template.id;
               const categoryColor = FRAMEWORK_COLORS[template.subCategory || template.category] || FRAMEWORK_COLORS.universal;
               
               return (
@@ -299,10 +373,22 @@ export const TemplateRecommendationPanel: React.FC<TemplateRecommendationPanelPr
                   className={cn(
                     "flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all",
                     "hover:border-primary/50 hover:bg-primary/5",
-                    isSelected && "border-primary bg-primary/5 shadow-sm"
+                    isSelected && "border-primary bg-primary/10 shadow-sm"
                   )}
                   onClick={() => handleTemplateClick(template)}
                 >
+                  {/* Checkbox for multi-select */}
+                  {multiSelect && (
+                    <div className={cn(
+                      "w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors",
+                      isSelected 
+                        ? "bg-primary border-primary" 
+                        : "border-muted-foreground/30 hover:border-primary/50"
+                    )}>
+                      {isSelected && <Check className="h-3 w-3 text-primary-foreground" />}
+                    </div>
+                  )}
+                  
                   <div className={cn("p-3 rounded-lg border", categoryColor)}>
                     <PieChart className="h-5 w-5" />
                   </div>
@@ -321,7 +407,7 @@ export const TemplateRecommendationPanel: React.FC<TemplateRecommendationPanelPr
                       ))}
                     </div>
                   </div>
-                  {isSelected && <Check className="h-5 w-5 text-primary shrink-0" />}
+                  {!multiSelect && isSelected && <Check className="h-5 w-5 text-primary shrink-0" />}
                 </div>
               );
             })}
