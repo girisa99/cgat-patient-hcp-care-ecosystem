@@ -31,6 +31,8 @@ import type {
   SFXGenRequest, SFXGenResponse,
   NLPRequest, NLPResponse,
   AgentWorkflowRequest, AgentWorkflowResponse,
+  VoiceCloneRequest, VoiceCloneResponse,
+  TextToVideoRequest, TextToVideoResponse,
   AIHubConfig,
 } from './types';
 
@@ -603,6 +605,154 @@ export class UniversalAIHub {
         },
       };
     }, context);
+  }
+
+  // ============================================
+  // VOICE CLONING OPERATIONS
+  // ============================================
+
+  async cloneVoice(request: VoiceCloneRequest, context?: AIRequestContext): Promise<VoiceCloneResponse> {
+    const startTime = Date.now();
+    
+    // Map action to edge function action format
+    const actionMap: Record<string, string> = {
+      'create': 'create_clone',
+      'generate': 'generate_speech',
+      'list': 'list_clones',
+      'delete': 'delete_clone',
+    };
+
+    const { data, error } = await supabase.functions.invoke('voice-clone-processor', {
+      body: {
+        action: actionMap[request.action] || request.action,
+        voiceId: request.voiceId,
+        name: request.name,
+        description: request.description,
+        audioSamples: request.audioSamples,
+        text: request.text,
+        settings: request.settings ? {
+          stability: request.settings.stability,
+          similarity_boost: request.settings.similarity,
+          style: request.settings.style,
+        } : undefined,
+      },
+    });
+
+    if (error) throw new Error(error.message);
+
+    return {
+      voiceId: data.voiceId,
+      name: data.name,
+      status: data.status || 'success',
+      audioUrl: data.audioUrl,
+      audioBase64: data.audioBase64,
+      duration: data.duration,
+      voices: data.voices,
+      confidence: this.createConfidence(0.9, 'elevenlabs', Date.now() - startTime),
+    };
+  }
+
+  // ============================================
+  // TEXT TO VIDEO DIRECT OPERATIONS
+  // ============================================
+
+  async generateTextToVideo(request: TextToVideoRequest, context?: AIRequestContext): Promise<TextToVideoResponse> {
+    return this.executeWithFallback('video_gen', async (provider) => {
+      const startTime = Date.now();
+      
+      // For ModelsLab, use modelslab-media
+      if (provider === 'modelslab') {
+        const { data, error } = await supabase.functions.invoke('modelslab-media', {
+          body: {
+            type: 'text2video',
+            prompt: request.prompt,
+            negative_prompt: 'low quality, blurry, distorted',
+            duration: request.duration || 5,
+            aspect_ratio: request.aspectRatio || '16:9',
+            guidance_scale: 7.5,
+          },
+        });
+
+        if (error) throw new Error(error.message);
+
+        return {
+          videoUrl: data.output?.[0] || data.fetch_url,
+          thumbnailUrl: data.thumbnail,
+          duration: request.duration || 5,
+          confidence: this.createConfidence(0.85, provider, Date.now() - startTime),
+          metadata: {
+            promptUsed: request.prompt,
+            style: request.style || 'cinematic',
+            hasVoiceover: request.voiceover?.enabled || false,
+            hasBackgroundMusic: request.backgroundMusic?.enabled || false,
+            estimatedCost: 0.05,
+            format: 'mp4',
+          },
+        };
+      }
+
+      // For other providers, use Gemini Veo or ai-video-generator
+      const { data, error } = await supabase.functions.invoke('ai-video-generator', {
+        body: {
+          prompt: request.prompt,
+          provider: this.mapVideoProvider(provider),
+          duration: request.duration || 5,
+          aspectRatio: request.aspectRatio || '16:9',
+          quality: request.quality || 'standard',
+        },
+      });
+
+      if (error) throw new Error(error.message);
+
+      return {
+        videoUrl: data.videoUrl || data.video_url,
+        thumbnailUrl: data.thumbnailUrl,
+        duration: request.duration || 5,
+        confidence: this.createConfidence(0.8, provider, Date.now() - startTime),
+        metadata: {
+          promptUsed: request.prompt,
+          style: request.style || 'cinematic',
+          hasVoiceover: request.voiceover?.enabled || false,
+          hasBackgroundMusic: request.backgroundMusic?.enabled || false,
+          estimatedCost: 0.05,
+          format: 'mp4',
+        },
+      };
+    }, context);
+  }
+
+  // ============================================
+  // ALIBABA TTS OPERATIONS
+  // ============================================
+
+  async generateSpeechWithAlibaba(request: TTSRequest, context?: AIRequestContext): Promise<TTSResponse> {
+    const startTime = Date.now();
+    
+    const { data, error } = await supabase.functions.invoke('alibaba-tts', {
+      body: {
+        text: request.text,
+        voice: request.voice,
+        language: request.language,
+        speed: request.speed,
+        pitch: request.pitch,
+        format: request.outputFormat,
+      },
+    });
+
+    if (error) throw new Error(error.message);
+
+    return {
+      audioUrl: data.audioUrl,
+      audioBlob: undefined,
+      duration: data.duration || 0,
+      confidence: this.createConfidence(0.9, 'alibaba', Date.now() - startTime),
+      voice: data.voice || request.voice || 'default',
+      metadata: {
+        characterCount: request.text.length,
+        estimatedCost: data.metadata?.estimatedCost || 0.002,
+        format: request.outputFormat || 'mp3',
+      },
+    };
   }
 
   // ============================================

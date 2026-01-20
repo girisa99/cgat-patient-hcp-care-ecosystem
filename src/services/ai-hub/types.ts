@@ -304,6 +304,80 @@ export interface SFXGenResponse {
 }
 
 // ============================================
+// VOICE CLONING TYPES
+// ============================================
+
+export interface VoiceCloneRequest {
+  action: 'create' | 'generate' | 'list' | 'delete';
+  provider?: AIProviderKey;
+  voiceId?: string;
+  name?: string;
+  description?: string;
+  audioSamples?: string[];  // Base64 encoded audio files for cloning
+  text?: string;            // Text to synthesize with cloned voice
+  settings?: {
+    stability?: number;     // 0-1
+    similarity?: number;    // 0-1
+    style?: number;         // 0-1
+  };
+}
+
+export interface VoiceCloneResponse {
+  voiceId?: string;
+  name?: string;
+  status: string;
+  audioUrl?: string;
+  audioBase64?: string;
+  duration?: number;
+  voices?: ClonedVoice[];
+  confidence: ConfidenceScore;
+}
+
+export interface ClonedVoice {
+  voiceId: string;
+  name: string;
+  category: string;
+  labels?: Record<string, string>;
+}
+
+// ============================================
+// TEXT TO VIDEO DIRECT TYPES
+// ============================================
+
+export interface TextToVideoRequest {
+  prompt: string;
+  provider?: AIProviderKey;
+  style?: 'cinematic' | 'realistic' | 'animated' | 'documentary';
+  duration?: number;        // seconds
+  aspectRatio?: '16:9' | '9:16' | '1:1' | '4:3';
+  quality?: 'standard' | 'high' | 'ultra';
+  voiceover?: {
+    enabled: boolean;
+    voice?: string;
+    language?: string;
+  };
+  backgroundMusic?: {
+    enabled: boolean;
+    style?: string;
+  };
+}
+
+export interface TextToVideoResponse {
+  videoUrl: string;
+  thumbnailUrl?: string;
+  duration: number;
+  confidence: ConfidenceScore;
+  metadata: {
+    promptUsed: string;
+    style: string;
+    hasVoiceover: boolean;
+    hasBackgroundMusic: boolean;
+    estimatedCost: number;
+    format: string;
+  };
+}
+
+// ============================================
 // NLP TYPES
 // ============================================
 
