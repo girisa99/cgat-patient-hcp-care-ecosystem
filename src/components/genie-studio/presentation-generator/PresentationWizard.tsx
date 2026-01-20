@@ -113,7 +113,7 @@ import { LanguageConfigPopup } from './LanguageConfigPopup';
 import { GenerationSummaryPanel } from './GenerationSummaryPanel';
 import { VersionComparisonPanel } from './VersionComparisonPanel';
 import { SlideEnhancerPanel } from './SlideEnhancerPanel';
-import { CreditBurnDisplay, CREDIT_MULTIPLIERS } from './components/CreditBurnDisplay';
+import { CreditBurnDisplay, CREDIT_MULTIPLIERS, calculateCredits } from './components/CreditBurnDisplay';
 import { RefreshCapsDisplay } from './components/RefreshCapsDisplay';
 import { useAICredits } from '@/hooks/useAICredits';
 import { useRefreshCaps } from '@/hooks/useRefreshCaps';
@@ -478,7 +478,10 @@ export function PresentationWizard({
   const [outputSettings, setOutputSettings] = useState<OutputTypeSettings>(getDefaultOutputSettings(10));
 
   // Credit & Refresh tracking
-  const { credits, refreshCredits } = useAICredits();
+  const { credits, refreshCredits, useCredits, canAfford } = useAICredits();
+  const [creditsUsedThisSession, setCreditsUsedThisSession] = useState(0);
+  const [isDeductingCredits, setIsDeductingCredits] = useState(false);
+  
   const refreshCapsHook = useRefreshCaps({ 
     userTier: 'professional', // TODO: Get from user profile
     onCapReached: (capType) => {
@@ -722,6 +725,40 @@ export function PresentationWizard({
       toast.error('Please enter content first');
       return;
     }
+
+    // Calculate required credits before generation
+    const estimatedCredits = calculateCredits({
+      outputType: outputSettings.outputType,
+      slideCount: outputSettings.slideCount,
+      includeVoiceover: outputSettings.includeVoiceover,
+      includeMusic: outputSettings.includeMusic,
+      resolution: outputSettings.resolution as '720p' | '1080p' | '4k',
+      languageCount: generateMultipleLanguages ? selectedLanguages.length + 1 : 1,
+    });
+
+    // Check if user has enough credits
+    if (credits && credits.credits_balance < estimatedCredits) {
+      toast.error(`Insufficient credits. Need ${estimatedCredits}, have ${credits.credits_balance}. Please purchase more credits.`);
+      return;
+    }
+
+    // Deduct credits before starting generation
+    setIsDeductingCredits(true);
+    const deductionResult = await useCredits('presentation_generation', estimatedCredits, {
+      outputType: outputSettings.outputType,
+      slideCount: outputSettings.slideCount,
+      languages: generateMultipleLanguages ? selectedLanguages.length + 1 : 1,
+    });
+    setIsDeductingCredits(false);
+
+    if (!deductionResult.success) {
+      toast.error(deductionResult.error || 'Failed to deduct credits. Please try again.');
+      return;
+    }
+
+    // Track credits used this session
+    setCreditsUsedThisSession(prev => prev + (deductionResult.credits_deducted || 0));
+    toast.success(`${deductionResult.credits_deducted} credits deducted. Starting generation...`);
 
     // Initialize progress tracking
     setGenerationPhase('analyzing');
