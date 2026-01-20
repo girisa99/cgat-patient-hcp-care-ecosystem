@@ -128,7 +128,7 @@ import {
 } from './wizardConstants';
 import { ContentTypeSelector, CONTENT_CATEGORIES, EXTENDED_COLLATERAL_TYPES } from './ContentTypeSelector';
 import { AIModelConfigPanel } from './AIModelConfigPanel';
-import { TemplateBrandingPanel, BrandConfig } from './TemplateBrandingPanel';
+import { TemplateBrandingPanelV2 as TemplateBrandingPanel, BrandConfig } from './TemplateBrandingPanelV2';
 import { AgentSelectorDialog, AgentCard, AgentModelConfig } from './AgentSelectorDialog';
 import { AgentLanguageConfigPanel } from './AgentLanguageConfigPanel';
 import { InlineTrainAIFeedback } from '../InlineTrainAIFeedback';
