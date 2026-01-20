@@ -63,9 +63,6 @@ export {
   type LayoutZone,
 } from './wizardConstants';
 
-// Legacy: EnhancedTemplateWorkflow (deprecated - use wizardConstants instead)
-export { EnhancedTemplateWorkflow } from './EnhancedTemplateWorkflow';
-
 // Agent architecture definitions
 export { 
   AGENT_TYPES, 
