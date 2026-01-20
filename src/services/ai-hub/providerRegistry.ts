@@ -121,12 +121,12 @@ export const AI_PROVIDER_REGISTRY: Record<AIProviderKey, AIProviderDefinition> =
         costPerUnit: 0.04,
       },
       video_gen: {
-        models: ['sora'],
-        strengths: ['High quality', 'Long duration', 'Complex scenes'],
-        weaknesses: ['Very expensive', 'Limited access'],
+        models: ['sora-1.0-turbo', 'sora', 'animatediff-openai'],
+        strengths: ['High quality', 'Long duration', 'Complex scenes', 'AnimateDiff support'],
+        weaknesses: ['Very expensive', 'API availability varies'],
         priority: 1,
         costPerUnit: 0.50,
-        notes: 'Limited availability - use Replicate/Alibaba as fallback',
+        notes: 'Sora for premium, falls back to ModelsLab AnimateDiff',
       },
       vision: {
         models: ['gpt-4o', 'gpt-4-vision-preview'],
