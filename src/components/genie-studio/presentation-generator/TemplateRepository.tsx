@@ -478,28 +478,36 @@ export function TemplateRepository({
         </Select>
       </div>
 
-      {/* Category Pills */}
-      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-        {TEMPLATE_CATEGORIES.map(cat => {
-          const Icon = cat.icon;
-          const isActive = activeCategory === cat.id;
-          return (
-            <button
-              key={cat.id}
-              onClick={() => setActiveCategory(cat.id)}
-              className={cn(
-                "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all",
-                isActive
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted/50 text-muted-foreground hover:bg-muted"
-              )}
-            >
-              <Icon className="h-3 w-3" />
-              {cat.name}
-            </button>
-          );
-        })}
-      </div>
+      {/* Category Dropdown - Replaces scrolling pills */}
+      <Select value={activeCategory} onValueChange={setActiveCategory}>
+        <SelectTrigger className="w-full bg-background border">
+          <div className="flex items-center gap-2">
+            {(() => {
+              const activeCat = TEMPLATE_CATEGORIES.find(c => c.id === activeCategory);
+              const Icon = activeCat?.icon || Layers;
+              return (
+                <>
+                  <Icon className="h-4 w-4 text-muted-foreground" />
+                  <SelectValue placeholder="Select category" />
+                </>
+              );
+            })()}
+          </div>
+        </SelectTrigger>
+        <SelectContent className="z-50 bg-popover border shadow-lg">
+          {TEMPLATE_CATEGORIES.map(cat => {
+            const Icon = cat.icon;
+            return (
+              <SelectItem key={cat.id} value={cat.id}>
+                <div className="flex items-center gap-2">
+                  <Icon className="h-4 w-4" />
+                  <span>{cat.name}</span>
+                </div>
+              </SelectItem>
+            );
+          })}
+        </SelectContent>
+      </Select>
 
       {/* Template Grid */}
       <ScrollArea className="h-[400px]">

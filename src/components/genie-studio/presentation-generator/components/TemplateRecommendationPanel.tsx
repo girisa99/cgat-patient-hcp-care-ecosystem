@@ -212,10 +212,10 @@ export const TemplateRecommendationPanel: React.FC<TemplateRecommendationPanelPr
           </div>
         </div>
 
-        {/* Quick Style Selector - Clean Grid */}
+        {/* Quick Style Selector - Clean Grid with text truncation */}
         <div className="space-y-3">
           <p className="text-sm font-semibold text-foreground">Style Selection</p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             {quickStyles.map(({ style, label, description }) => {
               const Icon = STYLE_ICONS[style];
               const isActive = recommendation.style === style;
@@ -226,15 +226,15 @@ export const TemplateRecommendationPanel: React.FC<TemplateRecommendationPanelPr
                   variant={isActive ? "default" : "outline"}
                   size="sm"
                   className={cn(
-                    "h-auto py-3 flex flex-col items-center gap-2",
+                    "h-auto py-2.5 px-2 flex flex-col items-center gap-1.5 min-w-0",
                     isActive && "shadow-md"
                   )}
                   onClick={() => handleStyleClick(style)}
                   title={description}
                 >
-                  <Icon className="h-5 w-5" />
-                  <span className="text-xs font-medium">{label}</span>
-                  {isActive && <Check className="h-3 w-3" />}
+                  <Icon className="h-4 w-4 shrink-0" />
+                  <span className="text-[10px] font-medium truncate w-full text-center leading-tight">{label}</span>
+                  {isActive && <Check className="h-3 w-3 shrink-0" />}
                 </Button>
               );
             })}
