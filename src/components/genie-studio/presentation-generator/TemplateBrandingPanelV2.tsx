@@ -222,6 +222,17 @@ export function TemplateBrandingPanelV2({
   const [featuresOpen, setFeaturesOpen] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Visual Features - proper state with sub-options support
+  const [visualFeatureSelections, setVisualFeatureSelections] = useState<VisualFeatureSelection[]>(() => {
+    // Initialize from legacy toggles
+    const initial: VisualFeatureSelection[] = [];
+    if (includeInfographics) initial.push({ featureId: 'infographics', subOptions: [] });
+    if (includeJourneyMaps) initial.push({ featureId: 'journey-maps', subOptions: [] });
+    if (includeTables) initial.push({ featureId: 'data-tables', subOptions: [] });
+    if (includeCharts) initial.push({ featureId: 'charts', subOptions: [] });
+    return initial;
+  });
 
   // Library hook
   const libraryData = useTemplateLibrary();
@@ -1007,26 +1018,29 @@ export function TemplateBrandingPanelV2({
           </Badge>
         </div>
         
-        {/* Visual Features Dropdown */}
+        {/* Visual Features Dropdown - with proper state */}
         <VisualFeaturesDropdown
-          value={
-            Object.entries(featureToggles)
-              .filter(([_, toggle]) => toggle.value)
-              .map(([id]) => ({
-                featureId: LEGACY_FEATURE_MAP[id] || id,
-                subOptions: []
-              }))
-          }
+          value={visualFeatureSelections}
           onChange={(selections) => {
-            // Map from new dropdown to legacy toggles
-            Object.keys(featureToggles).forEach(legacyId => {
-              const newId = LEGACY_FEATURE_MAP[legacyId] || legacyId;
-              const isSelected = selections.some(s => s.featureId === newId || s.featureId === legacyId);
-              const toggle = featureToggles[legacyId];
-              if (toggle.value !== isSelected) {
-                toggle.onChange(isSelected);
-              }
-            });
+            // Update internal state with full sub-options support
+            setVisualFeatureSelections(selections);
+            
+            // Also sync to legacy toggles for backward compatibility
+            const selectedFeatureIds = new Set(selections.map(s => s.featureId));
+            
+            // Map new IDs to legacy IDs and update
+            if (includeInfographics !== selectedFeatureIds.has('infographics')) {
+              onIncludeInfographicsChange(selectedFeatureIds.has('infographics'));
+            }
+            if (includeJourneyMaps !== selectedFeatureIds.has('journey-maps')) {
+              onIncludeJourneyMapsChange(selectedFeatureIds.has('journey-maps'));
+            }
+            if (includeTables !== selectedFeatureIds.has('data-tables')) {
+              onIncludeTablesChange(selectedFeatureIds.has('data-tables'));
+            }
+            if (includeCharts !== selectedFeatureIds.has('charts')) {
+              onIncludeChartsChange(selectedFeatureIds.has('charts'));
+            }
           }}
         />
         
