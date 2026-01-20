@@ -87,7 +87,7 @@ export function TokenUsageDashboard({ className }: TokenUsageDashboardProps) {
           <ChevronDown className="h-3 w-3" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[400px] p-0" align="end">
+      <PopoverContent className="w-[440px] p-0" align="end" sideOffset={8}>
         <div className="p-4 space-y-4">
           {/* Header */}
           <div className="flex items-center justify-between">
@@ -101,18 +101,18 @@ export function TokenUsageDashboard({ className }: TokenUsageDashboardProps) {
           </div>
 
           {/* Quick Stats */}
-          <div className="grid grid-cols-3 gap-2">
-            <div className="p-2 bg-primary/10 rounded-lg text-center">
-              <div className="text-lg font-bold font-mono text-primary">{formatTokens(balance)}</div>
-              <div className="text-[10px] text-muted-foreground">Balance</div>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="p-3 bg-primary/10 rounded-lg text-center min-w-0">
+              <div className="text-base font-bold font-mono text-primary truncate">{formatTokens(balance)}</div>
+              <div className="text-[10px] text-muted-foreground mt-0.5">Balance</div>
             </div>
-            <div className="p-2 bg-muted/50 rounded-lg text-center">
-              <div className="text-lg font-bold font-mono">{formatTokens(stats.totalCreditsUsed)}</div>
-              <div className="text-[10px] text-muted-foreground">Total Used</div>
+            <div className="p-3 bg-muted/50 rounded-lg text-center min-w-0">
+              <div className="text-base font-bold font-mono truncate">{formatTokens(stats.totalCreditsUsed)}</div>
+              <div className="text-[10px] text-muted-foreground mt-0.5">Total Used</div>
             </div>
-            <div className="p-2 bg-muted/50 rounded-lg text-center">
-              <div className="text-lg font-bold font-mono">{stats.completedGenerations}</div>
-              <div className="text-[10px] text-muted-foreground">Generations</div>
+            <div className="p-3 bg-muted/50 rounded-lg text-center min-w-0">
+              <div className="text-base font-bold font-mono truncate">{stats.completedGenerations}</div>
+              <div className="text-[10px] text-muted-foreground mt-0.5">Generations</div>
             </div>
           </div>
 

@@ -1,14 +1,13 @@
 /**
  * Genie Deck Hero Section
- * Engaging hero with highlight banners explaining industry challenges and solutions
+ * Premium hero with Genie Studio-style deep gradients and glassmorphism
+ * Features: Industry challenges, User requests, AI models, Publishing, Stats
  */
 
 import React, { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import {
-  Presentation,
   Sparkles,
   Zap,
   Globe,
@@ -19,314 +18,294 @@ import {
   Brain,
   Languages,
   Video,
-  ChevronRight,
   CheckCircle2,
   TrendingUp,
-  BarChart3,
   Layers,
   Wand2,
   ArrowRight,
   Target,
-  Lightbulb,
   Shield,
+  Share2,
+  Linkedin,
+  Youtube,
+  ChevronLeft,
+  ChevronRight,
+  Cpu,
+  Mic2,
+  Image,
+  MessageSquare,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { motion, AnimatePresence } from 'framer-motion';
+import genieDeckLogo from '@/assets/logos/genie-deck-combined.png';
 
 interface GenieDeckHeroProps {
   onGetStarted?: () => void;
   className?: string;
 }
 
-// Industry challenges data
-const INDUSTRY_CHALLENGES = [
-  { icon: Clock, text: 'Hours spent on manual slide design', stat: '8+ hrs/deck' },
-  { icon: DollarSign, text: 'High agency costs for quality decks', stat: '$500-5K' },
-  { icon: Globe, text: 'Translation delays for global teams', stat: '3-5 days' },
-  { icon: Users, text: 'Inconsistent branding across teams', stat: '67% struggle' },
-];
-
-// What users asked for
-const USER_REQUESTS = [
-  'One-click professional presentations',
-  'Auto-translation to 70+ languages',
-  'Brand-consistent templates',
-  'AI voiceover generation',
-  'Consulting-grade frameworks',
-  'Video export with narration',
-];
-
-// Genie Deck solutions
-const GENIE_SOLUTIONS = [
-  { 
-    icon: Brain, 
-    title: 'AI-Powered Generation', 
-    description: 'Transform ideas into polished decks in minutes, not hours',
-    highlight: '10x Faster',
-  },
-  { 
-    icon: Languages, 
-    title: 'Multi-Language Magic', 
-    description: 'Generate in 70+ languages with native-quality translations',
-    highlight: '70+ Languages',
-  },
-  { 
-    icon: Palette, 
-    title: 'Brand Intelligence', 
-    description: 'Auto-extract colors from logos, maintain consistency everywhere',
-    highlight: 'Brand Safe',
-  },
-  { 
-    icon: Video, 
-    title: 'Video & Voice', 
-    description: 'Export as video with AI voiceovers and background music',
-    highlight: '4K Export',
-  },
-];
-
-// Feature highlights for rotating banner
-interface HighlightItem {
-  icon: React.ComponentType<{ className?: string }>;
-  text: string;
-  badge?: string;
-}
-
-const FEATURE_HIGHLIGHTS: Array<{
-  id: string;
-  icon: React.ComponentType<{ className?: string }>;
-  title: string;
-  subtitle: string;
-  gradient: string;
-  borderColor: string;
-  iconBg: string;
-  iconColor: string;
-  items: HighlightItem[];
-}> = [
+// Slide definitions with unique visual themes
+const HERO_SLIDES = [
   {
     id: 'challenge',
-    icon: Target,
     title: 'The Industry Challenge',
-    subtitle: 'What organizations struggle with',
-    gradient: 'from-destructive/20 to-warning/20',
-    borderColor: 'border-destructive/30',
-    iconBg: 'bg-destructive/10',
-    iconColor: 'text-destructive',
-    items: INDUSTRY_CHALLENGES.map(c => ({ icon: c.icon, text: c.text, badge: c.stat })),
+    subtitle: 'What organizations struggle with today',
+    gradient: 'from-rose-900 via-red-800 to-orange-900',
+    accentColor: 'text-rose-300',
+    badgeClass: 'bg-rose-500/20 border-rose-400/30 text-rose-200',
+    items: [
+      { icon: Clock, text: 'Hours spent on manual slide design', stat: '8+ hrs/deck' },
+      { icon: DollarSign, text: 'High agency costs for quality decks', stat: '$500-5K' },
+      { icon: Globe, text: 'Translation delays for global teams', stat: '3-5 days' },
+      { icon: Users, text: 'Inconsistent branding across teams', stat: '67%' },
+    ],
   },
   {
     id: 'users',
-    icon: Users,
     title: 'What Users Asked For',
-    subtitle: 'Top requested features',
-    gradient: 'from-primary/20 to-accent/20',
-    borderColor: 'border-primary/30',
-    iconBg: 'bg-primary/10',
-    iconColor: 'text-primary',
-    items: USER_REQUESTS.map(r => ({ icon: CheckCircle2, text: r, badge: undefined })),
+    subtitle: 'Top requested features from enterprise teams',
+    gradient: 'from-blue-900 via-indigo-800 to-purple-900',
+    accentColor: 'text-blue-300',
+    badgeClass: 'bg-blue-500/20 border-blue-400/30 text-blue-200',
+    items: [
+      { icon: Wand2, text: 'One-click professional presentations', stat: null },
+      { icon: Languages, text: 'Auto-translation to 70+ languages', stat: null },
+      { icon: Palette, text: 'Brand-consistent templates', stat: null },
+      { icon: Mic2, text: 'AI voiceover with voice cloning', stat: null },
+      { icon: Video, text: '4K video export with narration', stat: null },
+      { icon: Share2, text: 'Direct publish to LinkedIn & YouTube', stat: null },
+    ],
   },
   {
-    id: 'solution',
-    icon: Sparkles,
-    title: 'Genie Deck Delivers',
-    subtitle: 'AI-powered presentation revolution',
-    gradient: 'from-primary/20 to-secondary/20',
-    borderColor: 'border-primary/30',
-    iconBg: 'bg-primary/10',
-    iconColor: 'text-primary',
-    items: GENIE_SOLUTIONS.map(s => ({ icon: s.icon, text: s.title, badge: s.highlight })),
+    id: 'models',
+    title: 'Universal Media Connector',
+    subtitle: '50+ AI models across all media types',
+    gradient: 'from-purple-900 via-violet-800 to-fuchsia-900',
+    accentColor: 'text-purple-300',
+    badgeClass: 'bg-purple-500/20 border-purple-400/30 text-purple-200',
+    items: [
+      { icon: Brain, text: 'Gemini 3 Flash • GPT-5 • Claude Opus', stat: 'Text' },
+      { icon: Image, text: 'Flux • DALL-E 3 • Midjourney • ModelsLab', stat: 'Image' },
+      { icon: Video, text: 'Runway Gen-3 • Kling • Luma • Pika', stat: 'Video' },
+      { icon: Mic2, text: 'ElevenLabs • Azure • OpenAI TTS', stat: 'Voice' },
+      { icon: MessageSquare, text: 'DeepL • Qwen-MT • Google Translate', stat: 'Translation' },
+      { icon: Cpu, text: 'Alibaba • Baidu • AWS • Google Cloud', stat: 'Enterprise' },
+    ],
+  },
+  {
+    id: 'publish',
+    title: 'Publish Everywhere',
+    subtitle: 'One-click distribution to major platforms',
+    gradient: 'from-emerald-900 via-teal-800 to-cyan-900',
+    accentColor: 'text-emerald-300',
+    badgeClass: 'bg-emerald-500/20 border-emerald-400/30 text-emerald-200',
+    items: [
+      { icon: Linkedin, text: 'LinkedIn native video & carousel', stat: 'Live' },
+      { icon: Youtube, text: 'YouTube with chapters & thumbnails', stat: 'Live' },
+      { icon: Share2, text: 'Twitter/X video posts', stat: 'Coming' },
+      { icon: Share2, text: 'Instagram Reels & Stories', stat: 'Coming' },
+      { icon: Share2, text: 'TikTok short-form content', stat: 'Coming' },
+      { icon: Share2, text: 'Vimeo & custom embed', stat: 'Coming' },
+    ],
   },
   {
     id: 'stats',
-    icon: BarChart3,
-    title: 'By The Numbers',
-    subtitle: 'Results that speak',
-    gradient: 'from-success/20 to-accent/20',
-    borderColor: 'border-success/30',
-    iconBg: 'bg-success/10',
-    iconColor: 'text-success',
+    title: 'Performance Metrics',
+    subtitle: 'Real results from enterprise deployments',
+    gradient: 'from-amber-900 via-orange-800 to-yellow-900',
+    accentColor: 'text-amber-300',
+    badgeClass: 'bg-amber-500/20 border-amber-400/30 text-amber-200',
     items: [
-      { icon: TrendingUp, text: 'Time saved per presentation', badge: '87%' },
-      { icon: Globe, text: 'Languages supported', badge: '70+' },
-      { icon: Layers, text: 'Templates & frameworks', badge: '40+' },
-      { icon: Shield, text: 'Enterprise security', badge: 'HIPAA' },
+      { icon: TrendingUp, text: 'Time saved per presentation', stat: '87%' },
+      { icon: Globe, text: 'Languages supported natively', stat: '70+' },
+      { icon: Cpu, text: 'AI models integrated', stat: '50+' },
+      { icon: Video, text: 'Maximum video export quality', stat: '4K' },
+      { icon: Zap, text: 'Average generation time', stat: '~2 min' },
+      { icon: Shield, text: 'Enterprise security compliance', stat: 'HIPAA' },
     ],
   },
 ];
 
 export function GenieDeckHero({ onGetStarted, className }: GenieDeckHeroProps) {
-  const [activeHighlight, setActiveHighlight] = useState(0);
+  const [currentSlide, setCurrentSlide] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
 
-  // Auto-rotate highlights
+  // Auto-rotate slides
   useEffect(() => {
     if (isPaused) return;
     const interval = setInterval(() => {
-      setActiveHighlight(prev => (prev + 1) % FEATURE_HIGHLIGHTS.length);
-    }, 5000);
+      setCurrentSlide(prev => (prev + 1) % HERO_SLIDES.length);
+    }, 6000);
     return () => clearInterval(interval);
   }, [isPaused]);
 
-  const currentHighlight = FEATURE_HIGHLIGHTS[activeHighlight];
+  const goToSlide = (index: number) => {
+    setIsPaused(true);
+    setCurrentSlide(index);
+    // Resume after 10s
+    setTimeout(() => setIsPaused(false), 10000);
+  };
+
+  const goToPrev = () => {
+    setIsPaused(true);
+    setCurrentSlide(prev => (prev === 0 ? HERO_SLIDES.length - 1 : prev - 1));
+    setTimeout(() => setIsPaused(false), 10000);
+  };
+
+  const goToNext = () => {
+    setIsPaused(true);
+    setCurrentSlide(prev => (prev + 1) % HERO_SLIDES.length);
+    setTimeout(() => setIsPaused(false), 10000);
+  };
+
+  const slide = HERO_SLIDES[currentSlide];
 
   return (
-    <div 
-      className={cn("relative overflow-hidden", className)}
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
-    >
-      {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-primary/5 pointer-events-none" />
-      
-      {/* Animated orbs */}
-      <div className="absolute top-10 right-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl animate-pulse" />
-      <div className="absolute bottom-10 left-10 w-56 h-56 bg-primary/5 rounded-full blur-3xl animate-pulse delay-1000" />
+    <div className={cn("relative overflow-hidden border-b border-border/50", className)}>
+      {/* Carousel Container */}
+      <div className="relative overflow-hidden">
+        {/* Slides */}
+        <div 
+          className="flex transition-transform duration-500 ease-out"
+          style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+        >
+          {HERO_SLIDES.map((slideData, index) => (
+            <div key={slideData.id} className="min-w-full relative h-[420px] md:h-[460px]">
+              {/* Deep gradient background */}
+              <div className={cn("absolute inset-0 bg-gradient-to-br", slideData.gradient)} />
+              
+              {/* Dot pattern overlay */}
+              <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiPjxjaXJjbGUgY3g9IjUwIiBjeT0iNTAiIHI9IjEuNSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-50" />
+              
+              {/* Radial glow */}
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.15),transparent_60%)]" />
+              <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-black/20" />
 
-      <div className="relative container py-8 space-y-6">
-        {/* Main Hero Header */}
-        <div className="text-center space-y-4 max-w-3xl mx-auto">
-          <div className="flex items-center justify-center gap-2">
-            <Badge className="bg-primary/10 text-primary border-primary/30">
-              <Sparkles className="h-3 w-3 mr-1" />
-              AI-Powered
-            </Badge>
-            <Badge className="bg-success/10 text-success border-success/30">
-              <Shield className="h-3 w-3 mr-1" />
-              Enterprise Ready
-            </Badge>
-          </div>
-          
-          <h1 className="text-3xl md:text-4xl font-bold">
-            <span className="bg-gradient-to-r from-primary via-primary to-primary bg-clip-text text-transparent">
-              Transform Ideas into Impact
-            </span>
-          </h1>
-          
-          <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-            Create stunning, multi-language presentations in minutes with AI. 
-            No design skills needed. Just your ideas.
-          </p>
-
-          {onGetStarted && (
-            <Button 
-              size="lg" 
-              onClick={onGetStarted}
-              className="gap-2 shadow-lg"
-            >
-              <Wand2 className="h-5 w-5" />
-              Start Creating
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-
-        {/* Feature Highlight Banners */}
-        <div className="space-y-4">
-          {/* Navigation Dots */}
-          <div className="flex items-center justify-center gap-2">
-            {FEATURE_HIGHLIGHTS.map((highlight, idx) => (
-              <button
-                key={highlight.id}
-                onClick={() => setActiveHighlight(idx)}
-                className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all",
-                  idx === activeHighlight
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted/50 hover:bg-muted text-muted-foreground"
-                )}
-              >
-                <highlight.icon className="h-3.5 w-3.5" />
-                <span className="text-xs font-medium hidden sm:inline">{highlight.title}</span>
-              </button>
-            ))}
-          </div>
-
-          {/* Active Highlight Card */}
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentHighlight.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-            >
-              <Card className={cn(
-                "border-2 bg-gradient-to-r overflow-hidden",
-                currentHighlight.gradient,
-                currentHighlight.borderColor
-              )}>
-                <CardContent className="p-6">
-                  <div className="flex flex-col md:flex-row md:items-start gap-6">
-                    {/* Header */}
-                    <div className="flex-shrink-0 space-y-2">
-                      <div className={cn(
-                        "w-12 h-12 rounded-xl flex items-center justify-center",
-                        currentHighlight.iconBg
-                      )}>
-                        <currentHighlight.icon className={cn("h-6 w-6", currentHighlight.iconColor)} />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-lg">{currentHighlight.title}</h3>
-                        <p className="text-sm text-muted-foreground">{currentHighlight.subtitle}</p>
-                      </div>
+              {/* Content */}
+              <div className="relative h-full max-w-7xl mx-auto px-6 md:px-8 py-8 flex items-center">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center w-full">
+                  {/* Left: Text Content */}
+                  <div className="space-y-5">
+                    <div className={cn("inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur border border-white/20")}>
+                      <Sparkles className="h-4 w-4 text-yellow-300" />
+                      <span className="text-sm text-white font-medium">AI-Powered Presentations</span>
                     </div>
+                    
+                    <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight leading-tight">
+                      {slideData.title}
+                    </h1>
+                    
+                    <p className={cn("text-lg md:text-xl font-light", slideData.accentColor)}>
+                      {slideData.subtitle}
+                    </p>
 
                     {/* Items Grid */}
-                    <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {currentHighlight.items.map((item, idx) => (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
+                      {slideData.items.slice(0, 6).map((item, idx) => (
                         <div 
                           key={idx}
-                          className="flex items-center gap-3 p-3 rounded-lg bg-background/50 backdrop-blur-sm border border-border/50"
+                          className="flex items-center gap-3 px-3 py-2 rounded-lg bg-white/10 backdrop-blur-sm border border-white/10"
                         >
-                          <item.icon className={cn("h-4 w-4 flex-shrink-0", currentHighlight.iconColor)} />
-                          <span className="text-sm flex-1">{item.text}</span>
-                          {item.badge && (
-                            <Badge variant="secondary" className="text-xs font-mono">
-                              {item.badge}
+                          <item.icon className={cn("h-4 w-4 flex-shrink-0", slideData.accentColor)} />
+                          <span className="text-sm text-white/90 flex-1 truncate">{item.text}</span>
+                          {item.stat && (
+                            <Badge className={cn("text-xs font-mono shrink-0", slideData.badgeClass)}>
+                              {item.stat}
                             </Badge>
                           )}
                         </div>
                       ))}
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </AnimatePresence>
 
-          {/* Progress Indicator */}
-          <div className="flex justify-center">
-            <div className="flex gap-1">
-              {FEATURE_HIGHLIGHTS.map((_, idx) => (
-                <div
-                  key={idx}
-                  className={cn(
-                    "h-1 rounded-full transition-all duration-300",
-                    idx === activeHighlight ? "w-8 bg-primary" : "w-2 bg-muted"
-                  )}
-                />
-              ))}
+                    {onGetStarted && index === 0 && (
+                      <Button 
+                        size="lg" 
+                        onClick={onGetStarted}
+                        className="gap-2 bg-white text-gray-900 hover:bg-white/90 shadow-lg"
+                      >
+                        <Wand2 className="h-5 w-5" />
+                        Start Creating
+                        <ArrowRight className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* Right: Logo */}
+                  <div className="hidden lg:flex justify-center lg:justify-end">
+                    <div className="relative">
+                      <div className="absolute -inset-4 bg-gradient-to-r from-white/20 to-white/10 rounded-3xl blur-2xl" />
+                      <div className="relative h-56 w-72 md:h-64 md:w-80 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center p-6 shadow-2xl">
+                        <img 
+                          src={genieDeckLogo} 
+                          alt="Genie Deck" 
+                          className="h-full w-full object-contain drop-shadow-2xl" 
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
+          ))}
         </div>
 
-        {/* Quick Stats Bar */}
-        <div className="flex flex-wrap items-center justify-center gap-6 pt-4 border-t border-border/50">
+        {/* Navigation Arrows */}
+        <button
+          onClick={goToPrev}
+          className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/10 backdrop-blur border border-white/20 text-white hover:bg-white/20 transition-colors z-10"
+          aria-label="Previous slide"
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </button>
+        <button
+          onClick={goToNext}
+          className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/10 backdrop-blur border border-white/20 text-white hover:bg-white/20 transition-colors z-10"
+          aria-label="Next slide"
+        >
+          <ChevronRight className="h-5 w-5" />
+        </button>
+      </div>
+
+      {/* Slide Navigation Dots */}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10">
+        {HERO_SLIDES.map((s, idx) => (
+          <button
+            key={s.id}
+            onClick={() => goToSlide(idx)}
+            className={cn(
+              "transition-all duration-300 rounded-full",
+              idx === currentSlide 
+                ? "w-8 h-2 bg-white" 
+                : "w-2 h-2 bg-white/40 hover:bg-white/60"
+            )}
+            aria-label={`Go to slide ${idx + 1}: ${s.title}`}
+          />
+        ))}
+      </div>
+
+      {/* Quick Stats Bar */}
+      <div className="relative bg-background/95 backdrop-blur-sm border-t border-border/50">
+        <div className="max-w-7xl mx-auto px-6 py-3 flex flex-wrap items-center justify-center gap-x-8 gap-y-2">
           <div className="flex items-center gap-2 text-sm">
-            <Zap className="h-4 w-4 text-warning" />
+            <Zap className="h-4 w-4 text-amber-500" />
             <span className="text-muted-foreground">Generate in</span>
-            <span className="font-semibold">~2 minutes</span>
+            <span className="font-semibold">~2 min</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
-            <Globe className="h-4 w-4 text-info" />
+            <Globe className="h-4 w-4 text-blue-500" />
             <span className="font-semibold">70+ languages</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
-            <Layers className="h-4 w-4 text-primary" />
+            <Cpu className="h-4 w-4 text-purple-500" />
             <span className="font-semibold">50+ AI models</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
-            <Video className="h-4 w-4 text-accent-foreground" />
-            <span className="font-semibold">4K video export</span>
+            <Video className="h-4 w-4 text-pink-500" />
+            <span className="font-semibold">4K export</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <Linkedin className="h-4 w-4 text-blue-600" />
+            <Youtube className="h-4 w-4 text-red-500" />
+            <span className="font-semibold">Direct publish</span>
           </div>
         </div>
       </div>
