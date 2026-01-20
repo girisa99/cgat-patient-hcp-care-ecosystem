@@ -4719,6 +4719,66 @@ export type Database = {
           },
         ]
       }
+      custom_consulting_frameworks: {
+        Row: {
+          category: Database["public"]["Enums"]["framework_category"]
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          frameworks: string[]
+          id: string
+          industries: string[] | null
+          is_system: boolean | null
+          name: string
+          rating_avg: number | null
+          rating_count: number | null
+          tags: string[]
+          updated_at: string | null
+          usage_count: number | null
+          use_cases: string[]
+          visibility: Database["public"]["Enums"]["template_visibility"] | null
+          visual_style: string | null
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["framework_category"]
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          frameworks?: string[]
+          id?: string
+          industries?: string[] | null
+          is_system?: boolean | null
+          name: string
+          rating_avg?: number | null
+          rating_count?: number | null
+          tags?: string[]
+          updated_at?: string | null
+          usage_count?: number | null
+          use_cases?: string[]
+          visibility?: Database["public"]["Enums"]["template_visibility"] | null
+          visual_style?: string | null
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["framework_category"]
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          frameworks?: string[]
+          id?: string
+          industries?: string[] | null
+          is_system?: boolean | null
+          name?: string
+          rating_avg?: number | null
+          rating_count?: number | null
+          tags?: string[]
+          updated_at?: string | null
+          usage_count?: number | null
+          use_cases?: string[]
+          visibility?: Database["public"]["Enums"]["template_visibility"] | null
+          visual_style?: string | null
+        }
+        Relationships: []
+      }
       data_import_sessions: {
         Row: {
           completed_at: string | null
@@ -9175,6 +9235,75 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      industry_template_library: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          frameworks: string[]
+          id: string
+          industry: string
+          is_system: boolean | null
+          name: string
+          preview_image_url: string | null
+          rating_avg: number | null
+          rating_count: number | null
+          recommended_visuals: string[] | null
+          sample_slides: Json | null
+          slide_suggestions: Json | null
+          sub_industry: string | null
+          tags: string[]
+          template_type: string
+          updated_at: string | null
+          usage_count: number | null
+          visibility: Database["public"]["Enums"]["template_visibility"] | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          frameworks?: string[]
+          id?: string
+          industry: string
+          is_system?: boolean | null
+          name: string
+          preview_image_url?: string | null
+          rating_avg?: number | null
+          rating_count?: number | null
+          recommended_visuals?: string[] | null
+          sample_slides?: Json | null
+          slide_suggestions?: Json | null
+          sub_industry?: string | null
+          tags?: string[]
+          template_type?: string
+          updated_at?: string | null
+          usage_count?: number | null
+          visibility?: Database["public"]["Enums"]["template_visibility"] | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          frameworks?: string[]
+          id?: string
+          industry?: string
+          is_system?: boolean | null
+          name?: string
+          preview_image_url?: string | null
+          rating_avg?: number | null
+          rating_count?: number | null
+          recommended_visuals?: string[] | null
+          sample_slides?: Json | null
+          slide_suggestions?: Json | null
+          sub_industry?: string | null
+          tags?: string[]
+          template_type?: string
+          updated_at?: string | null
+          usage_count?: number | null
+          visibility?: Database["public"]["Enums"]["template_visibility"] | null
+        }
+        Relationships: []
       }
       insurance_coverages: {
         Row: {
@@ -16213,6 +16342,54 @@ export type Database = {
           },
         ]
       }
+      template_ratings: {
+        Row: {
+          created_at: string | null
+          framework_id: string | null
+          id: string
+          rating: number
+          review: string | null
+          template_id: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          framework_id?: string | null
+          id?: string
+          rating: number
+          review?: string | null
+          template_id?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          framework_id?: string | null
+          id?: string
+          rating?: number
+          review?: string | null
+          template_id?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "template_ratings_framework_id_fkey"
+            columns: ["framework_id"]
+            isOneToOne: false
+            referencedRelation: "custom_consulting_frameworks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "template_ratings_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "industry_template_library"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       template_reviews: {
         Row: {
           created_at: string
@@ -18028,6 +18205,48 @@ export type Database = {
             columns: ["role_id"]
             isOneToOne: false
             referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_saved_frameworks: {
+        Row: {
+          framework_id: string | null
+          id: string
+          notes: string | null
+          saved_at: string | null
+          template_id: string | null
+          user_id: string
+        }
+        Insert: {
+          framework_id?: string | null
+          id?: string
+          notes?: string | null
+          saved_at?: string | null
+          template_id?: string | null
+          user_id: string
+        }
+        Update: {
+          framework_id?: string | null
+          id?: string
+          notes?: string | null
+          saved_at?: string | null
+          template_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_saved_frameworks_framework_id_fkey"
+            columns: ["framework_id"]
+            isOneToOne: false
+            referencedRelation: "custom_consulting_frameworks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_saved_frameworks_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "industry_template_library"
             referencedColumns: ["id"]
           },
         ]
@@ -21498,6 +21717,13 @@ export type Database = {
         | "clinic"
         | "pharmacy"
         | "laboratory"
+      framework_category:
+        | "strategy"
+        | "growth"
+        | "operations"
+        | "universal"
+        | "industry-specific"
+        | "custom"
       inventory_model:
         | "traditional_wholesale"
         | "consignment"
@@ -21641,6 +21867,7 @@ export type Database = {
         | "api_integration"
         | "manual_processes"
         | "hybrid_approach"
+      template_visibility: "private" | "public" | "pending_review"
       therapy_type:
         | "car_t_cell"
         | "gene_therapy"
@@ -21869,6 +22096,14 @@ export const Constants = {
         "pharmacy",
         "laboratory",
       ],
+      framework_category: [
+        "strategy",
+        "growth",
+        "operations",
+        "universal",
+        "industry-specific",
+        "custom",
+      ],
       inventory_model: [
         "traditional_wholesale",
         "consignment",
@@ -22028,6 +22263,7 @@ export const Constants = {
         "manual_processes",
         "hybrid_approach",
       ],
+      template_visibility: ["private", "public", "pending_review"],
       therapy_type: [
         "car_t_cell",
         "gene_therapy",
