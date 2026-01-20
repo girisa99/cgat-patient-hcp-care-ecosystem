@@ -77,14 +77,14 @@ export function TokenBalanceHeader({
             variant="outline"
             size="sm"
             className={cn(
-              "gap-2 h-9 px-3",
+              "gap-1.5 h-9 px-2.5 min-w-[120px]",
               !hasEnoughCredits && estimatedCost > 0 && "border-destructive text-destructive"
             )}
           >
-            <Coins className="h-4 w-4 text-primary" />
-            <span className="font-mono font-medium">{formatTokens(balance)}</span>
-            <span className="text-muted-foreground text-xs">credits</span>
-            <ChevronDown className="h-3 w-3 ml-1" />
+            <Coins className="h-4 w-4 text-primary shrink-0" />
+            <span className="font-mono font-medium whitespace-nowrap">{formatTokens(balance)}</span>
+            <span className="text-muted-foreground text-xs whitespace-nowrap">credits</span>
+            <ChevronDown className="h-3 w-3 shrink-0" />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-80" align="end">

@@ -229,16 +229,20 @@ export function GenieDeckHero({ onGetStarted, className }: GenieDeckHeroProps) {
                     )}
                   </div>
 
-                  {/* Right: Logo */}
+                  {/* Right: Logo with Tagline */}
                   <div className="hidden lg:flex justify-center lg:justify-end">
                     <div className="relative">
                       <div className="absolute -inset-4 bg-gradient-to-r from-white/20 to-white/10 rounded-3xl blur-2xl" />
-                      <div className="relative h-56 w-72 md:h-64 md:w-80 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center p-6 shadow-2xl">
+                      <div className="relative rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 flex flex-col items-center justify-center p-6 shadow-2xl">
                         <img 
                           src={genieDeckLogo} 
                           alt="Genie Deck" 
-                          className="h-full w-full object-contain drop-shadow-2xl" 
+                          className="h-40 w-auto object-contain drop-shadow-2xl" 
                         />
+                        <div className="mt-4 text-center">
+                          <h2 className="text-2xl font-bold text-white tracking-tight">Genie Deck</h2>
+                          <p className="text-lg text-white/80 font-light mt-1">Ideas to Impact</p>
+                        </div>
                       </div>
                     </div>
                   </div>
