@@ -207,12 +207,12 @@ const getConfidenceColor = (score: number): string => {
   return 'text-red-500 bg-red-500/10';
 };
 
-// Wizard Steps - Restructured for unified workflow with A2A integration
+// Wizard Steps - 5-Step standardized workflow
 const WIZARD_STEPS = [
-  { id: 'input', label: 'Content', icon: Type, description: 'Add your source material to transform into slides' },
-  { id: 'industry', label: 'Industry', icon: Presentation, description: 'Select industry, segment & collateral type' },
-  { id: 'template', label: 'Template', icon: Layout, description: 'Choose templates and branding' },
-  { id: 'agents', label: 'AI Agents', icon: Brain, description: 'Configure A2A agents and languages' },
+  { id: 'input', label: 'Input', icon: Type, description: 'Add your source material and context' },
+  { id: 'configure', label: 'Configure', icon: Settings2, description: 'Select industry, segment & content type' },
+  { id: 'template', label: 'Template & Branding', icon: Layout, description: 'Choose templates, themes and branding' },
+  { id: 'agents', label: 'Agents & Languages', icon: Brain, description: 'Configure AI agents and multi-language settings' },
   { id: 'generate', label: 'Generate', icon: Wand2, description: 'Review and create your presentation' },
 ];
 
