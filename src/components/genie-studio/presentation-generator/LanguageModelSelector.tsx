@@ -29,7 +29,6 @@ import {
   Globe,
   Brain,
   Image as ImageIcon,
-  Mic,
   ChevronDown,
   ChevronRight,
   Settings2,
@@ -63,11 +62,7 @@ const IMAGE_MODELS = [
   { id: 'google/gemini-3-pro-image-preview', name: 'Gemini Pro Image', tier: 'premium', icon: Crown },
 ];
 
-const VOICE_MODELS = [
-  { id: 'openai', name: 'OpenAI TTS', tier: 'balanced' },
-  { id: 'elevenlabs', name: 'ElevenLabs', tier: 'premium' },
-  { id: 'google', name: 'Google Cloud TTS', tier: 'balanced' },
-];
+// Voice models removed - TTS is configured post-generation in VideoExportPanel
 
 const tierColors: Record<string, string> = {
   fast: 'bg-blue-500/20 text-blue-600 border-blue-500/30',
@@ -80,8 +75,7 @@ function getDefaultConfig(languageCode: string): LanguageModelConfig {
     languageCode,
     textModel: 'google/gemini-3-flash-preview',
     imageModel: 'google/gemini-2.5-flash-image-preview',
-    voiceModel: 'openai',
-    voiceId: 'alloy',
+    // Voice model removed - configured post-generation
   };
 }
 
@@ -216,38 +210,8 @@ function LanguageModelCard({
                 </SelectContent>
               </Select>
             </div>
-
-            {/* Voice Model */}
-            <div className="space-y-1.5">
-              <Label className="text-xs flex items-center gap-1">
-                <Mic className="h-3 w-3" />
-                Voice/TTS Provider
-              </Label>
-              <Select
-                value={config.voiceModel || 'openai'}
-                onValueChange={(value) => updateConfig({ voiceModel: value })}
-              >
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {VOICE_MODELS.map(model => (
-                    <SelectItem key={model.id} value={model.id}>
-                      <div className="flex items-center gap-2">
-                        <Mic className="h-3 w-3" />
-                        <span>{model.name}</span>
-                        <Badge 
-                          variant="outline" 
-                          className={cn("text-[8px] ml-auto", tierColors[model.tier])}
-                        >
-                          {model.tier}
-                        </Badge>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            
+            {/* Voice model removed - configured post-generation in VideoExportPanel */}
           </div>
         </CollapsibleContent>
       </div>
@@ -293,7 +257,7 @@ export function LanguageModelSelector({
       ...c,
       textModel: templateConfig.textModel,
       imageModel: templateConfig.imageModel,
-      voiceModel: templateConfig.voiceModel,
+      // Voice model removed - configured post-generation
     }));
     onModelConfigChange(updated);
   };
