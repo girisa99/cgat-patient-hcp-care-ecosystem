@@ -218,17 +218,19 @@ export function getConfiguredProvidersForCapability(capability: AICapability): P
  */
 export function getConfiguredFallbackChain(capability: AICapability): AIProviderKey[] {
   const fallbackOrders: Record<AICapability, AIProviderKey[]> = {
-    llm: ['openai', 'claude', 'gemini', 'deepseek', 'alibaba', 'huggingface', 'modelslab'],
-    translation: ['deepl', 'claude', 'google', 'openai', 'alibaba', 'deepseek'],
-    ocr: ['gemini', 'google', 'claude', 'deepseek', 'alibaba'],
+    llm: ['gemini', 'openai', 'claude', 'deepseek', 'alibaba', 'huggingface'],
+    translation: ['deepl', 'alibaba', 'claude', 'google', 'openai', 'deepseek'],
+    ocr: ['gemini', 'google', 'alibaba', 'claude', 'deepseek'],
     tts: ['elevenlabs', 'openai', 'google', 'alibaba', 'modelslab'],
     stt: ['openai', 'google', 'alibaba'],
-    image_gen: ['modelslab', 'openai', 'gemini', 'replicate', 'alibaba', 'huggingface'], // ModelsLab first for image
-    video_gen: ['modelslab', 'replicate', 'alibaba'], // ModelsLab first for video
+    // UPDATED: ModelsLab as PRIMARY for image generation
+    image_gen: ['modelslab', 'gemini', 'openai', 'replicate', 'alibaba', 'huggingface'],
+    // UPDATED: ModelsLab as PRIMARY for video generation
+    video_gen: ['modelslab', 'gemini', 'replicate', 'alibaba'],
     music_gen: ['elevenlabs', 'modelslab'],
     sfx_gen: ['elevenlabs', 'modelslab'],
-    vision: ['gemini', 'openai', 'claude', 'google', 'deepseek', 'alibaba'],
-    nlp: ['openai', 'claude', 'gemini', 'google', 'deepseek', 'alibaba'],
+    vision: ['gemini', 'openai', 'claude', 'google', 'alibaba', 'deepseek'],
+    nlp: ['gemini', 'openai', 'claude', 'deepseek', 'alibaba'],
   };
 
   return fallbackOrders[capability] || [];

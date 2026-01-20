@@ -12,6 +12,8 @@ import type {
   TTSProvider,
   STTProvider,
   ImageGenProvider,
+  VideoGenProvider,
+  SFXGenProvider,
   NLPProvider 
 } from './types';
 
@@ -233,14 +235,48 @@ export const STT_PROVIDERS: Record<STTProvider, MediaProviderConfig> = {
 };
 
 export const IMAGE_GEN_PROVIDERS: Record<ImageGenProvider, MediaProviderConfig> = {
+  // ModelsLab providers - PRIMARY for image generation
+  modelslab_flux: {
+    id: 'modelslab_flux',
+    name: 'ModelsLab FLUX Pro',
+    capabilities: ['image_gen'],
+    secretKey: 'MODELSLAB_API_KEY',
+    isConfigured: true, // Configured per gap analysis
+    priority: 1, // PRIMARY
+    costPerUnit: 0.003,
+    strengths: ['Ultra-high quality', 'FLUX Pro/Dev models', 'Fast', 'Photorealistic', 'CivitAI models'],
+    weaknesses: ['Async for complex generations'],
+  },
+  modelslab_sdxl: {
+    id: 'modelslab_sdxl',
+    name: 'ModelsLab SDXL',
+    capabilities: ['image_gen'],
+    secretKey: 'MODELSLAB_API_KEY',
+    isConfigured: true,
+    priority: 2,
+    costPerUnit: 0.002,
+    strengths: ['Stable Diffusion XL', 'ControlNet', 'Inpainting', 'Wide style range'],
+    weaknesses: ['Slower than FLUX'],
+  },
+  modelslab_realistic: {
+    id: 'modelslab_realistic',
+    name: 'ModelsLab Realistic Vision',
+    capabilities: ['image_gen'],
+    secretKey: 'MODELSLAB_API_KEY',
+    isConfigured: true,
+    priority: 3,
+    costPerUnit: 0.002,
+    strengths: ['Photorealistic focus', 'Product shots', 'Portraits'],
+    weaknesses: ['Limited artistic styles'],
+  },
   gemini_nano_banana: {
     id: 'gemini_nano_banana',
     name: 'Gemini 2.5 Flash Image',
     capabilities: ['image_gen'],
-    secretKey: 'LOVABLE_API_KEY', // Via Lovable AI Gateway
-    isConfigured: false,
-    priority: 1,
-    costPerUnit: 0.002, // per image
+    secretKey: 'LOVABLE_API_KEY',
+    isConfigured: true,
+    priority: 4,
+    costPerUnit: 0.002,
     strengths: ['Fast', 'Good quality', 'Edit capability', 'Via Lovable AI'],
     weaknesses: ['Base64 output (large)'],
   },
@@ -249,8 +285,8 @@ export const IMAGE_GEN_PROVIDERS: Record<ImageGenProvider, MediaProviderConfig> 
     name: 'Gemini 3 Pro Image',
     capabilities: ['image_gen'],
     secretKey: 'LOVABLE_API_KEY',
-    isConfigured: false,
-    priority: 2,
+    isConfigured: true,
+    priority: 5,
     costPerUnit: 0.004,
     strengths: ['Highest quality', 'Complex scenes', 'Via Lovable AI'],
     weaknesses: ['Slower', 'Higher cost'],
@@ -260,9 +296,9 @@ export const IMAGE_GEN_PROVIDERS: Record<ImageGenProvider, MediaProviderConfig> 
     name: 'OpenAI DALL-E 3',
     capabilities: ['image_gen'],
     secretKey: 'OPENAI_API_KEY',
-    isConfigured: false,
-    priority: 3,
-    costPerUnit: 0.04, // per image (1024x1024)
+    isConfigured: true,
+    priority: 6,
+    costPerUnit: 0.04,
     strengths: ['Excellent text rendering', 'High quality', 'Prompt refinement'],
     weaknesses: ['Expensive', 'No editing'],
   },
@@ -271,10 +307,10 @@ export const IMAGE_GEN_PROVIDERS: Record<ImageGenProvider, MediaProviderConfig> 
     name: 'Alibaba Wanx',
     capabilities: ['image_gen'],
     secretKey: 'ALIBABA_API_KEY',
-    isConfigured: false,
-    priority: 4,
+    isConfigured: true,
+    priority: 7,
     costPerUnit: 0.005,
-    strengths: ['Low cost', 'Good for Asian aesthetics', 'Multiple styles'],
+    strengths: ['Low cost', 'Good for Asian aesthetics', 'Multiple styles', 'CJK text rendering'],
     weaknesses: ['Newer service'],
   },
   stability: {
@@ -282,19 +318,19 @@ export const IMAGE_GEN_PROVIDERS: Record<ImageGenProvider, MediaProviderConfig> 
     name: 'Stability AI SDXL',
     capabilities: ['image_gen'],
     secretKey: 'STABILITY_API_KEY',
-    isConfigured: false,
-    priority: 5,
+    isConfigured: false, // Not configured - use ModelsLab instead
+    priority: 90,
     costPerUnit: 0.002,
     strengths: ['Fine control', 'Inpainting', 'ControlNet'],
-    weaknesses: ['Complex API'],
+    weaknesses: ['Use ModelsLab instead - same models, lower cost'],
   },
   huggingface: {
     id: 'huggingface',
     name: 'HuggingFace FLUX',
     capabilities: ['image_gen'],
-    secretKey: 'HUGGINGFACE_TOKEN',
-    isConfigured: false,
-    priority: 6,
+    secretKey: 'HUGGING_FACE_ACCESS_TOKEN',
+    isConfigured: true,
+    priority: 8,
     costPerUnit: 0.001,
     strengths: ['Open models', 'Customizable', 'Low cost'],
     weaknesses: ['Variable quality', 'Rate limits'],
@@ -304,11 +340,102 @@ export const IMAGE_GEN_PROVIDERS: Record<ImageGenProvider, MediaProviderConfig> 
     name: 'Replicate',
     capabilities: ['image_gen'],
     secretKey: 'REPLICATE_API_TOKEN',
-    isConfigured: false,
-    priority: 7,
+    isConfigured: true,
+    priority: 9,
     costPerUnit: 0.002,
     strengths: ['Many models', 'Video capable', 'Pay-per-use'],
     weaknesses: ['Cold start delays'],
+  },
+};
+
+// ============================================
+// VIDEO GENERATION PROVIDERS (NEW)
+// ============================================
+
+export const VIDEO_GEN_PROVIDERS: Record<VideoGenProvider, MediaProviderConfig> = {
+  modelslab_animatediff: {
+    id: 'modelslab_animatediff',
+    name: 'ModelsLab AnimateDiff',
+    capabilities: ['video_gen'],
+    secretKey: 'MODELSLAB_API_KEY',
+    isConfigured: true,
+    priority: 1, // PRIMARY for video
+    costPerUnit: 0.02,
+    strengths: ['Text-to-video', 'Image-to-video', 'Multiple styles', 'Async processing'],
+    weaknesses: ['Short duration (3-10s)'],
+  },
+  modelslab_svd: {
+    id: 'modelslab_svd',
+    name: 'ModelsLab Stable Video Diffusion',
+    capabilities: ['video_gen'],
+    secretKey: 'MODELSLAB_API_KEY',
+    isConfigured: true,
+    priority: 2,
+    costPerUnit: 0.03,
+    strengths: ['Higher quality', 'Smooth motion', 'Image-to-video'],
+    weaknesses: ['Slower processing'],
+  },
+  gemini_veo: {
+    id: 'gemini_veo',
+    name: 'Google Gemini Veo',
+    capabilities: ['video_gen'],
+    secretKey: 'GEMINI_API_KEY',
+    isConfigured: true,
+    priority: 3,
+    costPerUnit: 0.05,
+    strengths: ['High quality', 'Longer duration', 'Via Google'],
+    weaknesses: ['Limited availability'],
+  },
+  alibaba_wanx_video: {
+    id: 'alibaba_wanx_video',
+    name: 'Alibaba Wanx Video',
+    capabilities: ['video_gen'],
+    secretKey: 'ALIBABA_API_KEY',
+    isConfigured: true,
+    priority: 4,
+    costPerUnit: 0.02,
+    strengths: ['Low cost', 'Good for CJK content', 'Fast'],
+    weaknesses: ['Lower resolution'],
+  },
+  replicate: {
+    id: 'replicate',
+    name: 'Replicate Video',
+    capabilities: ['video_gen'],
+    secretKey: 'REPLICATE_API_TOKEN',
+    isConfigured: true,
+    priority: 5,
+    costPerUnit: 0.04,
+    strengths: ['Runway-style', 'Multiple models'],
+    weaknesses: ['Cold start delays'],
+  },
+};
+
+// ============================================
+// SFX GENERATION PROVIDERS (NEW)
+// ============================================
+
+export const SFX_GEN_PROVIDERS: Record<SFXGenProvider, MediaProviderConfig> = {
+  elevenlabs: {
+    id: 'elevenlabs',
+    name: 'ElevenLabs SFX',
+    capabilities: ['sfx_gen'],
+    secretKey: 'ELEVENLABS_API_KEY',
+    isConfigured: true,
+    priority: 1,
+    costPerUnit: 0.005,
+    strengths: ['High quality', 'Text-to-SFX', 'Diverse sounds'],
+    weaknesses: ['Credit-based pricing'],
+  },
+  modelslab_audio: {
+    id: 'modelslab_audio',
+    name: 'ModelsLab Audio',
+    capabilities: ['sfx_gen'],
+    secretKey: 'MODELSLAB_API_KEY',
+    isConfigured: true,
+    priority: 2,
+    costPerUnit: 0.003,
+    strengths: ['MusicGen', 'Bark model', 'Low cost'],
+    weaknesses: ['Less refined than ElevenLabs'],
   },
 };
 
@@ -376,15 +503,22 @@ export const NLP_PROVIDERS: Record<NLPProvider, MediaProviderConfig> = {
 
 export const DEFAULT_ADAPTER_CONFIG: MediaAdapterConfig = {
   defaultOCRProvider: 'google_vision',
-  defaultTTSProvider: 'azure',
+  defaultTTSProvider: 'elevenlabs', // Changed: ElevenLabs as primary (configured)
   defaultSTTProvider: 'openai_whisper',
-  defaultImageGenProvider: 'gemini_nano_banana',
+  defaultImageGenProvider: 'modelslab_flux', // Changed: ModelsLab FLUX as primary
+  defaultVideoGenProvider: 'modelslab_animatediff', // NEW: ModelsLab AnimateDiff
+  defaultSFXGenProvider: 'elevenlabs', // NEW: ElevenLabs SFX
   defaultNLPProvider: 'gemini',
   fallbackChain: {
-    ocr: ['google_vision', 'azure_doc_intel', 'alibaba_qwen_vl', 'tesseract'],
-    tts: ['azure', 'elevenlabs', 'openai', 'google', 'alibaba_voice'],
-    stt: ['openai_whisper', 'azure', 'google', 'alibaba_voice'],
-    imageGen: ['gemini_nano_banana', 'openai_dalle', 'alibaba_wanx', 'huggingface', 'replicate'],
+    ocr: ['google_vision', 'alibaba_qwen_vl', 'tesseract'], // Removed azure (not configured)
+    tts: ['elevenlabs', 'openai', 'google', 'alibaba_voice'], // ElevenLabs first, removed azure
+    stt: ['openai_whisper', 'google', 'alibaba_voice'],
+    // UPDATED: ModelsLab as PRIMARY for image generation
+    imageGen: ['modelslab_flux', 'modelslab_sdxl', 'gemini_nano_banana', 'openai_dalle', 'alibaba_wanx', 'replicate'],
+    // NEW: Video generation fallback chain
+    videoGen: ['modelslab_animatediff', 'modelslab_svd', 'gemini_veo', 'alibaba_wanx_video', 'replicate'],
+    // NEW: SFX generation fallback chain
+    sfxGen: ['elevenlabs', 'modelslab_audio'],
     nlp: ['gemini', 'claude', 'openai', 'deepseek', 'alibaba_qwen'],
   },
   enableFallback: true,

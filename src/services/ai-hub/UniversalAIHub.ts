@@ -41,12 +41,12 @@ import type {
 const DEFAULT_CONFIG: AIHubConfig = {
   defaultProviders: {
     llm: 'gemini',
-    translation: 'google',
-    ocr: 'google',
-    tts: 'azure',
+    translation: 'deepl', // Changed: DeepL as primary (configured)
+    ocr: 'gemini', // Changed: Gemini vision for OCR
+    tts: 'elevenlabs', // Changed: ElevenLabs as primary (configured)
     stt: 'openai',
-    image_gen: 'gemini',
-    video_gen: 'replicate',
+    image_gen: 'modelslab', // Changed: ModelsLab as PRIMARY
+    video_gen: 'modelslab', // Changed: ModelsLab as PRIMARY  
     music_gen: 'elevenlabs',
     sfx_gen: 'elevenlabs',
     vision: 'gemini',
@@ -370,9 +370,19 @@ export class UniversalAIHub {
     return this.executeWithFallback('image_gen', async (provider) => {
       const startTime = Date.now();
       
+      // Route ModelsLab as PRIMARY
+      if (provider === 'modelslab') {
+        return this.generateImageWithModelsLab(request, startTime);
+      }
+
       // For Gemini, use Lovable AI Gateway
       if (provider === 'gemini') {
         return this.generateImageWithGemini(request, startTime);
+      }
+      
+      // For Alibaba Wanx
+      if (provider === 'alibaba') {
+        return this.generateImageWithAlibaba(request, startTime);
       }
 
       const { data, error } = await supabase.functions.invoke('ai-image-generator', {
@@ -407,6 +417,72 @@ export class UniversalAIHub {
         },
       };
     }, context);
+  }
+
+  // NEW: ModelsLab image generation (PRIMARY)
+  private async generateImageWithModelsLab(request: ImageGenRequest, startTime: number): Promise<ImageGenResponse> {
+    const { data, error } = await supabase.functions.invoke('modelslab-media', {
+      body: {
+        type: 'image',
+        prompt: request.prompt,
+        model: 'flux-schnell',
+        negative_prompt: request.negativePrompt,
+        width: request.size?.includes('1792') ? 1792 : 1024,
+        height: request.size?.includes('1792') ? 1024 : 1024,
+        samples: request.numberOfImages || 1,
+        guidance_scale: 7.5,
+      },
+    });
+
+    if (error) throw new Error(error.message);
+    
+    const outputs = data.output || (data.fetch_url ? [data.fetch_url] : []);
+    return {
+      images: outputs.map((url: string) => ({
+        url,
+        width: 1024,
+        height: 1024,
+        format: 'png',
+      })),
+      confidence: this.createConfidence(0.9, 'modelslab', Date.now() - startTime),
+      metadata: {
+        promptUsed: request.prompt,
+        estimatedCost: 0.003,
+      },
+    };
+  }
+
+  // NEW: Alibaba Wanx image generation
+  private async generateImageWithAlibaba(request: ImageGenRequest, startTime: number): Promise<ImageGenResponse> {
+    const { data, error } = await supabase.functions.invoke('ai-image-generator', {
+      body: {
+        prompt: request.prompt,
+        provider: 'alibaba',
+        model: 'wanx-v1',
+        size: request.size || '1024x1024',
+        quality: request.quality || 'standard',
+        n: request.numberOfImages || 1,
+      },
+    });
+
+    if (error) throw new Error(error.message);
+
+    return {
+      images: Array.isArray(data.images) 
+        ? data.images.map((img: any) => ({
+            url: img.url || img.imageUrl,
+            base64: img.base64,
+            width: 1024,
+            height: 1024,
+            format: 'png',
+          }))
+        : [{ url: data.imageUrl, width: 1024, height: 1024, format: 'png' }],
+      confidence: this.createConfidence(0.85, 'alibaba', Date.now() - startTime),
+      metadata: {
+        promptUsed: request.prompt,
+        estimatedCost: 0.005,
+      },
+    };
   }
 
   private async generateImageWithGemini(request: ImageGenRequest, startTime: number): Promise<ImageGenResponse> {

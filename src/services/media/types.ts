@@ -33,6 +33,9 @@ export type STTProvider =
   | 'aws_transcribe';    // AWS Transcribe (future)
 
 export type ImageGenProvider = 
+  | 'modelslab_flux'     // ModelsLab FLUX Pro (PRIMARY - best quality)
+  | 'modelslab_sdxl'     // ModelsLab SDXL
+  | 'modelslab_realistic'// ModelsLab Realistic Vision
   | 'gemini_nano_banana' // Google Gemini 2.5 Flash Image
   | 'gemini_3_pro'       // Google Gemini 3 Pro Image
   | 'openai_dalle'       // OpenAI DALL-E 3
@@ -41,6 +44,17 @@ export type ImageGenProvider =
   | 'huggingface'        // HuggingFace models
   | 'replicate';         // Replicate
 
+export type VideoGenProvider =
+  | 'modelslab_animatediff' // ModelsLab AnimateDiff (PRIMARY)
+  | 'modelslab_svd'         // ModelsLab Stable Video Diffusion
+  | 'gemini_veo'            // Google Gemini Veo
+  | 'alibaba_wanx_video'    // Alibaba Wanx Video
+  | 'replicate';            // Replicate (Runway-style)
+
+export type SFXGenProvider =
+  | 'elevenlabs'         // ElevenLabs SFX
+  | 'modelslab_audio';   // ModelsLab Audio
+
 export type NLPProvider = 
   | 'gemini'             // Google Gemini
   | 'claude'             // Anthropic Claude
@@ -48,7 +62,7 @@ export type NLPProvider =
   | 'deepseek'           // DeepSeek (Chinese/technical specialist)
   | 'alibaba_qwen';      // Alibaba Qwen LLM
 
-export type MediaCapability = 'ocr' | 'tts' | 'stt' | 'image_gen' | 'nlp';
+export type MediaCapability = 'ocr' | 'tts' | 'stt' | 'image_gen' | 'video_gen' | 'sfx_gen' | 'nlp';
 
 // ============================================
 // CONFIDENCE SCORING
@@ -296,12 +310,16 @@ export interface MediaAdapterConfig {
   defaultTTSProvider: TTSProvider;
   defaultSTTProvider: STTProvider;
   defaultImageGenProvider: ImageGenProvider;
+  defaultVideoGenProvider: VideoGenProvider;
+  defaultSFXGenProvider: SFXGenProvider;
   defaultNLPProvider: NLPProvider;
   fallbackChain: {
     ocr: OCRProvider[];
     tts: TTSProvider[];
     stt: STTProvider[];
     imageGen: ImageGenProvider[];
+    videoGen: VideoGenProvider[];
+    sfxGen: SFXGenProvider[];
     nlp: NLPProvider[];
   };
   enableFallback: boolean;
