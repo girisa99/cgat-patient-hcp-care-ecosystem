@@ -87,6 +87,27 @@ export { TemplateRecommendationPanel } from './components/TemplateRecommendation
 export { TemplateAIModelSelector } from './components/TemplateAIModelSelector';
 export { CreateTemplateDialog } from './components/CreateTemplateDialog';
 
+// Quick Actions & Review System
+export { QuickActionsBar } from './components/QuickActionsBar';
+export { useReviewActions } from './hooks/useReviewActions';
+export type { UseReviewActionsReturn, UseReviewActionsOptions } from './hooks/useReviewActions';
+
+// Review Action Types & Service
+export * from './types/reviewActions';
+export { reviewActionService } from './services/reviewActionService';
+
+// Output-Aware Generation Service
+export { outputAwareGenerationService } from './services/outputAwareGenerationService';
+export type { 
+  SlideRenderDecision, 
+  HybridRenderOutput, 
+  ContentFitResult,
+  OutputAwareSlideContent 
+} from './services/outputAwareGenerationService';
+
+// Generation Config Service (from src/services)
+export { generationConfigService } from '@/services/generationConfigService';
+
 // Re-export template library hook and types
 export { 
   default as useTemplateLibrary,

@@ -54,7 +54,7 @@ const ENHANCEMENT_TYPES: { type: SlideEnhancementType; label: string; icon: Reac
   { type: 'polish', label: 'Polish & Refine', icon: <Sparkles className="h-4 w-4" /> },
   { type: 'expand', label: 'Expand Content', icon: <Wand2 className="h-4 w-4" /> },
   { type: 'simplify', label: 'Simplify', icon: <RefreshCw className="h-4 w-4" /> },
-  { type: 'storytelling', label: 'Add Storytelling', icon: <CheckCheck className="h-4 w-4" /> },
+  { type: 'rewrite', label: 'Rewrite', icon: <CheckCheck className="h-4 w-4" /> },
 ];
 
 export function QuickActionsBar({
@@ -97,7 +97,7 @@ export function QuickActionsBar({
         
         {issueCount > 0 && (
           <div className="flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-yellow-500" />
+            <AlertTriangle className="h-4 w-4 text-warning" />
             <span className="text-sm text-muted-foreground">
               {issueCount} issues ({autoFixableCount} auto-fixable)
             </span>
@@ -123,7 +123,7 @@ export function QuickActionsBar({
                 {isProcessing && currentAction === 'accept' ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  <CheckCheck className="h-4 w-4 text-green-500" />
+                  <CheckCheck className="h-4 w-4 text-primary" />
                 )}
                 Accept All
               </Button>
@@ -168,7 +168,7 @@ export function QuickActionsBar({
                 {isProcessing && currentAction === 'enhance' ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  <Wand2 className="h-4 w-4 text-purple-500" />
+                  <Wand2 className="h-4 w-4 text-accent-foreground" />
                 )}
                 Enhance All
               </Button>
@@ -202,7 +202,7 @@ export function QuickActionsBar({
                 {isProcessing && currentAction === 'fix' ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  <Wrench className="h-4 w-4 text-orange-500" />
+                  <Wrench className="h-4 w-4 text-secondary-foreground" />
                 )}
                 Auto-Fix ({autoFixableCount})
               </Button>
