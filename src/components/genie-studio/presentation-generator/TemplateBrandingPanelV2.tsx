@@ -128,11 +128,13 @@ const TEMPLATES = [
 ];
 
 const FRAMEWORK_CATEGORIES = [
+  { id: 'all', label: 'All Frameworks' },
   { id: 'strategy', label: 'Strategic Planning' },
   { id: 'analysis', label: 'Business Analysis' },
   { id: 'growth', label: 'Growth & Portfolio' },
   { id: 'operations', label: 'Operations' },
   { id: 'transformation', label: 'Transformation' },
+  { id: 'universal', label: 'Universal / Custom' },
 ];
 
 // Visual Features - now using imported VISUAL_FEATURES from VisualFeaturesDropdown
@@ -233,18 +235,21 @@ export function TemplateBrandingPanelV2({
 
   // Get frameworks for selected category - map category to firm type
   const frameworksForCategory = useMemo(() => {
-    if (!selectedFrameworkCategory) return CONSULTING_FRAMEWORKS;
+    if (!selectedFrameworkCategory || selectedFrameworkCategory === 'all') {
+      return CONSULTING_FRAMEWORKS;
+    }
     
     // Map FRAMEWORK_CATEGORIES ids to CONSULTING_FRAMEWORKS firm types
     const categoryToFirmMap: Record<string, string[]> = {
-      'strategy': ['tier1-strategy', 'universal'],
+      'strategy': ['tier1-strategy'],
       'analysis': ['universal'],
-      'growth': ['tier1-growth', 'universal'],
-      'operations': ['tier1-operations', 'universal'],
+      'growth': ['tier1-growth'],
+      'operations': ['tier1-operations'],
       'transformation': ['tier1-strategy', 'tier1-operations'],
+      'universal': ['universal'],
     };
     
-    const firmTypes = categoryToFirmMap[selectedFrameworkCategory] || ['universal', 'custom'];
+    const firmTypes = categoryToFirmMap[selectedFrameworkCategory] || ['universal'];
     return CONSULTING_FRAMEWORKS.filter(f => firmTypes.includes(f.firm));
   }, [selectedFrameworkCategory]);
 
