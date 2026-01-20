@@ -56,6 +56,7 @@ import { toast } from 'sonner';
 import { PresentationTemplate, PresentationTheme } from './types';
 import useTemplateLibrary from '@/hooks/useTemplateLibrary';
 import { CreateTemplateDialog } from './components/CreateTemplateDialog';
+import { VisualFeaturesDropdown, VisualFeatureSelection, VISUAL_FEATURES } from './components/VisualFeaturesDropdown';
 import {
   getTemplateRecommendations,
   CONSULTING_FRAMEWORKS,
@@ -134,17 +135,18 @@ const FRAMEWORK_CATEGORIES = [
   { id: 'transformation', label: 'Transformation' },
 ];
 
-// Visual Features
-const VISUAL_FEATURES = [
-  { id: 'infographics', icon: FileImage, label: 'Infographics', description: 'Visual data representations' },
-  { id: 'journey-maps', icon: Map, label: 'Journey Maps', description: 'Customer/user journeys' },
-  { id: 'tables', icon: Table, label: 'Data Tables', description: 'Structured data display' },
-  { id: 'charts', icon: BarChart3, label: 'Charts', description: 'Bar, line, pie charts' },
-  { id: 'timelines', icon: Calendar, label: 'Timelines', description: 'Chronological displays' },
-  { id: 'diagrams', icon: Network, label: 'Diagrams', description: 'Flow & process diagrams' },
-  { id: 'quotes', icon: Quote, label: 'Quote Blocks', description: 'Testimonials & quotes' },
-  { id: 'icons', icon: Sparkles, label: 'Icon Sets', description: 'Decorative icons' },
-];
+// Visual Features - now using imported VISUAL_FEATURES from VisualFeaturesDropdown
+// Legacy mapping for backward compatibility with feature toggles
+const LEGACY_FEATURE_MAP: Record<string, string> = {
+  'infographics': 'infographics',
+  'journey-maps': 'journey-maps', 
+  'tables': 'data-tables',
+  'charts': 'charts',
+  'timelines': 'timelines',
+  'diagrams': 'diagrams',
+  'quotes': 'quote-blocks',
+  'icons': 'icon-sets',
+};
 
 // ============ INTERFACES ============
 
@@ -739,51 +741,43 @@ export function TemplateBrandingPanelV2({
         </CollapsibleContent>
       </Collapsible>
 
-      {/* Visual Features Section - Collapsible */}
-      <Collapsible open={featuresOpen} onOpenChange={setFeaturesOpen}>
-        <CollapsibleTrigger asChild>
-          <button className="w-full p-4 rounded-xl border flex items-center justify-between hover:bg-muted/30 transition-colors">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Sparkles className="h-4 w-4 text-primary" />
-              </div>
-              <div className="text-left">
-                <p className="text-sm font-medium text-foreground">Visual Features</p>
-                <p className="text-xs text-muted-foreground">
-                  {Object.values(featureToggles).filter(t => t.value).length} features enabled
-                </p>
-              </div>
-            </div>
-            <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", featuresOpen && "rotate-180")} />
-          </button>
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          <div className="p-4 border border-t-0 rounded-b-xl bg-muted/20">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {VISUAL_FEATURES.map(feature => {
-                const toggle = featureToggles[feature.id];
-                const Icon = feature.icon;
-                return (
-                  <button
-                    key={feature.id}
-                    onClick={() => toggle.onChange(!toggle.value)}
-                    className={cn(
-                      "flex flex-col items-center gap-2 p-3 rounded-lg border-2 transition-all text-center",
-                      toggle.value
-                        ? "border-primary bg-primary/5"
-                        : "border-transparent bg-muted/50 hover:border-primary/30"
-                    )}
-                  >
-                    <Icon className={cn("h-5 w-5", toggle.value ? "text-primary" : "text-muted-foreground")} />
-                    <span className="text-xs font-medium">{feature.label}</span>
-                    {toggle.value && <Check className="h-3 w-3 text-primary" />}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </CollapsibleContent>
-      </Collapsible>
+      {/* Visual Features Section - Dropdown with Sub-options */}
+      <div className="p-4 rounded-xl border bg-card space-y-4">
+        <div className="flex items-center gap-2 pb-2 border-b">
+          <Sparkles className="h-4 w-4 text-primary" />
+          <h4 className="text-sm font-medium">Visual Features</h4>
+          <Badge variant="secondary" className="ml-auto text-xs">
+            {Object.values(featureToggles).filter(t => t.value).length} enabled
+          </Badge>
+        </div>
+        
+        {/* Visual Features Dropdown */}
+        <VisualFeaturesDropdown
+          value={
+            Object.entries(featureToggles)
+              .filter(([_, toggle]) => toggle.value)
+              .map(([id]) => ({
+                featureId: LEGACY_FEATURE_MAP[id] || id,
+                subOptions: []
+              }))
+          }
+          onChange={(selections) => {
+            // Map from new dropdown to legacy toggles
+            Object.keys(featureToggles).forEach(legacyId => {
+              const newId = LEGACY_FEATURE_MAP[legacyId] || legacyId;
+              const isSelected = selections.some(s => s.featureId === newId || s.featureId === legacyId);
+              const toggle = featureToggles[legacyId];
+              if (toggle.value !== isSelected) {
+                toggle.onChange(isSelected);
+              }
+            });
+          }}
+        />
+        
+        <p className="text-xs text-muted-foreground">
+          Select visual elements to include in your presentation. Expand each feature to choose specific sub-types.
+        </p>
+      </div>
     </div>
   );
 }

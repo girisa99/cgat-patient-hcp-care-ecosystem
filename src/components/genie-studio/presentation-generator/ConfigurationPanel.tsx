@@ -184,14 +184,20 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
   // Mode state
   const [mode, setMode] = useState<'ai' | 'custom'>(isAutoSelect ? 'ai' : 'custom');
   
-  // Local output type state (used if parent doesn't provide)
-  const [localOutputType, setLocalOutputType] = useState<OutputType>('2d-static');
-  const currentOutputType = selectedOutputType ?? localOutputType;
+  // Multi-select output type state
+  const [localOutputTypes, setLocalOutputTypes] = useState<OutputType[]>(['2d-static']);
+  const currentOutputType = selectedOutputType ?? localOutputTypes[0] ?? '2d-static';
   const handleOutputTypeChange = (type: OutputType) => {
     if (setSelectedOutputType) {
       setSelectedOutputType(type);
     } else {
-      setLocalOutputType(type);
+      setLocalOutputTypes([type]);
+    }
+  };
+  const handleMultiOutputTypeChange = (types: OutputType[]) => {
+    setLocalOutputTypes(types);
+    if (types.length > 0 && setSelectedOutputType) {
+      setSelectedOutputType(types[0]); // Primary output type
     }
   };
 
@@ -451,49 +457,61 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
         </div>
       </div>
 
-      {/* Output Type Section - Dropdown */}
+      {/* Output Type Section - Multi-Select Dropdown */}
       <div className="p-4 rounded-xl border bg-card space-y-4">
         <div className="flex items-center gap-2 pb-2 border-b">
           <Layers className="h-4 w-4 text-primary" />
           <h4 className="text-sm font-medium">Output Type</h4>
+          {localOutputTypes.length > 1 && (
+            <Badge variant="secondary" className="ml-auto text-xs">
+              {localOutputTypes.length} selected
+            </Badge>
+          )}
         </div>
         <div className="space-y-4">
-          {/* Output Type Dropdown */}
+          {/* Output Type Multi-Select Dropdown */}
           <OutputTypeDropdown
             value={currentOutputType}
             onChange={handleOutputTypeChange}
+            allowMultiple={true}
+            multiValue={localOutputTypes}
+            onMultiChange={handleMultiOutputTypeChange}
           />
 
-          {/* Selected Output Type Details */}
-          {currentOutputType && (
-            <div className="p-3 rounded-lg bg-muted/50 border space-y-2">
-              <div className="flex items-start gap-2">
-                <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">
-                    {OUTPUT_TYPE_CONFIGS.find(o => o.id === currentOutputType)?.name}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {OUTPUT_TYPE_CONFIGS.find(o => o.id === currentOutputType)?.description}
-                  </p>
-                </div>
-              </div>
-              
-              {/* Capabilities */}
-              <div className="flex flex-wrap gap-1 pl-6">
-                {OUTPUT_TYPE_CONFIGS.find(o => o.id === currentOutputType)?.capabilities.map((cap, i) => (
-                  <Badge key={i} variant="secondary" className="text-[10px]">{cap}</Badge>
-                ))}
-              </div>
-              
-              {/* Available Providers */}
-              <div className="pl-6">
-                <p className="text-[10px] text-muted-foreground">
-                  <span className="font-medium">Providers: </span>
-                  {OUTPUT_TYPE_CONFIGS.find(o => o.id === currentOutputType)?.providers.slice(0, 4).join(', ')}
-                  {(OUTPUT_TYPE_CONFIGS.find(o => o.id === currentOutputType)?.providers.length || 0) > 4 && '...'}
-                </p>
-              </div>
+          {/* Selected Output Types Details */}
+          {localOutputTypes.length > 0 && (
+            <div className="space-y-2">
+              {localOutputTypes.map(outputType => {
+                const config = OUTPUT_TYPE_CONFIGS.find(o => o.id === outputType);
+                if (!config) return null;
+                return (
+                  <div key={outputType} className="p-3 rounded-lg bg-muted/50 border space-y-2">
+                    <div className="flex items-start gap-2">
+                      <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium">{config.name}</p>
+                        <p className="text-xs text-muted-foreground">{config.description}</p>
+                      </div>
+                    </div>
+                    
+                    {/* Capabilities */}
+                    <div className="flex flex-wrap gap-1 pl-6">
+                      {config.capabilities.map((cap, i) => (
+                        <Badge key={i} variant="secondary" className="text-[10px]">{cap}</Badge>
+                      ))}
+                    </div>
+                    
+                    {/* Available Providers */}
+                    <div className="pl-6">
+                      <p className="text-[10px] text-muted-foreground">
+                        <span className="font-medium">Providers: </span>
+                        {config.providers.slice(0, 4).join(', ')}
+                        {config.providers.length > 4 && '...'}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
