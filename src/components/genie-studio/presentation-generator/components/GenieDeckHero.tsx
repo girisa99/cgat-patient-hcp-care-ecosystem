@@ -175,28 +175,28 @@ export function GenieDeckHero({ onGetStarted, className }: GenieDeckHeroProps) {
       onMouseLeave={() => setIsPaused(false)}
     >
       {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-purple-950/30 via-background to-violet-950/20 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-primary/5 pointer-events-none" />
       
       {/* Animated orbs */}
-      <div className="absolute top-10 right-10 w-72 h-72 bg-purple-500/10 rounded-full blur-3xl animate-pulse" />
-      <div className="absolute bottom-10 left-10 w-56 h-56 bg-violet-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
+      <div className="absolute top-10 right-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl animate-pulse" />
+      <div className="absolute bottom-10 left-10 w-56 h-56 bg-primary/5 rounded-full blur-3xl animate-pulse delay-1000" />
 
       <div className="relative container py-8 space-y-6">
         {/* Main Hero Header */}
         <div className="text-center space-y-4 max-w-3xl mx-auto">
           <div className="flex items-center justify-center gap-2">
-            <Badge className="bg-purple-500/10 text-purple-600 border-purple-500/30">
+            <Badge className="bg-primary/10 text-primary border-primary/30">
               <Sparkles className="h-3 w-3 mr-1" />
               AI-Powered
             </Badge>
-            <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30">
+            <Badge className="bg-success/10 text-success border-success/30">
               <Shield className="h-3 w-3 mr-1" />
               Enterprise Ready
             </Badge>
           </div>
           
           <h1 className="text-3xl md:text-4xl font-bold">
-            <span className="bg-gradient-to-r from-purple-600 via-violet-600 to-purple-600 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-primary via-primary to-primary bg-clip-text text-transparent">
               Transform Ideas into Impact
             </span>
           </h1>
@@ -210,7 +210,7 @@ export function GenieDeckHero({ onGetStarted, className }: GenieDeckHeroProps) {
             <Button 
               size="lg" 
               onClick={onGetStarted}
-              className="bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 gap-2 shadow-lg shadow-purple-500/25"
+              className="gap-2 shadow-lg"
             >
               <Wand2 className="h-5 w-5" />
               Start Creating
@@ -312,20 +312,20 @@ export function GenieDeckHero({ onGetStarted, className }: GenieDeckHeroProps) {
         {/* Quick Stats Bar */}
         <div className="flex flex-wrap items-center justify-center gap-6 pt-4 border-t border-border/50">
           <div className="flex items-center gap-2 text-sm">
-            <Zap className="h-4 w-4 text-amber-500" />
+            <Zap className="h-4 w-4 text-warning" />
             <span className="text-muted-foreground">Generate in</span>
             <span className="font-semibold">~2 minutes</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
-            <Globe className="h-4 w-4 text-blue-500" />
+            <Globe className="h-4 w-4 text-info" />
             <span className="font-semibold">70+ languages</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
-            <Layers className="h-4 w-4 text-purple-500" />
+            <Layers className="h-4 w-4 text-primary" />
             <span className="font-semibold">50+ AI models</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
-            <Video className="h-4 w-4 text-pink-500" />
+            <Video className="h-4 w-4 text-accent-foreground" />
             <span className="font-semibold">4K video export</span>
           </div>
         </div>
