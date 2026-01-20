@@ -42,6 +42,7 @@ export interface ModelTierInfo {
 }
 
 export const MODEL_TIERS: Record<string, ModelTierInfo> = {
+  // ==================== TEXT / LLM MODELS ====================
   // Tier 1 - Core/Primary (Best quality + speed, available via Lovable AI)
   'google/gemini-3-flash-preview': { tier: 1, tierName: 'Tier 1 - Core', description: 'Fastest multimodal via Lovable AI', costMultiplier: 1.0, qualityScore: 90, speedScore: 95 },
   'google/gemini-3-pro-preview': { tier: 1, tierName: 'Tier 1 - Core', description: 'Next-gen reasoning', costMultiplier: 1.2, qualityScore: 95, speedScore: 85 },
@@ -50,29 +51,74 @@ export const MODEL_TIERS: Record<string, ModelTierInfo> = {
   'openai/gpt-5': { tier: 1, tierName: 'Tier 1 - Core', description: 'Premium quality, strong reasoning', costMultiplier: 2.0, qualityScore: 98, speedScore: 75 },
   'openai/gpt-5-mini': { tier: 1, tierName: 'Tier 1 - Core', description: 'Cost-effective GPT-5', costMultiplier: 1.0, qualityScore: 90, speedScore: 88 },
   'openai/gpt-5.2': { tier: 1, tierName: 'Tier 1 - Core', description: 'Enhanced reasoning', costMultiplier: 2.2, qualityScore: 99, speedScore: 72 },
-  'elevenlabs-multilingual': { tier: 1, tierName: 'Tier 1 - Core', description: 'Premium voice, 100+ languages', costMultiplier: 1.5, qualityScore: 98, speedScore: 85 },
-  'deepl': { tier: 1, tierName: 'Tier 1 - Core', description: 'Highest quality EU translation', costMultiplier: 1.2, qualityScore: 98, speedScore: 90 },
-  'flux-pro': { tier: 1, tierName: 'Tier 1 - Core', description: 'High quality images', costMultiplier: 1.5, qualityScore: 95, speedScore: 80 },
-  'modelslab': { tier: 1, tierName: 'Tier 1 - Core', description: 'Multi-model hub', costMultiplier: 1.0, qualityScore: 90, speedScore: 85 },
-  
-  // Tier 2 - Specialized (Enterprise features, specific use cases)
+  // Tier 2 - Enterprise/Specialized
   'anthropic/claude-opus-4': { tier: 2, tierName: 'Tier 2 - Enterprise', description: 'Best nuance, 200k context', costMultiplier: 2.5, qualityScore: 97, speedScore: 70 },
   'anthropic/claude-sonnet-4': { tier: 2, tierName: 'Tier 2 - Enterprise', description: 'Balanced Claude quality', costMultiplier: 1.8, qualityScore: 93, speedScore: 78 },
   'anthropic/claude-3.5-sonnet': { tier: 2, tierName: 'Tier 2 - Enterprise', description: 'Compliance-sensitive', costMultiplier: 1.5, qualityScore: 92, speedScore: 80 },
   'azure/gpt-4o': { tier: 2, tierName: 'Tier 2 - Enterprise', description: 'Enterprise SLA, HIPAA', costMultiplier: 2.0, qualityScore: 94, speedScore: 75 },
-  'dall-e-3': { tier: 2, tierName: 'Tier 2 - Enterprise', description: 'Excellent text rendering', costMultiplier: 2.0, qualityScore: 95, speedScore: 70 },
-  'azure-neural': { tier: 2, tierName: 'Tier 2 - Enterprise', description: 'Enterprise voice, 300+ languages', costMultiplier: 1.2, qualityScore: 92, speedScore: 88 },
-  'qwen-mt': { tier: 2, tierName: 'Tier 2 - Specialized', description: 'Best CJK translation', costMultiplier: 0.8, qualityScore: 95, speedScore: 90 },
-  'runway': { tier: 2, tierName: 'Tier 2 - Specialized', description: 'Premium video generation', costMultiplier: 3.0, qualityScore: 95, speedScore: 60 },
-  
-  // Tier 3 - Regional/Low-Cost (Budget-friendly, region-specific)
+  // Tier 3 - Budget/Regional
   'deepseek/deepseek-chat': { tier: 3, tierName: 'Tier 3 - Budget', description: 'Best Chinese, very low cost', costMultiplier: 0.3, qualityScore: 85, speedScore: 90 },
   'deepseek/deepseek-coder': { tier: 3, tierName: 'Tier 3 - Budget', description: 'Technical/code content', costMultiplier: 0.3, qualityScore: 88, speedScore: 88 },
   'alibaba/qwen-max': { tier: 3, tierName: 'Tier 3 - Regional', description: 'Excellent CJK, full-stack', costMultiplier: 0.5, qualityScore: 88, speedScore: 85 },
   'alibaba/qwen-2.5': { tier: 3, tierName: 'Tier 3 - Regional', description: 'Asian language optimized', costMultiplier: 0.4, qualityScore: 85, speedScore: 88 },
   'alibaba/qwen-turbo': { tier: 3, tierName: 'Tier 3 - Regional', description: 'Fast, very low cost', costMultiplier: 0.2, qualityScore: 80, speedScore: 95 },
-  'google-translate': { tier: 3, tierName: 'Tier 3 - Budget', description: '249+ languages, reliable', costMultiplier: 0.5, qualityScore: 85, speedScore: 95 },
-  'google-wavenet': { tier: 3, tierName: 'Tier 3 - Budget', description: 'Good quality, 200+ languages', costMultiplier: 0.6, qualityScore: 85, speedScore: 90 },
+
+  // ==================== IMAGE GENERATION ====================
+  // Tier 1 - Core (Lovable AI + ModelsLab Hub)
+  'gemini-nano-banana': { tier: 1, tierName: 'Tier 1 - Core', description: 'Fast image gen via Lovable AI', costMultiplier: 0.5, qualityScore: 88, speedScore: 95 },
+  'gemini-3-pro-image': { tier: 1, tierName: 'Tier 1 - Core', description: 'Highest quality via Lovable AI', costMultiplier: 1.0, qualityScore: 95, speedScore: 80 },
+  'modelslab': { tier: 1, tierName: 'Tier 1 - Core', description: 'Multi-model hub: Image/Video/3D', costMultiplier: 1.0, qualityScore: 90, speedScore: 85 },
+  'modelslab-realvision': { tier: 1, tierName: 'Tier 1 - Core', description: 'Photorealistic images', costMultiplier: 1.2, qualityScore: 94, speedScore: 80 },
+  // Tier 2 - Premium
+  'flux-pro': { tier: 2, tierName: 'Tier 2 - Premium', description: 'High quality, fine control', costMultiplier: 1.5, qualityScore: 95, speedScore: 75 },
+  'flux-schnell': { tier: 2, tierName: 'Tier 2 - Premium', description: 'Fast generation', costMultiplier: 0.8, qualityScore: 88, speedScore: 92 },
+  'dall-e-3': { tier: 2, tierName: 'Tier 2 - Premium', description: 'Excellent text rendering', costMultiplier: 2.0, qualityScore: 95, speedScore: 70 },
+  'stability': { tier: 2, tierName: 'Tier 2 - Premium', description: 'ControlNet, fine control', costMultiplier: 1.0, qualityScore: 90, speedScore: 82 },
+  // Tier 3 - Budget/Open Source
+  'alibaba-wanx': { tier: 3, tierName: 'Tier 3 - Regional', description: 'Asian aesthetics, low cost', costMultiplier: 0.3, qualityScore: 82, speedScore: 88 },
+  'replicate': { tier: 3, tierName: 'Tier 3 - Budget', description: 'Open source models', costMultiplier: 0.5, qualityScore: 85, speedScore: 80 },
+  'huggingface': { tier: 3, tierName: 'Tier 3 - Budget', description: 'Open models, customizable', costMultiplier: 0.4, qualityScore: 82, speedScore: 78 },
+  'stock': { tier: 3, tierName: 'Tier 3 - Budget', description: 'Pre-existing stock photos', costMultiplier: 0.1, qualityScore: 75, speedScore: 99 },
+
+  // ==================== VIDEO GENERATION ====================
+  // Tier 1 - ModelsLab as primary video hub
+  'modelslab-video': { tier: 1, tierName: 'Tier 1 - Core', description: '1080p, up to 30s, AnimateDiff', costMultiplier: 2.0, qualityScore: 88, speedScore: 75 },
+  // Tier 2 - Premium video
+  'runway': { tier: 2, tierName: 'Tier 2 - Premium', description: 'Gen-3, 4K quality, 10s max', costMultiplier: 4.0, qualityScore: 98, speedScore: 50 },
+  'pika': { tier: 2, tierName: 'Tier 2 - Premium', description: 'Pika Labs, 4s max', costMultiplier: 3.0, qualityScore: 92, speedScore: 65 },
+  'gemini-video': { tier: 2, tierName: 'Tier 2 - Premium', description: '1080p, 60s max via Lovable AI', costMultiplier: 2.5, qualityScore: 88, speedScore: 70 },
+
+  // ==================== 3D GENERATION ====================
+  // Tier 1 - ModelsLab is only integrated 3D provider
+  'modelslab-3d': { tier: 1, tierName: 'Tier 1 - Core', description: 'Text-to-mesh, 3D models', costMultiplier: 3.0, qualityScore: 85, speedScore: 60 },
+
+  // ==================== TRANSLATION ====================
+  // Tier 1 - Highest quality
+  'deepl': { tier: 1, tierName: 'Tier 1 - Core', description: 'Highest quality EU translation', costMultiplier: 1.2, qualityScore: 98, speedScore: 90 },
+  'google-translate': { tier: 1, tierName: 'Tier 1 - Core', description: '249+ languages, reliable', costMultiplier: 0.5, qualityScore: 88, speedScore: 95 },
+  // Tier 2 - Enterprise/Specialized
+  'qwen-mt': { tier: 2, tierName: 'Tier 2 - Specialized', description: 'Best CJK translation', costMultiplier: 0.8, qualityScore: 95, speedScore: 90 },
+  'azure': { tier: 2, tierName: 'Tier 2 - Enterprise', description: '135+ languages, enterprise', costMultiplier: 1.0, qualityScore: 90, speedScore: 88 },
+  'azure-translator': { tier: 2, tierName: 'Tier 2 - Enterprise', description: 'Enterprise, RTL support', costMultiplier: 1.0, qualityScore: 90, speedScore: 88 },
+  'aws-translate': { tier: 2, tierName: 'Tier 2 - Enterprise', description: 'High volume, custom terms', costMultiplier: 0.8, qualityScore: 88, speedScore: 90 },
+  // Tier 3 - AI-based / Open source
+  'gemini-translate': { tier: 3, tierName: 'Tier 3 - AI', description: 'Context-aware via Lovable AI', costMultiplier: 0.6, qualityScore: 85, speedScore: 80 },
+  'gpt-translate': { tier: 3, tierName: 'Tier 3 - AI', description: 'Context-aware, creative', costMultiplier: 1.0, qualityScore: 88, speedScore: 75 },
+  'claude-translate': { tier: 3, tierName: 'Tier 3 - AI', description: 'Literary, nuanced', costMultiplier: 1.2, qualityScore: 90, speedScore: 70 },
+  'nllb': { tier: 3, tierName: 'Tier 3 - Open', description: '200 languages, open source', costMultiplier: 0.2, qualityScore: 78, speedScore: 85 },
+
+  // ==================== VOICE / TTS ====================
+  // Tier 1 - Premium
+  'elevenlabs-multilingual': { tier: 1, tierName: 'Tier 1 - Core', description: 'Most natural, voice cloning', costMultiplier: 1.5, qualityScore: 98, speedScore: 85 },
+  'azure-neural': { tier: 1, tierName: 'Tier 1 - Core', description: '300+ voices, SSML, enterprise', costMultiplier: 1.0, qualityScore: 92, speedScore: 90 },
+  // Tier 2 - Standard
+  'google-wavenet': { tier: 2, tierName: 'Tier 2 - Standard', description: 'WaveNet, 200+ languages', costMultiplier: 0.6, qualityScore: 88, speedScore: 90 },
+  'openai-tts-hd': { tier: 2, tierName: 'Tier 2 - Standard', description: 'Simple API, good quality', costMultiplier: 0.8, qualityScore: 88, speedScore: 92 },
+  // Tier 3 - Budget/Regional
+  'alibaba-cosyvoice': { tier: 3, tierName: 'Tier 3 - Regional', description: 'Best Chinese voices', costMultiplier: 0.3, qualityScore: 85, speedScore: 88 },
+  'alibaba-tts': { tier: 3, tierName: 'Tier 3 - Regional', description: 'DashScope, Asian optimized', costMultiplier: 0.3, qualityScore: 82, speedScore: 90 },
+  'amazon-polly': { tier: 3, tierName: 'Tier 3 - Budget', description: 'Neural voices, AWS', costMultiplier: 0.5, qualityScore: 82, speedScore: 92 },
+  'aws-polly': { tier: 3, tierName: 'Tier 3 - Budget', description: 'Neural voices, AWS', costMultiplier: 0.5, qualityScore: 82, speedScore: 92 },
 };
 
 // Get tier info for a model, with fallback
@@ -623,19 +669,19 @@ export function PreGenerationConfirmationPanel({
                 translationModel={summary.aiModels.translationModel}
               />
               
-              {/* Tier Legend */}
+              {/* Tier Legend - Using semantic color classes */}
               <div className="flex items-center gap-4 pt-2 border-t border-muted">
                 <span className="text-xs text-muted-foreground font-medium">Tiers:</span>
                 <div className="flex items-center gap-1">
-                  <div className="w-2 h-2 rounded-full bg-green-500" />
+                  <div className="w-2 h-2 rounded-full bg-primary" />
                   <span className="text-xs text-muted-foreground">T1 Core</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <div className="w-2 h-2 rounded-full bg-blue-500" />
+                  <div className="w-2 h-2 rounded-full bg-secondary" />
                   <span className="text-xs text-muted-foreground">T2 Enterprise</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <div className="w-2 h-2 rounded-full bg-amber-500" />
+                  <div className="w-2 h-2 rounded-full bg-muted-foreground" />
                   <span className="text-xs text-muted-foreground">T3 Budget</span>
                 </div>
               </div>

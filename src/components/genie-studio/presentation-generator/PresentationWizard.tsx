@@ -1634,13 +1634,26 @@ export function PresentationWizard({
                     includeVoiceover: outputSettings.includeVoiceover || includeVoiceover,
                     voiceProvider,
                     
-                    // AI Models
+                    // AI Models - Current selections
                     aiModels: {
                       textModel: workflowConfig?.aiModels?.textModel || workflowConfig?.aiRecommendation?.textModel || 'Auto',
                       imageModel: workflowConfig?.aiModels?.imageModel || workflowConfig?.aiRecommendation?.imageModel || 'Auto',
                       voiceModel: workflowConfig?.aiModels?.voiceModel || workflowConfig?.aiRecommendation?.voiceModel || 'Auto',
                       translationModel: workflowConfig?.aiModels?.translationModel || workflowConfig?.aiRecommendation?.translationModel || 'Auto',
                     },
+                    
+                    // NEW: Pass full AI recommendation for confidence scores and reasoning
+                    aiRecommendation: workflowConfig?.aiRecommendation ? {
+                      textModel: workflowConfig.aiRecommendation.textModel,
+                      imageModel: workflowConfig.aiRecommendation.imageModel,
+                      voiceModel: workflowConfig.aiRecommendation.voiceModel,
+                      translationModel: workflowConfig.aiRecommendation.translationModel,
+                      videoModel: workflowConfig.aiRecommendation.videoModel,
+                      reason: workflowConfig.aiRecommendation.reason,
+                      confidence: workflowConfig.aiRecommendation.confidence,
+                      alternativeTextModels: workflowConfig.aiRecommendation.alternativeTextModels,
+                      alternativeImageModels: workflowConfig.aiRecommendation.alternativeImageModels,
+                    } : undefined,
                   }}
                   onConfirm={handleGenerate}
                   onEdit={(stepIndex) => setCurrentStep(stepIndex)}
