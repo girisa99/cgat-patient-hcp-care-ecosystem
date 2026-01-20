@@ -135,19 +135,42 @@ const NATIVE_TYPE_HERE: Record<string, string> = {
   ms: 'Taip di sini',
 };
 
-// Provider recommendations based on language pairs
+// Provider recommendations based on language pairs (now using real providers)
 const PROVIDER_RECOMMENDATIONS: Record<string, { provider: string; model: string; reason: string }> = {
+  // European languages - DeepL is best
   'de-en': { provider: 'deepl', model: 'DeepL Pro', reason: 'Best for DE↔EN' },
   'fr-en': { provider: 'deepl', model: 'DeepL Pro', reason: 'Highest accuracy for French' },
   'es-en': { provider: 'deepl', model: 'DeepL Pro', reason: 'Excellent for Spanish' },
-  'zh-en': { provider: 'ai', model: 'Qwen-MT / Gemini', reason: 'Best for Chinese↔English' },
-  'ja-en': { provider: 'ai', model: 'Qwen-MT / Gemini', reason: 'Superior Japanese handling' },
-  'ko-en': { provider: 'ai', model: 'Qwen-MT / Gemini', reason: 'Excellent Korean accuracy' },
-  'hi-en': { provider: 'ai', model: 'Gemini 3 Flash', reason: 'Best Hindi understanding' },
+  'it-en': { provider: 'deepl', model: 'DeepL Pro', reason: 'Excellent for Italian' },
+  'nl-en': { provider: 'deepl', model: 'DeepL Pro', reason: 'Excellent for Dutch' },
+  'pl-en': { provider: 'deepl', model: 'DeepL Pro', reason: 'Excellent for Polish' },
+  'ru-en': { provider: 'deepl', model: 'DeepL Pro', reason: 'Excellent for Russian' },
+  
+  // CJK languages - Alibaba/Qwen-MT is best
+  'zh-en': { provider: 'alibaba', model: 'Qwen-MT', reason: 'Best for Chinese↔English' },
+  'ja-en': { provider: 'alibaba', model: 'Qwen-MT', reason: 'Superior Japanese handling' },
+  'ko-en': { provider: 'alibaba', model: 'Qwen-MT', reason: 'Excellent Korean accuracy' },
+  
+  // Indian languages - Lovable AI (Gemini) is best
+  'hi-en': { provider: 'lovable', model: 'Gemini 3 Flash', reason: 'Best Hindi understanding' },
+  'te-en': { provider: 'lovable', model: 'Gemini 3 Flash', reason: 'Best Telugu understanding' },
+  'ta-en': { provider: 'lovable', model: 'Gemini 3 Flash', reason: 'Best Tamil understanding' },
+  'bn-en': { provider: 'lovable', model: 'Gemini 3 Flash', reason: 'Best Bengali understanding' },
+  'mr-en': { provider: 'lovable', model: 'Gemini 3 Flash', reason: 'Best Marathi understanding' },
+  'gu-en': { provider: 'lovable', model: 'Gemini 3 Flash', reason: 'Best Gujarati understanding' },
+  
+  // RTL languages - Google is best for Arabic
   'ar-en': { provider: 'google', model: 'Google Translate', reason: 'Best Arabic RTL handling' },
-  'te-en': { provider: 'ai', model: 'Gemini 3 Flash', reason: 'Best Telugu understanding' },
-  'ta-en': { provider: 'ai', model: 'Gemini 3 Flash', reason: 'Best Tamil understanding' },
-  'default': { provider: 'ai', model: 'Gemini 3 Flash', reason: 'Universal - fast & accurate' },
+  'he-en': { provider: 'google', model: 'Google Translate', reason: 'Best Hebrew handling' },
+  
+  // Southeast Asian - Microsoft or Lovable AI
+  'th-en': { provider: 'lovable', model: 'Gemini 3 Flash', reason: 'Best Thai understanding' },
+  'vi-en': { provider: 'lovable', model: 'Gemini 3 Flash', reason: 'Best Vietnamese understanding' },
+  'id-en': { provider: 'google', model: 'Google Translate', reason: 'Good Indonesian support' },
+  'ms-en': { provider: 'google', model: 'Google Translate', reason: 'Good Malay support' },
+  
+  // Default - Lovable AI with Gemini
+  'default': { provider: 'lovable', model: 'Gemini 3 Flash', reason: 'Universal - fast & accurate via Lovable AI' },
 };
 
 function getRecommendedProvider(inputLang: string, outputLang: string) {
