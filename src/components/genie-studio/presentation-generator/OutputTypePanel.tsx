@@ -51,11 +51,23 @@ const outputIcons: Record<string, React.ReactNode> = {
   'Layers': <Layers className="h-4 w-4" />,
 };
 
-// Tier badges
-const tierBadges: Record<1 | 2 | 3, { label: string; color: string }> = {
-  1: { label: 'Standard', color: 'bg-success/20 text-success' },
-  2: { label: 'Advanced', color: 'bg-primary/20 text-primary' },
-  3: { label: 'Premium', color: 'bg-accent/20 text-accent-foreground' },
+// Tier configuration with proper visibility
+const tierBadges: Record<1 | 2 | 3, { label: string; description: string; color: string }> = {
+  1: { 
+    label: 'Standard', 
+    description: 'Fast generation, lower resource usage',
+    color: 'bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-900/30 dark:text-emerald-400',
+  },
+  2: { 
+    label: 'Advanced', 
+    description: 'Balanced quality and speed',
+    color: 'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900/30 dark:text-blue-400',
+  },
+  3: { 
+    label: 'Premium', 
+    description: 'Highest quality, more processing time',
+    color: 'bg-purple-100 text-purple-700 border-purple-300 dark:bg-purple-900/30 dark:text-purple-400',
+  },
 };
 
 // Structure mode options
@@ -137,6 +149,26 @@ export function OutputTypePanel({
 
   return (
     <div className={cn("space-y-6", className)}>
+      {/* Tier Legend */}
+      <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 border">
+        <span className="text-xs text-muted-foreground font-medium">Output Tiers:</span>
+        <div className="flex items-center gap-2 flex-wrap">
+          {Object.entries(tierBadges).map(([tier, config]) => (
+            <div key={tier} className="flex items-center gap-1.5">
+              <Badge
+                variant="outline"
+                className={cn('text-[10px] px-2 py-0.5', config.color)}
+              >
+                {config.label}
+              </Badge>
+              <span className="text-[10px] text-muted-foreground hidden sm:inline">
+                {config.description}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Output Type Dropdown - Multi-select enabled */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
