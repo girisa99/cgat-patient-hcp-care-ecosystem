@@ -37,6 +37,14 @@ import { PresentationSlide, SlideEnhancementType } from '../types';
 
 class ReviewActionService {
   private actionHistory: ReviewAction[] = [];
+  private static instance: ReviewActionService;
+  
+  static getInstance(): ReviewActionService {
+    if (!ReviewActionService.instance) {
+      ReviewActionService.instance = new ReviewActionService();
+    }
+    return ReviewActionService.instance;
+  }
   
   /**
    * Execute a review action
