@@ -50,34 +50,73 @@ import {
 import { CONTENT_CATEGORIES, EXTENDED_COLLATERAL_TYPES } from './ContentTypeSelector';
 
 // ==========================================
-// PROVIDER CONFIGURATIONS
+// PROVIDER CONFIGURATIONS - Universal AI Hub
+// All providers from UniversalAIHub/UniversalMediaAdapter
 // ==========================================
 
 const TEXT_PROVIDERS = [
-  { id: 'google/gemini-3-flash-preview', name: 'Gemini 3 Flash', short: 'Gemini Flash' },
-  { id: 'google/gemini-2.5-pro', name: 'Gemini 2.5 Pro', short: 'Gemini Pro' },
-  { id: 'openai/gpt-5', name: 'GPT-5', short: 'GPT-5' },
-  { id: 'openai/gpt-5-mini', name: 'GPT-5 Mini', short: 'GPT-5 Mini' },
-  { id: 'claude-3-5-sonnet', name: 'Claude 3.5 Sonnet', short: 'Claude 3.5' },
-  { id: 'deepseek/deepseek-chat', name: 'DeepSeek', short: 'DeepSeek' },
-  { id: 'alibaba/qwen-2.5', name: 'Qwen 2.5', short: 'Qwen 2.5' },
+  // Tier 1 - Primary/Recommended
+  { id: 'google/gemini-3-flash-preview', name: 'Gemini 3 Flash Preview', short: 'Gemini 3 Flash', tier: 1, description: 'Fastest, multimodal via Lovable AI' },
+  { id: 'google/gemini-3-pro-preview', name: 'Gemini 3 Pro Preview', short: 'Gemini 3 Pro', tier: 1, description: 'Next-gen reasoning' },
+  { id: 'google/gemini-2.5-pro', name: 'Gemini 2.5 Pro', short: 'Gemini Pro', tier: 1, description: 'Best for complex reasoning, 1M context' },
+  { id: 'google/gemini-2.5-flash', name: 'Gemini 2.5 Flash', short: 'Gemini Flash', tier: 1, description: 'Fast balanced multimodal' },
+  { id: 'openai/gpt-5', name: 'OpenAI GPT-5', short: 'GPT-5', tier: 1, description: 'Premium quality, strong reasoning' },
+  { id: 'openai/gpt-5-mini', name: 'OpenAI GPT-5 Mini', short: 'GPT-5 Mini', tier: 1, description: 'Cost-effective GPT-5' },
+  { id: 'openai/gpt-5.2', name: 'OpenAI GPT-5.2', short: 'GPT-5.2', tier: 1, description: 'Latest with enhanced reasoning' },
+  // Tier 2 - Specialized
+  { id: 'anthropic/claude-opus-4', name: 'Claude Opus 4', short: 'Claude Opus', tier: 2, description: 'Best for nuance, 200k context' },
+  { id: 'anthropic/claude-sonnet-4', name: 'Claude Sonnet 4', short: 'Claude Sonnet', tier: 2, description: 'Balanced Claude quality' },
+  { id: 'anthropic/claude-3-5-sonnet', name: 'Claude 3.5 Sonnet', short: 'Claude 3.5', tier: 2, description: 'Compliance-sensitive content' },
+  { id: 'deepseek/deepseek-chat', name: 'DeepSeek Chat', short: 'DeepSeek', tier: 3, description: 'Best for Chinese, low cost' },
+  { id: 'deepseek/deepseek-coder', name: 'DeepSeek Coder', short: 'DeepSeek Code', tier: 3, description: 'Technical/code content' },
+  // Tier 3 - Alibaba/Azure
+  { id: 'alibaba/qwen-max', name: 'Qwen Max', short: 'Qwen Max', tier: 3, description: 'Excellent CJK, full-stack' },
+  { id: 'alibaba/qwen-2.5', name: 'Qwen 2.5', short: 'Qwen 2.5', tier: 3, description: 'Asian language optimized' },
+  { id: 'alibaba/qwen-turbo', name: 'Qwen Turbo', short: 'Qwen Fast', tier: 3, description: 'Fast, low cost' },
+  { id: 'azure/gpt-4o', name: 'Azure OpenAI GPT-4o', short: 'Azure GPT-4o', tier: 2, description: 'Enterprise SLA, HIPAA' },
 ];
 
 const IMAGE_PROVIDERS = [
-  { id: 'modelslab', name: 'ModelsLab', short: 'ModelsLab' },
-  { id: 'flux-pro', name: 'Flux Pro', short: 'Flux Pro' },
-  { id: 'flux-schnell', name: 'Flux Schnell', short: 'Flux Fast' },
-  { id: 'dall-e-3', name: 'DALL-E 3', short: 'DALL-E 3' },
-  { id: 'stability', name: 'Stability AI', short: 'Stability' },
-  { id: 'stock', name: 'Stock Images', short: 'Stock' },
+  // Tier 1 - Primary via Lovable AI / ModelsLab
+  { id: 'gemini-nano-banana', name: 'Gemini 2.5 Flash Image', short: 'Gemini Image', tier: 1, description: 'Fast via Lovable AI' },
+  { id: 'gemini-3-pro-image', name: 'Gemini 3 Pro Image', short: 'Gemini 3 Image', tier: 1, description: 'Highest quality via Lovable AI' },
+  { id: 'modelslab', name: 'ModelsLab Hub', short: 'ModelsLab', tier: 1, description: 'Multi-model hub for Image/Video/3D' },
+  { id: 'modelslab-realvision', name: 'ModelsLab RealVision', short: 'RealVision', tier: 1, description: 'Photorealistic images' },
+  { id: 'modelslab-video', name: 'ModelsLab Video', short: 'ModelsLab Video', tier: 1, description: 'Video generation' },
+  // Tier 2 - Premium
+  { id: 'flux-pro', name: 'Flux Pro', short: 'Flux Pro', tier: 2, description: 'High quality, fine control' },
+  { id: 'flux-schnell', name: 'Flux Schnell', short: 'Flux Fast', tier: 2, description: 'Fast generation' },
+  { id: 'dall-e-3', name: 'OpenAI DALL-E 3', short: 'DALL-E 3', tier: 2, description: 'Excellent text rendering' },
+  { id: 'stability', name: 'Stability AI SDXL', short: 'Stability', tier: 2, description: 'Fine control, ControlNet' },
+  // Tier 3 - Alibaba/Replicate
+  { id: 'alibaba-wanx', name: 'Alibaba Wanx', short: 'Wanx', tier: 3, description: 'Asian aesthetics, low cost' },
+  { id: 'replicate', name: 'Replicate', short: 'Replicate', tier: 3, description: 'Open source models' },
+  { id: 'huggingface', name: 'HuggingFace FLUX', short: 'HF FLUX', tier: 3, description: 'Open models, customizable' },
+  { id: 'stock', name: 'Stock Images', short: 'Stock', tier: 3, description: 'Pre-existing stock photos' },
 ];
 
 const TRANSLATION_PROVIDERS = [
-  { id: 'deepl', name: 'DeepL', short: 'DeepL' },
-  { id: 'google-translate', name: 'Google Translate', short: 'Google' },
-  { id: 'qwen-mt', name: 'Qwen-MT', short: 'Qwen' },
-  { id: 'azure', name: 'Azure Translator', short: 'Azure' },
-  { id: 'nllb', name: 'NLLB', short: 'NLLB' },
+  // Tier 1 - Best quality
+  { id: 'deepl', name: 'DeepL Pro', short: 'DeepL', tier: 1, description: 'Highest quality EU languages' },
+  { id: 'google-translate', name: 'Google Translate', short: 'Google', tier: 1, description: '249+ languages, reliable' },
+  // Tier 2 - Specialized
+  { id: 'qwen-mt', name: 'Qwen-MT', short: 'Qwen MT', tier: 2, description: 'Best for CJK languages' },
+  { id: 'azure', name: 'Azure Translator', short: 'Azure', tier: 2, description: 'Enterprise, 135+ languages' },
+  { id: 'aws-translate', name: 'AWS Translate', short: 'AWS', tier: 2, description: 'High volume, custom terminology' },
+  // Tier 3 - LLM-based
+  { id: 'gemini-translate', name: 'Gemini Translation', short: 'Gemini', tier: 3, description: 'Context-aware via Lovable AI' },
+  { id: 'gpt-translate', name: 'GPT Translation', short: 'GPT', tier: 3, description: 'Context-aware, creative' },
+  { id: 'claude-translate', name: 'Claude Translation', short: 'Claude', tier: 3, description: 'Literary, nuanced' },
+  { id: 'nllb', name: 'NLLB (Meta)', short: 'NLLB', tier: 3, description: '200 languages, open source' },
+];
+
+const VOICE_PROVIDERS = [
+  { id: 'elevenlabs-multilingual', name: 'ElevenLabs Multilingual', short: 'ElevenLabs', tier: 1, description: 'Most natural sounding' },
+  { id: 'azure-neural', name: 'Azure Neural TTS', short: 'Azure TTS', tier: 1, description: 'Huge voice selection, SSML' },
+  { id: 'google-wavenet', name: 'Google WaveNet', short: 'Google TTS', tier: 2, description: 'WaveNet voices, many languages' },
+  { id: 'openai-tts-hd', name: 'OpenAI TTS HD', short: 'OpenAI TTS', tier: 2, description: 'Simple, good quality' },
+  { id: 'alibaba-cosyvoice', name: 'Alibaba CosyVoice', short: 'CosyVoice', tier: 3, description: 'Best Chinese voices' },
+  { id: 'amazon-polly', name: 'Amazon Polly', short: 'Polly', tier: 3, description: 'Neural voices, AWS' },
 ];
 
 // Categories without AI Auto for Custom mode
@@ -135,33 +174,15 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
     }
   }, [mode, contentCategory, setContentCategory]);
 
-  // Get AI model recommendations based on current selections
+  // Get AI model recommendations using the proper getRecommendedProviders function
   const modelRecommendation = useMemo(() => {
     const industry = workflowConfig?.industryCategory || '';
     const segment = workflowConfig?.segment || '';
-    const hasAsianLangs = selectedLanguages.some(l => ['zh', 'ja', 'ko', 'th', 'vi'].includes(l));
+    const collateralType = workflowConfig?.collateralType?.id || selectedContentTypes[0] || '';
     
-    let textModel = 'google/gemini-3-flash-preview';
-    let reasoning = 'Gemini 3 Flash - fast and versatile for general content.';
-    
-    if (['healthcare', 'pharma', 'legal'].includes(industry)) {
-      textModel = 'claude-3-5-sonnet';
-      reasoning = `Claude 3.5 Sonnet - optimized for ${industry} domain accuracy.`;
-    } else if (['consulting'].includes(industry)) {
-      textModel = 'openai/gpt-5';
-      reasoning = 'GPT-5 - premium quality for strategic consulting content.';
-    } else if (hasAsianLangs) {
-      textModel = 'alibaba/qwen-2.5';
-      reasoning = 'Qwen 2.5 - superior Asian language support.';
-    }
-    
-    const imageModel = contentCategory === 'visual' ? 'modelslab' : 'flux-pro';
-    const translationModel = hasAsianLangs ? 'qwen-mt' : 'deepl';
-    
-    const confidence = Math.min(98, 75 + (industry ? 10 : 0) + (segment ? 5 : 0) + (selectedContentTypes.length > 0 ? 8 : 0));
-    
-    return { textModel, imageModel, translationModel, reasoning, confidence };
-  }, [workflowConfig, selectedLanguages, contentCategory, selectedContentTypes]);
+    // Use the proper recommendation function from wizardConstants
+    return getRecommendedProviders(industry, segment, collateralType, selectedLanguages);
+  }, [workflowConfig?.industryCategory, workflowConfig?.segment, workflowConfig?.collateralType, selectedContentTypes, selectedLanguages]);
 
   // Auto-apply AI models when in AI Auto mode or when context changes
   useEffect(() => {
@@ -419,15 +440,21 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* AI Auto Mode - Show recommendation info */}
+          {/* AI Auto Mode - Show recommendation info with alternatives */}
           {mode === 'ai' && (
-            <div className="p-3 rounded-lg bg-muted/50 border mb-4">
+            <div className="p-3 rounded-lg bg-muted/50 border mb-4 space-y-2">
               <div className="flex items-start gap-2">
                 <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                 <p className="text-sm text-muted-foreground">
-                  {modelRecommendation.reasoning} Models auto-selected based on your industry, segment, and content choices.
+                  {modelRecommendation.reason}
                 </p>
               </div>
+              {modelRecommendation.alternativeTextModels && modelRecommendation.alternativeTextModels.length > 0 && (
+                <div className="text-xs text-muted-foreground pl-6">
+                  <span className="font-medium">Alternatives: </span>
+                  {modelRecommendation.alternativeTextModels.slice(0, 2).join(', ')}
+                </div>
+              )}
             </div>
           )}
 
@@ -440,22 +467,32 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
                 <Label className="text-xs font-medium text-foreground">Text Model</Label>
               </div>
               {mode === 'ai' ? (
-                <div className="h-10 px-3 flex items-center rounded-md border bg-muted/30 text-sm">
-                  {TEXT_PROVIDERS.find(p => p.id === currentModels.text)?.short || 'Auto'}
+                <div className="h-10 px-3 flex items-center rounded-md border bg-muted/30 text-sm gap-2">
+                  <span>{TEXT_PROVIDERS.find(p => p.id === currentModels.text)?.short || currentModels.text}</span>
+                  <Badge variant="outline" className="text-[10px]">AI Selected</Badge>
                 </div>
               ) : (
                 <Select value={currentModels.text} onValueChange={(val) => handleModelChange('text', val)}>
                   <SelectTrigger className="h-10 bg-background">
                     <SelectValue>
-                      <span className="truncate">{TEXT_PROVIDERS.find(p => p.id === currentModels.text)?.short}</span>
+                      <span className="truncate">{TEXT_PROVIDERS.find(p => p.id === currentModels.text)?.short || currentModels.text}</span>
                     </SelectValue>
                   </SelectTrigger>
-                  <SelectContent className="z-50 bg-popover border shadow-lg">
-                    {TEXT_PROVIDERS.map(p => (
-                      <SelectItem key={p.id} value={p.id}>
-                        <span className="font-medium">{p.name}</span>
-                      </SelectItem>
-                    ))}
+                  <SelectContent className="z-50 bg-popover border shadow-lg max-h-[300px]">
+                    <ScrollArea className="h-[280px]">
+                      {TEXT_PROVIDERS.map(p => (
+                        <SelectItem key={p.id} value={p.id}>
+                          <div className="flex flex-col gap-0.5">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{p.name}</span>
+                              {p.tier === 1 && <Badge variant="default" className="text-[9px] px-1">Tier 1</Badge>}
+                              {p.tier === 2 && <Badge variant="secondary" className="text-[9px] px-1">Tier 2</Badge>}
+                            </div>
+                            <span className="text-xs text-muted-foreground">{p.description}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </ScrollArea>
                   </SelectContent>
                 </Select>
               )}
@@ -468,22 +505,32 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
                 <Label className="text-xs font-medium text-foreground">Image Model</Label>
               </div>
               {mode === 'ai' ? (
-                <div className="h-10 px-3 flex items-center rounded-md border bg-muted/30 text-sm">
-                  {IMAGE_PROVIDERS.find(p => p.id === currentModels.image)?.short || 'Auto'}
+                <div className="h-10 px-3 flex items-center rounded-md border bg-muted/30 text-sm gap-2">
+                  <span>{IMAGE_PROVIDERS.find(p => p.id === currentModels.image)?.short || currentModels.image}</span>
+                  <Badge variant="outline" className="text-[10px]">AI Selected</Badge>
                 </div>
               ) : (
                 <Select value={currentModels.image} onValueChange={(val) => handleModelChange('image', val)}>
                   <SelectTrigger className="h-10 bg-background">
                     <SelectValue>
-                      <span className="truncate">{IMAGE_PROVIDERS.find(p => p.id === currentModels.image)?.short}</span>
+                      <span className="truncate">{IMAGE_PROVIDERS.find(p => p.id === currentModels.image)?.short || currentModels.image}</span>
                     </SelectValue>
                   </SelectTrigger>
-                  <SelectContent className="z-50 bg-popover border shadow-lg">
-                    {IMAGE_PROVIDERS.map(p => (
-                      <SelectItem key={p.id} value={p.id}>
-                        <span className="font-medium">{p.name}</span>
-                      </SelectItem>
-                    ))}
+                  <SelectContent className="z-50 bg-popover border shadow-lg max-h-[300px]">
+                    <ScrollArea className="h-[280px]">
+                      {IMAGE_PROVIDERS.map(p => (
+                        <SelectItem key={p.id} value={p.id}>
+                          <div className="flex flex-col gap-0.5">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{p.name}</span>
+                              {p.tier === 1 && <Badge variant="default" className="text-[9px] px-1">Tier 1</Badge>}
+                              {p.tier === 2 && <Badge variant="secondary" className="text-[9px] px-1">Tier 2</Badge>}
+                            </div>
+                            <span className="text-xs text-muted-foreground">{p.description}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </ScrollArea>
                   </SelectContent>
                 </Select>
               )}
@@ -496,22 +543,32 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
                 <Label className="text-xs font-medium text-foreground">Translation</Label>
               </div>
               {mode === 'ai' ? (
-                <div className="h-10 px-3 flex items-center rounded-md border bg-muted/30 text-sm">
-                  {TRANSLATION_PROVIDERS.find(p => p.id === currentModels.translation)?.short || 'Auto'}
+                <div className="h-10 px-3 flex items-center rounded-md border bg-muted/30 text-sm gap-2">
+                  <span>{TRANSLATION_PROVIDERS.find(p => p.id === currentModels.translation)?.short || currentModels.translation}</span>
+                  <Badge variant="outline" className="text-[10px]">AI Selected</Badge>
                 </div>
               ) : (
                 <Select value={currentModels.translation} onValueChange={(val) => handleModelChange('translation', val)}>
                   <SelectTrigger className="h-10 bg-background">
                     <SelectValue>
-                      <span className="truncate">{TRANSLATION_PROVIDERS.find(p => p.id === currentModels.translation)?.short}</span>
+                      <span className="truncate">{TRANSLATION_PROVIDERS.find(p => p.id === currentModels.translation)?.short || currentModels.translation}</span>
                     </SelectValue>
                   </SelectTrigger>
-                  <SelectContent className="z-50 bg-popover border shadow-lg">
-                    {TRANSLATION_PROVIDERS.map(p => (
-                      <SelectItem key={p.id} value={p.id}>
-                        <span className="font-medium">{p.name}</span>
-                      </SelectItem>
-                    ))}
+                  <SelectContent className="z-50 bg-popover border shadow-lg max-h-[300px]">
+                    <ScrollArea className="h-[280px]">
+                      {TRANSLATION_PROVIDERS.map(p => (
+                        <SelectItem key={p.id} value={p.id}>
+                          <div className="flex flex-col gap-0.5">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{p.name}</span>
+                              {p.tier === 1 && <Badge variant="default" className="text-[9px] px-1">Tier 1</Badge>}
+                              {p.tier === 2 && <Badge variant="secondary" className="text-[9px] px-1">Tier 2</Badge>}
+                            </div>
+                            <span className="text-xs text-muted-foreground">{p.description}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </ScrollArea>
                   </SelectContent>
                 </Select>
               )}
