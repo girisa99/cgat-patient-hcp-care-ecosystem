@@ -188,6 +188,13 @@ interface TemplateBrandingPanelV2Props {
   segmentFilter?: string;
   contentTypeFilter?: string[];
   className?: string;
+  // NEW: State lifting callbacks for complete data flow
+  visualFeatureSelections?: VisualFeatureSelection[];
+  onVisualFeatureSelectionsChange?: (selections: VisualFeatureSelection[]) => void;
+  selectedFrameworkCategories?: string[];
+  onSelectedFrameworkCategoriesChange?: (categories: string[]) => void;
+  selectedFrameworkIds?: string[];
+  onSelectedFrameworkIdsChange?: (ids: string[]) => void;
 }
 
 // ============ COMPONENT ============
@@ -211,20 +218,55 @@ export function TemplateBrandingPanelV2({
   segmentFilter,
   contentTypeFilter,
   className,
+  // NEW: Lifted state props
+  visualFeatureSelections: externalVisualFeatures,
+  onVisualFeatureSelectionsChange,
+  selectedFrameworkCategories: externalFrameworkCategories,
+  onSelectedFrameworkCategoriesChange,
+  selectedFrameworkIds: externalFrameworkIds,
+  onSelectedFrameworkIdsChange,
 }: TemplateBrandingPanelV2Props) {
   // State
   const [mode, setMode] = useState<'ai' | 'custom'>('ai');
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(selectedTemplate?.id || '');
-  const [selectedFrameworkCategories, setSelectedFrameworkCategories] = useState<string[]>([]);
-  const [selectedFrameworkIds, setSelectedFrameworkIds] = useState<string[]>([]);
+  
+  // Use external state if provided, otherwise use internal state
+  const [internalFrameworkCategories, setInternalFrameworkCategories] = useState<string[]>([]);
+  const [internalFrameworkIds, setInternalFrameworkIds] = useState<string[]>([]);
+  
+  const selectedFrameworkCategories = externalFrameworkCategories ?? internalFrameworkCategories;
+  const selectedFrameworkIds = externalFrameworkIds ?? internalFrameworkIds;
+  
+  const setSelectedFrameworkCategories = useCallback((categoriesOrUpdater: string[] | ((prev: string[]) => string[])) => {
+    const newValue = typeof categoriesOrUpdater === 'function' 
+      ? categoriesOrUpdater(externalFrameworkCategories ?? internalFrameworkCategories)
+      : categoriesOrUpdater;
+    if (onSelectedFrameworkCategoriesChange) {
+      onSelectedFrameworkCategoriesChange(newValue);
+    } else {
+      setInternalFrameworkCategories(newValue);
+    }
+  }, [onSelectedFrameworkCategoriesChange, externalFrameworkCategories, internalFrameworkCategories]);
+  
+  const setSelectedFrameworkIds = useCallback((idsOrUpdater: string[] | ((prev: string[]) => string[])) => {
+    const newValue = typeof idsOrUpdater === 'function'
+      ? idsOrUpdater(externalFrameworkIds ?? internalFrameworkIds)
+      : idsOrUpdater;
+    if (onSelectedFrameworkIdsChange) {
+      onSelectedFrameworkIdsChange(newValue);
+    } else {
+      setInternalFrameworkIds(newValue);
+    }
+  }, [onSelectedFrameworkIdsChange, externalFrameworkIds, internalFrameworkIds]);
+  
   const [selectedSavedId, setSelectedSavedId] = useState<string>('');
   const [brandingOpen, setBrandingOpen] = useState(false);
   const [featuresOpen, setFeaturesOpen] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // Visual Features - proper state with sub-options support
-  const [visualFeatureSelections, setVisualFeatureSelections] = useState<VisualFeatureSelection[]>(() => {
+  // Visual Features - use external state if provided
+  const [internalVisualFeatures, setInternalVisualFeatures] = useState<VisualFeatureSelection[]>(() => {
     // Initialize from legacy toggles
     const initial: VisualFeatureSelection[] = [];
     if (includeInfographics) initial.push({ featureId: 'infographics', subOptions: [] });
@@ -233,6 +275,16 @@ export function TemplateBrandingPanelV2({
     if (includeCharts) initial.push({ featureId: 'charts', subOptions: [] });
     return initial;
   });
+  
+  const visualFeatureSelections = externalVisualFeatures ?? internalVisualFeatures;
+  
+  const setVisualFeatureSelections = useCallback((selections: VisualFeatureSelection[]) => {
+    if (onVisualFeatureSelectionsChange) {
+      onVisualFeatureSelectionsChange(selections);
+    } else {
+      setInternalVisualFeatures(selections);
+    }
+  }, [onVisualFeatureSelectionsChange]);
 
   // Library hook
   const libraryData = useTemplateLibrary();

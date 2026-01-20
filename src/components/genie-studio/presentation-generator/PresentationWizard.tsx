@@ -398,6 +398,11 @@ export function PresentationWizard({
   const [selectedContentTypes, setSelectedContentTypes] = useState<string[]>([]);
   const [isAutoSelectModels, setIsAutoSelectModels] = useState(true);
   
+  // NEW: Lifted state from TemplateBrandingPanel for complete data flow
+  const [visualFeatureSelections, setVisualFeatureSelections] = useState<Array<{ featureId: string; subOptions: string[] }>>([]);
+  const [selectedFrameworkCategories, setSelectedFrameworkCategories] = useState<string[]>([]);
+  const [selectedFrameworkIds, setSelectedFrameworkIds] = useState<string[]>([]);
+  
   // All available providers from modelAlignmentService
   const ALL_TEXT_PROVIDERS = [
     { id: 'google/gemini-3-flash-preview', name: 'Gemini 3 Flash', strengths: ['Speed', 'Multilingual'] },
@@ -836,8 +841,10 @@ export function PresentationWizard({
         selectedTemplateId: selectedTemplate?.id,
         selectedThemeId: selectedTheme?.id,
         brandConfig: brandConfig as any,
-        // These will come from TemplateBrandingPanelV2 state
-        // TODO: Add selectedFrameworkCategories, selectedFrameworkIds, visualFeatures
+        // Complete data flow from TemplateBrandingPanel
+        selectedFrameworkCategories,
+        selectedFrameworkIds,
+        visualFeatures: visualFeatureSelections,
       },
       
       agentContext: {
@@ -1506,6 +1513,13 @@ export function PresentationWizard({
                 industryFilter={workflowConfig?.industryCategory}
                 segmentFilter={workflowConfig?.segment}
                 contentTypeFilter={selectedContentTypes}
+                // NEW: Lifted state callbacks for complete data flow
+                visualFeatureSelections={visualFeatureSelections}
+                onVisualFeatureSelectionsChange={setVisualFeatureSelections}
+                selectedFrameworkCategories={selectedFrameworkCategories}
+                onSelectedFrameworkCategoriesChange={setSelectedFrameworkCategories}
+                selectedFrameworkIds={selectedFrameworkIds}
+                onSelectedFrameworkIdsChange={setSelectedFrameworkIds}
               />
             )}
 
