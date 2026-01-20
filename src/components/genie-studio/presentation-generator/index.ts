@@ -109,6 +109,25 @@ export type {
   OutputAwareSlideContent 
 } from './services/outputAwareGenerationService';
 
+// Token Estimation & Optimization Service
+export { 
+  estimateTokens, 
+  formatTokens, 
+  getUsageColor,
+  TOKEN_COSTS,
+  TOKENS_PER_CREDIT,
+} from './services/tokenEstimationService';
+export type { 
+  TokenEstimate, 
+  TokenBreakdown, 
+  OptimizationSuggestion,
+  EstimationConfig,
+} from './services/tokenEstimationService';
+
+// Token UI Components
+export { TokenBalanceHeader } from './components/TokenBalanceHeader';
+export { TokenBreakdownPanel } from './components/TokenBreakdownPanel';
+
 // Generation Config Service (from src/services)
 export { generationConfigService } from '@/services/generationConfigService';
 
