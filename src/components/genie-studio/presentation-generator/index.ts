@@ -127,6 +127,16 @@ export type {
 // Token UI Components
 export { TokenBalanceHeader } from './components/TokenBalanceHeader';
 export { TokenBreakdownPanel } from './components/TokenBreakdownPanel';
+export { TokenUsageDashboard } from './components/TokenUsageDashboard';
+
+// Smart Tooltip System
+export { GenieTooltipProvider, useGenieTooltip, GENIE_DECK_TOOLTIPS } from './context/TooltipContext';
+export type { TooltipDefinition } from './context/TooltipContext';
+export { SmartTooltip, HelpTooltip } from './components/SmartTooltip';
+
+// Generation History Service
+export { generationHistoryService } from './services/generationHistoryService';
+export type { GenerationRecord, ActualUsageBreakdown } from './services/generationHistoryService';
 
 // Generation Config Service (from src/services)
 export { generationConfigService } from '@/services/generationConfigService';
