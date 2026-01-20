@@ -2,6 +2,7 @@
  * Types for Universal Presentation Generator
  * Slide editing, AI enhancement, and generation types
  * Extended with tables, charts, templates, and rich content support
+ * Enhanced with visual element editing and multi-format export
  */
 
 export type SlideType = 'title' | 'content' | 'section' | 'infographic' | 'journey' | 'stats' | 'conclusion' | 'cta' | 'table' | 'chart' | 'comparison' | 'timeline';
@@ -18,6 +19,24 @@ export type SlideEnhancementType =
   | 'add_table'     // Convert to table format
   | 'add_chart'     // Add chart visualization
   | 'convert_format'; // Convert between formats
+
+// Visual element action types
+export type ElementActionType = 
+  | 'edit'          // Manual text/content edit
+  | 'regenerate'    // Full AI regeneration
+  | 'enhance'       // AI enhancement (improve current)
+  | 'revert'        // Undo to original
+  | 'style'         // Change colors/fonts/size
+  | 'resize';       // Scale SVG elements
+
+// Visual element format types
+export type VisualFormat = 'svg' | 'png' | 'webp';
+
+// Export format types  
+export type ExportFormat = 'svg' | 'png' | 'webp' | 'pdf';
+
+// Visual layer types for hybrid rendering
+export type VisualLayerType = 'text' | 'visual' | 'vector';
 
 // Chart types for data visualization
 export type ChartType = 'bar' | 'line' | 'pie' | 'donut' | 'area' | 'scatter' | 'radar' | 'funnel';
@@ -134,6 +153,162 @@ export interface LayoutRegion {
   style?: Record<string, string>;
 }
 
+// ============= VISUAL ELEMENT TYPES =============
+
+/**
+ * Visual element for hybrid rendering (PNG background + SVG text overlays)
+ */
+export interface VisualElement {
+  id: string;
+  type: 'infographic' | 'chart' | 'diagram' | 'icon' | 'photo' | 'illustration';
+  
+  // Layered content for hybrid rendering
+  layers: VisualLayer[];
+  
+  // Combined render (for preview)
+  previewUrl?: string;
+  
+  // Original state for revert
+  originalLayers?: VisualLayer[];
+  
+  // Generation metadata
+  prompt?: string;
+  model?: string;
+  generatedAt?: string;
+  
+  // Editing state
+  isEditing?: boolean;
+  isRegenerating?: boolean;
+  isEnhancing?: boolean;
+  
+  // Style configuration
+  style: VisualElementStyle;
+}
+
+/**
+ * Individual layer in the hybrid rendering system
+ */
+export interface VisualLayer {
+  id: string;
+  type: VisualLayerType;
+  zIndex: number;
+  
+  // Content based on type
+  content: 
+    | TextLayerContent      // For text layers (SVG text, editable)
+    | VisualLayerContent    // For visual layers (PNG/WebP, AI-generated)
+    | VectorLayerContent;   // For vector layers (SVG shapes, icons)
+    
+  // Position and size
+  position: { x: number; y: number };
+  size: { width: number; height: number };
+  
+  // Visibility
+  isVisible: boolean;
+  isLocked: boolean;
+}
+
+export interface TextLayerContent {
+  type: 'text';
+  text: string;
+  originalText?: string;
+  format: 'svg' | 'html';
+  style: TextStyle;
+}
+
+export interface VisualLayerContent {
+  type: 'visual';
+  url: string;
+  base64?: string;
+  format: 'png' | 'webp' | 'jpg';
+  alt: string;
+}
+
+export interface VectorLayerContent {
+  type: 'vector';
+  svgContent: string;
+  isEditable: boolean;
+  elements?: SVGElementData[];
+}
+
+export interface SVGElementData {
+  id: string;
+  tagName: string;
+  attributes: Record<string, string>;
+  children?: SVGElementData[];
+  isEditable: boolean;
+}
+
+export interface TextStyle {
+  fontFamily: string;
+  fontSize: number;
+  fontWeight: number;
+  color: string;
+  backgroundColor?: string;
+  alignment: 'left' | 'center' | 'right';
+  lineHeight?: number;
+  letterSpacing?: number;
+}
+
+export interface VisualElementStyle {
+  backgroundColor?: string;
+  borderRadius?: number;
+  border?: string;
+  shadow?: string;
+  padding?: number;
+}
+
+/**
+ * Element action configuration
+ */
+export interface ElementAction {
+  type: ElementActionType;
+  label: string;
+  description: string;
+  icon: string;
+  shortcut?: string;
+  isDestructive?: boolean;
+  requiresConfirmation?: boolean;
+}
+
+/**
+ * Style editor configuration
+ */
+export interface StyleEditorConfig {
+  allowFontChange: boolean;
+  allowColorChange: boolean;
+  allowSizeChange: boolean;
+  allowPositionChange: boolean;
+  colorPalette?: string[];
+  fontOptions?: string[];
+  sizePresets?: { label: string; width: number; height: number }[];
+}
+
+/**
+ * Export configuration
+ */
+export interface ExportConfig {
+  format: ExportFormat;
+  quality?: number; // 0-100 for lossy formats
+  scale?: number;   // 1x, 2x, 3x for resolution
+  backgroundColor?: string;
+  includeMetadata?: boolean;
+}
+
+/**
+ * Export result
+ */
+export interface ExportResult {
+  format: ExportFormat;
+  blob: Blob;
+  url: string;
+  filename: string;
+  size: number;
+  dimensions: { width: number; height: number };
+}
+
+// ============= END VISUAL ELEMENT TYPES =============
+
 export interface PresentationSlide {
   id: string;
   slideNumber: number;
@@ -143,6 +318,9 @@ export interface PresentationSlide {
   content: SlideContentData;
   image?: GeneratedSlideImage;
   speakerNotes?: string;
+  
+  // Visual elements (hybrid PNG+SVG)
+  visualElements?: VisualElement[];
   
   // Layout and styling
   layout?: SlideLayout;
@@ -303,6 +481,10 @@ export interface GeneratedSlideImage {
   prompt: string;
   isRegenerating?: boolean;
   model?: string;
+  
+  // Visual format info
+  format?: VisualFormat;
+  layers?: VisualLayer[];
 }
 
 export interface PresentationData {
@@ -328,6 +510,9 @@ export interface PresentationData {
   imageStyle?: string;
   imageModel?: string;
   
+  // Export settings
+  preferredExportFormats?: ExportFormat[];
+  
   // Stats
   imagesGenerated: number;
   slidesAccepted: number;
@@ -350,11 +535,12 @@ export interface BulletEnhancementResult {
 }
 
 // Editing modes
-export type EditingMode = 'slide' | 'presentation' | 'prompt';
+export type EditingMode = 'slide' | 'presentation' | 'prompt' | 'visual-element';
 
 export interface EditingContext {
   mode: EditingMode;
   selectedSlideId?: string;
+  selectedElementId?: string;
   customPrompt?: string;
   targetSlides?: string[]; // For batch editing
 }
