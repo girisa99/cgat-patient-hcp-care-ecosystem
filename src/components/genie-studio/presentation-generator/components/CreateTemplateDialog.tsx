@@ -269,8 +269,8 @@ export const CreateTemplateDialog: React.FC<CreateTemplateDialogProps> = ({
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
-        <DialogHeader className="shrink-0">
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+        <DialogHeader className="shrink-0 pb-4">
           <DialogTitle className="flex items-center gap-2">
             {type === 'framework' ? (
               <Briefcase className="h-5 w-5 text-primary" />
@@ -286,7 +286,7 @@ export const CreateTemplateDialog: React.FC<CreateTemplateDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="flex-1 min-h-0 flex flex-col">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="flex-1 min-h-0 flex flex-col overflow-hidden">
           <TabsList className="grid w-full grid-cols-2 shrink-0">
             <TabsTrigger value="details" className="gap-2">
               <Layers className="h-4 w-4" />
@@ -298,7 +298,7 @@ export const CreateTemplateDialog: React.FC<CreateTemplateDialogProps> = ({
             </TabsTrigger>
           </TabsList>
 
-          <ScrollArea className="flex-1 min-h-0 mt-2" style={{ maxHeight: 'calc(85vh - 220px)' }}>
+          <div className="flex-1 min-h-0 overflow-y-auto mt-4 pr-2" style={{ maxHeight: 'calc(90vh - 280px)' }}>
             <TabsContent value="details" className="mt-4 space-y-4 pr-4">
               {type === 'framework' ? (
                 // Framework form
@@ -562,7 +562,7 @@ export const CreateTemplateDialog: React.FC<CreateTemplateDialogProps> = ({
                 showRecommendations
               />
             </TabsContent>
-          </ScrollArea>
+          </div>
         </Tabs>
 
         <DialogFooter className="mt-4 shrink-0 border-t pt-4">

@@ -231,10 +231,21 @@ export function TemplateBrandingPanelV2({
     });
   }, [industryFilter, segmentFilter, contentTypeFilter]);
 
-  // Get frameworks for selected category
+  // Get frameworks for selected category - map category to firm type
   const frameworksForCategory = useMemo(() => {
-    if (!selectedFrameworkCategory) return [];
-    return CONSULTING_FRAMEWORKS.filter(f => (f as any).category === selectedFrameworkCategory);
+    if (!selectedFrameworkCategory) return CONSULTING_FRAMEWORKS;
+    
+    // Map FRAMEWORK_CATEGORIES ids to CONSULTING_FRAMEWORKS firm types
+    const categoryToFirmMap: Record<string, string[]> = {
+      'strategy': ['tier1-strategy', 'universal'],
+      'analysis': ['universal'],
+      'growth': ['tier1-growth', 'universal'],
+      'operations': ['tier1-operations', 'universal'],
+      'transformation': ['tier1-strategy', 'tier1-operations'],
+    };
+    
+    const firmTypes = categoryToFirmMap[selectedFrameworkCategory] || ['universal', 'custom'];
+    return CONSULTING_FRAMEWORKS.filter(f => firmTypes.includes(f.firm));
   }, [selectedFrameworkCategory]);
 
   // Feature toggles map
