@@ -31,6 +31,7 @@ import { toast } from 'sonner';
 import {
   getTemplateRecommendations,
   getQuickStyleSuggestions,
+  getTemplatesForStyle,
   TemplateRecommendation,
   TemplateStyle,
   RecommendedTemplate,
@@ -110,7 +111,7 @@ export const TemplateRecommendationPanel: React.FC<TemplateRecommendationPanelPr
   const [selectedFramework, setSelectedFramework] = useState<ConsultingFramework | null>(null);
   const [internalSelectedStyle, setInternalSelectedStyle] = useState<TemplateStyle | null>(null);
 
-  // Get recommendations
+  // Get AI recommendations (initial)
   const recommendation = useMemo(() => {
     return getTemplateRecommendations({
       industry,
@@ -128,6 +129,22 @@ export const TemplateRecommendationPanel: React.FC<TemplateRecommendationPanelPr
 
   // Use external or internal selected style, fallback to AI recommendation
   const activeStyle = externalSelectedStyle || internalSelectedStyle || recommendation.style;
+
+  // Get templates based on active style (regenerates when style changes)
+  const activeTemplates = useMemo(() => {
+    if (activeStyle === recommendation.style) {
+      // Use AI-generated templates
+      return recommendation.templates;
+    }
+    // Regenerate templates for manually selected style
+    return getTemplatesForStyle(activeStyle, {
+      industry,
+      segment,
+      contentTypes,
+      userPrompt,
+      audienceLevel,
+    });
+  }, [activeStyle, recommendation, industry, segment, contentTypes, userPrompt, audienceLevel]);
 
   const handleTemplateClick = (template: RecommendedTemplate) => {
     onTemplateSelect?.(template);
@@ -157,12 +174,12 @@ export const TemplateRecommendationPanel: React.FC<TemplateRecommendationPanelPr
                 <StyleIcon className="h-4 w-4 text-primary" />
               </div>
               <div>
-                <p className="text-sm font-medium">{recommendation.style.replace(/-/g, ' ')}</p>
+                <p className="text-sm font-medium">{activeStyle.replace(/-/g, ' ')}</p>
                 <p className="text-[10px] text-muted-foreground">{recommendation.confidence}% match</p>
               </div>
             </div>
             <Badge variant="secondary" className="text-[10px]">
-              {recommendation.templates.length} templates
+              {activeTemplates.length} templates
             </Badge>
           </div>
         </CardContent>
@@ -267,12 +284,12 @@ export const TemplateRecommendationPanel: React.FC<TemplateRecommendationPanelPr
           <div className="flex items-center justify-between">
             <p className="text-sm font-semibold text-foreground">Recommended Templates</p>
             <Badge variant="secondary" className="text-xs">
-              {recommendation.templates.length} matches
+              {activeTemplates.length} matches
             </Badge>
           </div>
           
           <div className="space-y-2">
-            {recommendation.templates.map(template => {
+            {activeTemplates.map(template => {
               const isSelected = selectedTemplateId === template.id;
               const categoryColor = FRAMEWORK_COLORS[template.subCategory || template.category] || FRAMEWORK_COLORS.universal;
               
@@ -312,7 +329,7 @@ export const TemplateRecommendationPanel: React.FC<TemplateRecommendationPanelPr
         </div>
 
         {/* Framework Library Section - Using Generic Names */}
-        {(recommendation.style === 'pure-consulting' || recommendation.style === 'consulting-hybrid') && (
+        {(activeStyle === 'pure-consulting' || activeStyle === 'consulting-hybrid') && (
           <>
             <Separator />
             <div className="space-y-2">
