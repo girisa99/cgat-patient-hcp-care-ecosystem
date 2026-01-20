@@ -359,7 +359,14 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
             {/* Industry Dropdown */}
             <div className="space-y-2">
               <Label className="text-xs font-medium text-foreground">Industry</Label>
-              <Select value={workflowConfig?.industryCategory || ''} onValueChange={handleIndustryChange}>
+              <Select value={workflowConfig?.industryCategory || ''} onValueChange={(value) => {
+                if (value === '__add_new__') {
+                  const newIndustry = prompt('Enter new industry name:');
+                  if (newIndustry) toast.success(`Industry "${newIndustry}" noted.`);
+                  return;
+                }
+                handleIndustryChange(value);
+              }}>
                 <SelectTrigger className="h-10 bg-background">
                   <SelectValue placeholder="Select industry..." />
                 </SelectTrigger>
@@ -373,17 +380,12 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
                     </SelectItem>
                   ))}
                   <Separator className="my-1" />
-                  <div
-                    className="flex items-center gap-2 px-2 py-1.5 text-sm cursor-pointer hover:bg-accent rounded text-primary"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const newIndustry = prompt('Enter new industry name:');
-                      if (newIndustry) toast.success(`Industry "${newIndustry}" noted.`);
-                    }}
-                  >
-                    <span>+</span>
-                    <span>Add New...</span>
-                  </div>
+                  <SelectItem value="__add_new__" className="text-primary">
+                    <div className="flex items-center gap-2">
+                      <span>+</span>
+                      <span>Add New...</span>
+                    </div>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
