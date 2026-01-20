@@ -29,10 +29,25 @@ import {
   Music,
   Mic,
   Package,
-  Orbit
+  Orbit,
+  BookOpen,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { OutputType } from './types';
+
+// ==========================================
+// ELEMENT-LEVEL GENERATION STATUS
+// ==========================================
+
+export interface ElementGenerationStatus {
+  id: string;
+  name: string;
+  type: 'text' | 'image' | 'chart' | 'table' | 'animation' | '3d-model' | 'audio' | 'video';
+  status: 'pending' | 'generating' | 'complete' | 'error';
+  progress?: number;
+}
 
 export interface SlideGenerationStatus {
   slideNumber: number;
@@ -42,6 +57,15 @@ export interface SlideGenerationStatus {
   phase?: 'content' | 'image' | 'speaker-notes' | 'animation' | '3d-render' | 'video-render' | 'audio' | 'compositing';
   progress?: number;
   error?: string;
+  elements?: ElementGenerationStatus[];
+}
+
+export interface ChapterGenerationStatus {
+  chapterNumber: number;
+  title: string;
+  status: 'pending' | 'generating' | 'complete' | 'error';
+  slides: SlideGenerationStatus[];
+  progress?: number;
 }
 
 // Extended generation phases for different output types
@@ -66,10 +90,12 @@ interface GenerationProgressPanelProps {
   totalSlides: number;
   currentSlide: number;
   slideStatuses: SlideGenerationStatus[];
+  chapters?: ChapterGenerationStatus[];
   phase: GenerationPhase;
   overallProgress: number;
   estimatedTime?: number;
   outputType?: OutputType;
+  showDetailedBreakdown?: boolean;
   className?: string;
 }
 
@@ -87,12 +113,25 @@ const slideTypeIcons: Record<string, React.ReactNode> = {
   'video-intro': <Play className="h-3 w-3" />,
   'video-scene': <Film className="h-3 w-3" />,
   'video-outro': <Clapperboard className="h-3 w-3" />,
+  'chapter-cover': <BookOpen className="h-3 w-3" />,
   // 3D types
   '3d-scene': <Box className="h-3 w-3" />,
   '3d-model': <Package className="h-3 w-3" />,
   '3d-animated': <Orbit className="h-3 w-3" />,
   // Interactive
   interactive: <MousePointerClick className="h-3 w-3" />,
+};
+
+// Element type icons
+const elementTypeIcons: Record<string, React.ReactNode> = {
+  text: <FileText className="h-2.5 w-2.5" />,
+  image: <ImageIcon className="h-2.5 w-2.5" />,
+  chart: <BarChart3 className="h-2.5 w-2.5" />,
+  table: <FileText className="h-2.5 w-2.5" />,
+  animation: <Sparkles className="h-2.5 w-2.5" />,
+  '3d-model': <Box className="h-2.5 w-2.5" />,
+  audio: <Mic className="h-2.5 w-2.5" />,
+  video: <Film className="h-2.5 w-2.5" />,
 };
 
 // Phase labels with icons for all output types
@@ -154,36 +193,64 @@ export function GenerationProgressPanel({
   totalSlides,
   currentSlide,
   slideStatuses,
+  chapters,
   phase,
   overallProgress,
   estimatedTime,
   outputType = '2d-static',
+  showDetailedBreakdown = true,
   className
 }: GenerationProgressPanelProps) {
+  const [expandedChapters, setExpandedChapters] = React.useState<number[]>([]);
+  const [expandedSlides, setExpandedSlides] = React.useState<string[]>([]);
+  
   if (!isGenerating && phase !== 'complete') return null;
 
   const phaseInfo = phaseLabels[phase] || phaseLabels.generating;
   const completedSlides = slideStatuses.filter(s => s.status === 'complete').length;
   const expectedPhases = getExpectedPhases(outputType);
   const currentPhaseIndex = expectedPhases.indexOf(phase);
-  const phaseProgress = currentPhaseIndex >= 0 
-    ? Math.round((currentPhaseIndex / (expectedPhases.length - 1)) * 100) 
-    : 0;
+  
+  // Toggle chapter expansion
+  const toggleChapter = (chapterNum: number) => {
+    setExpandedChapters(prev => 
+      prev.includes(chapterNum) 
+        ? prev.filter(c => c !== chapterNum)
+        : [...prev, chapterNum]
+    );
+  };
+  
+  // Toggle slide expansion (for element details)
+  const toggleSlide = (slideId: string) => {
+    setExpandedSlides(prev => 
+      prev.includes(slideId) 
+        ? prev.filter(s => s !== slideId)
+        : [...prev, slideId]
+    );
+  };
 
   // Output type specific completion message
   const getCompletionMessage = () => {
+    const chapterCount = chapters?.length || 1;
     switch (outputType) {
       case 'video-intro':
       case 'video-full':
-        return `Generated ${totalSlides} video scenes!`;
+        return `Generated ${chapterCount} chapter${chapterCount > 1 ? 's' : ''} with ${totalSlides} video scenes!`;
       case '3d-scene':
       case '3d-animated':
-        return `Rendered ${totalSlides} 3D scenes!`;
+        return `Rendered ${chapterCount} chapter${chapterCount > 1 ? 's' : ''} with ${totalSlides} 3D scenes!`;
       case 'interactive':
-        return `Built ${totalSlides} interactive slides!`;
+        return `Built ${chapterCount} chapter${chapterCount > 1 ? 's' : ''} with ${totalSlides} interactive slides!`;
       default:
-        return `Generated ${totalSlides} slides!`;
+        return `Generated ${chapterCount} chapter${chapterCount > 1 ? 's' : ''} with ${totalSlides} slides!`;
     }
+  };
+  
+  // Get item label based on output type
+  const getItemLabel = (singular: boolean = true) => {
+    if (outputType.includes('video')) return singular ? 'scene' : 'scenes';
+    if (outputType.includes('3d')) return singular ? '3D scene' : '3D scenes';
+    return singular ? 'slide' : 'slides';
   };
 
   return (
@@ -191,7 +258,7 @@ export function GenerationProgressPanel({
       <CardHeader className="p-4 pb-2">
         <CardTitle className="text-sm flex items-center gap-2">
           {phase === 'complete' ? (
-            <Check className="h-4 w-4 text-green-500" />
+            <Check className="h-4 w-4 text-success" />
           ) : (
             <Loader2 className="h-4 w-4 animate-spin text-primary" />
           )}
@@ -230,7 +297,7 @@ export function GenerationProgressPanel({
                   <div 
                     className={cn(
                       "flex items-center gap-1 px-2 py-1 rounded-full text-[9px] whitespace-nowrap transition-all",
-                      isComplete && "bg-green-500/20 text-green-700 dark:text-green-400",
+                      isComplete && "bg-success/20 text-success",
                       isCurrent && "bg-primary/20 text-primary animate-pulse",
                       !isComplete && !isCurrent && "bg-muted text-muted-foreground"
                     )}
@@ -247,7 +314,7 @@ export function GenerationProgressPanel({
                   {idx < expectedPhases.filter(pp => pp !== 'complete').length - 1 && (
                     <div className={cn(
                       "w-3 h-0.5",
-                      isComplete ? "bg-green-500" : "bg-muted"
+                      isComplete ? "bg-success" : "bg-muted"
                     )} />
                   )}
                 </React.Fragment>
@@ -267,7 +334,7 @@ export function GenerationProgressPanel({
           </div>
           <Progress value={overallProgress} className="h-2" />
           <div className="flex justify-between text-[10px] text-muted-foreground">
-            <span>{completedSlides} of {totalSlides} {outputType.includes('video') ? 'scenes' : 'slides'}</span>
+            <span>{completedSlides} of {totalSlides} {getItemLabel(false)}</span>
             {phase === 'images' && <span>Generating visuals...</span>}
             {phase === 'video-scenes' && <span>Rendering video clips...</span>}
             {phase === '3d-rendering' && <span>Rendering 3D models...</span>}
@@ -276,57 +343,188 @@ export function GenerationProgressPanel({
           </div>
         </div>
 
-        {/* Slide/Scene Status Grid */}
-        <div className="space-y-1.5">
-          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
-            {outputType.includes('video') ? 'Scene Progress' : 'Slide Progress'}
-          </p>
-          <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-1.5">
-            {slideStatuses.map((slide) => (
-              <div
-                key={slide.slideNumber}
-                className={cn(
-                  "relative p-2 rounded-lg border text-center transition-all",
-                  slide.status === 'complete' && "border-green-500/50 bg-green-500/10",
-                  slide.status === 'generating' && "border-primary bg-primary/10 animate-pulse",
-                  slide.status === 'pending' && "border-muted bg-muted/30",
-                  slide.status === 'error' && "border-destructive bg-destructive/10"
-                )}
-              >
-                {/* Slide/Scene Number */}
-                <div className="text-xs font-bold">
-                  {slide.slideNumber}
-                </div>
+        {/* DETAILED BREAKDOWN: Chapters > Slides > Elements */}
+        {showDetailedBreakdown && chapters && chapters.length > 0 ? (
+          <div className="space-y-2">
+            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+              Chapter Progress
+            </p>
+            <div className="space-y-2">
+              {chapters.map((chapter) => {
+                const isExpanded = expandedChapters.includes(chapter.chapterNumber);
+                const chapterComplete = chapter.slides.every(s => s.status === 'complete');
+                const chapterProgress = chapter.slides.length > 0 
+                  ? Math.round((chapter.slides.filter(s => s.status === 'complete').length / chapter.slides.length) * 100)
+                  : 0;
                 
-                {/* Type Icon */}
-                <div className="mt-0.5 flex justify-center text-muted-foreground">
-                  {slideTypeIcons[slide.type] || <FileText className="h-3 w-3" />}
-                </div>
-
-                {/* Status Indicator */}
-                <div className="absolute -top-1 -right-1">
-                  {slide.status === 'complete' && (
-                    <div className="h-3 w-3 rounded-full bg-green-500 flex items-center justify-center">
-                      <Check className="h-2 w-2 text-white" />
-                    </div>
-                  )}
-                  {slide.status === 'generating' && (
-                    <div className="h-3 w-3 rounded-full bg-primary flex items-center justify-center">
-                      <Loader2 className="h-2 w-2 text-white animate-spin" />
-                    </div>
-                  )}
-                </div>
-
-                {/* Title (if available and complete) */}
-                {slide.title && slide.status === 'complete' && (
-                  <div className="mt-1 text-[8px] text-muted-foreground truncate" title={slide.title}>
-                    {slide.title.slice(0, 15)}...
+                return (
+                  <div key={chapter.chapterNumber} className="border rounded-lg overflow-hidden">
+                    {/* Chapter Header */}
+                    <button
+                      onClick={() => toggleChapter(chapter.chapterNumber)}
+                      className={cn(
+                        "w-full flex items-center gap-2 p-2 text-left transition-colors",
+                        chapterComplete ? "bg-success/10" : chapter.status === 'generating' ? "bg-primary/10" : "bg-muted/30"
+                      )}
+                    >
+                      {isExpanded ? (
+                        <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                      ) : (
+                        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                      )}
+                      <BookOpen className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-xs font-medium flex-1">
+                        Chapter {chapter.chapterNumber}: {chapter.title}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-muted-foreground">
+                          {chapter.slides.filter(s => s.status === 'complete').length}/{chapter.slides.length}
+                        </span>
+                        {chapterComplete ? (
+                          <div className="h-4 w-4 rounded-full bg-success flex items-center justify-center">
+                            <Check className="h-2.5 w-2.5 text-success-foreground" />
+                          </div>
+                        ) : chapter.status === 'generating' ? (
+                          <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                        ) : (
+                          <div className="h-4 w-16">
+                            <Progress value={chapterProgress} className="h-1.5" />
+                          </div>
+                        )}
+                      </div>
+                    </button>
+                    
+                    {/* Expanded Slides */}
+                    {isExpanded && (
+                      <div className="p-2 pt-0 space-y-1.5 bg-background/50">
+                        {chapter.slides.map((slide) => {
+                          const slideId = `ch${chapter.chapterNumber}-slide${slide.slideNumber}`;
+                          const isSlideExpanded = expandedSlides.includes(slideId);
+                          const hasElements = slide.elements && slide.elements.length > 0;
+                          
+                          return (
+                            <div key={slide.slideNumber} className="rounded border bg-background">
+                              {/* Slide Row */}
+                              <div
+                                className={cn(
+                                  "flex items-center gap-2 p-2 cursor-pointer transition-colors",
+                                  slide.status === 'complete' && "border-l-2 border-l-success",
+                                  slide.status === 'generating' && "border-l-2 border-l-primary",
+                                  slide.status === 'error' && "border-l-2 border-l-destructive"
+                                )}
+                                onClick={() => hasElements && toggleSlide(slideId)}
+                              >
+                                {hasElements && (
+                                  isSlideExpanded ? (
+                                    <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                                  ) : (
+                                    <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                                  )
+                                )}
+                                {!hasElements && <span className="w-3" />}
+                                
+                                <div className="w-5 h-5 rounded bg-muted flex items-center justify-center text-[10px] font-bold">
+                                  {slide.slideNumber}
+                                </div>
+                                
+                                <div className="flex-1 flex items-center gap-2">
+                                  {slideTypeIcons[slide.type] || <FileText className="h-3 w-3" />}
+                                  <span className="text-xs truncate">{slide.title || slide.type}</span>
+                                </div>
+                                
+                                {/* Slide Status */}
+                                {slide.status === 'complete' && (
+                                  <Check className="h-3.5 w-3.5 text-success" />
+                                )}
+                                {slide.status === 'generating' && (
+                                  <div className="flex items-center gap-1">
+                                    <Loader2 className="h-3 w-3 animate-spin text-primary" />
+                                    {slide.phase && (
+                                      <span className="text-[9px] text-muted-foreground">{slide.phase}</span>
+                                    )}
+                                  </div>
+                                )}
+                                {slide.status === 'error' && (
+                                  <span className="text-[9px] text-destructive">Error</span>
+                                )}
+                              </div>
+                              
+                              {/* Element Details */}
+                              {isSlideExpanded && hasElements && (
+                                <div className="px-2 pb-2 pt-0 grid grid-cols-2 sm:grid-cols-4 gap-1">
+                                  {slide.elements?.map((element) => (
+                                    <div
+                                      key={element.id}
+                                      className={cn(
+                                        "flex items-center gap-1.5 p-1.5 rounded text-[9px] border",
+                                        element.status === 'complete' && "bg-success/10 border-success/30",
+                                        element.status === 'generating' && "bg-primary/10 border-primary/30 animate-pulse",
+                                        element.status === 'pending' && "bg-muted/30 border-muted",
+                                        element.status === 'error' && "bg-destructive/10 border-destructive/30"
+                                      )}
+                                    >
+                                      {elementTypeIcons[element.type] || <Layers className="h-2.5 w-2.5" />}
+                                      <span className="truncate flex-1">{element.name}</span>
+                                      {element.status === 'complete' && <Check className="h-2 w-2 text-success" />}
+                                      {element.status === 'generating' && <Loader2 className="h-2 w-2 animate-spin" />}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            ))}
+                );
+              })}
+            </div>
           </div>
-        </div>
+        ) : (
+          /* Simple Slide Grid (fallback when no chapters) */
+          <div className="space-y-1.5">
+            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+              {outputType.includes('video') ? 'Scene Progress' : 'Slide Progress'}
+            </p>
+            <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-1.5">
+              {slideStatuses.map((slide) => (
+                <div
+                  key={slide.slideNumber}
+                  className={cn(
+                    "relative p-2 rounded-lg border text-center transition-all",
+                    slide.status === 'complete' && "border-success/50 bg-success/10",
+                    slide.status === 'generating' && "border-primary bg-primary/10 animate-pulse",
+                    slide.status === 'pending' && "border-muted bg-muted/30",
+                    slide.status === 'error' && "border-destructive bg-destructive/10"
+                  )}
+                >
+                  <div className="text-xs font-bold">{slide.slideNumber}</div>
+                  <div className="mt-0.5 flex justify-center text-muted-foreground">
+                    {slideTypeIcons[slide.type] || <FileText className="h-3 w-3" />}
+                  </div>
+                  <div className="absolute -top-1 -right-1">
+                    {slide.status === 'complete' && (
+                      <div className="h-3 w-3 rounded-full bg-success flex items-center justify-center">
+                        <Check className="h-2 w-2 text-success-foreground" />
+                      </div>
+                    )}
+                    {slide.status === 'generating' && (
+                      <div className="h-3 w-3 rounded-full bg-primary flex items-center justify-center">
+                        <Loader2 className="h-2 w-2 text-primary-foreground animate-spin" />
+                      </div>
+                    )}
+                  </div>
+                  {slide.title && slide.status === 'complete' && (
+                    <div className="mt-1 text-[8px] text-muted-foreground truncate" title={slide.title}>
+                      {slide.title.slice(0, 15)}...
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Current Slide/Scene Detail */}
         {phase !== 'complete' && slideStatuses[currentSlide - 1] && (
@@ -334,7 +532,7 @@ export function GenerationProgressPanel({
             <div className="flex items-center gap-2 text-xs">
               <Loader2 className="h-3 w-3 animate-spin text-primary" />
               <span className="font-medium">
-                Generating {outputType.includes('video') ? 'Scene' : 'Slide'} {currentSlide}: {slideStatuses[currentSlide - 1]?.type}
+                Generating {getItemLabel()} {currentSlide}: {slideStatuses[currentSlide - 1]?.type}
               </span>
             </div>
             {slideStatuses[currentSlide - 1]?.phase && (
@@ -355,8 +553,8 @@ export function GenerationProgressPanel({
 
         {/* Completion Summary */}
         {phase === 'complete' && (
-          <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
-            <div className="flex items-center gap-2 text-xs text-green-700 dark:text-green-400">
+          <div className="p-3 bg-success/10 border border-success/30 rounded-lg">
+            <div className="flex items-center gap-2 text-xs text-success">
               <Check className="h-4 w-4" />
               <span className="font-medium">
                 {getCompletionMessage()}
