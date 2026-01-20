@@ -38,7 +38,7 @@ interface AutoTranslateInputProps {
   onTranslationComplete?: (translatedText: string) => void;
 }
 
-// Language display names
+// Language display names (native)
 const LANGUAGE_NAMES: Record<string, string> = {
   en: 'English',
   de: 'Deutsch',
@@ -57,6 +57,69 @@ const LANGUAGE_NAMES: Record<string, string> = {
   vi: 'Tiếng Việt',
   ru: 'Русский',
   tr: 'Türkçe',
+  bn: 'বাংলা',
+  ta: 'தமிழ்',
+  te: 'తెలుగు',
+  mr: 'मराठी',
+  gu: 'ગુજરાતી',
+  id: 'Bahasa Indonesia',
+  ms: 'Bahasa Melayu',
+};
+
+// Native placeholders - "Type your content here" in each language
+const NATIVE_PLACEHOLDERS: Record<string, string> = {
+  en: 'Type your content here...',
+  de: 'Geben Sie hier Ihren Inhalt ein...',
+  fr: 'Tapez votre contenu ici...',
+  es: 'Escriba su contenido aquí...',
+  it: 'Scrivi il tuo contenuto qui...',
+  pt: 'Digite seu conteúdo aqui...',
+  nl: 'Typ hier uw inhoud...',
+  pl: 'Wpisz tutaj swoją treść...',
+  zh: '在此输入您的内容...',
+  ja: 'ここにコンテンツを入力してください...',
+  ko: '여기에 내용을 입력하세요...',
+  hi: 'यहां अपनी सामग्री टाइप करें...',
+  ar: 'اكتب محتواك هنا...',
+  th: 'พิมพ์เนื้อหาของคุณที่นี่...',
+  vi: 'Nhập nội dung của bạn tại đây...',
+  ru: 'Введите ваш контент здесь...',
+  tr: 'İçeriğinizi buraya yazın...',
+  bn: 'এখানে আপনার কন্টেন্ট টাইপ করুন...',
+  ta: 'உங்கள் உள்ளடக்கத்தை இங்கே தட்டச்சு செய்யவும்...',
+  te: 'మీ కంటెంట్‌ను ఇక్కడ టైప్ చేయండి...',
+  mr: 'तुमची सामग्री येथे टाइप करा...',
+  gu: 'તમારી સામગ્રી અહીં ટાઇપ કરો...',
+  id: 'Ketik konten Anda di sini...',
+  ms: 'Taip kandungan anda di sini...',
+};
+
+// Native "Type here" labels
+const NATIVE_TYPE_HERE: Record<string, string> = {
+  en: 'Type here',
+  de: 'Hier eingeben',
+  fr: 'Tapez ici',
+  es: 'Escriba aquí',
+  it: 'Scrivi qui',
+  pt: 'Digite aqui',
+  nl: 'Typ hier',
+  pl: 'Wpisz tutaj',
+  zh: '在此输入',
+  ja: 'ここに入力',
+  ko: '여기에 입력',
+  hi: 'यहां टाइप करें',
+  ar: 'اكتب هنا',
+  th: 'พิมพ์ที่นี่',
+  vi: 'Nhập tại đây',
+  ru: 'Введите здесь',
+  tr: 'Buraya yazın',
+  bn: 'এখানে টাইপ করুন',
+  ta: 'இங்கே தட்டச்சு செய்க',
+  te: 'ఇక్కడ టైప్ చేయండి',
+  mr: 'येथे टाइप करा',
+  gu: 'અહીં ટાઇપ કરો',
+  id: 'Ketik di sini',
+  ms: 'Taip di sini',
 };
 
 // Recommended translation models
@@ -98,10 +161,8 @@ export function AutoTranslateInput({
   const needsTranslation = inputLanguage !== outputLanguage && value.trim().length > 0;
   const inputLangName = LANGUAGE_NAMES[inputLanguage] || inputLanguage.toUpperCase();
   const outputLangName = LANGUAGE_NAMES[outputLanguage] || outputLanguage.toUpperCase();
-
-  const defaultPlaceholder = inputLanguage === 'en' 
-    ? 'Type your content here...'
-    : `Type in ${inputLangName}...`;
+  const nativePlaceholder = NATIVE_PLACEHOLDERS[inputLanguage] || NATIVE_PLACEHOLDERS['en'];
+  const nativeTypeHere = NATIVE_TYPE_HERE[inputLanguage] || NATIVE_TYPE_HERE['en'];
 
   // Auto-translate
   useEffect(() => {
@@ -156,7 +217,7 @@ export function AutoTranslateInput({
         <Textarea
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder || defaultPlaceholder}
+          placeholder={placeholder || nativePlaceholder}
           className="resize-none"
           style={{ minHeight }}
         />
@@ -210,12 +271,13 @@ export function AutoTranslateInput({
               </Badge>
               <span className="text-xs font-medium">{inputLangName}</span>
             </div>
-            <span className="text-[10px] text-muted-foreground">Type here</span>
+            <span className="text-[10px] text-muted-foreground">{nativeTypeHere}</span>
           </div>
           <Textarea
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            placeholder={placeholder || defaultPlaceholder}
+            dir={inputLanguage === 'ar' ? 'rtl' : 'ltr'}
+            placeholder={placeholder || nativePlaceholder}
             className="border-0 rounded-none resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
             style={{ minHeight }}
           />
