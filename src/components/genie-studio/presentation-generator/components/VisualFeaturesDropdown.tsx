@@ -6,7 +6,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Popover,
@@ -297,16 +296,21 @@ export function VisualFeaturesDropdown({
                         : 'hover:bg-muted border border-transparent'
                     )}
                   >
-                    <div 
+                    <button
+                      type="button"
                       className="shrink-0"
+                      onMouseDown={(e) => e.preventDefault()}
                       onClick={(e) => toggleFeature(feature.id, e)}
                     >
-                      <Checkbox
-                        checked={isSelected}
-                        onCheckedChange={() => {}}
-                        className="pointer-events-none"
-                      />
-                    </div>
+                      <div className={cn(
+                        "h-4 w-4 rounded-sm border flex items-center justify-center",
+                        isSelected 
+                          ? "bg-primary border-primary text-primary-foreground" 
+                          : "border-input"
+                      )}>
+                        {isSelected && <Check className="h-3 w-3" />}
+                      </div>
+                    </button>
                     <Icon className="h-4 w-4 text-primary shrink-0" />
                     <div
                       className="flex-1 min-w-0 cursor-pointer"
@@ -343,31 +347,38 @@ export function VisualFeaturesDropdown({
                       {feature.subOptions.map(subOption => {
                         const isChecked = isSubOptionSelected(feature.id, subOption.id);
                         return (
-                          <div
+                          <button
+                            type="button"
                             key={subOption.id}
                             className={cn(
-                              'flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors select-none',
+                              'flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors select-none w-full text-left',
                               isChecked
                                 ? 'bg-primary/10 border border-primary/30'
                                 : 'hover:bg-muted/50 border border-transparent'
                             )}
-                            onClick={(e) => toggleSubOption(feature.id, subOption.id, e)}
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                            }}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              toggleSubOption(feature.id, subOption.id);
+                            }}
                           >
-                            <div 
-                              className="shrink-0"
-                              onClick={(e) => toggleSubOption(feature.id, subOption.id, e)}
-                            >
-                              <Checkbox
-                                checked={isChecked}
-                                onCheckedChange={() => {}}
-                                className="pointer-events-none"
-                              />
+                            <div className={cn(
+                              "h-4 w-4 shrink-0 rounded-sm border flex items-center justify-center",
+                              isChecked 
+                                ? "bg-primary border-primary text-primary-foreground" 
+                                : "border-input"
+                            )}>
+                              {isChecked && <Check className="h-3 w-3" />}
                             </div>
                             <span className="text-sm flex-1">{subOption.name}</span>
                             {isChecked && (
                               <Check className="h-3 w-3 text-primary shrink-0" />
                             )}
-                          </div>
+                          </button>
                         );
                       })}
                     </div>
