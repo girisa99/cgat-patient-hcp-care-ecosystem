@@ -7,8 +7,6 @@ import React, { useState, useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent } from '@/components/ui/card';
 import {
   Select,
   SelectContent,
@@ -296,144 +294,131 @@ export function SlideCountRecommendation({
   ];
 
   return (
-    <Card className={cn("border-primary/20", className)}>
-      <CardContent className="p-4 space-y-4">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Layers className="h-5 w-5 text-primary" />
-            <span className="font-medium">Slide Count</span>
-          </div>
-          <Badge variant="outline" className={cn(
-            isOptimal ? "border-success text-success" :
-            isAboveAbsoluteMax ? "border-destructive text-destructive" :
-            "border-warning text-warning"
-          )}>
-            {isOptimal ? (
-              <><Check className="h-3 w-3 mr-1" /> Optimal</>
-            ) : isBelowRecommended ? (
-              <><TrendingDown className="h-3 w-3 mr-1" /> Below Rec.</>
-            ) : isAboveAbsoluteMax ? (
-              <><AlertTriangle className="h-3 w-3 mr-1" /> Too Many</>
-            ) : (
-              <><TrendingUp className="h-3 w-3 mr-1" /> Above Rec.</>
-            )}
-          </Badge>
+    <div className={cn("space-y-4", className)}>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Layers className="h-4 w-4 text-primary" />
+          <span className="text-sm font-medium">Slide Count</span>
         </div>
+        <Badge variant="outline" className={cn(
+          "text-[10px]",
+          isOptimal ? "border-success text-success" :
+          isAboveAbsoluteMax ? "border-destructive text-destructive" :
+          "border-warning text-warning"
+        )}>
+          {isOptimal ? (
+            <><Check className="h-2.5 w-2.5 mr-1" /> Optimal</>
+          ) : isBelowRecommended ? (
+            <><TrendingDown className="h-2.5 w-2.5 mr-1" /> Below Rec.</>
+          ) : isAboveAbsoluteMax ? (
+            <><AlertTriangle className="h-2.5 w-2.5 mr-1" /> Too Many</>
+          ) : (
+            <><TrendingUp className="h-2.5 w-2.5 mr-1" /> Above Rec.</>
+          )}
+        </Badge>
+      </div>
 
-        {/* Current Count Display */}
-        <div className="flex items-center justify-center py-2">
-          <div className="text-center">
-            <div className="text-4xl font-bold text-primary">{currentCount}</div>
-            <div className="text-xs text-muted-foreground">slides</div>
-          </div>
+      {/* Current Count Display */}
+      <div className="flex items-center justify-center py-2">
+        <div className="text-center">
+          <div className="text-3xl font-bold text-primary">{currentCount}</div>
+          <div className="text-xs text-muted-foreground">slides</div>
         </div>
+      </div>
 
-        {/* Slider */}
-        <div className="space-y-2">
-          <Slider
-            value={[currentCount]}
-            onValueChange={([v]) => onCountChange(v)}
-            min={minSlides}
-            max={maxSlides}
-            step={1}
-            className="w-full"
-          />
-          <div className="flex justify-between text-[10px] text-muted-foreground">
-            <span>{minSlides}</span>
-            <span className="text-primary font-medium">
-              Recommended: {adjustedRecommendation.recommendedMin}-{adjustedRecommendation.recommendedMax}
-            </span>
-            <span>{maxSlides}</span>
-          </div>
+      {/* Slider */}
+      <div className="space-y-2">
+        <Slider
+          value={[currentCount]}
+          onValueChange={([v]) => onCountChange(v)}
+          min={minSlides}
+          max={maxSlides}
+          step={1}
+          className="w-full"
+        />
+        <div className="flex justify-between text-[10px] text-muted-foreground">
+          <span>{minSlides}</span>
+          <span className="text-primary font-medium">
+            Rec: {adjustedRecommendation.recommendedMin}-{adjustedRecommendation.recommendedMax}
+          </span>
+          <span>{maxSlides}</span>
         </div>
+      </div>
 
-        {/* Quick Select */}
-        <div className="grid grid-cols-4 gap-2">
-          {quickOptions.map((opt) => (
-            <Button
-              key={opt.label}
-              size="sm"
-              variant={currentCount === opt.value ? "default" : "outline"}
-              onClick={() => onCountChange(opt.value)}
-              className="text-xs h-8"
+      {/* Quick Select */}
+      <div className="grid grid-cols-4 gap-2">
+        {quickOptions.map((opt) => (
+          <Button
+            key={opt.label}
+            size="sm"
+            variant={currentCount === opt.value ? "default" : "outline"}
+            onClick={() => onCountChange(opt.value)}
+            className="text-[10px] h-7 px-2"
+          >
+            {opt.label}
+            <span className="ml-1 opacity-70">{opt.value}</span>
+          </Button>
+        ))}
+      </div>
+
+      {/* Recommendation Details - Compact */}
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+              onClick={() => setShowDetails(!showDetails)}
             >
-              {opt.label}
-              <span className="ml-1 opacity-70">{opt.value}</span>
-            </Button>
-          ))}
-        </div>
-
-        {/* Recommendation Details */}
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full text-xs"
-                onClick={() => setShowDetails(!showDetails)}
-              >
-                <Info className="h-3 w-3 mr-1" />
-                Why this recommendation?
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" className="max-w-[300px] p-3">
-              <div className="space-y-2 text-xs">
-                <div>
-                  <span className="font-medium">Content Type:</span> {adjustedRecommendation.contentType}
-                </div>
-                <div>
-                  <span className="font-medium">Reasoning:</span> {adjustedRecommendation.reasoning}
-                </div>
-                <div className="flex items-start gap-1">
-                  <BarChart3 className="h-3 w-3 text-primary mt-0.5" />
-                  <span className="text-muted-foreground">{adjustedRecommendation.marketData}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Target className="h-3 w-3 text-primary" />
-                  <span className="text-muted-foreground">
-                    Attention span: {adjustedRecommendation.attentionSpan}
-                  </span>
-                </div>
-                {outputAdjustment.multiplier !== 1 && (
-                  <div className="pt-2 border-t">
-                    <span className="text-muted-foreground">
-                      Adjusted for {outputType}: {outputAdjustment.reason}
-                    </span>
-                  </div>
-                )}
+              <Info className="h-3 w-3" />
+              Why this recommendation?
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="max-w-[280px] p-3">
+            <div className="space-y-2 text-xs">
+              <div>
+                <span className="font-medium">Content Type:</span> {adjustedRecommendation.contentType}
               </div>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+              <div className="text-muted-foreground">{adjustedRecommendation.reasoning}</div>
+              <div className="flex items-start gap-1 text-muted-foreground">
+                <BarChart3 className="h-3 w-3 text-primary mt-0.5 shrink-0" />
+                <span className="line-clamp-2">{adjustedRecommendation.marketData}</span>
+              </div>
+              <div className="flex items-center gap-1 text-muted-foreground">
+                <Target className="h-3 w-3 text-primary shrink-0" />
+                <span>Attention span: {adjustedRecommendation.attentionSpan}</span>
+              </div>
+            </div>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
 
-        {/* Warnings */}
-        {isAboveAbsoluteMax && (
-          <div className="flex items-start gap-2 p-2 bg-destructive/10 rounded-lg text-xs">
-            <AlertTriangle className="h-4 w-4 text-destructive mt-0.5" />
-            <div>
-              <span className="font-medium text-destructive">High slide count warning</span>
-              <p className="text-muted-foreground mt-0.5">
-                {currentCount} slides may lead to viewer fatigue. Consider splitting into multiple presentations or reducing content density.
-              </p>
-            </div>
+      {/* Warnings - Compact */}
+      {isAboveAbsoluteMax && (
+        <div className="flex items-start gap-2 p-2 bg-destructive/10 rounded-md text-[10px]">
+          <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0 mt-0.5" />
+          <div>
+            <span className="font-medium text-destructive">High slide count</span>
+            <p className="text-muted-foreground mt-0.5 line-clamp-2">
+              {currentCount} slides may cause viewer fatigue. Consider splitting into multiple presentations.
+            </p>
           </div>
-        )}
-        
-        {isBelowRecommended && currentCount >= minSlides && (
-          <div className="flex items-start gap-2 p-2 bg-warning/10 rounded-lg text-xs">
-            <Info className="h-4 w-4 text-warning mt-0.5" />
-            <div>
-              <span className="font-medium text-warning">Below recommended range</span>
-              <p className="text-muted-foreground mt-0.5">
-                {adjustedRecommendation.contentType} typically needs {adjustedRecommendation.recommendedMin}+ slides for comprehensive coverage.
-              </p>
-            </div>
+        </div>
+      )}
+      
+      {isBelowRecommended && currentCount >= minSlides && (
+        <div className="flex items-start gap-2 p-2 bg-warning/10 rounded-md text-[10px]">
+          <Info className="h-3.5 w-3.5 text-warning shrink-0 mt-0.5" />
+          <div>
+            <span className="font-medium text-warning">Below recommended</span>
+            <p className="text-muted-foreground mt-0.5 line-clamp-2">
+              {adjustedRecommendation.contentType} typically needs {adjustedRecommendation.recommendedMin}+ slides.
+            </p>
           </div>
-        )}
-      </CardContent>
-    </Card>
+        </div>
+      )}
+    </div>
   );
 }
 
