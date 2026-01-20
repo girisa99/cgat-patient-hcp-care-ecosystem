@@ -1,13 +1,20 @@
 /**
  * Auto-Translate Input Component
+ * Features: Expandable popup modal for comfortable typing
  * Side-by-side: Native language input + English translation preview
- * Flat architecture - no nested cards
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import {
   Tooltip,
   TooltipContent,
@@ -23,6 +30,9 @@ import {
   ArrowRight,
   Star,
   Info,
+  Maximize2,
+  Send,
+  PenLine,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -36,6 +46,7 @@ interface AutoTranslateInputProps {
   minHeight?: number;
   className?: string;
   onTranslationComplete?: (translatedText: string) => void;
+  onSubmit?: () => void;
 }
 
 // Language display names (native)
@@ -132,7 +143,56 @@ const RECOMMENDED_MODELS: Record<string, { model: string; reason: string }> = {
   'ko-en': { model: 'Qwen-MT', reason: 'Excellent Korean accuracy' },
   'hi-en': { model: 'Gemini', reason: 'Best Hindi understanding' },
   'ar-en': { model: 'Google', reason: 'Best Arabic RTL handling' },
+  'te-en': { model: 'Gemini', reason: 'Best Telugu understanding' },
+  'ta-en': { model: 'Gemini', reason: 'Best Tamil understanding' },
   'default': { model: 'Gemini 3 Flash', reason: 'Universal - fast & accurate' },
+};
+
+// Mock translation examples (simulating real translation)
+const MOCK_TRANSLATIONS: Record<string, Record<string, string>> = {
+  te: {
+    'నమస్కారం': 'Hello',
+    'ధన్యవాదాలు': 'Thank you',
+    'మీకు స్వాగతం': 'Welcome',
+    'ప్రదర్శన': 'Presentation',
+    'విషయం': 'Content',
+  },
+  hi: {
+    'नमस्ते': 'Hello',
+    'धन्यवाद': 'Thank you',
+    'स्वागत है': 'Welcome',
+    'प्रस्तुति': 'Presentation',
+  },
+  zh: {
+    '你好': 'Hello',
+    '谢谢': 'Thank you',
+    '欢迎': 'Welcome',
+    '演示文稿': 'Presentation',
+  },
+  ja: {
+    'こんにちは': 'Hello',
+    'ありがとう': 'Thank you',
+    'ようこそ': 'Welcome',
+    'プレゼンテーション': 'Presentation',
+  },
+  fr: {
+    'bonjour': 'Hello',
+    'merci': 'Thank you',
+    'bienvenue': 'Welcome',
+    'présentation': 'Presentation',
+  },
+  de: {
+    'hallo': 'Hello',
+    'danke': 'Thank you',
+    'willkommen': 'Welcome',
+    'präsentation': 'Presentation',
+  },
+  es: {
+    'hola': 'Hello',
+    'gracias': 'Thank you',
+    'bienvenido': 'Welcome',
+    'presentación': 'Presentation',
+  },
 };
 
 function getRecommendedModel(inputLang: string, outputLang: string) {
@@ -141,32 +201,63 @@ function getRecommendedModel(inputLang: string, outputLang: string) {
   return RECOMMENDED_MODELS[key] || RECOMMENDED_MODELS[reverseKey] || RECOMMENDED_MODELS['default'];
 }
 
+// Simulate translation (in production, this would call a real API)
+function simulateTranslation(text: string, fromLang: string, toLang: string): string {
+  if (!text.trim()) return '';
+  if (fromLang === toLang) return text;
+  
+  // Check for known translations
+  const langTranslations = MOCK_TRANSLATIONS[fromLang];
+  if (langTranslations) {
+    for (const [native, english] of Object.entries(langTranslations)) {
+      if (text.toLowerCase().includes(native.toLowerCase())) {
+        return text.replace(new RegExp(native, 'gi'), english);
+      }
+    }
+  }
+  
+  // For demo: show a meaningful English translation message
+  const langName = LANGUAGE_NAMES[fromLang] || fromLang;
+  return `[Translated from ${langName}]: "${text}"`;
+}
+
 export function AutoTranslateInput({
   value,
   onChange,
   inputLanguage,
   outputLanguage = 'en',
   placeholder,
-  minHeight = 120,
+  minHeight = 80,
   className,
   onTranslationComplete,
+  onSubmit,
 }: AutoTranslateInputProps) {
   const [translatedText, setTranslatedText] = useState('');
   const [isTranslating, setIsTranslating] = useState(false);
   const [translationError, setTranslationError] = useState<string | null>(null);
-  const debouncedValue = useDebounce(value, 800);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [modalValue, setModalValue] = useState(value);
+  const debouncedValue = useDebounce(isExpanded ? modalValue : value, 500);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const recommendedModel = getRecommendedModel(inputLanguage, outputLanguage);
-  const needsTranslation = inputLanguage !== outputLanguage && value.trim().length > 0;
+  const needsTranslation = inputLanguage !== outputLanguage;
   const inputLangName = LANGUAGE_NAMES[inputLanguage] || inputLanguage.toUpperCase();
   const outputLangName = LANGUAGE_NAMES[outputLanguage] || outputLanguage.toUpperCase();
   const nativePlaceholder = NATIVE_PLACEHOLDERS[inputLanguage] || NATIVE_PLACEHOLDERS['en'];
   const nativeTypeHere = NATIVE_TYPE_HERE[inputLanguage] || NATIVE_TYPE_HERE['en'];
 
+  // Sync modal value when opening
+  useEffect(() => {
+    if (isExpanded) {
+      setModalValue(value);
+    }
+  }, [isExpanded, value]);
+
   // Auto-translate
   useEffect(() => {
-    if (!needsTranslation || !debouncedValue.trim()) {
+    const textToTranslate = debouncedValue.trim();
+    if (!needsTranslation || !textToTranslate) {
       setTranslatedText('');
       return;
     }
@@ -181,10 +272,13 @@ export function AutoTranslateInput({
       setTranslationError(null);
 
       try {
-        await new Promise(resolve => setTimeout(resolve, 600));
-        const mockTranslation = debouncedValue; // In production, call real API
-        setTranslatedText(mockTranslation);
-        onTranslationComplete?.(mockTranslation);
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 400));
+        
+        // Perform mock translation
+        const translated = simulateTranslation(textToTranslate, inputLanguage, outputLanguage);
+        setTranslatedText(translated);
+        onTranslationComplete?.(translated);
       } catch (error) {
         if ((error as Error).name !== 'AbortError') {
           setTranslationError('Translation failed');
@@ -206,141 +300,227 @@ export function AutoTranslateInput({
   const handleRetry = useCallback(() => {
     setTranslatedText('');
     setTranslationError(null);
-    onChange(value + ' ');
-    setTimeout(() => onChange(value.trim()), 10);
-  }, [value, onChange]);
+    const currentVal = isExpanded ? modalValue : value;
+    if (isExpanded) {
+      setModalValue(currentVal + ' ');
+      setTimeout(() => setModalValue(currentVal.trim()), 10);
+    } else {
+      onChange(currentVal + ' ');
+      setTimeout(() => onChange(currentVal.trim()), 10);
+    }
+  }, [value, modalValue, onChange, isExpanded]);
 
-  // Same language - simple input
-  if (!needsTranslation && inputLanguage === outputLanguage) {
-    return (
-      <div className={cn("space-y-2", className)}>
-        <Textarea
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder || nativePlaceholder}
-          className="resize-none"
-          style={{ minHeight }}
-        />
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <CheckCircle2 className="h-3.5 w-3.5 text-success" />
-          Typing in {inputLangName} - no translation needed
-        </div>
-      </div>
-    );
-  }
+  const handleExpandClick = () => {
+    setModalValue(value);
+    setIsExpanded(true);
+  };
 
-  return (
-    <div className={cn("space-y-3", className)}>
-      {/* Model & Language Header */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="bg-primary/5 border-primary/30 text-primary gap-1.5 text-xs">
-            <Star className="h-3 w-3 fill-current" />
-            {recommendedModel.model}
-          </Badge>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-5 px-1.5">
-                  <Info className="h-3 w-3" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-[200px]">
-                <p className="text-xs">{recommendedModel.reason}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+  const handleModalSubmit = () => {
+    onChange(modalValue);
+    setIsExpanded(false);
+    onSubmit?.();
+  };
+
+  const handleModalClose = () => {
+    onChange(modalValue);
+    setIsExpanded(false);
+  };
+
+  // Compact collapsed view
+  const CollapsedView = () => (
+    <div className={cn("space-y-2", className)}>
+      {/* Click-to-expand area */}
+      <div 
+        onClick={handleExpandClick}
+        className="relative group cursor-pointer rounded-lg border-2 border-dashed border-primary/30 hover:border-primary/60 bg-primary/5 hover:bg-primary/10 transition-all p-4"
+      >
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="text-[10px] font-mono h-5">
+              {inputLanguage.toUpperCase()}
+            </Badge>
+            <span className="text-xs font-medium">{inputLangName}</span>
+            {needsTranslation && (
+              <>
+                <ArrowRight className="h-3 w-3 text-muted-foreground" />
+                <Badge variant="outline" className="text-[10px] font-mono h-5">
+                  {outputLanguage.toUpperCase()}
+                </Badge>
+                <span className="text-xs font-medium">{outputLangName}</span>
+              </>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="bg-primary/5 border-primary/30 text-primary gap-1 text-[10px]">
+              <Star className="h-2.5 w-2.5 fill-current" />
+              {recommendedModel.model}
+            </Badge>
+            <Maximize2 className="h-4 w-4 text-primary group-hover:scale-110 transition-transform" />
+          </div>
         </div>
         
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Languages className="h-3.5 w-3.5" />
-          {inputLangName}
-          <ArrowRight className="h-3 w-3" />
-          {outputLangName}
-        </div>
-      </div>
-
-      {/* Side-by-Side Layout - Flat divs, no nested cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {/* LEFT: Native Language Input */}
-        <div className="rounded-lg border border-primary/20 overflow-hidden">
-          <div className="px-3 py-2 bg-primary/5 border-b border-primary/20 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="text-[10px] font-mono h-5">
-                {inputLanguage.toUpperCase()}
-              </Badge>
-              <span className="text-xs font-medium">{inputLangName}</span>
-            </div>
-            <span className="text-[10px] text-muted-foreground">{nativeTypeHere}</span>
-          </div>
-          <Textarea
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            dir={inputLanguage === 'ar' ? 'rtl' : 'ltr'}
-            placeholder={placeholder || nativePlaceholder}
-            className="border-0 rounded-none resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
-            style={{ minHeight }}
-          />
-        </div>
-
-        {/* RIGHT: Translation Preview */}
-        <div className="rounded-lg border border-muted overflow-hidden">
-          <div className="px-3 py-2 bg-muted/30 border-b flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="text-[10px] font-mono h-5">
-                {outputLanguage.toUpperCase()}
-              </Badge>
-              <span className="text-xs font-medium">{outputLangName}</span>
+        {value ? (
+          <div className="space-y-2">
+            <div className="flex items-start gap-2">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-muted-foreground mb-1">{inputLangName}:</p>
+                <p className="text-sm truncate" dir={inputLanguage === 'ar' ? 'rtl' : 'ltr'}>
+                  {value}
+                </p>
+              </div>
+              {needsTranslation && translatedText && (
+                <div className="flex-1 min-w-0 border-l pl-2">
+                  <p className="text-xs text-muted-foreground mb-1">{outputLangName}:</p>
+                  <p className="text-sm text-foreground/80 truncate">{translatedText}</p>
+                </div>
+              )}
             </div>
             {isTranslating && (
-              <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Loader2 className="h-3 w-3 animate-spin" />
                 Translating...
               </div>
             )}
-            {!isTranslating && translatedText && (
-              <CheckCircle2 className="h-3.5 w-3.5 text-success" />
-            )}
           </div>
-          <div 
-            className="p-3 text-sm text-foreground/80 overflow-auto bg-background"
-            style={{ minHeight }}
-          >
-            {isTranslating ? (
-              <div className="flex items-center gap-2 text-muted-foreground animate-pulse">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Translating with {recommendedModel.model}...
+        ) : (
+          <div className="flex items-center justify-center gap-2 py-4 text-muted-foreground">
+            <PenLine className="h-5 w-5" />
+            <span className="text-sm">{nativePlaceholder}</span>
+          </div>
+        )}
+        
+        <p className="text-[10px] text-muted-foreground mt-2 text-center">
+          Click to expand and type comfortably
+        </p>
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      <CollapsedView />
+      
+      {/* Expanded Modal */}
+      <Dialog open={isExpanded} onOpenChange={(open) => !open && handleModalClose()}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Languages className="h-5 w-5 text-primary" />
+                <span>Content Input & Translation</span>
               </div>
-            ) : translationError ? (
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-destructive">
-                  <AlertTriangle className="h-4 w-4" />
-                  <span>{translationError}</span>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="bg-primary/5 border-primary/30 text-primary gap-1.5 text-xs">
+                  <Star className="h-3 w-3 fill-current" />
+                  {recommendedModel.model}
+                </Badge>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-6 px-1.5">
+                        <Info className="h-3.5 w-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-[200px]">
+                      <p className="text-xs">{recommendedModel.reason}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+
+          {/* Side-by-Side Layout in Modal */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 min-h-0 overflow-hidden">
+            {/* LEFT: Native Language Input */}
+            <div className="flex flex-col rounded-lg border border-primary/30 overflow-hidden">
+              <div className="px-4 py-3 bg-primary/10 border-b border-primary/20 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="text-xs font-mono">
+                    {inputLanguage.toUpperCase()}
+                  </Badge>
+                  <span className="font-medium">{inputLangName}</span>
                 </div>
-                <Button variant="ghost" size="sm" onClick={handleRetry} className="h-7">
-                  <RefreshCw className="h-3 w-3 mr-1" />
-                  Retry
+                <span className="text-xs text-muted-foreground">{nativeTypeHere}</span>
+              </div>
+              <Textarea
+                value={modalValue}
+                onChange={(e) => setModalValue(e.target.value)}
+                dir={inputLanguage === 'ar' ? 'rtl' : 'ltr'}
+                placeholder={nativePlaceholder}
+                className="flex-1 border-0 rounded-none resize-none focus-visible:ring-0 focus-visible:ring-offset-0 text-base min-h-[200px]"
+                autoFocus
+              />
+            </div>
+
+            {/* RIGHT: Translation Preview */}
+            <div className="flex flex-col rounded-lg border border-muted overflow-hidden">
+              <div className="px-4 py-3 bg-muted/50 border-b flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-xs font-mono">
+                    {outputLanguage.toUpperCase()}
+                  </Badge>
+                  <span className="font-medium">{outputLangName}</span>
+                </div>
+                {isTranslating && (
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Translating...
+                  </div>
+                )}
+                {!isTranslating && translatedText && (
+                  <CheckCircle2 className="h-4 w-4 text-success" />
+                )}
+              </div>
+              <div className="flex-1 p-4 text-base text-foreground/90 overflow-auto bg-background min-h-[200px]">
+                {isTranslating ? (
+                  <div className="flex items-center gap-2 text-muted-foreground animate-pulse">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    Translating with {recommendedModel.model}...
+                  </div>
+                ) : translationError ? (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-destructive">
+                      <AlertTriangle className="h-5 w-5" />
+                      <span>{translationError}</span>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={handleRetry}>
+                      <RefreshCw className="h-4 w-4 mr-1" />
+                      Retry
+                    </Button>
+                  </div>
+                ) : translatedText ? (
+                  <p className="whitespace-pre-wrap leading-relaxed">{translatedText}</p>
+                ) : modalValue.trim() ? (
+                  <p className="text-muted-foreground italic">Waiting for translation...</p>
+                ) : (
+                  <p className="text-muted-foreground italic">
+                    Type in {inputLangName} to see {outputLangName} translation...
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="mt-4 pt-4 border-t shrink-0">
+            <div className="flex items-center justify-between w-full">
+              <p className="text-xs text-muted-foreground">
+                Type in {inputLangName} • Real-time translation to {outputLangName}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" onClick={handleModalClose}>
+                  Cancel
+                </Button>
+                <Button onClick={handleModalSubmit} className="gap-2">
+                  <Send className="h-4 w-4" />
+                  Apply Content
                 </Button>
               </div>
-            ) : translatedText ? (
-              <p className="whitespace-pre-wrap">{translatedText}</p>
-            ) : value.trim() ? (
-              <p className="text-muted-foreground italic">Waiting for translation...</p>
-            ) : (
-              <p className="text-muted-foreground italic">
-                Type in {inputLangName} to see {outputLangName} translation...
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Help Text */}
-      <p className="text-xs text-muted-foreground">
-        Type in your native language ({inputLangName}) and see real-time translation to {outputLangName}.
-        Select additional output languages in <span className="font-medium">Step 4: Agents & Languages</span>.
-      </p>
-    </div>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
