@@ -38,6 +38,14 @@ import {
   Languages,
   ChevronDown,
   Sparkles,
+  // Output type icons
+  Box,
+  Film,
+  Video,
+  MousePointerClick,
+  Layers,
+  Play,
+  Clapperboard,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -48,6 +56,19 @@ import {
   getRecommendedProviders,
 } from './wizardConstants';
 import { CONTENT_CATEGORIES, EXTENDED_COLLATERAL_TYPES } from './ContentTypeSelector';
+import { OutputType, OUTPUT_TYPE_CONFIGS } from './types';
+
+// Output type icon mapping
+const OUTPUT_TYPE_ICONS: Record<OutputType, React.ElementType> = {
+  '2d-static': ImageIcon,
+  '2d-animated': Sparkles,
+  '3d-scene': Box,
+  '3d-animated': Box,
+  'video-intro': Play,
+  'video-full': Clapperboard,
+  'interactive': MousePointerClick,
+  'mixed': Layers,
+};
 
 // ==========================================
 // PROVIDER CONFIGURATIONS - Universal AI Hub
@@ -139,6 +160,8 @@ interface ConfigurationPanelProps {
   setContentCategory: (category: string) => void;
   selectedContentTypes: string[];
   setSelectedContentTypes: (types: string[]) => void;
+  selectedOutputType?: OutputType;
+  setSelectedOutputType?: (type: OutputType) => void;
 }
 
 // ==========================================
@@ -158,9 +181,22 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
   setContentCategory,
   selectedContentTypes,
   setSelectedContentTypes,
+  selectedOutputType,
+  setSelectedOutputType,
 }) => {
   // Mode state
   const [mode, setMode] = useState<'ai' | 'custom'>(isAutoSelect ? 'ai' : 'custom');
+  
+  // Local output type state (used if parent doesn't provide)
+  const [localOutputType, setLocalOutputType] = useState<OutputType>('2d-static');
+  const currentOutputType = selectedOutputType ?? localOutputType;
+  const handleOutputTypeChange = (type: OutputType) => {
+    if (setSelectedOutputType) {
+      setSelectedOutputType(type);
+    } else {
+      setLocalOutputType(type);
+    }
+  };
 
   // Sync mode with isAutoSelect prop
   useEffect(() => {
@@ -421,6 +457,83 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
                   </Badge>
                 ) : null;
               })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Output Type Section */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Layers className="h-4 w-4 text-primary" />
+            Output Type
+            {currentOutputType !== '2d-static' && (
+              <Badge variant="secondary" className="ml-auto text-xs">
+                {OUTPUT_TYPE_CONFIGS.find(o => o.id === currentOutputType)?.name}
+              </Badge>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Output Type Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {OUTPUT_TYPE_CONFIGS.map(outputType => {
+              const Icon = OUTPUT_TYPE_ICONS[outputType.id];
+              const isSelected = currentOutputType === outputType.id;
+              return (
+                <button
+                  key={outputType.id}
+                  onClick={() => handleOutputTypeChange(outputType.id)}
+                  className={cn(
+                    "flex flex-col items-center gap-2 p-3 rounded-lg border transition-all text-center",
+                    isSelected 
+                      ? "border-primary bg-primary/10 ring-1 ring-primary" 
+                      : "border-border hover:border-primary/50 hover:bg-accent"
+                  )}
+                >
+                  <Icon className={cn("h-5 w-5", isSelected ? "text-primary" : "text-muted-foreground")} />
+                  <div className="space-y-0.5">
+                    <p className={cn("text-xs font-medium", isSelected && "text-primary")}>{outputType.name}</p>
+                    {outputType.tier === 3 && (
+                      <Badge variant="outline" className="text-[9px] px-1">Pro</Badge>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Selected Output Type Details */}
+          {currentOutputType && (
+            <div className="p-3 rounded-lg bg-muted/50 border space-y-2">
+              <div className="flex items-start gap-2">
+                <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">
+                    {OUTPUT_TYPE_CONFIGS.find(o => o.id === currentOutputType)?.name}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {OUTPUT_TYPE_CONFIGS.find(o => o.id === currentOutputType)?.description}
+                  </p>
+                </div>
+              </div>
+              
+              {/* Capabilities */}
+              <div className="flex flex-wrap gap-1 pl-6">
+                {OUTPUT_TYPE_CONFIGS.find(o => o.id === currentOutputType)?.capabilities.map((cap, i) => (
+                  <Badge key={i} variant="secondary" className="text-[10px]">{cap}</Badge>
+                ))}
+              </div>
+              
+              {/* Available Providers */}
+              <div className="pl-6">
+                <p className="text-[10px] text-muted-foreground">
+                  <span className="font-medium">Providers: </span>
+                  {OUTPUT_TYPE_CONFIGS.find(o => o.id === currentOutputType)?.providers.slice(0, 4).join(', ')}
+                  {(OUTPUT_TYPE_CONFIGS.find(o => o.id === currentOutputType)?.providers.length || 0) > 4 && '...'}
+                </p>
+              </div>
             </div>
           )}
         </CardContent>
