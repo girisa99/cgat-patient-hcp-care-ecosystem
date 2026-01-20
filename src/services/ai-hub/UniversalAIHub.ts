@@ -254,6 +254,15 @@ export class UniversalAIHub {
     return this.executeWithFallback('vision', async (provider) => {
       const startTime = Date.now();
       
+      // Route to specialized providers
+      if (provider === 'azure' || request.documentType) {
+        return this.analyzeWithAzureFormRecognizer(request, startTime);
+      }
+      
+      if (provider === 'deepseek') {
+        return this.analyzeWithDeepSeekVL(request, startTime);
+      }
+      
       const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
         body: {
           action: 'vision',
@@ -279,6 +288,65 @@ export class UniversalAIHub {
         },
       };
     }, context);
+  }
+
+  // NEW: Azure Form Recognizer for document processing
+  private async analyzeWithAzureFormRecognizer(request: VisionRequest, startTime: number): Promise<VisionResponse> {
+    const { data, error } = await supabase.functions.invoke('azure-form-recognizer', {
+      body: {
+        document: request.image,
+        inputType: request.inputType,
+        documentType: request.documentType || 'general',
+        language: request.language,
+        extractTables: true,
+        extractKeyValuePairs: true,
+      },
+    });
+
+    if (error) throw new Error(error.message);
+
+    return {
+      content: data.content || '',
+      confidence: this.createConfidence(data.confidence || 0.9, 'azure', Date.now() - startTime),
+      structure: {
+        tables: data.tables,
+        keyValuePairs: data.keyValuePairs?.reduce((acc: Record<string, string>, kv: any) => {
+          if (kv.key && kv.value) acc[kv.key] = kv.value;
+          return acc;
+        }, {}),
+        entities: data.documents?.[0]?.fields,
+      },
+      metadata: {
+        detectedLanguage: data.metadata?.language,
+        pageCount: data.metadata?.pageCount,
+      },
+    };
+  }
+
+  // NEW: DeepSeek-VL for Chinese/multilingual OCR
+  private async analyzeWithDeepSeekVL(request: VisionRequest, startTime: number): Promise<VisionResponse> {
+    const { data, error } = await supabase.functions.invoke('deepseek-vision', {
+      body: {
+        image: request.image,
+        inputType: request.inputType,
+        operation: request.operation || 'ocr',
+        prompt: request.prompt,
+        language: request.language,
+        documentType: request.documentType,
+      },
+    });
+
+    if (error) throw new Error(error.message);
+
+    return {
+      content: data.content || '',
+      confidence: this.createConfidence(data.confidence || 0.9, 'deepseek', Date.now() - startTime),
+      structure: data.structure,
+      metadata: {
+        detectedLanguage: data.metadata?.language,
+        pageCount: 1,
+      },
+    };
   }
 
   async performOCR(request: VisionRequest, context?: AIRequestContext): Promise<VisionResponse> {
@@ -337,6 +405,11 @@ export class UniversalAIHub {
     return this.executeWithFallback('stt', async (provider) => {
       const startTime = Date.now();
       
+      // Route to Alibaba Paraformer for Chinese/multilingual
+      if (provider === 'alibaba' || (request.language && ['zh', 'zh-CN', 'zh-TW', 'ja', 'ko'].includes(request.language))) {
+        return this.transcribeWithAlibaba(request, startTime);
+      }
+      
       const { data, error } = await supabase.functions.invoke('universal-media-processor', {
         body: {
           operation: 'stt',
@@ -362,6 +435,34 @@ export class UniversalAIHub {
         },
       };
     }, context);
+  }
+
+  // NEW: Alibaba Paraformer STT for Chinese/multilingual
+  private async transcribeWithAlibaba(request: STTRequest, startTime: number): Promise<STTResponse> {
+    const { data, error } = await supabase.functions.invoke('alibaba-stt', {
+      body: {
+        audio: request.audio,
+        inputType: request.inputType,
+        language: request.language,
+        enablePunctuation: true,
+        enableTimestamps: request.options?.wordTimestamps,
+        enableSpeakerDiarization: request.options?.speakerDiarization,
+      },
+    });
+
+    if (error) throw new Error(error.message);
+
+    return {
+      text: data.text || '',
+      confidence: this.createConfidence(data.confidence || 0.9, 'alibaba', Date.now() - startTime),
+      language: data.language,
+      words: data.words,
+      speakers: data.speakers,
+      metadata: {
+        durationSeconds: data.metadata?.durationSeconds || 0,
+        wordCount: data.text?.split(/\s+/).length || 0,
+      },
+    };
   }
 
   // ============================================
