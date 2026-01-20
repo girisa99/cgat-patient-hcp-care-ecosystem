@@ -542,6 +542,9 @@ function buildTemplateList(
 ): RecommendedTemplate[] {
   const templates: RecommendedTemplate[] = [];
   
+  // ALWAYS add at least some base templates regardless of style
+  // This prevents "0 templates" scenario
+  
   // Add consulting frameworks based on style
   if (style === 'pure-consulting' || style === 'consulting-hybrid' || style === 'investor-pitch') {
     const relevantFrameworks = CONSULTING_FRAMEWORKS.filter(f => {
@@ -554,7 +557,10 @@ function buildTemplateList(
       return useCaseMatch || visualMatch;
     });
     
-    relevantFrameworks.forEach(f => {
+    // If no frameworks match, add all as fallback
+    const frameworksToAdd = relevantFrameworks.length > 0 ? relevantFrameworks : CONSULTING_FRAMEWORKS.slice(0, 4);
+    
+    frameworksToAdd.forEach(f => {
       templates.push({
         id: f.id,
         name: f.name,
@@ -600,6 +606,16 @@ function buildTemplateList(
       { id: 'dashboard', name: 'Analytics Dashboard', category: 'data', matchScore: Math.round(dataScore * 0.9), frameworks: ['KPIs', 'Trends', 'Comparisons'], tags: ['metrics', 'visualization'] },
       { id: 'research-report', name: 'Research Report', category: 'data', matchScore: Math.round(dataScore * 0.85), frameworks: ['Methodology', 'Findings', 'Analysis'], tags: ['research', 'insights'] },
       { id: 'financial-model', name: 'Financial Overview', category: 'data', matchScore: Math.round(dataScore * 0.8), frameworks: ['P&L', 'Projections', 'ROI'], tags: ['finance', 'numbers'] }
+    );
+  }
+  
+  // FALLBACK: If still no templates, add universal defaults
+  if (templates.length === 0) {
+    templates.push(
+      { id: 'universal-business', name: 'Business Professional', category: 'universal', matchScore: Math.round((consultingScore + visualScore) / 2), frameworks: ['Overview', 'Details', 'Summary'], tags: ['professional', 'versatile'] },
+      { id: 'universal-modern', name: 'Modern Clean', category: 'universal', matchScore: Math.round((visualScore + dataScore) / 2), frameworks: ['Introduction', 'Content', 'Conclusion'], tags: ['modern', 'clean'] },
+      { id: 'universal-corporate', name: 'Corporate Standard', category: 'universal', matchScore: Math.round(consultingScore * 0.7), frameworks: ['Executive Summary', 'Analysis', 'Recommendations'], tags: ['corporate', 'formal'] },
+      { id: 'universal-dynamic', name: 'Dynamic Presentation', category: 'universal', matchScore: Math.round(visualScore * 0.8), frameworks: ['Hook', 'Story', 'Call to Action'], tags: ['dynamic', 'engaging'] }
     );
   }
   
