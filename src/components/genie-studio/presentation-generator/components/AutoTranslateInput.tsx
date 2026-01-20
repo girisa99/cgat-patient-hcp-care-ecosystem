@@ -1,7 +1,7 @@
 /**
  * Auto-Translate Input Component
  * Features: Expandable popup modal for comfortable typing
- * Side-by-side: Native language input + English translation preview
+ * Uses REAL translation-service edge function (not mock data)
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -36,6 +36,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDebounce } from '@/hooks/useDebounce';
+import { supabase } from '@/integrations/supabase/client';
+import { InlineTrainAIFeedback } from '@/components/genie-studio/InlineTrainAIFeedback';
 
 interface AutoTranslateInputProps {
   value: string;
@@ -133,92 +135,68 @@ const NATIVE_TYPE_HERE: Record<string, string> = {
   ms: 'Taip di sini',
 };
 
-// Recommended translation models
-const RECOMMENDED_MODELS: Record<string, { model: string; reason: string }> = {
-  'de-en': { model: 'DeepL', reason: 'Best for DE↔EN' },
-  'fr-en': { model: 'DeepL', reason: 'Highest accuracy for French' },
-  'es-en': { model: 'DeepL', reason: 'Excellent for Spanish' },
-  'zh-en': { model: 'Qwen-MT', reason: 'Best for Chinese↔English' },
-  'ja-en': { model: 'Qwen-MT', reason: 'Superior Japanese handling' },
-  'ko-en': { model: 'Qwen-MT', reason: 'Excellent Korean accuracy' },
-  'hi-en': { model: 'Gemini', reason: 'Best Hindi understanding' },
-  'ar-en': { model: 'Google', reason: 'Best Arabic RTL handling' },
-  'te-en': { model: 'Gemini', reason: 'Best Telugu understanding' },
-  'ta-en': { model: 'Gemini', reason: 'Best Tamil understanding' },
-  'default': { model: 'Gemini 3 Flash', reason: 'Universal - fast & accurate' },
+// Provider recommendations based on language pairs
+const PROVIDER_RECOMMENDATIONS: Record<string, { provider: string; model: string; reason: string }> = {
+  'de-en': { provider: 'deepl', model: 'DeepL Pro', reason: 'Best for DE↔EN' },
+  'fr-en': { provider: 'deepl', model: 'DeepL Pro', reason: 'Highest accuracy for French' },
+  'es-en': { provider: 'deepl', model: 'DeepL Pro', reason: 'Excellent for Spanish' },
+  'zh-en': { provider: 'ai', model: 'Qwen-MT / Gemini', reason: 'Best for Chinese↔English' },
+  'ja-en': { provider: 'ai', model: 'Qwen-MT / Gemini', reason: 'Superior Japanese handling' },
+  'ko-en': { provider: 'ai', model: 'Qwen-MT / Gemini', reason: 'Excellent Korean accuracy' },
+  'hi-en': { provider: 'ai', model: 'Gemini 3 Flash', reason: 'Best Hindi understanding' },
+  'ar-en': { provider: 'google', model: 'Google Translate', reason: 'Best Arabic RTL handling' },
+  'te-en': { provider: 'ai', model: 'Gemini 3 Flash', reason: 'Best Telugu understanding' },
+  'ta-en': { provider: 'ai', model: 'Gemini 3 Flash', reason: 'Best Tamil understanding' },
+  'default': { provider: 'ai', model: 'Gemini 3 Flash', reason: 'Universal - fast & accurate' },
 };
 
-// Mock translation examples (simulating real translation)
-const MOCK_TRANSLATIONS: Record<string, Record<string, string>> = {
-  te: {
-    'నమస్కారం': 'Hello',
-    'ధన్యవాదాలు': 'Thank you',
-    'మీకు స్వాగతం': 'Welcome',
-    'ప్రదర్శన': 'Presentation',
-    'విషయం': 'Content',
-  },
-  hi: {
-    'नमस्ते': 'Hello',
-    'धन्यवाद': 'Thank you',
-    'स्वागत है': 'Welcome',
-    'प्रस्तुति': 'Presentation',
-  },
-  zh: {
-    '你好': 'Hello',
-    '谢谢': 'Thank you',
-    '欢迎': 'Welcome',
-    '演示文稿': 'Presentation',
-  },
-  ja: {
-    'こんにちは': 'Hello',
-    'ありがとう': 'Thank you',
-    'ようこそ': 'Welcome',
-    'プレゼンテーション': 'Presentation',
-  },
-  fr: {
-    'bonjour': 'Hello',
-    'merci': 'Thank you',
-    'bienvenue': 'Welcome',
-    'présentation': 'Presentation',
-  },
-  de: {
-    'hallo': 'Hello',
-    'danke': 'Thank you',
-    'willkommen': 'Welcome',
-    'präsentation': 'Presentation',
-  },
-  es: {
-    'hola': 'Hello',
-    'gracias': 'Thank you',
-    'bienvenido': 'Welcome',
-    'presentación': 'Presentation',
-  },
-};
-
-function getRecommendedModel(inputLang: string, outputLang: string) {
+function getRecommendedProvider(inputLang: string, outputLang: string) {
   const key = `${inputLang}-${outputLang}`;
   const reverseKey = `${outputLang}-${inputLang}`;
-  return RECOMMENDED_MODELS[key] || RECOMMENDED_MODELS[reverseKey] || RECOMMENDED_MODELS['default'];
+  return PROVIDER_RECOMMENDATIONS[key] || PROVIDER_RECOMMENDATIONS[reverseKey] || PROVIDER_RECOMMENDATIONS['default'];
 }
 
-// Simulate translation (in production, this would call a real API)
-function simulateTranslation(text: string, fromLang: string, toLang: string): string {
-  if (!text.trim()) return '';
-  if (fromLang === toLang) return text;
-  
-  // Check for known translations
-  const langTranslations = MOCK_TRANSLATIONS[fromLang];
-  if (langTranslations) {
-    for (const [native, english] of Object.entries(langTranslations)) {
-      if (text.toLowerCase().includes(native.toLowerCase())) {
-        return text.replace(new RegExp(native, 'gi'), english);
+// Real translation via edge function
+async function translateText(
+  text: string, 
+  fromLang: string, 
+  toLang: string,
+  provider: string = 'ai'
+): Promise<{ translatedText: string; confidence: number; error?: string }> {
+  try {
+    const { data, error } = await supabase.functions.invoke('translation-service', {
+      body: {
+        action: 'translate',
+        provider: provider,
+        text: text,
+        sourceLanguage: fromLang,
+        targetLanguage: toLang,
+        context: 'presentation content',
       }
+    });
+
+    if (error) {
+      console.error('[AutoTranslate] Edge function error:', error);
+      return { translatedText: '', confidence: 0, error: error.message };
     }
+
+    if (data?.error) {
+      console.error('[AutoTranslate] Translation error:', data.error);
+      return { translatedText: '', confidence: 0, error: data.error };
+    }
+
+    return {
+      translatedText: data?.translatedText || '',
+      confidence: data?.confidence || 0.85,
+    };
+  } catch (err) {
+    console.error('[AutoTranslate] Request failed:', err);
+    return { 
+      translatedText: '', 
+      confidence: 0, 
+      error: err instanceof Error ? err.message : 'Translation failed' 
+    };
   }
-  
-  // For demo: show a meaningful English translation message
-  const langName = LANGUAGE_NAMES[fromLang] || fromLang;
-  return `[Translated from ${langName}]: "${text}"`;
 }
 
 export function AutoTranslateInput({
@@ -235,12 +213,13 @@ export function AutoTranslateInput({
   const [translatedText, setTranslatedText] = useState('');
   const [isTranslating, setIsTranslating] = useState(false);
   const [translationError, setTranslationError] = useState<string | null>(null);
+  const [translationConfidence, setTranslationConfidence] = useState<number>(0);
   const [isExpanded, setIsExpanded] = useState(false);
   const [modalValue, setModalValue] = useState(value);
-  const debouncedValue = useDebounce(isExpanded ? modalValue : value, 500);
+  const debouncedValue = useDebounce(isExpanded ? modalValue : value, 800);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  const recommendedModel = getRecommendedModel(inputLanguage, outputLanguage);
+  const recommendedProvider = getRecommendedProvider(inputLanguage, outputLanguage);
   const needsTranslation = inputLanguage !== outputLanguage;
   const inputLangName = LANGUAGE_NAMES[inputLanguage] || inputLanguage.toUpperCase();
   const outputLangName = LANGUAGE_NAMES[outputLanguage] || outputLanguage.toUpperCase();
@@ -254,15 +233,16 @@ export function AutoTranslateInput({
     }
   }, [isExpanded, value]);
 
-  // Auto-translate
+  // Real translation via edge function
   useEffect(() => {
     const textToTranslate = debouncedValue.trim();
     if (!needsTranslation || !textToTranslate) {
       setTranslatedText('');
+      setTranslationConfidence(0);
       return;
     }
 
-    const translateText = async () => {
+    const performTranslation = async () => {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
@@ -271,31 +251,34 @@ export function AutoTranslateInput({
       setIsTranslating(true);
       setTranslationError(null);
 
-      try {
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 400));
-        
-        // Perform mock translation
-        const translated = simulateTranslation(textToTranslate, inputLanguage, outputLanguage);
-        setTranslatedText(translated);
-        onTranslationComplete?.(translated);
-      } catch (error) {
-        if ((error as Error).name !== 'AbortError') {
-          setTranslationError('Translation failed');
-        }
-      } finally {
-        setIsTranslating(false);
+      const result = await translateText(
+        textToTranslate, 
+        inputLanguage, 
+        outputLanguage,
+        recommendedProvider.provider
+      );
+
+      if (result.error) {
+        setTranslationError(result.error);
+        setTranslatedText('');
+        setTranslationConfidence(0);
+      } else {
+        setTranslatedText(result.translatedText);
+        setTranslationConfidence(result.confidence);
+        onTranslationComplete?.(result.translatedText);
       }
+
+      setIsTranslating(false);
     };
 
-    translateText();
+    performTranslation();
 
     return () => {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
     };
-  }, [debouncedValue, inputLanguage, outputLanguage, needsTranslation, onTranslationComplete]);
+  }, [debouncedValue, inputLanguage, outputLanguage, needsTranslation, onTranslationComplete, recommendedProvider.provider]);
 
   const handleRetry = useCallback(() => {
     setTranslatedText('');
@@ -353,7 +336,7 @@ export function AutoTranslateInput({
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="bg-primary/5 border-primary/30 text-primary gap-1 text-[10px]">
               <Star className="h-2.5 w-2.5 fill-current" />
-              {recommendedModel.model}
+              {recommendedProvider.model}
             </Badge>
             <Maximize2 className="h-4 w-4 text-primary group-hover:scale-110 transition-transform" />
           </div>
@@ -370,7 +353,14 @@ export function AutoTranslateInput({
               </div>
               {needsTranslation && translatedText && (
                 <div className="flex-1 min-w-0 border-l pl-2">
-                  <p className="text-xs text-muted-foreground mb-1">{outputLangName}:</p>
+                  <div className="flex items-center gap-1 mb-1">
+                    <p className="text-xs text-muted-foreground">{outputLangName}:</p>
+                    {translationConfidence > 0 && (
+                      <Badge variant="secondary" className="text-[9px] h-4">
+                        {Math.round(translationConfidence * 100)}%
+                      </Badge>
+                    )}
+                  </div>
                   <p className="text-sm text-foreground/80 truncate">{translatedText}</p>
                 </div>
               )}
@@ -378,7 +368,13 @@ export function AutoTranslateInput({
             {isTranslating && (
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Loader2 className="h-3 w-3 animate-spin" />
-                Translating...
+                Translating via {recommendedProvider.model}...
+              </div>
+            )}
+            {translationError && (
+              <div className="flex items-center gap-1.5 text-xs text-destructive">
+                <AlertTriangle className="h-3 w-3" />
+                {translationError}
               </div>
             )}
           </div>
@@ -393,6 +389,27 @@ export function AutoTranslateInput({
           Click to expand and type comfortably
         </p>
       </div>
+
+      {/* RLHF Feedback for translation quality */}
+      {translatedText && (
+        <InlineTrainAIFeedback
+          data={{
+            context: 'slide_generation',
+            product: 'deck',
+            contentId: `translation_${inputLanguage}_${outputLanguage}`,
+            originalContent: translatedText,
+            userInput: value,
+            metadata: { 
+              inputLanguage, 
+              outputLanguage, 
+              provider: recommendedProvider.provider,
+              confidence: translationConfidence 
+            }
+          }}
+          variant="minimal"
+          showTextFeedback={false}
+        />
+      )}
     </div>
   );
 
@@ -412,7 +429,7 @@ export function AutoTranslateInput({
               <div className="flex items-center gap-2">
                 <Badge variant="outline" className="bg-primary/5 border-primary/30 text-primary gap-1.5 text-xs">
                   <Star className="h-3 w-3 fill-current" />
-                  {recommendedModel.model}
+                  {recommendedProvider.model}
                 </Badge>
                 <TooltipProvider>
                   <Tooltip>
@@ -422,7 +439,7 @@ export function AutoTranslateInput({
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" className="max-w-[200px]">
-                      <p className="text-xs">{recommendedModel.reason}</p>
+                      <p className="text-xs">{recommendedProvider.reason}</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -461,6 +478,11 @@ export function AutoTranslateInput({
                     {outputLanguage.toUpperCase()}
                   </Badge>
                   <span className="font-medium">{outputLangName}</span>
+                  {translationConfidence > 0 && (
+                    <Badge variant="secondary" className="text-[10px]">
+                      {Math.round(translationConfidence * 100)}% confidence
+                    </Badge>
+                  )}
                 </div>
                 {isTranslating && (
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -476,7 +498,7 @@ export function AutoTranslateInput({
                 {isTranslating ? (
                   <div className="flex items-center gap-2 text-muted-foreground animate-pulse">
                     <Loader2 className="h-5 w-5 animate-spin" />
-                    Translating with {recommendedModel.model}...
+                    Translating with {recommendedProvider.model}...
                   </div>
                 ) : translationError ? (
                   <div className="flex items-center justify-between">
@@ -504,9 +526,25 @@ export function AutoTranslateInput({
 
           <DialogFooter className="mt-4 pt-4 border-t shrink-0">
             <div className="flex items-center justify-between w-full">
-              <p className="text-xs text-muted-foreground">
-                Type in {inputLangName} • Real-time translation to {outputLangName}
-              </p>
+              <div className="flex items-center gap-2">
+                <p className="text-xs text-muted-foreground">
+                  Real-time {inputLangName} → {outputLangName} via {recommendedProvider.model}
+                </p>
+                {translatedText && (
+                  <InlineTrainAIFeedback
+                    data={{
+                      context: 'slide_generation',
+                      product: 'deck',
+                      contentId: `modal_translation_${inputLanguage}_${outputLanguage}`,
+                      originalContent: translatedText,
+                      userInput: modalValue,
+                      metadata: { inputLanguage, outputLanguage, provider: recommendedProvider.provider }
+                    }}
+                    variant="minimal"
+                    showTextFeedback={false}
+                  />
+                )}
+              </div>
               <div className="flex items-center gap-2">
                 <Button variant="outline" onClick={handleModalClose}>
                   Cancel
