@@ -1,91 +1,85 @@
 /**
  * Enhanced Agent & Language Configuration Panel
- * Provides full agent architecture selection with provider configuration and multi-language generation
- * REFACTORED: Uses clean dropdown components for better UI/UX
+ * Refactored: Clean dropdowns, all providers, structured layout
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import {
   Brain,
   Languages,
   Sparkles,
   Globe,
   Volume2,
+  Bot,
+  Network,
+  Cpu,
+  ImageIcon,
+  BarChart3,
+  Mic2,
+  Settings2,
+  ChevronDown,
+  Check,
+  Zap,
+  Star,
+  Info,
+  Video,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { AGENT_CATALOG, ARCHITECTURE_TYPE_INFO, AgentArchitectureType } from './AgentArchitecture';
-import { AgentModelConfig, AgentSelectorDialog } from './AgentSelectorDialog';
-import { SUPPORTED_LANGUAGES } from './MultiLanguageGenerator';
-import { AgentArchitectureDropdown } from './components/AgentArchitectureDropdown';
-import { VoiceProviderDropdown } from './components/VoiceProviderDropdown';
+import { AgentModelConfig } from './AgentSelectorDialog';
 import { LanguageMultiSelectDropdown } from './components/LanguageMultiSelectDropdown';
-
-import { Bot, Network, Cpu, ImageIcon, BarChart3, Mic2, Users, Settings2, ChevronDown, Check, Zap, Plus } from 'lucide-react';
+import { AgentProviderSelector } from './components/AgentProviderSelector';
+import {
+  TEXT_PROVIDERS,
+  IMAGE_PROVIDERS,
+  VIDEO_PROVIDERS,
+  VOICE_PROVIDERS,
+  TRANSLATION_PROVIDERS,
+  TIER_COLORS,
+  TIER_LABELS,
+  getRecommendedProvider,
+} from './constants/aiProviderConstants';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-// Provider categories (kept for backward compatibility)
-const PROVIDER_CATEGORIES = {
-  text: [
-    { id: 'openai', name: 'OpenAI', icon: '🤖', color: 'bg-green-500/10 text-green-600' },
-    { id: 'anthropic', name: 'Anthropic', icon: '🧠', color: 'bg-purple-500/10 text-purple-600' },
-    { id: 'google', name: 'Google', icon: '☁️', color: 'bg-blue-500/10 text-blue-600' },
-  ],
-  voice: [
-    { id: 'elevenlabs', name: 'ElevenLabs', icon: '🎙️', color: 'bg-pink-500/10 text-pink-600' },
-    { id: 'openai', name: 'OpenAI TTS', icon: '🔊', color: 'bg-green-500/10 text-green-600' },
-    { id: 'google', name: 'Google Cloud', icon: '☁️', color: 'bg-blue-500/10 text-blue-600' },
-    { id: 'azure', name: 'Azure Neural', icon: '📡', color: 'bg-cyan-500/10 text-cyan-600' },
-    { id: 'aws', name: 'Amazon Polly', icon: '📢', color: 'bg-amber-500/10 text-amber-600' },
-  ],
-  translation: [
-    { id: 'deepl', name: 'DeepL', icon: '🌐', color: 'bg-blue-500/10 text-blue-600' },
-    { id: 'google', name: 'Google Translate', icon: '🔤', color: 'bg-green-500/10 text-green-600' },
-    { id: 'azure', name: 'Azure Translator', icon: '📝', color: 'bg-cyan-500/10 text-cyan-600' },
-  ],
-};
-
-// AI Model options
-const AI_MODEL_OPTIONS = [
-  { id: 'gpt-4o', name: 'GPT-4o', description: 'Best quality' },
-  { id: 'gpt-4-turbo', name: 'GPT-4 Turbo', description: 'Fast & capable' },
-  { id: 'claude-3-opus', name: 'Claude 3 Opus', description: 'Advanced reasoning' },
-  { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', description: 'Multimodal' },
-];
-
-const IMAGE_MODEL_OPTIONS = [
-  { id: 'flux-pro', name: 'Flux Pro', description: 'Highest quality' },
-  { id: 'dall-e-3', name: 'DALL-E 3', description: 'Creative & detailed' },
-  { id: 'modelslab', name: 'ModelsLab', description: 'Fast generation' },
-];
-
-const VOICE_MODEL_OPTIONS = [
-  { id: 'elevenlabs-v2', name: 'ElevenLabs v2', description: 'Natural voices' },
-  { id: 'openai-tts', name: 'OpenAI TTS', description: 'Clear & fast' },
-  { id: 'azure-neural', name: 'Azure Neural', description: 'Enterprise grade' },
-];
-
-// Architecture type icons
+// Architecture icons
 const ARCH_ICONS: Record<AgentArchitectureType, React.ReactNode> = {
-  single: <Bot className="h-5 w-5" />,
-  agentic: <Brain className="h-5 w-5" />,
-  a2a: <Network className="h-5 w-5" />,
+  single: <Bot className="h-4 w-4" />,
+  agentic: <Brain className="h-4 w-4" />,
+  a2a: <Network className="h-4 w-4" />,
 };
 
-// Language with voice configuration
-interface LanguageVoiceConfig {
-  code: string;
-  name: string;
-  voiceProvider?: string;
-  voiceModel?: string;
-  textModel?: string;
-  enabled: boolean;
-}
+// Agent type icons
+const AGENT_TYPE_ICONS: Record<string, React.ReactNode> = {
+  coordinator: <Cpu className="h-4 w-4" />,
+  slide_generator: <Brain className="h-4 w-4" />,
+  image_generator: <ImageIcon className="h-4 w-4" />,
+  translator: <Languages className="h-4 w-4" />,
+  content_analyzer: <BarChart3 className="h-4 w-4" />,
+  enhancer: <Sparkles className="h-4 w-4" />,
+  voiceover: <Mic2 className="h-4 w-4" />,
+  video_generator: <Video className="h-4 w-4" />,
+};
 
 interface AgentLanguageConfigPanelProps {
   useAgenticGeneration: boolean;
@@ -118,37 +112,50 @@ export function AgentLanguageConfigPanel({
   onIncludeVoiceoverChange,
   className,
 }: AgentLanguageConfigPanelProps) {
-  const [selectedArchitecture, setSelectedArchitecture] = useState<AgentArchitectureType>('single');
-  const [expandedAgents, setExpandedAgents] = useState(false);
-  const [expandedLanguages, setExpandedLanguages] = useState(false);
-  const [showAgentConfig, setShowAgentConfig] = useState<string | null>(null);
+  const [selectedArchitecture, setSelectedArchitecture] = useState<AgentArchitectureType>('agentic');
+  const [expandedSection, setExpandedSection] = useState<string | null>('agents');
 
   // Get agents filtered by architecture
-  const getAgentsByArchitecture = useCallback((archType: AgentArchitectureType) => {
-    return Object.entries(AGENT_CATALOG).filter(
-      ([_, agent]) => agent.architectureType === archType
-    );
+  const agentsByArchitecture = useMemo(() => {
+    const all = Object.entries(AGENT_CATALOG);
+    return {
+      single: all.filter(([_, a]) => a.architectureType === 'single'),
+      agentic: all.filter(([_, a]) => a.architectureType === 'agentic'),
+      a2a: all.filter(([_, a]) => a.architectureType === 'a2a'),
+    };
   }, []);
+
+  // Get all available agents for current architecture (includes compatible agents)
+  const availableAgents = useMemo(() => {
+    if (selectedArchitecture === 'a2a') {
+      return Object.entries(AGENT_CATALOG); // A2A can use all agents
+    }
+    if (selectedArchitecture === 'agentic') {
+      return Object.entries(AGENT_CATALOG).filter(
+        ([_, a]) => a.architectureType === 'agentic' || a.architectureType === 'single'
+      );
+    }
+    return agentsByArchitecture.single;
+  }, [selectedArchitecture, agentsByArchitecture]);
 
   // Handle architecture selection
   const handleArchitectureSelect = useCallback((archType: AgentArchitectureType) => {
     setSelectedArchitecture(archType);
-    const agentsForArch = getAgentsByArchitecture(archType).map(([key]) => key);
-    onSelectedAgentsChange(agentsForArch);
-    onUseAgenticGenerationChange(archType !== 'single');
-    toast.success(`Switched to ${ARCHITECTURE_TYPE_INFO[archType].label} architecture`);
-  }, [getAgentsByArchitecture, onSelectedAgentsChange, onUseAgenticGenerationChange]);
-
-  // Handle language toggle
-  const handleLanguageToggle = useCallback((langCode: string) => {
-    if (langCode === primaryLanguage) return;
     
-    if (selectedLanguages.includes(langCode)) {
-      onSelectedLanguagesChange(selectedLanguages.filter(l => l !== langCode));
+    // Auto-select recommended agents for architecture
+    let recommendedAgents: string[] = [];
+    if (archType === 'single') {
+      recommendedAgents = ['slide_generator'];
+    } else if (archType === 'agentic') {
+      recommendedAgents = ['slide_generator', 'image_generator', 'translator', 'enhancer'];
     } else {
-      onSelectedLanguagesChange([...selectedLanguages, langCode]);
+      recommendedAgents = Object.keys(AGENT_CATALOG);
     }
-  }, [selectedLanguages, onSelectedLanguagesChange, primaryLanguage]);
+    
+    onSelectedAgentsChange(recommendedAgents);
+    onUseAgenticGenerationChange(archType !== 'single');
+    toast.success(`Switched to ${ARCHITECTURE_TYPE_INFO[archType].label}`);
+  }, [onSelectedAgentsChange, onUseAgenticGenerationChange]);
 
   // Handle agent toggle
   const handleAgentToggle = useCallback((agentKey: string) => {
@@ -159,46 +166,29 @@ export function AgentLanguageConfigPanel({
     }
   }, [selectedAgents, onSelectedAgentsChange]);
 
-  // Handle agent model change
-  const handleAgentModelChange = useCallback((agentKey: string, model: string) => {
+  // Handle provider change for agent
+  const handleProviderChange = useCallback((agentKey: string, providerId: string) => {
     const existing = agentModelConfigs.find(c => c.agentKey === agentKey);
     if (existing) {
       onAgentModelConfigsChange(
-        agentModelConfigs.map(c => c.agentKey === agentKey ? { ...c, model } : c)
+        agentModelConfigs.map(c => 
+          c.agentKey === agentKey ? { ...c, model: providerId } : c
+        )
       );
     } else {
-      onAgentModelConfigsChange([...agentModelConfigs, { agentKey, model, enabled: true }]);
+      onAgentModelConfigsChange([
+        ...agentModelConfigs,
+        { agentKey, model: providerId, enabled: true }
+      ]);
     }
   }, [agentModelConfigs, onAgentModelConfigsChange]);
 
-  // Get agent config
-  const getAgentConfig = useCallback((agentKey: string) => {
-    return agentModelConfigs.find(c => c.agentKey === agentKey);
+  // Get current provider for agent
+  const getAgentProvider = useCallback((agentKey: string, agentType: string) => {
+    const config = agentModelConfigs.find(c => c.agentKey === agentKey);
+    if (config?.model) return config.model;
+    return getRecommendedProvider(agentType)?.id || 'gemini-3-flash';
   }, [agentModelConfigs]);
-
-  // Get icon for agent type
-  const getAgentIcon = (type: string) => {
-    switch (type) {
-      case 'coordinator': return <Cpu className="h-4 w-4" />;
-      case 'slide_generator': return <Brain className="h-4 w-4" />;
-      case 'image_generator': return <ImageIcon className="h-4 w-4" />;
-      case 'translator': return <Languages className="h-4 w-4" />;
-      case 'content_analyzer': return <BarChart3 className="h-4 w-4" />;
-      case 'enhancer': return <Sparkles className="h-4 w-4" />;
-      case 'voiceover': return <Mic2 className="h-4 w-4" />;
-      default: return <Bot className="h-4 w-4" />;
-    }
-  };
-
-  // Get model options for agent
-  const getModelOptions = (agentType: string) => {
-    if (agentType === 'image_generator') return IMAGE_MODEL_OPTIONS;
-    if (agentType === 'voiceover') return VOICE_MODEL_OPTIONS;
-    return AI_MODEL_OPTIONS;
-  };
-
-  // Agent config being edited
-  const editingAgent = showAgentConfig ? AGENT_CATALOG[showAgentConfig as keyof typeof AGENT_CATALOG] : null;
 
   return (
     <div className={cn("space-y-6", className)}>
@@ -210,278 +200,180 @@ export function AgentLanguageConfigPanel({
           </div>
           <div>
             <h3 className="font-semibold text-foreground">AI Agents & Languages</h3>
-            <p className="text-sm text-muted-foreground">Configure agent architecture and multi-language generation</p>
+            <p className="text-sm text-muted-foreground">Configure multi-agent architecture</p>
           </div>
         </div>
         <Badge variant={useAgenticGeneration ? "default" : "secondary"} className="gap-1">
           {useAgenticGeneration ? <Zap className="h-3 w-3" /> : <Bot className="h-3 w-3" />}
-          {useAgenticGeneration ? 'Agentic' : 'Simple'}
+          {ARCHITECTURE_TYPE_INFO[selectedArchitecture].label}
         </Badge>
       </div>
 
-      {/* Architecture Selection */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-2">
+      {/* Architecture Dropdown */}
+      <div className="space-y-3">
+        <Label className="text-sm font-medium flex items-center gap-2">
           <Network className="h-4 w-4 text-primary" />
-          <span className="text-sm font-medium">Agent Architecture</span>
-        </div>
-        <p className="text-xs text-muted-foreground">
-          Choose how AI agents collaborate to generate your presentation
-        </p>
-
-        {/* Architecture Type Cards - Clean Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {(Object.keys(ARCHITECTURE_TYPE_INFO) as AgentArchitectureType[]).map(archType => {
-            const info = ARCHITECTURE_TYPE_INFO[archType];
-            const isSelected = selectedArchitecture === archType;
-            const agentCount = getAgentsByArchitecture(archType).length;
-
-            return (
-              <button
-                key={archType}
-                onClick={() => handleArchitectureSelect(archType)}
-                className={cn(
-                  "p-4 rounded-xl border-2 transition-all text-left",
-                  isSelected 
-                    ? "border-primary bg-primary/5 shadow-md" 
-                    : "border-border hover:border-primary/50 hover:bg-muted/30"
-                )}
-              >
-                <div className="flex items-start gap-3">
-                  <div className={cn(
-                    "p-2.5 rounded-lg shrink-0",
-                    isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                  )}>
-                    {ARCH_ICONS[archType]}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm text-foreground">{info.label}</p>
-                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{info.description}</p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <Badge variant={isSelected ? "default" : "secondary"} className="text-[10px]">
-                        {agentCount} agents
-                      </Badge>
-                      {isSelected && <Check className="h-4 w-4 text-primary ml-auto" />}
+          Agent Architecture
+        </Label>
+        <Select value={selectedArchitecture} onValueChange={(v) => handleArchitectureSelect(v as AgentArchitectureType)}>
+          <SelectTrigger className="h-10 bg-background">
+            <SelectValue>
+              <div className="flex items-center gap-2">
+                {ARCH_ICONS[selectedArchitecture]}
+                <span>{ARCHITECTURE_TYPE_INFO[selectedArchitecture].label}</span>
+                <Badge variant="secondary" className="text-[10px] ml-2">
+                  {availableAgents.length} agents
+                </Badge>
+              </div>
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent className="bg-popover border shadow-lg z-50">
+            {(Object.keys(ARCHITECTURE_TYPE_INFO) as AgentArchitectureType[]).map(arch => {
+              const info = ARCHITECTURE_TYPE_INFO[arch];
+              const count = arch === 'a2a' 
+                ? Object.keys(AGENT_CATALOG).length 
+                : arch === 'agentic'
+                  ? Object.entries(AGENT_CATALOG).filter(([_, a]) => a.architectureType !== 'a2a').length
+                  : agentsByArchitecture.single.length;
+              
+              return (
+                <SelectItem key={arch} value={arch}>
+                  <div className="flex items-center gap-3 py-1">
+                    <div className={cn(
+                      "p-2 rounded-lg",
+                      selectedArchitecture === arch ? "bg-primary/10" : "bg-muted"
+                    )}>
+                      {ARCH_ICONS[arch]}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{info.label}</span>
+                        <Badge variant="outline" className="text-[9px]">{count} agents</Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{info.description}</p>
                     </div>
                   </div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
+                </SelectItem>
+              );
+            })}
+          </SelectContent>
+        </Select>
+      </div>
 
-        <Separator />
+      <Separator />
 
-        {/* Agent Enable Toggle */}
-        <div className="flex items-center justify-between p-3 rounded-xl border bg-muted/30">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <Users className="h-4 w-4 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-foreground">Enable Agentic Generation</p>
-              <p className="text-xs text-muted-foreground">Multi-agent collaboration for higher quality</p>
-            </div>
+      {/* Agents Configuration */}
+      <Collapsible 
+        open={expandedSection === 'agents'} 
+        onOpenChange={(open) => setExpandedSection(open ? 'agents' : null)}
+      >
+        <CollapsibleTrigger className="w-full flex items-center justify-between p-3 rounded-xl border hover:bg-muted/30 transition-colors">
+          <div className="flex items-center gap-2">
+            <Settings2 className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium">Configure Agents</span>
+            <Badge variant="secondary" className="text-xs">{selectedAgents.length} active</Badge>
           </div>
-          <Switch 
-            checked={useAgenticGeneration} 
-            onCheckedChange={onUseAgenticGenerationChange} 
-          />
-        </div>
-
-        {/* Agents List - Collapsible */}
-        {useAgenticGeneration && (
-          <Collapsible open={expandedAgents} onOpenChange={setExpandedAgents}>
-            <CollapsibleTrigger asChild>
-              <button className="w-full flex items-center justify-between p-3 rounded-xl border hover:bg-muted/30 transition-colors">
-                <div className="flex items-center gap-2">
-                  <Settings2 className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-medium text-foreground">Configure Agents</span>
-                  <Badge variant="secondary" className="text-xs">{selectedAgents.length} active</Badge>
-                </div>
-                <ChevronDown className={cn("h-4 w-4 transition-transform", expandedAgents && "rotate-180")} />
-              </button>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <div className="mt-3 space-y-2">
-                {Object.entries(AGENT_CATALOG).map(([key, agent]) => {
-                  const isSelected = selectedAgents.includes(key);
-                  const config = getAgentConfig(key);
-                  const archInfo = ARCHITECTURE_TYPE_INFO[agent.architectureType];
-                  const modelOptions = getModelOptions(agent.type);
-                  const currentModel = config?.model || agent.defaultModel;
-
-                  return (
-                    <div
-                      key={key}
-                      className={cn(
-                        "p-3 rounded-xl border-2 transition-all",
-                        isSelected ? "border-primary/50 bg-primary/5" : "border-border"
-                      )}
-                    >
-                      <div className="flex items-start gap-3">
-                        {/* Toggle */}
-                        <Switch
-                          checked={isSelected}
-                          onCheckedChange={() => handleAgentToggle(key)}
-                          className="mt-0.5"
-                        />
-                        
-                        {/* Icon */}
-                        <div className={cn(
-                          "p-1.5 rounded-lg flex-shrink-0",
-                          isSelected ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
-                        )}>
-                          {getAgentIcon(agent.type)}
-                        </div>
-
-                        {/* Content */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <p className="font-medium text-sm text-foreground">{agent.name}</p>
-                            <Badge variant="outline" className={cn("text-[9px] px-1 py-0 gap-0.5", archInfo.color)}>
-                              {archInfo.label}
+          <ChevronDown className={cn("h-4 w-4 transition-transform", expandedSection === 'agents' && "rotate-180")} />
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <ScrollArea className="h-[280px] mt-3">
+            <div className="space-y-2 pr-3">
+              {availableAgents.map(([key, agent]) => {
+                const isSelected = selectedAgents.includes(key);
+                const currentProvider = getAgentProvider(key, agent.type);
+                const recommended = getRecommendedProvider(agent.type);
+                
+                return (
+                  <div
+                    key={key}
+                    className={cn(
+                      "p-3 rounded-xl border transition-all",
+                      isSelected ? "border-primary/50 bg-primary/5" : "border-border hover:border-muted-foreground/30"
+                    )}
+                  >
+                    <div className="flex items-start gap-3">
+                      <Switch
+                        checked={isSelected}
+                        onCheckedChange={() => handleAgentToggle(key)}
+                        className="mt-0.5"
+                      />
+                      <div className={cn(
+                        "p-1.5 rounded-lg shrink-0",
+                        isSelected ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+                      )}>
+                        {AGENT_TYPE_ICONS[agent.type] || <Bot className="h-4 w-4" />}
+                      </div>
+                      <div className="flex-1 min-w-0 space-y-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium text-sm">{agent.name}</span>
+                          <Badge 
+                            variant="outline" 
+                            className={cn("text-[9px] px-1.5", ARCHITECTURE_TYPE_INFO[agent.architectureType].color)}
+                          >
+                            {ARCHITECTURE_TYPE_INFO[agent.architectureType].label}
+                          </Badge>
+                          {agent.supportsStreaming && (
+                            <Badge variant="outline" className="text-[9px] px-1.5 text-green-600 border-green-500/30">
+                              <Zap className="h-2 w-2 mr-0.5" />
+                              Stream
                             </Badge>
-                            {agent.supportsStreaming && (
-                              <Badge variant="outline" className="text-[9px] px-1 py-0 text-green-600 border-green-500/30">
-                                <Zap className="h-2 w-2 mr-0.5" />
-                                Stream
-                              </Badge>
-                            )}
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-0.5">{agent.description}</p>
-
-                          {/* Provider Selection */}
-                          {isSelected && (
-                            <div className="mt-2 flex items-center gap-2">
-                              <Label className="text-[10px] text-muted-foreground">MODEL:</Label>
-                              <Select
-                                value={currentModel}
-                                onValueChange={(value) => handleAgentModelChange(key, value)}
-                              >
-                                <SelectTrigger className="h-7 text-xs flex-1 max-w-[200px] bg-background">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent className="bg-popover border shadow-lg z-50">
-                                  {modelOptions.map(opt => (
-                                    <SelectItem key={opt.id} value={opt.id}>
-                                      <div className="flex flex-col">
-                                        <span className="text-xs">{opt.name}</span>
-                                        <span className="text-[10px] text-muted-foreground">{opt.description}</span>
-                                      </div>
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-
-                              {/* Provider Badges */}
-                              {agent.providers && (
-                                <div className="flex gap-1 ml-auto">
-                                  {agent.providers.slice(0, 3).map(provider => {
-                                    const providerInfo = PROVIDER_CATEGORIES.text.find(p => p.id === provider);
-                                    return (
-                                      <span
-                                        key={provider}
-                                        className={cn("text-[10px] px-1.5 py-0.5 rounded-full", providerInfo?.color || "bg-muted")}
-                                        title={providerInfo?.name || provider}
-                                      >
-                                        {providerInfo?.icon || '•'}
-                                      </span>
-                                    );
-                                  })}
-                                </div>
-                              )}
-                            </div>
                           )}
                         </div>
+                        <p className="text-xs text-muted-foreground line-clamp-1">{agent.description}</p>
+                        
+                        {/* Provider Selection - Only when selected */}
+                        {isSelected && (
+                          <div className="flex items-center gap-2 pt-1">
+                            <AgentProviderSelector
+                              agentType={agent.type}
+                              value={currentProvider}
+                              onChange={(v) => handleProviderChange(key, v)}
+                              showLabel={false}
+                              className="flex-1 max-w-[180px]"
+                            />
+                            {recommended && currentProvider === recommended.id && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <Badge variant="outline" className="text-[9px] gap-1 text-yellow-600 border-yellow-500/30">
+                                      <Star className="h-2.5 w-2.5 fill-yellow-500" />
+                                      Recommended
+                                    </Badge>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p className="text-xs">Best provider for this agent type</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
-        )}
-      </div>
+                  </div>
+                );
+              })}
+            </div>
+          </ScrollArea>
+        </CollapsibleContent>
+      </Collapsible>
 
       <Separator />
 
       {/* Multi-Language Generation */}
       <div className="space-y-4">
-        <div className="flex items-center gap-2">
+        <Label className="text-sm font-medium flex items-center gap-2">
           <Languages className="h-4 w-4 text-primary" />
-          <span className="text-sm font-medium">Multi-Language Generation</span>
-        </div>
-        <p className="text-xs text-muted-foreground">
-          Generate presentations in multiple languages simultaneously
-        </p>
-
-        {/* Primary Language */}
-        <div className="flex items-center gap-3 p-3 rounded-xl border bg-primary/5 border-primary/20">
-          <Globe className="h-4 w-4 text-primary" />
-          <div className="flex-1">
-            <Label className="text-xs text-muted-foreground">PRIMARY LANGUAGE</Label>
-            <Select value={primaryLanguage} onValueChange={onPrimaryLanguageChange}>
-              <SelectTrigger className="h-8 mt-1 bg-background">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-popover border shadow-lg z-50">
-                {SUPPORTED_LANGUAGES.map(lang => (
-                  <SelectItem key={lang.code} value={lang.code}>
-                    {lang.flag} {lang.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <Badge variant="default" className="bg-primary">Primary</Badge>
-        </div>
-
-        {/* Language Selection Grid */}
-        <Collapsible open={expandedLanguages} onOpenChange={setExpandedLanguages}>
-          <CollapsibleTrigger asChild>
-            <button className="w-full flex items-center justify-between p-3 rounded-xl border hover:bg-muted/30 transition-colors">
-              <div className="flex items-center gap-2">
-                <Plus className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium text-foreground">Add Languages</span>
-                <Badge variant="secondary" className="text-xs">{selectedLanguages.length} selected</Badge>
-              </div>
-              <ChevronDown className={cn("h-4 w-4 transition-transform", expandedLanguages && "rotate-180")} />
-            </button>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 p-3 rounded-xl bg-muted/30 border">
-              {SUPPORTED_LANGUAGES.map(lang => {
-                const isSelected = selectedLanguages.includes(lang.code);
-                const isPrimary = primaryLanguage === lang.code;
-
-                return (
-                  <button
-                    key={lang.code}
-                    onClick={() => handleLanguageToggle(lang.code)}
-                    className={cn(
-                      "flex items-center gap-2 p-3 rounded-lg border-2 transition-all text-left",
-                      isSelected
-                        ? isPrimary
-                          ? "border-primary bg-primary/10 shadow-sm"
-                          : "border-primary/50 bg-primary/5"
-                        : "border-transparent bg-background hover:border-primary/30"
-                    )}
-                  >
-                    <span className="text-xl">{lang.flag}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground">{lang.name}</p>
-                      {isPrimary && (
-                        <Badge variant="default" className="text-[9px] px-1.5 py-0 mt-1">Primary</Badge>
-                      )}
-                    </div>
-                    {isSelected && !isPrimary && <Check className="h-4 w-4 text-primary shrink-0" />}
-                  </button>
-                );
-              })}
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
+          Multi-Language Generation
+        </Label>
+        
+        <LanguageMultiSelectDropdown
+          value={selectedLanguages}
+          onChange={onSelectedLanguagesChange}
+          primaryLanguage={primaryLanguage}
+          onPrimaryChange={onPrimaryLanguageChange}
+          maxLanguages={7}
+        />
 
         {/* Voiceover Toggle */}
         <div className="flex items-center justify-between p-3 rounded-xl border bg-muted/30">
@@ -490,8 +382,8 @@ export function AgentLanguageConfigPanel({
               <Volume2 className="h-4 w-4 text-primary" />
             </div>
             <div>
-              <p className="text-sm font-medium text-foreground">Include Voiceover</p>
-              <p className="text-xs text-muted-foreground">Generate audio narration for each language</p>
+              <p className="text-sm font-medium">Include Voiceover</p>
+              <p className="text-xs text-muted-foreground">Generate audio for each language</p>
             </div>
           </div>
           <Switch 
@@ -500,77 +392,103 @@ export function AgentLanguageConfigPanel({
           />
         </div>
 
-        {/* Voice Provider Selection - Clean Grid */}
+        {/* Voice Provider Info */}
         {includeVoiceover && (
-          <div className="space-y-3">
-            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Voice Providers</Label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
-              {PROVIDER_CATEGORIES.voice.map(provider => (
-                <button
-                  key={provider.id}
-                  className={cn(
-                    "flex items-center gap-2 p-3 rounded-lg border-2 transition-all",
-                    "border-border hover:border-primary/50 hover:bg-primary/5"
-                  )}
-                >
-                  <span className="text-xl">{provider.icon}</span>
-                  <span className="text-xs font-medium text-foreground">{provider.name}</span>
-                </button>
+          <div className="p-3 rounded-xl border bg-muted/20">
+            <div className="flex items-center gap-2 mb-2">
+              <Mic2 className="h-4 w-4 text-primary" />
+              <Label className="text-xs font-medium">Available Voice Providers</Label>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {VOICE_PROVIDERS.slice(0, 6).map(p => (
+                <TooltipProvider key={p.id}>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Badge 
+                        variant="outline" 
+                        className={cn("text-[10px] gap-1 cursor-default", TIER_COLORS[p.tier])}
+                      >
+                        <span>{p.icon}</span>
+                        {p.shortName}
+                        {p.recommended && <Star className="h-2.5 w-2.5 fill-yellow-500 text-yellow-500" />}
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-xs font-medium">{p.name}</p>
+                      <p className="text-[10px] text-muted-foreground">{p.description}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               ))}
             </div>
           </div>
         )}
       </div>
 
-      {/* Summary */}
-      <div className="p-4 rounded-xl border-primary/20 bg-gradient-to-r from-primary/5 to-accent/5 border">
-        <div className="flex items-start gap-3">
-          <div className="p-2 rounded-lg bg-primary/10">
-            <Sparkles className="h-4 w-4 text-primary" />
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-medium text-foreground mb-2">Configuration Summary</p>
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="outline" className={ARCHITECTURE_TYPE_INFO[selectedArchitecture].color}>
-                {ARCHITECTURE_TYPE_INFO[selectedArchitecture].label}
-              </Badge>
-              <Badge variant="secondary">{selectedAgents.length} Agents</Badge>
-              <Badge variant="secondary">{selectedLanguages.length} Languages</Badge>
-              {includeVoiceover && <Badge variant="secondary">Voiceover</Badge>}
+      <Separator />
+
+      {/* Configuration Summary */}
+      <div className="p-4 rounded-xl border bg-gradient-to-br from-primary/5 via-background to-accent/5">
+        <div className="flex items-center gap-2 mb-3">
+          <Sparkles className="h-4 w-4 text-primary" />
+          <span className="text-sm font-semibold">Configuration Summary</span>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-3">
+          {/* Architecture */}
+          <div className="p-2.5 rounded-lg bg-background border">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Architecture</p>
+            <div className="flex items-center gap-2">
+              {ARCH_ICONS[selectedArchitecture]}
+              <span className="text-sm font-medium">{ARCHITECTURE_TYPE_INFO[selectedArchitecture].label}</span>
             </div>
-            <div className="flex flex-wrap gap-1 mt-2">
-              {selectedLanguages.map(code => {
-                const lang = SUPPORTED_LANGUAGES.find(l => l.code === code);
-                return lang && (
-                  <span key={code} className="text-base" title={lang.name}>{lang.flag}</span>
+          </div>
+          
+          {/* Agents */}
+          <div className="p-2.5 rounded-lg bg-background border">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Active Agents</p>
+            <span className="text-sm font-medium">{selectedAgents.length} of {availableAgents.length}</span>
+          </div>
+          
+          {/* Languages */}
+          <div className="p-2.5 rounded-lg bg-background border">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Languages</p>
+            <span className="text-sm font-medium">{selectedLanguages.length} selected</span>
+          </div>
+          
+          {/* Voiceover */}
+          <div className="p-2.5 rounded-lg bg-background border">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Voiceover</p>
+            <span className="text-sm font-medium">{includeVoiceover ? 'Enabled' : 'Disabled'}</span>
+          </div>
+        </div>
+
+        {/* Active Agents List */}
+        {selectedAgents.length > 0 && (
+          <div className="mt-3 pt-3 border-t">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-2">Active Agents & Providers</p>
+            <div className="flex flex-wrap gap-1.5">
+              {selectedAgents.map(key => {
+                const agent = AGENT_CATALOG[key as keyof typeof AGENT_CATALOG];
+                if (!agent) return null;
+                const provider = getAgentProvider(key, agent.type);
+                const providerInfo = [...TEXT_PROVIDERS, ...IMAGE_PROVIDERS, ...VOICE_PROVIDERS, ...TRANSLATION_PROVIDERS]
+                  .find(p => p.id === provider);
+                
+                return (
+                  <Badge key={key} variant="secondary" className="text-[10px] gap-1">
+                    {AGENT_TYPE_ICONS[agent.type]}
+                    <span className="truncate max-w-[80px]">{agent.name.replace(' Agent', '')}</span>
+                    {providerInfo && (
+                      <span className="text-muted-foreground">• {providerInfo.icon}</span>
+                    )}
+                  </Badge>
                 );
               })}
             </div>
           </div>
-        </div>
+        )}
       </div>
-
-      {/* Agent Config Dialog */}
-      {showAgentConfig && editingAgent && (
-        <AgentSelectorDialog
-          open={!!showAgentConfig}
-          onOpenChange={(open) => !open && setShowAgentConfig(null)}
-          agent={editingAgent}
-          agentKey={showAgentConfig}
-          config={getAgentConfig(showAgentConfig)}
-          onConfirm={(config) => {
-            const existing = agentModelConfigs.find(c => c.agentKey === config.agentKey);
-            if (existing) {
-              onAgentModelConfigsChange(
-                agentModelConfigs.map(c => c.agentKey === config.agentKey ? config : c)
-              );
-            } else {
-              onAgentModelConfigsChange([...agentModelConfigs, config]);
-            }
-            setShowAgentConfig(null);
-          }}
-        />
-      )}
     </div>
   );
 }

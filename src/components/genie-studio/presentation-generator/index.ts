@@ -82,6 +82,10 @@ export { VoiceAudioConfigPanel } from './VoiceAudioConfigPanel';
 export { ContentContextPanel } from './ContentContextPanel';
 export { AgentLanguageConfigPanel } from './AgentLanguageConfigPanel';
 
+// AI Provider Constants & Selectors
+export * from './constants/aiProviderConstants';
+export { AgentProviderSelector, AgentProviderBadge } from './components/AgentProviderSelector';
+
 // Template Recommendation & Creation with AI Model Selection
 export { TemplateRecommendationPanel } from './components/TemplateRecommendationPanel';
 export { TemplateAIModelSelector } from './components/TemplateAIModelSelector';
