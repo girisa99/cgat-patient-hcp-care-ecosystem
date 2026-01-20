@@ -25,7 +25,17 @@ import { AgentArchitectureDropdown } from './components/AgentArchitectureDropdow
 import { VoiceProviderDropdown } from './components/VoiceProviderDropdown';
 import { LanguageMultiSelectDropdown } from './components/LanguageMultiSelectDropdown';
 
+import { Bot, Network, Cpu, ImageIcon, BarChart3, Mic2, Users, Settings2, ChevronDown, Check, Zap, Plus } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 // Provider categories (kept for backward compatibility)
+const PROVIDER_CATEGORIES = {
+  text: [
+    { id: 'openai', name: 'OpenAI', icon: '🤖', color: 'bg-green-500/10 text-green-600' },
+    { id: 'anthropic', name: 'Anthropic', icon: '🧠', color: 'bg-purple-500/10 text-purple-600' },
+    { id: 'google', name: 'Google', icon: '☁️', color: 'bg-blue-500/10 text-blue-600' },
+  ],
   voice: [
     { id: 'elevenlabs', name: 'ElevenLabs', icon: '🎙️', color: 'bg-pink-500/10 text-pink-600' },
     { id: 'openai', name: 'OpenAI TTS', icon: '🔊', color: 'bg-green-500/10 text-green-600' },
@@ -39,6 +49,26 @@ import { LanguageMultiSelectDropdown } from './components/LanguageMultiSelectDro
     { id: 'azure', name: 'Azure Translator', icon: '📝', color: 'bg-cyan-500/10 text-cyan-600' },
   ],
 };
+
+// AI Model options
+const AI_MODEL_OPTIONS = [
+  { id: 'gpt-4o', name: 'GPT-4o', description: 'Best quality' },
+  { id: 'gpt-4-turbo', name: 'GPT-4 Turbo', description: 'Fast & capable' },
+  { id: 'claude-3-opus', name: 'Claude 3 Opus', description: 'Advanced reasoning' },
+  { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', description: 'Multimodal' },
+];
+
+const IMAGE_MODEL_OPTIONS = [
+  { id: 'flux-pro', name: 'Flux Pro', description: 'Highest quality' },
+  { id: 'dall-e-3', name: 'DALL-E 3', description: 'Creative & detailed' },
+  { id: 'modelslab', name: 'ModelsLab', description: 'Fast generation' },
+];
+
+const VOICE_MODEL_OPTIONS = [
+  { id: 'elevenlabs-v2', name: 'ElevenLabs v2', description: 'Natural voices' },
+  { id: 'openai-tts', name: 'OpenAI TTS', description: 'Clear & fast' },
+  { id: 'azure-neural', name: 'Azure Neural', description: 'Enterprise grade' },
+];
 
 // Architecture type icons
 const ARCH_ICONS: Record<AgentArchitectureType, React.ReactNode> = {
