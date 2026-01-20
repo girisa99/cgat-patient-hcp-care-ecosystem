@@ -297,45 +297,40 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
   const availableCategories = mode === 'ai' ? CONTENT_CATEGORIES : MANUAL_CONTENT_CATEGORIES;
 
   return (
-    <div className="space-y-4">
-      {/* Mode Toggle */}
-      <Card className="border-primary/20">
-        <CardContent className="p-4">
-          <div className="flex items-center gap-2">
-            <Button
-              variant={mode === 'ai' ? 'default' : 'outline'}
-              size="sm"
-              className="flex-1 gap-2"
-              onClick={() => setMode('ai')}
-            >
-              <Bot className="h-4 w-4" />
-              AI Auto
-              {mode === 'ai' && <Check className="h-3 w-3" />}
-            </Button>
-            <Button
-              variant={mode === 'custom' ? 'default' : 'outline'}
-              size="sm"
-              className="flex-1 gap-2"
-              onClick={() => setMode('custom')}
-            >
-              <Pencil className="h-4 w-4" />
-              Custom
-              {mode === 'custom' && <Check className="h-3 w-3" />}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+    <div className="space-y-5">
+      {/* Mode Toggle - flat div, no Card */}
+      <div className="p-4 rounded-xl border border-primary/20 bg-card">
+        <div className="flex items-center gap-2">
+          <Button
+            variant={mode === 'ai' ? 'default' : 'outline'}
+            size="sm"
+            className="flex-1 gap-2"
+            onClick={() => setMode('ai')}
+          >
+            <Bot className="h-4 w-4" />
+            AI Auto
+            {mode === 'ai' && <Check className="h-3 w-3" />}
+          </Button>
+          <Button
+            variant={mode === 'custom' ? 'default' : 'outline'}
+            size="sm"
+            className="flex-1 gap-2"
+            onClick={() => setMode('custom')}
+          >
+            <Pencil className="h-4 w-4" />
+            Custom
+            {mode === 'custom' && <Check className="h-3 w-3" />}
+          </Button>
+        </div>
+      </div>
 
-      {/* Industry & Segment Section - Both Modes */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Building2 className="h-4 w-4 text-primary" />
-            Industry Context
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {/* Industry & Segment Section - flat div */}
+      <div className="p-4 rounded-xl border bg-card space-y-4">
+        <div className="flex items-center gap-2 pb-2 border-b">
+          <Building2 className="h-4 w-4 text-primary" />
+          <h4 className="text-sm font-medium">Industry Context</h4>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Industry Dropdown */}
             <div className="space-y-2">
               <Label className="text-xs font-medium text-foreground">Industry</Label>
@@ -394,18 +389,16 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
               </Select>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* Content Type Section - Both Modes */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <FileText className="h-4 w-4 text-primary" />
-            Content Type
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      {/* Content Type Section - flat div */}
+      <div className="p-4 rounded-xl border bg-card space-y-4">
+        <div className="flex items-center gap-2 pb-2 border-b">
+          <FileText className="h-4 w-4 text-primary" />
+          <h4 className="text-sm font-medium">Content Type</h4>
+        </div>
+        <div className="space-y-4">
           {/* Category Dropdown */}
           <div className="space-y-2">
             <Label className="text-xs font-medium text-foreground">Category</Label>
@@ -459,22 +452,20 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
               })}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* Output Type Section */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Layers className="h-4 w-4 text-primary" />
-            Output Type
-            {currentOutputType !== '2d-static' && (
-              <Badge variant="secondary" className="ml-auto text-xs">
-                {OUTPUT_TYPE_CONFIGS.find(o => o.id === currentOutputType)?.name}
-              </Badge>
-            )}
-          </CardTitle>
-        </CardHeader>
+      {/* Output Type Section - flat div */}
+      <div className="p-4 rounded-xl border bg-card space-y-4">
+        <div className="flex items-center gap-2 pb-2 border-b">
+          <Layers className="h-4 w-4 text-primary" />
+          <h4 className="text-sm font-medium">Output Type</h4>
+          {currentOutputType !== '2d-static' && (
+            <Badge variant="secondary" className="ml-auto text-xs">
+              {OUTPUT_TYPE_CONFIGS.find(o => o.id === currentOutputType)?.name}
+            </Badge>
+          )}
+        </div>
         <CardContent className="space-y-4">
           {/* Output Type Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -536,22 +527,20 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
               </div>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* AI Models Section */}
-      <Card className={mode === 'ai' ? 'border-primary/20' : ''}>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-primary" />
-            AI Models
-            {mode === 'ai' && (
-              <Badge variant="secondary" className="ml-auto text-xs">
-                {modelRecommendation.confidence}% match
-              </Badge>
-            )}
-          </CardTitle>
-        </CardHeader>
+      {/* AI Models Section - flat div */}
+      <div className={cn("p-4 rounded-xl border bg-card space-y-4", mode === 'ai' && "border-primary/20")}>
+        <div className="flex items-center gap-2 pb-2 border-b">
+          <Sparkles className="h-4 w-4 text-primary" />
+          <h4 className="text-sm font-medium">AI Models</h4>
+          {mode === 'ai' && (
+            <Badge variant="secondary" className="ml-auto text-xs">
+              {modelRecommendation.confidence}% match
+            </Badge>
+          )}
+        </div>
         <CardContent className="space-y-4">
           {/* AI Auto Mode - Show recommendation info with alternatives */}
           {mode === 'ai' && (
@@ -707,8 +696,8 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
               </>
             )}
           </Button>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };
