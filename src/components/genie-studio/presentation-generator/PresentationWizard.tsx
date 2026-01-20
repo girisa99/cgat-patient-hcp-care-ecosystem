@@ -116,7 +116,6 @@ import { useAgentPresentationGenerator, LanguageGenerationState } from '@/hooks/
 import { LanguageModelConfig } from '@/services/agentPresentationGeneratorService';
 import { AGENT_CATALOG, AGENT_TYPES } from './AgentArchitecture';
 import { 
-  EnhancedTemplateWorkflow,
   COLLATERAL_TYPES,
   INDUSTRY_CATEGORIES,
   CONSULTING_TEMPLATES,
@@ -126,7 +125,7 @@ import {
   type FinalWorkflowConfig,
   type AIModelConfig as WorkflowAIModelConfig,
   type CollateralType as WorkflowCollateralType,
-} from './EnhancedTemplateWorkflow';
+} from './wizardConstants';
 import { ContentTypeSelector, CONTENT_CATEGORIES, EXTENDED_COLLATERAL_TYPES } from './ContentTypeSelector';
 import { AIModelConfigPanel } from './AIModelConfigPanel';
 import { TemplateBrandingPanel, BrandConfig } from './TemplateBrandingPanel';

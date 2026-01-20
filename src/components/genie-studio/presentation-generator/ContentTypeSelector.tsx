@@ -49,8 +49,7 @@ import {
   Plus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { COLLATERAL_TYPES } from './EnhancedTemplateWorkflow';
-import { FinalWorkflowConfig } from './EnhancedTemplateWorkflow';
+import { COLLATERAL_TYPES, FinalWorkflowConfig } from './wizardConstants';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 
