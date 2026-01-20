@@ -31,6 +31,67 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import type { VisualFeatureSelection } from './VisualFeaturesDropdown';
 import type { OutputTypeSettings } from '../OutputTypePanel';
 
+// Model Tier Definitions - Based on ConfigurationPanel.tsx
+export interface ModelTierInfo {
+  tier: 1 | 2 | 3;
+  tierName: string;
+  description: string;
+  costMultiplier: number; // 1x = baseline
+  qualityScore: number; // 0-100
+  speedScore: number; // 0-100
+}
+
+export const MODEL_TIERS: Record<string, ModelTierInfo> = {
+  // Tier 1 - Core/Primary (Best quality + speed, available via Lovable AI)
+  'google/gemini-3-flash-preview': { tier: 1, tierName: 'Tier 1 - Core', description: 'Fastest multimodal via Lovable AI', costMultiplier: 1.0, qualityScore: 90, speedScore: 95 },
+  'google/gemini-3-pro-preview': { tier: 1, tierName: 'Tier 1 - Core', description: 'Next-gen reasoning', costMultiplier: 1.2, qualityScore: 95, speedScore: 85 },
+  'google/gemini-2.5-pro': { tier: 1, tierName: 'Tier 1 - Core', description: '1M context, complex reasoning', costMultiplier: 1.5, qualityScore: 95, speedScore: 80 },
+  'google/gemini-2.5-flash': { tier: 1, tierName: 'Tier 1 - Core', description: 'Fast balanced multimodal', costMultiplier: 0.8, qualityScore: 88, speedScore: 92 },
+  'openai/gpt-5': { tier: 1, tierName: 'Tier 1 - Core', description: 'Premium quality, strong reasoning', costMultiplier: 2.0, qualityScore: 98, speedScore: 75 },
+  'openai/gpt-5-mini': { tier: 1, tierName: 'Tier 1 - Core', description: 'Cost-effective GPT-5', costMultiplier: 1.0, qualityScore: 90, speedScore: 88 },
+  'openai/gpt-5.2': { tier: 1, tierName: 'Tier 1 - Core', description: 'Enhanced reasoning', costMultiplier: 2.2, qualityScore: 99, speedScore: 72 },
+  'elevenlabs-multilingual': { tier: 1, tierName: 'Tier 1 - Core', description: 'Premium voice, 100+ languages', costMultiplier: 1.5, qualityScore: 98, speedScore: 85 },
+  'deepl': { tier: 1, tierName: 'Tier 1 - Core', description: 'Highest quality EU translation', costMultiplier: 1.2, qualityScore: 98, speedScore: 90 },
+  'flux-pro': { tier: 1, tierName: 'Tier 1 - Core', description: 'High quality images', costMultiplier: 1.5, qualityScore: 95, speedScore: 80 },
+  'modelslab': { tier: 1, tierName: 'Tier 1 - Core', description: 'Multi-model hub', costMultiplier: 1.0, qualityScore: 90, speedScore: 85 },
+  
+  // Tier 2 - Specialized (Enterprise features, specific use cases)
+  'anthropic/claude-opus-4': { tier: 2, tierName: 'Tier 2 - Enterprise', description: 'Best nuance, 200k context', costMultiplier: 2.5, qualityScore: 97, speedScore: 70 },
+  'anthropic/claude-sonnet-4': { tier: 2, tierName: 'Tier 2 - Enterprise', description: 'Balanced Claude quality', costMultiplier: 1.8, qualityScore: 93, speedScore: 78 },
+  'anthropic/claude-3.5-sonnet': { tier: 2, tierName: 'Tier 2 - Enterprise', description: 'Compliance-sensitive', costMultiplier: 1.5, qualityScore: 92, speedScore: 80 },
+  'azure/gpt-4o': { tier: 2, tierName: 'Tier 2 - Enterprise', description: 'Enterprise SLA, HIPAA', costMultiplier: 2.0, qualityScore: 94, speedScore: 75 },
+  'dall-e-3': { tier: 2, tierName: 'Tier 2 - Enterprise', description: 'Excellent text rendering', costMultiplier: 2.0, qualityScore: 95, speedScore: 70 },
+  'azure-neural': { tier: 2, tierName: 'Tier 2 - Enterprise', description: 'Enterprise voice, 300+ languages', costMultiplier: 1.2, qualityScore: 92, speedScore: 88 },
+  'qwen-mt': { tier: 2, tierName: 'Tier 2 - Specialized', description: 'Best CJK translation', costMultiplier: 0.8, qualityScore: 95, speedScore: 90 },
+  'runway': { tier: 2, tierName: 'Tier 2 - Specialized', description: 'Premium video generation', costMultiplier: 3.0, qualityScore: 95, speedScore: 60 },
+  
+  // Tier 3 - Regional/Low-Cost (Budget-friendly, region-specific)
+  'deepseek/deepseek-chat': { tier: 3, tierName: 'Tier 3 - Budget', description: 'Best Chinese, very low cost', costMultiplier: 0.3, qualityScore: 85, speedScore: 90 },
+  'deepseek/deepseek-coder': { tier: 3, tierName: 'Tier 3 - Budget', description: 'Technical/code content', costMultiplier: 0.3, qualityScore: 88, speedScore: 88 },
+  'alibaba/qwen-max': { tier: 3, tierName: 'Tier 3 - Regional', description: 'Excellent CJK, full-stack', costMultiplier: 0.5, qualityScore: 88, speedScore: 85 },
+  'alibaba/qwen-2.5': { tier: 3, tierName: 'Tier 3 - Regional', description: 'Asian language optimized', costMultiplier: 0.4, qualityScore: 85, speedScore: 88 },
+  'alibaba/qwen-turbo': { tier: 3, tierName: 'Tier 3 - Regional', description: 'Fast, very low cost', costMultiplier: 0.2, qualityScore: 80, speedScore: 95 },
+  'google-translate': { tier: 3, tierName: 'Tier 3 - Budget', description: '249+ languages, reliable', costMultiplier: 0.5, qualityScore: 85, speedScore: 95 },
+  'google-wavenet': { tier: 3, tierName: 'Tier 3 - Budget', description: 'Good quality, 200+ languages', costMultiplier: 0.6, qualityScore: 85, speedScore: 90 },
+};
+
+// Get tier info for a model, with fallback
+export function getModelTierInfo(modelId: string): ModelTierInfo {
+  return MODEL_TIERS[modelId] || { tier: 2, tierName: 'Tier 2', description: 'Standard provider', costMultiplier: 1.0, qualityScore: 80, speedScore: 80 };
+}
+
+export interface AIRecommendation {
+  textModel: string;
+  imageModel: string;
+  voiceModel: string;
+  translationModel: string;
+  videoModel?: string;
+  reason: string;
+  confidence: number;
+  alternativeTextModels?: string[];
+  alternativeImageModels?: string[];
+}
+
 export interface GenerationContextSummary {
   // Step 0: Input
   inputSource: string;
@@ -67,13 +128,16 @@ export interface GenerationContextSummary {
   includeVoiceover: boolean;
   voiceProvider: string;
   
-  // AI Models
+  // AI Models - Current selections
   aiModels: {
     textModel: string;
     imageModel: string;
     voiceModel: string;
     translationModel: string;
   };
+  
+  // NEW: AI Recommendation with confidence
+  aiRecommendation?: AIRecommendation;
 }
 
 interface PreGenerationConfirmationPanelProps {
@@ -83,6 +147,14 @@ interface PreGenerationConfirmationPanelProps {
   isGenerating: boolean;
   creditEstimate?: number;
   className?: string;
+  // NEW: Model override callbacks
+  onModelOverride?: (modelType: 'text' | 'image' | 'voice' | 'translation', newModel: string) => void;
+  availableModels?: {
+    text: Array<{ id: string; name: string; tier: number }>;
+    image: Array<{ id: string; name: string; tier: number }>;
+    voice: Array<{ id: string; name: string; tier: number }>;
+    translation: Array<{ id: string; name: string; tier: number }>;
+  };
 }
 
 // Visual feature labels
@@ -97,6 +169,66 @@ const VISUAL_FEATURE_LABELS: Record<string, string> = {
   'icon-sets': 'Icon Sets',
 };
 
+// Model Card Component
+function ModelCard({ type, icon, label, model, recommended, alternatives, onOverride, isRecommendationActive }: {
+  type: 'text' | 'image' | 'voice' | 'translation';
+  icon: React.ReactNode;
+  label: string;
+  model: string;
+  recommended?: string;
+  alternatives?: string[];
+  onOverride?: (type: 'text' | 'image' | 'voice' | 'translation', model: string) => void;
+  isRecommendationActive: boolean;
+}) {
+  const tierInfo = getModelTierInfo(model);
+  const isUsingRecommended = model === recommended;
+  const tierColor = tierInfo.tier === 1 ? 'bg-green-500' : tierInfo.tier === 2 ? 'bg-blue-500' : 'bg-amber-500';
+  
+  return (
+    <div className="p-2 rounded-lg border bg-card/50 space-y-1">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          {icon}
+          <span className="text-xs font-medium">{label}</span>
+        </div>
+        <div className={cn("w-2 h-2 rounded-full", tierColor)} title={tierInfo.tierName} />
+      </div>
+      <div className="text-xs font-mono truncate" title={model}>
+        {model?.split('/').pop() || 'Auto'}
+      </div>
+      {isRecommendationActive && isUsingRecommended && (
+        <Badge variant="secondary" className="text-[10px] h-4">✓ Recommended</Badge>
+      )}
+      <div className="flex gap-1 text-[10px] text-muted-foreground">
+        <span>Q:{tierInfo.qualityScore}</span>
+        <span>S:{tierInfo.speedScore}</span>
+        <span>{tierInfo.costMultiplier}x</span>
+      </div>
+    </div>
+  );
+}
+
+// Cost Optimization Summary
+function CostOptimizationSummary({ textModel, imageModel, voiceModel, translationModel }: {
+  textModel: string; imageModel: string; voiceModel: string; translationModel: string;
+}) {
+  const textTier = getModelTierInfo(textModel);
+  const imageTier = getModelTierInfo(imageModel);
+  const voiceTier = getModelTierInfo(voiceModel);
+  const translationTier = getModelTierInfo(translationModel);
+  
+  const avgQuality = Math.round((textTier.qualityScore + imageTier.qualityScore + voiceTier.qualityScore + translationTier.qualityScore) / 4);
+  const avgCost = ((textTier.costMultiplier + imageTier.costMultiplier + voiceTier.costMultiplier + translationTier.costMultiplier) / 4).toFixed(1);
+  
+  return (
+    <div className="flex items-center gap-4 text-xs p-2 rounded bg-muted/30">
+      <div><span className="text-muted-foreground">Avg Quality:</span> <span className="font-medium">{avgQuality}/100</span></div>
+      <div><span className="text-muted-foreground">Cost Factor:</span> <span className="font-medium">{avgCost}x</span></div>
+      <div><span className="text-muted-foreground">Optimization:</span> <Badge variant="outline" className="text-[10px] h-4 ml-1">Balanced</Badge></div>
+    </div>
+  );
+}
+
 export function PreGenerationConfirmationPanel({
   summary,
   onConfirm,
@@ -104,6 +236,7 @@ export function PreGenerationConfirmationPanel({
   isGenerating,
   creditEstimate,
   className,
+  onModelOverride,
 }: PreGenerationConfirmationPanelProps) {
   const [expandedSections, setExpandedSections] = React.useState<Set<string>>(new Set(['input', 'config', 'template', 'output', 'agents']));
 
@@ -403,29 +536,108 @@ export function PreGenerationConfirmationPanel({
               </Collapsible>
             ))}
 
-            {/* AI Models Summary */}
-            <div className="p-3 rounded-lg border bg-gradient-to-r from-primary/5 to-accent/5">
-              <div className="flex items-center gap-2 mb-2">
-                <Sparkles className="h-4 w-4 text-primary" />
-                <span className="font-medium text-sm">AI Models</span>
+            {/* Enhanced AI Models Section with Confidence, Tiers & Override */}
+            <div className="p-4 rounded-lg border bg-gradient-to-r from-primary/5 to-accent/5 space-y-4">
+              {/* Header with Confidence Score */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  <span className="font-medium text-sm">AI Model Configuration</span>
+                </div>
+                {summary.aiRecommendation && (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="default" className="text-xs bg-primary/90">
+                      {summary.aiRecommendation.confidence}% Confidence
+                    </Badge>
+                    {summary.step1Mode === 'ai' && (
+                      <Badge variant="secondary" className="text-xs">AI Auto</Badge>
+                    )}
+                  </div>
+                )}
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                <Badge variant="outline" className="text-xs justify-start">
-                  <FileText className="h-3 w-3 mr-1" />
-                  Text: {summary.aiModels.textModel?.split('/').pop() || 'Auto'}
-                </Badge>
-                <Badge variant="outline" className="text-xs justify-start">
-                  <ImageIcon className="h-3 w-3 mr-1" />
-                  Image: {summary.aiModels.imageModel || 'Auto'}
-                </Badge>
-                <Badge variant="outline" className="text-xs justify-start">
-                  <Mic className="h-3 w-3 mr-1" />
-                  Voice: {summary.aiModels.voiceModel || 'Auto'}
-                </Badge>
-                <Badge variant="outline" className="text-xs justify-start">
-                  <Languages className="h-3 w-3 mr-1" />
-                  Translation: {summary.aiModels.translationModel || 'Auto'}
-                </Badge>
+
+              {/* AI Recommendation Reasoning */}
+              {summary.aiRecommendation && (
+                <div className="p-2 rounded bg-muted/50 border border-muted">
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-medium text-foreground">Why these models?</span>{' '}
+                    {summary.aiRecommendation.reason}
+                  </p>
+                </div>
+              )}
+
+              {/* Model Cards with Tier Info */}
+              <div className="grid grid-cols-2 gap-3">
+                {/* Text Model */}
+                <ModelCard
+                  type="text"
+                  icon={<FileText className="h-3.5 w-3.5" />}
+                  label="Text"
+                  model={summary.aiModels.textModel}
+                  recommended={summary.aiRecommendation?.textModel}
+                  alternatives={summary.aiRecommendation?.alternativeTextModels}
+                  onOverride={onModelOverride}
+                  isRecommendationActive={summary.step1Mode === 'ai'}
+                />
+                
+                {/* Image Model */}
+                <ModelCard
+                  type="image"
+                  icon={<ImageIcon className="h-3.5 w-3.5" />}
+                  label="Image"
+                  model={summary.aiModels.imageModel}
+                  recommended={summary.aiRecommendation?.imageModel}
+                  alternatives={summary.aiRecommendation?.alternativeImageModels}
+                  onOverride={onModelOverride}
+                  isRecommendationActive={summary.step1Mode === 'ai'}
+                />
+                
+                {/* Voice Model */}
+                <ModelCard
+                  type="voice"
+                  icon={<Mic className="h-3.5 w-3.5" />}
+                  label="Voice"
+                  model={summary.aiModels.voiceModel}
+                  recommended={summary.aiRecommendation?.voiceModel}
+                  onOverride={onModelOverride}
+                  isRecommendationActive={summary.step1Mode === 'ai'}
+                />
+                
+                {/* Translation Model */}
+                <ModelCard
+                  type="translation"
+                  icon={<Languages className="h-3.5 w-3.5" />}
+                  label="Translation"
+                  model={summary.aiModels.translationModel}
+                  recommended={summary.aiRecommendation?.translationModel}
+                  onOverride={onModelOverride}
+                  isRecommendationActive={summary.step1Mode === 'ai'}
+                />
+              </div>
+
+              {/* Cost/Quality Optimization Summary */}
+              <CostOptimizationSummary
+                textModel={summary.aiModels.textModel}
+                imageModel={summary.aiModels.imageModel}
+                voiceModel={summary.aiModels.voiceModel}
+                translationModel={summary.aiModels.translationModel}
+              />
+              
+              {/* Tier Legend */}
+              <div className="flex items-center gap-4 pt-2 border-t border-muted">
+                <span className="text-xs text-muted-foreground font-medium">Tiers:</span>
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-green-500" />
+                  <span className="text-xs text-muted-foreground">T1 Core</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-blue-500" />
+                  <span className="text-xs text-muted-foreground">T2 Enterprise</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-amber-500" />
+                  <span className="text-xs text-muted-foreground">T3 Budget</span>
+                </div>
               </div>
             </div>
           </div>
