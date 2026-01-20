@@ -47,9 +47,9 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import useTemplateLibrary, {
-  ConsultingFramework,
-  IndustryTemplate,
-  TemplateAIModelConfig,
+  type ConsultingFramework,
+  type IndustryTemplate,
+  type TemplateAIModelConfig,
   getRecommendedAIConfig,
 } from '@/hooks/useTemplateLibrary';
 import { TemplateAIModelSelector } from './TemplateAIModelSelector';

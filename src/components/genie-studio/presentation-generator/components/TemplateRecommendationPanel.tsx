@@ -1,6 +1,7 @@
 /**
  * TemplateRecommendationPanel - Integrates templateRecommendationService into Step 2
  * Shows context-aware template recommendations with consulting frameworks
+ * Now integrates with dynamic useTemplateLibrary for database-driven templates
  */
 
 import React, { useMemo, useState } from 'react';
@@ -31,6 +32,9 @@ import {
   HeartPulse,
   ShoppingCart,
   Plane,
+  Plus,
+  RefreshCw,
+  Database,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -54,6 +58,9 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import useTemplateLibrary from '@/hooks/useTemplateLibrary';
+import { CreateTemplateDialog } from './CreateTemplateDialog';
+import { TemplateAIModelSelector } from './TemplateAIModelSelector';
 
 // Style icons mapping
 const STYLE_ICONS: Record<TemplateStyle, React.ElementType> = {
@@ -198,6 +205,18 @@ export const TemplateRecommendationPanel: React.FC<TemplateRecommendationPanelPr
   const [selectedFramework, setSelectedFramework] = useState<ConsultingFramework | null>(null);
   const [simplifiedStyle, setSimplifiedStyle] = useState<SimplifiedStyle>('consulting-frameworks');
   const [internalSelectedTemplates, setInternalSelectedTemplates] = useState<string[]>([]);
+  const [showAIConfig, setShowAIConfig] = useState(false);
+
+  // Use dynamic template library from database
+  const { 
+    consultingFrameworks: dbFrameworks, 
+    industryTemplates: dbTemplates, 
+    loading: libraryLoading,
+    isEmpty: libraryEmpty,
+    refresh: refreshLibrary,
+    getFrameworksByCategory,
+    getTemplatesByIndustry,
+  } = useTemplateLibrary();
 
   // Track selected templates (internal or external)
   const selectedIds = selectedTemplateIds.length > 0 ? selectedTemplateIds : internalSelectedTemplates;
@@ -326,6 +345,51 @@ export const TemplateRecommendationPanel: React.FC<TemplateRecommendationPanelPr
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Dynamic Library Status */}
+        {!libraryLoading && (
+          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border">
+            <div className="flex items-center gap-2">
+              <Database className="h-4 w-4 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">
+                {libraryEmpty 
+                  ? 'No templates in library - create your first!'
+                  : `${dbFrameworks.length} frameworks · ${dbTemplates.length} templates`
+                }
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-7 px-2"
+                onClick={() => refreshLibrary()}
+              >
+                <RefreshCw className="h-3 w-3" />
+              </Button>
+              <CreateTemplateDialog 
+                type="framework" 
+                defaultIndustry={industry}
+                trigger={
+                  <Button variant="outline" size="sm" className="h-7 px-2 gap-1">
+                    <Plus className="h-3 w-3" />
+                    <span className="text-xs">Framework</span>
+                  </Button>
+                }
+              />
+              <CreateTemplateDialog 
+                type="template" 
+                defaultIndustry={industry}
+                trigger={
+                  <Button variant="outline" size="sm" className="h-7 px-2 gap-1">
+                    <Plus className="h-3 w-3" />
+                    <span className="text-xs">Template</span>
+                  </Button>
+                }
+              />
+            </div>
+          </div>
+        )}
+
         {/* Reasoning - Clean Card */}
         <div className="p-4 rounded-xl bg-muted/50 border">
           <div className="flex items-start gap-3">

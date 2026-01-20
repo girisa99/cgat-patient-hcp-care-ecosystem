@@ -74,8 +74,27 @@ export {
   type AgentExecutionContext,
 } from './AgentArchitecture';
 
-// Template Repository
+// Template Repository & Library
 export { TemplateRepository } from './TemplateRepository';
 export { VoiceAudioConfigPanel } from './VoiceAudioConfigPanel';
 export { ContentContextPanel } from './ContentContextPanel';
 export { AgentLanguageConfigPanel } from './AgentLanguageConfigPanel';
+
+// Template Recommendation & Creation with AI Model Selection
+export { TemplateRecommendationPanel } from './components/TemplateRecommendationPanel';
+export { TemplateAIModelSelector } from './components/TemplateAIModelSelector';
+export { CreateTemplateDialog } from './components/CreateTemplateDialog';
+
+// Re-export template library hook and types
+export { 
+  default as useTemplateLibrary,
+  AI_PROVIDERS,
+  getProvidersByCategory,
+  getRecommendedAIConfig,
+} from '@/hooks/useTemplateLibrary';
+export type {
+  ConsultingFramework,
+  IndustryTemplate,
+  TemplateAIModelConfig,
+  AIProvider,
+} from '@/hooks/useTemplateLibrary';

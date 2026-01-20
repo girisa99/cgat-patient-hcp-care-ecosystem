@@ -51,8 +51,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
-  TemplateAIModelConfig,
-  AIProvider,
+  type TemplateAIModelConfig,
+  type AIProvider,
   AI_PROVIDERS,
   getProvidersByCategory,
   getRecommendedAIConfig,
@@ -321,9 +321,9 @@ export const TemplateAIModelSelector: React.FC<TemplateAIModelSelectorProps> = (
               variant="outline"
               className={cn(
                 "text-xs",
-                current.confidence >= 90 ? "bg-green-500/10 text-green-600 border-green-200" :
-                current.confidence >= 80 ? "bg-blue-500/10 text-blue-600 border-blue-200" :
-                "bg-amber-500/10 text-amber-600 border-amber-200"
+                current.confidence >= 90 ? "bg-primary/10 text-primary border-primary/20" :
+                current.confidence >= 80 ? "bg-accent/10 text-accent-foreground border-accent/20" :
+                "bg-muted text-muted-foreground border-muted"
               )}
             >
               {current.confidence}% match
@@ -347,9 +347,9 @@ export const TemplateAIModelSelector: React.FC<TemplateAIModelSelectorProps> = (
               variant="outline"
               className={cn(
                 "text-xs",
-                current.confidence >= 90 ? "bg-green-500/10 text-green-600 border-green-200" :
-                current.confidence >= 80 ? "bg-blue-500/10 text-blue-600 border-blue-200" :
-                "bg-amber-500/10 text-amber-600 border-amber-200"
+                current.confidence >= 90 ? "bg-primary/10 text-primary border-primary/20" :
+                current.confidence >= 80 ? "bg-accent/10 text-accent-foreground border-accent/20" :
+                "bg-muted text-muted-foreground border-muted"
               )}
             >
               <TrendingUp className="h-3 w-3 mr-1" />
@@ -421,7 +421,7 @@ export const TemplateAIModelSelector: React.FC<TemplateAIModelSelectorProps> = (
         {/* Manual mode hint */}
         {!isAutoSelect && (
           <p className="text-[11px] text-muted-foreground flex items-center gap-1">
-            <Check className="h-3 w-3 text-green-500" />
+            <Check className="h-3 w-3 text-primary" />
             Manual mode: Click "Compare" on each model to see detailed rankings and metrics
           </p>
         )}
