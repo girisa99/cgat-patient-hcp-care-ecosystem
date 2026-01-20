@@ -37,14 +37,15 @@ export interface GenerationContextSummary {
   inputContentPreview: string;
   hasUploadedFile: boolean;
   
-  // Step 1: Configuration
+  // Step 1: Configuration - NOW with independent mode tracking
   industryCategory: string;
   industryName: string;
   segment: string;
   contentTypes: string[];
-  isAIAutoMode: boolean;
+  isAIAutoMode: boolean; // Legacy - kept for backward compat
+  step1Mode: 'ai' | 'custom'; // NEW: Independent Step 1 mode
   
-  // Step 2: Template & Branding
+  // Step 2: Template & Branding - NOW with independent mode tracking
   templateId: string;
   templateName: string;
   themeName: string;
@@ -53,6 +54,7 @@ export interface GenerationContextSummary {
   selectedFrameworkCategories: string[];
   selectedFrameworkIds: string[];
   visualFeatures: VisualFeatureSelection[];
+  step2Mode: 'ai' | 'custom'; // NEW: Independent Step 2 mode
   
   // Step 3: Output Type
   outputSettings: OutputTypeSettings;
@@ -254,9 +256,9 @@ export function PreGenerationConfirmationPanel({
                           </div>
                         </div>
                         <div className="text-sm">
-                          <span className="text-muted-foreground">Mode:</span>
-                          <Badge variant={summary.isAIAutoMode ? 'default' : 'outline'} className="ml-2">
-                            {summary.isAIAutoMode ? '🤖 AI Auto' : '🔧 Custom'}
+                          <span className="text-muted-foreground">Step 1 Mode:</span>
+                          <Badge variant={summary.step1Mode === 'ai' ? 'default' : 'outline'} className="ml-2">
+                            {summary.step1Mode === 'ai' ? '🤖 AI Auto' : '🔧 Custom'}
                           </Badge>
                         </div>
                       </>
@@ -273,6 +275,12 @@ export function PreGenerationConfirmationPanel({
                             <span className="text-muted-foreground">Theme:</span>
                             <span className="ml-2 font-medium">{summary.themeName || 'Default'}</span>
                           </div>
+                        </div>
+                        <div className="text-sm">
+                          <span className="text-muted-foreground">Step 2 Mode:</span>
+                          <Badge variant={summary.step2Mode === 'ai' ? 'default' : 'outline'} className="ml-2">
+                            {summary.step2Mode === 'ai' ? '🤖 AI Auto' : '🔧 Custom'}
+                          </Badge>
                         </div>
                         {summary.selectedFrameworkCategories.length > 0 && (
                           <div className="text-sm">

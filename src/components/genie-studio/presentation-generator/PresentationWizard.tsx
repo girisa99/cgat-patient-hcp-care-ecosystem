@@ -399,6 +399,15 @@ export function PresentationWizard({
   const [selectedContentTypes, setSelectedContentTypes] = useState<string[]>([]);
   const [isAutoSelectModels, setIsAutoSelectModels] = useState(true);
   
+  // NEW: Per-step AI Auto/Custom mode tracking (independent per step)
+  const [step1Mode, setStep1Mode] = useState<'ai' | 'custom'>('ai');
+  const [step2Mode, setStep2Mode] = useState<'ai' | 'custom'>('ai');
+  
+  // Sync isAutoSelectModels with step1Mode for backward compatibility
+  React.useEffect(() => {
+    setIsAutoSelectModels(step1Mode === 'ai');
+  }, [step1Mode]);
+  
   // NEW: Lifted state from TemplateBrandingPanel for complete data flow
   const [visualFeatureSelections, setVisualFeatureSelections] = useState<Array<{ featureId: string; subOptions: string[] }>>([]);
   const [selectedFrameworkCategories, setSelectedFrameworkCategories] = useState<string[]>([]);
@@ -836,6 +845,9 @@ export function PresentationWizard({
         aiModels: workflowConfig?.aiModels,
         isAIAutoMode: isAutoSelectModels,
         aiRecommendation: workflowConfig?.aiRecommendation,
+        // NEW: Per-step mode tracking for dynamic AI Auto/Custom
+        step1Mode,
+        step2Mode,
       },
       
       templateContext: {
@@ -846,6 +858,7 @@ export function PresentationWizard({
         selectedFrameworkCategories,
         selectedFrameworkIds,
         visualFeatures: visualFeatureSelections,
+        step2Mode, // Also include in template context for template-specific logic
       },
       
       agentContext: {
@@ -1597,6 +1610,7 @@ export function PresentationWizard({
                     segment: workflowConfig?.segment || '',
                     contentTypes: selectedContentTypes,
                     isAIAutoMode: isAutoSelectModels,
+                    step1Mode, // NEW: Independent per-step mode
                     
                     // Step 2: Template & Branding
                     templateId: selectedTemplate?.id || '',
@@ -1607,6 +1621,7 @@ export function PresentationWizard({
                     selectedFrameworkCategories,
                     selectedFrameworkIds,
                     visualFeatures: visualFeatureSelections,
+                    step2Mode, // NEW: Independent per-step mode
                     
                     // Step 3: Output Type
                     outputSettings,
