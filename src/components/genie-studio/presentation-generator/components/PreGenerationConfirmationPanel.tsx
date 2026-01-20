@@ -1,6 +1,7 @@
 /**
  * Pre-Generation Confirmation Panel
  * Shows complete summary of all selections across Steps 0-5 before generation
+ * Includes TokenBreakdownPanel for detailed cost estimation
  */
 
 import React from 'react';
@@ -25,11 +26,21 @@ import {
   Languages,
   ChevronDown,
   ChevronRight,
+  Calculator,
+  Coins,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import type { VisualFeatureSelection } from './VisualFeaturesDropdown';
 import type { OutputTypeSettings } from '../OutputTypePanel';
+import { TokenBreakdownPanel } from './TokenBreakdownPanel';
+import { 
+  estimateTokens, 
+  createEstimationConfigFromWizard,
+  type TokenEstimate,
+  type EstimationConfig,
+  type OptimizationSuggestion,
+} from '../services/tokenEstimationService';
 
 // Model Tier Definitions - Based on ConfigurationPanel.tsx
 export interface ModelTierInfo {
@@ -142,6 +153,7 @@ export interface GenerationContextSummary {
   // Step 0: Input
   inputSource: string;
   inputContentPreview: string;
+  inputContentLength: number; // NEW: Full length for token calc
   hasUploadedFile: boolean;
   
   // Step 1: Configuration - NOW with independent mode tracking
@@ -180,10 +192,17 @@ export interface GenerationContextSummary {
     imageModel: string;
     voiceModel: string;
     translationModel: string;
+    videoModel?: string;
   };
   
   // NEW: AI Recommendation with confidence
   aiRecommendation?: AIRecommendation;
+  
+  // NEW: Additional feature flags for token estimation
+  includeCharts?: boolean;
+  includeTables?: boolean;
+  includeInfographics?: boolean;
+  includeJourneyMaps?: boolean;
 }
 
 interface PreGenerationConfirmationPanelProps {
@@ -191,10 +210,13 @@ interface PreGenerationConfirmationPanelProps {
   onConfirm: () => void;
   onEdit: (stepIndex: number) => void;
   isGenerating: boolean;
+  currentBalance: number; // NEW: User's current credit balance
   creditEstimate?: number;
   className?: string;
   // NEW: Model override callbacks
   onModelOverride?: (modelType: 'text' | 'image' | 'voice' | 'translation', newModel: string) => void;
+  // NEW: Optimization action callbacks
+  onApplyOptimization?: (suggestion: OptimizationSuggestion) => void;
   availableModels?: {
     text: Array<{ id: string; name: string; tier: number }>;
     image: Array<{ id: string; name: string; tier: number }>;
@@ -280,11 +302,72 @@ export function PreGenerationConfirmationPanel({
   onConfirm,
   onEdit,
   isGenerating,
+  currentBalance = 0,
   creditEstimate,
   className,
   onModelOverride,
+  onApplyOptimization,
 }: PreGenerationConfirmationPanelProps) {
   const [expandedSections, setExpandedSections] = React.useState<Set<string>>(new Set(['input', 'config', 'template', 'output', 'agents']));
+  const [showTokenBreakdown, setShowTokenBreakdown] = React.useState(false);
+
+  // Calculate token estimation from all wizard state
+  const tokenEstimate = React.useMemo<TokenEstimate>(() => {
+    const config: EstimationConfig = {
+      // Step 0
+      slideCount: summary.outputSettings.slideCount || 10,
+      contentLength: summary.inputContentLength || summary.inputContentPreview.length * 5,
+      hasUploadedFile: summary.hasUploadedFile,
+      inputSource: summary.inputSource as 'prompt' | 'document' | 'url' | 'image',
+      
+      // Step 1
+      industryCategory: summary.industryCategory,
+      segment: summary.segment,
+      contentTypes: summary.contentTypes,
+      
+      // Step 2
+      selectedFrameworkIds: summary.selectedFrameworkIds,
+      visualFeatures: summary.visualFeatures.map(vf => vf.featureId),
+      visualFeatureSubOptions: summary.visualFeatures.reduce((sum, vf) => sum + vf.subOptions.length, 0),
+      hasCustomLogo: summary.hasLogo,
+      hasCustomColors: summary.brandColors.primary !== '#3b82f6',
+      
+      // Step 3
+      outputType: summary.outputSettings.outputType,
+      outputTypes: summary.outputSettings.outputTypes,
+      resolution: (summary.outputSettings.resolution || '1080p') as '720p' | '1080p' | '4k',
+      aspectRatio: summary.outputSettings.aspectRatio,
+      structureMode: (summary.outputSettings.structureMode || 'flat') as 'flat' | 'chapters',
+      chapterCount: summary.outputSettings.chapterCount,
+      
+      // Step 4
+      languageCount: summary.selectedLanguages.length,
+      includeVoiceover: summary.includeVoiceover,
+      voiceoverLanguages: summary.includeVoiceover ? Math.min(summary.selectedLanguages.length, 3) : 0,
+      useAgenticGeneration: summary.useAgenticGeneration,
+      selectedAgentCount: summary.selectedAgents.length,
+      
+      // Features
+      includeMusic: summary.outputSettings.includeMusic || false,
+      includeCharts: summary.includeCharts ? Math.ceil((summary.outputSettings.slideCount || 10) * 0.2) : 0,
+      includeTables: summary.includeTables ? Math.ceil((summary.outputSettings.slideCount || 10) * 0.15) : 0,
+      includeInteractive: summary.outputSettings.outputType === 'interactive',
+      includeInfographics: summary.includeInfographics || false,
+      includeJourneyMaps: summary.includeJourneyMaps || false,
+      
+      // Frameworks
+      frameworkCount: summary.selectedFrameworkIds.length,
+      
+      // Models
+      textModel: summary.aiModels.textModel || 'auto',
+      imageModel: summary.aiModels.imageModel || 'auto',
+      voiceModel: summary.aiModels.voiceModel || 'auto',
+      translationModel: summary.aiModels.translationModel || 'auto',
+      videoModel: summary.aiModels.videoModel,
+    };
+    
+    return estimateTokens(config);
+  }, [summary]);
 
   const toggleSection = (section: string) => {
     setExpandedSections(prev => {
@@ -322,6 +405,8 @@ export function PreGenerationConfirmationPanel({
     { id: 'output', title: 'Step 3: Output Type', icon: Layers, step: 3 },
     { id: 'agents', title: 'Step 4: Agents & Languages', icon: Brain, step: 4 },
   ];
+
+  const hasEnoughCredits = currentBalance >= tokenEstimate.totalCredits;
 
   return (
     <Card className={cn('border-primary/30', className)}>

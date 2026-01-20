@@ -86,33 +86,173 @@ export interface OptimizationSuggestion {
 }
 
 export interface EstimationConfig {
-  // Content
+  // Step 0: Content/Input
   slideCount: number;
   contentLength: number; // Character count of input
+  hasUploadedFile: boolean;
+  inputSource: 'prompt' | 'document' | 'url' | 'image';
   
-  // Output
+  // Step 1: Configuration
+  industryCategory: string;
+  segment: string;
+  contentTypes: string[];
+  
+  // Step 2: Template & Branding
+  selectedFrameworkIds: string[];
+  visualFeatures: string[]; // Feature IDs
+  visualFeatureSubOptions: number; // Total sub-options selected
+  hasCustomLogo: boolean;
+  hasCustomColors: boolean;
+  
+  // Step 3: Output
   outputType: string;
+  outputTypes?: string[]; // For multi-select
   resolution: '720p' | '1080p' | '4k';
+  aspectRatio?: string;
+  structureMode: 'flat' | 'chapters';
+  chapterCount?: number;
   
-  // Languages
+  // Step 4: Languages & Agents
   languageCount: number;
   includeVoiceover: boolean;
   voiceoverLanguages: number;
+  useAgenticGeneration: boolean;
+  selectedAgentCount: number;
   
   // Additional features
   includeMusic: boolean;
   includeCharts: number;
   includeTables: number;
   includeInteractive: boolean;
+  includeInfographics: boolean;
+  includeJourneyMaps: boolean;
   
-  // Frameworks
+  // Frameworks (derived from Step 2)
   frameworkCount: number;
   
-  // Models
+  // Models (from Step 1 or auto-selected)
   textModel: string;
   imageModel: string;
   voiceModel: string;
   translationModel: string;
+  videoModel?: string;
+}
+
+/**
+ * Create estimation config from wizard state
+ * Aggregates all data from Steps 0-5
+ */
+export function createEstimationConfigFromWizard(wizardState: {
+  // Step 0
+  inputContent: string;
+  inputSource: string;
+  uploadedFile: boolean;
+  
+  // Step 1
+  industryCategory: string;
+  segment: string;
+  contentTypes: string[];
+  
+  // Step 2
+  selectedFrameworkIds: string[];
+  visualFeatures: Array<{ featureId: string; subOptions: string[] }>;
+  hasLogo: boolean;
+  brandColors: { primary: string; secondary: string; accent: string };
+  
+  // Step 3
+  outputSettings: {
+    outputType: string;
+    outputTypes?: string[];
+    slideCount: number;
+    resolution: string;
+    aspectRatio?: string;
+    structureMode: string;
+    chapterCount?: number;
+    includeVoiceover: boolean;
+    includeMusic: boolean;
+  };
+  
+  // Step 4
+  selectedLanguages: string[];
+  useAgenticGeneration: boolean;
+  selectedAgents: string[];
+  
+  // Features
+  includeCharts: boolean;
+  includeTables: boolean;
+  includeInfographics: boolean;
+  includeJourneyMaps: boolean;
+  
+  // Models
+  aiModels: {
+    textModel: string;
+    imageModel: string;
+    voiceModel: string;
+    translationModel: string;
+    videoModel?: string;
+  };
+}): EstimationConfig {
+  const voiceoverLangCount = wizardState.outputSettings.includeVoiceover 
+    ? Math.min(wizardState.selectedLanguages.length, 3) // Max 3 voiceover languages
+    : 0;
+  
+  const totalSubOptions = wizardState.visualFeatures.reduce(
+    (sum, vf) => sum + vf.subOptions.length, 
+    0
+  );
+  
+  return {
+    // Step 0
+    slideCount: wizardState.outputSettings.slideCount,
+    contentLength: wizardState.inputContent.length,
+    hasUploadedFile: wizardState.uploadedFile,
+    inputSource: wizardState.inputSource as 'prompt' | 'document' | 'url' | 'image',
+    
+    // Step 1
+    industryCategory: wizardState.industryCategory,
+    segment: wizardState.segment,
+    contentTypes: wizardState.contentTypes,
+    
+    // Step 2
+    selectedFrameworkIds: wizardState.selectedFrameworkIds,
+    visualFeatures: wizardState.visualFeatures.map(vf => vf.featureId),
+    visualFeatureSubOptions: totalSubOptions,
+    hasCustomLogo: wizardState.hasLogo,
+    hasCustomColors: wizardState.brandColors.primary !== '#3b82f6', // Non-default
+    
+    // Step 3
+    outputType: wizardState.outputSettings.outputType,
+    outputTypes: wizardState.outputSettings.outputTypes,
+    resolution: wizardState.outputSettings.resolution as '720p' | '1080p' | '4k',
+    aspectRatio: wizardState.outputSettings.aspectRatio,
+    structureMode: wizardState.outputSettings.structureMode as 'flat' | 'chapters',
+    chapterCount: wizardState.outputSettings.chapterCount,
+    
+    // Step 4
+    languageCount: wizardState.selectedLanguages.length,
+    includeVoiceover: wizardState.outputSettings.includeVoiceover,
+    voiceoverLanguages: voiceoverLangCount,
+    useAgenticGeneration: wizardState.useAgenticGeneration,
+    selectedAgentCount: wizardState.selectedAgents.length,
+    
+    // Features
+    includeMusic: wizardState.outputSettings.includeMusic,
+    includeCharts: wizardState.includeCharts ? wizardState.outputSettings.slideCount * 0.2 : 0, // ~20% slides with charts
+    includeTables: wizardState.includeTables ? wizardState.outputSettings.slideCount * 0.15 : 0, // ~15% slides with tables
+    includeInteractive: wizardState.outputSettings.outputType === 'interactive',
+    includeInfographics: wizardState.includeInfographics,
+    includeJourneyMaps: wizardState.includeJourneyMaps,
+    
+    // Frameworks
+    frameworkCount: wizardState.selectedFrameworkIds.length,
+    
+    // Models
+    textModel: wizardState.aiModels.textModel || 'auto',
+    imageModel: wizardState.aiModels.imageModel || 'auto',
+    voiceModel: wizardState.aiModels.voiceModel || 'auto',
+    translationModel: wizardState.aiModels.translationModel || 'auto',
+    videoModel: wizardState.aiModels.videoModel,
+  };
 }
 
 /**
