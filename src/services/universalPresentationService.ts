@@ -79,6 +79,41 @@ export interface AIModelSuggestion {
   confidence: number;
 }
 
+// Output configuration for visual/rendering settings
+export interface OutputConfig {
+  outputType: '2d-static' | '2d-animated' | '3d-scene' | '3d-animated' | 'video-intro' | 'video-full' | 'interactive' | 'mixed';
+  structureMode: 'flat' | 'chapters';
+  slideCount: number;           // For flat mode
+  chapterCount: number;         // For chapter mode
+  slidesPerChapter: number;     // For chapter mode
+  includeVoiceover: boolean;
+  includeMusic: boolean;
+  animationIntensity: number;   // 0-100
+  resolution: '720p' | '1080p' | '4k';
+  aspectRatio: '16:9' | '4:3' | '9:16' | '1:1';
+  duration?: number;            // For video (seconds)
+}
+
+// Visual rendering configuration
+export interface VisualConfig {
+  useHybridRendering: boolean;      // PNG + SVG overlay strategy
+  generateTextFreeImages: boolean;   // Images without AI text artifacts
+  svgOverlayEnabled: boolean;        // Editable SVG text layers
+  primaryFormat: 'svg' | 'png' | 'webp' | 'pdf';
+  imageQuality: 'draft' | 'standard' | 'high' | 'ultra';
+}
+
+// Content fitting configuration
+export interface ContentFittingConfig {
+  maxTitleLength: number;
+  maxSubtitleLength: number;
+  maxBulletsPerSlide: number;
+  maxBulletLength: number;
+  maxParagraphLength: number;
+  autoTruncate: boolean;
+  preserveKeyPoints: boolean;
+}
+
 export interface PresentationRequest {
   // Input source
   inputSource: InputSource;
@@ -98,6 +133,11 @@ export interface PresentationRequest {
   topics?: string[];
   agenda?: string[];
   targetAudience?: string;
+  
+  // ========== NEW: Output Configuration ==========
+  outputConfig?: OutputConfig;           // Visual output type & structure
+  visualConfig?: VisualConfig;           // Rendering strategy
+  contentFittingConfig?: ContentFittingConfig; // Content overflow prevention
   
   // Image options
   imageSource?: ImageSourceType;
