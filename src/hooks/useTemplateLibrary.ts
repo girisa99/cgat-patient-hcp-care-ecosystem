@@ -1,13 +1,23 @@
 /**
  * useTemplateLibrary - Hook for managing consulting frameworks and industry templates
- * Combines database-stored templates with system defaults
+ * Fully database-driven with AI model configuration support
  * Supports user-created templates with public/private visibility
  */
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { toast } from 'sonner';
+
+// AI Model configuration for templates
+export interface TemplateAIModelConfig {
+  textModel: string;
+  imageModel: string;
+  voiceModel: string;
+  translationModel: string;
+  confidence: number;
+  reasoning?: string;
+}
 
 // Types
 export interface ConsultingFramework {
@@ -27,6 +37,7 @@ export interface ConsultingFramework {
   ratingAvg: number;
   ratingCount: number;
   createdAt?: string;
+  aiModelConfig?: TemplateAIModelConfig;
 }
 
 export interface IndustryTemplate {
@@ -48,154 +59,173 @@ export interface IndustryTemplate {
   ratingCount: number;
   previewImageUrl?: string;
   createdAt?: string;
+  aiModelConfig?: TemplateAIModelConfig;
 }
 
-// Default system frameworks (fallback if DB is empty)
-const DEFAULT_CONSULTING_FRAMEWORKS: ConsultingFramework[] = [
-  // Strategy
-  { id: 'seven-s', name: '7-S Framework', description: 'Organizational alignment across 7 elements', category: 'strategy', frameworks: ['Strategy', 'Structure', 'Systems', 'Shared Values', 'Style', 'Staff', 'Skills'], tags: ['organization', 'alignment'], useCases: ['strategic', 'business'], visualStyle: 'minimal', industries: [], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  { id: 'three-horizons', name: 'Three Horizons Growth', description: 'Strategic planning across growth horizons', category: 'strategy', frameworks: ['Horizon 1: Core', 'Horizon 2: Emerging', 'Horizon 3: Transformational'], tags: ['growth', 'innovation'], useCases: ['strategic', 'investor'], visualStyle: 'balanced', industries: [], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  { id: 'change-influence', name: 'Change Influence Model', description: 'Leadership-driven change management', category: 'strategy', frameworks: ['Change Vision', 'Stakeholder Alignment', 'Communication Plan'], tags: ['change', 'transformation'], useCases: ['training', 'business'], visualStyle: 'minimal', industries: [], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  { id: 'playing-to-win', name: 'Playing to Win', description: 'Five strategic choices cascade', category: 'strategy', frameworks: ['Winning Aspiration', 'Where to Play', 'How to Win', 'Capabilities', 'Management Systems'], tags: ['strategy', 'competitive'], useCases: ['strategic'], visualStyle: 'minimal', industries: [], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  { id: 'strategy-diamond', name: 'Strategy Diamond', description: 'Comprehensive strategy articulation', category: 'strategy', frameworks: ['Arenas', 'Vehicles', 'Differentiators', 'Staging', 'Economic Logic'], tags: ['strategy', 'execution'], useCases: ['strategic'], visualStyle: 'balanced', industries: [], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
+// AI Provider definitions with confidence scores and rankings
+export interface AIProvider {
+  id: string;
+  name: string;
+  shortName: string;
+  category: 'text' | 'image' | 'voice' | 'translation';
+  confidenceScore: number;
+  ranking: number;
+  costTier: 'low' | 'medium' | 'high';
+  speedTier: 'fast' | 'medium' | 'slow';
+  qualityTier: 'basic' | 'standard' | 'premium';
+  bestFor: string[];
+  limitations?: string[];
+}
+
+export const AI_PROVIDERS: AIProvider[] = [
+  // Text Models
+  { id: 'google/gemini-3-flash-preview', name: 'Gemini 3 Flash Preview', shortName: 'Gemini Flash', category: 'text', confidenceScore: 95, ranking: 1, costTier: 'low', speedTier: 'fast', qualityTier: 'premium', bestFor: ['general', 'fast-iteration', 'multilingual'] },
+  { id: 'google/gemini-2.5-pro', name: 'Gemini 2.5 Pro', shortName: 'Gemini Pro', category: 'text', confidenceScore: 94, ranking: 2, costTier: 'medium', speedTier: 'medium', qualityTier: 'premium', bestFor: ['complex-reasoning', 'multimodal', 'research'] },
+  { id: 'openai/gpt-5', name: 'GPT-5', shortName: 'GPT-5', category: 'text', confidenceScore: 96, ranking: 1, costTier: 'high', speedTier: 'medium', qualityTier: 'premium', bestFor: ['consulting', 'strategic', 'creative-writing'] },
+  { id: 'openai/gpt-5-mini', name: 'GPT-5 Mini', shortName: 'GPT-5 Mini', category: 'text', confidenceScore: 88, ranking: 3, costTier: 'low', speedTier: 'fast', qualityTier: 'standard', bestFor: ['drafts', 'simple-tasks', 'high-volume'] },
+  { id: 'claude-3-5-sonnet', name: 'Claude 3.5 Sonnet', shortName: 'Claude 3.5', category: 'text', confidenceScore: 93, ranking: 2, costTier: 'medium', speedTier: 'medium', qualityTier: 'premium', bestFor: ['healthcare', 'legal', 'compliance', 'nuanced-writing'] },
+  { id: 'deepseek/deepseek-chat', name: 'DeepSeek', shortName: 'DeepSeek', category: 'text', confidenceScore: 85, ranking: 4, costTier: 'low', speedTier: 'fast', qualityTier: 'standard', bestFor: ['code', 'technical', 'cost-effective'] },
+  { id: 'alibaba/qwen-2.5', name: 'Qwen 2.5', shortName: 'Qwen 2.5', category: 'text', confidenceScore: 87, ranking: 3, costTier: 'low', speedTier: 'fast', qualityTier: 'standard', bestFor: ['asian-languages', 'chinese', 'japanese', 'korean'] },
   
-  // Growth
-  { id: 'bcg-matrix', name: 'Growth-Share Matrix', description: 'Portfolio analysis using growth and share', category: 'growth', frameworks: ['Stars', 'Cash Cows', 'Question Marks', 'Dogs'], tags: ['portfolio', 'investment'], useCases: ['strategic', 'investor'], visualStyle: 'data-heavy', industries: [], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  { id: 'competitive-advantage', name: 'Competitive Advantage Matrix', description: 'Mapping competitive position', category: 'growth', frameworks: ['Cost Leadership', 'Differentiation', 'Focus'], tags: ['competition', 'strategy'], useCases: ['strategic'], visualStyle: 'balanced', industries: [], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  { id: 'digital-maturity', name: 'Digital Maturity Index', description: 'Digital transformation readiness', category: 'growth', frameworks: ['Initiate', 'Enable', 'Integrate', 'Optimize', 'Transform'], tags: ['digital', 'transformation'], useCases: ['technical', 'business'], visualStyle: 'data-heavy', industries: [], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  { id: 'market-entry', name: 'Market Entry Strategy', description: 'Market expansion framework', category: 'growth', frameworks: ['Market Analysis', 'Entry Modes', 'Risk Assessment', 'Go-to-Market'], tags: ['expansion', 'market'], useCases: ['strategic', 'business'], visualStyle: 'balanced', industries: [], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  { id: 'ma-integration', name: 'M&A Integration', description: 'Merger integration framework', category: 'growth', frameworks: ['Due Diligence', 'Synergy Capture', 'Integration Planning', 'Day 1 Readiness'], tags: ['merger', 'acquisition'], useCases: ['strategic', 'investor'], visualStyle: 'data-heavy', industries: [], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
+  // Image Models
+  { id: 'modelslab', name: 'ModelsLab', shortName: 'ModelsLab', category: 'image', confidenceScore: 92, ranking: 1, costTier: 'medium', speedTier: 'medium', qualityTier: 'premium', bestFor: ['photorealistic', 'product-shots', 'diverse-styles'] },
+  { id: 'flux-pro', name: 'Flux Pro', shortName: 'Flux Pro', category: 'image', confidenceScore: 90, ranking: 2, costTier: 'medium', speedTier: 'medium', qualityTier: 'premium', bestFor: ['professional', 'business', 'clean-design'] },
+  { id: 'flux-schnell', name: 'Flux Schnell', shortName: 'Flux Fast', category: 'image', confidenceScore: 82, ranking: 3, costTier: 'low', speedTier: 'fast', qualityTier: 'standard', bestFor: ['drafts', 'iterations', 'speed-priority'] },
+  { id: 'dall-e-3', name: 'DALL-E 3', shortName: 'DALL-E 3', category: 'image', confidenceScore: 88, ranking: 2, costTier: 'high', speedTier: 'slow', qualityTier: 'premium', bestFor: ['creative', 'artistic', 'unique-styles'] },
+  { id: 'stability', name: 'Stability AI', shortName: 'Stability', category: 'image', confidenceScore: 85, ranking: 3, costTier: 'medium', speedTier: 'medium', qualityTier: 'standard', bestFor: ['landscapes', 'textures', 'backgrounds'] },
+  { id: 'stock', name: 'Stock Images', shortName: 'Stock', category: 'image', confidenceScore: 75, ranking: 5, costTier: 'low', speedTier: 'fast', qualityTier: 'basic', bestFor: ['quick-placeholder', 'generic', 'licensed'] },
   
-  // Operations
-  { id: 'nps', name: 'Customer Loyalty System', description: 'NPS and promoter methodology', category: 'operations', frameworks: ['Promoters', 'Passives', 'Detractors', 'Root Cause'], tags: ['customer', 'loyalty'], useCases: ['marketing', 'business'], visualStyle: 'data-heavy', industries: [], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  { id: 'lean-six-sigma', name: 'Lean Six Sigma', description: 'Process improvement framework', category: 'operations', frameworks: ['Define', 'Measure', 'Analyze', 'Improve', 'Control'], tags: ['process', 'quality'], useCases: ['operational'], visualStyle: 'data-heavy', industries: [], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  { id: 'supply-chain', name: 'Supply Chain Excellence', description: 'End-to-end supply chain optimization', category: 'operations', frameworks: ['Plan', 'Source', 'Make', 'Deliver', 'Return'], tags: ['supply-chain', 'logistics'], useCases: ['operational'], visualStyle: 'balanced', industries: [], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  { id: 'customer-journey', name: 'Customer Journey Map', description: 'Touchpoint and experience mapping', category: 'operations', frameworks: ['Awareness', 'Consideration', 'Purchase', 'Retention', 'Advocacy'], tags: ['customer', 'experience'], useCases: ['marketing', 'business'], visualStyle: 'balanced', industries: [], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
+  // Voice Models
+  { id: 'elevenlabs-multilingual', name: 'ElevenLabs Multilingual', shortName: 'ElevenLabs', category: 'voice', confidenceScore: 96, ranking: 1, costTier: 'high', speedTier: 'medium', qualityTier: 'premium', bestFor: ['natural-speech', 'voice-cloning', 'premium-quality'] },
+  { id: 'openai-tts-hd', name: 'OpenAI TTS HD', shortName: 'OpenAI', category: 'voice', confidenceScore: 88, ranking: 2, costTier: 'medium', speedTier: 'fast', qualityTier: 'standard', bestFor: ['english', 'consistent', 'reliable'] },
+  { id: 'google-wavenet', name: 'Google WaveNet', shortName: 'WaveNet', category: 'voice', confidenceScore: 90, ranking: 2, costTier: 'medium', speedTier: 'fast', qualityTier: 'premium', bestFor: ['asian-languages', 'multilingual', 'google-ecosystem'] },
+  { id: 'azure-neural', name: 'Azure Neural', shortName: 'Azure', category: 'voice', confidenceScore: 87, ranking: 3, costTier: 'medium', speedTier: 'fast', qualityTier: 'standard', bestFor: ['enterprise', 'ssml-control', 'custom-voices'] },
+  { id: 'aws-polly', name: 'AWS Polly', shortName: 'Polly', category: 'voice', confidenceScore: 80, ranking: 4, costTier: 'low', speedTier: 'fast', qualityTier: 'basic', bestFor: ['cost-effective', 'aws-ecosystem', 'high-volume'] },
   
-  // Universal
-  { id: 'five-forces', name: 'Five Forces Analysis', description: 'Industry competitive analysis', category: 'universal', frameworks: ['Rivalry', 'New Entrants', 'Substitutes', 'Buyer Power', 'Supplier Power'], tags: ['competition', 'industry'], useCases: ['strategic', 'research'], visualStyle: 'balanced', industries: [], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  { id: 'swot', name: 'SWOT Analysis', description: 'Strengths, Weaknesses, Opportunities, Threats', category: 'universal', frameworks: ['Strengths', 'Weaknesses', 'Opportunities', 'Threats'], tags: ['analysis', 'planning'], useCases: ['strategic', 'proposal'], visualStyle: 'minimal', industries: [], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  { id: 'pestle', name: 'PESTLE Analysis', description: 'Macro environment analysis', category: 'universal', frameworks: ['Political', 'Economic', 'Social', 'Technological', 'Legal', 'Environmental'], tags: ['environment', 'trends'], useCases: ['strategic', 'research'], visualStyle: 'balanced', industries: [], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  { id: 'value-chain', name: 'Value Chain Analysis', description: 'Primary and support activities', category: 'universal', frameworks: ['Inbound Logistics', 'Operations', 'Outbound Logistics', 'Marketing', 'Service'], tags: ['operations', 'value'], useCases: ['operational', 'strategic'], visualStyle: 'data-heavy', industries: [], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  { id: 'balanced-scorecard', name: 'Balanced Scorecard', description: 'Multi-perspective KPIs', category: 'universal', frameworks: ['Financial', 'Customer', 'Internal Process', 'Learning & Growth'], tags: ['performance', 'metrics'], useCases: ['business', 'operational'], visualStyle: 'data-heavy', industries: [], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  { id: 'bmc', name: 'Business Model Canvas', description: '9-block business model visualization', category: 'universal', frameworks: ['Value Proposition', 'Customer Segments', 'Channels', 'Revenue Streams', 'Key Resources', 'Key Activities', 'Key Partners', 'Cost Structure', 'Customer Relationships'], tags: ['business-model', 'startup'], useCases: ['investor', 'strategic'], visualStyle: 'balanced', industries: [], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  { id: 'okr', name: 'OKR Framework', description: 'Objectives and Key Results', category: 'universal', frameworks: ['Objectives', 'Key Results', 'Initiatives'], tags: ['goals', 'performance'], useCases: ['business', 'operational'], visualStyle: 'minimal', industries: [], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  { id: 'blue-ocean', name: 'Blue Ocean Strategy', description: 'Value innovation framework', category: 'universal', frameworks: ['Eliminate', 'Reduce', 'Raise', 'Create'], tags: ['innovation', 'differentiation'], useCases: ['strategic', 'creative'], visualStyle: 'balanced', industries: [], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  { id: 'root-cause', name: 'Root Cause Analysis', description: '5 Whys and Fishbone diagram', category: 'universal', frameworks: ['5 Whys', 'Ishikawa Diagram', 'Cause Categories'], tags: ['problem-solving', 'quality'], useCases: ['operational', 'technical'], visualStyle: 'balanced', industries: [], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  { id: 'raci', name: 'RACI Matrix', description: 'Responsibility assignment', category: 'universal', frameworks: ['Responsible', 'Accountable', 'Consulted', 'Informed'], tags: ['responsibility', 'roles'], useCases: ['operational', 'business'], visualStyle: 'minimal', industries: [], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  { id: 'stakeholder', name: 'Stakeholder Mapping', description: 'Influence and interest analysis', category: 'universal', frameworks: ['Power/Interest Grid', 'Influence Matrix', 'Engagement Strategy'], tags: ['stakeholders', 'management'], useCases: ['business', 'strategic'], visualStyle: 'balanced', industries: [], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  { id: 'risk-matrix', name: 'Risk Assessment Matrix', description: 'Probability and impact analysis', category: 'universal', frameworks: ['Probability', 'Impact', 'Risk Score', 'Mitigation'], tags: ['risk', 'assessment'], useCases: ['compliance', 'operational'], visualStyle: 'data-heavy', industries: [], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  { id: 'ansoff', name: 'Ansoff Growth Matrix', description: 'Product-market growth strategies', category: 'universal', frameworks: ['Market Penetration', 'Market Development', 'Product Development', 'Diversification'], tags: ['growth', 'market'], useCases: ['strategic'], visualStyle: 'minimal', industries: [], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  { id: 'vrio', name: 'VRIO Framework', description: 'Resource-based competitive advantage', category: 'universal', frameworks: ['Valuable', 'Rare', 'Imitable', 'Organized'], tags: ['competitive', 'resources'], useCases: ['strategic'], visualStyle: 'minimal', industries: [], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
+  // Translation Models
+  { id: 'deepl', name: 'DeepL', shortName: 'DeepL', category: 'translation', confidenceScore: 95, ranking: 1, costTier: 'medium', speedTier: 'fast', qualityTier: 'premium', bestFor: ['european-languages', 'nuanced', 'professional'] },
+  { id: 'google-translate', name: 'Google Translate', shortName: 'Google', category: 'translation', confidenceScore: 88, ranking: 2, costTier: 'low', speedTier: 'fast', qualityTier: 'standard', bestFor: ['broad-coverage', 'cost-effective', 'quick'] },
+  { id: 'qwen-mt', name: 'Qwen-MT', shortName: 'Qwen', category: 'translation', confidenceScore: 90, ranking: 1, costTier: 'low', speedTier: 'fast', qualityTier: 'premium', bestFor: ['asian-languages', 'chinese', 'japanese', 'korean'] },
+  { id: 'azure', name: 'Azure Translator', shortName: 'Azure', category: 'translation', confidenceScore: 85, ranking: 3, costTier: 'medium', speedTier: 'fast', qualityTier: 'standard', bestFor: ['enterprise', 'custom-models', 'integration'] },
+  { id: 'nllb', name: 'NLLB', shortName: 'NLLB', category: 'translation', confidenceScore: 78, ranking: 4, costTier: 'low', speedTier: 'medium', qualityTier: 'basic', bestFor: ['rare-languages', 'open-source', 'research'] },
 ];
 
-// Default industry templates
-const DEFAULT_INDUSTRY_TEMPLATES: IndustryTemplate[] = [
-  // Healthcare
-  { id: 'healthcare-clinical', name: 'Clinical Workflow', description: 'Clinical process optimization', industry: 'healthcare', templateType: 'presentation', frameworks: ['Patient Flow', 'Care Pathways'], tags: ['clinical', 'workflow'], slideSuggestions: [], recommendedVisuals: ['flowcharts', 'timelines'], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  { id: 'healthcare-journey', name: 'Patient Journey', description: 'End-to-end patient experience', industry: 'healthcare', templateType: 'presentation', frameworks: ['Journey Stages', 'Touchpoints'], tags: ['patient', 'journey'], slideSuggestions: [], recommendedVisuals: ['journey-map', 'timeline'], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  { id: 'healthcare-compliance', name: 'Regulatory Compliance', description: 'HIPAA and FDA compliance', industry: 'healthcare', templateType: 'presentation', frameworks: ['Compliance Checklist', 'Risk Matrix'], tags: ['compliance', 'regulatory'], slideSuggestions: [], recommendedVisuals: ['checklists', 'tables'], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  { id: 'healthcare-trials', name: 'Clinical Trial Results', description: 'Study findings presentation', industry: 'healthcare', templateType: 'presentation', frameworks: ['Study Design', 'Statistical Results'], tags: ['clinical-trial', 'research'], slideSuggestions: [], recommendedVisuals: ['charts', 'tables'], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  
-  // Technology
-  { id: 'tech-roadmap', name: 'Product Roadmap', description: 'Product development timeline', industry: 'technology', templateType: 'presentation', frameworks: ['Timeline', 'Feature Prioritization'], tags: ['product', 'roadmap'], slideSuggestions: [], recommendedVisuals: ['timeline', 'kanban'], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  { id: 'tech-architecture', name: 'System Architecture', description: 'Technical architecture overview', industry: 'technology', templateType: 'presentation', frameworks: ['Architecture Diagram', 'Data Flow'], tags: ['architecture', 'technical'], slideSuggestions: [], recommendedVisuals: ['diagrams', 'flowcharts'], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  { id: 'tech-sprint', name: 'Sprint Review', description: 'Agile sprint summary', industry: 'technology', templateType: 'presentation', frameworks: ['Sprint Metrics', 'Burndown'], tags: ['agile', 'sprint'], slideSuggestions: [], recommendedVisuals: ['charts', 'kanban'], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  { id: 'tech-api', name: 'API Documentation', description: 'Technical API reference', industry: 'technology', templateType: 'presentation', frameworks: ['Endpoint Reference', 'Authentication'], tags: ['api', 'documentation'], slideSuggestions: [], recommendedVisuals: ['code-blocks', 'diagrams'], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  { id: 'tech-cloud', name: 'Cloud Migration', description: 'Cloud transformation planning', industry: 'technology', templateType: 'presentation', frameworks: ['Migration Phases', 'Cost Analysis'], tags: ['cloud', 'migration'], slideSuggestions: [], recommendedVisuals: ['diagrams', 'timelines'], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  
-  // Finance
-  { id: 'finance-thesis', name: 'Investment Thesis', description: 'Investment analysis', industry: 'finance', templateType: 'presentation', frameworks: ['Market Analysis', 'Financial Model'], tags: ['investment', 'analysis'], slideSuggestions: [], recommendedVisuals: ['charts', 'tables'], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  { id: 'finance-portfolio', name: 'Portfolio Analysis', description: 'Portfolio performance review', industry: 'finance', templateType: 'presentation', frameworks: ['Asset Allocation', 'Risk Metrics'], tags: ['portfolio', 'investment'], slideSuggestions: [], recommendedVisuals: ['pie-charts', 'line-graphs'], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  { id: 'finance-risk', name: 'Risk Management', description: 'Enterprise risk framework', industry: 'finance', templateType: 'presentation', frameworks: ['Risk Matrix', 'Control Framework'], tags: ['risk', 'management'], slideSuggestions: [], recommendedVisuals: ['matrices', 'heatmaps'], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  { id: 'finance-ma', name: 'M&A Deal Book', description: 'M&A transaction documentation', industry: 'finance', templateType: 'presentation', frameworks: ['Deal Overview', 'Valuation'], tags: ['m&a', 'deal'], slideSuggestions: [], recommendedVisuals: ['financial-tables', 'charts'], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  
-  // Manufacturing
-  { id: 'mfg-lean', name: 'Lean Operations', description: 'Lean manufacturing metrics', industry: 'manufacturing', templateType: 'presentation', frameworks: ['OEE Metrics', 'Waste Analysis'], tags: ['lean', 'operations'], slideSuggestions: [], recommendedVisuals: ['dashboards', 'gauges'], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  { id: 'mfg-supply', name: 'Supply Chain Visibility', description: 'Supply chain monitoring', industry: 'manufacturing', templateType: 'presentation', frameworks: ['Supply Chain Map', 'Inventory Levels'], tags: ['supply-chain', 'logistics'], slideSuggestions: [], recommendedVisuals: ['maps', 'flowcharts'], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  { id: 'mfg-quality', name: 'Quality Control', description: 'Product quality metrics', industry: 'manufacturing', templateType: 'presentation', frameworks: ['Quality Metrics', 'SPC Charts'], tags: ['quality', 'control'], slideSuggestions: [], recommendedVisuals: ['pareto-charts', 'control-charts'], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  
-  // Retail
-  { id: 'retail-segment', name: 'Customer Segmentation', description: 'Customer analysis', industry: 'retail', templateType: 'presentation', frameworks: ['Segment Profiles', 'Value Mapping'], tags: ['customer', 'segmentation'], slideSuggestions: [], recommendedVisuals: ['personas', 'charts'], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  { id: 'retail-omni', name: 'Omnichannel Strategy', description: 'Unified commerce', industry: 'retail', templateType: 'presentation', frameworks: ['Channel Map', 'Integration Plan'], tags: ['omnichannel', 'commerce'], slideSuggestions: [], recommendedVisuals: ['diagrams', 'journey-maps'], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  { id: 'retail-campaign', name: 'Seasonal Campaign', description: 'Marketing campaign planning', industry: 'retail', templateType: 'presentation', frameworks: ['Campaign Calendar', 'Creative Brief'], tags: ['campaign', 'seasonal'], slideSuggestions: [], recommendedVisuals: ['calendars', 'timelines'], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  
-  // Startup
-  { id: 'startup-seed', name: 'Seed Pitch Deck', description: 'Early-stage pitch', industry: 'startup', templateType: 'presentation', frameworks: ['Problem-Solution', 'Market Size', 'Team'], tags: ['pitch', 'seed'], slideSuggestions: [], recommendedVisuals: ['simple-charts', 'team-photos'], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  { id: 'startup-series', name: 'Series A Pitch', description: 'Growth-stage pitch', industry: 'startup', templateType: 'presentation', frameworks: ['Traction', 'Unit Economics', 'Growth Plan'], tags: ['pitch', 'series-a'], slideSuggestions: [], recommendedVisuals: ['metric-cards', 'growth-charts'], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  { id: 'startup-board', name: 'Board Deck', description: 'Board meeting presentation', industry: 'startup', templateType: 'presentation', frameworks: ['Financial Review', 'OKR Progress'], tags: ['board', 'governance'], slideSuggestions: [], recommendedVisuals: ['dashboards', 'tables'], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  
-  // Consulting
-  { id: 'consult-strategy', name: 'Strategy Recommendation', description: 'Strategic consulting presentation', industry: 'consulting', templateType: 'presentation', frameworks: ['Situation Analysis', 'Options', 'Recommendation'], tags: ['strategy', 'consulting'], slideSuggestions: [], recommendedVisuals: ['frameworks', 'matrices'], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  { id: 'consult-dd', name: 'Due Diligence Report', description: 'Due diligence findings', industry: 'consulting', templateType: 'presentation', frameworks: ['Financial Analysis', 'Risk Assessment'], tags: ['due-diligence', 'analysis'], slideSuggestions: [], recommendedVisuals: ['tables', 'charts'], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-  { id: 'consult-transform', name: 'Transformation Roadmap', description: 'Organizational transformation', industry: 'consulting', templateType: 'presentation', frameworks: ['Current State', 'Future Vision', 'Waves'], tags: ['transformation', 'change'], slideSuggestions: [], recommendedVisuals: ['timelines', 'maturity-models'], isSystem: true, visibility: 'public', usageCount: 0, ratingAvg: 0, ratingCount: 0 },
-];
+// Get providers by category
+export const getProvidersByCategory = (category: AIProvider['category']): AIProvider[] => {
+  return AI_PROVIDERS.filter(p => p.category === category).sort((a, b) => a.ranking - b.ranking);
+};
 
-// Map DB record to ConsultingFramework
-function mapDbToFramework(record: any): ConsultingFramework {
+// Get recommended AI config based on context
+export const getRecommendedAIConfig = (
+  industry: string,
+  languages: string[] = [],
+  contentType?: string
+): TemplateAIModelConfig => {
+  const hasAsianLangs = languages.some(l => ['zh', 'ja', 'ko', 'th', 'vi'].includes(l));
+  const industryLower = industry.toLowerCase();
+  
+  let textModel = 'google/gemini-3-flash-preview';
+  let textConfidence = 90;
+  let reasoning = 'Default high-performance model';
+  
+  if (['healthcare', 'pharma', 'biotech', 'medical', 'legal'].some(i => industryLower.includes(i))) {
+    textModel = 'claude-3-5-sonnet';
+    textConfidence = 94;
+    reasoning = 'Claude excels at nuanced, compliance-sensitive content';
+  } else if (['consulting', 'strategy', 'management'].some(i => industryLower.includes(i))) {
+    textModel = 'openai/gpt-5';
+    textConfidence = 96;
+    reasoning = 'GPT-5 optimal for strategic consulting frameworks';
+  } else if (hasAsianLangs) {
+    textModel = 'alibaba/qwen-2.5';
+    textConfidence = 92;
+    reasoning = 'Qwen optimized for Asian language content';
+  }
+  
+  let imageModel = 'flux-pro';
+  if (contentType === 'visual' || contentType === 'creative') {
+    imageModel = 'modelslab';
+  }
+  
+  const voiceModel = hasAsianLangs ? 'google-wavenet' : 'elevenlabs-multilingual';
+  const translationModel = hasAsianLangs ? 'qwen-mt' : 'deepl';
+  
+  const confidence = Math.min(98, textConfidence + (industry ? 5 : 0) + (languages.length > 0 ? 3 : 0));
+  
   return {
-    id: record.id,
-    name: record.name,
-    description: record.description,
-    category: record.category,
-    frameworks: record.frameworks || [],
-    tags: record.tags || [],
-    useCases: record.use_cases || [],
-    visualStyle: record.visual_style || 'balanced',
-    industries: record.industries || [],
-    isSystem: record.is_system,
-    visibility: record.visibility,
-    createdBy: record.created_by,
-    usageCount: record.usage_count || 0,
-    ratingAvg: record.rating_avg || 0,
-    ratingCount: record.rating_count || 0,
-    createdAt: record.created_at,
+    textModel,
+    imageModel,
+    voiceModel,
+    translationModel,
+    confidence,
+    reasoning,
   };
-}
+};
 
-// Map DB record to IndustryTemplate
-function mapDbToTemplate(record: any): IndustryTemplate {
-  return {
-    id: record.id,
-    name: record.name,
-    description: record.description,
-    industry: record.industry,
-    subIndustry: record.sub_industry,
-    templateType: record.template_type || 'presentation',
-    frameworks: record.frameworks || [],
-    tags: record.tags || [],
-    slideSuggestions: record.slide_suggestions || [],
-    recommendedVisuals: record.recommended_visuals || [],
-    isSystem: record.is_system,
-    visibility: record.visibility,
-    createdBy: record.created_by,
-    usageCount: record.usage_count || 0,
-    ratingAvg: record.rating_avg || 0,
-    ratingCount: record.rating_count || 0,
-    previewImageUrl: record.preview_image_url,
-    createdAt: record.created_at,
-  };
-}
+// Map database row to ConsultingFramework
+const mapDbToFramework = (row: any): ConsultingFramework => ({
+  id: row.id,
+  name: row.name,
+  description: row.description,
+  category: row.category || 'custom',
+  frameworks: row.frameworks || [],
+  tags: row.tags || [],
+  useCases: row.use_cases || [],
+  visualStyle: row.visual_style || 'balanced',
+  industries: row.industries || [],
+  isSystem: row.is_system || false,
+  visibility: row.visibility || 'private',
+  createdBy: row.created_by,
+  usageCount: row.usage_count || 0,
+  ratingAvg: row.rating_avg || 0,
+  ratingCount: row.rating_count || 0,
+  createdAt: row.created_at,
+  aiModelConfig: row.ai_model_config,
+});
+
+// Map database row to IndustryTemplate
+const mapDbToTemplate = (row: any): IndustryTemplate => ({
+  id: row.id,
+  name: row.name,
+  description: row.description,
+  industry: row.industry,
+  subIndustry: row.sub_industry,
+  templateType: row.template_type || 'presentation',
+  frameworks: row.frameworks || [],
+  tags: row.tags || [],
+  slideSuggestions: row.slide_suggestions || [],
+  recommendedVisuals: row.recommended_visuals || [],
+  isSystem: row.is_system || false,
+  visibility: row.visibility || 'private',
+  createdBy: row.created_by,
+  usageCount: row.usage_count || 0,
+  ratingAvg: row.rating_avg || 0,
+  ratingCount: row.rating_count || 0,
+  previewImageUrl: row.preview_image_url,
+  createdAt: row.created_at,
+  aiModelConfig: row.ai_model_config,
+});
 
 export function useTemplateLibrary() {
   const { user } = useMasterAuth();
-  const [consultingFrameworks, setConsultingFrameworks] = useState<ConsultingFramework[]>(DEFAULT_CONSULTING_FRAMEWORKS);
-  const [industryTemplates, setIndustryTemplates] = useState<IndustryTemplate[]>(DEFAULT_INDUSTRY_TEMPLATES);
+  const [consultingFrameworks, setConsultingFrameworks] = useState<ConsultingFramework[]>([]);
+  const [industryTemplates, setIndustryTemplates] = useState<IndustryTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch from database
+  // Fetch data from database only - no hardcoded fallbacks
   useEffect(() => {
     const fetchLibrary = async () => {
-      setLoading(true);
-      setError(null);
-
       try {
+        setLoading(true);
+        setError(null);
+        
         // Fetch consulting frameworks
         const { data: frameworksData, error: frameworksError } = await supabase
           .from('custom_consulting_frameworks')
           .select('*')
-          .order('name');
+          .or('visibility.eq.public,is_system.eq.true')
+          .order('usage_count', { ascending: false });
 
         if (frameworksError) throw frameworksError;
 
@@ -203,21 +233,20 @@ export function useTemplateLibrary() {
         const { data: templatesData, error: templatesError } = await supabase
           .from('industry_template_library')
           .select('*')
-          .order('name');
+          .or('visibility.eq.public,is_system.eq.true')
+          .order('usage_count', { ascending: false });
 
         if (templatesError) throw templatesError;
 
-        // Use DB data if available, otherwise use defaults
-        if (frameworksData && frameworksData.length > 0) {
-          setConsultingFrameworks(frameworksData.map(mapDbToFramework));
-        }
-
-        if (templatesData && templatesData.length > 0) {
-          setIndustryTemplates(templatesData.map(mapDbToTemplate));
-        }
+        // Set data from database only
+        setConsultingFrameworks(frameworksData ? frameworksData.map(mapDbToFramework) : []);
+        setIndustryTemplates(templatesData ? templatesData.map(mapDbToTemplate) : []);
       } catch (err: any) {
-        console.warn('Failed to fetch template library from DB, using defaults:', err.message);
-        // Keep using defaults
+        console.error('Failed to fetch template library:', err.message);
+        setError(err.message);
+        // Don't set defaults - keep empty arrays to force AI generation
+        setConsultingFrameworks([]);
+        setIndustryTemplates([]);
       } finally {
         setLoading(false);
       }
@@ -226,22 +255,62 @@ export function useTemplateLibrary() {
     fetchLibrary();
   }, []);
 
-  // Get frameworks by category
-  const getFrameworksByCategory = useMemo(() => {
-    return (category?: string) => {
-      if (!category) return consultingFrameworks;
-      return consultingFrameworks.filter(f => f.category === category);
+  // Fetch user's private items
+  useEffect(() => {
+    if (!user) return;
+    
+    const fetchUserItems = async () => {
+      try {
+        // Fetch user's private frameworks
+        const { data: userFrameworksData } = await supabase
+          .from('custom_consulting_frameworks')
+          .select('*')
+          .eq('created_by', user.id)
+          .eq('visibility', 'private');
+
+        // Fetch user's private templates
+        const { data: userTemplatesData } = await supabase
+          .from('industry_template_library')
+          .select('*')
+          .eq('created_by', user.id)
+          .eq('visibility', 'private');
+
+        // Merge with existing data (avoiding duplicates)
+        if (userFrameworksData) {
+          setConsultingFrameworks(prev => {
+            const existingIds = new Set(prev.map(f => f.id));
+            const newItems = userFrameworksData.filter(f => !existingIds.has(f.id)).map(mapDbToFramework);
+            return [...prev, ...newItems];
+          });
+        }
+
+        if (userTemplatesData) {
+          setIndustryTemplates(prev => {
+            const existingIds = new Set(prev.map(t => t.id));
+            const newItems = userTemplatesData.filter(t => !existingIds.has(t.id)).map(mapDbToTemplate);
+            return [...prev, ...newItems];
+          });
+        }
+      } catch (err: any) {
+        console.warn('Failed to fetch user items:', err.message);
+      }
     };
+
+    fetchUserItems();
+  }, [user]);
+
+  // Get frameworks by category
+  const getFrameworksByCategory = useCallback((category?: string) => {
+    if (!category) return consultingFrameworks;
+    return consultingFrameworks.filter(f => f.category === category);
   }, [consultingFrameworks]);
 
   // Get templates by industry
-  const getTemplatesByIndustry = useMemo(() => {
-    return (industry?: string) => {
-      if (!industry) return industryTemplates;
-      return industryTemplates.filter(t => 
-        t.industry.toLowerCase().includes(industry.toLowerCase())
-      );
-    };
+  const getTemplatesByIndustry = useCallback((industry?: string) => {
+    if (!industry) return industryTemplates;
+    return industryTemplates.filter(t => 
+      t.industry.toLowerCase().includes(industry.toLowerCase())
+    );
   }, [industryTemplates]);
 
   // Get user's own frameworks
@@ -256,8 +325,11 @@ export function useTemplateLibrary() {
     return industryTemplates.filter(t => t.createdBy === user.id);
   }, [industryTemplates, user]);
 
-  // Create new framework
-  const createFramework = async (framework: Omit<ConsultingFramework, 'id' | 'isSystem' | 'usageCount' | 'ratingAvg' | 'ratingCount' | 'createdAt' | 'createdBy'>) => {
+  // Create new framework with AI model config
+  const createFramework = async (
+    framework: Omit<ConsultingFramework, 'id' | 'isSystem' | 'usageCount' | 'ratingAvg' | 'ratingCount' | 'createdAt' | 'createdBy'>,
+    aiConfig?: TemplateAIModelConfig
+  ) => {
     if (!user) {
       toast.error('Please sign in to create frameworks');
       return null;
@@ -278,6 +350,7 @@ export function useTemplateLibrary() {
           visibility: framework.visibility,
           created_by: user.id,
           is_system: false,
+          ai_model_config: aiConfig,
         })
         .select()
         .single();
@@ -294,8 +367,11 @@ export function useTemplateLibrary() {
     }
   };
 
-  // Create new template
-  const createTemplate = async (template: Omit<IndustryTemplate, 'id' | 'isSystem' | 'usageCount' | 'ratingAvg' | 'ratingCount' | 'createdAt' | 'createdBy'>) => {
+  // Create new template with AI model config
+  const createTemplate = async (
+    template: Omit<IndustryTemplate, 'id' | 'isSystem' | 'usageCount' | 'ratingAvg' | 'ratingCount' | 'createdAt' | 'createdBy'>,
+    aiConfig?: TemplateAIModelConfig
+  ) => {
     if (!user) {
       toast.error('Please sign in to create templates');
       return null;
@@ -317,6 +393,7 @@ export function useTemplateLibrary() {
           visibility: template.visibility,
           created_by: user.id,
           is_system: false,
+          ai_model_config: aiConfig,
         })
         .select()
         .single();
@@ -340,24 +417,26 @@ export function useTemplateLibrary() {
       const { data: frameworksData } = await supabase
         .from('custom_consulting_frameworks')
         .select('*')
-        .order('name');
+        .or('visibility.eq.public,is_system.eq.true')
+        .order('usage_count', { ascending: false });
 
       const { data: templatesData } = await supabase
         .from('industry_template_library')
         .select('*')
-        .order('name');
+        .or('visibility.eq.public,is_system.eq.true')
+        .order('usage_count', { ascending: false });
 
-      if (frameworksData && frameworksData.length > 0) {
-        setConsultingFrameworks(frameworksData.map(mapDbToFramework));
-      }
-
-      if (templatesData && templatesData.length > 0) {
-        setIndustryTemplates(templatesData.map(mapDbToTemplate));
-      }
+      setConsultingFrameworks(frameworksData ? frameworksData.map(mapDbToFramework) : []);
+      setIndustryTemplates(templatesData ? templatesData.map(mapDbToTemplate) : []);
     } finally {
       setLoading(false);
     }
   };
+
+  // Check if library is empty (needs seeding)
+  const isEmpty = useMemo(() => {
+    return consultingFrameworks.length === 0 && industryTemplates.length === 0;
+  }, [consultingFrameworks, industryTemplates]);
 
   return {
     // Data
@@ -367,6 +446,7 @@ export function useTemplateLibrary() {
     userTemplates,
     loading,
     error,
+    isEmpty,
     
     // Getters
     getFrameworksByCategory,
@@ -376,6 +456,11 @@ export function useTemplateLibrary() {
     createFramework,
     createTemplate,
     refresh,
+    
+    // AI Model helpers
+    getRecommendedAIConfig,
+    getProvidersByCategory,
+    aiProviders: AI_PROVIDERS,
   };
 }
 
