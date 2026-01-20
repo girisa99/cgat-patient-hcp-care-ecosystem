@@ -41,11 +41,23 @@ const OUTPUT_ICONS: Record<string, React.ElementType> = {
   'Layers': Layers,
 };
 
-// Tier badges
-const TIER_STYLES: Record<number, string> = {
-  1: 'bg-success/20 text-success border-success/30',
-  2: 'bg-primary/20 text-primary border-primary/30',
-  3: 'bg-accent/20 text-accent-foreground border-accent/30',
+// Tier configuration with proper visibility
+const TIER_CONFIG: Record<number, { label: string; description: string; className: string }> = {
+  1: { 
+    label: 'Standard', 
+    description: 'Fast generation, lower resource usage',
+    className: 'bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-700',
+  },
+  2: { 
+    label: 'Advanced', 
+    description: 'Balanced quality and speed',
+    className: 'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-700',
+  },
+  3: { 
+    label: 'Premium', 
+    description: 'Highest quality, more processing time',
+    className: 'bg-purple-100 text-purple-700 border-purple-300 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-700',
+  },
 };
 
 interface OutputTypeDropdownProps {
@@ -120,11 +132,27 @@ export function OutputTypeDropdown({
         className="w-[380px] p-0 z-50 bg-popover border shadow-lg"
         align="start"
       >
-        <div className="p-3 border-b">
-          <span className="text-sm font-medium">Output Type</span>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Choose the format for your generated content
-          </p>
+        <div className="p-3 border-b space-y-2">
+          <div>
+            <span className="text-sm font-medium">Output Type</span>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Choose the format for your generated content
+            </p>
+          </div>
+          {/* Tier Legend */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] text-muted-foreground">Tiers:</span>
+            {Object.entries(TIER_CONFIG).map(([tier, config]) => (
+              <Badge
+                key={tier}
+                variant="outline"
+                className={cn('text-[9px] px-1.5 py-0', config.className)}
+                title={config.description}
+              >
+                {config.label}
+              </Badge>
+            ))}
+          </div>
         </div>
         <ScrollArea className="h-[320px]">
           <div className="p-2 space-y-1">
@@ -164,9 +192,10 @@ export function OutputTypeDropdown({
                       <p className="text-sm font-medium">{config.name}</p>
                       <Badge
                         variant="outline"
-                        className={cn('text-[9px] px-1.5', TIER_STYLES[config.tier])}
+                        className={cn('text-[9px] px-1.5', TIER_CONFIG[config.tier]?.className)}
+                        title={TIER_CONFIG[config.tier]?.description}
                       >
-                        Tier {config.tier}
+                        {TIER_CONFIG[config.tier]?.label || `Tier ${config.tier}`}
                       </Badge>
                       {isSelected && !allowMultiple && (
                         <Check className="h-4 w-4 text-primary ml-auto" />
