@@ -23,7 +23,14 @@ import {
   Layers,
   Wand2,
   PieChart,
+  ChevronDown,
   ChevronRight,
+  Factory,
+  Building2,
+  Cpu,
+  HeartPulse,
+  ShoppingCart,
+  Plane,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -42,6 +49,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 
 // Style icons mapping
 const STYLE_ICONS: Record<TemplateStyle, React.ElementType> = {
@@ -57,7 +69,7 @@ const STYLE_ICONS: Record<TemplateStyle, React.ElementType> = {
 };
 
 // Simplified 2-style options for UI
-type SimplifiedStyle = 'with-consulting' | 'industry-only';
+type SimplifiedStyle = 'consulting-frameworks' | 'industry-focused';
 
 const SIMPLIFIED_STYLES: Array<{
   id: SimplifiedStyle;
@@ -67,18 +79,70 @@ const SIMPLIFIED_STYLES: Array<{
   mapsToStyles: TemplateStyle[];
 }> = [
   {
-    id: 'with-consulting',
-    label: 'With Consulting Frameworks',
-    description: 'McKinsey, BCG, Bain-style frameworks combined with your industry',
+    id: 'consulting-frameworks',
+    label: 'Consulting Frameworks',
+    description: 'McKinsey, BCG, Bain-style strategic frameworks',
     icon: Briefcase,
     mapsToStyles: ['pure-consulting', 'consulting-hybrid', 'investor-pitch'],
   },
   {
-    id: 'industry-only',
-    label: 'Industry-Focused',
-    description: 'Templates tailored specifically to your sector without consulting frameworks',
+    id: 'industry-focused',
+    label: 'Industry Focused',
+    description: 'Templates tailored to your specific sector',
     icon: Target,
     mapsToStyles: ['industry-focused', 'creative-narrative', 'data-analytical', 'educational', 'storytelling', 'mixed-adaptive'],
+  },
+];
+
+// Industry-specific visual libraries
+const INDUSTRY_LIBRARIES: Array<{
+  id: string;
+  label: string;
+  icon: React.ElementType;
+  industries: string[];
+  templates: string[];
+}> = [
+  {
+    id: 'healthcare',
+    label: 'Healthcare & Life Sciences',
+    icon: HeartPulse,
+    industries: ['healthcare', 'pharma', 'biotech', 'medical'],
+    templates: ['Clinical Workflow', 'Patient Journey', 'Regulatory Compliance', 'Research Pipeline'],
+  },
+  {
+    id: 'technology',
+    label: 'Technology & SaaS',
+    icon: Cpu,
+    industries: ['technology', 'software', 'saas', 'it', 'tech'],
+    templates: ['Product Roadmap', 'Architecture Overview', 'Sprint Review', 'Technical Deep-dive'],
+  },
+  {
+    id: 'manufacturing',
+    label: 'Manufacturing & Industrial',
+    icon: Factory,
+    industries: ['manufacturing', 'industrial', 'automotive', 'engineering'],
+    templates: ['Process Flow', 'Supply Chain', 'Quality Metrics', 'Lean Operations'],
+  },
+  {
+    id: 'retail',
+    label: 'Retail & E-commerce',
+    icon: ShoppingCart,
+    industries: ['retail', 'ecommerce', 'consumer', 'cpg'],
+    templates: ['Customer Funnel', 'Omnichannel Strategy', 'Seasonal Campaign', 'Inventory Analytics'],
+  },
+  {
+    id: 'finance',
+    label: 'Financial Services',
+    icon: Building2,
+    industries: ['finance', 'banking', 'insurance', 'fintech'],
+    templates: ['Risk Assessment', 'Portfolio Analysis', 'Compliance Report', 'Investment Thesis'],
+  },
+  {
+    id: 'travel',
+    label: 'Travel & Hospitality',
+    icon: Plane,
+    industries: ['travel', 'hospitality', 'tourism', 'airline'],
+    templates: ['Guest Experience', 'Revenue Management', 'Destination Marketing', 'Loyalty Program'],
   },
 ];
 
@@ -132,7 +196,7 @@ export const TemplateRecommendationPanel: React.FC<TemplateRecommendationPanelPr
 }) => {
   const [showFrameworkDetails, setShowFrameworkDetails] = useState(false);
   const [selectedFramework, setSelectedFramework] = useState<ConsultingFramework | null>(null);
-  const [simplifiedStyle, setSimplifiedStyle] = useState<SimplifiedStyle>('with-consulting');
+  const [simplifiedStyle, setSimplifiedStyle] = useState<SimplifiedStyle>('consulting-frameworks');
   const [internalSelectedTemplates, setInternalSelectedTemplates] = useState<string[]>([]);
 
   // Track selected templates (internal or external)
@@ -143,7 +207,7 @@ export const TemplateRecommendationPanel: React.FC<TemplateRecommendationPanelPr
     if (externalSelectedStyle) return externalSelectedStyle;
     
     // Map simplified style to actual TemplateStyle based on context
-    if (simplifiedStyle === 'with-consulting') {
+    if (simplifiedStyle === 'consulting-frameworks') {
       // Choose between pure-consulting and consulting-hybrid based on industry
       const industryLower = industry.toLowerCase();
       if (industryLower.includes('consult') || industryLower.includes('strategy')) {
@@ -162,6 +226,14 @@ export const TemplateRecommendationPanel: React.FC<TemplateRecommendationPanelPr
       return 'industry-focused';
     }
   }, [externalSelectedStyle, simplifiedStyle, industry, contentTypes]);
+
+  // Get relevant industry library based on selected industry
+  const relevantIndustryLibraries = useMemo(() => {
+    const industryLower = industry.toLowerCase();
+    return INDUSTRY_LIBRARIES.filter(lib => 
+      lib.industries.some(ind => industryLower.includes(ind))
+    );
+  }, [industry]);
 
   // Get AI recommendations (initial)
   const recommendation = useMemo(() => {
@@ -289,44 +361,178 @@ export const TemplateRecommendationPanel: React.FC<TemplateRecommendationPanelPr
           </div>
         </div>
 
-        {/* Simplified 2-Style Selector */}
+        {/* Style Selection - Collapsible Dropdowns */}
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-foreground">Style Selection</p>
-            <Badge variant="outline" className="text-[10px]">
-              {simplifiedStyle === 'with-consulting' ? 'Consulting Mode' : 'Industry Mode'}
-            </Badge>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
+          <p className="text-sm font-semibold text-foreground">Style Selection</p>
+          
+          <div className="space-y-2">
             {SIMPLIFIED_STYLES.map((styleOption) => {
               const Icon = styleOption.icon;
               const isActive = simplifiedStyle === styleOption.id;
+              const isConsulting = styleOption.id === 'consulting-frameworks';
               
               return (
-                <Button
+                <Collapsible
                   key={styleOption.id}
-                  variant={isActive ? "default" : "outline"}
-                  size="sm"
-                  className={cn(
-                    "h-auto py-4 px-3 flex flex-col items-center gap-2 min-w-0 relative",
-                    isActive && "shadow-md ring-2 ring-primary/20"
-                  )}
-                  onClick={() => handleSimplifiedStyleChange(styleOption.id)}
-                  title={styleOption.description}
+                  open={isActive}
+                  onOpenChange={() => handleSimplifiedStyleChange(styleOption.id)}
                 >
-                  <Icon className="h-5 w-5 shrink-0" />
-                  <span className="text-xs font-medium text-center leading-tight">{styleOption.label}</span>
-                  {isActive && <Check className="h-4 w-4 shrink-0 absolute top-2 right-2" />}
-                </Button>
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      variant={isActive ? "default" : "outline"}
+                      size="sm"
+                      className={cn(
+                        "w-full h-auto py-3 px-4 flex items-center justify-between gap-3",
+                        isActive && "shadow-md"
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Icon className="h-5 w-5 shrink-0" />
+                        <div className="text-left">
+                          <span className="text-sm font-medium block">{styleOption.label}</span>
+                          <span className="text-xs opacity-70">{styleOption.description}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {isActive && <Check className="h-4 w-4" />}
+                        {isActive ? (
+                          <ChevronDown className="h-4 w-4" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4" />
+                        )}
+                      </div>
+                    </Button>
+                  </CollapsibleTrigger>
+                  
+                  <CollapsibleContent className="mt-2">
+                    {isConsulting ? (
+                      /* Consulting Framework Library */
+                      <div className="p-3 rounded-lg bg-muted/50 border space-y-3">
+                        <p className="text-xs font-medium text-muted-foreground">Framework Library</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          {Object.entries(FRAMEWORK_LABELS).map(([firmKey, { name, description }]) => {
+                            const firmFrameworks = CONSULTING_FRAMEWORKS.filter(f => f.firm === firmKey);
+                            const firmColor = FRAMEWORK_COLORS[firmKey];
+                            
+                            if (firmFrameworks.length === 0) return null;
+                            
+                            return (
+                              <Dialog key={firmKey}>
+                                <DialogTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className={cn(
+                                      "h-auto py-2 px-3 flex flex-col items-start gap-1 text-left",
+                                      firmColor
+                                    )}
+                                  >
+                                    <span className="text-xs font-medium">{name}</span>
+                                    <span className="text-[10px] opacity-70">{firmFrameworks.length} frameworks</span>
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-md">
+                                  <DialogHeader>
+                                    <DialogTitle className="flex items-center gap-2">
+                                      <Briefcase className="h-5 w-5" />
+                                      {name}
+                                    </DialogTitle>
+                                  </DialogHeader>
+                                  <div className="space-y-3 mt-4">
+                                    <p className="text-sm text-muted-foreground">{description}</p>
+                                    <div className="space-y-2">
+                                      {firmFrameworks.map(framework => (
+                                        <div
+                                          key={framework.id}
+                                          className="p-3 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors"
+                                          onClick={() => {
+                                            setSelectedFramework(framework);
+                                            toast.success(`Selected: ${framework.name}`);
+                                          }}
+                                        >
+                                          <p className="text-sm font-medium">{framework.name}</p>
+                                          <div className="flex flex-wrap gap-1 mt-1">
+                                            {framework.frameworks.slice(0, 3).map(f => (
+                                              <Badge key={f} variant="secondary" className="text-[10px]">{f}</Badge>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
+                            );
+                          })}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">
+                          Explore strategic frameworks from top consulting methodologies
+                        </p>
+                      </div>
+                    ) : (
+                      /* Industry Library */
+                      <div className="p-3 rounded-lg bg-muted/50 border space-y-3">
+                        <p className="text-xs font-medium text-muted-foreground">Industry Template Library</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          {(relevantIndustryLibraries.length > 0 ? relevantIndustryLibraries : INDUSTRY_LIBRARIES.slice(0, 4)).map((lib) => {
+                            const LibIcon = lib.icon;
+                            
+                            return (
+                              <Dialog key={lib.id}>
+                                <DialogTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-auto py-2 px-3 flex flex-col items-start gap-1 text-left"
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <LibIcon className="h-4 w-4" />
+                                      <span className="text-xs font-medium">{lib.label}</span>
+                                    </div>
+                                    <span className="text-[10px] text-muted-foreground">{lib.templates.length} templates</span>
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-md">
+                                  <DialogHeader>
+                                    <DialogTitle className="flex items-center gap-2">
+                                      <LibIcon className="h-5 w-5" />
+                                      {lib.label}
+                                    </DialogTitle>
+                                  </DialogHeader>
+                                  <div className="space-y-3 mt-4">
+                                    <p className="text-sm text-muted-foreground">
+                                      Industry-specific templates designed for {lib.label.toLowerCase()}
+                                    </p>
+                                    <div className="space-y-2">
+                                      {lib.templates.map(template => (
+                                        <div
+                                          key={template}
+                                          className="p-3 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors"
+                                          onClick={() => {
+                                            toast.success(`Template style: ${template}`);
+                                          }}
+                                        >
+                                          <p className="text-sm font-medium">{template}</p>
+                                          <p className="text-xs text-muted-foreground">Optimized for {lib.label}</p>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
+                            );
+                          })}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">
+                          Templates tailored to your specific industry sector
+                        </p>
+                      </div>
+                    )}
+                  </CollapsibleContent>
+                </Collapsible>
               );
             })}
           </div>
-          <p className="text-xs text-muted-foreground text-center">
-            {simplifiedStyle === 'with-consulting' 
-              ? 'Uses consulting frameworks (McKinsey, BCG style) adapted to your industry'
-              : 'Templates tailored to your specific industry without consulting overlays'
-            }
-          </p>
         </div>
 
         <Separator />
