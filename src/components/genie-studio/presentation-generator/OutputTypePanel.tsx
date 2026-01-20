@@ -56,34 +56,39 @@ const outputIcons: Record<string, React.ReactNode> = {
 
 // Tier badges
 const tierBadges: Record<1 | 2 | 3, { label: string; color: string }> = {
-  1: { label: 'Standard', color: 'bg-green-500/20 text-green-700 dark:text-green-400' },
-  2: { label: 'Advanced', color: 'bg-blue-500/20 text-blue-700 dark:text-blue-400' },
-  3: { label: 'Premium', color: 'bg-purple-500/20 text-purple-700 dark:text-purple-400' },
+  1: { label: 'Standard', color: 'bg-success/20 text-success' },
+  2: { label: 'Advanced', color: 'bg-primary/20 text-primary' },
+  3: { label: 'Premium', color: 'bg-accent/20 text-accent-foreground' },
 };
+
+// Structure mode options
+type StructureMode = 'flat' | 'chapters';
 
 interface OutputTypeSettings {
   outputType: OutputType;
-  chapterCount: number;
-  slidesPerChapter: number;
+  structureMode: StructureMode;  // NEW: flat slides or chapters
+  slideCount: number;            // For flat mode
+  chapterCount: number;          // For chapter mode
+  slidesPerChapter: number;      // For chapter mode
   includeVoiceover: boolean;
   includeMusic: boolean;
-  animationIntensity: number; // 0-100
+  animationIntensity: number;    // 0-100
   resolution: '720p' | '1080p' | '4k';
   aspectRatio: '16:9' | '4:3' | '9:16' | '1:1';
-  duration?: number; // For video (seconds)
+  duration?: number;             // For video (seconds)
 }
 
 interface OutputTypePanelProps {
   value: OutputTypeSettings;
   onChange: (settings: OutputTypeSettings) => void;
-  slideCount?: number;
+  suggestedSlideCount?: number;
   className?: string;
 }
 
 export function OutputTypePanel({
   value,
   onChange,
-  slideCount = 10,
+  suggestedSlideCount = 10,
   className
 }: OutputTypePanelProps) {
   const [selectedOutput, setSelectedOutput] = useState<OutputType>(value.outputType);
@@ -216,43 +221,87 @@ export function OutputTypePanel({
               </div>
             </div>
 
-            {/* Structure Settings */}
-            <div className="grid grid-cols-2 gap-4">
-              {/* Chapters */}
-              <div className="space-y-2">
-                <Label className="text-xs">Chapters</Label>
-                <Select
-                  value={String(value.chapterCount)}
-                  onValueChange={(v) => onChange({ ...value, chapterCount: Number(v) })}
-                >
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder="Chapters" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[1, 2, 3, 4, 5, 6].map((n) => (
-                      <SelectItem key={n} value={String(n)}>{n} Chapter{n > 1 ? 's' : ''}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            {/* Structure Mode Toggle */}
+            <div className="space-y-3 pt-2 border-t">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label className="text-xs font-medium">Content Structure</Label>
+                  <p className="text-[10px] text-muted-foreground">
+                    Organize content into chapters or keep as flat {isVideoType ? 'scenes' : 'slides'}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={cn("text-xs", value.structureMode === 'flat' && "font-medium")}>Flat</span>
+                  <Switch
+                    checked={value.structureMode === 'chapters'}
+                    onCheckedChange={(checked) => onChange({ 
+                      ...value, 
+                      structureMode: checked ? 'chapters' : 'flat' 
+                    })}
+                  />
+                  <span className={cn("text-xs", value.structureMode === 'chapters' && "font-medium")}>Chapters</span>
+                </div>
               </div>
+            </div>
 
-              {/* Slides/Scenes per Chapter */}
-              <div className="space-y-2">
-                <Label className="text-xs">{isVideoType ? 'Scenes' : 'Slides'} per Chapter</Label>
-                <Select
-                  value={String(value.slidesPerChapter)}
-                  onValueChange={(v) => onChange({ ...value, slidesPerChapter: Number(v) })}
-                >
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder="Count" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[2, 3, 4, 5, 6, 8, 10].map((n) => (
-                      <SelectItem key={n} value={String(n)}>{n}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            {/* Dynamic Structure Settings */}
+            <div className="grid grid-cols-2 gap-4">
+              {value.structureMode === 'flat' ? (
+                /* Flat Mode: Just slide count */
+                <div className="space-y-2 col-span-2">
+                  <Label className="text-xs">Number of {isVideoType ? 'Scenes' : 'Slides'}</Label>
+                  <Select
+                    value={String(value.slideCount)}
+                    onValueChange={(v) => onChange({ ...value, slideCount: Number(v) })}
+                  >
+                    <SelectTrigger className="h-9">
+                      <SelectValue placeholder="Count" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[5, 8, 10, 12, 15, 20, 25, 30].map((n) => (
+                        <SelectItem key={n} value={String(n)}>{n} {isVideoType ? 'scenes' : 'slides'}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : (
+                /* Chapter Mode: Chapters + slides per chapter */
+                <>
+                  <div className="space-y-2">
+                    <Label className="text-xs">Chapters</Label>
+                    <Select
+                      value={String(value.chapterCount)}
+                      onValueChange={(v) => onChange({ ...value, chapterCount: Number(v) })}
+                    >
+                      <SelectTrigger className="h-9">
+                        <SelectValue placeholder="Chapters" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[1, 2, 3, 4, 5, 6, 8].map((n) => (
+                          <SelectItem key={n} value={String(n)}>{n} Chapter{n > 1 ? 's' : ''}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-xs">{isVideoType ? 'Scenes' : 'Slides'} per Chapter</Label>
+                    <Select
+                      value={String(value.slidesPerChapter)}
+                      onValueChange={(v) => onChange({ ...value, slidesPerChapter: Number(v) })}
+                    >
+                      <SelectTrigger className="h-9">
+                        <SelectValue placeholder="Count" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[2, 3, 4, 5, 6, 8, 10].map((n) => (
+                          <SelectItem key={n} value={String(n)}>{n}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
+              )}
 
               {/* Resolution */}
               <div className="space-y-2">
@@ -361,30 +410,39 @@ export function OutputTypePanel({
                 <Info className="h-3.5 w-3.5 text-primary" />
                 Generation Estimate
               </div>
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="p-2 bg-background rounded">
-                  <div className="text-lg font-bold text-primary">
-                    {value.chapterCount * value.slidesPerChapter}
+              {(() => {
+                const totalItems = value.structureMode === 'flat' 
+                  ? value.slideCount 
+                  : value.chapterCount * value.slidesPerChapter;
+                const genTimeMinutes = Math.ceil((totalItems * (isVideoType ? 30 : is3DType ? 20 : 8)) / 60);
+                
+                return (
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className="p-2 bg-background rounded">
+                      <div className="text-lg font-bold text-primary">
+                        {totalItems}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground">
+                        {isVideoType ? 'Scenes' : is3DType ? '3D Scenes' : 'Slides'}
+                      </div>
+                    </div>
+                    <div className="p-2 bg-background rounded">
+                      <div className="text-lg font-bold text-primary flex items-center justify-center gap-1">
+                        <Clock className="h-4 w-4" />
+                        ~{genTimeMinutes}m
+                      </div>
+                      <div className="text-[10px] text-muted-foreground">Gen Time</div>
+                    </div>
+                    <div className="p-2 bg-background rounded">
+                      <div className="text-lg font-bold text-primary flex items-center justify-center gap-1">
+                        <Cpu className="h-4 w-4" />
+                        {selectedConfig.tier === 3 ? 'High' : selectedConfig.tier === 2 ? 'Med' : 'Low'}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground">Resources</div>
+                    </div>
                   </div>
-                  <div className="text-[10px] text-muted-foreground">
-                    {isVideoType ? 'Scenes' : is3DType ? '3D Scenes' : 'Slides'}
-                  </div>
-                </div>
-                <div className="p-2 bg-background rounded">
-                  <div className="text-lg font-bold text-primary flex items-center justify-center gap-1">
-                    <Clock className="h-4 w-4" />
-                    ~{Math.ceil((value.chapterCount * value.slidesPerChapter * (isVideoType ? 30 : is3DType ? 20 : 8)) / 60)}m
-                  </div>
-                  <div className="text-[10px] text-muted-foreground">Gen Time</div>
-                </div>
-                <div className="p-2 bg-background rounded">
-                  <div className="text-lg font-bold text-primary flex items-center justify-center gap-1">
-                    <Cpu className="h-4 w-4" />
-                    {selectedConfig.tier === 3 ? 'High' : selectedConfig.tier === 2 ? 'Med' : 'Low'}
-                  </div>
-                  <div className="text-[10px] text-muted-foreground">Resources</div>
-                </div>
-              </div>
+                );
+              })()}
             </div>
           </CardContent>
         </Card>
@@ -397,6 +455,8 @@ export function OutputTypePanel({
 export function getDefaultOutputSettings(slideCount: number = 10): OutputTypeSettings {
   return {
     outputType: '2d-static',
+    structureMode: 'flat',
+    slideCount: slideCount,
     chapterCount: Math.max(1, Math.ceil(slideCount / 5)),
     slidesPerChapter: Math.min(5, slideCount),
     includeVoiceover: false,
