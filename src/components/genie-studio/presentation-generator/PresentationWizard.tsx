@@ -139,6 +139,7 @@ import { TemplateBrandingPanelV2 as TemplateBrandingPanel, BrandConfig } from '.
 import { AgentSelectorDialog, AgentCard, AgentModelConfig } from './AgentSelectorDialog';
 import { AgentLanguageConfigPanel } from './AgentLanguageConfigPanel';
 import { InlineTrainAIFeedback } from '../InlineTrainAIFeedback';
+import { PreGenerationConfirmationPanel, GenerationContextSummary } from './components/PreGenerationConfirmationPanel';
 import { 
   PresentationRequest,
   InputSource,
@@ -1577,80 +1578,67 @@ export function PresentationWizard({
                   <div>
                     <h3 className="font-semibold text-base">Review & Generate</h3>
                     <p className="text-sm text-muted-foreground">
-                      Review your configuration and start generation
+                      Review all your selections before generating
                     </p>
                   </div>
                 </div>
 
-                {/* Configuration Summary */}
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Eye className="h-4 w-4 text-primary" />
-                      Configuration Summary
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {/* Content Summary */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Industry</p>
-                        <p className="text-sm font-medium">{INDUSTRY_CATEGORIES.find(i => i.id === workflowConfig?.industryCategory)?.name || 'Not selected'}</p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Segment</p>
-                        <p className="text-sm font-medium">{workflowConfig?.segment || 'Not selected'}</p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Content Type</p>
-                        <p className="text-sm font-medium">{workflowConfig?.collateralType?.name || (contentCategory === 'ai-generated' ? 'AI Generated' : 'Not selected')}</p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Languages</p>
-                        <p className="text-sm font-medium">{selectedLanguages.length} language(s)</p>
-                      </div>
-                    </div>
-
-                    <Separator />
-
-                    {/* AI Models Summary */}
-                    <div className="space-y-2">
-                      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">AI Models</p>
-                      <div className="flex flex-wrap gap-2">
-                        <Badge variant="outline" className="text-xs">
-                          Text: {workflowConfig?.aiRecommendation?.textModel?.split('/').pop() || 'Auto'}
-                        </Badge>
-                        <Badge variant="outline" className="text-xs">
-                          Image: {workflowConfig?.aiRecommendation?.imageModel || 'Auto'}
-                        </Badge>
-                        <Badge variant="outline" className="text-xs">
-                          Voice: {workflowConfig?.aiRecommendation?.voiceModel || 'Auto'}
-                        </Badge>
-                        <Badge variant="outline" className="text-xs">
-                          Translation: {workflowConfig?.aiRecommendation?.translationModel || 'Auto'}
-                        </Badge>
-                      </div>
-                    </div>
-
-                    <Separator />
-
-                    {/* Features Summary */}
-                    <div className="space-y-2">
-                      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Features</p>
-                      <div className="flex flex-wrap gap-2">
-                        {includeInfographics && <Badge variant="secondary" className="text-xs">✓ Infographics</Badge>}
-                        {includeJourneyMaps && <Badge variant="secondary" className="text-xs">✓ Journey Maps</Badge>}
-                        {includeTables && <Badge variant="secondary" className="text-xs">✓ Tables</Badge>}
-                        {includeCharts && <Badge variant="secondary" className="text-xs">✓ Charts</Badge>}
-                        {includeVoiceover && <Badge variant="secondary" className="text-xs">✓ Voiceover</Badge>}
-                        {useAgenticGeneration && <Badge variant="secondary" className="text-xs">✓ Multi-Agent</Badge>}
-                        {!includeInfographics && !includeJourneyMaps && !includeTables && !includeCharts && !includeVoiceover && (
-                          <span className="text-xs text-muted-foreground">No additional features selected</span>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                {/* Pre-Generation Confirmation Panel */}
+                <PreGenerationConfirmationPanel
+                  summary={{
+                    // Step 0: Input
+                    inputSource,
+                    inputContentPreview: inputContent.slice(0, 200) + (inputContent.length > 200 ? '...' : ''),
+                    hasUploadedFile: !!uploadedFile,
+                    
+                    // Step 1: Configuration
+                    industryCategory: workflowConfig?.industryCategory || '',
+                    industryName: INDUSTRY_CATEGORIES.find(i => i.id === workflowConfig?.industryCategory)?.name || '',
+                    segment: workflowConfig?.segment || '',
+                    contentTypes: selectedContentTypes,
+                    isAIAutoMode: isAutoSelectModels,
+                    
+                    // Step 2: Template & Branding
+                    templateId: selectedTemplate?.id || '',
+                    templateName: selectedTemplate?.name || 'Default',
+                    themeName: selectedTheme?.name || 'Default',
+                    brandColors: brandConfig.colors || { primary: '#3b82f6', secondary: '#64748b', accent: '#f59e0b' },
+                    hasLogo: !!brandConfig.logo?.url,
+                    selectedFrameworkCategories,
+                    selectedFrameworkIds,
+                    visualFeatures: visualFeatureSelections,
+                    
+                    // Step 3: Output Type
+                    outputSettings,
+                    
+                    // Step 4: Agents & Languages
+                    useAgenticGeneration,
+                    selectedAgents,
+                    selectedLanguages,
+                    primaryLanguage,
+                    includeVoiceover: outputSettings.includeVoiceover || includeVoiceover,
+                    voiceProvider,
+                    
+                    // AI Models
+                    aiModels: {
+                      textModel: workflowConfig?.aiModels?.textModel || workflowConfig?.aiRecommendation?.textModel || 'Auto',
+                      imageModel: workflowConfig?.aiModels?.imageModel || workflowConfig?.aiRecommendation?.imageModel || 'Auto',
+                      voiceModel: workflowConfig?.aiModels?.voiceModel || workflowConfig?.aiRecommendation?.voiceModel || 'Auto',
+                      translationModel: workflowConfig?.aiModels?.translationModel || workflowConfig?.aiRecommendation?.translationModel || 'Auto',
+                    },
+                  }}
+                  onConfirm={handleGenerate}
+                  onEdit={(stepIndex) => setCurrentStep(stepIndex)}
+                  isGenerating={isGenerating}
+                  creditEstimate={calculateCredits({
+                    outputType: outputSettings.outputType,
+                    slideCount: outputSettings.slideCount,
+                    includeVoiceover: outputSettings.includeVoiceover,
+                    includeMusic: outputSettings.includeMusic,
+                    resolution: outputSettings.resolution as '720p' | '1080p' | '4k',
+                    languageCount: selectedLanguages.length,
+                  })}
+                />
 
                 {/* Compliance Check Option */}
                 {workflowConfig?.industryCategory && ['healthcare', 'pharma', 'finance', 'legal'].includes(workflowConfig.industryCategory) && (
@@ -1685,41 +1673,6 @@ export function PresentationWizard({
                   resolution={outputSettings.resolution}
                   languageCount={selectedLanguages.length}
                 />
-
-                {/* Generate Button */}
-                <Card className="border-primary/30 bg-gradient-to-r from-primary/5 to-accent/5">
-                  <CardContent className="p-6">
-                    <div className="text-center space-y-4">
-                      <div className="inline-flex items-center justify-center p-3 rounded-full bg-primary/10">
-                        <Sparkles className="h-8 w-8 text-primary" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold">Ready to Generate</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Your presentation will be generated with {outputSettings.slideCount} slides (max 20) in {selectedLanguages.length || 1} language(s)
-                        </p>
-                      </div>
-                      <Button
-                        onClick={handleGenerate}
-                        disabled={isGenerating || !inputContent.trim()}
-                        className="w-full max-w-md h-12 text-base"
-                        size="lg"
-                      >
-                        {isGenerating ? (
-                          <>
-                            <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                            Generating...
-                          </>
-                        ) : (
-                          <>
-                            <Sparkles className="h-5 w-5 mr-2" />
-                            Generate Presentation
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
 
                 {/* Generation Progress - simplified */}
                 {isGenerating && (
