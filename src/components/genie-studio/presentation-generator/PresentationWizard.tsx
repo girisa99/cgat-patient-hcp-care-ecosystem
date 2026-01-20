@@ -1577,6 +1577,7 @@ export function PresentationWizard({
                 onPrimaryLanguageChange={setPrimaryLanguage}
                 includeVoiceover={outputSettings.includeVoiceover || includeVoiceover}
                 onIncludeVoiceoverChange={setIncludeVoiceover}
+                selectedOutputTypes={outputSettings.outputTypes || [outputSettings.outputType]}
               />
             )}
 

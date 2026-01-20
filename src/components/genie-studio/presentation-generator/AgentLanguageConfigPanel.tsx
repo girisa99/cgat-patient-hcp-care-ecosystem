@@ -81,6 +81,39 @@ const AGENT_TYPE_ICONS: Record<string, React.ReactNode> = {
   video_generator: <Video className="h-4 w-4" />,
 };
 
+// Output types that restrict language count
+const RESTRICTED_OUTPUT_TYPES = ['3d-scene', '3d-animated', 'video-intro', 'video-full', 'interactive', 'mixed'];
+const UNRESTRICTED_OUTPUT_TYPES = ['2d-static', '2d-animated'];
+
+// Calculate max languages based on output types
+function calculateMaxLanguages(outputTypes: string[], includeVoiceover: boolean): { maxLanguages: number; maxVoiceoverLanguages: number; reason: string } {
+  const hasRestrictedType = outputTypes.some(t => RESTRICTED_OUTPUT_TYPES.includes(t));
+  const hasOnlyUnrestricted = outputTypes.length > 0 && outputTypes.every(t => UNRESTRICTED_OUTPUT_TYPES.includes(t));
+  
+  if (hasRestrictedType) {
+    return {
+      maxLanguages: 1,
+      maxVoiceoverLanguages: 1,
+      reason: '3D, Video, and Interactive formats are limited to 1 language due to rendering complexity',
+    };
+  }
+  
+  if (hasOnlyUnrestricted) {
+    return {
+      maxLanguages: 7,
+      maxVoiceoverLanguages: includeVoiceover ? 3 : 0,
+      reason: '2D formats support up to 7 languages. Voiceover is limited to 3 languages.',
+    };
+  }
+  
+  // Default (no output selected yet)
+  return {
+    maxLanguages: 7,
+    maxVoiceoverLanguages: 3,
+    reason: 'Select output format to see language limits',
+  };
+}
+
 interface AgentLanguageConfigPanelProps {
   useAgenticGeneration: boolean;
   onUseAgenticGenerationChange: (use: boolean) => void;
@@ -94,6 +127,7 @@ interface AgentLanguageConfigPanelProps {
   onPrimaryLanguageChange: (language: string) => void;
   includeVoiceover: boolean;
   onIncludeVoiceoverChange: (include: boolean) => void;
+  selectedOutputTypes?: string[]; // NEW: Output types from Step 3
   className?: string;
 }
 
@@ -110,10 +144,28 @@ export function AgentLanguageConfigPanel({
   onPrimaryLanguageChange,
   includeVoiceover,
   onIncludeVoiceoverChange,
+  selectedOutputTypes = [],
   className,
 }: AgentLanguageConfigPanelProps) {
   const [selectedArchitecture, setSelectedArchitecture] = useState<AgentArchitectureType>('agentic');
   const [expandedSection, setExpandedSection] = useState<string | null>('agents');
+
+  // Calculate dynamic language limits based on output types
+  const languageLimits = useMemo(() => {
+    return calculateMaxLanguages(selectedOutputTypes, includeVoiceover);
+  }, [selectedOutputTypes, includeVoiceover]);
+
+  // Enforce language limits when output types change
+  const handleLanguageChange = useCallback((languages: string[]) => {
+    // Enforce max language limit
+    if (languages.length > languageLimits.maxLanguages) {
+      toast.warning(`Limited to ${languageLimits.maxLanguages} language${languageLimits.maxLanguages > 1 ? 's' : ''} for selected output format`);
+      onSelectedLanguagesChange(languages.slice(0, languageLimits.maxLanguages));
+      return;
+    }
+    onSelectedLanguagesChange(languages);
+  }, [languageLimits.maxLanguages, onSelectedLanguagesChange]);
+
 
   // Get agents filtered by architecture
   const agentsByArchitecture = useMemo(() => {
@@ -362,17 +414,33 @@ export function AgentLanguageConfigPanel({
 
       {/* Multi-Language Generation */}
       <div className="space-y-4">
-        <Label className="text-sm font-medium flex items-center gap-2">
-          <Languages className="h-4 w-4 text-primary" />
-          Multi-Language Generation
-        </Label>
+        <div className="flex items-center justify-between">
+          <Label className="text-sm font-medium flex items-center gap-2">
+            <Languages className="h-4 w-4 text-primary" />
+            Multi-Language Generation
+          </Label>
+          <Badge 
+            variant={languageLimits.maxLanguages === 1 ? 'destructive' : 'secondary'} 
+            className="text-[10px]"
+          >
+            Max {languageLimits.maxLanguages} language{languageLimits.maxLanguages > 1 ? 's' : ''}
+          </Badge>
+        </div>
+        
+        {/* Language Limit Warning */}
+        {languageLimits.maxLanguages === 1 && (
+          <div className="flex items-center gap-2 p-2.5 rounded-lg bg-destructive/10 border border-destructive/20">
+            <Info className="h-4 w-4 text-destructive shrink-0" />
+            <p className="text-xs text-destructive">{languageLimits.reason}</p>
+          </div>
+        )}
         
         <LanguageMultiSelectDropdown
           value={selectedLanguages}
-          onChange={onSelectedLanguagesChange}
+          onChange={handleLanguageChange}
           primaryLanguage={primaryLanguage}
           onPrimaryChange={onPrimaryLanguageChange}
-          maxLanguages={7}
+          maxLanguages={languageLimits.maxLanguages}
         />
 
         {/* Voiceover Toggle */}
@@ -383,7 +451,9 @@ export function AgentLanguageConfigPanel({
             </div>
             <div>
               <p className="text-sm font-medium">Include Voiceover</p>
-              <p className="text-xs text-muted-foreground">Generate audio for each language</p>
+              <p className="text-xs text-muted-foreground">
+                Generate audio (max {languageLimits.maxVoiceoverLanguages} language{languageLimits.maxVoiceoverLanguages !== 1 ? 's' : ''})
+              </p>
             </div>
           </div>
           <Switch 
@@ -391,6 +461,17 @@ export function AgentLanguageConfigPanel({
             onCheckedChange={onIncludeVoiceoverChange} 
           />
         </div>
+
+        {/* Voiceover Language Limit Warning */}
+        {includeVoiceover && selectedLanguages.length > languageLimits.maxVoiceoverLanguages && (
+          <div className="flex items-center gap-2 p-2.5 rounded-lg bg-warning/10 border border-warning/20">
+            <Info className="h-4 w-4 text-warning shrink-0" />
+            <p className="text-xs text-warning">
+              Voiceover will be generated for first {languageLimits.maxVoiceoverLanguages} languages only. 
+              Other languages will have slides without audio.
+            </p>
+          </div>
+        )}
 
         {/* Voice Provider Info */}
         {includeVoiceover && (
