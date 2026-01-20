@@ -284,3 +284,9 @@ verify_jwt = false
 
 [functions.ask-genie-voice]
 verify_jwt = false
+
+[functions.alibaba-tts]
+verify_jwt = false
+
+[functions.elevenlabs-sfx]
+verify_jwt = false
