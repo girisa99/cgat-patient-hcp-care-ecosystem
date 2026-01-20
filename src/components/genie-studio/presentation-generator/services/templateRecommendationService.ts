@@ -840,3 +840,35 @@ export const getAvailableIndustries = () => INDUSTRY_REGISTRY.map(i => ({ id: i.
 export const getAvailableContentTypes = () => CONTENT_TYPE_REGISTRY.map(c => ({ id: c.id, name: c.name, subOptions: c.subOptions }));
 export const getConsultingFrameworks = (firm?: string) => 
   firm ? CONSULTING_FRAMEWORKS.filter(f => f.firm === firm) : CONSULTING_FRAMEWORKS;
+
+/**
+ * Get templates for a specific style - used when user manually selects a style
+ */
+export function getTemplatesForStyle(
+  style: TemplateStyle,
+  context: ContextInput
+): RecommendedTemplate[] {
+  // Get industry weights
+  const industryConfig = getIndustryConfig(context.industry);
+  
+  let consultingScore = industryConfig.consulting;
+  let visualScore = industryConfig.visual;
+  let dataScore = industryConfig.data;
+  
+  // Apply content type influences
+  context.contentTypes.forEach(contentType => {
+    const config = getContentTypeConfig(contentType);
+    if (config) {
+      consultingScore += config.boostConsulting;
+      visualScore += config.boostVisual;
+      dataScore += config.boostData;
+    }
+  });
+  
+  // Normalize scores (0-100)
+  consultingScore = Math.max(0, Math.min(100, consultingScore));
+  visualScore = Math.max(0, Math.min(100, visualScore));
+  dataScore = Math.max(0, Math.min(100, dataScore));
+  
+  return buildTemplateList(style, context, consultingScore, visualScore, dataScore);
+}
