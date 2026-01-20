@@ -28,10 +28,8 @@ import {
   Bot,
   Pencil,
   Check,
-  Wand2,
   Info,
   Building2,
-  Target,
   FileText,
   Type,
   Image as ImageIcon,
@@ -40,8 +38,6 @@ import {
   Sparkles,
   // Output type icons
   Box,
-  Film,
-  Video,
   MousePointerClick,
   Layers,
   Play,
@@ -390,7 +386,6 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
             </div>
           </div>
         </div>
-      </div>
 
       {/* Content Type Section - flat div */}
       <div className="p-4 rounded-xl border bg-card space-y-4">
@@ -466,7 +461,7 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
             </Badge>
           )}
         </div>
-        <CardContent className="space-y-4">
+        <div className="space-y-4">
           {/* Output Type Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {OUTPUT_TYPE_CONFIGS.map(outputType => {
@@ -541,7 +536,7 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
             </Badge>
           )}
         </div>
-        <CardContent className="space-y-4">
+        <div className="space-y-4">
           {/* AI Auto Mode - Show recommendation info with alternatives */}
           {mode === 'ai' && (
             <div className="p-3 rounded-lg bg-muted/50 border mb-4 space-y-2">
