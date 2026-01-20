@@ -447,8 +447,8 @@ class OutputAwareGenerationService {
         violations.push(`Too many bullets (${slide.content.bullets.length} > ${config.maxBulletsPerSlide})`);
       }
       
-      slide.content.bullets.forEach((bullet, i) => {
-        const text = typeof bullet === 'string' ? bullet : bullet.text || '';
+      slide.content.bullets.forEach((bullet: unknown, i: number) => {
+        const text = typeof bullet === 'string' ? bullet : (bullet as any)?.text || String(bullet);
         if (text.length > config.maxBulletLength) {
           violations.push(`Bullet ${i + 1} exceeds ${config.maxBulletLength} characters`);
         }
