@@ -1,10 +1,9 @@
 /**
- * Output Type Selection Panel - Dedicated step for choosing output format
- * Supports: 2D Static, 2D Animated, 3D Scene, 3D Animated, Video, Interactive
+ * Output Type Selection Panel - Refactored for clean dropdown-based selection
+ * Uses flat architecture without nested cards
  */
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -31,29 +30,25 @@ import {
   Zap,
   Clock,
   Cpu,
-  Star,
-  TrendingUp
+  TrendingUp,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { OutputType, OUTPUT_TYPE_CONFIGS, OutputTypeConfig } from './types';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { OutputType, OUTPUT_TYPE_CONFIGS } from './types';
+import { OutputTypeDropdown } from './components/OutputTypeDropdown';
 import { SlideCountRecommendation } from './components/SlideCountRecommendation';
 
 // Icon mapping
 const outputIcons: Record<string, React.ReactNode> = {
-  'Image': <ImageIcon className="h-6 w-6" />,
-  'Sparkles': <Sparkles className="h-6 w-6" />,
-  'Box': <Box className="h-6 w-6" />,
-  'Orbit': <Orbit className="h-6 w-6" />,
-  'Video': <Video className="h-6 w-6" />,
-  'Film': <Film className="h-6 w-6" />,
-  'MousePointerClick': <MousePointerClick className="h-6 w-6" />,
-  'Layers': <Layers className="h-6 w-6" />,
+  'Image': <ImageIcon className="h-4 w-4" />,
+  'Sparkles': <Sparkles className="h-4 w-4" />,
+  'Box': <Box className="h-4 w-4" />,
+  'Orbit': <Orbit className="h-4 w-4" />,
+  'Video': <Video className="h-4 w-4" />,
+  'Film': <Film className="h-4 w-4" />,
+  'MousePointerClick': <MousePointerClick className="h-4 w-4" />,
+  'Layers': <Layers className="h-4 w-4" />,
 };
 
 // Tier badges
@@ -68,23 +63,23 @@ type StructureMode = 'flat' | 'chapters';
 
 interface OutputTypeSettings {
   outputType: OutputType;
-  structureMode: StructureMode;  // NEW: flat slides or chapters
-  slideCount: number;            // For flat mode
-  chapterCount: number;          // For chapter mode
-  slidesPerChapter: number;      // For chapter mode
+  structureMode: StructureMode;
+  slideCount: number;
+  chapterCount: number;
+  slidesPerChapter: number;
   includeVoiceover: boolean;
   includeMusic: boolean;
-  animationIntensity: number;    // 0-100
+  animationIntensity: number;
   resolution: '720p' | '1080p' | '4k';
   aspectRatio: '16:9' | '4:3' | '9:16' | '1:1';
-  duration?: number;             // For video (seconds)
+  duration?: number;
 }
 
 interface OutputTypePanelProps {
   value: OutputTypeSettings;
   onChange: (settings: OutputTypeSettings) => void;
   suggestedSlideCount?: number;
-  contentType?: string; // For slide count recommendations
+  contentType?: string;
   className?: string;
 }
 
@@ -96,386 +91,362 @@ export function OutputTypePanel({
   className
 }: OutputTypePanelProps) {
   const [showRecommendation, setShowRecommendation] = useState(false);
-  const [selectedOutput, setSelectedOutput] = useState<OutputType>(value.outputType);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   
   const handleOutputSelect = (outputType: OutputType) => {
-    setSelectedOutput(outputType);
     onChange({
       ...value,
       outputType,
-      // Reset settings based on output type
       includeVoiceover: outputType.includes('video'),
       includeMusic: outputType === 'video-full',
       animationIntensity: outputType.includes('animated') ? 70 : outputType.includes('3d') ? 50 : 30,
     });
   };
 
-  const selectedConfig = OUTPUT_TYPE_CONFIGS.find(c => c.id === selectedOutput);
-  const isVideoType = selectedOutput.includes('video');
-  const is3DType = selectedOutput.includes('3d');
-  const isAnimated = selectedOutput.includes('animated') || isVideoType;
+  const selectedConfig = OUTPUT_TYPE_CONFIGS.find(c => c.id === value.outputType);
+  const isVideoType = value.outputType.includes('video');
+  const is3DType = value.outputType.includes('3d');
+  const isAnimated = value.outputType.includes('animated') || isVideoType;
+
+  // Calculate totals
+  const totalItems = value.structureMode === 'flat' 
+    ? value.slideCount 
+    : value.chapterCount * value.slidesPerChapter;
+  const genTimeMinutes = Math.ceil((totalItems * (isVideoType ? 30 : is3DType ? 20 : 8)) / 60);
 
   return (
     <div className={cn("space-y-6", className)}>
-      {/* Header */}
+      {/* Output Type Dropdown */}
       <div className="space-y-2">
-        <h3 className="text-lg font-semibold">Output Type</h3>
-        <p className="text-sm text-muted-foreground">
-          Choose the format for your generated content
-        </p>
+        <Label className="text-sm font-medium">Output Format</Label>
+        <OutputTypeDropdown
+          value={value.outputType}
+          onChange={handleOutputSelect}
+        />
       </div>
 
-      {/* Output Type Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {OUTPUT_TYPE_CONFIGS.map((config) => {
-          const isSelected = selectedOutput === config.id;
-          const tierInfo = tierBadges[config.tier];
-          
-          return (
-            <TooltipProvider key={config.id}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Card
-                    className={cn(
-                      "cursor-pointer transition-all hover:border-primary/50 relative",
-                      isSelected && "border-primary ring-2 ring-primary/20 bg-primary/5"
-                    )}
-                    onClick={() => handleOutputSelect(config.id)}
-                  >
-                    <CardContent className="p-4 text-center space-y-2">
-                      {/* Tier Badge */}
-                      <Badge className={cn("absolute top-2 right-2 text-[9px]", tierInfo.color)}>
-                        {tierInfo.label}
-                      </Badge>
-                      
-                      {/* Icon */}
-                      <div className={cn(
-                        "mx-auto w-12 h-12 rounded-xl flex items-center justify-center",
-                        isSelected 
-                          ? "bg-primary text-primary-foreground" 
-                          : "bg-muted text-muted-foreground"
-                      )}>
-                        {outputIcons[config.icon]}
-                      </div>
-                      
-                      {/* Name */}
-                      <h4 className="font-medium text-sm">{config.name}</h4>
-                      
-                      {/* Selected Check */}
-                      {isSelected && (
-                        <div className="absolute top-2 left-2">
-                          <div className="h-5 w-5 rounded-full bg-primary flex items-center justify-center">
-                            <Check className="h-3 w-3 text-primary-foreground" />
-                          </div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="max-w-[250px]">
-                  <p className="font-medium">{config.name}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{config.description}</p>
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {config.capabilities.slice(0, 3).map((cap) => (
-                      <Badge key={cap} variant="outline" className="text-[9px]">
-                        {cap}
-                      </Badge>
-                    ))}
-                  </div>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          );
-        })}
-      </div>
-
-      {/* Selected Output Details */}
+      {/* Selected Output Quick Info */}
       {selectedConfig && (
-        <Card className="border-primary/30">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              {outputIcons[selectedConfig.icon]}
-              {selectedConfig.name} Settings
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Capabilities */}
-            <div className="flex flex-wrap gap-2">
-              {selectedConfig.capabilities.map((cap) => (
-                <Badge key={cap} variant="secondary" className="text-xs">
-                  <Check className="h-3 w-3 mr-1" />
-                  {cap}
-                </Badge>
-              ))}
+        <div className="p-4 rounded-lg bg-muted/30 border space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-md bg-primary/10 text-primary">
+                {outputIcons[selectedConfig.icon]}
+              </div>
+              <span className="font-medium text-sm">{selectedConfig.name}</span>
+              <Badge className={cn("text-[10px]", tierBadges[selectedConfig.tier].color)}>
+                {tierBadges[selectedConfig.tier].label}
+              </Badge>
             </div>
+          </div>
+          
+          {/* Capabilities - horizontal scrollable */}
+          <div className="flex flex-wrap gap-1.5">
+            {selectedConfig.capabilities.slice(0, 5).map((cap) => (
+              <Badge key={cap} variant="secondary" className="text-[10px] px-2 py-0.5">
+                <Check className="h-2.5 w-2.5 mr-1" />
+                {cap}
+              </Badge>
+            ))}
+            {selectedConfig.capabilities.length > 5 && (
+              <Badge variant="outline" className="text-[10px] px-2 py-0.5">
+                +{selectedConfig.capabilities.length - 5} more
+              </Badge>
+            )}
+          </div>
 
-            {/* Providers */}
-            <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground">Available Providers</Label>
-              <div className="flex flex-wrap gap-1">
-                {selectedConfig.providers.slice(0, 5).map((provider) => (
-                  <Badge key={provider} variant="outline" className="text-[10px]">
-                    {provider}
-                  </Badge>
-                ))}
-                {selectedConfig.providers.length > 5 && (
-                  <Badge variant="outline" className="text-[10px]">
-                    +{selectedConfig.providers.length - 5} more
-                  </Badge>
+          {/* Providers row */}
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span className="font-medium">Providers:</span>
+            <span className="truncate">
+              {selectedConfig.providers.slice(0, 3).join(', ')}
+              {selectedConfig.providers.length > 3 && ` +${selectedConfig.providers.length - 3}`}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Content Structure Section */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <Label className="text-sm font-medium">Content Structure</Label>
+          <div className="flex items-center gap-2 p-1 bg-muted rounded-lg">
+            <button
+              type="button"
+              onClick={() => onChange({ ...value, structureMode: 'flat' })}
+              className={cn(
+                "px-3 py-1 text-xs rounded-md transition-colors",
+                value.structureMode === 'flat' 
+                  ? "bg-background text-foreground shadow-sm font-medium" 
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Flat
+            </button>
+            <button
+              type="button"
+              onClick={() => onChange({ ...value, structureMode: 'chapters' })}
+              className={cn(
+                "px-3 py-1 text-xs rounded-md transition-colors",
+                value.structureMode === 'chapters' 
+                  ? "bg-background text-foreground shadow-sm font-medium" 
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Chapters
+            </button>
+          </div>
+        </div>
+
+        {/* Structure Settings Grid */}
+        <div className="grid grid-cols-2 gap-4">
+          {value.structureMode === 'flat' ? (
+            <div className="col-span-2 space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs text-muted-foreground">
+                  Number of {isVideoType ? 'Scenes' : 'Slides'}
+                </Label>
+                {contentType && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 text-[10px] text-primary hover:text-primary"
+                    onClick={() => setShowRecommendation(!showRecommendation)}
+                  >
+                    <TrendingUp className="h-3 w-3 mr-1" />
+                    {showRecommendation ? 'Hide' : 'Show'} AI Recommendations
+                  </Button>
                 )}
               </div>
-            </div>
-
-            {/* Structure Mode Toggle */}
-            <div className="space-y-3 pt-2 border-t">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label className="text-xs font-medium">Content Structure</Label>
-                  <p className="text-[10px] text-muted-foreground">
-                    Organize content into chapters or keep as flat {isVideoType ? 'scenes' : 'slides'}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className={cn("text-xs", value.structureMode === 'flat' && "font-medium")}>Flat</span>
-                  <Switch
-                    checked={value.structureMode === 'chapters'}
-                    onCheckedChange={(checked) => onChange({ 
-                      ...value, 
-                      structureMode: checked ? 'chapters' : 'flat' 
-                    })}
+              
+              {showRecommendation && contentType && (
+                <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 space-y-3">
+                  <SlideCountRecommendation
+                    contentType={contentType}
+                    outputType={value.outputType}
+                    currentCount={value.slideCount}
+                    onCountChange={(count) => onChange({ ...value, slideCount: count })}
+                    minSlides={3}
+                    maxSlides={20}
+                    className="border-0 p-0 bg-transparent"
                   />
-                  <span className={cn("text-xs", value.structureMode === 'chapters' && "font-medium")}>Chapters</span>
                 </div>
-              </div>
+              )}
+              
+              {!showRecommendation && (
+                <Select
+                  value={String(value.slideCount)}
+                  onValueChange={(v) => onChange({ ...value, slideCount: Math.min(20, Number(v)) })}
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="Select count" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[5, 8, 10, 12, 15, 20].map((n) => (
+                      <SelectItem key={n} value={String(n)}>
+                        {n} {isVideoType ? 'scenes' : 'slides'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
+          ) : (
+            <>
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">Chapters</Label>
+                <Select
+                  value={String(value.chapterCount)}
+                  onValueChange={(v) => onChange({ ...value, chapterCount: Number(v) })}
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="Chapters" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[1, 2, 3, 4, 5, 6, 8].map((n) => (
+                      <SelectItem key={n} value={String(n)}>
+                        {n} Chapter{n > 1 ? 's' : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            {/* Dynamic Structure Settings */}
-            <div className="grid grid-cols-2 gap-4">
-              {value.structureMode === 'flat' ? (
-                /* Flat Mode: Smart slide count with recommendations */
-                <div className="space-y-3 col-span-2">
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">
+                  {isVideoType ? 'Scenes' : 'Slides'} per Chapter
+                </Label>
+                <Select
+                  value={String(value.slidesPerChapter)}
+                  onValueChange={(v) => onChange({ ...value, slidesPerChapter: Number(v) })}
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="Count" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[2, 3, 4, 5, 6, 8, 10].map((n) => (
+                      <SelectItem key={n} value={String(n)}>{n}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Quality Settings */}
+      <div className="space-y-4">
+        <Label className="text-sm font-medium">Quality Settings</Label>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground">Resolution</Label>
+            <Select
+              value={value.resolution}
+              onValueChange={(v) => onChange({ ...value, resolution: v as any })}
+            >
+              <SelectTrigger className="h-9">
+                <SelectValue placeholder="Resolution" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="720p">720p</SelectItem>
+                <SelectItem value="1080p">1080p (HD)</SelectItem>
+                <SelectItem value="4k">4K Ultra HD</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground">Aspect Ratio</Label>
+            <Select
+              value={value.aspectRatio}
+              onValueChange={(v) => onChange({ ...value, aspectRatio: v as any })}
+            >
+              <SelectTrigger className="h-9">
+                <SelectValue placeholder="Ratio" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="16:9">16:9 Widescreen</SelectItem>
+                <SelectItem value="4:3">4:3 Standard</SelectItem>
+                <SelectItem value="9:16">9:16 Vertical</SelectItem>
+                <SelectItem value="1:1">1:1 Square</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
+
+      {/* Advanced Settings Toggle */}
+      {(isAnimated || isVideoType) && (
+        <div className="space-y-4">
+          <button
+            type="button"
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className="flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+          >
+            {showAdvanced ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            Advanced Settings
+          </button>
+
+          {showAdvanced && (
+            <div className="space-y-4 p-4 rounded-lg bg-muted/30 border">
+              {/* Animation Intensity */}
+              {isAnimated && (
+                <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs">Number of {isVideoType ? 'Scenes' : 'Slides'}</Label>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 text-[10px] text-primary"
-                      onClick={() => setShowRecommendation(!showRecommendation)}
-                    >
-                      <TrendingUp className="h-3 w-3 mr-1" />
-                      {showRecommendation ? 'Hide' : 'Show'} Recommendations
-                    </Button>
+                    <Label className="text-xs">Animation Intensity</Label>
+                    <span className="text-xs text-muted-foreground">{value.animationIntensity}%</span>
                   </div>
-                  
-                  {showRecommendation && contentType && (
-                    <SlideCountRecommendation
-                      contentType={contentType}
-                      outputType={selectedOutput}
-                      currentCount={value.slideCount}
-                      onCountChange={(count) => onChange({ ...value, slideCount: count })}
-                      minSlides={3}
-                      maxSlides={20}
-                      className="mb-3"
-                    />
-                  )}
-                  
-                  <Select
-                    value={String(value.slideCount)}
-                    onValueChange={(v) => onChange({ ...value, slideCount: Math.min(20, Number(v)) })}
-                  >
-                    <SelectTrigger className="h-9">
-                      <SelectValue placeholder="Count" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[5, 8, 10, 12, 15, 20].map((n) => (
-                        <SelectItem key={n} value={String(n)}>{n} {isVideoType ? 'scenes' : 'slides'}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Slider
+                    value={[value.animationIntensity]}
+                    onValueChange={([v]) => onChange({ ...value, animationIntensity: v })}
+                    max={100}
+                    step={10}
+                    className="w-full"
+                  />
+                  <div className="flex justify-between text-[10px] text-muted-foreground">
+                    <span>Subtle</span>
+                    <span>Dynamic</span>
+                  </div>
                 </div>
-              ) : (
-                /* Chapter Mode: Chapters + slides per chapter */
-                <>
-                  <div className="space-y-2">
-                    <Label className="text-xs">Chapters</Label>
-                    <Select
-                      value={String(value.chapterCount)}
-                      onValueChange={(v) => onChange({ ...value, chapterCount: Number(v) })}
-                    >
-                      <SelectTrigger className="h-9">
-                        <SelectValue placeholder="Chapters" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {[1, 2, 3, 4, 5, 6, 8].map((n) => (
-                          <SelectItem key={n} value={String(n)}>{n} Chapter{n > 1 ? 's' : ''}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-xs">{isVideoType ? 'Scenes' : 'Slides'} per Chapter</Label>
-                    <Select
-                      value={String(value.slidesPerChapter)}
-                      onValueChange={(v) => onChange({ ...value, slidesPerChapter: Number(v) })}
-                    >
-                      <SelectTrigger className="h-9">
-                        <SelectValue placeholder="Count" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {[2, 3, 4, 5, 6, 8, 10].map((n) => (
-                          <SelectItem key={n} value={String(n)}>{n}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </>
               )}
 
-              {/* Resolution */}
-              <div className="space-y-2">
-                <Label className="text-xs">Resolution</Label>
-                <Select
-                  value={value.resolution}
-                  onValueChange={(v) => onChange({ ...value, resolution: v as any })}
-                >
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder="Resolution" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="720p">720p</SelectItem>
-                    <SelectItem value="1080p">1080p (HD)</SelectItem>
-                    <SelectItem value="4k">4K Ultra HD</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* Video Duration */}
+              {isVideoType && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs">Estimated Duration</Label>
+                    <span className="text-xs font-medium text-primary">
+                      ~{Math.round((totalItems * 8) / 60)} min
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">
+                    Based on {totalItems} scenes × ~8s each
+                  </p>
+                </div>
+              )}
 
-              {/* Aspect Ratio */}
-              <div className="space-y-2">
-                <Label className="text-xs">Aspect Ratio</Label>
-                <Select
-                  value={value.aspectRatio}
-                  onValueChange={(v) => onChange({ ...value, aspectRatio: v as any })}
-                >
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder="Ratio" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="16:9">16:9 (Widescreen)</SelectItem>
-                    <SelectItem value="4:3">4:3 (Standard)</SelectItem>
-                    <SelectItem value="9:16">9:16 (Vertical)</SelectItem>
-                    <SelectItem value="1:1">1:1 (Square)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* Audio Settings */}
+              {isVideoType && (
+                <div className="space-y-3 pt-3 border-t">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-xs">AI Voiceover</Label>
+                      <p className="text-[10px] text-muted-foreground">Generate narration</p>
+                    </div>
+                    <Switch
+                      checked={value.includeVoiceover}
+                      onCheckedChange={(checked) => onChange({ ...value, includeVoiceover: checked })}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-xs">Background Music</Label>
+                      <p className="text-[10px] text-muted-foreground">AI-generated music</p>
+                    </div>
+                    <Switch
+                      checked={value.includeMusic}
+                      onCheckedChange={(checked) => onChange({ ...value, includeMusic: checked })}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
-
-            {/* Animation Intensity (for animated types) */}
-            {isAnimated && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs">Animation Intensity</Label>
-                  <span className="text-xs text-muted-foreground">{value.animationIntensity}%</span>
-                </div>
-                <Slider
-                  value={[value.animationIntensity]}
-                  onValueChange={([v]) => onChange({ ...value, animationIntensity: v })}
-                  max={100}
-                  step={10}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-[10px] text-muted-foreground">
-                  <span>Subtle</span>
-                  <span>Dynamic</span>
-                </div>
-              </div>
-            )}
-
-            {/* Video Duration */}
-            {isVideoType && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs">Estimated Duration</Label>
-                  <span className="text-xs text-muted-foreground">
-                    ~{Math.round((value.chapterCount * value.slidesPerChapter * 8) / 60)} min
-                  </span>
-                </div>
-                <p className="text-[10px] text-muted-foreground">
-                  Based on {value.chapterCount * value.slidesPerChapter} scenes × ~8s each
-                </p>
-              </div>
-            )}
-
-            {/* Audio Settings (for video types) */}
-            {isVideoType && (
-              <div className="space-y-3 pt-2 border-t">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label className="text-xs">AI Voiceover</Label>
-                    <p className="text-[10px] text-muted-foreground">Generate narration for each scene</p>
-                  </div>
-                  <Switch
-                    checked={value.includeVoiceover}
-                    onCheckedChange={(checked) => onChange({ ...value, includeVoiceover: checked })}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label className="text-xs">Background Music</Label>
-                    <p className="text-[10px] text-muted-foreground">Add AI-generated background music</p>
-                  </div>
-                  <Switch
-                    checked={value.includeMusic}
-                    onCheckedChange={(checked) => onChange({ ...value, includeMusic: checked })}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Estimation Summary */}
-            <div className="p-3 bg-muted/50 rounded-lg space-y-2">
-              <div className="flex items-center gap-2 text-xs font-medium">
-                <Info className="h-3.5 w-3.5 text-primary" />
-                Generation Estimate
-              </div>
-              {(() => {
-                const totalItems = value.structureMode === 'flat' 
-                  ? value.slideCount 
-                  : value.chapterCount * value.slidesPerChapter;
-                const genTimeMinutes = Math.ceil((totalItems * (isVideoType ? 30 : is3DType ? 20 : 8)) / 60);
-                
-                return (
-                  <div className="grid grid-cols-3 gap-2 text-center">
-                    <div className="p-2 bg-background rounded">
-                      <div className="text-lg font-bold text-primary">
-                        {totalItems}
-                      </div>
-                      <div className="text-[10px] text-muted-foreground">
-                        {isVideoType ? 'Scenes' : is3DType ? '3D Scenes' : 'Slides'}
-                      </div>
-                    </div>
-                    <div className="p-2 bg-background rounded">
-                      <div className="text-lg font-bold text-primary flex items-center justify-center gap-1">
-                        <Clock className="h-4 w-4" />
-                        ~{genTimeMinutes}m
-                      </div>
-                      <div className="text-[10px] text-muted-foreground">Gen Time</div>
-                    </div>
-                    <div className="p-2 bg-background rounded">
-                      <div className="text-lg font-bold text-primary flex items-center justify-center gap-1">
-                        <Cpu className="h-4 w-4" />
-                        {selectedConfig.tier === 3 ? 'High' : selectedConfig.tier === 2 ? 'Med' : 'Low'}
-                      </div>
-                      <div className="text-[10px] text-muted-foreground">Resources</div>
-                    </div>
-                  </div>
-                );
-              })()}
-            </div>
-          </CardContent>
-        </Card>
+          )}
+        </div>
       )}
+
+      {/* Generation Estimate Summary */}
+      <div className="p-4 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20">
+        <div className="flex items-center gap-2 mb-3">
+          <Info className="h-4 w-4 text-primary" />
+          <span className="text-sm font-medium">Generation Estimate</span>
+        </div>
+        
+        <div className="grid grid-cols-3 gap-3">
+          <div className="text-center p-2 bg-background/80 rounded-md">
+            <div className="text-xl font-bold text-primary">{totalItems}</div>
+            <div className="text-[10px] text-muted-foreground">
+              {isVideoType ? 'Scenes' : is3DType ? '3D Scenes' : 'Slides'}
+            </div>
+          </div>
+          <div className="text-center p-2 bg-background/80 rounded-md">
+            <div className="text-xl font-bold text-primary flex items-center justify-center gap-1">
+              <Clock className="h-4 w-4" />
+              {genTimeMinutes}m
+            </div>
+            <div className="text-[10px] text-muted-foreground">Gen Time</div>
+          </div>
+          <div className="text-center p-2 bg-background/80 rounded-md">
+            <div className="text-xl font-bold text-primary flex items-center justify-center gap-1">
+              <Cpu className="h-4 w-4" />
+              {selectedConfig?.tier === 3 ? 'High' : selectedConfig?.tier === 2 ? 'Med' : 'Low'}
+            </div>
+            <div className="text-[10px] text-muted-foreground">Resources</div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
