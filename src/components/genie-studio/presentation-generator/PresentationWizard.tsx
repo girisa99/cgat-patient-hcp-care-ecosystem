@@ -1229,18 +1229,22 @@ export function PresentationWizard({
             <div className="p-5 space-y-5">
             {/* Step 0: Content Input */}
             {currentStep === 0 && (
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <Type className="h-4 w-4 text-primary" />
-                    <span>Content Input</span>
-                    <span className="text-xs font-normal text-muted-foreground ml-1">
-                      — Add your source material
-                    </span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Input Type Selection - Clear labels with descriptions */}
+              <div className="space-y-4">
+                {/* Step Header */}
+                <div className="flex items-center gap-3 p-4 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <Type className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-sm">Content Input</h3>
+                    <p className="text-xs text-muted-foreground">
+                      Add your source material — describe, paste, upload, or link
+                    </p>
+                  </div>
+                </div>
+
+                {/* Input Type Selection */}
+                <div className="space-y-3">
                   <Label className="text-xs font-medium text-foreground">Choose how to add your content:</Label>
                   <Tabs value={inputSource} onValueChange={(v) => setInputSource(v as InputSource)}>
                     <TabsList className="!grid !grid-cols-5 !w-full !h-10 !p-1 !bg-muted !rounded-lg !gap-0 !min-h-0 !overflow-visible !border-0 !shadow-none">
@@ -1510,8 +1514,8 @@ export function PresentationWizard({
                       <span>Need multiple output languages? Configure in <strong>Step 4: Agents & Languages</strong></span>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             )}
 
             {/* Step 1: Industry, Segment & Collateral Type */}
