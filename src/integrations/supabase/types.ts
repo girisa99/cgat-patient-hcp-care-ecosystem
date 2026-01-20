@@ -21197,24 +21197,15 @@ export type Database = {
       get_or_create_user_credits: {
         Args: { p_user_id: string }
         Returns: {
-          created_at: string | null
+          created_at: string
           credits_balance: number
           credits_purchased_total: number
           credits_used_total: number
-          current_period_end: string | null
-          current_period_start: string | null
-          id: string
           subscription_credits_monthly: number
           subscription_credits_used: number
-          updated_at: string | null
+          updated_at: string
           user_id: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "user_ai_credits"
-          isOneToOne: true
-          isSetofReturn: false
-        }
+        }[]
       }
       get_prepopulate_data: { Args: { user_uuid: string }; Returns: Json }
       get_recent_popup_events: {
@@ -21389,7 +21380,7 @@ export type Database = {
               p_severity: string
               p_user_id: string
             }
-            Returns: undefined
+            Returns: string
           }
       log_sensitive_data_access: {
         Args: { operation_type: string; record_id?: string; table_name: string }
