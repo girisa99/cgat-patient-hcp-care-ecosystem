@@ -138,6 +138,12 @@ export { SmartTooltip, HelpTooltip } from './components/SmartTooltip';
 export { generationHistoryService } from './services/generationHistoryService';
 export type { GenerationRecord, ActualUsageBreakdown } from './services/generationHistoryService';
 
+// Auto-Translate Input
+export { AutoTranslateInput } from './components/AutoTranslateInput';
+
+// Hero Component
+export { GenieDeckHero } from './components/GenieDeckHero';
+
 // Generation Config Service (from src/services)
 export { generationConfigService } from '@/services/generationConfigService';
 

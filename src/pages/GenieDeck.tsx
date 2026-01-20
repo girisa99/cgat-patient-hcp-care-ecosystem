@@ -9,10 +9,9 @@ import AppLayout from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { 
-  Presentation, 
+  Presentation,
   Sparkles, 
   Zap,
   Mic,
@@ -27,6 +26,7 @@ import {
   PlusCircle,
 } from 'lucide-react';
 import { PresentationWizard } from '@/components/genie-studio/presentation-generator/PresentationWizard';
+import { GenieDeckHero } from '@/components/genie-studio/presentation-generator/components/GenieDeckHero';
 import { BackToSubscription } from '@/components/subscription/BackToSubscription';
 import { AskGenie } from '@/components/genie-studio/AskGenie';
 import { HIPAAComplianceFooter } from '@/components/genie-studio/HIPAAComplianceFooter';
@@ -274,8 +274,21 @@ const GenieDeck = () => {
           />
         )}
 
+        {/* Hero Section - Collapsible */}
+        {!hasGeneratedContent && (
+          <GenieDeckHero 
+            className="border-b"
+            onGetStarted={() => {
+              // Scroll to wizard or focus input
+              document.getElementById('wizard-container')?.scrollIntoView({ behavior: 'smooth' });
+            }}
+          />
+        )}
+
         {/* Full-Screen Presentation Wizard */}
-        <div className="h-[calc(100vh-56px)]">
+        <div id="wizard-container" className={cn(
+          hasGeneratedContent ? "h-[calc(100vh-56px)]" : "h-[calc(100vh-56px-380px)]"
+        )}>
           <PresentationWizard 
             className="h-full"
             onComplete={(presentation) => {

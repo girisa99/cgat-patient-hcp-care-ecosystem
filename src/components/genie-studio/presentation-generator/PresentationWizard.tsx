@@ -121,6 +121,9 @@ import { RealTimeSlideStreamer } from './RealTimeSlideStreamer';
 import { useAgentPresentationGenerator, LanguageGenerationState } from '@/hooks/useAgentPresentationGenerator';
 import { LanguageModelConfig } from '@/services/agentPresentationGeneratorService';
 import { AGENT_CATALOG, AGENT_TYPES } from './AgentArchitecture';
+import { TokenBalanceHeader } from './components/TokenBalanceHeader';
+import { TokenUsageDashboard } from './components/TokenUsageDashboard';
+import { AutoTranslateInput } from './components/AutoTranslateInput';
 import { 
   COLLATERAL_TYPES,
   INDUSTRY_CATEGORIES,
@@ -1156,7 +1159,7 @@ export function PresentationWizard({
     <div className={cn("flex h-full", className)}>
       {/* Left Panel - Wizard Steps */}
       <div className="w-[480px] min-w-[440px] flex-shrink-0 flex flex-col border-r bg-background">
-        {/* Compact Progress Header */}
+        {/* Compact Progress Header with Token Balance */}
         <div className="px-5 py-3 border-b bg-muted/30">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-3">
@@ -1165,12 +1168,28 @@ export function PresentationWizard({
                 Step {currentStep + 1}/{WIZARD_STEPS.length}
               </Badge>
             </div>
-            {lastSaved && (
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Clock className="h-3 w-3" />
-                {lastSaved.toLocaleTimeString()}
-              </div>
-            )}
+            <div className="flex items-center gap-2">
+              {/* Token Balance & Usage Dashboard */}
+              <TokenBalanceHeader 
+                estimatedCost={calculateCredits({
+                  outputType: outputSettings.outputType,
+                  slideCount: outputSettings.slideCount,
+                  includeVoiceover: outputSettings.includeVoiceover,
+                  includeMusic: outputSettings.includeMusic,
+                  resolution: outputSettings.resolution as '720p' | '1080p' | '4k',
+                  languageCount: selectedLanguages.length,
+                })}
+                isGenerating={isGenerating}
+                creditsUsed={creditsUsedThisSession}
+              />
+              <TokenUsageDashboard />
+              {lastSaved && (
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Clock className="h-3 w-3" />
+                  {lastSaved.toLocaleTimeString()}
+                </div>
+              )}
+            </div>
           </div>
           <Progress value={progressPercent} className="h-1.5" />
         </div>
@@ -1234,24 +1253,46 @@ export function PresentationWizard({
 
                     <TabsContent value="prompt" className="mt-3 space-y-2">
                       <p className="text-xs text-muted-foreground">Describe your presentation topic and the AI will generate content for you.</p>
-                      <Textarea
-                        placeholder="Example: Create a presentation about renewable energy trends in 2024, focusing on solar and wind power adoption rates..."
-                        value={inputContent}
-                        onChange={(e) => setInputContent(e.target.value)}
-                        rows={6}
-                        className="resize-none text-sm bg-background text-foreground placeholder:text-muted-foreground border-input"
-                      />
+                      {inputLanguage !== primaryLanguage ? (
+                        <AutoTranslateInput
+                          value={inputContent}
+                          onChange={setInputContent}
+                          inputLanguage={inputLanguage}
+                          outputLanguage={primaryLanguage}
+                          placeholder="Example: Create a presentation about renewable energy trends in 2024, focusing on solar and wind power adoption rates..."
+                          minHeight={140}
+                        />
+                      ) : (
+                        <Textarea
+                          placeholder="Example: Create a presentation about renewable energy trends in 2024, focusing on solar and wind power adoption rates..."
+                          value={inputContent}
+                          onChange={(e) => setInputContent(e.target.value)}
+                          rows={6}
+                          className="resize-none text-sm bg-background text-foreground placeholder:text-muted-foreground border-input"
+                        />
+                      )}
                     </TabsContent>
 
                     <TabsContent value="text" className="mt-3 space-y-2">
                       <p className="text-xs text-muted-foreground">Paste existing content like notes, articles, or outlines to transform into slides.</p>
-                      <Textarea
-                        placeholder="Paste your text content here. The AI will analyze and structure it into presentation slides..."
-                        value={inputContent}
-                        onChange={(e) => setInputContent(e.target.value)}
-                        rows={8}
-                        className="resize-none text-sm bg-background text-foreground placeholder:text-muted-foreground border-input"
-                      />
+                      {inputLanguage !== primaryLanguage ? (
+                        <AutoTranslateInput
+                          value={inputContent}
+                          onChange={setInputContent}
+                          inputLanguage={inputLanguage}
+                          outputLanguage={primaryLanguage}
+                          placeholder="Paste your text content here. The AI will analyze and structure it into presentation slides..."
+                          minHeight={180}
+                        />
+                      ) : (
+                        <Textarea
+                          placeholder="Paste your text content here. The AI will analyze and structure it into presentation slides..."
+                          value={inputContent}
+                          onChange={(e) => setInputContent(e.target.value)}
+                          rows={8}
+                          className="resize-none text-sm bg-background text-foreground placeholder:text-muted-foreground border-input"
+                        />
+                      )}
                     </TabsContent>
 
                     <TabsContent value="document" className="mt-3 space-y-2">
@@ -1463,10 +1504,10 @@ export function PresentationWizard({
                       </div>
                     )}
 
-                    {/* Multi-language hint - configure in Step 3 */}
+                    {/* Multi-language hint - configure in Step 4 (Agents & Languages) */}
                     <div className="flex items-center gap-2 p-2 rounded-lg border bg-muted/30 text-xs text-muted-foreground">
                       <Languages className="h-3 w-3 flex-shrink-0" />
-                      <span>Need multiple output languages? Configure in <strong>Step 3: Languages</strong></span>
+                      <span>Need multiple output languages? Configure in <strong>Step 4: Agents & Languages</strong></span>
                     </div>
                   </div>
                 </CardContent>
