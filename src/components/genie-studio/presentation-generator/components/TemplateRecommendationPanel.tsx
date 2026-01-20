@@ -42,6 +42,18 @@ import {
   RefreshCw,
   Database,
   ChevronRight,
+  // Additional icons for expanded template styles
+  Palette,
+  Film,
+  LayoutDashboard,
+  Megaphone,
+  Users,
+  Crown,
+  FileText,
+  ArrowRightLeft,
+  MousePointerClick,
+  Box,
+  Video,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -63,16 +75,43 @@ import {
 import useTemplateLibrary from '@/hooks/useTemplateLibrary';
 import { CreateTemplateDialog } from './CreateTemplateDialog';
 
-// Style icons mapping
+// Style icons mapping - all template styles
 const STYLE_ICONS: Record<TemplateStyle, React.ElementType> = {
+  // Consulting & Strategy
   'pure-consulting': Briefcase,
   'consulting-hybrid': Layers,
+  'strategy-planning': Target,
+  'growth-portfolio': TrendingUp,
+  // Industry
   'industry-focused': Target,
+  'healthcare-clinical': HeartPulse,
+  'pharma-biotech': Factory,
+  'tech-innovation': Cpu,
+  'finance-investment': Building2,
+  // Creative
   'creative-narrative': Lightbulb,
+  'visual-immersive': Palette,
+  'motion-graphics': Sparkles,
+  'cinematic': Film,
+  // Data
   'data-analytical': BarChart3,
+  'dashboard-style': LayoutDashboard,
+  'research-academic': GraduationCap,
+  // Communication
   'educational': GraduationCap,
   'investor-pitch': TrendingUp,
+  'sales-enablement': Megaphone,
+  'internal-comms': Users,
+  'executive-summary': Crown,
+  // Narrative
   'storytelling': BookOpen,
+  'case-study': FileText,
+  'before-after': ArrowRightLeft,
+  // Interactive
+  'interactive-web': MousePointerClick,
+  '3d-immersive': Box,
+  'video-hybrid': Video,
+  // Adaptive
   'mixed-adaptive': Sparkles,
 };
 

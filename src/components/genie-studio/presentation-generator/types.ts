@@ -54,6 +54,105 @@ export type CollateralType =
   | 'case-study'        // Case studies
   | 'whitepaper';       // White papers
 
+// ==========================================
+// OUTPUT TYPES - Visual Output Formats
+// ==========================================
+
+export type OutputType = 
+  | '2d-static'         // Standard 2D slides (PNG/SVG)
+  | '2d-animated'       // 2D with CSS/Framer animations
+  | '3d-scene'          // 3D rendered scenes (Three.js)
+  | '3d-animated'       // 3D with physics/animations
+  | 'video-intro'       // Video introduction clips
+  | 'video-full'        // Full video presentations
+  | 'interactive'       // Interactive web components
+  | 'mixed';            // Combination of types
+
+export interface OutputTypeConfig {
+  id: OutputType;
+  name: string;
+  description: string;
+  icon: string;
+  providers: string[];    // Available providers for this type
+  capabilities: string[]; // What it can do
+  tier: 1 | 2 | 3;       // Quality tier
+}
+
+export const OUTPUT_TYPE_CONFIGS: OutputTypeConfig[] = [
+  {
+    id: '2d-static',
+    name: '2D Static Slides',
+    description: 'Standard high-quality slides with images, charts, infographics',
+    icon: 'Image',
+    providers: ['modelslab', 'flux-pro', 'dall-e-3', 'gemini-image', 'stability', 'alibaba-wanx'],
+    capabilities: ['PNG export', 'SVG overlay', 'Print-ready', 'Text rendering'],
+    tier: 1
+  },
+  {
+    id: '2d-animated',
+    name: '2D Animated',
+    description: 'Slides with CSS/Framer Motion animations and transitions',
+    icon: 'Sparkles',
+    providers: ['modelslab', 'flux-pro', 'framer-motion', 'lottie'],
+    capabilities: ['Entry animations', 'Hover effects', 'Scroll triggers', 'Micro-interactions'],
+    tier: 2
+  },
+  {
+    id: '3d-scene',
+    name: '3D Scene',
+    description: 'Three.js rendered 3D scenes and models',
+    icon: 'Box',
+    providers: ['modelslab-3d', 'three-js', 'replicate-3d'],
+    capabilities: ['3D models', 'Scene composition', 'Lighting', 'Camera angles'],
+    tier: 2
+  },
+  {
+    id: '3d-animated',
+    name: '3D Animated',
+    description: 'Full 3D animations with physics and particle effects',
+    icon: 'Orbit',
+    providers: ['modelslab-3d', 'three-js', 'replicate-3d'],
+    capabilities: ['Physics simulation', 'Particle effects', '3D transitions', 'Flow animations'],
+    tier: 3
+  },
+  {
+    id: 'video-intro',
+    name: 'Video Intro',
+    description: 'Short 5-10s video intros and outros',
+    icon: 'Video',
+    providers: ['modelslab-video', 'replicate-video', 'runway', 'pika-labs', 'alibaba-video'],
+    capabilities: ['Motion graphics', 'Logo reveals', 'Cinematic effects', 'AI-generated scenes'],
+    tier: 2
+  },
+  {
+    id: 'video-full',
+    name: 'Full Video',
+    description: 'Complete video presentations with voiceover',
+    icon: 'Film',
+    providers: ['modelslab-video', 'replicate-video', 'elevenlabs-tts', 'azure-tts'],
+    capabilities: ['Full narration', 'Scene transitions', 'Background music', 'Multi-language'],
+    tier: 3
+  },
+  {
+    id: 'interactive',
+    name: 'Interactive',
+    description: 'Web-based interactive presentations with user controls',
+    icon: 'MousePointerClick',
+    providers: ['react-components', 'three-js', 'framer-motion'],
+    capabilities: ['Clickable elements', 'Form inputs', 'Data visualization', 'Real-time updates'],
+    tier: 3
+  },
+  {
+    id: 'mixed',
+    name: 'Mixed Output',
+    description: 'Combination of static, animated, and video elements',
+    icon: 'Layers',
+    providers: ['all'],
+    capabilities: ['Per-slide customization', 'Best-of-breed selection', 'Adaptive quality'],
+    tier: 1
+  }
+];
+
 // Image source options
 export type ImageSourceType = 
   | 'ai-generated'      // Full AI generation

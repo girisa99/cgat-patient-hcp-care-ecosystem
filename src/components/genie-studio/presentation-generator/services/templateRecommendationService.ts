@@ -9,15 +9,83 @@
 // ==========================================
 
 export type TemplateStyle = 
+  // Consulting & Strategy
   | 'pure-consulting'      // McKinsey, BCG, Bain frameworks only
   | 'consulting-hybrid'    // Consulting frameworks + industry visuals
+  | 'strategy-planning'    // Strategic planning focused
+  | 'growth-portfolio'     // Growth & portfolio management
+  // Industry & Vertical
   | 'industry-focused'     // Industry-specific templates
+  | 'healthcare-clinical'  // Medical/clinical presentations
+  | 'pharma-biotech'       // Pharmaceutical/biotech focus
+  | 'tech-innovation'      // Technology & innovation
+  | 'finance-investment'   // Financial services
+  // Creative & Visual
   | 'creative-narrative'   // Story-driven, visual-heavy
+  | 'visual-immersive'     // Heavy imagery, minimal text
+  | 'motion-graphics'      // Animation-focused
+  | 'cinematic'            // Film/video style
+  // Data & Analytics
   | 'data-analytical'      // Charts, graphs, data viz focused
+  | 'dashboard-style'      // Dashboard/metrics focused
+  | 'research-academic'    // Research paper style
+  // Communication Types
   | 'educational'          // Training, learning materials
   | 'investor-pitch'       // VC/Investor focused
+  | 'sales-enablement'     // Sales decks
+  | 'internal-comms'       // Internal communications
+  | 'executive-summary'    // C-suite briefings
+  // Narrative
   | 'storytelling'         // Narrative arc focused
+  | 'case-study'           // Case study format
+  | 'before-after'         // Transformation stories
+  // Interactive & Modern
+  | 'interactive-web'      // Web-based interactive
+  | '3d-immersive'         // 3D/spatial presentations
+  | 'video-hybrid'         // Video + slides
+  // Adaptive
   | 'mixed-adaptive';      // AI-selected blend
+
+// Template style metadata for UI
+export interface TemplateStyleConfig {
+  id: TemplateStyle;
+  name: string;
+  description: string;
+  category: 'consulting' | 'industry' | 'creative' | 'data' | 'communication' | 'narrative' | 'interactive';
+  icon: string;
+  outputTypes: string[]; // Compatible output types
+}
+
+export const TEMPLATE_STYLE_CONFIGS: TemplateStyleConfig[] = [
+  { id: 'pure-consulting', name: 'Pure Consulting', description: 'Strategic frameworks, minimal visuals', category: 'consulting', icon: 'Briefcase', outputTypes: ['2d-static', '2d-animated'] },
+  { id: 'consulting-hybrid', name: 'Consulting Hybrid', description: 'Frameworks + industry visuals', category: 'consulting', icon: 'Layers', outputTypes: ['2d-static', '2d-animated'] },
+  { id: 'strategy-planning', name: 'Strategic Planning', description: 'Long-term strategy focus', category: 'consulting', icon: 'Target', outputTypes: ['2d-static', '2d-animated', 'interactive'] },
+  { id: 'growth-portfolio', name: 'Growth & Portfolio', description: 'Growth matrices, portfolio analysis', category: 'consulting', icon: 'TrendingUp', outputTypes: ['2d-static', '2d-animated'] },
+  { id: 'industry-focused', name: 'Industry Focused', description: 'Sector-specific templates', category: 'industry', icon: 'Building2', outputTypes: ['2d-static', '2d-animated', 'video-intro'] },
+  { id: 'healthcare-clinical', name: 'Healthcare/Clinical', description: 'Medical & clinical style', category: 'industry', icon: 'Heart', outputTypes: ['2d-static', '3d-scene', 'video-intro'] },
+  { id: 'pharma-biotech', name: 'Pharma/Biotech', description: 'Scientific & regulatory', category: 'industry', icon: 'FlaskConical', outputTypes: ['2d-static', '3d-animated', 'video-full'] },
+  { id: 'tech-innovation', name: 'Tech/Innovation', description: 'Modern tech aesthetics', category: 'industry', icon: 'Cpu', outputTypes: ['2d-animated', '3d-scene', 'interactive', 'video-intro'] },
+  { id: 'finance-investment', name: 'Finance/Investment', description: 'Financial services style', category: 'industry', icon: 'DollarSign', outputTypes: ['2d-static', '2d-animated', 'interactive'] },
+  { id: 'creative-narrative', name: 'Creative Narrative', description: 'Story-driven, visual-heavy', category: 'creative', icon: 'Palette', outputTypes: ['2d-animated', '3d-animated', 'video-full'] },
+  { id: 'visual-immersive', name: 'Visual Immersive', description: 'Full-bleed imagery', category: 'creative', icon: 'Image', outputTypes: ['2d-static', '2d-animated', 'video-intro'] },
+  { id: 'motion-graphics', name: 'Motion Graphics', description: 'Animation-focused', category: 'creative', icon: 'Sparkles', outputTypes: ['2d-animated', '3d-animated', 'video-full'] },
+  { id: 'cinematic', name: 'Cinematic', description: 'Film/video aesthetic', category: 'creative', icon: 'Film', outputTypes: ['video-intro', 'video-full', '3d-animated'] },
+  { id: 'data-analytical', name: 'Data Analytical', description: 'Charts, graphs, data viz', category: 'data', icon: 'BarChart3', outputTypes: ['2d-static', '2d-animated', 'interactive'] },
+  { id: 'dashboard-style', name: 'Dashboard Style', description: 'Metrics & KPIs focused', category: 'data', icon: 'LayoutDashboard', outputTypes: ['2d-static', 'interactive'] },
+  { id: 'research-academic', name: 'Research/Academic', description: 'Academic paper style', category: 'data', icon: 'GraduationCap', outputTypes: ['2d-static'] },
+  { id: 'educational', name: 'Educational', description: 'Training & learning', category: 'communication', icon: 'BookOpen', outputTypes: ['2d-static', '2d-animated', 'video-full', 'interactive'] },
+  { id: 'investor-pitch', name: 'Investor Pitch', description: 'VC/Investor focused', category: 'communication', icon: 'Rocket', outputTypes: ['2d-static', '2d-animated', 'video-intro'] },
+  { id: 'sales-enablement', name: 'Sales Enablement', description: 'Sales team decks', category: 'communication', icon: 'Megaphone', outputTypes: ['2d-static', '2d-animated', 'interactive'] },
+  { id: 'internal-comms', name: 'Internal Comms', description: 'Internal updates', category: 'communication', icon: 'Users', outputTypes: ['2d-static', '2d-animated'] },
+  { id: 'executive-summary', name: 'Executive Summary', description: 'C-suite briefings', category: 'communication', icon: 'Crown', outputTypes: ['2d-static'] },
+  { id: 'storytelling', name: 'Storytelling', description: 'Narrative arc', category: 'narrative', icon: 'BookMarked', outputTypes: ['2d-animated', 'video-full', '3d-animated'] },
+  { id: 'case-study', name: 'Case Study', description: 'Problem-solution format', category: 'narrative', icon: 'FileText', outputTypes: ['2d-static', '2d-animated', 'video-intro'] },
+  { id: 'before-after', name: 'Before/After', description: 'Transformation stories', category: 'narrative', icon: 'ArrowRightLeft', outputTypes: ['2d-static', '2d-animated', 'video-intro'] },
+  { id: 'interactive-web', name: 'Interactive Web', description: 'Web-based interactive', category: 'interactive', icon: 'MousePointerClick', outputTypes: ['interactive', '2d-animated'] },
+  { id: '3d-immersive', name: '3D Immersive', description: '3D/spatial presentations', category: 'interactive', icon: 'Box', outputTypes: ['3d-scene', '3d-animated', 'interactive'] },
+  { id: 'video-hybrid', name: 'Video Hybrid', description: 'Video + slides combined', category: 'interactive', icon: 'Video', outputTypes: ['video-intro', 'video-full', '2d-animated'] },
+  { id: 'mixed-adaptive', name: 'AI Mixed', description: 'AI-selected best blend', category: 'interactive', icon: 'Wand2', outputTypes: ['mixed'] }
+];
 
 export interface TemplateRecommendation {
   style: TemplateStyle;
@@ -806,12 +874,31 @@ function formatStyleLabel(style: TemplateStyle): string {
   const labels: Record<TemplateStyle, string> = {
     'pure-consulting': 'Pure Consulting',
     'consulting-hybrid': 'Consulting + Industry',
+    'strategy-planning': 'Strategic Planning',
+    'growth-portfolio': 'Growth & Portfolio',
     'industry-focused': 'Industry Specific',
+    'healthcare-clinical': 'Healthcare/Clinical',
+    'pharma-biotech': 'Pharma/Biotech',
+    'tech-innovation': 'Tech/Innovation',
+    'finance-investment': 'Finance/Investment',
     'creative-narrative': 'Creative & Visual',
+    'visual-immersive': 'Visual Immersive',
+    'motion-graphics': 'Motion Graphics',
+    'cinematic': 'Cinematic',
     'data-analytical': 'Data & Analytics',
+    'dashboard-style': 'Dashboard Style',
+    'research-academic': 'Research/Academic',
     'educational': 'Training & Education',
     'investor-pitch': 'Investor Pitch',
+    'sales-enablement': 'Sales Enablement',
+    'internal-comms': 'Internal Comms',
+    'executive-summary': 'Executive Summary',
     'storytelling': 'Storytelling',
+    'case-study': 'Case Study',
+    'before-after': 'Before/After',
+    'interactive-web': 'Interactive Web',
+    '3d-immersive': '3D Immersive',
+    'video-hybrid': 'Video Hybrid',
     'mixed-adaptive': 'AI Adaptive'
   };
   return labels[style] || style;
@@ -821,12 +908,31 @@ function getStyleDescription(style: TemplateStyle): string {
   const descriptions: Record<TemplateStyle, string> = {
     'pure-consulting': 'McKinsey, BCG, Bain frameworks',
     'consulting-hybrid': 'Frameworks + industry visuals',
+    'strategy-planning': 'Long-term strategic planning',
+    'growth-portfolio': 'Growth matrices & portfolios',
     'industry-focused': 'Tailored to your sector',
+    'healthcare-clinical': 'Medical & clinical style',
+    'pharma-biotech': 'Scientific & regulatory',
+    'tech-innovation': 'Modern tech aesthetics',
+    'finance-investment': 'Financial services style',
     'creative-narrative': 'Story-driven, visual-heavy',
+    'visual-immersive': 'Full-bleed imagery, minimal text',
+    'motion-graphics': 'Animation-focused layouts',
+    'cinematic': 'Film/video production style',
     'data-analytical': 'Charts, graphs, metrics',
+    'dashboard-style': 'KPIs & dashboard layouts',
+    'research-academic': 'Academic paper format',
     'educational': 'Learning-optimized layouts',
     'investor-pitch': 'VC-ready with traction metrics',
+    'sales-enablement': 'Sales team-ready decks',
+    'internal-comms': 'Internal communication style',
+    'executive-summary': 'C-suite executive briefings',
     'storytelling': 'Narrative arc, engaging flow',
+    'case-study': 'Problem-solution-results format',
+    'before-after': 'Transformation story format',
+    'interactive-web': 'Web-based interactivity',
+    '3d-immersive': '3D spatial presentations',
+    'video-hybrid': 'Video + slides combined',
     'mixed-adaptive': 'AI selects optimal blend'
   };
   return descriptions[style] || '';
