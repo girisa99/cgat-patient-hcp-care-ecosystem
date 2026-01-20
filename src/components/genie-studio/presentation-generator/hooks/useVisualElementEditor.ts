@@ -145,7 +145,7 @@ export function useVisualElementEditor(options: UseVisualElementEditorOptions = 
       updateElement(elementId, { isEnhancing: true });
     }
 
-    const dismiss = showLoading('Enhancing visual element...');
+    showInfo('Enhancing visual element...');
 
     try {
       if (options.onEnhanceRequest) {
@@ -169,10 +169,8 @@ export function useVisualElementEditor(options: UseVisualElementEditorOptions = 
       updateElement(elementId, { isEnhancing: false });
       showError('Failed to enhance visual');
       throw error;
-    } finally {
-      dismiss();
     }
-  }, [elements, updateElement, options, showLoading, showSuccess, showError]);
+  }, [elements, updateElement, options, showInfo, showSuccess, showError]);
 
   // Revert to original
   const revertElement = useCallback((elementId: string) => {
@@ -194,7 +192,7 @@ export function useVisualElementEditor(options: UseVisualElementEditorOptions = 
     const element = elements.get(elementId);
     if (!element) return null;
 
-    const dismiss = showLoading(`Exporting as ${format.toUpperCase()}...`);
+    showInfo(`Exporting as ${format.toUpperCase()}...`);
 
     try {
       // Create a canvas or SVG based on format
@@ -204,10 +202,8 @@ export function useVisualElementEditor(options: UseVisualElementEditorOptions = 
     } catch (error) {
       showError(`Failed to export as ${format.toUpperCase()}`);
       throw error;
-    } finally {
-      dismiss();
     }
-  }, [elements, showLoading, showSuccess, showError]);
+  }, [elements, showInfo, showSuccess, showError]);
 
   // Get element by ID
   const getElement = useCallback((elementId: string) => {
