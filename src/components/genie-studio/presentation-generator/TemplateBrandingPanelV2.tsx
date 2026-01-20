@@ -262,14 +262,15 @@ export function TemplateBrandingPanelV2({
       description: template.description,
       thumbnail: template.preview,
       category: categoryMap[template.category] || 'business',
-      isPremium: false,
-      slides: [],
+      slideLayouts: [],
       theme: {
         id: template.id,
         name: template.name,
-        colors: { ...template.colors, background: '#ffffff', foreground: '#1a1a1a', muted: '#f5f5f5', card: '#ffffff', border: '#e5e5e5', text: '#1a1a1a' },
-        fonts: { heading: { family: 'Inter', weight: '600', size: '2rem' }, body: { family: 'Inter', weight: '400', size: '1rem' } },
+        colors: { ...template.colors, background: '#ffffff', foreground: '#1a1a1a', muted: '#f5f5f5', card: '#ffffff', cardForeground: '#1a1a1a', border: '#e5e5e5' },
+        fonts: { heading: { family: 'Inter', weight: 600, size: '2rem' }, body: { family: 'Inter', weight: 400, size: '1rem' }, accent: { family: 'Inter', weight: 500, size: '1.25rem' } },
         spacing: 'normal',
+        borderRadius: 'medium',
+        shadows: true,
       },
     };
     
