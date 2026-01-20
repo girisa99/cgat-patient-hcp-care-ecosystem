@@ -443,30 +443,71 @@ export interface ConsultingFramework {
 // Generic consulting frameworks - NO TRADEMARKED NAMES
 // Using descriptive names that represent the methodology, not specific firms
 export const CONSULTING_FRAMEWORKS: ConsultingFramework[] = [
-  // Tier 1 Strategy Frameworks (Similar to top consulting firm methodologies)
+  // ==========================================
+  // STRATEGY FRAMEWORKS
+  // ==========================================
   { id: 'org-7-elements', name: '7-Element Alignment Model', firm: 'tier1-strategy', frameworks: ['Organizational Alignment', 'MECE Principle', 'Pyramid Structure'], tags: ['organization', 'alignment', 'strategy'], useCase: ['strategic', 'business'], visualStyle: 'minimal' },
   { id: 'three-horizons', name: 'Three Horizons Growth Model', firm: 'tier1-strategy', frameworks: ['Horizon Planning', 'Growth Strategy'], tags: ['growth', 'innovation', 'planning'], useCase: ['strategic', 'investor'], visualStyle: 'balanced' },
   { id: 'change-influence', name: 'Change Influence Framework', firm: 'tier1-strategy', frameworks: ['Change Management', 'Leadership Alignment'], tags: ['change', 'transformation'], useCase: ['training', 'business'], visualStyle: 'minimal' },
+  { id: 'strategic-choice-cascade', name: 'Strategic Choice Cascade', firm: 'tier1-strategy', frameworks: ['Winning Aspirations', 'Where to Play', 'How to Win'], tags: ['strategy', 'choices', 'competitive'], useCase: ['strategic'], visualStyle: 'minimal' },
+  { id: 'vision-mission-values', name: 'Vision-Mission-Values Framework', firm: 'tier1-strategy', frameworks: ['Vision Statement', 'Mission', 'Core Values', 'Strategic Objectives'], tags: ['corporate', 'culture', 'identity'], useCase: ['strategic', 'business'], visualStyle: 'minimal' },
+  { id: 'scenario-planning', name: 'Scenario Planning Matrix', firm: 'tier1-strategy', frameworks: ['Future Scenarios', 'Risk Assessment', 'Strategic Options'], tags: ['planning', 'risk', 'futures'], useCase: ['strategic', 'research'], visualStyle: 'balanced' },
   
-  // Tier 1 Growth Frameworks
-  { id: 'growth-share-matrix', name: 'Growth-Share Portfolio Matrix', firm: 'tier1-growth', frameworks: ['Portfolio Analysis', 'Experience Curve', 'Market Share'], tags: ['portfolio', 'growth', 'investment'], useCase: ['strategic', 'investor'], visualStyle: 'data-heavy' },
-  { id: 'competitive-advantage', name: 'Competitive Advantage Matrix', firm: 'tier1-growth', frameworks: ['Competitive Position', 'Market Dynamics'], tags: ['competition', 'strategy'], useCase: ['strategic'], visualStyle: 'balanced' },
-  { id: 'digital-maturity', name: 'Digital Maturity Index', firm: 'tier1-growth', frameworks: ['Digital Transformation', 'Technology Adoption'], tags: ['digital', 'technology'], useCase: ['technical', 'business'], visualStyle: 'data-heavy' },
-  
-  // Tier 1 Operations Frameworks
-  { id: 'loyalty-promoter', name: 'Customer Loyalty & Promoter System', firm: 'tier1-operations', frameworks: ['Customer Loyalty', 'Results Delivery', 'NPS Methodology'], tags: ['customer', 'loyalty', 'metrics'], useCase: ['marketing', 'business'], visualStyle: 'data-heavy' },
-  { id: 'strategy-diamond', name: 'Strategic Choice Diamond', firm: 'tier1-operations', frameworks: ['Strategic Choices', 'Execution Planning'], tags: ['strategy', 'execution'], useCase: ['strategic'], visualStyle: 'minimal' },
-  
-  // Universal/Generic Frameworks
+  // ==========================================
+  // BUSINESS ANALYSIS FRAMEWORKS
+  // ==========================================
   { id: 'five-forces', name: 'Five Forces Industry Analysis', firm: 'universal', frameworks: ['Industry Analysis', 'Competitive Dynamics', 'Market Structure'], tags: ['competition', 'industry', 'analysis'], useCase: ['strategic', 'research'], visualStyle: 'balanced' },
   { id: 'swot-analysis', name: 'SWOT Strategic Analysis', firm: 'universal', frameworks: ['SWOT', 'Strategic Planning'], tags: ['analysis', 'planning'], useCase: ['strategic', 'proposal'], visualStyle: 'minimal' },
   { id: 'pestle-macro', name: 'PESTLE Macro Analysis', firm: 'universal', frameworks: ['PESTLE', 'External Environment'], tags: ['environment', 'external'], useCase: ['strategic', 'research'], visualStyle: 'balanced' },
   { id: 'value-chain', name: 'Value Chain Analysis', firm: 'universal', frameworks: ['Value Chain', 'Operations Mapping'], tags: ['operations', 'value'], useCase: ['operational', 'strategic'], visualStyle: 'data-heavy' },
-  { id: 'balanced-scorecard', name: 'Balanced Scorecard KPIs', firm: 'universal', frameworks: ['KPIs', 'Performance Management'], tags: ['performance', 'metrics'], useCase: ['business', 'operational'], visualStyle: 'data-heavy' },
-  { id: 'growth-matrix', name: 'Market-Product Growth Matrix', firm: 'universal', frameworks: ['Growth Strategy', 'Market Expansion'], tags: ['growth', 'market'], useCase: ['strategic', 'investor'], visualStyle: 'minimal' },
-  { id: 'blue-ocean', name: 'Blue Ocean Value Innovation', firm: 'universal', frameworks: ['Value Innovation', 'Strategy Canvas'], tags: ['innovation', 'differentiation'], useCase: ['strategic', 'creative'], visualStyle: 'balanced' },
-  { id: 'okr-framework', name: 'OKR Goal Framework', firm: 'universal', frameworks: ['Objectives', 'Key Results', 'Alignment'], tags: ['goals', 'performance'], useCase: ['business', 'operational'], visualStyle: 'minimal' },
-  { id: 'business-model-canvas', name: 'Business Model Canvas', firm: 'universal', frameworks: ['Value Proposition', 'Revenue Model', 'Customer Segments'], tags: ['business-model', 'startup'], useCase: ['investor', 'strategic'], visualStyle: 'balanced' },
+  { id: 'root-cause-analysis', name: 'Root Cause Analysis (5 Whys)', firm: 'universal', frameworks: ['Problem Analysis', 'Fishbone Diagram', 'Issue Tree'], tags: ['problem-solving', 'analysis'], useCase: ['operational', 'business'], visualStyle: 'balanced' },
+  { id: 'gap-analysis', name: 'Gap Analysis Framework', firm: 'universal', frameworks: ['Current State', 'Future State', 'Gap Identification', 'Action Plan'], tags: ['analysis', 'improvement'], useCase: ['strategic', 'operational'], visualStyle: 'balanced' },
+  { id: 'stakeholder-mapping', name: 'Stakeholder Analysis & Mapping', firm: 'universal', frameworks: ['Power/Interest Grid', 'Stakeholder Engagement', 'Influence Mapping'], tags: ['stakeholders', 'governance'], useCase: ['business', 'proposal'], visualStyle: 'data-heavy' },
+  { id: 'competitive-benchmarking', name: 'Competitive Benchmarking', firm: 'universal', frameworks: ['Competitor Profiles', 'Feature Comparison', 'Market Positioning'], tags: ['competition', 'benchmarking'], useCase: ['strategic', 'research'], visualStyle: 'data-heavy' },
+  
+  // ==========================================
+  // GROWTH & PORTFOLIO FRAMEWORKS
+  // ==========================================
+  { id: 'growth-share-matrix', name: 'Growth-Share Portfolio Matrix', firm: 'tier1-growth', frameworks: ['Portfolio Analysis', 'Experience Curve', 'Market Share'], tags: ['portfolio', 'growth', 'investment'], useCase: ['strategic', 'investor'], visualStyle: 'data-heavy' },
+  { id: 'competitive-advantage', name: 'Competitive Advantage Matrix', firm: 'tier1-growth', frameworks: ['Competitive Position', 'Market Dynamics'], tags: ['competition', 'strategy'], useCase: ['strategic'], visualStyle: 'balanced' },
+  { id: 'digital-maturity', name: 'Digital Maturity Index', firm: 'tier1-growth', frameworks: ['Digital Transformation', 'Technology Adoption'], tags: ['digital', 'technology'], useCase: ['technical', 'business'], visualStyle: 'data-heavy' },
+  { id: 'growth-matrix', name: 'Market-Product Growth Matrix', firm: 'tier1-growth', frameworks: ['Growth Strategy', 'Market Expansion', 'Product Development'], tags: ['growth', 'market'], useCase: ['strategic', 'investor'], visualStyle: 'minimal' },
+  { id: 'blue-ocean', name: 'Blue Ocean Value Innovation', firm: 'tier1-growth', frameworks: ['Value Innovation', 'Strategy Canvas', 'Four Actions Framework'], tags: ['innovation', 'differentiation'], useCase: ['strategic', 'creative'], visualStyle: 'balanced' },
+  { id: 'market-entry', name: 'Market Entry Strategy', firm: 'tier1-growth', frameworks: ['Market Assessment', 'Entry Mode', 'Go-to-Market Plan'], tags: ['expansion', 'market', 'growth'], useCase: ['strategic', 'investor'], visualStyle: 'balanced' },
+  { id: 'product-lifecycle', name: 'Product Lifecycle Management', firm: 'tier1-growth', frameworks: ['Introduction', 'Growth', 'Maturity', 'Decline', 'Extension'], tags: ['product', 'lifecycle'], useCase: ['strategic', 'marketing'], visualStyle: 'balanced' },
+  { id: 'innovation-funnel', name: 'Innovation Funnel & Pipeline', firm: 'tier1-growth', frameworks: ['Ideation', 'Validation', 'Development', 'Launch'], tags: ['innovation', 'r&d'], useCase: ['strategic', 'technical'], visualStyle: 'balanced' },
+  
+  // ==========================================
+  // OPERATIONS FRAMEWORKS
+  // ==========================================
+  { id: 'loyalty-promoter', name: 'Customer Loyalty & Promoter System', firm: 'tier1-operations', frameworks: ['Customer Loyalty', 'Results Delivery', 'NPS Methodology'], tags: ['customer', 'loyalty', 'metrics'], useCase: ['marketing', 'business'], visualStyle: 'data-heavy' },
+  { id: 'strategy-diamond', name: 'Strategic Choice Diamond', firm: 'tier1-operations', frameworks: ['Strategic Choices', 'Execution Planning'], tags: ['strategy', 'execution'], useCase: ['strategic'], visualStyle: 'minimal' },
+  { id: 'balanced-scorecard', name: 'Balanced Scorecard KPIs', firm: 'tier1-operations', frameworks: ['KPIs', 'Performance Management', 'Four Perspectives'], tags: ['performance', 'metrics'], useCase: ['business', 'operational'], visualStyle: 'data-heavy' },
+  { id: 'okr-framework', name: 'OKR Goal Framework', firm: 'tier1-operations', frameworks: ['Objectives', 'Key Results', 'Alignment'], tags: ['goals', 'performance'], useCase: ['business', 'operational'], visualStyle: 'minimal' },
+  { id: 'lean-six-sigma', name: 'Lean Six Sigma DMAIC', firm: 'tier1-operations', frameworks: ['Define', 'Measure', 'Analyze', 'Improve', 'Control'], tags: ['process', 'improvement', 'quality'], useCase: ['operational'], visualStyle: 'balanced' },
+  { id: 'raci-matrix', name: 'RACI Responsibility Matrix', firm: 'tier1-operations', frameworks: ['Responsible', 'Accountable', 'Consulted', 'Informed'], tags: ['governance', 'roles', 'process'], useCase: ['operational', 'business'], visualStyle: 'data-heavy' },
+  { id: 'process-mapping', name: 'Business Process Mapping', firm: 'tier1-operations', frameworks: ['Current State', 'Process Flow', 'Optimization', 'Future State'], tags: ['process', 'workflow'], useCase: ['operational'], visualStyle: 'balanced' },
+  { id: 'capacity-planning', name: 'Capacity & Resource Planning', firm: 'tier1-operations', frameworks: ['Demand Forecasting', 'Resource Allocation', 'Gap Analysis'], tags: ['capacity', 'resources', 'planning'], useCase: ['operational', 'strategic'], visualStyle: 'data-heavy' },
+  
+  // ==========================================
+  // TRANSFORMATION FRAMEWORKS
+  // ==========================================
+  { id: 'change-management-8step', name: '8-Step Change Model', firm: 'tier1-strategy', frameworks: ['Create Urgency', 'Build Coalition', 'Vision', 'Communicate', 'Empower', 'Quick Wins', 'Consolidate', 'Anchor'], tags: ['change', 'transformation', 'leadership'], useCase: ['training', 'business'], visualStyle: 'balanced' },
+  { id: 'organizational-design', name: 'Organizational Design Framework', firm: 'tier1-operations', frameworks: ['Structure', 'Governance', 'Capabilities', 'Culture'], tags: ['organization', 'design', 'structure'], useCase: ['strategic', 'business'], visualStyle: 'balanced' },
+  { id: 'digital-transformation', name: 'Digital Transformation Roadmap', firm: 'tier1-strategy', frameworks: ['Digital Vision', 'Technology Stack', 'Change Management', 'Value Realization'], tags: ['digital', 'transformation', 'technology'], useCase: ['strategic', 'technical'], visualStyle: 'balanced' },
+  { id: 'culture-change', name: 'Culture Change Framework', firm: 'tier1-operations', frameworks: ['Values Audit', 'Behavior Change', 'Leadership Modeling', 'Reinforcement'], tags: ['culture', 'change', 'hr'], useCase: ['training', 'business'], visualStyle: 'minimal' },
+  { id: 'turnaround-restructuring', name: 'Turnaround & Restructuring', firm: 'tier1-strategy', frameworks: ['Financial Stabilization', 'Operational Improvement', 'Strategic Repositioning'], tags: ['turnaround', 'crisis', 'restructuring'], useCase: ['strategic', 'investor'], visualStyle: 'data-heavy' },
+  { id: 'ma-integration', name: 'M&A Integration Playbook', firm: 'tier1-strategy', frameworks: ['Due Diligence', 'Day 1 Readiness', 'Synergy Capture', 'Integration Management'], tags: ['m&a', 'integration', 'merger'], useCase: ['strategic', 'investor'], visualStyle: 'balanced' },
+  
+  // ==========================================
+  // UNIVERSAL / CUSTOM FRAMEWORKS
+  // ==========================================
+  { id: 'business-model-canvas', name: 'Business Model Canvas', firm: 'universal', frameworks: ['Value Proposition', 'Revenue Model', 'Customer Segments', 'Channels', 'Key Activities'], tags: ['business-model', 'startup'], useCase: ['investor', 'strategic'], visualStyle: 'balanced' },
+  { id: 'lean-canvas', name: 'Lean Canvas (Startup)', firm: 'universal', frameworks: ['Problem', 'Solution', 'Key Metrics', 'Unfair Advantage', 'Channels'], tags: ['startup', 'lean', 'mvp'], useCase: ['investor', 'strategic'], visualStyle: 'minimal' },
+  { id: 'customer-journey', name: 'Customer Journey Mapping', firm: 'universal', frameworks: ['Awareness', 'Consideration', 'Purchase', 'Retention', 'Advocacy'], tags: ['customer', 'experience', 'journey'], useCase: ['marketing', 'business'], visualStyle: 'balanced' },
+  { id: 'design-thinking', name: 'Design Thinking Process', firm: 'universal', frameworks: ['Empathize', 'Define', 'Ideate', 'Prototype', 'Test'], tags: ['innovation', 'design', 'ux'], useCase: ['creative', 'technical'], visualStyle: 'balanced' },
+  { id: 'agile-scrum', name: 'Agile/Scrum Framework', firm: 'universal', frameworks: ['Sprints', 'User Stories', 'Backlog', 'Retrospectives'], tags: ['agile', 'development', 'project'], useCase: ['technical', 'operational'], visualStyle: 'minimal' },
+  { id: 'risk-assessment', name: 'Risk Assessment Matrix', firm: 'universal', frameworks: ['Risk Identification', 'Impact Analysis', 'Probability', 'Mitigation'], tags: ['risk', 'governance', 'compliance'], useCase: ['strategic', 'operational'], visualStyle: 'data-heavy' },
 ];
 
 // ==========================================
