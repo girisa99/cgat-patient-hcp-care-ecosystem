@@ -1,70 +1,31 @@
 /**
  * Enhanced Agent & Language Configuration Panel
  * Provides full agent architecture selection with provider configuration and multi-language generation
- * REFACTORED: Removed nested Card structures for cleaner UI
+ * REFACTORED: Uses clean dropdown components for better UI/UX
  */
 
 import React, { useState, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import {
   Brain,
-  Bot,
-  Network,
   Languages,
-  Mic2,
-  Image as ImageIcon,
   Sparkles,
-  BarChart3,
-  Cpu,
-  Settings2,
-  ChevronDown,
-  ChevronRight,
-  Check,
-  Zap,
-  Plus,
   Globe,
   Volume2,
-  CircleDot,
-  Users,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { AGENT_CATALOG, AGENT_TYPES, ARCHITECTURE_TYPE_INFO, AgentArchitectureType } from './AgentArchitecture';
-import { 
-  AgentModelConfig, 
-  AI_MODEL_OPTIONS, 
-  IMAGE_MODEL_OPTIONS, 
-  VOICE_MODEL_OPTIONS,
-  AgentSelectorDialog 
-} from './AgentSelectorDialog';
+import { AGENT_CATALOG, ARCHITECTURE_TYPE_INFO, AgentArchitectureType } from './AgentArchitecture';
+import { AgentModelConfig, AgentSelectorDialog } from './AgentSelectorDialog';
 import { SUPPORTED_LANGUAGES } from './MultiLanguageGenerator';
+import { AgentArchitectureDropdown } from './components/AgentArchitectureDropdown';
+import { VoiceProviderDropdown } from './components/VoiceProviderDropdown';
+import { LanguageMultiSelectDropdown } from './components/LanguageMultiSelectDropdown';
 
-// Provider categories
-const PROVIDER_CATEGORIES = {
-  text: [
-    { id: 'gemini', name: 'Google Gemini', icon: '🔮', color: 'bg-blue-500/10 text-blue-600' },
-    { id: 'openai', name: 'OpenAI', icon: '🤖', color: 'bg-green-500/10 text-green-600' },
-    { id: 'claude', name: 'Anthropic Claude', icon: '🧠', color: 'bg-purple-500/10 text-purple-600' },
-    { id: 'deepseek', name: 'DeepSeek', icon: '🔍', color: 'bg-orange-500/10 text-orange-600' },
-  ],
-  image: [
-    { id: 'gemini', name: 'Gemini Image', icon: '🎨', color: 'bg-blue-500/10 text-blue-600' },
-    { id: 'dalle', name: 'DALL-E', icon: '🖼️', color: 'bg-green-500/10 text-green-600' },
-    { id: 'flux', name: 'Flux', icon: '⚡', color: 'bg-purple-500/10 text-purple-600' },
-    { id: 'modelslab', name: 'ModelsLab', icon: '🔬', color: 'bg-orange-500/10 text-orange-600' },
-  ],
+// Provider categories (kept for backward compatibility)
   voice: [
     { id: 'elevenlabs', name: 'ElevenLabs', icon: '🎙️', color: 'bg-pink-500/10 text-pink-600' },
     { id: 'openai', name: 'OpenAI TTS', icon: '🔊', color: 'bg-green-500/10 text-green-600' },
