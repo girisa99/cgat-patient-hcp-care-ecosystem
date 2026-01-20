@@ -820,7 +820,58 @@ export function PresentationWizard({
       contentEnhancements: allEnhancements,
       languages: generateMultipleLanguages ? [primaryLanguage, ...selectedLanguages.filter(l => l !== primaryLanguage)] : [primaryLanguage],
       primaryLanguage,
+      
+      // ========== NEW: Complete Workflow Context ==========
+      workflowContext: {
+        industryCategory: workflowConfig?.industryCategory || '',
+        segment: workflowConfig?.segment || '',
+        contentCategory,
+        selectedContentTypes,
+        aiModels: workflowConfig?.aiModels,
+        isAIAutoMode: isAutoSelectModels,
+        aiRecommendation: workflowConfig?.aiRecommendation,
+      },
+      
+      templateContext: {
+        selectedTemplateId: selectedTemplate?.id,
+        selectedThemeId: selectedTheme?.id,
+        brandConfig: brandConfig as any,
+        // These will come from TemplateBrandingPanelV2 state
+        // TODO: Add selectedFrameworkCategories, selectedFrameworkIds, visualFeatures
+      },
+      
+      agentContext: {
+        architectureType: useAgenticGeneration ? 'agentic' : 'single',
+        selectedAgentIds: selectedAgents,
+        agentModelConfigs: agentModelConfigs as any,
+        languageVoiceConfigs: languageModelConfigs.map(c => ({
+          languageCode: c.languageCode,
+          voiceProvider: (c as any).provider || (c as any).voiceProvider || '',
+          voiceId: c.voiceId,
+        })),
+      },
+      
+      // Output configuration
+      outputConfig: {
+        outputType: outputSettings.outputType,
+        structureMode: outputSettings.structureMode,
+        slideCount: outputSettings.slideCount,
+        chapterCount: outputSettings.chapterCount || 3,
+        slidesPerChapter: outputSettings.slidesPerChapter || 5,
+        includeVoiceover: outputSettings.includeVoiceover,
+        includeMusic: outputSettings.includeMusic,
+        animationIntensity: 50,
+        resolution: outputSettings.resolution as '720p' | '1080p' | '4k',
+        aspectRatio: outputSettings.aspectRatio as '16:9' | '4:3' | '9:16' | '1:1',
+      },
     } as PresentationRequest;
+
+    console.log('[Generation] Complete request context:', {
+      workflowContext: request.workflowContext,
+      templateContext: request.templateContext,
+      agentContext: request.agentContext,
+      outputConfig: request.outputConfig,
+    });
 
     // Simulate progress phases
     const progressTimer = setInterval(() => {

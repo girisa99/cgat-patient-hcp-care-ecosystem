@@ -134,7 +134,7 @@ export interface PresentationRequest {
   agenda?: string[];
   targetAudience?: string;
   
-  // ========== NEW: Output Configuration ==========
+  // ========== Output Configuration ==========
   outputConfig?: OutputConfig;           // Visual output type & structure
   visualConfig?: VisualConfig;           // Rendering strategy
   contentFittingConfig?: ContentFittingConfig; // Content overflow prevention
@@ -171,6 +171,74 @@ export interface PresentationRequest {
   languages?: string[]; // Array of language codes for simultaneous generation
   primaryLanguage?: string; // Source/primary language
   generateVoiceoversForAll?: boolean; // Generate TTS for all languages
+  
+  // ========== NEW: Complete Workflow Context ==========
+  workflowContext?: {
+    // Step 1: Industry & Segment context
+    industryCategory?: string;
+    segment?: string;
+    contentCategory?: string;
+    selectedContentTypes?: string[]; // Multi-select content types
+    
+    // AI Model configuration
+    aiModels?: {
+      textModel?: string;
+      imageModel?: string;
+      voiceModel?: string;
+      translationModel?: string;
+      videoModel?: string;
+    };
+    
+    // Mode: AI Auto vs Custom
+    isAIAutoMode?: boolean;
+    aiRecommendation?: {
+      textModel: string;
+      imageModel: string;
+      voiceModel: string;
+      translationModel: string;
+      reason: string;
+      confidence: number;
+    };
+  };
+  
+  // Step 2: Template & Branding context
+  templateContext?: {
+    selectedTemplateId?: string;
+    selectedThemeId?: string;
+    brandConfig?: {
+      logo?: { url: string; position: string; size: string };
+      colors?: { primary: string; secondary: string; accent: string };
+      typography?: { headingFont: string; bodyFont: string };
+    };
+    
+    // Framework selections (multi-select)
+    selectedFrameworkCategories?: string[];
+    selectedFrameworkIds?: string[];
+    
+    // Visual Features with sub-options (multi-select)
+    visualFeatures?: Array<{
+      featureId: string;
+      subOptions: string[];
+    }>;
+  };
+  
+  // Step 3-4: Output & Agent context
+  agentContext?: {
+    architectureType?: 'single' | 'agentic' | 'a2a';
+    selectedAgentIds?: string[];
+    agentModelConfigs?: Array<{
+      agentId: string;
+      textModel: string;
+      imageModel?: string;
+    }>;
+    
+    // Per-language voice provider configuration
+    languageVoiceConfigs?: Array<{
+      languageCode: string;
+      voiceProvider: string;
+      voiceId?: string;
+    }>;
+  };
 }
 
 export interface GeneratedSlide {
