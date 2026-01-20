@@ -5,7 +5,7 @@
  * Enhanced with visual element editing and multi-format export
  */
 
-export type SlideType = 'title' | 'content' | 'section' | 'infographic' | 'journey' | 'stats' | 'conclusion' | 'cta' | 'table' | 'chart' | 'comparison' | 'timeline';
+export type SlideType = 'title' | 'content' | 'section' | 'infographic' | 'journey' | 'stats' | 'conclusion' | 'cta' | 'table' | 'chart' | 'comparison' | 'timeline' | 'video-intro' | 'video-scene' | 'video-outro' | '3d-scene' | '3d-model' | '3d-animated' | 'interactive' | 'chapter-cover';
 export type ContentType = 'bullets' | 'paragraphs' | 'stats' | 'journey' | 'comparison' | 'timeline' | 'quote' | 'table' | 'chart' | 'rich-text';
 export type SlideEnhancementType = 
   | 'rewrite'       // Improve clarity
@@ -152,6 +152,327 @@ export const OUTPUT_TYPE_CONFIGS: OutputTypeConfig[] = [
     tier: 1
   }
 ];
+
+// ==========================================
+// OUTPUT-TYPE-AWARE SLIDE TEMPLATES
+// ==========================================
+
+/**
+ * Slide/Chapter templates that adapt based on OutputType
+ * Each output type has specific slide types it can generate
+ */
+export interface OutputSlideTemplate {
+  id: string;
+  name: string;
+  description: string;
+  outputType: OutputType;
+  slideTypes: SlideType[];           // Available slide types for this output
+  defaultStructure: SlideStructure[]; // Default chapter/slide structure
+  capabilities: string[];
+  providers: string[];
+  renderSettings: OutputRenderSettings;
+}
+
+export interface SlideStructure {
+  type: SlideType;
+  role: 'opener' | 'content' | 'transition' | 'closer' | 'chapter';
+  order: number;
+  isRequired: boolean;
+  duration?: number;                  // For video outputs (seconds)
+  animationType?: AnimationType;      // For animated outputs
+  interactiveType?: InteractiveType;  // For interactive outputs
+  threeD?: ThreeDConfig;              // For 3D outputs
+}
+
+export type AnimationType = 
+  | 'fade-in'
+  | 'slide-in'
+  | 'zoom'
+  | 'bounce'
+  | 'morph'
+  | 'parallax'
+  | 'particle'
+  | 'kinetic-typography';
+
+export type InteractiveType =
+  | 'click-reveal'
+  | 'hover-expand'
+  | 'drag-explore'
+  | 'scroll-trigger'
+  | 'form-input'
+  | 'quiz'
+  | 'timeline-scrub'
+  | 'data-filter';
+
+export interface ThreeDConfig {
+  sceneType: '3d-static' | '3d-animated' | '3d-interactive';
+  cameraPath?: 'orbit' | 'flythrough' | 'fixed' | 'user-controlled';
+  lighting?: 'studio' | 'natural' | 'dramatic' | 'neon';
+  physics?: boolean;
+  particleEffects?: boolean;
+}
+
+export interface OutputRenderSettings {
+  resolution: { width: number; height: number };
+  format: string;
+  quality: 'draft' | 'standard' | 'high' | 'ultra';
+  fps?: number;                       // For video/animated
+  duration?: number;                  // For video
+  loop?: boolean;                     // For video/animated
+  audioEnabled?: boolean;             // For video
+}
+
+// Output-specific slide templates
+export const OUTPUT_SLIDE_TEMPLATES: OutputSlideTemplate[] = [
+  // 2D Static Templates
+  {
+    id: '2d-static-standard',
+    name: 'Standard Presentation',
+    description: 'Classic slide deck with images, charts, and infographics',
+    outputType: '2d-static',
+    slideTypes: ['title', 'content', 'section', 'infographic', 'journey', 'stats', 'conclusion', 'cta', 'table', 'chart', 'comparison', 'timeline', 'chapter-cover'],
+    defaultStructure: [
+      { type: 'title', role: 'opener', order: 1, isRequired: true },
+      { type: 'section', role: 'chapter', order: 2, isRequired: false },
+      { type: 'content', role: 'content', order: 3, isRequired: true },
+      { type: 'stats', role: 'content', order: 4, isRequired: false },
+      { type: 'infographic', role: 'content', order: 5, isRequired: false },
+      { type: 'journey', role: 'content', order: 6, isRequired: false },
+      { type: 'conclusion', role: 'closer', order: 7, isRequired: true },
+      { type: 'cta', role: 'closer', order: 8, isRequired: false },
+    ],
+    capabilities: ['PNG export', 'SVG overlay', 'Print-ready', 'PDF export', 'PPTX export'],
+    providers: ['modelslab', 'flux-pro', 'dall-e-3', 'gemini-image', 'stability'],
+    renderSettings: {
+      resolution: { width: 1920, height: 1080 },
+      format: 'png',
+      quality: 'high'
+    }
+  },
+  
+  // 2D Animated Templates
+  {
+    id: '2d-animated-motion',
+    name: 'Motion Graphics Deck',
+    description: 'Animated slides with entry effects and transitions',
+    outputType: '2d-animated',
+    slideTypes: ['title', 'content', 'section', 'infographic', 'journey', 'stats', 'conclusion', 'cta', 'chapter-cover'],
+    defaultStructure: [
+      { type: 'title', role: 'opener', order: 1, isRequired: true, animationType: 'kinetic-typography' },
+      { type: 'section', role: 'chapter', order: 2, isRequired: false, animationType: 'morph' },
+      { type: 'content', role: 'content', order: 3, isRequired: true, animationType: 'fade-in' },
+      { type: 'stats', role: 'content', order: 4, isRequired: false, animationType: 'bounce' },
+      { type: 'infographic', role: 'content', order: 5, isRequired: false, animationType: 'parallax' },
+      { type: 'conclusion', role: 'closer', order: 6, isRequired: true, animationType: 'zoom' },
+    ],
+    capabilities: ['Entry animations', 'Hover effects', 'Scroll triggers', 'Micro-interactions', 'Lottie export'],
+    providers: ['modelslab', 'flux-pro', 'framer-motion', 'lottie'],
+    renderSettings: {
+      resolution: { width: 1920, height: 1080 },
+      format: 'html',
+      quality: 'high',
+      fps: 60
+    }
+  },
+  
+  // 3D Scene Templates
+  {
+    id: '3d-scene-showcase',
+    name: '3D Scene Showcase',
+    description: 'Three.js rendered 3D scenes with camera controls',
+    outputType: '3d-scene',
+    slideTypes: ['title', '3d-scene', '3d-model', 'section', 'content', 'conclusion', 'chapter-cover'],
+    defaultStructure: [
+      { type: 'title', role: 'opener', order: 1, isRequired: true, threeD: { sceneType: '3d-static', cameraPath: 'fixed', lighting: 'studio' } },
+      { type: '3d-scene', role: 'content', order: 2, isRequired: true, threeD: { sceneType: '3d-static', cameraPath: 'orbit', lighting: 'natural' } },
+      { type: '3d-model', role: 'content', order: 3, isRequired: false, threeD: { sceneType: '3d-static', cameraPath: 'user-controlled', lighting: 'studio' } },
+      { type: 'section', role: 'chapter', order: 4, isRequired: false },
+      { type: 'conclusion', role: 'closer', order: 5, isRequired: true },
+    ],
+    capabilities: ['3D models', 'Scene composition', 'Lighting', 'Camera angles', 'WebGL export'],
+    providers: ['modelslab-3d', 'three-js', 'replicate-3d'],
+    renderSettings: {
+      resolution: { width: 1920, height: 1080 },
+      format: 'webgl',
+      quality: 'high',
+      fps: 60
+    }
+  },
+  
+  // 3D Animated Templates
+  {
+    id: '3d-animated-cinematic',
+    name: '3D Cinematic Animation',
+    description: 'Full 3D animations with physics and particle effects',
+    outputType: '3d-animated',
+    slideTypes: ['title', '3d-scene', '3d-model', '3d-animated', 'section', 'conclusion', 'chapter-cover'],
+    defaultStructure: [
+      { type: 'title', role: 'opener', order: 1, isRequired: true, threeD: { sceneType: '3d-animated', cameraPath: 'flythrough', lighting: 'dramatic', particleEffects: true } },
+      { type: '3d-animated', role: 'content', order: 2, isRequired: true, threeD: { sceneType: '3d-animated', cameraPath: 'orbit', lighting: 'natural', physics: true } },
+      { type: '3d-scene', role: 'content', order: 3, isRequired: false, threeD: { sceneType: '3d-animated', cameraPath: 'flythrough', lighting: 'neon' } },
+      { type: 'section', role: 'chapter', order: 4, isRequired: false },
+      { type: 'conclusion', role: 'closer', order: 5, isRequired: true, threeD: { sceneType: '3d-animated', cameraPath: 'orbit', lighting: 'dramatic' } },
+    ],
+    capabilities: ['Physics simulation', 'Particle effects', '3D transitions', 'Flow animations', 'GLTF export'],
+    providers: ['modelslab-3d', 'three-js', 'replicate-3d'],
+    renderSettings: {
+      resolution: { width: 1920, height: 1080 },
+      format: 'webgl',
+      quality: 'ultra',
+      fps: 60,
+      loop: true
+    }
+  },
+  
+  // Video Intro Templates
+  {
+    id: 'video-intro-short',
+    name: 'Video Intro',
+    description: 'Short 5-10s video intros and outros',
+    outputType: 'video-intro',
+    slideTypes: ['video-intro', 'title', 'video-outro', 'chapter-cover'],
+    defaultStructure: [
+      { type: 'video-intro', role: 'opener', order: 1, isRequired: true, duration: 5 },
+      { type: 'title', role: 'content', order: 2, isRequired: true, duration: 3 },
+      { type: 'video-outro', role: 'closer', order: 3, isRequired: false, duration: 2 },
+    ],
+    capabilities: ['Motion graphics', 'Logo reveals', 'Cinematic effects', 'AI-generated scenes'],
+    providers: ['modelslab-video', 'replicate-video', 'runway', 'pika-labs'],
+    renderSettings: {
+      resolution: { width: 1920, height: 1080 },
+      format: 'mp4',
+      quality: 'high',
+      fps: 30,
+      duration: 10,
+      audioEnabled: true
+    }
+  },
+  
+  // Full Video Templates
+  {
+    id: 'video-full-presentation',
+    name: 'Full Video Presentation',
+    description: 'Complete video with voiceover, music, and transitions',
+    outputType: 'video-full',
+    slideTypes: ['video-intro', 'video-scene', 'title', 'content', 'stats', 'infographic', 'journey', 'conclusion', 'video-outro', 'chapter-cover'],
+    defaultStructure: [
+      { type: 'video-intro', role: 'opener', order: 1, isRequired: true, duration: 5 },
+      { type: 'title', role: 'opener', order: 2, isRequired: true, duration: 8 },
+      { type: 'chapter-cover', role: 'chapter', order: 3, isRequired: false, duration: 3 },
+      { type: 'video-scene', role: 'content', order: 4, isRequired: true, duration: 15 },
+      { type: 'content', role: 'content', order: 5, isRequired: true, duration: 20 },
+      { type: 'stats', role: 'content', order: 6, isRequired: false, duration: 10 },
+      { type: 'infographic', role: 'content', order: 7, isRequired: false, duration: 12 },
+      { type: 'journey', role: 'content', order: 8, isRequired: false, duration: 15 },
+      { type: 'conclusion', role: 'closer', order: 9, isRequired: true, duration: 10 },
+      { type: 'video-outro', role: 'closer', order: 10, isRequired: false, duration: 5 },
+    ],
+    capabilities: ['Full narration', 'Scene transitions', 'Background music', 'Multi-language', 'Voice cloning'],
+    providers: ['modelslab-video', 'replicate-video', 'elevenlabs-tts', 'azure-tts'],
+    renderSettings: {
+      resolution: { width: 1920, height: 1080 },
+      format: 'mp4',
+      quality: 'high',
+      fps: 30,
+      duration: 120,
+      audioEnabled: true
+    }
+  },
+  
+  // Interactive Templates
+  {
+    id: 'interactive-web',
+    name: 'Interactive Web Presentation',
+    description: 'Web-based interactive presentations with user controls',
+    outputType: 'interactive',
+    slideTypes: ['title', 'interactive', 'content', 'section', 'stats', 'infographic', 'journey', 'conclusion', 'cta', 'chapter-cover'],
+    defaultStructure: [
+      { type: 'title', role: 'opener', order: 1, isRequired: true, interactiveType: 'click-reveal' },
+      { type: 'section', role: 'chapter', order: 2, isRequired: false, interactiveType: 'scroll-trigger' },
+      { type: 'interactive', role: 'content', order: 3, isRequired: true, interactiveType: 'drag-explore' },
+      { type: 'content', role: 'content', order: 4, isRequired: true, interactiveType: 'hover-expand' },
+      { type: 'stats', role: 'content', order: 5, isRequired: false, interactiveType: 'data-filter' },
+      { type: 'journey', role: 'content', order: 6, isRequired: false, interactiveType: 'timeline-scrub' },
+      { type: 'conclusion', role: 'closer', order: 7, isRequired: true, interactiveType: 'click-reveal' },
+      { type: 'cta', role: 'closer', order: 8, isRequired: false, interactiveType: 'form-input' },
+    ],
+    capabilities: ['Clickable elements', 'Form inputs', 'Data visualization', 'Real-time updates', 'Quiz integration'],
+    providers: ['react-components', 'three-js', 'framer-motion'],
+    renderSettings: {
+      resolution: { width: 1920, height: 1080 },
+      format: 'html',
+      quality: 'high'
+    }
+  },
+  
+  // Mixed Output Templates
+  {
+    id: 'mixed-adaptive',
+    name: 'Adaptive Mixed Output',
+    description: 'Combination of static, animated, and video elements',
+    outputType: 'mixed',
+    slideTypes: ['title', 'content', 'section', 'infographic', 'journey', 'stats', 'video-scene', '3d-scene', 'interactive', 'conclusion', 'cta', 'chapter-cover'],
+    defaultStructure: [
+      { type: 'video-intro', role: 'opener', order: 1, isRequired: false, duration: 5 },
+      { type: 'title', role: 'opener', order: 2, isRequired: true },
+      { type: 'chapter-cover', role: 'chapter', order: 3, isRequired: false },
+      { type: 'content', role: 'content', order: 4, isRequired: true },
+      { type: '3d-scene', role: 'content', order: 5, isRequired: false, threeD: { sceneType: '3d-static', cameraPath: 'orbit', lighting: 'studio' } },
+      { type: 'interactive', role: 'content', order: 6, isRequired: false, interactiveType: 'hover-expand' },
+      { type: 'video-scene', role: 'content', order: 7, isRequired: false, duration: 15 },
+      { type: 'stats', role: 'content', order: 8, isRequired: false, animationType: 'bounce' },
+      { type: 'conclusion', role: 'closer', order: 9, isRequired: true },
+    ],
+    capabilities: ['Per-slide customization', 'Best-of-breed selection', 'Adaptive quality', 'Multi-format export'],
+    providers: ['all'],
+    renderSettings: {
+      resolution: { width: 1920, height: 1080 },
+      format: 'mixed',
+      quality: 'high'
+    }
+  }
+];
+
+/**
+ * Get template for a specific output type
+ */
+export function getOutputSlideTemplate(outputType: OutputType): OutputSlideTemplate {
+  return OUTPUT_SLIDE_TEMPLATES.find(t => t.outputType === outputType) || OUTPUT_SLIDE_TEMPLATES[0];
+}
+
+/**
+ * Get available slide types for an output type
+ */
+export function getAvailableSlideTypes(outputType: OutputType): SlideType[] {
+  const template = getOutputSlideTemplate(outputType);
+  return template.slideTypes;
+}
+
+/**
+ * Get default slide structure for an output type
+ */
+export function getDefaultSlideStructure(outputType: OutputType, slideCount: number): SlideStructure[] {
+  const template = getOutputSlideTemplate(outputType);
+  const structure = [...template.defaultStructure];
+  
+  // Adjust structure based on requested slide count
+  const requiredSlides = structure.filter(s => s.isRequired);
+  const optionalSlides = structure.filter(s => !s.isRequired);
+  
+  // If we need more slides, duplicate content slides
+  while (structure.length < slideCount && optionalSlides.length > 0) {
+    const contentSlides = optionalSlides.filter(s => s.role === 'content');
+    if (contentSlides.length > 0) {
+      const toAdd = contentSlides[structure.length % contentSlides.length];
+      structure.splice(structure.length - 2, 0, { ...toAdd, order: structure.length });
+    } else {
+      break;
+    }
+  }
+  
+  // Re-number orders
+  return structure.slice(0, slideCount).map((s, i) => ({ ...s, order: i + 1 }));
+}
 
 // Image source options
 export type ImageSourceType = 
@@ -441,6 +762,73 @@ export interface PresentationSlide {
   segment?: string;
   importance?: 'high' | 'medium' | 'low';
   imagePrompt?: string;
+  
+  // Output-type-specific properties
+  outputType?: OutputType;
+  
+  // Animation (2D animated / 3D animated)
+  animation?: {
+    type: AnimationType;
+    duration?: number;
+    delay?: number;
+    easing?: string;
+  };
+  
+  // 3D scene configuration
+  threeD?: {
+    config: ThreeDConfig;
+    modelUrl?: string;
+    sceneData?: Record<string, any>;
+    cameraPosition?: { x: number; y: number; z: number };
+  };
+  
+  // Video scene configuration
+  video?: {
+    sceneUrl?: string;
+    duration: number;
+    transitions?: { in: string; out: string };
+    voiceover?: {
+      scriptText: string;
+      audioUrl?: string;
+      provider: string;
+      voiceId: string;
+    };
+    backgroundMusic?: {
+      trackUrl?: string;
+      volume: number;
+    };
+  };
+  
+  // Interactive configuration
+  interactive?: {
+    type: InteractiveType;
+    actions: InteractiveAction[];
+    dataBindings?: DataBinding[];
+  };
+  
+  // Chapter/section grouping
+  chapter?: {
+    chapterId: string;
+    chapterTitle: string;
+    chapterNumber: number;
+  };
+}
+
+// Interactive action definition
+export interface InteractiveAction {
+  id: string;
+  trigger: 'click' | 'hover' | 'scroll' | 'load' | 'timer';
+  action: 'reveal' | 'navigate' | 'animate' | 'filter' | 'submit' | 'play';
+  targetElementId?: string;
+  config?: Record<string, any>;
+}
+
+// Data binding for interactive elements
+export interface DataBinding {
+  elementId: string;
+  dataSource: string;
+  dataField: string;
+  transformFn?: string;
 }
 
 export interface SlideContentData {
@@ -599,23 +987,60 @@ export interface PresentationData {
   template?: PresentationTemplate;
   theme?: PresentationTheme;
   
+  // Output type configuration
+  outputType: OutputType;
+  outputTemplate?: OutputSlideTemplate;
+  renderSettings?: OutputRenderSettings;
+  
+  // Chapter structure (for organized output)
+  chapters?: PresentationChapter[];
+  
   // Source info
   sourceType: 'document' | 'image' | 'text' | 'prompt' | 'url';
   sourceContent?: string;
   
   // Generation settings
   length: 'short' | 'standard' | 'long';
-  outputFormat: 'pptx' | 'social' | 'infographic' | 'whitepaper' | 'journey-map';
+  outputFormat: 'pptx' | 'social' | 'infographic' | 'whitepaper' | 'journey-map' | 'video' | 'interactive' | '3d';
   imageStyle?: string;
   imageModel?: string;
   
   // Export settings
   preferredExportFormats?: ExportFormat[];
   
+  // Video-specific settings
+  voiceover?: {
+    enabled: boolean;
+    provider: string;
+    voiceId: string;
+    language: string;
+  };
+  backgroundMusic?: {
+    enabled: boolean;
+    trackId?: string;
+    volume: number;
+  };
+  
   // Stats
   imagesGenerated: number;
   slidesAccepted: number;
   slidesSkipped: number;
+  videoDuration?: number;
+  audioGenerated?: boolean;
+}
+
+/**
+ * Chapter structure for organized presentations
+ */
+export interface PresentationChapter {
+  id: string;
+  number: number;
+  title: string;
+  description?: string;
+  slideIds: string[];
+  duration?: number;           // For video output
+  coverSlideId?: string;       // Reference to chapter cover slide
+  theme?: Partial<PresentationTheme>;
 }
 
 export interface SlideEnhancementOptions {
