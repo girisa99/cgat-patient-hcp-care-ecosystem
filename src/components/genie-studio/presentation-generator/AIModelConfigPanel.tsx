@@ -19,7 +19,6 @@ import {
   Sparkles,
   Type,
   Image as ImageIcon,
-  Mic,
   Languages,
   Wand2,
   Check,
@@ -48,13 +47,7 @@ const IMAGE_PROVIDERS = [
   { id: 'stock', name: 'Stock Images', short: 'Stock' },
 ];
 
-const VOICE_PROVIDERS = [
-  { id: 'elevenlabs-multilingual', name: 'ElevenLabs Multilingual', short: 'ElevenLabs' },
-  { id: 'openai-tts-hd', name: 'OpenAI TTS HD', short: 'OpenAI' },
-  { id: 'google-wavenet', name: 'Google WaveNet', short: 'WaveNet' },
-  { id: 'azure-neural', name: 'Azure Neural', short: 'Azure' },
-  { id: 'aws-polly', name: 'AWS Polly', short: 'Polly' },
-];
+// Voice model removed - TTS is configured post-generation in VideoExportPanel
 
 const TRANSLATION_PROVIDERS = [
   { id: 'deepl', name: 'DeepL', short: 'DeepL' },
@@ -99,15 +92,14 @@ export const AIModelConfigPanel: React.FC<AIModelConfigPanelProps> = ({
     else if (hasAsianLangs) text = 'alibaba/qwen-2.5';
     
     let image = contentCategory === 'visual' ? 'modelslab' : 'flux-pro';
-    let voice = hasAsianLangs ? 'google-wavenet' : 'elevenlabs-multilingual';
     let translation = hasAsianLangs ? 'qwen-mt' : 'deepl';
     
     const confidence = Math.min(98, 75 + (industry ? 10 : 0) + (selectedLanguages.length > 0 ? 8 : 0));
     
-    return { text, image, voice, translation, confidence };
+    return { text, image, translation, confidence };
   }, [workflowConfig, selectedLanguages, contentCategory]);
 
-  // Apply auto-select
+  // Apply auto-select (voice removed - configured post-generation)
   useEffect(() => {
     if (isAutoSelect && workflowConfig?.aiRecommendation) {
       setWorkflowConfig({
@@ -116,7 +108,6 @@ export const AIModelConfigPanel: React.FC<AIModelConfigPanelProps> = ({
           ...workflowConfig.aiRecommendation,
           textModel: recommendations.text,
           imageModel: recommendations.image,
-          voiceModel: recommendations.voice,
           translationModel: recommendations.translation,
           confidence: recommendations.confidence,
         },
@@ -126,16 +117,15 @@ export const AIModelConfigPanel: React.FC<AIModelConfigPanelProps> = ({
     }
   }, [isAutoSelect, recommendations]);
 
-  // Current selected values
+  // Current selected values (voice removed - configured post-generation)
   const current = useMemo(() => ({
     text: isAutoSelect ? recommendations.text : (workflowConfig?.aiRecommendation?.textModel || 'google/gemini-3-flash-preview'),
     image: isAutoSelect ? recommendations.image : (workflowConfig?.aiRecommendation?.imageModel || 'flux-pro'),
-    voice: isAutoSelect ? recommendations.voice : (workflowConfig?.aiRecommendation?.voiceModel || 'elevenlabs-multilingual'),
     translation: isAutoSelect ? recommendations.translation : (workflowConfig?.aiRecommendation?.translationModel || 'deepl'),
   }), [isAutoSelect, recommendations, workflowConfig]);
 
   // Update handler for manual selection
-  const handleModelChange = (type: 'text' | 'image' | 'voice' | 'translation', value: string) => {
+  const handleModelChange = (type: 'text' | 'image' | 'translation', value: string) => {
     if (isAutoSelect) return; // Prevent changes when auto is on
     
     if (workflowConfig) {
@@ -194,8 +184,8 @@ export const AIModelConfigPanel: React.FC<AIModelConfigPanelProps> = ({
           </div>
         )}
 
-        {/* Model Grid - 2x2 Clean Layout */}
-        <div className="grid grid-cols-2 gap-4">
+        {/* Model Grid - 3 columns (Text, Image, Translation - voice removed) */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {/* Text Model */}
           <div className="space-y-2">
             <div className="flex items-center gap-2">
@@ -254,40 +244,6 @@ export const AIModelConfigPanel: React.FC<AIModelConfigPanelProps> = ({
               </SelectTrigger>
               <SelectContent className="z-50 bg-popover border shadow-lg">
                 {IMAGE_PROVIDERS.map(p => (
-                  <SelectItem key={p.id} value={p.id}>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{p.name}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Voice Model */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Mic className="h-4 w-4 text-primary" />
-              <Label className="text-xs font-medium text-foreground">Voice Model</Label>
-              {isAutoSelect && <Lock className="h-3 w-3 text-muted-foreground" />}
-            </div>
-            <Select 
-              value={current.voice} 
-              onValueChange={(val) => handleModelChange('voice', val)}
-              disabled={isAutoSelect}
-            >
-              <SelectTrigger className={cn(
-                "h-10 bg-background",
-                isAutoSelect && "opacity-60 cursor-not-allowed"
-              )}>
-                <SelectValue>
-                  <span className="truncate">
-                    {VOICE_PROVIDERS.find(p => p.id === current.voice)?.short || current.voice}
-                  </span>
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent className="z-50 bg-popover border shadow-lg">
-                {VOICE_PROVIDERS.map(p => (
                   <SelectItem key={p.id} value={p.id}>
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{p.name}</span>

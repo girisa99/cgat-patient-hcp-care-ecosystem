@@ -19,7 +19,6 @@ import {
   Layers,
   Brain,
   Image as ImageIcon,
-  Mic,
   Settings,
   CheckCircle2,
   Loader2,
@@ -160,7 +159,7 @@ function LanguageStatusCard({
         </div>
       </div>
 
-      {/* Model badges */}
+      {/* Model badges - voice removed, configured post-generation */}
       <div className="flex flex-wrap gap-1.5 mb-2">
         <Badge variant="outline" className="text-[9px] gap-1">
           <Brain className="h-2.5 w-2.5" />
@@ -170,12 +169,6 @@ function LanguageStatusCard({
           <ImageIcon className="h-2.5 w-2.5" />
           {config.imageModel.split('/')[1]?.replace('-', ' ').substring(0, 15)}
         </Badge>
-        {config.voiceModel && (
-          <Badge variant="outline" className="text-[9px] gap-1">
-            <Mic className="h-2.5 w-2.5" />
-            {config.voiceModel}
-          </Badge>
-        )}
       </div>
 
       {/* Progress bar during generation */}
