@@ -1,7 +1,7 @@
 /**
  * ConfigurationPanel - Unified AI vs Custom configuration
- * Combines Industry, Segment, Content Type, and AI Models under single toggle
- * Matches Step 3 TemplateBrandingPanelV2 pattern
+ * AI Auto: User selects context (industry, segment, content), AI models auto-selected
+ * Custom: Full manual control over everything including AI models
  */
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -47,7 +47,7 @@ import {
   SEGMENTS,
   getRecommendedProviders,
 } from './wizardConstants';
-import { CONTENT_CATEGORIES, EXTENDED_COLLATERAL_TYPES, CATEGORY_SUB_OPTIONS } from './ContentTypeSelector';
+import { CONTENT_CATEGORIES, EXTENDED_COLLATERAL_TYPES } from './ContentTypeSelector';
 
 // ==========================================
 // PROVIDER CONFIGURATIONS
@@ -79,6 +79,9 @@ const TRANSLATION_PROVIDERS = [
   { id: 'azure', name: 'Azure Translator', short: 'Azure' },
   { id: 'nllb', name: 'NLLB', short: 'NLLB' },
 ];
+
+// Categories without AI Auto for Custom mode
+const MANUAL_CONTENT_CATEGORIES = CONTENT_CATEGORIES.filter(c => c.id !== 'ai-generated');
 
 // ==========================================
 // PROPS INTERFACE
@@ -117,7 +120,7 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
   selectedContentTypes,
   setSelectedContentTypes,
 }) => {
-  // Mode state - matches Step 3 pattern
+  // Mode state
   const [mode, setMode] = useState<'ai' | 'custom'>(isAutoSelect ? 'ai' : 'custom');
 
   // Sync mode with isAutoSelect prop
@@ -125,133 +128,120 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
     setIsAutoSelect(mode === 'ai');
   }, [mode, setIsAutoSelect]);
 
-  // AI Auto recommendations based on context
-  const aiRecommendation = useMemo(() => {
+  // When switching to custom mode, reset category if it's ai-generated
+  useEffect(() => {
+    if (mode === 'custom' && contentCategory === 'ai-generated') {
+      setContentCategory('business');
+    }
+  }, [mode, contentCategory, setContentCategory]);
+
+  // Get AI model recommendations based on current selections
+  const modelRecommendation = useMemo(() => {
+    const industry = workflowConfig?.industryCategory || '';
+    const segment = workflowConfig?.segment || '';
     const hasAsianLangs = selectedLanguages.some(l => ['zh', 'ja', 'ko', 'th', 'vi'].includes(l));
     
-    // Default recommendations for AI Auto mode
-    const defaultIndustry = 'technology';
-    const defaultSegment = 'saas';
-    const defaultContentType = 'investor-pitch';
-    
     let textModel = 'google/gemini-3-flash-preview';
-    let reasoning = 'Optimized for general content generation with fast turnaround.';
+    let reasoning = 'Gemini 3 Flash - fast and versatile for general content.';
     
-    if (hasAsianLangs) {
+    if (['healthcare', 'pharma', 'legal'].includes(industry)) {
+      textModel = 'claude-3-5-sonnet';
+      reasoning = `Claude 3.5 Sonnet - optimized for ${industry} domain accuracy.`;
+    } else if (['consulting'].includes(industry)) {
+      textModel = 'openai/gpt-5';
+      reasoning = 'GPT-5 - premium quality for strategic consulting content.';
+    } else if (hasAsianLangs) {
       textModel = 'alibaba/qwen-2.5';
-      reasoning = 'Qwen 2.5 selected for superior Asian language support.';
+      reasoning = 'Qwen 2.5 - superior Asian language support.';
     }
     
-    const imageModel = 'flux-pro';
+    const imageModel = contentCategory === 'visual' ? 'modelslab' : 'flux-pro';
     const translationModel = hasAsianLangs ? 'qwen-mt' : 'deepl';
     
-    const confidence = 92;
+    const confidence = Math.min(98, 75 + (industry ? 10 : 0) + (segment ? 5 : 0) + (selectedContentTypes.length > 0 ? 8 : 0));
     
-    return {
-      industry: defaultIndustry,
-      segment: defaultSegment,
-      contentType: defaultContentType,
-      textModel,
-      imageModel,
-      translationModel,
-      reasoning,
-      confidence,
-    };
-  }, [selectedLanguages]);
+    return { textModel, imageModel, translationModel, reasoning, confidence };
+  }, [workflowConfig, selectedLanguages, contentCategory, selectedContentTypes]);
 
-  // Apply AI Auto selection
+  // Auto-apply AI models when in AI Auto mode or when context changes
   useEffect(() => {
     if (mode === 'ai' && workflowConfig) {
-      const rec = getRecommendedProviders(
-        aiRecommendation.industry,
-        aiRecommendation.segment,
-        aiRecommendation.contentType,
-        selectedLanguages
-      );
-      
       setWorkflowConfig({
         ...workflowConfig,
-        industryCategory: aiRecommendation.industry,
-        segment: aiRecommendation.segment,
-        aiRecommendation: rec,
+        aiRecommendation: {
+          ...workflowConfig.aiRecommendation!,
+          textModel: modelRecommendation.textModel,
+          imageModel: modelRecommendation.imageModel,
+          translationModel: modelRecommendation.translationModel,
+          confidence: modelRecommendation.confidence,
+        },
       });
-      
-      setContentCategory('ai-generated');
-      setSelectedContentTypes([aiRecommendation.contentType]);
-      setSelectedAIModel(rec.textModel);
-      setImageModel(rec.imageModel as any);
+      setSelectedAIModel(modelRecommendation.textModel);
+      setImageModel(modelRecommendation.imageModel as any);
     }
-  }, [mode, aiRecommendation]);
+  }, [mode, modelRecommendation.textModel, modelRecommendation.imageModel, modelRecommendation.translationModel]);
 
-  // Handle industry change (custom mode)
+  // Handle industry change
   const handleIndustryChange = (value: string) => {
     if (!workflowConfig) return;
-    const rec = getRecommendedProviders(
-      value,
-      '',
-      workflowConfig?.collateralType?.id || '',
-      selectedLanguages
-    );
+    const rec = getRecommendedProviders(value, '', workflowConfig?.collateralType?.id || '', selectedLanguages);
     setWorkflowConfig({
       ...workflowConfig,
       industryCategory: value,
       segment: '',
-      aiRecommendation: rec,
+      aiRecommendation: mode === 'ai' ? rec : workflowConfig.aiRecommendation,
     });
-    setSelectedAIModel(rec.textModel);
-    setImageModel(rec.imageModel as any);
+    if (mode === 'ai') {
+      setSelectedAIModel(rec.textModel);
+      setImageModel(rec.imageModel as any);
+    }
   };
 
-  // Handle segment change (custom mode)
+  // Handle segment change
   const handleSegmentChange = (value: string) => {
     if (!workflowConfig) return;
-    const rec = getRecommendedProviders(
-      workflowConfig?.industryCategory || '',
-      value,
-      workflowConfig?.collateralType?.id || '',
-      selectedLanguages
-    );
+    const rec = getRecommendedProviders(workflowConfig.industryCategory || '', value, workflowConfig?.collateralType?.id || '', selectedLanguages);
     setWorkflowConfig({
       ...workflowConfig,
       segment: value,
-      aiRecommendation: rec,
+      aiRecommendation: mode === 'ai' ? rec : workflowConfig.aiRecommendation,
     });
-    setSelectedAIModel(rec.textModel);
-    setImageModel(rec.imageModel as any);
+    if (mode === 'ai') {
+      setSelectedAIModel(rec.textModel);
+      setImageModel(rec.imageModel as any);
+    }
   };
 
-  // Handle model change (custom mode)
+  // Handle model change (custom mode only)
   const handleModelChange = (type: 'text' | 'image' | 'translation', value: string) => {
-    if (workflowConfig) {
-      const key = `${type}Model` as keyof typeof workflowConfig.aiRecommendation;
-      setWorkflowConfig({
-        ...workflowConfig,
-        aiRecommendation: { 
-          ...workflowConfig.aiRecommendation!, 
-          [key]: value 
-        }
-      });
-      
-      if (type === 'text') setSelectedAIModel(value);
-      if (type === 'image') setImageModel(value as any);
-    }
+    if (!workflowConfig || mode === 'ai') return;
+    const key = `${type}Model` as keyof typeof workflowConfig.aiRecommendation;
+    setWorkflowConfig({
+      ...workflowConfig,
+      aiRecommendation: { ...workflowConfig.aiRecommendation!, [key]: value }
+    });
+    if (type === 'text') setSelectedAIModel(value);
+    if (type === 'image') setImageModel(value as any);
   };
 
   // Current model values
   const currentModels = useMemo(() => ({
-    text: workflowConfig?.aiRecommendation?.textModel || 'google/gemini-3-flash-preview',
-    image: workflowConfig?.aiRecommendation?.imageModel || 'flux-pro',
-    translation: workflowConfig?.aiRecommendation?.translationModel || 'deepl',
-  }), [workflowConfig]);
+    text: workflowConfig?.aiRecommendation?.textModel || modelRecommendation.textModel,
+    image: workflowConfig?.aiRecommendation?.imageModel || modelRecommendation.imageModel,
+    translation: workflowConfig?.aiRecommendation?.translationModel || modelRecommendation.translationModel,
+  }), [workflowConfig, modelRecommendation]);
 
   // Available segments for selected industry
   const availableSegments = workflowConfig?.industryCategory 
     ? SEGMENTS[workflowConfig.industryCategory] || []
     : [];
 
+  // Categories for current mode
+  const availableCategories = mode === 'ai' ? CONTENT_CATEGORIES : MANUAL_CONTENT_CATEGORIES;
+
   return (
     <div className="space-y-4">
-      {/* Mode Toggle - Matches Step 3 */}
+      {/* Mode Toggle */}
       <Card className="border-primary/20">
         <CardContent className="p-4">
           <div className="flex items-center gap-2">
@@ -279,335 +269,276 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
         </CardContent>
       </Card>
 
-      {/* AI Auto Mode */}
-      {mode === 'ai' && (
-        <Card className="border-primary/20">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Wand2 className="h-4 w-4 text-primary" />
-              AI Auto Configuration
+      {/* Industry & Segment Section - Both Modes */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Building2 className="h-4 w-4 text-primary" />
+            Industry Context
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Industry Dropdown */}
+            <div className="space-y-2">
+              <Label className="text-xs font-medium text-foreground">Industry</Label>
+              <Select value={workflowConfig?.industryCategory || ''} onValueChange={handleIndustryChange}>
+                <SelectTrigger className="h-10 bg-background">
+                  <SelectValue placeholder="Select industry..." />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border shadow-lg z-50">
+                  {INDUSTRY_CATEGORIES.map(industry => (
+                    <SelectItem key={industry.id} value={industry.id}>
+                      <div className="flex items-center gap-2">
+                        <span className="text-primary">{industry.icon}</span>
+                        <span>{industry.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                  <Separator className="my-1" />
+                  <div
+                    className="flex items-center gap-2 px-2 py-1.5 text-sm cursor-pointer hover:bg-accent rounded text-primary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const newIndustry = prompt('Enter new industry name:');
+                      if (newIndustry) toast.success(`Industry "${newIndustry}" noted.`);
+                    }}
+                  >
+                    <span>+</span>
+                    <span>Add New...</span>
+                  </div>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Segment Dropdown */}
+            <div className="space-y-2">
+              <Label className="text-xs font-medium text-foreground">
+                Segment <span className="text-muted-foreground font-normal">(Optional)</span>
+              </Label>
+              <Select
+                value={workflowConfig?.segment || ''}
+                onValueChange={handleSegmentChange}
+                disabled={!workflowConfig?.industryCategory || availableSegments.length === 0}
+              >
+                <SelectTrigger className="h-10 bg-background">
+                  <SelectValue placeholder={workflowConfig?.industryCategory ? "Select segment..." : "Select industry first"} />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border shadow-lg z-50">
+                  {availableSegments.map(segment => (
+                    <SelectItem key={segment.id} value={segment.id}>
+                      <div className="flex flex-col">
+                        <span>{segment.name}</span>
+                        <span className="text-xs text-muted-foreground">{segment.description}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Content Type Section - Both Modes */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <FileText className="h-4 w-4 text-primary" />
+            Content Type
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Category Dropdown */}
+          <div className="space-y-2">
+            <Label className="text-xs font-medium text-foreground">Category</Label>
+            <Select value={contentCategory} onValueChange={setContentCategory}>
+              <SelectTrigger className="h-10 bg-background">
+                <SelectValue placeholder="Select category..." />
+              </SelectTrigger>
+              <SelectContent className="bg-popover border shadow-lg z-50">
+                {availableCategories.map(cat => {
+                  const Icon = cat.icon;
+                  return (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      <div className="flex items-center gap-2">
+                        <Icon className="h-4 w-4 text-primary" />
+                        <span>{cat.label}</span>
+                        {cat.isAI && <Badge variant="secondary" className="text-[10px] ml-1">AI</Badge>}
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Content Types Multi-select */}
+          <div className="space-y-2">
+            <Label className="text-xs font-medium text-foreground">Content Types</Label>
+            <ContentTypeMultiSelect
+              selectedTypes={selectedContentTypes}
+              onTypesChange={setSelectedContentTypes}
+              categoryFilter={contentCategory !== 'ai-generated' ? contentCategory : undefined}
+            />
+          </div>
+
+          {/* Selected badges */}
+          {selectedContentTypes.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {selectedContentTypes.map(typeId => {
+                const ct = EXTENDED_COLLATERAL_TYPES.find(c => c.id === typeId);
+                return ct ? (
+                  <Badge key={typeId} variant="secondary" className="text-xs">
+                    {ct.name}
+                    <button
+                      className="ml-1 hover:text-destructive"
+                      onClick={() => setSelectedContentTypes(selectedContentTypes.filter(t => t !== typeId))}
+                    >
+                      ×
+                    </button>
+                  </Badge>
+                ) : null;
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* AI Models Section */}
+      <Card className={mode === 'ai' ? 'border-primary/20' : ''}>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" />
+            AI Models
+            {mode === 'ai' && (
               <Badge variant="secondary" className="ml-auto text-xs">
-                {aiRecommendation.confidence}% confidence
+                {modelRecommendation.confidence}% match
               </Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* AI Reasoning */}
-            <div className="p-3 rounded-lg bg-muted/50 border">
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* AI Auto Mode - Show recommendation info */}
+          {mode === 'ai' && (
+            <div className="p-3 rounded-lg bg-muted/50 border mb-4">
               <div className="flex items-start gap-2">
                 <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                 <p className="text-sm text-muted-foreground">
-                  {aiRecommendation.reasoning} AI will automatically select optimal industry context, content type, and models based on your prompt and languages.
+                  {modelRecommendation.reasoning} Models auto-selected based on your industry, segment, and content choices.
                 </p>
               </div>
             </div>
+          )}
 
-            {/* AI Selected Context Preview */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
-                <div className="flex items-center gap-2 mb-1">
-                  <Building2 className="h-3 w-3 text-primary" />
-                  <span className="text-[10px] uppercase text-muted-foreground font-medium">Industry</span>
-                </div>
-                <p className="text-xs font-medium text-foreground truncate">
-                  {INDUSTRY_CATEGORIES.find(i => i.id === aiRecommendation.industry)?.name || 'Auto'}
-                </p>
+          {/* Model Grid - Read-only in AI mode, editable in Custom */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* Text Model */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Type className="h-4 w-4 text-primary" />
+                <Label className="text-xs font-medium text-foreground">Text Model</Label>
               </div>
-              <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
-                <div className="flex items-center gap-2 mb-1">
-                  <FileText className="h-3 w-3 text-primary" />
-                  <span className="text-[10px] uppercase text-muted-foreground font-medium">Content</span>
+              {mode === 'ai' ? (
+                <div className="h-10 px-3 flex items-center rounded-md border bg-muted/30 text-sm">
+                  {TEXT_PROVIDERS.find(p => p.id === currentModels.text)?.short || 'Auto'}
                 </div>
-                <p className="text-xs font-medium text-foreground truncate">
-                  {EXTENDED_COLLATERAL_TYPES.find(c => c.id === aiRecommendation.contentType)?.name || 'Auto'}
-                </p>
-              </div>
-              <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
-                <div className="flex items-center gap-2 mb-1">
-                  <Type className="h-3 w-3 text-primary" />
-                  <span className="text-[10px] uppercase text-muted-foreground font-medium">Text</span>
-                </div>
-                <p className="text-xs font-medium text-foreground truncate">
-                  {TEXT_PROVIDERS.find(p => p.id === aiRecommendation.textModel)?.short}
-                </p>
-              </div>
-              <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
-                <div className="flex items-center gap-2 mb-1">
-                  <ImageIcon className="h-3 w-3 text-primary" />
-                  <span className="text-[10px] uppercase text-muted-foreground font-medium">Image</span>
-                </div>
-                <p className="text-xs font-medium text-foreground truncate">
-                  {IMAGE_PROVIDERS.find(p => p.id === aiRecommendation.imageModel)?.short}
-                </p>
-              </div>
-            </div>
-
-            {/* Quick Switch to Custom */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full text-muted-foreground"
-              onClick={() => setMode('custom')}
-            >
-              Want more control? Switch to Custom mode
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Custom Mode */}
-      {mode === 'custom' && (
-        <>
-          {/* Industry & Segment Section */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Building2 className="h-4 w-4 text-primary" />
-                Industry Context
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Industry Dropdown */}
-                <div className="space-y-2">
-                  <Label className="text-xs font-medium text-foreground">Industry</Label>
-                  <Select
-                    value={workflowConfig?.industryCategory || ''}
-                    onValueChange={handleIndustryChange}
-                  >
-                    <SelectTrigger className="h-10 bg-background">
-                      <SelectValue placeholder="Select industry..." />
-                    </SelectTrigger>
-                    <SelectContent className="bg-popover border shadow-lg z-50">
-                      {INDUSTRY_CATEGORIES.map(industry => (
-                        <SelectItem key={industry.id} value={industry.id}>
-                          <div className="flex items-center gap-2">
-                            <span className="text-primary">{industry.icon}</span>
-                            <span>{industry.name}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                      <Separator className="my-1" />
-                      <div
-                        className="flex items-center gap-2 px-2 py-1.5 text-sm cursor-pointer hover:bg-accent rounded text-primary"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const newIndustry = prompt('Enter new industry name:');
-                          if (newIndustry) {
-                            toast.success(`Industry "${newIndustry}" noted. Contact support to add permanently.`);
-                          }
-                        }}
-                      >
-                        <span>+</span>
-                        <span>Add New Industry...</span>
-                      </div>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Segment Dropdown */}
-                <div className="space-y-2">
-                  <Label className="text-xs font-medium text-foreground">
-                    Segment <span className="text-muted-foreground font-normal">(Optional)</span>
-                  </Label>
-                  <Select
-                    value={workflowConfig?.segment || ''}
-                    onValueChange={handleSegmentChange}
-                    disabled={!workflowConfig?.industryCategory || availableSegments.length === 0}
-                  >
-                    <SelectTrigger className="h-10 bg-background">
-                      <SelectValue placeholder={workflowConfig?.industryCategory ? "Select segment..." : "Select industry first"} />
-                    </SelectTrigger>
-                    <SelectContent className="bg-popover border shadow-lg z-50">
-                      {availableSegments.map(segment => (
-                        <SelectItem key={segment.id} value={segment.id}>
-                          <div className="flex flex-col">
-                            <span>{segment.name}</span>
-                            <span className="text-xs text-muted-foreground">{segment.description}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Content Type Section */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <FileText className="h-4 w-4 text-primary" />
-                Content Type
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Category Dropdown */}
-              <div className="space-y-2">
-                <Label className="text-xs font-medium text-foreground">Category</Label>
-                <Select
-                  value={contentCategory}
-                  onValueChange={setContentCategory}
-                >
+              ) : (
+                <Select value={currentModels.text} onValueChange={(val) => handleModelChange('text', val)}>
                   <SelectTrigger className="h-10 bg-background">
-                    <SelectValue placeholder="Select category..." />
+                    <SelectValue>
+                      <span className="truncate">{TEXT_PROVIDERS.find(p => p.id === currentModels.text)?.short}</span>
+                    </SelectValue>
                   </SelectTrigger>
-                  <SelectContent className="bg-popover border shadow-lg z-50">
-                    {CONTENT_CATEGORIES.map(cat => {
-                      const Icon = cat.icon;
-                      return (
-                        <SelectItem key={cat.id} value={cat.id}>
-                          <div className="flex items-center gap-2">
-                            <Icon className="h-4 w-4 text-primary" />
-                            <span>{cat.label}</span>
-                            {cat.isAI && <Badge variant="secondary" className="text-[10px] ml-1">AI</Badge>}
-                          </div>
-                        </SelectItem>
-                      );
-                    })}
+                  <SelectContent className="z-50 bg-popover border shadow-lg">
+                    {TEXT_PROVIDERS.map(p => (
+                      <SelectItem key={p.id} value={p.id}>
+                        <span className="font-medium">{p.name}</span>
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
-              </div>
-
-              {/* Content Types Multi-select */}
-              <div className="space-y-2">
-                <Label className="text-xs font-medium text-foreground">Content Types</Label>
-                <ContentTypeMultiSelect
-                  selectedTypes={selectedContentTypes}
-                  onTypesChange={setSelectedContentTypes}
-                  categoryFilter={contentCategory !== 'ai-generated' ? contentCategory : undefined}
-                />
-              </div>
-
-              {/* Selected badges */}
-              {selectedContentTypes.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {selectedContentTypes.map(typeId => {
-                    const ct = EXTENDED_COLLATERAL_TYPES.find(c => c.id === typeId);
-                    return ct ? (
-                      <Badge key={typeId} variant="secondary" className="text-xs">
-                        {ct.name}
-                        <button
-                          className="ml-1 hover:text-destructive"
-                          onClick={() => setSelectedContentTypes(selectedContentTypes.filter(t => t !== typeId))}
-                        >
-                          ×
-                        </button>
-                      </Badge>
-                    ) : null;
-                  })}
-                </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
 
-          {/* AI Models Section */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-primary" />
-                AI Models
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {/* Text Model */}
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Type className="h-4 w-4 text-primary" />
-                    <Label className="text-xs font-medium text-foreground">Text Model</Label>
-                  </div>
-                  <Select 
-                    value={currentModels.text} 
-                    onValueChange={(val) => handleModelChange('text', val)}
-                  >
-                    <SelectTrigger className="h-10 bg-background">
-                      <SelectValue>
-                        <span className="truncate">
-                          {TEXT_PROVIDERS.find(p => p.id === currentModels.text)?.short}
-                        </span>
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent className="z-50 bg-popover border shadow-lg">
-                      {TEXT_PROVIDERS.map(p => (
-                        <SelectItem key={p.id} value={p.id}>
-                          <span className="font-medium">{p.name}</span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Image Model */}
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <ImageIcon className="h-4 w-4 text-primary" />
-                    <Label className="text-xs font-medium text-foreground">Image Model</Label>
-                  </div>
-                  <Select 
-                    value={currentModels.image} 
-                    onValueChange={(val) => handleModelChange('image', val)}
-                  >
-                    <SelectTrigger className="h-10 bg-background">
-                      <SelectValue>
-                        <span className="truncate">
-                          {IMAGE_PROVIDERS.find(p => p.id === currentModels.image)?.short}
-                        </span>
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent className="z-50 bg-popover border shadow-lg">
-                      {IMAGE_PROVIDERS.map(p => (
-                        <SelectItem key={p.id} value={p.id}>
-                          <span className="font-medium">{p.name}</span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Translation Model */}
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Languages className="h-4 w-4 text-primary" />
-                    <Label className="text-xs font-medium text-foreground">Translation</Label>
-                  </div>
-                  <Select 
-                    value={currentModels.translation} 
-                    onValueChange={(val) => handleModelChange('translation', val)}
-                  >
-                    <SelectTrigger className="h-10 bg-background">
-                      <SelectValue>
-                        <span className="truncate">
-                          {TRANSLATION_PROVIDERS.find(p => p.id === currentModels.translation)?.short}
-                        </span>
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent className="z-50 bg-popover border shadow-lg">
-                      {TRANSLATION_PROVIDERS.map(p => (
-                        <SelectItem key={p.id} value={p.id}>
-                          <span className="font-medium">{p.name}</span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+            {/* Image Model */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <ImageIcon className="h-4 w-4 text-primary" />
+                <Label className="text-xs font-medium text-foreground">Image Model</Label>
               </div>
-            </CardContent>
-          </Card>
+              {mode === 'ai' ? (
+                <div className="h-10 px-3 flex items-center rounded-md border bg-muted/30 text-sm">
+                  {IMAGE_PROVIDERS.find(p => p.id === currentModels.image)?.short || 'Auto'}
+                </div>
+              ) : (
+                <Select value={currentModels.image} onValueChange={(val) => handleModelChange('image', val)}>
+                  <SelectTrigger className="h-10 bg-background">
+                    <SelectValue>
+                      <span className="truncate">{IMAGE_PROVIDERS.find(p => p.id === currentModels.image)?.short}</span>
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="z-50 bg-popover border shadow-lg">
+                    {IMAGE_PROVIDERS.map(p => (
+                      <SelectItem key={p.id} value={p.id}>
+                        <span className="font-medium">{p.name}</span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
 
-          {/* Quick Switch to AI */}
+            {/* Translation Model */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Languages className="h-4 w-4 text-primary" />
+                <Label className="text-xs font-medium text-foreground">Translation</Label>
+              </div>
+              {mode === 'ai' ? (
+                <div className="h-10 px-3 flex items-center rounded-md border bg-muted/30 text-sm">
+                  {TRANSLATION_PROVIDERS.find(p => p.id === currentModels.translation)?.short || 'Auto'}
+                </div>
+              ) : (
+                <Select value={currentModels.translation} onValueChange={(val) => handleModelChange('translation', val)}>
+                  <SelectTrigger className="h-10 bg-background">
+                    <SelectValue>
+                      <span className="truncate">{TRANSLATION_PROVIDERS.find(p => p.id === currentModels.translation)?.short}</span>
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="z-50 bg-popover border shadow-lg">
+                    {TRANSLATION_PROVIDERS.map(p => (
+                      <SelectItem key={p.id} value={p.id}>
+                        <span className="font-medium">{p.name}</span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+          </div>
+
+          {/* Mode switch hint */}
           <Button
             variant="ghost"
             size="sm"
             className="w-full text-muted-foreground"
-            onClick={() => setMode('ai')}
+            onClick={() => setMode(mode === 'ai' ? 'custom' : 'ai')}
           >
-            <Bot className="h-3 w-3 mr-1" />
-            Let AI auto-configure everything for your context
+            {mode === 'ai' ? (
+              <>
+                <Pencil className="h-3 w-3 mr-1" />
+                Want to choose models manually? Switch to Custom
+              </>
+            ) : (
+              <>
+                <Bot className="h-3 w-3 mr-1" />
+                Let AI choose optimal models for your context
+              </>
+            )}
           </Button>
-        </>
-      )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
