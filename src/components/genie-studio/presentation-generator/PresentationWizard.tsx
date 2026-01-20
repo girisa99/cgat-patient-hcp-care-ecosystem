@@ -142,6 +142,7 @@ import { TemplateBrandingPanelV2 as TemplateBrandingPanel, BrandConfig } from '.
 import { AgentSelectorDialog, AgentCard, AgentModelConfig } from './AgentSelectorDialog';
 import { AgentLanguageConfigPanel } from './AgentLanguageConfigPanel';
 import { InlineTrainAIFeedback } from '../InlineTrainAIFeedback';
+import { StepGuidancePanel } from './components/StepGuidancePanel';
 import { PreGenerationConfirmationPanel, GenerationContextSummary } from './components/PreGenerationConfirmationPanel';
 import { 
   PresentationRequest,
@@ -2070,45 +2071,39 @@ export function PresentationWizard({
           )}
           
           {slides.length === 0 && !isGenerating && !agentGenerator.isGenerating ? (
-            <div className="h-full flex items-center justify-center p-8">
-              <div className="text-center max-w-md">
-                {/* Enhanced Empty State */}
-                <div className="relative mb-6">
-                  <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-violet-500/20 rounded-full blur-2xl" />
-                  <div className="relative bg-gradient-to-br from-purple-100 to-violet-100 dark:from-purple-900/30 dark:to-violet-900/30 rounded-2xl p-6 border border-purple-200/50 dark:border-purple-700/50">
-                    <Presentation className="h-16 w-16 mx-auto text-purple-600 dark:text-purple-400" />
-                  </div>
-                </div>
-                
-                <h3 className="text-lg font-semibold text-foreground mb-2">
-                  Ready to Create Your Presentation
-                </h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Transform your ideas into professional slides with AI-powered generation
-                </p>
-                
-                {/* Getting Started Steps */}
-                <div className="bg-muted/50 rounded-lg p-4 text-left space-y-3 border">
-                  <p className="text-xs font-medium text-foreground uppercase tracking-wide">Getting Started</p>
-                  <div className="space-y-2">
-                    <div className="flex items-start gap-2 text-sm">
-                      <span className="flex-shrink-0 w-5 h-5 rounded-full bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400 flex items-center justify-center text-xs font-medium">1</span>
-                      <span className="text-muted-foreground">Enter your content, notes, or paste a document</span>
-                    </div>
-                    <div className="flex items-start gap-2 text-sm">
-                      <span className="flex-shrink-0 w-5 h-5 rounded-full bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400 flex items-center justify-center text-xs font-medium">2</span>
-                      <span className="text-muted-foreground">Choose your brand style and template</span>
-                    </div>
-                    <div className="flex items-start gap-2 text-sm">
-                      <span className="flex-shrink-0 w-5 h-5 rounded-full bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400 flex items-center justify-center text-xs font-medium">3</span>
-                      <span className="text-muted-foreground">Generate and customize your slides</span>
+            <div className="h-full flex flex-col p-4 gap-4">
+              {/* Dynamic Step Guidance Panel */}
+              <StepGuidancePanel currentStep={currentStep} />
+              
+              {/* Quick Start Summary */}
+              <div className="flex-1 flex items-center justify-center">
+                <div className="text-center max-w-md">
+                  <div className="relative mb-4">
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 rounded-full blur-2xl" />
+                    <div className="relative bg-gradient-to-br from-primary/10 to-accent/10 rounded-2xl p-4 border border-primary/20">
+                      <Presentation className="h-12 w-12 mx-auto text-primary" />
                     </div>
                   </div>
+                  
+                  <h3 className="text-base font-semibold text-foreground mb-1">
+                    Ready to Create Your Presentation
+                  </h3>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Follow the guidance above • Real-time AI translation • Multi-language output
+                  </p>
+                  
+                  {/* RLHF Feedback for guidance quality */}
+                  <InlineTrainAIFeedback
+                    data={{
+                      context: 'slide_generation',
+                      product: 'deck',
+                      contentId: `guidance_step_${currentStep}`,
+                      metadata: { step: currentStep, stepName: WIZARD_STEPS[currentStep]?.label }
+                    }}
+                    variant="minimal"
+                    showTextFeedback={false}
+                  />
                 </div>
-                
-                <p className="text-xs text-muted-foreground mt-4">
-                  Your presentation will appear here once generated
-                </p>
               </div>
             </div>
           ) : editingMode === 'layout' && selectedSlideId ? (

@@ -7,7 +7,7 @@ const corsHeaders = {
 
 interface TranslationRequest {
   action: 'translate' | 'detect' | 'languages';
-  provider: 'google' | 'deepl' | 'microsoft' | 'amazon' | 'ai';
+  provider: 'google' | 'deepl' | 'microsoft' | 'amazon' | 'alibaba' | 'lovable' | 'ai';
   text?: string;
   sourceLanguage?: string;
   targetLanguage?: string;
@@ -15,6 +15,7 @@ interface TranslationRequest {
   glossary?: Record<string, string>;
   category?: string;
   context?: string;
+  model?: string; // Specific model override
 }
 
 interface TranslationResponse {
@@ -88,6 +89,10 @@ async function handleTranslation(request: TranslationRequest): Promise<Translati
       return translateWithMicrosoft(text, sourceLanguage || 'auto', targetLanguage, category);
     case 'amazon':
       return translateWithAmazon(text, sourceLanguage || 'auto', targetLanguage, formality);
+    case 'alibaba':
+      return translateWithAlibaba(text, sourceLanguage || 'auto', targetLanguage, context);
+    case 'lovable':
+      return translateWithLovableAI(text, sourceLanguage || 'en', targetLanguage, context, formality);
     case 'ai':
     default:
       return translateWithAI(text, sourceLanguage || 'en', targetLanguage, context, formality);
@@ -295,9 +300,148 @@ async function translateWithAmazon(
   formality?: 'formal' | 'informal' | 'neutral'
 ): Promise<TranslationResponse> {
   // Amazon Translate requires AWS SDK which is complex in Deno
-  // Fallback to AI translation for now
-  console.log('[TranslationService] Amazon Translate not implemented, using AI translation');
-  return translateWithAI(text, sourceLanguage, targetLanguage, undefined, formality);
+  // Fallback to Lovable AI translation
+  console.log('[TranslationService] Amazon Translate not implemented, using Lovable AI translation');
+  return translateWithLovableAI(text, sourceLanguage, targetLanguage, undefined, formality);
+}
+
+// Alibaba/Qwen-MT Translation - Best for CJK (Chinese, Japanese, Korean)
+async function translateWithAlibaba(
+  text: string,
+  sourceLanguage: string,
+  targetLanguage: string,
+  context?: string
+): Promise<TranslationResponse> {
+  const alibabaKey = Deno.env.get('ALIBABA_API_KEY') || Deno.env.get('QWEN_API_KEY');
+  
+  if (!alibabaKey) {
+    console.log('[TranslationService] Alibaba/Qwen API key not found, falling back to Lovable AI');
+    return translateWithLovableAI(text, sourceLanguage, targetLanguage, context);
+  }
+
+  try {
+    // Alibaba Machine Translation API
+    const response = await fetch('https://mt.cn-hangzhou.aliyuncs.com/', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${alibabaKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        Action: 'TranslateGeneral',
+        SourceLanguage: sourceLanguage === 'auto' ? 'auto' : sourceLanguage,
+        TargetLanguage: targetLanguage,
+        SourceText: text,
+        FormatType: 'text',
+        Scene: 'general',
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.error('[TranslationService] Alibaba API error:', error);
+      throw new Error(`Alibaba Translation error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    return {
+      translatedText: data.Data?.Translated || '',
+      detectedLanguage: data.Data?.DetectedLanguage,
+      confidence: 0.92, // Alibaba is excellent for CJK
+    };
+  } catch (error) {
+    console.error('[TranslationService] Alibaba translation error:', error);
+    return translateWithLovableAI(text, sourceLanguage, targetLanguage, context);
+  }
+}
+
+// Lovable AI Gateway Translation - Uses Gemini/GPT through Lovable's gateway
+async function translateWithLovableAI(
+  text: string,
+  sourceLanguage: string,
+  targetLanguage: string,
+  context?: string,
+  formality?: 'formal' | 'informal' | 'neutral'
+): Promise<TranslationResponse> {
+  const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+  
+  if (!lovableApiKey) {
+    console.log('[TranslationService] LOVABLE_API_KEY not found, falling back to Universal AI');
+    return translateWithAI(text, sourceLanguage, targetLanguage, context, formality);
+  }
+
+  const languageNames: Record<string, string> = {
+    en: 'English', de: 'German', fr: 'French', es: 'Spanish',
+    it: 'Italian', pt: 'Portuguese', nl: 'Dutch', pl: 'Polish',
+    ru: 'Russian', ja: 'Japanese', zh: 'Chinese', ko: 'Korean',
+    ar: 'Arabic', hi: 'Hindi', tr: 'Turkish', vi: 'Vietnamese',
+    th: 'Thai', id: 'Indonesian', ms: 'Malay', sv: 'Swedish',
+    da: 'Danish', no: 'Norwegian', fi: 'Finnish', el: 'Greek',
+    cs: 'Czech', hu: 'Hungarian', ro: 'Romanian', uk: 'Ukrainian',
+    he: 'Hebrew', fa: 'Persian', bn: 'Bengali', ta: 'Tamil',
+    te: 'Telugu', mr: 'Marathi', gu: 'Gujarati', pa: 'Punjabi',
+  };
+
+  const sourceLangName = languageNames[sourceLanguage] || sourceLanguage;
+  const targetLangName = languageNames[targetLanguage] || targetLanguage;
+  
+  const systemPrompt = `You are an expert professional translator. Translate the following text from ${sourceLangName} to ${targetLangName}.
+
+${formality ? `Use a ${formality} tone and register.` : ''}
+${context ? `Context for translation: ${context}` : ''}
+
+CRITICAL INSTRUCTIONS:
+1. Provide ONLY the translated text, nothing else
+2. Preserve the original formatting, punctuation, and structure
+3. Maintain technical terms, proper nouns, and brand names appropriately
+4. Ensure natural, fluent translation that reads like native ${targetLangName}
+5. Do NOT include explanations, notes, or the original text`;
+
+  try {
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${lovableApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-3-flash-preview',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: text },
+        ],
+        temperature: 0.3,
+        max_tokens: Math.max(1000, text.length * 2),
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.error('[TranslationService] Lovable AI Gateway error:', error);
+      
+      // Handle rate limiting
+      if (response.status === 429) {
+        console.log('[TranslationService] Rate limited, falling back to Universal AI');
+        return translateWithAI(text, sourceLanguage, targetLanguage, context, formality);
+      }
+      
+      throw new Error(`Lovable AI Gateway error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const translatedText = data.choices?.[0]?.message?.content || '';
+
+    console.log('[TranslationService] Lovable AI translation successful');
+
+    return {
+      translatedText: translatedText.trim(),
+      confidence: 0.92,
+    };
+  } catch (error) {
+    console.error('[TranslationService] Lovable AI translation error:', error);
+    return translateWithAI(text, sourceLanguage, targetLanguage, context, formality);
+  }
 }
 
 async function translateWithAI(
