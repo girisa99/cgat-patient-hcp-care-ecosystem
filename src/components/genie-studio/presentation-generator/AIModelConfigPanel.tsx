@@ -26,7 +26,7 @@ import {
   Lock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { FinalWorkflowConfig } from './EnhancedTemplateWorkflow';
+import { FinalWorkflowConfig } from './wizardConstants';
 
 // Provider configurations with short display names
 const TEXT_PROVIDERS = [

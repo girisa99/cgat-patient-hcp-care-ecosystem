@@ -42,9 +42,8 @@ export { SlideEnhancerPanel } from './SlideEnhancerPanel';
 export type { SlideEnhancementType } from './SlideEnhancerPanel';
 export { RealTimeSlideStreamer } from './RealTimeSlideStreamer';
 
-// Enhanced Template Workflow
+// Wizard Constants & Types (centralized configuration)
 export { 
-  EnhancedTemplateWorkflow,
   COLLATERAL_TYPES,
   INDUSTRY_CATEGORIES,
   CONSULTING_TEMPLATES,
@@ -59,7 +58,13 @@ export {
   type FinalWorkflowConfig,
   type Segment,
   type AIProviderRecommendation,
-} from './EnhancedTemplateWorkflow';
+  type ThemeConfig,
+  type SlideLayout,
+  type LayoutZone,
+} from './wizardConstants';
+
+// Legacy: EnhancedTemplateWorkflow (deprecated - use wizardConstants instead)
+export { EnhancedTemplateWorkflow } from './EnhancedTemplateWorkflow';
 
 // Agent architecture definitions
 export { 
