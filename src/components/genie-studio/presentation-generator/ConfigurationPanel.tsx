@@ -53,6 +53,7 @@ import {
 } from './wizardConstants';
 import { CONTENT_CATEGORIES, EXTENDED_COLLATERAL_TYPES } from './ContentTypeSelector';
 import { OutputType, OUTPUT_TYPE_CONFIGS } from './types';
+import { OutputTypeDropdown } from './components/OutputTypeDropdown';
 
 // Output type icon mapping
 const OUTPUT_TYPE_ICONS: Record<OutputType, React.ElementType> = {
@@ -450,45 +451,18 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
         </div>
       </div>
 
-      {/* Output Type Section - flat div */}
+      {/* Output Type Section - Dropdown */}
       <div className="p-4 rounded-xl border bg-card space-y-4">
         <div className="flex items-center gap-2 pb-2 border-b">
           <Layers className="h-4 w-4 text-primary" />
           <h4 className="text-sm font-medium">Output Type</h4>
-          {currentOutputType !== '2d-static' && (
-            <Badge variant="secondary" className="ml-auto text-xs">
-              {OUTPUT_TYPE_CONFIGS.find(o => o.id === currentOutputType)?.name}
-            </Badge>
-          )}
         </div>
         <div className="space-y-4">
-          {/* Output Type Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {OUTPUT_TYPE_CONFIGS.map(outputType => {
-              const Icon = OUTPUT_TYPE_ICONS[outputType.id];
-              const isSelected = currentOutputType === outputType.id;
-              return (
-                <button
-                  key={outputType.id}
-                  onClick={() => handleOutputTypeChange(outputType.id)}
-                  className={cn(
-                    "flex flex-col items-center gap-2 p-3 rounded-lg border transition-all text-center",
-                    isSelected 
-                      ? "border-primary bg-primary/10 ring-1 ring-primary" 
-                      : "border-border hover:border-primary/50 hover:bg-accent"
-                  )}
-                >
-                  <Icon className={cn("h-5 w-5", isSelected ? "text-primary" : "text-muted-foreground")} />
-                  <div className="space-y-0.5">
-                    <p className={cn("text-xs font-medium", isSelected && "text-primary")}>{outputType.name}</p>
-                    {outputType.tier === 3 && (
-                      <Badge variant="outline" className="text-[9px] px-1">Pro</Badge>
-                    )}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+          {/* Output Type Dropdown */}
+          <OutputTypeDropdown
+            value={currentOutputType}
+            onChange={handleOutputTypeChange}
+          />
 
           {/* Selected Output Type Details */}
           {currentOutputType && (
