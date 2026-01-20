@@ -417,42 +417,121 @@ export function PresentationWizard({
   const [selectedFrameworkCategories, setSelectedFrameworkCategories] = useState<string[]>([]);
   const [selectedFrameworkIds, setSelectedFrameworkIds] = useState<string[]>([]);
   
-  // All available providers from modelAlignmentService
+  // All available providers from modelAlignmentService - Updated with Gap Analysis 2025
   const ALL_TEXT_PROVIDERS = [
-    { id: 'google/gemini-3-flash-preview', name: 'Gemini 3 Flash', strengths: ['Speed', 'Multilingual'] },
-    { id: 'google/gemini-2.5-pro', name: 'Gemini 2.5 Pro', strengths: ['Complex reasoning', 'Long context'] },
-    { id: 'openai/gpt-5', name: 'GPT-5', strengths: ['Premium quality', 'Nuance'] },
-    { id: 'openai/gpt-5-mini', name: 'GPT-5 Mini', strengths: ['Balanced', 'Cost-effective'] },
-    { id: 'claude-3-5-sonnet', name: 'Claude 3.5 Sonnet', strengths: ['Nuanced writing', 'Safety'] },
-    { id: 'deepseek/deepseek-chat', name: 'DeepSeek', strengths: ['Technical', 'Reasoning'] },
+    // Tier 1 - Core (Lovable AI Gateway)
+    { id: 'google/gemini-3-flash-preview', name: 'Gemini 3 Flash', strengths: ['Speed', 'Multilingual'], tier: 1 },
+    { id: 'google/gemini-3-pro-preview', name: 'Gemini 3 Pro', strengths: ['Next-gen reasoning', 'Complex tasks'], tier: 1 },
+    { id: 'google/gemini-2.5-pro', name: 'Gemini 2.5 Pro', strengths: ['1M context', 'Complex reasoning'], tier: 1 },
+    { id: 'openai/gpt-5', name: 'GPT-5', strengths: ['Premium quality', 'Nuance'], tier: 1 },
+    { id: 'openai/gpt-5-mini', name: 'GPT-5 Mini', strengths: ['Balanced', 'Cost-effective'], tier: 1 },
+    { id: 'openai/gpt-5.2', name: 'GPT-5.2', strengths: ['Enhanced reasoning', 'Latest'], tier: 1 },
+    // Tier 2 - Enterprise
+    { id: 'anthropic/claude-opus-4', name: 'Claude Opus 4', strengths: ['Best nuance', '200k context'], tier: 2 },
+    { id: 'anthropic/claude-sonnet-4', name: 'Claude Sonnet 4', strengths: ['Balanced', 'Compliance'], tier: 2 },
+    { id: 'azure/gpt-4o', name: 'Azure GPT-4o', strengths: ['Enterprise SLA', 'HIPAA'], tier: 2 },
+    // Tier 3 - Budget/Regional
+    { id: 'deepseek/deepseek-chat', name: 'DeepSeek Chat', strengths: ['Technical', 'Low cost'], tier: 3 },
+    { id: 'deepseek/deepseek-coder', name: 'DeepSeek Coder', strengths: ['Code', 'Technical'], tier: 3 },
+    { id: 'alibaba/qwen-max', name: 'Qwen Max', strengths: ['CJK excellence', 'Full-stack'], tier: 3 },
+    { id: 'alibaba/qwen-2.5', name: 'Qwen 2.5', strengths: ['Asian optimized', 'Low cost'], tier: 3 },
   ];
   
   const ALL_IMAGE_PROVIDERS = [
-    { id: 'modelslab', name: 'ModelsLab', styles: ['photorealistic', 'artistic', 'corporate'] },
-    { id: 'flux-pro', name: 'Flux Pro', styles: ['photorealistic', 'artistic'] },
-    { id: 'flux-schnell', name: 'Flux Schnell', styles: ['fast', 'artistic'] },
-    { id: 'gemini-image', name: 'Gemini Image', styles: ['balanced', 'professional'] },
-    { id: 'dall-e-3', name: 'DALL-E 3', styles: ['photorealistic', 'infographic'] },
-    { id: 'stability', name: 'Stability AI', styles: ['artistic', 'abstract'] },
-    { id: 'stock', name: 'Stock Images', styles: ['professional', 'corporate'] },
+    // Tier 1 - Core (ModelsLab Hub + Lovable AI)
+    { id: 'gemini-nano-banana', name: 'Gemini Nano Image', styles: ['fast', 'balanced'], tier: 1 },
+    { id: 'gemini-3-pro-image', name: 'Gemini 3 Pro Image', styles: ['highest-quality', 'professional'], tier: 1 },
+    { id: 'modelslab', name: 'ModelsLab Hub', styles: ['photorealistic', 'artistic', 'corporate'], tier: 1 },
+    { id: 'modelslab-realvision', name: 'ModelsLab RealVision', styles: ['photorealistic', 'lifelike'], tier: 1 },
+    { id: 'modelslab-civitai', name: 'CivitAI Models', styles: ['artistic', 'anime', 'stylized'], tier: 1 },
+    // Tier 2 - Premium
+    { id: 'flux-pro', name: 'Flux Pro', styles: ['photorealistic', 'artistic'], tier: 2 },
+    { id: 'flux-schnell', name: 'Flux Schnell', styles: ['fast', 'artistic'], tier: 2 },
+    { id: 'dall-e-3', name: 'DALL-E 3', styles: ['text-rendering', 'infographic'], tier: 2 },
+    { id: 'stability', name: 'Stability AI', styles: ['artistic', 'abstract', 'controlnet'], tier: 2 },
+    // Tier 3 - Budget/Regional
+    { id: 'alibaba-wanx', name: 'Alibaba Wanx', styles: ['asian-aesthetics', 'low-cost'], tier: 3 },
+    { id: 'replicate', name: 'Replicate Models', styles: ['open-source', 'varied'], tier: 3 },
+    { id: 'stock', name: 'Stock Images', styles: ['professional', 'corporate'], tier: 3 },
+  ];
+
+  // NEW: Video Providers with AnimateDiff, Sora, Wanx
+  const ALL_VIDEO_PROVIDERS = [
+    // Tier 1 - Core (ModelsLab + OpenAI)
+    { id: 'openai-sora', name: 'OpenAI Sora', quality: 'premium', duration: 20, tier: 1 },
+    { id: 'modelslab-animatediff', name: 'AnimateDiff', quality: 'high', duration: 8, tier: 1 },
+    { id: 'modelslab-svd', name: 'Stable Video Diffusion', quality: 'high', duration: 4, tier: 1 },
+    // Tier 2 - Premium
+    { id: 'gemini-veo', name: 'Gemini Veo', quality: 'premium', duration: 8, tier: 2 },
+    { id: 'runway-gen3', name: 'Runway Gen-3', quality: 'premium', duration: 10, tier: 2 },
+    { id: 'pika-labs', name: 'Pika Labs', quality: 'high', duration: 4, tier: 2 },
+    // Tier 3 - Regional/Budget
+    { id: 'alibaba-wanx-video', name: 'Alibaba Wanx Video', quality: 'high', duration: 6, tier: 3 },
+    { id: 'replicate-video', name: 'Replicate Video', quality: 'standard', duration: 5, tier: 3 },
+  ];
+
+  // NEW: 3D Mesh Generation Providers
+  const ALL_3D_PROVIDERS = [
+    // Tier 1 - Core (ModelsLab)
+    { id: 'modelslab-3d', name: 'ModelsLab 3D', formats: ['glb', 'obj', 'fbx'], tier: 1 },
+    // Tier 2 - Specialized
+    { id: 'meshy-ai', name: 'Meshy AI', formats: ['glb', 'obj', 'stl'], tier: 2 },
+    { id: 'triposr', name: 'TripoSR', formats: ['glb', 'obj'], tier: 2 },
+    { id: 'point-e', name: 'Point-E (OpenAI)', formats: ['ply', 'obj'], tier: 2 },
+    // Tier 3 - Budget
+    { id: 'replicate-3d', name: 'Replicate 3D', formats: ['glb', 'obj'], tier: 3 },
   ];
   
   const ALL_VOICE_PROVIDERS = [
-    { id: 'elevenlabs-multilingual', name: 'ElevenLabs', quality: 'premium', languages: 100 },
-    { id: 'openai-tts-hd', name: 'OpenAI TTS HD', quality: 'neural', languages: 9 },
-    { id: 'google-wavenet', name: 'Google WaveNet', quality: 'neural', languages: 200 },
-    { id: 'azure-neural', name: 'Azure Neural', quality: 'premium', languages: 300 },
-    { id: 'aws-polly', name: 'AWS Polly', quality: 'neural', languages: 60 },
-    { id: 'alibaba-tts', name: 'Alibaba TTS', quality: 'neural', languages: 50 },
+    // Tier 1 - Premium
+    { id: 'elevenlabs-multilingual', name: 'ElevenLabs', quality: 'premium', languages: 100, cloning: true, tier: 1 },
+    { id: 'azure-neural', name: 'Azure Neural TTS', quality: 'premium', languages: 300, cloning: false, tier: 1 },
+    // Tier 2 - Standard
+    { id: 'openai-tts-hd', name: 'OpenAI TTS HD', quality: 'neural', languages: 9, cloning: false, tier: 2 },
+    { id: 'google-wavenet', name: 'Google WaveNet', quality: 'neural', languages: 200, cloning: false, tier: 2 },
+    // Tier 3 - Budget/Regional
+    { id: 'alibaba-cosyvoice', name: 'Alibaba CosyVoice', quality: 'neural', languages: 50, cloning: true, tier: 3 },
+    { id: 'alibaba-tts', name: 'Alibaba DashScope TTS', quality: 'neural', languages: 50, cloning: false, tier: 3 },
+    { id: 'aws-polly', name: 'AWS Polly', quality: 'neural', languages: 60, cloning: false, tier: 3 },
+  ];
+
+  // NEW: STT (Speech-to-Text) Providers
+  const ALL_STT_PROVIDERS = [
+    // Tier 1 - Premium
+    { id: 'azure-speech', name: 'Azure Speech Services', quality: 'premium', languages: 100, realtime: true, tier: 1 },
+    { id: 'openai-whisper', name: 'OpenAI Whisper', quality: 'premium', languages: 99, realtime: false, tier: 1 },
+    // Tier 2 - Standard
+    { id: 'google-stt', name: 'Google Speech-to-Text', quality: 'high', languages: 125, realtime: true, tier: 2 },
+    { id: 'deepgram', name: 'Deepgram Nova', quality: 'high', languages: 36, realtime: true, tier: 2 },
+    // Tier 3 - Regional
+    { id: 'alibaba-paraformer', name: 'Alibaba Paraformer', quality: 'high', languages: 20, realtime: true, tier: 3 },
+  ];
+
+  // NEW: OCR/Document Processing Providers
+  const ALL_OCR_PROVIDERS = [
+    // Tier 1 - Enterprise
+    { id: 'azure-form-recognizer', name: 'Azure Form Recognizer', types: ['invoices', 'receipts', 'ids', 'tables'], tier: 1 },
+    { id: 'azure-document-intelligence', name: 'Azure Document Intelligence', types: ['documents', 'contracts', 'forms'], tier: 1 },
+    // Tier 2 - AI-powered
+    { id: 'deepseek-vl', name: 'DeepSeek VL', types: ['documents', 'multilingual', 'complex'], tier: 2 },
+    { id: 'gemini-vision', name: 'Gemini Vision OCR', types: ['general', 'handwriting', 'diagrams'], tier: 2 },
+    { id: 'gpt-4-vision', name: 'GPT-4 Vision', types: ['general', 'complex-layouts'], tier: 2 },
+    // Tier 3 - Budget
+    { id: 'tesseract', name: 'Tesseract OCR', types: ['basic', 'print'], tier: 3 },
   ];
   
   const ALL_TRANSLATION_PROVIDERS = [
-    { id: 'deepl', name: 'DeepL', regions: ['Europe', 'Americas'], quality: 'native' },
-    { id: 'google-translate', name: 'Google Translate', regions: ['Global'], quality: 'high' },
-    { id: 'qwen-mt', name: 'Qwen-MT', regions: ['Asia', 'China'], quality: 'native' },
-    { id: 'azure', name: 'Azure Translator', regions: ['Global'], quality: 'high' },
-    { id: 'nllb', name: 'NLLB (Meta)', regions: ['Africa', 'India'], quality: 'high' },
-    { id: 'alibaba', name: 'Alibaba Translation', regions: ['Asia'], quality: 'high' },
+    // Tier 1 - Highest Quality
+    { id: 'deepl', name: 'DeepL', regions: ['Europe', 'Americas'], quality: 'native', tier: 1 },
+    { id: 'google-translate', name: 'Google Translate', regions: ['Global'], quality: 'high', tier: 1 },
+    // Tier 2 - Enterprise/Specialized
+    { id: 'qwen-mt', name: 'Qwen-MT', regions: ['Asia', 'China'], quality: 'native', tier: 2 },
+    { id: 'azure-translator', name: 'Azure Translator', regions: ['Global'], quality: 'high', tier: 2 },
+    { id: 'aws-translate', name: 'AWS Translate', regions: ['Global'], quality: 'high', tier: 2 },
+    // Tier 3 - AI-based / Open
+    { id: 'gemini-translate', name: 'Gemini Translate', regions: ['Global'], quality: 'context-aware', tier: 3 },
+    { id: 'alibaba-translate', name: 'Alibaba Translation', regions: ['Asia'], quality: 'high', tier: 3 },
+    { id: 'nllb', name: 'NLLB (Meta)', regions: ['Africa', 'India'], quality: 'high', tier: 3 },
   ];
 
   // Template and branding state

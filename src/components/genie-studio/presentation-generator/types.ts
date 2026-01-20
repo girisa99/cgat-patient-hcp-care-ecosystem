@@ -84,7 +84,7 @@ export const OUTPUT_TYPE_CONFIGS: OutputTypeConfig[] = [
     name: '2D Static Slides',
     description: 'Standard high-quality slides with images, charts, infographics',
     icon: 'Image',
-    providers: ['modelslab', 'flux-pro', 'dall-e-3', 'gemini-image', 'stability', 'alibaba-wanx'],
+    providers: ['modelslab', 'modelslab-realvision', 'modelslab-civitai', 'flux-pro', 'dall-e-3', 'gemini-image', 'gemini-3-pro-image', 'stability', 'alibaba-wanx'],
     capabilities: ['PNG export', 'SVG overlay', 'Print-ready', 'Text rendering'],
     tier: 1
   },
@@ -93,7 +93,7 @@ export const OUTPUT_TYPE_CONFIGS: OutputTypeConfig[] = [
     name: '2D Animated',
     description: 'Slides with CSS/Framer Motion animations and transitions',
     icon: 'Sparkles',
-    providers: ['modelslab', 'flux-pro', 'framer-motion', 'lottie'],
+    providers: ['modelslab', 'modelslab-civitai', 'flux-pro', 'framer-motion', 'lottie'],
     capabilities: ['Entry animations', 'Hover effects', 'Scroll triggers', 'Micro-interactions'],
     tier: 2
   },
@@ -102,8 +102,8 @@ export const OUTPUT_TYPE_CONFIGS: OutputTypeConfig[] = [
     name: '3D Scene',
     description: 'Three.js rendered 3D scenes and models',
     icon: 'Box',
-    providers: ['modelslab-3d', 'three-js', 'replicate-3d'],
-    capabilities: ['3D models', 'Scene composition', 'Lighting', 'Camera angles'],
+    providers: ['modelslab-3d', 'meshy-ai', 'triposr', 'point-e', 'three-js', 'replicate-3d'],
+    capabilities: ['3D models', 'Scene composition', 'Lighting', 'Camera angles', 'GLB/OBJ export'],
     tier: 2
   },
   {
@@ -111,7 +111,7 @@ export const OUTPUT_TYPE_CONFIGS: OutputTypeConfig[] = [
     name: '3D Animated',
     description: 'Full 3D animations with physics and particle effects',
     icon: 'Orbit',
-    providers: ['modelslab-3d', 'three-js', 'replicate-3d'],
+    providers: ['modelslab-3d', 'meshy-ai', 'triposr', 'three-js', 'replicate-3d'],
     capabilities: ['Physics simulation', 'Particle effects', '3D transitions', 'Flow animations'],
     tier: 3
   },
@@ -120,7 +120,7 @@ export const OUTPUT_TYPE_CONFIGS: OutputTypeConfig[] = [
     name: 'Video Intro',
     description: 'Short 5-10s video intros and outros',
     icon: 'Video',
-    providers: ['modelslab-video', 'replicate-video', 'runway', 'pika-labs', 'alibaba-video'],
+    providers: ['openai-sora', 'modelslab-animatediff', 'modelslab-svd', 'gemini-veo', 'runway-gen3', 'pika-labs', 'alibaba-wanx-video', 'replicate-video'],
     capabilities: ['Motion graphics', 'Logo reveals', 'Cinematic effects', 'AI-generated scenes'],
     tier: 2
   },
@@ -129,8 +129,8 @@ export const OUTPUT_TYPE_CONFIGS: OutputTypeConfig[] = [
     name: 'Full Video',
     description: 'Complete video presentations with voiceover',
     icon: 'Film',
-    providers: ['modelslab-video', 'replicate-video', 'elevenlabs-tts', 'azure-tts'],
-    capabilities: ['Full narration', 'Scene transitions', 'Background music', 'Multi-language'],
+    providers: ['openai-sora', 'modelslab-animatediff', 'gemini-veo', 'elevenlabs-tts', 'azure-neural', 'alibaba-cosyvoice'],
+    capabilities: ['Full narration', 'Scene transitions', 'Background music', 'Multi-language', 'Voice cloning'],
     tier: 3
   },
   {
