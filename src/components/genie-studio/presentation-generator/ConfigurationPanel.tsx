@@ -548,7 +548,7 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
           )}
 
           {/* Model Grid - Read-only in AI mode, editable in Custom */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="space-y-3">
             {/* Text Model */}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
@@ -556,9 +556,9 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
                 <Label className="text-xs font-medium text-foreground">Text Model</Label>
               </div>
               {mode === 'ai' ? (
-                <div className="h-10 px-3 flex items-center rounded-md border bg-muted/30 text-sm gap-2">
-                  <span>{TEXT_PROVIDERS.find(p => p.id === currentModels.text)?.short || currentModels.text}</span>
-                  <Badge variant="outline" className="text-[10px]">AI Selected</Badge>
+                <div className="h-10 px-3 flex items-center rounded-md border bg-muted/30 text-sm gap-2 overflow-hidden">
+                  <span className="truncate flex-1">{TEXT_PROVIDERS.find(p => p.id === currentModels.text)?.short || 'Auto'}</span>
+                  <Badge variant="outline" className="text-[10px] shrink-0">AI</Badge>
                 </div>
               ) : (
                 <Select value={currentModels.text} onValueChange={(val) => handleModelChange('text', val)}>
@@ -594,9 +594,9 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
                 <Label className="text-xs font-medium text-foreground">Image Model</Label>
               </div>
               {mode === 'ai' ? (
-                <div className="h-10 px-3 flex items-center rounded-md border bg-muted/30 text-sm gap-2">
-                  <span>{IMAGE_PROVIDERS.find(p => p.id === currentModels.image)?.short || currentModels.image}</span>
-                  <Badge variant="outline" className="text-[10px]">AI Selected</Badge>
+                <div className="h-10 px-3 flex items-center rounded-md border bg-muted/30 text-sm gap-2 overflow-hidden">
+                  <span className="truncate flex-1">{IMAGE_PROVIDERS.find(p => p.id === currentModels.image)?.short || 'Auto'}</span>
+                  <Badge variant="outline" className="text-[10px] shrink-0">AI</Badge>
                 </div>
               ) : (
                 <Select value={currentModels.image} onValueChange={(val) => handleModelChange('image', val)}>
@@ -632,9 +632,9 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
                 <Label className="text-xs font-medium text-foreground">Translation</Label>
               </div>
               {mode === 'ai' ? (
-                <div className="h-10 px-3 flex items-center rounded-md border bg-muted/30 text-sm gap-2">
-                  <span>{TRANSLATION_PROVIDERS.find(p => p.id === currentModels.translation)?.short || currentModels.translation}</span>
-                  <Badge variant="outline" className="text-[10px]">AI Selected</Badge>
+                <div className="h-10 px-3 flex items-center rounded-md border bg-muted/30 text-sm gap-2 overflow-hidden">
+                  <span className="truncate flex-1">{TRANSLATION_PROVIDERS.find(p => p.id === currentModels.translation)?.short || 'Auto'}</span>
+                  <Badge variant="outline" className="text-[10px] shrink-0">AI</Badge>
                 </div>
               ) : (
                 <Select value={currentModels.translation} onValueChange={(val) => handleModelChange('translation', val)}>

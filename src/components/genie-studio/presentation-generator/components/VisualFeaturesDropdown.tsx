@@ -158,8 +158,14 @@ export function VisualFeaturesDropdown({
     const existing = value.find(v => v.featureId === featureId);
     if (existing) {
       onChange(value.filter(v => v.featureId !== featureId));
+      // Collapse when deselecting
+      setExpandedFeatures(prev => prev.filter(f => f !== featureId));
     } else {
       onChange([...value, { featureId, subOptions: [] }]);
+      // Auto-expand when selecting to show sub-options
+      if (!expandedFeatures.includes(featureId)) {
+        setExpandedFeatures(prev => [...prev, featureId]);
+      }
     }
   };
 
