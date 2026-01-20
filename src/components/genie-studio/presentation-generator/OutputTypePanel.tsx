@@ -31,7 +31,8 @@ import {
   Zap,
   Clock,
   Cpu,
-  Star
+  Star,
+  TrendingUp
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { OutputType, OUTPUT_TYPE_CONFIGS, OutputTypeConfig } from './types';
@@ -41,6 +42,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { SlideCountRecommendation } from './components/SlideCountRecommendation';
 
 // Icon mapping
 const outputIcons: Record<string, React.ReactNode> = {
@@ -82,6 +84,7 @@ interface OutputTypePanelProps {
   value: OutputTypeSettings;
   onChange: (settings: OutputTypeSettings) => void;
   suggestedSlideCount?: number;
+  contentType?: string; // For slide count recommendations
   className?: string;
 }
 
@@ -89,8 +92,10 @@ export function OutputTypePanel({
   value,
   onChange,
   suggestedSlideCount = 10,
+  contentType,
   className
 }: OutputTypePanelProps) {
+  const [showRecommendation, setShowRecommendation] = useState(false);
   const [selectedOutput, setSelectedOutput] = useState<OutputType>(value.outputType);
   
   const handleOutputSelect = (outputType: OutputType) => {
@@ -247,18 +252,42 @@ export function OutputTypePanel({
             {/* Dynamic Structure Settings */}
             <div className="grid grid-cols-2 gap-4">
               {value.structureMode === 'flat' ? (
-                /* Flat Mode: Just slide count */
-                <div className="space-y-2 col-span-2">
-                  <Label className="text-xs">Number of {isVideoType ? 'Scenes' : 'Slides'}</Label>
+                /* Flat Mode: Smart slide count with recommendations */
+                <div className="space-y-3 col-span-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs">Number of {isVideoType ? 'Scenes' : 'Slides'}</Label>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 text-[10px] text-primary"
+                      onClick={() => setShowRecommendation(!showRecommendation)}
+                    >
+                      <TrendingUp className="h-3 w-3 mr-1" />
+                      {showRecommendation ? 'Hide' : 'Show'} Recommendations
+                    </Button>
+                  </div>
+                  
+                  {showRecommendation && contentType && (
+                    <SlideCountRecommendation
+                      contentType={contentType}
+                      outputType={selectedOutput}
+                      currentCount={value.slideCount}
+                      onCountChange={(count) => onChange({ ...value, slideCount: count })}
+                      minSlides={3}
+                      maxSlides={20}
+                      className="mb-3"
+                    />
+                  )}
+                  
                   <Select
                     value={String(value.slideCount)}
-                    onValueChange={(v) => onChange({ ...value, slideCount: Number(v) })}
+                    onValueChange={(v) => onChange({ ...value, slideCount: Math.min(20, Number(v)) })}
                   >
                     <SelectTrigger className="h-9">
                       <SelectValue placeholder="Count" />
                     </SelectTrigger>
                     <SelectContent>
-                      {[5, 8, 10, 12, 15, 20, 25, 30].map((n) => (
+                      {[5, 8, 10, 12, 15, 20].map((n) => (
                         <SelectItem key={n} value={String(n)}>{n} {isVideoType ? 'scenes' : 'slides'}</SelectItem>
                       ))}
                     </SelectContent>

@@ -113,6 +113,10 @@ import { LanguageConfigPopup } from './LanguageConfigPopup';
 import { GenerationSummaryPanel } from './GenerationSummaryPanel';
 import { VersionComparisonPanel } from './VersionComparisonPanel';
 import { SlideEnhancerPanel } from './SlideEnhancerPanel';
+import { CreditBurnDisplay, CREDIT_MULTIPLIERS } from './components/CreditBurnDisplay';
+import { RefreshCapsDisplay } from './components/RefreshCapsDisplay';
+import { useAICredits } from '@/hooks/useAICredits';
+import { useRefreshCaps } from '@/hooks/useRefreshCaps';
 import { RealTimeSlideStreamer } from './RealTimeSlideStreamer';
 import { useAgentPresentationGenerator, LanguageGenerationState } from '@/hooks/useAgentPresentationGenerator';
 import { LanguageModelConfig } from '@/services/agentPresentationGeneratorService';
@@ -472,6 +476,15 @@ export function PresentationWizard({
   
   // Output Type settings (2D, 3D, Video, Interactive)
   const [outputSettings, setOutputSettings] = useState<OutputTypeSettings>(getDefaultOutputSettings(10));
+
+  // Credit & Refresh tracking
+  const { credits, refreshCredits } = useAICredits();
+  const refreshCapsHook = useRefreshCaps({ 
+    userTier: 'professional', // TODO: Get from user profile
+    onCapReached: (capType) => {
+      toast.warning(`${capType} refresh limit reached. Upgrade for more.`);
+    }
+  });
 
   // Inline options (to avoid service method type issues)
   const imageStyleOptions = [
@@ -1428,6 +1441,7 @@ export function PresentationWizard({
                   value={outputSettings}
                   onChange={setOutputSettings}
                   suggestedSlideCount={10}
+                  contentType={contentCategory || workflowConfig?.collateralType?.id}
                 />
               </div>
             )}
@@ -1559,6 +1573,17 @@ export function PresentationWizard({
                   </Card>
                 )}
 
+                {/* Credit Burn Estimate */}
+                <CreditBurnDisplay
+                  currentBalance={credits?.credits_balance || 0}
+                  outputType={outputSettings.outputType}
+                  slideCount={outputSettings.slideCount}
+                  includeVoiceover={outputSettings.includeVoiceover}
+                  includeMusic={outputSettings.includeMusic}
+                  resolution={outputSettings.resolution}
+                  languageCount={selectedLanguages.length}
+                />
+
                 {/* Generate Button */}
                 <Card className="border-primary/30 bg-gradient-to-r from-primary/5 to-accent/5">
                   <CardContent className="p-6">
@@ -1569,7 +1594,7 @@ export function PresentationWizard({
                       <div>
                         <h3 className="text-lg font-semibold">Ready to Generate</h3>
                         <p className="text-sm text-muted-foreground">
-                          Your presentation will be generated with {workflowConfig?.slideCount || 12} slides in {selectedLanguages.length || 1} language(s)
+                          Your presentation will be generated with {outputSettings.slideCount} slides (max 20) in {selectedLanguages.length || 1} language(s)
                         </p>
                       </div>
                       <Button
