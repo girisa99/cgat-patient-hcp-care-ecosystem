@@ -214,62 +214,91 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
   }, [mode, contentCategory, setContentCategory]);
 
   // Get AI model recommendations using the proper getRecommendedProviders function
+  // This is DYNAMIC - changes based on industry, segment, content type, and languages
   const modelRecommendation = useMemo(() => {
     const industry = workflowConfig?.industryCategory || '';
     const segment = workflowConfig?.segment || '';
     const collateralType = workflowConfig?.collateralType?.id || selectedContentTypes[0] || '';
     
     // Use the proper recommendation function from wizardConstants
-    return getRecommendedProviders(industry, segment, collateralType, selectedLanguages);
+    const rec = getRecommendedProviders(industry, segment, collateralType, selectedLanguages);
+    
+    console.log('[AI Model Recommendation] Context:', { industry, segment, collateralType, languages: selectedLanguages });
+    console.log('[AI Model Recommendation] Result:', rec);
+    
+    return rec;
   }, [workflowConfig?.industryCategory, workflowConfig?.segment, workflowConfig?.collateralType, selectedContentTypes, selectedLanguages]);
 
   // Auto-apply AI models when in AI Auto mode or when context changes
   useEffect(() => {
     if (mode === 'ai' && workflowConfig) {
+      // Update workflow config with new recommendations
+      const updatedRecommendation = {
+        textModel: modelRecommendation.textModel,
+        imageModel: modelRecommendation.imageModel,
+        translationModel: modelRecommendation.translationModel,
+        voiceModel: modelRecommendation.voiceModel,
+        videoModel: modelRecommendation.videoModel,
+        reason: modelRecommendation.reason,
+        confidence: modelRecommendation.confidence,
+        alternativeTextModels: modelRecommendation.alternativeTextModels,
+        alternativeImageModels: modelRecommendation.alternativeImageModels,
+      };
+      
       setWorkflowConfig({
         ...workflowConfig,
-        aiRecommendation: {
-          ...workflowConfig.aiRecommendation!,
-          textModel: modelRecommendation.textModel,
-          imageModel: modelRecommendation.imageModel,
-          translationModel: modelRecommendation.translationModel,
-          confidence: modelRecommendation.confidence,
-        },
+        aiRecommendation: updatedRecommendation,
       });
       setSelectedAIModel(modelRecommendation.textModel);
       setImageModel(modelRecommendation.imageModel as any);
     }
-  }, [mode, modelRecommendation.textModel, modelRecommendation.imageModel, modelRecommendation.translationModel]);
+  }, [mode, modelRecommendation]);
 
-  // Handle industry change
+  // Current model values - DYNAMIC based on mode
+  // In AI mode: always use modelRecommendation (dynamic)
+  // In Custom mode: use workflowConfig values (user-selected)
+  const currentModels = useMemo(() => {
+    if (mode === 'ai') {
+      // In AI Auto mode, always show the dynamic recommendation
+      return {
+        text: modelRecommendation.textModel,
+        image: modelRecommendation.imageModel,
+        translation: modelRecommendation.translationModel,
+        confidence: modelRecommendation.confidence,
+        reason: modelRecommendation.reason,
+        alternativeTextModels: modelRecommendation.alternativeTextModels,
+        alternativeImageModels: modelRecommendation.alternativeImageModels,
+      };
+    }
+    // In Custom mode, use user-selected values
+    return {
+      text: workflowConfig?.aiRecommendation?.textModel || modelRecommendation.textModel,
+      image: workflowConfig?.aiRecommendation?.imageModel || modelRecommendation.imageModel,
+      translation: workflowConfig?.aiRecommendation?.translationModel || modelRecommendation.translationModel,
+      confidence: workflowConfig?.aiRecommendation?.confidence || modelRecommendation.confidence,
+      reason: workflowConfig?.aiRecommendation?.reason || modelRecommendation.reason,
+      alternativeTextModels: modelRecommendation.alternativeTextModels,
+      alternativeImageModels: modelRecommendation.alternativeImageModels,
+    };
+  }, [mode, workflowConfig, modelRecommendation]);
+
+  // Handle industry change - triggers dynamic model re-calculation
   const handleIndustryChange = (value: string) => {
     if (!workflowConfig) return;
-    const rec = getRecommendedProviders(value, '', workflowConfig?.collateralType?.id || '', selectedLanguages);
     setWorkflowConfig({
       ...workflowConfig,
       industryCategory: value,
-      segment: '',
-      aiRecommendation: mode === 'ai' ? rec : workflowConfig.aiRecommendation,
+      segment: '', // Reset segment when industry changes
     });
-    if (mode === 'ai') {
-      setSelectedAIModel(rec.textModel);
-      setImageModel(rec.imageModel as any);
-    }
   };
 
-  // Handle segment change
+  // Handle segment change - triggers dynamic model re-calculation
   const handleSegmentChange = (value: string) => {
     if (!workflowConfig) return;
-    const rec = getRecommendedProviders(workflowConfig.industryCategory || '', value, workflowConfig?.collateralType?.id || '', selectedLanguages);
     setWorkflowConfig({
       ...workflowConfig,
       segment: value,
-      aiRecommendation: mode === 'ai' ? rec : workflowConfig.aiRecommendation,
     });
-    if (mode === 'ai') {
-      setSelectedAIModel(rec.textModel);
-      setImageModel(rec.imageModel as any);
-    }
   };
 
   // Handle model change (custom mode only)
@@ -283,13 +312,6 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
     if (type === 'text') setSelectedAIModel(value);
     if (type === 'image') setImageModel(value as any);
   };
-
-  // Current model values
-  const currentModels = useMemo(() => ({
-    text: workflowConfig?.aiRecommendation?.textModel || modelRecommendation.textModel,
-    image: workflowConfig?.aiRecommendation?.imageModel || modelRecommendation.imageModel,
-    translation: workflowConfig?.aiRecommendation?.translationModel || modelRecommendation.translationModel,
-  }), [workflowConfig, modelRecommendation]);
 
   // Available segments for selected industry
   const availableSegments = workflowConfig?.industryCategory 
