@@ -25,6 +25,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
   Bot,
   Pencil,
   Sparkles,
@@ -209,8 +215,8 @@ export function TemplateBrandingPanelV2({
   // State
   const [mode, setMode] = useState<'ai' | 'custom'>('ai');
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(selectedTemplate?.id || '');
-  const [selectedFrameworkCategory, setSelectedFrameworkCategory] = useState<string>('');
-  const [selectedFrameworkId, setSelectedFrameworkId] = useState<string>('');
+  const [selectedFrameworkCategories, setSelectedFrameworkCategories] = useState<string[]>([]);
+  const [selectedFrameworkIds, setSelectedFrameworkIds] = useState<string[]>([]);
   const [selectedSavedId, setSelectedSavedId] = useState<string>('');
   const [brandingOpen, setBrandingOpen] = useState(false);
   const [featuresOpen, setFeaturesOpen] = useState(true);
@@ -233,9 +239,9 @@ export function TemplateBrandingPanelV2({
     });
   }, [industryFilter, segmentFilter, contentTypeFilter]);
 
-  // Get frameworks for selected category - map category to firm type
-  const frameworksForCategory = useMemo(() => {
-    if (!selectedFrameworkCategory || selectedFrameworkCategory === 'all') {
+  // Get frameworks for selected categories - map categories to firm types
+  const frameworksForCategories = useMemo(() => {
+    if (selectedFrameworkCategories.length === 0 || selectedFrameworkCategories.includes('all')) {
       return CONSULTING_FRAMEWORKS;
     }
     
@@ -249,9 +255,15 @@ export function TemplateBrandingPanelV2({
       'universal': ['universal'],
     };
     
-    const firmTypes = categoryToFirmMap[selectedFrameworkCategory] || ['universal'];
-    return CONSULTING_FRAMEWORKS.filter(f => firmTypes.includes(f.firm));
-  }, [selectedFrameworkCategory]);
+    // Collect all firm types for selected categories
+    const allFirmTypes = new Set<string>();
+    selectedFrameworkCategories.forEach(cat => {
+      const firmTypes = categoryToFirmMap[cat] || ['universal'];
+      firmTypes.forEach(ft => allFirmTypes.add(ft));
+    });
+    
+    return CONSULTING_FRAMEWORKS.filter(f => allFirmTypes.has(f.firm));
+  }, [selectedFrameworkCategories]);
 
   // Feature toggles map
   const featureToggles: Record<string, { value: boolean; onChange: (v: boolean) => void }> = {
@@ -515,53 +527,161 @@ export function TemplateBrandingPanelV2({
             </div>
           </div>
 
-          {/* Framework Selection */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Framework Selection - Multi-Select */}
+          <div className="space-y-3">
             <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground">Framework Category</Label>
-              <Select value={selectedFrameworkCategory} onValueChange={setSelectedFrameworkCategory}>
-                <SelectTrigger className="w-full bg-background">
-                  <SelectValue placeholder="Select category..." />
-                </SelectTrigger>
-                <SelectContent className="bg-popover border shadow-lg z-50">
-                  {FRAMEWORK_CATEGORIES.map(cat => (
-                    <SelectItem key={cat.id} value={cat.id}>
-                      <span>{cat.label}</span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label className="text-xs text-muted-foreground">Framework Categories (Multi-Select)</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    className="w-full justify-between h-10 text-sm font-normal bg-background"
+                  >
+                    <span className="truncate">
+                      {selectedFrameworkCategories.length === 0 
+                        ? 'Select categories...' 
+                        : `${selectedFrameworkCategories.length} categor${selectedFrameworkCategories.length > 1 ? 'ies' : 'y'} selected`}
+                    </span>
+                    <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[280px] p-0 z-50 bg-popover border shadow-lg" align="start">
+                  <ScrollArea className="h-[200px]">
+                    <div className="p-2 space-y-1">
+                      {FRAMEWORK_CATEGORIES.map(cat => {
+                        const isSelected = selectedFrameworkCategories.includes(cat.id);
+                        return (
+                          <div
+                            key={cat.id}
+                            className={cn(
+                              'flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors',
+                              isSelected ? 'bg-primary/10 border border-primary/30' : 'hover:bg-muted border border-transparent'
+                            )}
+                            onClick={() => {
+                              if (cat.id === 'all') {
+                                setSelectedFrameworkCategories(['all']);
+                              } else {
+                                setSelectedFrameworkCategories(prev => {
+                                  const filtered = prev.filter(c => c !== 'all');
+                                  return isSelected 
+                                    ? filtered.filter(c => c !== cat.id)
+                                    : [...filtered, cat.id];
+                                });
+                              }
+                            }}
+                          >
+                            <Checkbox checked={isSelected} className="pointer-events-none" />
+                            <span className="text-sm">{cat.label}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </ScrollArea>
+                  {selectedFrameworkCategories.length > 0 && (
+                    <div className="p-2 border-t flex flex-wrap gap-1">
+                      {selectedFrameworkCategories.map(catId => {
+                        const cat = FRAMEWORK_CATEGORIES.find(c => c.id === catId);
+                        return (
+                          <Badge key={catId} variant="secondary" className="text-xs gap-1">
+                            {cat?.label}
+                            <X
+                              className="h-3 w-3 cursor-pointer hover:text-destructive"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedFrameworkCategories(prev => prev.filter(c => c !== catId));
+                              }}
+                            />
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  )}
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground">Framework</Label>
-              <Select 
-                value={selectedFrameworkId} 
-                onValueChange={(id) => {
-                  setSelectedFrameworkId(id);
-                  const framework = frameworksForCategory.find(f => f.id === id);
-                  if (framework) toast.success(`Selected: ${framework.name}`);
-                }}
-                disabled={!selectedFrameworkCategory}
-              >
-                <SelectTrigger className="w-full bg-background">
-                  <SelectValue placeholder={selectedFrameworkCategory ? "Select framework..." : "Select category first"} />
-                </SelectTrigger>
-                <SelectContent className="bg-popover border shadow-lg z-50">
-                  {frameworksForCategory.map(framework => (
-                    <SelectItem key={framework.id} value={framework.id}>
-                      <div className="flex items-center gap-2">
-                        <span>{framework.name}</span>
-                        {framework.frameworks.length > 0 && (
-                          <Badge variant="secondary" className="text-[10px]">
-                            {framework.frameworks.length} tools
-                          </Badge>
+              <Label className="text-xs text-muted-foreground">Frameworks (Multi-Select)</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    className="w-full justify-between h-10 text-sm font-normal bg-background"
+                    disabled={selectedFrameworkCategories.length === 0}
+                  >
+                    <span className="truncate">
+                      {selectedFrameworkCategories.length === 0 
+                        ? 'Select categories first...' 
+                        : selectedFrameworkIds.length === 0 
+                          ? 'Select frameworks...' 
+                          : `${selectedFrameworkIds.length} framework${selectedFrameworkIds.length > 1 ? 's' : ''} selected`}
+                    </span>
+                    <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[320px] p-0 z-50 bg-popover border shadow-lg" align="start">
+                  <ScrollArea className="h-[280px]">
+                    <div className="p-2 space-y-1">
+                      {frameworksForCategories.map(framework => {
+                        const isSelected = selectedFrameworkIds.includes(framework.id);
+                        return (
+                          <div
+                            key={framework.id}
+                            className={cn(
+                              'flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors',
+                              isSelected ? 'bg-primary/10 border border-primary/30' : 'hover:bg-muted border border-transparent'
+                            )}
+                            onClick={() => {
+                              setSelectedFrameworkIds(prev => 
+                                isSelected 
+                                  ? prev.filter(id => id !== framework.id)
+                                  : [...prev, framework.id]
+                              );
+                              if (!isSelected) {
+                                toast.success(`Added: ${framework.name}`);
+                              }
+                            }}
+                          >
+                            <Checkbox checked={isSelected} className="pointer-events-none" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{framework.name}</p>
+                              {framework.frameworks.length > 0 && (
+                                <p className="text-xs text-muted-foreground">{framework.frameworks.length} tools included</p>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </ScrollArea>
+                  {selectedFrameworkIds.length > 0 && (
+                    <div className="p-2 border-t">
+                      <div className="flex flex-wrap gap-1 max-h-[80px] overflow-auto">
+                        {selectedFrameworkIds.slice(0, 6).map(fwId => {
+                          const fw = CONSULTING_FRAMEWORKS.find(f => f.id === fwId);
+                          return (
+                            <Badge key={fwId} variant="secondary" className="text-xs gap-1">
+                              {fw?.name}
+                              <X
+                                className="h-3 w-3 cursor-pointer hover:text-destructive"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedFrameworkIds(prev => prev.filter(id => id !== fwId));
+                                }}
+                              />
+                            </Badge>
+                          );
+                        })}
+                        {selectedFrameworkIds.length > 6 && (
+                          <Badge variant="outline" className="text-xs">+{selectedFrameworkIds.length - 6} more</Badge>
                         )}
                       </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    </div>
+                  )}
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 

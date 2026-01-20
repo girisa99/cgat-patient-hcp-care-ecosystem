@@ -30,6 +30,7 @@ import {
   Quote,
   Shapes,
   X,
+  Check,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -308,24 +309,35 @@ export function VisualFeaturesDropdown({
 
                   {isExpanded && (
                     <div className="ml-8 pl-2 border-l-2 border-muted space-y-1">
-                      {feature.subOptions.map(subOption => (
-                        <div
-                          key={subOption.id}
-                          className={cn(
-                            'flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors',
-                            isSubOptionSelected(feature.id, subOption.id)
-                              ? 'bg-primary/5'
-                              : 'hover:bg-muted/50'
-                          )}
-                          onClick={() => toggleSubOption(feature.id, subOption.id)}
-                        >
-                          <Checkbox
-                            checked={isSubOptionSelected(feature.id, subOption.id)}
-                            className="pointer-events-none"
-                          />
-                          <span className="text-sm">{subOption.name}</span>
-                        </div>
-                      ))}
+                      {feature.subOptions.map(subOption => {
+                        const isChecked = isSubOptionSelected(feature.id, subOption.id);
+                        return (
+                          <div
+                            key={subOption.id}
+                            className={cn(
+                              'flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors select-none',
+                              isChecked
+                                ? 'bg-primary/10 border border-primary/30'
+                                : 'hover:bg-muted/50 border border-transparent'
+                            )}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              toggleSubOption(feature.id, subOption.id);
+                            }}
+                          >
+                            <Checkbox
+                              checked={isChecked}
+                              onCheckedChange={() => toggleSubOption(feature.id, subOption.id)}
+                              className="pointer-events-auto"
+                            />
+                            <span className="text-sm flex-1">{subOption.name}</span>
+                            {isChecked && (
+                              <Check className="h-3 w-3 text-primary" />
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
