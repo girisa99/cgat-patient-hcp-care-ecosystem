@@ -299,7 +299,7 @@ export const CreateTemplateDialog: React.FC<CreateTemplateDialogProps> = ({
           </TabsList>
 
           <ScrollArea className="flex-1 min-h-0 mt-2" style={{ maxHeight: 'calc(85vh - 220px)' }}>
-            <TabsContent value="details" className="mt-4 space-y-4">
+            <TabsContent value="details" className="mt-4 space-y-4 pr-4">
               {type === 'framework' ? (
                 // Framework form
                 <>
@@ -553,7 +553,7 @@ export const CreateTemplateDialog: React.FC<CreateTemplateDialogProps> = ({
               </div>
             </TabsContent>
 
-            <TabsContent value="ai-config" className="mt-4">
+            <TabsContent value="ai-config" className="mt-4 pr-4">
               <TemplateAIModelSelector
                 industry={currentIndustry}
                 languages={defaultLanguages}

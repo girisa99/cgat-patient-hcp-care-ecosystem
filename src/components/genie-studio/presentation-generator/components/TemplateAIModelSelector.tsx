@@ -36,7 +36,6 @@ import {
   Sparkles,
   Type,
   Image as ImageIcon,
-  Mic,
   Languages,
   Wand2,
   Check,
@@ -283,17 +282,15 @@ export const TemplateAIModelSelector: React.FC<TemplateAIModelSelectorProps> = (
       [type]: newValue,
     };
     
-    // Recalculate confidence
+    // Recalculate confidence (only text, image, translation - no voice for templates)
     const textProvider = AI_PROVIDERS.find(p => p.id === updated.textModel);
     const imageProvider = AI_PROVIDERS.find(p => p.id === updated.imageModel);
-    const voiceProvider = AI_PROVIDERS.find(p => p.id === updated.voiceModel);
     const translationProvider = AI_PROVIDERS.find(p => p.id === updated.translationModel);
     
     const avgConfidence = Math.round(
       ((textProvider?.confidenceScore || 80) +
         (imageProvider?.confidenceScore || 80) +
-        (voiceProvider?.confidenceScore || 80) +
-        (translationProvider?.confidenceScore || 80)) / 4
+        (translationProvider?.confidenceScore || 80)) / 3
     );
     
     updated.confidence = avgConfidence;
@@ -378,8 +375,8 @@ export const TemplateAIModelSelector: React.FC<TemplateAIModelSelectorProps> = (
           </div>
         )}
 
-        {/* Model Grid */}
-        <div className="grid grid-cols-2 gap-4">
+        {/* Model Grid - Text, Image, Translation only (no voice for templates) */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <CategoryModelSelector
             category="text"
             icon={Type}
@@ -396,15 +393,6 @@ export const TemplateAIModelSelector: React.FC<TemplateAIModelSelectorProps> = (
             value={current.imageModel}
             recommendedId={recommendations.imageModel}
             onChange={(v) => handleModelChange('imageModel', v)}
-            isAutoSelect={isAutoSelect}
-          />
-          <CategoryModelSelector
-            category="voice"
-            icon={Mic}
-            label="Voice Model"
-            value={current.voiceModel}
-            recommendedId={recommendations.voiceModel}
-            onChange={(v) => handleModelChange('voiceModel', v)}
             isAutoSelect={isAutoSelect}
           />
           <CategoryModelSelector
