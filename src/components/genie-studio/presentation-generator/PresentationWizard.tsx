@@ -128,6 +128,7 @@ import {
 } from './wizardConstants';
 import { ContentTypeSelector, CONTENT_CATEGORIES, EXTENDED_COLLATERAL_TYPES } from './ContentTypeSelector';
 import { AIModelConfigPanel } from './AIModelConfigPanel';
+import { ConfigurationPanel } from './ConfigurationPanel';
 import { TemplateBrandingPanelV2 as TemplateBrandingPanel, BrandConfig } from './TemplateBrandingPanelV2';
 import { AgentSelectorDialog, AgentCard, AgentModelConfig } from './AgentSelectorDialog';
 import { AgentLanguageConfigPanel } from './AgentLanguageConfigPanel';
@@ -1359,156 +1360,8 @@ export function PresentationWizard({
                   </div>
                 </div>
 
-                {/* Industry & Segment Card */}
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Industry Dropdown */}
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium flex items-center gap-2">
-                      <Building2 className="h-4 w-4 text-primary" />
-                      Industry
-                    </Label>
-                    <Select
-                      value={workflowConfig?.industryCategory || ''}
-                      onValueChange={(value) => {
-                        const rec = getRecommendedProviders(
-                          value,
-                          '',
-                          workflowConfig?.collateralType?.id || '',
-                          selectedLanguages
-                        );
-                        setWorkflowConfig(prev => ({
-                          ...prev!,
-                          industryCategory: value,
-                          segment: '', // Reset segment when industry changes
-                          aiRecommendation: rec,
-                        }));
-                        setSelectedAIModel(rec.textModel);
-                        setImageModel(rec.imageModel as any);
-                      }}
-                    >
-                      <SelectTrigger className="h-11 bg-background">
-                        <SelectValue placeholder="Select your industry..." />
-                      </SelectTrigger>
-                      <SelectContent className="bg-background border shadow-lg z-50">
-                        {INDUSTRY_CATEGORIES.map(industry => (
-                          <SelectItem key={industry.id} value={industry.id}>
-                            <div className="flex items-center gap-2">
-                              <span className="text-primary">{industry.icon}</span>
-                              <span className="text-foreground">{industry.name}</span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                        <Separator className="my-1" />
-                        <div
-                          className="flex items-center gap-2 px-2 py-1.5 text-sm cursor-pointer hover:bg-accent rounded text-primary"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const newIndustry = prompt('Enter new industry name:');
-                            if (newIndustry) {
-                              toast.success(`Industry "${newIndustry}" noted. Contact support to add permanently.`);
-                            }
-                          }}
-                        >
-                          <span>+</span>
-                          <span>Add New Industry...</span>
-                        </div>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Segment Dropdown - Only shows when industry is selected */}
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium flex items-center gap-2">
-                      <Target className="h-4 w-4 text-primary" />
-                      Segment
-                      <span className="text-xs text-muted-foreground font-normal">(Optional)</span>
-                    </Label>
-                    <Select
-                      value={workflowConfig?.segment || ''}
-                      onValueChange={(value) => {
-                        const rec = getRecommendedProviders(
-                          workflowConfig?.industryCategory || '',
-                          value,
-                          workflowConfig?.collateralType?.id || '',
-                          selectedLanguages
-                        );
-                        setWorkflowConfig(prev => ({
-                          ...prev!,
-                          segment: value,
-                          aiRecommendation: rec,
-                        }));
-                        setSelectedAIModel(rec.textModel);
-                        setImageModel(rec.imageModel as any);
-                      }}
-                      disabled={!workflowConfig?.industryCategory || !SEGMENTS[workflowConfig.industryCategory]}
-                    >
-                      <SelectTrigger className="h-11 bg-background">
-                        <SelectValue placeholder={workflowConfig?.industryCategory ? "Select segment..." : "Select industry first"} />
-                      </SelectTrigger>
-                      <SelectContent className="bg-background border shadow-lg z-50">
-                        {workflowConfig?.industryCategory && SEGMENTS[workflowConfig.industryCategory]?.map(segment => (
-                          <SelectItem key={segment.id} value={segment.id}>
-                            <div className="flex flex-col">
-                              <span className="text-foreground">{segment.name}</span>
-                              <span className="text-xs text-muted-foreground">{segment.description}</span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                        {workflowConfig?.industryCategory && (
-                          <>
-                            <Separator className="my-1" />
-                            <div
-                              className="flex items-center gap-2 px-2 py-1.5 text-sm cursor-pointer hover:bg-accent rounded text-primary"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const newSegment = prompt('Enter new segment name:');
-                                if (newSegment) {
-                                  toast.success(`Segment "${newSegment}" noted. Contact support to add permanently.`);
-                                }
-                              }}
-                            >
-                              <span>+</span>
-                              <span>Add New Segment...</span>
-                            </div>
-                          </>
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Content Type Selection */}
-                <ContentTypeSelector
-                  contentCategory={contentCategory}
-                  setContentCategory={setContentCategory}
-                  selectedContentTypes={selectedContentTypes}
-                  setSelectedContentTypes={setSelectedContentTypes}
-                  workflowConfig={workflowConfig}
-                  onSelectCollateralType={(ct) => {
-                    const rec = getRecommendedProviders(
-                      workflowConfig?.industryCategory || '',
-                      workflowConfig?.segment || '',
-                      ct.id,
-                      selectedLanguages
-                    );
-                    setWorkflowConfig(prev => ({
-                      ...prev!,
-                      collateralType: ct,
-                      slideCount: ct.suggestedSlides,
-                      aiRecommendation: rec,
-                    }));
-                    setSelectedAIModel(rec.textModel);
-                    setImageModel(rec.imageModel as any);
-                  }}
-                  selectedLanguages={selectedLanguages}
-                />
-
-                {/* AI Model Configuration - New Component */}
-                <AIModelConfigPanel
+                {/* Unified Configuration Panel - AI Auto vs Custom */}
+                <ConfigurationPanel
                   workflowConfig={workflowConfig}
                   setWorkflowConfig={setWorkflowConfig}
                   selectedAIModel={selectedAIModel}
@@ -1518,7 +1371,9 @@ export function PresentationWizard({
                   isAutoSelect={isAutoSelectModels}
                   setIsAutoSelect={setIsAutoSelectModels}
                   contentCategory={contentCategory}
+                  setContentCategory={setContentCategory}
                   selectedContentTypes={selectedContentTypes}
+                  setSelectedContentTypes={setSelectedContentTypes}
                 />
               </div>
             )}
