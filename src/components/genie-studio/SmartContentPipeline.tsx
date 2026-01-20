@@ -69,7 +69,7 @@ import { PresentationScriptView } from './PresentationScriptView';
 import { VideoContentAnalyzer, VideoAnalysisResult, VideoScriptOptions, DetectedContentType } from './VideoContentAnalyzer';
 import { URLContentAnalyzer, URLAnalysisResult, URLScriptOptions, DetectedURLContentType } from './URLContentAnalyzer';
 import { SlideScript } from './SlideScriptCard';
-import { PresentationGeneratorPanel } from './presentation-generator';
+import { PresentationWizard } from './presentation-generator';
 import { 
   SegmentedScriptEditor, 
   SegmentedScriptData, 
@@ -1689,21 +1689,24 @@ export function SmartContentPipeline({
 
           {/* Dynamic Content Based on Selection */}
           {contentType === 'presentation' ? (
-            /* Presentation Generator - Integrated directly */
-            <PresentationGeneratorPanel
+            /* Presentation Wizard - New 6-step standardized workflow */
+            <PresentationWizard
+              className="h-[calc(100vh-200px)] min-h-[600px]"
               onComplete={(presentation) => {
-                toast.success(`Presentation "${presentation.title}" generated!`);
+                toast.success(`Presentation "${presentation?.metadata?.title || 'Untitled'}" generated!`);
+                if (onSaveToKnowledgeBase && presentation) {
+                  const generatedContent: GeneratedContent = {
+                    title: presentation.metadata?.title || 'Presentation',
+                    script: JSON.stringify(presentation.slides || []),
+                    type: 'presentation_script',
+                    sourceType: 'document',
+                  };
+                  onSaveToKnowledgeBase(generatedContent);
+                }
               }}
-              onSaveToKnowledgeBase={onSaveToKnowledgeBase ? (title, content) => {
-                const generatedContent: GeneratedContent = {
-                  title,
-                  script: content,
-                  type: 'presentation_script',
-                  sourceType: 'document',
-                };
-                onSaveToKnowledgeBase(generatedContent);
-              } : undefined}
-              hideHeader={true}
+              onError={(error) => {
+                toast.error('Generation failed', { description: error });
+              }}
             />
           ) : null}
 
