@@ -3,7 +3,7 @@
  * Uses proper Select components for better UX
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -352,6 +352,213 @@ const SubOptionsDropdown: React.FC<SubOptionsDropdownProps> = ({
 // MAIN COMPONENT
 // ==========================================
 
+// ==========================================
+// CONTENT TYPE MULTI-SELECT DROPDOWN
+// ==========================================
+
+interface ContentTypeDropdownProps {
+  options: typeof EXTENDED_COLLATERAL_TYPES;
+  selectedTypes: string[];
+  onTypesChange: (types: string[]) => void;
+  onSelectCollateral: (ct: any) => void;
+}
+
+const ContentTypeDropdown: React.FC<ContentTypeDropdownProps> = ({
+  options,
+  selectedTypes,
+  onTypesChange,
+  onSelectCollateral,
+}) => {
+  const [open, setOpen] = useState(false);
+
+  const toggleType = (typeId: string, ct: any) => {
+    if (selectedTypes.includes(typeId)) {
+      onTypesChange(selectedTypes.filter(id => id !== typeId));
+    } else {
+      onTypesChange([...selectedTypes, typeId]);
+      onSelectCollateral(ct);
+    }
+  };
+
+  const displayText = selectedTypes.length === 0
+    ? 'Select content types...'
+    : `${selectedTypes.length} content type${selectedTypes.length > 1 ? 's' : ''} selected`;
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between h-10 text-sm font-normal bg-background"
+        >
+          <span className="truncate">{displayText}</span>
+          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[350px] p-0 z-50 bg-popover border shadow-lg" align="start">
+        <ScrollArea className="h-[280px]">
+          <div className="p-2 space-y-1">
+            {options.map(ct => (
+              <div
+                key={ct.id}
+                className={cn(
+                  "flex items-center gap-3 p-2.5 rounded-md cursor-pointer hover:bg-accent transition-colors",
+                  selectedTypes.includes(ct.id) && "bg-primary/10 border border-primary/30"
+                )}
+                onClick={() => toggleType(ct.id, ct)}
+              >
+                <Checkbox
+                  checked={selectedTypes.includes(ct.id)}
+                  className="pointer-events-none"
+                />
+                <div className="p-1.5 rounded bg-muted">
+                  {ct.icon}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{ct.name}</p>
+                  <p className="text-xs text-muted-foreground truncate">{ct.description}</p>
+                </div>
+                <Badge variant="secondary" className="text-[10px] shrink-0">
+                  {ct.suggestedSlides} slides
+                </Badge>
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
+        {selectedTypes.length > 0 && (
+          <div className="p-2 border-t">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full text-xs"
+              onClick={() => onTypesChange([])}
+            >
+              Clear All
+            </Button>
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+};
+
+// ==========================================
+// CATEGORY MULTI-SELECT DROPDOWN
+// ==========================================
+
+interface CategoryMultiSelectProps {
+  selectedCategories: string[];
+  onCategoriesChange: (categories: string[]) => void;
+}
+
+const CategoryMultiSelect: React.FC<CategoryMultiSelectProps> = ({
+  selectedCategories,
+  onCategoriesChange,
+}) => {
+  const [open, setOpen] = useState(false);
+
+  const toggleCategory = (categoryId: string) => {
+    if (selectedCategories.includes(categoryId)) {
+      onCategoriesChange(selectedCategories.filter(id => id !== categoryId));
+    } else {
+      onCategoriesChange([...selectedCategories, categoryId]);
+    }
+  };
+
+  const displayText = selectedCategories.length === 0
+    ? 'Select categories...'
+    : selectedCategories.length === 1
+      ? CONTENT_CATEGORIES.find(c => c.id === selectedCategories[0])?.label || '1 selected'
+      : `${selectedCategories.length} categories`;
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between h-10 text-sm font-normal bg-background"
+        >
+          <div className="flex items-center gap-2 truncate">
+            {selectedCategories.length === 1 ? (
+              <>
+                {(() => {
+                  const cat = CONTENT_CATEGORIES.find(c => c.id === selectedCategories[0]);
+                  if (cat) {
+                    const Icon = cat.icon;
+                    return <Icon className="h-4 w-4 text-primary" />;
+                  }
+                  return null;
+                })()}
+                <span>{displayText}</span>
+              </>
+            ) : (
+              <span>{displayText}</span>
+            )}
+          </div>
+          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[300px] p-0 z-50 bg-popover border shadow-lg" align="start">
+        <ScrollArea className="h-[300px]">
+          <div className="p-2 space-y-1">
+            {CONTENT_CATEGORIES.map(category => {
+              const Icon = category.icon;
+              return (
+                <div
+                  key={category.id}
+                  className={cn(
+                    "flex items-center gap-3 p-2.5 rounded-md cursor-pointer hover:bg-accent transition-colors",
+                    selectedCategories.includes(category.id) && "bg-primary/10 border border-primary/30"
+                  )}
+                  onClick={() => toggleCategory(category.id)}
+                >
+                  <Checkbox
+                    checked={selectedCategories.includes(category.id)}
+                    className="pointer-events-none"
+                  />
+                  <div className={cn(
+                    "p-1.5 rounded",
+                    category.isAI ? "bg-primary/10" : "bg-muted"
+                  )}>
+                    <Icon className={cn("h-4 w-4", category.isAI ? "text-primary" : "text-muted-foreground")} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium">{category.label}</p>
+                    <p className="text-xs text-muted-foreground truncate">{category.description}</p>
+                  </div>
+                  {category.isAI && (
+                    <Badge variant="secondary" className="text-[10px]">AI</Badge>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </ScrollArea>
+        {selectedCategories.length > 0 && (
+          <div className="p-2 border-t">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full text-xs"
+              onClick={() => onCategoriesChange([])}
+            >
+              Clear All
+            </Button>
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+};
+
+// ==========================================
+// MAIN COMPONENT
+// ==========================================
+
 interface ContentTypeSelectorProps {
   contentCategory: string;
   setContentCategory: (category: string) => void;
@@ -375,18 +582,41 @@ export const ContentTypeSelector: React.FC<ContentTypeSelectorProps> = ({
   selectedSubOptions = [],
   onSubOptionChange,
 }) => {
-  const filteredCollaterals = useMemo(() => 
-    EXTENDED_COLLATERAL_TYPES.filter(c => c.category === contentCategory),
-    [contentCategory]
+  // Support multiple categories
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(
+    contentCategory ? [contentCategory] : ['ai-generated']
   );
+
+  // Get content types for all selected categories
+  const filteredCollaterals = useMemo(() => {
+    if (selectedCategories.includes('ai-generated')) {
+      return EXTENDED_COLLATERAL_TYPES;
+    }
+    return EXTENDED_COLLATERAL_TYPES.filter(c => selectedCategories.includes(c.category));
+  }, [selectedCategories]);
   
-  const currentSubOptions = useMemo(() => 
-    CATEGORY_SUB_OPTIONS[contentCategory] || [],
-    [contentCategory]
-  );
+  // Get sub-options for selected categories
+  const currentSubOptions = useMemo(() => {
+    const allSubOptions: typeof CATEGORY_SUB_OPTIONS['training'] = [];
+    selectedCategories.forEach(cat => {
+      if (CATEGORY_SUB_OPTIONS[cat]) {
+        allSubOptions.push(...CATEGORY_SUB_OPTIONS[cat]);
+      }
+    });
+    return allSubOptions;
+  }, [selectedCategories]);
   
   const hasSubOptions = currentSubOptions.length > 0;
-  const selectedCategoryData = CONTENT_CATEGORIES.find(c => c.id === contentCategory);
+  const isAIMode = selectedCategories.includes('ai-generated');
+
+  // Sync with parent when categories change
+  useEffect(() => {
+    if (selectedCategories.length === 1) {
+      setContentCategory(selectedCategories[0]);
+    } else if (selectedCategories.length > 1) {
+      setContentCategory('mixed');
+    }
+  }, [selectedCategories, setContentCategory]);
 
   return (
     <Card>
@@ -396,84 +626,51 @@ export const ContentTypeSelector: React.FC<ContentTypeSelectorProps> = ({
           <LayoutGrid className="h-4 w-4 text-primary" />
           <span className="text-sm font-semibold text-foreground">Content Type</span>
           <Badge variant="outline" className="text-[10px]">
-            {CONTENT_CATEGORIES.length} categories
+            Multi-select
           </Badge>
         </div>
 
-        {/* Category Dropdown */}
+        {/* Category Multi-Select Dropdown */}
         <div className="space-y-2">
-          <Label className="text-xs text-muted-foreground">Category</Label>
-          <Select value={contentCategory} onValueChange={(value) => {
-            setContentCategory(value);
-            if (value === 'ai-generated') {
-              setSelectedContentTypes([]);
-            }
-            if (onSubOptionChange) {
-              onSubOptionChange([]);
-            }
-          }}>
-            <SelectTrigger className="h-10 bg-background">
-              <SelectValue>
-                {selectedCategoryData && (
-                  <div className="flex items-center gap-2">
-                    <selectedCategoryData.icon className="h-4 w-4 text-primary" />
-                    <span>{selectedCategoryData.label}</span>
-                  </div>
-                )}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent className="z-50 bg-popover border shadow-lg">
-              {CONTENT_CATEGORIES.map(category => (
-                <SelectItem key={category.id} value={category.id}>
-                  <div className="flex items-center gap-2">
-                    <category.icon className={cn("h-4 w-4", category.isAI ? "text-primary" : "text-muted-foreground")} />
-                    <div className="flex flex-col">
-                      <span className="font-medium">{category.label}</span>
-                      <span className="text-xs text-muted-foreground">{category.description}</span>
-                    </div>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Label className="text-xs text-muted-foreground">Categories</Label>
+          <CategoryMultiSelect
+            selectedCategories={selectedCategories}
+            onCategoriesChange={(cats) => {
+              setSelectedCategories(cats);
+              if (onSubOptionChange) {
+                onSubOptionChange([]);
+              }
+            }}
+          />
+          {selectedCategories.length > 0 && (
+            <div className="flex flex-wrap gap-1 pt-1">
+              {selectedCategories.map(catId => {
+                const cat = CONTENT_CATEGORIES.find(c => c.id === catId);
+                if (!cat) return null;
+                const Icon = cat.icon;
+                return (
+                  <Badge key={catId} variant="secondary" className="text-[10px] py-0.5 gap-1">
+                    <Icon className="h-3 w-3" />
+                    {cat.label}
+                  </Badge>
+                );
+              })}
+            </div>
+          )}
         </div>
         
-        {/* AI Auto-Select Mode */}
-        {contentCategory === 'ai-generated' && (
-          <div className="space-y-3 p-3 rounded-lg border border-primary/30 bg-primary/5">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium text-foreground">AI Auto-Select</span>
-              <Badge variant="secondary" className="text-[10px]">Recommended</Badge>
-            </div>
+        {/* AI Auto-Select Info */}
+        {isAIMode && (
+          <div className="flex items-center gap-2 p-2.5 rounded-lg bg-primary/5 border border-primary/20">
+            <Sparkles className="h-4 w-4 text-primary shrink-0" />
             <p className="text-xs text-muted-foreground">
-              AI will select optimal content types based on your industry, segment, and context.
+              <span className="text-foreground font-medium">AI Mode:</span> All content types available for intelligent selection
             </p>
-            <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground">Content Types (optional)</Label>
-              <AIAutoSelectDropdown
-                selectedContentTypes={selectedContentTypes}
-                setSelectedContentTypes={setSelectedContentTypes}
-              />
-            </div>
-            {selectedContentTypes.length > 0 && (
-              <div className="flex flex-wrap gap-1 pt-1">
-                {selectedContentTypes.map(typeId => {
-                  const ct = EXTENDED_COLLATERAL_TYPES.find(c => c.id === typeId);
-                  return ct ? (
-                    <Badge key={typeId} variant="default" className="text-[10px] py-0.5 bg-primary/80">
-                      <Check className="h-2.5 w-2.5 mr-1" />
-                      {ct.name}
-                    </Badge>
-                  ) : null;
-                })}
-              </div>
-            )}
           </div>
         )}
 
         {/* Sub-Options Dropdown */}
-        {contentCategory !== 'ai-generated' && hasSubOptions && onSubOptionChange && (
+        {!isAIMode && hasSubOptions && onSubOptionChange && (
           <div className="space-y-2">
             <Label className="text-xs text-muted-foreground flex items-center gap-2">
               <Zap className="h-3 w-3 text-primary" />
@@ -500,52 +697,37 @@ export const ContentTypeSelector: React.FC<ContentTypeSelectorProps> = ({
           </div>
         )}
 
-        {/* Content Type Selection Grid */}
-        {contentCategory !== 'ai-generated' && filteredCollaterals.length > 0 && (
-          <div className="space-y-2">
-            <Label className="text-xs text-muted-foreground">Content Type</Label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {filteredCollaterals.slice(0, 6).map(ct => {
-                const isSelected = workflowConfig?.collateralType?.id === ct.id;
-                
-                return (
-                  <div
-                    key={ct.id}
-                    className={cn(
-                      "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all",
-                      "hover:border-primary/50 hover:bg-primary/5",
-                      isSelected && "border-primary bg-primary/10 ring-1 ring-primary/30"
-                    )}
-                    onClick={() => onSelectCollateralType(ct)}
-                  >
-                    <div className={cn(
-                      "p-2 rounded-md shrink-0",
-                      isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                    )}>
-                      {ct.icon}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate text-foreground">{ct.name}</p>
-                      <p className="text-[11px] text-muted-foreground truncate">{ct.description}</p>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <span className="text-xs font-medium">{ct.suggestedSlides}</span>
-                      <span className="text-[10px] text-muted-foreground ml-0.5">slides</span>
-                    </div>
-                    {isSelected && <Check className="h-4 w-4 text-primary shrink-0" />}
-                  </div>
-                );
+        {/* Content Type Multi-Select Dropdown */}
+        <div className="space-y-2">
+          <Label className="text-xs text-muted-foreground">Content Types</Label>
+          <ContentTypeDropdown
+            options={filteredCollaterals}
+            selectedTypes={selectedContentTypes}
+            onTypesChange={setSelectedContentTypes}
+            onSelectCollateral={onSelectCollateralType}
+          />
+          {selectedContentTypes.length > 0 && (
+            <div className="flex flex-wrap gap-1 pt-1">
+              {selectedContentTypes.map(typeId => {
+                const ct = EXTENDED_COLLATERAL_TYPES.find(c => c.id === typeId);
+                return ct ? (
+                  <Badge key={typeId} variant="default" className="text-[10px] py-0.5 bg-primary/80">
+                    <Check className="h-2.5 w-2.5 mr-1" />
+                    {ct.name}
+                    <span className="ml-1 opacity-70">{ct.suggestedSlides} slides</span>
+                  </Badge>
+                ) : null;
               })}
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Empty State */}
-        {contentCategory !== 'ai-generated' && filteredCollaterals.length === 0 && (
+        {filteredCollaterals.length === 0 && (
           <div className="text-center py-6 text-muted-foreground">
             <LayoutGrid className="h-6 w-6 mx-auto mb-2 opacity-50" />
-            <p className="text-xs">No content types for this category yet</p>
-            <p className="text-[10px] mt-1">Select a different category or use AI Auto</p>
+            <p className="text-xs">No content types for selected categories</p>
+            <p className="text-[10px] mt-1">Select different categories or add AI Auto</p>
           </div>
         )}
       </CardContent>
