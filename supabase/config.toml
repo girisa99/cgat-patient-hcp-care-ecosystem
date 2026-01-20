@@ -290,3 +290,12 @@ verify_jwt = false
 
 [functions.elevenlabs-sfx]
 verify_jwt = false
+
+[functions.azure-form-recognizer]
+verify_jwt = false
+
+[functions.alibaba-stt]
+verify_jwt = false
+
+[functions.deepseek-vision]
+verify_jwt = false
