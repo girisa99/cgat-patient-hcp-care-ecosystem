@@ -106,7 +106,9 @@ import { MultiLanguageGenerator, useMultiLanguageGeneration, SUPPORTED_LANGUAGES
 import { TableEditor, ChartEditor } from './TableChartEditor';
 import { DraggableSlideLayout, LayoutElement } from './DraggableSlideLayout';
 import { useUniversalPresentation, DownloadFormat } from '@/hooks/useUniversalPresentation';
-import { GenerationProgressPanel, SlideGenerationStatus } from './GenerationProgressPanel';
+import { GenerationProgressPanel, SlideGenerationStatus, ChapterGenerationStatus } from './GenerationProgressPanel';
+import { OutputTypePanel, getDefaultOutputSettings, OutputTypeSettings } from './OutputTypePanel';
+import { OUTPUT_SLIDE_TEMPLATES, OutputType } from './types';
 import { LanguageConfigPopup } from './LanguageConfigPopup';
 import { GenerationSummaryPanel } from './GenerationSummaryPanel';
 import { VersionComparisonPanel } from './VersionComparisonPanel';
@@ -207,11 +209,12 @@ const getConfidenceColor = (score: number): string => {
   return 'text-red-500 bg-red-500/10';
 };
 
-// Wizard Steps - 5-Step standardized workflow
+// Wizard Steps - 6-Step standardized workflow (with Output Type)
 const WIZARD_STEPS = [
   { id: 'input', label: 'Input', icon: Type, description: 'Add your source material and context' },
   { id: 'configure', label: 'Configure', icon: Settings2, description: 'Select industry, segment & content type' },
   { id: 'template', label: 'Template & Branding', icon: Layout, description: 'Choose templates, themes and branding' },
+  { id: 'output', label: 'Output Type', icon: Layers, description: 'Choose 2D, 3D, Video or Interactive output' },
   { id: 'agents', label: 'Agents & Languages', icon: Brain, description: 'Configure AI agents and multi-language settings' },
   { id: 'generate', label: 'Generate', icon: Wand2, description: 'Review and create your presentation' },
 ];
@@ -463,8 +466,12 @@ export function PresentationWizard({
   const [exportedVideoUrl, setExportedVideoUrl] = useState<string | null>(null);
 
   // Generation progress tracking
-  const [generationPhase, setGenerationPhase] = useState<'analyzing' | 'structuring' | 'generating' | 'images' | 'complete'>('analyzing');
+  const [generationPhase, setGenerationPhase] = useState<'analyzing' | 'structuring' | 'generating' | 'images' | 'animations' | '3d-modeling' | '3d-rendering' | 'video-scenes' | 'video-compositing' | 'audio-tts' | 'audio-music' | 'interactive' | 'finalizing' | 'complete'>('analyzing');
   const [slideStatuses, setSlideStatuses] = useState<SlideGenerationStatus[]>([]);
+  const [chapterStatuses, setChapterStatuses] = useState<ChapterGenerationStatus[]>([]);
+  
+  // Output Type settings (2D, 3D, Video, Interactive)
+  const [outputSettings, setOutputSettings] = useState<OutputTypeSettings>(getDefaultOutputSettings(10));
 
   // Inline options (to avoid service method type issues)
   const imageStyleOptions = [
@@ -1401,8 +1408,32 @@ export function PresentationWizard({
               />
             )}
 
-            {/* Step 3: AI Agents & Multi-Language - Enhanced Panel */}
+            {/* Step 3: Output Type Selection */}
             {currentStep === 3 && (
+              <div className="space-y-4">
+                {/* Step Header */}
+                <div className="flex items-center gap-3 p-4 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <Layers className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-sm">Output Type & Structure</h3>
+                    <p className="text-xs text-muted-foreground">
+                      Choose your output format: 2D slides, 3D scenes, video, or interactive
+                    </p>
+                  </div>
+                </div>
+                
+                <OutputTypePanel
+                  value={outputSettings}
+                  onChange={setOutputSettings}
+                  suggestedSlideCount={10}
+                />
+              </div>
+            )}
+
+            {/* Step 4: AI Agents & Multi-Language - Enhanced Panel */}
+            {currentStep === 4 && (
               <AgentLanguageConfigPanel
                 useAgenticGeneration={useAgenticGeneration}
                 onUseAgenticGenerationChange={setUseAgenticGeneration}
@@ -1414,13 +1445,13 @@ export function PresentationWizard({
                 onSelectedLanguagesChange={setSelectedLanguages}
                 primaryLanguage={primaryLanguage}
                 onPrimaryLanguageChange={setPrimaryLanguage}
-                includeVoiceover={includeVoiceover}
+                includeVoiceover={outputSettings.includeVoiceover || includeVoiceover}
                 onIncludeVoiceoverChange={setIncludeVoiceover}
               />
             )}
 
-            {/* Step 4: Review & Generate */}
-            {currentStep === 4 && (
+            {/* Step 5: Review & Generate */}
+            {currentStep === 5 && (
               <div className="space-y-6">
                 {/* Step Header */}
                 <div className="flex items-center gap-3 p-4 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20">
