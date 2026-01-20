@@ -282,11 +282,35 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
     };
   }, [mode, workflowConfig, modelRecommendation]);
 
+  // Default workflow config structure for initialization
+  const getDefaultWorkflowConfig = (): FinalWorkflowConfig => ({
+    collateralType: null,
+    industryCategory: '',
+    segment: '',
+    languages: selectedLanguages || ['en'],
+    brandConfig: {} as any,
+    theme: {
+      id: 'default',
+      name: 'Default',
+      colors: { primary: '#1f2937', secondary: '#3b82f6', accent: '#10b981', background: '#ffffff', foreground: '#111827' },
+      fonts: { heading: 'Inter', body: 'Inter' },
+    },
+    aiModels: {
+      textModel: 'google/gemini-3-flash-preview',
+      imageModel: 'gemini-nano-banana',
+      voiceModel: 'elevenlabs-multilingual',
+      translationModel: 'deepl',
+    },
+    slideCount: 10,
+    includeNotes: true,
+    includeVoiceover: false,
+  });
+
   // Handle industry change - triggers dynamic model re-calculation
   const handleIndustryChange = (value: string) => {
-    if (!workflowConfig) return;
+    const baseConfig = workflowConfig || getDefaultWorkflowConfig();
     setWorkflowConfig({
-      ...workflowConfig,
+      ...baseConfig,
       industryCategory: value,
       segment: '', // Reset segment when industry changes
     });
@@ -294,9 +318,9 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
 
   // Handle segment change - triggers dynamic model re-calculation
   const handleSegmentChange = (value: string) => {
-    if (!workflowConfig) return;
+    const baseConfig = workflowConfig || getDefaultWorkflowConfig();
     setWorkflowConfig({
-      ...workflowConfig,
+      ...baseConfig,
       segment: value,
     });
   };
