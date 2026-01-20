@@ -1,16 +1,15 @@
 /**
  * Enhanced Agent & Language Configuration Panel
  * Provides full agent architecture selection with provider configuration and multi-language generation
+ * REFACTORED: Removed nested Card structures for cleaner UI
  */
 
 import React, { useState, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Select,
   SelectContent,
@@ -99,7 +98,7 @@ interface LanguageVoiceConfig {
 
 interface AgentLanguageConfigPanelProps {
   useAgenticGeneration: boolean;
-  onUseAgenticGenerationChange: (value: boolean) => void;
+  onUseAgenticGenerationChange: (use: boolean) => void;
   selectedAgents: string[];
   onSelectedAgentsChange: (agents: string[]) => void;
   agentModelConfigs: AgentModelConfig[];
@@ -109,7 +108,7 @@ interface AgentLanguageConfigPanelProps {
   primaryLanguage: string;
   onPrimaryLanguageChange: (language: string) => void;
   includeVoiceover: boolean;
-  onIncludeVoiceoverChange: (value: boolean) => void;
+  onIncludeVoiceoverChange: (include: boolean) => void;
   className?: string;
 }
 
@@ -126,79 +125,65 @@ export function AgentLanguageConfigPanel({
   onPrimaryLanguageChange,
   includeVoiceover,
   onIncludeVoiceoverChange,
-  className
+  className,
 }: AgentLanguageConfigPanelProps) {
-  const [selectedArchitecture, setSelectedArchitecture] = useState<AgentArchitectureType>('agentic');
-  const [showAgentConfig, setShowAgentConfig] = useState<string | null>(null);
+  const [selectedArchitecture, setSelectedArchitecture] = useState<AgentArchitectureType>('single');
   const [expandedAgents, setExpandedAgents] = useState(false);
   const [expandedLanguages, setExpandedLanguages] = useState(false);
-  const [languageVoiceConfigs, setLanguageVoiceConfigs] = useState<LanguageVoiceConfig[]>([]);
+  const [showAgentConfig, setShowAgentConfig] = useState<string | null>(null);
 
-  // Get agents by architecture type
-  const getAgentsByArchitecture = (archType: AgentArchitectureType) => {
-    return Object.entries(AGENT_CATALOG).filter(([_, agent]) => agent.architectureType === archType);
-  };
+  // Get agents filtered by architecture
+  const getAgentsByArchitecture = useCallback((archType: AgentArchitectureType) => {
+    return Object.entries(AGENT_CATALOG).filter(
+      ([_, agent]) => agent.architectureType === archType
+    );
+  }, []);
 
   // Handle architecture selection
-  const handleArchitectureSelect = (archType: AgentArchitectureType) => {
+  const handleArchitectureSelect = useCallback((archType: AgentArchitectureType) => {
     setSelectedArchitecture(archType);
+    const agentsForArch = getAgentsByArchitecture(archType).map(([key]) => key);
+    onSelectedAgentsChange(agentsForArch);
+    onUseAgenticGenerationChange(archType !== 'single');
+    toast.success(`Switched to ${ARCHITECTURE_TYPE_INFO[archType].label} architecture`);
+  }, [getAgentsByArchitecture, onSelectedAgentsChange, onUseAgenticGenerationChange]);
+
+  // Handle language toggle
+  const handleLanguageToggle = useCallback((langCode: string) => {
+    if (langCode === primaryLanguage) return;
     
-    // Auto-select agents based on architecture
-    const archAgents = getAgentsByArchitecture(archType);
-    const agentKeys = archAgents.map(([key]) => key);
-    
-    if (archType === 'a2a') {
-      // A2A includes coordinator + all agents
-      onSelectedAgentsChange(Object.keys(AGENT_CATALOG));
-    } else if (archType === 'agentic') {
-      // Agentic excludes coordinator
-      onSelectedAgentsChange(agentKeys.filter(k => k !== 'coordinator'));
+    if (selectedLanguages.includes(langCode)) {
+      onSelectedLanguagesChange(selectedLanguages.filter(l => l !== langCode));
     } else {
-      // Single agent - just content generator
-      onSelectedAgentsChange(['slide_generator']);
+      onSelectedLanguagesChange([...selectedLanguages, langCode]);
     }
-    
-    toast.success(`Architecture: ${ARCHITECTURE_TYPE_INFO[archType].label}`);
-  };
+  }, [selectedLanguages, onSelectedLanguagesChange, primaryLanguage]);
 
   // Handle agent toggle
-  const handleAgentToggle = (agentKey: string) => {
-    onSelectedAgentsChange(
-      selectedAgents.includes(agentKey)
-        ? selectedAgents.filter(a => a !== agentKey)
-        : [...selectedAgents, agentKey]
-    );
-  };
+  const handleAgentToggle = useCallback((agentKey: string) => {
+    if (selectedAgents.includes(agentKey)) {
+      onSelectedAgentsChange(selectedAgents.filter(a => a !== agentKey));
+    } else {
+      onSelectedAgentsChange([...selectedAgents, agentKey]);
+    }
+  }, [selectedAgents, onSelectedAgentsChange]);
 
-  // Get agent model config
-  const getAgentConfig = (agentKey: string) => {
-    return agentModelConfigs.find(c => c.agentKey === agentKey);
-  };
-
-  // Update agent model
-  const handleAgentModelChange = (agentKey: string, model: string) => {
+  // Handle agent model change
+  const handleAgentModelChange = useCallback((agentKey: string, model: string) => {
     const existing = agentModelConfigs.find(c => c.agentKey === agentKey);
     if (existing) {
       onAgentModelConfigsChange(
         agentModelConfigs.map(c => c.agentKey === agentKey ? { ...c, model } : c)
       );
     } else {
-      onAgentModelConfigsChange([...agentModelConfigs, { agentKey, enabled: true, model }]);
+      onAgentModelConfigsChange([...agentModelConfigs, { agentKey, model, enabled: true }]);
     }
-  };
+  }, [agentModelConfigs, onAgentModelConfigsChange]);
 
-  // Handle language selection
-  const handleLanguageToggle = (langCode: string) => {
-    if (selectedLanguages.includes(langCode)) {
-      if (langCode === primaryLanguage) {
-        toast.error('Cannot remove primary language');
-        return;
-      }
-      onSelectedLanguagesChange(selectedLanguages.filter(l => l !== langCode));
-    } else {
-      onSelectedLanguagesChange([...selectedLanguages, langCode]);
-    }
-  };
+  // Get agent config
+  const getAgentConfig = useCallback((agentKey: string) => {
+    return agentModelConfigs.find(c => c.agentKey === agentKey);
+  }, [agentModelConfigs]);
 
   // Get icon for agent type
   const getAgentIcon = (type: string) => {
@@ -225,7 +210,7 @@ export function AgentLanguageConfigPanel({
   const editingAgent = showAgentConfig ? AGENT_CATALOG[showAgentConfig as keyof typeof AGENT_CATALOG] : null;
 
   return (
-    <div className={cn("space-y-4", className)}>
+    <div className={cn("space-y-6", className)}>
       {/* Header */}
       <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5 border">
         <div className="flex items-center gap-3">
@@ -237,350 +222,342 @@ export function AgentLanguageConfigPanel({
             <p className="text-sm text-muted-foreground">Configure agent architecture and multi-language generation</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Badge variant={useAgenticGeneration ? "default" : "secondary"} className="gap-1">
-            {useAgenticGeneration ? <Zap className="h-3 w-3" /> : <Bot className="h-3 w-3" />}
-            {useAgenticGeneration ? 'Agentic' : 'Simple'}
-          </Badge>
-        </div>
+        <Badge variant={useAgenticGeneration ? "default" : "secondary"} className="gap-1">
+          {useAgenticGeneration ? <Zap className="h-3 w-3" /> : <Bot className="h-3 w-3" />}
+          {useAgenticGeneration ? 'Agentic' : 'Simple'}
+        </Badge>
       </div>
 
       {/* Architecture Selection */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Network className="h-4 w-4 text-primary" />
-            Agent Architecture
-          </CardTitle>
-          <CardDescription className="text-xs">
-            Choose how AI agents collaborate to generate your presentation
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Architecture Type Cards - Clean Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {(Object.keys(ARCHITECTURE_TYPE_INFO) as AgentArchitectureType[]).map(archType => {
-              const info = ARCHITECTURE_TYPE_INFO[archType];
-              const isSelected = selectedArchitecture === archType;
-              const agentCount = getAgentsByArchitecture(archType).length;
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Network className="h-4 w-4 text-primary" />
+          <span className="text-sm font-medium">Agent Architecture</span>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Choose how AI agents collaborate to generate your presentation
+        </p>
 
-              return (
-                <button
-                  key={archType}
-                  onClick={() => handleArchitectureSelect(archType)}
-                  className={cn(
-                    "p-4 rounded-xl border-2 transition-all text-left",
-                    isSelected 
-                      ? "border-primary bg-primary/5 shadow-md" 
-                      : "border-border hover:border-primary/50 hover:bg-muted/30"
-                  )}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className={cn(
-                      "p-2.5 rounded-lg shrink-0",
-                      isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                    )}>
-                      {ARCH_ICONS[archType]}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm text-foreground">{info.label}</p>
-                      <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{info.description}</p>
-                      <div className="flex items-center gap-2 mt-2">
-                        <Badge variant={isSelected ? "default" : "secondary"} className="text-[10px]">
-                          {agentCount} agents
-                        </Badge>
-                        {isSelected && <Check className="h-4 w-4 text-primary ml-auto" />}
-                      </div>
+        {/* Architecture Type Cards - Clean Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {(Object.keys(ARCHITECTURE_TYPE_INFO) as AgentArchitectureType[]).map(archType => {
+            const info = ARCHITECTURE_TYPE_INFO[archType];
+            const isSelected = selectedArchitecture === archType;
+            const agentCount = getAgentsByArchitecture(archType).length;
+
+            return (
+              <button
+                key={archType}
+                onClick={() => handleArchitectureSelect(archType)}
+                className={cn(
+                  "p-4 rounded-xl border-2 transition-all text-left",
+                  isSelected 
+                    ? "border-primary bg-primary/5 shadow-md" 
+                    : "border-border hover:border-primary/50 hover:bg-muted/30"
+                )}
+              >
+                <div className="flex items-start gap-3">
+                  <div className={cn(
+                    "p-2.5 rounded-lg shrink-0",
+                    isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                  )}>
+                    {ARCH_ICONS[archType]}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm text-foreground">{info.label}</p>
+                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{info.description}</p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <Badge variant={isSelected ? "default" : "secondary"} className="text-[10px]">
+                        {agentCount} agents
+                      </Badge>
+                      {isSelected && <Check className="h-4 w-4 text-primary ml-auto" />}
                     </div>
                   </div>
-                </button>
-              );
-            })}
-          </div>
-
-          <Separator />
-
-          {/* Agent Enable Toggle */}
-          <div className="flex items-center justify-between p-3 rounded-xl border bg-muted/30">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Users className="h-4 w-4 text-primary" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-foreground">Enable Agentic Generation</p>
-                <p className="text-xs text-muted-foreground">Multi-agent collaboration for higher quality</p>
-              </div>
-            </div>
-            <Switch 
-              checked={useAgenticGeneration} 
-              onCheckedChange={onUseAgenticGenerationChange} 
-            />
-          </div>
-
-          {/* Agents List - Collapsible */}
-          {useAgenticGeneration && (
-            <Collapsible open={expandedAgents} onOpenChange={setExpandedAgents}>
-              <CollapsibleTrigger asChild>
-                <button className="w-full flex items-center justify-between p-3 rounded-xl border hover:bg-muted/30 transition-colors">
-                  <div className="flex items-center gap-2">
-                    <Settings2 className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-medium text-foreground">Configure Agents</span>
-                    <Badge variant="secondary" className="text-xs">{selectedAgents.length} active</Badge>
-                  </div>
-                  <ChevronDown className={cn("h-4 w-4 transition-transform", expandedAgents && "rotate-180")} />
-                </button>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <div className="mt-3 space-y-2">
-                  {Object.entries(AGENT_CATALOG).map(([key, agent]) => {
-                    const isSelected = selectedAgents.includes(key);
-                    const config = getAgentConfig(key);
-                    const archInfo = ARCHITECTURE_TYPE_INFO[agent.architectureType];
-                    const modelOptions = getModelOptions(agent.type);
-                    const currentModel = config?.model || agent.defaultModel;
-
-                    return (
-                      <div
-                        key={key}
-                        className={cn(
-                          "p-3 rounded-xl border-2 transition-all",
-                          isSelected ? "border-primary/50 bg-primary/5" : "border-border"
-                        )}
-                      >
-                        <div className="flex items-start gap-3">
-                          {/* Toggle */}
-                          <Switch
-                            checked={isSelected}
-                            onCheckedChange={() => handleAgentToggle(key)}
-                            className="mt-0.5"
-                          />
-                          
-                          {/* Icon */}
-                          <div className={cn(
-                            "p-1.5 rounded-lg flex-shrink-0",
-                            isSelected ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
-                          )}>
-                            {getAgentIcon(agent.type)}
-                          </div>
-
-                          {/* Content */}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <p className="font-medium text-sm text-foreground">{agent.name}</p>
-                              <Badge variant="outline" className={cn("text-[9px] px-1 py-0 gap-0.5", archInfo.color)}>
-                                {archInfo.label}
-                              </Badge>
-                              {agent.supportsStreaming && (
-                                <Badge variant="outline" className="text-[9px] px-1 py-0 text-green-600 border-green-500/30">
-                                  <Zap className="h-2 w-2 mr-0.5" />
-                                  Stream
-                                </Badge>
-                              )}
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-0.5">{agent.description}</p>
-
-                            {/* Provider Selection */}
-                            {isSelected && (
-                              <div className="mt-2 flex items-center gap-2">
-                                <Label className="text-[10px] text-muted-foreground">MODEL:</Label>
-                                <Select
-                                  value={currentModel}
-                                  onValueChange={(value) => handleAgentModelChange(key, value)}
-                                >
-                                  <SelectTrigger className="h-7 text-xs flex-1 max-w-[200px]">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {modelOptions.map(opt => (
-                                      <SelectItem key={opt.id} value={opt.id}>
-                                        <div className="flex flex-col">
-                                          <span className="text-xs">{opt.name}</span>
-                                          <span className="text-[10px] text-muted-foreground">{opt.description}</span>
-                                        </div>
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-
-                                {/* Provider Badges */}
-                                {agent.providers && (
-                                  <div className="flex gap-1 ml-auto">
-                                    {agent.providers.slice(0, 3).map(provider => {
-                                      const providerInfo = PROVIDER_CATEGORIES.text.find(p => p.id === provider);
-                                      return (
-                                        <span
-                                          key={provider}
-                                          className={cn("text-[10px] px-1.5 py-0.5 rounded-full", providerInfo?.color || "bg-muted")}
-                                          title={providerInfo?.name || provider}
-                                        >
-                                          {providerInfo?.icon || '•'}
-                                        </span>
-                                      );
-                                    })}
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
                 </div>
-              </CollapsibleContent>
-            </Collapsible>
-          )}
-        </CardContent>
-      </Card>
+              </button>
+            );
+          })}
+        </div>
 
-      {/* Multi-Language Generation */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Languages className="h-4 w-4 text-primary" />
-            Multi-Language Generation
-          </CardTitle>
-          <CardDescription className="text-xs">
-            Generate presentations in multiple languages simultaneously
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Primary Language */}
-          <div className="flex items-center gap-3 p-3 rounded-xl border bg-primary/5 border-primary/20">
-            <Globe className="h-4 w-4 text-primary" />
-            <div className="flex-1">
-              <Label className="text-xs text-muted-foreground">PRIMARY LANGUAGE</Label>
-              <Select value={primaryLanguage} onValueChange={onPrimaryLanguageChange}>
-                <SelectTrigger className="h-8 mt-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {SUPPORTED_LANGUAGES.map(lang => (
-                    <SelectItem key={lang.code} value={lang.code}>
-                      {lang.flag} {lang.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+        <Separator />
+
+        {/* Agent Enable Toggle */}
+        <div className="flex items-center justify-between p-3 rounded-xl border bg-muted/30">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Users className="h-4 w-4 text-primary" />
             </div>
-            <Badge variant="default" className="bg-primary">Primary</Badge>
+            <div>
+              <p className="text-sm font-medium text-foreground">Enable Agentic Generation</p>
+              <p className="text-xs text-muted-foreground">Multi-agent collaboration for higher quality</p>
+            </div>
           </div>
+          <Switch 
+            checked={useAgenticGeneration} 
+            onCheckedChange={onUseAgenticGenerationChange} 
+          />
+        </div>
 
-          {/* Language Selection Grid */}
-          <Collapsible open={expandedLanguages} onOpenChange={setExpandedLanguages}>
+        {/* Agents List - Collapsible */}
+        {useAgenticGeneration && (
+          <Collapsible open={expandedAgents} onOpenChange={setExpandedAgents}>
             <CollapsibleTrigger asChild>
               <button className="w-full flex items-center justify-between p-3 rounded-xl border hover:bg-muted/30 transition-colors">
                 <div className="flex items-center gap-2">
-                  <Plus className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-medium text-foreground">Add Languages</span>
-                  <Badge variant="secondary" className="text-xs">{selectedLanguages.length} selected</Badge>
+                  <Settings2 className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium text-foreground">Configure Agents</span>
+                  <Badge variant="secondary" className="text-xs">{selectedAgents.length} active</Badge>
                 </div>
-                <ChevronDown className={cn("h-4 w-4 transition-transform", expandedLanguages && "rotate-180")} />
+                <ChevronDown className={cn("h-4 w-4 transition-transform", expandedAgents && "rotate-180")} />
               </button>
             </CollapsibleTrigger>
             <CollapsibleContent>
-              <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 p-3 rounded-xl bg-card border">
-                {SUPPORTED_LANGUAGES.map(lang => {
-                  const isSelected = selectedLanguages.includes(lang.code);
-                  const isPrimary = primaryLanguage === lang.code;
+              <div className="mt-3 space-y-2">
+                {Object.entries(AGENT_CATALOG).map(([key, agent]) => {
+                  const isSelected = selectedAgents.includes(key);
+                  const config = getAgentConfig(key);
+                  const archInfo = ARCHITECTURE_TYPE_INFO[agent.architectureType];
+                  const modelOptions = getModelOptions(agent.type);
+                  const currentModel = config?.model || agent.defaultModel;
 
                   return (
-                    <button
-                      key={lang.code}
-                      onClick={() => handleLanguageToggle(lang.code)}
+                    <div
+                      key={key}
                       className={cn(
-                        "flex items-center gap-2 p-3 rounded-lg border-2 transition-all text-left",
-                        isSelected
-                          ? isPrimary
-                            ? "border-primary bg-primary/10 shadow-sm"
-                            : "border-primary/50 bg-primary/5"
-                          : "border-transparent bg-muted/50 hover:border-primary/30 hover:bg-muted"
+                        "p-3 rounded-xl border-2 transition-all",
+                        isSelected ? "border-primary/50 bg-primary/5" : "border-border"
                       )}
                     >
-                      <span className="text-xl">{lang.flag}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground">{lang.name}</p>
-                        {isPrimary && (
-                          <Badge variant="default" className="text-[9px] px-1.5 py-0 mt-1">Primary</Badge>
-                        )}
+                      <div className="flex items-start gap-3">
+                        {/* Toggle */}
+                        <Switch
+                          checked={isSelected}
+                          onCheckedChange={() => handleAgentToggle(key)}
+                          className="mt-0.5"
+                        />
+                        
+                        {/* Icon */}
+                        <div className={cn(
+                          "p-1.5 rounded-lg flex-shrink-0",
+                          isSelected ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+                        )}>
+                          {getAgentIcon(agent.type)}
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-medium text-sm text-foreground">{agent.name}</p>
+                            <Badge variant="outline" className={cn("text-[9px] px-1 py-0 gap-0.5", archInfo.color)}>
+                              {archInfo.label}
+                            </Badge>
+                            {agent.supportsStreaming && (
+                              <Badge variant="outline" className="text-[9px] px-1 py-0 text-green-600 border-green-500/30">
+                                <Zap className="h-2 w-2 mr-0.5" />
+                                Stream
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-0.5">{agent.description}</p>
+
+                          {/* Provider Selection */}
+                          {isSelected && (
+                            <div className="mt-2 flex items-center gap-2">
+                              <Label className="text-[10px] text-muted-foreground">MODEL:</Label>
+                              <Select
+                                value={currentModel}
+                                onValueChange={(value) => handleAgentModelChange(key, value)}
+                              >
+                                <SelectTrigger className="h-7 text-xs flex-1 max-w-[200px] bg-background">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="bg-popover border shadow-lg z-50">
+                                  {modelOptions.map(opt => (
+                                    <SelectItem key={opt.id} value={opt.id}>
+                                      <div className="flex flex-col">
+                                        <span className="text-xs">{opt.name}</span>
+                                        <span className="text-[10px] text-muted-foreground">{opt.description}</span>
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+
+                              {/* Provider Badges */}
+                              {agent.providers && (
+                                <div className="flex gap-1 ml-auto">
+                                  {agent.providers.slice(0, 3).map(provider => {
+                                    const providerInfo = PROVIDER_CATEGORIES.text.find(p => p.id === provider);
+                                    return (
+                                      <span
+                                        key={provider}
+                                        className={cn("text-[10px] px-1.5 py-0.5 rounded-full", providerInfo?.color || "bg-muted")}
+                                        title={providerInfo?.name || provider}
+                                      >
+                                        {providerInfo?.icon || '•'}
+                                      </span>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      {isSelected && !isPrimary && <Check className="h-4 w-4 text-primary shrink-0" />}
-                    </button>
+                    </div>
                   );
                 })}
               </div>
             </CollapsibleContent>
           </Collapsible>
+        )}
+      </div>
 
-          {/* Voiceover Toggle */}
-          <div className="flex items-center justify-between p-3 rounded-xl border bg-muted/30">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Volume2 className="h-4 w-4 text-primary" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-foreground">Include Voiceover</p>
-                <p className="text-xs text-muted-foreground">Generate audio narration for each language</p>
-              </div>
-            </div>
-            <Switch 
-              checked={includeVoiceover} 
-              onCheckedChange={onIncludeVoiceoverChange} 
-            />
+      <Separator />
+
+      {/* Multi-Language Generation */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Languages className="h-4 w-4 text-primary" />
+          <span className="text-sm font-medium">Multi-Language Generation</span>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Generate presentations in multiple languages simultaneously
+        </p>
+
+        {/* Primary Language */}
+        <div className="flex items-center gap-3 p-3 rounded-xl border bg-primary/5 border-primary/20">
+          <Globe className="h-4 w-4 text-primary" />
+          <div className="flex-1">
+            <Label className="text-xs text-muted-foreground">PRIMARY LANGUAGE</Label>
+            <Select value={primaryLanguage} onValueChange={onPrimaryLanguageChange}>
+              <SelectTrigger className="h-8 mt-1 bg-background">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-popover border shadow-lg z-50">
+                {SUPPORTED_LANGUAGES.map(lang => (
+                  <SelectItem key={lang.code} value={lang.code}>
+                    {lang.flag} {lang.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
+          <Badge variant="default" className="bg-primary">Primary</Badge>
+        </div>
 
-          {/* Voice Provider Selection - Clean Grid */}
-          {includeVoiceover && (
-            <div className="space-y-3">
-              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Voice Providers</Label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
-                {PROVIDER_CATEGORIES.voice.map(provider => (
+        {/* Language Selection Grid */}
+        <Collapsible open={expandedLanguages} onOpenChange={setExpandedLanguages}>
+          <CollapsibleTrigger asChild>
+            <button className="w-full flex items-center justify-between p-3 rounded-xl border hover:bg-muted/30 transition-colors">
+              <div className="flex items-center gap-2">
+                <Plus className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium text-foreground">Add Languages</span>
+                <Badge variant="secondary" className="text-xs">{selectedLanguages.length} selected</Badge>
+              </div>
+              <ChevronDown className={cn("h-4 w-4 transition-transform", expandedLanguages && "rotate-180")} />
+            </button>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 p-3 rounded-xl bg-muted/30 border">
+              {SUPPORTED_LANGUAGES.map(lang => {
+                const isSelected = selectedLanguages.includes(lang.code);
+                const isPrimary = primaryLanguage === lang.code;
+
+                return (
                   <button
-                    key={provider.id}
+                    key={lang.code}
+                    onClick={() => handleLanguageToggle(lang.code)}
                     className={cn(
-                      "flex items-center gap-2 p-3 rounded-lg border-2 transition-all",
-                      "border-border hover:border-primary/50 hover:bg-primary/5"
+                      "flex items-center gap-2 p-3 rounded-lg border-2 transition-all text-left",
+                      isSelected
+                        ? isPrimary
+                          ? "border-primary bg-primary/10 shadow-sm"
+                          : "border-primary/50 bg-primary/5"
+                        : "border-transparent bg-background hover:border-primary/30"
                     )}
                   >
-                    <span className="text-xl">{provider.icon}</span>
-                    <span className="text-xs font-medium text-foreground">{provider.name}</span>
+                    <span className="text-xl">{lang.flag}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground">{lang.name}</p>
+                      {isPrimary && (
+                        <Badge variant="default" className="text-[9px] px-1.5 py-0 mt-1">Primary</Badge>
+                      )}
+                    </div>
+                    {isSelected && !isPrimary && <Check className="h-4 w-4 text-primary shrink-0" />}
                   </button>
-                ))}
-              </div>
+                );
+              })}
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </CollapsibleContent>
+        </Collapsible>
 
-      {/* Summary Card */}
-      <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-accent/5">
-        <CardContent className="p-4">
-          <div className="flex items-start gap-3">
+        {/* Voiceover Toggle */}
+        <div className="flex items-center justify-between p-3 rounded-xl border bg-muted/30">
+          <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-primary/10">
-              <Sparkles className="h-4 w-4 text-primary" />
+              <Volume2 className="h-4 w-4 text-primary" />
             </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-foreground mb-2">Configuration Summary</p>
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="outline" className={ARCHITECTURE_TYPE_INFO[selectedArchitecture].color}>
-                  {ARCHITECTURE_TYPE_INFO[selectedArchitecture].label}
-                </Badge>
-                <Badge variant="secondary">{selectedAgents.length} Agents</Badge>
-                <Badge variant="secondary">{selectedLanguages.length} Languages</Badge>
-                {includeVoiceover && <Badge variant="secondary">Voiceover</Badge>}
-              </div>
-              <div className="flex flex-wrap gap-1 mt-2">
-                {selectedLanguages.map(code => {
-                  const lang = SUPPORTED_LANGUAGES.find(l => l.code === code);
-                  return lang && (
-                    <span key={code} className="text-base" title={lang.name}>{lang.flag}</span>
-                  );
-                })}
-              </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">Include Voiceover</p>
+              <p className="text-xs text-muted-foreground">Generate audio narration for each language</p>
             </div>
           </div>
-        </CardContent>
-      </Card>
+          <Switch 
+            checked={includeVoiceover} 
+            onCheckedChange={onIncludeVoiceoverChange} 
+          />
+        </div>
+
+        {/* Voice Provider Selection - Clean Grid */}
+        {includeVoiceover && (
+          <div className="space-y-3">
+            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Voice Providers</Label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+              {PROVIDER_CATEGORIES.voice.map(provider => (
+                <button
+                  key={provider.id}
+                  className={cn(
+                    "flex items-center gap-2 p-3 rounded-lg border-2 transition-all",
+                    "border-border hover:border-primary/50 hover:bg-primary/5"
+                  )}
+                >
+                  <span className="text-xl">{provider.icon}</span>
+                  <span className="text-xs font-medium text-foreground">{provider.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Summary */}
+      <div className="p-4 rounded-xl border-primary/20 bg-gradient-to-r from-primary/5 to-accent/5 border">
+        <div className="flex items-start gap-3">
+          <div className="p-2 rounded-lg bg-primary/10">
+            <Sparkles className="h-4 w-4 text-primary" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-medium text-foreground mb-2">Configuration Summary</p>
+            <div className="flex flex-wrap gap-2">
+              <Badge variant="outline" className={ARCHITECTURE_TYPE_INFO[selectedArchitecture].color}>
+                {ARCHITECTURE_TYPE_INFO[selectedArchitecture].label}
+              </Badge>
+              <Badge variant="secondary">{selectedAgents.length} Agents</Badge>
+              <Badge variant="secondary">{selectedLanguages.length} Languages</Badge>
+              {includeVoiceover && <Badge variant="secondary">Voiceover</Badge>}
+            </div>
+            <div className="flex flex-wrap gap-1 mt-2">
+              {selectedLanguages.map(code => {
+                const lang = SUPPORTED_LANGUAGES.find(l => l.code === code);
+                return lang && (
+                  <span key={code} className="text-base" title={lang.name}>{lang.flag}</span>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Agent Config Dialog */}
       {showAgentConfig && editingAgent && (
