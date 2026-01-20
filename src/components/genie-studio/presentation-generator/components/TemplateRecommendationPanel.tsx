@@ -90,6 +90,7 @@ interface TemplateRecommendationPanelProps {
   onTemplateSelect?: (template: RecommendedTemplate) => void;
   onStyleSelect?: (style: TemplateStyle) => void;
   selectedTemplateId?: string;
+  selectedStyle?: TemplateStyle;
   compact?: boolean;
 }
 
@@ -102,10 +103,12 @@ export const TemplateRecommendationPanel: React.FC<TemplateRecommendationPanelPr
   onTemplateSelect,
   onStyleSelect,
   selectedTemplateId,
+  selectedStyle: externalSelectedStyle,
   compact = false,
 }) => {
   const [showFrameworkDetails, setShowFrameworkDetails] = useState(false);
   const [selectedFramework, setSelectedFramework] = useState<ConsultingFramework | null>(null);
+  const [internalSelectedStyle, setInternalSelectedStyle] = useState<TemplateStyle | null>(null);
 
   // Get recommendations
   const recommendation = useMemo(() => {
@@ -123,14 +126,18 @@ export const TemplateRecommendationPanel: React.FC<TemplateRecommendationPanelPr
     return getQuickStyleSuggestions(industry);
   }, [industry]);
 
+  // Use external or internal selected style, fallback to AI recommendation
+  const activeStyle = externalSelectedStyle || internalSelectedStyle || recommendation.style;
+
   const handleTemplateClick = (template: RecommendedTemplate) => {
     onTemplateSelect?.(template);
     toast.success(`Selected: ${template.name}`);
   };
 
   const handleStyleClick = (style: TemplateStyle) => {
+    setInternalSelectedStyle(style);
     onStyleSelect?.(style);
-    toast.info(`Style changed to: ${style.replace('-', ' ')}`);
+    toast.info(`Style changed to: ${style.replace(/-/g, ' ')}`);
   };
 
   const handleFrameworkPreview = (framework: ConsultingFramework) => {
@@ -138,7 +145,7 @@ export const TemplateRecommendationPanel: React.FC<TemplateRecommendationPanelPr
     setShowFrameworkDetails(true);
   };
 
-  const StyleIcon = STYLE_ICONS[recommendation.style];
+  const StyleIcon = STYLE_ICONS[activeStyle];
 
   if (compact) {
     return (
@@ -214,11 +221,19 @@ export const TemplateRecommendationPanel: React.FC<TemplateRecommendationPanelPr
 
         {/* Quick Style Selector - Clean Grid with text truncation */}
         <div className="space-y-3">
-          <p className="text-sm font-semibold text-foreground">Style Selection</p>
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold text-foreground">Style Selection</p>
+            {internalSelectedStyle && internalSelectedStyle !== recommendation.style && (
+              <Badge variant="outline" className="text-[10px]">
+                Manual Override
+              </Badge>
+            )}
+          </div>
           <div className="grid grid-cols-3 gap-2">
             {quickStyles.map(({ style, label, description }) => {
               const Icon = STYLE_ICONS[style];
-              const isActive = recommendation.style === style;
+              const isActive = activeStyle === style;
+              const isAIRecommended = recommendation.style === style;
               
               return (
                 <Button
@@ -226,12 +241,16 @@ export const TemplateRecommendationPanel: React.FC<TemplateRecommendationPanelPr
                   variant={isActive ? "default" : "outline"}
                   size="sm"
                   className={cn(
-                    "h-auto py-2.5 px-2 flex flex-col items-center gap-1.5 min-w-0",
-                    isActive && "shadow-md"
+                    "h-auto py-2.5 px-2 flex flex-col items-center gap-1.5 min-w-0 relative",
+                    isActive && "shadow-md",
+                    !isActive && isAIRecommended && "border-primary/50"
                   )}
                   onClick={() => handleStyleClick(style)}
                   title={description}
                 >
+                  {isAIRecommended && !isActive && (
+                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full" />
+                  )}
                   <Icon className="h-4 w-4 shrink-0" />
                   <span className="text-[10px] font-medium truncate w-full text-center leading-tight">{label}</span>
                   {isActive && <Check className="h-3 w-3 shrink-0" />}
