@@ -1603,6 +1603,7 @@ export function PresentationWizard({
                     // Step 0: Input
                     inputSource,
                     inputContentPreview: inputContent.slice(0, 200) + (inputContent.length > 200 ? '...' : ''),
+                    inputContentLength: inputContent.length, // NEW: Full length for token calc
                     hasUploadedFile: !!uploadedFile,
                     
                     // Step 1: Configuration
@@ -1641,6 +1642,7 @@ export function PresentationWizard({
                       imageModel: workflowConfig?.aiModels?.imageModel || workflowConfig?.aiRecommendation?.imageModel || 'Auto',
                       voiceModel: workflowConfig?.aiModels?.voiceModel || workflowConfig?.aiRecommendation?.voiceModel || 'Auto',
                       translationModel: workflowConfig?.aiModels?.translationModel || workflowConfig?.aiRecommendation?.translationModel || 'Auto',
+                      videoModel: workflowConfig?.aiModels?.videoModel || workflowConfig?.aiRecommendation?.videoModel,
                     },
                     
                     // NEW: Pass full AI recommendation for confidence scores and reasoning
@@ -1655,10 +1657,17 @@ export function PresentationWizard({
                       alternativeTextModels: workflowConfig.aiRecommendation.alternativeTextModels,
                       alternativeImageModels: workflowConfig.aiRecommendation.alternativeImageModels,
                     } : undefined,
+                    
+                    // NEW: Feature flags for token estimation
+                    includeCharts,
+                    includeTables,
+                    includeInfographics,
+                    includeJourneyMaps,
                   }}
                   onConfirm={handleGenerate}
                   onEdit={(stepIndex) => setCurrentStep(stepIndex)}
                   isGenerating={isGenerating}
+                  currentBalance={credits?.credits_balance || 0}
                   creditEstimate={calculateCredits({
                     outputType: outputSettings.outputType,
                     slideCount: outputSettings.slideCount,
