@@ -63,6 +63,7 @@ type StructureMode = 'flat' | 'chapters';
 
 interface OutputTypeSettings {
   outputType: OutputType;
+  outputTypes: OutputType[]; // NEW: Support multiple output types
   structureMode: StructureMode;
   slideCount: number;
   chapterCount: number;
@@ -97,72 +98,102 @@ export function OutputTypePanel({
     onChange({
       ...value,
       outputType,
+      outputTypes: [outputType],
       includeVoiceover: outputType.includes('video'),
       includeMusic: outputType === 'video-full',
       animationIntensity: outputType.includes('animated') ? 70 : outputType.includes('3d') ? 50 : 30,
     });
   };
 
-  const selectedConfig = OUTPUT_TYPE_CONFIGS.find(c => c.id === value.outputType);
-  const isVideoType = value.outputType.includes('video');
-  const is3DType = value.outputType.includes('3d');
-  const isAnimated = value.outputType.includes('animated') || isVideoType;
+  const handleMultiOutputChange = (types: OutputType[]) => {
+    const primaryType = types[0] || '2d-static';
+    const hasVideo = types.some(t => t.includes('video'));
+    const has3D = types.some(t => t.includes('3d'));
+    const hasAnimated = types.some(t => t.includes('animated')) || hasVideo;
+    
+    onChange({
+      ...value,
+      outputType: primaryType,
+      outputTypes: types,
+      includeVoiceover: hasVideo,
+      includeMusic: types.includes('video-full'),
+      animationIntensity: hasAnimated ? 70 : has3D ? 50 : 30,
+    });
+  };
+
+  const outputTypes = value.outputTypes || [value.outputType];
+  const primaryConfig = OUTPUT_TYPE_CONFIGS.find(c => c.id === value.outputType);
+  const selectedConfigs = OUTPUT_TYPE_CONFIGS.filter(c => outputTypes.includes(c.id));
+  
+  const hasVideoType = outputTypes.some(t => t.includes('video'));
+  const has3DType = outputTypes.some(t => t.includes('3d'));
+  const hasAnimated = outputTypes.some(t => t.includes('animated')) || hasVideoType;
 
   // Calculate totals
   const totalItems = value.structureMode === 'flat' 
     ? value.slideCount 
     : value.chapterCount * value.slidesPerChapter;
-  const genTimeMinutes = Math.ceil((totalItems * (isVideoType ? 30 : is3DType ? 20 : 8)) / 60);
+  const genTimeMinutes = Math.ceil((totalItems * (hasVideoType ? 30 : has3DType ? 20 : 8)) / 60);
 
   return (
     <div className={cn("space-y-6", className)}>
-      {/* Output Type Dropdown */}
+      {/* Output Type Dropdown - Multi-select enabled */}
       <div className="space-y-2">
-        <Label className="text-sm font-medium">Output Format</Label>
+        <div className="flex items-center justify-between">
+          <Label className="text-sm font-medium">Output Formats</Label>
+          <span className="text-[10px] text-muted-foreground">
+            {outputTypes.length} selected
+          </span>
+        </div>
         <OutputTypeDropdown
           value={value.outputType}
           onChange={handleOutputSelect}
+          allowMultiple={true}
+          multiValue={outputTypes}
+          onMultiChange={handleMultiOutputChange}
         />
       </div>
 
-      {/* Selected Output Quick Info */}
-      {selectedConfig && (
+      {/* Selected Output Quick Info - Show all selected */}
+      {selectedConfigs.length > 0 && (
         <div className="p-4 rounded-lg bg-muted/30 border space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-md bg-primary/10 text-primary">
-                {outputIcons[selectedConfig.icon]}
+          {/* Selected formats badges */}
+          <div className="flex flex-wrap gap-2">
+            {selectedConfigs.map((config) => (
+              <div key={config.id} className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-primary/10 border border-primary/20">
+                <div className="text-primary">
+                  {outputIcons[config.icon]}
+                </div>
+                <span className="text-xs font-medium">{config.name}</span>
+                <Badge className={cn("text-[9px] px-1", tierBadges[config.tier].color)}>
+                  T{config.tier}
+                </Badge>
               </div>
-              <span className="font-medium text-sm">{selectedConfig.name}</span>
-              <Badge className={cn("text-[10px]", tierBadges[selectedConfig.tier].color)}>
-                {tierBadges[selectedConfig.tier].label}
-              </Badge>
-            </div>
+            ))}
           </div>
           
-          {/* Capabilities - horizontal scrollable */}
-          <div className="flex flex-wrap gap-1.5">
-            {selectedConfig.capabilities.slice(0, 5).map((cap) => (
-              <Badge key={cap} variant="secondary" className="text-[10px] px-2 py-0.5">
-                <Check className="h-2.5 w-2.5 mr-1" />
-                {cap}
-              </Badge>
-            ))}
-            {selectedConfig.capabilities.length > 5 && (
-              <Badge variant="outline" className="text-[10px] px-2 py-0.5">
-                +{selectedConfig.capabilities.length - 5} more
-              </Badge>
-            )}
-          </div>
+          {/* Combined capabilities from all selected */}
+          {primaryConfig && (
+            <div className="flex flex-wrap gap-1.5">
+              {Array.from(new Set(selectedConfigs.flatMap(c => c.capabilities))).slice(0, 6).map((cap) => (
+                <Badge key={cap} variant="secondary" className="text-[10px] px-2 py-0.5">
+                  <Check className="h-2.5 w-2.5 mr-1" />
+                  {cap}
+                </Badge>
+              ))}
+            </div>
+          )}
 
-          {/* Providers row */}
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="font-medium">Providers:</span>
-            <span className="truncate">
-              {selectedConfig.providers.slice(0, 3).join(', ')}
-              {selectedConfig.providers.length > 3 && ` +${selectedConfig.providers.length - 3}`}
-            </span>
-          </div>
+          {/* Providers from primary */}
+          {primaryConfig && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span className="font-medium">Providers:</span>
+              <span className="truncate">
+                {primaryConfig.providers.slice(0, 3).join(', ')}
+                {primaryConfig.providers.length > 3 && ` +${primaryConfig.providers.length - 3}`}
+              </span>
+            </div>
+          )}
         </div>
       )}
 
@@ -204,7 +235,7 @@ export function OutputTypePanel({
             <div className="col-span-2 space-y-3">
               <div className="flex items-center justify-between">
                 <Label className="text-xs text-muted-foreground">
-                  Number of {isVideoType ? 'Scenes' : 'Slides'}
+                  Number of {hasVideoType ? 'Scenes' : 'Slides'}
                 </Label>
                 {contentType && (
                   <Button
@@ -244,7 +275,7 @@ export function OutputTypePanel({
                   <SelectContent>
                     {[5, 8, 10, 12, 15, 20].map((n) => (
                       <SelectItem key={n} value={String(n)}>
-                        {n} {isVideoType ? 'scenes' : 'slides'}
+                        {n} {hasVideoType ? 'scenes' : 'slides'}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -274,7 +305,7 @@ export function OutputTypePanel({
 
               <div className="space-y-2">
                 <Label className="text-xs text-muted-foreground">
-                  {isVideoType ? 'Scenes' : 'Slides'} per Chapter
+                  {hasVideoType ? 'Scenes' : 'Slides'} per Chapter
                 </Label>
                 <Select
                   value={String(value.slidesPerChapter)}
@@ -337,7 +368,7 @@ export function OutputTypePanel({
       </div>
 
       {/* Advanced Settings Toggle */}
-      {(isAnimated || isVideoType) && (
+      {(hasAnimated || hasVideoType) && (
         <div className="space-y-4">
           <button
             type="button"
@@ -351,7 +382,7 @@ export function OutputTypePanel({
           {showAdvanced && (
             <div className="space-y-4 p-4 rounded-lg bg-muted/30 border">
               {/* Animation Intensity */}
-              {isAnimated && (
+              {hasAnimated && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label className="text-xs">Animation Intensity</Label>
@@ -372,7 +403,7 @@ export function OutputTypePanel({
               )}
 
               {/* Video Duration */}
-              {isVideoType && (
+              {hasVideoType && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label className="text-xs">Estimated Duration</Label>
@@ -387,7 +418,7 @@ export function OutputTypePanel({
               )}
 
               {/* Audio Settings */}
-              {isVideoType && (
+              {hasVideoType && (
                 <div className="space-y-3 pt-3 border-t">
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
@@ -428,7 +459,7 @@ export function OutputTypePanel({
           <div className="text-center p-2 bg-background/80 rounded-md">
             <div className="text-xl font-bold text-primary">{totalItems}</div>
             <div className="text-[10px] text-muted-foreground">
-              {isVideoType ? 'Scenes' : is3DType ? '3D Scenes' : 'Slides'}
+              {hasVideoType ? 'Scenes' : has3DType ? '3D Scenes' : 'Slides'}
             </div>
           </div>
           <div className="text-center p-2 bg-background/80 rounded-md">
@@ -441,7 +472,7 @@ export function OutputTypePanel({
           <div className="text-center p-2 bg-background/80 rounded-md">
             <div className="text-xl font-bold text-primary flex items-center justify-center gap-1">
               <Cpu className="h-4 w-4" />
-              {selectedConfig?.tier === 3 ? 'High' : selectedConfig?.tier === 2 ? 'Med' : 'Low'}
+              {primaryConfig?.tier === 3 ? 'High' : primaryConfig?.tier === 2 ? 'Med' : 'Low'}
             </div>
             <div className="text-[10px] text-muted-foreground">Resources</div>
           </div>
@@ -455,6 +486,7 @@ export function OutputTypePanel({
 export function getDefaultOutputSettings(slideCount: number = 10): OutputTypeSettings {
   return {
     outputType: '2d-static',
+    outputTypes: ['2d-static'],
     structureMode: 'flat',
     slideCount: slideCount,
     chapterCount: Math.max(1, Math.ceil(slideCount / 5)),
