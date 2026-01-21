@@ -363,21 +363,21 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
         {/* Feature Matrix Tab */}
         <TabsContent value="matrix" className="mt-0">
           <div className={`border rounded-lg overflow-auto ${needsScroll ? 'max-h-[600px]' : ''}`}>
-            <Table>
+            <Table className="table-fixed">
               <TableHeader className="sticky top-0 z-20 bg-background">
                 <TableRow>
-                  <TableHead className="sticky left-0 bg-background z-30 min-w-[180px] border-r font-semibold">Feature</TableHead>
-                  <TableHead className="min-w-[70px] bg-background">Cat</TableHead>
+                  <TableHead className="sticky left-0 bg-background z-30 w-[160px] border-r font-semibold text-xs">Feature</TableHead>
+                  <TableHead className="w-[50px] bg-background text-xs">Cat</TableHead>
                   {PROVIDER_SUMMARIES.map(p => (
-                    <TableHead key={p.id} className="text-center min-w-[90px] bg-background">
+                    <TableHead key={p.id} className="text-center w-[60px] bg-background px-1">
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger className="cursor-help">
                             <div className="flex flex-col items-center gap-0.5">
-                              <span className="text-xs font-medium">{p.name.split(' ')[0]}</span>
+                              <span className="text-[10px] font-medium truncate max-w-[55px]">{p.name.split(' ')[0]}</span>
                               {p.status === 'configured' ? 
-                                <Badge variant="outline" className="text-[8px] bg-emerald-500/10 border-emerald-500/30">✓</Badge> :
-                                <Badge variant="outline" className="text-[8px] bg-amber-500/10 border-amber-500/30">!</Badge>
+                                <Badge variant="outline" className="text-[7px] px-0.5 bg-emerald-500/10 border-emerald-500/30">✓</Badge> :
+                                <Badge variant="outline" className="text-[7px] px-0.5 bg-amber-500/10 border-amber-500/30">!</Badge>
                               }
                             </div>
                           </TooltipTrigger>
@@ -397,16 +397,16 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
                   const featureImpl = localMatrix[feature.id] || {};
                   return (
                     <TableRow key={feature.id} className="hover:bg-muted/50">
-                      <TableCell className="sticky left-0 bg-background font-medium border-r z-10">
+                      <TableCell className="sticky left-0 bg-background font-medium border-r z-10 w-[160px]">
                         <div className="flex items-center gap-1">
-                          <span className="text-sm">{feature.name}</span>
+                          <span className="text-xs truncate max-w-[130px]">{feature.name}</span>
                           {feature.priority === 'critical' && (
-                            <Badge variant="destructive" className="text-[8px] px-1">!</Badge>
+                            <Badge variant="destructive" className="text-[7px] px-0.5">!</Badge>
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="text-[9px] px-1">
+                      <TableCell className="w-[50px] px-1">
+                        <Badge variant="outline" className="text-[8px] px-0.5">
                           {CATEGORY_LABELS[feature.category]?.split(' ')[0]}
                         </Badge>
                       </TableCell>
@@ -415,7 +415,7 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
                         const isEditing = editingCell?.featureId === feature.id && editingCell?.providerId === p.id;
                         
                         return (
-                          <TableCell key={`${feature.id}-${p.id}`} className="text-center">
+                          <TableCell key={`${feature.id}-${p.id}`} className="text-center w-[60px] px-1">
                             {editMode ? (
                               isEditing ? (
                                 <Select
