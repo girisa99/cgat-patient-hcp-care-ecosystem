@@ -56,3 +56,7 @@ export {
   type Framework,
   type FrameworkCategory
 } from './expandedFrameworks';
+
+// Services - re-export for convenience
+export * from '../services/visualOutputCompatibilityMatrix';
+export * from '../services/outputModelSelection';
