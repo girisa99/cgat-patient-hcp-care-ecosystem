@@ -299,3 +299,18 @@ verify_jwt = false
 
 [functions.deepseek-vision]
 verify_jwt = false
+
+[functions.multi-language-audio-orchestrator]
+verify_jwt = false
+
+[functions.music-composer-agent]
+verify_jwt = false
+
+[functions.ai-video-generator]
+verify_jwt = false
+
+[functions.gemini-generate-video]
+verify_jwt = false
+
+[functions.gemini-generate-image]
+verify_jwt = false

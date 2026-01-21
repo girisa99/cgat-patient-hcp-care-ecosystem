@@ -161,6 +161,26 @@ export type {
   TierAudioConfig,
 } from './services/tierAudioProviderService';
 
+// Multi-Language Audio Service (Edge Function Integration)
+export { 
+  multiLanguageAudioService,
+  generateSingleLanguageAudio,
+  generateMultiLanguageAudio,
+  getProviderRecommendations,
+  generateVoiceSimple,
+  generateBackgroundMusic,
+  generateSoundEffect,
+  checkConfiguredProviders,
+  base64ToAudioBlob,
+  createAudioUrl,
+} from './services/multiLanguageAudioService';
+export type {
+  VoiceGenerationConfig,
+  LanguageAudioResult,
+  MultiLanguageAudioResult,
+  ProviderRecommendation,
+} from './services/multiLanguageAudioService';
+
 // Token UI Components
 export { TokenBalanceHeader } from './components/TokenBalanceHeader';
 export { TokenBreakdownPanel } from './components/TokenBreakdownPanel';
