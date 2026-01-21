@@ -93,21 +93,43 @@ export const MODEL_TIERS: Record<string, ModelTierInfo> = {
   'stock': { tier: 3, tierName: 'Tier 3 - Budget', description: 'Pre-existing stock photos', costMultiplier: 0.1, qualityScore: 75, speedScore: 99 },
 
   // ==================== VIDEO GENERATION ====================
-  // Tier 1 - Core (OpenAI Sora + ModelsLab)
+  // Tier 1 - Core (Multi-Provider AnimateDiff/SVD)
   'openai-sora': { tier: 1, tierName: 'Tier 1 - Core', description: 'OpenAI Sora, 20s, 4K quality', costMultiplier: 5.0, qualityScore: 98, speedScore: 50 },
-  'modelslab-animatediff': { tier: 1, tierName: 'Tier 1 - Core', description: 'AnimateDiff, smooth motion', costMultiplier: 2.0, qualityScore: 88, speedScore: 75 },
-  'modelslab-svd': { tier: 1, tierName: 'Tier 1 - Core', description: 'Stable Video Diffusion', costMultiplier: 2.0, qualityScore: 90, speedScore: 70 },
+  'modelslab-animatediff': { tier: 1, tierName: 'Tier 1 - Core', description: 'AnimateDiff via ModelsLab', costMultiplier: 2.0, qualityScore: 88, speedScore: 75 },
+  'modelslab-svd': { tier: 1, tierName: 'Tier 1 - Core', description: 'SVD via ModelsLab', costMultiplier: 2.0, qualityScore: 90, speedScore: 70 },
   'modelslab-video': { tier: 1, tierName: 'Tier 1 - Core', description: '1080p, up to 30s, AnimateDiff', costMultiplier: 2.0, qualityScore: 88, speedScore: 75 },
-  // Tier 2 - Premium video
+  
+  // Multi-Provider AnimateDiff (same model, different providers)
+  'alibaba-animatediff': { tier: 2, tierName: 'Tier 2 - Regional', description: 'AnimateDiff via Alibaba, CJK optimized', costMultiplier: 1.2, qualityScore: 82, speedScore: 85 },
+  'azure-animatediff': { tier: 2, tierName: 'Tier 2 - Enterprise', description: 'AnimateDiff via Azure, HIPAA compliant', costMultiplier: 2.5, qualityScore: 90, speedScore: 65 },
+  'google-animatediff': { tier: 2, tierName: 'Tier 2 - Premium', description: 'AnimateDiff via Google Veo', costMultiplier: 2.5, qualityScore: 92, speedScore: 60 },
+  'deepseek-animatediff': { tier: 3, tierName: 'Tier 3 - Budget', description: 'AnimateDiff via DeepSeek, lowest cost', costMultiplier: 0.8, qualityScore: 80, speedScore: 80 },
+  'replicate-animatediff': { tier: 2, tierName: 'Tier 2 - Open Source', description: 'AnimateDiff via Replicate', costMultiplier: 1.5, qualityScore: 85, speedScore: 70 },
+  
+  // Multi-Provider SVD (same model, different providers)
+  'alibaba-svd': { tier: 2, tierName: 'Tier 2 - Regional', description: 'SVD via Alibaba WAN 2.2', costMultiplier: 1.0, qualityScore: 85, speedScore: 80 },
+  'azure-svd': { tier: 2, tierName: 'Tier 2 - Enterprise', description: 'SVD via Azure Video AI', costMultiplier: 2.5, qualityScore: 88, speedScore: 60 },
+  'google-svd': { tier: 2, tierName: 'Tier 2 - Premium', description: 'SVD via Google Veo', costMultiplier: 2.5, qualityScore: 94, speedScore: 55 },
+  'deepseek-svd': { tier: 3, tierName: 'Tier 3 - Budget', description: 'SVD via DeepSeek, technical content', costMultiplier: 0.6, qualityScore: 78, speedScore: 82 },
+  'replicate-svd': { tier: 2, tierName: 'Tier 2 - Open Source', description: 'SVD via Replicate, custom configs', costMultiplier: 1.5, qualityScore: 88, speedScore: 65 },
+  
+  // Tier 2 - Premium video (other models)
   'gemini-veo': { tier: 2, tierName: 'Tier 2 - Premium', description: 'Gemini Veo, 8s, via Lovable AI', costMultiplier: 2.5, qualityScore: 88, speedScore: 70 },
   'runway': { tier: 2, tierName: 'Tier 2 - Premium', description: 'Gen-3, 4K quality, 10s max', costMultiplier: 4.0, qualityScore: 98, speedScore: 50 },
   'runway-gen3': { tier: 2, tierName: 'Tier 2 - Premium', description: 'Runway Gen-3 Alpha', costMultiplier: 4.0, qualityScore: 98, speedScore: 50 },
   'pika': { tier: 2, tierName: 'Tier 2 - Premium', description: 'Pika Labs, 4s max', costMultiplier: 3.0, qualityScore: 92, speedScore: 65 },
   'pika-labs': { tier: 2, tierName: 'Tier 2 - Premium', description: 'Pika Labs, creative videos', costMultiplier: 3.0, qualityScore: 92, speedScore: 65 },
   'gemini-video': { tier: 2, tierName: 'Tier 2 - Premium', description: '1080p, 60s max via Lovable AI', costMultiplier: 2.5, qualityScore: 88, speedScore: 70 },
+  
+  // Avatar & Lip-sync (Multi-Provider)
+  'alibaba-wan-animate': { tier: 1, tierName: 'Tier 1 - Avatar', description: 'Alibaba WAN 2.2 Animate, lip-sync', costMultiplier: 1.0, qualityScore: 88, speedScore: 80 },
+  'azure-avatar': { tier: 2, tierName: 'Tier 2 - Avatar', description: 'Azure Avatar + Visemes, enterprise', costMultiplier: 2.5, qualityScore: 92, speedScore: 65 },
+  'deepseek-avatar': { tier: 3, tierName: 'Tier 3 - Avatar', description: 'DeepSeek Avatar, budget option', costMultiplier: 0.8, qualityScore: 80, speedScore: 78 },
+  
   // Tier 3 - Regional/Budget
   'alibaba-wanx-video': { tier: 3, tierName: 'Tier 3 - Regional', description: 'Alibaba Wanx Video, CJK optimized', costMultiplier: 1.5, qualityScore: 82, speedScore: 75 },
   'replicate-video': { tier: 3, tierName: 'Tier 3 - Budget', description: 'Open source video models', costMultiplier: 1.0, qualityScore: 80, speedScore: 70 },
+  'deepseek-video': { tier: 3, tierName: 'Tier 3 - Budget', description: 'DeepSeek Video, lowest cost', costMultiplier: 0.5, qualityScore: 78, speedScore: 82 },
 
   // ==================== 3D MESH GENERATION ====================
   // Tier 1 - ModelsLab is primary 3D hub

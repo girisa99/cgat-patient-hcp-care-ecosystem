@@ -144,6 +144,7 @@ export const IMAGE_MODELS: ModelConfig[] = [
 // VIDEO GENERATION MODELS
 // ==========================================
 export const VIDEO_MODELS: ModelConfig[] = [
+  // ============ ANIMATEDIFF (Multi-Provider) ============
   // Tier 1 - Standard
   {
     id: 'modelslab-animatediff',
@@ -151,12 +152,69 @@ export const VIDEO_MODELS: ModelConfig[] = [
     provider: 'ModelsLab',
     tier: 1,
     description: 'Fast animated GIFs and short videos',
-    capabilities: ['Image-to-video', 'Short clips', 'Loops'],
+    capabilities: ['Image-to-video', 'Short clips', 'Loops', 'LoRA support'],
     costMultiplier: 2.0,
     quality: 6,
     speed: 8,
     isDefault: true
   },
+  {
+    id: 'alibaba-animatediff',
+    name: 'AnimateDiff',
+    provider: 'Alibaba',
+    tier: 2,
+    description: 'AnimateDiff optimized for CJK content',
+    capabilities: ['Image-to-video', 'CJK optimized', 'Low cost', 'Fast'],
+    costMultiplier: 1.2,
+    quality: 6,
+    speed: 9
+  },
+  {
+    id: 'azure-animatediff',
+    name: 'AnimateDiff',
+    provider: 'Azure',
+    tier: 2,
+    description: 'Enterprise AnimateDiff with HIPAA compliance',
+    capabilities: ['Image-to-video', 'Enterprise SLA', 'HIPAA compliant'],
+    costMultiplier: 2.5,
+    quality: 7,
+    speed: 6
+  },
+  {
+    id: 'google-animatediff',
+    name: 'AnimateDiff',
+    provider: 'Google',
+    tier: 2,
+    description: 'AnimateDiff via Google Veo infrastructure',
+    capabilities: ['Image-to-video', 'High quality', 'Google Cloud'],
+    costMultiplier: 2.5,
+    quality: 8,
+    speed: 5
+  },
+  {
+    id: 'deepseek-animatediff',
+    name: 'AnimateDiff',
+    provider: 'DeepSeek',
+    tier: 3,
+    description: 'Budget AnimateDiff for technical content',
+    capabilities: ['Image-to-video', 'Lowest cost', 'Technical content'],
+    costMultiplier: 0.8,
+    quality: 5,
+    speed: 8
+  },
+  {
+    id: 'replicate-animatediff',
+    name: 'AnimateDiff',
+    provider: 'Replicate',
+    tier: 2,
+    description: 'Open source AnimateDiff with custom configs',
+    capabilities: ['Image-to-video', 'Custom weights', 'Community models'],
+    costMultiplier: 1.5,
+    quality: 6,
+    speed: 7
+  },
+  
+  // ============ SVD (Multi-Provider) ============
   {
     id: 'modelslab-svd',
     name: 'Stable Video Diffusion',
@@ -167,6 +225,97 @@ export const VIDEO_MODELS: ModelConfig[] = [
     costMultiplier: 2.0,
     quality: 7,
     speed: 7
+  },
+  {
+    id: 'alibaba-svd',
+    name: 'Stable Video Diffusion',
+    provider: 'Alibaba',
+    tier: 2,
+    description: 'SVD via Alibaba WAN 2.2 with character animation',
+    capabilities: ['Image-to-video', 'Character animation', 'CJK optimized'],
+    costMultiplier: 1.0,
+    quality: 6,
+    speed: 8
+  },
+  {
+    id: 'azure-svd',
+    name: 'Stable Video Diffusion',
+    provider: 'Azure',
+    tier: 2,
+    description: 'Enterprise SVD with compliance features',
+    capabilities: ['Image-to-video', 'Enterprise SLA', 'Compliance'],
+    costMultiplier: 2.5,
+    quality: 7,
+    speed: 6
+  },
+  {
+    id: 'google-svd',
+    name: 'Stable Video Diffusion',
+    provider: 'Google',
+    tier: 2,
+    description: 'Premium SVD via Google Veo',
+    capabilities: ['Image-to-video', 'Premium quality', 'Longer duration'],
+    costMultiplier: 2.5,
+    quality: 8,
+    speed: 5
+  },
+  {
+    id: 'deepseek-svd',
+    name: 'Stable Video Diffusion',
+    provider: 'DeepSeek',
+    tier: 3,
+    description: 'Budget SVD for technical demonstrations',
+    capabilities: ['Image-to-video', 'Technical content', 'Lowest cost'],
+    costMultiplier: 0.6,
+    quality: 5,
+    speed: 8
+  },
+  {
+    id: 'replicate-svd',
+    name: 'Stable Video Diffusion',
+    provider: 'Replicate',
+    tier: 2,
+    description: 'SVD with SVD-XT and custom configurations',
+    capabilities: ['Image-to-video', 'XT model', 'Custom configs'],
+    costMultiplier: 1.5,
+    quality: 7,
+    speed: 6
+  },
+  
+  // ============ AVATAR & LIP-SYNC (Multi-Provider) ============
+  {
+    id: 'alibaba-wan-animate',
+    name: 'WAN 2.2 Animate',
+    provider: 'Alibaba',
+    tier: 1,
+    description: 'AI avatar and lip-sync generation',
+    capabilities: ['Avatar', 'Lip-sync', 'Character animation', 'Motion transfer'],
+    costMultiplier: 1.0,
+    quality: 7,
+    speed: 8,
+    isDefault: true
+  },
+  {
+    id: 'azure-avatar',
+    name: 'Azure Avatar',
+    provider: 'Azure',
+    tier: 2,
+    description: 'Enterprise avatar with viseme lip-sync',
+    capabilities: ['Avatar', 'Lip-sync', 'Visemes', 'Neural TTS integration'],
+    costMultiplier: 2.5,
+    quality: 8,
+    speed: 6
+  },
+  {
+    id: 'deepseek-avatar',
+    name: 'DeepSeek Avatar',
+    provider: 'DeepSeek',
+    tier: 3,
+    description: 'Budget avatar generation with vision understanding',
+    capabilities: ['Avatar', 'Vision', 'Lowest cost'],
+    costMultiplier: 0.8,
+    quality: 5,
+    speed: 8
   },
   
   // Tier 2 - Advanced
