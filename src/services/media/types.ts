@@ -1,12 +1,14 @@
 /**
  * Universal Media Adapter Types
  * 
- * Shared types for OCR, TTS/STT, Image Generation, and NLP operations
- * across the Genie Suite (Spark, Mind, Vibe, Arc, Deck, Hub)
+ * Shared types for OCR, TTS/STT, Image Generation, Video Generation, and NLP operations
+ * across the Genie Suite (Spark, Mind, Vibe, Arc, Deck, Hub, Ask Genie)
+ * 
+ * Updated: Multi-provider support for AnimateDiff, SVD, Avatar, Lip-Sync
  */
 
 // ============================================
-// PROVIDER TYPES
+// PROVIDER TYPES - EXPANDED
 // ============================================
 
 export type OCRProvider = 
@@ -14,6 +16,7 @@ export type OCRProvider =
   | 'azure_doc_intel'    // Azure Document Intelligence (Form Recognizer)
   | 'azure_cv'           // Azure Computer Vision (general OCR)
   | 'alibaba_qwen_vl'    // Alibaba Qwen-VL (vision-language)
+  | 'deepseek_ocr'       // DeepSeek Vision OCR (CJK optimized)
   | 'tesseract'          // Open-source fallback
   | 'aws_textract';      // AWS Textract (future)
 
@@ -22,14 +25,16 @@ export type TTSProvider =
   | 'elevenlabs'         // ElevenLabs
   | 'openai'             // OpenAI TTS
   | 'google'             // Google Cloud TTS
-  | 'alibaba_voice'      // Alibaba DashScope Voice
+  | 'alibaba_voice'      // Alibaba CosyVoice
+  | 'deepseek_tts'       // DeepSeek TTS (CJK optimized)
   | 'amazon_polly';      // AWS Polly (future)
 
 export type STTProvider = 
   | 'azure'              // Azure Speech-to-Text
   | 'openai_whisper'     // OpenAI Whisper
   | 'google'             // Google Cloud STT
-  | 'alibaba_voice'      // Alibaba DashScope STT
+  | 'alibaba_voice'      // Alibaba Paraformer STT
+  | 'deepseek_stt'       // DeepSeek STT (CJK optimized)
   | 'aws_transcribe';    // AWS Transcribe (future)
 
 export type ImageGenProvider = 
@@ -40,19 +45,40 @@ export type ImageGenProvider =
   | 'gemini_3_pro'       // Google Gemini 3 Pro Image
   | 'openai_dalle'       // OpenAI DALL-E 3
   | 'alibaba_wanx'       // Alibaba Wanx
+  | 'deepseek_image'     // DeepSeek Image (CJK optimized)
+  | 'azure_image'        // Azure DALL-E (enterprise)
   | 'stability'          // Stability AI
   | 'huggingface'        // HuggingFace models
   | 'replicate';         // Replicate
 
+// Video providers - Multi-provider AnimateDiff/SVD support
 export type VideoGenProvider =
-  | 'modelslab_animatediff' // ModelsLab AnimateDiff (PRIMARY)
-  | 'modelslab_svd'         // ModelsLab Stable Video Diffusion
-  | 'gemini_veo'            // Google Gemini Veo
-  | 'alibaba_wanx_video'    // Alibaba Wanx Video
-  | 'alibaba_wan_animate'   // Alibaba WAN 2.2 Animate (Avatar/Lip-sync)
-  | 'azure_video'           // Azure Video AI
-  | 'deepseek_video'        // DeepSeek Video Generation
-  | 'replicate';            // Replicate (Runway-style)
+  // AnimateDiff - Multi-Provider
+  | 'modelslab_animatediff'   // ModelsLab AnimateDiff (PRIMARY)
+  | 'alibaba_animatediff'     // Alibaba AnimateDiff
+  | 'azure_animatediff'       // Azure AnimateDiff
+  | 'deepseek_animatediff'    // DeepSeek AnimateDiff
+  | 'google_animatediff'      // Google Veo AnimateDiff
+  | 'replicate_animatediff'   // Replicate AnimateDiff
+  // SVD - Multi-Provider
+  | 'modelslab_svd'           // ModelsLab SVD (PRIMARY)
+  | 'alibaba_svd'             // Alibaba WAN SVD
+  | 'azure_svd'               // Azure Video AI SVD
+  | 'deepseek_svd'            // DeepSeek SVD
+  | 'google_svd'              // Google Veo SVD
+  | 'replicate_svd'           // Replicate SVD
+  // Avatar & Lip-Sync
+  | 'alibaba_wan_animate'     // Alibaba WAN 2.2 Animate (PRIMARY for avatar)
+  | 'azure_video'             // Azure Video AI (Viseme lip-sync)
+  | 'deepseek_video'          // DeepSeek Video
+  // Premium Providers
+  | 'gemini_veo'              // Google Gemini Veo
+  | 'openai_sora'             // OpenAI Sora
+  | 'runway_gen3'             // Runway Gen-3 Alpha
+  | 'pika_labs'               // Pika Labs
+  // Regional/Budget
+  | 'alibaba_wanx_video'      // Alibaba Wanx Video
+  | 'replicate';              // Replicate (general)
 
 export type SFXGenProvider =
   | 'elevenlabs'         // ElevenLabs SFX
@@ -65,7 +91,26 @@ export type NLPProvider =
   | 'deepseek'           // DeepSeek (Chinese/technical specialist)
   | 'alibaba_qwen';      // Alibaba Qwen LLM
 
-export type MediaCapability = 'ocr' | 'tts' | 'stt' | 'image_gen' | 'video_gen' | 'sfx_gen' | 'nlp' | 'avatar' | 'lipsync' | 'character_animation';
+// Expanded capabilities for multi-provider routing
+export type MediaCapability = 
+  | 'ocr' 
+  | 'tts' 
+  | 'stt' 
+  | 'image_gen' 
+  | 'video_gen' 
+  | 'sfx_gen' 
+  | 'nlp' 
+  | 'avatar' 
+  | 'lipsync' 
+  | 'character_animation'
+  // Expanded capabilities for provider matching
+  | 'voice_clone'        // ElevenLabs, Alibaba CosyVoice
+  | 'realtime_stt'       // Azure, Google real-time STT
+  | 'music_gen'          // ModelsLab MusicGen
+  | 'text_to_video'      // Text prompt to video
+  | 'image_to_video'     // Image animation to video
+  | 'animatediff'        // AnimateDiff capability
+  | 'svd';               // Stable Video Diffusion capability
 
 // ============================================
 // CONFIDENCE SCORING
@@ -248,6 +293,40 @@ export interface GeneratedImage {
 }
 
 // ============================================
+// VIDEO GENERATION TYPES
+// ============================================
+
+export interface VideoGenRequest {
+  prompt: string;
+  provider?: VideoGenProvider;
+  referenceImage?: string;    // For image-to-video
+  duration?: number;          // Seconds
+  resolution?: '480p' | '720p' | '1080p' | '4k';
+  style?: string;
+  mode?: 'text_to_video' | 'image_to_video' | 'avatar' | 'lipsync';
+  options?: {
+    seed?: number;
+    motionStrength?: number;
+    fps?: number;
+  };
+}
+
+export interface VideoGenResult {
+  videoUrl: string;
+  thumbnailUrl?: string;
+  duration: number;
+  confidence: ConfidenceScore;
+  provider: VideoGenProvider;
+  metadata: {
+    promptUsed: string;
+    resolution: string;
+    fps: number;
+    processingTimeMs: number;
+    estimatedCost: number;
+  };
+}
+
+// ============================================
 // NLP TYPES
 // ============================================
 
@@ -291,7 +370,7 @@ export interface NLPResult {
 }
 
 // ============================================
-// PROVIDER CONFIGURATION
+// PROVIDER CONFIGURATION - EXTENDED
 // ============================================
 
 export interface MediaProviderConfig {
@@ -306,6 +385,10 @@ export interface MediaProviderConfig {
   supportedLanguages?: string[];
   strengths: string[];
   weaknesses: string[];
+  // Extended scoring metrics
+  qualityScore?: number;   // 0-100
+  speedScore?: number;     // 0-100
+  reliabilityScore?: number; // 0-100
 }
 
 export interface MediaAdapterConfig {
@@ -342,4 +425,35 @@ export interface MediaRequestContext {
   sessionId?: string;
   correlationId?: string;
   metadata?: Record<string, any>;
+}
+
+// ============================================
+// PROVIDER SCORING & RECOMMENDATION
+// ============================================
+
+export interface ProviderScore {
+  providerId: string;
+  overallScore: number;    // 0-100 weighted average
+  qualityScore: number;
+  speedScore: number;
+  costScore: number;
+  reliabilityScore: number;
+  contextBonuses: {
+    languageBonus: number;
+    complianceBonus: number;
+    regionalBonus: number;
+  };
+  recommendation: 'primary' | 'fallback' | 'budget' | 'premium';
+  reasons: string[];
+}
+
+export interface ProviderRecommendation {
+  primary: ProviderScore;
+  alternatives: ProviderScore[];
+  fallbackChain: string[];
+  context: {
+    language?: string;
+    industry?: string;
+    priority: 'quality' | 'speed' | 'budget' | 'balanced';
+  };
 }
