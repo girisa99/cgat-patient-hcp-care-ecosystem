@@ -11,7 +11,6 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { 
-  Presentation,
   Sparkles, 
   Zap,
   Mic,
@@ -21,18 +20,17 @@ import {
   Shield,
   Lock,
   CheckCircle2,
-  FileText,
   Loader2,
+  Presentation,
+  FileText,
   PlusCircle,
 } from 'lucide-react';
 import { PresentationWizard } from '@/components/genie-studio/presentation-generator/PresentationWizard';
-import { GenieDeckHero } from '@/components/genie-studio/presentation-generator/components/GenieDeckHero';
 import { BackToSubscription } from '@/components/subscription/BackToSubscription';
 import { AskGenie } from '@/components/genie-studio/AskGenie';
 import { HIPAAComplianceFooter } from '@/components/genie-studio/HIPAAComplianceFooter';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
 import genieDeckLogo from '@/assets/logos/genie-deck-combined.png';
 
 // ==================== HIPAA Badge Component ====================
@@ -194,11 +192,11 @@ const GenieDeck = () => {
   }, []);
 
   return (
-    <AppLayout>
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-purple-950/10">
-        {/* Compact Header */}
+    <AppLayout showNavigation={false}>
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-purple-950/5">
+        {/* Compact Header - Matches reference design */}
         <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="container flex h-14 items-center justify-between">
+          <div className="flex h-14 items-center justify-between px-4 md:px-6">
             <div className="flex items-center gap-4">
               <BackToSubscription 
                 fallbackPath="/genie-studio" 
@@ -209,15 +207,15 @@ const GenieDeck = () => {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div className="flex items-center gap-3 cursor-help">
-                      {/* Logo - no duplicate hover, just trigger for tooltip */}
-                      <div className="h-9 w-9 rounded-lg bg-white/90 backdrop-blur border border-purple-200/50 flex items-center justify-center shadow-sm overflow-hidden p-1">
+                      {/* Lamp Logo - matching reference design */}
+                      <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-purple-100 to-violet-50 dark:from-purple-900/40 dark:to-violet-900/30 border border-purple-200/50 dark:border-purple-700/50 flex items-center justify-center shadow-sm overflow-hidden p-1.5">
                         <img src={genieDeckLogo} alt="Genie Deck" className="h-full w-full object-contain" />
                       </div>
                       <div>
-                        <h1 className="text-lg font-semibold bg-gradient-to-r from-purple-600 to-violet-600 bg-clip-text text-transparent">
+                        <h1 className="text-xl font-semibold bg-gradient-to-r from-purple-600 to-violet-600 bg-clip-text text-transparent">
                           Genie Deck
                         </h1>
-                        <p className="text-xs text-muted-foreground hidden sm:block">Ideas to Impact</p>
+                        <p className="text-xs text-muted-foreground">Ideas to Impact</p>
                       </div>
                     </div>
                   </TooltipTrigger>
@@ -239,8 +237,8 @@ const GenieDeck = () => {
               {/* Prominent HIPAA Badge */}
               <HIPAABadge />
               
-              <Badge className="bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20 hidden md:flex">
-                <Sparkles className="h-3 w-3 mr-1" />
+              <Badge className="bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20 hidden md:flex gap-1">
+                <Sparkles className="h-3 w-3" />
                 AI Powered
               </Badge>
               <Button
@@ -274,22 +272,8 @@ const GenieDeck = () => {
           />
         )}
 
-        {/* Hero Section - Collapsible */}
-        {!hasGeneratedContent && (
-          <GenieDeckHero 
-            className="border-b"
-            onGetStarted={() => {
-              // Scroll to wizard or focus input
-              document.getElementById('wizard-container')?.scrollIntoView({ behavior: 'smooth' });
-            }}
-          />
-        )}
-
-        {/* Full-Screen Presentation Wizard */}
-        <div id="wizard-container" className={cn(
-          "flex-1 min-h-0",
-          hasGeneratedContent ? "h-[calc(100vh-56px)]" : "h-[calc(100vh-56px-320px)]"
-        )}>
+        {/* Full-Screen Presentation Wizard - No hero banner, maximized space */}
+        <div id="wizard-container" className="h-[calc(100vh-56px)]">
           <PresentationWizard 
             className="h-full"
             onComplete={(presentation) => {
