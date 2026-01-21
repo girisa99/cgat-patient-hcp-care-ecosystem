@@ -1,5 +1,5 @@
 import React from 'react';
-import { GENIE_PRODUCTS, GenieProduct } from '@/hooks/useSubscription';
+import { GENIE_PRODUCTS, GenieProduct } from '@/constants/genie-products';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -7,30 +7,12 @@ import { ArrowRight, Check, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 
-// Import logos from assets - using horizontal/banner versions for consistency
-import genieStudioLogo from '@/assets/logos/genie-studio-horizontal.png';
-import genieSparkLogo from '@/assets/logos/genie-spark-combined.png';
-import genieVibeLogo from '@/assets/logos/genie-vibe-combined.png';
-import genieMindLogo from '@/assets/logos/genie-mind-combined.png';
-// Production Hub uses Arc logo (Arc is consolidated into Production Hub per architecture)
-import genieProductionHubLogo from '@/assets/logos/genie-arc-combined.png';
-import genieDeckLogo from '@/assets/logos/genie-deck-combined.png';
-
-const productLogos: Record<GenieProduct, string> = {
-  mind: genieMindLogo,
-  spark: genieSparkLogo,
-  vibe: genieVibeLogo,
-  studio: genieStudioLogo,
-  productionHub: genieProductionHubLogo,
-  deck: genieDeckLogo
-};
-
 const productRoutes: Record<GenieProduct, string> = {
   mind: '/genie-mind',
   spark: '/genie-spark',
   vibe: '/genie-vibe',
   studio: '/genie-studio',
-  productionHub: '/production-hub',
+  arc: '/production-hub',
   deck: '/genie-deck'
 };
 
@@ -73,7 +55,7 @@ export const ProductsOverview = () => {
                   product.borderColor, "border"
                 )}>
                   <img 
-                    src={productLogos[key]} 
+                    src={product.logos.combined} 
                     alt={product.name}
                     className="h-12 w-12 object-contain"
                   />
@@ -100,15 +82,7 @@ export const ProductsOverview = () => {
               <div className="space-y-2">
                 {product.features.map((feature, idx) => (
                   <div key={idx} className="flex items-center gap-2 text-sm">
-                    <Check className={cn(
-                      "h-4 w-4 shrink-0",
-                      product.color.includes('blue') ? 'text-blue-500' :
-                      product.color.includes('amber') ? 'text-amber-500' :
-                      product.color.includes('purple') ? 'text-purple-500' :
-                      product.color.includes('indigo') ? 'text-indigo-500' :
-                      product.color.includes('emerald') ? 'text-emerald-500' :
-                      'text-rose-500'
-                    )} />
+                    <Check className="h-4 w-4 shrink-0 text-primary" />
                     <span className="text-muted-foreground">{feature}</span>
                   </div>
                 ))}
