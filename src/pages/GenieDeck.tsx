@@ -211,12 +211,12 @@ const GenieDeck = () => {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div className="flex items-center gap-3 cursor-help">
-                      {/* Lamp Logo - matching reference design */}
-                      <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-purple-100 to-violet-50 dark:from-purple-900/40 dark:to-violet-900/30 border border-purple-200/50 dark:border-purple-700/50 flex items-center justify-center shadow-sm overflow-hidden p-1.5">
+                      {/* Logo container - consistent with Genie ecosystem */}
+                      <div className="h-10 w-10 rounded-lg bg-card border border-border/50 flex items-center justify-center overflow-hidden p-1.5 shadow-sm">
                         <img src={genieDeckLogo} alt="Genie Deck" className="h-full w-full object-contain" />
                       </div>
                       <div>
-                        <h1 className="text-xl font-semibold bg-gradient-to-r from-purple-600 to-violet-600 bg-clip-text text-transparent">
+                        <h1 className="text-lg font-semibold text-foreground">
                           Genie Deck
                         </h1>
                         <p className="text-xs text-muted-foreground">Ideas to Impact</p>
