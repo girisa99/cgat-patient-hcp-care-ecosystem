@@ -1048,12 +1048,27 @@ export function PresentationWizard({
         slideCount: outputSettings.slideCount,
         chapterCount: outputSettings.chapterCount || 3,
         slidesPerChapter: outputSettings.slidesPerChapter || 5,
-        includeVoiceover: outputSettings.includeVoiceover,
-        includeMusic: outputSettings.includeMusic,
+        includeVoiceover: outputSettings.includeVoiceover || voiceConfig.enabled,
+        includeMusic: outputSettings.includeMusic || voiceConfig.backgroundMusic,
         animationIntensity: 50,
         resolution: outputSettings.resolution as '720p' | '1080p' | '4k',
         aspectRatio: outputSettings.aspectRatio as '16:9' | '4:3' | '9:16' | '1:1',
       },
+      
+      // NEW: Global tier and voice configuration (Gap Analysis Fix)
+      globalTier,
+      voiceConfig: voiceConfig.enabled ? {
+        provider: voiceConfig.provider,
+        voiceId: voiceConfig.voiceId,
+        persona: voiceConfig.persona,
+        speed: voiceConfig.speed,
+        pitch: voiceConfig.pitch,
+        stability: voiceConfig.stability,
+        clarity: voiceConfig.clarity,
+        backgroundMusic: voiceConfig.backgroundMusic,
+        musicVolume: voiceConfig.musicVolume,
+        pauseBetweenSlides: voiceConfig.pauseBetweenSlides,
+      } : undefined,
     } as PresentationRequest;
 
     console.log('[Generation] Complete request context:', {
