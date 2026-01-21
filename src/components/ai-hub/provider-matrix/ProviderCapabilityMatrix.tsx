@@ -100,7 +100,7 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
   };
 
   return (
-    <Card className={`${className} max-h-[85vh] overflow-hidden flex flex-col`}>
+    <Card className={`${className} h-full flex flex-col overflow-hidden`}>
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
@@ -169,15 +169,15 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
           </div>
 
           {/* Feature Matrix Tab */}
-          <TabsContent value="matrix" className="flex-1 overflow-hidden">
-            <ScrollArea className="h-[450px]">
-              <Table>
-                <TableHeader>
+          <TabsContent value="matrix" className="flex-1 overflow-hidden mt-0">
+            <div className="h-[calc(100vh-400px)] min-h-[400px] overflow-auto border rounded-md">
+              <Table className="relative">
+                <TableHeader className="sticky top-0 z-20 bg-background">
                   <TableRow>
-                    <TableHead className="sticky left-0 bg-background z-10 min-w-[200px]">Feature</TableHead>
-                    <TableHead className="w-20">Category</TableHead>
-                    {PROVIDER_SUMMARIES.slice(0, 8).map(p => (
-                      <TableHead key={p.id} className="text-center w-24">
+                    <TableHead className="sticky left-0 bg-background z-30 min-w-[200px] border-r">Feature</TableHead>
+                    <TableHead className="min-w-[80px] bg-background">Category</TableHead>
+                    {PROVIDER_SUMMARIES.map(p => (
+                      <TableHead key={p.id} className="text-center min-w-[100px] bg-background">
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger className="cursor-help">
@@ -202,7 +202,7 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
                     const featureImpl = FEATURE_IMPLEMENTATION_MATRIX[feature.id] || {};
                     return (
                       <TableRow key={feature.id}>
-                        <TableCell className="sticky left-0 bg-background font-medium">
+                        <TableCell className="sticky left-0 bg-background font-medium border-r z-10">
                           {feature.name}
                           {feature.priority === 'critical' && (
                             <Badge variant="destructive" className="ml-2 text-[8px]">Critical</Badge>
@@ -213,17 +213,17 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
                             {CATEGORY_LABELS[feature.category]?.split(' ')[0]}
                           </Badge>
                         </TableCell>
-                        {PROVIDER_SUMMARIES.slice(0, 8).map(p => {
+                        {PROVIDER_SUMMARIES.map(p => {
                           const impl = featureImpl[p.id as ProviderId];
                           return (
-                            <TableCell key={p.id} className="text-center">
+                            <TableCell key={`${feature.id}-${p.id}`} className="text-center">
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger>
                                     {STATUS_ICONS[impl?.implementation || 'not_applicable']}
                                   </TooltipTrigger>
                                   <TooltipContent>
-                                    <p>{impl?.implementation || 'Not applicable'}</p>
+                                    <p>{impl?.implementation || 'Not mapped yet'}</p>
                                     {impl?.notes && <p className="text-xs text-muted-foreground">{impl.notes}</p>}
                                     {impl?.edgeFunctionUsed && <p className="text-xs">Edge: {impl.edgeFunctionUsed}</p>}
                                   </TooltipContent>
@@ -237,14 +237,13 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
                   })}
                 </TableBody>
               </Table>
-              <ScrollBar orientation="horizontal" />
-            </ScrollArea>
+            </div>
           </TabsContent>
 
           {/* Provider Summary Tab */}
-          <TabsContent value="providers" className="flex-1 overflow-hidden">
-            <ScrollArea className="h-[450px]">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pr-4">
+          <TabsContent value="providers" className="flex-1 overflow-auto mt-0">
+            <div className="h-[calc(100vh-400px)] min-h-[400px] overflow-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-1">
                 {PROVIDER_SUMMARIES.map(provider => (
                   <Card key={provider.id} className={provider.status === 'configured' ? 'border-primary/30' : 'border-secondary/30'}>
                     <CardHeader className="pb-2">
@@ -273,13 +272,13 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
                   </Card>
                 ))}
               </div>
-            </ScrollArea>
+            </div>
           </TabsContent>
 
           {/* LLM Capabilities Tab */}
-          <TabsContent value="llm" className="flex-1 overflow-hidden">
-            <ScrollArea className="h-[450px]">
-              <div className="space-y-6 pr-4">
+          <TabsContent value="llm" className="flex-1 overflow-auto mt-0">
+            <div className="h-[calc(100vh-400px)] min-h-[400px] overflow-auto">
+              <div className="space-y-6 p-1">
                 {/* Fallback Logic Explanation */}
                 <Card className="border-2 border-dashed border-primary/30">
                   <CardHeader className="pb-2">
@@ -470,15 +469,15 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
                       <strong>Recommendation:</strong> Keep direct OpenAI for general use. Add Azure OpenAI for enterprise healthcare clients requiring HIPAA compliance.
                     </p>
                   </CardContent>
-                </Card>
+              </Card>
               </div>
-            </ScrollArea>
+            </div>
           </TabsContent>
 
           {/* Gap Analysis Tab */}
-          <TabsContent value="gaps" className="flex-1 overflow-hidden">
-            <ScrollArea className="h-[450px]">
-              <div className="space-y-4 pr-4">
+          <TabsContent value="gaps" className="flex-1 overflow-auto mt-0">
+            <div className="h-[calc(100vh-400px)] min-h-[400px] overflow-auto">
+              <div className="space-y-4 p-1">
                 <h3 className="font-semibold">🚨 Critical Gaps to Address</h3>
                 <Table>
                   <TableHeader>
@@ -491,7 +490,7 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
                   </TableHeader>
                   <TableBody>
                     {CRITICAL_GAPS.map((gap, i) => (
-                      <TableRow key={i}>
+                      <TableRow key={`gap-${i}`}>
                         <TableCell className="font-medium">{gap.feature}</TableCell>
                         <TableCell>{gap.provider}</TableCell>
                         <TableCell>
@@ -505,7 +504,7 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
                   </TableBody>
                 </Table>
               </div>
-            </ScrollArea>
+            </div>
           </TabsContent>
         </Tabs>
       </CardContent>
