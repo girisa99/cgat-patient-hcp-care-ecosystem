@@ -1237,18 +1237,18 @@ export function PresentationWizard({
 
   return (
     <div className={cn("flex h-full", className)}>
-      {/* Left Panel - Wizard Steps */}
-      <div className="w-[480px] min-w-[440px] flex-shrink-0 flex flex-col border-r bg-background">
+      {/* Left Panel - Wizard Steps - WIDER for better spacing */}
+      <div className="w-[55%] min-w-[520px] max-w-[680px] flex-shrink-0 flex flex-col border-r bg-background">
         {/* Compact Progress Header with Token Balance */}
-        <div className="px-5 py-3 border-b bg-muted/30">
-          <div className="flex items-center justify-between mb-2">
+        <div className="px-6 py-4 border-b bg-muted/20">
+          <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
-              <h2 className="text-base font-semibold">Create Presentation</h2>
-              <Badge variant="outline" className="text-xs">
+              <h2 className="text-lg font-semibold text-foreground">Create Presentation</h2>
+              <Badge variant="outline" className="text-xs font-medium">
                 Step {currentStep + 1}/{WIZARD_STEPS.length}
               </Badge>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               {/* Token Balance & Usage Dashboard */}
               <TokenBalanceHeader 
                 estimatedCost={calculateCredits({
@@ -1271,13 +1271,13 @@ export function PresentationWizard({
               )}
             </div>
           </div>
-          <Progress value={progressPercent} className="h-1.5" />
+          <Progress value={progressPercent} className="h-2" />
         </div>
 
-        {/* Step Navigator - Vertical Sidebar */}
+        {/* Step Navigator - Vertical Sidebar with better spacing */}
         <div className="flex flex-1 min-h-0">
-          {/* Step Icons */}
-          <div className="w-14 border-r bg-muted/20 py-3 flex flex-col items-center gap-1">
+          {/* Step Icons - Wider with labels */}
+          <div className="w-16 border-r bg-muted/10 py-4 flex flex-col items-center gap-2">
             {WIZARD_STEPS.map((step, idx) => {
               const StepIcon = step.icon;
               const isActive = currentStep === idx;
@@ -1287,56 +1287,56 @@ export function PresentationWizard({
                   key={step.id}
                   onClick={() => goToStep(idx)}
                   className={cn(
-                    "w-10 h-10 rounded-lg flex items-center justify-center transition-all",
-                    isActive && "bg-primary text-primary-foreground shadow-sm",
-                    !isActive && isComplete && "bg-green-100 text-green-600 dark:bg-green-900/30",
-                    !isActive && !isComplete && "hover:bg-muted text-muted-foreground"
+                    "w-11 h-11 rounded-xl flex items-center justify-center transition-all",
+                    isActive && "bg-primary text-primary-foreground shadow-md",
+                    !isActive && isComplete && "bg-green-100 text-green-600 dark:bg-green-900/40 dark:text-green-400",
+                    !isActive && !isComplete && "hover:bg-muted/80 text-muted-foreground"
                   )}
                   title={step.label}
                 >
                   {isComplete && !isActive ? (
-                    <CheckCircle2 className="h-4 w-4" />
+                    <CheckCircle2 className="h-5 w-5" />
                   ) : (
-                    <StepIcon className="h-4 w-4" />
+                    <StepIcon className="h-5 w-5" />
                   )}
                 </button>
               );
             })}
           </div>
 
-          {/* Step Content - No nested ScrollArea */}
+          {/* Step Content - FLAT design, no nested cards */}
           <div className="flex-1 overflow-y-auto">
-            <div className="p-5 space-y-5">
+            <div className="p-6 space-y-6">
             {/* Step 0: Content Input */}
             {currentStep === 0 && (
-              <div className="space-y-4">
-                {/* Step Header */}
-                <div className="flex items-center gap-3 p-4 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20">
-                  <div className="p-2 rounded-lg bg-primary/10">
+              <div className="space-y-5">
+                {/* Step Header - Flat design */}
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-primary/10">
                     <Type className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-sm">Content Input</h3>
-                    <p className="text-xs text-muted-foreground">
-                      Add your source material — describe, paste, upload, or link
+                    <h3 className="font-semibold text-base text-foreground">Content Input</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Add your source material
                     </p>
                   </div>
                 </div>
 
-                {/* Input Type Selection */}
-                <div className="space-y-3">
-                  <Label className="text-xs font-medium text-foreground">Choose how to add your content:</Label>
+                {/* Input Type Selection - Flat tabs */}
+                <div className="space-y-4">
+                  <Label className="text-sm font-medium text-foreground">Choose how to add your content:</Label>
                   <Tabs value={inputSource} onValueChange={(v) => setInputSource(v as InputSource)}>
-                    <TabsList className="!grid !grid-cols-5 !w-full !h-10 !p-1 !bg-muted !rounded-lg !gap-0 !min-h-0 !overflow-visible !border-0 !shadow-none">
-                      <TabsTrigger value="prompt" className="!text-xs !font-medium !h-8 !rounded-md !px-2 !py-1 !min-w-0 !scale-100 data-[state=active]:!bg-primary data-[state=active]:!text-primary-foreground data-[state=active]:!shadow-sm data-[state=active]:!scale-100 !text-foreground !border-0">Describe</TabsTrigger>
-                      <TabsTrigger value="text" className="!text-xs !font-medium !h-8 !rounded-md !px-2 !py-1 !min-w-0 !scale-100 data-[state=active]:!bg-primary data-[state=active]:!text-primary-foreground data-[state=active]:!shadow-sm data-[state=active]:!scale-100 !text-foreground !border-0">Paste</TabsTrigger>
-                      <TabsTrigger value="document" className="!text-xs !font-medium !h-8 !rounded-md !px-2 !py-1 !min-w-0 !scale-100 data-[state=active]:!bg-primary data-[state=active]:!text-primary-foreground data-[state=active]:!shadow-sm data-[state=active]:!scale-100 !text-foreground !border-0">Upload</TabsTrigger>
-                      <TabsTrigger value="image" className="!text-xs !font-medium !h-8 !rounded-md !px-2 !py-1 !min-w-0 !scale-100 data-[state=active]:!bg-primary data-[state=active]:!text-primary-foreground data-[state=active]:!shadow-sm data-[state=active]:!scale-100 !text-foreground !border-0">Image</TabsTrigger>
-                      <TabsTrigger value="url" className="!text-xs !font-medium !h-8 !rounded-md !px-2 !py-1 !min-w-0 !scale-100 data-[state=active]:!bg-primary data-[state=active]:!text-primary-foreground data-[state=active]:!shadow-sm data-[state=active]:!scale-100 !text-foreground !border-0">Link</TabsTrigger>
+                    <TabsList className="grid grid-cols-5 w-full h-11 p-1 bg-muted rounded-lg">
+                      <TabsTrigger value="prompt" className="text-sm font-medium rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Describe</TabsTrigger>
+                      <TabsTrigger value="text" className="text-sm font-medium rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Paste</TabsTrigger>
+                      <TabsTrigger value="document" className="text-sm font-medium rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Upload</TabsTrigger>
+                      <TabsTrigger value="image" className="text-sm font-medium rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Image</TabsTrigger>
+                      <TabsTrigger value="url" className="text-sm font-medium rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Link</TabsTrigger>
                     </TabsList>
 
-                    <TabsContent value="prompt" className="mt-3 space-y-2">
-                      <p className="text-xs text-muted-foreground">Describe your presentation topic and the AI will generate content for you.</p>
+                    <TabsContent value="prompt" className="mt-4 space-y-3">
+                      <p className="text-sm text-muted-foreground">Describe your presentation topic and the AI will generate content for you.</p>
                       {inputLanguage !== primaryLanguage ? (
                         <AutoTranslateInput
                           value={inputContent}
@@ -1344,7 +1344,7 @@ export function PresentationWizard({
                           inputLanguage={inputLanguage}
                           outputLanguage={primaryLanguage}
                           placeholder="Example: Create a presentation about renewable energy trends in 2024, focusing on solar and wind power adoption rates..."
-                          minHeight={140}
+                          minHeight={160}
                         />
                       ) : (
                         <Textarea
