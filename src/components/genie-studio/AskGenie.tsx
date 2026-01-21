@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { 
   Send, 
   Loader2, 
@@ -1646,54 +1647,78 @@ Respond helpfully, warmly, and with genuine care for their creative journey.
             </AnimatePresence>
 
             <div className="flex gap-2 items-center">
-              {/* Language Selector */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button 
-                    size="icon" 
-                    variant="ghost"
-                    className="h-11 w-11 rounded-xl shrink-0"
-                    title={`Language: ${voice.currentPairing?.languageName || 'English'}`}
-                  >
-                    <Globe className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="max-h-[300px] overflow-auto">
-                  {LANGUAGE_VOICE_PAIRINGS.slice(0, 15).map((lang) => (
-                    <DropdownMenuItem 
-                      key={lang.languageCode}
-                      onClick={() => voice.setLanguage(lang.languageCode)}
-                      className={cn(
-                        "flex items-center gap-2",
-                        voice.userLanguage.startsWith(lang.languageCode) && "bg-primary/10"
-                      )}
-                    >
-                      <span>{lang.nativeName}</span>
-                      <span className="text-muted-foreground text-xs">({lang.languageName})</span>
-                      {lang.quality === 'excellent' && <Badge variant="outline" className="text-[10px] h-4">Best</Badge>}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {/* Language Selector with Tooltip */}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button 
+                          size="icon" 
+                          variant="ghost"
+                          className="h-11 w-11 rounded-xl shrink-0"
+                          title={`Language: ${voice.currentPairing?.languageName || 'English'}`}
+                        >
+                          <Globe className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="max-h-[300px] overflow-auto bg-popover">
+                        {LANGUAGE_VOICE_PAIRINGS.slice(0, 15).map((lang) => (
+                          <DropdownMenuItem 
+                            key={lang.languageCode}
+                            onClick={() => voice.setLanguage(lang.languageCode)}
+                            className={cn(
+                              "flex items-center gap-2",
+                              voice.userLanguage.startsWith(lang.languageCode) && "bg-primary/10"
+                            )}
+                          >
+                            <span>{lang.nativeName}</span>
+                            <span className="text-muted-foreground text-xs">({lang.languageName})</span>
+                            {lang.quality === 'excellent' && <Badge variant="outline" className="text-[10px] h-4">Best</Badge>}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-[250px] bg-popover">
+                    <div className="space-y-1">
+                      <p className="font-medium text-sm">Language Selection</p>
+                      <p className="text-xs text-muted-foreground">Choose your preferred language for Ask Genie. Supports 42+ languages with voice in/out.</p>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
 
-              {/* Mic Button - Hold or Toggle */}
-              <Button
-                size="icon"
-                variant={voice.isListening ? "destructive" : "outline"}
-                className={cn(
-                  "h-11 w-11 rounded-xl shrink-0 transition-all",
-                  voice.isListening && "ring-2 ring-red-500 ring-offset-2"
-                )}
-                onClick={() => voice.toggleListening()}
-                disabled={voice.isProcessing || voice.isSpeaking}
-                title={voice.isListening ? "Stop listening" : "Start voice input"}
-              >
-                {voice.isListening ? (
-                  <MicOff className="h-4 w-4" />
-                ) : (
-                  <Mic className="h-4 w-4" />
-                )}
-              </Button>
+              {/* Mic Button - Hold or Toggle with Tooltip */}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="icon"
+                      variant={voice.isListening ? "destructive" : "outline"}
+                      className={cn(
+                        "h-11 w-11 rounded-xl shrink-0 transition-all",
+                        voice.isListening && "ring-2 ring-red-500 ring-offset-2"
+                      )}
+                      onClick={() => voice.toggleListening()}
+                      disabled={voice.isProcessing || voice.isSpeaking}
+                    >
+                      {voice.isListening ? (
+                        <MicOff className="h-4 w-4" />
+                      ) : (
+                        <Mic className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-[250px] bg-popover">
+                    <div className="space-y-1">
+                      <p className="font-medium text-sm">Voice Input</p>
+                      <p className="text-xs text-muted-foreground">Speak to Ask Genie using your microphone. Supports 42+ languages with automatic detection.</p>
+                      <p className="text-xs text-muted-foreground/70">Shortcut: Ctrl+M</p>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
 
               <Textarea
                 ref={inputRef}
@@ -1724,30 +1749,41 @@ Respond helpfully, warmly, and with genuine care for their creative journey.
                 )}
               </Button>
 
-              {/* Speaker Toggle - Read responses aloud */}
-              <Button
-                size="icon"
-                variant={autoSpeak ? "default" : "outline"}
-                className={cn(
-                  "h-11 w-11 rounded-xl shrink-0",
-                  autoSpeak && `bg-gradient-to-r ${productContext.color}`
-                )}
-                onClick={() => {
-                  setAutoSpeak(!autoSpeak);
-                  if (!autoSpeak) {
-                    toast.success("🔊 I'll read my responses aloud now!");
-                  } else {
-                    toast.info("🔇 Voice responses turned off");
-                  }
-                }}
-                title={autoSpeak ? "Voice responses ON" : "Voice responses OFF"}
-              >
-                {autoSpeak ? (
-                  <Volume2 className="h-4 w-4 text-white" />
-                ) : (
-                  <VolumeX className="h-4 w-4" />
-                )}
-              </Button>
+              {/* Speaker Toggle - Read responses aloud with Tooltip */}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="icon"
+                      variant={autoSpeak ? "default" : "outline"}
+                      className={cn(
+                        "h-11 w-11 rounded-xl shrink-0",
+                        autoSpeak && `bg-gradient-to-r ${productContext.color}`
+                      )}
+                      onClick={() => {
+                        setAutoSpeak(!autoSpeak);
+                        if (!autoSpeak) {
+                          toast.success("🔊 I'll read my responses aloud now!");
+                        } else {
+                          toast.info("🔇 Voice responses turned off");
+                        }
+                      }}
+                    >
+                      {autoSpeak ? (
+                        <Volume2 className="h-4 w-4 text-white" />
+                      ) : (
+                        <VolumeX className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-[250px] bg-popover">
+                    <div className="space-y-1">
+                      <p className="font-medium text-sm">Voice Responses</p>
+                      <p className="text-xs text-muted-foreground">When enabled, Ask Genie will read responses aloud in your selected language. Great for hands-free interaction!</p>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
             
             <p id="genie-input-hint" className="text-[10px] text-muted-foreground mt-2 text-center">
