@@ -2,11 +2,14 @@
  * Provider Capability Matrix - Comprehensive Dashboard
  * Shows all features × all providers with implementation status
  * 
- * NO nested cards/frames - direct content rendering for Architecture Tab
+ * Features:
+ * - Legend for status icons
+ * - Dynamic height based on category selection
+ * - Inline editing capability
  */
 
 import React, { useState, useMemo } from 'react';
-import { Check, X, AlertCircle, Clock, Download, Search, DollarSign, Zap, Target } from 'lucide-react';
+import { Check, X, AlertCircle, Clock, Download, Search, Zap, Target, Plus, Save, Edit2, Info } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +18,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Progress } from '@/components/ui/progress';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { 
   ALL_FEATURES, 
@@ -25,7 +30,7 @@ import {
   LLM_COMPARISONS,
   ROUTING_STRATEGY 
 } from './matrixData';
-import type { FeatureCategory, ImplementationStatus, ProviderId } from './types';
+import type { FeatureCategory, ImplementationStatus, ProviderId, Feature } from './types';
 
 const CATEGORY_LABELS: Record<FeatureCategory, string> = {
   INPUT: '📥 Input',
@@ -45,12 +50,17 @@ const CATEGORY_LABELS: Record<FeatureCategory, string> = {
   USE_CASE: '💼 Use Case',
 };
 
-const STATUS_ICONS: Record<ImplementationStatus, React.ReactNode> = {
-  implemented: <Check className="w-4 h-4 text-emerald-500" />,
-  partial: <AlertCircle className="w-4 h-4 text-amber-500" />,
-  planned: <Clock className="w-4 h-4 text-blue-500" />,
-  not_started: <X className="w-4 h-4 text-muted-foreground" />,
-  not_applicable: <span className="text-muted-foreground">—</span>,
+const STATUS_OPTIONS: { value: ImplementationStatus; label: string; icon: React.ReactNode; color: string }[] = [
+  { value: 'implemented', label: 'Implemented', icon: <Check className="w-4 h-4" />, color: 'text-emerald-500 bg-emerald-500/10' },
+  { value: 'partial', label: 'Partial', icon: <AlertCircle className="w-4 h-4" />, color: 'text-amber-500 bg-amber-500/10' },
+  { value: 'planned', label: 'Planned', icon: <Clock className="w-4 h-4" />, color: 'text-blue-500 bg-blue-500/10' },
+  { value: 'not_started', label: 'Not Started', icon: <X className="w-4 h-4" />, color: 'text-muted-foreground bg-muted' },
+  { value: 'not_applicable', label: 'N/A', icon: <span>—</span>, color: 'text-muted-foreground bg-transparent' },
+];
+
+const getStatusIcon = (status: ImplementationStatus | undefined) => {
+  const opt = STATUS_OPTIONS.find(s => s.value === status) || STATUS_OPTIONS[4];
+  return <span className={opt.color}>{opt.icon}</span>;
 };
 
 const COST_BADGES: Record<string, React.ReactNode> = {
@@ -59,18 +69,118 @@ const COST_BADGES: Record<string, React.ReactNode> = {
   '$$$': <Badge className="bg-purple-500/20 text-purple-600 border-purple-500/30 text-[10px]">$$$ Premium</Badge>,
 };
 
+// Legend Component
+const MatrixLegend: React.FC = () => (
+  <div className="flex flex-wrap items-center gap-4 p-3 rounded-lg bg-muted/30 border text-xs">
+    <div className="flex items-center gap-1 font-medium text-muted-foreground">
+      <Info className="w-3.5 h-3.5" /> Legend:
+    </div>
+    {STATUS_OPTIONS.map(opt => (
+      <div key={opt.value} className="flex items-center gap-1.5">
+        <span className={`flex items-center justify-center w-5 h-5 rounded ${opt.color}`}>
+          {opt.icon}
+        </span>
+        <span className="text-muted-foreground">{opt.label}</span>
+      </div>
+    ))}
+  </div>
+);
+
+// Add Feature Dialog
+const AddFeatureDialog: React.FC<{
+  onAdd: (feature: Feature) => void;
+  existingCategories: FeatureCategory[];
+}> = ({ onAdd, existingCategories }) => {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState('');
+  const [category, setCategory] = useState<FeatureCategory>('INPUT');
+  const [priority, setPriority] = useState<'critical' | 'high' | 'medium' | 'low'>('medium');
+
+  const handleAdd = () => {
+    if (!name.trim()) {
+      toast.error('Please enter a feature name');
+      return;
+    }
+    const id = name.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+    onAdd({ id, name, category, priority });
+    setName('');
+    setOpen(false);
+    toast.success(`Added "${name}" to ${category}`);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm">
+          <Plus className="w-4 h-4 mr-1" /> Add Feature
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Add New Feature</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label>Feature Name</Label>
+            <Input 
+              value={name} 
+              onChange={(e) => setName(e.target.value)} 
+              placeholder="e.g., Real-time Preview"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Category</Label>
+            <Select value={category} onValueChange={(v) => setCategory(v as FeatureCategory)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {existingCategories.map(cat => (
+                  <SelectItem key={cat} value={cat}>{CATEGORY_LABELS[cat]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Priority</Label>
+            <Select value={priority} onValueChange={(v) => setPriority(v as typeof priority)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="critical">Critical</SelectItem>
+                <SelectItem value="high">High</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="low">Low</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+          <Button onClick={handleAdd}>Add Feature</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ className }) => {
   const [selectedCategory, setSelectedCategory] = useState<FeatureCategory | 'all'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [view, setView] = useState<'matrix' | 'providers' | 'gaps' | 'llm'>('matrix');
+  const [editMode, setEditMode] = useState(false);
+  const [localFeatures, setLocalFeatures] = useState<Feature[]>([...ALL_FEATURES]);
+  const [localMatrix, setLocalMatrix] = useState({ ...FEATURE_IMPLEMENTATION_MATRIX });
+  const [editingCell, setEditingCell] = useState<{ featureId: string; providerId: string } | null>(null);
 
   const filteredFeatures = useMemo(() => {
-    return ALL_FEATURES.filter(f => {
+    return localFeatures.filter(f => {
       const matchesCategory = selectedCategory === 'all' || f.category === selectedCategory;
       const matchesSearch = f.name.toLowerCase().includes(searchTerm.toLowerCase());
       return matchesCategory && matchesSearch;
     });
-  }, [selectedCategory, searchTerm]);
+  }, [selectedCategory, searchTerm, localFeatures]);
 
   // Compute stats from actual matrix data
   const overallStats = useMemo(() => {
@@ -90,15 +200,18 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
     };
   }, []);
 
+  // Dynamic height - no scroll for single categories with few items
+  const needsScroll = selectedCategory === 'all' || filteredFeatures.length > 15;
+
   const handleExport = () => {
     let csv = 'Feature,Category,Priority,';
     PROVIDER_SUMMARIES.forEach(p => csv += `${p.name},`);
     csv += '\n';
     
-    ALL_FEATURES.forEach(f => {
+    localFeatures.forEach(f => {
       csv += `"${f.name}",${f.category},${f.priority},`;
       PROVIDER_SUMMARIES.forEach(p => {
-        const impl = FEATURE_IMPLEMENTATION_MATRIX[f.id]?.[p.id as ProviderId];
+        const impl = localMatrix[f.id]?.[p.id as ProviderId];
         csv += `${impl?.implementation || 'not_applicable'},`;
       });
       csv += '\n';
@@ -113,6 +226,41 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
     toast.success('Matrix exported!');
   };
 
+  const handleAddFeature = (feature: Feature) => {
+    setLocalFeatures(prev => [...prev, feature]);
+    setLocalMatrix(prev => ({
+      ...prev,
+      [feature.id]: {},
+    }));
+  };
+
+  const handleStatusChange = (featureId: string, providerId: string, newStatus: ImplementationStatus) => {
+    setLocalMatrix(prev => ({
+      ...prev,
+      [featureId]: {
+        ...prev[featureId],
+        [providerId]: {
+          ...prev[featureId]?.[providerId as ProviderId],
+          status: 'configured',
+          implementation: newStatus,
+        },
+      },
+    }));
+    setEditingCell(null);
+    toast.success('Status updated');
+  };
+
+  const handleSave = () => {
+    // In a real app, this would save to database
+    toast.success('Changes saved locally. Database persistence coming soon!');
+    setEditMode(false);
+  };
+
+  const existingCategories = useMemo(() => 
+    [...new Set(localFeatures.map(f => f.category))].filter(c => c !== 'USE_CASE') as FeatureCategory[],
+    [localFeatures]
+  );
+
   return (
     <div className={`${className} space-y-4`}>
       {/* Header with Stats */}
@@ -123,12 +271,34 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
             {overallStats.total} features × {PROVIDER_SUMMARIES.length} providers | {overallStats.coverage}% coverage
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={handleExport}>
-          <Download className="w-4 h-4 mr-2" /> Export CSV
-        </Button>
+        <div className="flex gap-2">
+          {editMode ? (
+            <>
+              <AddFeatureDialog onAdd={handleAddFeature} existingCategories={existingCategories} />
+              <Button variant="default" size="sm" onClick={handleSave}>
+                <Save className="w-4 h-4 mr-1" /> Save
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setEditMode(false)}>
+                Cancel
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="outline" size="sm" onClick={() => setEditMode(true)}>
+                <Edit2 className="w-4 h-4 mr-1" /> Edit
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleExport}>
+                <Download className="w-4 h-4 mr-1" /> Export
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
-      {/* Stats Summary - Inline badges */}
+      {/* Legend */}
+      <MatrixLegend />
+
+      {/* Stats Summary */}
       <div className="flex flex-wrap gap-3 py-3 px-4 rounded-lg bg-muted/30 border">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full bg-emerald-500" />
@@ -182,7 +352,7 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
-                {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+                {Object.entries(CATEGORY_LABELS).filter(([k]) => k !== 'USE_CASE').map(([key, label]) => (
                   <SelectItem key={key} value={key}>{label}</SelectItem>
                 ))}
               </SelectContent>
@@ -192,7 +362,7 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
 
         {/* Feature Matrix Tab */}
         <TabsContent value="matrix" className="mt-0">
-          <div className="border rounded-lg overflow-auto max-h-[600px]">
+          <div className={`border rounded-lg overflow-auto ${needsScroll ? 'max-h-[600px]' : ''}`}>
             <Table>
               <TableHeader className="sticky top-0 z-20 bg-background">
                 <TableRow>
@@ -224,7 +394,7 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
               </TableHeader>
               <TableBody>
                 {filteredFeatures.map(feature => {
-                  const featureImpl = FEATURE_IMPLEMENTATION_MATRIX[feature.id] || {};
+                  const featureImpl = localMatrix[feature.id] || {};
                   return (
                     <TableRow key={feature.id} className="hover:bg-muted/50">
                       <TableCell className="sticky left-0 bg-background font-medium border-r z-10">
@@ -242,21 +412,52 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
                       </TableCell>
                       {PROVIDER_SUMMARIES.map(p => {
                         const impl = featureImpl[p.id as ProviderId];
+                        const isEditing = editingCell?.featureId === feature.id && editingCell?.providerId === p.id;
+                        
                         return (
                           <TableCell key={`${feature.id}-${p.id}`} className="text-center">
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger>
-                                  {STATUS_ICONS[impl?.implementation || 'not_applicable']}
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p className="font-medium">{impl?.implementation || 'Not mapped'}</p>
-                                  {impl?.confidence && <p className="text-xs">Confidence: {impl.confidence}%</p>}
-                                  {impl?.notes && <p className="text-xs text-muted-foreground">{impl.notes}</p>}
-                                  {impl?.edgeFunctionUsed && <p className="text-xs">Edge: {impl.edgeFunctionUsed}</p>}
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                            {editMode ? (
+                              isEditing ? (
+                                <Select
+                                  value={impl?.implementation || 'not_applicable'}
+                                  onValueChange={(v) => handleStatusChange(feature.id, p.id, v as ImplementationStatus)}
+                                >
+                                  <SelectTrigger className="h-7 w-20 text-[10px]">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {STATUS_OPTIONS.map(opt => (
+                                      <SelectItem key={opt.value} value={opt.value}>
+                                        <span className="flex items-center gap-1">
+                                          {opt.icon} {opt.label}
+                                        </span>
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              ) : (
+                                <button
+                                  onClick={() => setEditingCell({ featureId: feature.id, providerId: p.id })}
+                                  className="p-1 hover:bg-muted rounded transition-colors"
+                                >
+                                  {getStatusIcon(impl?.implementation)}
+                                </button>
+                              )
+                            ) : (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    {getStatusIcon(impl?.implementation)}
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p className="font-medium">{impl?.implementation || 'Not mapped'}</p>
+                                    {impl?.confidence && <p className="text-xs">Confidence: {impl.confidence}%</p>}
+                                    {impl?.notes && <p className="text-xs text-muted-foreground">{impl.notes}</p>}
+                                    {impl?.edgeFunctionUsed && <p className="text-xs">Edge: {impl.edgeFunctionUsed}</p>}
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
                           </TableCell>
                         );
                       })}
@@ -266,6 +467,11 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
               </TableBody>
             </Table>
           </div>
+          {selectedCategory !== 'all' && (
+            <p className="text-xs text-muted-foreground mt-2">
+              Showing {filteredFeatures.length} features in {CATEGORY_LABELS[selectedCategory]}
+            </p>
+          )}
         </TabsContent>
 
         {/* Provider Summary Tab */}
