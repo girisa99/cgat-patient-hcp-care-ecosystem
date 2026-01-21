@@ -113,13 +113,15 @@ export type {
   VisualizationContext 
 } from './services/visualizationRecommendationService';
 
-// Output-Aware Generation Service
+// Output-Aware Generation Service (with Audio Integration)
 export { outputAwareGenerationService } from './services/outputAwareGenerationService';
 export type { 
   SlideRenderDecision, 
   HybridRenderOutput, 
   ContentFitResult,
-  OutputAwareSlideContent 
+  OutputAwareSlideContent,
+  AudioGenerationConfig,
+  SlideAudioOutput,
 } from './services/outputAwareGenerationService';
 
 // Token Estimation & Optimization Service

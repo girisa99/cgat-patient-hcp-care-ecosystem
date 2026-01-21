@@ -1,8 +1,13 @@
 /**
  * OUTPUT-AWARE GENERATION SERVICE
  * 
- * Connects outputConfig, visualConfig, and contentFittingConfig
+ * Connects outputConfig, visualConfig, contentFittingConfig, and AUDIO CONFIG
  * to the actual generation process for slide rendering decisions.
+ * 
+ * Audio Integration:
+ * - Determines when TTS/voiceover is needed based on output type
+ * - Syncs voice provider with language and output requirements
+ * - Coordinates background music and SFX generation
  */
 
 import { 
@@ -17,6 +22,7 @@ import {
   generationConfigService 
 } from '@/services/generationConfigService';
 import { OutputType, SlideType } from '../types';
+import { getOutputById, ExpandedOutputConfig } from '../constants/expandedOutputTypes';
 
 // ============================================
 // TYPES
@@ -29,6 +35,42 @@ export interface OutputAwareSlideContent {
   fittingApplied: boolean;
 }
 
+// Audio Configuration for generation
+export interface AudioGenerationConfig {
+  enabled: boolean;
+  voiceProvider: string;
+  voiceId: string;
+  voiceSettings: {
+    speed: number;
+    pitch: number;
+    stability: number;
+    clarity: number;
+  };
+  backgroundMusic: {
+    enabled: boolean;
+    genre?: string;
+    mood?: string;
+    volume: number;
+  };
+  sfx: {
+    enabled: boolean;
+    transitionSounds: boolean;
+    ambientSounds: boolean;
+  };
+  pauseBetweenSlides: number;
+  languageCode: string;
+}
+
+// Audio output for a slide
+export interface SlideAudioOutput {
+  voiceoverUrl?: string;
+  voiceoverDuration?: number;
+  backgroundMusicUrl?: string;
+  sfxUrls?: string[];
+  script: string;
+  language: string;
+}
+
 export interface HybridRenderOutput {
   imageLayer: {
     url: string;
@@ -39,6 +81,7 @@ export interface HybridRenderOutput {
     content: string;
     elements: SvgElement[];
   };
+  audioLayer?: SlideAudioOutput;
   combined?: string;
 }
 
@@ -66,6 +109,15 @@ export interface SlideRenderDecision {
   applySvgOverlay: boolean;
   exportFormat: 'png' | 'svg' | 'webp' | 'pdf';
   contentFitting: ContentFitResult;
+  // Audio decisions
+  audioConfig?: {
+    requiresVoiceover: boolean;
+    voiceProvider: string;
+    voiceId: string;
+    generateBackgroundMusic: boolean;
+    generateSFX: boolean;
+    script: string;
+  };
   specialRendering?: {
     type: '3d' | 'video' | 'interactive' | 'animated';
     config: Record<string, any>;
@@ -80,10 +132,12 @@ class OutputAwareGenerationService {
   
   /**
    * Build rendering decisions for a slide based on output config
+   * Now includes audio configuration for video/animated outputs
    */
   buildSlideRenderDecision(
     slide: GeneratedSlide,
-    pipelineConfig: GenerationPipelineConfig
+    pipelineConfig: GenerationPipelineConfig,
+    audioConfig?: AudioGenerationConfig
   ): SlideRenderDecision {
     const { visual, contentFitting, outputType } = pipelineConfig;
     
@@ -101,6 +155,9 @@ class OutputAwareGenerationService {
     // Check for special rendering needs
     const specialRendering = this.getSpecialRenderingConfig(outputType, slide);
     
+    // Build audio config if needed
+    const slideAudioConfig = this.buildSlideAudioConfig(slide, outputType, audioConfig);
+    
     return {
       slideType: slide.type as SlideType,
       useHybridRendering,
@@ -108,7 +165,121 @@ class OutputAwareGenerationService {
       applySvgOverlay,
       exportFormat,
       contentFitting: fittedContent,
+      audioConfig: slideAudioConfig,
       specialRendering,
+    };
+  }
+  
+  /**
+   * Build audio configuration for a slide based on output type requirements
+   */
+  buildSlideAudioConfig(
+    slide: GeneratedSlide,
+    outputType: OutputType,
+    audioConfig?: AudioGenerationConfig
+  ): SlideRenderDecision['audioConfig'] | undefined {
+    // Get output config to check if voice is required
+    const outputDef = getOutputById(outputType as any);
+    
+    // Skip audio if not enabled or output doesn't support it
+    if (!audioConfig?.enabled) {
+      return undefined;
+    }
+    
+    // Check if this output type has voice models
+    const hasVoiceSupport = outputDef?.voiceModels && outputDef.voiceModels.length > 0;
+    const requiresVoice = outputDef?.requiresVoice || false;
+    
+    // Generate script from slide content
+    const script = this.generateSlideScript(slide);
+    
+    // Determine if we should generate voiceover
+    const shouldGenerateVoice = audioConfig.enabled && (requiresVoice || hasVoiceSupport);
+    
+    if (!shouldGenerateVoice) {
+      return undefined;
+    }
+    
+    return {
+      requiresVoiceover: requiresVoice,
+      voiceProvider: audioConfig.voiceProvider,
+      voiceId: audioConfig.voiceId,
+      generateBackgroundMusic: audioConfig.backgroundMusic.enabled,
+      generateSFX: audioConfig.sfx.enabled,
+      script,
+    };
+  }
+  
+  /**
+   * Generate narration script from slide content
+   */
+  generateSlideScript(slide: GeneratedSlide): string {
+    const parts: string[] = [];
+    
+    // Add title with natural pause
+    if (slide.title) {
+      parts.push(slide.title);
+    }
+    
+    // Add subtitle
+    if (slide.subtitle) {
+      parts.push(slide.subtitle);
+    }
+    
+    // Add bullet points as narration
+    if (slide.content?.bullets && Array.isArray(slide.content.bullets)) {
+      slide.content.bullets.forEach((bullet: unknown) => {
+        const text = typeof bullet === 'string' ? bullet : (bullet as any)?.text || String(bullet);
+        parts.push(text);
+      });
+    }
+    
+    // Add speaker notes if available (preferred for narration)
+    if (slide.speakerNotes) {
+      // Speaker notes often contain the full narration - use them instead
+      return slide.speakerNotes;
+    }
+    
+    return parts.join('. ');
+  }
+  
+  /**
+   * Get recommended voice models for an output type
+   */
+  getRecommendedVoiceModels(outputType: OutputType): string[] {
+    const outputDef = getOutputById(outputType as any);
+    return outputDef?.voiceModels || [];
+  }
+  
+  /**
+   * Check if output type requires audio generation
+   */
+  outputRequiresAudio(outputType: OutputType): boolean {
+    const outputDef = getOutputById(outputType as any);
+    return outputDef?.requiresVoice || false;
+  }
+  
+  /**
+   * Get audio capabilities for an output type
+   */
+  getAudioCapabilities(outputType: OutputType): {
+    supportsVoiceover: boolean;
+    supportsBackgroundMusic: boolean;
+    supportsSFX: boolean;
+    recommendedProviders: string[];
+  } {
+    const outputDef = getOutputById(outputType as any);
+    
+    const supportsVoiceover = (outputDef?.voiceModels?.length || 0) > 0;
+    const isVideo = outputDef?.category === 'video' || outputDef?.requiresVideo;
+    const is3D = outputDef?.category === '3d' || outputDef?.requires3D;
+    const isImmersive = outputDef?.category === 'immersive';
+    
+    return {
+      supportsVoiceover,
+      supportsBackgroundMusic: isVideo || isImmersive,
+      supportsSFX: isVideo || is3D || isImmersive,
+      recommendedProviders: outputDef?.voiceModels || [],
     };
   }
   
@@ -306,12 +477,13 @@ class OutputAwareGenerationService {
   }
   
   /**
-   * Generate hybrid PNG + SVG output
+   * Generate hybrid PNG + SVG + Audio output
    */
   async generateHybridOutput(
     slide: GeneratedSlide,
     renderDecision: SlideRenderDecision,
-    imageUrl: string
+    imageUrl: string,
+    audioOutput?: SlideAudioOutput
   ): Promise<HybridRenderOutput> {
     const output: HybridRenderOutput = {
       imageLayer: {
@@ -324,6 +496,11 @@ class OutputAwareGenerationService {
     // Generate SVG overlay if enabled
     if (renderDecision.applySvgOverlay) {
       output.svgLayer = this.generateSvgOverlay(slide, renderDecision);
+    }
+    
+    // Add audio layer if provided
+    if (audioOutput) {
+      output.audioLayer = audioOutput;
     }
     
     return output;
