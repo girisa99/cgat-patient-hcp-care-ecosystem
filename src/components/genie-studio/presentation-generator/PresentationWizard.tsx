@@ -147,6 +147,8 @@ import { StepAlertBanner, getStepAlerts } from './components/StepAlertBanner';
 import { StepFeedbackPanel } from './components/StepFeedbackPanel';
 import { HelpTooltip, SmartTooltip } from './components/SmartTooltip';
 import { PreGenerationConfirmationPanel, GenerationContextSummary } from './components/PreGenerationConfirmationPanel';
+import { GlobalTierFilter } from './components/GlobalTierFilter';
+import { VisualizationRecommendationBadges } from './components/VisualizationRecommendationBadges';
 import { 
   PresentationRequest,
   InputSource,
@@ -1340,7 +1342,7 @@ export function PresentationWizard({
     <div className={cn("flex h-full", className)}>
       {/* Left Panel - Wizard Steps - WIDER for better spacing */}
       <div className="w-[55%] min-w-[520px] max-w-[680px] flex-shrink-0 flex flex-col border-r bg-background">
-        {/* Compact Progress Header with Token Balance */}
+        {/* Compact Progress Header with Token Balance & Global Tier */}
         <div className="px-6 py-4 border-b bg-muted/20">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
@@ -1348,6 +1350,13 @@ export function PresentationWizard({
               <Badge variant="outline" className="text-xs font-medium">
                 Step {currentStep + 1}/{WIZARD_STEPS.length}
               </Badge>
+              {/* Global Tier Filter - affects all AI models */}
+              <GlobalTierFilter
+                value={globalTier}
+                onChange={setGlobalTier}
+                compact={false}
+                showLegend={false}
+              />
             </div>
             <div className="flex items-center gap-3">
               {/* Token Balance & Usage Dashboard */}
@@ -1355,8 +1364,8 @@ export function PresentationWizard({
                 estimatedCost={calculateCredits({
                   outputType: outputSettings.outputType,
                   slideCount: outputSettings.slideCount,
-                  includeVoiceover: outputSettings.includeVoiceover,
-                  includeMusic: outputSettings.includeMusic,
+                  includeVoiceover: outputSettings.includeVoiceover || voiceConfig.enabled,
+                  includeMusic: outputSettings.includeMusic || voiceConfig.backgroundMusic,
                   resolution: outputSettings.resolution as '720p' | '1080p' | '4k',
                   languageCount: selectedLanguages.length,
                 })}
@@ -1844,6 +1853,9 @@ export function PresentationWizard({
                   onSelectedFrameworkCategoriesChange={setSelectedFrameworkCategories}
                   selectedFrameworkIds={selectedFrameworkIds}
                   onSelectedFrameworkIdsChange={setSelectedFrameworkIds}
+                  // NEW: For visualization recommendations (Gap Analysis Fix)
+                  globalTier={globalTier}
+                  outputType={outputSettings.outputType}
                 />
 
                 {/* Step Feedback */}

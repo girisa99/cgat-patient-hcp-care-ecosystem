@@ -72,6 +72,8 @@ import {
   getFrameworksByType,
   FRAMEWORK_TYPE_LABELS,
 } from './constants/expandedFrameworks';
+import { VisualizationRecommendationBadges } from './components/VisualizationRecommendationBadges';
+import type { VisualizationContext } from './services/visualizationRecommendationService';
 
 // ============ CONSTANTS ============
 
@@ -211,6 +213,9 @@ interface TemplateBrandingPanelV2Props {
   onSelectedFrameworkCategoriesChange?: (categories: string[]) => void;
   selectedFrameworkIds?: string[];
   onSelectedFrameworkIdsChange?: (ids: string[]) => void;
+  // NEW: For visualization recommendations
+  globalTier?: 1 | 2 | 3;
+  outputType?: string;
 }
 
 // ============ COMPONENT ============
@@ -241,6 +246,9 @@ export function TemplateBrandingPanelV2({
   onSelectedFrameworkCategoriesChange,
   selectedFrameworkIds: externalFrameworkIds,
   onSelectedFrameworkIdsChange,
+  // Visualization context props
+  globalTier = 2,
+  outputType = '2d-standard',
 }: TemplateBrandingPanelV2Props) {
   // State
   const [mode, setMode] = useState<'ai' | 'custom'>('ai');
@@ -1085,6 +1093,33 @@ export function TemplateBrandingPanelV2({
             {Object.values(featureToggles).filter(t => t.value).length} enabled
           </Badge>
         </div>
+        
+        {/* AI Visualization Recommendations */}
+        <VisualizationRecommendationBadges
+          context={{
+            industry: industryFilter || '',
+            segment: segmentFilter || '',
+            contentTypes: contentTypeFilter || [],
+            selectedFrameworks: selectedFrameworkIds,
+            outputType: outputType,
+            globalTier: globalTier as 1 | 2 | 3,
+          }}
+          selectedFeatures={visualFeatureSelections.map(v => v.featureId)}
+          onFeatureSelect={(featureId, subOptions) => {
+            const existing = visualFeatureSelections.find(v => v.featureId === featureId);
+            if (existing) {
+              // Already selected - remove it
+              setVisualFeatureSelections(visualFeatureSelections.filter(v => v.featureId !== featureId));
+            } else {
+              // Add with suggested sub-options
+              setVisualFeatureSelections([
+                ...visualFeatureSelections,
+                { featureId, subOptions: subOptions || [] }
+              ]);
+            }
+          }}
+          maxDisplay={5}
+        />
         
         {/* Visual Features Dropdown - with proper state */}
         <VisualFeaturesDropdown
