@@ -216,6 +216,8 @@ interface TemplateBrandingPanelV2Props {
   // NEW: For visualization recommendations
   globalTier?: 1 | 2 | 3;
   outputType?: string;
+  // NEW: Selected output types for compatibility checking
+  selectedOutputTypes?: string[];
 }
 
 // ============ COMPONENT ============
@@ -249,6 +251,7 @@ export function TemplateBrandingPanelV2({
   // Visualization context props
   globalTier = 2,
   outputType = '2d-standard',
+  selectedOutputTypes = [],
 }: TemplateBrandingPanelV2Props) {
   // State
   const [mode, setMode] = useState<'ai' | 'custom'>('ai');
@@ -1121,7 +1124,7 @@ export function TemplateBrandingPanelV2({
           maxDisplay={5}
         />
         
-        {/* Visual Features Dropdown - with proper state */}
+        {/* Visual Features Dropdown - with proper state and compatibility */}
         <VisualFeaturesDropdown
           value={visualFeatureSelections}
           onChange={(selections) => {
@@ -1145,6 +1148,9 @@ export function TemplateBrandingPanelV2({
               onIncludeChartsChange(selectedFeatureIds.has('charts'));
             }
           }}
+          selectedOutputTypes={selectedOutputTypes}
+          globalTier={globalTier as 1 | 2 | 3}
+          showCompatibility={true}
         />
         
         <p className="text-xs text-muted-foreground">

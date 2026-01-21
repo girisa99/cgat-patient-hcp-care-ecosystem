@@ -441,6 +441,9 @@ export function PresentationWizard({
   const [selectedFrameworkCategories, setSelectedFrameworkCategories] = useState<string[]>([]);
   const [selectedFrameworkIds, setSelectedFrameworkIds] = useState<string[]>([]);
   
+  // NEW: Model selections from OutputModelSelector (Primary + Override + Multi-Select)
+  const [modelSelections, setModelSelections] = useState<Record<string, { primaryId: string; overrideIds: string[]; mode: 'ai-auto' | 'user-override' | 'multi-select' }>>({});
+  
   // All available providers from modelAlignmentService - Updated with Gap Analysis 2025
   const ALL_TEXT_PROVIDERS = [
     // Tier 1 - Core (Lovable AI Gateway)
@@ -1009,6 +1012,8 @@ export function PresentationWizard({
         // Per-step mode tracking for dynamic AI Auto/Custom
         step1Mode,
         step2Mode,
+        // NEW: Model selections from OutputModelSelector (Many-to-Many with guardrails)
+        modelSelections,
       },
       
       templateContext: {
@@ -1856,6 +1861,8 @@ export function PresentationWizard({
                   // NEW: For visualization recommendations (Gap Analysis Fix)
                   globalTier={globalTier}
                   outputType={outputSettings.outputType}
+                  // NEW: Pass output types for compatibility checking
+                  selectedOutputTypes={outputSettings.outputTypes || [outputSettings.outputType]}
                 />
 
                 {/* Step Feedback */}
@@ -1895,6 +1902,11 @@ export function PresentationWizard({
                   onChange={setOutputSettings}
                   suggestedSlideCount={10}
                   contentType={contentCategory || workflowConfig?.collateralType?.id}
+                  globalTier={globalTier}
+                  industry={workflowConfig?.industryCategory}
+                  languageCode={primaryLanguage}
+                  modelSelections={modelSelections}
+                  onModelSelectionsChange={setModelSelections}
                 />
 
                 {/* Step Feedback */}
