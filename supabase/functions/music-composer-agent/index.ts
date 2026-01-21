@@ -3,6 +3,11 @@
  * Unified audio generation hub for Voice, Music, and SFX
  * Supports tier-based provider routing (Standard, Advanced, Premium)
  * 
+ * Multi-Provider Support:
+ * - Voice: ElevenLabs, OpenAI, Azure, Google, AWS Polly, Alibaba
+ * - Music: ElevenLabs, Suno
+ * - SFX: ElevenLabs
+ * 
  * Actions:
  * - generate_voice: TTS voice generation
  * - generate_music: Background music generation
@@ -10,7 +15,6 @@
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -21,7 +25,7 @@ const corsHeaders = {
 type GlobalTier = 1 | 2 | 3;
 
 interface AudioRequest {
-  action: 'generate_voice' | 'generate_music' | 'generate_sfx' | 'generate' | 'generate_music';
+  action: 'generate_voice' | 'generate_music' | 'generate_sfx' | 'generate' | 'check_providers';
   tier?: GlobalTier;
   // Voice params
   text?: string;
@@ -41,51 +45,148 @@ interface AudioRequest {
   languageCode?: string;
 }
 
-// Default voice IDs per provider
-const DEFAULT_VOICES: Record<string, string> = {
-  'elevenlabs': 'JBFqnCBsd6RMkjVDRZzb', // George
-  'openai': 'alloy',
-  'google': 'en-US-Neural2-A',
-  'azure': 'en-US-JennyNeural',
+// Language-specific voice mappings for each provider
+const VOICE_MAPPINGS: Record<string, Record<string, string>> = {
+  'elevenlabs': {
+    'en': 'JBFqnCBsd6RMkjVDRZzb',
+    'en-US': 'JBFqnCBsd6RMkjVDRZzb',
+    'en-GB': 'ThT5KcBeYPX3keUQqHPh',
+    'es': 'EXAVITQu4vr4xnSDxMaL',
+    'fr': 'CwhRBWXzGAHq8TQ4Fs17',
+    'de': 'EXAVITQu4vr4xnSDxMaL',
+    'zh': 'XB0fDUnXU5powFXDhCwa',
+    'ja': 'iP95p4xoKVk53GoZ742B',
+    'ko': 'jsCqWAovK2LkecY7zXl4',
+  },
+  'openai': {
+    'default': 'alloy',
+    'male': 'onyx',
+    'female': 'nova',
+  },
+  'azure': {
+    'en-US': 'en-US-JennyNeural',
+    'en-GB': 'en-GB-SoniaNeural',
+    'zh-CN': 'zh-CN-XiaoxiaoNeural',
+    'zh': 'zh-CN-XiaoxiaoNeural',
+    'ja': 'ja-JP-NanamiNeural',
+    'ko': 'ko-KR-SunHiNeural',
+    'ar': 'ar-SA-HamedNeural',
+    'hi': 'hi-IN-SwaraNeural',
+    'es': 'es-ES-ElviraNeural',
+    'fr': 'fr-FR-DeniseNeural',
+    'de': 'de-DE-KatjaNeural',
+  },
+  'google': {
+    'en-US': 'en-US-Neural2-F',
+    'zh-CN': 'cmn-CN-Wavenet-A',
+    'zh': 'cmn-CN-Wavenet-A',
+    'ja': 'ja-JP-Neural2-B',
+    'ko': 'ko-KR-Neural2-A',
+    'hi': 'hi-IN-Neural2-A',
+    'ar': 'ar-XA-Wavenet-A',
+  },
+  'aws': {
+    'en-US': 'Joanna',
+    'en-GB': 'Amy',
+    'zh': 'Zhiyu',
+    'ja': 'Mizuki',
+    'ko': 'Seoyeon',
+    'es': 'Lucia',
+    'fr': 'Celine',
+    'de': 'Marlene',
+  },
 };
 
-// Get appropriate provider based on tier
-function getVoiceProvider(tier: GlobalTier, preferredProvider?: string): string {
-  if (preferredProvider) return preferredProvider;
-  
-  switch (tier) {
-    case 3: return 'elevenlabs'; // Premium
-    case 2: return 'openai';     // Advanced
-    case 1: 
-    default: return 'google';    // Standard
+// CJK language detection
+const CJK_LANGUAGES = ['zh', 'zh-CN', 'zh-TW', 'ja', 'ko'];
+const INDIC_LANGUAGES = ['hi', 'bn', 'ta', 'te', 'mr', 'gu', 'kn', 'ml'];
+const ARABIC_LANGUAGES = ['ar', 'ar-SA', 'ar-EG'];
+
+// Get appropriate provider based on tier and language
+function getVoiceProvider(tier: GlobalTier, languageCode?: string, preferredProvider?: string): string {
+  if (preferredProvider && isProviderConfigured(preferredProvider)) {
+    return preferredProvider;
   }
+  
+  const lang = languageCode?.split('-')[0] || 'en';
+  
+  // CJK - prefer Azure or Alibaba
+  if (CJK_LANGUAGES.includes(lang) || CJK_LANGUAGES.includes(languageCode || '')) {
+    if (tier >= 2 && isProviderConfigured('azure')) return 'azure';
+    if (isProviderConfigured('alibaba')) return 'alibaba';
+    if (isProviderConfigured('google')) return 'google';
+  }
+  
+  // Indic/Arabic - prefer Azure
+  if (INDIC_LANGUAGES.includes(lang) || ARABIC_LANGUAGES.includes(lang)) {
+    if (tier >= 2 && isProviderConfigured('azure')) return 'azure';
+    if (isProviderConfigured('google')) return 'google';
+  }
+  
+  // Default tier-based routing for other languages
+  switch (tier) {
+    case 3:
+      if (isProviderConfigured('elevenlabs')) return 'elevenlabs';
+      if (isProviderConfigured('azure')) return 'azure';
+      if (isProviderConfigured('openai')) return 'openai';
+      break;
+    case 2:
+      if (isProviderConfigured('openai')) return 'openai';
+      if (isProviderConfigured('azure')) return 'azure';
+      if (isProviderConfigured('google')) return 'google';
+      break;
+    case 1:
+    default:
+      if (isProviderConfigured('google')) return 'google';
+      if (isProviderConfigured('aws')) return 'aws';
+      if (isProviderConfigured('openai')) return 'openai';
+  }
+  
+  // Final fallback
+  if (isProviderConfigured('openai')) return 'openai';
+  if (isProviderConfigured('google')) return 'google';
+  if (isProviderConfigured('elevenlabs')) return 'elevenlabs';
+  
+  throw new Error('No voice provider configured. Please add API keys for ElevenLabs, OpenAI, Azure, or Google.');
+}
+
+function isProviderConfigured(provider: string): boolean {
+  const keyMap: Record<string, string> = {
+    'elevenlabs': 'ELEVENLABS_API_KEY',
+    'openai': 'OPENAI_API_KEY',
+    'azure': 'AZURE_SPEECH_KEY',
+    'google': 'GOOGLE_API_KEY',
+    'aws': 'AWS_ACCESS_KEY_ID',
+    'alibaba': 'ALIBABA_API_KEY',
+  };
+  const key = Deno.env.get(keyMap[provider] || '');
+  return !!key && key.length > 0;
 }
 
 function getMusicProvider(tier: GlobalTier): string {
   switch (tier) {
-    case 3: return 'elevenlabs'; // Premium
-    case 2: return 'suno';       // Advanced (fallback to elevenlabs)
-    case 1: 
-    default: return 'basic';     // Standard (pre-generated loops)
+    case 3: return 'elevenlabs';
+    case 2: return 'suno';
+    default: return 'basic';
   }
 }
 
 function getSfxProvider(tier: GlobalTier): string {
   switch (tier) {
-    case 3: return 'elevenlabs'; // Premium
-    case 2: return 'adobe';      // Advanced (fallback to elevenlabs)
-    case 1: 
-    default: return 'freesound'; // Standard (library)
+    case 3: return 'elevenlabs';
+    default: return 'freesound';
   }
 }
 
-// Generate voice using ElevenLabs
+// Voice generation functions
 async function generateElevenLabsVoice(
   text: string,
   voiceId: string,
-  apiKey: string,
   options?: { speed?: number; stability?: number }
 ): Promise<ArrayBuffer> {
+  const apiKey = Deno.env.get('ELEVENLABS_API_KEY');
+  if (!apiKey) throw new Error('ElevenLabs API key not configured');
+  
   const response = await fetch(
     `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`,
     {
@@ -116,13 +217,14 @@ async function generateElevenLabsVoice(
   return response.arrayBuffer();
 }
 
-// Generate voice using OpenAI
 async function generateOpenAIVoice(
   text: string,
   voiceId: string,
-  apiKey: string,
   options?: { speed?: number }
 ): Promise<ArrayBuffer> {
+  const apiKey = Deno.env.get('OPENAI_API_KEY');
+  if (!apiKey) throw new Error('OpenAI API key not configured');
+  
   const response = await fetch('https://api.openai.com/v1/audio/speech', {
     method: 'POST',
     headers: {
@@ -146,12 +248,85 @@ async function generateOpenAIVoice(
   return response.arrayBuffer();
 }
 
-// Generate music using ElevenLabs
+async function generateAzureVoice(
+  text: string,
+  voiceName: string,
+  languageCode: string
+): Promise<ArrayBuffer> {
+  const apiKey = Deno.env.get('AZURE_SPEECH_KEY');
+  const region = Deno.env.get('AZURE_SPEECH_REGION') || 'eastus';
+  if (!apiKey) throw new Error('Azure Speech API key not configured');
+  
+  const ssml = `
+    <speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='${languageCode}'>
+      <voice name='${voiceName}'>${text}</voice>
+    </speak>
+  `;
+  
+  const response = await fetch(
+    `https://${region}.tts.speech.microsoft.com/cognitiveservices/v1`,
+    {
+      method: 'POST',
+      headers: {
+        'Ocp-Apim-Subscription-Key': apiKey,
+        'Content-Type': 'application/ssml+xml',
+        'X-Microsoft-OutputFormat': 'audio-24khz-96kbitrate-mono-mp3',
+      },
+      body: ssml,
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Azure TTS failed: ${response.status} - ${error}`);
+  }
+
+  return response.arrayBuffer();
+}
+
+async function generateGoogleVoice(
+  text: string,
+  voiceName: string,
+  languageCode: string
+): Promise<ArrayBuffer> {
+  const apiKey = Deno.env.get('GOOGLE_API_KEY');
+  if (!apiKey) throw new Error('Google API key not configured');
+  
+  const response = await fetch(
+    `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        input: { text },
+        voice: { languageCode, name: voiceName },
+        audioConfig: { audioEncoding: 'MP3' },
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Google TTS failed: ${response.status} - ${error}`);
+  }
+
+  const data = await response.json();
+  const binaryString = atob(data.audioContent);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes.buffer;
+}
+
+// Music generation
 async function generateElevenLabsMusic(
   prompt: string,
-  duration: number,
-  apiKey: string
+  duration: number
 ): Promise<ArrayBuffer> {
+  const apiKey = Deno.env.get('ELEVENLABS_API_KEY');
+  if (!apiKey) throw new Error('ElevenLabs API key not configured');
+  
   const response = await fetch('https://api.elevenlabs.io/v1/music', {
     method: 'POST',
     headers: {
@@ -172,12 +347,14 @@ async function generateElevenLabsMusic(
   return response.arrayBuffer();
 }
 
-// Generate SFX using ElevenLabs
+// SFX generation
 async function generateElevenLabsSFX(
   prompt: string,
-  duration: number,
-  apiKey: string
+  duration: number
 ): Promise<ArrayBuffer> {
+  const apiKey = Deno.env.get('ELEVENLABS_API_KEY');
+  if (!apiKey) throw new Error('ElevenLabs API key not configured');
+  
   const response = await fetch('https://api.elevenlabs.io/v1/sound-generation', {
     method: 'POST',
     headers: {
@@ -186,7 +363,7 @@ async function generateElevenLabsSFX(
     },
     body: JSON.stringify({
       text: prompt,
-      duration_seconds: Math.min(duration || 5, 22), // Max 22 seconds
+      duration_seconds: Math.min(duration || 5, 22),
       prompt_influence: 0.3,
     }),
   });
@@ -207,11 +384,25 @@ serve(async (req) => {
   try {
     const body: AudioRequest = await req.json();
     const { action, tier = 2 } = body;
-    
-    const ELEVENLABS_API_KEY = Deno.env.get('ELEVENLABS_API_KEY');
-    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 
     console.log(`[MusicComposerAgent] Action: ${action}, Tier: ${tier}`);
+
+    // ========== CHECK CONFIGURED PROVIDERS ==========
+    if (action === 'check_providers') {
+      const providers = {
+        elevenlabs: isProviderConfigured('elevenlabs'),
+        openai: isProviderConfigured('openai'),
+        azure: isProviderConfigured('azure'),
+        google: isProviderConfigured('google'),
+        aws: isProviderConfigured('aws'),
+        alibaba: isProviderConfigured('alibaba'),
+      };
+      
+      return new Response(
+        JSON.stringify({ providers, tier }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // ========== VOICE GENERATION ==========
     if (action === 'generate_voice') {
@@ -221,39 +412,40 @@ serve(async (req) => {
         throw new Error('Text is required for voice generation');
       }
 
-      const provider = getVoiceProvider(tier, voiceProvider);
-      const finalVoiceId = voiceId || DEFAULT_VOICES[provider] || 'alloy';
+      const provider = getVoiceProvider(tier, languageCode, voiceProvider);
+      const lang = languageCode || 'en-US';
+      const mappings = VOICE_MAPPINGS[provider] || {};
+      const finalVoiceId = voiceId || mappings[lang] || mappings[lang.split('-')[0]] || mappings['default'] || 'alloy';
       
-      console.log(`[Voice] Provider: ${provider}, VoiceId: ${finalVoiceId}, Text length: ${text.length}`);
+      console.log(`[Voice] Provider: ${provider}, Voice: ${finalVoiceId}, Lang: ${lang}, Text: ${text.length} chars`);
 
       let audioBuffer: ArrayBuffer;
 
-      if (provider === 'elevenlabs') {
-        if (!ELEVENLABS_API_KEY) {
-          // Fallback to OpenAI if ElevenLabs not configured
-          console.log('[Voice] ElevenLabs not configured, falling back to OpenAI');
-          if (!OPENAI_API_KEY) {
-            throw new Error('No voice API keys configured (ELEVENLABS_API_KEY or OPENAI_API_KEY required)');
-          }
-          audioBuffer = await generateOpenAIVoice(text, 'alloy', OPENAI_API_KEY, { speed });
-        } else {
-          audioBuffer = await generateElevenLabsVoice(text, finalVoiceId, ELEVENLABS_API_KEY, { speed, stability });
-        }
-      } else if (provider === 'openai') {
-        if (!OPENAI_API_KEY) {
-          throw new Error('OpenAI API key not configured');
-        }
-        audioBuffer = await generateOpenAIVoice(text, finalVoiceId, OPENAI_API_KEY, { speed });
-      } else {
-        // Default fallback to OpenAI
-        if (!OPENAI_API_KEY) {
-          throw new Error('OpenAI API key not configured');
-        }
-        audioBuffer = await generateOpenAIVoice(text, 'alloy', OPENAI_API_KEY, { speed });
+      switch (provider) {
+        case 'elevenlabs':
+          audioBuffer = await generateElevenLabsVoice(text, finalVoiceId, { speed, stability });
+          break;
+        case 'openai':
+          audioBuffer = await generateOpenAIVoice(text, finalVoiceId, { speed });
+          break;
+        case 'azure':
+          audioBuffer = await generateAzureVoice(text, finalVoiceId, lang);
+          break;
+        case 'google':
+          audioBuffer = await generateGoogleVoice(text, finalVoiceId, lang);
+          break;
+        default:
+          // Fallback to OpenAI
+          audioBuffer = await generateOpenAIVoice(text, 'alloy', { speed });
       }
 
       return new Response(audioBuffer, {
-        headers: { ...corsHeaders, 'Content-Type': 'audio/mpeg' },
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'audio/mpeg',
+          'X-Provider': provider,
+          'X-Voice-Id': finalVoiceId,
+        },
       });
     }
 
@@ -265,18 +457,13 @@ serve(async (req) => {
       console.log(`[Music] Provider: ${provider}, Prompt: ${prompt}, Duration: ${duration}s`);
 
       if (provider === 'elevenlabs' || provider === 'suno') {
-        if (!ELEVENLABS_API_KEY) {
-          throw new Error('ElevenLabs API key not configured for music generation');
-        }
-        
         const fullPrompt = genre ? `${genre} style: ${prompt}` : prompt || 'background music';
-        const audioBuffer = await generateElevenLabsMusic(fullPrompt, duration, ELEVENLABS_API_KEY);
+        const audioBuffer = await generateElevenLabsMusic(fullPrompt, duration);
 
         return new Response(audioBuffer, {
           headers: { ...corsHeaders, 'Content-Type': 'audio/mpeg' },
         });
       } else {
-        // Basic tier - return placeholder response
         return new Response(
           JSON.stringify({ 
             success: true, 
@@ -301,17 +488,12 @@ serve(async (req) => {
       console.log(`[SFX] Provider: ${provider}, Prompt: ${effectPrompt}, Duration: ${duration}s`);
 
       if (provider === 'elevenlabs') {
-        if (!ELEVENLABS_API_KEY) {
-          throw new Error('ElevenLabs API key not configured for SFX generation');
-        }
-        
-        const audioBuffer = await generateElevenLabsSFX(effectPrompt, duration, ELEVENLABS_API_KEY);
+        const audioBuffer = await generateElevenLabsSFX(effectPrompt, duration);
 
         return new Response(audioBuffer, {
           headers: { ...corsHeaders, 'Content-Type': 'audio/mpeg' },
         });
       } else {
-        // Non-premium tiers - return guidance
         return new Response(
           JSON.stringify({ 
             success: true, 
