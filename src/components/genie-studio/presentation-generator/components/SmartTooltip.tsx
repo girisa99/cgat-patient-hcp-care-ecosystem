@@ -65,8 +65,18 @@ export function SmartTooltip({
   triggerClassName,
   delayDuration = 300,
 }: SmartTooltipProps) {
-  const { getTooltip, isTooltipEnabled } = useGenieTooltip();
-  const tooltip = getTooltip(tooltipId);
+  // Safely try to use context - return children if not available
+  let tooltip: TooltipDefinition | undefined;
+  let isTooltipEnabled = false;
+  
+  try {
+    const context = useGenieTooltip();
+    tooltip = context.getTooltip(tooltipId);
+    isTooltipEnabled = context.isTooltipEnabled;
+  } catch {
+    // Context not available, render children only
+    return <>{children}</>;
+  }
 
   if (!tooltip || !isTooltipEnabled) {
     return <>{children}</>;
@@ -175,8 +185,18 @@ export function HelpTooltip({
   size?: 'sm' | 'md' | 'lg';
   className?: string;
 }) {
-  const { getTooltip, isTooltipEnabled } = useGenieTooltip();
-  const tooltip = getTooltip(tooltipId);
+  // Safely try to use context - return null if not available
+  let tooltip: TooltipDefinition | undefined;
+  let isTooltipEnabled = false;
+  
+  try {
+    const context = useGenieTooltip();
+    tooltip = context.getTooltip(tooltipId);
+    isTooltipEnabled = context.isTooltipEnabled;
+  } catch {
+    // Context not available, don't render tooltip
+    return null;
+  }
 
   if (!tooltip || !isTooltipEnabled) {
     return null;
