@@ -60,7 +60,7 @@ export const ASK_GENIE = {
 /**
  * Official Genie Product Taglines - DO NOT MODIFY
  * 
- * - Genie Mind: "AI that understands"
+ * - Genie Mind: "AI That Understands"
  * - Genie Vibe: "Script to Screen"
  * - Genie Spark: "Ignite your Ideas"
  * - Genie Studio: "Mind to Media"
@@ -71,7 +71,7 @@ export const GENIE_PRODUCTS: Record<GenieProduct, GenieProductInfo> = {
   mind: {
     id: 'mind',
     name: 'Genie Mind',
-    tagline: 'AI that understands',
+    tagline: 'AI That Understands',
     description: 'Your intelligent AI companion that truly understands context, learns from interactions, and provides meaningful insights across your creative journey.',
     emoji: '🧠',
     color: 'from-blue-500 to-cyan-500',
