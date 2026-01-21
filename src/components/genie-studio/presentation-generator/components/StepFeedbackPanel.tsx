@@ -1,13 +1,12 @@
 /**
- * Step Feedback Panel - Visible Likes/Dislikes with Label Studio Integration
- * Prominently displays feedback options at the bottom of each step
+ * Step Feedback Panel - Compact feedback for Genie AI Deck improvement
+ * Minimal design with quick like/improve actions
  */
 
 import React, { useState, useCallback } from 'react';
-import { ThumbsUp, ThumbsDown, MessageSquare, Send, Loader2, Check, Brain, Sparkles } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, Send, Loader2, Check, Brain } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { labelStudioService } from '@/services/labelStudioBackgroundService';
@@ -43,7 +42,7 @@ export function StepFeedbackPanel({
     try {
       const { data: user } = await supabase.auth.getUser();
       
-      // 1. Store to RAG (knowledge_base_contributions) for future AI improvement
+      // Store to RAG for AI improvement
       const ragContribution = {
         user_id: user.user?.id,
         contribution_type: 'step_feedback',
@@ -69,7 +68,7 @@ export function StepFeedbackPanel({
         .from('knowledge_base_contributions')
         .insert(ragContribution);
 
-      // 2. Also store to conversation_learning_feedback for detailed analytics
+      // Store to conversation_learning_feedback for analytics
       await supabase
         .from('conversation_learning_feedback')
         .insert({
@@ -87,11 +86,11 @@ export function StepFeedbackPanel({
           }
         });
 
-      // 3. Record to Label Studio background service for ML training
+      // Record to Label Studio for ML training
       labelStudioService.recordEvent({
         eventType: 'script_enhancement_accepted',
         context: {
-          product: 'spark', // Use spark as deck proxy for label studio types
+          product: 'spark',
           contentType: 'wizard_step',
           originalValue: stepContent,
           userAction: selectedRating === 'positive' ? 'accept' : 'reject'
@@ -105,9 +104,9 @@ export function StepFeedbackPanel({
 
       setIsSubmitted(true);
       
-      toast.success('Thank you! Your feedback improves our AI.', {
+      toast.success('Thanks! Improving Genie AI Deck.', {
         duration: 2000,
-        icon: <Brain className="h-4 w-4" />
+        icon: <Brain className="h-3 w-3" />
       });
     } catch (error) {
       console.error('Failed to submit feedback:', error);
@@ -121,10 +120,8 @@ export function StepFeedbackPanel({
     setRating(newRating);
     
     if (variant === 'inline') {
-      // For inline, submit immediately
       submitFeedback(newRating);
     } else {
-      // For full/compact, show text input option
       setShowTextInput(true);
     }
   }, [variant, submitFeedback]);
@@ -139,17 +136,13 @@ export function StepFeedbackPanel({
   if (isSubmitted) {
     return (
       <div className={cn(
-        "flex items-center gap-2 p-3 rounded-lg bg-green-500/10 border border-green-500/30",
+        "flex items-center gap-2 px-3 py-2 rounded-md bg-green-500/10 border border-green-500/20",
         className
       )}>
-        <Check className="h-4 w-4 text-green-600" />
-        <span className="text-sm text-green-700 dark:text-green-400">
-          Feedback recorded! AI is learning from your input.
+        <Check className="h-3 w-3 text-green-600" />
+        <span className="text-xs text-green-700 dark:text-green-400">
+          Feedback recorded
         </span>
-        <Badge variant="outline" className="text-[9px] px-1.5 bg-green-500/10 border-green-500/30 text-green-600">
-          <Brain className="h-2.5 w-2.5 mr-0.5" />
-          Label Studio
-        </Badge>
       </div>
     );
   }
@@ -158,135 +151,120 @@ export function StepFeedbackPanel({
   if (variant === 'inline') {
     return (
       <div className={cn("flex items-center gap-2", className)}>
-        <span className="text-xs text-muted-foreground">Was this helpful?</span>
+        <span className="text-xs text-muted-foreground">Helpful?</span>
         <Button
           variant="ghost"
           size="sm"
           className={cn(
-            "h-7 w-7 p-0",
+            "h-6 w-6 p-0",
             rating === 'positive' && "bg-green-500/20 text-green-600"
           )}
           onClick={() => handleRating('positive')}
           disabled={isSubmitting}
         >
           {isSubmitting && rating === 'positive' ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            <Loader2 className="h-3 w-3 animate-spin" />
           ) : (
-            <ThumbsUp className="h-3.5 w-3.5" />
+            <ThumbsUp className="h-3 w-3" />
           )}
         </Button>
         <Button
           variant="ghost"
           size="sm"
           className={cn(
-            "h-7 w-7 p-0",
+            "h-6 w-6 p-0",
             rating === 'negative' && "bg-red-500/20 text-red-600"
           )}
           onClick={() => handleRating('negative')}
           disabled={isSubmitting}
         >
           {isSubmitting && rating === 'negative' ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            <Loader2 className="h-3 w-3 animate-spin" />
           ) : (
-            <ThumbsDown className="h-3.5 w-3.5" />
+            <ThumbsDown className="h-3 w-3" />
           )}
         </Button>
       </div>
     );
   }
 
-  // Full/Compact variant
+  // Full/Compact variant - reduced size
   return (
     <div className={cn(
-      "rounded-lg border bg-gradient-to-r from-primary/5 via-background to-accent/5 overflow-hidden",
+      "rounded-md border bg-muted/30 p-2.5",
       className
     )}>
-      {/* Header */}
-      <div className="px-4 py-3 bg-muted/50 border-b flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-primary" />
-          <span className="text-sm font-medium">Help Improve Genie AI</span>
-        </div>
-        <Badge variant="outline" className="text-[9px] px-1.5">
-          <Brain className="h-2.5 w-2.5 mr-0.5" />
-          Label Studio Learning
-        </Badge>
-      </div>
-
-      {/* Content */}
-      <div className="p-4 space-y-4">
-        <p className="text-sm text-muted-foreground">
-          Is Step {stepNumber}: <strong>{stepName}</strong> clear and helpful?
-        </p>
-
-        {/* Rating Buttons */}
-        <div className="flex items-center gap-3">
-          <Button
-            variant={rating === 'positive' ? 'default' : 'outline'}
-            size="sm"
-            className={cn(
-              "flex-1 gap-2",
-              rating === 'positive' && "bg-green-600 hover:bg-green-700"
-            )}
-            onClick={() => handleRating('positive')}
-            disabled={isSubmitting}
-          >
-            <ThumbsUp className="h-4 w-4" />
-            Yes, it's clear
-          </Button>
-          <Button
-            variant={rating === 'negative' ? 'default' : 'outline'}
-            size="sm"
-            className={cn(
-              "flex-1 gap-2",
-              rating === 'negative' && "bg-red-600 hover:bg-red-700"
-            )}
-            onClick={() => handleRating('negative')}
-            disabled={isSubmitting}
-          >
-            <ThumbsDown className="h-4 w-4" />
-            Needs improvement
-          </Button>
+      <div className="flex items-center justify-between gap-3">
+        {/* Left: Title */}
+        <div className="flex items-center gap-1.5">
+          <Brain className="h-3 w-3 text-muted-foreground" />
+          <span className="text-xs font-medium text-muted-foreground">
+            Help improve Genie AI Deck
+          </span>
         </div>
 
-        {/* Text Feedback */}
-        {showTextInput && (
-          <div className="space-y-3 pt-2 border-t">
-            <p className="text-xs text-muted-foreground">
-              {rating === 'positive' 
-                ? 'What did you like most?' 
-                : 'How can we improve this step?'}
-            </p>
-            <Textarea
-              placeholder={rating === 'positive' 
-                ? "The flow diagram was really helpful..." 
-                : "It would be clearer if..."}
-              value={feedbackText}
-              onChange={(e) => setFeedbackText(e.target.value)}
-              rows={2}
-              className="text-sm resize-none"
-            />
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] text-muted-foreground">
-                Optional: Add specific suggestions
-              </span>
-              <Button
-                size="sm"
-                onClick={handleSubmitWithText}
-                disabled={isSubmitting}
-                className="gap-1.5"
-              >
-                {isSubmitting ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Send className="h-3.5 w-3.5" />
-                )}
-                Submit Feedback
-              </Button>
-            </div>
+        {/* Right: Rating Buttons */}
+        {!showTextInput && (
+          <div className="flex items-center gap-1.5">
+            <Button
+              variant={rating === 'positive' ? 'default' : 'outline'}
+              size="sm"
+              className={cn(
+                "h-6 px-2 text-xs gap-1",
+                rating === 'positive' && "bg-green-600 hover:bg-green-700"
+              )}
+              onClick={() => handleRating('positive')}
+              disabled={isSubmitting}
+            >
+              <ThumbsUp className="h-3 w-3" />
+              Good
+            </Button>
+            <Button
+              variant={rating === 'negative' ? 'default' : 'outline'}
+              size="sm"
+              className={cn(
+                "h-6 px-2 text-xs gap-1",
+                rating === 'negative' && "bg-amber-600 hover:bg-amber-700"
+              )}
+              onClick={() => handleRating('negative')}
+              disabled={isSubmitting}
+            >
+              <ThumbsDown className="h-3 w-3" />
+              Improve
+            </Button>
           </div>
         )}
       </div>
+
+      {/* Text Feedback - compact */}
+      {showTextInput && (
+        <div className="mt-2 pt-2 border-t border-border/50 space-y-2">
+          <Textarea
+            placeholder={rating === 'positive' 
+              ? "What worked well?" 
+              : "How can we improve?"}
+            value={feedbackText}
+            onChange={(e) => setFeedbackText(e.target.value)}
+            rows={1}
+            className="text-xs resize-none min-h-[28px] py-1.5"
+          />
+          <div className="flex justify-end">
+            <Button
+              size="sm"
+              onClick={handleSubmitWithText}
+              disabled={isSubmitting}
+              className="h-6 px-2 text-xs gap-1"
+            >
+              {isSubmitting ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Send className="h-3 w-3" />
+              )}
+              Send
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

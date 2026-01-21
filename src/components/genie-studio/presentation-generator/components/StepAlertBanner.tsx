@@ -1,6 +1,6 @@
 /**
- * Step Alert Banner - Proactive Alerts for each wizard step
- * Shows contextual guidance, warnings, and required actions
+ * Step Alert Banner - Horizontal card layout for alerts and tips
+ * Displays as compact cards in a row at the top of each step
  */
 
 import React from 'react';
@@ -11,10 +11,8 @@ import {
   Lightbulb, 
   AlertTriangle,
   ArrowRight,
-  Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 export type AlertType = 'info' | 'warning' | 'success' | 'action' | 'tip';
@@ -35,36 +33,36 @@ interface StepAlertBannerProps {
   className?: string;
 }
 
-const ALERT_STYLES: Record<AlertType, { bg: string; border: string; icon: React.ReactNode; textColor: string }> = {
+const ALERT_STYLES: Record<AlertType, { bg: string; border: string; icon: React.ReactNode; iconColor: string }> = {
   info: {
     bg: 'bg-blue-500/10',
-    border: 'border-blue-500/30',
-    icon: <Info className="h-4 w-4 text-blue-600" />,
-    textColor: 'text-blue-700 dark:text-blue-400',
+    border: 'border-blue-500/20',
+    icon: <Info className="h-3.5 w-3.5" />,
+    iconColor: 'text-blue-600',
   },
   warning: {
     bg: 'bg-amber-500/10',
-    border: 'border-amber-500/30',
-    icon: <AlertTriangle className="h-4 w-4 text-amber-600" />,
-    textColor: 'text-amber-700 dark:text-amber-400',
+    border: 'border-amber-500/20',
+    icon: <AlertTriangle className="h-3.5 w-3.5" />,
+    iconColor: 'text-amber-600',
   },
   success: {
     bg: 'bg-green-500/10',
-    border: 'border-green-500/30',
-    icon: <CheckCircle2 className="h-4 w-4 text-green-600" />,
-    textColor: 'text-green-700 dark:text-green-400',
+    border: 'border-green-500/20',
+    icon: <CheckCircle2 className="h-3.5 w-3.5" />,
+    iconColor: 'text-green-600',
   },
   action: {
     bg: 'bg-primary/10',
-    border: 'border-primary/30',
-    icon: <AlertCircle className="h-4 w-4 text-primary" />,
-    textColor: 'text-primary',
+    border: 'border-primary/20',
+    icon: <AlertCircle className="h-3.5 w-3.5" />,
+    iconColor: 'text-primary',
   },
   tip: {
     bg: 'bg-purple-500/10',
-    border: 'border-purple-500/30',
-    icon: <Lightbulb className="h-4 w-4 text-purple-600" />,
-    textColor: 'text-purple-700 dark:text-purple-400',
+    border: 'border-purple-500/20',
+    icon: <Lightbulb className="h-3.5 w-3.5" />,
+    iconColor: 'text-purple-600',
   },
 };
 
@@ -72,47 +70,45 @@ export function StepAlertBanner({ alerts, onDismiss, className }: StepAlertBanne
   if (!alerts.length) return null;
 
   return (
-    <div className={cn("space-y-2", className)}>
+    <div className={cn("flex flex-wrap gap-2", className)}>
       {alerts.map((alert) => {
         const styles = ALERT_STYLES[alert.type];
         return (
           <div
             key={alert.id}
             className={cn(
-              "flex items-start gap-3 p-3 rounded-lg border",
+              "flex items-center gap-2 px-2.5 py-1.5 rounded-md border",
               styles.bg,
-              styles.border
+              styles.border,
+              "max-w-[320px]"
             )}
           >
-            <div className="mt-0.5 shrink-0">{styles.icon}</div>
-            <div className="flex-1 min-w-0 space-y-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className={cn("text-sm font-medium", styles.textColor)}>
-                  {alert.title}
+            <div className={cn("shrink-0", styles.iconColor)}>{styles.icon}</div>
+            <div className="flex-1 min-w-0">
+              <span className="text-xs font-medium text-foreground">
+                {alert.title}
+              </span>
+              {alert.message && (
+                <span className="text-[10px] text-muted-foreground ml-1 hidden sm:inline">
+                  – {alert.message.length > 60 ? `${alert.message.slice(0, 60)}...` : alert.message}
                 </span>
-                <Badge variant="outline" className="text-[9px] px-1.5 py-0">
-                  {alert.type.toUpperCase()}
-                </Badge>
-              </div>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                {alert.message}
-              </p>
-              {alert.actionLabel && alert.onAction && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="mt-2 h-7 text-xs"
-                  onClick={alert.onAction}
-                >
-                  {alert.actionLabel}
-                  <ArrowRight className="h-3 w-3 ml-1" />
-                </Button>
               )}
             </div>
+            {alert.actionLabel && alert.onAction && (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-5 px-1.5 text-[10px]"
+                onClick={alert.onAction}
+              >
+                {alert.actionLabel}
+                <ArrowRight className="h-2.5 w-2.5 ml-0.5" />
+              </Button>
+            )}
             {alert.dismissible && onDismiss && (
               <button
                 onClick={() => onDismiss(alert.id)}
-                className="text-muted-foreground hover:text-foreground"
+                className="text-muted-foreground hover:text-foreground text-xs"
               >
                 ×
               </button>
@@ -148,23 +144,23 @@ export function getStepAlerts(
           id: 'input-required',
           type: 'action',
           title: 'Content Required',
-          message: 'Enter at least 50 characters of content to proceed. You can describe your topic, paste text, upload a document, or provide a URL.',
+          message: 'Enter at least 50 characters to proceed.',
         });
       }
       if (state.inputContent && state.inputContent.length >= 50 && state.inputContent.length < 200) {
         alerts.push({
           id: 'input-short',
           type: 'tip',
-          title: 'More Content = Better Results',
-          message: 'Adding more context (200+ chars) helps AI generate more accurate and detailed slides. Consider adding key points or examples.',
+          title: 'Add More Content',
+          message: '200+ chars helps AI generate better slides.',
         });
       }
       if (state.inputContent && state.inputContent.length >= 200) {
         alerts.push({
           id: 'input-ready',
           type: 'success',
-          title: 'Great Content!',
-          message: `${state.inputContent.length.toLocaleString()} characters ready for AI processing. Click "Next" to configure your presentation.`,
+          title: 'Ready!',
+          message: `${state.inputContent.length.toLocaleString()} characters ready.`,
         });
       }
       break;
@@ -175,22 +171,22 @@ export function getStepAlerts(
           id: 'industry-required',
           type: 'action',
           title: 'Select Industry',
-          message: 'Choose an industry category to optimize AI recommendations for terminology, design, and content structure.',
+          message: 'Choose an industry to optimize AI.',
         });
       }
       if (state.industryCategory) {
         alerts.push({
           id: 'industry-selected',
           type: 'success',
-          title: 'Industry Selected',
-          message: 'AI models will now optimize for your industry-specific terminology and visual styles.',
+          title: 'Industry Set',
+          message: 'AI optimized for your industry.',
         });
       }
       alerts.push({
         id: 'auto-mode-tip',
         type: 'tip',
         title: 'AI Auto Mode',
-        message: 'Use "AI Auto" for intelligent model selection based on your content and industry. Switch to "Custom" for manual control.',
+        message: 'Auto-selects best models for your content.',
       });
       break;
 
@@ -199,15 +195,15 @@ export function getStepAlerts(
         alerts.push({
           id: 'template-required',
           type: 'info',
-          title: 'Choose a Template',
-          message: 'Select a template that matches your presentation style. AI will recommend templates based on your industry.',
+          title: 'Choose Template',
+          message: 'Pick a style for your presentation.',
         });
       }
       alerts.push({
         id: 'branding-tip',
         type: 'tip',
-        title: 'Upload Your Logo',
-        message: 'Upload your company logo to auto-extract brand colors and create a cohesive visual identity.',
+        title: 'Add Your Logo',
+        message: 'Auto-extracts brand colors.',
       });
       break;
 
@@ -216,23 +212,23 @@ export function getStepAlerts(
         alerts.push({
           id: 'complex-output',
           type: 'warning',
-          title: 'Extended Generation Time',
-          message: '3D/Video outputs require 2-4x more generation time and credits. Consider starting with 2D for faster iteration.',
+          title: 'Extended Time',
+          message: '3D/Video needs 2-4x more time.',
         });
       }
       if ((state.outputSettings?.outputTypes?.length || 0) > 2) {
         alerts.push({
           id: 'multi-output',
           type: 'info',
-          title: 'Multiple Output Types',
-          message: 'You\'ve selected multiple output formats. Each format will be generated separately, increasing total credits used.',
+          title: 'Multi-Output',
+          message: 'Each format uses additional credits.',
         });
       }
       alerts.push({
         id: 'output-tip',
         type: 'tip',
         title: 'Start Simple',
-        message: '2D Static is fastest and most compatible. Use it for initial review, then add complexity if needed.',
+        message: '2D Static is fastest to review.',
       });
       break;
 
@@ -241,32 +237,32 @@ export function getStepAlerts(
         alerts.push({
           id: 'language-required',
           type: 'action',
-          title: 'Select Output Languages',
-          message: 'Choose at least one output language for your presentation. Primary language is pre-selected from Step 0.',
+          title: 'Select Languages',
+          message: 'Choose output languages.',
         });
       }
       if ((state.selectedLanguages?.length || 0) > 3) {
         alerts.push({
           id: 'many-languages',
           type: 'warning',
-          title: 'Multiple Languages',
-          message: `${state.selectedLanguages?.length} languages selected. Voiceover is limited to 3 languages by default to manage costs.`,
+          title: 'Many Languages',
+          message: `${state.selectedLanguages?.length} selected. Voiceover limited to 3.`,
         });
       }
       if (state.useAgenticGeneration) {
         alerts.push({
           id: 'agentic-mode',
           type: 'info',
-          title: 'Agentic AI Enabled',
-          message: 'Multi-agent architecture provides highest quality with specialized agents for text, visuals, and voice.',
+          title: 'Agentic AI',
+          message: 'Multi-agent for highest quality.',
         });
       }
       if (state.includeVoiceover) {
         alerts.push({
           id: 'voiceover-enabled',
           type: 'success',
-          title: 'Voiceover Enabled',
-          message: 'AI will generate natural-sounding narration for your slides. Each language gets a native-sounding voice.',
+          title: 'Voiceover On',
+          message: 'Natural narration will be generated.',
         });
       }
       break;
@@ -276,13 +272,13 @@ export function getStepAlerts(
         id: 'review-all',
         type: 'info',
         title: 'Final Review',
-        message: 'Review all your selections below. Check AI confidence scores and credit estimates before generating.',
+        message: 'Check settings before generating.',
       });
       alerts.push({
         id: 'generate-tip',
         type: 'tip',
-        title: 'Save Your Work',
-        message: 'Generated presentations are auto-saved. You can edit, regenerate specific slides, or export to multiple formats.',
+        title: 'Auto-Saved',
+        message: 'Results save automatically.',
       });
       break;
   }
