@@ -314,3 +314,9 @@ verify_jwt = false
 
 [functions.gemini-generate-image]
 verify_jwt = false
+
+[functions.google-slides-export]
+verify_jwt = false
+
+[functions.distribution-agent]
+verify_jwt = false
