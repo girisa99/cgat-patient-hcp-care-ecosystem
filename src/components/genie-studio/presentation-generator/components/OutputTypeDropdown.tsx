@@ -93,6 +93,7 @@ interface OutputTypeDropdownProps {
   onMultiChange?: (types: AnyOutputType[]) => void;
   className?: string;
   showCategories?: boolean;
+  tierFilter?: 1 | 2 | 3 | 'all'; // External tier filter
 }
 
 export function OutputTypeDropdown({
@@ -103,9 +104,10 @@ export function OutputTypeDropdown({
   onMultiChange,
   className,
   showCategories = false,
+  tierFilter = 'all',
 }: OutputTypeDropdownProps) {
   const [open, setOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'all' | 'tier' | 'category'>('tier');
+  const [activeTab, setActiveTab] = useState<'all' | 'tier' | 'category'>(tierFilter !== 'all' ? 'tier' : 'tier');
 
   const handleSelect = (type: AnyOutputType) => {
     if (allowMultiple && onMultiChange) {
@@ -135,26 +137,47 @@ export function OutputTypeDropdown({
     return selectedConfig?.name || 'Select output type...';
   };
 
+  // Filter configs based on external tier filter
+  const getFilteredConfigs = () => {
+    if (tierFilter === 'all') return EXPANDED_OUTPUT_CONFIGS;
+    return EXPANDED_OUTPUT_CONFIGS.filter(c => c.tier === tierFilter);
+  };
+
   // Get grouped outputs based on active tab
   const getGroupedOutputs = () => {
+    const baseConfigs = getFilteredConfigs();
+    
     if (activeTab === 'tier') {
+      // If tier filter is applied, show only that tier
+      if (tierFilter !== 'all') {
+        return [{ 
+          label: `${TIER_CONFIG[tierFilter]?.label || 'Tier ' + tierFilter} Outputs`, 
+          items: baseConfigs 
+        }];
+      }
       return [
-        { label: 'Standard (Tier 1)', items: OUTPUT_TIERS.standard },
-        { label: 'Advanced (Tier 2)', items: OUTPUT_TIERS.advanced },
-        { label: 'Premium (Tier 3)', items: OUTPUT_TIERS.premium },
-      ];
+        { label: 'Standard (Tier 1)', items: baseConfigs.filter(c => c.tier === 1) },
+        { label: 'Advanced (Tier 2)', items: baseConfigs.filter(c => c.tier === 2) },
+        { label: 'Premium (Tier 3)', items: baseConfigs.filter(c => c.tier === 3) },
+      ].filter(g => g.items.length > 0);
     } else if (activeTab === 'category') {
-      return [
-        { label: 'Documents', items: OUTPUT_CATEGORIES.document },
-        { label: 'Static', items: OUTPUT_CATEGORIES.static },
-        { label: 'Animated', items: OUTPUT_CATEGORIES.animated },
-        { label: 'Video', items: OUTPUT_CATEGORIES.video },
-        { label: '3D', items: OUTPUT_CATEGORIES.threeD },
-        { label: 'Interactive', items: OUTPUT_CATEGORIES.interactive },
-        { label: 'Immersive', items: OUTPUT_CATEGORIES.immersive },
+      const categoryGroups = [
+        { label: 'Documents', category: 'document' },
+        { label: 'Static', category: 'static' },
+        { label: 'Animated', category: 'animated' },
+        { label: 'Video', category: 'video' },
+        { label: '3D', category: 'threeD' },
+        { label: 'Interactive', category: 'interactive' },
+        { label: 'Immersive', category: 'immersive' },
       ];
+      return categoryGroups
+        .map(g => ({
+          label: g.label,
+          items: baseConfigs.filter(c => OUTPUT_CATEGORIES[g.category as keyof typeof OUTPUT_CATEGORIES]?.some(oc => oc.id === c.id))
+        }))
+        .filter(g => g.items.length > 0);
     }
-    return [{ label: 'All Outputs', items: EXPANDED_OUTPUT_CONFIGS }];
+    return [{ label: 'All Outputs', items: baseConfigs }];
   };
 
   return (

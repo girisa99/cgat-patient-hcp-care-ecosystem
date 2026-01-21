@@ -105,6 +105,7 @@ export function OutputTypePanel({
 }: OutputTypePanelProps) {
   const [showRecommendation, setShowRecommendation] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [tierFilter, setTierFilter] = useState<1 | 2 | 3 | 'all'>('all');
   
   const handleOutputSelect = (outputType: OutputType) => {
     onChange({
@@ -147,26 +148,57 @@ export function OutputTypePanel({
     : value.chapterCount * value.slidesPerChapter;
   const genTimeMinutes = Math.ceil((totalItems * (hasVideoType ? 30 : has3DType ? 20 : 8)) / 60);
 
+  // Filter output types by tier
+  const filteredOutputConfigs = tierFilter === 'all' 
+    ? OUTPUT_TYPE_CONFIGS 
+    : OUTPUT_TYPE_CONFIGS.filter(c => c.tier === tierFilter);
+
   return (
     <div className={cn("space-y-6", className)}>
-      {/* Tier Legend */}
-      <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 border">
-        <span className="text-xs text-muted-foreground font-medium">Output Tiers:</span>
-        <div className="flex items-center gap-2 flex-wrap">
-          {Object.entries(tierBadges).map(([tier, config]) => (
-            <div key={tier} className="flex items-center gap-1.5">
-              <Badge
-                variant="outline"
-                className={cn('text-[10px] px-2 py-0.5', config.color)}
-              >
-                {config.label}
-              </Badge>
-              <span className="text-[10px] text-muted-foreground hidden sm:inline">
-                {config.description}
+      {/* Tier Filter & Legend - Interactive */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-muted-foreground font-medium">Filter by Tier:</span>
+          <span className="text-[10px] text-muted-foreground">
+            {tierFilter === 'all' ? 'Showing all' : `Showing ${tierBadges[tierFilter as 1 | 2 | 3]?.label} only`}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setTierFilter('all')}
+            className={cn(
+              "px-3 py-1.5 text-xs rounded-lg border transition-all",
+              tierFilter === 'all' 
+                ? "bg-foreground text-background border-foreground font-medium" 
+                : "bg-background text-muted-foreground border-border hover:border-foreground/50"
+            )}
+          >
+            All Tiers
+          </button>
+          {(Object.entries(tierBadges) as [string, typeof tierBadges[1]][]).map(([tier, config]) => (
+            <button
+              key={tier}
+              onClick={() => setTierFilter(Number(tier) as 1 | 2 | 3)}
+              className={cn(
+                "px-3 py-1.5 text-xs rounded-lg border transition-all flex items-center gap-1.5",
+                tierFilter === Number(tier)
+                  ? cn(config.color, "font-medium shadow-sm")
+                  : "bg-background text-muted-foreground border-border hover:border-foreground/30"
+              )}
+            >
+              <span>{config.label}</span>
+              <span className="text-[9px] opacity-70 hidden sm:inline">
+                ({OUTPUT_TYPE_CONFIGS.filter(c => c.tier === Number(tier)).length})
               </span>
-            </div>
+            </button>
           ))}
         </div>
+        {/* Tier descriptions */}
+        {tierFilter !== 'all' && (
+          <p className="text-xs text-muted-foreground bg-muted/30 px-3 py-2 rounded-lg">
+            {tierBadges[tierFilter as 1 | 2 | 3]?.description}
+          </p>
+        )}
       </div>
 
       {/* Output Type Dropdown - Multi-select enabled */}
@@ -183,6 +215,7 @@ export function OutputTypePanel({
           allowMultiple={true}
           multiValue={outputTypes}
           onMultiChange={handleMultiOutputChange}
+          tierFilter={tierFilter}
         />
       </div>
 
