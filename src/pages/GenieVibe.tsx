@@ -45,6 +45,9 @@ import {
   Library,
   DollarSign
 } from 'lucide-react';
+// Unified infrastructure imports
+import { GlobalTierFilter, type GlobalTier } from '@/components/genie-studio/presentation-generator/components/GlobalTierFilter';
+import { useGlobalTier } from '@/hooks/useGlobalTier';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { InlineTrainAIFeedback } from '@/components/genie-studio/InlineTrainAIFeedback';
@@ -139,6 +142,9 @@ const GenieVibe: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const isMobileOrTablet = useIsMobileOrTablet();
+  
+  // Unified Global Tier - affects all AI processing (TTS, music, video generation)
+  const { globalTier, setGlobalTier, tierConfig } = useGlobalTier({ defaultTier: 'advanced' });
   
   // Get context from URL params (from MeetingRoom or ProductionHub)
   const showId = searchParams.get('showId');
@@ -507,6 +513,13 @@ const GenieVibe: React.FC = () => {
                   <span className="hidden md:inline">Mobile</span>
                 </Button>
               </div>
+
+              {/* Global Tier Filter - affects TTS, music, video generation quality */}
+              <GlobalTierFilter
+                value={globalTier === 'standard' ? 1 : globalTier === 'advanced' ? 2 : 3}
+                onChange={(tier) => setGlobalTier(tier === 1 ? 'standard' : tier === 2 ? 'advanced' : 'premium')}
+                compact={true}
+              />
 
               <Badge variant="secondary">
                 {recordings.length} Recordings
