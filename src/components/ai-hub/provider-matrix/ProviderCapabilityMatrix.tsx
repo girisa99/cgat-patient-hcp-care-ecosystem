@@ -49,7 +49,7 @@ const STATUS_ICONS: Record<ImplementationStatus, React.ReactNode> = {
 export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ className }) => {
   const [selectedCategory, setSelectedCategory] = useState<FeatureCategory | 'all'>('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [view, setView] = useState<'matrix' | 'providers' | 'gaps'>('matrix');
+  const [view, setView] = useState<'matrix' | 'providers' | 'gaps' | 'llm'>('matrix');
 
   const filteredFeatures = useMemo(() => {
     return ALL_FEATURES.filter(f => {
@@ -100,7 +100,7 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
   };
 
   return (
-    <Card className={className}>
+    <Card className={`${className} max-h-[85vh] overflow-hidden flex flex-col`}>
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
@@ -134,12 +134,13 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
         </div>
       </CardHeader>
 
-      <CardContent>
-        <Tabs value={view} onValueChange={(v) => setView(v as typeof view)}>
-          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+      <CardContent className="flex-1 overflow-hidden flex flex-col">
+        <Tabs value={view} onValueChange={(v) => setView(v as typeof view)} className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-2 flex-shrink-0">
             <TabsList>
               <TabsTrigger value="matrix">Feature Matrix</TabsTrigger>
               <TabsTrigger value="providers">By Provider</TabsTrigger>
+              <TabsTrigger value="llm">LLM Capabilities</TabsTrigger>
               <TabsTrigger value="gaps">Gap Analysis</TabsTrigger>
             </TabsList>
             
@@ -168,8 +169,8 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
           </div>
 
           {/* Feature Matrix Tab */}
-          <TabsContent value="matrix">
-            <ScrollArea className="h-[500px]">
+          <TabsContent value="matrix" className="flex-1 overflow-hidden">
+            <ScrollArea className="h-[450px]">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -241,67 +242,270 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
           </TabsContent>
 
           {/* Provider Summary Tab */}
-          <TabsContent value="providers">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {PROVIDER_SUMMARIES.map(provider => (
-                <Card key={provider.id} className={provider.status === 'configured' ? 'border-primary/30' : 'border-secondary/30'}>
+          <TabsContent value="providers" className="flex-1 overflow-hidden">
+            <ScrollArea className="h-[450px]">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pr-4">
+                {PROVIDER_SUMMARIES.map(provider => (
+                  <Card key={provider.id} className={provider.status === 'configured' ? 'border-primary/30' : 'border-secondary/30'}>
+                    <CardHeader className="pb-2">
+                      <div className="flex justify-between items-start">
+                        <CardTitle className="text-base">{provider.name}</CardTitle>
+                        <Badge variant={provider.status === 'configured' ? 'default' : 'secondary'}>
+                          {provider.status === 'configured' ? '✅ Ready' : '⚠️ Needs Key'}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <Progress value={(provider.implementedFeatures / provider.totalFeatures) * 100} className="h-2 mb-2" />
+                      <p className="text-xs text-muted-foreground mb-2">
+                        {provider.implementedFeatures}/{provider.totalFeatures} features ({Math.round((provider.implementedFeatures / provider.totalFeatures) * 100)}%)
+                      </p>
+                      <div className="flex flex-wrap gap-1 mb-2">
+                        {provider.capabilities.slice(0, 4).map(cap => (
+                          <Badge key={cap} variant="outline" className="text-[10px]">{cap}</Badge>
+                        ))}
+                      </div>
+                      <p className="text-xs text-primary">✓ {provider.strengths.slice(0, 2).join(', ')}</p>
+                      {provider.weaknesses.length > 0 && (
+                        <p className="text-xs text-muted-foreground">⚠ {provider.weaknesses[0]}</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </ScrollArea>
+          </TabsContent>
+
+          {/* LLM Capabilities Tab */}
+          <TabsContent value="llm" className="flex-1 overflow-hidden">
+            <ScrollArea className="h-[450px]">
+              <div className="space-y-6 pr-4">
+                {/* Fallback Logic Explanation */}
+                <Card className="border-2 border-dashed border-primary/30">
                   <CardHeader className="pb-2">
-                    <div className="flex justify-between items-start">
-                      <CardTitle className="text-base">{provider.name}</CardTitle>
-                      <Badge variant={provider.status === 'configured' ? 'default' : 'secondary'}>
-                        {provider.status === 'configured' ? '✅ Ready' : '⚠️ Needs Key'}
-                      </Badge>
-                    </div>
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      ⚡ Fallback Routing Logic
+                    </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <Progress value={(provider.implementedFeatures / provider.totalFeatures) * 100} className="h-2 mb-2" />
-                    <p className="text-xs text-muted-foreground mb-2">
-                      {provider.implementedFeatures}/{provider.totalFeatures} features ({Math.round((provider.implementedFeatures / provider.totalFeatures) * 100)}%)
+                  <CardContent className="text-xs space-y-2">
+                    <p className="text-muted-foreground">
+                      <strong>Current Strategy:</strong> Quality-First → Cost-Optimized fallback. Primary uses best-fit model for task, 
+                      then falls back to lower-cost alternatives with acceptable quality.
                     </p>
-                    <div className="flex flex-wrap gap-1 mb-2">
-                      {provider.capabilities.slice(0, 4).map(cap => (
-                        <Badge key={cap} variant="outline" className="text-[10px]">{cap}</Badge>
-                      ))}
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      <div className="p-2 bg-primary/10 rounded">
+                        <div className="font-bold">1st</div>
+                        <div>Best Quality</div>
+                      </div>
+                      <div className="p-2 bg-secondary/50 rounded">
+                        <div className="font-bold">2nd</div>
+                        <div>Balanced</div>
+                      </div>
+                      <div className="p-2 bg-muted rounded">
+                        <div className="font-bold">3rd</div>
+                        <div>Budget</div>
+                      </div>
                     </div>
-                    <p className="text-xs text-primary">✓ {provider.strengths.slice(0, 2).join(', ')}</p>
-                    {provider.weaknesses.length > 0 && (
-                      <p className="text-xs text-muted-foreground">⚠ {provider.weaknesses[0]}</p>
-                    )}
+                    <p className="text-muted-foreground mt-2">
+                      <strong>Why not cheapest first?</strong> User experience prioritized over cost—critical tasks (healthcare, finance) 
+                      need high accuracy. Cost optimization happens in fallback chain, not primary selection.
+                    </p>
                   </CardContent>
                 </Card>
-              ))}
-            </div>
+
+                {/* LLM Comparison Table */}
+                <div>
+                  <h3 className="font-semibold mb-3">🧠 LLM Capabilities by Use Case</h3>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="min-w-[120px]">Model</TableHead>
+                        <TableHead>Best For Industries</TableHead>
+                        <TableHead>Output Types</TableHead>
+                        <TableHead>Input Understanding</TableHead>
+                        <TableHead>Cost</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      <TableRow>
+                        <TableCell className="font-medium">
+                          <div>GPT-4o</div>
+                          <Badge variant="outline" className="text-[8px]">OpenAI</Badge>
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          <div className="flex flex-wrap gap-1">
+                            <Badge variant="secondary" className="text-[8px]">Healthcare</Badge>
+                            <Badge variant="secondary" className="text-[8px]">Finance</Badge>
+                            <Badge variant="secondary" className="text-[8px]">Legal</Badge>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          <div className="flex flex-wrap gap-1">
+                            <Badge variant="outline" className="text-[8px]">Long-form</Badge>
+                            <Badge variant="outline" className="text-[8px]">Code</Badge>
+                            <Badge variant="outline" className="text-[8px]">JSON</Badge>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-xs">Vision, PDF, Audio, Complex docs</TableCell>
+                        <TableCell><Badge className="bg-destructive/80 text-[8px]">$$$</Badge></TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">
+                          <div>Gemini 2.5 Pro</div>
+                          <Badge variant="outline" className="text-[8px]">Google</Badge>
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          <div className="flex flex-wrap gap-1">
+                            <Badge variant="secondary" className="text-[8px]">Education</Badge>
+                            <Badge variant="secondary" className="text-[8px]">Research</Badge>
+                            <Badge variant="secondary" className="text-[8px]">Media</Badge>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          <div className="flex flex-wrap gap-1">
+                            <Badge variant="outline" className="text-[8px]">Multimodal</Badge>
+                            <Badge variant="outline" className="text-[8px]">Image+Text</Badge>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-xs">1M context, Video, Images</TableCell>
+                        <TableCell><Badge className="bg-primary/80 text-[8px]">$$</Badge></TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">
+                          <div>Claude 3.5 Sonnet</div>
+                          <Badge variant="outline" className="text-[8px]">Anthropic</Badge>
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          <div className="flex flex-wrap gap-1">
+                            <Badge variant="secondary" className="text-[8px]">Enterprise</Badge>
+                            <Badge variant="secondary" className="text-[8px]">Compliance</Badge>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          <div className="flex flex-wrap gap-1">
+                            <Badge variant="outline" className="text-[8px]">Nuanced</Badge>
+                            <Badge variant="outline" className="text-[8px]">Safety</Badge>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-xs">200K context, Complex reasoning</TableCell>
+                        <TableCell><Badge className="bg-destructive/80 text-[8px]">$$$</Badge></TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">
+                          <div>DeepSeek V3</div>
+                          <Badge variant="outline" className="text-[8px]">DeepSeek</Badge>
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          <div className="flex flex-wrap gap-1">
+                            <Badge variant="secondary" className="text-[8px]">Tech</Badge>
+                            <Badge variant="secondary" className="text-[8px]">Startups</Badge>
+                            <Badge variant="secondary" className="text-[8px]">Code</Badge>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          <div className="flex flex-wrap gap-1">
+                            <Badge variant="outline" className="text-[8px]">Code</Badge>
+                            <Badge variant="outline" className="text-[8px]">Math</Badge>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-xs">Vision, Code repos</TableCell>
+                        <TableCell><Badge className="bg-secondary/80 text-[8px]">$</Badge></TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">
+                          <div>Qwen 2.5</div>
+                          <Badge variant="outline" className="text-[8px]">Alibaba</Badge>
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          <div className="flex flex-wrap gap-1">
+                            <Badge variant="secondary" className="text-[8px]">APAC</Badge>
+                            <Badge variant="secondary" className="text-[8px]">E-commerce</Badge>
+                            <Badge variant="secondary" className="text-[8px]">CJK</Badge>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          <div className="flex flex-wrap gap-1">
+                            <Badge variant="outline" className="text-[8px]">Multilingual</Badge>
+                            <Badge variant="outline" className="text-[8px]">CJK Native</Badge>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-xs">Chinese/Japanese/Korean docs</TableCell>
+                        <TableCell><Badge className="bg-secondary/80 text-[8px]">$</Badge></TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Azure vs Direct OpenAI */}
+                <Card className="border border-muted">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">🔷 Azure OpenAI vs Direct OpenAI</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-xs space-y-3">
+                    <p className="text-muted-foreground">
+                      <strong>Current:</strong> Direct OpenAI integration. <strong>Azure OpenAI</strong> offers same models with enterprise benefits.
+                    </p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <div className="font-medium text-primary">Azure OpenAI Advantages:</div>
+                        <ul className="text-muted-foreground list-disc list-inside space-y-0.5">
+                          <li>HIPAA/SOC2/GDPR compliance built-in</li>
+                          <li>Private VNet integration</li>
+                          <li>Regional data residency</li>
+                          <li>Enterprise SLAs (99.9%)</li>
+                          <li>Content filtering controls</li>
+                        </ul>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="font-medium">When to Use Azure:</div>
+                        <ul className="text-muted-foreground list-disc list-inside space-y-0.5">
+                          <li>Healthcare with PHI data</li>
+                          <li>Financial services (PCI-DSS)</li>
+                          <li>Government/public sector</li>
+                          <li>Existing Azure infrastructure</li>
+                        </ul>
+                      </div>
+                    </div>
+                    <p className="text-xs bg-muted p-2 rounded">
+                      <strong>Recommendation:</strong> Keep direct OpenAI for general use. Add Azure OpenAI for enterprise healthcare clients requiring HIPAA compliance.
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            </ScrollArea>
           </TabsContent>
 
           {/* Gap Analysis Tab */}
-          <TabsContent value="gaps">
-            <div className="space-y-4">
-              <h3 className="font-semibold">🚨 Critical Gaps to Address</h3>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Feature</TableHead>
-                    <TableHead>Best Provider</TableHead>
-                    <TableHead>Priority</TableHead>
-                    <TableHead>Effort</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {CRITICAL_GAPS.map((gap, i) => (
-                    <TableRow key={i}>
-                      <TableCell className="font-medium">{gap.feature}</TableCell>
-                      <TableCell>{gap.provider}</TableCell>
-                      <TableCell>
-                        <Badge variant={gap.priority === 'high' ? 'destructive' : 'secondary'}>{gap.priority}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{gap.effort}</Badge>
-                      </TableCell>
+          <TabsContent value="gaps" className="flex-1 overflow-hidden">
+            <ScrollArea className="h-[450px]">
+              <div className="space-y-4 pr-4">
+                <h3 className="font-semibold">🚨 Critical Gaps to Address</h3>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Feature</TableHead>
+                      <TableHead>Best Provider</TableHead>
+                      <TableHead>Priority</TableHead>
+                      <TableHead>Effort</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {CRITICAL_GAPS.map((gap, i) => (
+                      <TableRow key={i}>
+                        <TableCell className="font-medium">{gap.feature}</TableCell>
+                        <TableCell>{gap.provider}</TableCell>
+                        <TableCell>
+                          <Badge variant={gap.priority === 'high' ? 'destructive' : 'secondary'}>{gap.priority}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{gap.effort}</Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </ScrollArea>
           </TabsContent>
         </Tabs>
       </CardContent>
