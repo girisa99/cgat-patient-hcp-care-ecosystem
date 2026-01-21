@@ -1323,19 +1323,44 @@ export function PresentationWizard({
                   </div>
                 </div>
 
-                {/* Input Type Selection - Flat tabs */}
+                {/* Input Type Selection - Flat consistent tabs */}
                 <div className="space-y-4">
                   <Label className="text-sm font-medium text-foreground">Choose how to add your content:</Label>
                   <Tabs value={inputSource} onValueChange={(v) => setInputSource(v as InputSource)}>
-                    <TabsList className="grid grid-cols-5 w-full h-11 p-1 bg-muted rounded-lg">
-                      <TabsTrigger value="prompt" className="text-sm font-medium rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Describe</TabsTrigger>
-                      <TabsTrigger value="text" className="text-sm font-medium rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Paste</TabsTrigger>
-                      <TabsTrigger value="document" className="text-sm font-medium rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Upload</TabsTrigger>
-                      <TabsTrigger value="image" className="text-sm font-medium rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Image</TabsTrigger>
-                      <TabsTrigger value="url" className="text-sm font-medium rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Link</TabsTrigger>
+                    <TabsList className="inline-flex h-10 items-center justify-start gap-1 rounded-lg bg-muted p-1 w-full">
+                      <TabsTrigger 
+                        value="prompt" 
+                        className="flex-1 inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"
+                      >
+                        Describe
+                      </TabsTrigger>
+                      <TabsTrigger 
+                        value="text" 
+                        className="flex-1 inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"
+                      >
+                        Paste
+                      </TabsTrigger>
+                      <TabsTrigger 
+                        value="document" 
+                        className="flex-1 inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"
+                      >
+                        Upload
+                      </TabsTrigger>
+                      <TabsTrigger 
+                        value="image" 
+                        className="flex-1 inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"
+                      >
+                        Image
+                      </TabsTrigger>
+                      <TabsTrigger 
+                        value="url" 
+                        className="flex-1 inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"
+                      >
+                        Link
+                      </TabsTrigger>
                     </TabsList>
 
-                    <TabsContent value="prompt" className="mt-4 space-y-3">
+                    <TabsContent value="prompt" className="mt-4 space-y-3 border-0 p-0">
                       <p className="text-sm text-muted-foreground">Describe your presentation topic and the AI will generate content for you.</p>
                       {inputLanguage !== primaryLanguage ? (
                         <AutoTranslateInput
@@ -1357,7 +1382,7 @@ export function PresentationWizard({
                       )}
                     </TabsContent>
 
-                    <TabsContent value="text" className="mt-3 space-y-2">
+                    <TabsContent value="text" className="mt-4 space-y-3 border-0 p-0">
                       <p className="text-xs text-muted-foreground">Paste existing content like notes, articles, or outlines to transform into slides.</p>
                       {inputLanguage !== primaryLanguage ? (
                         <AutoTranslateInput
@@ -1379,7 +1404,7 @@ export function PresentationWizard({
                       )}
                     </TabsContent>
 
-                    <TabsContent value="document" className="mt-3 space-y-2">
+                    <TabsContent value="document" className="mt-4 space-y-3 border-0 p-0">
                       <p className="text-xs text-muted-foreground">Upload a document and we'll extract and convert the content into slides.</p>
                       <div className={cn(
                         "border-2 border-dashed rounded-lg p-4 text-center transition-colors bg-background",
@@ -1419,7 +1444,7 @@ export function PresentationWizard({
                       )}
                     </TabsContent>
 
-                    <TabsContent value="image" className="mt-3 space-y-2">
+                    <TabsContent value="image" className="mt-4 space-y-3 border-0 p-0">
                       <p className="text-xs text-muted-foreground">Upload an image (chart, diagram, or visual) to base your presentation on.</p>
                       <div className={cn(
                         "border-2 border-dashed rounded-lg p-4 text-center transition-colors bg-background",
@@ -1454,7 +1479,7 @@ export function PresentationWizard({
                       )}
                     </TabsContent>
 
-                    <TabsContent value="url" className="mt-3 space-y-2">
+                    <TabsContent value="url" className="mt-4 space-y-3 border-0 p-0">
                       <p className="text-xs text-muted-foreground">Enter a webpage URL and we'll extract the content for your presentation.</p>
                       <Input
                         placeholder="https://example.com/article-to-convert"
@@ -1601,14 +1626,14 @@ export function PresentationWizard({
             {/* Step 1: Industry, Segment & Collateral Type */}
             {currentStep === 1 && (
               <div className="space-y-4">
-                {/* Step Header */}
-                <div className="flex items-center gap-3 p-4 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20">
-                  <div className="p-2 rounded-lg bg-primary/10">
+                {/* Step Header - Flat design */}
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-primary/10">
                     <Presentation className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-sm">Configure Your Presentation</h3>
-                    <p className="text-xs text-muted-foreground">
+                    <h3 className="font-semibold text-base text-foreground">Configure Your Presentation</h3>
+                    <p className="text-sm text-muted-foreground">
                       AI models will be optimized based on your selections
                     </p>
                   </div>
@@ -1665,14 +1690,14 @@ export function PresentationWizard({
             {/* Step 3: Output Type Selection */}
             {currentStep === 3 && (
               <div className="space-y-4">
-                {/* Step Header */}
-                <div className="flex items-center gap-3 p-4 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20">
-                  <div className="p-2 rounded-lg bg-primary/10">
+                {/* Step Header - Flat design */}
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-primary/10">
                     <Layers className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-sm">Output Type & Structure</h3>
-                    <p className="text-xs text-muted-foreground">
+                    <h3 className="font-semibold text-base text-foreground">Output Type & Structure</h3>
+                    <p className="text-sm text-muted-foreground">
                       Choose your output format: 2D slides, 3D scenes, video, or interactive
                     </p>
                   </div>
@@ -1709,13 +1734,13 @@ export function PresentationWizard({
             {/* Step 5: Review & Generate */}
             {currentStep === 5 && (
               <div className="space-y-6">
-                {/* Step Header */}
-                <div className="flex items-center gap-3 p-4 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20">
-                  <div className="p-2.5 rounded-lg bg-primary/10">
+                {/* Step Header - Flat design */}
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-primary/10">
                     <Wand2 className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-base">Review & Generate</h3>
+                    <h3 className="font-semibold text-base text-foreground">Review & Generate</h3>
                     <p className="text-sm text-muted-foreground">
                       Review all your selections before generating
                     </p>
@@ -1801,27 +1826,23 @@ export function PresentationWizard({
                   })}
                 />
 
-                {/* Compliance Check Option */}
+                {/* Compliance Check Option - FLAT design */}
                 {workflowConfig?.industryCategory && ['healthcare', 'pharma', 'finance', 'legal'].includes(workflowConfig.industryCategory) && (
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm flex items-center gap-2">
-                        <Shield className="h-4 w-4 text-primary" />
-                        Compliance Check
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex items-center justify-between p-3 rounded-lg border bg-background">
-                        <div>
-                          <p className="text-sm font-medium">Enable Compliance Verification</p>
-                          <p className="text-xs text-muted-foreground">
-                            Verify content against industry regulations
-                          </p>
-                        </div>
-                        <Switch checked={showComplianceCheck} onCheckedChange={setShowComplianceCheck} />
+                  <div className="p-4 rounded-lg border bg-muted/30">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Shield className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-medium">Compliance Check</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium">Enable Compliance Verification</p>
+                        <p className="text-xs text-muted-foreground">
+                          Verify content against industry regulations
+                        </p>
                       </div>
-                    </CardContent>
-                  </Card>
+                      <Switch checked={showComplianceCheck} onCheckedChange={setShowComplianceCheck} />
+                    </div>
+                  </div>
                 )}
 
                 {/* Credit Burn Estimate */}
@@ -1835,20 +1856,18 @@ export function PresentationWizard({
                   languageCount={selectedLanguages.length}
                 />
 
-                {/* Generation Progress - simplified */}
+                {/* Generation Progress - FLAT design */}
                 {isGenerating && (
-                  <Card className="border-primary/30">
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-3">
-                        <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                        <div>
-                          <p className="text-sm font-medium">Generating presentation...</p>
-                          <p className="text-xs text-muted-foreground">This may take a few moments</p>
-                        </div>
+                  <div className="p-4 rounded-lg border border-primary/30 bg-primary/5">
+                    <div className="flex items-center gap-3">
+                      <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                      <div>
+                        <p className="text-sm font-medium">Generating presentation...</p>
+                        <p className="text-xs text-muted-foreground">This may take a few moments</p>
                       </div>
-                      <Progress value={50} className="mt-3" />
-                    </CardContent>
-                  </Card>
+                    </div>
+                    <Progress value={50} className="mt-3" />
+                  </div>
                 )}
               </div>
             )}
