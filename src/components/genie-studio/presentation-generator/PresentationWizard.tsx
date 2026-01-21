@@ -143,6 +143,8 @@ import { AgentSelectorDialog, AgentCard, AgentModelConfig } from './AgentSelecto
 import { AgentLanguageConfigPanel } from './AgentLanguageConfigPanel';
 import { InlineTrainAIFeedback } from '../InlineTrainAIFeedback';
 import { StepGuidancePanel } from './components/StepGuidancePanel';
+import { StepAlertBanner, getStepAlerts } from './components/StepAlertBanner';
+import { StepFeedbackPanel } from './components/StepFeedbackPanel';
 import { PreGenerationConfirmationPanel, GenerationContextSummary } from './components/PreGenerationConfirmationPanel';
 import { 
   PresentationRequest,
@@ -1310,6 +1312,14 @@ export function PresentationWizard({
             {/* Step 0: Content Input */}
             {currentStep === 0 && (
               <div className="space-y-5">
+                {/* Proactive Alerts for Step 0 */}
+                <StepAlertBanner 
+                  alerts={getStepAlerts(0, { 
+                    inputContent, 
+                    hasUploadedFile: !!uploadedFile 
+                  })} 
+                />
+
                 {/* Step Header - Flat design */}
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 rounded-xl bg-primary/10">
