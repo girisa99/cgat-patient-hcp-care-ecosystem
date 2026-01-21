@@ -2019,7 +2019,7 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 bg-card/50 backdrop-blur rounded-xl p-6 border border-border/50 mb-8">
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
-                  <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg overflow-hidden p-1">
+                  <div className="h-16 w-16 rounded-xl bg-white border border-border/50 flex items-center justify-center shadow-lg overflow-hidden p-1.5">
                     <img src={genieMindProductLogo} alt="Genie Mind" className="h-full w-full object-contain" />
                   </div>
                   <div>
@@ -2064,10 +2064,12 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
                     onClick={() => navigate('/genie-vibe')}
                     className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white shadow-lg shadow-pink-500/25 transition-all hover:scale-105 flex items-center gap-3 h-auto py-2.5 px-5"
                   >
-                    <img src={genieVibeProductLogo} alt="Genie Vibe" className="h-8 w-8 object-contain rounded bg-white p-0.5" />
+                    <div className="h-10 w-10 rounded-lg bg-white border border-border/50 flex items-center justify-center overflow-hidden p-1 shadow-sm">
+                      <img src={genieVibeProductLogo} alt="Genie Vibe" className="h-full w-full object-contain" />
+                    </div>
                     <div className="flex flex-col items-start">
                       <span className="font-semibold">Genie Vibe</span>
-                      <span className="text-[10px] font-normal opacity-80">Full Recording Studio</span>
+                      <span className="text-[10px] font-normal opacity-80">Script to Screen</span>
                     </div>
                   </Button>
                   
@@ -2078,10 +2080,12 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
                     onClick={() => setIsCreateShowDialogOpen(true)}
                     className="border-indigo-500/30 hover:border-indigo-500 hover:bg-indigo-500/10 flex items-center gap-3 h-auto py-2.5 px-5"
                   >
-                    <img src={genieArcProductLogo} alt="Genie Arc" className="h-8 w-8 object-contain rounded bg-indigo-100 p-0.5" />
+                    <div className="h-10 w-10 rounded-lg bg-white border border-border/50 flex items-center justify-center overflow-hidden p-1 shadow-sm">
+                      <img src={genieArcProductLogo} alt="Genie Arc" className="h-full w-full object-contain" />
+                    </div>
                     <div className="flex flex-col items-start">
                       <span className="font-semibold">Genie Arc</span>
-                      <span className="text-[10px] font-normal text-muted-foreground">Team Productions</span>
+                      <span className="text-[10px] font-normal text-muted-foreground">Infinite Possibilities</span>
                     </div>
                   </Button>
                   
