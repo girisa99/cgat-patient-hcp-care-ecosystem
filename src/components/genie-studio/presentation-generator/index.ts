@@ -171,6 +171,11 @@ export { GenieTooltipProvider, useGenieTooltip, GENIE_DECK_TOOLTIPS } from './co
 export type { TooltipDefinition } from './context/TooltipContext';
 export { SmartTooltip, HelpTooltip } from './components/SmartTooltip';
 
+// Global Tier Filter & Visualization Recommendations
+export { GlobalTierFilter, TierBadge, getTierConfig, TIER_CONFIGS } from './components/GlobalTierFilter';
+export type { GlobalTier as WizardGlobalTier } from './components/GlobalTierFilter';
+export { VisualizationRecommendationBadges, VisualizationRecommendationChips } from './components/VisualizationRecommendationBadges';
+
 // Generation History Service
 export { generationHistoryService } from './services/generationHistoryService';
 export type { GenerationRecord, ActualUsageBreakdown } from './services/generationHistoryService';
