@@ -67,6 +67,11 @@ import {
   getTemplateRecommendations,
   CONSULTING_FRAMEWORKS,
 } from './services/templateRecommendationService';
+import {
+  EXPANDED_FRAMEWORK_CATEGORIES,
+  getFrameworksByType,
+  FRAMEWORK_TYPE_LABELS,
+} from './constants/expandedFrameworks';
 
 // ============ CONSTANTS ============
 
@@ -133,14 +138,25 @@ const TEMPLATES = [
   },
 ];
 
+// Framework Categories - now using expanded framework categories with types
 const FRAMEWORK_CATEGORIES = [
-  { id: 'all', label: 'All Frameworks' },
-  { id: 'strategy', label: 'Strategic Planning' },
-  { id: 'analysis', label: 'Business Analysis' },
-  { id: 'growth', label: 'Growth & Portfolio' },
-  { id: 'operations', label: 'Operations' },
-  { id: 'transformation', label: 'Transformation' },
-  { id: 'universal', label: 'Universal / Custom' },
+  { id: 'all', label: 'All Frameworks', type: null },
+  // Consulting styles
+  ...EXPANDED_FRAMEWORK_CATEGORIES.filter(c => c.type === 'consulting').map(c => ({
+    id: c.id, label: c.name, type: 'consulting' as const
+  })),
+  // Methodology types
+  ...EXPANDED_FRAMEWORK_CATEGORIES.filter(c => c.type === 'methodology').map(c => ({
+    id: c.id, label: c.name, type: 'methodology' as const
+  })),
+  // Industry-specific
+  ...EXPANDED_FRAMEWORK_CATEGORIES.filter(c => c.type === 'industry').map(c => ({
+    id: c.id, label: c.name, type: 'industry' as const
+  })),
+  // Regional
+  ...EXPANDED_FRAMEWORK_CATEGORIES.filter(c => c.type === 'regional').map(c => ({
+    id: c.id, label: c.name, type: 'regional' as const
+  })),
 ];
 
 // Visual Features - now using imported VISUAL_FEATURES from VisualFeaturesDropdown
