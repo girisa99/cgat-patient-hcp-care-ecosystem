@@ -1968,13 +1968,68 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
                   </div>
                 </div>
               </div>
+
+              {/* Slide 7: Genie Deck - Presentation Generator */}
+              <div className="min-w-full relative h-[480px] md:h-[520px]">
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-violet-800 to-indigo-900" />
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,rgba(139,92,246,0.3),transparent_60%)]" />
+                <div className="relative h-full max-w-7xl mx-auto px-8 py-8 flex items-center">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center w-full">
+                    <div className="space-y-4">
+                      <div className="flex items-start gap-3 p-3 rounded-xl bg-red-500/10 border border-red-400/20 max-w-lg">
+                        <div className="h-8 w-8 rounded-lg bg-red-500/20 flex items-center justify-center flex-shrink-0">
+                          <FileText className="h-4 w-4 text-red-300" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-red-300">Industry Challenge</p>
+                          <p className="text-[11px] text-white/70">Creating professional presentations takes hours. Healthcare teams need compliant, on-brand decks fast.</p>
+                        </div>
+                      </div>
+                      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur border border-white/20">
+                        <Sparkles className="h-4 w-4 text-purple-300" />
+                        <span className="text-sm text-white font-medium">AI Presentation Generator</span>
+                        <Badge className="bg-purple-400/20 text-purple-200 border-purple-300/30 text-xs">NEW</Badge>
+                      </div>
+                      <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white tracking-tight">
+                        Genie <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-300 to-violet-300">Deck</span>
+                      </h1>
+                      <p className="text-xl md:text-2xl text-white/90 font-light">Ideas to Impact</p>
+                      <p className="text-sm text-white/70 max-w-lg">
+                        <strong className="text-green-300">What users asked for:</strong> "Generate professional presentations instantly." Upload content, describe your vision—Deck creates stunning slides with smart layouts and multi-language support.
+                      </p>
+                      <div className="flex flex-wrap gap-2 pt-2">
+                        <div className="flex items-center gap-2 px-3 py-2 bg-green-500/20 rounded-lg border border-green-400/30">
+                          <Check className="h-3 w-3 text-green-300" />
+                          <span className="text-xs text-white">AI slide generation</span>
+                        </div>
+                        <div className="flex items-center gap-2 px-3 py-2 bg-green-500/20 rounded-lg border border-green-400/30">
+                          <Check className="h-3 w-3 text-green-300" />
+                          <span className="text-xs text-white">Multi-language export</span>
+                        </div>
+                        <div className="flex items-center gap-2 px-3 py-2 bg-green-500/20 rounded-lg border border-green-400/30">
+                          <Check className="h-3 w-3 text-green-300" />
+                          <span className="text-xs text-white">Brand customization</span>
+                        </div>
+                      </div>
+                      <Button size="lg" onClick={() => navigate('/genie-deck')} className="mt-2 bg-white text-purple-700 hover:bg-white/90 shadow-xl font-semibold px-8">
+                        <Sparkles className="h-5 w-5 mr-2" />Open Genie Deck
+                      </Button>
+                    </div>
+                    <div className="flex justify-center lg:justify-end">
+                      <div className="relative h-56 w-72 md:h-64 md:w-80 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center p-6 shadow-2xl cursor-pointer hover:scale-105 transition-transform" onClick={() => navigate('/genie-deck')}>
+                        <img src={genieDeckProductLogo} alt="Genie Deck" className="h-full w-full object-contain drop-shadow-2xl" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Navigation Arrows */}
             <button
               onClick={() => {
                 handleCarouselInteraction();
-                setCurrentHeroSlide(prev => (prev === 0 ? 5 : prev - 1));
+                setCurrentHeroSlide(prev => (prev === 0 ? 6 : prev - 1));
               }}
               className="absolute left-4 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-black/30 backdrop-blur border border-white/20 flex items-center justify-center text-white hover:bg-black/50 transition-colors z-10"
             >
@@ -1983,7 +2038,7 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
             <button
               onClick={() => {
                 handleCarouselInteraction();
-                setCurrentHeroSlide(prev => (prev === 5 ? 0 : prev + 1));
+                setCurrentHeroSlide(prev => (prev === 6 ? 0 : prev + 1));
               }}
               className="absolute right-4 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-black/30 backdrop-blur border border-white/20 flex items-center justify-center text-white hover:bg-black/50 transition-colors z-10"
             >
@@ -1992,7 +2047,7 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
 
             {/* Slide Indicators */}
             <div className="absolute -bottom-14 left-1/2 -translate-x-1/2 flex items-center gap-2 z-20">
-              {['Studio', 'Arc', 'Mind', 'Spark', 'Vibe', 'Ask Genie'].map((name, index) => (
+              {['Studio', 'Arc', 'Mind', 'Spark', 'Vibe', 'Ask Genie', 'Deck'].map((name, index) => (
                 <button
                   key={name}
                   onClick={() => handleCarouselInteraction(index)}
