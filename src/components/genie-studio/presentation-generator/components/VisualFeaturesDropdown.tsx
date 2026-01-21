@@ -1,9 +1,10 @@
 /**
  * Visual Features Multi-Select Dropdown
  * Clean dropdown with sub-options for each visual feature category
+ * Now uses EXPANDED_VISUAL_FEATURES for comprehensive coverage
  */
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -12,11 +13,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
 import {
   ChevronDown,
   ChevronRight,
@@ -30,110 +26,52 @@ import {
   Shapes,
   X,
   Check,
+  ImagePlus,
+  Video,
+  AudioLines,
+  Sparkles,
+  Box,
+  Orbit,
+  Clapperboard,
+  Smartphone,
+  MousePointerClick,
+  FormInput,
+  HelpCircle,
+  Filter,
+  Activity,
+  LayoutGrid,
+  LayoutTemplate,
+  LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { 
+  EXPANDED_VISUAL_FEATURES, 
+  VISUAL_FEATURE_CATEGORIES,
+  type ExpandedVisualFeature 
+} from '../constants/expandedVisualFeatures';
 
-// Visual feature definitions with sub-options
-export const VISUAL_FEATURES = [
-  {
-    id: 'infographics',
-    name: 'Infographics',
-    icon: BarChart3,
-    description: 'Data visualizations and info graphics',
-    subOptions: [
-      { id: 'comparison', name: 'Comparison Charts' },
-      { id: 'process-flow', name: 'Process Flow' },
-      { id: 'statistics', name: 'Statistics Display' },
-      { id: 'icon-grid', name: 'Icon Grid' },
-    ],
-  },
-  {
-    id: 'journey-maps',
-    name: 'Journey Maps',
-    icon: Map,
-    description: 'User journey and experience maps',
-    subOptions: [
-      { id: 'customer-journey', name: 'Customer Journey' },
-      { id: 'user-flow', name: 'User Flow' },
-      { id: 'roadmap', name: 'Product Roadmap' },
-      { id: 'milestone', name: 'Milestone Map' },
-    ],
-  },
-  {
-    id: 'data-tables',
-    name: 'Data Tables',
-    icon: Table2,
-    description: 'Structured data presentations',
-    subOptions: [
-      { id: 'comparison-table', name: 'Comparison Table' },
-      { id: 'pricing-table', name: 'Pricing Table' },
-      { id: 'feature-matrix', name: 'Feature Matrix' },
-      { id: 'data-grid', name: 'Data Grid' },
-    ],
-  },
-  {
-    id: 'charts',
-    name: 'Charts',
-    icon: PieChart,
-    description: 'Various chart types for data',
-    subOptions: [
-      { id: 'bar-chart', name: 'Bar Chart' },
-      { id: 'line-chart', name: 'Line Chart' },
-      { id: 'pie-chart', name: 'Pie Chart' },
-      { id: 'area-chart', name: 'Area Chart' },
-      { id: 'donut-chart', name: 'Donut Chart' },
-    ],
-  },
-  {
-    id: 'timelines',
-    name: 'Timelines',
-    icon: Clock,
-    description: 'Chronological presentations',
-    subOptions: [
-      { id: 'horizontal', name: 'Horizontal Timeline' },
-      { id: 'vertical', name: 'Vertical Timeline' },
-      { id: 'milestone-timeline', name: 'Milestone Timeline' },
-      { id: 'gantt', name: 'Gantt Chart' },
-    ],
-  },
-  {
-    id: 'diagrams',
-    name: 'Diagrams',
-    icon: Network,
-    description: 'Structural and flow diagrams',
-    subOptions: [
-      { id: 'flowchart', name: 'Flowchart' },
-      { id: 'org-chart', name: 'Org Chart' },
-      { id: 'mind-map', name: 'Mind Map' },
-      { id: 'venn', name: 'Venn Diagram' },
-      { id: 'hierarchy', name: 'Hierarchy' },
-    ],
-  },
-  {
-    id: 'quote-blocks',
-    name: 'Quote Blocks',
-    icon: Quote,
-    description: 'Testimonials and callouts',
-    subOptions: [
-      { id: 'testimonial', name: 'Testimonial' },
-      { id: 'pull-quote', name: 'Pull Quote' },
-      { id: 'callout', name: 'Callout Box' },
-      { id: 'highlight', name: 'Highlight Block' },
-    ],
-  },
-  {
-    id: 'icon-sets',
-    name: 'Icon Sets',
-    icon: Shapes,
-    description: 'Icon-based visual elements',
-    subOptions: [
-      { id: 'feature-icons', name: 'Feature Icons' },
-      { id: 'step-icons', name: 'Step Icons' },
-      { id: 'category-icons', name: 'Category Icons' },
-      { id: 'status-icons', name: 'Status Icons' },
-    ],
-  },
-];
+// Icon mapping for expanded visual features
+const ICON_MAP: Record<string, LucideIcon> = {
+  BarChart3, Map, Table2, PieChart, Clock, Network, Quote, Shapes,
+  ImagePlus, Video, AudioLines, Sparkles, Box, Orbit, Clapperboard,
+  Smartphone, MousePointerClick, FormInput, HelpCircle, Filter,
+  Activity, LayoutGrid, LayoutTemplate,
+};
+
+// Legacy export for backward compatibility
+export const VISUAL_FEATURES = EXPANDED_VISUAL_FEATURES.map(f => ({
+  id: f.id,
+  name: f.name,
+  icon: ICON_MAP[f.icon] || BarChart3,
+  description: f.description,
+  category: f.category,
+  tier: f.tier,
+  subOptions: f.subOptions.map(s => ({
+    id: s.id,
+    name: s.name,
+    tier: s.tier,
+  })),
+}));
 
 export interface VisualFeatureSelection {
   featureId: string;

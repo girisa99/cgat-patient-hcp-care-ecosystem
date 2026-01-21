@@ -1,6 +1,7 @@
 /**
  * Expanded Framework Categories
  * Regional + Industry-Specific + Methodology Types
+ * Generic names (no trademarked firm names)
  */
 
 export interface Framework {
@@ -13,7 +14,7 @@ export interface Framework {
 export interface FrameworkCategory {
   id: string;
   name: string;
-  firm?: string;
+  subtitle?: string;
   icon: string;
   color: string;
   bgColor: string;
@@ -23,8 +24,8 @@ export interface FrameworkCategory {
 }
 
 export const EXPANDED_FRAMEWORK_CATEGORIES: FrameworkCategory[] = [
-  // ==================== CONSULTING (Tier 1-3) ====================
-  { id: 'mckinsey', name: 'McKinsey Style', firm: 'McKinsey & Company', icon: 'Building2', color: 'text-blue-600', bgColor: 'bg-blue-50', description: 'Strategic analysis frameworks', type: 'consulting',
+  // ==================== CONSULTING STYLES (Generic Names) ====================
+  { id: 'tier1-strategy', name: 'Tier 1 Strategy', subtitle: 'Executive Consulting', icon: 'Building2', color: 'text-blue-600', bgColor: 'bg-blue-50', description: 'Strategic analysis frameworks', type: 'consulting',
     frameworks: [
       { id: '7s', name: '7S Framework', description: 'Organization alignment', tier: 1 },
       { id: 'mece', name: 'MECE Principle', description: 'Mutually exclusive, collectively exhaustive', tier: 1 },
@@ -32,18 +33,25 @@ export const EXPANDED_FRAMEWORK_CATEGORIES: FrameworkCategory[] = [
       { id: 'three-horizons', name: 'Three Horizons', description: 'Growth strategy', tier: 2 },
       { id: 'influence-model', name: 'Influence Model', description: 'Change management', tier: 2 }
     ]},
-  { id: 'bcg', name: 'BCG Style', firm: 'Boston Consulting Group', icon: 'TrendingUp', color: 'text-green-600', bgColor: 'bg-green-50', description: 'Portfolio analysis', type: 'consulting',
+  { id: 'portfolio-analysis', name: 'Portfolio Analysis', subtitle: 'Growth & Investment', icon: 'TrendingUp', color: 'text-green-600', bgColor: 'bg-green-50', description: 'Portfolio and market analysis', type: 'consulting',
     frameworks: [
-      { id: 'bcg-matrix', name: 'BCG Matrix', description: 'Portfolio management', tier: 1 },
-      { id: 'growth-share', name: 'Growth-Share', description: 'Market positioning', tier: 1 },
+      { id: 'growth-share-matrix', name: 'Growth-Share Matrix', description: 'Portfolio management', tier: 1 },
+      { id: 'market-positioning', name: 'Market Positioning', description: 'Competitive positioning', tier: 1 },
       { id: 'experience-curve', name: 'Experience Curve', description: 'Cost optimization', tier: 2 },
       { id: 'advantage-matrix', name: 'Advantage Matrix', description: 'Competitive advantage', tier: 2 }
     ]},
-  { id: 'bain', name: 'Bain Style', firm: 'Bain & Company', icon: 'Target', color: 'text-red-600', bgColor: 'bg-red-50', description: 'Results-focused', type: 'consulting',
+  { id: 'results-driven', name: 'Results-Driven', subtitle: 'Outcome-Focused', icon: 'Target', color: 'text-red-600', bgColor: 'bg-red-50', description: 'Results and outcomes focused', type: 'consulting',
     frameworks: [
       { id: 'nps', name: 'NPS Analysis', description: 'Customer loyalty', tier: 1 },
       { id: 'full-potential', name: 'Full Potential', description: 'Value creation', tier: 2 },
       { id: 'decision-insights', name: 'Decision Insights', description: 'Data-driven decisions', tier: 2 }
+    ]},
+  { id: 'universal', name: 'Universal Frameworks', subtitle: 'Industry Standard', icon: 'BarChart3', color: 'text-purple-600', bgColor: 'bg-purple-50', description: 'Widely-used business frameworks', type: 'consulting',
+    frameworks: [
+      { id: 'swot', name: 'SWOT Analysis', description: 'Strengths, weaknesses, opportunities, threats', tier: 1 },
+      { id: 'porter-five', name: "Porter's Five Forces", description: 'Industry analysis', tier: 1 },
+      { id: 'value-chain', name: 'Value Chain', description: 'Activity analysis', tier: 1 },
+      { id: 'competitive-analysis', name: 'Competitive Analysis', description: 'Market comparison', tier: 1 }
     ]},
 
   // ==================== METHODOLOGY TYPES ====================
