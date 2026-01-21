@@ -287,7 +287,8 @@ const GenieDeck = () => {
 
         {/* Full-Screen Presentation Wizard */}
         <div id="wizard-container" className={cn(
-          hasGeneratedContent ? "h-[calc(100vh-56px)]" : "h-[calc(100vh-56px-380px)]"
+          "flex-1 min-h-0",
+          hasGeneratedContent ? "h-[calc(100vh-56px)]" : "h-[calc(100vh-56px-320px)]"
         )}>
           <PresentationWizard 
             className="h-full"

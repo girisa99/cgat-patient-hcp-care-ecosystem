@@ -115,12 +115,12 @@ const HERO_SLIDES = [
     accentColor: 'text-amber-300',
     badgeClass: 'bg-amber-500/20 border-amber-400/30 text-amber-200',
     items: [
-      { icon: TrendingUp, text: 'Time saved per presentation', stat: '87%' },
-      { icon: Globe, text: 'Languages supported natively', stat: '70+' },
-      { icon: Cpu, text: 'AI models integrated', stat: '50+' },
-      { icon: Video, text: 'Maximum video export quality', stat: '4K' },
-      { icon: Zap, text: 'Average generation time', stat: '~2 min' },
-      { icon: Shield, text: 'Enterprise security compliance', stat: 'HIPAA' },
+      { icon: TrendingUp, text: 'Time saved per presentation', stat: '92%' },
+      { icon: Globe, text: 'Languages supported natively', stat: '100+' },
+      { icon: Cpu, text: 'AI models integrated', stat: '100+' },
+      { icon: Video, text: 'Maximum video export quality', stat: '4K HDR' },
+      { icon: Zap, text: 'Average generation time', stat: '~90s' },
+      { icon: Shield, text: 'Enterprise compliance', stat: 'SOC2' },
     ],
   },
 ];
@@ -169,7 +169,7 @@ export function GenieDeckHero({ onGetStarted, className }: GenieDeckHeroProps) {
           style={{ transform: `translateX(-${currentSlide * 100}%)` }}
         >
           {HERO_SLIDES.map((slideData, index) => (
-            <div key={slideData.id} className="min-w-full relative h-[420px] md:h-[460px]">
+            <div key={slideData.id} className="min-w-full relative h-[280px] md:h-[320px]">
               {/* Deep gradient background */}
               <div className={cn("absolute inset-0 bg-gradient-to-br", slideData.gradient)} />
               
@@ -181,34 +181,34 @@ export function GenieDeckHero({ onGetStarted, className }: GenieDeckHeroProps) {
               <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-black/20" />
 
               {/* Content */}
-              <div className="relative h-full max-w-7xl mx-auto px-6 md:px-8 py-8 flex items-center">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center w-full">
+              <div className="relative h-full max-w-7xl mx-auto px-4 md:px-6 py-4 flex items-center">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-center w-full">
                   {/* Left: Text Content */}
-                  <div className="space-y-5">
-                    <div className={cn("inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur border border-white/20")}>
-                      <Sparkles className="h-4 w-4 text-yellow-300" />
-                      <span className="text-sm text-white font-medium">AI-Powered Presentations</span>
+                  <div className="space-y-3">
+                    <div className={cn("inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur border border-white/20")}>
+                      <Sparkles className="h-3.5 w-3.5 text-yellow-300" />
+                      <span className="text-xs text-white font-medium">AI-Powered Presentations</span>
                     </div>
                     
-                    <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight leading-tight">
+                    <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight leading-tight">
                       {slideData.title}
                     </h1>
                     
-                    <p className={cn("text-lg md:text-xl font-light", slideData.accentColor)}>
+                    <p className={cn("text-sm md:text-base font-light", slideData.accentColor)}>
                       {slideData.subtitle}
                     </p>
 
-                    {/* Items Grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
+                    {/* Items Grid - Compact */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 pt-1">
                       {slideData.items.slice(0, 6).map((item, idx) => (
                         <div 
                           key={idx}
-                          className="flex items-center gap-3 px-3 py-2 rounded-lg bg-white/10 backdrop-blur-sm border border-white/10"
+                          className="flex items-center gap-2 px-2 py-1.5 rounded-md bg-white/10 backdrop-blur-sm border border-white/10"
                         >
-                          <item.icon className={cn("h-4 w-4 flex-shrink-0", slideData.accentColor)} />
-                          <span className="text-sm text-white/90 flex-1 truncate">{item.text}</span>
+                          <item.icon className={cn("h-3.5 w-3.5 flex-shrink-0", slideData.accentColor)} />
+                          <span className="text-[11px] text-white/90 flex-1 truncate">{item.text}</span>
                           {item.stat && (
-                            <Badge className={cn("text-xs font-mono shrink-0", slideData.badgeClass)}>
+                            <Badge className={cn("text-[9px] font-mono shrink-0 px-1 py-0", slideData.badgeClass)}>
                               {item.stat}
                             </Badge>
                           )}
@@ -217,7 +217,7 @@ export function GenieDeckHero({ onGetStarted, className }: GenieDeckHeroProps) {
                     </div>
 
                     {onGetStarted && index === 0 && (
-                      <Button 
+                      <Button
                         size="lg" 
                         onClick={onGetStarted}
                         className="gap-2 bg-white text-gray-900 hover:bg-white/90 shadow-lg"
