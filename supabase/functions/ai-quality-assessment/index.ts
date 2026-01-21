@@ -64,9 +64,9 @@ async function handleSlideAssessment(
   slide: SlideData, 
   context?: { presentationTopic?: string; targetAudience?: string; previousSlide?: string; nextSlide?: string }
 ): Promise<Response> {
-  const apiKey = Deno.env.get('LOVABLE_API_KEY');
+  const apiKey = Deno.env.get('GOOGLE_API_KEY') || Deno.env.get('GEMINI_API_KEY');
   if (!apiKey) {
-    throw new Error('LOVABLE_API_KEY not configured');
+    throw new Error('GEMINI_API_KEY not configured');
   }
 
   // Build comprehensive prompt for AI assessment
@@ -103,7 +103,7 @@ Respond in this exact JSON format:
   "analysis": "<brief overall analysis paragraph>"
 }`;
 
-  const response = await callLovableAI(apiKey, prompt);
+  const response = await callGeminiAI(apiKey, prompt);
   const parsed = parseAIResponse(response);
 
   const result = {
@@ -126,9 +126,9 @@ async function handlePresentationAssessment(
   slides: SlideData[],
   metadata?: { presentationTopic?: string; targetAudience?: string; language?: string }
 ): Promise<Response> {
-  const apiKey = Deno.env.get('LOVABLE_API_KEY');
+  const apiKey = Deno.env.get('GOOGLE_API_KEY') || Deno.env.get('GEMINI_API_KEY');
   if (!apiKey) {
-    throw new Error('LOVABLE_API_KEY not configured');
+    throw new Error('GEMINI_API_KEY not configured');
   }
 
   // Build presentation summary
@@ -175,7 +175,7 @@ Evaluate the ENTIRE presentation and each slide. Respond in this exact JSON form
   "recommendations": ["<recommendation 1>", "<recommendation 2>", ...]
 }`;
 
-  const response = await callLovableAI(apiKey, prompt);
+  const response = await callGeminiAI(apiKey, prompt);
   const parsed = parseAIResponse(response);
 
   // Map slide scores to include slide IDs
@@ -215,9 +215,9 @@ async function handleQuickCheck(
   content: string,
   contentType: 'title' | 'bullet' | 'paragraph' | 'speaker_notes'
 ): Promise<Response> {
-  const apiKey = Deno.env.get('LOVABLE_API_KEY');
+  const apiKey = Deno.env.get('GOOGLE_API_KEY') || Deno.env.get('GEMINI_API_KEY');
   if (!apiKey) {
-    throw new Error('LOVABLE_API_KEY not configured');
+    throw new Error('GEMINI_API_KEY not configured');
   }
 
   const typeGuidelines: Record<string, string> = {
@@ -238,7 +238,7 @@ Respond in JSON format:
   "feedback": "<brief 1-2 sentence feedback>"
 }`;
 
-  const response = await callLovableAI(apiKey, prompt, true);
+  const response = await callGeminiAI(apiKey, prompt, true);
   const parsed = parseAIResponse(response);
 
   return new Response(JSON.stringify({
@@ -254,9 +254,9 @@ async function handleImageRelevance(
   slideTitle: string,
   slideContent: string
 ): Promise<Response> {
-  const apiKey = Deno.env.get('LOVABLE_API_KEY');
+  const apiKey = Deno.env.get('GOOGLE_API_KEY') || Deno.env.get('GEMINI_API_KEY');
   if (!apiKey) {
-    throw new Error('LOVABLE_API_KEY not configured');
+    throw new Error('GEMINI_API_KEY not configured');
   }
 
   // Note: For actual image analysis, we'd use a vision model
@@ -279,7 +279,7 @@ Respond in JSON format:
   "suggestions": ["<suggestion 1>", "<suggestion 2>"]
 }`;
 
-  const response = await callLovableAI(apiKey, prompt, true);
+  const response = await callGeminiAI(apiKey, prompt, true);
   const parsed = parseAIResponse(response);
 
   return new Response(JSON.stringify({
@@ -317,35 +317,37 @@ function buildSlideContentString(slide: SlideData): string {
   return parts.join('\n');
 }
 
-async function callLovableAI(apiKey: string, prompt: string, quick = false): Promise<string> {
-  const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+async function callGeminiAI(apiKey: string, prompt: string, quick = false): Promise<string> {
+  const model = quick ? 'gemini-2.0-flash-lite' : 'gemini-2.0-flash';
+  
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: quick ? 'google/gemini-2.5-flash-lite' : 'google/gemini-3-flash-preview',
-      messages: [
+      contents: [
         { 
-          role: 'system', 
-          content: 'You are an expert presentation quality assessor. Always respond with valid JSON only, no markdown.' 
-        },
-        { role: 'user', content: prompt }
+          parts: [{ 
+            text: `You are an expert presentation quality assessor. Always respond with valid JSON only, no markdown.\n\n${prompt}` 
+          }] 
+        }
       ],
-      temperature: 0.3,
-      max_tokens: quick ? 500 : 2000
+      generationConfig: {
+        temperature: 0.3,
+        maxOutputTokens: quick ? 500 : 2000
+      }
     }),
   });
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error('Lovable AI error:', response.status, errorText);
+    console.error('Gemini AI error:', response.status, errorText);
     throw new Error(`AI assessment failed: ${response.status}`);
   }
 
   const data = await response.json();
-  return data.choices?.[0]?.message?.content || '';
+  return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 }
 
 function parseAIResponse(response: string): any {

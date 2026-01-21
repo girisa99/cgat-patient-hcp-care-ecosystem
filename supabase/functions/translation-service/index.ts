@@ -7,7 +7,7 @@ const corsHeaders = {
 
 interface TranslationRequest {
   action: 'translate' | 'detect' | 'languages';
-  provider: 'google' | 'deepl' | 'microsoft' | 'amazon' | 'alibaba' | 'lovable' | 'ai';
+  provider: 'google' | 'deepl' | 'microsoft' | 'amazon' | 'alibaba' | 'gemini' | 'ai';
   text?: string;
   sourceLanguage?: string;
   targetLanguage?: string;
@@ -91,8 +91,8 @@ async function handleTranslation(request: TranslationRequest): Promise<Translati
       return translateWithAmazon(text, sourceLanguage || 'auto', targetLanguage, formality);
     case 'alibaba':
       return translateWithAlibaba(text, sourceLanguage || 'auto', targetLanguage, context);
-    case 'lovable':
-      return translateWithLovableAI(text, sourceLanguage || 'en', targetLanguage, context, formality);
+    case 'gemini':
+      return translateWithGemini(text, sourceLanguage || 'en', targetLanguage, context, formality);
     case 'ai':
     default:
       return translateWithAI(text, sourceLanguage || 'en', targetLanguage, context, formality);
@@ -352,22 +352,22 @@ async function translateWithAlibaba(
     };
   } catch (error) {
     console.error('[TranslationService] Alibaba translation error:', error);
-    return translateWithLovableAI(text, sourceLanguage, targetLanguage, context);
+    return translateWithGemini(text, sourceLanguage, targetLanguage, context);
   }
 }
 
-// Lovable AI Gateway Translation - Uses Gemini/GPT through Lovable's gateway
-async function translateWithLovableAI(
+// Gemini Direct Translation - Uses Gemini API directly
+async function translateWithGemini(
   text: string,
   sourceLanguage: string,
   targetLanguage: string,
   context?: string,
   formality?: 'formal' | 'informal' | 'neutral'
 ): Promise<TranslationResponse> {
-  const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+  const geminiApiKey = Deno.env.get('GOOGLE_API_KEY') || Deno.env.get('GEMINI_API_KEY');
   
-  if (!lovableApiKey) {
-    console.log('[TranslationService] LOVABLE_API_KEY not found, falling back to Universal AI');
+  if (!geminiApiKey) {
+    console.log('[TranslationService] GEMINI_API_KEY not found, falling back to Universal AI');
     return translateWithAI(text, sourceLanguage, targetLanguage, context, formality);
   }
 
@@ -386,7 +386,7 @@ async function translateWithLovableAI(
   const sourceLangName = languageNames[sourceLanguage] || sourceLanguage;
   const targetLangName = languageNames[targetLanguage] || targetLanguage;
   
-  const systemPrompt = `You are an expert professional translator. Translate the following text from ${sourceLangName} to ${targetLangName}.
+  const prompt = `You are an expert professional translator. Translate the following text from ${sourceLangName} to ${targetLangName}.
 
 ${formality ? `Use a ${formality} tone and register.` : ''}
 ${context ? `Context for translation: ${context}` : ''}
@@ -396,50 +396,43 @@ CRITICAL INSTRUCTIONS:
 2. Preserve the original formatting, punctuation, and structure
 3. Maintain technical terms, proper nouns, and brand names appropriately
 4. Ensure natural, fluent translation that reads like native ${targetLangName}
-5. Do NOT include explanations, notes, or the original text`;
+5. Do NOT include explanations, notes, or the original text
+
+Text to translate:
+${text}`;
 
   try {
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${lovableApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-3-flash-preview',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: text },
-        ],
-        temperature: 0.3,
-        max_tokens: Math.max(1000, text.length * 2),
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.3,
+          maxOutputTokens: Math.max(1000, text.length * 2),
+        }
       }),
     });
 
     if (!response.ok) {
       const error = await response.text();
-      console.error('[TranslationService] Lovable AI Gateway error:', error);
-      
-      // Handle rate limiting
-      if (response.status === 429) {
-        console.log('[TranslationService] Rate limited, falling back to Universal AI');
-        return translateWithAI(text, sourceLanguage, targetLanguage, context, formality);
-      }
-      
-      throw new Error(`Lovable AI Gateway error: ${response.status}`);
+      console.error('[TranslationService] Gemini API error:', error);
+      throw new Error(`Gemini API error: ${response.status}`);
     }
 
     const data = await response.json();
-    const translatedText = data.choices?.[0]?.message?.content || '';
+    const translatedText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
-    console.log('[TranslationService] Lovable AI translation successful');
+    console.log('[TranslationService] Gemini translation successful');
 
     return {
       translatedText: translatedText.trim(),
       confidence: 0.92,
     };
   } catch (error) {
-    console.error('[TranslationService] Lovable AI translation error:', error);
+    console.error('[TranslationService] Gemini translation error:', error);
     return translateWithAI(text, sourceLanguage, targetLanguage, context, formality);
   }
 }
