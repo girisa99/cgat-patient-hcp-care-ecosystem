@@ -139,6 +139,28 @@ export type {
   EstimationConfig,
 } from './services/tokenEstimationService';
 
+// Tier-Based Audio Provider Routing Service
+export { 
+  tierAudioProviderService,
+  getAudioProviders,
+  getDefaultAudioProvider,
+  getProvidersUpToTier,
+  getRecommendedVoiceProvider,
+  buildTierAudioConfig,
+  calculateAudioTokenCost,
+  VOICE_PROVIDERS_BY_TIER,
+  MUSIC_PROVIDERS_BY_TIER,
+  SFX_PROVIDERS_BY_TIER,
+  LANGUAGE_VOICE_PAIRINGS,
+} from './services/tierAudioProviderService';
+export type {
+  GlobalTier,
+  AudioType,
+  AudioProviderConfig,
+  LanguageVoicePairing,
+  TierAudioConfig,
+} from './services/tierAudioProviderService';
+
 // Token UI Components
 export { TokenBalanceHeader } from './components/TokenBalanceHeader';
 export { TokenBreakdownPanel } from './components/TokenBreakdownPanel';
