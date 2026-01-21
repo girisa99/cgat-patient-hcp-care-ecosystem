@@ -25,7 +25,11 @@ import {
   FileText,
   PlusCircle,
 } from 'lucide-react';
+// Force fresh import of 6-step wizard (not old 5-step PresentationGeneratorPanel)
 import { PresentationWizard } from '@/components/genie-studio/presentation-generator/PresentationWizard';
+
+// Debug log to verify correct wizard is loaded
+console.log('🎯 GenieDeck: Loading 6-step PresentationWizard (not 5-step legacy panel)');
 import { BackToSubscription } from '@/components/subscription/BackToSubscription';
 import { AskGenie } from '@/components/genie-studio/AskGenie';
 import { HIPAAComplianceFooter } from '@/components/genie-studio/HIPAAComplianceFooter';
