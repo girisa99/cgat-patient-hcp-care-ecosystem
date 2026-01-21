@@ -48,6 +48,14 @@ serve(async (req) => {
         return await handleExport(req);
       case 'check-connection':
         return await handleCheckConnection(req);
+      case 'download-pdf':
+        return await handleDownloadPdf(req);
+      case 'list-folders':
+        return await handleListFolders(req);
+      case 'get-presentation':
+        return await handleGetPresentation(req);
+      case 'publish-social':
+        return await handlePublishToSocial(req);
       default:
         throw new Error(`Unknown action: ${action}`);
     }
@@ -514,4 +522,264 @@ async function moveToFolder(presentationId: string, folderId: string, accessToke
   } catch (error) {
     console.warn('[Export] Could not move to folder:', error);
   }
+}
+
+// Download presentation as PDF
+async function handleDownloadPdf(req: Request): Promise<Response> {
+  const body = await req.json();
+  const { presentationId } = body;
+
+  if (!presentationId) {
+    throw new Error('Presentation ID is required');
+  }
+
+  const authHeader = req.headers.get('authorization');
+  if (!authHeader) {
+    throw new Error('Authentication required');
+  }
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+  const userToken = authHeader.replace('Bearer ', '');
+  const { data: { user } } = await supabase.auth.getUser(userToken);
+
+  if (!user) {
+    throw new Error('Invalid authentication');
+  }
+
+  const accessToken = await getValidAccessToken(user.id, supabase);
+
+  console.log(`[PDF] Downloading presentation ${presentationId} as PDF`);
+
+  // Export as PDF using Google Drive API
+  const response = await fetch(
+    `https://www.googleapis.com/drive/v3/files/${presentationId}/export?mimeType=application/pdf`,
+    {
+      headers: { 'Authorization': `Bearer ${accessToken}` },
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.text();
+    console.error('[PDF] Export failed:', error);
+    throw new Error('Failed to export presentation as PDF');
+  }
+
+  // Return PDF as base64 for client download
+  const pdfBuffer = await response.arrayBuffer();
+  const pdfBase64 = btoa(String.fromCharCode(...new Uint8Array(pdfBuffer)));
+
+  return new Response(
+    JSON.stringify({
+      success: true,
+      pdfBase64,
+      mimeType: 'application/pdf',
+      filename: `presentation_${presentationId}.pdf`,
+    }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
+}
+
+// List Google Drive folders for save location selection
+async function handleListFolders(req: Request): Promise<Response> {
+  const authHeader = req.headers.get('authorization');
+  if (!authHeader) {
+    throw new Error('Authentication required');
+  }
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+  const userToken = authHeader.replace('Bearer ', '');
+  const { data: { user } } = await supabase.auth.getUser(userToken);
+
+  if (!user) {
+    throw new Error('Invalid authentication');
+  }
+
+  const accessToken = await getValidAccessToken(user.id, supabase);
+
+  console.log('[Folders] Listing Google Drive folders');
+
+  // Query for folders only
+  const response = await fetch(
+    `https://www.googleapis.com/drive/v3/files?q=mimeType='application/vnd.google-apps.folder' and trashed=false&fields=files(id,name,parents)&orderBy=name`,
+    {
+      headers: { 'Authorization': `Bearer ${accessToken}` },
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.text();
+    console.error('[Folders] List failed:', error);
+    throw new Error('Failed to list folders');
+  }
+
+  const data = await response.json();
+
+  return new Response(
+    JSON.stringify({
+      success: true,
+      folders: data.files || [],
+    }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
+}
+
+// Get presentation details
+async function handleGetPresentation(req: Request): Promise<Response> {
+  const body = await req.json();
+  const { presentationId } = body;
+
+  if (!presentationId) {
+    throw new Error('Presentation ID is required');
+  }
+
+  const authHeader = req.headers.get('authorization');
+  if (!authHeader) {
+    throw new Error('Authentication required');
+  }
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+  const userToken = authHeader.replace('Bearer ', '');
+  const { data: { user } } = await supabase.auth.getUser(userToken);
+
+  if (!user) {
+    throw new Error('Invalid authentication');
+  }
+
+  const accessToken = await getValidAccessToken(user.id, supabase);
+
+  // Get presentation metadata
+  const response = await fetch(
+    `https://slides.googleapis.com/v1/presentations/${presentationId}`,
+    {
+      headers: { 'Authorization': `Bearer ${accessToken}` },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error('Failed to get presentation');
+  }
+
+  const presentation = await response.json();
+
+  // Get thumbnail for each slide
+  const thumbnails: string[] = [];
+  for (const slide of presentation.slides || []) {
+    try {
+      const thumbResponse = await fetch(
+        `https://slides.googleapis.com/v1/presentations/${presentationId}/pages/${slide.objectId}/thumbnail`,
+        {
+          headers: { 'Authorization': `Bearer ${accessToken}` },
+        }
+      );
+      if (thumbResponse.ok) {
+        const thumbData = await thumbResponse.json();
+        thumbnails.push(thumbData.contentUrl);
+      }
+    } catch {
+      thumbnails.push('');
+    }
+  }
+
+  return new Response(
+    JSON.stringify({
+      success: true,
+      title: presentation.title,
+      slideCount: presentation.slides?.length || 0,
+      presentationId,
+      url: `https://docs.google.com/presentation/d/${presentationId}/edit`,
+      thumbnails,
+    }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
+}
+
+// Publish Google Slides to social platforms (LinkedIn/YouTube)
+async function handlePublishToSocial(req: Request): Promise<Response> {
+  const body = await req.json();
+  const { presentationId, platform, metadata } = body;
+
+  if (!presentationId || !platform) {
+    throw new Error('Presentation ID and platform are required');
+  }
+
+  const authHeader = req.headers.get('authorization');
+  if (!authHeader) {
+    throw new Error('Authentication required');
+  }
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+  const userToken = authHeader.replace('Bearer ', '');
+  const { data: { user } } = await supabase.auth.getUser(userToken);
+
+  if (!user) {
+    throw new Error('Invalid authentication');
+  }
+
+  const accessToken = await getValidAccessToken(user.id, supabase);
+
+  console.log(`[Social] Publishing presentation ${presentationId} to ${platform}`);
+
+  // First, export presentation as PDF for sharing
+  const pdfResponse = await fetch(
+    `https://www.googleapis.com/drive/v3/files/${presentationId}/export?mimeType=application/pdf`,
+    {
+      headers: { 'Authorization': `Bearer ${accessToken}` },
+    }
+  );
+
+  if (!pdfResponse.ok) {
+    throw new Error('Failed to export presentation for sharing');
+  }
+
+  const pdfBuffer = await pdfResponse.arrayBuffer();
+
+  // Get presentation URL for sharing
+  const presentationUrl = `https://docs.google.com/presentation/d/${presentationId}/view`;
+
+  // Delegate to distribution-agent for actual publishing
+  const SUPABASE_URL_ENV = Deno.env.get('SUPABASE_URL');
+  
+  const publishResponse = await fetch(
+    `${SUPABASE_URL_ENV}/functions/v1/distribution-agent`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authHeader,
+      },
+      body: JSON.stringify({
+        action: 'distribute',
+        platform,
+        videoUrl: presentationUrl, // Using presentation URL as content URL
+        metadata: {
+          ...metadata,
+          title: metadata?.title || 'Presentation',
+          description: metadata?.description || `View presentation: ${presentationUrl}`,
+          type: 'document',
+          presentationId,
+          source: 'google_slides',
+        },
+        integrationMode: 'direct',
+      }),
+    }
+  );
+
+  if (!publishResponse.ok) {
+    const error = await publishResponse.text();
+    console.error(`[Social] Publish to ${platform} failed:`, error);
+    throw new Error(`Failed to publish to ${platform}`);
+  }
+
+  const publishResult = await publishResponse.json();
+
+  return new Response(
+    JSON.stringify({
+      success: true,
+      platform,
+      publishedUrl: publishResult.url,
+      presentationUrl,
+      metadata: publishResult.metadata,
+    }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
 }

@@ -1,6 +1,6 @@
 /**
  * Google Slides Export Hook
- * Handles OAuth connection and export functionality for Genie Deck
+ * Handles OAuth connection, export, PDF download, and social publishing
  */
 
 import { useState, useCallback } from 'react';
@@ -21,6 +21,12 @@ export interface SlideData {
   visualUrl?: string;
 }
 
+export interface GoogleDriveFolder {
+  id: string;
+  name: string;
+  parents?: string[];
+}
+
 export interface GoogleSlidesExportResult {
   success: boolean;
   presentationId?: string;
@@ -29,11 +35,22 @@ export interface GoogleSlidesExportResult {
   error?: string;
 }
 
+export interface PublishResult {
+  success: boolean;
+  platform: string;
+  publishedUrl?: string;
+  presentationUrl?: string;
+  error?: string;
+}
+
 export const useGoogleSlidesExport = () => {
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
+  const [folders, setFolders] = useState<GoogleDriveFolder[]>([]);
 
   // Check if user has Google Slides connected
   const checkConnection = useCallback(async (): Promise<boolean> => {
@@ -74,7 +91,6 @@ export const useGoogleSlidesExport = () => {
         return;
       }
 
-      // Get current URL for redirect
       const redirectUri = `${window.location.origin}/oauth/google-slides/callback`;
 
       const { data, error } = await supabase.functions.invoke(
@@ -88,11 +104,8 @@ export const useGoogleSlidesExport = () => {
       if (error) throw error;
 
       if (data?.authUrl) {
-        // Store state for verification
         sessionStorage.setItem('google_slides_oauth_state', data.state);
         sessionStorage.setItem('google_slides_redirect_uri', redirectUri);
-
-        // Redirect to Google OAuth
         window.location.href = data.authUrl;
       }
     } catch (error) {
@@ -131,7 +144,6 @@ export const useGoogleSlidesExport = () => {
 
       if (error) throw error;
 
-      // Clean up stored state
       sessionStorage.removeItem('google_slides_oauth_state');
       sessionStorage.removeItem('google_slides_redirect_uri');
 
@@ -145,7 +157,31 @@ export const useGoogleSlidesExport = () => {
     }
   }, []);
 
-  // Export slides to Google Slides
+  // List Google Drive folders
+  const listDriveFolders = useCallback(async (): Promise<GoogleDriveFolder[]> => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return [];
+
+      const { data, error } = await supabase.functions.invoke(
+        'google-slides-export?action=list-folders',
+        {
+          headers: { 'Authorization': `Bearer ${session.access_token}` }
+        }
+      );
+
+      if (error) throw error;
+
+      const folderList = data?.folders || [];
+      setFolders(folderList);
+      return folderList;
+    } catch (error) {
+      console.error('Error listing folders:', error);
+      return [];
+    }
+  }, []);
+
+  // Export slides to Google Slides (saved directly to Drive)
   const exportToGoogleSlides = useCallback(async (
     slides: SlideData[],
     title: string,
@@ -160,7 +196,6 @@ export const useGoogleSlidesExport = () => {
         throw new Error('Please sign in to export');
       }
 
-      // Check connection first
       const connected = await checkConnection();
       if (!connected) {
         return {
@@ -171,7 +206,6 @@ export const useGoogleSlidesExport = () => {
 
       setExportProgress(30);
 
-      // Transform slides to API format
       const transformedSlides = slides.map((slide, index) => ({
         title: slide.title || `Slide ${index + 1}`,
         type: slide.type || slide.layout || 'content',
@@ -201,7 +235,7 @@ export const useGoogleSlidesExport = () => {
       if (data?.success) {
         setExportProgress(100);
         toast.success('Exported to Google Slides!', {
-          description: `${data.slideCount} slides created`,
+          description: `${data.slideCount} slides created in Google Drive`,
           action: {
             label: 'Open',
             onClick: () => window.open(data.url, '_blank'),
@@ -232,13 +266,125 @@ export const useGoogleSlidesExport = () => {
     }
   }, [checkConnection]);
 
+  // Download Google Slides as PDF
+  const downloadAsPdf = useCallback(async (presentationId: string, filename?: string): Promise<boolean> => {
+    try {
+      setIsDownloading(true);
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Please sign in to download');
+      }
+
+      toast.info('Generating PDF...', { duration: 2000 });
+
+      const { data, error } = await supabase.functions.invoke(
+        'google-slides-export?action=download-pdf',
+        {
+          body: { presentationId },
+          headers: { 'Authorization': `Bearer ${session.access_token}` }
+        }
+      );
+
+      if (error) throw error;
+
+      if (data?.success && data.pdfBase64) {
+        // Convert base64 to blob and download
+        const byteCharacters = atob(data.pdfBase64);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'application/pdf' });
+
+        // Create download link
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename || data.filename || 'presentation.pdf';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+
+        toast.success('PDF downloaded successfully!');
+        return true;
+      }
+
+      throw new Error('Failed to generate PDF');
+    } catch (error: any) {
+      console.error('PDF download error:', error);
+      toast.error('Failed to download PDF', { description: error.message });
+      return false;
+    } finally {
+      setIsDownloading(false);
+    }
+  }, []);
+
+  // Publish Google Slides to social platforms
+  const publishToSocial = useCallback(async (
+    presentationId: string,
+    platform: 'linkedin' | 'youtube',
+    metadata?: { title?: string; description?: string }
+  ): Promise<PublishResult> => {
+    try {
+      setIsPublishing(true);
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Please sign in to publish');
+      }
+
+      toast.info(`Publishing to ${platform}...`, { duration: 3000 });
+
+      const { data, error } = await supabase.functions.invoke(
+        'google-slides-export?action=publish-social',
+        {
+          body: { presentationId, platform, metadata },
+          headers: { 'Authorization': `Bearer ${session.access_token}` }
+        }
+      );
+
+      if (error) throw error;
+
+      if (data?.success) {
+        toast.success(`Published to ${platform}!`, {
+          description: 'Your presentation has been shared',
+          action: data.publishedUrl ? {
+            label: 'View',
+            onClick: () => window.open(data.publishedUrl, '_blank'),
+          } : undefined,
+        });
+
+        return {
+          success: true,
+          platform,
+          publishedUrl: data.publishedUrl,
+          presentationUrl: data.presentationUrl,
+        };
+      }
+
+      throw new Error(data?.error || 'Publish failed');
+    } catch (error: any) {
+      console.error('Publish error:', error);
+      toast.error(`Failed to publish to ${platform}`, { description: error.message });
+      return {
+        success: false,
+        platform,
+        error: error.message,
+      };
+    } finally {
+      setIsPublishing(false);
+    }
+  }, []);
+
   // Disconnect Google Slides
   const disconnectGoogleSlides = useCallback(async (): Promise<void> => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
-      // Delete token from database
       const { error } = await supabase
         .from('google_slides_tokens')
         .delete()
@@ -255,14 +401,23 @@ export const useGoogleSlidesExport = () => {
   }, []);
 
   return {
+    // Connection state
     isConnected,
     isConnecting,
     isExporting,
+    isDownloading,
+    isPublishing,
     exportProgress,
+    folders,
+    
+    // Actions
     checkConnection,
     connectGoogleSlides,
     handleOAuthCallback,
+    listDriveFolders,
     exportToGoogleSlides,
+    downloadAsPdf,
+    publishToSocial,
     disconnectGoogleSlides,
   };
 };
