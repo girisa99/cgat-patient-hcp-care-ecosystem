@@ -30,16 +30,40 @@ export const TOKEN_COSTS = {
     'video-full': 15000,
   },
   
-  // Voice generation (per minute)
+  // Voice generation (per minute) - Tier-adjusted
   voicePerMinute: 2000,
   voicePerSlide: 500, // ~30 seconds per slide average
+  voiceTierMultiplier: {
+    1: 1.0,    // Standard: Google/AWS
+    2: 1.5,    // Advanced: OpenAI/Azure
+    3: 3.0,    // Premium: ElevenLabs
+  },
+  
+  // Music generation - Tier-adjusted
+  musicGeneration: {
+    base: 5000,
+    tierMultiplier: {
+      1: 0.5,   // Standard: Pre-generated loops
+      2: 2.0,   // Advanced: Suno/Mubert
+      3: 4.0,   // Premium: ElevenLabs Music
+    },
+  },
+  
+  // SFX generation - Tier-adjusted
+  sfxGeneration: {
+    base: 600,  // ~200 tokens per SFX × 3 per presentation
+    tierMultiplier: {
+      1: 0.0,   // Standard: Free library
+      2: 1.5,   // Advanced: Adobe
+      3: 2.0,   // Premium: ElevenLabs SFX
+    },
+  },
   
   // Translation (per 1000 chars)
   translationPer1K: 200,
   translationPerSlide: 300,
   
   // Additional features
-  musicGeneration: 5000,
   interactiveElements: 1000,
   chartGeneration: 800,
   tableGeneration: 500,
@@ -119,8 +143,12 @@ export interface EstimationConfig {
   useAgenticGeneration: boolean;
   selectedAgentCount: number;
   
-  // Additional features
+  // Audio Features - NEW: Tier-aware audio config
   includeMusic: boolean;
+  includeSfx?: boolean;
+  audioTier?: 1 | 2 | 3; // Global tier for audio provider routing
+  
+  // Additional features
   includeCharts: number;
   includeTables: number;
   includeInteractive: boolean;
@@ -305,22 +333,27 @@ export function estimateTokens(config: EstimationConfig): TokenEstimate {
   });
   totalTokens += imageTokens;
   
-  // 3. Voiceover
+  // 3. Voiceover - NEW: Tier-aware calculation
   if (config.includeVoiceover) {
+    const audioTier = config.audioTier || 2;
+    const tierMultiplier = TOKEN_COSTS.voiceTierMultiplier[audioTier] || 1;
     const voiceTokens = Math.ceil(
-      config.slideCount * TOKEN_COSTS.voicePerSlide * config.voiceoverLanguages * voiceModelCost
+      config.slideCount * TOKEN_COSTS.voicePerSlide * config.voiceoverLanguages * voiceModelCost * tierMultiplier
     );
+    const tierLabel = audioTier === 3 ? 'Premium (ElevenLabs)' : audioTier === 2 ? 'Advanced (OpenAI)' : 'Standard (Google)';
     breakdown.push({
       category: 'Voice Generation',
-      subcategory: `TTS (${config.voiceoverLanguages} languages)`,
+      subcategory: `TTS (${config.voiceoverLanguages} langs, ${tierLabel})`,
       tokens: voiceTokens,
       credits: Math.ceil(voiceTokens / TOKENS_PER_CREDIT),
-      description: `${config.slideCount} slides × ${config.voiceoverLanguages} languages`,
+      description: `${config.slideCount} slides × ${config.voiceoverLanguages} languages @ Tier ${audioTier}`,
       isOptional: true,
       savingsIfRemoved: voiceTokens,
-      optimizationTip: config.voiceoverLanguages > 1 
-        ? 'Reduce to 1-2 voiceover languages' 
-        : 'Remove voiceover entirely',
+      optimizationTip: audioTier === 3 
+        ? 'Switch to Standard tier for 66% savings on voice' 
+        : config.voiceoverLanguages > 1 
+          ? 'Reduce to 1-2 voiceover languages' 
+          : 'Remove voiceover entirely',
     });
     totalTokens += voiceTokens;
   }
@@ -343,20 +376,46 @@ export function estimateTokens(config: EstimationConfig): TokenEstimate {
     totalTokens += translationTokens;
   }
   
-  // 5. Music
+  // 5. Music - NEW: Tier-aware calculation
   if (config.includeMusic) {
-    const musicTokens = Math.ceil(TOKEN_COSTS.musicGeneration * outputMultiplier);
+    const audioTier = config.audioTier || 2;
+    const tierMultiplier = TOKEN_COSTS.musicGeneration.tierMultiplier[audioTier] || 1;
+    const musicTokens = Math.ceil(TOKEN_COSTS.musicGeneration.base * tierMultiplier * outputMultiplier);
+    const tierLabel = audioTier === 3 ? 'Premium (ElevenLabs)' : audioTier === 2 ? 'Advanced (Suno)' : 'Standard (Loops)';
     breakdown.push({
       category: 'Audio',
-      subcategory: 'Background Music',
+      subcategory: `Background Music (${tierLabel})`,
       tokens: musicTokens,
       credits: Math.ceil(musicTokens / TOKENS_PER_CREDIT),
-      description: 'AI-generated background music',
+      description: `AI-generated music @ Tier ${audioTier}`,
       isOptional: true,
       savingsIfRemoved: musicTokens,
-      optimizationTip: 'Remove music for fixed 5K token savings',
+      optimizationTip: audioTier === 3 
+        ? 'Switch to Standard tier (pre-generated loops) for 87% savings' 
+        : 'Remove music for fixed savings',
     });
     totalTokens += musicTokens;
+  }
+  
+  // 5b. SFX - NEW: Only for relevant output types
+  if (config.includeSfx || ['video-full', '3d-animated', 'interactive'].includes(config.outputType)) {
+    const audioTier = config.audioTier || 2;
+    const tierMultiplier = TOKEN_COSTS.sfxGeneration.tierMultiplier[audioTier] || 0;
+    if (tierMultiplier > 0) {
+      const sfxTokens = Math.ceil(TOKEN_COSTS.sfxGeneration.base * tierMultiplier);
+      const tierLabel = audioTier === 3 ? 'Premium (ElevenLabs)' : 'Advanced';
+      breakdown.push({
+        category: 'Audio',
+        subcategory: `Sound Effects (${tierLabel})`,
+        tokens: sfxTokens,
+        credits: Math.ceil(sfxTokens / TOKENS_PER_CREDIT),
+        description: `~3 AI-generated SFX @ Tier ${audioTier}`,
+        isOptional: true,
+        savingsIfRemoved: sfxTokens,
+        optimizationTip: 'Switch to Standard tier for free SFX from library',
+      });
+      totalTokens += sfxTokens;
+    }
   }
   
   // 6. Charts & Tables

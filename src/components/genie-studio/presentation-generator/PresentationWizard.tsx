@@ -410,6 +410,25 @@ export function PresentationWizard({
   const [step1Mode, setStep1Mode] = useState<'ai' | 'custom'>('ai');
   const [step2Mode, setStep2Mode] = useState<'ai' | 'custom'>('ai');
   
+  // NEW: Global Tier Filter (1=Standard, 2=Advanced, 3=Premium)
+  // Affects all models: Text, Image, Video, Voice, Music, SFX
+  const [globalTier, setGlobalTier] = useState<1 | 2 | 3>(2);
+  
+  // NEW: Voice/Audio configuration from VoiceAudioConfigPanel
+  const [voiceConfig, setVoiceConfig] = useState({
+    enabled: false,
+    provider: 'openai',
+    voiceId: 'alloy',
+    persona: 'professional',
+    speed: 1.0,
+    pitch: 0,
+    stability: 0.5,
+    clarity: 0.75,
+    backgroundMusic: false,
+    musicVolume: 30,
+    pauseBetweenSlides: 1,
+  });
+  
   // Sync isAutoSelectModels with step1Mode for backward compatibility
   React.useEffect(() => {
     setIsAutoSelectModels(step1Mode === 'ai');
@@ -577,6 +596,19 @@ export function PresentationWizard({
   
   // Output Type settings (2D, 3D, Video, Interactive)
   const [outputSettings, setOutputSettings] = useState<OutputTypeSettings>(getDefaultOutputSettings(10));
+
+  // Auto-enable voice for video/3D output types (must be after outputSettings declaration)
+  React.useEffect(() => {
+    const requiresVoice = ['video-full', 'video-intro', '3d-animated', '2d-animated'].includes(outputSettings.outputType);
+    if (requiresVoice && !voiceConfig.enabled) {
+      setVoiceConfig(prev => ({ ...prev, enabled: true }));
+      setIncludeVoiceover(true);
+    }
+    const requiresMusic = ['video-full', '3d-animated'].includes(outputSettings.outputType);
+    if (requiresMusic && !voiceConfig.backgroundMusic) {
+      setVoiceConfig(prev => ({ ...prev, backgroundMusic: true }));
+    }
+  }, [outputSettings.outputType, voiceConfig.enabled, voiceConfig.backgroundMusic]);
 
   // Credit & Refresh tracking
   const { credits, refreshCredits, useCredits, canAfford } = useAICredits();
