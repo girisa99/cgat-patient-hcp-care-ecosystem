@@ -2,6 +2,8 @@
  * Production Hub - Vertical Swimlane Kanban production pipeline management
  * Supports Media Productions, Business Meetings, and Events
  * Includes meeting booking, invite sending, calendar sync, reschedule/cancel
+ * 
+ * UNIFIED INFRASTRUCTURE: GlobalTierFilter, OutputCompatibility, ProviderTierBadge
  */
 
 import React, { useState } from 'react';
@@ -67,6 +69,9 @@ import { ProductionGuidedWizard } from '@/components/production/ProductionGuided
 import { AskGenie } from '@/components/genie-studio/AskGenie';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+// Unified infrastructure imports
+import { GlobalTierFilter, type GlobalTier } from '@/components/genie-studio/presentation-generator/components/GlobalTierFilter';
+import { useGlobalTier } from '@/hooks/useGlobalTier';
 import { 
   PRODUCTION_STAGES,
   MEETING_STAGES,
@@ -110,6 +115,10 @@ const getStageRequirements = (stage: ProductionStage) => {
 
 export default function ProductionHub() {
   const navigate = useNavigate();
+  
+  // Unified Global Tier - affects all AI processing in production pipeline
+  const { globalTier, setGlobalTier, tierConfig } = useGlobalTier({ defaultTier: 'advanced' });
+  
   const { 
     shows, 
     isLoading, 
@@ -711,6 +720,12 @@ export default function ProductionHub() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {/* Global Tier Filter - affects AI processing in production pipeline */}
+            <GlobalTierFilter
+              value={globalTier === 'standard' ? 1 : globalTier === 'advanced' ? 2 : 3}
+              onChange={(tier) => setGlobalTier(tier === 1 ? 'standard' : tier === 2 ? 'advanced' : 'premium')}
+              compact={true}
+            />
             {/* Project Selector */}
             <Select 
               value={selectedProject || '__all__'} 

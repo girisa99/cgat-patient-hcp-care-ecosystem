@@ -4,6 +4,7 @@
  * 
  * DATA FLOW: Uses existing hooks - all data is user-scoped via RLS
  * INTEGRATED: Ask Genie AI assistant for context-aware help
+ * UNIFIED INFRASTRUCTURE: GlobalTierFilter for AI processing quality
  */
 
 import React, { useState } from 'react';
@@ -44,6 +45,9 @@ import { AskGenie } from '@/components/genie-studio/AskGenie';
 import { InlineTrainAIFeedback } from '@/components/genie-studio/InlineTrainAIFeedback';
 import genieArcLogo from '@/assets/logos/genie-arc-combined.png';
 import { AutoPublishScheduler } from '@/components/genie-studio/publishing/AutoPublishScheduler';
+// Unified infrastructure imports
+import { GlobalTierFilter, type GlobalTier } from '@/components/genie-studio/presentation-generator/components/GlobalTierFilter';
+import { useGlobalTier } from '@/hooks/useGlobalTier';
 
 const SHOW_TYPES = [
   { value: 'podcast', label: 'Podcast', icon: Podcast, color: 'from-purple-500 to-pink-500' },
@@ -57,6 +61,10 @@ const SHOW_TYPES = [
 const GenieArc: React.FC = () => {
   const navigate = useNavigate();
   const { shows, isLoading, createShow, deleteShow } = useShows();
+  
+  // Unified Global Tier - affects all AI processing in show production
+  const { globalTier, setGlobalTier, tierConfig } = useGlobalTier({ defaultTier: 'advanced' });
+  
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
   
@@ -138,6 +146,12 @@ const GenieArc: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-3">
+                {/* Global Tier Filter - affects AI processing quality */}
+                <GlobalTierFilter
+                  value={globalTier === 'standard' ? 1 : globalTier === 'advanced' ? 2 : 3}
+                  onChange={(tier) => setGlobalTier(tier === 1 ? 'standard' : tier === 2 ? 'advanced' : 'premium')}
+                  compact={true}
+                />
                 <Badge className="bg-indigo-500/10 text-indigo-600 border-indigo-500/20">
                   {shows?.length || 0} Shows
                 </Badge>
