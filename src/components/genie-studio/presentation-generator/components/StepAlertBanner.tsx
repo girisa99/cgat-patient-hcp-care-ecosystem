@@ -1,9 +1,9 @@
 /**
- * Step Alert Banner - Horizontal card layout for alerts and tips
- * Displays as compact cards in a row at the top of each step
+ * Step Alert Banner - Rotating carousel for alerts and tips
+ * Displays one alert at a time, auto-rotating every 4 seconds
  */
 
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   AlertCircle, 
   CheckCircle2, 
@@ -11,6 +11,8 @@ import {
   Lightbulb, 
   AlertTriangle,
   ArrowRight,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -31,6 +33,7 @@ interface StepAlertBannerProps {
   alerts: StepAlert[];
   onDismiss?: (id: string) => void;
   className?: string;
+  autoRotateInterval?: number;
 }
 
 const ALERT_STYLES: Record<AlertType, { bg: string; border: string; icon: React.ReactNode; iconColor: string }> = {
@@ -66,56 +69,129 @@ const ALERT_STYLES: Record<AlertType, { bg: string; border: string; icon: React.
   },
 };
 
-export function StepAlertBanner({ alerts, onDismiss, className }: StepAlertBannerProps) {
+export function StepAlertBanner({ 
+  alerts, 
+  onDismiss, 
+  className,
+  autoRotateInterval = 4000 
+}: StepAlertBannerProps) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+
+  const goToNext = useCallback(() => {
+    setCurrentIndex((prev) => (prev + 1) % alerts.length);
+  }, [alerts.length]);
+
+  const goToPrev = useCallback(() => {
+    setCurrentIndex((prev) => (prev - 1 + alerts.length) % alerts.length);
+  }, [alerts.length]);
+
+  // Auto-rotate effect
+  useEffect(() => {
+    if (alerts.length <= 1 || isPaused) return;
+    
+    const timer = setInterval(goToNext, autoRotateInterval);
+    return () => clearInterval(timer);
+  }, [alerts.length, isPaused, goToNext, autoRotateInterval]);
+
+  // Reset index when alerts change
+  useEffect(() => {
+    setCurrentIndex(0);
+  }, [alerts.length]);
+
   if (!alerts.length) return null;
 
+  const currentAlert = alerts[currentIndex];
+  const styles = ALERT_STYLES[currentAlert.type];
+
   return (
-    <div className={cn("flex flex-wrap gap-2", className)}>
-      {alerts.map((alert) => {
-        const styles = ALERT_STYLES[alert.type];
-        return (
-          <div
-            key={alert.id}
-            className={cn(
-              "flex items-center gap-2 px-2.5 py-1.5 rounded-md border",
-              styles.bg,
-              styles.border,
-              "max-w-[320px]"
-            )}
+    <div 
+      className={cn("relative", className)}
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+    >
+      <div
+        className={cn(
+          "flex items-center gap-2 px-2.5 py-1.5 rounded-md border transition-all duration-300",
+          styles.bg,
+          styles.border
+        )}
+      >
+        {/* Navigation - only show if multiple alerts */}
+        {alerts.length > 1 && (
+          <button
+            onClick={goToPrev}
+            className="shrink-0 p-0.5 hover:bg-background/50 rounded transition-colors"
+            aria-label="Previous alert"
           >
-            <div className={cn("shrink-0", styles.iconColor)}>{styles.icon}</div>
-            <div className="flex-1 min-w-0">
-              <span className="text-xs font-medium text-foreground">
-                {alert.title}
-              </span>
-              {alert.message && (
-                <span className="text-[10px] text-muted-foreground ml-1 hidden sm:inline">
-                  – {alert.message.length > 60 ? `${alert.message.slice(0, 60)}...` : alert.message}
-                </span>
-              )}
-            </div>
-            {alert.actionLabel && alert.onAction && (
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-5 px-1.5 text-[10px]"
-                onClick={alert.onAction}
-              >
-                {alert.actionLabel}
-                <ArrowRight className="h-2.5 w-2.5 ml-0.5" />
-              </Button>
-            )}
-            {alert.dismissible && onDismiss && (
+            <ChevronLeft className="h-3 w-3 text-muted-foreground" />
+          </button>
+        )}
+
+        <div className={cn("shrink-0", styles.iconColor)}>{styles.icon}</div>
+        
+        <div className="flex-1 min-w-0 flex items-center gap-1">
+          <span className="text-xs font-medium text-foreground whitespace-nowrap">
+            {currentAlert.title}
+          </span>
+          {currentAlert.message && (
+            <span className="text-[10px] text-muted-foreground truncate hidden sm:inline">
+              – {currentAlert.message.length > 50 ? `${currentAlert.message.slice(0, 50)}...` : currentAlert.message}
+            </span>
+          )}
+        </div>
+
+        {/* Dot indicators */}
+        {alerts.length > 1 && (
+          <div className="flex items-center gap-1 shrink-0">
+            {alerts.map((_, idx) => (
               <button
-                onClick={() => onDismiss(alert.id)}
-                className="text-muted-foreground hover:text-foreground text-xs"
-              >
-                ×
-              </button>
-            )}
+                key={idx}
+                onClick={() => setCurrentIndex(idx)}
+                className={cn(
+                  "w-1 h-1 rounded-full transition-all",
+                  idx === currentIndex 
+                    ? "bg-foreground/70 w-2" 
+                    : "bg-foreground/20 hover:bg-foreground/40"
+                )}
+                aria-label={`Go to alert ${idx + 1}`}
+              />
+            ))}
           </div>
-        );
-      })}
+        )}
+
+        {currentAlert.actionLabel && currentAlert.onAction && (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-5 px-1.5 text-[10px] shrink-0"
+            onClick={currentAlert.onAction}
+          >
+            {currentAlert.actionLabel}
+            <ArrowRight className="h-2.5 w-2.5 ml-0.5" />
+          </Button>
+        )}
+
+        {currentAlert.dismissible && onDismiss && (
+          <button
+            onClick={() => onDismiss(currentAlert.id)}
+            className="text-muted-foreground hover:text-foreground text-xs shrink-0"
+          >
+            ×
+          </button>
+        )}
+
+        {/* Navigation - only show if multiple alerts */}
+        {alerts.length > 1 && (
+          <button
+            onClick={goToNext}
+            className="shrink-0 p-0.5 hover:bg-background/50 rounded transition-colors"
+            aria-label="Next alert"
+          >
+            <ChevronRight className="h-3 w-3 text-muted-foreground" />
+          </button>
+        )}
+      </div>
     </div>
   );
 }
