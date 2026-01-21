@@ -44,6 +44,13 @@ export { SlideEnhancerPanel } from './SlideEnhancerPanel';
 export type { SlideEnhancementType } from './SlideEnhancerPanel';
 export { RealTimeSlideStreamer } from './RealTimeSlideStreamer';
 
+// New Critical Components - Gap Analysis Fixes (OutputCompatibility, ProviderTierBadge, ScriptReview)
+export { OutputCompatibilityWarning, useOutputCompatibility, OUTPUT_COMPATIBILITY_CONFIGS } from './components/OutputCompatibilityWarning';
+export type { VisualFeatureSelection, CompatibilityIssue } from './components/OutputCompatibilityWarning';
+export { ProviderTierBadge, ProviderItem, GroupedProviderList, TIER_STYLES } from './components/ProviderTierBadge';
+export { ScriptReviewPanel, useScriptReview, countWords, estimateDuration, formatDuration } from './components/ScriptReviewPanel';
+export type { SlideScript, ScriptReviewState } from './components/ScriptReviewPanel';
+
 // Wizard Constants & Types (centralized configuration)
 export { 
   COLLATERAL_TYPES,
