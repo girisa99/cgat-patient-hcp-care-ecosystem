@@ -419,6 +419,28 @@ export const VIDEO_GEN_PROVIDERS: Record<VideoGenProvider, MediaProviderConfig> 
     strengths: ['Runway-style', 'Multiple models'],
     weaknesses: ['Cold start delays'],
   },
+  azure_video: {
+    id: 'azure_video',
+    name: 'Azure Video AI',
+    capabilities: ['video_gen', 'avatar', 'lipsync'],
+    secretKey: 'AZURE_SPEECH_KEY',
+    isConfigured: true,
+    priority: 2,
+    costPerUnit: 0.03,
+    strengths: ['Enterprise-grade', 'Viseme lip-sync', 'Neural TTS integration'],
+    weaknesses: ['Requires Azure subscription'],
+  },
+  deepseek_video: {
+    id: 'deepseek_video',
+    name: 'DeepSeek Video',
+    capabilities: ['video_gen', 'avatar'],
+    secretKey: 'DEEPSEEK_API_KEY',
+    isConfigured: true,
+    priority: 3,
+    costPerUnit: 0.01,
+    strengths: ['Low cost', 'CJK optimized', 'Technical content', 'Vision understanding'],
+    weaknesses: ['Newer model'],
+  },
 };
 
 // ============================================
