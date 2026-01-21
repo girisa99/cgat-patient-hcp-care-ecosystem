@@ -2092,7 +2092,9 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
                     onClick={() => navigate('/genie-deck')}
                     className="border-purple-500/30 hover:border-purple-500 hover:bg-purple-500/10 flex items-center gap-3 h-auto py-2.5 px-5"
                   >
-                    <img src={genieDeckProductLogo} alt="Genie Deck" className="h-8 w-8 object-contain rounded bg-purple-50 p-0.5" />
+                    <div className="h-10 w-10 rounded-lg bg-white border border-border/50 flex items-center justify-center overflow-hidden p-1 shadow-sm">
+                      <img src={genieDeckProductLogo} alt="Genie Deck" className="h-full w-full object-contain" />
+                    </div>
                     <div className="flex flex-col items-start">
                       <span className="font-semibold">Genie Deck</span>
                       <span className="text-[10px] font-normal text-muted-foreground">Ideas to Impact</span>
