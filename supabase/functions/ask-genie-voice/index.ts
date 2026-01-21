@@ -8,8 +8,8 @@
  * Supports 20+ languages with optimal provider selection
  */
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { encode as base64Encode } from "https://deno.land/std@0.177.0/encoding/base64.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
