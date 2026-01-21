@@ -26,6 +26,7 @@ const PLATFORM_APIS: Record<string, { baseUrl: string; authType: string }> = {
   s3: { baseUrl: 'https://s3.amazonaws.com', authType: 'aws_sig' },
   dropbox: { baseUrl: 'https://api.dropboxapi.com/2', authType: 'oauth2' },
   google_drive: { baseUrl: 'https://www.googleapis.com/drive/v3', authType: 'oauth2' },
+  google_slides: { baseUrl: 'https://slides.googleapis.com/v1', authType: 'oauth2' },
 };
 
 // Optimal posting times by platform (UTC hours)
@@ -90,6 +91,8 @@ async function handleDistribute(params: any): Promise<Response> {
     result = await distributeViaN8n(platform, videoUrl, metadata, n8nConfig);
   } else if (['s3', 'dropbox', 'google_drive', 'onedrive', 'box'].includes(platform)) {
     result = await distributeToCloud(platform, videoUrl, metadata, cloudConfig);
+  } else if (platform === 'google_slides') {
+    result = await distributeToGoogleSlides(videoUrl, metadata, cloudConfig);
   } else {
     result = await distributeDirectAPI(platform, videoUrl, metadata);
   }
@@ -310,6 +313,61 @@ async function uploadToGoogleDrive(
       mimeType: 'video/mp4',
     },
   };
+}
+
+// Google Slides Export (delegates to google-slides-export function)
+async function distributeToGoogleSlides(
+  contentUrl: string,
+  metadata: any,
+  config: any
+): Promise<any> {
+  console.log(`[Google Slides] Exporting presentation: ${metadata?.title}`);
+
+  // For presentations, this delegates to the google-slides-export edge function
+  // The actual export is handled there with proper OAuth token management
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  
+  try {
+    const response = await fetch(`${supabaseUrl}/functions/v1/google-slides-export?action=export`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${config?.userToken || ''}`,
+      },
+      body: JSON.stringify({
+        slides: metadata?.slides || [],
+        title: metadata?.title || 'Genie Deck Presentation',
+        folderId: config?.folderId,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.error('[Google Slides] Export failed:', error);
+      return {
+        status: 'failed',
+        error: 'Google Slides export failed',
+      };
+    }
+
+    const data = await response.json();
+    
+    return {
+      status: data.success ? 'success' : 'failed',
+      url: data.url,
+      metadata: {
+        presentationId: data.presentationId,
+        slideCount: data.slideCount,
+        platform: 'google_slides',
+      },
+    };
+  } catch (error: any) {
+    console.error('[Google Slides] Error:', error);
+    return {
+      status: 'failed',
+      error: error.message || 'Export failed',
+    };
+  }
 }
 
 // Handle scheduling
