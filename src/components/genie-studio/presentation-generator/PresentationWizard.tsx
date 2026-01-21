@@ -145,6 +145,7 @@ import { InlineTrainAIFeedback } from '../InlineTrainAIFeedback';
 import { StepGuidancePanel } from './components/StepGuidancePanel';
 import { StepAlertBanner, getStepAlerts } from './components/StepAlertBanner';
 import { StepFeedbackPanel } from './components/StepFeedbackPanel';
+import { HelpTooltip, SmartTooltip } from './components/SmartTooltip';
 import { PreGenerationConfirmationPanel, GenerationContextSummary } from './components/PreGenerationConfirmationPanel';
 import { 
   PresentationRequest,
@@ -1333,41 +1334,54 @@ export function PresentationWizard({
                   </div>
                 </div>
 
-                {/* Input Type Selection - Flat consistent tabs */}
+                {/* Input Type Selection - Flat consistent tabs with tooltips */}
                 <div className="space-y-4">
-                  <Label className="text-sm font-medium text-foreground">Choose how to add your content:</Label>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-sm font-medium text-foreground">Choose how to add your content:</Label>
+                    <HelpTooltip tooltipId="wizard.step0" size="sm" />
+                  </div>
                   <Tabs value={inputSource} onValueChange={(v) => setInputSource(v as InputSource)}>
                     <TabsList className="inline-flex h-10 items-center justify-start gap-1 rounded-lg bg-muted p-1 w-full">
-                      <TabsTrigger 
-                        value="prompt" 
-                        className="flex-1 inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"
-                      >
-                        Describe
-                      </TabsTrigger>
-                      <TabsTrigger 
-                        value="text" 
-                        className="flex-1 inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"
-                      >
-                        Paste
-                      </TabsTrigger>
-                      <TabsTrigger 
-                        value="document" 
-                        className="flex-1 inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"
-                      >
-                        Upload
-                      </TabsTrigger>
-                      <TabsTrigger 
-                        value="image" 
-                        className="flex-1 inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"
-                      >
-                        Image
-                      </TabsTrigger>
-                      <TabsTrigger 
-                        value="url" 
-                        className="flex-1 inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"
-                      >
-                        Link
-                      </TabsTrigger>
+                      <SmartTooltip tooltipId="input.describe" showIcon={false} side="bottom">
+                        <TabsTrigger 
+                          value="prompt" 
+                          className="flex-1 inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"
+                        >
+                          Describe
+                        </TabsTrigger>
+                      </SmartTooltip>
+                      <SmartTooltip tooltipId="input.paste" showIcon={false} side="bottom">
+                        <TabsTrigger 
+                          value="text" 
+                          className="flex-1 inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"
+                        >
+                          Paste
+                        </TabsTrigger>
+                      </SmartTooltip>
+                      <SmartTooltip tooltipId="input.upload" showIcon={false} side="bottom">
+                        <TabsTrigger 
+                          value="document" 
+                          className="flex-1 inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"
+                        >
+                          Upload
+                        </TabsTrigger>
+                      </SmartTooltip>
+                      <SmartTooltip tooltipId="input.image" showIcon={false} side="bottom">
+                        <TabsTrigger 
+                          value="image" 
+                          className="flex-1 inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"
+                        >
+                          Image
+                        </TabsTrigger>
+                      </SmartTooltip>
+                      <SmartTooltip tooltipId="input.url" showIcon={false} side="bottom">
+                        <TabsTrigger 
+                          value="url" 
+                          className="flex-1 inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"
+                        >
+                          Link
+                        </TabsTrigger>
+                      </SmartTooltip>
                     </TabsList>
 
                     <TabsContent value="prompt" className="mt-4 space-y-3 border-0 p-0">
@@ -1511,14 +1525,20 @@ export function PresentationWizard({
 
                   {/* Language Input & Translation Options */}
                   <div className="space-y-3">
-                    <Label className="text-xs font-medium text-foreground flex items-center gap-2">
-                      <Globe className="h-3 w-3 text-primary" />
-                      Language Settings
-                    </Label>
+                    <div className="flex items-center gap-2">
+                      <Label className="text-xs font-medium text-foreground flex items-center gap-2">
+                        <Globe className="h-3 w-3 text-primary" />
+                        Language Settings
+                      </Label>
+                      <HelpTooltip tooltipId="input.inputLanguage" size="sm" />
+                    </div>
                     
                     {/* Input Language Selection - Now Searchable */}
                     <div className="space-y-2">
-                      <Label className="text-[10px] text-muted-foreground">You're typing in:</Label>
+                      <div className="flex items-center gap-1">
+                        <Label className="text-[10px] text-muted-foreground">You're typing in:</Label>
+                        <HelpTooltip tooltipId="input.inputLanguage" size="sm" />
+                      </div>
                       <SearchableSelect
                         value={inputLanguage}
                         onValueChange={setInputLanguage}
@@ -1536,7 +1556,10 @@ export function PresentationWizard({
 
                     {/* Primary Output Language - Now Searchable */}
                     <div className="space-y-2">
-                      <Label className="text-[10px] text-muted-foreground">Generate presentation in:</Label>
+                      <div className="flex items-center gap-1">
+                        <Label className="text-[10px] text-muted-foreground">Generate presentation in:</Label>
+                        <HelpTooltip tooltipId="input.outputLanguage" size="sm" />
+                      </div>
                       <SearchableSelect
                         value={primaryLanguage}
                         onValueChange={setPrimaryLanguage}
