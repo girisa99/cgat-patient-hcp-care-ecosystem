@@ -188,6 +188,7 @@ export function getImageProviderForLanguage(language: string): MediaProviderConf
   const cjkLanguages = ['zh', 'ja', 'ko', 'zh-CN', 'zh-TW'];
   if (cjkLanguages.some(l => language.startsWith(l))) {
     return IMAGE_GEN_PROVIDERS.alibaba_wanx || IMAGE_GEN_PROVIDERS.deepseek_image;
+  }
   // Default to ModelsLab FLUX
   return IMAGE_GEN_PROVIDERS.modelslab_flux;
 }

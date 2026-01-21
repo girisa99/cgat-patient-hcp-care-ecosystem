@@ -19,16 +19,45 @@ import type {
   MediaRequestContext,
   MediaProviderConfig,
 } from './types';
-import {
-  OCR_PROVIDERS,
-  TTS_PROVIDERS,
-  STT_PROVIDERS,
-  IMAGE_GEN_PROVIDERS,
-  NLP_PROVIDERS,
-  DEFAULT_ADAPTER_CONFIG,
-  getFallbackChain,
-  getProviderById,
-} from './providerConfig';
+import { OCR_PROVIDERS, TTS_PROVIDERS, STT_PROVIDERS, NLP_PROVIDERS } from './audioProviderConfig';
+import { IMAGE_GEN_PROVIDERS } from './imageProviderConfig';
+
+// Default adapter configuration
+const DEFAULT_ADAPTER_CONFIG: MediaAdapterConfig = {
+  defaultOCRProvider: 'google_vision',
+  defaultTTSProvider: 'elevenlabs',
+  defaultSTTProvider: 'openai_whisper',
+  defaultImageGenProvider: 'modelslab_flux',
+  defaultVideoGenProvider: 'modelslab_animatediff',
+  defaultSFXGenProvider: 'elevenlabs',
+  defaultNLPProvider: 'gemini',
+  fallbackChain: {
+    ocr: ['google_vision', 'azure_doc_intel', 'azure_cv', 'tesseract'],
+    tts: ['elevenlabs', 'azure', 'openai', 'google'],
+    stt: ['openai_whisper', 'azure', 'google'],
+    imageGen: ['modelslab_flux', 'gemini_nano_banana', 'openai_dalle'],
+    videoGen: ['modelslab_animatediff', 'modelslab_svd', 'gemini_veo'],
+    sfxGen: ['elevenlabs', 'modelslab_audio'],
+    nlp: ['gemini', 'openai', 'claude'],
+  },
+  enableFallback: true,
+  maxRetries: 3,
+  timeoutMs: 30000,
+};
+
+// Helper function to get fallback chain
+function getFallbackChain(capability: 'ocr' | 'tts' | 'stt' | 'image_gen' | 'nlp' | 'video_gen' | 'sfx_gen', config: MediaAdapterConfig): string[] {
+  switch (capability) {
+    case 'ocr': return config.fallbackChain.ocr;
+    case 'tts': return config.fallbackChain.tts;
+    case 'stt': return config.fallbackChain.stt;
+    case 'image_gen': return config.fallbackChain.imageGen;
+    case 'video_gen': return config.fallbackChain.videoGen;
+    case 'sfx_gen': return config.fallbackChain.sfxGen;
+    case 'nlp': return config.fallbackChain.nlp;
+    default: return [];
+  }
+}
 
 // ============================================
 // UNIVERSAL MEDIA ADAPTER CLASS
