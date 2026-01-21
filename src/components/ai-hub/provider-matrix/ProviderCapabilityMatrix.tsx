@@ -24,8 +24,7 @@ import { toast } from 'sonner';
 import { 
   ALL_FEATURES, 
   PROVIDER_SUMMARIES, 
-  FEATURE_IMPLEMENTATION_MATRIX, 
-  CATEGORY_IMPLEMENTATION_SUMMARY, 
+  FEATURE_IMPLEMENTATION_MATRIX,
   CRITICAL_GAPS,
   LLM_COMPARISONS,
   ROUTING_STRATEGY 
@@ -182,9 +181,60 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
     });
   }, [selectedCategory, searchTerm, localFeatures]);
 
-  // Compute stats from actual matrix data
+  // Compute per-feature stats dynamically from localMatrix
+  const computeFeatureStats = (featureId: string) => {
+    const featureImpl = localMatrix[featureId] || {};
+    const statuses = Object.values(featureImpl).map(p => p?.implementation).filter(Boolean);
+    
+    return {
+      implemented: statuses.filter(s => s === 'implemented').length,
+      partial: statuses.filter(s => s === 'partial').length,
+      planned: statuses.filter(s => s === 'planned').length,
+      notStarted: statuses.filter(s => s === 'not_started').length,
+      notApplicable: PROVIDER_SUMMARIES.length - statuses.length,
+      total: PROVIDER_SUMMARIES.length,
+      hasAnyImplementation: statuses.includes('implemented') || statuses.includes('partial'),
+    };
+  };
+
+  // Compute category stats dynamically from localMatrix
+  const computeCategoryStats = useMemo(() => {
+    const categories: FeatureCategory[] = ['INPUT', 'SCRIPT', 'VOICE', 'AUDIO', 'IMAGE', 'VIDEO', 'ANIMATION', '3D', 'AR_VR', 'VFX', 'INTERACTIVE', 'TRANSLATION', 'EXPORT', 'PUBLISHING', 'USE_CASE'];
+    
+    const result: Record<FeatureCategory, { total: number; implemented: number; partial: number; planned: number; notStarted: number }> = {} as any;
+    
+    categories.forEach(category => {
+      const categoryFeatures = localFeatures.filter(f => f.category === category);
+      let implemented = 0, partial = 0, planned = 0, notStarted = 0;
+      
+      categoryFeatures.forEach(feature => {
+        const featureImpl = localMatrix[feature.id];
+        if (!featureImpl || Object.keys(featureImpl).length === 0) {
+          notStarted++;
+          return;
+        }
+        
+        const statuses = Object.values(featureImpl).map(p => p?.implementation);
+        if (statuses.includes('implemented')) {
+          implemented++;
+        } else if (statuses.includes('partial')) {
+          partial++;
+        } else if (statuses.includes('planned')) {
+          planned++;
+        } else {
+          notStarted++;
+        }
+      });
+      
+      result[category] = { total: categoryFeatures.length, implemented, partial, planned, notStarted };
+    });
+    
+    return result;
+  }, [localMatrix, localFeatures]);
+
+  // Compute overall stats from dynamic category stats
   const overallStats = useMemo(() => {
-    const totals = Object.values(CATEGORY_IMPLEMENTATION_SUMMARY).reduce(
+    const totals = Object.values(computeCategoryStats).reduce(
       (acc, cat) => ({
         total: acc.total + cat.total,
         implemented: acc.implemented + cat.implemented,
@@ -196,9 +246,15 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
     );
     return {
       ...totals,
-      coverage: Math.round(((totals.implemented + totals.partial * 0.5) / totals.total) * 100),
+      coverage: totals.total > 0 ? Math.round(((totals.implemented + totals.partial * 0.5) / totals.total) * 100) : 0,
     };
-  }, []);
+  }, [computeCategoryStats]);
+
+  // Current category stats
+  const currentCategoryStats = useMemo(() => {
+    if (selectedCategory === 'all') return overallStats;
+    return computeCategoryStats[selectedCategory] || { total: 0, implemented: 0, partial: 0, planned: 0, notStarted: 0 };
+  }, [selectedCategory, computeCategoryStats, overallStats]);
 
   // Dynamic height - no scroll for single categories with few items
   const needsScroll = selectedCategory === 'all' || filteredFeatures.length > 15;
@@ -298,32 +354,80 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
       {/* Legend */}
       <MatrixLegend />
 
-      {/* Stats Summary */}
-      <div className="flex flex-wrap gap-3 py-3 px-4 rounded-lg bg-muted/30 border">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-emerald-500" />
-          <span className="text-sm font-medium">{overallStats.implemented}</span>
-          <span className="text-xs text-muted-foreground">Implemented</span>
+      {/* Stats Summary - Dynamic based on selected category */}
+      <div className="space-y-2">
+        <div className="flex flex-wrap gap-3 py-3 px-4 rounded-lg bg-muted/30 border">
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-medium text-muted-foreground">
+              {selectedCategory === 'all' ? 'All Categories' : CATEGORY_LABELS[selectedCategory]}:
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+            <span className="text-sm font-bold text-emerald-600">{currentCategoryStats.implemented}</span>
+            <span className="text-xs text-muted-foreground">Implemented</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+            <span className="text-sm font-bold text-amber-600">{currentCategoryStats.partial}</span>
+            <span className="text-xs text-muted-foreground">Partial</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+            <span className="text-sm font-bold text-blue-600">{currentCategoryStats.planned}</span>
+            <span className="text-xs text-muted-foreground">Planned</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground" />
+            <span className="text-sm font-bold">{currentCategoryStats.notStarted}</span>
+            <span className="text-xs text-muted-foreground">Not Started</span>
+          </div>
+          <div className="flex items-center gap-2 ml-auto">
+            <span className="text-xs text-muted-foreground">{currentCategoryStats.total} features</span>
+            <Progress 
+              value={currentCategoryStats.total > 0 
+                ? Math.round(((currentCategoryStats.implemented + currentCategoryStats.partial * 0.5) / currentCategoryStats.total) * 100) 
+                : 0
+              } 
+              className="w-20 h-2" 
+            />
+            <span className="text-sm font-bold">
+              {currentCategoryStats.total > 0 
+                ? Math.round(((currentCategoryStats.implemented + currentCategoryStats.partial * 0.5) / currentCategoryStats.total) * 100) 
+                : 0}%
+            </span>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-amber-500" />
-          <span className="text-sm font-medium">{overallStats.partial}</span>
-          <span className="text-xs text-muted-foreground">Partial</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-blue-500" />
-          <span className="text-sm font-medium">{overallStats.planned}</span>
-          <span className="text-xs text-muted-foreground">Planned</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-muted-foreground" />
-          <span className="text-sm font-medium">{overallStats.notStarted}</span>
-          <span className="text-xs text-muted-foreground">Not Started</span>
-        </div>
-        <div className="flex items-center gap-2 ml-auto">
-          <Progress value={overallStats.coverage} className="w-24 h-2" />
-          <span className="text-sm font-bold">{overallStats.coverage}%</span>
-        </div>
+        
+        {/* Per-Category Breakdown when viewing all */}
+        {selectedCategory === 'all' && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+            {Object.entries(computeCategoryStats)
+              .filter(([k]) => k !== 'USE_CASE')
+              .map(([cat, stats]) => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat as FeatureCategory)}
+                  className="p-2 rounded-lg border bg-card hover:bg-muted/50 transition-colors text-left"
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] font-medium truncate">{CATEGORY_LABELS[cat as FeatureCategory]?.split(' ')[1]}</span>
+                    <span className="text-[10px] text-muted-foreground">{stats.total}</span>
+                  </div>
+                  <div className="flex gap-0.5 text-[9px]">
+                    <span className="text-emerald-600 font-bold">{stats.implemented}✓</span>
+                    {stats.partial > 0 && <span className="text-amber-600">/{stats.partial}⚠</span>}
+                    {stats.planned > 0 && <span className="text-blue-600">/{stats.planned}🕐</span>}
+                    {stats.notStarted > 0 && <span className="text-muted-foreground">/{stats.notStarted}✗</span>}
+                  </div>
+                  <Progress 
+                    value={stats.total > 0 ? Math.round(((stats.implemented + stats.partial * 0.5) / stats.total) * 100) : 0}
+                    className="h-1 mt-1"
+                  />
+                </button>
+              ))}
+          </div>
+        )}
       </div>
 
       {/* Tabs */}
@@ -366,18 +470,19 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
             <Table className="table-fixed">
               <TableHeader className="sticky top-0 z-20 bg-background">
                 <TableRow>
-                  <TableHead className="sticky left-0 bg-background z-30 w-[160px] border-r font-semibold text-xs">Feature</TableHead>
-                  <TableHead className="w-[50px] bg-background text-xs">Cat</TableHead>
+                  <TableHead className="sticky left-0 bg-background z-30 w-[140px] border-r font-semibold text-xs">Feature</TableHead>
+                  <TableHead className="w-[45px] bg-background text-xs px-1">Cat</TableHead>
+                  <TableHead className="w-[80px] bg-background text-xs px-1">Stats</TableHead>
                   {PROVIDER_SUMMARIES.map(p => (
-                    <TableHead key={p.id} className="text-center w-[60px] bg-background px-1">
+                    <TableHead key={p.id} className="text-center w-[55px] bg-background px-0.5">
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger className="cursor-help">
                             <div className="flex flex-col items-center gap-0.5">
-                              <span className="text-[10px] font-medium truncate max-w-[55px]">{p.name.split(' ')[0]}</span>
+                              <span className="text-[9px] font-medium truncate max-w-[50px]">{p.name.split(' ')[0]}</span>
                               {p.status === 'configured' ? 
-                                <Badge variant="outline" className="text-[7px] px-0.5 bg-emerald-500/10 border-emerald-500/30">✓</Badge> :
-                                <Badge variant="outline" className="text-[7px] px-0.5 bg-amber-500/10 border-amber-500/30">!</Badge>
+                                <Badge variant="outline" className="text-[6px] px-0.5 bg-emerald-500/10 border-emerald-500/30">✓</Badge> :
+                                <Badge variant="outline" className="text-[6px] px-0.5 bg-amber-500/10 border-amber-500/30">!</Badge>
                               }
                             </div>
                           </TooltipTrigger>
@@ -395,27 +500,62 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
               <TableBody>
                 {filteredFeatures.map(feature => {
                   const featureImpl = localMatrix[feature.id] || {};
+                  const featureStats = computeFeatureStats(feature.id);
+                  
                   return (
                     <TableRow key={feature.id} className="hover:bg-muted/50">
-                      <TableCell className="sticky left-0 bg-background font-medium border-r z-10 w-[160px]">
+                      <TableCell className="sticky left-0 bg-background font-medium border-r z-10 w-[140px]">
                         <div className="flex items-center gap-1">
-                          <span className="text-xs truncate max-w-[130px]">{feature.name}</span>
+                          <span className="text-[11px] truncate max-w-[110px]">{feature.name}</span>
                           {feature.priority === 'critical' && (
-                            <Badge variant="destructive" className="text-[7px] px-0.5">!</Badge>
+                            <Badge variant="destructive" className="text-[6px] px-0.5">!</Badge>
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="w-[50px] px-1">
-                        <Badge variant="outline" className="text-[8px] px-0.5">
+                      <TableCell className="w-[45px] px-0.5">
+                        <Badge variant="outline" className="text-[7px] px-0.5">
                           {CATEGORY_LABELS[feature.category]?.split(' ')[0]}
                         </Badge>
+                      </TableCell>
+                      <TableCell className="w-[80px] px-1">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger className="cursor-help w-full">
+                              <div className="flex items-center gap-0.5 text-[9px]">
+                                <span className="text-emerald-600 font-bold">{featureStats.implemented}✓</span>
+                                {featureStats.partial > 0 && <span className="text-amber-500">/{featureStats.partial}⚠</span>}
+                                {featureStats.planned > 0 && <span className="text-blue-500">/{featureStats.planned}🕐</span>}
+                                <span className="text-muted-foreground">/{featureStats.notApplicable}—</span>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent side="right" className="max-w-xs">
+                              <div className="space-y-1">
+                                <p className="font-medium text-sm">{feature.name}</p>
+                                <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-xs">
+                                  <span className="text-emerald-500">✓ Implemented:</span><span>{featureStats.implemented} providers</span>
+                                  <span className="text-amber-500">⚠ Partial:</span><span>{featureStats.partial} providers</span>
+                                  <span className="text-blue-500">🕐 Planned:</span><span>{featureStats.planned} providers</span>
+                                  <span className="text-muted-foreground">— N/A:</span><span>{featureStats.notApplicable} providers</span>
+                                </div>
+                                {!featureStats.hasAnyImplementation && (
+                                  <p className="text-xs text-red-500 mt-1">⚠️ No provider has implemented this feature yet!</p>
+                                )}
+                                {featureStats.notApplicable > 0 && featureStats.implemented < PROVIDER_SUMMARIES.length && (
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    💡 {PROVIDER_SUMMARIES.length - featureStats.implemented - featureStats.partial} providers could potentially support this
+                                  </p>
+                                )}
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </TableCell>
                       {PROVIDER_SUMMARIES.map(p => {
                         const impl = featureImpl[p.id as ProviderId];
                         const isEditing = editingCell?.featureId === feature.id && editingCell?.providerId === p.id;
                         
                         return (
-                          <TableCell key={`${feature.id}-${p.id}`} className="text-center w-[60px] px-1">
+                          <TableCell key={`${feature.id}-${p.id}`} className="text-center w-[55px] px-0.5">
                             {editMode ? (
                               isEditing ? (
                                 <Select
