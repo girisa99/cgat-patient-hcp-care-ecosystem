@@ -192,7 +192,7 @@ export default function GenieStudio() {
     if (isCarouselPaused) return;
     
     carouselIntervalRef.current = setInterval(() => {
-      setCurrentHeroSlide(prev => (prev === 4 ? 0 : prev + 1));
+      setCurrentHeroSlide(prev => (prev === 6 ? 0 : prev + 1));
     }, 5000);
     
     return () => {
