@@ -1630,12 +1630,26 @@ export function PresentationWizard({
                     </div>
                   </div>
                 </div>
+
+                {/* Step Feedback for Step 0 */}
+                <StepFeedbackPanel 
+                  stepNumber={0} 
+                  stepName="Content Input" 
+                  variant="compact" 
+                />
               </div>
             )}
 
             {/* Step 1: Industry, Segment & Collateral Type */}
             {currentStep === 1 && (
               <div className="space-y-4">
+                {/* Proactive Alerts for Step 1 */}
+                <StepAlertBanner 
+                  alerts={getStepAlerts(1, { 
+                    industryCategory: workflowConfig?.industryCategory 
+                  })} 
+                />
+
                 {/* Step Header - Flat design */}
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 rounded-xl bg-primary/10">
@@ -1664,42 +1678,72 @@ export function PresentationWizard({
                   selectedContentTypes={selectedContentTypes}
                   setSelectedContentTypes={setSelectedContentTypes}
                 />
+
+                {/* Step Feedback */}
+                <StepFeedbackPanel 
+                  stepNumber={1} 
+                  stepName="Configure" 
+                  variant="compact" 
+                />
               </div>
             )}
 
             {/* Step 2: Template & Branding */}
             {currentStep === 2 && (
-              <TemplateBrandingPanel
-                selectedTemplate={selectedTemplate}
-                onTemplateChange={setSelectedTemplate}
-                selectedTheme={selectedTheme}
-                onThemeChange={setSelectedTheme}
-                brandConfig={brandConfig}
-                onBrandConfigChange={setBrandConfig}
-                includeInfographics={includeInfographics}
-                onIncludeInfographicsChange={setIncludeInfographics}
-                includeJourneyMaps={includeJourneyMaps}
-                onIncludeJourneyMapsChange={setIncludeJourneyMaps}
-                includeTables={includeTables}
-                onIncludeTablesChange={setIncludeTables}
-                includeCharts={includeCharts}
-                onIncludeChartsChange={setIncludeCharts}
-                industryFilter={workflowConfig?.industryCategory}
-                segmentFilter={workflowConfig?.segment}
-                contentTypeFilter={selectedContentTypes}
-                // NEW: Lifted state callbacks for complete data flow
-                visualFeatureSelections={visualFeatureSelections}
-                onVisualFeatureSelectionsChange={setVisualFeatureSelections}
-                selectedFrameworkCategories={selectedFrameworkCategories}
-                onSelectedFrameworkCategoriesChange={setSelectedFrameworkCategories}
-                selectedFrameworkIds={selectedFrameworkIds}
-                onSelectedFrameworkIdsChange={setSelectedFrameworkIds}
-              />
+              <div className="space-y-4">
+                {/* Proactive Alerts for Step 2 */}
+                <StepAlertBanner 
+                  alerts={getStepAlerts(2, { 
+                    selectedTemplate 
+                  })} 
+                />
+
+                <TemplateBrandingPanel
+                  selectedTemplate={selectedTemplate}
+                  onTemplateChange={setSelectedTemplate}
+                  selectedTheme={selectedTheme}
+                  onThemeChange={setSelectedTheme}
+                  brandConfig={brandConfig}
+                  onBrandConfigChange={setBrandConfig}
+                  includeInfographics={includeInfographics}
+                  onIncludeInfographicsChange={setIncludeInfographics}
+                  includeJourneyMaps={includeJourneyMaps}
+                  onIncludeJourneyMapsChange={setIncludeJourneyMaps}
+                  includeTables={includeTables}
+                  onIncludeTablesChange={setIncludeTables}
+                  includeCharts={includeCharts}
+                  onIncludeChartsChange={setIncludeCharts}
+                  industryFilter={workflowConfig?.industryCategory}
+                  segmentFilter={workflowConfig?.segment}
+                  contentTypeFilter={selectedContentTypes}
+                  // NEW: Lifted state callbacks for complete data flow
+                  visualFeatureSelections={visualFeatureSelections}
+                  onVisualFeatureSelectionsChange={setVisualFeatureSelections}
+                  selectedFrameworkCategories={selectedFrameworkCategories}
+                  onSelectedFrameworkCategoriesChange={setSelectedFrameworkCategories}
+                  selectedFrameworkIds={selectedFrameworkIds}
+                  onSelectedFrameworkIdsChange={setSelectedFrameworkIds}
+                />
+
+                {/* Step Feedback */}
+                <StepFeedbackPanel 
+                  stepNumber={2} 
+                  stepName="Template & Branding" 
+                  variant="compact" 
+                />
+              </div>
             )}
 
             {/* Step 3: Output Type Selection */}
             {currentStep === 3 && (
               <div className="space-y-4">
+                {/* Proactive Alerts for Step 3 */}
+                <StepAlertBanner 
+                  alerts={getStepAlerts(3, { 
+                    outputSettings 
+                  })} 
+                />
+
                 {/* Step Header - Flat design */}
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 rounded-xl bg-primary/10">
@@ -1719,31 +1763,62 @@ export function PresentationWizard({
                   suggestedSlideCount={10}
                   contentType={contentCategory || workflowConfig?.collateralType?.id}
                 />
+
+                {/* Step Feedback */}
+                <StepFeedbackPanel 
+                  stepNumber={3} 
+                  stepName="Output Type" 
+                  variant="compact" 
+                />
               </div>
             )}
 
             {/* Step 4: AI Agents & Multi-Language - Enhanced Panel */}
             {currentStep === 4 && (
-              <AgentLanguageConfigPanel
-                useAgenticGeneration={useAgenticGeneration}
-                onUseAgenticGenerationChange={setUseAgenticGeneration}
-                selectedAgents={selectedAgents}
-                onSelectedAgentsChange={setSelectedAgents}
-                agentModelConfigs={agentModelConfigs}
-                onAgentModelConfigsChange={setAgentModelConfigs}
-                selectedLanguages={selectedLanguages}
-                onSelectedLanguagesChange={setSelectedLanguages}
-                primaryLanguage={primaryLanguage}
-                onPrimaryLanguageChange={setPrimaryLanguage}
-                includeVoiceover={outputSettings.includeVoiceover || includeVoiceover}
-                onIncludeVoiceoverChange={setIncludeVoiceover}
-                selectedOutputTypes={outputSettings.outputTypes || [outputSettings.outputType]}
-              />
+              <div className="space-y-4">
+                {/* Proactive Alerts for Step 4 */}
+                <StepAlertBanner 
+                  alerts={getStepAlerts(4, { 
+                    selectedLanguages,
+                    useAgenticGeneration,
+                    primaryLanguage,
+                    includeVoiceover: outputSettings.includeVoiceover || includeVoiceover
+                  })} 
+                />
+
+                <AgentLanguageConfigPanel
+                  useAgenticGeneration={useAgenticGeneration}
+                  onUseAgenticGenerationChange={setUseAgenticGeneration}
+                  selectedAgents={selectedAgents}
+                  onSelectedAgentsChange={setSelectedAgents}
+                  agentModelConfigs={agentModelConfigs}
+                  onAgentModelConfigsChange={setAgentModelConfigs}
+                  selectedLanguages={selectedLanguages}
+                  onSelectedLanguagesChange={setSelectedLanguages}
+                  primaryLanguage={primaryLanguage}
+                  onPrimaryLanguageChange={setPrimaryLanguage}
+                  includeVoiceover={outputSettings.includeVoiceover || includeVoiceover}
+                  onIncludeVoiceoverChange={setIncludeVoiceover}
+                  selectedOutputTypes={outputSettings.outputTypes || [outputSettings.outputType]}
+                />
+
+                {/* Step Feedback */}
+                <StepFeedbackPanel 
+                  stepNumber={4} 
+                  stepName="Agents & Languages" 
+                  variant="compact" 
+                />
+              </div>
             )}
 
             {/* Step 5: Review & Generate */}
             {currentStep === 5 && (
               <div className="space-y-6">
+                {/* Proactive Alerts for Step 5 */}
+                <StepAlertBanner 
+                  alerts={getStepAlerts(5, {})} 
+                />
+
                 {/* Step Header - Flat design */}
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 rounded-xl bg-primary/10">
@@ -1879,6 +1954,13 @@ export function PresentationWizard({
                     <Progress value={50} className="mt-3" />
                   </div>
                 )}
+
+                {/* Final Step Feedback */}
+                <StepFeedbackPanel 
+                  stepNumber={5} 
+                  stepName="Review & Generate" 
+                  variant="full" 
+                />
               </div>
             )}
           </div>
