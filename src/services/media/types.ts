@@ -49,6 +49,7 @@ export type VideoGenProvider =
   | 'modelslab_svd'         // ModelsLab Stable Video Diffusion
   | 'gemini_veo'            // Google Gemini Veo
   | 'alibaba_wanx_video'    // Alibaba Wanx Video
+  | 'alibaba_wan_animate'   // Alibaba WAN 2.2 Animate (Avatar/Lip-sync)
   | 'replicate';            // Replicate (Runway-style)
 
 export type SFXGenProvider =
@@ -62,7 +63,7 @@ export type NLPProvider =
   | 'deepseek'           // DeepSeek (Chinese/technical specialist)
   | 'alibaba_qwen';      // Alibaba Qwen LLM
 
-export type MediaCapability = 'ocr' | 'tts' | 'stt' | 'image_gen' | 'video_gen' | 'sfx_gen' | 'nlp';
+export type MediaCapability = 'ocr' | 'tts' | 'stt' | 'image_gen' | 'video_gen' | 'sfx_gen' | 'nlp' | 'avatar' | 'lipsync' | 'character_animation';
 
 // ============================================
 // CONFIDENCE SCORING

@@ -45,8 +45,37 @@ serve(async (req) => {
       duration = 5,
       aspectRatio = '16:9',
       quality = 'standard',
-      referenceImage
+      referenceImage,
+      // Avatar/Lip-sync specific params
+      type = 'video', // 'video' | 'avatar' | 'lipsync'
+      sourceImage,
+      audioUrl,
+      script,
+      language = 'en-US',
+      voiceId
     } = body;
+
+    // Handle avatar/lip-sync generation
+    if (type === 'avatar' || type === 'lipsync') {
+      console.log(`🎭 Generating ${type} with existing providers`);
+      const avatarResult = await generateAvatarOrLipSync({
+        type,
+        sourceImage: sourceImage || referenceImage,
+        audioUrl,
+        script: script || prompt,
+        language,
+        voiceId
+      });
+      
+      return new Response(JSON.stringify({
+        success: true,
+        ...avatarResult,
+        type,
+        timestamp: new Date().toISOString()
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     if (!prompt) {
       return new Response(
@@ -92,6 +121,9 @@ serve(async (req) => {
       case 'modelslab':
         result = await generateWithModelsLab(prompt, selectedModel, duration, referenceImage);
         break;
+      case 'alibaba':
+        result = await generateWithAlibabaWAN(prompt, selectedModel, duration, referenceImage);
+        break;
       case 'replicate':
         result = await generateWithReplicate(prompt, selectedModel);
         break;
@@ -102,6 +134,7 @@ serve(async (req) => {
         // Try fallback chain
         result = await generateWithFallbackChain(prompt, duration, aspectRatio, referenceImage);
     }
+
 
     const processingTime = Date.now() - startTime;
 
@@ -143,6 +176,22 @@ interface VideoResult {
   thumbnailUrl?: string;
   provider: string;
   model: string;
+  visemeData?: VisemeData[];
+}
+
+interface VisemeData {
+  offset: number;
+  visemeId: number;
+  audioOffset?: number;
+}
+
+interface AvatarRequest {
+  type: 'avatar' | 'lipsync';
+  sourceImage?: string;
+  audioUrl?: string;
+  script?: string;
+  language?: string;
+  voiceId?: string;
 }
 
 function selectProvider(requestedProvider: string): string {
@@ -151,16 +200,31 @@ function selectProvider(requestedProvider: string): string {
   // Check available API keys and select best provider
   const openaiKey = Deno.env.get('OPENAI_API_KEY');
   const modelsLabKey = Deno.env.get('MODELSLAB_API_KEY');
-  const replicateKey = Deno.env.get('REPLICATE_API_TOKEN');
+  const alibabaKey = Deno.env.get('ALIBABA_API_KEY');
   const googleKey = Deno.env.get('GOOGLE_API_KEY');
+  const replicateKey = Deno.env.get('REPLICATE_API_TOKEN');
   
-  // Priority: OpenAI (Sora) > ModelsLab (AnimateDiff) > Gemini (Veo) > Replicate
+  // Priority: OpenAI (Sora) > ModelsLab (AnimateDiff) > Alibaba (WAN) > Gemini (Veo) > Replicate
   if (openaiKey) return 'openai';
   if (modelsLabKey) return 'modelslab';
+  if (alibabaKey) return 'alibaba';
   if (googleKey) return 'gemini';
   if (replicateKey) return 'replicate';
   
-  throw new Error('No video generation API keys configured. Please add OPENAI_API_KEY, MODELSLAB_API_KEY, or REPLICATE_API_TOKEN.');
+  throw new Error('No video generation API keys configured. Please add OPENAI_API_KEY, MODELSLAB_API_KEY, ALIBABA_API_KEY, or GOOGLE_API_KEY.');
+}
+
+function selectAvatarProvider(): string {
+  // Priority for avatar/lip-sync: Alibaba WAN > ModelsLab > Azure
+  const alibabaKey = Deno.env.get('ALIBABA_API_KEY');
+  const modelsLabKey = Deno.env.get('MODELSLAB_API_KEY');
+  const azureKey = Deno.env.get('AZURE_SPEECH_KEY');
+  
+  if (alibabaKey) return 'alibaba';
+  if (modelsLabKey) return 'modelslab';
+  if (azureKey) return 'azure';
+  
+  throw new Error('No avatar generation API keys configured. Please add ALIBABA_API_KEY, MODELSLAB_API_KEY, or AZURE_SPEECH_KEY.');
 }
 
 function selectModel(provider: string, requestedModel: string): string {
@@ -169,6 +233,7 @@ function selectModel(provider: string, requestedModel: string): string {
   const defaultModels: Record<string, string> = {
     'openai': 'sora-1.0-turbo',
     'modelslab': 'animatediff',
+    'alibaba': 'wan-2.2-animate',
     'replicate': 'minimax/video-01',
     'gemini': 'veo-001',
   };
@@ -476,6 +541,7 @@ async function generateWithFallbackChain(
   const providers = [
     { name: 'openai', fn: () => generateWithOpenAI(prompt, 'sora-1.0-turbo', duration, aspectRatio) },
     { name: 'modelslab', fn: () => generateWithModelsLab(prompt, 'animatediff', duration, referenceImage) },
+    { name: 'alibaba', fn: () => generateWithAlibabaWAN(prompt, 'wan-2.2-animate', duration, referenceImage) },
     { name: 'gemini', fn: () => generateWithGemini(prompt, duration, aspectRatio) },
     { name: 'replicate', fn: () => generateWithReplicate(prompt, 'minimax/video-01') },
   ];
@@ -502,4 +568,381 @@ function getReplicateVersion(model: string): string {
   };
 
   return versions[model] || versions['minimax/video-01'];
+}
+
+// =============================================================================
+// ALIBABA WAN 2.2 ANIMATE - Character Animation & Avatar Video
+// =============================================================================
+async function generateWithAlibabaWAN(
+  prompt: string, 
+  model: string, 
+  duration: number, 
+  referenceImage?: string
+): Promise<VideoResult> {
+  const apiKey = Deno.env.get('ALIBABA_API_KEY');
+  
+  if (!apiKey) {
+    throw new Error('ALIBABA_API_KEY is not configured');
+  }
+
+  console.log('🎥 Generating video with Alibaba WAN 2.2 Animate:', model);
+
+  // Alibaba DashScope WAN Video API
+  const endpoint = 'https://dashscope.aliyuncs.com/api/v1/services/aigc/video-generation/generation';
+  
+  const requestBody: Record<string, unknown> = {
+    model: 'wan-2.2',
+    input: {
+      prompt: `${prompt}. High quality, smooth character animation, safe for all audiences.`,
+      negative_prompt: 'blurry, distorted, low quality, nsfw',
+    },
+    parameters: {
+      duration: Math.min(duration, 10), // WAN max 10 seconds
+      resolution: '720p',
+      fps: 24,
+    }
+  };
+
+  // Image-to-video mode for avatar animation
+  if (referenceImage) {
+    requestBody.input = {
+      ...requestBody.input as Record<string, unknown>,
+      image_url: referenceImage,
+      mode: 'animate', // Character animation mode
+    };
+  }
+
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+      'X-DashScope-Async': 'enable',
+    },
+    body: JSON.stringify(requestBody),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('Alibaba WAN API error:', errorText);
+    throw new Error(`Alibaba WAN API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+
+  // Handle async processing
+  if (data.output?.task_id) {
+    return await pollAlibabaTask(data.output.task_id, apiKey);
+  }
+
+  return {
+    videoUrl: data.output?.video_url || data.output?.results?.[0]?.url,
+    provider: 'alibaba',
+    model: 'wan-2.2-animate',
+  };
+}
+
+async function pollAlibabaTask(taskId: string, apiKey: string): Promise<VideoResult> {
+  const maxAttempts = 60;
+  let attempts = 0;
+
+  while (attempts < maxAttempts) {
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    attempts++;
+
+    const response = await fetch(
+      `https://dashscope.aliyuncs.com/api/v1/tasks/${taskId}`,
+      {
+        headers: { 
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    const data = await response.json();
+    console.log(`⏳ Alibaba WAN status (attempt ${attempts}):`, data.output?.task_status);
+
+    if (data.output?.task_status === 'SUCCEEDED') {
+      return {
+        videoUrl: data.output?.video_url || data.output?.results?.[0]?.url,
+        provider: 'alibaba',
+        model: 'wan-2.2-animate',
+      };
+    } else if (data.output?.task_status === 'FAILED') {
+      throw new Error(data.output?.message || 'Alibaba WAN video generation failed');
+    }
+  }
+
+  throw new Error('Alibaba WAN video generation timed out');
+}
+
+// =============================================================================
+// AVATAR & LIP-SYNC GENERATION - Using Existing Providers
+// =============================================================================
+async function generateAvatarOrLipSync(request: AvatarRequest): Promise<{
+  videoUrl: string;
+  audioUrl?: string;
+  visemeData?: VisemeData[];
+  provider: string;
+  model: string;
+}> {
+  const avatarProvider = selectAvatarProvider();
+  console.log(`🎭 Using ${avatarProvider} for ${request.type} generation`);
+
+  switch (avatarProvider) {
+    case 'alibaba':
+      return await generateAvatarWithAlibaba(request);
+    case 'modelslab':
+      return await generateAvatarWithModelsLab(request);
+    case 'azure':
+      return await generateLipSyncWithAzure(request);
+    default:
+      throw new Error(`Unsupported avatar provider: ${avatarProvider}`);
+  }
+}
+
+// Alibaba WAN Avatar Animation
+async function generateAvatarWithAlibaba(request: AvatarRequest): Promise<{
+  videoUrl: string;
+  audioUrl?: string;
+  provider: string;
+  model: string;
+}> {
+  const apiKey = Deno.env.get('ALIBABA_API_KEY');
+  if (!apiKey) throw new Error('ALIBABA_API_KEY is not configured');
+
+  console.log('🎭 Generating avatar with Alibaba WAN 2.2 Animate');
+
+  // Step 1: Generate audio with Alibaba CosyVoice if script provided
+  let audioUrl = request.audioUrl;
+  if (!audioUrl && request.script) {
+    audioUrl = await generateAudioWithAlibabaCosyVoice(request.script, request.language || 'en-US', apiKey);
+  }
+
+  // Step 2: Animate the source image with lip-sync
+  const endpoint = 'https://dashscope.aliyuncs.com/api/v1/services/aigc/video-generation/generation';
+  
+  const requestBody = {
+    model: 'wan-2.2',
+    input: {
+      image_url: request.sourceImage,
+      audio_url: audioUrl,
+      mode: request.type === 'lipsync' ? 'lip_sync' : 'talking_head',
+    },
+    parameters: {
+      resolution: '720p',
+      preserve_expression: true,
+      smooth_motion: true,
+    }
+  };
+
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+      'X-DashScope-Async': 'enable',
+    },
+    body: JSON.stringify(requestBody),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Alibaba Avatar API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  
+  if (data.output?.task_id) {
+    const result = await pollAlibabaTask(data.output.task_id, apiKey);
+    return { ...result, audioUrl };
+  }
+
+  return {
+    videoUrl: data.output?.video_url,
+    audioUrl,
+    provider: 'alibaba',
+    model: 'wan-2.2-animate',
+  };
+}
+
+// Alibaba CosyVoice TTS
+async function generateAudioWithAlibabaCosyVoice(
+  text: string, 
+  language: string, 
+  apiKey: string
+): Promise<string> {
+  console.log('🎙️ Generating audio with Alibaba CosyVoice');
+  
+  const voiceMap: Record<string, string> = {
+    'en-US': 'cosyvoice-longxiaochun-en',
+    'zh-CN': 'cosyvoice-longxiaochun',
+    'ja-JP': 'cosyvoice-longxiaochun-jp',
+    'ko-KR': 'cosyvoice-longxiaochun-kr',
+  };
+
+  const response = await fetch(
+    'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-to-speech/synthesis',
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'cosyvoice-v1',
+        input: { text },
+        parameters: {
+          voice: voiceMap[language] || voiceMap['en-US'],
+          format: 'mp3',
+        }
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Alibaba CosyVoice error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.output?.audio_url || data.output?.audio;
+}
+
+// ModelsLab Avatar Animation
+async function generateAvatarWithModelsLab(request: AvatarRequest): Promise<{
+  videoUrl: string;
+  audioUrl?: string;
+  provider: string;
+  model: string;
+}> {
+  const apiKey = Deno.env.get('MODELSLAB_API_KEY');
+  if (!apiKey) throw new Error('MODELSLAB_API_KEY is not configured');
+
+  console.log('🎭 Generating avatar with ModelsLab');
+
+  // ModelsLab voice clone + animation endpoint
+  const endpoint = request.type === 'lipsync' 
+    ? 'https://modelslab.com/api/v6/video/lipsync'
+    : 'https://modelslab.com/api/v6/video/talking_avatar';
+
+  const requestBody: Record<string, unknown> = {
+    key: apiKey,
+    init_image: request.sourceImage,
+    text: request.script,
+    voice_id: request.voiceId || 'default',
+    language: request.language || 'en-US',
+  };
+
+  if (request.audioUrl) {
+    requestBody.audio_url = request.audioUrl;
+  }
+
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(requestBody),
+  });
+
+  if (!response.ok) {
+    throw new Error(`ModelsLab Avatar API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+
+  if (data.status === 'processing' && data.fetch_result) {
+    const result = await pollModelsLabResult(data.fetch_result, apiKey);
+    return {
+      videoUrl: result.videoUrl,
+      provider: 'modelslab',
+      model: 'talking-avatar',
+    };
+  }
+
+  return {
+    videoUrl: data.output?.[0] || data.output,
+    audioUrl: data.audio_url,
+    provider: 'modelslab',
+    model: 'talking-avatar',
+  };
+}
+
+// Azure Speech + Viseme for Lip-Sync Data
+async function generateLipSyncWithAzure(request: AvatarRequest): Promise<{
+  videoUrl: string;
+  audioUrl: string;
+  visemeData: VisemeData[];
+  provider: string;
+  model: string;
+}> {
+  const azureKey = Deno.env.get('AZURE_SPEECH_KEY');
+  const azureRegion = Deno.env.get('AZURE_SPEECH_REGION') || 'eastus';
+  
+  if (!azureKey) throw new Error('AZURE_SPEECH_KEY is not configured');
+
+  console.log('🎙️ Generating lip-sync audio with Azure Speech + Visemes');
+
+  // Get voice based on language
+  const voiceMap: Record<string, string> = {
+    'en-US': 'en-US-JennyNeural',
+    'en-GB': 'en-GB-SoniaNeural',
+    'zh-CN': 'zh-CN-XiaoxiaoNeural',
+    'ja-JP': 'ja-JP-NanamiNeural',
+    'ko-KR': 'ko-KR-SunHiNeural',
+    'es-ES': 'es-ES-ElviraNeural',
+    'fr-FR': 'fr-FR-DeniseNeural',
+    'de-DE': 'de-DE-KatjaNeural',
+  };
+
+  const voice = voiceMap[request.language || 'en-US'] || voiceMap['en-US'];
+
+  // SSML with viseme output
+  const ssml = `
+    <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" 
+           xmlns:mstts="http://www.w3.org/2001/mstts" xml:lang="${request.language || 'en-US'}">
+      <voice name="${voice}">
+        <mstts:viseme type="redlips_front"/>
+        ${request.script}
+      </voice>
+    </speak>
+  `;
+
+  const response = await fetch(
+    `https://${azureRegion}.tts.speech.microsoft.com/cognitiveservices/v1`,
+    {
+      method: 'POST',
+      headers: {
+        'Ocp-Apim-Subscription-Key': azureKey,
+        'Content-Type': 'application/ssml+xml',
+        'X-Microsoft-OutputFormat': 'audio-16khz-128kbitrate-mono-mp3',
+        'X-Microsoft-Viseme': 'true',
+      },
+      body: ssml,
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Azure Speech API error: ${response.status}`);
+  }
+
+  // Parse viseme data from response headers
+  const visemeHeader = response.headers.get('X-Microsoft-Viseme-Data');
+  const visemeData: VisemeData[] = visemeHeader 
+    ? JSON.parse(visemeHeader) 
+    : [];
+
+  // Get audio blob and convert to data URL
+  const audioBlob = await response.blob();
+  const audioBuffer = await audioBlob.arrayBuffer();
+  const audioBase64 = btoa(String.fromCharCode(...new Uint8Array(audioBuffer)));
+  const audioUrl = `data:audio/mp3;base64,${audioBase64}`;
+
+  // For Azure, we return viseme data for client-side animation
+  // The video URL will be generated client-side using the viseme data
+  return {
+    videoUrl: '', // Client will generate using viseme data
+    audioUrl,
+    visemeData,
+    provider: 'azure',
+    model: 'azure-neural-tts-viseme',
+  };
 }

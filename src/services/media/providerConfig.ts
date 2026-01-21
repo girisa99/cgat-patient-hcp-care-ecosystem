@@ -392,10 +392,21 @@ export const VIDEO_GEN_PROVIDERS: Record<VideoGenProvider, MediaProviderConfig> 
     capabilities: ['video_gen'],
     secretKey: 'ALIBABA_API_KEY',
     isConfigured: true,
-    priority: 4,
+    priority: 3,
     costPerUnit: 0.02,
     strengths: ['Low cost', 'Good for CJK content', 'Fast'],
     weaknesses: ['Lower resolution'],
+  },
+  alibaba_wan_animate: {
+    id: 'alibaba_wan_animate',
+    name: 'Alibaba WAN 2.2 Animate',
+    capabilities: ['video_gen', 'avatar', 'lipsync', 'character_animation'],
+    secretKey: 'ALIBABA_API_KEY',
+    isConfigured: true,
+    priority: 1, // PRIMARY for avatar/lipsync
+    costPerUnit: 0.01,
+    strengths: ['Free/open-source', 'Realistic animations', 'Motion transfer', 'Lip-sync', 'CJK optimized'],
+    weaknesses: ['Requires image input'],
   },
   replicate: {
     id: 'replicate',
