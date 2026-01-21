@@ -2,6 +2,7 @@
  * Visual Features Multi-Select Dropdown
  * Clean dropdown with sub-options for each visual feature category
  * Now uses EXPANDED_VISUAL_FEATURES for comprehensive coverage
+ * ENHANCED: Includes compatibility badges from visualOutputCompatibilityMatrix
  */
 
 import React, { useState, useMemo } from 'react';
@@ -13,6 +14,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import {
   ChevronDown,
   ChevronRight,
@@ -42,6 +49,10 @@ import {
   LayoutGrid,
   LayoutTemplate,
   LucideIcon,
+  AlertTriangle,
+  CheckCircle2,
+  Star,
+  Info,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
@@ -49,6 +60,14 @@ import {
   VISUAL_FEATURE_CATEGORIES,
   type ExpandedVisualFeature 
 } from '../constants/expandedVisualFeatures';
+import {
+  getCompatibility,
+  getVisualFeaturesForOutput,
+  CompatibilityLevel,
+  CompatibilityLevelColors,
+  CompatibilityLevelLabels,
+} from '../services/visualOutputCompatibilityMatrix';
+import type { ExpandedOutputType } from '../constants/expandedOutputTypes';
 
 // Icon mapping for expanded visual features
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -76,18 +95,40 @@ export const VISUAL_FEATURES = EXPANDED_VISUAL_FEATURES.map(f => ({
 export interface VisualFeatureSelection {
   featureId: string;
   subOptions: string[];
+  // NEW: Optional label for display
+  label?: string;
 }
 
 interface VisualFeaturesDropdownProps {
   value: VisualFeatureSelection[];
   onChange: (selections: VisualFeatureSelection[]) => void;
   className?: string;
+  // NEW: Output types for compatibility checking
+  selectedOutputTypes?: ExpandedOutputType[];
+  // NEW: Global tier filter
+  globalTier?: 1 | 2 | 3;
+  // NEW: Show compatibility badges
+  showCompatibility?: boolean;
 }
+
+// Compatibility icon helper
+const getCompatibilityIcon = (level: CompatibilityLevel) => {
+  switch (level) {
+    case 'optimal': return CheckCircle2;
+    case 'compatible': return Check;
+    case 'warning': return AlertTriangle;
+    case 'incompatible': return X;
+    default: return Info;
+  }
+};
 
 export function VisualFeaturesDropdown({
   value,
   onChange,
   className,
+  selectedOutputTypes = [],
+  globalTier = 3,
+  showCompatibility = true,
 }: VisualFeaturesDropdownProps) {
   const [open, setOpen] = useState(false);
   const [expandedFeatures, setExpandedFeatures] = useState<string[]>([]);
@@ -202,17 +243,34 @@ export function VisualFeaturesDropdown({
         className="w-[380px] p-0 z-50 bg-popover border shadow-lg"
         align="start"
       >
-        <div className="p-3 border-b flex items-center justify-between">
-          <span className="text-sm font-medium">Visual Features</span>
-          {value.length > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 text-xs text-muted-foreground"
-              onClick={(e) => clearAll(e)}
-            >
-              Clear All
-            </Button>
+        <div className="p-3 border-b space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium">Visual Features</span>
+            {value.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 text-xs text-muted-foreground"
+                onClick={(e) => clearAll(e)}
+              >
+                Clear All
+              </Button>
+            )}
+          </div>
+          
+          {/* NEW: Compatibility Legend when output is selected */}
+          {showCompatibility && selectedOutputTypes.length > 0 && (
+            <div className="flex items-center gap-2 flex-wrap text-[10px]">
+              <span className="text-muted-foreground">Compatibility:</span>
+              <Badge variant="outline" className="text-emerald-600 border-emerald-200 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0">
+                <CheckCircle2 className="h-2.5 w-2.5 mr-0.5" />
+                Optimal
+              </Badge>
+              <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50 dark:bg-amber-900/20 px-1.5 py-0">
+                <AlertTriangle className="h-2.5 w-2.5 mr-0.5" />
+                Limited
+              </Badge>
+            </div>
           )}
         </div>
         <ScrollArea className="h-[320px]">
@@ -223,6 +281,14 @@ export function VisualFeaturesDropdown({
               const isExpanded = expandedFeatures.includes(feature.id);
               const selectedSubCount =
                 value.find(v => v.featureId === feature.id)?.subOptions.length || 0;
+              
+              // NEW: Get compatibility for first selected output type
+              const compatibility = showCompatibility && selectedOutputTypes.length > 0
+                ? getCompatibility(selectedOutputTypes[0], feature.id)
+                : null;
+              const CompatIcon = compatibility ? getCompatibilityIcon(compatibility.level) : null;
+              const isRecommended = compatibility?.level === 'optimal';
+              const hasWarning = compatibility?.level === 'warning' || compatibility?.level === 'incompatible';
 
               return (
                 <div key={feature.id} className="space-y-1">
@@ -231,6 +297,10 @@ export function VisualFeaturesDropdown({
                       'flex items-center gap-2 p-2 rounded-md transition-colors cursor-pointer',
                       isSelected
                         ? 'bg-primary/10 border border-primary/30'
+                        : hasWarning
+                        ? 'hover:bg-amber-50 dark:hover:bg-amber-900/20 border border-transparent'
+                        : isRecommended
+                        ? 'hover:bg-emerald-50 dark:hover:bg-emerald-900/20 border border-transparent'
                         : 'hover:bg-muted border border-transparent'
                     )}
                   >
