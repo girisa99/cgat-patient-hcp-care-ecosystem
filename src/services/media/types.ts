@@ -50,6 +50,8 @@ export type VideoGenProvider =
   | 'gemini_veo'            // Google Gemini Veo
   | 'alibaba_wanx_video'    // Alibaba Wanx Video
   | 'alibaba_wan_animate'   // Alibaba WAN 2.2 Animate (Avatar/Lip-sync)
+  | 'azure_video'           // Azure Video AI
+  | 'deepseek_video'        // DeepSeek Video Generation
   | 'replicate';            // Replicate (Runway-style)
 
 export type SFXGenProvider =
