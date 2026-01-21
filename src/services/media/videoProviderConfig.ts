@@ -354,7 +354,7 @@ export function getLipsyncProviders(): MediaProviderConfig[] {
 }
 
 // Get best provider for language context
-export function getVideoProviderForLanguage(language: string, capability: string = 'video_gen'): MediaProviderConfig | undefined {
+export function getVideoProviderForLanguage(language: string, capability: MediaCapability = 'video_gen'): MediaProviderConfig | undefined {
   const providers = getVideoProvidersByCapability(capability);
   const cjkLanguages = ['zh', 'ja', 'ko', 'zh-CN', 'zh-TW'];
   
