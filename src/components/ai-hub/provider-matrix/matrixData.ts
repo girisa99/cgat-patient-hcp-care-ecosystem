@@ -3,13 +3,15 @@
  * 
  * Comprehensive data mapping all features × all providers
  * Based on Excel analysis + codebase audit
+ * 
+ * NOTE: Only includes CONFIGURED providers that we actively use
+ * Removed: Suno (music), Runway (video) - not configured, can use ModelsLab/ElevenLabs
  */
 
 import type { 
   Feature, 
   FeatureCategory, 
   ProviderSummary, 
-  FeatureCapabilityEntry,
   ProviderId,
   ProviderCapability 
 } from './types';
@@ -178,7 +180,7 @@ export const ALL_FEATURES: Feature[] = [
 ];
 
 // ============================================
-// PROVIDER SUMMARIES
+// PROVIDER SUMMARIES (Only configured/active providers)
 // ============================================
 
 export const PROVIDER_SUMMARIES: ProviderSummary[] = [
@@ -288,21 +290,6 @@ export const PROVIDER_SUMMARIES: ProviderSummary[] = [
     costTier: 'premium',
   },
   {
-    id: 'azure',
-    name: 'Microsoft Azure',
-    website: 'https://azure.microsoft.com',
-    status: 'needs_key',
-    secretKey: 'AZURE_SPEECH_KEY',
-    totalFeatures: 35,
-    implementedFeatures: 10,
-    partialFeatures: 5,
-    missingFeatures: 20,
-    capabilities: ['VOICE', 'AUDIO', 'IMAGE'],
-    strengths: ['Neural TTS', 'Form Recognizer', 'Enterprise', 'Visemes'],
-    weaknesses: ['Complex setup', 'Enterprise pricing'],
-    costTier: 'enterprise',
-  },
-  {
     id: 'deepl',
     name: 'DeepL',
     website: 'https://deepl.com',
@@ -334,14 +321,10 @@ export const PROVIDER_SUMMARIES: ProviderSummary[] = [
   },
 ];
 
-// NOTE: Suno and Runway removed - not configured and lower priority
-// Can be added back when API keys are available
-
 // ============================================
 // FEATURE IMPLEMENTATION STATUS
 // ============================================
 
-// Use Partial for sparse matrix - not all providers support all features
 export const FEATURE_IMPLEMENTATION_MATRIX: Record<string, Partial<Record<ProviderId, Partial<ProviderCapability>>>> = {
   // INPUT FEATURES
   text_prompt: {
@@ -354,7 +337,6 @@ export const FEATURE_IMPLEMENTATION_MATRIX: Record<string, Partial<Record<Provid
   document_upload: {
     openai: { status: 'configured', implementation: 'implemented', confidence: 95, edgeFunctionUsed: 'ai-universal-processor', notes: 'GPT-4o Vision' },
     gemini: { status: 'configured', implementation: 'implemented', confidence: 98, notes: '1M context for large docs' },
-    azure: { status: 'needs_key', implementation: 'partial', confidence: 97, notes: 'Form Recognizer ready' },
   },
   url_input: {
     openai: { status: 'configured', implementation: 'implemented', confidence: 90, edgeFunctionUsed: 'ai-universal-processor' },
@@ -372,11 +354,21 @@ export const FEATURE_IMPLEMENTATION_MATRIX: Record<string, Partial<Record<Provid
   },
   audio_upload: {
     openai: { status: 'configured', implementation: 'implemented', confidence: 98, edgeFunctionUsed: 'ask-genie-voice', notes: 'Whisper' },
-    google: { status: 'configured', implementation: 'implemented', confidence: 90 },
     alibaba: { status: 'configured', implementation: 'implemented', confidence: 88, edgeFunctionUsed: 'alibaba-stt', notes: 'Paraformer' },
   },
   pptx_import: {
     openai: { status: 'configured', implementation: 'implemented', confidence: 85, notes: 'Via text extraction' },
+  },
+  voice_recording: {
+    openai: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'Whisper STT' },
+    alibaba: { status: 'configured', implementation: 'implemented', confidence: 85, notes: 'Paraformer' },
+  },
+  screen_recording: {
+    gemini: { status: 'configured', implementation: 'partial', confidence: 70, notes: 'Via video understanding' },
+  },
+  csv_data: {
+    openai: { status: 'configured', implementation: 'implemented', confidence: 90, notes: 'Data analysis' },
+    gemini: { status: 'configured', implementation: 'implemented', confidence: 88, notes: 'Table understanding' },
   },
   
   // SCRIPT FEATURES
@@ -395,9 +387,25 @@ export const FEATURE_IMPLEMENTATION_MATRIX: Record<string, Partial<Record<Provid
     openai: { status: 'configured', implementation: 'implemented', confidence: 95 },
     claude: { status: 'configured', implementation: 'implemented', confidence: 97, notes: 'Best for nuanced edits' },
   },
+  tone_style: {
+    openai: { status: 'configured', implementation: 'implemented', confidence: 92 },
+    claude: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'Excellent tone control' },
+  },
+  audience_input: {
+    openai: { status: 'configured', implementation: 'implemented', confidence: 90 },
+    gemini: { status: 'configured', implementation: 'implemented', confidence: 88 },
+  },
+  script_length: {
+    openai: { status: 'configured', implementation: 'implemented', confidence: 92 },
+    claude: { status: 'configured', implementation: 'implemented', confidence: 94 },
+  },
   multi_scene_script: {
     openai: { status: 'configured', implementation: 'implemented', confidence: 92 },
     gemini: { status: 'configured', implementation: 'implemented', confidence: 90 },
+  },
+  speaker_notes: {
+    openai: { status: 'configured', implementation: 'implemented', confidence: 90 },
+    claude: { status: 'configured', implementation: 'implemented', confidence: 92 },
   },
   outline_gen: {
     openai: { status: 'configured', implementation: 'implemented', confidence: 95 },
@@ -410,7 +418,6 @@ export const FEATURE_IMPLEMENTATION_MATRIX: Record<string, Partial<Record<Provid
   },
   script_translation: {
     deepl: { status: 'configured', implementation: 'implemented', confidence: 99, edgeFunctionUsed: 'translate' },
-    google: { status: 'configured', implementation: 'implemented', confidence: 90 },
     alibaba: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'Best for CJK' },
   },
   script_to_slides: {
@@ -421,18 +428,23 @@ export const FEATURE_IMPLEMENTATION_MATRIX: Record<string, Partial<Record<Provid
     modelslab: { status: 'configured', implementation: 'partial', confidence: 70, notes: 'Manual workflow' },
     alibaba: { status: 'configured', implementation: 'partial', confidence: 65 },
   },
+  ai_rewrite: {
+    openai: { status: 'configured', implementation: 'implemented', confidence: 94 },
+    claude: { status: 'configured', implementation: 'implemented', confidence: 96, notes: 'Best for rewrites' },
+  },
+  brand_voice: {
+    openai: { status: 'configured', implementation: 'partial', confidence: 70, notes: 'Prompt-based' },
+    claude: { status: 'configured', implementation: 'partial', confidence: 75 },
+  },
   
   // VOICE FEATURES
   tts: {
     elevenlabs: { status: 'configured', implementation: 'implemented', confidence: 98, edgeFunctionUsed: 'ai-tts-unified' },
     openai: { status: 'configured', implementation: 'implemented', confidence: 90, edgeFunctionUsed: 'ai-tts-unified' },
-    google: { status: 'configured', implementation: 'implemented', confidence: 88, edgeFunctionUsed: 'ai-tts-unified' },
     alibaba: { status: 'configured', implementation: 'implemented', confidence: 85, edgeFunctionUsed: 'alibaba-tts', notes: 'CosyVoice' },
-    azure: { status: 'needs_key', implementation: 'partial', confidence: 95, notes: 'Neural TTS ready, needs key' },
   },
   voice_cloning: {
     elevenlabs: { status: 'configured', implementation: 'implemented', confidence: 98 },
-    azure: { status: 'needs_key', implementation: 'not_started', confidence: 92 },
   },
   multi_language_voice: {
     elevenlabs: { status: 'configured', implementation: 'implemented', confidence: 95, notes: '29 languages' },
@@ -442,27 +454,39 @@ export const FEATURE_IMPLEMENTATION_MATRIX: Record<string, Partial<Record<Provid
     elevenlabs: { status: 'configured', implementation: 'implemented', confidence: 92 },
     alibaba: { status: 'configured', implementation: 'partial', confidence: 75 },
   },
+  voice_speed: {
+    elevenlabs: { status: 'configured', implementation: 'implemented', confidence: 95 },
+    openai: { status: 'configured', implementation: 'implemented', confidence: 88 },
+  },
   ai_voice_count: {
     elevenlabs: { status: 'configured', implementation: 'implemented', confidence: 95, notes: '500+ voices' },
-    google: { status: 'configured', implementation: 'implemented', confidence: 85 },
   },
   
   // AUDIO FEATURES
   stt: {
     openai: { status: 'configured', implementation: 'implemented', confidence: 98, edgeFunctionUsed: 'ask-genie-voice', notes: 'Whisper' },
-    google: { status: 'configured', implementation: 'implemented', confidence: 90 },
     alibaba: { status: 'configured', implementation: 'implemented', confidence: 85, edgeFunctionUsed: 'alibaba-stt', notes: 'Paraformer' },
-    assemblyai: { status: 'needs_key', implementation: 'not_started', confidence: 97, notes: 'Best for medical' },
   },
   bg_music: {
     elevenlabs: { status: 'configured', implementation: 'partial', confidence: 60, notes: 'Limited library' },
   },
+  sfx_library: {
+    elevenlabs: { status: 'configured', implementation: 'implemented', confidence: 85, edgeFunctionUsed: 'elevenlabs-sfx' },
+  },
   ai_music_gen: {
-    suno: { status: 'needs_key', implementation: 'not_started', confidence: 98, notes: 'Best quality' },
-    elevenlabs: { status: 'configured', implementation: 'partial', confidence: 70 },
+    elevenlabs: { status: 'configured', implementation: 'partial', confidence: 70, notes: 'Use ElevenLabs SFX as alternative' },
   },
   ai_sfx_gen: {
     elevenlabs: { status: 'configured', implementation: 'implemented', confidence: 85, edgeFunctionUsed: 'elevenlabs-sfx' },
+  },
+  noise_reduction: {
+    elevenlabs: { status: 'configured', implementation: 'partial', confidence: 60 },
+  },
+  audio_ducking: {
+    modelslab: { status: 'configured', implementation: 'not_started', confidence: 0 },
+  },
+  multi_track: {
+    modelslab: { status: 'configured', implementation: 'not_started', confidence: 0 },
   },
   audio_sync: {
     modelslab: { status: 'configured', implementation: 'partial', confidence: 65 },
@@ -493,19 +517,37 @@ export const FEATURE_IMPLEMENTATION_MATRIX: Record<string, Partial<Record<Provid
     modelslab: { status: 'configured', implementation: 'partial', confidence: 75 },
   },
   image_upscaling: {
-    modelslab: { status: 'configured', implementation: 'not_started', confidence: 0, notes: 'API available' },
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 70, notes: 'API available' },
     replicate: { status: 'configured', implementation: 'partial', confidence: 70 },
+  },
+  object_removal: {
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 65 },
+    replicate: { status: 'configured', implementation: 'partial', confidence: 60 },
+  },
+  image_filters: {
+    modelslab: { status: 'configured', implementation: 'implemented', confidence: 80 },
+  },
+  stock_images: {
+    openai: { status: 'configured', implementation: 'implemented', confidence: 85, notes: 'Generate on demand' },
+    modelslab: { status: 'configured', implementation: 'implemented', confidence: 90 },
+  },
+  image_animation: {
+    modelslab: { status: 'configured', implementation: 'implemented', confidence: 85, notes: 'AnimateDiff' },
+    replicate: { status: 'configured', implementation: 'partial', confidence: 70 },
+  },
+  smart_crop: {
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 70 },
+  },
+  style_transfer: {
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 70 },
   },
   controlnet: {
     modelslab: { status: 'configured', implementation: 'partial', confidence: 75, notes: 'Pose only, depth missing' },
     replicate: { status: 'configured', implementation: 'partial', confidence: 70 },
   },
   inpainting: {
-    modelslab: { status: 'configured', implementation: 'not_started', confidence: 0, notes: 'API available, not integrated' },
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 60, notes: 'API available, partial integration' },
     replicate: { status: 'configured', implementation: 'partial', confidence: 60 },
-  },
-  style_transfer: {
-    modelslab: { status: 'configured', implementation: 'partial', confidence: 70 },
   },
   
   // VIDEO FEATURES
@@ -513,7 +555,6 @@ export const FEATURE_IMPLEMENTATION_MATRIX: Record<string, Partial<Record<Provid
     modelslab: { status: 'configured', implementation: 'implemented', confidence: 85, edgeFunctionUsed: 'ai-video-generator' },
     alibaba: { status: 'configured', implementation: 'implemented', confidence: 80, edgeFunctionUsed: 'ai-video-generator', notes: 'WAN 2.2' },
     replicate: { status: 'configured', implementation: 'implemented', confidence: 75 },
-    runway: { status: 'needs_key', implementation: 'not_started', confidence: 95, notes: 'Best quality' },
   },
   image_to_video: {
     modelslab: { status: 'configured', implementation: 'implemented', confidence: 85, notes: 'AnimateDiff' },
@@ -523,83 +564,206 @@ export const FEATURE_IMPLEMENTATION_MATRIX: Record<string, Partial<Record<Provid
     modelslab: { status: 'configured', implementation: 'partial', confidence: 70 },
     alibaba: { status: 'configured', implementation: 'partial', confidence: 65 },
   },
+  url_to_video: {
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 60 },
+  },
   ppt_to_video: {
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 60 },
+  },
+  video_trimming: {
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 65 },
+  },
+  video_merging: {
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 60 },
+  },
+  speed_control: {
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 65 },
+  },
+  video_transitions: {
     modelslab: { status: 'configured', implementation: 'partial', confidence: 60 },
   },
   ai_avatars: {
     modelslab: { status: 'configured', implementation: 'partial', confidence: 60, notes: 'Basic avatar, not full talking head' },
     alibaba: { status: 'configured', implementation: 'not_started', confidence: 70, notes: 'EMO API available' },
   },
+  custom_avatar: {
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 55 },
+  },
   lip_sync: {
     modelslab: { status: 'configured', implementation: 'not_started', confidence: 0, notes: 'Wav2Lip API available' },
     alibaba: { status: 'configured', implementation: 'not_started', confidence: 0, notes: 'V-Express available' },
   },
-  auto_subtitles: {
-    openai: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'Whisper transcription' },
-    alibaba: { status: 'configured', implementation: 'implemented', confidence: 88, notes: 'Paraformer' },
-  },
   video_enhancement: {
     modelslab: { status: 'configured', implementation: 'partial', confidence: 65 },
     replicate: { status: 'configured', implementation: 'partial', confidence: 60 },
+  },
+  stock_video: {
+    modelslab: { status: 'configured', implementation: 'implemented', confidence: 80, notes: 'Generate on demand' },
+  },
+  auto_subtitles: {
+    openai: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'Whisper transcription' },
+    alibaba: { status: 'configured', implementation: 'implemented', confidence: 88, notes: 'Paraformer' },
   },
   
   // ANIMATION FEATURES
   text_animation: {
     modelslab: { status: 'configured', implementation: 'partial', confidence: 60 },
   },
+  object_animation: {
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 55 },
+  },
   slide_transitions: {
     modelslab: { status: 'configured', implementation: 'partial', confidence: 55 },
+  },
+  motion_graphics: {
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 50 },
+  },
+  animated_stickers: {
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 60 },
   },
   lottie: {
     replicate: { status: 'configured', implementation: 'not_started', confidence: 40 },
   },
+  custom_paths: {
+    modelslab: { status: 'configured', implementation: 'not_started', confidence: 0 },
+  },
+  auto_animate: {
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 55 },
+  },
   
   // 3D FEATURES
-  mesh_generation: {
-    modelslab: { status: 'configured', implementation: 'implemented', confidence: 75, edgeFunctionUsed: 'modelslab-media' },
+  '3d_text': {
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 60 },
   },
   '3d_objects': {
     modelslab: { status: 'configured', implementation: 'partial', confidence: 65 },
   },
+  '3d_scene_gen': {
+    modelslab: { status: 'configured', implementation: 'not_started', confidence: 40 },
+  },
   '3d_avatar': {
     modelslab: { status: 'configured', implementation: 'partial', confidence: 60 },
   },
+  '360_view': {
+    modelslab: { status: 'configured', implementation: 'not_started', confidence: 0 },
+  },
+  '3d_import': {
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 50 },
+  },
+  mesh_generation: {
+    modelslab: { status: 'configured', implementation: 'implemented', confidence: 75, edgeFunctionUsed: 'modelslab-media' },
+  },
+  
+  // AR/VR FEATURES
+  ar_preview: {
+    modelslab: { status: 'configured', implementation: 'not_started', confidence: 0 },
+  },
+  vr_export: {
+    modelslab: { status: 'configured', implementation: 'not_started', confidence: 0 },
+  },
+  spatial: {
+    modelslab: { status: 'configured', implementation: 'not_started', confidence: 0 },
+  },
+  immersive: {
+    modelslab: { status: 'configured', implementation: 'not_started', confidence: 0 },
+  },
   
   // VFX FEATURES
-  ai_bg_replace: {
-    modelslab: { status: 'configured', implementation: 'partial', confidence: 70 },
-    replicate: { status: 'configured', implementation: 'partial', confidence: 65 },
+  video_filters: {
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 65 },
+  },
+  color_grading: {
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 55 },
   },
   green_screen: {
     modelslab: { status: 'configured', implementation: 'partial', confidence: 65 },
   },
-  color_grading: {
-    modelslab: { status: 'configured', implementation: 'not_started', confidence: 0, notes: 'API available' },
+  motion_tracking: {
+    modelslab: { status: 'configured', implementation: 'not_started', confidence: 0 },
+  },
+  ai_bg_replace: {
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 70 },
+    replicate: { status: 'configured', implementation: 'partial', confidence: 65 },
+  },
+  particle_effects: {
+    modelslab: { status: 'configured', implementation: 'not_started', confidence: 0 },
+  },
+  visual_overlays: {
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 60 },
+  },
+  
+  // INTERACTIVE FEATURES
+  clickable_cta: {
+    openai: { status: 'configured', implementation: 'partial', confidence: 65, notes: 'Via slide templates' },
+  },
+  branching: {
+    openai: { status: 'configured', implementation: 'not_started', confidence: 0 },
+  },
+  embedded_quizzes: {
+    openai: { status: 'configured', implementation: 'not_started', confidence: 0 },
+  },
+  polls_surveys: {
+    openai: { status: 'configured', implementation: 'not_started', confidence: 0 },
+  },
+  hotspots: {
+    openai: { status: 'configured', implementation: 'partial', confidence: 50 },
+  },
+  figma_embed: {
+    openai: { status: 'configured', implementation: 'not_started', confidence: 0 },
+  },
+  interactive_charts: {
+    openai: { status: 'configured', implementation: 'partial', confidence: 65 },
+    gemini: { status: 'configured', implementation: 'partial', confidence: 60 },
+  },
+  video_chapters: {
+    openai: { status: 'configured', implementation: 'partial', confidence: 70 },
+  },
+  viewer_analytics: {
+    openai: { status: 'configured', implementation: 'partial', confidence: 70 },
+  },
+  ai_chatbot: {
+    openai: { status: 'configured', implementation: 'implemented', confidence: 90 },
+    gemini: { status: 'configured', implementation: 'implemented', confidence: 85 },
+    claude: { status: 'configured', implementation: 'implemented', confidence: 88 },
   },
   
   // TRANSLATION FEATURES
   one_click_translate: {
     deepl: { status: 'configured', implementation: 'implemented', confidence: 99, edgeFunctionUsed: 'translate' },
-    google: { status: 'configured', implementation: 'implemented', confidence: 90 },
     alibaba: { status: 'configured', implementation: 'implemented', confidence: 92, notes: 'Best for CJK' },
-    microsoft: { status: 'configured', implementation: 'implemented', confidence: 88 },
   },
   auto_subtitles_translate: {
     deepl: { status: 'configured', implementation: 'implemented', confidence: 95 },
-    google: { status: 'configured', implementation: 'implemented', confidence: 88 },
   },
   voice_dubbing: {
     elevenlabs: { status: 'configured', implementation: 'partial', confidence: 75, notes: 'Manual workflow' },
     alibaba: { status: 'configured', implementation: 'not_started', confidence: 70 },
   },
-  languages_70plus: {
-    deepl: { status: 'configured', implementation: 'partial', confidence: 60, notes: '30 languages only' },
-    google: { status: 'configured', implementation: 'implemented', confidence: 95, notes: '100+ languages' },
-    alibaba: { status: 'configured', implementation: 'implemented', confidence: 88 },
+  lip_sync_translate: {
+    modelslab: { status: 'configured', implementation: 'not_started', confidence: 0, notes: 'Wav2Lip available' },
+    alibaba: { status: 'configured', implementation: 'not_started', confidence: 0, notes: 'V-Express available' },
+  },
+  multi_lang_export: {
+    deepl: { status: 'configured', implementation: 'implemented', confidence: 90 },
+    alibaba: { status: 'configured', implementation: 'implemented', confidence: 85 },
   },
   rtl_support: {
     deepl: { status: 'configured', implementation: 'implemented', confidence: 90 },
-    google: { status: 'configured', implementation: 'implemented', confidence: 92 },
+  },
+  localization: {
+    deepl: { status: 'configured', implementation: 'partial', confidence: 70 },
+  },
+  accent_dialects: {
+    elevenlabs: { status: 'configured', implementation: 'implemented', confidence: 85 },
+    alibaba: { status: 'configured', implementation: 'implemented', confidence: 80, notes: 'CJK dialects' },
+  },
+  multilingual_avatars: {
+    modelslab: { status: 'configured', implementation: 'not_started', confidence: 0 },
+    alibaba: { status: 'configured', implementation: 'not_started', confidence: 0 },
+  },
+  languages_70plus: {
+    deepl: { status: 'configured', implementation: 'partial', confidence: 60, notes: '30 languages only' },
+    alibaba: { status: 'configured', implementation: 'implemented', confidence: 88 },
   },
   
   // EXPORT FEATURES
@@ -616,23 +780,74 @@ export const FEATURE_IMPLEMENTATION_MATRIX: Record<string, Partial<Record<Provid
   '4k_export': {
     modelslab: { status: 'configured', implementation: 'partial', confidence: 70, notes: 'Processing intensive' },
   },
+  watermark_free: {
+    modelslab: { status: 'configured', implementation: 'implemented', confidence: 95 },
+  },
+  scorm_export: {
+    openai: { status: 'configured', implementation: 'not_started', confidence: 0 },
+  },
   
   // PUBLISHING FEATURES
   web_publish: {
     openai: { status: 'configured', implementation: 'implemented', confidence: 88 },
   },
+  embed_website: {
+    openai: { status: 'configured', implementation: 'implemented', confidence: 85 },
+  },
+  youtube_upload: {
+    openai: { status: 'configured', implementation: 'partial', confidence: 60 },
+  },
+  social_schedule: {
+    openai: { status: 'configured', implementation: 'not_started', confidence: 0 },
+  },
+  gdrive_integration: {
+    gemini: { status: 'configured', implementation: 'partial', confidence: 65 },
+  },
   api_access: {
     openai: { status: 'configured', implementation: 'implemented', confidence: 95 },
     gemini: { status: 'configured', implementation: 'implemented', confidence: 92 },
   },
-  viewer_analytics: {
-    openai: { status: 'configured', implementation: 'partial', confidence: 70 },
+  custom_domain: {
+    openai: { status: 'configured', implementation: 'partial', confidence: 50 },
+  },
+  password_protection: {
+    openai: { status: 'configured', implementation: 'implemented', confidence: 85 },
   },
 };
 
 // ============================================
-// CATEGORY SUMMARIES
+// COMPUTE CATEGORY SUMMARIES FROM ACTUAL DATA
 // ============================================
+
+const computeCategorySummary = (category: FeatureCategory) => {
+  const features = ALL_FEATURES.filter(f => f.category === category);
+  let implemented = 0;
+  let partial = 0;
+  let planned = 0;
+  let notStarted = 0;
+
+  features.forEach(feature => {
+    const featureImpl = FEATURE_IMPLEMENTATION_MATRIX[feature.id];
+    if (!featureImpl || Object.keys(featureImpl).length === 0) {
+      notStarted++;
+      return;
+    }
+    
+    // Get best status across all providers
+    const statuses = Object.values(featureImpl).map(p => p?.implementation);
+    if (statuses.includes('implemented')) {
+      implemented++;
+    } else if (statuses.includes('partial')) {
+      partial++;
+    } else if (statuses.includes('planned')) {
+      planned++;
+    } else {
+      notStarted++;
+    }
+  });
+
+  return { total: features.length, implemented, partial, planned, notStarted };
+};
 
 export const CATEGORY_IMPLEMENTATION_SUMMARY: Record<FeatureCategory, { 
   total: number; 
@@ -641,36 +856,139 @@ export const CATEGORY_IMPLEMENTATION_SUMMARY: Record<FeatureCategory, {
   planned: number;
   notStarted: number;
 }> = {
-  INPUT: { total: 10, implemented: 7, partial: 2, planned: 1, notStarted: 0 },
-  SCRIPT: { total: 15, implemented: 12, partial: 2, planned: 1, notStarted: 0 },
-  VOICE: { total: 6, implemented: 4, partial: 2, planned: 0, notStarted: 0 },
-  AUDIO: { total: 9, implemented: 4, partial: 2, planned: 1, notStarted: 2 },
-  IMAGE: { total: 14, implemented: 8, partial: 3, planned: 2, notStarted: 1 },
-  VIDEO: { total: 15, implemented: 6, partial: 4, planned: 3, notStarted: 2 },
-  ANIMATION: { total: 8, implemented: 3, partial: 2, planned: 2, notStarted: 1 },
-  '3D': { total: 7, implemented: 2, partial: 2, planned: 1, notStarted: 2 },
-  AR_VR: { total: 4, implemented: 0, partial: 0, planned: 2, notStarted: 2 },
-  VFX: { total: 7, implemented: 2, partial: 3, planned: 1, notStarted: 1 },
-  INTERACTIVE: { total: 10, implemented: 3, partial: 2, planned: 3, notStarted: 2 },
-  TRANSLATION: { total: 10, implemented: 6, partial: 2, planned: 1, notStarted: 1 },
-  EXPORT: { total: 6, implemented: 4, partial: 1, planned: 1, notStarted: 0 },
-  PUBLISHING: { total: 8, implemented: 4, partial: 2, planned: 1, notStarted: 1 },
+  INPUT: computeCategorySummary('INPUT'),
+  SCRIPT: computeCategorySummary('SCRIPT'),
+  VOICE: computeCategorySummary('VOICE'),
+  AUDIO: computeCategorySummary('AUDIO'),
+  IMAGE: computeCategorySummary('IMAGE'),
+  VIDEO: computeCategorySummary('VIDEO'),
+  ANIMATION: computeCategorySummary('ANIMATION'),
+  '3D': computeCategorySummary('3D'),
+  AR_VR: computeCategorySummary('AR_VR'),
+  VFX: computeCategorySummary('VFX'),
+  INTERACTIVE: computeCategorySummary('INTERACTIVE'),
+  TRANSLATION: computeCategorySummary('TRANSLATION'),
+  EXPORT: computeCategorySummary('EXPORT'),
+  PUBLISHING: computeCategorySummary('PUBLISHING'),
   USE_CASE: { total: 0, implemented: 0, partial: 0, planned: 0, notStarted: 0 },
 };
 
 // ============================================
-// GAP ANALYSIS
+// GAP ANALYSIS (Using configured providers only)
 // ============================================
 
 export const CRITICAL_GAPS = [
-  { feature: 'Lip-Sync Translation', provider: 'Alibaba (V-Express) / ModelsLab (Wav2Lip)', priority: 'high', effort: 'medium' },
-  { feature: 'AI Music Generation', provider: 'Suno AI', priority: 'medium', effort: 'low' },
-  { feature: 'DeepSeek R1 Reasoning', provider: 'DeepSeek', priority: 'high', effort: 'low' },
-  { feature: 'Runway Gen-3 Video', provider: 'Runway', priority: 'medium', effort: 'low' },
-  { feature: 'ControlNet Depth/Canny', provider: 'ModelsLab', priority: 'medium', effort: 'medium' },
-  { feature: 'Image Inpainting', provider: 'ModelsLab', priority: 'medium', effort: 'low' },
-  { feature: 'Azure Neural TTS', provider: 'Azure', priority: 'high', effort: 'low' },
-  { feature: 'Qwen2.5-VL Video Understanding', provider: 'Alibaba', priority: 'medium', effort: 'medium' },
-  { feature: 'EMO Facial Animation', provider: 'Alibaba', priority: 'low', effort: 'high' },
-  { feature: 'DeepSeek Janus Vision', provider: 'DeepSeek', priority: 'low', effort: 'medium' },
+  { feature: 'Lip-Sync Translation', provider: 'ModelsLab (Wav2Lip) / Alibaba (V-Express)', priority: 'high', effort: 'medium', notes: 'APIs available, need integration' },
+  { feature: 'AI Music Generation', provider: 'ElevenLabs SFX (Alternative)', priority: 'medium', effort: 'low', notes: 'Use ElevenLabs SFX as workaround' },
+  { feature: 'DeepSeek R1 Reasoning', provider: 'DeepSeek', priority: 'high', effort: 'low', notes: 'Model available, needs integration' },
+  { feature: 'ControlNet Depth/Canny', provider: 'ModelsLab', priority: 'medium', effort: 'medium', notes: 'Pose working, add depth' },
+  { feature: 'Image Inpainting', provider: 'ModelsLab / Replicate', priority: 'medium', effort: 'low', notes: 'APIs ready' },
+  { feature: 'Advanced AI Avatars', provider: 'ModelsLab / Alibaba EMO', priority: 'high', effort: 'high', notes: 'Complex integration' },
+  { feature: 'AR/VR Export', provider: 'ModelsLab', priority: 'low', effort: 'high', notes: 'Future roadmap' },
 ];
+
+// ============================================
+// LLM COMPARISON DATA (For LLM Tab)
+// ============================================
+
+export interface LLMComparison {
+  model: string;
+  provider: string;
+  providerId: ProviderId;
+  costTier: '$' | '$$' | '$$$';
+  accuracy: number; // 0-100
+  speed: 'fast' | 'medium' | 'slow';
+  contextWindow: string;
+  bestForIndustries: string[];
+  bestForOutputTypes: string[];
+  inputStrengths: string[];
+  notes: string;
+}
+
+export const LLM_COMPARISONS: LLMComparison[] = [
+  {
+    model: 'GPT-4o',
+    provider: 'OpenAI',
+    providerId: 'openai',
+    costTier: '$$$',
+    accuracy: 98,
+    speed: 'medium',
+    contextWindow: '128K',
+    bestForIndustries: ['Healthcare', 'Finance', 'Legal', 'Enterprise'],
+    bestForOutputTypes: ['Long-form', 'Code', 'JSON', 'Technical docs'],
+    inputStrengths: ['Vision', 'PDF', 'Audio', 'Complex docs', 'Multi-modal'],
+    notes: 'Best overall accuracy. Use for critical tasks requiring high precision.',
+  },
+  {
+    model: 'Gemini 2.5 Pro',
+    provider: 'Google',
+    providerId: 'gemini',
+    costTier: '$$',
+    accuracy: 95,
+    speed: 'fast',
+    contextWindow: '1M+',
+    bestForIndustries: ['Education', 'Research', 'Media', 'Marketing'],
+    bestForOutputTypes: ['Multimodal', 'Image+Text', 'Video analysis', 'Long context'],
+    inputStrengths: ['1M context', 'Video', 'Images', 'Long documents'],
+    notes: 'Best for large documents and video understanding. Fast and cost-effective.',
+  },
+  {
+    model: 'Claude 3.5 Sonnet',
+    provider: 'Anthropic',
+    providerId: 'claude',
+    costTier: '$$$',
+    accuracy: 97,
+    speed: 'medium',
+    contextWindow: '200K',
+    bestForIndustries: ['Enterprise', 'Compliance', 'Legal', 'Academic'],
+    bestForOutputTypes: ['Nuanced writing', 'Safety-critical', 'Analysis'],
+    inputStrengths: ['200K context', 'Complex reasoning', 'Structured output'],
+    notes: 'Best for nuanced writing and compliance-sensitive content.',
+  },
+  {
+    model: 'DeepSeek V3',
+    provider: 'DeepSeek',
+    providerId: 'deepseek',
+    costTier: '$',
+    accuracy: 90,
+    speed: 'fast',
+    contextWindow: '64K',
+    bestForIndustries: ['Tech', 'Startups', 'Development', 'Data'],
+    bestForOutputTypes: ['Code', 'Math', 'Technical', 'JSON'],
+    inputStrengths: ['Vision', 'Code repos', 'Technical diagrams'],
+    notes: 'Ultra low cost. Excellent for code and technical content.',
+  },
+  {
+    model: 'Qwen 2.5',
+    provider: 'Alibaba',
+    providerId: 'alibaba',
+    costTier: '$',
+    accuracy: 88,
+    speed: 'fast',
+    contextWindow: '128K',
+    bestForIndustries: ['APAC', 'E-commerce', 'Manufacturing', 'Logistics'],
+    bestForOutputTypes: ['Multilingual', 'CJK Native', 'Translation'],
+    inputStrengths: ['Chinese', 'Japanese', 'Korean docs', 'APAC languages'],
+    notes: 'Best for CJK languages and APAC content. Very cost-effective.',
+  },
+];
+
+// ============================================
+// ROUTING STRATEGY
+// ============================================
+
+export const ROUTING_STRATEGY = {
+  primary: 'Quality-First',
+  fallback: 'Cost-Optimized',
+  explanation: `
+    Primary requests use the highest-accuracy model for the task type (GPT-4o for healthcare/finance, 
+    Gemini for large docs, Claude for nuanced writing). Fallback chain uses progressively 
+    lower-cost models (DeepSeek, Qwen) that still meet quality thresholds.
+  `,
+  whyNotCheapestFirst: `
+    User experience is prioritized over cost. Critical sectors (Healthcare, Finance, Legal) 
+    require high accuracy where errors have significant consequences. Cost optimization 
+    happens in the fallback chain, not primary selection. Budget models serve as reliable 
+    fallbacks when premium providers are unavailable or rate-limited.
+  `,
+};
