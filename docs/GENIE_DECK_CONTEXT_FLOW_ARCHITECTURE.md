@@ -271,7 +271,7 @@ const filteredFrameworks = filterFrameworksByTier(EXPANDED_FRAMEWORK_CATEGORIES,
 
 ---
 
-## 5. Generation Pipeline Data Aggregation
+## 5. Generation Pipeline Data Aggregation (Including Audio)
 
 ```typescript
 // In PresentationWizard.handleGenerate()
@@ -305,6 +305,32 @@ const generationRequest: PresentationRequest = {
     settings: outputSettings
   },
   
+  // Audio config (integrated with Step 3 & 4)
+  audioConfig: {
+    enabled: voiceEnabled,
+    voiceProvider: selectedVoiceProvider, // elevenlabs, openai, azure, google
+    voiceId: selectedVoiceId,
+    voiceSettings: {
+      speed: voiceSpeed,
+      pitch: voicePitch,
+      stability: voiceStability,
+      clarity: voiceClarity
+    },
+    backgroundMusic: {
+      enabled: musicEnabled,
+      genre: selectedMusicGenre,
+      mood: selectedMusicMood,
+      volume: musicVolume
+    },
+    sfx: {
+      enabled: sfxEnabled,
+      transitionSounds: true,
+      ambientSounds: is3DOrImmersive
+    },
+    pauseBetweenSlides: pauseDuration,
+    languageCode: primaryLanguage
+  },
+  
   // Agent context (Step 4)
   agentContext: {
     architecture: selectedArchitecture,
@@ -323,6 +349,51 @@ const generationRequest: PresentationRequest = {
   }
 };
 ```
+
+---
+
+## 5.1 Audio Generation Flow
+
+Audio is generated as part of the output-aware generation pipeline:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      AUDIO GENERATION PIPELINE                              │
+│                                                                             │
+│  ┌─────────────┐     ┌──────────────┐     ┌─────────────────┐              │
+│  │ Slide Text  │ ──► │ Script Gen   │ ──► │ TTS Generation  │              │
+│  │ + Notes     │     │ (Narration)  │     │ (Voice Provider)│              │
+│  └─────────────┘     └──────────────┘     └─────────────────┘              │
+│                                                    │                        │
+│                                                    ▼                        │
+│  ┌─────────────┐     ┌──────────────┐     ┌─────────────────┐              │
+│  │ Output Type │ ──► │ Background   │ ──► │ SFX Generation  │              │
+│  │ Detection   │     │ Music Gen    │     │ (Transitions)   │              │
+│  └─────────────┘     └──────────────┘     └─────────────────┘              │
+│                                                    │                        │
+│                                                    ▼                        │
+│                           ┌──────────────────────────────┐                  │
+│                           │ Audio Mixing & Sync to Slides │                  │
+│                           └──────────────────────────────┘                  │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Output Types and Audio Requirements
+
+| Output Type | Voiceover | Background Music | SFX | Notes |
+|-------------|-----------|------------------|-----|-------|
+| pdf-export | ❌ | ❌ | ❌ | No audio support |
+| pptx-export | ⚙️ Optional | ❌ | ❌ | Embedded audio optional |
+| 2d-static | ❌ | ❌ | ❌ | No audio support |
+| 2d-animated | ⚙️ Optional | ⚙️ Optional | ⚙️ Optional | Animation triggers |
+| video-short | ✅ Required | ⚙️ Optional | ⚙️ Optional | Short-form narration |
+| video-full | ✅ Required | ✅ Recommended | ✅ Recommended | Full production |
+| 3d-static | ⚙️ Optional | ❌ | ❌ | Minimal audio |
+| 3d-animated | ✅ Required | ✅ Recommended | ✅ Required | Spatial audio |
+| interactive | ⚙️ Optional | ⚙️ Optional | ✅ Recommended | Feedback sounds |
+| vr-experience | ✅ Required | ✅ Required | ✅ Required | Immersive audio |
+| ar-overlay | ⚙️ Optional | ❌ | ⚙️ Optional | Context-aware |
+| mixed-reality | ✅ Required | ✅ Required | ✅ Required | Full audio suite |
 
 ---
 
