@@ -189,6 +189,18 @@ export { GenieDeckHero } from './components/GenieDeckHero';
 // Generation Config Service (from src/services)
 export { generationConfigService } from '@/services/generationConfigService';
 
+// Language-Voice Pairing Service (Multi-Provider)
+export { languageVoicePairingService, getVoiceForLanguage, getAllVoicesForLanguage, getMultiLanguageVoiceConfig, isOptimalProviderForLanguage, COMPREHENSIVE_LANGUAGE_VOICE_PAIRINGS } from './services/languageVoicePairingService';
+export type { LanguageVoiceConfig, ProviderVoiceMapping, VoiceQuality } from './services/languageVoicePairingService';
+
+// Output Compatibility Service
+export { outputCompatibilityService, getOutputTypeConfig, filterVisualsByOutput, getOutputsByTier, validateVisualsForOutput, OUTPUT_TYPE_CONFIGS } from './services/outputCompatibilityService';
+export type { OutputTypeConfig, OutputCategory, VisualType } from './services/outputCompatibilityService';
+
+// Translation Provider Service (DeepL, Alibaba, Azure, Google)
+export { translationProviderService, getTranslationProvider, getTranslationProvidersByTier, getMultiLanguageTranslationConfig, TRANSLATION_PROVIDERS } from './services/translationProviderService';
+export type { TranslationProvider, LanguageTranslationConfig } from './services/translationProviderService';
+
 // Re-export template library hook and types
 export { 
   default as useTemplateLibrary,
