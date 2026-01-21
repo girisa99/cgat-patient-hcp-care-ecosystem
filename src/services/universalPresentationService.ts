@@ -82,6 +82,7 @@ export interface AIModelSuggestion {
 // Output configuration for visual/rendering settings
 export interface OutputConfig {
   outputType: '2d-static' | '2d-animated' | '3d-scene' | '3d-animated' | 'video-intro' | 'video-full' | 'interactive' | 'mixed';
+  outputTypes?: Array<'2d-static' | '2d-animated' | '3d-scene' | '3d-animated' | 'video-intro' | 'video-full' | 'interactive' | 'mixed'>; // FIX #1: Multi-format support
   structureMode: 'flat' | 'chapters';
   slideCount: number;           // For flat mode
   chapterCount: number;         // For chapter mode
@@ -147,6 +148,8 @@ export interface PresentationRequest {
   colorScheme?: 'default' | 'dark' | 'light' | 'brand';
   includeJourneyMaps?: boolean;
   includeInfographics?: boolean;
+  includeCharts?: boolean;    // FIX #3: Unified chart/table detection
+  includeTables?: boolean;    // FIX #3: Unified chart/table detection
   
   // Voice options
   voiceProvider?: VoiceProviderType;
@@ -220,15 +223,23 @@ export interface PresentationRequest {
       featureId: string;
       subOptions: string[];
     }>;
+    visualFeatureSubOptionsCount?: number; // FIX #2: Total sub-options for token estimation
+    step2Mode?: 'ai' | 'custom'; // Step mode tracking
   };
   
   // Step 3-4: Output & Agent context
   agentContext?: {
     architectureType?: 'single' | 'agentic' | 'a2a';
     selectedAgentIds?: string[];
+    // Support both AgentSelectorDialog format and legacy format
     agentModelConfigs?: Array<{
-      agentId: string;
-      textModel: string;
+      // AgentSelectorDialog format
+      agentKey?: string;
+      enabled?: boolean;
+      model?: string;
+      // Legacy format (for backward compatibility)
+      agentId?: string;
+      textModel?: string;
       imageModel?: string;
     }>;
     

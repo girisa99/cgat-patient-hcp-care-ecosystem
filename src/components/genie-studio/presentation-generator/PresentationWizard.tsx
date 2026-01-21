@@ -887,6 +887,40 @@ export function PresentationWizard({
       processedContent = `[Tone & Style: ${toneInstructions}]\n\n${processedContent}`;
     }
 
+    // FIX #2: Add visual feature sub-options to AI prompt for granular generation
+    if (visualFeatureSelections.length > 0) {
+      const visualInstructions = visualFeatureSelections
+        .filter(vf => vf.subOptions && vf.subOptions.length > 0)
+        .map(vf => {
+          const featureLabel = vf.featureId.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+          return `${featureLabel}: ${vf.subOptions.join(', ')}`;
+        });
+      
+      if (visualInstructions.length > 0) {
+        processedContent = `[Visual Elements Required: ${visualInstructions.join('; ')}]\n\n${processedContent}`;
+      }
+    }
+
+    // FIX #3: Unified chart/table detection from visualFeatureSelections
+    const hasChartsFromFeatures = visualFeatureSelections.some(vf => 
+      vf.featureId === 'charts' || vf.featureId === 'data-visualizations'
+    );
+    const hasTablesFromFeatures = visualFeatureSelections.some(vf => 
+      vf.featureId === 'data-tables' || vf.featureId === 'tables'
+    );
+    const hasInfographicsFromFeatures = visualFeatureSelections.some(vf => 
+      vf.featureId === 'infographics'
+    );
+    const hasJourneyMapsFromFeatures = visualFeatureSelections.some(vf => 
+      vf.featureId === 'journey-maps'
+    );
+
+    // Merge with explicit toggles (if either is true, include it)
+    const finalIncludeCharts = includeCharts || hasChartsFromFeatures;
+    const finalIncludeTables = includeTables || hasTablesFromFeatures;
+    const finalIncludeInfographics = includeInfographics || hasInfographicsFromFeatures;
+    const finalIncludeJourneyMaps = includeJourneyMaps || hasJourneyMapsFromFeatures;
+
     // Add translation instructions if needed
     if (inputLanguage === 'en' && primaryLanguage !== 'en' && autoTranslateFromEnglish) {
       const targetLang = SUPPORTED_LANGUAGES.find(l => l.code === primaryLanguage);
@@ -902,6 +936,10 @@ export function PresentationWizard({
 
     // Use enhancements directly (no content styles to merge anymore)
     const allEnhancements = selectedEnhancements;
+    // FIX #1: Get all output types for multi-format generation
+    const allOutputTypes = outputSettings.outputTypes?.length > 0 
+      ? outputSettings.outputTypes 
+      : [outputSettings.outputType];
 
     const request = {
       inputSource,
@@ -913,8 +951,11 @@ export function PresentationWizard({
       imageSource,
       imageStyles: selectedImageStyles,
       generateImages: imageSource !== 'placeholder',
-      includeJourneyMaps,
-      includeInfographics,
+      // FIX #3: Use unified detection results
+      includeJourneyMaps: finalIncludeJourneyMaps,
+      includeInfographics: finalIncludeInfographics,
+      includeCharts: finalIncludeCharts,
+      includeTables: finalIncludeTables,
       targetAudience: targetAudience || undefined,
       voiceProvider,
       tones: selectedTones,
@@ -922,7 +963,7 @@ export function PresentationWizard({
       languages: generateMultipleLanguages ? [primaryLanguage, ...selectedLanguages.filter(l => l !== primaryLanguage)] : [primaryLanguage],
       primaryLanguage,
       
-      // ========== NEW: Complete Workflow Context ==========
+      // ========== Complete Workflow Context ==========
       workflowContext: {
         industryCategory: workflowConfig?.industryCategory || '',
         segment: workflowConfig?.segment || '',
@@ -931,7 +972,7 @@ export function PresentationWizard({
         aiModels: workflowConfig?.aiModels,
         isAIAutoMode: isAutoSelectModels,
         aiRecommendation: workflowConfig?.aiRecommendation,
-        // NEW: Per-step mode tracking for dynamic AI Auto/Custom
+        // Per-step mode tracking for dynamic AI Auto/Custom
         step1Mode,
         step2Mode,
       },
@@ -944,13 +985,22 @@ export function PresentationWizard({
         selectedFrameworkCategories,
         selectedFrameworkIds,
         visualFeatures: visualFeatureSelections,
+        // FIX #2: Include sub-options count for token estimation accuracy
+        visualFeatureSubOptionsCount: visualFeatureSelections.reduce(
+          (sum, vf) => sum + (vf.subOptions?.length || 0), 0
+        ),
         step2Mode, // Also include in template context for template-specific logic
       },
       
       agentContext: {
         architectureType: useAgenticGeneration ? 'agentic' : 'single',
         selectedAgentIds: selectedAgents,
-        agentModelConfigs: agentModelConfigs as any,
+        // Use correct AgentModelConfig structure (agentKey, enabled, model)
+        agentModelConfigs: agentModelConfigs.map(config => ({
+          agentKey: config.agentKey,
+          enabled: config.enabled,
+          model: config.model,
+        })),
         languageVoiceConfigs: languageModelConfigs.map(c => ({
           languageCode: c.languageCode,
           voiceProvider: (c as any).provider || (c as any).voiceProvider || '',
@@ -958,9 +1008,10 @@ export function PresentationWizard({
         })),
       },
       
-      // Output configuration
+      // Output configuration - FIX #1: Include outputTypes array
       outputConfig: {
         outputType: outputSettings.outputType,
+        outputTypes: allOutputTypes, // NEW: Multi-format support
         structureMode: outputSettings.structureMode,
         slideCount: outputSettings.slideCount,
         chapterCount: outputSettings.chapterCount || 3,
