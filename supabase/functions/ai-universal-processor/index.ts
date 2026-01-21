@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 interface AIRequest {
-  provider: 'openai' | 'claude' | 'gemini' | 'lovable';
+  provider: 'openai' | 'claude' | 'gemini';
   model: string;
   prompt: string;
   systemPrompt?: string;
@@ -182,16 +182,15 @@ serve(async (req) => {
     }
 
     // ============================================
-    // IMAGE GENERATION ACTION (Gemini via Lovable AI)
+    // IMAGE GENERATION ACTION (Gemini Direct API)
     // ============================================
     if (action === 'image_generation') {
-      console.log(`[UniversalAI] Image generation via Lovable AI`);
+      console.log(`[UniversalAI] Image generation via Gemini API`);
       
-      const imageResult = await callLovableAI(
-        model || 'google/gemini-2.5-flash-image-preview',
+      const imageResult = await callGeminiImage(
+        model || 'gemini-2.0-flash-exp',
         prompt,
         systemPrompt,
-        true, // imageGeneration flag
         aspectRatio,
         style
       );
@@ -217,7 +216,7 @@ serve(async (req) => {
       console.log(`[UniversalAI] Scene analysis request - Provider: ${provider}`);
       response = await callVisionAnalysis(provider, model, prompt, systemPrompt, context.image, context);
     }
-    // Route image generation based on provider preference - Universal AI first, Lovable as fallback
+    // Route image generation based on provider preference - Direct API calls
     else if (imageGeneration) {
       console.log(`[UniversalAI] Image generation request - Provider: ${provider}, Model: ${model}`);
       
@@ -227,16 +226,16 @@ serve(async (req) => {
           // Use DALL-E for OpenAI
           response = await callOpenAIImage(model || 'dall-e-3', prompt, aspectRatio, style);
         } else if (provider === 'gemini') {
-          // Use Gemini image models via Lovable gateway (they support nano-banana)
-          response = await callLovableAI(model || 'google/gemini-2.5-flash-image-preview', prompt, systemPrompt, true, aspectRatio, style);
+          // Use Gemini image models directly
+          response = await callGeminiImage(model || 'gemini-2.0-flash-exp', prompt, systemPrompt, aspectRatio, style);
         } else {
-          // Default: Use Lovable AI gateway for image generation
-          response = await callLovableAI(model || 'google/gemini-2.5-flash-image-preview', prompt, systemPrompt, true, aspectRatio, style);
+          // Default: Use Gemini for image generation
+          response = await callGeminiImage(model || 'gemini-2.0-flash-exp', prompt, systemPrompt, aspectRatio, style);
         }
       } catch (imageError) {
-        // Fallback to Lovable AI if primary image generation fails
-        console.warn(`[UniversalAI] Primary image generation failed, falling back to Lovable AI:`, imageError);
-        response = await callLovableAI('google/gemini-2.5-flash-image-preview', prompt, systemPrompt, true, aspectRatio, style);
+        // Fallback to OpenAI DALL-E if Gemini image generation fails
+        console.warn(`[UniversalAI] Primary image generation failed, falling back to DALL-E:`, imageError);
+        response = await callOpenAIImage('dall-e-3', prompt, aspectRatio, style);
       }
     }
     // Route to appropriate handler based on provider for TEXT generation
@@ -251,10 +250,7 @@ serve(async (req) => {
         case 'gemini':
           response = await callGemini(model || 'gemini-2.0-flash', prompt, systemPrompt, temperature, maxTokens);
           break;
-        case 'lovable':
-          // Route through Lovable AI Gateway (for text generation)
-          response = await callLovableAI(model || 'google/gemini-3-flash-preview', prompt, systemPrompt, false, aspectRatio, style);
-          break;
+        // 'lovable' provider removed - use 'gemini' directly instead
         default:
           // Auto-select: use gemini as default for best balance
           console.log(`[UniversalAI] Auto-selecting gemini for provider: ${provider}`);
@@ -639,99 +635,84 @@ async function callGemini(model: string, prompt: string, systemPrompt?: string, 
 }
 
 /**
- * Call Lovable AI Gateway (Universal AI connector for Gemini models)
- * Supports both text generation and image generation (nano banana)
+ * Gemini Image Generation via Direct API
+ * Uses Gemini's native image generation capabilities (Imagen models)
  */
-async function callLovableAI(
+async function callGeminiImage(
   model: string, 
   prompt: string, 
   systemPrompt?: string, 
-  imageGeneration?: boolean,
   aspectRatio?: string,
   style?: string
 ) {
-  const apiKey = Deno.env.get('LOVABLE_API_KEY');
+  const apiKey = Deno.env.get('GOOGLE_API_KEY') || Deno.env.get('GEMINI_API_KEY');
   if (!apiKey) {
-    throw new Error('LOVABLE_API_KEY not configured. This is auto-provisioned in Lovable Cloud projects.');
+    throw new Error('GEMINI_API_KEY not configured. Please add GOOGLE_API_KEY or GEMINI_API_KEY to your Edge Function secrets.');
   }
 
-  // Determine if this is an image generation model
-  const isImageModel = imageGeneration || 
-    model.includes('image') || 
-    model.includes('nano-banana') ||
-    model === 'google/gemini-2.5-flash-image-preview' ||
-    model === 'google/gemini-3-pro-image-preview';
-
-  // Normalize model name
-  let targetModel = model;
-  if (model === 'gemini-nano-banana' || model === 'nano-banana') {
-    targetModel = 'google/gemini-2.5-flash-image-preview';
-  } else if (!model.startsWith('google/') && !model.startsWith('openai/')) {
-    // Default to flash for text generation
-    targetModel = 'google/gemini-2.5-flash';
-  }
-
-  console.log(`[UniversalAI-Lovable] Calling Lovable AI Gateway: model=${targetModel}, isImage=${isImageModel}`);
+  // Normalize model name for image generation
+  const targetModel = model.includes('imagen') ? model : 'gemini-2.0-flash-exp';
+  
+  console.log(`[UniversalAI-Gemini] Generating image: model=${targetModel}`);
 
   const fullPrompt = systemPrompt ? `${systemPrompt}\n\n${prompt}` : prompt;
   
-  // For image generation, add safety guidance
-  const finalPrompt = isImageModel && style
+  // Add style and aspect ratio to prompt
+  const finalPrompt = style
     ? `Create a ${style} style image: ${fullPrompt}. ${aspectRatio || '1:1'} aspect ratio. Professional, high quality. Safe for all audiences.`
-    : fullPrompt;
+    : `${fullPrompt}. Professional, high quality. Safe for all audiences.`;
 
-  const requestBody: any = {
-    model: targetModel,
-    messages: [{ role: 'user', content: finalPrompt }],
-  };
-
-  // Add modalities for image generation
-  if (isImageModel) {
-    requestBody.modalities = ['image', 'text'];
-  }
-
-  const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+  // Use Gemini's generateContent with image output modality
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${apiKey}`, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(requestBody),
+    body: JSON.stringify({
+      contents: [{ 
+        parts: [{ text: finalPrompt }] 
+      }],
+      generationConfig: {
+        responseModalities: ['TEXT', 'IMAGE'],
+        temperature: 0.7,
+      }
+    }),
   });
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error(`[UniversalAI-Lovable] Error (${response.status}):`, errorText);
+    console.error(`[UniversalAI-Gemini] Image generation error (${response.status}):`, errorText);
     
-    if (response.status === 429) {
-      throw new Error('Rate limit exceeded. Please try again later or upgrade your plan.');
-    }
-    if (response.status === 402) {
-      throw new Error('API credits exhausted. Please add funds to your Lovable workspace.');
+    // If image generation fails, try text-only generation for fallback
+    if (response.status === 400 || response.status === 404) {
+      console.log(`[UniversalAI-Gemini] Image modality not available, using text-to-description fallback`);
+      throw new Error(`Gemini image generation not available: ${response.status}`);
     }
     
-    throw new Error(`Lovable AI Gateway error: ${response.status} - ${errorText}`);
+    throw new Error(`Gemini image generation error: ${response.status} - ${errorText}`);
   }
 
   const data = await response.json();
-
-  // Handle image response
-  if (isImageModel) {
-    const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-    const textContent = data.choices?.[0]?.message?.content || '';
-    
-    return {
-      content: imageUrl || textContent,
-      imageUrl: imageUrl,
-      isImage: !!imageUrl,
-      usage: data.usage
-    };
+  
+  // Extract image from response
+  const parts = data.candidates?.[0]?.content?.parts || [];
+  let imageUrl = '';
+  let textContent = '';
+  
+  for (const part of parts) {
+    if (part.inlineData?.mimeType?.startsWith('image/')) {
+      // Convert base64 to data URL
+      imageUrl = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+    } else if (part.text) {
+      textContent = part.text;
+    }
   }
 
-  // Handle text response
   return {
-    content: data.choices?.[0]?.message?.content || '',
-    usage: data.usage
+    content: imageUrl || textContent,
+    imageUrl: imageUrl,
+    isImage: !!imageUrl,
+    usage: data.usageMetadata
   };
 }
 
