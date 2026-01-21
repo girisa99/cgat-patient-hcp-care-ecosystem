@@ -333,10 +333,15 @@ export const FEATURE_IMPLEMENTATION_MATRIX: Record<string, Partial<Record<Provid
     claude: { status: 'configured', implementation: 'implemented', confidence: 99, edgeFunctionUsed: 'ai-universal-processor' },
     deepseek: { status: 'configured', implementation: 'implemented', confidence: 95, edgeFunctionUsed: 'ai-universal-processor' },
     alibaba: { status: 'configured', implementation: 'implemented', confidence: 92, notes: 'Qwen 2.5' },
+    deepl: { status: 'configured', implementation: 'implemented', confidence: 99, edgeFunctionUsed: 'translate', notes: 'Text input for translation' },
+    modelslab: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'Text prompts for image/video generation' },
+    replicate: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'Text prompts for AI models' },
+    elevenlabs: { status: 'configured', implementation: 'implemented', confidence: 98, notes: 'Text input for TTS' },
   },
   document_upload: {
     openai: { status: 'configured', implementation: 'implemented', confidence: 95, edgeFunctionUsed: 'ai-universal-processor', notes: 'GPT-4o Vision' },
     gemini: { status: 'configured', implementation: 'implemented', confidence: 98, notes: '1M context for large docs' },
+    deepl: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'Document translation' },
   },
   url_input: {
     openai: { status: 'configured', implementation: 'implemented', confidence: 90, edgeFunctionUsed: 'ai-universal-processor' },
@@ -347,14 +352,20 @@ export const FEATURE_IMPLEMENTATION_MATRIX: Record<string, Partial<Record<Provid
     gemini: { status: 'configured', implementation: 'implemented', confidence: 97, notes: 'Gemini 2.5 Pro' },
     deepseek: { status: 'configured', implementation: 'partial', confidence: 85, notes: 'DeepSeek-VL' },
     alibaba: { status: 'configured', implementation: 'partial', confidence: 80, notes: 'Qwen-VL' },
+    modelslab: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'img2img, image editing' },
+    replicate: { status: 'configured', implementation: 'implemented', confidence: 92, notes: 'img2img models' },
+    stability: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'Image-to-image' },
   },
   video_upload: {
     gemini: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'Native video understanding' },
     alibaba: { status: 'configured', implementation: 'partial', confidence: 75, notes: 'Qwen2.5-VL' },
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 70, notes: 'Video-to-video processing' },
+    replicate: { status: 'configured', implementation: 'partial', confidence: 70, notes: 'Video processing models' },
   },
   audio_upload: {
     openai: { status: 'configured', implementation: 'implemented', confidence: 98, edgeFunctionUsed: 'ask-genie-voice', notes: 'Whisper' },
     alibaba: { status: 'configured', implementation: 'implemented', confidence: 88, edgeFunctionUsed: 'alibaba-stt', notes: 'Paraformer' },
+    elevenlabs: { status: 'configured', implementation: 'implemented', confidence: 97, notes: 'Scribe STT for audio transcription' },
   },
   pptx_import: {
     openai: { status: 'configured', implementation: 'implemented', confidence: 85, notes: 'Via text extraction' },
@@ -362,6 +373,7 @@ export const FEATURE_IMPLEMENTATION_MATRIX: Record<string, Partial<Record<Provid
   voice_recording: {
     openai: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'Whisper STT' },
     alibaba: { status: 'configured', implementation: 'implemented', confidence: 85, notes: 'Paraformer' },
+    elevenlabs: { status: 'configured', implementation: 'implemented', confidence: 97, notes: 'Scribe realtime STT' },
   },
   screen_recording: {
     gemini: { status: 'configured', implementation: 'partial', confidence: 70, notes: 'Via video understanding' },
