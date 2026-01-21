@@ -843,6 +843,34 @@ export interface SlideContentData {
   table?: TableData;
   chart?: ChartData;
   richContent?: string; // HTML rich text content
+  cta?: CTAData; // Call-to-action content
+  hook?: HookData; // Opening hook content
+}
+
+// CTA (Call-to-Action) content for closing slides
+export interface CTAData {
+  headline: string;
+  subheadline?: string;
+  buttonText: string;
+  buttonUrl?: string;
+  urgencyText?: string; // e.g., "Limited time offer"
+  benefitPoints?: string[]; // Key benefits/reasons to act
+  contactInfo?: {
+    email?: string;
+    phone?: string;
+    website?: string;
+  };
+  style?: 'primary' | 'secondary' | 'gradient' | 'minimal';
+}
+
+// Hook content for opening slides
+export interface HookData {
+  hookType: 'question' | 'statistic' | 'story' | 'quote' | 'problem' | 'bold-statement';
+  mainText: string;
+  supportingText?: string;
+  statValue?: string; // For statistic hooks
+  statLabel?: string;
+  sourceAttribution?: string; // For quotes/statistics
 }
 
 export interface BulletPoint {

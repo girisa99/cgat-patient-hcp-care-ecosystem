@@ -23,7 +23,14 @@ import {
   FileText,
   BarChart3,
   Map,
-  Presentation
+  Presentation,
+  Megaphone,
+  Lightbulb,
+  ArrowRight,
+  Zap,
+  Mail,
+  Phone,
+  Globe
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PresentationSlide, SlideEnhancementType } from './types';
@@ -76,7 +83,8 @@ const slideTypeIcons: Record<string, React.ReactNode> = {
   journey: <Map className="h-4 w-4" />,
   infographic: <BarChart3 className="h-4 w-4" />,
   conclusion: <Check className="h-4 w-4" />,
-  cta: <Check className="h-4 w-4" />,
+  cta: <Megaphone className="h-4 w-4" />,
+  hook: <Lightbulb className="h-4 w-4" />,
 };
 
 export function SlideCard({
@@ -388,6 +396,131 @@ export function SlideCard({
                   <div className="text-[10px] text-muted-foreground line-clamp-2">{step.description}</div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Content - CTA (Call-to-Action) */}
+          {slide.type === 'cta' && slide.content.cta && (
+            <div className="space-y-3 p-3 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg border border-primary/20">
+              {/* Headline */}
+              <div className="text-center">
+                <h4 className="text-base font-bold text-primary">
+                  {slide.content.cta.headline}
+                </h4>
+                {slide.content.cta.subheadline && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {slide.content.cta.subheadline}
+                  </p>
+                )}
+              </div>
+              
+              {/* Urgency Text */}
+              {slide.content.cta.urgencyText && (
+                <div className="flex items-center justify-center gap-1">
+                  <Zap className="h-3 w-3 text-yellow-500" />
+                  <span className="text-xs font-medium text-yellow-600">
+                    {slide.content.cta.urgencyText}
+                  </span>
+                </div>
+              )}
+              
+              {/* Benefit Points */}
+              {slide.content.cta.benefitPoints && slide.content.cta.benefitPoints.length > 0 && (
+                <ul className="space-y-1">
+                  {slide.content.cta.benefitPoints.map((benefit, idx) => (
+                    <li key={idx} className="flex items-start gap-2 text-xs">
+                      <Check className="h-3 w-3 text-green-500 mt-0.5 flex-shrink-0" />
+                      <span>{benefit}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              
+              {/* CTA Button */}
+              <div className="flex justify-center">
+                <Button 
+                  size="sm" 
+                  className={cn(
+                    "text-xs gap-1",
+                    slide.content.cta.style === 'gradient' && "bg-gradient-to-r from-primary to-purple-600",
+                    slide.content.cta.style === 'minimal' && "bg-transparent border border-primary text-primary hover:bg-primary/10"
+                  )}
+                >
+                  {slide.content.cta.buttonText}
+                  <ArrowRight className="h-3 w-3" />
+                </Button>
+              </div>
+              
+              {/* Contact Info */}
+              {slide.content.cta.contactInfo && (
+                <div className="flex items-center justify-center gap-3 text-[10px] text-muted-foreground pt-2 border-t border-primary/10">
+                  {slide.content.cta.contactInfo.email && (
+                    <span className="flex items-center gap-1">
+                      <Mail className="h-2.5 w-2.5" />
+                      {slide.content.cta.contactInfo.email}
+                    </span>
+                  )}
+                  {slide.content.cta.contactInfo.phone && (
+                    <span className="flex items-center gap-1">
+                      <Phone className="h-2.5 w-2.5" />
+                      {slide.content.cta.contactInfo.phone}
+                    </span>
+                  )}
+                  {slide.content.cta.contactInfo.website && (
+                    <span className="flex items-center gap-1">
+                      <Globe className="h-2.5 w-2.5" />
+                      {slide.content.cta.contactInfo.website}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Content - Hook (Opening Statement) */}
+          {slide.content.hook && (
+            <div className="space-y-2 p-3 bg-gradient-to-br from-amber-500/10 to-orange-500/5 rounded-lg border border-amber-500/20">
+              {/* Hook Type Badge */}
+              <Badge variant="outline" className="text-[10px] border-amber-500/30 text-amber-600">
+                <Lightbulb className="h-2.5 w-2.5 mr-1" />
+                {slide.content.hook.hookType.replace('-', ' ')}
+              </Badge>
+              
+              {/* Main Hook Text */}
+              {slide.content.hook.hookType === 'statistic' && slide.content.hook.statValue ? (
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-amber-600">
+                    {slide.content.hook.statValue}
+                  </div>
+                  {slide.content.hook.statLabel && (
+                    <div className="text-xs text-muted-foreground">
+                      {slide.content.hook.statLabel}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className={cn(
+                  "text-sm font-medium",
+                  slide.content.hook.hookType === 'question' && "text-center italic",
+                  slide.content.hook.hookType === 'bold-statement' && "text-center font-bold text-primary"
+                )}>
+                  {slide.content.hook.hookType === 'question' ? `"${slide.content.hook.mainText}"` : slide.content.hook.mainText}
+                </p>
+              )}
+              
+              {/* Supporting Text */}
+              {slide.content.hook.supportingText && (
+                <p className="text-xs text-muted-foreground">
+                  {slide.content.hook.supportingText}
+                </p>
+              )}
+              
+              {/* Source Attribution */}
+              {slide.content.hook.sourceAttribution && (
+                <p className="text-[10px] text-muted-foreground italic text-right">
+                  — {slide.content.hook.sourceAttribution}
+                </p>
+              )}
             </div>
           )}
 
