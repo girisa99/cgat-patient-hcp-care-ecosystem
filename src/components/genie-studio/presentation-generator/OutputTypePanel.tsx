@@ -94,6 +94,12 @@ interface OutputTypePanelProps {
   suggestedSlideCount?: number;
   contentType?: string;
   className?: string;
+  // NEW: Model selection integration
+  globalTier?: 1 | 2 | 3;
+  industry?: string;
+  languageCode?: string;
+  modelSelections?: Record<string, { primaryId: string; overrideIds: string[]; mode: 'ai-auto' | 'user-override' | 'multi-select' }>;
+  onModelSelectionsChange?: (selections: Record<string, { primaryId: string; overrideIds: string[]; mode: 'ai-auto' | 'user-override' | 'multi-select' }>) => void;
 }
 
 export function OutputTypePanel({
