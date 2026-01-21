@@ -39,9 +39,9 @@ const CATEGORY_LABELS: Record<FeatureCategory, string> = {
 };
 
 const STATUS_ICONS: Record<ImplementationStatus, React.ReactNode> = {
-  implemented: <Check className="w-4 h-4 text-green-500" />,
-  partial: <AlertCircle className="w-4 h-4 text-amber-500" />,
-  planned: <Clock className="w-4 h-4 text-blue-500" />,
+  implemented: <Check className="w-4 h-4 text-primary" />,
+  partial: <AlertCircle className="w-4 h-4 text-secondary-foreground" />,
+  planned: <Clock className="w-4 h-4 text-accent-foreground" />,
   not_started: <X className="w-4 h-4 text-muted-foreground" />,
   not_applicable: <span className="text-muted-foreground">—</span>,
 };
@@ -118,13 +118,13 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
 
         {/* Stats Summary */}
         <div className="grid grid-cols-5 gap-4 mt-4">
-          {[
-            { label: 'Implemented', value: overallStats.implemented, color: 'bg-green-500' },
-            { label: 'Partial', value: overallStats.partial, color: 'bg-amber-500' },
-            { label: 'Planned', value: overallStats.planned, color: 'bg-blue-500' },
-            { label: 'Not Started', value: overallStats.notStarted, color: 'bg-muted' },
-            { label: 'Total', value: overallStats.total, color: 'bg-primary' },
-          ].map(stat => (
+        {[
+          { label: 'Implemented', value: overallStats.implemented, color: 'bg-primary' },
+          { label: 'Partial', value: overallStats.partial, color: 'bg-secondary' },
+          { label: 'Planned', value: overallStats.planned, color: 'bg-accent' },
+          { label: 'Not Started', value: overallStats.notStarted, color: 'bg-muted' },
+          { label: 'Total', value: overallStats.total, color: 'bg-foreground' },
+        ].map(stat => (
             <div key={stat.label} className="text-center p-3 rounded-lg border bg-card">
               <div className={`w-3 h-3 rounded-full ${stat.color} mx-auto mb-1`} />
               <div className="text-2xl font-bold">{stat.value}</div>
@@ -182,8 +182,8 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
                             <TooltipTrigger className="cursor-help">
                               <span className="text-xs">{p.name.split(' ')[0]}</span>
                               {p.status === 'configured' ? 
-                                <Badge variant="outline" className="ml-1 text-[8px] bg-green-500/10">✓</Badge> :
-                                <Badge variant="outline" className="ml-1 text-[8px] bg-amber-500/10">!</Badge>
+                                <Badge variant="outline" className="ml-1 text-[8px] bg-primary/10">✓</Badge> :
+                                <Badge variant="outline" className="ml-1 text-[8px] bg-secondary/30">!</Badge>
                               }
                             </TooltipTrigger>
                             <TooltipContent>
@@ -244,7 +244,7 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
           <TabsContent value="providers">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {PROVIDER_SUMMARIES.map(provider => (
-                <Card key={provider.id} className={provider.status === 'configured' ? 'border-green-500/30' : 'border-amber-500/30'}>
+                <Card key={provider.id} className={provider.status === 'configured' ? 'border-primary/30' : 'border-secondary/30'}>
                   <CardHeader className="pb-2">
                     <div className="flex justify-between items-start">
                       <CardTitle className="text-base">{provider.name}</CardTitle>
@@ -263,9 +263,9 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
                         <Badge key={cap} variant="outline" className="text-[10px]">{cap}</Badge>
                       ))}
                     </div>
-                    <p className="text-xs text-green-600">✓ {provider.strengths.slice(0, 2).join(', ')}</p>
+                    <p className="text-xs text-primary">✓ {provider.strengths.slice(0, 2).join(', ')}</p>
                     {provider.weaknesses.length > 0 && (
-                      <p className="text-xs text-amber-600">⚠ {provider.weaknesses[0]}</p>
+                      <p className="text-xs text-muted-foreground">⚠ {provider.weaknesses[0]}</p>
                     )}
                   </CardContent>
                 </Card>

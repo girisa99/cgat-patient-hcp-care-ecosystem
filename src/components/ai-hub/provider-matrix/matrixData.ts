@@ -332,37 +332,10 @@ export const PROVIDER_SUMMARIES: ProviderSummary[] = [
     weaknesses: ['Cold starts', 'Variable quality'],
     costTier: 'standard',
   },
-  {
-    id: 'suno',
-    name: 'Suno AI',
-    website: 'https://suno.ai',
-    status: 'needs_key',
-    secretKey: 'SUNO_API_KEY',
-    totalFeatures: 5,
-    implementedFeatures: 0,
-    partialFeatures: 0,
-    missingFeatures: 5,
-    capabilities: ['AUDIO'],
-    strengths: ['Best AI music', 'Vocals', 'Full songs'],
-    weaknesses: ['Music only', 'API access limited'],
-    costTier: 'standard',
-  },
-  {
-    id: 'runway',
-    name: 'Runway',
-    website: 'https://runwayml.com',
-    status: 'needs_key',
-    secretKey: 'RUNWAY_API_KEY',
-    totalFeatures: 15,
-    implementedFeatures: 0,
-    partialFeatures: 0,
-    missingFeatures: 15,
-    capabilities: ['VIDEO', 'VFX'],
-    strengths: ['Gen-3 Alpha', 'Best video quality', '10s clips'],
-    weaknesses: ['Expensive', 'API access limited'],
-    costTier: 'premium',
-  },
 ];
+
+// NOTE: Suno and Runway removed - not configured and lower priority
+// Can be added back when API keys are available
 
 // ============================================
 // FEATURE IMPLEMENTATION STATUS
