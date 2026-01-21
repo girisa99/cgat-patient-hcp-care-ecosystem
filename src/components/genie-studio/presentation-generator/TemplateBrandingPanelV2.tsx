@@ -1148,7 +1148,7 @@ export function TemplateBrandingPanelV2({
               onIncludeChartsChange(selectedFeatureIds.has('charts'));
             }
           }}
-          selectedOutputTypes={selectedOutputTypes}
+          selectedOutputTypes={selectedOutputTypes as any}
           globalTier={globalTier as 1 | 2 | 3}
           showCompatibility={true}
         />
