@@ -42,44 +42,64 @@ interface ConsultingFramework {
 
 const CONSULTING_FRAMEWORKS: ConsultingFramework[] = [
   {
-    id: 'consulting-mckinsey',
-    name: 'McKinsey Style',
-    firm: 'McKinsey & Company',
-    description: 'Strategic analysis with 7S Framework, MECE principle, and Pyramid structure',
+    id: 'tier1-strategy',
+    name: 'Tier 1 Strategy',
+    firm: 'Executive Consulting',
+    description: 'Strategic analysis with organizational framework, structured reasoning, and pyramid communication',
     icon: <Building2 className="h-5 w-5" />,
     frameworks: ['7S Framework', 'MECE', 'Pyramid Principle', 'Three Horizons'],
     color: 'text-blue-600',
     bgColor: 'bg-blue-50 hover:bg-blue-100'
   },
   {
-    id: 'consulting-bcg',
-    name: 'BCG Style',
-    firm: 'Boston Consulting Group',
-    description: 'Portfolio analysis with Growth-Share Matrix and Experience Curve',
+    id: 'portfolio-analysis',
+    name: 'Portfolio Analysis',
+    firm: 'Growth Strategy',
+    description: 'Portfolio optimization with growth-share analysis and experience curves',
     icon: <TrendingUp className="h-5 w-5" />,
-    frameworks: ['BCG Matrix', 'Growth-Share', 'Experience Curve', 'Advantage Matrix'],
+    frameworks: ['Growth-Share Matrix', 'Experience Curve', 'Advantage Matrix', 'Portfolio Optimization'],
     color: 'text-green-600',
     bgColor: 'bg-green-50 hover:bg-green-100'
   },
   {
-    id: 'consulting-bain',
-    name: 'Bain Style',
-    firm: 'Bain & Company',
-    description: 'Results-focused with Net Promoter and Decision Insights',
+    id: 'results-delivery',
+    name: 'Results Delivery',
+    firm: 'Performance Focus',
+    description: 'Results-focused with customer loyalty metrics and decision frameworks',
     icon: <Target className="h-5 w-5" />,
-    frameworks: ['NPS Analysis', 'Results Delivery', 'Decision Insights', 'Full Potential'],
+    frameworks: ['Customer Metrics', 'Results Framework', 'Decision Insights', 'Full Potential'],
     color: 'text-red-600',
     bgColor: 'bg-red-50 hover:bg-red-100'
   },
   {
-    id: 'consulting-generic',
-    name: 'Generic Consulting',
-    firm: 'Universal Framework',
-    description: 'Balanced approach with SWOT, Porter\'s Five Forces, and Value Chain',
+    id: 'universal-strategy',
+    name: 'Universal Strategy',
+    firm: 'Balanced Framework',
+    description: 'Comprehensive approach with competitive analysis and value chain mapping',
     icon: <BarChart3 className="h-5 w-5" />,
-    frameworks: ['SWOT', 'Porter\'s Five Forces', 'Value Chain', 'Competitive Analysis'],
+    frameworks: ['SWOT Analysis', 'Competitive Forces', 'Value Chain', 'Market Analysis'],
     color: 'text-purple-600',
     bgColor: 'bg-purple-50 hover:bg-purple-100'
+  },
+  {
+    id: 'innovation-framework',
+    name: 'Innovation Framework',
+    firm: 'Design & Innovation',
+    description: 'Innovation-centered approach with design thinking and lean methodologies',
+    icon: <Layers className="h-5 w-5" />,
+    frameworks: ['Design Thinking', 'Lean Startup', 'Blue Ocean', 'Jobs To Be Done'],
+    color: 'text-orange-600',
+    bgColor: 'bg-orange-50 hover:bg-orange-100'
+  },
+  {
+    id: 'agile-transformation',
+    name: 'Agile Transformation',
+    firm: 'Digital & Agile',
+    description: 'Agile methodologies with digital transformation and continuous improvement',
+    icon: <GitBranch className="h-5 w-5" />,
+    frameworks: ['Agile/Scrum', 'OKRs', 'DevOps', 'Continuous Improvement'],
+    color: 'text-cyan-600',
+    bgColor: 'bg-cyan-50 hover:bg-cyan-100'
   }
 ];
 
