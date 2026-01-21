@@ -100,6 +100,19 @@ export type { UseReviewActionsReturn, UseReviewActionsOptions } from './hooks/us
 export * from './types/reviewActions';
 export { reviewActionService } from './services/reviewActionService';
 
+// Visualization Recommendation Service (flexible, non-restrictive)
+export { 
+  visualizationRecommendationService,
+  getVisualizationRecommendations,
+  filterVisualFeaturesByTier,
+  getAllVisualFeatures,
+} from './services/visualizationRecommendationService';
+export type { 
+  VisualizationSuggestion, 
+  VisualizationRecommendation, 
+  VisualizationContext 
+} from './services/visualizationRecommendationService';
+
 // Output-Aware Generation Service
 export { outputAwareGenerationService } from './services/outputAwareGenerationService';
 export type { 
