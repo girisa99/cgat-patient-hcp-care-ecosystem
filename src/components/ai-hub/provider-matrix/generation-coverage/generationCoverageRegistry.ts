@@ -3,7 +3,11 @@
  * 
  * Links existing constants to AI capabilities with bidirectional mapping.
  * Programmatically generates mappings from ALL constants (Industries, Frameworks, Visuals, Outputs).
- * This is the single source of truth for Context ↔ Capability relationships.
+ * 
+ * UNIFIED DATA SOURCE:
+ * - Uses CROSS_FUNCTIONAL_MAPPINGS and FEATURE_USE_CASES from matrixData.ts as source of truth
+ * - No redundant definitions - inherits use cases, scenarios, providers from existing data
+ * - Adds generation-specific context (industries, frameworks, outputs) on top
  */
 
 import { FeatureCategory, ProviderId } from '../types';
@@ -29,6 +33,21 @@ import {
   EXPANDED_OUTPUT_CONFIGS,
   type ExpandedOutputConfig 
 } from '@/components/genie-studio/presentation-generator/constants/expandedOutputTypes';
+import { 
+  CROSS_FUNCTIONAL_MAPPINGS, 
+  FEATURE_USE_CASES 
+} from '../matrixData';
+
+// ==========================================
+// PROVIDER CONSTANTS - ALL CONFIGURED PROVIDERS
+// ==========================================
+
+const ALL_TEXT_PROVIDERS: ProviderId[] = ['openai', 'claude', 'gemini', 'deepseek', 'alibaba', 'azure'];
+const ALL_TRANSLATION_PROVIDERS: ProviderId[] = ['deepl', 'google', 'microsoft', 'alibaba'];
+const ALL_IMAGE_PROVIDERS: ProviderId[] = ['modelslab', 'stability', 'openai', 'replicate', 'huggingface'];
+const ALL_VIDEO_PROVIDERS: ProviderId[] = ['modelslab', 'runway', 'pika', 'replicate', 'alibaba'];
+const ALL_VOICE_PROVIDERS: ProviderId[] = ['elevenlabs', 'openai', 'google', 'alibaba', 'azure'];
+const ALL_3D_PROVIDERS: ProviderId[] = ['modelslab', 'replicate', 'huggingface'];
 
 // ==========================================
 // COMPREHENSIVE INDUSTRY DEFINITIONS (25+ Industries)
@@ -487,6 +506,14 @@ const ALL_FEATURE_IDS = [
 ];
 
 function generateFeatureContextMapping(featureDef: { id: string; name: string; category: FeatureCategory }): CapabilityToContextMapping {
+  // INHERIT FROM CROSS_FUNCTIONAL_MAPPINGS - Single source of truth
+  const crossFunctionalMapping = CROSS_FUNCTIONAL_MAPPINGS.find(
+    m => m.primaryFeatureId === featureDef.id && m.primaryCategory === featureDef.category
+  );
+  
+  // INHERIT FROM FEATURE_USE_CASES
+  const featureUseCases = FEATURE_USE_CASES[featureDef.id];
+  
   // Find which industries use this feature
   const usedByIndustries = INDUSTRY_CAPABILITY_MAPPINGS
     .filter(m => m.requiredFeatures.some(f => f.featureId === featureDef.id))
@@ -508,36 +535,48 @@ function generateFeatureContextMapping(featureDef: { id: string; name: string; c
     .filter(m => m.requiredFeatures.some(f => f.featureId === featureDef.id))
     .map(m => ({ id: m.contextId as OutputFormatId, priority: 'primary' as const }));
   
-  // Define dependencies
+  // Build dependencies from CROSS_FUNCTIONAL_MAPPINGS relationships
   const dependsOn: CapabilityToContextMapping['dependsOn'] = [];
   const enablesFeatures: CapabilityToContextMapping['enablesFeatures'] = [];
   
-  // Define common dependencies
-  if (featureDef.id === 'tts') {
-    dependsOn.push({ featureId: 'ai_script_gen', category: 'SCRIPT' });
-    enablesFeatures.push({ featureId: 'voice_cloning', category: 'VOICE' });
-    enablesFeatures.push({ featureId: 'multi_language_voice', category: 'VOICE' });
+  if (crossFunctionalMapping) {
+    crossFunctionalMapping.relatedFeatures.forEach(rel => {
+      if (rel.relationship === 'requires') {
+        dependsOn.push({ featureId: rel.featureId, category: rel.category });
+      } else if (rel.relationship === 'enables') {
+        enablesFeatures.push({ featureId: rel.featureId, category: rel.category });
+      }
+    });
   }
-  if (featureDef.id === 'video_generation') {
-    dependsOn.push({ featureId: 'ai_image_gen', category: 'IMAGE' });
-    enablesFeatures.push({ featureId: 'avatar_generation', category: 'VIDEO' });
-  }
-  if (featureDef.id === 'mesh_3d_gen') {
-    dependsOn.push({ featureId: 'ai_image_gen', category: 'IMAGE' });
-    enablesFeatures.push({ featureId: '3d_animation', category: '3D' });
-    enablesFeatures.push({ featureId: 'ar_vr_export', category: 'AR_VR' });
-  }
-  if (featureDef.id === 'ai_script_gen') {
-    dependsOn.push({ featureId: 'text_prompt', category: 'INPUT' });
-    enablesFeatures.push({ featureId: 'tts', category: 'VOICE' });
-    enablesFeatures.push({ featureId: 'multi_language', category: 'TRANSLATION' });
-  }
-  if (featureDef.id === 'voice_cloning') {
-    dependsOn.push({ featureId: 'tts', category: 'VOICE' });
-  }
-  if (featureDef.id === 'avatar_generation') {
-    dependsOn.push({ featureId: 'video_generation', category: 'VIDEO' });
-    dependsOn.push({ featureId: 'tts', category: 'VOICE' });
+  
+  // Fallback dependencies for features not in CROSS_FUNCTIONAL_MAPPINGS
+  if (dependsOn.length === 0 && enablesFeatures.length === 0) {
+    if (featureDef.id === 'tts') {
+      dependsOn.push({ featureId: 'ai_script_gen', category: 'SCRIPT' });
+      enablesFeatures.push({ featureId: 'voice_cloning', category: 'VOICE' });
+      enablesFeatures.push({ featureId: 'multi_language_voice', category: 'VOICE' });
+    }
+    if (featureDef.id === 'video_generation') {
+      dependsOn.push({ featureId: 'ai_image_gen', category: 'IMAGE' });
+      enablesFeatures.push({ featureId: 'avatar_generation', category: 'VIDEO' });
+    }
+    if (featureDef.id === 'mesh_3d_gen') {
+      dependsOn.push({ featureId: 'ai_image_gen', category: 'IMAGE' });
+      enablesFeatures.push({ featureId: '3d_animation', category: '3D' });
+      enablesFeatures.push({ featureId: 'ar_vr_export', category: 'AR_VR' });
+    }
+    if (featureDef.id === 'ai_script_gen') {
+      dependsOn.push({ featureId: 'text_prompt', category: 'INPUT' });
+      enablesFeatures.push({ featureId: 'tts', category: 'VOICE' });
+      enablesFeatures.push({ featureId: 'multi_language', category: 'TRANSLATION' });
+    }
+    if (featureDef.id === 'voice_cloning') {
+      dependsOn.push({ featureId: 'tts', category: 'VOICE' });
+    }
+    if (featureDef.id === 'avatar_generation') {
+      dependsOn.push({ featureId: 'video_generation', category: 'VIDEO' });
+      dependsOn.push({ featureId: 'tts', category: 'VOICE' });
+    }
   }
   
   return {
@@ -550,7 +589,19 @@ function generateFeatureContextMapping(featureDef: { id: string; name: string; c
     usedByVisuals,
     usedByOutputs,
     dependsOn,
-    enablesFeatures
+    enablesFeatures,
+    // INHERIT scenarios from FEATURE_USE_CASES (no redundancy)
+    scenarios: featureUseCases?.scenarios || crossFunctionalMapping?.scenarios || [],
+    // INHERIT use cases from FEATURE_USE_CASES (no redundancy)
+    useCases: featureUseCases?.bestFor || crossFunctionalMapping?.useCases || [],
+    // INHERIT recommended providers from CROSS_FUNCTIONAL_MAPPINGS
+    recommendedProviders: crossFunctionalMapping?.recommendedProviders as ProviderId[] || [],
+    // INHERIT recommended LLMs
+    recommendedLLMs: crossFunctionalMapping?.recommendedLLMs || [],
+    // INHERIT Genie products
+    genieProducts: crossFunctionalMapping?.genieProducts || [],
+    // INHERIT limitations
+    limitations: featureUseCases?.limitations || [],
   };
 }
 
@@ -617,6 +668,7 @@ export function getGenerationCoverageStats(categoryFilter?: string) {
   
   const forwardMappings = [...INDUSTRY_CAPABILITY_MAPPINGS, ...FRAMEWORK_CAPABILITY_MAPPINGS, ...VISUAL_CAPABILITY_MAPPINGS, ...OUTPUT_CAPABILITY_MAPPINGS];
   
+  // Collect from forward mappings
   forwardMappings.forEach(mapping => {
     mapping.scenarios.forEach(s => allScenarios.add(s));
     mapping.useCases.forEach(u => allUseCases.add(u));
@@ -626,9 +678,29 @@ export function getGenerationCoverageStats(categoryFilter?: string) {
     mapping.recommendedModels.forEach(m => m.modelIds.forEach(model => allModels.add(model)));
   });
   
+  // ALSO collect from CROSS_FUNCTIONAL_MAPPINGS to ensure all providers are counted
+  CROSS_FUNCTIONAL_MAPPINGS.forEach(mapping => {
+    if (mapping.recommendedProviders) {
+      mapping.recommendedProviders.forEach(p => allProviders.add(p));
+    }
+    if (mapping.scenarios) {
+      mapping.scenarios.forEach(s => allScenarios.add(s));
+    }
+    if (mapping.useCases) {
+      mapping.useCases.forEach(u => allUseCases.add(u));
+    }
+  });
+  
+  // Collect from feature mappings with inherited data
   const categoryFeatures = categoryFilter && categoryFilter !== 'all'
     ? FEATURE_CONTEXT_MAPPINGS.filter(f => f.category === categoryFilter)
     : FEATURE_CONTEXT_MAPPINGS;
+  
+  categoryFeatures.forEach(feature => {
+    if (feature.scenarios) feature.scenarios.forEach(s => allScenarios.add(s));
+    if (feature.useCases) feature.useCases.forEach(u => allUseCases.add(u));
+    if (feature.recommendedProviders) feature.recommendedProviders.forEach(p => allProviders.add(p));
+  });
   
   const crossDependencies = categoryFeatures.reduce((sum, f) => sum + f.dependsOn.length + f.enablesFeatures.length, 0);
   
@@ -646,7 +718,9 @@ export function getGenerationCoverageStats(categoryFilter?: string) {
     crossDependencies,
     // Sub-option counts
     visualSubOptions: EXPANDED_VISUAL_FEATURES.reduce((sum, v) => sum + v.subOptions.length, 0),
-    frameworkCategories: EXPANDED_FRAMEWORK_CATEGORIES.length
+    frameworkCategories: EXPANDED_FRAMEWORK_CATEGORIES.length,
+    // Provider breakdown
+    allProviders: Array.from(allProviders).sort()
   };
 }
 
