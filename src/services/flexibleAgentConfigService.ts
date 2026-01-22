@@ -294,25 +294,106 @@ const INDUSTRY_PROVIDER_ROUTING: Record<string, {
 };
 
 // ============================================
-// FRAMEWORK-BASED PROVIDER ROUTING
+// FRAMEWORK-BASED PROVIDER ROUTING (All 49+ frameworks)
 // ============================================
 
 const FRAMEWORK_PROVIDER_ROUTING: Record<string, {
   visualProvider: string;
   chartType: string;
+  a2aRecommended: boolean;
+  agents: string[];
   reason: string;
 }> = {
-  // Strategy Frameworks
-  'swot': { visualProvider: 'modelslab-flux', chartType: 'quadrant', reason: '2x2 matrix visualization' },
-  'porters-five-forces': { visualProvider: 'stability-sdxl', chartType: 'radar', reason: 'Force analysis' },
-  'pestle': { visualProvider: 'modelslab-flux', chartType: 'hexagon', reason: '6-factor analysis' },
-  'value-chain': { visualProvider: 'stability-sdxl', chartType: 'flow', reason: 'Process visualization' },
-  'bcg-matrix': { visualProvider: 'modelslab-flux', chartType: 'quadrant', reason: 'Portfolio matrix' },
-  'ansoff-matrix': { visualProvider: 'modelslab-flux', chartType: 'quadrant', reason: 'Growth strategies' },
-  'balanced-scorecard': { visualProvider: 'stability-sdxl', chartType: 'dashboard', reason: 'Multi-metric' },
+  // ==================== CONSULTING FRAMEWORKS ====================
+  // Tier 1 Strategy
+  '7s': { visualProvider: 'stability-sdxl', chartType: 'heptagon', a2aRecommended: true, agents: ['image_generator', 'enhancer'], reason: '7-element diagram' },
+  'mece': { visualProvider: 'modelslab-flux', chartType: 'tree', a2aRecommended: true, agents: ['content_analyzer', 'image_generator'], reason: 'Hierarchical structure' },
+  'pyramid': { visualProvider: 'modelslab-flux', chartType: 'pyramid', a2aRecommended: true, agents: ['slide_generator', 'image_generator'], reason: 'Pyramid visualization' },
+  'three-horizons': { visualProvider: 'stability-sdxl', chartType: 'timeline', a2aRecommended: true, agents: ['image_generator', 'enhancer'], reason: 'Time-based horizon' },
+  'influence-model': { visualProvider: 'modelslab-flux', chartType: 'radial', a2aRecommended: true, agents: ['image_generator', 'content_analyzer'], reason: 'Influence mapping' },
+  
+  // Portfolio Analysis
+  'growth-share-matrix': { visualProvider: 'modelslab-flux', chartType: 'quadrant', a2aRecommended: true, agents: ['image_generator', 'content_analyzer'], reason: 'BCG matrix' },
+  'market-positioning': { visualProvider: 'stability-sdxl', chartType: 'scatter', a2aRecommended: true, agents: ['image_generator', 'enhancer'], reason: 'Position mapping' },
+  'experience-curve': { visualProvider: 'modelslab-flux', chartType: 'line', a2aRecommended: false, agents: ['image_generator'], reason: 'Curve visualization' },
+  'advantage-matrix': { visualProvider: 'modelslab-flux', chartType: 'quadrant', a2aRecommended: true, agents: ['image_generator', 'content_analyzer'], reason: 'Competitive matrix' },
+  
+  // Results-Driven
+  'nps': { visualProvider: 'modelslab-flux', chartType: 'gauge', a2aRecommended: false, agents: ['image_generator'], reason: 'Score gauge' },
+  'full-potential': { visualProvider: 'stability-sdxl', chartType: 'waterfall', a2aRecommended: true, agents: ['image_generator', 'enhancer'], reason: 'Value bridge' },
+  'decision-insights': { visualProvider: 'modelslab-flux', chartType: 'dashboard', a2aRecommended: true, agents: ['image_generator', 'content_analyzer'], reason: 'Insight dashboard' },
+  
+  // Universal Frameworks
+  'swot': { visualProvider: 'modelslab-flux', chartType: 'quadrant', a2aRecommended: false, agents: ['image_generator'], reason: '2x2 matrix visualization' },
+  'porter-five': { visualProvider: 'stability-sdxl', chartType: 'radar', a2aRecommended: true, agents: ['image_generator', 'content_analyzer'], reason: 'Force analysis' },
+  'pestle': { visualProvider: 'modelslab-flux', chartType: 'hexagon', a2aRecommended: true, agents: ['image_generator', 'enhancer'], reason: '6-factor analysis' },
+  'value-chain': { visualProvider: 'stability-sdxl', chartType: 'flow', a2aRecommended: true, agents: ['image_generator', 'content_analyzer'], reason: 'Process visualization' },
+  'competitive-analysis': { visualProvider: 'modelslab-flux', chartType: 'comparison', a2aRecommended: false, agents: ['image_generator'], reason: 'Comparison chart' },
+  
+  // ==================== METHODOLOGY FRAMEWORKS ====================
+  // Strategy
+  'ansoff': { visualProvider: 'modelslab-flux', chartType: 'quadrant', a2aRecommended: false, agents: ['image_generator'], reason: 'Growth matrix' },
+  'blue-ocean': { visualProvider: 'stability-sdxl', chartType: 'strategy-canvas', a2aRecommended: true, agents: ['image_generator', 'enhancer'], reason: 'Strategy canvas' },
+  'balanced-scorecard': { visualProvider: 'stability-sdxl', chartType: 'dashboard', a2aRecommended: true, agents: ['image_generator', 'content_analyzer'], reason: 'Multi-metric dashboard' },
+  
+  // Innovation
+  'design-thinking': { visualProvider: 'modelslab-flux', chartType: 'process', a2aRecommended: true, agents: ['image_generator', 'enhancer'], reason: '5-stage process' },
+  'lean-startup': { visualProvider: 'modelslab-flux', chartType: 'cycle', a2aRecommended: true, agents: ['image_generator', 'content_analyzer'], reason: 'Build-measure-learn' },
+  'jobs-to-be-done': { visualProvider: 'stability-sdxl', chartType: 'hierarchy', a2aRecommended: true, agents: ['image_generator', 'enhancer'], reason: 'Job hierarchy' },
+  'stage-gate': { visualProvider: 'modelslab-flux', chartType: 'funnel', a2aRecommended: true, agents: ['image_generator', 'content_analyzer'], reason: 'Gate stages' },
+  
+  // Agile
+  'scrum': { visualProvider: 'modelslab-flux', chartType: 'sprint', a2aRecommended: false, agents: ['image_generator'], reason: 'Sprint board' },
+  'kanban': { visualProvider: 'modelslab-flux', chartType: 'board', a2aRecommended: false, agents: ['image_generator'], reason: 'Kanban board' },
+  'safe': { visualProvider: 'stability-sdxl', chartType: 'hierarchy', a2aRecommended: true, agents: ['image_generator', 'enhancer'], reason: 'SAFe layers' },
+  'okr': { visualProvider: 'modelslab-flux', chartType: 'tree', a2aRecommended: false, agents: ['image_generator'], reason: 'OKR cascade' },
+  
+  // ==================== INDUSTRY FRAMEWORKS ====================
+  // Healthcare
+  'patient-journey': { visualProvider: 'dall-e-3', chartType: 'journey', a2aRecommended: true, agents: ['image_generator', 'content_analyzer', 'enhancer'], reason: 'Care pathway' },
+  'value-based-care': { visualProvider: 'dall-e-3', chartType: 'value-flow', a2aRecommended: true, agents: ['image_generator', 'enhancer'], reason: 'Outcome focus' },
+  'care-model': { visualProvider: 'dall-e-3', chartType: 'canvas', a2aRecommended: true, agents: ['image_generator', 'content_analyzer'], reason: 'Care model canvas' },
+  'hipaa-compliance': { visualProvider: 'dall-e-3', chartType: 'checklist', a2aRecommended: true, agents: ['image_generator', 'compliance_checker'], reason: 'HIPAA visual' },
+  
+  // FinTech
+  'risk-assessment': { visualProvider: 'stability-sdxl', chartType: 'heatmap', a2aRecommended: true, agents: ['image_generator', 'content_analyzer'], reason: 'Risk matrix' },
+  'regulatory': { visualProvider: 'stability-sdxl', chartType: 'timeline', a2aRecommended: true, agents: ['image_generator', 'compliance_checker'], reason: 'Regulatory roadmap' },
+  'fintech-stack': { visualProvider: 'stability-sdxl', chartType: 'architecture', a2aRecommended: true, agents: ['image_generator', 'enhancer'], reason: 'Tech stack' },
+  
+  // SaaS
+  'saas-metrics': { visualProvider: 'modelslab-flux', chartType: 'dashboard', a2aRecommended: true, agents: ['image_generator', 'content_analyzer'], reason: 'Metrics dashboard' },
+  'product-led': { visualProvider: 'modelslab-flux', chartType: 'funnel', a2aRecommended: true, agents: ['image_generator', 'enhancer'], reason: 'PLG funnel' },
+  'pirate-metrics': { visualProvider: 'modelslab-flux', chartType: 'funnel', a2aRecommended: false, agents: ['image_generator'], reason: 'AARRR funnel' },
+  
+  // Retail
+  'omnichannel': { visualProvider: 'modelslab-flux', chartType: 'hub-spoke', a2aRecommended: true, agents: ['image_generator', 'enhancer'], reason: 'Channel map' },
+  'customer-lifecycle': { visualProvider: 'modelslab-flux', chartType: 'cycle', a2aRecommended: true, agents: ['image_generator', 'content_analyzer'], reason: 'Lifecycle visual' },
+  'retail-analytics': { visualProvider: 'modelslab-flux', chartType: 'dashboard', a2aRecommended: true, agents: ['image_generator', 'content_analyzer'], reason: 'Store analytics' },
+  
+  // Manufacturing
+  'lean-manufacturing': { visualProvider: 'stability-sdxl', chartType: 'process', a2aRecommended: true, agents: ['image_generator', 'enhancer'], reason: 'Lean flow' },
+  'six-sigma': { visualProvider: 'stability-sdxl', chartType: 'dmaic', a2aRecommended: true, agents: ['image_generator', 'content_analyzer'], reason: 'DMAIC process' },
+  'industry-4': { visualProvider: 'stability-sdxl', chartType: 'architecture', a2aRecommended: true, agents: ['image_generator', 'mesh_generator', 'enhancer'], reason: 'IoT architecture' },
+  
+  // ==================== REGIONAL FRAMEWORKS ====================
+  // APAC
+  'guanxi': { visualProvider: 'alibaba-wanx', chartType: 'network', a2aRecommended: true, agents: ['image_generator', 'enhancer'], reason: 'Relationship network' },
+  'kaizen': { visualProvider: 'alibaba-wanx', chartType: 'cycle', a2aRecommended: true, agents: ['image_generator', 'content_analyzer'], reason: 'Improvement cycle' },
+  'keiretsu': { visualProvider: 'alibaba-wanx', chartType: 'hierarchy', a2aRecommended: true, agents: ['image_generator', 'enhancer'], reason: 'Business network' },
+  'china-market': { visualProvider: 'alibaba-wanx', chartType: 'market-map', a2aRecommended: true, agents: ['image_generator', 'translator', 'enhancer'], reason: 'China strategy' },
+  
+  // EMEA
+  'gdpr': { visualProvider: 'stability-sdxl', chartType: 'flow', a2aRecommended: true, agents: ['image_generator', 'compliance_checker'], reason: 'Data flow' },
+  'eu-sustainability': { visualProvider: 'stability-sdxl', chartType: 'scorecard', a2aRecommended: true, agents: ['image_generator', 'content_analyzer'], reason: 'ESG metrics' },
+  'mena-market': { visualProvider: 'stability-sdxl', chartType: 'market-map', a2aRecommended: true, agents: ['image_generator', 'translator', 'enhancer'], reason: 'MENA strategy' },
+  
+  // Americas
+  'us-market': { visualProvider: 'modelslab-flux', chartType: 'market-map', a2aRecommended: false, agents: ['image_generator', 'enhancer'], reason: 'US expansion' },
+  'latam-growth': { visualProvider: 'modelslab-flux', chartType: 'market-map', a2aRecommended: true, agents: ['image_generator', 'translator'], reason: 'LATAM strategy' },
+  'soc2': { visualProvider: 'stability-sdxl', chartType: 'compliance', a2aRecommended: true, agents: ['image_generator', 'compliance_checker'], reason: 'SOC 2 visual' },
   
   // Default
-  'default': { visualProvider: 'modelslab-flux', chartType: 'auto', reason: 'Context-adaptive' },
+  'default': { visualProvider: 'modelslab-flux', chartType: 'auto', a2aRecommended: false, agents: ['image_generator'], reason: 'Context-adaptive' },
 };
 
 // ============================================
@@ -325,73 +406,267 @@ const OUTPUT_SUBOPTION_PROVIDER_ROUTING: Record<string, {
   models: string[];
   a2aRequired: boolean;
   tier: 1 | 2 | 3;
+  agents: string[];
   reason: string;
 }> = {
   // Document Tier (Tier 1)
-  'pdf-export': { primaryProvider: 'jspdf', models: ['jspdf', 'pdfmake'], a2aRequired: false, tier: 1, reason: 'Static PDF generation' },
-  'pptx-export': { primaryProvider: 'pptxgenjs', models: ['pptxgenjs'], a2aRequired: false, tier: 1, reason: 'PowerPoint export' },
-  '2d-static': { primaryProvider: 'modelslab-flux', models: ['flux-pro', 'dall-e-3'], a2aRequired: false, tier: 1, reason: 'High-quality static images' },
-  'print-ready': { primaryProvider: 'modelslab-flux', models: ['flux-pro', 'midjourney-v6'], a2aRequired: false, tier: 1, reason: 'Print-optimized output' },
+  'pdf-export': { primaryProvider: 'jspdf', models: ['jspdf', 'pdfmake'], a2aRequired: false, tier: 1, agents: ['slide_generator'], reason: 'Static PDF generation' },
+  'pptx-export': { primaryProvider: 'pptxgenjs', models: ['pptxgenjs'], a2aRequired: false, tier: 1, agents: ['slide_generator'], reason: 'PowerPoint export' },
+  'docx-export': { primaryProvider: 'docx', models: ['docx'], a2aRequired: false, tier: 1, agents: ['slide_generator'], reason: 'Word export' },
+  '2d-static': { primaryProvider: 'modelslab-flux', models: ['flux-pro', 'dall-e-3'], a2aRequired: false, tier: 1, agents: ['image_generator'], reason: 'High-quality static images' },
+  'print-ready': { primaryProvider: 'modelslab-flux', models: ['flux-pro', 'midjourney-v6'], a2aRequired: false, tier: 1, agents: ['image_generator', 'enhancer'], reason: 'Print-optimized output' },
+  'infographic': { primaryProvider: 'modelslab-flux', models: ['flux-pro', 'dall-e-3'], a2aRequired: false, tier: 1, agents: ['image_generator'], reason: 'Infographic images' },
   
   // Animated Tier (Tier 2)
-  '2d-animated': { primaryProvider: 'modelslab-animatediff', models: ['animatediff-v2', 'framer-motion'], a2aRequired: true, tier: 2, reason: 'CSS/Framer animations' },
-  'video-short': { primaryProvider: 'modelslab-video', models: ['animatediff-v2', 'pika-labs'], a2aRequired: true, tier: 2, reason: '5-15s video clips' },
-  '3d-static': { primaryProvider: 'modelslab-3d', models: ['meshy-ai', 'triposr', 'shap-e'], a2aRequired: true, tier: 2, reason: 'Static 3D scenes' },
-  'web-embed': { primaryProvider: 'react', models: ['react', 'vue'], a2aRequired: false, tier: 2, reason: 'Embeddable widgets' },
-  'social-media': { primaryProvider: 'modelslab-flux', models: ['flux-pro', 'dall-e-3'], a2aRequired: true, tier: 2, reason: 'Platform-optimized formats' },
+  '2d-animated': { primaryProvider: 'modelslab-animatediff', models: ['animatediff-v2', 'framer-motion'], a2aRequired: true, tier: 2, agents: ['image_generator', 'animation_generator'], reason: 'CSS/Framer animations' },
+  'video-short': { primaryProvider: 'modelslab-video', models: ['animatediff-v2', 'pika-labs'], a2aRequired: true, tier: 2, agents: ['video_generator', 'enhancer'], reason: '5-15s video clips' },
+  'video-intro': { primaryProvider: 'modelslab-video', models: ['animatediff-v2', 'pika-labs'], a2aRequired: true, tier: 2, agents: ['video_generator'], reason: 'Intro animation' },
+  'video-outro': { primaryProvider: 'modelslab-video', models: ['animatediff-v2', 'pika-labs'], a2aRequired: true, tier: 2, agents: ['video_generator'], reason: 'Outro animation' },
+  '3d-static': { primaryProvider: 'modelslab-3d', models: ['meshy-ai', 'triposr', 'shap-e'], a2aRequired: true, tier: 2, agents: ['mesh_generator', 'image_generator'], reason: 'Static 3D scenes' },
+  'web-embed': { primaryProvider: 'react', models: ['react', 'vue'], a2aRequired: false, tier: 2, agents: ['interactive_generator'], reason: 'Embeddable widgets' },
+  'social-media': { primaryProvider: 'modelslab-flux', models: ['flux-pro', 'dall-e-3'], a2aRequired: true, tier: 2, agents: ['image_generator', 'video_generator'], reason: 'Platform-optimized formats' },
+  'gif-animated': { primaryProvider: 'modelslab-animatediff', models: ['animatediff-v2'], a2aRequired: true, tier: 2, agents: ['animation_generator'], reason: 'GIF export' },
+  'lottie-animation': { primaryProvider: 'lottie', models: ['lottie', 'rive'], a2aRequired: true, tier: 2, agents: ['animation_generator'], reason: 'Lottie export' },
   
   // Video Premium (Tier 3)
-  'video-full': { primaryProvider: 'runway-gen3', models: ['openai-sora', 'runway-gen3', 'gemini-veo', 'luma-dream-machine'], a2aRequired: true, tier: 3, reason: 'Full video with narration' },
+  'video-full': { primaryProvider: 'runway-gen3', models: ['openai-sora', 'runway-gen3', 'gemini-veo', 'luma-dream-machine'], a2aRequired: true, tier: 3, agents: ['coordinator', 'video_generator', 'voiceover', 'enhancer'], reason: 'Full video with narration' },
+  'video-cinematic': { primaryProvider: 'runway-gen3', models: ['openai-sora', 'runway-gen3'], a2aRequired: true, tier: 3, agents: ['coordinator', 'video_generator', 'enhancer', 'color_grader'], reason: 'Cinematic quality' },
+  'video-explainer': { primaryProvider: 'runway-gen3', models: ['runway-gen3', 'pika-labs'], a2aRequired: true, tier: 3, agents: ['video_generator', 'voiceover', 'content_analyzer'], reason: 'Explainer video' },
   
   // 3D Premium (Tier 3)
-  '3d-animated': { primaryProvider: 'modelslab-3d', models: ['rodin-gen1', 'luma-genie', 'csm-3d'], a2aRequired: true, tier: 3, reason: '3D animations with physics' },
+  '3d-animated': { primaryProvider: 'modelslab-3d', models: ['rodin-gen1', 'luma-genie', 'csm-3d'], a2aRequired: true, tier: 3, agents: ['mesh_generator', 'animation_generator', 'enhancer'], reason: '3D animations with physics' },
+  '3d-interactive': { primaryProvider: 'three.js', models: ['three.js', 'babylon.js'], a2aRequired: true, tier: 3, agents: ['mesh_generator', 'interactive_generator'], reason: 'Interactive 3D' },
+  '3d-product-viz': { primaryProvider: 'modelslab-3d', models: ['rodin-gen1', 'meshy-ai'], a2aRequired: true, tier: 3, agents: ['mesh_generator', 'enhancer'], reason: 'Product visualization' },
   
   // Interactive (Tier 3)
-  'interactive': { primaryProvider: 'react', models: ['react', 'd3', 'three.js'], a2aRequired: true, tier: 3, reason: 'Interactive web apps' },
+  'interactive': { primaryProvider: 'react', models: ['react', 'd3', 'three.js'], a2aRequired: true, tier: 3, agents: ['interactive_generator', 'enhancer'], reason: 'Interactive web apps' },
+  'interactive-dashboard': { primaryProvider: 'react', models: ['react', 'd3', 'recharts'], a2aRequired: true, tier: 3, agents: ['interactive_generator', 'content_analyzer'], reason: 'Data dashboard' },
+  'interactive-quiz': { primaryProvider: 'react', models: ['react'], a2aRequired: true, tier: 3, agents: ['interactive_generator'], reason: 'Quiz/assessment' },
+  'interactive-form': { primaryProvider: 'react', models: ['react'], a2aRequired: true, tier: 3, agents: ['interactive_generator'], reason: 'Form/calculator' },
   
   // Immersive (Tier 3) - VR/AR/MR
-  'vr-experience': { primaryProvider: 'aframe', models: ['aframe', 'three.js', 'babylon.js'], a2aRequired: true, tier: 3, reason: 'VR-ready 360° content' },
-  'ar-overlay': { primaryProvider: 'modelslab-3d', models: ['meshy-ai', 'triposr', 'arcore'], a2aRequired: true, tier: 3, reason: 'AR overlay content' },
-  'mixed-reality': { primaryProvider: 'runway-gen3', models: ['openai-sora', 'rodin-gen1', 'elevenlabs-ultra'], a2aRequired: true, tier: 3, reason: 'Multi-format adaptive' },
+  'vr-experience': { primaryProvider: 'aframe', models: ['aframe', 'three.js', 'babylon.js'], a2aRequired: true, tier: 3, agents: ['coordinator', 'mesh_generator', 'spatial_audio_generator'], reason: 'VR-ready 360° content' },
+  'vr-360': { primaryProvider: 'modelslab-3d', models: ['rodin-gen1', 'stability-sv3d'], a2aRequired: true, tier: 3, agents: ['mesh_generator', 'image_generator'], reason: '360° content' },
+  'ar-overlay': { primaryProvider: 'modelslab-3d', models: ['meshy-ai', 'triposr', 'arcore'], a2aRequired: true, tier: 3, agents: ['mesh_generator', 'image_generator'], reason: 'AR overlay content' },
+  'ar-product': { primaryProvider: 'modelslab-3d', models: ['meshy-ai', 'rodin-gen1'], a2aRequired: true, tier: 3, agents: ['mesh_generator', 'enhancer'], reason: 'AR product view' },
+  'ar-face-filter': { primaryProvider: 'modelslab-3d', models: ['meshy-ai'], a2aRequired: true, tier: 3, agents: ['mesh_generator', 'face_tracker'], reason: 'AR face filter' },
+  'mixed-reality': { primaryProvider: 'runway-gen3', models: ['openai-sora', 'rodin-gen1', 'elevenlabs-ultra'], a2aRequired: true, tier: 3, agents: ['coordinator', 'video_generator', 'mesh_generator', 'spatial_audio_generator'], reason: 'Multi-format adaptive' },
   
   // AI Avatar Video (Premium Tier 3)
-  'ai-avatar-video': { primaryProvider: 'heygen', models: ['heygen', 'd-id', 'synthesia'], a2aRequired: true, tier: 3, reason: 'AI avatar generation' },
-  'avatar-lipsync': { primaryProvider: 'modelslab-video', models: ['sadtalker', 'wav2lip'], a2aRequired: true, tier: 3, reason: 'Lip-sync animation' },
-  'avatar-realistic': { primaryProvider: 'heygen', models: ['heygen-v2', 'd-id-v2'], a2aRequired: true, tier: 3, reason: 'Photorealistic avatars' },
-  'avatar-3d-mesh': { primaryProvider: 'rodin-gen1', models: ['rodin-gen1', 'luma-genie'], a2aRequired: true, tier: 3, reason: '3D avatar meshes' },
+  'ai-avatar-video': { primaryProvider: 'heygen', models: ['heygen', 'd-id', 'synthesia'], a2aRequired: true, tier: 3, agents: ['coordinator', 'avatar_generator', 'voiceover', 'lipsync_generator'], reason: 'AI avatar generation' },
+  'avatar-lipsync': { primaryProvider: 'modelslab-video', models: ['sadtalker', 'wav2lip'], a2aRequired: true, tier: 3, agents: ['lipsync_generator', 'voiceover'], reason: 'Lip-sync animation' },
+  'avatar-realistic': { primaryProvider: 'heygen', models: ['heygen-v2', 'd-id-v2'], a2aRequired: true, tier: 3, agents: ['avatar_generator', 'enhancer'], reason: 'Photorealistic avatars' },
+  'avatar-stylized': { primaryProvider: 'd-id', models: ['d-id', 'synthesia'], a2aRequired: true, tier: 3, agents: ['avatar_generator', 'enhancer'], reason: 'Stylized avatars' },
+  'avatar-3d-mesh': { primaryProvider: 'rodin-gen1', models: ['rodin-gen1', 'luma-genie'], a2aRequired: true, tier: 3, agents: ['mesh_generator', 'animation_generator', 'enhancer'], reason: '3D avatar meshes' },
 };
 
 // ============================================
-// FRAMEWORK CATEGORY PROVIDER ROUTING
+// VISUAL FEATURES A2A ROUTING (22 categories)
+// Maps visual features to specialized agents
+// ============================================
+
+const VISUAL_FEATURE_A2A_ROUTING: Record<string, {
+  primaryProvider: string;
+  a2aRequired: boolean;
+  tier: 1 | 2 | 3;
+  agents: string[];
+  compatibleOutputs: string[];
+  reason: string;
+}> = {
+  // ==================== DATA VISUALIZATION ====================
+  'infographics': { primaryProvider: 'modelslab-flux', a2aRequired: false, tier: 1, agents: ['image_generator'], compatibleOutputs: ['pdf', 'pptx', 'video', 'interactive'], reason: 'Data infographics' },
+  'charts': { primaryProvider: 'recharts', a2aRequired: false, tier: 1, agents: ['image_generator'], compatibleOutputs: ['pdf', 'pptx', 'interactive'], reason: 'Chart rendering' },
+  'data-tables': { primaryProvider: 'react', a2aRequired: false, tier: 1, agents: ['slide_generator'], compatibleOutputs: ['pdf', 'pptx', 'interactive'], reason: 'Table rendering' },
+  
+  // ==================== STRUCTURAL ELEMENTS ====================
+  'journey-maps': { primaryProvider: 'modelslab-flux', a2aRequired: true, tier: 1, agents: ['image_generator', 'content_analyzer'], compatibleOutputs: ['pdf', 'pptx', 'video', 'interactive'], reason: 'Journey visualization' },
+  'timelines': { primaryProvider: 'modelslab-flux', a2aRequired: true, tier: 1, agents: ['image_generator', 'content_analyzer'], compatibleOutputs: ['pdf', 'pptx', 'video', 'interactive'], reason: 'Timeline rendering' },
+  'diagrams': { primaryProvider: 'modelslab-flux', a2aRequired: true, tier: 1, agents: ['image_generator', 'content_analyzer'], compatibleOutputs: ['pdf', 'pptx', 'video', 'interactive'], reason: 'Diagram generation' },
+  'quote-blocks': { primaryProvider: 'modelslab-flux', a2aRequired: false, tier: 1, agents: ['slide_generator'], compatibleOutputs: ['pdf', 'pptx', 'video'], reason: 'Quote styling' },
+  'icon-sets': { primaryProvider: 'modelslab-flux', a2aRequired: false, tier: 1, agents: ['image_generator'], compatibleOutputs: ['pdf', 'pptx', 'video', 'interactive', '3d'], reason: 'Icon generation' },
+  
+  // ==================== MEDIA ELEMENTS ====================
+  'images': { primaryProvider: 'modelslab-flux', a2aRequired: false, tier: 1, agents: ['image_generator'], compatibleOutputs: ['pdf', 'pptx', 'video', 'interactive', '3d', 'vr'], reason: 'AI image generation' },
+  'video-clips': { primaryProvider: 'modelslab-video', a2aRequired: true, tier: 2, agents: ['video_generator', 'enhancer'], compatibleOutputs: ['video', 'interactive', 'vr'], reason: 'Video clips' },
+  'audio': { primaryProvider: 'elevenlabs', a2aRequired: true, tier: 2, agents: ['voiceover', 'music_generator'], compatibleOutputs: ['video', 'interactive', 'vr', 'ar'], reason: 'Audio generation' },
+  'animations': { primaryProvider: 'modelslab-animatediff', a2aRequired: true, tier: 2, agents: ['animation_generator', 'video_generator'], compatibleOutputs: ['video', 'interactive', '3d', 'vr'], reason: 'Motion graphics' },
+  
+  // ==================== 3D & AR ELEMENTS ====================
+  '3d-objects': { primaryProvider: 'modelslab-3d', a2aRequired: true, tier: 2, agents: ['mesh_generator', 'image_generator'], compatibleOutputs: ['interactive', '3d', 'vr', 'ar'], reason: '3D object generation' },
+  '3d-scenes': { primaryProvider: 'modelslab-3d', a2aRequired: true, tier: 3, agents: ['coordinator', 'mesh_generator', 'enhancer'], compatibleOutputs: ['3d', 'vr', 'ar'], reason: '3D scene composition' },
+  '3d-animations': { primaryProvider: 'modelslab-3d', a2aRequired: true, tier: 3, agents: ['mesh_generator', 'animation_generator', 'enhancer'], compatibleOutputs: ['video', '3d', 'vr'], reason: '3D motion' },
+  'ar-elements': { primaryProvider: 'modelslab-3d', a2aRequired: true, tier: 3, agents: ['coordinator', 'mesh_generator', 'ar_tracker'], compatibleOutputs: ['ar', 'interactive'], reason: 'AR experiences' },
+  
+  // ==================== INTERACTIVE ELEMENTS ====================
+  'clickable': { primaryProvider: 'react', a2aRequired: true, tier: 2, agents: ['interactive_generator'], compatibleOutputs: ['interactive', 'vr'], reason: 'Click interactions' },
+  'forms': { primaryProvider: 'react', a2aRequired: true, tier: 2, agents: ['interactive_generator'], compatibleOutputs: ['interactive'], reason: 'Form inputs' },
+  'quizzes': { primaryProvider: 'react', a2aRequired: true, tier: 2, agents: ['interactive_generator', 'content_analyzer'], compatibleOutputs: ['interactive'], reason: 'Quiz logic' },
+  'data-filters': { primaryProvider: 'react', a2aRequired: true, tier: 3, agents: ['interactive_generator', 'content_analyzer'], compatibleOutputs: ['interactive'], reason: 'Data exploration' },
+  'realtime': { primaryProvider: 'react', a2aRequired: true, tier: 3, agents: ['coordinator', 'interactive_generator'], compatibleOutputs: ['interactive', 'vr'], reason: 'Real-time updates' },
+  
+  // ==================== LAYOUT ELEMENTS ====================
+  'grids': { primaryProvider: 'react', a2aRequired: false, tier: 1, agents: ['slide_generator'], compatibleOutputs: ['pdf', 'pptx', 'video', 'interactive'], reason: 'Grid layouts' },
+  'sections': { primaryProvider: 'react', a2aRequired: false, tier: 1, agents: ['slide_generator'], compatibleOutputs: ['pdf', 'pptx', 'video', 'interactive'], reason: 'Section layouts' },
+};
+
+// ============================================
+// CONTENT TYPE A2A ROUTING
+// Maps content types to specialized agents
+// ============================================
+
+const CONTENT_TYPE_A2A_ROUTING: Record<string, {
+  primaryProvider: string;
+  a2aRequired: boolean;
+  tier: 1 | 2 | 3;
+  agents: string[];
+  suggestedFrameworks: string[];
+  reason: string;
+}> = {
+  // Narrative
+  'storytelling': { primaryProvider: 'claude-3-opus', a2aRequired: true, tier: 2, agents: ['content_generator', 'enhancer', 'image_generator'], suggestedFrameworks: ['customer-journey'], reason: 'Narrative arc' },
+  'case-study': { primaryProvider: 'claude-3-opus', a2aRequired: true, tier: 2, agents: ['content_generator', 'content_analyzer', 'image_generator'], suggestedFrameworks: ['value-chain'], reason: 'Case analysis' },
+  'customer-journey': { primaryProvider: 'claude-3-sonnet', a2aRequired: true, tier: 2, agents: ['content_generator', 'image_generator', 'content_analyzer'], suggestedFrameworks: ['patient-journey', 'customer-lifecycle'], reason: 'Journey mapping' },
+  
+  // Business
+  'investor-pitch': { primaryProvider: 'claude-3-opus', a2aRequired: true, tier: 3, agents: ['coordinator', 'content_generator', 'enhancer', 'image_generator'], suggestedFrameworks: ['growth-share-matrix', 'saas-metrics'], reason: 'Investment narrative' },
+  'sales-deck': { primaryProvider: 'gemini-3-flash', a2aRequired: true, tier: 2, agents: ['content_generator', 'enhancer', 'image_generator'], suggestedFrameworks: ['swot', 'competitive-analysis'], reason: 'Sales persuasion' },
+  'quarterly-review': { primaryProvider: 'gemini-3-flash', a2aRequired: true, tier: 2, agents: ['content_generator', 'content_analyzer', 'image_generator'], suggestedFrameworks: ['balanced-scorecard', 'okr'], reason: 'Performance review' },
+  'board-presentation': { primaryProvider: 'claude-3-opus', a2aRequired: true, tier: 3, agents: ['coordinator', 'content_generator', 'enhancer'], suggestedFrameworks: ['tier1-strategy', 'three-horizons'], reason: 'Executive summary' },
+  
+  // Training
+  'training-module': { primaryProvider: 'gemini-2.5-pro', a2aRequired: true, tier: 2, agents: ['content_generator', 'enhancer', 'image_generator', 'interactive_generator'], suggestedFrameworks: ['design-thinking'], reason: 'Educational content' },
+  'onboarding': { primaryProvider: 'gemini-3-flash', a2aRequired: true, tier: 2, agents: ['content_generator', 'image_generator', 'interactive_generator'], suggestedFrameworks: ['customer-journey'], reason: 'Onboarding flow' },
+  'workshop': { primaryProvider: 'gemini-2.5-pro', a2aRequired: true, tier: 2, agents: ['content_generator', 'interactive_generator', 'content_analyzer'], suggestedFrameworks: ['design-thinking', 'scrum'], reason: 'Workshop materials' },
+  
+  // Research
+  'research-report': { primaryProvider: 'claude-3-opus', a2aRequired: true, tier: 3, agents: ['coordinator', 'content_generator', 'content_analyzer', 'enhancer'], suggestedFrameworks: ['pestle', 'porter-five'], reason: 'Research depth' },
+  'market-analysis': { primaryProvider: 'gemini-2.5-pro', a2aRequired: true, tier: 2, agents: ['content_generator', 'content_analyzer', 'image_generator'], suggestedFrameworks: ['porter-five', 'competitive-analysis'], reason: 'Market insights' },
+  'whitepaper': { primaryProvider: 'claude-3-opus', a2aRequired: true, tier: 3, agents: ['coordinator', 'content_generator', 'enhancer', 'content_analyzer'], suggestedFrameworks: ['value-chain', 'pestle'], reason: 'Technical depth' },
+  
+  // Visual
+  'infographic-deck': { primaryProvider: 'modelslab-flux', a2aRequired: true, tier: 2, agents: ['image_generator', 'enhancer', 'content_analyzer'], suggestedFrameworks: ['swot'], reason: 'Visual focus' },
+  'photo-essay': { primaryProvider: 'modelslab-flux', a2aRequired: true, tier: 2, agents: ['image_generator', 'enhancer'], suggestedFrameworks: [], reason: 'Photo narrative' },
+  'portfolio': { primaryProvider: 'modelslab-flux', a2aRequired: true, tier: 2, agents: ['image_generator', 'enhancer', 'slide_generator'], suggestedFrameworks: [], reason: 'Portfolio showcase' },
+  
+  // Video
+  'video-script': { primaryProvider: 'claude-3-sonnet', a2aRequired: true, tier: 3, agents: ['coordinator', 'content_generator', 'voiceover', 'video_generator'], suggestedFrameworks: [], reason: 'Video narrative' },
+  'explainer-video': { primaryProvider: 'claude-3-sonnet', a2aRequired: true, tier: 3, agents: ['coordinator', 'content_generator', 'video_generator', 'voiceover', 'animation_generator'], suggestedFrameworks: ['design-thinking'], reason: 'Explainer content' },
+  'product-demo': { primaryProvider: 'gemini-3-flash', a2aRequired: true, tier: 3, agents: ['coordinator', 'video_generator', 'voiceover', 'screen_recorder'], suggestedFrameworks: ['product-led'], reason: 'Demo flow' },
+};
+
+// ============================================
+// DESIGN TEMPLATE A2A ROUTING
+// Maps template styles to agents and providers
+// ============================================
+
+const DESIGN_TEMPLATE_A2A_ROUTING: Record<string, {
+  primaryProvider: string;
+  a2aRequired: boolean;
+  tier: 1 | 2 | 3;
+  agents: string[];
+  visualStyle: string;
+  reason: string;
+}> = {
+  // Template Styles
+  'pure-consulting': { primaryProvider: 'stability-sdxl', a2aRequired: true, tier: 2, agents: ['image_generator', 'enhancer', 'content_analyzer'], visualStyle: 'minimal-professional', reason: 'Consulting standards' },
+  'consulting-hybrid': { primaryProvider: 'modelslab-flux', a2aRequired: true, tier: 2, agents: ['image_generator', 'enhancer'], visualStyle: 'balanced-professional', reason: 'Modern consulting' },
+  'industry-focused': { primaryProvider: 'modelslab-flux', a2aRequired: true, tier: 2, agents: ['image_generator', 'content_analyzer'], visualStyle: 'industry-specific', reason: 'Industry alignment' },
+  'creative-narrative': { primaryProvider: 'modelslab-flux', a2aRequired: true, tier: 2, agents: ['image_generator', 'enhancer', 'animation_generator'], visualStyle: 'expressive', reason: 'Creative expression' },
+  'data-analytical': { primaryProvider: 'stability-sdxl', a2aRequired: true, tier: 2, agents: ['image_generator', 'content_analyzer'], visualStyle: 'data-focused', reason: 'Data visualization' },
+  'educational': { primaryProvider: 'modelslab-flux', a2aRequired: true, tier: 2, agents: ['image_generator', 'interactive_generator'], visualStyle: 'clear-accessible', reason: 'Learning focus' },
+  'investor-pitch': { primaryProvider: 'stability-sdxl', a2aRequired: true, tier: 3, agents: ['coordinator', 'image_generator', 'enhancer', 'content_analyzer'], visualStyle: 'premium-professional', reason: 'Investment grade' },
+  'storytelling': { primaryProvider: 'modelslab-flux', a2aRequired: true, tier: 2, agents: ['image_generator', 'enhancer', 'video_generator'], visualStyle: 'narrative-visual', reason: 'Story-driven' },
+  'mixed-adaptive': { primaryProvider: 'modelslab-flux', a2aRequired: false, tier: 1, agents: ['image_generator', 'slide_generator'], visualStyle: 'flexible', reason: 'Context-adaptive' },
+  
+  // Template Categories
+  'business': { primaryProvider: 'stability-sdxl', a2aRequired: false, tier: 1, agents: ['image_generator', 'slide_generator'], visualStyle: 'corporate', reason: 'Business standard' },
+  'creative': { primaryProvider: 'modelslab-flux', a2aRequired: true, tier: 2, agents: ['image_generator', 'enhancer'], visualStyle: 'artistic', reason: 'Creative freedom' },
+  'minimal': { primaryProvider: 'modelslab-flux', a2aRequired: false, tier: 1, agents: ['slide_generator'], visualStyle: 'clean-minimal', reason: 'Minimal design' },
+  'healthcare': { primaryProvider: 'dall-e-3', a2aRequired: true, tier: 2, agents: ['image_generator', 'compliance_checker'], visualStyle: 'medical-compliant', reason: 'Healthcare compliance' },
+  'tech': { primaryProvider: 'modelslab-flux', a2aRequired: true, tier: 2, agents: ['image_generator', 'enhancer'], visualStyle: 'modern-tech', reason: 'Tech aesthetic' },
+  'education': { primaryProvider: 'modelslab-flux', a2aRequired: true, tier: 2, agents: ['image_generator', 'interactive_generator'], visualStyle: 'educational', reason: 'Learning focus' },
+};
+
+// ============================================
+// MUSIC & SFX A2A ROUTING
+// Maps audio requirements to providers
+// ============================================
+
+const MUSIC_SFX_A2A_ROUTING: Record<string, {
+  primaryProvider: string;
+  models: string[];
+  a2aRequired: boolean;
+  tier: 1 | 2 | 3;
+  agents: string[];
+  reason: string;
+}> = {
+  // Music Genres
+  'corporate': { primaryProvider: 'suno', models: ['suno-v3', 'udio'], a2aRequired: true, tier: 2, agents: ['music_generator'], reason: 'Corporate background' },
+  'cinematic': { primaryProvider: 'suno', models: ['suno-v3', 'elevenlabs-music'], a2aRequired: true, tier: 3, agents: ['music_generator', 'enhancer'], reason: 'Cinematic score' },
+  'upbeat': { primaryProvider: 'suno', models: ['suno-v3', 'udio'], a2aRequired: true, tier: 2, agents: ['music_generator'], reason: 'Energetic music' },
+  'ambient': { primaryProvider: 'suno', models: ['suno-v3', 'udio'], a2aRequired: true, tier: 2, agents: ['music_generator'], reason: 'Ambient background' },
+  'inspirational': { primaryProvider: 'suno', models: ['suno-v3', 'elevenlabs-music'], a2aRequired: true, tier: 2, agents: ['music_generator'], reason: 'Motivational music' },
+  'electronic': { primaryProvider: 'udio', models: ['udio', 'suno-v3'], a2aRequired: true, tier: 2, agents: ['music_generator'], reason: 'Electronic beats' },
+  'classical': { primaryProvider: 'suno', models: ['suno-v3'], a2aRequired: true, tier: 3, agents: ['music_generator', 'enhancer'], reason: 'Classical composition' },
+  
+  // Sound Effects
+  'ui-sounds': { primaryProvider: 'elevenlabs', models: ['elevenlabs-sfx'], a2aRequired: false, tier: 1, agents: ['sfx_generator'], reason: 'UI feedback' },
+  'transitions': { primaryProvider: 'elevenlabs', models: ['elevenlabs-sfx'], a2aRequired: false, tier: 1, agents: ['sfx_generator'], reason: 'Transition sounds' },
+  'ambient-sfx': { primaryProvider: 'elevenlabs', models: ['elevenlabs-sfx'], a2aRequired: true, tier: 2, agents: ['sfx_generator', 'spatial_audio_generator'], reason: 'Ambient audio' },
+  'notification': { primaryProvider: 'elevenlabs', models: ['elevenlabs-sfx'], a2aRequired: false, tier: 1, agents: ['sfx_generator'], reason: 'Alert sounds' },
+  
+  // Spatial Audio (VR/AR)
+  'spatial-3d': { primaryProvider: 'dolby-atmos', models: ['dolby-atmos', 'binaural'], a2aRequired: true, tier: 3, agents: ['coordinator', 'spatial_audio_generator', 'music_generator'], reason: '3D spatial audio' },
+  'binaural': { primaryProvider: 'dolby-atmos', models: ['binaural', 'spatial-audio'], a2aRequired: true, tier: 3, agents: ['spatial_audio_generator'], reason: 'Binaural audio' },
+};
+
+// ============================================
+// FRAMEWORK CATEGORY PROVIDER ROUTING (Expanded)
 // ============================================
 
 const FRAMEWORK_CATEGORY_ROUTING: Record<string, {
   visualProvider: string;
   layoutType: string;
   a2aRecommended: boolean;
+  agents: string[];
 }> = {
   // Consulting Styles
-  'tier1-strategy': { visualProvider: 'stability-sdxl', layoutType: 'executive', a2aRecommended: true },
-  'portfolio-analysis': { visualProvider: 'modelslab-flux', layoutType: 'matrix', a2aRecommended: true },
-  'results-driven': { visualProvider: 'modelslab-flux', layoutType: 'dashboard', a2aRecommended: false },
-  'universal': { visualProvider: 'modelslab-flux', layoutType: 'flexible', a2aRecommended: false },
+  'tier1-strategy': { visualProvider: 'stability-sdxl', layoutType: 'executive', a2aRecommended: true, agents: ['image_generator', 'enhancer', 'content_analyzer'] },
+  'portfolio-analysis': { visualProvider: 'modelslab-flux', layoutType: 'matrix', a2aRecommended: true, agents: ['image_generator', 'content_analyzer'] },
+  'results-driven': { visualProvider: 'modelslab-flux', layoutType: 'dashboard', a2aRecommended: false, agents: ['image_generator'] },
+  'universal': { visualProvider: 'modelslab-flux', layoutType: 'flexible', a2aRecommended: false, agents: ['image_generator'] },
   
   // Methodology Types
-  'strategy': { visualProvider: 'stability-sdxl', layoutType: 'analytical', a2aRecommended: true },
-  'innovation': { visualProvider: 'modelslab-flux', layoutType: 'creative', a2aRecommended: true },
-  'agile': { visualProvider: 'gemini-imagen', layoutType: 'sprint', a2aRecommended: false },
+  'strategy': { visualProvider: 'stability-sdxl', layoutType: 'analytical', a2aRecommended: true, agents: ['image_generator', 'content_analyzer'] },
+  'innovation': { visualProvider: 'modelslab-flux', layoutType: 'creative', a2aRecommended: true, agents: ['image_generator', 'enhancer'] },
+  'agile': { visualProvider: 'gemini-imagen', layoutType: 'sprint', a2aRecommended: false, agents: ['image_generator'] },
   
-  // Industry-Specific
-  'healthcare': { visualProvider: 'dall-e-3', layoutType: 'compliant', a2aRecommended: true },
-  'fintech': { visualProvider: 'stability-sdxl', layoutType: 'secure', a2aRecommended: true },
-  'saas': { visualProvider: 'modelslab-flux', layoutType: 'metric', a2aRecommended: false },
-  'retail': { visualProvider: 'modelslab-flux', layoutType: 'visual', a2aRecommended: false },
-  'manufacturing': { visualProvider: 'stability-sdxl', layoutType: 'process', a2aRecommended: true },
+  // Industry-Specific (Expanded)
+  'healthcare': { visualProvider: 'dall-e-3', layoutType: 'compliant', a2aRecommended: true, agents: ['image_generator', 'compliance_checker', 'enhancer'] },
+  'fintech': { visualProvider: 'stability-sdxl', layoutType: 'secure', a2aRecommended: true, agents: ['image_generator', 'compliance_checker'] },
+  'saas': { visualProvider: 'modelslab-flux', layoutType: 'metric', a2aRecommended: false, agents: ['image_generator'] },
+  'retail': { visualProvider: 'modelslab-flux', layoutType: 'visual', a2aRecommended: false, agents: ['image_generator'] },
+  'manufacturing': { visualProvider: 'stability-sdxl', layoutType: 'process', a2aRecommended: true, agents: ['image_generator', 'content_analyzer'] },
+  'pharma': { visualProvider: 'dall-e-3', layoutType: 'compliant', a2aRecommended: true, agents: ['image_generator', 'compliance_checker', 'enhancer'] },
+  'legal': { visualProvider: 'stability-sdxl', layoutType: 'compliant', a2aRecommended: true, agents: ['image_generator', 'compliance_checker'] },
+  'consulting': { visualProvider: 'stability-sdxl', layoutType: 'executive', a2aRecommended: true, agents: ['image_generator', 'enhancer', 'content_analyzer'] },
+  'education': { visualProvider: 'modelslab-flux', layoutType: 'educational', a2aRecommended: true, agents: ['image_generator', 'interactive_generator'] },
+  'government': { visualProvider: 'stability-sdxl', layoutType: 'compliant', a2aRecommended: true, agents: ['image_generator', 'compliance_checker'] },
+  'nonprofit': { visualProvider: 'modelslab-flux', layoutType: 'impact', a2aRecommended: false, agents: ['image_generator'] },
+  'energy': { visualProvider: 'stability-sdxl', layoutType: 'technical', a2aRecommended: true, agents: ['image_generator', 'content_analyzer'] },
+  'oil-gas': { visualProvider: 'stability-sdxl', layoutType: 'technical', a2aRecommended: true, agents: ['image_generator', 'content_analyzer', 'mesh_generator'] },
+  'aerospace': { visualProvider: 'stability-sdxl', layoutType: 'technical', a2aRecommended: true, agents: ['image_generator', 'mesh_generator', 'enhancer'] },
+  'automotive': { visualProvider: 'modelslab-flux', layoutType: 'product', a2aRecommended: true, agents: ['image_generator', 'mesh_generator'] },
+  'real-estate': { visualProvider: 'modelslab-flux', layoutType: 'visual', a2aRecommended: true, agents: ['image_generator', 'mesh_generator'] },
+  'travel': { visualProvider: 'modelslab-flux', layoutType: 'visual', a2aRecommended: true, agents: ['image_generator', 'enhancer'] },
+  'hospitality': { visualProvider: 'modelslab-flux', layoutType: 'visual', a2aRecommended: true, agents: ['image_generator', 'enhancer'] },
   
-  // Regional
-  'apac': { visualProvider: 'alibaba-wanx', layoutType: 'cultural', a2aRecommended: true },
-  'emea': { visualProvider: 'stability-sdxl', layoutType: 'compliant', a2aRecommended: true },
-  'americas': { visualProvider: 'modelslab-flux', layoutType: 'standard', a2aRecommended: false },
+  // Regional (Expanded)
+  'apac': { visualProvider: 'alibaba-wanx', layoutType: 'cultural', a2aRecommended: true, agents: ['image_generator', 'translator', 'enhancer'] },
+  'emea': { visualProvider: 'stability-sdxl', layoutType: 'compliant', a2aRecommended: true, agents: ['image_generator', 'compliance_checker'] },
+  'americas': { visualProvider: 'modelslab-flux', layoutType: 'standard', a2aRecommended: false, agents: ['image_generator'] },
+  'mena': { visualProvider: 'stability-sdxl', layoutType: 'cultural', a2aRecommended: true, agents: ['image_generator', 'translator'] },
+  'latam': { visualProvider: 'modelslab-flux', layoutType: 'cultural', a2aRecommended: true, agents: ['image_generator', 'translator'] },
 };
 
 // ============================================
@@ -405,12 +680,108 @@ const CONTENT_STRUCTURE_AGENT_REQUIREMENTS: Record<string, string[]> = {
   'includeCharts': ['image_generator'],
   'includeTables': ['slide_generator'],
   'includeTimelines': ['image_generator'],
-  'includeDiagrams': ['image_generator'],
+  'includeDiagrams': ['image_generator', 'content_analyzer'],
   'includeQuotes': ['slide_generator'],
   'include3DElements': ['image_generator', 'mesh_generator'],
   'includeInteractiveElements': ['interactive_generator'],
   'includeAnimations': ['video_generator', 'animation_generator'],
 };
+
+// ============================================
+// HELPER: Get A2A requirements for context
+// ============================================
+
+export function getA2ARequirementsForContext(context: GenerationContext): {
+  requiredAgents: string[];
+  a2aRequired: boolean;
+  tier: GlobalTierLevel;
+  providers: Record<string, string>;
+} {
+  const requiredAgents = new Set<string>();
+  const providers: Record<string, string> = {};
+  let maxTier: 1 | 2 | 3 = 1;
+  let a2aRequired = false;
+  
+  // Check visual features
+  if (context.visualFeatures) {
+    for (const vf of context.visualFeatures) {
+      const routing = VISUAL_FEATURE_A2A_ROUTING[vf.featureId];
+      if (routing) {
+        routing.agents.forEach(a => requiredAgents.add(a));
+        if (routing.a2aRequired) a2aRequired = true;
+        if (routing.tier > maxTier) maxTier = routing.tier;
+        providers[vf.featureId] = routing.primaryProvider;
+      }
+    }
+  }
+  
+  // Check output types
+  if (context.outputTypes) {
+    for (const outputType of context.outputTypes) {
+      const routing = OUTPUT_SUBOPTION_PROVIDER_ROUTING[outputType];
+      if (routing) {
+        routing.agents.forEach(a => requiredAgents.add(a));
+        if (routing.a2aRequired) a2aRequired = true;
+        if (routing.tier > maxTier) maxTier = routing.tier;
+        providers[outputType] = routing.primaryProvider;
+      }
+    }
+  }
+  
+  // Check frameworks
+  if (context.selectedFrameworks) {
+    for (const framework of context.selectedFrameworks) {
+      const routing = FRAMEWORK_PROVIDER_ROUTING[framework];
+      if (routing) {
+        routing.agents.forEach(a => requiredAgents.add(a));
+        if (routing.a2aRecommended) a2aRequired = true;
+        providers[framework] = routing.visualProvider;
+      }
+    }
+  }
+  
+  // Check content types
+  if (context.selectedContentTypes) {
+    for (const contentType of context.selectedContentTypes) {
+      const routing = CONTENT_TYPE_A2A_ROUTING[contentType];
+      if (routing) {
+        routing.agents.forEach(a => requiredAgents.add(a));
+        if (routing.a2aRequired) a2aRequired = true;
+        if (routing.tier > maxTier) maxTier = routing.tier;
+        providers[contentType] = routing.primaryProvider;
+      }
+    }
+  }
+  
+  // Check template style
+  if (context.templateStyle) {
+    const routing = DESIGN_TEMPLATE_A2A_ROUTING[context.templateStyle];
+    if (routing) {
+      routing.agents.forEach(a => requiredAgents.add(a));
+      if (routing.a2aRequired) a2aRequired = true;
+      if (routing.tier > maxTier) maxTier = routing.tier;
+      providers['template'] = routing.primaryProvider;
+    }
+  }
+  
+  // Check content structure
+  if (context.contentStructure) {
+    for (const [key, enabled] of Object.entries(context.contentStructure)) {
+      if (enabled && CONTENT_STRUCTURE_AGENT_REQUIREMENTS[key]) {
+        CONTENT_STRUCTURE_AGENT_REQUIREMENTS[key].forEach(a => requiredAgents.add(a));
+      }
+    }
+  }
+  
+  const tierMap: Record<1 | 2 | 3, GlobalTierLevel> = { 1: 'standard', 2: 'advanced', 3: 'premium' };
+  
+  return {
+    requiredAgents: Array.from(requiredAgents),
+    a2aRequired,
+    tier: tierMap[maxTier],
+    providers,
+  };
+}
 
 // ============================================
 // LANGUAGE-BASED PROVIDER ROUTING
@@ -1058,6 +1429,20 @@ class FlexibleAgentConfigService {
 
 // Export singleton instance
 export const flexibleAgentConfigService = new FlexibleAgentConfigService();
+
+// Export routing constants for external use
+export {
+  VISUAL_FEATURE_A2A_ROUTING,
+  CONTENT_TYPE_A2A_ROUTING,
+  DESIGN_TEMPLATE_A2A_ROUTING,
+  MUSIC_SFX_A2A_ROUTING,
+  FRAMEWORK_PROVIDER_ROUTING,
+  FRAMEWORK_CATEGORY_ROUTING,
+  OUTPUT_SUBOPTION_PROVIDER_ROUTING,
+  CONTENT_STRUCTURE_AGENT_REQUIREMENTS,
+  INDUSTRY_PROVIDER_ROUTING,
+  LANGUAGE_PROVIDER_ROUTING,
+};
 
 // Export types and service
 export default FlexibleAgentConfigService;
