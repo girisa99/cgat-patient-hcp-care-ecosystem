@@ -299,6 +299,27 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
       }
     });
     
+    // CRITICAL: Also add providers from the actual FEATURE_IMPLEMENTATION_MATRIX
+    // This ensures we count all providers that have implementations for this category's features
+    categoryFeatures.forEach(f => {
+      const featureImpl = localMatrix[f.id];
+      if (featureImpl) {
+        Object.entries(featureImpl).forEach(([providerId, impl]) => {
+          if (impl?.implementation === 'implemented' || impl?.implementation === 'partial') {
+            providers.add(providerId as ProviderId);
+          }
+        });
+      }
+    });
+    
+    // Also add LLMs based on providers that are actually implemented
+    providers.forEach(providerId => {
+      const llmMatch = LLM_COMPARISONS.find(l => l.providerId === providerId);
+      if (llmMatch) {
+        llms.add(llmMatch.model);
+      }
+    });
+    
     return {
       features: categoryFeatures.length,
       scenarios: scenarios.size,
@@ -1282,9 +1303,16 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
             </p>
           </div>
 
-          {/* LLM Comparison Table - Direct, no card wrapper */}
+        {/* LLM Comparison Table - Dynamic based on category */}
           <div className="space-y-2">
-            <h3 className="font-semibold text-sm">Model Comparison</h3>
+            <h3 className="font-semibold text-sm">
+              Model Comparison {selectedCategory !== 'all' ? `- ${CATEGORY_LABELS[selectedCategory]}` : ''}
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              {selectedCategory === 'all' 
+                ? 'All models available across all features' 
+                : `Models with implementations in ${CATEGORY_LABELS[selectedCategory]} features`}
+            </p>
             <div className="border rounded-lg overflow-hidden">
               <Table>
                 <TableHeader className="bg-muted/30">
@@ -1292,47 +1320,94 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
                     <TableHead className="min-w-[100px] text-xs">Model</TableHead>
                     <TableHead className="w-[70px] text-xs">Cost</TableHead>
                     <TableHead className="w-[50px] text-xs">Acc</TableHead>
+                    <TableHead className="min-w-[100px] text-xs">Category Features</TableHead>
                     <TableHead className="min-w-[120px] text-xs">Industries</TableHead>
-                    <TableHead className="min-w-[120px] text-xs">Outputs</TableHead>
                     <TableHead className="min-w-[120px] text-xs">Input Strengths</TableHead>
                     <TableHead className="min-w-[150px] text-xs">Notes</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {LLM_COMPARISONS.map(llm => (
-                    <TableRow key={llm.model}>
-                      <TableCell className="py-2">
-                        <div className="font-medium text-xs">{llm.model}</div>
-                        <span className="text-[9px] text-muted-foreground">{llm.provider}</span>
-                      </TableCell>
-                      <TableCell className="py-2">{COST_BADGES[llm.costTier]}</TableCell>
-                      <TableCell className="py-2">
-                        <span className={`text-xs font-bold ${
-                          llm.accuracy >= 95 ? 'text-primary' : 'text-muted-foreground'
-                        }`}>{llm.accuracy}%</span>
-                      </TableCell>
-                      <TableCell className="py-2">
-                        <div className="flex flex-wrap gap-0.5">
-                          {llm.bestForIndustries.slice(0, 3).map(ind => (
-                            <Badge key={ind} variant="secondary" className="text-[8px] px-1 py-0">{ind}</Badge>
-                          ))}
-                        </div>
-                      </TableCell>
-                      <TableCell className="py-2">
-                        <div className="flex flex-wrap gap-0.5">
-                          {llm.bestForOutputTypes.slice(0, 3).map(out => (
-                            <Badge key={out} variant="outline" className="text-[8px] px-1 py-0">{out}</Badge>
-                          ))}
-                        </div>
-                      </TableCell>
-                      <TableCell className="py-2">
-                        <span className="text-[9px] text-muted-foreground">{llm.inputStrengths.slice(0, 3).join(', ')}</span>
-                      </TableCell>
-                      <TableCell className="py-2">
-                        <span className="text-[9px] text-muted-foreground">{llm.notes}</span>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {(() => {
+                    // Filter LLMs based on selected category
+                    const categoryFeatures = selectedCategory === 'all' 
+                      ? localFeatures 
+                      : localFeatures.filter(f => f.category === selectedCategory);
+                    
+                    // Get providers that have implementations for this category's features
+                    const categoryProviders = new Set<ProviderId>();
+                    categoryFeatures.forEach(f => {
+                      const featureImpl = localMatrix[f.id];
+                      if (featureImpl) {
+                        Object.entries(featureImpl).forEach(([providerId, impl]) => {
+                          if (impl?.implementation === 'implemented' || impl?.implementation === 'partial') {
+                            categoryProviders.add(providerId as ProviderId);
+                          }
+                        });
+                      }
+                    });
+                    
+                    // Filter and sort LLMs by relevance to this category
+                    const filteredLLMs = selectedCategory === 'all' 
+                      ? LLM_COMPARISONS 
+                      : LLM_COMPARISONS.filter(llm => categoryProviders.has(llm.providerId));
+                    
+                    // Compute feature count per LLM for this category
+                    const llmFeatureCounts = filteredLLMs.map(llm => {
+                      const implementedCount = categoryFeatures.filter(f => 
+                        localMatrix[f.id]?.[llm.providerId]?.implementation === 'implemented'
+                      ).length;
+                      const partialCount = categoryFeatures.filter(f => 
+                        localMatrix[f.id]?.[llm.providerId]?.implementation === 'partial'
+                      ).length;
+                      return { llm, implementedCount, partialCount, total: implementedCount + partialCount };
+                    }).sort((a, b) => b.total - a.total);
+                    
+                    if (llmFeatureCounts.length === 0) {
+                      return (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
+                            No LLM providers have implementations for {CATEGORY_LABELS[selectedCategory]} features
+                          </TableCell>
+                        </TableRow>
+                      );
+                    }
+                    
+                    return llmFeatureCounts.map(({ llm, implementedCount, partialCount }) => (
+                      <TableRow key={llm.model}>
+                        <TableCell className="py-2">
+                          <div className="font-medium text-xs">{llm.model}</div>
+                          <span className="text-[9px] text-muted-foreground">{llm.provider}</span>
+                        </TableCell>
+                        <TableCell className="py-2">{COST_BADGES[llm.costTier]}</TableCell>
+                        <TableCell className="py-2">
+                          <span className={`text-xs font-bold ${
+                            llm.accuracy >= 95 ? 'text-primary' : 'text-muted-foreground'
+                          }`}>{llm.accuracy}%</span>
+                        </TableCell>
+                        {/* Category-specific feature count */}
+                        <TableCell className="py-2">
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs font-bold text-emerald-600">{implementedCount}✓</span>
+                            {partialCount > 0 && <span className="text-xs text-amber-600">{partialCount}⚠</span>}
+                            <span className="text-[9px] text-muted-foreground">/ {categoryFeatures.length}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-2">
+                          <div className="flex flex-wrap gap-0.5">
+                            {llm.bestForIndustries.slice(0, 3).map(ind => (
+                              <Badge key={ind} variant="secondary" className="text-[8px] px-1 py-0">{ind}</Badge>
+                            ))}
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-2">
+                          <span className="text-[9px] text-muted-foreground">{llm.inputStrengths.slice(0, 3).join(', ')}</span>
+                        </TableCell>
+                        <TableCell className="py-2">
+                          <span className="text-[9px] text-muted-foreground">{llm.notes}</span>
+                        </TableCell>
+                      </TableRow>
+                    ));
+                  })()}
                 </TableBody>
               </Table>
             </div>
@@ -1422,6 +1497,16 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
                 {crossFunctionalMetrics.mappings.map((mapping, i) => {
                   const feature = localFeatures.find(f => f.id === mapping.primaryFeatureId);
                   
+                  // Get actual implemented providers from the matrix (not just recommended)
+                  const featureImpl = localMatrix[mapping.primaryFeatureId] || {};
+                  const actualProviders = Object.entries(featureImpl)
+                    .filter(([_, impl]) => impl?.implementation === 'implemented' || impl?.implementation === 'partial')
+                    .map(([providerId]) => ({
+                      id: providerId as ProviderId,
+                      name: PROVIDER_SUMMARIES.find(p => p.id === providerId)?.name || providerId,
+                      status: featureImpl[providerId as ProviderId]?.implementation
+                    }));
+                  
                   return (
                     <TableRow key={i}>
                       <TableCell className="py-2">
@@ -1493,16 +1578,43 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
                           )}
                         </div>
                       </TableCell>
-                      {/* Providers */}
+                      {/* Providers - Show actual implemented providers from matrix */}
                       <TableCell className="py-2">
                         <div className="flex flex-wrap gap-0.5">
-                          {mapping.recommendedProviders?.slice(0, 2).map(p => (
-                            <Badge key={p} variant="outline" className="text-[7px] px-1 py-0">
-                              {PROVIDER_SUMMARIES.find(pr => pr.id === p)?.name?.split(' ')[0] || p}
-                            </Badge>
-                          ))}
-                          {(mapping.recommendedProviders?.length || 0) > 2 && (
-                            <span className="text-[7px] text-muted-foreground">+{mapping.recommendedProviders!.length - 2}</span>
+                          {actualProviders.length > 0 ? (
+                            <>
+                              {actualProviders.slice(0, 3).map(p => (
+                                <TooltipProvider key={p.id}>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Badge 
+                                        variant="outline" 
+                                        className={`text-[7px] px-1 py-0 cursor-help ${
+                                          p.status === 'implemented' 
+                                            ? 'bg-primary/10 text-primary border-primary/30' 
+                                            : 'bg-secondary/30 text-secondary-foreground border-secondary/30'
+                                        }`}
+                                      >
+                                        {p.name.split(' ')[0]}
+                                      </Badge>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p className="text-xs">{p.name}: {p.status === 'implemented' ? '✓ Fully implemented' : '⚠ Partial'}</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              ))}
+                              {actualProviders.length > 3 && (
+                                <span className="text-[7px] text-muted-foreground">+{actualProviders.length - 3}</span>
+                              )}
+                            </>
+                          ) : (
+                            // Fallback to recommended providers if no implementations
+                            mapping.recommendedProviders?.slice(0, 2).map(p => (
+                              <Badge key={p} variant="outline" className="text-[7px] px-1 py-0 border-dashed opacity-60">
+                                {PROVIDER_SUMMARIES.find(pr => pr.id === p)?.name?.split(' ')[0] || p}
+                              </Badge>
+                            ))
                           )}
                         </div>
                       </TableCell>
