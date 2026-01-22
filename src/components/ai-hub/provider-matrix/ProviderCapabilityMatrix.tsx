@@ -48,6 +48,7 @@ import {
   getGenerationCoverageStats
 } from './generation-coverage/generationCoverageRegistry';
 import { calculateUnifiedMetrics } from './generation-coverage/unifiedMetricsEngine';
+import { TabMetricsHeader, type TabView } from './TabMetricsHeader';
 
 const CATEGORY_LABELS: Record<FeatureCategory, string> = {
   INPUT: '📥 Input',
@@ -185,7 +186,7 @@ const AddFeatureDialog: React.FC<{
 export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ className }) => {
   const [selectedCategory, setSelectedCategory] = useState<FeatureCategory | 'all'>('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [view, setView] = useState<'matrix' | 'providers' | 'gaps' | 'llm' | 'category' | 'crossfunc' | 'coverage'>('matrix');
+  const [view, setView] = useState<TabView>('matrix');
   const [editMode, setEditMode] = useState(false);
   const [localFeatures, setLocalFeatures] = useState<Feature[]>([...ALL_FEATURES]);
   const [localMatrix, setLocalMatrix] = useState({ ...FEATURE_IMPLEMENTATION_MATRIX });
@@ -592,130 +593,43 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
       {/* Legend */}
       <MatrixLegend />
 
-      {/* Stats Summary - Dynamic based on selected category */}
-      <div className="space-y-2">
-        {/* Implementation Stats Row */}
-        <div className="flex flex-wrap gap-3 py-3 px-4 rounded-lg bg-muted/30 border">
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs font-medium text-muted-foreground">
-              {selectedCategory === 'all' ? 'All Categories' : CATEGORY_LABELS[selectedCategory]}:
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-            <span className="text-sm font-bold text-emerald-600">{currentCategoryStats.implemented}</span>
-            <span className="text-xs text-muted-foreground">Implemented</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-            <span className="text-sm font-bold text-amber-600">{currentCategoryStats.partial}</span>
-            <span className="text-xs text-muted-foreground">Partial</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-            <span className="text-sm font-bold text-blue-600">{currentCategoryStats.planned}</span>
-            <span className="text-xs text-muted-foreground">Planned</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground" />
-            <span className="text-sm font-bold">{currentCategoryStats.notStarted}</span>
-            <span className="text-xs text-muted-foreground">Not Started</span>
-          </div>
-          <div className="flex items-center gap-2 ml-auto">
-            <span className="text-xs text-muted-foreground">{currentCategoryStats.total} features</span>
-            <Progress 
-              value={currentCategoryStats.total > 0 
-                ? Math.round(((currentCategoryStats.implemented + currentCategoryStats.partial * 0.5) / currentCategoryStats.total) * 100) 
-                : 0
-              } 
-              className="w-20 h-2" 
-            />
-            <span className="text-sm font-bold">
-              {currentCategoryStats.total > 0 
-                ? Math.round(((currentCategoryStats.implemented + currentCategoryStats.partial * 0.5) / currentCategoryStats.total) * 100) 
-                : 0}%
-            </span>
-          </div>
-        </div>
-        
-        {/* Dynamic Cross-Functional Metrics Row */}
-        <div className="flex flex-wrap gap-4 py-2 px-4 rounded-lg bg-primary/5 border border-primary/20">
-          <div className="flex items-center gap-1.5">
-            <Zap className="w-3.5 h-3.5 text-primary" />
-            <span className="text-xs font-medium text-primary">Cross-Functional:</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="text-sm font-bold text-foreground">{crossFunctionalMetrics.features}</span>
-            <span className="text-xs text-muted-foreground">Features</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="text-sm font-bold text-foreground">{crossFunctionalMetrics.scenarios}</span>
-            <span className="text-xs text-muted-foreground">Scenarios</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="text-sm font-bold text-foreground">{crossFunctionalMetrics.useCases}</span>
-            <span className="text-xs text-muted-foreground">Use Cases</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="text-sm font-bold text-foreground">{crossFunctionalMetrics.providers}</span>
-            <span className="text-xs text-muted-foreground">Providers</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="text-sm font-bold text-foreground">{crossFunctionalMetrics.llms}</span>
-            <span className="text-xs text-muted-foreground">LLMs</span>
-          </div>
-          {/* Genie Suite Products */}
-          <div className="flex items-center gap-1 ml-auto">
-            <span className="text-[10px] text-muted-foreground mr-1">Used in:</span>
-            {crossFunctionalMetrics.genieProducts.slice(0, 5).map(product => (
-              <TooltipProvider key={product}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="text-sm cursor-help">{GENIE_PRODUCT_LABELS[product]?.emoji}</span>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="font-medium">{GENIE_PRODUCT_LABELS[product]?.name}</p>
-                    <p className="text-xs text-muted-foreground">{GENIE_PRODUCT_LABELS[product]?.description}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+      {/* TAB-AWARE METRICS HEADER - Shows only relevant metrics for each tab */}
+      <TabMetricsHeader 
+        activeTab={view} 
+        selectedCategory={selectedCategory}
+        localFeatures={localFeatures}
+        localMatrix={localMatrix}
+      />
+
+      {/* Per-Category Breakdown when viewing all (only on matrix tab) */}
+      {selectedCategory === 'all' && view === 'matrix' && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+          {Object.entries(computeCategoryStats)
+            .filter(([k]) => k !== 'USE_CASE')
+            .map(([cat, stats]) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat as FeatureCategory)}
+                className="p-2 rounded-lg border bg-card hover:bg-muted/50 transition-colors text-left"
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[10px] font-medium truncate">{CATEGORY_LABELS[cat as FeatureCategory]?.split(' ')[1]}</span>
+                  <span className="text-[10px] text-muted-foreground">{stats.total}</span>
+                </div>
+                <div className="flex gap-0.5 text-[9px]">
+                  <span className="text-emerald-600 font-bold">{stats.implemented}✓</span>
+                  {stats.partial > 0 && <span className="text-amber-600">/{stats.partial}⚠</span>}
+                  {stats.planned > 0 && <span className="text-blue-600">/{stats.planned}🕐</span>}
+                  {stats.notStarted > 0 && <span className="text-muted-foreground">/{stats.notStarted}✗</span>}
+                </div>
+                <Progress 
+                  value={stats.total > 0 ? Math.round(((stats.implemented + stats.partial * 0.5) / stats.total) * 100) : 0}
+                  className="h-1 mt-1"
+                />
+              </button>
             ))}
-            {crossFunctionalMetrics.genieProducts.length > 5 && (
-              <span className="text-[10px] text-muted-foreground">+{crossFunctionalMetrics.genieProducts.length - 5}</span>
-            )}
-          </div>
         </div>
-        
-        {/* Per-Category Breakdown when viewing all */}
-        {selectedCategory === 'all' && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
-            {Object.entries(computeCategoryStats)
-              .filter(([k]) => k !== 'USE_CASE')
-              .map(([cat, stats]) => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat as FeatureCategory)}
-                  className="p-2 rounded-lg border bg-card hover:bg-muted/50 transition-colors text-left"
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-[10px] font-medium truncate">{CATEGORY_LABELS[cat as FeatureCategory]?.split(' ')[1]}</span>
-                    <span className="text-[10px] text-muted-foreground">{stats.total}</span>
-                  </div>
-                  <div className="flex gap-0.5 text-[9px]">
-                    <span className="text-emerald-600 font-bold">{stats.implemented}✓</span>
-                    {stats.partial > 0 && <span className="text-amber-600">/{stats.partial}⚠</span>}
-                    {stats.planned > 0 && <span className="text-blue-600">/{stats.planned}🕐</span>}
-                    {stats.notStarted > 0 && <span className="text-muted-foreground">/{stats.notStarted}✗</span>}
-                  </div>
-                  <Progress 
-                    value={stats.total > 0 ? Math.round(((stats.implemented + stats.partial * 0.5) / stats.total) * 100) : 0}
-                    className="h-1 mt-1"
-                  />
-                </button>
-              ))}
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Tabs */}
       <Tabs value={view} onValueChange={(v) => setView(v as typeof view)} className="space-y-4">
