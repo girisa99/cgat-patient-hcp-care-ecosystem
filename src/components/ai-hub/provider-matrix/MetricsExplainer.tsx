@@ -1,15 +1,18 @@
 /**
- * Metrics Explainer Component
+ * Metrics Explainer Component - V2
  * 
- * Explains to users WHY scenario/use case numbers differ across tabs
- * with clear derivation logic and clickable drill-down
+ * Explains to users:
+ * 1. WHY scenario/use case numbers differ across tabs
+ * 2. What the DELTA represents (existing vs new opportunities)
+ * 3. WHERE each new item was discovered from
+ * 4. What needs to be IMPLEMENTED (gaps vs opportunities)
  */
 
 import React, { useState } from 'react';
 import { 
   Info, ChevronDown, ChevronUp, ArrowRight, 
   CheckCircle2, Plus, AlertTriangle, HelpCircle,
-  Layers, Zap, Target, Check
+  Layers, Zap, Target, Check, Sparkles
 } from 'lucide-react';
 import {
   Dialog,
@@ -59,16 +62,26 @@ export const MetricsExplainer: React.FC<MetricsExplainerProps> = ({
     gen: useCases.total > 0 ? Math.round((useCases.newFromGen / useCases.total) * 100) : 0,
   };
 
+  // Are there NEW opportunities?
+  const hasNewOpportunities = scenarios.newFromCross > 0 || scenarios.newFromGen > 0 || 
+                              useCases.newFromCross > 0 || useCases.newFromGen > 0;
+
   return (
     <div className="rounded-lg border border-border/50 bg-card/50 p-2">
-      {/* Collapsible Header */}
+      {/* Collapsible Header - Updated Text */}
       <button 
         onClick={() => setIsExpanded(!isExpanded)}
         className="w-full flex items-center justify-between text-[9px] text-muted-foreground hover:text-foreground transition-colors"
       >
         <div className="flex items-center gap-1.5">
           <HelpCircle className="h-3 w-3 text-blue-500" />
-          <span>Why do Scenarios & Use Cases differ across tabs?</span>
+          <span>What do the Scenario & Use Case differences mean?</span>
+          {hasNewOpportunities && (
+            <Badge variant="secondary" className="text-[7px] bg-blue-500/10 text-blue-600">
+              <Sparkles className="h-2 w-2 mr-0.5" />
+              New opportunities found
+            </Badge>
+          )}
         </div>
         {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
       </button>
