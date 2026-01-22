@@ -25,6 +25,27 @@ import {
 // TYPES & INTERFACES
 // ============================================
 
+/**
+ * Global Tier Alignment:
+ * - 'standard' (Tier-1): Cost-effective, fast models (1.0x credits)
+ * - 'advanced' (Tier-2): Balanced quality & speed (2.5x credits)
+ * - 'premium' (Tier-3): Maximum quality (5.0x credits)
+ */
+export type GlobalTierLevel = 'standard' | 'advanced' | 'premium';
+
+// Mapping between provider tier naming and global tier naming
+export const TIER_MAPPING: Record<string, GlobalTierLevel> = {
+  'tier-1': 'standard',
+  'tier-2': 'advanced',
+  'tier-3': 'premium',
+};
+
+export const CREDIT_MULTIPLIERS: Record<GlobalTierLevel, number> = {
+  'standard': 1.0,
+  'advanced': 2.5,
+  'premium': 5.0,
+};
+
 export interface GenerationContext {
   // Content Context
   industry?: string;
@@ -32,14 +53,37 @@ export interface GenerationContext {
   contentType?: string;
   collateralType?: string;
   
+  // Content Types (multi-select)
+  selectedContentTypes?: string[];
+  
+  // Design Templates
+  selectedTemplateId?: string;
+  templateCategory?: string;
+  customBranding?: {
+    logoUrl?: string;
+    primaryColor?: string;
+    secondaryColor?: string;
+    fontFamily?: string;
+  };
+  
   // Framework & Visual Context
   selectedFrameworks?: string[];
   frameworkCategories?: string[];
-  visualFeatures?: Array<{ featureId: string; subOptions: string[] }>;
   
-  // Output Context
+  // Visual Features with Sub-Options (multi-select support)
+  visualFeatures?: Array<{ 
+    featureId: string; 
+    subOptions: string[];
+    tier?: GlobalTierLevel;
+  }>;
+  visualFeatureCount?: number;
+  totalSubOptionsSelected?: number;
+  
+  // Output Context (multi-select support)
   outputTypes?: string[];
+  primaryOutputType?: string;
   outputFormat?: 'static' | 'video' | 'interactive' | '3d';
+  resolution?: '720p' | '1080p' | '4k';
   
   // Language Context
   primaryLanguage?: string;
@@ -47,10 +91,20 @@ export interface GenerationContext {
   
   // Content Structure
   slideCount?: number;
+  chapterCount?: number;
+  structureMode?: 'flat' | 'chapters';
   includeInfographics?: boolean;
   includeJourneyMaps?: boolean;
   includeCharts?: boolean;
   includeTables?: boolean;
+  
+  // Global Tier Selection (ties to token consumption)
+  globalTier?: GlobalTierLevel;
+  
+  // Token/Credit Estimation Context
+  estimatedTokens?: number;
+  estimatedCredits?: number;
+  creditMultiplier?: number;
 }
 
 export interface ProviderRecommendation {
@@ -681,7 +735,138 @@ class FlexibleAgentConfigService {
       parts.push(`User Overrides: ${overrideCount}`);
     }
     
+    // Add tier info
+    if (config.context.globalTier) {
+      parts.push(`Tier: ${config.context.globalTier.toUpperCase()}`);
+    }
+    
     return parts.join(' | ');
+  }
+
+  /**
+   * Calculate estimated credits based on context and selected providers
+   */
+  calculateEstimatedCredits(config: FlexibleAgentConfig): {
+    totalCredits: number;
+    breakdown: Array<{ agent: string; credits: number; tier: string }>;
+    tierMultiplier: number;
+  } {
+    const breakdown: Array<{ agent: string; credits: number; tier: string }> = [];
+    let totalCredits = 0;
+    
+    const globalTier = config.context.globalTier || 'standard';
+    const tierMultiplier = CREDIT_MULTIPLIERS[globalTier];
+    
+    const slideCount = config.context.slideCount || 10;
+    const languageCount = (config.context.targetLanguages?.length || 0) + 1;
+    const visualFeatureCount = config.context.visualFeatures?.length || 0;
+    const totalSubOptions = config.context.totalSubOptionsSelected || 0;
+    
+    // Base credits per agent type
+    const BASE_CREDITS: Record<string, number> = {
+      'slide_generator': 100,
+      'image_generator': 200,
+      'translator': 50,
+      'voiceover': 150,
+      'enhancer': 75,
+      'content_analyzer': 25,
+      'coordinator': 50,
+    };
+    
+    for (const agentType of config.enabledAgents) {
+      const agentConfig = config.agentConfigs[agentType];
+      const providerTier = agentConfig?.effectiveProvider.tier || 'tier-1';
+      const providerMultiplier = CREDIT_MULTIPLIERS[TIER_MAPPING[providerTier] || 'standard'];
+      
+      let agentCredits = BASE_CREDITS[agentType] || 50;
+      
+      // Scale by slide count
+      agentCredits *= slideCount / 10;
+      
+      // Scale by language count for translator
+      if (agentType === 'translator') {
+        agentCredits *= languageCount;
+      }
+      
+      // Scale by visual features for image generator
+      if (agentType === 'image_generator') {
+        agentCredits += (visualFeatureCount * 20) + (totalSubOptions * 5);
+      }
+      
+      // Apply provider tier multiplier
+      agentCredits *= providerMultiplier;
+      
+      breakdown.push({
+        agent: agentType,
+        credits: Math.ceil(agentCredits),
+        tier: providerTier,
+      });
+      
+      totalCredits += agentCredits;
+    }
+    
+    // Apply global tier multiplier
+    totalCredits *= tierMultiplier;
+    
+    // Output format multiplier
+    const outputMultipliers: Record<string, number> = {
+      'static': 1.0,
+      'interactive': 1.5,
+      '3d': 3.0,
+      'video': 4.0,
+    };
+    const outputFormat = config.context.outputFormat || 'static';
+    totalCredits *= outputMultipliers[outputFormat] || 1.0;
+    
+    return {
+      totalCredits: Math.ceil(totalCredits),
+      breakdown,
+      tierMultiplier,
+    };
+  }
+
+  /**
+   * Get tier recommendation based on context
+   */
+  getRecommendedTier(context: GenerationContext): {
+    tier: GlobalTierLevel;
+    reason: string;
+    estimatedCredits: number;
+  } {
+    // High-stakes industries should use premium
+    const premiumIndustries = ['healthcare', 'pharma', 'legal', 'finance', 'banking'];
+    if (context.industry && premiumIndustries.includes(context.industry)) {
+      return {
+        tier: 'premium',
+        reason: `${context.industry} requires maximum accuracy`,
+        estimatedCredits: (context.slideCount || 10) * 50 * 5.0,
+      };
+    }
+    
+    // Complex output formats should use advanced+
+    if (context.outputFormat === 'video' || context.outputFormat === '3d') {
+      return {
+        tier: 'advanced',
+        reason: 'Complex output format benefits from quality providers',
+        estimatedCredits: (context.slideCount || 10) * 50 * 2.5,
+      };
+    }
+    
+    // Many visual features should use advanced
+    if ((context.visualFeatures?.length || 0) > 5) {
+      return {
+        tier: 'advanced',
+        reason: 'Multiple visual features need quality image generation',
+        estimatedCredits: (context.slideCount || 10) * 50 * 2.5,
+      };
+    }
+    
+    // Default to standard
+    return {
+      tier: 'standard',
+      reason: 'Cost-effective for standard presentations',
+      estimatedCredits: (context.slideCount || 10) * 50 * 1.0,
+    };
   }
 }
 
