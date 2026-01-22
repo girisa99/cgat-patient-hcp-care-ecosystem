@@ -47,6 +47,7 @@ import {
   FEATURE_CONTEXT_MAPPINGS,
   getGenerationCoverageStats
 } from './generation-coverage/generationCoverageRegistry';
+import { calculateUnifiedMetrics } from './generation-coverage/unifiedMetricsEngine';
 
 const CATEGORY_LABELS: Record<FeatureCategory, string> = {
   INPUT: '📥 Input',
