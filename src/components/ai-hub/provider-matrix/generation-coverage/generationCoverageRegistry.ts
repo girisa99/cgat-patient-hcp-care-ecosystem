@@ -200,7 +200,18 @@ function generateFrameworkMapping(framework: Framework, category: FrameworkCateg
     }
   }
   
-  const providers: ProviderId[] = isStrategy ? ['openai', 'claude'] : ['openai', 'gemini'];
+  if (isRegional) {
+    requiredFeatures.push({ featureId: 'multi_language', category: 'TRANSLATION', priority: 'critical' });
+  }
+  
+  // Expanded provider coverage based on framework type and region
+  const textProviders: ProviderId[] = isStrategy 
+    ? ['openai', 'claude', 'gemini'] 
+    : isRegional 
+      ? ['openai', 'deepseek', 'alibaba'] 
+      : ['openai', 'gemini', 'deepseek'];
+  
+  const translationProviders: ProviderId[] = ['deepl', 'google', 'alibaba'];
   
   return {
     contextType: 'framework',
@@ -208,21 +219,23 @@ function generateFrameworkMapping(framework: Framework, category: FrameworkCateg
     contextName: framework.name,
     requiredFeatures,
     recommendedProviders: {
-      text: [{ providers, reason: `${framework.name} analysis` }],
-      image: [{ providers: ['stability', 'modelslab'], reason: 'Framework diagrams' }]
+      text: [{ providers: textProviders, reason: `${framework.name} analysis` }],
+      image: [{ providers: ['modelslab', 'stability', 'openai'], reason: 'Framework diagrams' }],
+      translation: isRegional ? [{ providers: translationProviders, reason: 'Regional localization' }] : undefined
     },
     recommendedModels: [
-      { type: 'text', modelIds: ['gpt-5', 'claude-3.5'], reason: `${framework.name} depth`, tier: framework.tier as 1 | 2 | 3 },
-      { type: 'image', modelIds: ['flux-pro'], reason: 'Diagram quality', tier: 2 }
+      { type: 'text', modelIds: ['gpt-4o', 'claude-3.5-sonnet', 'gemini-2.0-flash'], reason: `${framework.name} depth`, tier: framework.tier as 1 | 2 | 3 },
+      { type: 'image', modelIds: ['flux-pro', 'dall-e-3', 'modelslab-flux'], reason: 'Diagram quality', tier: 2 },
+      ...(isRegional ? [{ type: 'translation' as ModelType, modelIds: ['deepl-pro', 'google-translate', 'alibaba-translate'], reason: 'Localization', tier: 1 as const }] : [])
     ],
     compatibleWith: {
       industries: isIndustry ? [category.id as IndustryId] : ['consulting', 'finance', 'technology'] as IndustryId[],
       visuals: ['charts', 'diagrams', 'infographics'] as VisualFeatureId[],
-      outputs: ['pdf-export', 'pptx-export'] as OutputFormatId[]
+      outputs: ['pdf-export', 'pptx-export', 'interactive'] as OutputFormatId[]
     },
     constraints: [],
-    scenarios: [framework.description, `${category.name} analysis`],
-    useCases: [`${framework.name} presentations`, `${category.name} deliverables`]
+    scenarios: [framework.description, `${category.name} analysis`, `${framework.name} strategic planning`],
+    useCases: [`${framework.name} presentations`, `${category.name} deliverables`, `Executive briefings`]
   };
 }
 
@@ -239,27 +252,37 @@ function generateVisualMapping(visual: ExpandedVisualFeature): ContextToCapabili
   const isInteractive = visual.category === 'interactive';
   const isMedia = visual.category === 'media';
   const isData = visual.category === 'data';
+  const isLayout = visual.category === 'layout';
   
   const requiredFeatures: ContextToCapabilityMapping['requiredFeatures'] = [];
   const constraints: ContextToCapabilityMapping['constraints'] = [];
   
   if (isData) {
     requiredFeatures.push({ featureId: 'ai_image_gen', category: 'IMAGE', priority: 'critical' });
+    requiredFeatures.push({ featureId: 'ai_script_gen', category: 'SCRIPT', priority: 'recommended' });
   }
   if (is3D) {
     requiredFeatures.push({ featureId: 'mesh_3d_gen', category: '3D', priority: 'critical' });
+    requiredFeatures.push({ featureId: '3d_animation', category: '3D', priority: 'recommended' });
     constraints.push({ contextType: 'output', contextId: 'pdf-export', severity: 'warning', reason: '3D rendered as static in PDF' });
   }
   if (isMedia && visual.id === 'video-clips') {
     requiredFeatures.push({ featureId: 'video_generation', category: 'VIDEO', priority: 'critical' });
     constraints.push({ contextType: 'output', contextId: 'pdf-export', severity: 'incompatible', reason: 'PDF cannot contain video' });
   }
+  if (isMedia && visual.id === 'animations') {
+    requiredFeatures.push({ featureId: 'motion_graphics', category: 'ANIMATION', priority: 'critical' });
+  }
   if (isMedia && visual.id === 'audio') {
     requiredFeatures.push({ featureId: 'tts', category: 'VOICE', priority: 'critical' });
+    requiredFeatures.push({ featureId: 'background_music', category: 'AUDIO', priority: 'recommended' });
   }
   if (isInteractive) {
     requiredFeatures.push({ featureId: 'interactive_elements', category: 'INTERACTIVE', priority: 'critical' });
     constraints.push({ contextType: 'output', contextId: 'pdf-export', severity: 'warning', reason: 'Interactive elements not in PDF' });
+  }
+  if (isLayout) {
+    requiredFeatures.push({ featureId: 'ai_image_gen', category: 'IMAGE', priority: 'recommended' });
   }
   
   // Default to image gen if no specific requirements
@@ -268,8 +291,8 @@ function generateVisualMapping(visual: ExpandedVisualFeature): ContextToCapabili
   }
   
   // Build compatible outputs based on visual type
-  let compatibleOutputs: OutputFormatId[] = ['pptx-export', '2d-static'];
-  if (is3D) compatibleOutputs = ['3d-static', '3d-animated', 'vr-experience', 'ar-overlay'];
+  let compatibleOutputs: OutputFormatId[] = ['pptx-export', '2d-static', 'pdf-export'];
+  if (is3D) compatibleOutputs = ['3d-static', '3d-animated', 'vr-experience', 'ar-overlay', 'mixed-reality'];
   if (isMedia && (visual.id === 'video-clips' || visual.id === 'animations')) compatibleOutputs = ['video-short', 'video-full', 'social-media', '2d-animated'];
   if (isInteractive) compatibleOutputs = ['interactive', 'web-embed'];
   
@@ -279,20 +302,23 @@ function generateVisualMapping(visual: ExpandedVisualFeature): ContextToCapabili
     contextName: visual.name,
     requiredFeatures,
     recommendedProviders: {
-      image: [{ providers: ['modelslab', 'stability'], reason: visual.description }],
-      ...(is3D && { mesh3d: [{ providers: ['modelslab', 'replicate'], reason: '3D generation' }] }),
-      ...(isMedia && visual.id.includes('video') && { video: [{ providers: ['modelslab', 'runway'], reason: 'Video generation' }] })
+      image: [{ providers: ['modelslab', 'stability', 'openai', 'replicate'], reason: visual.description }],
+      ...(is3D && { mesh3d: [{ providers: ['modelslab', 'replicate', 'huggingface'], reason: '3D generation' }] }),
+      ...(isMedia && visual.id.includes('video') && { video: [{ providers: ['modelslab', 'runway', 'alibaba'], reason: 'Video generation' }] }),
+      ...(isMedia && visual.id === 'audio' && { voice: [{ providers: ['elevenlabs', 'openai', 'google', 'alibaba'], reason: 'Audio generation' }] })
     },
     recommendedModels: [
-      { type: 'image', modelIds: ['flux-pro', 'dall-e-3'], reason: visual.description, tier: visual.tier },
-      ...(is3D ? [{ type: '3d' as ModelType, modelIds: ['meshy-ai', 'rodin-gen1'], reason: '3D models', tier: visual.tier }] : [])
+      { type: 'image', modelIds: ['flux-pro', 'dall-e-3', 'modelslab-flux', 'stable-diffusion-xl'], reason: visual.description, tier: visual.tier },
+      ...(is3D ? [{ type: '3d' as ModelType, modelIds: ['meshy-ai', 'rodin-gen1', 'triposr', 'luma-genie'], reason: '3D models', tier: visual.tier }] : []),
+      ...(isMedia && visual.id.includes('video') ? [{ type: 'video' as ModelType, modelIds: ['runway-gen3', 'openai-sora', 'pika-labs', 'luma-dream-machine'], reason: 'Video gen', tier: visual.tier }] : []),
+      ...(isMedia && visual.id === 'audio' ? [{ type: 'voice' as ModelType, modelIds: ['elevenlabs', 'azure-neural', 'openai-tts', 'alibaba-cosyvoice'], reason: 'Audio gen', tier: visual.tier }] : [])
     ],
     compatibleWith: {
       outputs: compatibleOutputs
     },
     constraints,
-    scenarios: visual.subOptions.slice(0, 3).map(s => s.name),
-    useCases: [`${visual.name} creation`, `${visual.category} design`]
+    scenarios: visual.subOptions.slice(0, 4).map(s => s.name),
+    useCases: [`${visual.name} creation`, `${visual.category} design`, `${visual.name} editing`]
   };
 }
 
@@ -310,12 +336,23 @@ function generateOutputMapping(output: ExpandedOutputConfig): ContextToCapabilit
   
   if (output.requiresVideo) {
     requiredFeatures.push({ featureId: 'video_generation', category: 'VIDEO', priority: 'critical' });
+    requiredFeatures.push({ featureId: 'video_editing', category: 'VIDEO', priority: 'recommended' });
   }
   if (output.requiresVoice) {
     requiredFeatures.push({ featureId: 'tts', category: 'VOICE', priority: 'critical' });
+    requiredFeatures.push({ featureId: 'background_music', category: 'AUDIO', priority: 'recommended' });
   }
   if (output.requires3D) {
     requiredFeatures.push({ featureId: 'mesh_3d_gen', category: '3D', priority: 'critical' });
+    requiredFeatures.push({ featureId: '3d_animation', category: '3D', priority: 'recommended' });
+  }
+  
+  // Add export-specific features
+  if (output.category === 'document') {
+    requiredFeatures.push({ featureId: 'pdf_export', category: 'EXPORT', priority: 'critical' });
+  }
+  if (output.category === 'interactive' || output.category === 'immersive') {
+    requiredFeatures.push({ featureId: 'interactive_elements', category: 'INTERACTIVE', priority: 'critical' });
   }
   
   const constraints: ContextToCapabilityMapping['constraints'] = [];
@@ -324,10 +361,18 @@ function generateOutputMapping(output: ExpandedOutputConfig): ContextToCapabilit
   if (output.category === 'document' || output.id === 'pdf-export') {
     constraints.push({ contextType: 'visual', contextId: 'video-clips', severity: 'incompatible', reason: 'PDF cannot contain video' });
     constraints.push({ contextType: 'visual', contextId: 'realtime', severity: 'incompatible', reason: 'PDF cannot contain realtime features' });
+    constraints.push({ contextType: 'visual', contextId: 'clickable', severity: 'warning', reason: 'Limited interactivity in PDF' });
   }
   if (output.category === 'video') {
     constraints.push({ contextType: 'visual', contextId: 'data-filters', severity: 'incompatible', reason: 'Interactive filters not in video' });
+    constraints.push({ contextType: 'visual', contextId: 'forms', severity: 'incompatible', reason: 'Forms not in video' });
   }
+  
+  // Enhanced provider mapping with full coverage
+  const imageProviders: ProviderId[] = ['modelslab', 'openai', 'stability', 'replicate'];
+  const videoProviders: ProviderId[] = ['modelslab', 'runway', 'alibaba'];
+  const voiceProviders: ProviderId[] = ['elevenlabs', 'openai', 'google', 'alibaba'];
+  const mesh3dProviders: ProviderId[] = ['modelslab', 'replicate', 'huggingface'];
   
   return {
     contextType: 'output',
@@ -335,26 +380,29 @@ function generateOutputMapping(output: ExpandedOutputConfig): ContextToCapabilit
     contextName: output.name,
     requiredFeatures,
     recommendedProviders: {
-      image: [{ providers: output.imageModels.slice(0, 2) as ProviderId[], reason: output.description }],
-      ...(output.videoModels.length > 0 && { video: [{ providers: output.videoModels.slice(0, 2) as ProviderId[], reason: 'Video generation' }] }),
-      ...(output.voiceModels.length > 0 && { voice: [{ providers: output.voiceModels.slice(0, 2) as ProviderId[], reason: 'Voice narration' }] }),
-      ...(output.mesh3dModels.length > 0 && { mesh3d: [{ providers: output.mesh3dModels.slice(0, 2) as ProviderId[], reason: '3D models' }] })
+      image: [{ providers: imageProviders.slice(0, 3), reason: output.description }],
+      text: [{ providers: ['openai', 'claude', 'gemini'] as ProviderId[], reason: 'Script generation' }],
+      ...(output.requiresVideo && { video: [{ providers: videoProviders, reason: 'Video generation' }] }),
+      ...(output.requiresVoice && { voice: [{ providers: voiceProviders, reason: 'Voice narration' }] }),
+      ...(output.requires3D && { mesh3d: [{ providers: mesh3dProviders, reason: '3D models' }] })
     },
     recommendedModels: [
-      { type: 'image', modelIds: output.imageModels.slice(0, 2), reason: output.description, tier: output.tier },
-      ...(output.videoModels.length > 0 ? [{ type: 'video' as ModelType, modelIds: output.videoModels.slice(0, 2), reason: 'Video quality', tier: output.tier }] : []),
-      ...(output.voiceModels.length > 0 ? [{ type: 'voice' as ModelType, modelIds: output.voiceModels.slice(0, 2), reason: 'Voice quality', tier: output.tier }] : [])
+      { type: 'text', modelIds: ['gpt-4o', 'claude-3.5-sonnet', 'gemini-2.0-flash'], reason: 'Script quality', tier: output.tier },
+      { type: 'image', modelIds: ['flux-pro', 'dall-e-3', 'modelslab-flux', 'stable-diffusion-xl'], reason: output.description, tier: output.tier },
+      ...(output.requiresVideo ? [{ type: 'video' as ModelType, modelIds: ['runway-gen3', 'openai-sora', 'pika-labs', 'alibaba-wan'], reason: 'Video quality', tier: output.tier }] : []),
+      ...(output.requiresVoice ? [{ type: 'voice' as ModelType, modelIds: ['elevenlabs', 'openai-tts', 'azure-neural', 'alibaba-cosyvoice'], reason: 'Voice quality', tier: output.tier }] : []),
+      ...(output.requires3D ? [{ type: '3d' as ModelType, modelIds: ['meshy-ai', 'rodin-gen1', 'triposr', 'luma-genie'], reason: '3D quality', tier: output.tier }] : [])
     ],
     compatibleWith: {
       visuals: output.category === 'video' 
         ? ['video-clips', 'animations', 'images'] as VisualFeatureId[]
         : output.category === '3d' || output.category === 'immersive'
-          ? ['3d-objects', '3d-scenes', '3d-animations'] as VisualFeatureId[]
-          : ['charts', 'diagrams', 'infographics', 'images'] as VisualFeatureId[]
+          ? ['3d-objects', '3d-scenes', '3d-animations', 'ar-elements'] as VisualFeatureId[]
+          : ['charts', 'diagrams', 'infographics', 'images', 'quote-blocks'] as VisualFeatureId[]
     },
     constraints,
-    scenarios: output.capabilities.slice(0, 3),
-    useCases: output.exportFormats.map(f => `${f.toUpperCase()} export`)
+    scenarios: [...output.capabilities.slice(0, 3), `${output.name} production`],
+    useCases: [...output.exportFormats.map(f => `${f.toUpperCase()} export`), `${output.category} publishing`]
   };
 }
 
