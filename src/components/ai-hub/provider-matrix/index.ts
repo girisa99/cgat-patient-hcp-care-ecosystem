@@ -5,3 +5,4 @@ export { TabMetricsHeader } from './TabMetricsHeader';
 export * from './types';
 export * from './matrixData';
 export * from './generation-coverage';
+export * from './pipelineCapabilityMatrix';
