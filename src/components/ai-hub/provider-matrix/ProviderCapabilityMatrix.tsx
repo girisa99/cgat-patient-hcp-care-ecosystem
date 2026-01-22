@@ -262,15 +262,22 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
   // Dynamic height - no scroll for single categories with few items
   const needsScroll = selectedCategory === 'all' || filteredFeatures.length > 15;
 
-  // Multi-sheet Excel export
-  const handleExportExcel = () => {
+  // Get filtered features based on category selection
+  const getFilteredFeaturesForExport = () => {
+    return selectedCategory === 'all' ? localFeatures : localFeatures.filter(f => f.category === selectedCategory);
+  };
+
+  // Multi-sheet Excel export - respects category filter
+  const handleExportExcel = (exportAll: boolean = false) => {
     const workbook = XLSX.utils.book_new();
+    const featuresToExport = exportAll ? localFeatures : getFilteredFeaturesForExport();
+    const categoryLabel = selectedCategory === 'all' ? 'All' : CATEGORY_LABELS[selectedCategory].replace(/[^\w\s]/g, '').trim();
     
-    // Sheet 1: Feature Matrix
+    // Sheet 1: Feature Matrix (filtered)
     const matrixData: (string | number)[][] = [
       ['Feature', 'Category', 'Priority', ...PROVIDER_SUMMARIES.map(p => p.name)]
     ];
-    localFeatures.forEach(f => {
+    featuresToExport.forEach(f => {
       const row: (string | number)[] = [f.name, f.category, f.priority];
       PROVIDER_SUMMARIES.forEach(p => {
         const impl = localMatrix[f.id]?.[p.id as ProviderId];
@@ -279,43 +286,58 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
       matrixData.push(row);
     });
     const matrixSheet = XLSX.utils.aoa_to_sheet(matrixData);
-    XLSX.utils.book_append_sheet(workbook, matrixSheet, 'Feature Matrix');
+    XLSX.utils.book_append_sheet(workbook, matrixSheet, `Features - ${categoryLabel}`.slice(0, 31));
     
-    // Sheet 2: Input Features
-    const inputData: (string | number)[][] = [
-      ['Feature', 'Description', 'Scenarios', 'Providers', 'Best For', 'Limitations']
-    ];
-    localFeatures.filter(f => f.category === 'INPUT').forEach(f => {
-      const useCase = FEATURE_USE_CASES[f.id];
-      const featureImpl = localMatrix[f.id] || {};
-      const providers = Object.entries(featureImpl)
-        .filter(([_, impl]) => impl?.implementation === 'implemented')
-        .map(([id]) => PROVIDER_SUMMARIES.find(p => p.id === id)?.name || id);
-      inputData.push([
-        f.name,
-        f.description || '',
-        useCase?.scenarios?.join('; ') || '',
-        providers.join('; '),
-        useCase?.bestFor?.join('; ') || '',
-        useCase?.limitations?.join('; ') || ''
-      ]);
-    });
-    const inputSheet = XLSX.utils.aoa_to_sheet(inputData);
-    XLSX.utils.book_append_sheet(workbook, inputSheet, 'Input Features');
+    // Sheet 2: Input Features (if INPUT selected or all)
+    if (selectedCategory === 'all' || selectedCategory === 'INPUT' || exportAll) {
+      const inputData: (string | number)[][] = [
+        ['Feature', 'Description', 'Scenarios', 'Providers', 'Best For', 'Limitations']
+      ];
+      const inputFeatures = exportAll 
+        ? localFeatures.filter(f => f.category === 'INPUT')
+        : featuresToExport.filter(f => f.category === 'INPUT');
+      inputFeatures.forEach(f => {
+        const useCase = FEATURE_USE_CASES[f.id];
+        const featureImpl = localMatrix[f.id] || {};
+        const providers = Object.entries(featureImpl)
+          .filter(([_, impl]) => impl?.implementation === 'implemented')
+          .map(([id]) => PROVIDER_SUMMARIES.find(p => p.id === id)?.name || id);
+        inputData.push([
+          f.name,
+          f.description || '',
+          useCase?.scenarios?.join('; ') || '',
+          providers.join('; '),
+          useCase?.bestFor?.join('; ') || '',
+          useCase?.limitations?.join('; ') || ''
+        ]);
+      });
+      if (inputData.length > 1) {
+        const inputSheet = XLSX.utils.aoa_to_sheet(inputData);
+        XLSX.utils.book_append_sheet(workbook, inputSheet, 'Input Features');
+      }
+    }
     
-    // Sheet 3: Providers Summary
+    // Sheet 3: Providers Summary (filtered by features they support in selected category)
     const providerData: (string | number)[][] = [
       ['Provider', 'Status', 'Cost Tier', 'Implemented', 'Partial', 'Total', 'Coverage %', 'Capabilities', 'Strengths', 'Weaknesses']
     ];
     PROVIDER_SUMMARIES.forEach(p => {
+      const implementedCount = featuresToExport.filter(f => 
+        localMatrix[f.id]?.[p.id as ProviderId]?.implementation === 'implemented'
+      ).length;
+      const partialCount = featuresToExport.filter(f => 
+        localMatrix[f.id]?.[p.id as ProviderId]?.implementation === 'partial'
+      ).length;
+      const totalCount = featuresToExport.length;
+      
       providerData.push([
         p.name,
         p.status,
         p.costTier,
-        p.implementedFeatures,
-        p.partialFeatures,
-        p.totalFeatures,
-        Math.round((p.implementedFeatures / p.totalFeatures) * 100),
+        implementedCount,
+        partialCount,
+        totalCount,
+        totalCount > 0 ? Math.round((implementedCount / totalCount) * 100) : 0,
         p.capabilities.join('; '),
         p.strengths.join('; '),
         p.weaknesses.join('; ')
@@ -324,7 +346,7 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
     const providerSheet = XLSX.utils.aoa_to_sheet(providerData);
     XLSX.utils.book_append_sheet(workbook, providerSheet, 'Providers');
     
-    // Sheet 4: LLM Comparison
+    // Sheet 4: LLM Comparison (always include, it's model-focused)
     const llmData: (string | number)[][] = [
       ['Model', 'Provider', 'Cost Tier', 'Accuracy %', 'Industries', 'Output Types', 'Input Strengths', 'Notes']
     ];
@@ -343,11 +365,11 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
     const llmSheet = XLSX.utils.aoa_to_sheet(llmData);
     XLSX.utils.book_append_sheet(workbook, llmSheet, 'LLM Analysis');
     
-    // Sheet 5: Gap Analysis
+    // Sheet 5: Gap Analysis (filtered)
     const gapData: (string | number)[][] = [
       ['Feature', 'Category', 'Priority', 'Partial Providers', 'Missing Providers', 'Potential Providers']
     ];
-    localFeatures.forEach(feature => {
+    featuresToExport.forEach(feature => {
       const featureImpl = localMatrix[feature.id] || {};
       const statuses = Object.values(featureImpl).map(p => p?.implementation);
       if (!statuses.includes('implemented') || statuses.includes('partial')) {
@@ -365,9 +387,9 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
       }
     });
     const gapSheet = XLSX.utils.aoa_to_sheet(gapData);
-    XLSX.utils.book_append_sheet(workbook, gapSheet, 'Gap Analysis');
+    XLSX.utils.book_append_sheet(workbook, gapSheet, `Gaps - ${categoryLabel}`.slice(0, 31));
     
-    // Sheet 6: Critical Gaps
+    // Sheet 6: Critical Gaps (always include)
     const criticalData: (string | number)[][] = [
       ['Feature', 'Provider', 'Priority', 'Effort', 'Notes']
     ];
@@ -378,8 +400,11 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
     XLSX.utils.book_append_sheet(workbook, criticalSheet, 'Critical Gaps');
     
     // Download
-    XLSX.writeFile(workbook, 'provider_capability_matrix.xlsx');
-    toast.success('Excel exported with 6 sheets!');
+    const filename = exportAll 
+      ? 'provider_capability_matrix_full.xlsx' 
+      : `provider_capability_matrix_${categoryLabel.toLowerCase().replace(/\s+/g, '_')}.xlsx`;
+    XLSX.writeFile(workbook, filename);
+    toast.success(`Exported ${featuresToExport.length} features to Excel!`);
   };
 
   const handleAddFeature = (feature: Feature) => {
@@ -443,9 +468,14 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
               <Button variant="outline" size="sm" onClick={() => setEditMode(true)}>
                 <Edit2 className="w-4 h-4 mr-1" /> Edit
               </Button>
-              <Button variant="outline" size="sm" onClick={handleExportExcel}>
-                <FileSpreadsheet className="w-4 h-4 mr-1" /> Export Excel
+              <Button variant="outline" size="sm" onClick={() => handleExportExcel(false)}>
+                <FileSpreadsheet className="w-4 h-4 mr-1" /> Export {selectedCategory === 'all' ? 'All' : 'Filtered'}
               </Button>
+              {selectedCategory !== 'all' && (
+                <Button variant="ghost" size="sm" onClick={() => handleExportExcel(true)}>
+                  <Download className="w-4 h-4 mr-1" /> Export All
+                </Button>
+              )}
             </>
           )}
         </div>
@@ -749,21 +779,27 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
           )}
         </TabsContent>
 
-        {/* Provider Summary Tab - Table Format */}
+        {/* Provider Summary Tab - Table Format - Respects Category Filter */}
         <TabsContent value="providers" className="mt-0 space-y-3">
-          {/* Summary Stats Bar */}
+          {/* Summary Stats Bar - Dynamic based on category */}
           {(() => {
+            const categoryFeatures = selectedCategory === 'all' ? localFeatures : localFeatures.filter(f => f.category === selectedCategory);
             const configuredCount = PROVIDER_SUMMARIES.filter(p => p.status === 'configured').length;
             const totalCoverage = PROVIDER_SUMMARIES.reduce((sum, p) => {
-              const implemented = localFeatures.filter(f => 
+              const implemented = categoryFeatures.filter(f => 
                 localMatrix[f.id]?.[p.id as ProviderId]?.implementation === 'implemented'
               ).length;
-              return sum + (localFeatures.length > 0 ? (implemented / localFeatures.length) * 100 : 0);
+              return sum + (categoryFeatures.length > 0 ? (implemented / categoryFeatures.length) * 100 : 0);
             }, 0) / PROVIDER_SUMMARIES.length;
             
             return (
               <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-lg border bg-muted/20">
                 <div className="flex items-center gap-4 text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-muted-foreground font-medium">
+                      {selectedCategory === 'all' ? 'All Categories' : CATEGORY_LABELS[selectedCategory]}:
+                    </span>
+                  </div>
                   <div className="flex items-center gap-1.5">
                     <span className="font-bold text-lg text-primary">{PROVIDER_SUMMARIES.length}</span>
                     <span className="text-muted-foreground">Providers</span>
@@ -780,8 +816,8 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
                   </div>
                   <div className="h-4 w-px bg-border" />
                   <div className="flex items-center gap-1.5">
-                    <span className="font-bold text-lg text-foreground">{localFeatures.length}</span>
-                    <span className="text-muted-foreground">Total Features</span>
+                    <span className="font-bold text-lg text-foreground">{categoryFeatures.length}</span>
+                    <span className="text-muted-foreground">Features</span>
                   </div>
                 </div>
                 {editMode && (
@@ -808,14 +844,15 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
               </TableHeader>
               <TableBody>
                 {PROVIDER_SUMMARIES.map(provider => {
-                  const implementedCount = localFeatures.filter(f => 
+                  const categoryFeatures = selectedCategory === 'all' ? localFeatures : localFeatures.filter(f => f.category === selectedCategory);
+                  const implementedCount = categoryFeatures.filter(f => 
                     localMatrix[f.id]?.[provider.id as ProviderId]?.implementation === 'implemented'
                   ).length;
-                  const partialCount = localFeatures.filter(f => 
+                  const partialCount = categoryFeatures.filter(f => 
                     localMatrix[f.id]?.[provider.id as ProviderId]?.implementation === 'partial'
                   ).length;
-                  const coveragePercent = localFeatures.length > 0 
-                    ? ((implementedCount + partialCount * 0.5) / localFeatures.length) * 100 
+                  const coveragePercent = categoryFeatures.length > 0 
+                    ? ((implementedCount + partialCount * 0.5) / categoryFeatures.length) * 100 
                     : 0;
 
                   return (
