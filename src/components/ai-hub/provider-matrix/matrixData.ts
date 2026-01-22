@@ -1617,7 +1617,7 @@ export const CROSS_FUNCTIONAL_MAPPINGS: CrossFunctionalMapping[] = [
     scenarios: ['Video narration', 'Podcast intro', 'E-learning modules'],
     recommendedProviders: ['elevenlabs', 'openai', 'alibaba'],
     recommendedLLMs: ['GPT-4o'],
-    genieProducts: ['deck', 'vibe', 'arc', 'ask_genie'],
+    genieProducts: ['deck', 'vibe', 'mind', 'arc', 'ask_genie'],
   },
   {
     primaryFeatureId: 'voice_cloning',
@@ -1631,7 +1631,7 @@ export const CROSS_FUNCTIONAL_MAPPINGS: CrossFunctionalMapping[] = [
     scenarios: ['CEO message localization', 'Training personalization', 'Podcast'],
     recommendedProviders: ['elevenlabs'],
     recommendedLLMs: ['GPT-4o'],
-    genieProducts: ['vibe', 'arc'],
+    genieProducts: ['vibe', 'mind', 'arc'],
   },
   {
     primaryFeatureId: 'multi_language_voice',
@@ -1645,7 +1645,7 @@ export const CROSS_FUNCTIONAL_MAPPINGS: CrossFunctionalMapping[] = [
     scenarios: ['CJK content', 'European localization', 'APAC markets', 'LatAm expansion'],
     recommendedProviders: ['elevenlabs', 'alibaba'],
     recommendedLLMs: ['GPT-4o', 'Qwen 2.5'],
-    genieProducts: ['deck', 'vibe', 'arc'],
+    genieProducts: ['deck', 'vibe', 'mind', 'arc'],
   },
   {
     primaryFeatureId: 'voice_emotion',
@@ -1658,7 +1658,7 @@ export const CROSS_FUNCTIONAL_MAPPINGS: CrossFunctionalMapping[] = [
     scenarios: ['Children content', 'Drama narration', 'IVR systems', 'Customer service'],
     recommendedProviders: ['elevenlabs'],
     recommendedLLMs: ['GPT-4o'],
-    genieProducts: ['vibe', 'arc'],
+    genieProducts: ['vibe', 'mind', 'arc'],
   },
   {
     primaryFeatureId: 'voice_speed',
@@ -1671,7 +1671,7 @@ export const CROSS_FUNCTIONAL_MAPPINGS: CrossFunctionalMapping[] = [
     scenarios: ['Timed ads', 'Accessibility compliance', 'Podcast pacing', 'Video sync'],
     recommendedProviders: ['elevenlabs', 'openai'],
     recommendedLLMs: ['GPT-4o'],
-    genieProducts: ['deck', 'vibe', 'arc'],
+    genieProducts: ['deck', 'vibe', 'mind', 'arc'],
   },
   {
     primaryFeatureId: 'ai_voice_count',
@@ -1684,7 +1684,7 @@ export const CROSS_FUNCTIONAL_MAPPINGS: CrossFunctionalMapping[] = [
     scenarios: ['Multi-character scripts', 'A/B voice testing', 'Regional customization', 'Diverse representation'],
     recommendedProviders: ['elevenlabs'],
     recommendedLLMs: ['GPT-4o'],
-    genieProducts: ['deck', 'vibe', 'spark', 'arc'],
+    genieProducts: ['deck', 'vibe', 'mind', 'spark', 'arc'],
   },
   // IMAGE CATEGORY
   {
