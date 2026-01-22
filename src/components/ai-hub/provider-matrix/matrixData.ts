@@ -1863,6 +1863,104 @@ export const CROSS_FUNCTIONAL_MAPPINGS: CrossFunctionalMapping[] = [
     recommendedLLMs: ['GPT-4o'],
     genieProducts: ['vibe', 'arc'],
   },
+  // ============================================
+  // PUBLISHING CATEGORY - All Publishing Features
+  // ============================================
+  {
+    primaryFeatureId: 'web_publish',
+    primaryCategory: 'PUBLISHING',
+    relatedFeatures: [
+      { featureId: 'pptx_export', category: 'EXPORT', relationship: 'alternative' },
+      { featureId: 'embed_website', category: 'PUBLISHING', relationship: 'enables' },
+      { featureId: 'password_protection', category: 'PUBLISHING', relationship: 'enhances' },
+    ],
+    useCases: ['Shareable links', 'Client previews', 'Public presentations', 'Internal sharing'],
+    scenarios: ['Sales deck sharing', 'Training distribution', 'Marketing campaigns', 'Portfolio showcase'],
+    recommendedProviders: ['openai', 'gemini'],
+    recommendedLLMs: ['GPT-4o'],
+    genieProducts: ['deck', 'vibe', 'spark', 'arc'],
+  },
+  {
+    primaryFeatureId: 'youtube_upload',
+    primaryCategory: 'PUBLISHING',
+    relatedFeatures: [
+      { featureId: 'mp4_export', category: 'EXPORT', relationship: 'requires' },
+      { featureId: 'auto_subtitles', category: 'VIDEO', relationship: 'enhances' },
+      { featureId: 'social_schedule', category: 'PUBLISHING', relationship: 'enhances' },
+    ],
+    useCases: ['Video publishing', 'Channel management', 'Content marketing', 'SEO optimization'],
+    scenarios: ['Product demos', 'Tutorial publishing', 'Marketing videos', 'Educational content'],
+    recommendedProviders: ['modelslab', 'replicate', 'elevenlabs'],
+    recommendedLLMs: ['GPT-4o', 'Gemini 2.5 Pro'],
+    genieProducts: ['vibe', 'arc'],
+  },
+  {
+    primaryFeatureId: 'social_schedule',
+    primaryCategory: 'PUBLISHING',
+    relatedFeatures: [
+      { featureId: 'youtube_upload', category: 'PUBLISHING', relationship: 'enhances' },
+      { featureId: 'web_publish', category: 'PUBLISHING', relationship: 'enhances' },
+      { featureId: 'mp4_export', category: 'EXPORT', relationship: 'requires' },
+    ],
+    useCases: ['Content calendar', 'Multi-platform posting', 'Campaign management', 'Optimal timing'],
+    scenarios: ['Marketing campaigns', 'Product launches', 'Event promotions', 'Regular content'],
+    recommendedProviders: ['openai', 'gemini'],
+    recommendedLLMs: ['GPT-4o'],
+    genieProducts: ['vibe', 'spark', 'arc'],
+  },
+  {
+    primaryFeatureId: 'embed_website',
+    primaryCategory: 'PUBLISHING',
+    relatedFeatures: [
+      { featureId: 'web_publish', category: 'PUBLISHING', relationship: 'requires' },
+      { featureId: 'custom_domain', category: 'PUBLISHING', relationship: 'enhances' },
+    ],
+    useCases: ['Website integration', 'Blog embeds', 'Knowledge base', 'Product pages'],
+    scenarios: ['Landing pages', 'Documentation', 'Training portals', 'Sales pages'],
+    recommendedProviders: ['openai', 'gemini'],
+    recommendedLLMs: ['GPT-4o'],
+    genieProducts: ['deck', 'vibe', 'hub'],
+  },
+  {
+    primaryFeatureId: 'api_access',
+    primaryCategory: 'PUBLISHING',
+    relatedFeatures: [
+      { featureId: 'web_publish', category: 'PUBLISHING', relationship: 'enables' },
+      { featureId: 'gdrive_integration', category: 'PUBLISHING', relationship: 'alternative' },
+    ],
+    useCases: ['Automation', 'Integrations', 'Batch processing', 'Custom workflows'],
+    scenarios: ['Enterprise integration', 'CMS sync', 'LMS integration', 'CRM publishing'],
+    recommendedProviders: ['openai', 'gemini', 'claude'],
+    recommendedLLMs: ['GPT-4o', 'Gemini 2.5 Pro'],
+    genieProducts: ['hub', 'arc', 'deck'],
+  },
+  {
+    primaryFeatureId: 'custom_domain',
+    primaryCategory: 'PUBLISHING',
+    relatedFeatures: [
+      { featureId: 'embed_website', category: 'PUBLISHING', relationship: 'enhances' },
+      { featureId: 'password_protection', category: 'PUBLISHING', relationship: 'enhances' },
+      { featureId: 'web_publish', category: 'PUBLISHING', relationship: 'requires' },
+    ],
+    useCases: ['White-label hosting', 'Brand consistency', 'Enterprise publishing', 'Client portals'],
+    scenarios: ['Agency deliverables', 'Enterprise training', 'Partner portals', 'Branded content hubs'],
+    recommendedProviders: ['openai', 'gemini'],
+    recommendedLLMs: ['GPT-4o'],
+    genieProducts: ['deck', 'vibe', 'arc', 'hub'],
+  },
+  {
+    primaryFeatureId: 'password_protection',
+    primaryCategory: 'PUBLISHING',
+    relatedFeatures: [
+      { featureId: 'web_publish', category: 'PUBLISHING', relationship: 'enhances' },
+      { featureId: 'viewer_analytics', category: 'INTERACTIVE', relationship: 'enhances' },
+    ],
+    useCases: ['Confidential sharing', 'Gated content', 'Premium access', 'Secure distribution'],
+    scenarios: ['Board decks', 'Financial reports', 'Pre-release content', 'NDA materials'],
+    recommendedProviders: ['openai', 'gemini'],
+    recommendedLLMs: ['GPT-4o'],
+    genieProducts: ['deck', 'vibe', 'arc'],
+  },
 ];
 
 // ============================================
