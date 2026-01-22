@@ -703,86 +703,160 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
           </div>
         </TabsContent>
 
-        {/* Input Features Tab - Comprehensive Guide */}
-        <TabsContent value="input" className="mt-0 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold flex items-center gap-2">
-              📥 Input Features - Complete Implementation Guide
-            </h3>
-            <Badge variant="outline" className="text-xs bg-primary/10 border-primary/30 text-primary">
-              {computeCategoryStats['INPUT']?.implemented || 0}/{computeCategoryStats['INPUT']?.total || 0} Implemented
-            </Badge>
-          </div>
-          
-          {/* Input Features Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {localFeatures.filter(f => f.category === 'INPUT').map(feature => {
-              const useCase = FEATURE_USE_CASES[feature.id];
-              const featureImpl = localMatrix[feature.id] || {};
-              const stats = computeFeatureStats(feature.id);
-              const providers = Object.entries(featureImpl)
-                .filter(([_, impl]) => impl?.implementation === 'implemented')
-                .map(([id]) => PROVIDER_SUMMARIES.find(p => p.id === id)?.name || id);
-              
-              return (
-                <div key={feature.id} className="p-4 rounded-lg border bg-card">
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <h4 className="font-medium text-sm text-foreground">{feature.name}</h4>
-                      {feature.description && (
-                        <p className="text-xs text-muted-foreground mt-0.5">{feature.description}</p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1 text-xs">
-                      <span className="text-primary font-bold">{stats.implemented}</span>
-                      <span className="text-muted-foreground">/{stats.total}</span>
-                    </div>
+        {/* Input Features Tab - Flat Table View with Full Details */}
+        <TabsContent value="input" className="mt-0 space-y-3">
+          {/* Summary Stats Bar */}
+          {(() => {
+            const inputFeatures = localFeatures.filter(f => f.category === 'INPUT');
+            const totalScenarios = inputFeatures.reduce((sum, f) => sum + (FEATURE_USE_CASES[f.id]?.scenarios?.length || 0), 0);
+            const totalBestFor = inputFeatures.reduce((sum, f) => sum + (FEATURE_USE_CASES[f.id]?.bestFor?.length || 0), 0);
+            const inputStats = computeCategoryStats['INPUT'] || { total: 0, implemented: 0, partial: 0 };
+            
+            return (
+              <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-lg border bg-muted/20">
+                <div className="flex items-center gap-4 text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-lg text-primary">{inputStats.total}</span>
+                    <span className="text-muted-foreground">Features</span>
                   </div>
-                  
-                  {/* Providers */}
-                  <div className="mb-3">
-                    <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1.5">Supported Providers</p>
-                    <div className="flex flex-wrap gap-1">
-                      {providers.length > 0 ? providers.map(name => (
-                        <Badge key={name} variant="outline" className="text-[9px] bg-primary/5 border-primary/20">{name}</Badge>
-                      )) : (
-                        <span className="text-[10px] text-muted-foreground">No providers configured</span>
-                      )}
-                    </div>
+                  <div className="h-4 w-px bg-border" />
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-lg text-foreground">{totalScenarios}</span>
+                    <span className="text-muted-foreground">Scenarios</span>
                   </div>
-                  
-                  {/* Use Cases & Scenarios */}
-                  {useCase && (
-                    <>
-                      <div className="mb-2">
-                        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">
-                          Scenarios ({useCase.scenarios.length})
-                        </p>
-                        <div className="flex flex-wrap gap-1">
-                          {useCase.scenarios.map((s, i) => (
-                            <span key={i} className="text-[9px] px-1.5 py-0.5 rounded bg-muted text-foreground">{s}</span>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="mb-2">
-                        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">Best For</p>
-                        <div className="flex flex-wrap gap-1">
-                          {useCase.bestFor.map((b, i) => (
-                            <span key={i} className="text-[9px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">{b}</span>
-                          ))}
-                        </div>
-                      </div>
-                      {useCase.limitations && useCase.limitations.length > 0 && (
-                        <div>
-                          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">Limitations</p>
-                          <p className="text-[9px] text-muted-foreground">{useCase.limitations.join(' • ')}</p>
-                        </div>
-                      )}
-                    </>
-                  )}
+                  <div className="h-4 w-px bg-border" />
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-lg text-foreground">{PROVIDER_SUMMARIES.length}</span>
+                    <span className="text-muted-foreground">Providers</span>
+                  </div>
+                  <div className="h-4 w-px bg-border" />
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-lg text-foreground">{totalBestFor}</span>
+                    <span className="text-muted-foreground">Use Cases</span>
+                  </div>
                 </div>
-              );
-            })}
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 text-xs">
+                    <div className="w-2 h-2 rounded-full bg-primary" />
+                    <span className="font-medium">{inputStats.implemented}/{inputStats.total}</span>
+                    <span className="text-muted-foreground">Implemented</span>
+                  </div>
+                  <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => {
+                    let csv = 'Feature,Description,Scenarios,Providers,Best For,Limitations\n';
+                    localFeatures.filter(f => f.category === 'INPUT').forEach(f => {
+                      const useCase = FEATURE_USE_CASES[f.id];
+                      const featureImpl = localMatrix[f.id] || {};
+                      const providers = Object.entries(featureImpl)
+                        .filter(([_, impl]) => impl?.implementation === 'implemented')
+                        .map(([id]) => PROVIDER_SUMMARIES.find(p => p.id === id)?.name || id);
+                      csv += `"${f.name}","${f.description || ''}","${useCase?.scenarios?.join('; ') || ''}","${providers.join('; ')}","${useCase?.bestFor?.join('; ') || ''}","${useCase?.limitations?.join('; ') || ''}"\n`;
+                    });
+                    const blob = new Blob([csv], { type: 'text/csv' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'input_features_guide.csv';
+                    a.click();
+                    toast.success('Input features guide exported!');
+                  }}>
+                    <Download className="w-3 h-3 mr-1" /> Export
+                  </Button>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Flat Table - No Scrolling, Fit to Page */}
+          <div className="border rounded-lg overflow-hidden">
+            <Table>
+              <TableHeader className="bg-muted/30">
+                <TableRow>
+                  <TableHead className="w-[140px] text-xs font-semibold">Feature</TableHead>
+                  <TableHead className="w-[180px] text-xs font-semibold">Scenarios</TableHead>
+                  <TableHead className="w-[120px] text-xs font-semibold">Providers</TableHead>
+                  <TableHead className="w-[140px] text-xs font-semibold">Best For</TableHead>
+                  <TableHead className="text-xs font-semibold">Limitations</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {localFeatures.filter(f => f.category === 'INPUT').map(feature => {
+                  const useCase = FEATURE_USE_CASES[feature.id];
+                  const featureImpl = localMatrix[feature.id] || {};
+                  const stats = computeFeatureStats(feature.id);
+                  const providers = Object.entries(featureImpl)
+                    .filter(([_, impl]) => impl?.implementation === 'implemented')
+                    .map(([id]) => PROVIDER_SUMMARIES.find(p => p.id === id)?.name || id);
+                  
+                  return (
+                    <TableRow key={feature.id} className="hover:bg-muted/30">
+                      {/* Feature Column */}
+                      <TableCell className="py-2 align-top">
+                        <div className="font-medium text-xs text-foreground">{feature.name}</div>
+                        {feature.description && (
+                          <p className="text-[9px] text-muted-foreground mt-0.5 leading-tight">{feature.description}</p>
+                        )}
+                        <div className="flex items-center gap-1 mt-1">
+                          <span className="text-[9px] font-medium text-primary">{stats.implemented}✓</span>
+                          {stats.partial > 0 && <span className="text-[9px] text-amber-600">{stats.partial}⚠</span>}
+                          <span className="text-[9px] text-muted-foreground">/{stats.total}</span>
+                        </div>
+                      </TableCell>
+                      
+                      {/* Scenarios Column */}
+                      <TableCell className="py-2 align-top">
+                        {useCase?.scenarios ? (
+                          <div className="flex flex-wrap gap-0.5">
+                            {useCase.scenarios.map((s, i) => (
+                              <span key={i} className="text-[9px] px-1 py-0.5 rounded bg-muted/50 text-foreground leading-tight">{s}</span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-[9px] text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      
+                      {/* Providers Column */}
+                      <TableCell className="py-2 align-top">
+                        {providers.length > 0 ? (
+                          <div className="flex flex-wrap gap-0.5">
+                            {providers.slice(0, 5).map(name => (
+                              <span key={name} className="text-[9px] px-1 py-0.5 rounded bg-primary/10 text-primary leading-tight">{name}</span>
+                            ))}
+                            {providers.length > 5 && (
+                              <span className="text-[9px] text-muted-foreground">+{providers.length - 5}</span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-[9px] text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      
+                      {/* Best For Column */}
+                      <TableCell className="py-2 align-top">
+                        {useCase?.bestFor ? (
+                          <div className="flex flex-wrap gap-0.5">
+                            {useCase.bestFor.map((b, i) => (
+                              <span key={i} className="text-[9px] px-1 py-0.5 rounded bg-secondary/50 text-foreground leading-tight">{b}</span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-[9px] text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      
+                      {/* Limitations Column */}
+                      <TableCell className="py-2 align-top">
+                        {useCase?.limitations && useCase.limitations.length > 0 ? (
+                          <span className="text-[9px] text-muted-foreground leading-tight">{useCase.limitations.join(' • ')}</span>
+                        ) : (
+                          <span className="text-[9px] text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
           </div>
         </TabsContent>
 
