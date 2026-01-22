@@ -75,13 +75,7 @@ export const MetricsExplainer: React.FC<MetricsExplainerProps> = ({
       >
         <div className="flex items-center gap-1.5">
           <HelpCircle className="h-3 w-3 text-blue-500" />
-          <span>What do the Scenario & Use Case differences mean?</span>
-          {hasNewOpportunities && (
-            <Badge variant="secondary" className="text-[7px] bg-blue-500/10 text-blue-600">
-              <Sparkles className="h-2 w-2 mr-0.5" />
-              New opportunities found
-            </Badge>
-          )}
+          <span>How do Context Combinations work?</span>
         </div>
         {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
       </button>
@@ -91,26 +85,29 @@ export const MetricsExplainer: React.FC<MetricsExplainerProps> = ({
           {/* Explanation */}
           <div className="text-[8px] text-muted-foreground leading-relaxed">
             <p className="mb-1.5">
-              <strong className="text-foreground">The numbers are consistent and correct.</strong> Here's how they work:
+              <strong className="text-foreground">Generation Coverage uses Context Combinations:</strong>
             </p>
             <ul className="space-y-1 ml-2">
               <li className="flex items-start gap-1">
-                <span className="text-emerald-500 mt-0.5">●</span>
-                <span><strong>Feature Matrix</strong> shows BASE scenarios/use cases defined for each feature</span>
+                <span className="text-blue-500 mt-0.5">●</span>
+                <span><strong>Industry</strong> (e.g., Healthcare, Finance) → determines domain-specific requirements</span>
               </li>
               <li className="flex items-start gap-1">
                 <span className="text-purple-500 mt-0.5">●</span>
-                <span><strong>Cross-Functional</strong> identifies NEW scenarios discovered through feature dependencies</span>
+                <span><strong>Framework</strong> (e.g., SWOT, Patient Journey) → structures the content logic</span>
               </li>
               <li className="flex items-start gap-1">
-                <span className="text-blue-500 mt-0.5">●</span>
-                <span><strong>Gen Coverage</strong> finds NEW scenarios by mapping to Industries, Frameworks, Visuals, Outputs</span>
+                <span className="text-emerald-500 mt-0.5">●</span>
+                <span><strong>Visual Features</strong> (e.g., Charts, 3D Objects) → defines media requirements</span>
               </li>
               <li className="flex items-start gap-1">
-                <span className="text-primary mt-0.5">●</span>
-                <span><strong>Total</strong> is the DEDUPLICATED union (removes duplicates across all sources)</span>
+                <span className="text-amber-500 mt-0.5">●</span>
+                <span><strong>Output Type</strong> (e.g., PDF, Video, Interactive) → determines export capabilities</span>
               </li>
             </ul>
+            <p className="mt-2 text-[7px] italic">
+              A single generation can combine: Healthcare + Patient Journey + 3D Anatomy + Interactive Export
+            </p>
           </div>
 
           {/* Visual Derivation */}
@@ -143,20 +140,11 @@ export const MetricsExplainer: React.FC<MetricsExplainerProps> = ({
             <div className="flex items-start gap-1.5">
               <Info className="h-3 w-3 text-primary mt-0.5 shrink-0" />
               <div>
-                <strong className="text-foreground">Key Insight for {categoryLabel}:</strong>
+                <strong className="text-foreground">Combination Example for {categoryLabel}:</strong>
                 <p className="text-muted-foreground mt-0.5">
-                  {scenarios.newFromGen > 0 || useCases.newFromGen > 0 ? (
-                    <>
-                      Generation Coverage discovered <strong className="text-blue-500">+{scenarios.newFromGen} scenarios</strong> and <strong className="text-blue-500">+{useCases.newFromGen} use cases</strong> by 
-                      analyzing how {categoryLabel} features apply to different industries, frameworks, and outputs. 
-                      These represent <strong>new implementation opportunities</strong> not captured in base feature definitions.
-                    </>
-                  ) : (
-                    <>
-                      All scenarios and use cases for {categoryLabel} are already captured in the Feature Matrix. 
-                      No additional opportunities were discovered through cross-functional or context analysis.
-                    </>
-                  )}
+                  When you select <strong>Healthcare + SWOT + Charts + PDF</strong>, the system identifies which {categoryLabel} features 
+                  are required (e.g., text_prompt, document_upload). Each context adds specific provider requirements - 
+                  the combination determines the full capability stack needed for generation.
                 </p>
               </div>
             </div>
