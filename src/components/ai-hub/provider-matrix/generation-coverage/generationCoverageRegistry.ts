@@ -533,6 +533,24 @@ const ALL_FEATURE_IDS = [
   { id: 'analytics_embed', name: 'Analytics Dashboard', category: 'PUBLISHING' as FeatureCategory },
   { id: 'qr_code_share', name: 'QR Code Sharing', category: 'PUBLISHING' as FeatureCategory },
   { id: 'email_distribution', name: 'Email Distribution', category: 'PUBLISHING' as FeatureCategory },
+  { id: 'instagram_publish', name: 'Instagram Direct Publish', category: 'PUBLISHING' as FeatureCategory },
+  { id: 'tiktok_publish', name: 'TikTok Direct Publish', category: 'PUBLISHING' as FeatureCategory },
+  { id: 'threads_publish', name: 'Threads Direct Publish', category: 'PUBLISHING' as FeatureCategory },
+  { id: 'twitter_publish', name: 'X/Twitter Direct Publish', category: 'PUBLISHING' as FeatureCategory },
+  { id: 'facebook_publish', name: 'Facebook Direct Publish', category: 'PUBLISHING' as FeatureCategory },
+  { id: 'pinterest_publish', name: 'Pinterest Direct Publish', category: 'PUBLISHING' as FeatureCategory },
+  
+  // SECURITY & AUTH (OAuth, MFA)
+  { id: 'google_oauth', name: 'Google OAuth', category: 'SECURITY' as FeatureCategory },
+  { id: 'linkedin_oauth', name: 'LinkedIn OAuth', category: 'SECURITY' as FeatureCategory },
+  { id: 'tiktok_oauth', name: 'TikTok OAuth', category: 'SECURITY' as FeatureCategory },
+  { id: 'instagram_oauth', name: 'Instagram/Meta OAuth', category: 'SECURITY' as FeatureCategory },
+  { id: 'twitter_oauth', name: 'X/Twitter OAuth', category: 'SECURITY' as FeatureCategory },
+  { id: 'mfa_support', name: 'Multi-Factor Authentication', category: 'SECURITY' as FeatureCategory },
+  { id: 'sso_integration', name: 'SSO Integration', category: 'SECURITY' as FeatureCategory },
+  { id: 'api_key_management', name: 'API Key Management', category: 'SECURITY' as FeatureCategory },
+  { id: 'session_management', name: 'Session Management', category: 'SECURITY' as FeatureCategory },
+  { id: 'audit_logging', name: 'Audit Logging', category: 'SECURITY' as FeatureCategory },
 ];
 
 function generateFeatureContextMapping(featureDef: { id: string; name: string; category: FeatureCategory }): CapabilityToContextMapping {
