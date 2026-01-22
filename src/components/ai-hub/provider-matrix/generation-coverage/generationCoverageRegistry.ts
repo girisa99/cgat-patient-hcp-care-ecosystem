@@ -209,6 +209,9 @@ function generateFrameworkMapping(framework: Framework, category: FrameworkCateg
   const isRegional = category.type === 'regional';
   
   const requiredFeatures: ContextToCapabilityMapping['requiredFeatures'] = [
+    // INPUT is foundational - all frameworks require text input for analysis
+    { featureId: 'text_prompt', category: 'INPUT', priority: 'critical' },
+    { featureId: 'document_upload', category: 'INPUT', priority: 'recommended' },
     { featureId: 'ai_script_gen', category: 'SCRIPT', priority: 'critical' },
     { featureId: 'ai_image_gen', category: 'IMAGE', priority: isStrategy ? 'critical' : 'recommended' }
   ];
@@ -273,10 +276,19 @@ function generateVisualMapping(visual: ExpandedVisualFeature): ContextToCapabili
   const isData = visual.category === 'data';
   const isLayout = visual.category === 'layout';
   
-  const requiredFeatures: ContextToCapabilityMapping['requiredFeatures'] = [];
+  // INPUT is foundational - all visuals require input (prompts, uploads, data)
+  const requiredFeatures: ContextToCapabilityMapping['requiredFeatures'] = [
+    { featureId: 'text_prompt', category: 'INPUT', priority: 'critical' }
+  ];
   const constraints: ContextToCapabilityMapping['constraints'] = [];
   
+  // Add image upload for visual-heavy workflows
+  if (isData || isMedia || isLayout) {
+    requiredFeatures.push({ featureId: 'image_upload', category: 'INPUT', priority: 'recommended' });
+  }
+  
   if (isData) {
+    requiredFeatures.push({ featureId: 'csv_data', category: 'INPUT', priority: 'recommended' });
     requiredFeatures.push({ featureId: 'ai_image_gen', category: 'IMAGE', priority: 'critical' });
     requiredFeatures.push({ featureId: 'ai_script_gen', category: 'SCRIPT', priority: 'recommended' });
   }
@@ -348,7 +360,10 @@ export const VISUAL_CAPABILITY_MAPPINGS: ContextToCapabilityMapping[] = EXPANDED
 // ==========================================
 
 function generateOutputMapping(output: ExpandedOutputConfig): ContextToCapabilityMapping {
+  // INPUT is foundational - all outputs require input (prompts, documents, data)
   const requiredFeatures: ContextToCapabilityMapping['requiredFeatures'] = [
+    { featureId: 'text_prompt', category: 'INPUT', priority: 'critical' },
+    { featureId: 'document_upload', category: 'INPUT', priority: 'recommended' },
     { featureId: 'ai_script_gen', category: 'SCRIPT', priority: 'critical' },
     { featureId: 'ai_image_gen', category: 'IMAGE', priority: 'critical' }
   ];
