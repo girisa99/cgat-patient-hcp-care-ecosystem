@@ -551,6 +551,25 @@ const ALL_FEATURE_IDS = [
   { id: 'api_key_management', name: 'API Key Management', category: 'SECURITY' as FeatureCategory },
   { id: 'session_management', name: 'Session Management', category: 'SECURITY' as FeatureCategory },
   { id: 'audit_logging', name: 'Audit Logging', category: 'SECURITY' as FeatureCategory },
+  
+  // BUSINESS & COMPLIANCE
+  { id: 'stripe_payments', name: 'Stripe Payment Gateway', category: 'BUSINESS' as FeatureCategory },
+  { id: 'stripe_subscriptions', name: 'Stripe Subscriptions', category: 'BUSINESS' as FeatureCategory },
+  { id: 'token_management', name: 'Token/Credit Management', category: 'BUSINESS' as FeatureCategory },
+  { id: 'api_rate_limits', name: 'API Rate Limiting', category: 'BUSINESS' as FeatureCategory },
+  { id: 'usage_metering', name: 'Usage Metering', category: 'BUSINESS' as FeatureCategory },
+  { id: 'billing_portal', name: 'Customer Billing Portal', category: 'BUSINESS' as FeatureCategory },
+  { id: 'hipaa_compliance', name: 'HIPAA Compliance', category: 'BUSINESS' as FeatureCategory },
+  { id: 'gdpr_compliance', name: 'GDPR Compliance', category: 'BUSINESS' as FeatureCategory },
+  { id: 'ccpa_compliance', name: 'CCPA Compliance', category: 'BUSINESS' as FeatureCategory },
+  { id: 'terms_conditions', name: 'Terms & Conditions', category: 'BUSINESS' as FeatureCategory },
+  { id: 'privacy_policy', name: 'Privacy Policy', category: 'BUSINESS' as FeatureCategory },
+  { id: 'ai_transparency', name: 'AI Transparency Statement', category: 'BUSINESS' as FeatureCategory },
+  { id: 'adult_protection', name: 'Adult Content Protection', category: 'BUSINESS' as FeatureCategory },
+  { id: 'coppa_compliance', name: 'COPPA Compliance', category: 'BUSINESS' as FeatureCategory },
+  { id: 'content_moderation', name: 'AI Content Moderation', category: 'BUSINESS' as FeatureCategory },
+  { id: 'baa_agreements', name: 'BAA Agreements', category: 'BUSINESS' as FeatureCategory },
+  { id: 'soc2_compliance', name: 'SOC 2 Compliance', category: 'BUSINESS' as FeatureCategory },
 ];
 
 function generateFeatureContextMapping(featureDef: { id: string; name: string; category: FeatureCategory }): CapabilityToContextMapping {
