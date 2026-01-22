@@ -170,22 +170,18 @@ export function calculateUnifiedMetrics(
   });
   
   // From Generation Coverage (NEW IDENTIFIED - not in other sources)
-  const relevantContextMappings = [
-    ...INDUSTRY_CAPABILITY_MAPPINGS,
-    ...FRAMEWORK_CAPABILITY_MAPPINGS,
-    ...VISUAL_CAPABILITY_MAPPINGS,
-    ...OUTPUT_CAPABILITY_MAPPINGS
-  ].filter(mapping => {
-    // Filter by category: check if any required feature matches the category
+  // IMPORTANT: We only count TRULY new scenarios/useCases that don't exist elsewhere
+  // We do NOT count context mappings (industries, frameworks) as "scenarios" - 
+  // those are CONTEXTS, not scenarios themselves
+  
+  // Get scenarios from FEATURE_CONTEXT_MAPPINGS only (these are feature-level, not context-level)
+  const relevantFeatureMappings = FEATURE_CONTEXT_MAPPINGS.filter(mapping => {
     if (categoryFilter === 'all') return true;
-    return mapping.requiredFeatures.some(rf => {
-      const feature = ALL_FEATURES.find(f => f.id === rf.featureId);
-      return feature?.category === categoryFilter;
-    });
+    return mapping.category === categoryFilter;
   });
   
-  relevantContextMappings.forEach(m => {
-    m.scenarios.forEach(s => {
+  relevantFeatureMappings.forEach(m => {
+    m.scenarios?.forEach(s => {
       if (!scenariosFromUseCases.has(s) && !scenariosFromCrossFunctional.has(s)) {
         scenariosFromGenerationCoverage.add(s);
       }
@@ -223,8 +219,9 @@ export function calculateUnifiedMetrics(
   });
   
   // From Generation Coverage (NEW IDENTIFIED)
-  relevantContextMappings.forEach(m => {
-    m.useCases.forEach(u => {
+  // Use the same feature mappings - NOT industry/framework context mappings
+  relevantFeatureMappings.forEach(m => {
+    m.useCases?.forEach(u => {
       if (!useCasesFromUseCases.has(u) && !useCasesFromCrossFunctional.has(u)) {
         useCasesFromGenerationCoverage.add(u);
       }
@@ -372,16 +369,6 @@ export function calculateUnifiedMetrics(
 // Now properly filters context mappings by which features they require
 // ==========================================
 
-// Helper: Check if a context mapping requires features from the given category
-function contextRequiresCategory(
-  mapping: { requiredFeatures: { featureId: string; category: FeatureCategory }[] },
-  categoryFilter: FeatureCategory | 'all',
-  featureIds: Set<string>
-): boolean {
-  if (categoryFilter === 'all') return true;
-  return mapping.requiredFeatures.some(rf => featureIds.has(rf.featureId));
-}
-
 export function getGenerationCoverageStatsForCategory(
   categoryFilter: FeatureCategory | 'all' = 'all'
 ): {
@@ -445,7 +432,8 @@ export function getGenerationCoverageStatsForCategory(
     ? FEATURE_CONTEXT_MAPPINGS
     : FEATURE_CONTEXT_MAPPINGS.filter(f => f.category === categoryFilter);
   
-  // Collect unique values from FILTERED mappings only
+  // Collect unique values from FILTERED FEATURE mappings only (NOT context mappings)
+  // Context mappings (industries, frameworks, etc.) count contexts, NOT scenarios/useCases
   const allScenarios = new Set<string>();
   const allUseCases = new Set<string>();
   const allProviders = new Set<string>();
@@ -460,17 +448,17 @@ export function getGenerationCoverageStatsForCategory(
     if (uc?.bestFor) uc.bestFor.forEach(b => baselineUseCases.add(b));
   });
   
-  // Aggregate from FILTERED mappings only
+  // FIXED: Only aggregate providers/models from context mappings, NOT scenarios/useCases
+  // Scenarios and useCases belong at the FEATURE level, not the context level
   [...filteredIndustries, ...filteredFrameworks, ...filteredVisuals, ...filteredOutputs].forEach(m => {
-    m.scenarios.forEach(s => allScenarios.add(s));
-    m.useCases.forEach(u => allUseCases.add(u));
+    // Don't add m.scenarios or m.useCases - those are context-specific, not generation-level
     Object.values(m.recommendedProviders).forEach(pList => {
       if (pList) pList.forEach(p => p.providers.forEach(provider => allProviders.add(provider)));
     });
     m.recommendedModels.forEach(model => model.modelIds.forEach(id => allModels.add(id)));
   });
   
-  // Feature mappings (already filtered by category)
+  // Feature mappings (already filtered by category) - these DO have scenarios/useCases
   filteredFeatures.forEach(f => {
     if (f.scenarios) f.scenarios.forEach(s => allScenarios.add(s));
     if (f.useCases) f.useCases.forEach(u => allUseCases.add(u));
@@ -479,6 +467,7 @@ export function getGenerationCoverageStatsForCategory(
   });
   
   // Calculate new (not in baseline) - these are Generation Coverage's unique contributions
+  // FIXED: Now this only counts feature-level scenarios, not context scenarios
   const newScenarios = Array.from(allScenarios).filter(s => !baselineScenarios.has(s)).length;
   const newUseCases = Array.from(allUseCases).filter(u => !baselineUseCases.has(u)).length;
   
