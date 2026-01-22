@@ -156,6 +156,40 @@ export const FEATURE_USE_CASES: Record<string, { scenarios: string[]; bestFor: s
     bestFor: ['Brand consistency', 'Team scaling', 'Content governance', 'Quality assurance'],
     limitations: ['Requires training data', 'May drift over time']
   },
+  
+  // ============================================
+  // VOICE FEATURES - Comprehensive Documentation
+  // ============================================
+  tts: {
+    scenarios: ['Video narration', 'Podcast intro', 'E-learning modules', 'Accessibility voiceover', 'IVR systems'],
+    bestFor: ['Natural narration', 'Multi-language content', 'Brand voice consistency', 'Accessibility compliance'],
+    limitations: ['Long content needs chunking', 'Emotion control varies by provider']
+  },
+  voice_cloning: {
+    scenarios: ['CEO message localization', 'Training personalization', 'Podcast consistency', 'Brand spokesperson'],
+    bestFor: ['Brand voice', 'Personalized content', 'Localization without re-recording', 'Consistent narrator'],
+    limitations: ['Requires clean audio samples', 'Legal consent required', 'ElevenLabs only currently']
+  },
+  multi_language_voice: {
+    scenarios: ['Global campaigns', 'Multilingual training', 'International webinars', 'Localized marketing'],
+    bestFor: ['CJK markets (Alibaba)', 'European languages (ElevenLabs)', 'Cross-border content', 'Native accents'],
+    limitations: ['Accent quality varies', 'Some languages limited voice options']
+  },
+  voice_emotion: {
+    scenarios: ['Storytelling narration', 'Dramatic content', 'Customer service IVR', 'Children content'],
+    bestFor: ['Emotional engagement', 'Brand personality', 'Entertainment content', 'Training with empathy'],
+    limitations: ['Subtle emotions hard to control', 'Alibaba partial support only']
+  },
+  voice_speed: {
+    scenarios: ['Accessibility compliance', 'Fast-paced ads', 'Slow educational content', 'Podcast pacing'],
+    bestFor: ['Duration matching', 'Accessibility (slower)', 'Engagement (faster)', 'Platform requirements'],
+    limitations: ['Extreme speeds affect quality', 'Pitch changes at high speeds']
+  },
+  ai_voice_count: {
+    scenarios: ['Multi-character content', 'Diverse representation', 'A/B testing voices', 'Regional customization'],
+    bestFor: ['Character variety', 'Audience matching', 'Brand testing', 'Accessibility options'],
+    limitations: ['Quality varies by voice', 'Premium voices cost more']
+  },
 };
 
 export const ALL_FEATURES: Feature[] = [
@@ -1598,6 +1632,59 @@ export const CROSS_FUNCTIONAL_MAPPINGS: CrossFunctionalMapping[] = [
     recommendedProviders: ['elevenlabs'],
     recommendedLLMs: ['GPT-4o'],
     genieProducts: ['vibe', 'arc'],
+  },
+  {
+    primaryFeatureId: 'multi_language_voice',
+    primaryCategory: 'VOICE',
+    relatedFeatures: [
+      { featureId: 'tts', category: 'VOICE', relationship: 'requires' },
+      { featureId: 'script_translation', category: 'SCRIPT', relationship: 'enhances' },
+      { featureId: 'one_click_translate', category: 'TRANSLATION', relationship: 'enables' },
+    ],
+    useCases: ['Global campaigns', 'Multilingual training', 'International webinars', 'Localized marketing'],
+    scenarios: ['CJK content', 'European localization', 'APAC markets', 'LatAm expansion'],
+    recommendedProviders: ['elevenlabs', 'alibaba'],
+    recommendedLLMs: ['GPT-4o', 'Qwen 2.5'],
+    genieProducts: ['deck', 'vibe', 'arc'],
+  },
+  {
+    primaryFeatureId: 'voice_emotion',
+    primaryCategory: 'VOICE',
+    relatedFeatures: [
+      { featureId: 'tts', category: 'VOICE', relationship: 'requires' },
+      { featureId: 'ai_script_gen', category: 'SCRIPT', relationship: 'enhances' },
+    ],
+    useCases: ['Storytelling', 'Brand personality', 'Entertainment', 'Training empathy'],
+    scenarios: ['Children content', 'Drama narration', 'IVR systems', 'Customer service'],
+    recommendedProviders: ['elevenlabs'],
+    recommendedLLMs: ['GPT-4o'],
+    genieProducts: ['vibe', 'arc'],
+  },
+  {
+    primaryFeatureId: 'voice_speed',
+    primaryCategory: 'VOICE',
+    relatedFeatures: [
+      { featureId: 'tts', category: 'VOICE', relationship: 'requires' },
+      { featureId: 'audio_sync', category: 'AUDIO', relationship: 'enhances' },
+    ],
+    useCases: ['Duration matching', 'Accessibility', 'Platform requirements', 'Pacing control'],
+    scenarios: ['Timed ads', 'Accessibility compliance', 'Podcast pacing', 'Video sync'],
+    recommendedProviders: ['elevenlabs', 'openai'],
+    recommendedLLMs: ['GPT-4o'],
+    genieProducts: ['deck', 'vibe', 'arc'],
+  },
+  {
+    primaryFeatureId: 'ai_voice_count',
+    primaryCategory: 'VOICE',
+    relatedFeatures: [
+      { featureId: 'tts', category: 'VOICE', relationship: 'requires' },
+      { featureId: 'voice_cloning', category: 'VOICE', relationship: 'alternative' },
+    ],
+    useCases: ['Character variety', 'Audience matching', 'Brand testing', 'Accessibility'],
+    scenarios: ['Multi-character scripts', 'A/B voice testing', 'Regional customization', 'Diverse representation'],
+    recommendedProviders: ['elevenlabs'],
+    recommendedLLMs: ['GPT-4o'],
+    genieProducts: ['deck', 'vibe', 'spark', 'arc'],
   },
   // IMAGE CATEGORY
   {
