@@ -141,35 +141,35 @@ export const PUBLISHING_CAPABILITY_ENTRIES: FeatureCapabilityEntry[] = PUBLISHIN
 function getPublishingProviders(featureId: string): ProviderCapability[] {
   const providerMappings: Record<string, Partial<ProviderCapability>[]> = {
     pdf_export: [
-      { providerId: 'lovable', status: 'configured', implementation: 'implemented', confidence: 95 },
+      { providerId: 'supabase', status: 'configured', implementation: 'implemented', confidence: 95 },
     ],
     pptx_export: [
-      { providerId: 'lovable', status: 'configured', implementation: 'implemented', confidence: 90 },
+      { providerId: 'supabase', status: 'configured', implementation: 'implemented', confidence: 90 },
     ],
     docx_export: [
-      { providerId: 'lovable', status: 'configured', implementation: 'implemented', confidence: 90 },
+      { providerId: 'supabase', status: 'configured', implementation: 'implemented', confidence: 90 },
     ],
     mp4_export: [
-      { providerId: 'lovable', status: 'configured', implementation: 'partial', confidence: 70 },
+      { providerId: 'supabase', status: 'configured', implementation: 'partial', confidence: 70 },
       { providerId: 'replicate', status: 'needs_key', implementation: 'planned', confidence: 0 },
     ],
     html_export: [
-      { providerId: 'lovable', status: 'configured', implementation: 'implemented', confidence: 85 },
+      { providerId: 'supabase', status: 'configured', implementation: 'implemented', confidence: 85 },
     ],
     scorm_export: [
-      { providerId: 'lovable', status: 'configured', implementation: 'planned', confidence: 0 },
+      { providerId: 'supabase', status: 'configured', implementation: 'planned', confidence: 0 },
     ],
     cloud_hosting: [
-      { providerId: 'lovable', status: 'configured', implementation: 'implemented', confidence: 95 },
+      { providerId: 'supabase', status: 'configured', implementation: 'implemented', confidence: 95 },
     ],
     embed_code: [
-      { providerId: 'lovable', status: 'configured', implementation: 'implemented', confidence: 90 },
+      { providerId: 'supabase', status: 'configured', implementation: 'implemented', confidence: 90 },
     ],
     password_protect: [
-      { providerId: 'lovable', status: 'configured', implementation: 'partial', confidence: 60 },
+      { providerId: 'supabase', status: 'configured', implementation: 'partial', confidence: 60 },
     ],
     analytics_tracking: [
-      { providerId: 'lovable', status: 'configured', implementation: 'partial', confidence: 50 },
+      { providerId: 'supabase', status: 'configured', implementation: 'partial', confidence: 50 },
       { providerId: 'google', status: 'needs_key', implementation: 'planned', confidence: 0 },
     ],
     youtube_upload: [
@@ -179,13 +179,13 @@ function getPublishingProviders(featureId: string): ProviderCapability[] {
       { providerId: 'microsoft', status: 'needs_key', implementation: 'planned', confidence: 0 },
     ],
     vimeo_upload: [
-      { providerId: 'lovable', status: 'configured', implementation: 'planned', confidence: 0 },
+      { providerId: 'supabase', status: 'configured', implementation: 'planned', confidence: 0 },
     ],
     slideshare_upload: [
-      { providerId: 'lovable', status: 'configured', implementation: 'not_started', confidence: 0 },
+      { providerId: 'supabase', status: 'configured', implementation: 'not_started', confidence: 0 },
     ],
     social_schedule: [
-      { providerId: 'lovable', status: 'configured', implementation: 'planned', confidence: 0 },
+      { providerId: 'supabase', status: 'configured', implementation: 'planned', confidence: 0 },
     ],
   };
 
