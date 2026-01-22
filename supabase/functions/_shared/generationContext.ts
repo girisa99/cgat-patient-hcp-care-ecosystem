@@ -9,6 +9,7 @@
  * - Visual Feature Categories (6) + Features (22) with sub-options (100+)
  * - Audio Categories (4): Voiceover, Music, SFX, Spatial Audio with multi-select
  * - Translation/Multi-Language separate routing
+ * - TRANSFORMATION PIPELINES (20+): text-to-image, image-to-video, ppt-to-video, etc.
  */
 
 // ============================================
@@ -669,6 +670,318 @@ export const TRANSLATION_A2A_ROUTING: Record<string, {
 };
 
 // ============================================
+// TRANSFORMATION PIPELINES (20+ workflows)
+// Multi-modal X → Y transformations with agent orchestration
+// ============================================
+export type TransformationPipeline = 
+  // Text-based
+  | 'text-to-image' | 'text-to-video' | 'text-to-3d' | 'text-to-animation' | 'text-to-avatar'
+  // Image-based
+  | 'image-to-video' | 'image-to-3d' | 'image-to-animation' | 'image-to-avatar'
+  // Voice-based
+  | 'voice-to-animation' | 'voice-to-avatar' | 'voice-to-3d' | 'voice-to-interactive'
+  // PPT/Document-based
+  | 'ppt-to-video' | 'ppt-to-animation' | 'ppt-to-interactive' | 'document-to-video'
+  // Complex Multi-Modal
+  | 'auto-record-to-avatar' | 'auto-record-to-3d' | 'auto-record-to-interactive'
+  | 'multi-modal-mashup';
+
+export interface TransformationPipelineConfig {
+  pipeline: TransformationPipeline;
+  stages: TransformationStage[];
+  a2aRequired: boolean;
+  tier: GlobalTierLevel;
+  agents: string[];
+  estimatedDurationSeconds: number;
+  fallbackPipeline?: TransformationPipeline;
+}
+
+export interface TransformationStage {
+  stage: number;
+  name: string;
+  inputType: 'text' | 'image' | 'audio' | 'video' | '3d' | 'document' | 'voice';
+  outputType: 'text' | 'image' | 'audio' | 'video' | '3d' | 'animation' | 'interactive';
+  agent: string;
+  provider: string;
+  models: string[];
+  optional?: boolean;
+}
+
+export const TRANSFORMATION_PIPELINE_ROUTING: Record<TransformationPipeline, TransformationPipelineConfig> = {
+  // ============ TEXT-BASED PIPELINES ============
+  'text-to-image': {
+    pipeline: 'text-to-image',
+    stages: [
+      { stage: 1, name: 'Prompt Enhancement', inputType: 'text', outputType: 'text', agent: 'prompt-enhancer', provider: 'openai', models: ['gpt-4o'] },
+      { stage: 2, name: 'Image Generation', inputType: 'text', outputType: 'image', agent: 'image-generator', provider: 'modelslab', models: ['flux-pro', 'dall-e-3', 'imagen-3'] },
+    ],
+    a2aRequired: false,
+    tier: 'starter',
+    agents: ['prompt-enhancer', 'image-generator'],
+    estimatedDurationSeconds: 15,
+  },
+  'text-to-video': {
+    pipeline: 'text-to-video',
+    stages: [
+      { stage: 1, name: 'Script Generation', inputType: 'text', outputType: 'text', agent: 'script-generator', provider: 'openai', models: ['gpt-4o'] },
+      { stage: 2, name: 'Storyboard Creation', inputType: 'text', outputType: 'image', agent: 'storyboard-agent', provider: 'gemini', models: ['gemini-2.0-flash'] },
+      { stage: 3, name: 'Video Generation', inputType: 'text', outputType: 'video', agent: 'video-generator', provider: 'runway', models: ['runway-gen3', 'sora', 'veo'] },
+    ],
+    a2aRequired: true,
+    tier: 'pro',
+    agents: ['script-generator', 'storyboard-agent', 'video-generator'],
+    estimatedDurationSeconds: 120,
+    fallbackPipeline: 'text-to-image',
+  },
+  'text-to-3d': {
+    pipeline: 'text-to-3d',
+    stages: [
+      { stage: 1, name: 'Concept Description', inputType: 'text', outputType: 'text', agent: 'concept-analyzer', provider: 'claude', models: ['claude-sonnet-4'] },
+      { stage: 2, name: '3D Mesh Generation', inputType: 'text', outputType: '3d', agent: 'mesh-generator', provider: 'modelslab', models: ['meshy-ai', 'rodin-gen1', 'triposr'] },
+    ],
+    a2aRequired: true,
+    tier: 'pro',
+    agents: ['concept-analyzer', 'mesh-generator'],
+    estimatedDurationSeconds: 60,
+  },
+  'text-to-animation': {
+    pipeline: 'text-to-animation',
+    stages: [
+      { stage: 1, name: 'Motion Script', inputType: 'text', outputType: 'text', agent: 'motion-scripter', provider: 'openai', models: ['gpt-4o'] },
+      { stage: 2, name: 'Keyframe Generation', inputType: 'text', outputType: 'animation', agent: 'animation-agent', provider: 'lottie', models: ['lottie', 'rive'] },
+    ],
+    a2aRequired: true,
+    tier: 'pro',
+    agents: ['motion-scripter', 'animation-agent'],
+    estimatedDurationSeconds: 45,
+  },
+  'text-to-avatar': {
+    pipeline: 'text-to-avatar',
+    stages: [
+      { stage: 1, name: 'Avatar Script', inputType: 'text', outputType: 'text', agent: 'avatar-scripter', provider: 'openai', models: ['gpt-4o'] },
+      { stage: 2, name: 'Voice Synthesis', inputType: 'text', outputType: 'audio', agent: 'voice-generator', provider: 'elevenlabs', models: ['elevenlabs-v2', 'azure-neural'] },
+      { stage: 3, name: 'Avatar Video', inputType: 'audio', outputType: 'video', agent: 'avatar-generator', provider: 'heygen', models: ['heygen', 'd-id', 'synthesia'] },
+    ],
+    a2aRequired: true,
+    tier: 'enterprise',
+    agents: ['avatar-scripter', 'voice-generator', 'avatar-generator'],
+    estimatedDurationSeconds: 180,
+  },
+
+  // ============ IMAGE-BASED PIPELINES ============
+  'image-to-video': {
+    pipeline: 'image-to-video',
+    stages: [
+      { stage: 1, name: 'Image Analysis', inputType: 'image', outputType: 'text', agent: 'vision-analyzer', provider: 'gemini', models: ['gemini-2.0-flash'] },
+      { stage: 2, name: 'Motion Planning', inputType: 'text', outputType: 'text', agent: 'motion-planner', provider: 'claude', models: ['claude-sonnet-4'] },
+      { stage: 3, name: 'Video Animation', inputType: 'image', outputType: 'video', agent: 'video-generator', provider: 'modelslab', models: ['animatediff-v2', 'svd', 'runway-gen3'] },
+    ],
+    a2aRequired: true,
+    tier: 'pro',
+    agents: ['vision-analyzer', 'motion-planner', 'video-generator'],
+    estimatedDurationSeconds: 90,
+  },
+  'image-to-3d': {
+    pipeline: 'image-to-3d',
+    stages: [
+      { stage: 1, name: 'Multi-View Inference', inputType: 'image', outputType: 'image', agent: 'multiview-agent', provider: 'stability', models: ['sv3d', 'zero123'] },
+      { stage: 2, name: '3D Reconstruction', inputType: 'image', outputType: '3d', agent: 'mesh-generator', provider: 'modelslab', models: ['triposr', 'luma-genie', 'meshy-ai'] },
+    ],
+    a2aRequired: true,
+    tier: 'pro',
+    agents: ['multiview-agent', 'mesh-generator'],
+    estimatedDurationSeconds: 75,
+  },
+  'image-to-animation': {
+    pipeline: 'image-to-animation',
+    stages: [
+      { stage: 1, name: 'Character Detection', inputType: 'image', outputType: 'text', agent: 'character-detector', provider: 'gemini', models: ['gemini-2.0-flash'] },
+      { stage: 2, name: 'Rig Generation', inputType: 'image', outputType: 'animation', agent: 'rigging-agent', provider: 'modelslab', models: ['animated-diff', 'sadtalker'] },
+    ],
+    a2aRequired: true,
+    tier: 'pro',
+    agents: ['character-detector', 'rigging-agent'],
+    estimatedDurationSeconds: 60,
+  },
+  'image-to-avatar': {
+    pipeline: 'image-to-avatar',
+    stages: [
+      { stage: 1, name: 'Face Extraction', inputType: 'image', outputType: 'image', agent: 'face-extractor', provider: 'azure', models: ['face-api'] },
+      { stage: 2, name: 'Avatar Creation', inputType: 'image', outputType: 'video', agent: 'avatar-generator', provider: 'heygen', models: ['heygen-photorealistic', 'd-id'] },
+    ],
+    a2aRequired: true,
+    tier: 'enterprise',
+    agents: ['face-extractor', 'avatar-generator'],
+    estimatedDurationSeconds: 120,
+  },
+
+  // ============ VOICE-BASED PIPELINES ============
+  'voice-to-animation': {
+    pipeline: 'voice-to-animation',
+    stages: [
+      { stage: 1, name: 'Speech-to-Text', inputType: 'voice', outputType: 'text', agent: 'stt-agent', provider: 'azure', models: ['whisper', 'azure-stt', 'paraformer'] },
+      { stage: 2, name: 'Viseme Extraction', inputType: 'audio', outputType: 'animation', agent: 'viseme-agent', provider: 'azure', models: ['azure-viseme', 'rhubarb'] },
+      { stage: 3, name: 'Animation Sync', inputType: 'animation', outputType: 'animation', agent: 'lipsync-agent', provider: 'modelslab', models: ['sadtalker', 'wav2lip'] },
+    ],
+    a2aRequired: true,
+    tier: 'pro',
+    agents: ['stt-agent', 'viseme-agent', 'lipsync-agent'],
+    estimatedDurationSeconds: 90,
+  },
+  'voice-to-avatar': {
+    pipeline: 'voice-to-avatar',
+    stages: [
+      { stage: 1, name: 'Voice Processing', inputType: 'voice', outputType: 'audio', agent: 'voice-processor', provider: 'elevenlabs', models: ['voice-clone', 'voice-design'] },
+      { stage: 2, name: 'Avatar Animation', inputType: 'audio', outputType: 'video', agent: 'avatar-generator', provider: 'heygen', models: ['heygen', 'd-id'] },
+    ],
+    a2aRequired: true,
+    tier: 'enterprise',
+    agents: ['voice-processor', 'avatar-generator'],
+    estimatedDurationSeconds: 150,
+  },
+  'voice-to-3d': {
+    pipeline: 'voice-to-3d',
+    stages: [
+      { stage: 1, name: 'Voice-to-Text', inputType: 'voice', outputType: 'text', agent: 'stt-agent', provider: 'azure', models: ['whisper'] },
+      { stage: 2, name: '3D Generation', inputType: 'text', outputType: '3d', agent: 'mesh-generator', provider: 'modelslab', models: ['meshy-ai', 'rodin-gen1'] },
+      { stage: 3, name: '3D Animation', inputType: '3d', outputType: 'animation', agent: 'animation-agent', provider: 'three', models: ['three.js', 'babylon'] },
+    ],
+    a2aRequired: true,
+    tier: 'enterprise',
+    agents: ['stt-agent', 'mesh-generator', 'animation-agent'],
+    estimatedDurationSeconds: 180,
+  },
+  'voice-to-interactive': {
+    pipeline: 'voice-to-interactive',
+    stages: [
+      { stage: 1, name: 'Voice Command Parse', inputType: 'voice', outputType: 'text', agent: 'stt-agent', provider: 'azure', models: ['whisper'] },
+      { stage: 2, name: 'Form Generation', inputType: 'text', outputType: 'interactive', agent: 'form-builder-agent', provider: 'react', models: ['react'] },
+    ],
+    a2aRequired: true,
+    tier: 'pro',
+    agents: ['stt-agent', 'form-builder-agent'],
+    estimatedDurationSeconds: 45,
+  },
+
+  // ============ PPT/DOCUMENT-BASED PIPELINES ============
+  'ppt-to-video': {
+    pipeline: 'ppt-to-video',
+    stages: [
+      { stage: 1, name: 'Slide Extraction', inputType: 'document', outputType: 'text', agent: 'document-processor', provider: 'azure', models: ['form-recognizer'] },
+      { stage: 2, name: 'Script Generation', inputType: 'text', outputType: 'text', agent: 'script-generator', provider: 'openai', models: ['gpt-4o'] },
+      { stage: 3, name: 'Voiceover', inputType: 'text', outputType: 'audio', agent: 'voice-generator', provider: 'elevenlabs', models: ['elevenlabs-v2'] },
+      { stage: 4, name: 'Video Composition', inputType: 'image', outputType: 'video', agent: 'video-composer', provider: 'ffmpeg', models: ['ffmpeg'] },
+    ],
+    a2aRequired: true,
+    tier: 'pro',
+    agents: ['document-processor', 'script-generator', 'voice-generator', 'video-composer'],
+    estimatedDurationSeconds: 240,
+  },
+  'ppt-to-animation': {
+    pipeline: 'ppt-to-animation',
+    stages: [
+      { stage: 1, name: 'Slide Extraction', inputType: 'document', outputType: 'image', agent: 'document-processor', provider: 'azure', models: ['form-recognizer'] },
+      { stage: 2, name: 'Animation Planning', inputType: 'text', outputType: 'animation', agent: 'animation-agent', provider: 'lottie', models: ['lottie', 'rive'] },
+    ],
+    a2aRequired: true,
+    tier: 'pro',
+    agents: ['document-processor', 'animation-agent'],
+    estimatedDurationSeconds: 90,
+  },
+  'ppt-to-interactive': {
+    pipeline: 'ppt-to-interactive',
+    stages: [
+      { stage: 1, name: 'Slide Analysis', inputType: 'document', outputType: 'text', agent: 'document-processor', provider: 'azure', models: ['form-recognizer'] },
+      { stage: 2, name: 'Interactive Build', inputType: 'text', outputType: 'interactive', agent: 'interactive-generator', provider: 'react', models: ['react', 'd3'] },
+    ],
+    a2aRequired: true,
+    tier: 'pro',
+    agents: ['document-processor', 'interactive-generator'],
+    estimatedDurationSeconds: 120,
+  },
+  'document-to-video': {
+    pipeline: 'document-to-video',
+    stages: [
+      { stage: 1, name: 'Document OCR', inputType: 'document', outputType: 'text', agent: 'ocr-agent', provider: 'azure', models: ['form-recognizer', 'tesseract'] },
+      { stage: 2, name: 'Content Summary', inputType: 'text', outputType: 'text', agent: 'summarizer-agent', provider: 'claude', models: ['claude-sonnet-4'] },
+      { stage: 3, name: 'Visual Generation', inputType: 'text', outputType: 'image', agent: 'image-generator', provider: 'modelslab', models: ['flux-pro'] },
+      { stage: 4, name: 'Video Assembly', inputType: 'image', outputType: 'video', agent: 'video-generator', provider: 'modelslab', models: ['animatediff-v2'] },
+    ],
+    a2aRequired: true,
+    tier: 'pro',
+    agents: ['ocr-agent', 'summarizer-agent', 'image-generator', 'video-generator'],
+    estimatedDurationSeconds: 180,
+  },
+
+  // ============ COMPLEX MULTI-MODAL PIPELINES ============
+  'auto-record-to-avatar': {
+    pipeline: 'auto-record-to-avatar',
+    stages: [
+      { stage: 1, name: 'Voice Recording', inputType: 'voice', outputType: 'audio', agent: 'voice-recorder', provider: 'browser', models: ['web-audio-api'] },
+      { stage: 2, name: 'Speech-to-Text', inputType: 'audio', outputType: 'text', agent: 'stt-agent', provider: 'azure', models: ['whisper'] },
+      { stage: 3, name: 'Script Refinement', inputType: 'text', outputType: 'text', agent: 'script-enhancer', provider: 'openai', models: ['gpt-4o'] },
+      { stage: 4, name: 'Avatar Generation', inputType: 'audio', outputType: 'video', agent: 'avatar-generator', provider: 'heygen', models: ['heygen', 'd-id'] },
+    ],
+    a2aRequired: true,
+    tier: 'enterprise',
+    agents: ['voice-recorder', 'stt-agent', 'script-enhancer', 'avatar-generator'],
+    estimatedDurationSeconds: 300,
+  },
+  'auto-record-to-3d': {
+    pipeline: 'auto-record-to-3d',
+    stages: [
+      { stage: 1, name: 'Voice Recording', inputType: 'voice', outputType: 'audio', agent: 'voice-recorder', provider: 'browser', models: ['web-audio-api'] },
+      { stage: 2, name: 'Speech-to-Text', inputType: 'audio', outputType: 'text', agent: 'stt-agent', provider: 'azure', models: ['whisper'] },
+      { stage: 3, name: '3D Scene Description', inputType: 'text', outputType: 'text', agent: 'scene-descriptor', provider: 'claude', models: ['claude-sonnet-4'] },
+      { stage: 4, name: '3D Generation', inputType: 'text', outputType: '3d', agent: 'mesh-generator', provider: 'modelslab', models: ['meshy-ai', 'rodin-gen1'] },
+    ],
+    a2aRequired: true,
+    tier: 'enterprise',
+    agents: ['voice-recorder', 'stt-agent', 'scene-descriptor', 'mesh-generator'],
+    estimatedDurationSeconds: 240,
+  },
+  'auto-record-to-interactive': {
+    pipeline: 'auto-record-to-interactive',
+    stages: [
+      { stage: 1, name: 'Voice Recording', inputType: 'voice', outputType: 'audio', agent: 'voice-recorder', provider: 'browser', models: ['web-audio-api'] },
+      { stage: 2, name: 'Speech-to-Text', inputType: 'audio', outputType: 'text', agent: 'stt-agent', provider: 'azure', models: ['whisper'] },
+      { stage: 3, name: 'Interactive Design', inputType: 'text', outputType: 'interactive', agent: 'interactive-generator', provider: 'react', models: ['react', 'd3'] },
+    ],
+    a2aRequired: true,
+    tier: 'pro',
+    agents: ['voice-recorder', 'stt-agent', 'interactive-generator'],
+    estimatedDurationSeconds: 120,
+  },
+  'multi-modal-mashup': {
+    pipeline: 'multi-modal-mashup',
+    stages: [
+      { stage: 1, name: 'Multi-Input Analysis', inputType: 'document', outputType: 'text', agent: 'multi-modal-analyzer', provider: 'gemini', models: ['gemini-2.0-flash'] },
+      { stage: 2, name: 'Content Fusion', inputType: 'text', outputType: 'text', agent: 'content-fusion-agent', provider: 'claude', models: ['claude-sonnet-4'] },
+      { stage: 3, name: 'Multi-Format Output', inputType: 'text', outputType: 'video', agent: 'multi-format-generator', provider: 'coordinator', models: ['a2a-coordinator'] },
+    ],
+    a2aRequired: true,
+    tier: 'enterprise',
+    agents: ['multi-modal-analyzer', 'content-fusion-agent', 'multi-format-generator'],
+    estimatedDurationSeconds: 360,
+  },
+};
+
+// Helper: Get pipeline config
+export function getPipelineConfig(pipeline: TransformationPipeline): TransformationPipelineConfig | null {
+  return TRANSFORMATION_PIPELINE_ROUTING[pipeline] || null;
+}
+
+// Helper: Get pipelines by tier
+export function getPipelinesByTier(tier: GlobalTierLevel): TransformationPipeline[] {
+  const tierOrder: GlobalTierLevel[] = ['free', 'starter', 'pro', 'enterprise'];
+  const tierIndex = tierOrder.indexOf(tier);
+  
+  return (Object.entries(TRANSFORMATION_PIPELINE_ROUTING) as [TransformationPipeline, TransformationPipelineConfig][])
+    .filter(([_, config]) => tierOrder.indexOf(config.tier) <= tierIndex)
+    .map(([pipeline]) => pipeline);
+}
+
+// ============================================
 // COMPLETE GENERATION CONTEXT
 // ============================================
 export interface GenerationContext {
@@ -680,6 +993,16 @@ export interface GenerationContext {
   translationConfig?: TranslationConfig;
   globalTier?: GlobalTierLevel;
   voiceConfig?: VoiceConfig;
+  
+  // Transformation pipeline selection
+  transformationPipeline?: TransformationPipeline;
+  transformationConfig?: {
+    sourceType: 'text' | 'image' | 'audio' | 'video' | 'document' | 'voice';
+    targetType: 'image' | 'video' | '3d' | 'animation' | 'interactive' | 'avatar';
+    includeVoiceover?: boolean;
+    include3D?: boolean;
+    includeInteractive?: boolean;
+  };
   
   // Computed A2A routing
   a2aRouting?: A2ARoutingConfig;
