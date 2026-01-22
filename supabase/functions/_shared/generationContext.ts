@@ -670,21 +670,58 @@ export const TRANSLATION_A2A_ROUTING: Record<string, {
 };
 
 // ============================================
-// TRANSFORMATION PIPELINES (20+ workflows)
+// TRANSFORMATION PIPELINES (50+ workflows)
 // Multi-modal X → Y transformations with agent orchestration
+// Aligned with actual configured providers and models
 // ============================================
+
+// CUSTOMER PAIN POINTS → Platform Solutions:
+// 1. "Takes too long to create professional videos" → Auto PPT-to-Video, Text-to-Video
+// 2. "Can't afford multiple tools" → All-in-one platform with unified pipeline
+// 3. "Lip-sync never matches audio" → Azure Viseme + ElevenLabs voice sync
+// 4. "3D content requires expensive software" → Text/Image-to-3D with ModelsLab/Meshy
+// 5. "VR/AR is too technical" → Guided VR creation with A-Frame/Babylon
+// 6. "Localization is tedious" → Multi-language with auto voice dubbing
+// 7. "Can't make AI avatars look natural" → HeyGen/D-ID with voice matching
+// 8. "Need custom music without licensing" → ElevenLabs Music + SunoAI
+
 export type TransformationPipeline = 
-  // Text-based
+  // ============ TEXT-BASED ============
   | 'text-to-image' | 'text-to-video' | 'text-to-3d' | 'text-to-animation' | 'text-to-avatar'
-  // Image-based
+  | 'text-to-vr' | 'text-to-ar' | 'text-to-interactive' | 'text-to-music' | 'text-to-sfx'
+  
+  // ============ IMAGE-BASED ============
   | 'image-to-video' | 'image-to-3d' | 'image-to-animation' | 'image-to-avatar'
-  // Voice-based
+  | 'image-to-vr' | 'image-to-ar' | 'image-to-vfx'
+  
+  // ============ VOICE/AUDIO-BASED ============
   | 'voice-to-animation' | 'voice-to-avatar' | 'voice-to-3d' | 'voice-to-interactive'
-  // PPT/Document-based
-  | 'ppt-to-video' | 'ppt-to-animation' | 'ppt-to-interactive' | 'document-to-video'
-  // Complex Multi-Modal
+  | 'voice-to-video' | 'voice-to-vr' | 'audio-to-animation' | 'audio-to-vfx'
+  
+  // ============ DOCUMENT/PPT-BASED ============
+  | 'ppt-to-video' | 'ppt-to-animation' | 'ppt-to-interactive' | 'ppt-to-3d' | 'ppt-to-vr'
+  | 'document-to-video' | 'document-to-slides' | 'document-to-interactive'
+  | 'pdf-to-video' | 'pdf-to-interactive'
+  
+  // ============ VIDEO-BASED ============
+  | 'video-to-avatar' | 'video-to-3d' | 'video-to-animation' | 'video-to-interactive'
+  | 'video-to-vr' | 'video-to-vfx' | 'video-to-multilingual'
+  
+  // ============ 3D-BASED ============
+  | '3d-to-video' | '3d-to-animation' | '3d-to-vr' | '3d-to-ar' | '3d-to-interactive'
+  
+  // ============ AR/VR/IMMERSIVE ============
+  | 'scene-to-vr' | 'scene-to-ar' | 'ar-to-video' | 'vr-to-video'
+  | 'panorama-to-vr' | 'floor-plan-to-vr'
+  
+  // ============ COMPLEX MULTI-MODAL ============
   | 'auto-record-to-avatar' | 'auto-record-to-3d' | 'auto-record-to-interactive'
-  | 'multi-modal-mashup';
+  | 'auto-record-to-video' | 'auto-record-to-vr'
+  | 'multi-modal-mashup' | 'full-production-suite'
+  
+  // ============ SPECIALIZED ============
+  | 'avatar-video-dubbing' | 'lip-sync-multilingual' | 'vfx-composite'
+  | 'sfx-scene-audio' | 'music-score-generation' | 'spatial-audio-3d';
 
 export interface TransformationPipelineConfig {
   pipeline: TransformationPipeline;
@@ -694,13 +731,19 @@ export interface TransformationPipelineConfig {
   agents: string[];
   estimatedDurationSeconds: number;
   fallbackPipeline?: TransformationPipeline;
+  // Customer value proposition
+  customerPainPoint?: string;
+  platformSolution?: string;
+  // Provider alignment
+  primaryProviders: string[];
+  requiredSecrets: string[];
 }
 
 export interface TransformationStage {
   stage: number;
   name: string;
-  inputType: 'text' | 'image' | 'audio' | 'video' | '3d' | 'document' | 'voice';
-  outputType: 'text' | 'image' | 'audio' | 'video' | '3d' | 'animation' | 'interactive';
+  inputType: 'text' | 'image' | 'audio' | 'video' | '3d' | 'document' | 'voice' | 'panorama' | 'scene';
+  outputType: 'text' | 'image' | 'audio' | 'video' | '3d' | 'animation' | 'interactive' | 'vr' | 'ar' | 'vfx' | 'sfx' | 'music';
   agent: string;
   provider: string;
   models: string[];
@@ -719,30 +762,42 @@ export const TRANSFORMATION_PIPELINE_ROUTING: Record<TransformationPipeline, Tra
     tier: 'starter',
     agents: ['prompt-enhancer', 'image-generator'],
     estimatedDurationSeconds: 15,
+    customerPainPoint: 'Need custom images without design skills',
+    platformSolution: 'AI generates professional images from text descriptions',
+    primaryProviders: ['modelslab', 'openai', 'google'],
+    requiredSecrets: ['MODELSLAB_API_KEY', 'OPENAI_API_KEY'],
   },
   'text-to-video': {
     pipeline: 'text-to-video',
     stages: [
       { stage: 1, name: 'Script Generation', inputType: 'text', outputType: 'text', agent: 'script-generator', provider: 'openai', models: ['gpt-4o'] },
       { stage: 2, name: 'Storyboard Creation', inputType: 'text', outputType: 'image', agent: 'storyboard-agent', provider: 'gemini', models: ['gemini-2.0-flash'] },
-      { stage: 3, name: 'Video Generation', inputType: 'text', outputType: 'video', agent: 'video-generator', provider: 'runway', models: ['runway-gen3', 'sora', 'veo'] },
+      { stage: 3, name: 'Video Generation', inputType: 'text', outputType: 'video', agent: 'video-generator', provider: 'runway', models: ['runway-gen3', 'sora', 'veo', 'kling-ai'] },
     ],
     a2aRequired: true,
     tier: 'pro',
     agents: ['script-generator', 'storyboard-agent', 'video-generator'],
     estimatedDurationSeconds: 120,
     fallbackPipeline: 'text-to-image',
+    customerPainPoint: 'Video creation takes weeks and costs thousands',
+    platformSolution: 'Generate professional videos from text in minutes',
+    primaryProviders: ['openai', 'google', 'runway', 'modelslab'],
+    requiredSecrets: ['OPENAI_API_KEY', 'GEMINI_API_KEY'],
   },
   'text-to-3d': {
     pipeline: 'text-to-3d',
     stages: [
       { stage: 1, name: 'Concept Description', inputType: 'text', outputType: 'text', agent: 'concept-analyzer', provider: 'claude', models: ['claude-sonnet-4'] },
-      { stage: 2, name: '3D Mesh Generation', inputType: 'text', outputType: '3d', agent: 'mesh-generator', provider: 'modelslab', models: ['meshy-ai', 'rodin-gen1', 'triposr'] },
+      { stage: 2, name: '3D Mesh Generation', inputType: 'text', outputType: '3d', agent: 'mesh-generator', provider: 'modelslab', models: ['meshy-ai', 'rodin-gen1', 'triposr', 'shap-e'] },
     ],
     a2aRequired: true,
     tier: 'pro',
     agents: ['concept-analyzer', 'mesh-generator'],
     estimatedDurationSeconds: 60,
+    customerPainPoint: '3D modeling requires expensive software and skills',
+    platformSolution: 'Create 3D models from text descriptions',
+    primaryProviders: ['anthropic', 'modelslab', 'replicate'],
+    requiredSecrets: ['ANTHROPIC_API_KEY', 'MODELSLAB_API_KEY'],
   },
   'text-to-animation': {
     pipeline: 'text-to-animation',
@@ -754,18 +809,103 @@ export const TRANSFORMATION_PIPELINE_ROUTING: Record<TransformationPipeline, Tra
     tier: 'pro',
     agents: ['motion-scripter', 'animation-agent'],
     estimatedDurationSeconds: 45,
+    customerPainPoint: 'Creating smooth animations requires After Effects expertise',
+    platformSolution: 'Generate Lottie/Rive animations from text',
+    primaryProviders: ['openai', 'lottie', 'rive'],
+    requiredSecrets: ['OPENAI_API_KEY'],
   },
   'text-to-avatar': {
     pipeline: 'text-to-avatar',
     stages: [
       { stage: 1, name: 'Avatar Script', inputType: 'text', outputType: 'text', agent: 'avatar-scripter', provider: 'openai', models: ['gpt-4o'] },
-      { stage: 2, name: 'Voice Synthesis', inputType: 'text', outputType: 'audio', agent: 'voice-generator', provider: 'elevenlabs', models: ['elevenlabs-v2', 'azure-neural'] },
-      { stage: 3, name: 'Avatar Video', inputType: 'audio', outputType: 'video', agent: 'avatar-generator', provider: 'heygen', models: ['heygen', 'd-id', 'synthesia'] },
+      { stage: 2, name: 'Voice Synthesis', inputType: 'text', outputType: 'audio', agent: 'voice-generator', provider: 'elevenlabs', models: ['elevenlabs-v2', 'azure-neural', 'cosyvoice'] },
+      { stage: 3, name: 'Avatar Video', inputType: 'audio', outputType: 'video', agent: 'avatar-generator', provider: 'heygen', models: ['heygen', 'd-id', 'synthesia', 'alibaba-wan'] },
     ],
     a2aRequired: true,
     tier: 'enterprise',
     agents: ['avatar-scripter', 'voice-generator', 'avatar-generator'],
     estimatedDurationSeconds: 180,
+    customerPainPoint: 'AI avatars look fake and lip-sync is off',
+    platformSolution: 'Photorealistic avatars with perfect lip-sync using Azure Viseme',
+    primaryProviders: ['openai', 'elevenlabs', 'azure', 'heygen'],
+    requiredSecrets: ['OPENAI_API_KEY', 'ELEVENLABS_API_KEY'],
+  },
+  'text-to-vr': {
+    pipeline: 'text-to-vr',
+    stages: [
+      { stage: 1, name: 'Scene Description', inputType: 'text', outputType: 'text', agent: 'scene-descriptor', provider: 'claude', models: ['claude-sonnet-4'] },
+      { stage: 2, name: '3D Environment', inputType: 'text', outputType: '3d', agent: 'environment-generator', provider: 'modelslab', models: ['meshy-ai', 'luma-genie'] },
+      { stage: 3, name: 'VR Scene Assembly', inputType: '3d', outputType: 'vr', agent: 'vr-assembler', provider: 'aframe', models: ['a-frame', 'babylon', 'three.js'] },
+    ],
+    a2aRequired: true,
+    tier: 'enterprise',
+    agents: ['scene-descriptor', 'environment-generator', 'vr-assembler'],
+    estimatedDurationSeconds: 240,
+    customerPainPoint: 'VR development is too technical and expensive',
+    platformSolution: 'Create VR experiences from text with A-Frame/Babylon',
+    primaryProviders: ['anthropic', 'modelslab', 'aframe'],
+    requiredSecrets: ['ANTHROPIC_API_KEY', 'MODELSLAB_API_KEY'],
+  },
+  'text-to-ar': {
+    pipeline: 'text-to-ar',
+    stages: [
+      { stage: 1, name: 'AR Object Design', inputType: 'text', outputType: 'text', agent: 'ar-designer', provider: 'openai', models: ['gpt-4o'] },
+      { stage: 2, name: '3D Asset Creation', inputType: 'text', outputType: '3d', agent: 'mesh-generator', provider: 'modelslab', models: ['meshy-ai', 'triposr'] },
+      { stage: 3, name: 'AR Packaging', inputType: '3d', outputType: 'ar', agent: 'ar-packager', provider: 'modelviewer', models: ['model-viewer', 'arcore', 'arkit'] },
+    ],
+    a2aRequired: true,
+    tier: 'enterprise',
+    agents: ['ar-designer', 'mesh-generator', 'ar-packager'],
+    estimatedDurationSeconds: 180,
+    customerPainPoint: 'AR requires mobile development expertise',
+    platformSolution: 'Web-based AR with Model Viewer for instant deployment',
+    primaryProviders: ['openai', 'modelslab', 'google'],
+    requiredSecrets: ['OPENAI_API_KEY', 'MODELSLAB_API_KEY'],
+  },
+  'text-to-interactive': {
+    pipeline: 'text-to-interactive',
+    stages: [
+      { stage: 1, name: 'Interactive Design', inputType: 'text', outputType: 'text', agent: 'interactive-designer', provider: 'claude', models: ['claude-sonnet-4'] },
+      { stage: 2, name: 'Component Build', inputType: 'text', outputType: 'interactive', agent: 'form-builder-agent', provider: 'react', models: ['react', 'd3'] },
+    ],
+    a2aRequired: true,
+    tier: 'pro',
+    agents: ['interactive-designer', 'form-builder-agent'],
+    estimatedDurationSeconds: 60,
+    customerPainPoint: 'Building interactive content requires coding',
+    platformSolution: 'Generate quizzes, calculators, forms from text',
+    primaryProviders: ['anthropic', 'react'],
+    requiredSecrets: ['ANTHROPIC_API_KEY'],
+  },
+  'text-to-music': {
+    pipeline: 'text-to-music',
+    stages: [
+      { stage: 1, name: 'Music Prompt', inputType: 'text', outputType: 'text', agent: 'music-prompt-agent', provider: 'openai', models: ['gpt-4o'] },
+      { stage: 2, name: 'Music Generation', inputType: 'text', outputType: 'music', agent: 'music-generator', provider: 'elevenlabs', models: ['elevenlabs-music', 'suno', 'udio'] },
+    ],
+    a2aRequired: true,
+    tier: 'pro',
+    agents: ['music-prompt-agent', 'music-generator'],
+    estimatedDurationSeconds: 45,
+    customerPainPoint: 'Royalty-free music is generic or expensive',
+    platformSolution: 'Generate custom original music with ElevenLabs/Suno',
+    primaryProviders: ['openai', 'elevenlabs', 'suno'],
+    requiredSecrets: ['OPENAI_API_KEY', 'ELEVENLABS_API_KEY'],
+  },
+  'text-to-sfx': {
+    pipeline: 'text-to-sfx',
+    stages: [
+      { stage: 1, name: 'SFX Description', inputType: 'text', outputType: 'text', agent: 'sfx-designer', provider: 'openai', models: ['gpt-4o'] },
+      { stage: 2, name: 'SFX Generation', inputType: 'text', outputType: 'sfx', agent: 'sfx-generator', provider: 'elevenlabs', models: ['elevenlabs-sfx'] },
+    ],
+    a2aRequired: false,
+    tier: 'starter',
+    agents: ['sfx-designer', 'sfx-generator'],
+    estimatedDurationSeconds: 15,
+    customerPainPoint: 'Hard to find the perfect sound effect',
+    platformSolution: 'Generate custom SFX from text descriptions',
+    primaryProviders: ['openai', 'elevenlabs'],
+    requiredSecrets: ['OPENAI_API_KEY', 'ELEVENLABS_API_KEY'],
   },
 
   // ============ IMAGE-BASED PIPELINES ============
@@ -774,12 +914,16 @@ export const TRANSFORMATION_PIPELINE_ROUTING: Record<TransformationPipeline, Tra
     stages: [
       { stage: 1, name: 'Image Analysis', inputType: 'image', outputType: 'text', agent: 'vision-analyzer', provider: 'gemini', models: ['gemini-2.0-flash'] },
       { stage: 2, name: 'Motion Planning', inputType: 'text', outputType: 'text', agent: 'motion-planner', provider: 'claude', models: ['claude-sonnet-4'] },
-      { stage: 3, name: 'Video Animation', inputType: 'image', outputType: 'video', agent: 'video-generator', provider: 'modelslab', models: ['animatediff-v2', 'svd', 'runway-gen3'] },
+      { stage: 3, name: 'Video Animation', inputType: 'image', outputType: 'video', agent: 'video-generator', provider: 'modelslab', models: ['animatediff-v2', 'svd', 'runway-gen3', 'kling-ai'] },
     ],
     a2aRequired: true,
     tier: 'pro',
     agents: ['vision-analyzer', 'motion-planner', 'video-generator'],
     estimatedDurationSeconds: 90,
+    customerPainPoint: 'Static images don\'t engage audience',
+    platformSolution: 'Animate any image with cinematic motion',
+    primaryProviders: ['google', 'anthropic', 'modelslab', 'runway'],
+    requiredSecrets: ['GEMINI_API_KEY', 'MODELSLAB_API_KEY'],
   },
   'image-to-3d': {
     pipeline: 'image-to-3d',
@@ -791,6 +935,10 @@ export const TRANSFORMATION_PIPELINE_ROUTING: Record<TransformationPipeline, Tra
     tier: 'pro',
     agents: ['multiview-agent', 'mesh-generator'],
     estimatedDurationSeconds: 75,
+    customerPainPoint: '3D scanning equipment is expensive',
+    platformSolution: 'Convert any 2D image to 3D model instantly',
+    primaryProviders: ['stability', 'modelslab', 'luma'],
+    requiredSecrets: ['MODELSLAB_API_KEY', 'REPLICATE_API_KEY'],
   },
   'image-to-animation': {
     pipeline: 'image-to-animation',
@@ -802,20 +950,75 @@ export const TRANSFORMATION_PIPELINE_ROUTING: Record<TransformationPipeline, Tra
     tier: 'pro',
     agents: ['character-detector', 'rigging-agent'],
     estimatedDurationSeconds: 60,
+    customerPainPoint: 'Character animation needs frame-by-frame work',
+    platformSolution: 'Auto-rig and animate characters from single image',
+    primaryProviders: ['google', 'modelslab'],
+    requiredSecrets: ['GEMINI_API_KEY', 'MODELSLAB_API_KEY'],
   },
   'image-to-avatar': {
     pipeline: 'image-to-avatar',
     stages: [
       { stage: 1, name: 'Face Extraction', inputType: 'image', outputType: 'image', agent: 'face-extractor', provider: 'azure', models: ['face-api'] },
-      { stage: 2, name: 'Avatar Creation', inputType: 'image', outputType: 'video', agent: 'avatar-generator', provider: 'heygen', models: ['heygen-photorealistic', 'd-id'] },
+      { stage: 2, name: 'Avatar Creation', inputType: 'image', outputType: 'video', agent: 'avatar-generator', provider: 'heygen', models: ['heygen-photorealistic', 'd-id', 'alibaba-wan'] },
     ],
     a2aRequired: true,
     tier: 'enterprise',
     agents: ['face-extractor', 'avatar-generator'],
     estimatedDurationSeconds: 120,
+    customerPainPoint: 'Creating talking head videos requires on-camera talent',
+    platformSolution: 'Turn any photo into a speaking avatar',
+    primaryProviders: ['azure', 'heygen', 'alibaba'],
+    requiredSecrets: ['AZURE_API_KEY'],
+  },
+  'image-to-vr': {
+    pipeline: 'image-to-vr',
+    stages: [
+      { stage: 1, name: 'Depth Estimation', inputType: 'image', outputType: 'image', agent: 'depth-estimator', provider: 'replicate', models: ['depth-anything', 'midas'] },
+      { stage: 2, name: '3D Scene Generation', inputType: 'image', outputType: '3d', agent: 'scene-generator', provider: 'stability', models: ['sv3d'] },
+      { stage: 3, name: 'VR Packaging', inputType: '3d', outputType: 'vr', agent: 'vr-packager', provider: 'aframe', models: ['a-frame'] },
+    ],
+    a2aRequired: true,
+    tier: 'enterprise',
+    agents: ['depth-estimator', 'scene-generator', 'vr-packager'],
+    estimatedDurationSeconds: 150,
+    customerPainPoint: 'VR content creation requires specialized 3D skills',
+    platformSolution: 'Convert 2D images to immersive VR environments',
+    primaryProviders: ['replicate', 'stability', 'aframe'],
+    requiredSecrets: ['REPLICATE_API_KEY'],
+  },
+  'image-to-ar': {
+    pipeline: 'image-to-ar',
+    stages: [
+      { stage: 1, name: 'Object Segmentation', inputType: 'image', outputType: 'image', agent: 'segmentation-agent', provider: 'replicate', models: ['sam-2'] },
+      { stage: 2, name: '3D Lift', inputType: 'image', outputType: '3d', agent: 'mesh-generator', provider: 'modelslab', models: ['triposr'] },
+      { stage: 3, name: 'AR Packaging', inputType: '3d', outputType: 'ar', agent: 'ar-packager', provider: 'modelviewer', models: ['model-viewer'] },
+    ],
+    a2aRequired: true,
+    tier: 'enterprise',
+    agents: ['segmentation-agent', 'mesh-generator', 'ar-packager'],
+    estimatedDurationSeconds: 120,
+    customerPainPoint: 'Product AR requires expensive 3D scanning',
+    platformSolution: 'Create AR product views from photos',
+    primaryProviders: ['replicate', 'modelslab', 'google'],
+    requiredSecrets: ['REPLICATE_API_KEY', 'MODELSLAB_API_KEY'],
+  },
+  'image-to-vfx': {
+    pipeline: 'image-to-vfx',
+    stages: [
+      { stage: 1, name: 'VFX Planning', inputType: 'image', outputType: 'text', agent: 'vfx-planner', provider: 'claude', models: ['claude-sonnet-4'] },
+      { stage: 2, name: 'Effect Generation', inputType: 'image', outputType: 'vfx', agent: 'vfx-generator', provider: 'modelslab', models: ['pika-effects', 'runway-gen3'] },
+    ],
+    a2aRequired: true,
+    tier: 'pro',
+    agents: ['vfx-planner', 'vfx-generator'],
+    estimatedDurationSeconds: 75,
+    customerPainPoint: 'VFX needs expensive software and expertise',
+    platformSolution: 'Add professional VFX to any image',
+    primaryProviders: ['anthropic', 'modelslab', 'pika'],
+    requiredSecrets: ['ANTHROPIC_API_KEY', 'MODELSLAB_API_KEY'],
   },
 
-  // ============ VOICE-BASED PIPELINES ============
+  // ============ VOICE/AUDIO-BASED PIPELINES ============
   'voice-to-animation': {
     pipeline: 'voice-to-animation',
     stages: [
@@ -827,6 +1030,10 @@ export const TRANSFORMATION_PIPELINE_ROUTING: Record<TransformationPipeline, Tra
     tier: 'pro',
     agents: ['stt-agent', 'viseme-agent', 'lipsync-agent'],
     estimatedDurationSeconds: 90,
+    customerPainPoint: 'Lip-sync animation is tedious frame-by-frame work',
+    platformSolution: 'Auto lip-sync with Azure Viseme phoneme mapping',
+    primaryProviders: ['azure', 'modelslab', 'openai'],
+    requiredSecrets: ['AZURE_API_KEY', 'MODELSLAB_API_KEY'],
   },
   'voice-to-avatar': {
     pipeline: 'voice-to-avatar',
@@ -838,6 +1045,10 @@ export const TRANSFORMATION_PIPELINE_ROUTING: Record<TransformationPipeline, Tra
     tier: 'enterprise',
     agents: ['voice-processor', 'avatar-generator'],
     estimatedDurationSeconds: 150,
+    customerPainPoint: 'Need talking avatar but don\'t want to record myself',
+    platformSolution: 'Clone voice and generate avatar speaking it',
+    primaryProviders: ['elevenlabs', 'heygen', 'd-id'],
+    requiredSecrets: ['ELEVENLABS_API_KEY'],
   },
   'voice-to-3d': {
     pipeline: 'voice-to-3d',
@@ -850,6 +1061,10 @@ export const TRANSFORMATION_PIPELINE_ROUTING: Record<TransformationPipeline, Tra
     tier: 'enterprise',
     agents: ['stt-agent', 'mesh-generator', 'animation-agent'],
     estimatedDurationSeconds: 180,
+    customerPainPoint: 'Describing 3D models via text is imprecise',
+    platformSolution: 'Speak your vision, AI creates the 3D model',
+    primaryProviders: ['azure', 'openai', 'modelslab'],
+    requiredSecrets: ['AZURE_API_KEY', 'MODELSLAB_API_KEY'],
   },
   'voice-to-interactive': {
     pipeline: 'voice-to-interactive',
@@ -861,6 +1076,72 @@ export const TRANSFORMATION_PIPELINE_ROUTING: Record<TransformationPipeline, Tra
     tier: 'pro',
     agents: ['stt-agent', 'form-builder-agent'],
     estimatedDurationSeconds: 45,
+    customerPainPoint: 'Building forms is repetitive and slow',
+    platformSolution: 'Voice-describe your form, AI builds it',
+    primaryProviders: ['azure', 'openai'],
+    requiredSecrets: ['AZURE_API_KEY', 'OPENAI_API_KEY'],
+  },
+  'voice-to-video': {
+    pipeline: 'voice-to-video',
+    stages: [
+      { stage: 1, name: 'Speech-to-Text', inputType: 'voice', outputType: 'text', agent: 'stt-agent', provider: 'azure', models: ['whisper', 'deepgram'] },
+      { stage: 2, name: 'Storyboard Generation', inputType: 'text', outputType: 'image', agent: 'storyboard-agent', provider: 'openai', models: ['dall-e-3'] },
+      { stage: 3, name: 'Video Composition', inputType: 'image', outputType: 'video', agent: 'video-composer', provider: 'modelslab', models: ['animatediff-v2'] },
+    ],
+    a2aRequired: true,
+    tier: 'pro',
+    agents: ['stt-agent', 'storyboard-agent', 'video-composer'],
+    estimatedDurationSeconds: 150,
+    customerPainPoint: 'Turning podcast/voice into video is manual',
+    platformSolution: 'Auto-visualize voice recording as video',
+    primaryProviders: ['azure', 'openai', 'modelslab'],
+    requiredSecrets: ['AZURE_API_KEY', 'OPENAI_API_KEY', 'MODELSLAB_API_KEY'],
+  },
+  'voice-to-vr': {
+    pipeline: 'voice-to-vr',
+    stages: [
+      { stage: 1, name: 'Scene Description', inputType: 'voice', outputType: 'text', agent: 'stt-agent', provider: 'azure', models: ['whisper'] },
+      { stage: 2, name: '3D Environment', inputType: 'text', outputType: '3d', agent: 'environment-generator', provider: 'modelslab', models: ['meshy-ai'] },
+      { stage: 3, name: 'VR Assembly', inputType: '3d', outputType: 'vr', agent: 'vr-assembler', provider: 'aframe', models: ['a-frame'] },
+    ],
+    a2aRequired: true,
+    tier: 'enterprise',
+    agents: ['stt-agent', 'environment-generator', 'vr-assembler'],
+    estimatedDurationSeconds: 240,
+    customerPainPoint: 'VR prototyping is slow and technical',
+    platformSolution: 'Voice-describe VR scene, AI builds it',
+    primaryProviders: ['azure', 'modelslab', 'aframe'],
+    requiredSecrets: ['AZURE_API_KEY', 'MODELSLAB_API_KEY'],
+  },
+  'audio-to-animation': {
+    pipeline: 'audio-to-animation',
+    stages: [
+      { stage: 1, name: 'Audio Analysis', inputType: 'audio', outputType: 'text', agent: 'audio-analyzer', provider: 'elevenlabs', models: ['audio-analysis'] },
+      { stage: 2, name: 'Beat Mapping', inputType: 'audio', outputType: 'animation', agent: 'beat-mapper', provider: 'lottie', models: ['lottie'] },
+    ],
+    a2aRequired: true,
+    tier: 'pro',
+    agents: ['audio-analyzer', 'beat-mapper'],
+    estimatedDurationSeconds: 60,
+    customerPainPoint: 'Syncing animation to music is tedious',
+    platformSolution: 'Auto-generate beat-synced animations',
+    primaryProviders: ['elevenlabs', 'lottie'],
+    requiredSecrets: ['ELEVENLABS_API_KEY'],
+  },
+  'audio-to-vfx': {
+    pipeline: 'audio-to-vfx',
+    stages: [
+      { stage: 1, name: 'Audio Analysis', inputType: 'audio', outputType: 'text', agent: 'audio-analyzer', provider: 'elevenlabs', models: ['audio-analysis'] },
+      { stage: 2, name: 'Reactive VFX', inputType: 'audio', outputType: 'vfx', agent: 'reactive-vfx-agent', provider: 'modelslab', models: ['audio-reactive'] },
+    ],
+    a2aRequired: true,
+    tier: 'pro',
+    agents: ['audio-analyzer', 'reactive-vfx-agent'],
+    estimatedDurationSeconds: 90,
+    customerPainPoint: 'Music visualizers need custom coding',
+    platformSolution: 'Generate audio-reactive visual effects',
+    primaryProviders: ['elevenlabs', 'modelslab'],
+    requiredSecrets: ['ELEVENLABS_API_KEY', 'MODELSLAB_API_KEY'],
   },
 
   // ============ PPT/DOCUMENT-BASED PIPELINES ============
@@ -869,13 +1150,17 @@ export const TRANSFORMATION_PIPELINE_ROUTING: Record<TransformationPipeline, Tra
     stages: [
       { stage: 1, name: 'Slide Extraction', inputType: 'document', outputType: 'text', agent: 'document-processor', provider: 'azure', models: ['form-recognizer'] },
       { stage: 2, name: 'Script Generation', inputType: 'text', outputType: 'text', agent: 'script-generator', provider: 'openai', models: ['gpt-4o'] },
-      { stage: 3, name: 'Voiceover', inputType: 'text', outputType: 'audio', agent: 'voice-generator', provider: 'elevenlabs', models: ['elevenlabs-v2'] },
+      { stage: 3, name: 'Voiceover', inputType: 'text', outputType: 'audio', agent: 'voice-generator', provider: 'elevenlabs', models: ['elevenlabs-v2', 'azure-neural'] },
       { stage: 4, name: 'Video Composition', inputType: 'image', outputType: 'video', agent: 'video-composer', provider: 'ffmpeg', models: ['ffmpeg'] },
     ],
     a2aRequired: true,
     tier: 'pro',
     agents: ['document-processor', 'script-generator', 'voice-generator', 'video-composer'],
     estimatedDurationSeconds: 240,
+    customerPainPoint: 'Recording presentation videos is time-consuming',
+    platformSolution: 'Auto-generate narrated video from PowerPoint',
+    primaryProviders: ['azure', 'openai', 'elevenlabs'],
+    requiredSecrets: ['AZURE_API_KEY', 'OPENAI_API_KEY', 'ELEVENLABS_API_KEY'],
   },
   'ppt-to-animation': {
     pipeline: 'ppt-to-animation',
@@ -887,6 +1172,10 @@ export const TRANSFORMATION_PIPELINE_ROUTING: Record<TransformationPipeline, Tra
     tier: 'pro',
     agents: ['document-processor', 'animation-agent'],
     estimatedDurationSeconds: 90,
+    customerPainPoint: 'PowerPoint animations are limited and boring',
+    platformSolution: 'Add cinematic Lottie animations to slides',
+    primaryProviders: ['azure', 'lottie'],
+    requiredSecrets: ['AZURE_API_KEY'],
   },
   'ppt-to-interactive': {
     pipeline: 'ppt-to-interactive',
@@ -898,6 +1187,42 @@ export const TRANSFORMATION_PIPELINE_ROUTING: Record<TransformationPipeline, Tra
     tier: 'pro',
     agents: ['document-processor', 'interactive-generator'],
     estimatedDurationSeconds: 120,
+    customerPainPoint: 'Static slides don\'t engage audience',
+    platformSolution: 'Convert slides to interactive web experience',
+    primaryProviders: ['azure', 'react'],
+    requiredSecrets: ['AZURE_API_KEY'],
+  },
+  'ppt-to-3d': {
+    pipeline: 'ppt-to-3d',
+    stages: [
+      { stage: 1, name: 'Content Extraction', inputType: 'document', outputType: 'text', agent: 'document-processor', provider: 'azure', models: ['form-recognizer'] },
+      { stage: 2, name: '3D Scene Design', inputType: 'text', outputType: 'text', agent: 'scene-designer', provider: 'claude', models: ['claude-sonnet-4'] },
+      { stage: 3, name: '3D Generation', inputType: 'text', outputType: '3d', agent: 'mesh-generator', provider: 'modelslab', models: ['meshy-ai'] },
+    ],
+    a2aRequired: true,
+    tier: 'enterprise',
+    agents: ['document-processor', 'scene-designer', 'mesh-generator'],
+    estimatedDurationSeconds: 180,
+    customerPainPoint: 'Presenting 3D data in slides is clunky',
+    platformSolution: 'Convert slide graphics to interactive 3D',
+    primaryProviders: ['azure', 'anthropic', 'modelslab'],
+    requiredSecrets: ['AZURE_API_KEY', 'ANTHROPIC_API_KEY', 'MODELSLAB_API_KEY'],
+  },
+  'ppt-to-vr': {
+    pipeline: 'ppt-to-vr',
+    stages: [
+      { stage: 1, name: 'Slide Extraction', inputType: 'document', outputType: 'text', agent: 'document-processor', provider: 'azure', models: ['form-recognizer'] },
+      { stage: 2, name: 'VR Layout', inputType: 'text', outputType: 'text', agent: 'vr-layout-agent', provider: 'claude', models: ['claude-sonnet-4'] },
+      { stage: 3, name: 'VR Assembly', inputType: 'text', outputType: 'vr', agent: 'vr-assembler', provider: 'aframe', models: ['a-frame'] },
+    ],
+    a2aRequired: true,
+    tier: 'enterprise',
+    agents: ['document-processor', 'vr-layout-agent', 'vr-assembler'],
+    estimatedDurationSeconds: 210,
+    customerPainPoint: 'VR presentations require specialized tools',
+    platformSolution: 'Convert any PPT to VR gallery experience',
+    primaryProviders: ['azure', 'anthropic', 'aframe'],
+    requiredSecrets: ['AZURE_API_KEY', 'ANTHROPIC_API_KEY'],
   },
   'document-to-video': {
     pipeline: 'document-to-video',
@@ -911,6 +1236,354 @@ export const TRANSFORMATION_PIPELINE_ROUTING: Record<TransformationPipeline, Tra
     tier: 'pro',
     agents: ['ocr-agent', 'summarizer-agent', 'image-generator', 'video-generator'],
     estimatedDurationSeconds: 180,
+    customerPainPoint: 'Documents are boring to read',
+    platformSolution: 'Turn documents into engaging videos',
+    primaryProviders: ['azure', 'anthropic', 'modelslab'],
+    requiredSecrets: ['AZURE_API_KEY', 'ANTHROPIC_API_KEY', 'MODELSLAB_API_KEY'],
+  },
+  'document-to-slides': {
+    pipeline: 'document-to-slides',
+    stages: [
+      { stage: 1, name: 'Document Analysis', inputType: 'document', outputType: 'text', agent: 'document-processor', provider: 'azure', models: ['form-recognizer'] },
+      { stage: 2, name: 'Structure Generation', inputType: 'text', outputType: 'text', agent: 'slide-structurer', provider: 'openai', models: ['gpt-4o'] },
+      { stage: 3, name: 'Visual Design', inputType: 'text', outputType: 'image', agent: 'slide-designer', provider: 'modelslab', models: ['flux-pro'] },
+    ],
+    a2aRequired: true,
+    tier: 'pro',
+    agents: ['document-processor', 'slide-structurer', 'slide-designer'],
+    estimatedDurationSeconds: 120,
+    customerPainPoint: 'Converting docs to slides is tedious',
+    platformSolution: 'AI extracts key points and designs slides',
+    primaryProviders: ['azure', 'openai', 'modelslab'],
+    requiredSecrets: ['AZURE_API_KEY', 'OPENAI_API_KEY', 'MODELSLAB_API_KEY'],
+  },
+  'document-to-interactive': {
+    pipeline: 'document-to-interactive',
+    stages: [
+      { stage: 1, name: 'Document Analysis', inputType: 'document', outputType: 'text', agent: 'document-processor', provider: 'azure', models: ['form-recognizer'] },
+      { stage: 2, name: 'Interactive Design', inputType: 'text', outputType: 'interactive', agent: 'interactive-generator', provider: 'react', models: ['react', 'd3'] },
+    ],
+    a2aRequired: true,
+    tier: 'pro',
+    agents: ['document-processor', 'interactive-generator'],
+    estimatedDurationSeconds: 90,
+    customerPainPoint: 'Long documents don\'t get read',
+    platformSolution: 'Convert to interactive explorable format',
+    primaryProviders: ['azure', 'react'],
+    requiredSecrets: ['AZURE_API_KEY'],
+  },
+  'pdf-to-video': {
+    pipeline: 'pdf-to-video',
+    stages: [
+      { stage: 1, name: 'PDF Extraction', inputType: 'document', outputType: 'text', agent: 'pdf-processor', provider: 'azure', models: ['form-recognizer'] },
+      { stage: 2, name: 'Script Writing', inputType: 'text', outputType: 'text', agent: 'script-generator', provider: 'openai', models: ['gpt-4o'] },
+      { stage: 3, name: 'Narration', inputType: 'text', outputType: 'audio', agent: 'voice-generator', provider: 'elevenlabs', models: ['elevenlabs-v2'] },
+      { stage: 4, name: 'Video Assembly', inputType: 'image', outputType: 'video', agent: 'video-composer', provider: 'ffmpeg', models: ['ffmpeg'] },
+    ],
+    a2aRequired: true,
+    tier: 'pro',
+    agents: ['pdf-processor', 'script-generator', 'voice-generator', 'video-composer'],
+    estimatedDurationSeconds: 200,
+    customerPainPoint: 'PDFs are static and unengaging',
+    platformSolution: 'Transform PDF content into narrated videos',
+    primaryProviders: ['azure', 'openai', 'elevenlabs'],
+    requiredSecrets: ['AZURE_API_KEY', 'OPENAI_API_KEY', 'ELEVENLABS_API_KEY'],
+  },
+  'pdf-to-interactive': {
+    pipeline: 'pdf-to-interactive',
+    stages: [
+      { stage: 1, name: 'PDF Analysis', inputType: 'document', outputType: 'text', agent: 'pdf-processor', provider: 'azure', models: ['form-recognizer'] },
+      { stage: 2, name: 'Interactive Build', inputType: 'text', outputType: 'interactive', agent: 'interactive-generator', provider: 'react', models: ['react'] },
+    ],
+    a2aRequired: true,
+    tier: 'pro',
+    agents: ['pdf-processor', 'interactive-generator'],
+    estimatedDurationSeconds: 90,
+    customerPainPoint: 'PDFs can\'t capture engagement data',
+    platformSolution: 'Convert to trackable interactive experience',
+    primaryProviders: ['azure', 'react'],
+    requiredSecrets: ['AZURE_API_KEY'],
+  },
+
+  // ============ VIDEO-BASED PIPELINES ============
+  'video-to-avatar': {
+    pipeline: 'video-to-avatar',
+    stages: [
+      { stage: 1, name: 'Face Extraction', inputType: 'video', outputType: 'image', agent: 'face-extractor', provider: 'azure', models: ['face-api'] },
+      { stage: 2, name: 'Avatar Training', inputType: 'image', outputType: 'video', agent: 'avatar-trainer', provider: 'heygen', models: ['heygen-clone'] },
+    ],
+    a2aRequired: true,
+    tier: 'enterprise',
+    agents: ['face-extractor', 'avatar-trainer'],
+    estimatedDurationSeconds: 300,
+    customerPainPoint: 'Creating consistent avatar from video is complex',
+    platformSolution: 'Train custom avatar from video footage',
+    primaryProviders: ['azure', 'heygen'],
+    requiredSecrets: ['AZURE_API_KEY'],
+  },
+  'video-to-3d': {
+    pipeline: 'video-to-3d',
+    stages: [
+      { stage: 1, name: 'Frame Extraction', inputType: 'video', outputType: 'image', agent: 'frame-extractor', provider: 'ffmpeg', models: ['ffmpeg'] },
+      { stage: 2, name: 'Photogrammetry', inputType: 'image', outputType: '3d', agent: 'photogrammetry-agent', provider: 'replicate', models: ['nerf', 'gaussian-splatting'] },
+    ],
+    a2aRequired: true,
+    tier: 'enterprise',
+    agents: ['frame-extractor', 'photogrammetry-agent'],
+    estimatedDurationSeconds: 360,
+    customerPainPoint: '3D scanning from video needs expensive software',
+    platformSolution: 'Convert video walkaround to 3D model',
+    primaryProviders: ['ffmpeg', 'replicate'],
+    requiredSecrets: ['REPLICATE_API_KEY'],
+  },
+  'video-to-animation': {
+    pipeline: 'video-to-animation',
+    stages: [
+      { stage: 1, name: 'Motion Capture', inputType: 'video', outputType: 'animation', agent: 'mocap-agent', provider: 'replicate', models: ['mediapipe', 'openpose'] },
+      { stage: 2, name: 'Animation Retarget', inputType: 'animation', outputType: 'animation', agent: 'retarget-agent', provider: 'modelslab', models: ['motion-retarget'] },
+    ],
+    a2aRequired: true,
+    tier: 'pro',
+    agents: ['mocap-agent', 'retarget-agent'],
+    estimatedDurationSeconds: 150,
+    customerPainPoint: 'Motion capture requires expensive equipment',
+    platformSolution: 'Extract animation from any video',
+    primaryProviders: ['replicate', 'modelslab'],
+    requiredSecrets: ['REPLICATE_API_KEY', 'MODELSLAB_API_KEY'],
+  },
+  'video-to-interactive': {
+    pipeline: 'video-to-interactive',
+    stages: [
+      { stage: 1, name: 'Video Analysis', inputType: 'video', outputType: 'text', agent: 'video-analyzer', provider: 'gemini', models: ['gemini-2.0-flash'] },
+      { stage: 2, name: 'Hotspot Design', inputType: 'text', outputType: 'interactive', agent: 'interactive-generator', provider: 'react', models: ['react'] },
+    ],
+    a2aRequired: true,
+    tier: 'pro',
+    agents: ['video-analyzer', 'interactive-generator'],
+    estimatedDurationSeconds: 120,
+    customerPainPoint: 'Videos are passive, can\'t capture interaction',
+    platformSolution: 'Add clickable hotspots and branching to videos',
+    primaryProviders: ['google', 'react'],
+    requiredSecrets: ['GEMINI_API_KEY'],
+  },
+  'video-to-vr': {
+    pipeline: 'video-to-vr',
+    stages: [
+      { stage: 1, name: '360 Conversion', inputType: 'video', outputType: 'video', agent: 'panorama-converter', provider: 'ffmpeg', models: ['ffmpeg'] },
+      { stage: 2, name: 'VR Packaging', inputType: 'video', outputType: 'vr', agent: 'vr-packager', provider: 'aframe', models: ['a-frame'] },
+    ],
+    a2aRequired: true,
+    tier: 'enterprise',
+    agents: ['panorama-converter', 'vr-packager'],
+    estimatedDurationSeconds: 180,
+    customerPainPoint: 'VR video players are fragmented',
+    platformSolution: 'Package video for universal VR playback',
+    primaryProviders: ['ffmpeg', 'aframe'],
+    requiredSecrets: [],
+  },
+  'video-to-vfx': {
+    pipeline: 'video-to-vfx',
+    stages: [
+      { stage: 1, name: 'Scene Analysis', inputType: 'video', outputType: 'text', agent: 'scene-analyzer', provider: 'gemini', models: ['gemini-2.0-flash'] },
+      { stage: 2, name: 'VFX Overlay', inputType: 'video', outputType: 'vfx', agent: 'vfx-compositor', provider: 'runway', models: ['runway-gen3'] },
+    ],
+    a2aRequired: true,
+    tier: 'pro',
+    agents: ['scene-analyzer', 'vfx-compositor'],
+    estimatedDurationSeconds: 150,
+    customerPainPoint: 'Adding VFX to existing video needs After Effects',
+    platformSolution: 'AI-powered VFX compositing on any video',
+    primaryProviders: ['google', 'runway'],
+    requiredSecrets: ['GEMINI_API_KEY'],
+  },
+  'video-to-multilingual': {
+    pipeline: 'video-to-multilingual',
+    stages: [
+      { stage: 1, name: 'Audio Extraction', inputType: 'video', outputType: 'audio', agent: 'audio-extractor', provider: 'ffmpeg', models: ['ffmpeg'] },
+      { stage: 2, name: 'Transcription', inputType: 'audio', outputType: 'text', agent: 'stt-agent', provider: 'azure', models: ['whisper'] },
+      { stage: 3, name: 'Translation', inputType: 'text', outputType: 'text', agent: 'translator-agent', provider: 'deepl', models: ['deepl-pro', 'qwen-mt'] },
+      { stage: 4, name: 'Voice Dubbing', inputType: 'text', outputType: 'audio', agent: 'voice-generator', provider: 'elevenlabs', models: ['elevenlabs-dubbing'] },
+      { stage: 5, name: 'Lip Sync', inputType: 'audio', outputType: 'video', agent: 'lipsync-agent', provider: 'modelslab', models: ['wav2lip'] },
+    ],
+    a2aRequired: true,
+    tier: 'enterprise',
+    agents: ['audio-extractor', 'stt-agent', 'translator-agent', 'voice-generator', 'lipsync-agent'],
+    estimatedDurationSeconds: 600,
+    customerPainPoint: 'Dubbing videos in multiple languages is expensive',
+    platformSolution: 'AI dubbing with voice cloning and lip-sync',
+    primaryProviders: ['ffmpeg', 'azure', 'deepl', 'elevenlabs', 'modelslab'],
+    requiredSecrets: ['AZURE_API_KEY', 'DEEPL_API_KEY', 'ELEVENLABS_API_KEY', 'MODELSLAB_API_KEY'],
+  },
+
+  // ============ 3D-BASED PIPELINES ============
+  '3d-to-video': {
+    pipeline: '3d-to-video',
+    stages: [
+      { stage: 1, name: 'Camera Path', inputType: '3d', outputType: 'animation', agent: 'camera-agent', provider: 'three', models: ['three.js'] },
+      { stage: 2, name: 'Render Sequence', inputType: '3d', outputType: 'video', agent: 'renderer', provider: 'three', models: ['three.js', 'babylon'] },
+    ],
+    a2aRequired: true,
+    tier: 'pro',
+    agents: ['camera-agent', 'renderer'],
+    estimatedDurationSeconds: 120,
+    customerPainPoint: 'Rendering 3D to video needs expensive software',
+    platformSolution: 'Web-based 3D-to-video rendering',
+    primaryProviders: ['three', 'babylon'],
+    requiredSecrets: [],
+  },
+  '3d-to-animation': {
+    pipeline: '3d-to-animation',
+    stages: [
+      { stage: 1, name: 'Rig Detection', inputType: '3d', outputType: 'animation', agent: 'auto-rigger', provider: 'modelslab', models: ['auto-rig'] },
+      { stage: 2, name: 'Animation Apply', inputType: '3d', outputType: 'animation', agent: 'animation-agent', provider: 'three', models: ['three.js', 'mixamo'] },
+    ],
+    a2aRequired: true,
+    tier: 'pro',
+    agents: ['auto-rigger', 'animation-agent'],
+    estimatedDurationSeconds: 90,
+    customerPainPoint: 'Rigging 3D models for animation is technical',
+    platformSolution: 'Auto-rig and animate any 3D model',
+    primaryProviders: ['modelslab', 'three', 'mixamo'],
+    requiredSecrets: ['MODELSLAB_API_KEY'],
+  },
+  '3d-to-vr': {
+    pipeline: '3d-to-vr',
+    stages: [
+      { stage: 1, name: 'VR Optimization', inputType: '3d', outputType: '3d', agent: 'mesh-optimizer', provider: 'three', models: ['mesh-optimization'] },
+      { stage: 2, name: 'VR Scene Build', inputType: '3d', outputType: 'vr', agent: 'vr-builder', provider: 'aframe', models: ['a-frame'] },
+    ],
+    a2aRequired: true,
+    tier: 'enterprise',
+    agents: ['mesh-optimizer', 'vr-builder'],
+    estimatedDurationSeconds: 150,
+    customerPainPoint: 'Optimizing 3D for VR is complex',
+    platformSolution: 'Auto-optimize and package 3D for VR',
+    primaryProviders: ['three', 'aframe'],
+    requiredSecrets: [],
+  },
+  '3d-to-ar': {
+    pipeline: '3d-to-ar',
+    stages: [
+      { stage: 1, name: 'AR Optimization', inputType: '3d', outputType: '3d', agent: 'mesh-optimizer', provider: 'three', models: ['mesh-optimization'] },
+      { stage: 2, name: 'AR Packaging', inputType: '3d', outputType: 'ar', agent: 'ar-packager', provider: 'modelviewer', models: ['model-viewer'] },
+    ],
+    a2aRequired: true,
+    tier: 'enterprise',
+    agents: ['mesh-optimizer', 'ar-packager'],
+    estimatedDurationSeconds: 120,
+    customerPainPoint: 'AR deployment needs native app development',
+    platformSolution: 'Web AR with Google Model Viewer',
+    primaryProviders: ['three', 'google'],
+    requiredSecrets: [],
+  },
+  '3d-to-interactive': {
+    pipeline: '3d-to-interactive',
+    stages: [
+      { stage: 1, name: '3D Viewer Setup', inputType: '3d', outputType: 'interactive', agent: '3d-viewer-agent', provider: 'three', models: ['three.js', 'react-three-fiber'] },
+    ],
+    a2aRequired: false,
+    tier: 'pro',
+    agents: ['3d-viewer-agent'],
+    estimatedDurationSeconds: 45,
+    customerPainPoint: 'Embedding interactive 3D on web is hard',
+    platformSolution: 'One-click interactive 3D viewer embed',
+    primaryProviders: ['three', 'react'],
+    requiredSecrets: [],
+  },
+
+  // ============ AR/VR SCENE PIPELINES ============
+  'scene-to-vr': {
+    pipeline: 'scene-to-vr',
+    stages: [
+      { stage: 1, name: 'Scene Description', inputType: 'scene', outputType: 'text', agent: 'scene-descriptor', provider: 'claude', models: ['claude-sonnet-4'] },
+      { stage: 2, name: '3D Assets', inputType: 'text', outputType: '3d', agent: 'asset-generator', provider: 'modelslab', models: ['meshy-ai'] },
+      { stage: 3, name: 'VR Composition', inputType: '3d', outputType: 'vr', agent: 'vr-composer', provider: 'aframe', models: ['a-frame'] },
+    ],
+    a2aRequired: true,
+    tier: 'enterprise',
+    agents: ['scene-descriptor', 'asset-generator', 'vr-composer'],
+    estimatedDurationSeconds: 300,
+    customerPainPoint: 'Building VR scenes from scratch is daunting',
+    platformSolution: 'Describe scene, AI builds complete VR environment',
+    primaryProviders: ['anthropic', 'modelslab', 'aframe'],
+    requiredSecrets: ['ANTHROPIC_API_KEY', 'MODELSLAB_API_KEY'],
+  },
+  'scene-to-ar': {
+    pipeline: 'scene-to-ar',
+    stages: [
+      { stage: 1, name: 'Scene Analysis', inputType: 'scene', outputType: 'text', agent: 'scene-analyzer', provider: 'gemini', models: ['gemini-2.0-flash'] },
+      { stage: 2, name: 'AR Objects', inputType: 'text', outputType: '3d', agent: 'ar-object-generator', provider: 'modelslab', models: ['triposr'] },
+      { stage: 3, name: 'AR Composition', inputType: '3d', outputType: 'ar', agent: 'ar-composer', provider: 'modelviewer', models: ['model-viewer'] },
+    ],
+    a2aRequired: true,
+    tier: 'enterprise',
+    agents: ['scene-analyzer', 'ar-object-generator', 'ar-composer'],
+    estimatedDurationSeconds: 240,
+    customerPainPoint: 'AR scene composition needs Unity/Unreal',
+    platformSolution: 'Web-based AR scene composition',
+    primaryProviders: ['google', 'modelslab', 'google'],
+    requiredSecrets: ['GEMINI_API_KEY', 'MODELSLAB_API_KEY'],
+  },
+  'ar-to-video': {
+    pipeline: 'ar-to-video',
+    stages: [
+      { stage: 1, name: 'AR Recording', inputType: 'ar', outputType: 'video', agent: 'ar-recorder', provider: 'browser', models: ['web-ar-recorder'] },
+      { stage: 2, name: 'Video Enhancement', inputType: 'video', outputType: 'video', agent: 'video-enhancer', provider: 'runway', models: ['runway-enhance'] },
+    ],
+    a2aRequired: true,
+    tier: 'pro',
+    agents: ['ar-recorder', 'video-enhancer'],
+    estimatedDurationSeconds: 90,
+    customerPainPoint: 'Recording AR experience for sharing is clunky',
+    platformSolution: 'Smooth AR-to-video capture and enhance',
+    primaryProviders: ['browser', 'runway'],
+    requiredSecrets: [],
+  },
+  'vr-to-video': {
+    pipeline: 'vr-to-video',
+    stages: [
+      { stage: 1, name: 'VR Recording', inputType: 'vr', outputType: 'video', agent: 'vr-recorder', provider: 'three', models: ['canvas-capture'] },
+      { stage: 2, name: 'Video Encoding', inputType: 'video', outputType: 'video', agent: 'video-encoder', provider: 'ffmpeg', models: ['ffmpeg'] },
+    ],
+    a2aRequired: true,
+    tier: 'pro',
+    agents: ['vr-recorder', 'video-encoder'],
+    estimatedDurationSeconds: 120,
+    customerPainPoint: 'Exporting VR experience as video is technical',
+    platformSolution: 'One-click VR-to-video export',
+    primaryProviders: ['three', 'ffmpeg'],
+    requiredSecrets: [],
+  },
+  'panorama-to-vr': {
+    pipeline: 'panorama-to-vr',
+    stages: [
+      { stage: 1, name: 'Panorama Processing', inputType: 'panorama', outputType: 'image', agent: 'panorama-processor', provider: 'three', models: ['equirectangular'] },
+      { stage: 2, name: 'VR Scene Build', inputType: 'image', outputType: 'vr', agent: 'vr-panorama-agent', provider: 'aframe', models: ['a-frame'] },
+    ],
+    a2aRequired: false,
+    tier: 'pro',
+    agents: ['panorama-processor', 'vr-panorama-agent'],
+    estimatedDurationSeconds: 60,
+    customerPainPoint: '360 photos are hard to share immersively',
+    platformSolution: 'Instant VR tour from 360 photos',
+    primaryProviders: ['three', 'aframe'],
+    requiredSecrets: [],
+  },
+  'floor-plan-to-vr': {
+    pipeline: 'floor-plan-to-vr',
+    stages: [
+      { stage: 1, name: 'Floor Plan Analysis', inputType: 'image', outputType: 'text', agent: 'floor-plan-analyzer', provider: 'gemini', models: ['gemini-2.0-flash'] },
+      { stage: 2, name: '3D Room Generation', inputType: 'text', outputType: '3d', agent: 'room-generator', provider: 'modelslab', models: ['meshy-ai'] },
+      { stage: 3, name: 'VR Walkthrough', inputType: '3d', outputType: 'vr', agent: 'vr-builder', provider: 'aframe', models: ['a-frame'] },
+    ],
+    a2aRequired: true,
+    tier: 'enterprise',
+    agents: ['floor-plan-analyzer', 'room-generator', 'vr-builder'],
+    estimatedDurationSeconds: 300,
+    customerPainPoint: 'Architectural VR needs expensive software',
+    platformSolution: 'Convert 2D floor plan to VR walkthrough',
+    primaryProviders: ['google', 'modelslab', 'aframe'],
+    requiredSecrets: ['GEMINI_API_KEY', 'MODELSLAB_API_KEY'],
   },
 
   // ============ COMPLEX MULTI-MODAL PIPELINES ============
@@ -926,6 +1599,10 @@ export const TRANSFORMATION_PIPELINE_ROUTING: Record<TransformationPipeline, Tra
     tier: 'enterprise',
     agents: ['voice-recorder', 'stt-agent', 'script-enhancer', 'avatar-generator'],
     estimatedDurationSeconds: 300,
+    customerPainPoint: 'Creating avatar videos requires multiple tools',
+    platformSolution: 'Record voice → instant avatar video',
+    primaryProviders: ['browser', 'azure', 'openai', 'heygen'],
+    requiredSecrets: ['AZURE_API_KEY', 'OPENAI_API_KEY'],
   },
   'auto-record-to-3d': {
     pipeline: 'auto-record-to-3d',
@@ -939,6 +1616,10 @@ export const TRANSFORMATION_PIPELINE_ROUTING: Record<TransformationPipeline, Tra
     tier: 'enterprise',
     agents: ['voice-recorder', 'stt-agent', 'scene-descriptor', 'mesh-generator'],
     estimatedDurationSeconds: 240,
+    customerPainPoint: 'Describing 3D via text is imprecise',
+    platformSolution: 'Voice-describe 3D model → AI creates it',
+    primaryProviders: ['browser', 'azure', 'anthropic', 'modelslab'],
+    requiredSecrets: ['AZURE_API_KEY', 'ANTHROPIC_API_KEY', 'MODELSLAB_API_KEY'],
   },
   'auto-record-to-interactive': {
     pipeline: 'auto-record-to-interactive',
@@ -951,6 +1632,45 @@ export const TRANSFORMATION_PIPELINE_ROUTING: Record<TransformationPipeline, Tra
     tier: 'pro',
     agents: ['voice-recorder', 'stt-agent', 'interactive-generator'],
     estimatedDurationSeconds: 120,
+    customerPainPoint: 'Prototyping interactive content is slow',
+    platformSolution: 'Voice-describe form/quiz → AI builds it',
+    primaryProviders: ['browser', 'azure', 'react'],
+    requiredSecrets: ['AZURE_API_KEY'],
+  },
+  'auto-record-to-video': {
+    pipeline: 'auto-record-to-video',
+    stages: [
+      { stage: 1, name: 'Voice Recording', inputType: 'voice', outputType: 'audio', agent: 'voice-recorder', provider: 'browser', models: ['web-audio-api'] },
+      { stage: 2, name: 'Speech-to-Text', inputType: 'audio', outputType: 'text', agent: 'stt-agent', provider: 'azure', models: ['whisper'] },
+      { stage: 3, name: 'Storyboard', inputType: 'text', outputType: 'image', agent: 'storyboard-agent', provider: 'openai', models: ['dall-e-3'] },
+      { stage: 4, name: 'Video Assembly', inputType: 'image', outputType: 'video', agent: 'video-composer', provider: 'modelslab', models: ['animatediff-v2'] },
+    ],
+    a2aRequired: true,
+    tier: 'pro',
+    agents: ['voice-recorder', 'stt-agent', 'storyboard-agent', 'video-composer'],
+    estimatedDurationSeconds: 180,
+    customerPainPoint: 'Video creation from ideas is multi-step',
+    platformSolution: 'Speak your video idea → AI creates it',
+    primaryProviders: ['browser', 'azure', 'openai', 'modelslab'],
+    requiredSecrets: ['AZURE_API_KEY', 'OPENAI_API_KEY', 'MODELSLAB_API_KEY'],
+  },
+  'auto-record-to-vr': {
+    pipeline: 'auto-record-to-vr',
+    stages: [
+      { stage: 1, name: 'Voice Recording', inputType: 'voice', outputType: 'audio', agent: 'voice-recorder', provider: 'browser', models: ['web-audio-api'] },
+      { stage: 2, name: 'Speech-to-Text', inputType: 'audio', outputType: 'text', agent: 'stt-agent', provider: 'azure', models: ['whisper'] },
+      { stage: 3, name: 'VR Scene Design', inputType: 'text', outputType: 'text', agent: 'vr-designer', provider: 'claude', models: ['claude-sonnet-4'] },
+      { stage: 4, name: '3D Assets', inputType: 'text', outputType: '3d', agent: 'mesh-generator', provider: 'modelslab', models: ['meshy-ai'] },
+      { stage: 5, name: 'VR Assembly', inputType: '3d', outputType: 'vr', agent: 'vr-assembler', provider: 'aframe', models: ['a-frame'] },
+    ],
+    a2aRequired: true,
+    tier: 'enterprise',
+    agents: ['voice-recorder', 'stt-agent', 'vr-designer', 'mesh-generator', 'vr-assembler'],
+    estimatedDurationSeconds: 360,
+    customerPainPoint: 'VR prototyping is too technical',
+    platformSolution: 'Voice-describe VR world → AI builds it',
+    primaryProviders: ['browser', 'azure', 'anthropic', 'modelslab', 'aframe'],
+    requiredSecrets: ['AZURE_API_KEY', 'ANTHROPIC_API_KEY', 'MODELSLAB_API_KEY'],
   },
   'multi-modal-mashup': {
     pipeline: 'multi-modal-mashup',
@@ -963,6 +1683,132 @@ export const TRANSFORMATION_PIPELINE_ROUTING: Record<TransformationPipeline, Tra
     tier: 'enterprise',
     agents: ['multi-modal-analyzer', 'content-fusion-agent', 'multi-format-generator'],
     estimatedDurationSeconds: 360,
+    customerPainPoint: 'Combining multiple content types is fragmented',
+    platformSolution: 'Upload multiple inputs → unified output',
+    primaryProviders: ['google', 'anthropic'],
+    requiredSecrets: ['GEMINI_API_KEY', 'ANTHROPIC_API_KEY'],
+  },
+  'full-production-suite': {
+    pipeline: 'full-production-suite',
+    stages: [
+      { stage: 1, name: 'Content Analysis', inputType: 'document', outputType: 'text', agent: 'content-analyzer', provider: 'claude', models: ['claude-sonnet-4'] },
+      { stage: 2, name: 'Script Generation', inputType: 'text', outputType: 'text', agent: 'script-generator', provider: 'openai', models: ['gpt-4o'] },
+      { stage: 3, name: 'Visual Assets', inputType: 'text', outputType: 'image', agent: 'image-generator', provider: 'modelslab', models: ['flux-pro'] },
+      { stage: 4, name: 'Voice Synthesis', inputType: 'text', outputType: 'audio', agent: 'voice-generator', provider: 'elevenlabs', models: ['elevenlabs-v2'] },
+      { stage: 5, name: 'Music Score', inputType: 'text', outputType: 'music', agent: 'music-generator', provider: 'elevenlabs', models: ['elevenlabs-music'] },
+      { stage: 6, name: 'Video Composition', inputType: 'image', outputType: 'video', agent: 'video-composer', provider: 'modelslab', models: ['runway-gen3'] },
+      { stage: 7, name: 'Multilingual Dubbing', inputType: 'video', outputType: 'video', agent: 'dubbing-agent', provider: 'elevenlabs', models: ['elevenlabs-dubbing'] },
+    ],
+    a2aRequired: true,
+    tier: 'enterprise',
+    agents: ['content-analyzer', 'script-generator', 'image-generator', 'voice-generator', 'music-generator', 'video-composer', 'dubbing-agent'],
+    estimatedDurationSeconds: 900,
+    customerPainPoint: 'Full video production requires entire team',
+    platformSolution: 'One-click complete video production pipeline',
+    primaryProviders: ['anthropic', 'openai', 'modelslab', 'elevenlabs'],
+    requiredSecrets: ['ANTHROPIC_API_KEY', 'OPENAI_API_KEY', 'MODELSLAB_API_KEY', 'ELEVENLABS_API_KEY'],
+  },
+
+  // ============ SPECIALIZED PIPELINES ============
+  'avatar-video-dubbing': {
+    pipeline: 'avatar-video-dubbing',
+    stages: [
+      { stage: 1, name: 'Audio Extraction', inputType: 'video', outputType: 'audio', agent: 'audio-extractor', provider: 'ffmpeg', models: ['ffmpeg'] },
+      { stage: 2, name: 'Transcription', inputType: 'audio', outputType: 'text', agent: 'stt-agent', provider: 'azure', models: ['whisper'] },
+      { stage: 3, name: 'Translation', inputType: 'text', outputType: 'text', agent: 'translator-agent', provider: 'deepl', models: ['deepl-pro'] },
+      { stage: 4, name: 'Voice Clone Dub', inputType: 'text', outputType: 'audio', agent: 'voice-cloner', provider: 'elevenlabs', models: ['voice-clone'] },
+      { stage: 5, name: 'Lip Sync', inputType: 'audio', outputType: 'video', agent: 'lipsync-agent', provider: 'modelslab', models: ['wav2lip'] },
+    ],
+    a2aRequired: true,
+    tier: 'enterprise',
+    agents: ['audio-extractor', 'stt-agent', 'translator-agent', 'voice-cloner', 'lipsync-agent'],
+    estimatedDurationSeconds: 480,
+    customerPainPoint: 'Professional dubbing costs thousands per minute',
+    platformSolution: 'AI voice cloning + lip-sync dubbing',
+    primaryProviders: ['ffmpeg', 'azure', 'deepl', 'elevenlabs', 'modelslab'],
+    requiredSecrets: ['AZURE_API_KEY', 'DEEPL_API_KEY', 'ELEVENLABS_API_KEY', 'MODELSLAB_API_KEY'],
+  },
+  'lip-sync-multilingual': {
+    pipeline: 'lip-sync-multilingual',
+    stages: [
+      { stage: 1, name: 'Audio Transcription', inputType: 'audio', outputType: 'text', agent: 'stt-agent', provider: 'azure', models: ['whisper'] },
+      { stage: 2, name: 'Multi-Language Translation', inputType: 'text', outputType: 'text', agent: 'translator-agent', provider: 'deepl', models: ['deepl-pro', 'qwen-mt', 'azure-translator'] },
+      { stage: 3, name: 'Multi-Voice Synthesis', inputType: 'text', outputType: 'audio', agent: 'multi-voice-agent', provider: 'elevenlabs', models: ['elevenlabs-v2', 'azure-neural', 'cosyvoice'] },
+      { stage: 4, name: 'Lip Sync All', inputType: 'audio', outputType: 'video', agent: 'batch-lipsync-agent', provider: 'modelslab', models: ['wav2lip'] },
+    ],
+    a2aRequired: true,
+    tier: 'enterprise',
+    agents: ['stt-agent', 'translator-agent', 'multi-voice-agent', 'batch-lipsync-agent'],
+    estimatedDurationSeconds: 600,
+    customerPainPoint: 'Need content in 10+ languages with lip-sync',
+    platformSolution: 'One-click multilingual lip-sync dubbing',
+    primaryProviders: ['azure', 'deepl', 'elevenlabs', 'alibaba', 'modelslab'],
+    requiredSecrets: ['AZURE_API_KEY', 'DEEPL_API_KEY', 'ELEVENLABS_API_KEY', 'MODELSLAB_API_KEY'],
+  },
+  'vfx-composite': {
+    pipeline: 'vfx-composite',
+    stages: [
+      { stage: 1, name: 'Scene Segmentation', inputType: 'video', outputType: 'image', agent: 'segmentation-agent', provider: 'replicate', models: ['sam-2'] },
+      { stage: 2, name: 'VFX Generation', inputType: 'text', outputType: 'vfx', agent: 'vfx-generator', provider: 'modelslab', models: ['pika-effects', 'runway-gen3'] },
+      { stage: 3, name: 'Composite Render', inputType: 'vfx', outputType: 'video', agent: 'compositor', provider: 'ffmpeg', models: ['ffmpeg'] },
+    ],
+    a2aRequired: true,
+    tier: 'enterprise',
+    agents: ['segmentation-agent', 'vfx-generator', 'compositor'],
+    estimatedDurationSeconds: 240,
+    customerPainPoint: 'VFX compositing needs After Effects expertise',
+    platformSolution: 'AI-powered VFX layer compositing',
+    primaryProviders: ['replicate', 'modelslab', 'runway', 'ffmpeg'],
+    requiredSecrets: ['REPLICATE_API_KEY', 'MODELSLAB_API_KEY'],
+  },
+  'sfx-scene-audio': {
+    pipeline: 'sfx-scene-audio',
+    stages: [
+      { stage: 1, name: 'Scene Analysis', inputType: 'video', outputType: 'text', agent: 'scene-analyzer', provider: 'gemini', models: ['gemini-2.0-flash'] },
+      { stage: 2, name: 'SFX Matching', inputType: 'text', outputType: 'text', agent: 'sfx-matcher', provider: 'openai', models: ['gpt-4o'] },
+      { stage: 3, name: 'SFX Generation', inputType: 'text', outputType: 'sfx', agent: 'sfx-generator', provider: 'elevenlabs', models: ['elevenlabs-sfx'] },
+      { stage: 4, name: 'Audio Mix', inputType: 'audio', outputType: 'audio', agent: 'audio-mixer', provider: 'ffmpeg', models: ['ffmpeg'] },
+    ],
+    a2aRequired: true,
+    tier: 'pro',
+    agents: ['scene-analyzer', 'sfx-matcher', 'sfx-generator', 'audio-mixer'],
+    estimatedDurationSeconds: 120,
+    customerPainPoint: 'Finding and syncing SFX is tedious',
+    platformSolution: 'AI analyzes video and adds perfect SFX',
+    primaryProviders: ['google', 'openai', 'elevenlabs', 'ffmpeg'],
+    requiredSecrets: ['GEMINI_API_KEY', 'OPENAI_API_KEY', 'ELEVENLABS_API_KEY'],
+  },
+  'music-score-generation': {
+    pipeline: 'music-score-generation',
+    stages: [
+      { stage: 1, name: 'Scene Mood Analysis', inputType: 'video', outputType: 'text', agent: 'mood-analyzer', provider: 'gemini', models: ['gemini-2.0-flash'] },
+      { stage: 2, name: 'Music Composition', inputType: 'text', outputType: 'music', agent: 'music-composer', provider: 'elevenlabs', models: ['elevenlabs-music', 'suno'] },
+      { stage: 3, name: 'Audio Sync', inputType: 'music', outputType: 'audio', agent: 'music-sync-agent', provider: 'ffmpeg', models: ['ffmpeg'] },
+    ],
+    a2aRequired: true,
+    tier: 'pro',
+    agents: ['mood-analyzer', 'music-composer', 'music-sync-agent'],
+    estimatedDurationSeconds: 120,
+    customerPainPoint: 'Custom music for video is expensive',
+    platformSolution: 'AI composes scene-matched original music',
+    primaryProviders: ['google', 'elevenlabs', 'suno', 'ffmpeg'],
+    requiredSecrets: ['GEMINI_API_KEY', 'ELEVENLABS_API_KEY'],
+  },
+  'spatial-audio-3d': {
+    pipeline: 'spatial-audio-3d',
+    stages: [
+      { stage: 1, name: '3D Scene Mapping', inputType: '3d', outputType: 'text', agent: '3d-mapper', provider: 'three', models: ['three.js'] },
+      { stage: 2, name: 'Spatial Audio Design', inputType: 'text', outputType: 'text', agent: 'spatial-audio-designer', provider: 'openai', models: ['gpt-4o'] },
+      { stage: 3, name: 'Binaural Render', inputType: 'audio', outputType: 'audio', agent: 'binaural-agent', provider: 'resonance', models: ['resonance-audio', 'ambisonics'] },
+    ],
+    a2aRequired: true,
+    tier: 'enterprise',
+    agents: ['3d-mapper', 'spatial-audio-designer', 'binaural-agent'],
+    estimatedDurationSeconds: 180,
+    customerPainPoint: 'Spatial audio needs specialized knowledge',
+    platformSolution: 'Auto-generate 3D positioned audio for VR',
+    primaryProviders: ['three', 'openai', 'google'],
+    requiredSecrets: ['OPENAI_API_KEY'],
   },
 };
 
