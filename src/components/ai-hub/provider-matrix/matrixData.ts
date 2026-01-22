@@ -748,18 +748,33 @@ export const PROVIDER_SUMMARIES: ProviderSummary[] = [
     costTier: 'standard',
   },
   {
-    id: 'lovable',
-    name: 'Lovable Cloud',
-    website: 'https://lovable.dev',
+    id: 'supabase',
+    name: 'Supabase',
+    website: 'https://supabase.com',
     status: 'configured',
-    secretKey: 'LOVABLE_API_KEY',
-    totalFeatures: 30,
-    implementedFeatures: 28,
-    partialFeatures: 2,
+    secretKey: 'SUPABASE_URL',
+    totalFeatures: 35,
+    implementedFeatures: 30,
+    partialFeatures: 5,
     missingFeatures: 0,
     capabilities: ['PUBLISHING', 'SECURITY', 'BUSINESS'],
-    strengths: ['Native hosting', 'Edge functions', 'Auth integration', 'Supabase'],
-    weaknesses: ['Lovable-specific'],
+    strengths: ['Auth', 'Database', 'Edge Functions', 'Storage', 'Realtime'],
+    weaknesses: ['Self-managed scaling'],
+    costTier: 'standard',
+  },
+  {
+    id: 'stripe',
+    name: 'Stripe',
+    website: 'https://stripe.com',
+    status: 'configured',
+    secretKey: 'STRIPE_SECRET_KEY',
+    totalFeatures: 15,
+    implementedFeatures: 12,
+    partialFeatures: 3,
+    missingFeatures: 0,
+    capabilities: ['BUSINESS'],
+    strengths: ['Payments', 'Subscriptions', 'Invoicing', 'Billing Portal'],
+    weaknesses: ['Transaction fees'],
     costTier: 'standard',
   },
 ];
@@ -1254,17 +1269,17 @@ export const FEATURE_IMPLEMENTATION_MATRIX: Record<string, Partial<Record<Provid
   // PUBLISHING FEATURES (Full 8-Step Wizard Integration)
   web_publish: {
     openai: { status: 'configured', implementation: 'implemented', confidence: 88, notes: 'Cloud URL generation' },
-    lovable: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'Primary hosting' },
+    supabase: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'Edge function hosting' },
   },
   embed_website: {
     openai: { status: 'configured', implementation: 'implemented', confidence: 85 },
-    lovable: { status: 'configured', implementation: 'implemented', confidence: 90 },
+    supabase: { status: 'configured', implementation: 'implemented', confidence: 90 },
   },
   youtube_upload: {
     google: { status: 'needs_key', implementation: 'planned', confidence: 0, notes: 'Requires OAuth2' },
   },
   social_schedule: {
-    lovable: { status: 'configured', implementation: 'planned', confidence: 0, notes: 'Scheduling backend pending' },
+    supabase: { status: 'configured', implementation: 'planned', confidence: 0, notes: 'Scheduling backend pending' },
   },
   gdrive_integration: {
     google: { status: 'needs_key', implementation: 'partial', confidence: 65, notes: 'Drive API setup needed' },
@@ -1273,150 +1288,161 @@ export const FEATURE_IMPLEMENTATION_MATRIX: Record<string, Partial<Record<Provid
   api_access: {
     openai: { status: 'configured', implementation: 'implemented', confidence: 95 },
     gemini: { status: 'configured', implementation: 'implemented', confidence: 92 },
-    lovable: { status: 'configured', implementation: 'implemented', confidence: 98, notes: 'Edge function APIs' },
+    supabase: { status: 'configured', implementation: 'implemented', confidence: 98, notes: 'Edge function APIs' },
   },
   custom_domain: {
-    lovable: { status: 'configured', implementation: 'partial', confidence: 50, notes: 'DNS setup required' },
+    supabase: { status: 'configured', implementation: 'partial', confidence: 50, notes: 'DNS setup required' },
   },
   password_protection: {
-    lovable: { status: 'configured', implementation: 'implemented', confidence: 85, notes: 'Server-side protection' },
+    supabase: { status: 'configured', implementation: 'implemented', confidence: 85, notes: 'RLS policies' },
   },
   linkedin_post: {
     microsoft: { status: 'needs_key', implementation: 'planned', confidence: 0, notes: 'LinkedIn API credentials needed' },
   },
   vimeo_upload: {
-    lovable: { status: 'configured', implementation: 'planned', confidence: 0, notes: 'Vimeo API integration' },
+    supabase: { status: 'configured', implementation: 'planned', confidence: 0, notes: 'Vimeo API integration' },
   },
   slideshare_upload: {
-    lovable: { status: 'configured', implementation: 'not_started', confidence: 0, notes: 'SlideShare deprecated, alternatives needed' },
+    supabase: { status: 'configured', implementation: 'not_started', confidence: 0, notes: 'SlideShare deprecated, alternatives needed' },
   },
   analytics_embed: {
     google: { status: 'needs_key', implementation: 'partial', confidence: 50, notes: 'GA4 integration' },
-    lovable: { status: 'configured', implementation: 'partial', confidence: 60, notes: 'Internal analytics' },
+    supabase: { status: 'configured', implementation: 'partial', confidence: 60, notes: 'Internal analytics' },
   },
   qr_code_share: {
-    lovable: { status: 'configured', implementation: 'implemented', confidence: 90, notes: 'QR code generation library' },
+    supabase: { status: 'configured', implementation: 'implemented', confidence: 90, notes: 'QR code generation library' },
   },
   email_distribution: {
-    lovable: { status: 'configured', implementation: 'partial', confidence: 60, notes: 'Email service integration pending' },
+    supabase: { status: 'configured', implementation: 'partial', confidence: 60, notes: 'Resend/SendGrid via edge function' },
   },
   
   // NEW SOCIAL PLATFORMS
   instagram_publish: {
-    lovable: { status: 'needs_key', implementation: 'planned', confidence: 0, notes: 'Meta Business API required' },
+    supabase: { status: 'needs_key', implementation: 'planned', confidence: 0, notes: 'Meta Business API required' },
   },
   tiktok_publish: {
-    lovable: { status: 'needs_key', implementation: 'planned', confidence: 0, notes: 'TikTok for Developers API' },
+    supabase: { status: 'needs_key', implementation: 'planned', confidence: 0, notes: 'TikTok for Developers API' },
   },
   threads_publish: {
-    lovable: { status: 'needs_key', implementation: 'planned', confidence: 0, notes: 'Threads API (Meta Graph API)' },
+    supabase: { status: 'needs_key', implementation: 'planned', confidence: 0, notes: 'Threads API (Meta Graph API)' },
   },
   twitter_publish: {
-    lovable: { status: 'needs_key', implementation: 'planned', confidence: 0, notes: 'X API v2 required' },
+    supabase: { status: 'needs_key', implementation: 'planned', confidence: 0, notes: 'X API v2 required' },
   },
   facebook_publish: {
-    lovable: { status: 'needs_key', implementation: 'planned', confidence: 0, notes: 'Meta Business API' },
+    supabase: { status: 'needs_key', implementation: 'planned', confidence: 0, notes: 'Meta Business API' },
   },
   pinterest_publish: {
-    lovable: { status: 'needs_key', implementation: 'not_started', confidence: 0, notes: 'Pinterest API' },
+    supabase: { status: 'needs_key', implementation: 'not_started', confidence: 0, notes: 'Pinterest API' },
   },
   
   // SECURITY & AUTH FEATURES
   google_oauth: {
     google: { status: 'configured', implementation: 'implemented', confidence: 92, notes: 'Supabase Google OAuth configured' },
-    lovable: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'Native OAuth support' },
+    supabase: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'Native OAuth support' },
   },
   linkedin_oauth: {
     microsoft: { status: 'needs_key', implementation: 'planned', confidence: 0, notes: 'LinkedIn OAuth credentials needed' },
-    lovable: { status: 'configured', implementation: 'planned', confidence: 60, notes: 'OAuth flow available' },
+    supabase: { status: 'configured', implementation: 'planned', confidence: 60, notes: 'OAuth flow available' },
   },
   tiktok_oauth: {
-    lovable: { status: 'needs_key', implementation: 'not_started', confidence: 0, notes: 'TikTok Login Kit' },
+    supabase: { status: 'needs_key', implementation: 'not_started', confidence: 0, notes: 'TikTok Login Kit' },
   },
   instagram_oauth: {
-    lovable: { status: 'needs_key', implementation: 'planned', confidence: 0, notes: 'Instagram Basic Display API / Graph API' },
+    supabase: { status: 'needs_key', implementation: 'planned', confidence: 0, notes: 'Instagram Basic Display API / Graph API' },
   },
   twitter_oauth: {
-    lovable: { status: 'needs_key', implementation: 'not_started', confidence: 0, notes: 'X OAuth 2.0' },
+    supabase: { status: 'needs_key', implementation: 'not_started', confidence: 0, notes: 'X OAuth 2.0' },
   },
   mfa_support: {
-    lovable: { status: 'configured', implementation: 'implemented', confidence: 85, notes: 'Supabase MFA integration' },
+    supabase: { status: 'configured', implementation: 'implemented', confidence: 85, notes: 'Supabase MFA integration' },
+    azure: { status: 'configured', implementation: 'partial', confidence: 70, notes: 'Azure AD B2C MFA' },
   },
   sso_integration: {
-    lovable: { status: 'configured', implementation: 'partial', confidence: 70, notes: 'SAML/OIDC via Supabase' },
+    supabase: { status: 'configured', implementation: 'partial', confidence: 70, notes: 'SAML/OIDC via Supabase' },
+    azure: { status: 'configured', implementation: 'implemented', confidence: 90, notes: 'Azure AD SSO' },
   },
   api_key_management: {
-    lovable: { status: 'configured', implementation: 'implemented', confidence: 90, notes: 'Edge function secrets' },
+    supabase: { status: 'configured', implementation: 'implemented', confidence: 90, notes: 'Edge function secrets' },
   },
   session_management: {
-    lovable: { status: 'configured', implementation: 'implemented', confidence: 88, notes: 'Supabase session handling' },
+    supabase: { status: 'configured', implementation: 'implemented', confidence: 88, notes: 'Supabase session handling' },
   },
   audit_logging: {
-    lovable: { status: 'configured', implementation: 'partial', confidence: 65, notes: 'Basic logging via postgres_logs' },
+    supabase: { status: 'configured', implementation: 'partial', confidence: 65, notes: 'postgres_logs + custom tables' },
+    azure: { status: 'configured', implementation: 'implemented', confidence: 85, notes: 'Azure Monitor logs' },
   },
   
   // BUSINESS & COMPLIANCE FEATURES
   stripe_payments: {
-    lovable: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'Stripe connector available' },
+    stripe: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'Stripe connector available' },
+    supabase: { status: 'configured', implementation: 'implemented', confidence: 90, notes: 'Edge function integration' },
   },
   stripe_subscriptions: {
-    lovable: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'Create-checkout edge function' },
+    stripe: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'Subscription management' },
+    supabase: { status: 'configured', implementation: 'implemented', confidence: 90, notes: 'Create-checkout edge function' },
   },
   token_management: {
-    lovable: { status: 'configured', implementation: 'planned', confidence: 50, notes: 'Custom implementation needed' },
+    supabase: { status: 'configured', implementation: 'planned', confidence: 50, notes: 'Custom implementation needed' },
   },
   api_rate_limits: {
-    lovable: { status: 'configured', implementation: 'partial', confidence: 70, notes: 'Edge function rate limiting' },
+    supabase: { status: 'configured', implementation: 'partial', confidence: 70, notes: 'Edge function rate limiting' },
   },
   usage_metering: {
-    lovable: { status: 'configured', implementation: 'planned', confidence: 40, notes: 'Stripe metered billing' },
+    stripe: { status: 'configured', implementation: 'planned', confidence: 40, notes: 'Stripe metered billing' },
+    supabase: { status: 'configured', implementation: 'planned', confidence: 50, notes: 'Custom metering tables' },
   },
   billing_portal: {
-    lovable: { status: 'configured', implementation: 'implemented', confidence: 90, notes: 'Customer-portal edge function' },
+    stripe: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'Stripe Billing Portal' },
+    supabase: { status: 'configured', implementation: 'implemented', confidence: 90, notes: 'Customer-portal edge function' },
   },
   invoice_generation: {
-    lovable: { status: 'configured', implementation: 'implemented', confidence: 85, notes: 'Stripe invoice API' },
+    stripe: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'Stripe invoice API' },
   },
   hipaa_compliance: {
-    lovable: { status: 'configured', implementation: 'partial', confidence: 60, notes: 'Supabase HIPAA add-on available' },
+    supabase: { status: 'configured', implementation: 'partial', confidence: 60, notes: 'Supabase HIPAA add-on available' },
+    azure: { status: 'configured', implementation: 'implemented', confidence: 90, notes: 'Azure HIPAA BAA' },
   },
   gdpr_compliance: {
-    lovable: { status: 'configured', implementation: 'implemented', confidence: 85, notes: 'Data deletion, consent management' },
+    supabase: { status: 'configured', implementation: 'implemented', confidence: 85, notes: 'Data deletion, consent management' },
   },
   ccpa_compliance: {
-    lovable: { status: 'configured', implementation: 'partial', confidence: 75, notes: 'Opt-out mechanisms' },
+    supabase: { status: 'configured', implementation: 'partial', confidence: 75, notes: 'Opt-out mechanisms' },
   },
   terms_conditions: {
-    lovable: { status: 'configured', implementation: 'implemented', confidence: 90, notes: 'Legal page templates' },
+    supabase: { status: 'configured', implementation: 'implemented', confidence: 90, notes: 'Legal page templates' },
   },
   privacy_policy: {
-    lovable: { status: 'configured', implementation: 'implemented', confidence: 90, notes: 'Privacy page templates' },
+    supabase: { status: 'configured', implementation: 'implemented', confidence: 90, notes: 'Privacy page templates' },
   },
   ai_transparency: {
-    lovable: { status: 'configured', implementation: 'partial', confidence: 65, notes: 'AI disclosure statements' },
+    supabase: { status: 'configured', implementation: 'partial', confidence: 65, notes: 'AI disclosure statements' },
   },
   data_retention: {
-    lovable: { status: 'configured', implementation: 'partial', confidence: 60, notes: 'Supabase data lifecycle' },
+    supabase: { status: 'configured', implementation: 'partial', confidence: 60, notes: 'Supabase data lifecycle' },
+    azure: { status: 'configured', implementation: 'implemented', confidence: 85, notes: 'Azure data retention policies' },
   },
   adult_protection: {
     openai: { status: 'configured', implementation: 'implemented', confidence: 92, notes: 'Content moderation API' },
-    lovable: { status: 'configured', implementation: 'partial', confidence: 70, notes: 'Custom filters' },
+    azure: { status: 'configured', implementation: 'implemented', confidence: 88, notes: 'Azure Content Safety' },
   },
   age_verification: {
-    lovable: { status: 'configured', implementation: 'planned', confidence: 30, notes: 'Third-party integration needed' },
+    supabase: { status: 'configured', implementation: 'planned', confidence: 30, notes: 'Third-party integration needed' },
   },
   coppa_compliance: {
-    lovable: { status: 'configured', implementation: 'planned', confidence: 40, notes: 'Parental consent flow needed' },
+    supabase: { status: 'configured', implementation: 'planned', confidence: 40, notes: 'Parental consent flow needed' },
   },
   content_moderation: {
     openai: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'Moderation API' },
-    lovable: { status: 'configured', implementation: 'partial', confidence: 70, notes: 'Custom rules' },
+    azure: { status: 'configured', implementation: 'implemented', confidence: 90, notes: 'Azure Content Safety' },
   },
   baa_agreements: {
-    lovable: { status: 'configured', implementation: 'partial', confidence: 50, notes: 'Supabase BAA available' },
+    supabase: { status: 'configured', implementation: 'partial', confidence: 50, notes: 'Supabase BAA available' },
+    azure: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'Azure BAA' },
   },
   soc2_compliance: {
-    lovable: { status: 'configured', implementation: 'partial', confidence: 55, notes: 'Supabase SOC 2 Type II' },
+    supabase: { status: 'configured', implementation: 'partial', confidence: 55, notes: 'Supabase SOC 2 Type II' },
+    azure: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'Azure SOC 2 Type II' },
   },
 };
 

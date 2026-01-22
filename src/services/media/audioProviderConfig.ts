@@ -313,11 +313,11 @@ export const NLP_PROVIDERS: Record<NLPProvider, MediaProviderConfig> = {
     id: 'gemini',
     name: 'Google Gemini',
     capabilities: ['nlp'],
-    secretKey: 'LOVABLE_API_KEY',
+    secretKey: 'GEMINI_API_KEY',
     isConfigured: true,
     priority: 1,
     costPerUnit: 0.00001,
-    strengths: ['Fast', 'Via Lovable AI', 'Good reasoning'],
+    strengths: ['Fast', 'Multimodal', 'Good reasoning'],
     weaknesses: ['Less nuanced than Claude'],
   },
   claude: {

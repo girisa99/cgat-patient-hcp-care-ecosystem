@@ -47,7 +47,6 @@ export type ProviderId =
   | 'deepseek'
   | 'alibaba'
   | 'azure'
-  | 'lovable'
   // Media
   | 'modelslab'
   | 'replicate'
@@ -63,6 +62,9 @@ export type ProviderId =
   | 'deepl'
   | 'microsoft'
   | 'google'
+  // Infrastructure
+  | 'supabase'
+  | 'stripe'
   // Specialized
   | 'huggingface'
   | 'cohere';

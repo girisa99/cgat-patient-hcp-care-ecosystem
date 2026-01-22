@@ -11,7 +11,7 @@ import { corsHeaders } from '../_shared/cors.ts';
 const PROVIDER_SECRETS: Record<string, string[]> = {
   openai: ['OPENAI_API_KEY'],
   claude: ['ANTHROPIC_API_KEY', 'CLAUDE_API_KEY'],
-  gemini: ['GEMINI_API_KEY', 'GOOGLE_API_KEY', 'LOVABLE_API_KEY'],
+  gemini: ['GEMINI_API_KEY', 'GOOGLE_API_KEY'],
   deepseek: ['DEEPSEEK_API_KEY'],
   alibaba: ['ALIBABA_API_KEY'],
   azure: ['AZURE_OPENAI_KEY'],
@@ -25,8 +25,13 @@ const PROVIDER_SECRETS: Record<string, string[]> = {
   stability: ['STABILITY_API_KEY'],
   huggingface: ['HUGGING_FACE_ACCESS_TOKEN'],
   microsoft: ['MICROSOFT_TRANSLATE_API_KEY'],
-  lovable: ['LOVABLE_API_KEY'],
   cohere: ['COHERE_API_KEY'],
+  assemblyai: ['ASSEMBLYAI_API_KEY'],
+  suno: ['SUNO_API_KEY'],
+  runway: ['RUNWAY_API_KEY'],
+  supabase: ['SUPABASE_URL'],
+  stripe: ['STRIPE_SECRET_KEY'],
+};
   assemblyai: ['ASSEMBLYAI_API_KEY'],
   suno: ['SUNO_API_KEY'],
   runway: ['RUNWAY_API_KEY'],
@@ -39,7 +44,7 @@ const PROVIDER_CAPABILITIES: Record<string, string[]> = {
   gemini: ['llm', 'translation', 'ocr', 'tts', 'image_gen', 'vision', 'nlp'],
   deepseek: ['llm', 'translation', 'ocr', 'vision', 'nlp'],
   alibaba: ['llm', 'translation', 'ocr', 'tts', 'stt', 'image_gen', 'video_gen', 'vision', 'nlp'],
-  azure: ['llm', 'vision', 'image_gen'],
+  azure: ['llm', 'vision', 'image_gen', 'tts', 'stt', 'ocr'],
   azure_speech: ['tts', 'stt'],
   azure_doc_intel: ['ocr'],
   aws: ['llm', 'translation', 'ocr', 'tts', 'stt', 'image_gen', 'vision', 'nlp', 'moderation'],
@@ -50,11 +55,12 @@ const PROVIDER_CAPABILITIES: Record<string, string[]> = {
   stability: ['image_gen'],
   huggingface: ['llm', 'image_gen', 'nlp'],
   microsoft: ['translation'],
-  lovable: ['llm', 'image_gen'],
   cohere: ['llm', 'nlp'],
   assemblyai: ['stt'],
   suno: ['music_gen'],
   runway: ['video_gen'],
+  supabase: ['auth', 'database', 'storage', 'edge_functions'],
+  stripe: ['payments', 'subscriptions', 'invoicing'],
 };
 
 function checkProviderAvailable(provider: string): boolean {
