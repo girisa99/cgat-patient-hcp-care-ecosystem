@@ -151,26 +151,26 @@ const PROVIDER_RECOMMENDATIONS: Record<string, { provider: string; model: string
   'ja-en': { provider: 'alibaba', model: 'Qwen-MT', reason: 'Superior Japanese handling' },
   'ko-en': { provider: 'alibaba', model: 'Qwen-MT', reason: 'Excellent Korean accuracy' },
   
-  // Indian languages - Lovable AI (Gemini) is best
-  'hi-en': { provider: 'lovable', model: 'Gemini 3 Flash', reason: 'Best Hindi understanding' },
-  'te-en': { provider: 'lovable', model: 'Gemini 3 Flash', reason: 'Best Telugu understanding' },
-  'ta-en': { provider: 'lovable', model: 'Gemini 3 Flash', reason: 'Best Tamil understanding' },
-  'bn-en': { provider: 'lovable', model: 'Gemini 3 Flash', reason: 'Best Bengali understanding' },
-  'mr-en': { provider: 'lovable', model: 'Gemini 3 Flash', reason: 'Best Marathi understanding' },
-  'gu-en': { provider: 'lovable', model: 'Gemini 3 Flash', reason: 'Best Gujarati understanding' },
+  // Indian languages - Gemini is best
+  'hi-en': { provider: 'gemini', model: 'Gemini 3 Flash', reason: 'Best Hindi understanding' },
+  'te-en': { provider: 'gemini', model: 'Gemini 3 Flash', reason: 'Best Telugu understanding' },
+  'ta-en': { provider: 'gemini', model: 'Gemini 3 Flash', reason: 'Best Tamil understanding' },
+  'bn-en': { provider: 'gemini', model: 'Gemini 3 Flash', reason: 'Best Bengali understanding' },
+  'mr-en': { provider: 'gemini', model: 'Gemini 3 Flash', reason: 'Best Marathi understanding' },
+  'gu-en': { provider: 'gemini', model: 'Gemini 3 Flash', reason: 'Best Gujarati understanding' },
   
   // RTL languages - Google is best for Arabic
   'ar-en': { provider: 'google', model: 'Google Translate', reason: 'Best Arabic RTL handling' },
   'he-en': { provider: 'google', model: 'Google Translate', reason: 'Best Hebrew handling' },
   
-  // Southeast Asian - Microsoft or Lovable AI
-  'th-en': { provider: 'lovable', model: 'Gemini 3 Flash', reason: 'Best Thai understanding' },
-  'vi-en': { provider: 'lovable', model: 'Gemini 3 Flash', reason: 'Best Vietnamese understanding' },
+  // Southeast Asian - Gemini for complex scripts
+  'th-en': { provider: 'gemini', model: 'Gemini 3 Flash', reason: 'Best Thai understanding' },
+  'vi-en': { provider: 'gemini', model: 'Gemini 3 Flash', reason: 'Best Vietnamese understanding' },
   'id-en': { provider: 'google', model: 'Google Translate', reason: 'Good Indonesian support' },
   'ms-en': { provider: 'google', model: 'Google Translate', reason: 'Good Malay support' },
   
-  // Default - Lovable AI with Gemini
-  'default': { provider: 'lovable', model: 'Gemini 3 Flash', reason: 'Universal - fast & accurate via Lovable AI' },
+  // Default - Universal AI with Gemini
+  'default': { provider: 'gemini', model: 'Gemini 3 Flash', reason: 'Universal - fast & accurate' },
 };
 
 function getRecommendedProvider(inputLang: string, outputLang: string) {

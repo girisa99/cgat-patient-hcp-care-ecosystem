@@ -504,10 +504,10 @@ Respond with JSON:
         const imagePrompt = slideData.imagePrompt || `Professional ${contentDecision.contentType} for: ${slide.title}`;
         
         try {
-          // Use Universal AI processor with Lovable for image generation (routes to nano-banana)
+          // Use Universal AI processor with Gemini for image generation
           const { data: imageData } = await supabase.functions.invoke('ai-universal-processor', {
             body: {
-              provider: 'lovable',
+              provider: 'gemini',
               model: 'google/gemini-2.5-flash-image',
               prompt: `Create a professional ${contentDecision.contentType} image: ${imagePrompt}. Style: modern, clean, corporate. Safe for all audiences.`,
               imageGeneration: true,

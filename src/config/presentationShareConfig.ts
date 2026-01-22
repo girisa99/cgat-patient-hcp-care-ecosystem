@@ -135,7 +135,7 @@ ${statsText}
 🔗 View the interactive presentation:
 ${publicUrl}
 
-Built with @Lovable AI!
+Built with Genie Studio!
 
 ${hashtags}`;
 };

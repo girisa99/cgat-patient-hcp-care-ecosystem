@@ -53,7 +53,7 @@ A unified gateway that decouples application logic from LLM providers:
 | **OpenAI** | GPT-5, GPT-4o, GPT-4o Mini, o3, o4-mini |
 | **Anthropic** | Claude Opus 4.1, Claude Sonnet 4, Claude 3.5 Sonnet/Haiku |
 | **Google** | Gemini 2.5 Pro/Flash, Gemini 2.0 Flash, Gemini Vision |
-| **Lovable AI** | Multi-model router, image generation |
+| **Azure** | Azure OpenAI, Azure Speech, Form Recognizer, Content Safety |
 | **Healthcare** | BioMed-LLaMA, Clinical-BERT, PubMed-GPT, Medical-Imaging-Vision |
 
 ### Key Capabilities

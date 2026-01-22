@@ -127,10 +127,10 @@
  * API PATTERN
  * ============================================
  * 
- * All agents use the Lovable AI Gateway:
+ * All agents use the Universal AI Hub with multi-provider routing:
  *   - Default: google/gemini-3-flash-preview
  *   - Premium: google/gemini-2.5-pro, openai/gpt-5
- *   - Images: google/gemini-2.5-flash-image-preview
+ *   - Images: google/gemini-2.5-flash-image-preview, modelslab
  * 
  * Per-language model selection allows:
  *   - Faster models for bulk languages

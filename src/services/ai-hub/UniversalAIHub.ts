@@ -478,7 +478,7 @@ export class UniversalAIHub {
         return this.generateImageWithModelsLab(request, startTime);
       }
 
-      // For Gemini, use Lovable AI Gateway
+      // For Gemini image generation
       if (provider === 'gemini') {
         return this.generateImageWithGemini(request, startTime);
       }

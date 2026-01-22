@@ -22,8 +22,8 @@ const modules = [
 const techStack = {
   frontend: ['React 18', 'TypeScript', 'Tailwind CSS', 'Framer Motion', 'Radix UI'],
   backend: ['Supabase', 'Edge Functions', 'PostgreSQL', 'Realtime', 'n8n'],
-  ai: ['OpenAI GPT-4o', 'Claude 3.5', 'Gemini Pro', 'ElevenLabs', 'OpenAI TTS'],
-  infra: ['Lovable Cloud', 'CDN', 'Object Storage', 'WebRTC'],
+  ai: ['OpenAI GPT-4o', 'Claude 3.5', 'Gemini Pro', 'ElevenLabs', 'Azure'],
+  infra: ['Supabase', 'CDN', 'Object Storage', 'WebRTC'],
   auth: ['Supabase Auth', 'Google OAuth', 'Email/Password', 'Magic Link'],
   integrations: ['Stripe', 'Resend', 'n8n', 'Zapier', 'Google Gemini'],
 };
