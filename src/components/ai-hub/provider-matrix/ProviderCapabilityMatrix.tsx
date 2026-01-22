@@ -5,11 +5,13 @@
  * Features:
  * - Legend for status icons
  * - Dynamic height based on category selection
- * - Inline editing capability
+ * - Inline editing capability across all tabs
+ * - Multi-sheet Excel export
  */
 
 import React, { useState, useMemo } from 'react';
-import { Check, X, AlertCircle, Clock, Download, Search, Zap, Target, Plus, Save, Edit2, Info } from 'lucide-react';
+import { Check, X, AlertCircle, Clock, Download, Search, Zap, Target, Plus, Save, Edit2, Info, FileSpreadsheet } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -260,27 +262,124 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
   // Dynamic height - no scroll for single categories with few items
   const needsScroll = selectedCategory === 'all' || filteredFeatures.length > 15;
 
-  const handleExport = () => {
-    let csv = 'Feature,Category,Priority,';
-    PROVIDER_SUMMARIES.forEach(p => csv += `${p.name},`);
-    csv += '\n';
+  // Multi-sheet Excel export
+  const handleExportExcel = () => {
+    const workbook = XLSX.utils.book_new();
     
+    // Sheet 1: Feature Matrix
+    const matrixData: (string | number)[][] = [
+      ['Feature', 'Category', 'Priority', ...PROVIDER_SUMMARIES.map(p => p.name)]
+    ];
     localFeatures.forEach(f => {
-      csv += `"${f.name}",${f.category},${f.priority},`;
+      const row: (string | number)[] = [f.name, f.category, f.priority];
       PROVIDER_SUMMARIES.forEach(p => {
         const impl = localMatrix[f.id]?.[p.id as ProviderId];
-        csv += `${impl?.implementation || 'not_applicable'},`;
+        row.push(impl?.implementation || 'N/A');
       });
-      csv += '\n';
+      matrixData.push(row);
     });
+    const matrixSheet = XLSX.utils.aoa_to_sheet(matrixData);
+    XLSX.utils.book_append_sheet(workbook, matrixSheet, 'Feature Matrix');
     
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'provider_capability_matrix.csv';
-    a.click();
-    toast.success('Matrix exported!');
+    // Sheet 2: Input Features
+    const inputData: (string | number)[][] = [
+      ['Feature', 'Description', 'Scenarios', 'Providers', 'Best For', 'Limitations']
+    ];
+    localFeatures.filter(f => f.category === 'INPUT').forEach(f => {
+      const useCase = FEATURE_USE_CASES[f.id];
+      const featureImpl = localMatrix[f.id] || {};
+      const providers = Object.entries(featureImpl)
+        .filter(([_, impl]) => impl?.implementation === 'implemented')
+        .map(([id]) => PROVIDER_SUMMARIES.find(p => p.id === id)?.name || id);
+      inputData.push([
+        f.name,
+        f.description || '',
+        useCase?.scenarios?.join('; ') || '',
+        providers.join('; '),
+        useCase?.bestFor?.join('; ') || '',
+        useCase?.limitations?.join('; ') || ''
+      ]);
+    });
+    const inputSheet = XLSX.utils.aoa_to_sheet(inputData);
+    XLSX.utils.book_append_sheet(workbook, inputSheet, 'Input Features');
+    
+    // Sheet 3: Providers Summary
+    const providerData: (string | number)[][] = [
+      ['Provider', 'Status', 'Cost Tier', 'Implemented', 'Partial', 'Total', 'Coverage %', 'Capabilities', 'Strengths', 'Weaknesses']
+    ];
+    PROVIDER_SUMMARIES.forEach(p => {
+      providerData.push([
+        p.name,
+        p.status,
+        p.costTier,
+        p.implementedFeatures,
+        p.partialFeatures,
+        p.totalFeatures,
+        Math.round((p.implementedFeatures / p.totalFeatures) * 100),
+        p.capabilities.join('; '),
+        p.strengths.join('; '),
+        p.weaknesses.join('; ')
+      ]);
+    });
+    const providerSheet = XLSX.utils.aoa_to_sheet(providerData);
+    XLSX.utils.book_append_sheet(workbook, providerSheet, 'Providers');
+    
+    // Sheet 4: LLM Comparison
+    const llmData: (string | number)[][] = [
+      ['Model', 'Provider', 'Cost Tier', 'Accuracy %', 'Industries', 'Output Types', 'Input Strengths', 'Notes']
+    ];
+    LLM_COMPARISONS.forEach(llm => {
+      llmData.push([
+        llm.model,
+        llm.provider,
+        llm.costTier,
+        llm.accuracy,
+        llm.bestForIndustries.join('; '),
+        llm.bestForOutputTypes.join('; '),
+        llm.inputStrengths.join('; '),
+        llm.notes
+      ]);
+    });
+    const llmSheet = XLSX.utils.aoa_to_sheet(llmData);
+    XLSX.utils.book_append_sheet(workbook, llmSheet, 'LLM Analysis');
+    
+    // Sheet 5: Gap Analysis
+    const gapData: (string | number)[][] = [
+      ['Feature', 'Category', 'Priority', 'Partial Providers', 'Missing Providers', 'Potential Providers']
+    ];
+    localFeatures.forEach(feature => {
+      const featureImpl = localMatrix[feature.id] || {};
+      const statuses = Object.values(featureImpl).map(p => p?.implementation);
+      if (!statuses.includes('implemented') || statuses.includes('partial')) {
+        const providers = Object.entries(featureImpl);
+        const partialProviders = providers.filter(([_, p]) => p?.implementation === 'partial').map(([id]) => PROVIDER_SUMMARIES.find(pr => pr.id === id)?.name || id);
+        const missingProviders = PROVIDER_SUMMARIES.filter(p => !featureImpl[p.id as ProviderId]).map(p => p.name);
+        gapData.push([
+          feature.name,
+          feature.category,
+          feature.priority,
+          partialProviders.join('; '),
+          missingProviders.slice(0, 5).join('; '),
+          missingProviders.slice(0, 3).join('; ')
+        ]);
+      }
+    });
+    const gapSheet = XLSX.utils.aoa_to_sheet(gapData);
+    XLSX.utils.book_append_sheet(workbook, gapSheet, 'Gap Analysis');
+    
+    // Sheet 6: Critical Gaps
+    const criticalData: (string | number)[][] = [
+      ['Feature', 'Provider', 'Priority', 'Effort', 'Notes']
+    ];
+    CRITICAL_GAPS.forEach(gap => {
+      criticalData.push([gap.feature, gap.provider, gap.priority, gap.effort, gap.notes]);
+    });
+    const criticalSheet = XLSX.utils.aoa_to_sheet(criticalData);
+    XLSX.utils.book_append_sheet(workbook, criticalSheet, 'Critical Gaps');
+    
+    // Download
+    XLSX.writeFile(workbook, 'provider_capability_matrix.xlsx');
+    toast.success('Excel exported with 6 sheets!');
   };
 
   const handleAddFeature = (feature: Feature) => {
@@ -344,8 +443,8 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
               <Button variant="outline" size="sm" onClick={() => setEditMode(true)}>
                 <Edit2 className="w-4 h-4 mr-1" /> Edit
               </Button>
-              <Button variant="outline" size="sm" onClick={handleExport}>
-                <Download className="w-4 h-4 mr-1" /> Export
+              <Button variant="outline" size="sm" onClick={handleExportExcel}>
+                <FileSpreadsheet className="w-4 h-4 mr-1" /> Export Excel
               </Button>
             </>
           )}
@@ -651,26 +750,48 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
         </TabsContent>
 
         {/* Provider Summary Tab */}
-        <TabsContent value="providers" className="mt-0">
-          <div className="max-h-[600px] overflow-auto">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {PROVIDER_SUMMARIES.map(provider => (
+        <TabsContent value="providers" className="mt-0 space-y-3">
+          {/* Edit Mode Header */}
+          {editMode && (
+            <div className="flex items-center justify-between p-2 rounded-lg border bg-muted/30">
+              <span className="text-xs text-muted-foreground">
+                Edit mode active — Click on status badges or features to modify provider data
+              </span>
+              <AddFeatureDialog onAdd={handleAddFeature} existingCategories={existingCategories} />
+            </div>
+          )}
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {PROVIDER_SUMMARIES.map(provider => {
+              // Compute dynamic stats for this provider
+              const providerFeatures = localFeatures.filter(f => {
+                const impl = localMatrix[f.id]?.[provider.id as ProviderId];
+                return impl?.implementation === 'implemented' || impl?.implementation === 'partial';
+              });
+              const implementedCount = localFeatures.filter(f => 
+                localMatrix[f.id]?.[provider.id as ProviderId]?.implementation === 'implemented'
+              ).length;
+              const partialCount = localFeatures.filter(f => 
+                localMatrix[f.id]?.[provider.id as ProviderId]?.implementation === 'partial'
+              ).length;
+              
+              return (
                 <div 
                   key={provider.id} 
-                  className={`p-4 rounded-lg border-2 ${
+                  className={`p-4 rounded-lg border-2 transition-colors ${
                     provider.status === 'configured' 
-                      ? 'border-emerald-500/30 bg-emerald-500/5' 
-                      : 'border-amber-500/30 bg-amber-500/5'
-                  }`}
+                      ? 'border-primary/30 bg-primary/5' 
+                      : 'border-secondary/30 bg-secondary/5'
+                  } ${editMode ? 'hover:border-primary cursor-pointer' : ''}`}
                 >
                   <div className="flex justify-between items-start mb-3">
                     <div>
                       <h3 className="font-semibold text-foreground">{provider.name}</h3>
                       <Badge variant="outline" className={`text-[10px] mt-1 ${
-                        provider.costTier === 'budget' ? 'bg-emerald-500/10 border-emerald-500/30' :
-                        provider.costTier === 'standard' ? 'bg-blue-500/10 border-blue-500/30' :
-                        provider.costTier === 'premium' ? 'bg-purple-500/10 border-purple-500/30' :
-                        'bg-amber-500/10 border-amber-500/30'
+                        provider.costTier === 'budget' ? 'bg-primary/10 border-primary/30' :
+                        provider.costTier === 'standard' ? 'bg-secondary/30 border-secondary/50' :
+                        provider.costTier === 'premium' ? 'bg-accent/10 border-accent/30' :
+                        'bg-muted border-border'
                       }`}>
                         {provider.costTier}
                       </Badge>
@@ -680,9 +801,11 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
                     </Badge>
                   </div>
                   
-                  <Progress value={(provider.implementedFeatures / provider.totalFeatures) * 100} className="h-2 mb-2" />
+                  <Progress value={localFeatures.length > 0 ? ((implementedCount + partialCount * 0.5) / localFeatures.length) * 100 : 0} className="h-2 mb-2" />
                   <p className="text-xs text-muted-foreground mb-3">
-                    {provider.implementedFeatures}/{provider.totalFeatures} features ({Math.round((provider.implementedFeatures / provider.totalFeatures) * 100)}%)
+                    <span className="text-primary font-medium">{implementedCount}</span>
+                    {partialCount > 0 && <span className="text-secondary-foreground"> + {partialCount} partial</span>}
+                    <span> / {localFeatures.length} features</span>
                   </p>
                   
                   <div className="flex flex-wrap gap-1 mb-2">
@@ -692,14 +815,32 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
                   </div>
                   
                   <div className="text-xs space-y-1">
-                    <p className="text-emerald-600">✓ {provider.strengths.slice(0, 2).join(', ')}</p>
+                    <p className="text-primary">✓ {provider.strengths.slice(0, 2).join(', ')}</p>
                     {provider.weaknesses.length > 0 && (
                       <p className="text-muted-foreground">⚠ {provider.weaknesses[0]}</p>
                     )}
                   </div>
+                  
+                  {editMode && (
+                    <div className="mt-3 pt-2 border-t">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full text-xs h-7"
+                        onClick={() => {
+                          setSelectedCategory('all');
+                          setSearchTerm('');
+                          setView('matrix');
+                          toast.info(`Filtered to ${provider.name} features in Matrix view`);
+                        }}
+                      >
+                        <Edit2 className="w-3 h-3 mr-1" /> Edit Features
+                      </Button>
+                    </div>
+                  )}
                 </div>
-              ))}
-            </div>
+              );
+            })}
           </div>
         </TabsContent>
 
@@ -741,26 +882,9 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
                     <span className="font-medium">{inputStats.implemented}/{inputStats.total}</span>
                     <span className="text-muted-foreground">Implemented</span>
                   </div>
-                  <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => {
-                    let csv = 'Feature,Description,Scenarios,Providers,Best For,Limitations\n';
-                    localFeatures.filter(f => f.category === 'INPUT').forEach(f => {
-                      const useCase = FEATURE_USE_CASES[f.id];
-                      const featureImpl = localMatrix[f.id] || {};
-                      const providers = Object.entries(featureImpl)
-                        .filter(([_, impl]) => impl?.implementation === 'implemented')
-                        .map(([id]) => PROVIDER_SUMMARIES.find(p => p.id === id)?.name || id);
-                      csv += `"${f.name}","${f.description || ''}","${useCase?.scenarios?.join('; ') || ''}","${providers.join('; ')}","${useCase?.bestFor?.join('; ') || ''}","${useCase?.limitations?.join('; ') || ''}"\n`;
-                    });
-                    const blob = new Blob([csv], { type: 'text/csv' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'input_features_guide.csv';
-                    a.click();
-                    toast.success('Input features guide exported!');
-                  }}>
-                    <Download className="w-3 h-3 mr-1" /> Export
-                  </Button>
+                  {editMode && (
+                    <AddFeatureDialog onAdd={handleAddFeature} existingCategories={['INPUT']} />
+                  )}
                 </div>
               </div>
             );
@@ -773,7 +897,9 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
                 <TableRow>
                   <TableHead className="w-[140px] text-xs font-semibold">Feature</TableHead>
                   <TableHead className="w-[180px] text-xs font-semibold">Scenarios</TableHead>
-                  <TableHead className="w-[120px] text-xs font-semibold">Providers</TableHead>
+                  <TableHead className={`text-xs font-semibold ${editMode ? 'w-[200px]' : 'w-[120px]'}`}>
+                    Providers {editMode && <span className="text-[9px] text-muted-foreground">(click to edit)</span>}
+                  </TableHead>
                   <TableHead className="w-[140px] text-xs font-semibold">Best For</TableHead>
                   <TableHead className="text-xs font-semibold">Limitations</TableHead>
                 </TableRow>
@@ -815,19 +941,63 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
                         )}
                       </TableCell>
                       
-                      {/* Providers Column */}
+                      {/* Providers Column - with edit support */}
                       <TableCell className="py-2 align-top">
-                        {providers.length > 0 ? (
-                          <div className="flex flex-wrap gap-0.5">
-                            {providers.slice(0, 5).map(name => (
-                              <span key={name} className="text-[9px] px-1 py-0.5 rounded bg-primary/10 text-primary leading-tight">{name}</span>
-                            ))}
-                            {providers.length > 5 && (
-                              <span className="text-[9px] text-muted-foreground">+{providers.length - 5}</span>
-                            )}
+                        {editMode ? (
+                          <div className="flex flex-wrap gap-1">
+                            {PROVIDER_SUMMARIES.slice(0, 6).map(p => {
+                              const impl = featureImpl[p.id as ProviderId];
+                              const isEditing = editingCell?.featureId === feature.id && editingCell?.providerId === p.id;
+                              
+                              return isEditing ? (
+                                <Select
+                                  key={p.id}
+                                  value={impl?.implementation || 'not_applicable'}
+                                  onValueChange={(v) => handleStatusChange(feature.id, p.id, v as ImplementationStatus)}
+                                >
+                                  <SelectTrigger className="h-6 w-24 text-[9px]">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {STATUS_OPTIONS.map(opt => (
+                                      <SelectItem key={opt.value} value={opt.value}>
+                                        <span className="flex items-center gap-1 text-[9px]">
+                                          {opt.icon} {opt.label}
+                                        </span>
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              ) : (
+                                <button
+                                  key={p.id}
+                                  onClick={() => setEditingCell({ featureId: feature.id, providerId: p.id })}
+                                  className={`text-[8px] px-1.5 py-0.5 rounded border transition-colors ${
+                                    impl?.implementation === 'implemented' 
+                                      ? 'bg-primary/10 text-primary border-primary/20' 
+                                      : impl?.implementation === 'partial'
+                                      ? 'bg-secondary/50 text-secondary-foreground border-secondary/30'
+                                      : 'bg-muted/30 text-muted-foreground border-border'
+                                  }`}
+                                >
+                                  {p.name.split(' ')[0]}
+                                </button>
+                              );
+                            })}
                           </div>
                         ) : (
-                          <span className="text-[9px] text-muted-foreground">—</span>
+                          providers.length > 0 ? (
+                            <div className="flex flex-wrap gap-0.5">
+                              {providers.slice(0, 5).map(name => (
+                                <span key={name} className="text-[9px] px-1 py-0.5 rounded bg-primary/10 text-primary leading-tight">{name}</span>
+                              ))}
+                              {providers.length > 5 && (
+                                <span className="text-[9px] text-muted-foreground">+{providers.length - 5}</span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-[9px] text-muted-foreground">—</span>
+                          )
                         )}
                       </TableCell>
                       
@@ -971,17 +1141,29 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
           </div>
         </TabsContent>
 
-        {/* Gap Analysis Tab - Dynamic based on category */}
+        {/* Gap Analysis Tab - Dynamic based on category with Edit Support */}
         <TabsContent value="gaps" className="mt-0 space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <h3 className="font-semibold flex items-center gap-2">
               <Target className="w-4 h-4" />
               Gap Analysis {selectedCategory !== 'all' ? `- ${CATEGORY_LABELS[selectedCategory]}` : ''}
             </h3>
-            <span className="text-xs text-muted-foreground">
-              {selectedCategory === 'all' ? 'Showing all categories' : `Filtered by ${CATEGORY_LABELS[selectedCategory]}`}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">
+                {selectedCategory === 'all' ? 'Showing all categories' : `Filtered by ${CATEGORY_LABELS[selectedCategory]}`}
+              </span>
+              {editMode && (
+                <AddFeatureDialog onAdd={handleAddFeature} existingCategories={existingCategories} />
+              )}
+            </div>
           </div>
+          
+          {/* Edit mode indicator */}
+          {editMode && (
+            <div className="p-2 rounded-lg border bg-muted/30 text-xs text-muted-foreground">
+              Edit mode active — Click "Fix Now" to update feature status directly
+            </div>
+          )}
           
           {/* Dynamic Gap Analysis based on category selection */}
           {(() => {
@@ -999,15 +1181,17 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
               const providers = Object.entries(featureImpl);
               const partialProviders = providers.filter(([_, p]) => p?.implementation === 'partial').map(([id]) => id);
               const plannedProviders = providers.filter(([_, p]) => p?.implementation === 'planned').map(([id]) => id);
-              const availableProviders = PROVIDER_SUMMARIES.filter(p => !featureImpl[p.id as ProviderId]).map(p => p.name);
+              const missingProviders = PROVIDER_SUMMARIES.filter(p => !featureImpl[p.id as ProviderId] || featureImpl[p.id as ProviderId]?.implementation === 'not_started');
               
               return {
+                featureId: feature.id,
                 feature: feature.name,
                 category: feature.category,
                 priority: feature.priority,
                 partialProviders,
                 plannedProviders,
-                potentialProviders: availableProviders.slice(0, 3),
+                missingProviders,
+                potentialProviders: missingProviders.slice(0, 3).map(p => p.name),
                 notes: providers.find(([_, p]) => p?.notes)?.[1]?.notes || 'Integration opportunity',
               };
             });
@@ -1031,11 +1215,11 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
                       <TableHead className="text-xs w-[80px]">Priority</TableHead>
                       <TableHead className="text-xs">Partial In</TableHead>
                       <TableHead className="text-xs">Could Add</TableHead>
-                      <TableHead className="text-xs">Notes</TableHead>
+                      {editMode && <TableHead className="text-xs w-[100px]">Actions</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {gaps.slice(0, 15).map((gap, i) => (
+                    {gaps.slice(0, 20).map((gap, i) => (
                       <TableRow key={`gap-${i}`}>
                         <TableCell className="py-2">
                           <div className="font-medium text-xs">{gap.feature}</div>
@@ -1049,7 +1233,7 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
                         <TableCell className="py-2">
                           <div className="flex flex-wrap gap-0.5">
                             {gap.partialProviders.length > 0 ? gap.partialProviders.map(p => (
-                              <Badge key={p} variant="outline" className="text-[8px] bg-secondary/30">{p}</Badge>
+                              <Badge key={p} variant="outline" className="text-[8px] bg-secondary/30">{PROVIDER_SUMMARIES.find(pr => pr.id === p)?.name || p}</Badge>
                             )) : <span className="text-[9px] text-muted-foreground">—</span>}
                           </div>
                         </TableCell>
@@ -1060,9 +1244,38 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
                             ))}
                           </div>
                         </TableCell>
-                        <TableCell className="py-2">
-                          <span className="text-[9px] text-muted-foreground">{gap.notes}</span>
-                        </TableCell>
+                        {editMode && (
+                          <TableCell className="py-2">
+                            <div className="flex gap-1">
+                              {gap.partialProviders.length > 0 && (
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="h-6 text-[9px] px-2"
+                                  onClick={() => {
+                                    // Mark first partial provider as implemented
+                                    handleStatusChange(gap.featureId, gap.partialProviders[0], 'implemented');
+                                  }}
+                                >
+                                  ✓ Complete
+                                </Button>
+                              )}
+                              {gap.missingProviders.length > 0 && (
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="h-6 text-[9px] px-2"
+                                  onClick={() => {
+                                    // Mark first missing provider as implemented
+                                    handleStatusChange(gap.featureId, gap.missingProviders[0].id, 'implemented');
+                                  }}
+                                >
+                                  + Add
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        )}
                       </TableRow>
                     ))}
                   </TableBody>
