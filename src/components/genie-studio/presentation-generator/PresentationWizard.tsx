@@ -223,14 +223,16 @@ const getConfidenceColor = (score: number): string => {
   return 'text-red-500 bg-red-500/10';
 };
 
-// Wizard Steps - 6-Step standardized workflow (with Output Type)
+// Wizard Steps - 8-Step standardized workflow (with Voice & Publishing)
 const WIZARD_STEPS = [
   { id: 'input', label: 'Input', icon: Type, description: 'Add your source material and context' },
   { id: 'configure', label: 'Configure', icon: Settings2, description: 'Select industry, segment & content type' },
   { id: 'template', label: 'Template & Branding', icon: Layout, description: 'Choose templates, themes and branding' },
   { id: 'output', label: 'Output Type', icon: Layers, description: 'Choose 2D, 3D, Video or Interactive output' },
   { id: 'agents', label: 'Agents & Languages', icon: Brain, description: 'Configure AI agents and multi-language settings' },
+  { id: 'voice', label: 'Voice & Music', icon: Mic, description: 'Configure voiceover and background music' },
   { id: 'generate', label: 'Generate', icon: Wand2, description: 'Review and create your presentation' },
+  { id: 'publish', label: 'Publish', icon: Share2, description: 'Export and distribute your content' },
 ];
 
 // Helper to categorize languages for searchable dropdown
@@ -750,13 +752,17 @@ export function PresentationWizard({
   const prevStep = () => goToStep(currentStep - 1);
 
   // Check if step is complete
+  // 8-Step validation for the updated wizard
   const isStepComplete = (stepIndex: number): boolean => {
     switch (stepIndex) {
-      case 0: return inputContent.trim().length > 0;
-      case 1: return !!collateralType && !!outputFormat;
-      case 2: return !!imageSource;
-      case 3: return true; // Advanced is optional
-      case 4: return slides.length > 0;
+      case 0: return inputContent.trim().length > 0; // Input
+      case 1: return !!workflowConfig?.industryCategory; // Configure
+      case 2: return true; // Template & Branding (optional)
+      case 3: return !!outputSettings.outputType; // Output Type
+      case 4: return selectedLanguages.length > 0; // Agents & Languages
+      case 5: return true; // Voice & Music (optional)
+      case 6: return true; // Generate (always accessible if prior steps ok)
+      case 7: return true; // Publish (final step)
       default: return false;
     }
   };
@@ -1956,11 +1962,126 @@ export function PresentationWizard({
               </div>
             )}
 
-            {/* Step 5: Review & Generate */}
+            {/* Step 5: Voice & Music (NEW) */}
             {currentStep === 5 && (
               <div className="space-y-6">
                 {/* Proactive Alerts for Step 5 */}
                 <StepAlertBanner 
+                  alerts={getStepAlerts(5, {})} 
+                />
+
+                {/* Step Header - Flat design */}
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-primary/10">
+                    <Mic className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-base text-foreground">Voice & Music</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Configure voiceover narration and background music
+                    </p>
+                  </div>
+                </div>
+
+                {/* Voice Configuration */}
+                <Card className="border border-border/50">
+                  <CardContent className="p-4 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                          <Mic className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-medium">Enable Voiceover</p>
+                          <p className="text-sm text-muted-foreground">
+                            Add AI-generated narration
+                          </p>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={includeVoiceover}
+                        onCheckedChange={setIncludeVoiceover}
+                      />
+                    </div>
+
+                    {includeVoiceover && (
+                      <div className="space-y-4 pt-4 border-t">
+                        <div className="space-y-2">
+                          <Label>Voice Provider</Label>
+                          <Select value={voiceProvider} onValueChange={(v) => setVoiceProvider(v as typeof voiceProvider)}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select provider" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="elevenlabs">
+                                <div className="flex items-center gap-2">
+                                  <span>ElevenLabs</span>
+                                  <Badge variant="outline" className="text-[9px]">Premium</Badge>
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="azure">Azure Neural TTS</SelectItem>
+                              <SelectItem value="google">Google WaveNet</SelectItem>
+                              <SelectItem value="openai">OpenAI TTS</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {selectedLanguages.length > 1 && (
+                          <div className="p-3 bg-muted/50 rounded-lg">
+                            <p className="text-sm font-medium flex items-center gap-2">
+                              <Globe className="h-4 w-4" />
+                              Multi-Language Voice
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Voices will be auto-selected for each of your {selectedLanguages.length} languages
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Background Music */}
+                <Card className="border border-border/50">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-full bg-secondary/10 flex items-center justify-center">
+                          <Film className="h-5 w-5 text-secondary-foreground" />
+                        </div>
+                        <div>
+                          <p className="font-medium">Background Music</p>
+                          <p className="text-sm text-muted-foreground">
+                            Add ambient music to your presentation
+                          </p>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={outputSettings.includeMusic || false}
+                        onCheckedChange={(checked) => setOutputSettings(prev => ({
+                          ...prev,
+                          includeMusic: checked
+                        }))}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Step Feedback */}
+                <StepFeedbackPanel 
+                  stepNumber={5} 
+                  stepName="Voice & Music" 
+                  variant="compact" 
+                />
+              </div>
+            )}
+
+            {/* Step 6: Review & Generate */}
+            {currentStep === 6 && (
+              <div className="space-y-6">
+                {/* Proactive Alerts for Step 6 */}
+                <StepAlertBanner
                   alerts={getStepAlerts(5, {})} 
                 />
 
@@ -2102,9 +2223,129 @@ export function PresentationWizard({
 
                 {/* Final Step Feedback */}
                 <StepFeedbackPanel 
-                  stepNumber={5} 
+                  stepNumber={6} 
                   stepName="Review & Generate" 
                   variant="full" 
+                />
+              </div>
+            )}
+
+            {/* Step 7: Publish (NEW) */}
+            {currentStep === 7 && (
+              <div className="space-y-6">
+                {/* Step Header - Flat design */}
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-primary/10">
+                    <Share2 className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-base text-foreground">Publish & Distribute</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Export and share your content across platforms
+                    </p>
+                  </div>
+                </div>
+
+                {/* Export Options */}
+                <Card className="border border-border/50">
+                  <CardHeader className="py-3">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Download className="h-4 w-4" />
+                      Export Files
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="justify-start"
+                        onClick={() => handleDownload('pptx')}
+                        disabled={isDownloading || slides.length === 0}
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        PPTX
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="justify-start"
+                        onClick={() => handleDownload('pdf')}
+                        disabled={isDownloading || slides.length === 0}
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        PDF
+                      </Button>
+                    </div>
+                    {slides.length === 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        Generate your presentation first to enable exports
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Cloud Publishing */}
+                <Card className="border border-border/50">
+                  <CardHeader className="py-3">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Globe className="h-4 w-4" />
+                      Cloud Publishing
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium">Enable Web Hosting</p>
+                        <p className="text-xs text-muted-foreground">
+                          Get a shareable link to your presentation
+                        </p>
+                      </div>
+                      <Button
+                        variant={showPublishPanel ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setShowPublishPanel(!showPublishPanel)}
+                        disabled={slides.length === 0}
+                      >
+                        {showPublishPanel ? 'Configured' : 'Configure'}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Social Platforms */}
+                <Card className="border border-border/50">
+                  <CardHeader className="py-3">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Share2 className="h-4 w-4" />
+                      Social Platforms
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant="outline" className="cursor-pointer hover:bg-muted">
+                        <Linkedin className="h-3 w-3 mr-1 text-blue-600" />
+                        LinkedIn
+                      </Badge>
+                      <Badge variant="outline" className="cursor-pointer hover:bg-muted">
+                        <Youtube className="h-3 w-3 mr-1 text-red-500" />
+                        YouTube
+                      </Badge>
+                      <Badge variant="outline" className="cursor-pointer hover:bg-muted opacity-50">
+                        Coming Soon...
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Platform integrations require API configuration
+                    </p>
+                  </CardContent>
+                </Card>
+
+                {/* Step Feedback */}
+                <StepFeedbackPanel 
+                  stepNumber={7} 
+                  stepName="Publish" 
+                  variant="compact" 
                 />
               </div>
             )}

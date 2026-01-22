@@ -190,6 +190,45 @@ export const FEATURE_USE_CASES: Record<string, { scenarios: string[]; bestFor: s
     bestFor: ['Character variety', 'Audience matching', 'Brand testing', 'Accessibility options'],
     limitations: ['Quality varies by voice', 'Premium voices cost more']
   },
+  
+  // ============================================
+  // PUBLISHING FEATURES - Use Cases
+  // ============================================
+  web_publish: {
+    scenarios: ['Cloud hosting', 'Shareable links', 'Public presentations', 'Landing pages'],
+    bestFor: ['Quick sharing', 'No-download viewing', 'Analytics tracking', 'Mobile access'],
+    limitations: ['Bandwidth costs', 'Privacy considerations']
+  },
+  embed_website: {
+    scenarios: ['Blog embedding', 'Product pages', 'Documentation', 'Course platforms'],
+    bestFor: ['Seamless integration', 'Branded experience', 'SEO benefits', 'User engagement'],
+    limitations: ['Iframe limitations', 'Cross-origin issues']
+  },
+  youtube_upload: {
+    scenarios: ['Video distribution', 'SEO visibility', 'Monetization', 'Channel building'],
+    bestFor: ['Massive reach', 'Search visibility', 'Community building', 'Analytics'],
+    limitations: ['API quota limits', 'Content policies']
+  },
+  linkedin_post: {
+    scenarios: ['Professional sharing', 'B2B marketing', 'Thought leadership', 'Recruitment'],
+    bestFor: ['Business audience', 'Lead generation', 'Brand awareness', 'Networking'],
+    limitations: ['Character limits', 'Media restrictions']
+  },
+  social_schedule: {
+    scenarios: ['Multi-platform campaigns', 'Timed releases', 'Global audiences', 'Content calendars'],
+    bestFor: ['Consistency', 'Time zone optimization', 'Team coordination', 'Campaign management'],
+    limitations: ['Platform API changes', 'Scheduling conflicts']
+  },
+  password_protection: {
+    scenarios: ['Confidential sharing', 'Gated content', 'Premium access', 'Secure distribution'],
+    bestFor: ['Board decks', 'Financial reports', 'Pre-release content', 'NDA materials'],
+    limitations: ['Password management', 'User friction']
+  },
+  analytics_embed: {
+    scenarios: ['Viewer tracking', 'Engagement metrics', 'A/B testing', 'ROI measurement'],
+    bestFor: ['Performance optimization', 'Content strategy', 'Stakeholder reporting', 'Conversion tracking'],
+    limitations: ['Privacy compliance (GDPR)', 'Data retention limits']
+  },
 };
 
 export const ALL_FEATURES: Feature[] = [
@@ -340,7 +379,7 @@ export const ALL_FEATURES: Feature[] = [
   { id: 'watermark_free', name: 'Watermark-Free Export', category: 'EXPORT', priority: 'high' },
   { id: 'scorm_export', name: 'LMS Integration (SCORM)', category: 'EXPORT', priority: 'medium' },
   
-  // PUBLISHING FEATURES
+  // PUBLISHING FEATURES (Expanded for 8-Step Wizard)
   { id: 'web_publish', name: 'Web Publishing/Link Sharing', category: 'PUBLISHING', priority: 'high' },
   { id: 'embed_website', name: 'Embed on Website', category: 'PUBLISHING', priority: 'medium' },
   { id: 'youtube_upload', name: 'YouTube Direct Upload', category: 'PUBLISHING', priority: 'medium' },
@@ -349,6 +388,12 @@ export const ALL_FEATURES: Feature[] = [
   { id: 'api_access', name: 'API for Publishing', category: 'PUBLISHING', priority: 'high' },
   { id: 'custom_domain', name: 'Custom Domain Hosting', category: 'PUBLISHING', priority: 'medium' },
   { id: 'password_protection', name: 'Password Protection', category: 'PUBLISHING', priority: 'medium' },
+  { id: 'linkedin_post', name: 'LinkedIn Direct Post', category: 'PUBLISHING', priority: 'high' },
+  { id: 'vimeo_upload', name: 'Vimeo Direct Upload', category: 'PUBLISHING', priority: 'low' },
+  { id: 'slideshare_upload', name: 'SlideShare Upload', category: 'PUBLISHING', priority: 'low' },
+  { id: 'analytics_embed', name: 'Analytics Dashboard', category: 'PUBLISHING', priority: 'medium' },
+  { id: 'qr_code_share', name: 'QR Code Sharing', category: 'PUBLISHING', priority: 'low' },
+  { id: 'email_distribution', name: 'Email Distribution', category: 'PUBLISHING', priority: 'medium' },
 ];
 
 // ============================================
