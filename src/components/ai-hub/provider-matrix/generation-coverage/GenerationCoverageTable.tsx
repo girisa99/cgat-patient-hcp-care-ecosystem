@@ -120,16 +120,24 @@ function* generateCoverageRows(
     const hasDeps = mapping.dependsOn.length > 0 || mapping.enablesFeatures.length > 0;
     const primaryCount = mapping.usedByIndustries.filter(i => i.priority === 'primary').length;
     
-    // Complete: used by many contexts and has dependencies
-    if (totalContexts >= 5 && primaryCount >= 2 && hasDeps) return 'complete';
+    // Check for inherited data from CROSS_FUNCTIONAL_MAPPINGS
+    const hasProviders = (mapping.recommendedProviders?.length || 0) > 0;
+    const hasScenarios = (mapping.scenarios?.length || 0) > 0;
+    const hasUseCases = (mapping.useCases?.length || 0) > 0;
+    
+    // Complete: has providers + scenarios + dependencies + good context coverage
+    if (hasProviders && hasScenarios && hasDeps && (totalContexts >= 3 || primaryCount >= 2)) return 'complete';
+    // Partial: has some providers or context coverage
+    if ((hasProviders || totalContexts >= 2) && (hasScenarios || hasDeps)) return 'partial';
     // Partial: used by some contexts
     if (totalContexts >= 2 || primaryCount >= 1) return 'partial';
     // Pending: has dependencies but not used anywhere
     if (hasDeps && totalContexts === 0) return 'pending';
-    // New opportunity: used by 1 context, has potential
-    if (totalContexts === 1 && !hasDeps) return 'new-opportunity';
-    // Gap: no usage and no dependencies
-    return 'gap';
+    // New opportunity: has providers but limited context usage
+    if (hasProviders && totalContexts < 2 && !hasDeps) return 'new-opportunity';
+    // Gap: no usage and no dependencies and no providers
+    if (!hasProviders && totalContexts === 0) return 'gap';
+    return 'partial';
   };
   
   // Industry mappings
@@ -241,6 +249,7 @@ function* generateCoverageRows(
   }
   
   // Feature mappings (filtered by category if provided)
+  // NOW includes inherited data from CROSS_FUNCTIONAL_MAPPINGS
   if (contextType === 'all' || contextType === 'feature') {
     const features = categoryFilter && categoryFilter !== 'all'
       ? FEATURE_CONTEXT_MAPPINGS.filter(f => f.category === categoryFilter)
@@ -248,6 +257,13 @@ function* generateCoverageRows(
     
     for (const mapping of features) {
       const contextCount = LOOKUP_MAPS.featureToContexts.get(mapping.featureId)?.size || 0;
+      
+      // Get inherited providers from the feature mapping (comes from CROSS_FUNCTIONAL_MAPPINGS)
+      const inheritedProviders = mapping.recommendedProviders || [];
+      
+      // Get scenarios and use cases from the feature mapping (comes from FEATURE_USE_CASES)
+      const inheritedScenarios = mapping.scenarios || [];
+      const inheritedUseCases = mapping.useCases || [];
       
       yield {
         id: `feature:${mapping.featureId}`,
@@ -257,13 +273,14 @@ function* generateCoverageRows(
         criticalFeatures: mapping.usedByIndustries.filter(i => i.priority === 'primary').length,
         recommendedFeatures: mapping.usedByIndustries.filter(i => i.priority === 'secondary').length,
         optionalFeatures: 0,
-        providers: [], // Will be enriched from forward mappings
-        models: [],
-        scenarios: contextCount,
-        useCases: mapping.usedByTemplates.length,
-        constraints: 0,
+        providers: inheritedProviders as string[], // Now shows providers from CROSS_FUNCTIONAL_MAPPINGS
+        models: mapping.recommendedLLMs || [],
+        scenarios: inheritedScenarios.length || contextCount,
+        useCases: inheritedUseCases.length || mapping.usedByTemplates.length,
+        constraints: mapping.limitations?.length || 0,
         crossDeps: mapping.dependsOn.length + mapping.enablesFeatures.length,
-        gapReason: contextCount === 0 ? 'No context mappings defined' : undefined
+        gapReason: contextCount === 0 && inheritedProviders.length === 0 ? 'No context mappings or providers defined' : undefined,
+        opportunities: inheritedUseCases.slice(0, 2)
       };
     }
   }

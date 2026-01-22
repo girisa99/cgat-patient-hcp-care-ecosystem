@@ -124,6 +124,14 @@ export interface CapabilityToContextMapping {
   // Cross-dependencies
   dependsOn: { featureId: string; category: FeatureCategory }[];
   enablesFeatures: { featureId: string; category: FeatureCategory }[];
+  
+  // INHERITED from CROSS_FUNCTIONAL_MAPPINGS & FEATURE_USE_CASES (no redundancy)
+  scenarios?: string[];
+  useCases?: string[];
+  limitations?: string[];
+  recommendedProviders?: string[];
+  recommendedLLMs?: string[];
+  genieProducts?: string[];
 }
 
 // ==========================================
