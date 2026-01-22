@@ -2092,7 +2092,7 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
 
         {/* Generation Coverage Tab */}
         <TabsContent value="coverage" className="mt-0">
-          <GenerationCoverageTab />
+          <GenerationCoverageTab selectedCategory={selectedCategory} />
         </TabsContent>
       </Tabs>
     </div>
