@@ -7,6 +7,7 @@
  * 3. Flat table UI (no nested cards)
  * 4. Dynamic filtering based on category selection
  * 5. Status tracking (Complete/Partial/Pending/Gap)
+ * 6. UNIFIED METRICS - synced with parent tab and other matrix tabs
  */
 
 import React, { useMemo, useState } from 'react';
@@ -24,6 +25,7 @@ import {
   OUTPUT_CAPABILITY_MAPPINGS,
   FEATURE_CONTEXT_MAPPINGS
 } from './generationCoverageRegistry';
+import { calculateUnifiedMetrics } from './unifiedMetricsEngine';
 import type { ContextToCapabilityMapping, CapabilityToContextMapping } from './types';
 import type { FeatureCategory } from '../types';
 
@@ -330,7 +332,15 @@ export const GenerationCoverageTable: React.FC<GenerationCoverageTableProps> = (
     return allRows.filter(r => r.status === statusFilter);
   }, [contextFilter, selectedCategory, statusFilter]);
   
-  // Summary stats (computed from visible rows)
+  // USE UNIFIED METRICS - synced with parent tab
+  const unifiedMetrics = useMemo(() => {
+    const categoryFilter = (selectedCategory === 'all' || !selectedCategory) 
+      ? 'all' 
+      : selectedCategory as FeatureCategory;
+    return calculateUnifiedMetrics(categoryFilter);
+  }, [selectedCategory]);
+  
+  // Stats derived from unified metrics (for consistency with parent tab)
   const stats = useMemo(() => {
     const all = [...generateCoverageRows('all', selectedCategory)];
     return {
@@ -340,20 +350,22 @@ export const GenerationCoverageTable: React.FC<GenerationCoverageTableProps> = (
       pending: all.filter(r => r.status === 'pending').length,
       gap: all.filter(r => r.status === 'gap').length,
       opportunity: all.filter(r => r.status === 'new-opportunity').length,
-      totalScenarios: all.reduce((sum, r) => sum + r.scenarios, 0),
-      totalUseCases: all.reduce((sum, r) => sum + r.useCases, 0),
+      // USE UNIFIED METRICS for scenarios/useCases to match parent tab
+      totalScenarios: unifiedMetrics.scenarios.total,
+      totalUseCases: unifiedMetrics.useCases.total,
       totalConstraints: all.reduce((sum, r) => sum + r.constraints, 0),
-      totalCrossDeps: all.reduce((sum, r) => sum + r.crossDeps, 0)
+      totalCrossDeps: all.reduce((sum, r) => sum + r.crossDeps, 0),
+      // NEW: Show breakdown
+      newScenarios: unifiedMetrics.scenarios.fromGenerationCoverage,
+      newUseCases: unifiedMetrics.useCases.fromGenerationCoverage
     };
-  }, [selectedCategory]);
+  }, [selectedCategory, unifiedMetrics]);
   
-  const coveragePercent = stats.total > 0 
-    ? Math.round(((stats.complete + stats.partial * 0.5) / stats.total) * 100) 
-    : 0;
+  const coveragePercent = unifiedMetrics.coverage;
 
   return (
     <div className="space-y-4">
-      {/* Summary Stats Bar */}
+      {/* Summary Stats Bar - NOW SYNCED with parent */}
       <div className="flex flex-wrap items-center gap-3 p-3 rounded-lg bg-muted/30 border text-xs">
         <div className="flex items-center gap-1.5 font-medium">
           <Target className="w-3.5 h-3.5 text-primary" />
@@ -384,10 +396,12 @@ export const GenerationCoverageTable: React.FC<GenerationCoverageTableProps> = (
         
         <div className="flex items-center gap-1.5 text-muted-foreground">
           <span>{stats.totalScenarios} scenarios</span>
+          {stats.newScenarios > 0 && <Badge variant="outline" className="text-[8px] px-1 py-0 h-4 text-primary">+{stats.newScenarios}</Badge>}
           <span>•</span>
           <span>{stats.totalUseCases} use cases</span>
+          {stats.newUseCases > 0 && <Badge variant="outline" className="text-[8px] px-1 py-0 h-4 text-primary">+{stats.newUseCases}</Badge>}
           <span>•</span>
-          <span>{stats.totalCrossDeps} dependencies</span>
+          <span>{stats.totalCrossDeps} deps</span>
         </div>
         
         <div className="ml-auto">
