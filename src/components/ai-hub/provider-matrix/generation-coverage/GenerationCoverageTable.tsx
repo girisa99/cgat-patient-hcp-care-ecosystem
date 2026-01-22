@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
-import { Check, AlertCircle, Clock, X, ChevronDown, ChevronRight, Zap, Target, TrendingUp } from 'lucide-react';
+import { Check, AlertCircle, Clock, X, Zap, Target, TrendingUp } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
@@ -113,12 +113,8 @@ const contextMatchesCategory = (
   if (!categoryFilter || categoryFilter === 'all') return true;
   
   // Check if any required feature's category matches the filter
-  return mapping.requiredFeatures.some(rf => {
-    // Get the feature category from the featureId
-    // Features like 'document_upload' belong to INPUT, 'tts' to VOICE, etc.
-    const featureMapping = FEATURE_CONTEXT_MAPPINGS.find(f => f.featureId === rf.featureId);
-    return featureMapping?.category === categoryFilter;
-  });
+  // FIXED: Use rf.category directly from the mapping - it's already stored there
+  return mapping.requiredFeatures.some(rf => rf.category === categoryFilter);
 };
 
 // Analyze implementability for a mapping
