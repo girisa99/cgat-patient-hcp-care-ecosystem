@@ -46,65 +46,167 @@ export const CREDIT_MULTIPLIERS: Record<GlobalTierLevel, number> = {
   'premium': 5.0,
 };
 
+/**
+ * Complete Generation Context with ALL sub-options for A2A orchestration
+ * Includes: Content Types, Output Formats (100+ sub-options), Frameworks, Visual Features
+ */
 export interface GenerationContext {
-  // Content Context
+  // ==========================================
+  // CONTENT TYPE & COLLATERAL (Multi-select)
+  // ==========================================
   industry?: string;
   segment?: string;
+  contentCategory?: string; // 'ai-generated' | 'narrative' | 'business' | 'training' | etc.
   contentType?: string;
   collateralType?: string;
+  selectedContentTypes?: string[]; // Multi-select: ['investor-pitch', 'case-study']
   
-  // Content Types (multi-select)
-  selectedContentTypes?: string[];
-  
-  // Design Templates
+  // ==========================================
+  // DESIGN TEMPLATES & BRANDING
+  // ==========================================
   selectedTemplateId?: string;
   templateCategory?: string;
+  templateStyle?: 'pure-consulting' | 'consulting-hybrid' | 'industry-focused' | 
+                  'creative-narrative' | 'data-analytical' | 'educational' | 
+                  'investor-pitch' | 'storytelling' | 'mixed-adaptive';
   customBranding?: {
     logoUrl?: string;
     primaryColor?: string;
     secondaryColor?: string;
     fontFamily?: string;
+    accentColor?: string;
   };
   
-  // Framework & Visual Context
-  selectedFrameworks?: string[];
-  frameworkCategories?: string[];
+  // ==========================================
+  // FRAMEWORK CATEGORIES & FRAMEWORKS (Multi-select)
+  // ==========================================
+  selectedFrameworkCategories?: string[]; // ['tier1-strategy', 'healthcare', 'agile']
+  selectedFrameworks?: string[]; // ['swot', 'porter-five', 'patient-journey']
+  frameworkCategories?: string[]; // Legacy support
+  frameworkType?: 'consulting' | 'methodology' | 'industry' | 'regional';
   
-  // Visual Features with Sub-Options (multi-select support)
+  // ==========================================
+  // VISUAL FEATURES WITH SUB-OPTIONS (100+ options)
+  // ==========================================
   visualFeatures?: Array<{ 
-    featureId: string; 
-    subOptions: string[];
+    featureId: string;          // 'charts', 'infographics', '3d-objects'
+    subOptions: string[];       // ['bar-chart', 'pie-chart', 'radar-chart']
     tier?: GlobalTierLevel;
+    category?: 'data' | 'structure' | 'media' | '3d-ar' | 'interactive' | 'layout';
   }>;
   visualFeatureCount?: number;
   totalSubOptionsSelected?: number;
   
-  // Output Context (multi-select support)
-  outputTypes?: string[];
+  // ==========================================
+  // OUTPUT FORMATS WITH SUB-OPTIONS (Multi-select, Tiered)
+  // ==========================================
+  outputTypes?: string[]; // Multi-select: ['pdf-export', 'video-full']
   primaryOutputType?: string;
-  outputFormat?: 'static' | 'video' | 'interactive' | '3d';
-  resolution?: '720p' | '1080p' | '4k';
+  outputFormat?: 'static' | 'video' | 'interactive' | '3d' | 'immersive';
   
-  // Language Context
+  // Output Format Sub-Options (100+ options across tiers)
+  outputSubOptions?: Array<{
+    outputTypeId: string;       // 'video-full', '3d-animated', 'vr-experience'
+    subOptions: string[];       // Specific sub-options per output type
+    tier: 1 | 2 | 3;
+    category: 'document' | 'static' | 'animated' | 'video' | '3d' | 'interactive' | 'immersive';
+    models: {                   // Model selection per output type
+      imageModels?: string[];
+      videoModels?: string[];
+      mesh3dModels?: string[];
+      voiceModels?: string[];
+    };
+    requirements?: {
+      requiresVoice?: boolean;
+      requires3D?: boolean;
+      requiresVideo?: boolean;
+    };
+  }>;
+  
+  // Immersive Output Sub-Options (Premium Tier 3)
+  immersiveOptions?: {
+    vrEnabled?: boolean;
+    vrSubOptions?: ('360-content' | 'spatial-audio' | 'hand-tracking' | 'teleportation')[];
+    arEnabled?: boolean;
+    arSubOptions?: ('marker-ar' | 'markerless-ar' | 'face-filter' | 'product-viz' | 'ar-portal')[];
+    mixedRealityEnabled?: boolean;
+    avatarOptions?: {
+      aiAvatarEnabled?: boolean;
+      avatarType?: 'realistic' | 'stylized' | 'cartoon' | '3d-mesh';
+      lipSyncEnabled?: boolean;
+      expressionsEnabled?: boolean;
+    };
+  };
+  
+  resolution?: '720p' | '1080p' | '4k';
+  aspectRatio?: '16:9' | '4:3' | '9:16' | '1:1' | '21:9';
+  
+  // ==========================================
+  // LANGUAGE CONTEXT
+  // ==========================================
   primaryLanguage?: string;
   targetLanguages?: string[];
+  enableRTL?: boolean;
+  enableCJK?: boolean;
   
-  // Content Structure
+  // ==========================================
+  // CONTENT STRUCTURE (Multi-select)
+  // ==========================================
   slideCount?: number;
   chapterCount?: number;
-  structureMode?: 'flat' | 'chapters';
-  includeInfographics?: boolean;
-  includeJourneyMaps?: boolean;
-  includeCharts?: boolean;
-  includeTables?: boolean;
+  structureMode?: 'flat' | 'chapters' | 'scenes';
+  slidesPerChapter?: number;
   
-  // Global Tier Selection (ties to token consumption)
+  // Content Structure Sub-Options
+  contentStructure?: {
+    includeInfographics?: boolean;
+    includeJourneyMaps?: boolean;
+    includeCharts?: boolean;
+    includeTables?: boolean;
+    includeTimelines?: boolean;
+    includeDiagrams?: boolean;
+    includeQuotes?: boolean;
+    include3DElements?: boolean;
+    includeInteractiveElements?: boolean;
+    includeAnimations?: boolean;
+  };
+  
+  // ==========================================
+  // A2A & AGENTIC AI CONFIGURATION
+  // ==========================================
+  agentArchitecture?: 'single' | 'agentic' | 'a2a';
+  enableParallelExecution?: boolean;
+  maxConcurrentAgents?: number;
+  
+  // A2A-specific routing for complex outputs
+  a2aRouting?: {
+    enableCoordinator?: boolean;
+    enableEnhancer?: boolean;
+    enableQualityChecker?: boolean;
+    enableMultiModelComparison?: boolean;
+    fallbackStrategy?: 'sequential' | 'parallel' | 'best-of-n';
+  };
+  
+  // ==========================================
+  // GLOBAL TIER & TOKEN CONSUMPTION
+  // ==========================================
   globalTier?: GlobalTierLevel;
   
   // Token/Credit Estimation Context
   estimatedTokens?: number;
   estimatedCredits?: number;
   creditMultiplier?: number;
+  
+  // Model Selection Mode
+  modelSelectionMode?: 'ai-auto' | 'user-override' | 'multi-select';
+  selectedModels?: {
+    textModels?: string[];
+    imageModels?: string[];
+    videoModels?: string[];
+    voiceModels?: string[];
+    translationModels?: string[];
+    mesh3dModels?: string[];
+  };
 }
 
 export interface ProviderRecommendation {
@@ -214,18 +316,100 @@ const FRAMEWORK_PROVIDER_ROUTING: Record<string, {
 };
 
 // ============================================
-// OUTPUT FORMAT PROVIDER ROUTING
+// OUTPUT FORMAT SUB-OPTION PROVIDER ROUTING
+// Maps 100+ output sub-options to specialized models
 // ============================================
 
-const OUTPUT_FORMAT_PROVIDER_ROUTING: Record<string, {
+const OUTPUT_SUBOPTION_PROVIDER_ROUTING: Record<string, {
   primaryProvider: string;
-  enhancedProvider?: string;
+  models: string[];
+  a2aRequired: boolean;
+  tier: 1 | 2 | 3;
   reason: string;
 }> = {
-  'static': { primaryProvider: 'modelslab-flux', reason: 'High-quality static images' },
-  'video': { primaryProvider: 'modelslab-video', enhancedProvider: 'runway-gen3', reason: 'Motion graphics' },
-  'interactive': { primaryProvider: 'gemini-imagen', reason: 'Dynamic elements' },
-  '3d': { primaryProvider: 'replicate-3d', enhancedProvider: 'modelslab-3d', reason: '3D mesh generation' },
+  // Document Tier (Tier 1)
+  'pdf-export': { primaryProvider: 'jspdf', models: ['jspdf', 'pdfmake'], a2aRequired: false, tier: 1, reason: 'Static PDF generation' },
+  'pptx-export': { primaryProvider: 'pptxgenjs', models: ['pptxgenjs'], a2aRequired: false, tier: 1, reason: 'PowerPoint export' },
+  '2d-static': { primaryProvider: 'modelslab-flux', models: ['flux-pro', 'dall-e-3'], a2aRequired: false, tier: 1, reason: 'High-quality static images' },
+  'print-ready': { primaryProvider: 'modelslab-flux', models: ['flux-pro', 'midjourney-v6'], a2aRequired: false, tier: 1, reason: 'Print-optimized output' },
+  
+  // Animated Tier (Tier 2)
+  '2d-animated': { primaryProvider: 'modelslab-animatediff', models: ['animatediff-v2', 'framer-motion'], a2aRequired: true, tier: 2, reason: 'CSS/Framer animations' },
+  'video-short': { primaryProvider: 'modelslab-video', models: ['animatediff-v2', 'pika-labs'], a2aRequired: true, tier: 2, reason: '5-15s video clips' },
+  '3d-static': { primaryProvider: 'modelslab-3d', models: ['meshy-ai', 'triposr', 'shap-e'], a2aRequired: true, tier: 2, reason: 'Static 3D scenes' },
+  'web-embed': { primaryProvider: 'react', models: ['react', 'vue'], a2aRequired: false, tier: 2, reason: 'Embeddable widgets' },
+  'social-media': { primaryProvider: 'modelslab-flux', models: ['flux-pro', 'dall-e-3'], a2aRequired: true, tier: 2, reason: 'Platform-optimized formats' },
+  
+  // Video Premium (Tier 3)
+  'video-full': { primaryProvider: 'runway-gen3', models: ['openai-sora', 'runway-gen3', 'gemini-veo', 'luma-dream-machine'], a2aRequired: true, tier: 3, reason: 'Full video with narration' },
+  
+  // 3D Premium (Tier 3)
+  '3d-animated': { primaryProvider: 'modelslab-3d', models: ['rodin-gen1', 'luma-genie', 'csm-3d'], a2aRequired: true, tier: 3, reason: '3D animations with physics' },
+  
+  // Interactive (Tier 3)
+  'interactive': { primaryProvider: 'react', models: ['react', 'd3', 'three.js'], a2aRequired: true, tier: 3, reason: 'Interactive web apps' },
+  
+  // Immersive (Tier 3) - VR/AR/MR
+  'vr-experience': { primaryProvider: 'aframe', models: ['aframe', 'three.js', 'babylon.js'], a2aRequired: true, tier: 3, reason: 'VR-ready 360° content' },
+  'ar-overlay': { primaryProvider: 'modelslab-3d', models: ['meshy-ai', 'triposr', 'arcore'], a2aRequired: true, tier: 3, reason: 'AR overlay content' },
+  'mixed-reality': { primaryProvider: 'runway-gen3', models: ['openai-sora', 'rodin-gen1', 'elevenlabs-ultra'], a2aRequired: true, tier: 3, reason: 'Multi-format adaptive' },
+  
+  // AI Avatar Video (Premium Tier 3)
+  'ai-avatar-video': { primaryProvider: 'heygen', models: ['heygen', 'd-id', 'synthesia'], a2aRequired: true, tier: 3, reason: 'AI avatar generation' },
+  'avatar-lipsync': { primaryProvider: 'modelslab-video', models: ['sadtalker', 'wav2lip'], a2aRequired: true, tier: 3, reason: 'Lip-sync animation' },
+  'avatar-realistic': { primaryProvider: 'heygen', models: ['heygen-v2', 'd-id-v2'], a2aRequired: true, tier: 3, reason: 'Photorealistic avatars' },
+  'avatar-3d-mesh': { primaryProvider: 'rodin-gen1', models: ['rodin-gen1', 'luma-genie'], a2aRequired: true, tier: 3, reason: '3D avatar meshes' },
+};
+
+// ============================================
+// FRAMEWORK CATEGORY PROVIDER ROUTING
+// ============================================
+
+const FRAMEWORK_CATEGORY_ROUTING: Record<string, {
+  visualProvider: string;
+  layoutType: string;
+  a2aRecommended: boolean;
+}> = {
+  // Consulting Styles
+  'tier1-strategy': { visualProvider: 'stability-sdxl', layoutType: 'executive', a2aRecommended: true },
+  'portfolio-analysis': { visualProvider: 'modelslab-flux', layoutType: 'matrix', a2aRecommended: true },
+  'results-driven': { visualProvider: 'modelslab-flux', layoutType: 'dashboard', a2aRecommended: false },
+  'universal': { visualProvider: 'modelslab-flux', layoutType: 'flexible', a2aRecommended: false },
+  
+  // Methodology Types
+  'strategy': { visualProvider: 'stability-sdxl', layoutType: 'analytical', a2aRecommended: true },
+  'innovation': { visualProvider: 'modelslab-flux', layoutType: 'creative', a2aRecommended: true },
+  'agile': { visualProvider: 'gemini-imagen', layoutType: 'sprint', a2aRecommended: false },
+  
+  // Industry-Specific
+  'healthcare': { visualProvider: 'dall-e-3', layoutType: 'compliant', a2aRecommended: true },
+  'fintech': { visualProvider: 'stability-sdxl', layoutType: 'secure', a2aRecommended: true },
+  'saas': { visualProvider: 'modelslab-flux', layoutType: 'metric', a2aRecommended: false },
+  'retail': { visualProvider: 'modelslab-flux', layoutType: 'visual', a2aRecommended: false },
+  'manufacturing': { visualProvider: 'stability-sdxl', layoutType: 'process', a2aRecommended: true },
+  
+  // Regional
+  'apac': { visualProvider: 'alibaba-wanx', layoutType: 'cultural', a2aRecommended: true },
+  'emea': { visualProvider: 'stability-sdxl', layoutType: 'compliant', a2aRecommended: true },
+  'americas': { visualProvider: 'modelslab-flux', layoutType: 'standard', a2aRecommended: false },
+};
+
+// ============================================
+// CONTENT STRUCTURE AGENT ROUTING
+// Maps structure options to required agents
+// ============================================
+
+const CONTENT_STRUCTURE_AGENT_REQUIREMENTS: Record<string, string[]> = {
+  'includeInfographics': ['image_generator', 'enhancer'],
+  'includeJourneyMaps': ['image_generator', 'content_analyzer'],
+  'includeCharts': ['image_generator'],
+  'includeTables': ['slide_generator'],
+  'includeTimelines': ['image_generator'],
+  'includeDiagrams': ['image_generator'],
+  'includeQuotes': ['slide_generator'],
+  'include3DElements': ['image_generator', 'mesh_generator'],
+  'includeInteractiveElements': ['interactive_generator'],
+  'includeAnimations': ['video_generator', 'animation_generator'],
 };
 
 // ============================================
@@ -423,7 +607,9 @@ class FlexibleAgentConfigService {
           provider = frameworkRouting.visualProvider;
           reason = frameworkRouting.reason;
         } else {
-          const outputRouting = OUTPUT_FORMAT_PROVIDER_ROUTING[outputFormat] || OUTPUT_FORMAT_PROVIDER_ROUTING['static'];
+          // Use output sub-option routing for format-specific providers
+          const outputRouting = OUTPUT_SUBOPTION_PROVIDER_ROUTING[context.primaryOutputType || 'pdf-export'] || 
+                               OUTPUT_SUBOPTION_PROVIDER_ROUTING['pdf-export'];
           provider = outputRouting.primaryProvider;
           reason = outputRouting.reason;
         }
