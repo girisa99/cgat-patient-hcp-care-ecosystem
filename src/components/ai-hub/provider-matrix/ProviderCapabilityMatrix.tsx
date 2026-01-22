@@ -1604,27 +1604,53 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
                           )}
                         </div>
                       </TableCell>
-                      {/* Use Cases */}
+                      {/* Use Cases - Full List with Tooltip */}
                       <TableCell className="py-2">
-                        <div className="flex flex-wrap gap-0.5">
-                          {mapping.useCases?.slice(0, 2).map((uc, j) => (
-                            <span key={j} className="text-[8px] px-1 py-0.5 rounded bg-muted/50 text-foreground">{uc}</span>
-                          ))}
-                          {(mapping.useCases?.length || 0) > 2 && (
-                            <span className="text-[8px] text-muted-foreground">+{mapping.useCases!.length - 2}</span>
-                          )}
-                        </div>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex flex-wrap gap-0.5 cursor-help">
+                                {mapping.useCases?.map((uc, j) => (
+                                  <span key={j} className="text-[8px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 font-medium">{uc}</span>
+                                ))}
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-sm p-3">
+                              <p className="font-semibold text-xs mb-1.5">📋 Use Cases ({mapping.useCases?.length || 0})</p>
+                              <ul className="text-[10px] space-y-1 text-muted-foreground">
+                                {mapping.useCases?.map((uc, j) => (
+                                  <li key={j} className="flex items-center gap-1">
+                                    <span className="text-emerald-500">•</span> {uc}
+                                  </li>
+                                ))}
+                              </ul>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </TableCell>
-                      {/* Scenarios */}
+                      {/* Scenarios - Full List with Tooltip */}
                       <TableCell className="py-2">
-                        <div className="flex flex-wrap gap-0.5">
-                          {mapping.scenarios?.slice(0, 2).map((sc, j) => (
-                            <span key={j} className="text-[8px] px-1 py-0.5 rounded bg-secondary/30 text-secondary-foreground">{sc}</span>
-                          ))}
-                          {(mapping.scenarios?.length || 0) > 2 && (
-                            <span className="text-[8px] text-muted-foreground">+{mapping.scenarios!.length - 2}</span>
-                          )}
-                        </div>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex flex-wrap gap-0.5 cursor-help">
+                                {mapping.scenarios?.map((sc, j) => (
+                                  <span key={j} className="text-[8px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-500/20 font-medium">{sc}</span>
+                                ))}
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-sm p-3">
+                              <p className="font-semibold text-xs mb-1.5">🎯 Scenarios ({mapping.scenarios?.length || 0})</p>
+                              <ul className="text-[10px] space-y-1 text-muted-foreground">
+                                {mapping.scenarios?.map((sc, j) => (
+                                  <li key={j} className="flex items-center gap-1">
+                                    <span className="text-blue-500">•</span> {sc}
+                                  </li>
+                                ))}
+                              </ul>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </TableCell>
                       {/* Providers - Show actual implemented providers from matrix */}
                       <TableCell className="py-2">
