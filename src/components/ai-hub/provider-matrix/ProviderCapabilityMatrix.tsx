@@ -551,14 +551,28 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
     [localFeatures]
   );
 
+  // Get unified metrics for the selected category (used in header)
+  const unifiedMetrics = useMemo(() => {
+    return calculateUnifiedMetrics(selectedCategory, localMatrix);
+  }, [selectedCategory, localMatrix]);
+
   return (
     <div className={`${className} space-y-4`}>
-      {/* Header with Stats */}
+      {/* Header with Stats - NOW CATEGORY AWARE */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h2 className="text-xl font-bold text-foreground">Provider Capability Matrix</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            {overallStats.total} features × {PROVIDER_SUMMARIES.length} providers | {overallStats.coverage}% coverage
+            {selectedCategory === 'all' ? (
+              <>
+                {overallStats.total} features × {PROVIDER_SUMMARIES.length} providers | {overallStats.coverage}% coverage
+              </>
+            ) : (
+              <>
+                <span className="text-primary font-medium">{CATEGORY_LABELS[selectedCategory]}</span>
+                {' '}: {unifiedMetrics.features.total} features × {unifiedMetrics.providers.implemented} providers | {unifiedMetrics.coverage}% coverage
+              </>
+            )}
           </p>
         </div>
         <div className="flex gap-2">
@@ -590,7 +604,7 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
         </div>
       </div>
 
-      {/* Legend */}
+      {/* Legend - Consistent across all tabs */}
       <MatrixLegend />
 
       {/* TAB-AWARE METRICS HEADER - Shows comparison with clickable navigation */}

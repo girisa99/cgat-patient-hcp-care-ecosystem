@@ -405,29 +405,40 @@ export function getGenerationCoverageStatsForCategory(
   
   const featureIds = new Set(categoryFeatures.map(f => f.id));
   
-  // Filter context mappings by category - ONLY include contexts that require features from this category
+  // Filter context mappings by category
+  // Include mappings where:
+  // 1. Any requiredFeature's featureId matches our category's features, OR
+  // 2. Any requiredFeature's category matches our filter
   const filteredIndustries = categoryFilter === 'all' 
     ? INDUSTRY_CAPABILITY_MAPPINGS
     : INDUSTRY_CAPABILITY_MAPPINGS.filter(m =>
-        m.requiredFeatures.some(rf => featureIds.has(rf.featureId))
+        m.requiredFeatures.some(rf => 
+          featureIds.has(rf.featureId) || rf.category === categoryFilter
+        )
       );
   
   const filteredFrameworks = categoryFilter === 'all'
     ? FRAMEWORK_CAPABILITY_MAPPINGS
     : FRAMEWORK_CAPABILITY_MAPPINGS.filter(m =>
-        m.requiredFeatures.some(rf => featureIds.has(rf.featureId))
+        m.requiredFeatures.some(rf => 
+          featureIds.has(rf.featureId) || rf.category === categoryFilter
+        )
       );
   
   const filteredVisuals = categoryFilter === 'all'
     ? VISUAL_CAPABILITY_MAPPINGS
     : VISUAL_CAPABILITY_MAPPINGS.filter(m =>
-        m.requiredFeatures.some(rf => featureIds.has(rf.featureId))
+        m.requiredFeatures.some(rf => 
+          featureIds.has(rf.featureId) || rf.category === categoryFilter
+        )
       );
   
   const filteredOutputs = categoryFilter === 'all'
     ? OUTPUT_CAPABILITY_MAPPINGS
     : OUTPUT_CAPABILITY_MAPPINGS.filter(m =>
-        m.requiredFeatures.some(rf => featureIds.has(rf.featureId))
+        m.requiredFeatures.some(rf => 
+          featureIds.has(rf.featureId) || rf.category === categoryFilter
+        )
       );
   
   const filteredFeatures = categoryFilter === 'all'
