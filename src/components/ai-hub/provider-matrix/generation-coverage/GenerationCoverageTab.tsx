@@ -156,69 +156,78 @@ export const GenerationCoverageTab: React.FC<GenerationCoverageTabProps> = ({
         </div>
       )}
 
-      {/* Header Stats Grid */}
+      {/* Header Stats Grid - Compact 2-row layout */}
       <div className="flex items-center justify-between gap-4">
-        <div className="grid grid-cols-9 gap-2 flex-1">
-          {[
-            { label: 'Industries', value: stats.industries, type: 'industry' as ContextType, colorClass: 'text-primary' },
-            { label: 'Frameworks', value: stats.frameworks, type: 'framework' as ContextType, colorClass: 'text-secondary-foreground' },
-            { label: 'Visuals', value: stats.visuals, type: 'visual' as ContextType, colorClass: 'text-accent-foreground' },
-            { label: 'Outputs', value: stats.outputs, type: 'output' as ContextType, colorClass: 'text-muted-foreground' },
-            { label: 'Features', value: stats.features, type: 'feature' as ContextType, colorClass: 'text-foreground' },
-            { label: 'Scenarios', value: stats.scenarios, type: 'industry' as ContextType, colorClass: 'text-primary', newCount: stats.newScenarios },
-            { label: 'Use Cases', value: stats.useCases, type: 'industry' as ContextType, colorClass: 'text-foreground', newCount: stats.newUseCases },
-            { label: 'Gaps', value: stats.gaps, type: 'industry' as ContextType, colorClass: 'text-destructive', isAlert: true },
-            { label: 'Opps', value: stats.opportunities, type: 'industry' as ContextType, colorClass: 'text-primary', isOpportunity: true },
-          ].map((stat, idx) => {
-            const Icon = idx < 5 ? CONTEXT_ICONS[stat.type] 
-              : idx === 5 ? Target 
-              : idx === 6 ? Zap 
-              : idx === 7 ? AlertTriangle 
-              : TrendingUp;
-            const isClickable = idx < 5;
-            return (
-              <TooltipProvider key={`stat-${idx}`}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Card 
-                      className={`transition-all ${isClickable ? 'cursor-pointer' : ''} ${selectedContext === stat.type && idx < 5 ? 'ring-2 ring-primary' : 'hover:bg-muted/50'}`}
-                      onClick={() => {
-                        if (!isClickable) return;
-                        setSelectedContext(stat.type);
-                        if (stat.type === 'feature') setViewMode('backward');
-                        else setViewMode('forward');
-                      }}
-                    >
-                      <CardContent className="p-2 flex items-center gap-1.5">
-                        <Icon className={`h-3.5 w-3.5 ${stat.colorClass}`} />
-                        <div>
-                          <div className="flex items-center gap-1">
-                            <span className={`text-base font-bold ${stat.colorClass}`}>{stat.value}</span>
-                            {'newCount' in stat && stat.newCount > 0 && (
-                              <Badge variant="outline" className="text-[8px] px-1 py-0 h-4 bg-primary/10 text-primary border-primary/30">
-                                +{stat.newCount} new
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="text-[9px] text-muted-foreground">{stat.label}</div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {'newCount' in stat && stat.newCount > 0 ? (
-                      <div className="text-xs">
-                        <div>{stat.value} total {stat.label.toLowerCase()}</div>
-                        <div className="text-primary">+{stat.newCount} newly identified from Generation Coverage</div>
-                      </div>
-                    ) : (
-                      <span>{stat.value} {stat.label.toLowerCase()} for {categoryLabel}</span>
-                    )}
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            );
-          })}
+        <div className="flex flex-col gap-2 flex-1">
+          {/* Row 1: Context counts */}
+          <div className="flex items-center gap-2">
+            {[
+              { label: 'Industries', value: stats.industries, type: 'industry' as ContextType },
+              { label: 'Frameworks', value: stats.frameworks, type: 'framework' as ContextType },
+              { label: 'Visuals', value: stats.visuals, type: 'visual' as ContextType },
+              { label: 'Outputs', value: stats.outputs, type: 'output' as ContextType },
+              { label: 'Features', value: stats.features, type: 'feature' as ContextType },
+            ].map((stat, idx) => {
+              const Icon = CONTEXT_ICONS[stat.type];
+              return (
+                <Card 
+                  key={`context-${idx}`} 
+                  className={`cursor-pointer transition-all flex-1 ${selectedContext === stat.type ? 'ring-2 ring-primary' : 'hover:bg-muted/50'}`}
+                  onClick={() => {
+                    setSelectedContext(stat.type);
+                    if (stat.type === 'feature') setViewMode('backward');
+                    else setViewMode('forward');
+                  }}
+                >
+                  <CardContent className="p-2 flex items-center gap-1.5">
+                    <Icon className="h-3.5 w-3.5 text-primary" />
+                    <div>
+                      <div className="text-sm font-bold">{stat.value}</div>
+                      <div className="text-[8px] text-muted-foreground">{stat.label}</div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+          
+          {/* Row 2: Metrics with breakdown */}
+          <div className="flex items-center gap-2 text-xs">
+            <div className="flex items-center gap-1 px-2 py-1 rounded bg-muted/30">
+              <Target className="h-3 w-3 text-primary" />
+              <span className="font-bold">{stats.scenarios}</span>
+              <span className="text-muted-foreground">Scenarios</span>
+              {stats.newScenarios > 0 && (
+                <Badge variant="outline" className="text-[8px] px-1 py-0 h-4 border-primary/30 text-primary">+{stats.newScenarios}</Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-1 px-2 py-1 rounded bg-muted/30">
+              <Zap className="h-3 w-3 text-foreground" />
+              <span className="font-bold">{stats.useCases}</span>
+              <span className="text-muted-foreground">Use Cases</span>
+              {stats.newUseCases > 0 && (
+                <Badge variant="outline" className="text-[8px] px-1 py-0 h-4 border-primary/30 text-primary">+{stats.newUseCases}</Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-1 px-2 py-1 rounded bg-muted/30">
+              <span className="font-bold">{stats.providers}</span>
+              <span className="text-muted-foreground">Providers</span>
+            </div>
+            {stats.gaps > 0 && (
+              <div className="flex items-center gap-1 px-2 py-1 rounded bg-destructive/10">
+                <AlertTriangle className="h-3 w-3 text-destructive" />
+                <span className="font-bold text-destructive">{stats.gaps}</span>
+                <span className="text-muted-foreground">Gaps</span>
+              </div>
+            )}
+            {stats.opportunities > 0 && (
+              <div className="flex items-center gap-1 px-2 py-1 rounded bg-primary/10">
+                <TrendingUp className="h-3 w-3 text-primary" />
+                <span className="font-bold text-primary">{stats.opportunities}</span>
+                <span className="text-muted-foreground">Opps</span>
+              </div>
+            )}
+          </div>
         </div>
         
         {/* Display Mode Toggle */}
