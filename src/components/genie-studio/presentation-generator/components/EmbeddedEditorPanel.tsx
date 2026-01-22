@@ -38,22 +38,22 @@ interface EmbeddedEditorPanelProps {
 function slidesToElements(slides: PresentationSlide[]): UniversalElement[] {
   return slides.map((slide, index) => ({
     id: slide.id || `slide-${index}`,
-    type: 'slide',
+    type: 'slide' as const,
     position: { x: 0, y: index * 320, width: 960, height: 540 },
     content: {
-      title: slide.title,
-      subtitle: slide.subtitle,
-      bullets: slide.content?.bullets?.map(b => b.text) || [],
-      image: slide.image?.url || slide.image?.base64,
-      speakerNotes: slide.speakerNotes,
+      type: 'container' as const,
+      value: {
+        title: slide.title,
+        subtitle: slide.subtitle,
+        bullets: slide.content?.bullets?.map(b => b.text) || [],
+        image: slide.image?.url || slide.image?.base64,
+        speakerNotes: slide.speakerNotes,
+      },
     },
     style: {
+      opacity: 1,
+      zIndex: index,
       backgroundColor: '#ffffff',
-    },
-    timeline: {
-      startTime: index * 5,
-      duration: 5,
-      layer: 0,
     },
     metadata: {
       createdAt: new Date().toISOString(),
@@ -62,6 +62,8 @@ function slidesToElements(slides: PresentationSlide[]): UniversalElement[] {
       slideNumber: slide.slideNumber,
       slideType: slide.type,
     },
+    isLocked: false,
+    isVisible: true,
   }));
 }
 
@@ -203,9 +205,13 @@ function EditorContent({
                     <Badge variant="secondary">Slide {idx + 1}</Badge>
                     <Badge variant="outline">{element.type}</Badge>
                   </div>
-                  <h4 className="font-medium">{element.content?.title || 'Untitled'}</h4>
-                  {element.content?.subtitle && (
-                    <p className="text-sm text-muted-foreground mt-1">{element.content.subtitle}</p>
+                  <h4 className="font-medium">
+                    {(element.content?.value as { title?: string })?.title || 'Untitled'}
+                  </h4>
+                  {(element.content?.value as { subtitle?: string })?.subtitle && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {(element.content.value as { subtitle?: string }).subtitle}
+                    </p>
                   )}
                 </div>
               ))}
@@ -242,7 +248,7 @@ function EditorContent({
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <span>{project.elements.length} slides</span>
         <span>Mode: {project.mode}</span>
-        <span>{project.isDirty ? 'Unsaved changes' : 'Saved'}</span>
+        <span>Ready</span>
       </div>
     </div>
   );
