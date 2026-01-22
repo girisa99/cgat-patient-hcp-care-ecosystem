@@ -258,32 +258,32 @@ class FlexibleAgentConfigService {
   ): string[] {
     switch (architectureType) {
       case 'single':
-        return [AGENT_TYPES.CONTENT_GENERATOR];
+        return ['slide_generator'];
         
       case 'agentic':
-        const agenticAgents = [
-          AGENT_TYPES.CONTENT_GENERATOR,
-          AGENT_TYPES.IMAGE_GENERATOR,
+        const agenticAgents: string[] = [
+          'slide_generator',
+          'image_generator',
         ];
         
         // Add translator if multiple languages
         if (context.targetLanguages && context.targetLanguages.length > 0) {
-          agenticAgents.push(AGENT_TYPES.TRANSLATOR);
+          agenticAgents.push('translator');
         }
         
         // Add enhancer if high-quality output needed
         if (context.outputFormat === 'video' || context.industry === 'consulting') {
-          agenticAgents.push(AGENT_TYPES.ENHANCER);
+          agenticAgents.push('enhancer');
         }
         
         return agenticAgents;
         
       case 'a2a':
         // Full A2A uses all agents
-        return Object.values(AGENT_TYPES);
+        return ['coordinator', 'slide_generator', 'image_generator', 'translator', 'content_analyzer', 'enhancer', 'voiceover'];
         
       default:
-        return [AGENT_TYPES.CONTENT_GENERATOR, AGENT_TYPES.IMAGE_GENERATOR];
+        return ['slide_generator', 'image_generator'];
     }
   }
 
