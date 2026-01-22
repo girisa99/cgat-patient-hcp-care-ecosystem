@@ -24,7 +24,9 @@ export type ProductVertical =
   | 'internal_comms'     // Town halls, announcements
   | 'customer_education' // Help videos, onboarding
   | 'sales_enablement'   // Demo videos, proposals
-  | 'live_realtime';     // Live streaming, real-time
+  | 'live_realtime'      // Live streaming, real-time
+  | 'immersive_3d'       // VR/AR/3D experiences
+  | 'collaboration';     // Real-time collaboration
 
 // ============================================
 // PRICING TIERS
@@ -49,8 +51,8 @@ export interface PipelineCapabilityEntry {
   description: string;
   category: PipelineCategory;
   
-  // Product vertical support
-  verticalSupport: Record<ProductVertical, SupportLevel>;
+  // Product vertical support (Partial - not all verticals required for each pipeline)
+  verticalSupport: Partial<Record<ProductVertical, SupportLevel>>;
   
   // Provider support
   primaryProviders: ProviderId[];
