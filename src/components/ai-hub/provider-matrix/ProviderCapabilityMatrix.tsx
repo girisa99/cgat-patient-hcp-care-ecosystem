@@ -170,7 +170,7 @@ const AddFeatureDialog: React.FC<{
 export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ className }) => {
   const [selectedCategory, setSelectedCategory] = useState<FeatureCategory | 'all'>('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [view, setView] = useState<'matrix' | 'providers' | 'gaps' | 'llm' | 'input'>('matrix');
+  const [view, setView] = useState<'matrix' | 'providers' | 'gaps' | 'llm' | 'category'>('matrix');
   const [editMode, setEditMode] = useState(false);
   const [localFeatures, setLocalFeatures] = useState<Feature[]>([...ALL_FEATURES]);
   const [localMatrix, setLocalMatrix] = useState({ ...FEATURE_IMPLEMENTATION_MATRIX });
@@ -565,7 +565,9 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
         <div className="flex items-center justify-between flex-wrap gap-2">
           <TabsList className="flex-wrap h-auto">
             <TabsTrigger value="matrix">Feature Matrix</TabsTrigger>
-            <TabsTrigger value="input">📥 Input Features</TabsTrigger>
+            <TabsTrigger value="category">
+              {selectedCategory === 'all' ? '📋 Category Details' : CATEGORY_LABELS[selectedCategory]}
+            </TabsTrigger>
             <TabsTrigger value="providers">By Provider</TabsTrigger>
             <TabsTrigger value="llm">LLM Analysis</TabsTrigger>
             <TabsTrigger value="gaps">Gap Analysis</TabsTrigger>
@@ -935,20 +937,24 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
           </div>
         </TabsContent>
 
-        {/* Input Features Tab - Flat Table View with Full Details */}
-        <TabsContent value="input" className="mt-0 space-y-3">
-          {/* Summary Stats Bar */}
+        {/* Category Details Tab - Dynamic based on selection */}
+        <TabsContent value="category" className="mt-0 space-y-3">
+          {/* Dynamic Summary Stats Bar */}
           {(() => {
-            const inputFeatures = localFeatures.filter(f => f.category === 'INPUT');
-            const totalScenarios = inputFeatures.reduce((sum, f) => sum + (FEATURE_USE_CASES[f.id]?.scenarios?.length || 0), 0);
-            const totalBestFor = inputFeatures.reduce((sum, f) => sum + (FEATURE_USE_CASES[f.id]?.bestFor?.length || 0), 0);
-            const inputStats = computeCategoryStats['INPUT'] || { total: 0, implemented: 0, partial: 0 };
+            const categoryToShow = selectedCategory === 'all' ? 'INPUT' : selectedCategory;
+            const categoryFeatures = localFeatures.filter(f => f.category === categoryToShow);
+            const totalScenarios = categoryFeatures.reduce((sum, f) => sum + (FEATURE_USE_CASES[f.id]?.scenarios?.length || 0), 0);
+            const totalBestFor = categoryFeatures.reduce((sum, f) => sum + (FEATURE_USE_CASES[f.id]?.bestFor?.length || 0), 0);
+            const categoryStats = computeCategoryStats[categoryToShow] || { total: 0, implemented: 0, partial: 0, planned: 0, notStarted: 0 };
             
             return (
               <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-lg border bg-muted/20">
                 <div className="flex items-center gap-4 text-xs">
                   <div className="flex items-center gap-1.5">
-                    <span className="font-bold text-lg text-primary">{inputStats.total}</span>
+                    <span className="font-medium text-muted-foreground">{CATEGORY_LABELS[categoryToShow]}:</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-lg text-primary">{categoryStats.total}</span>
                     <span className="text-muted-foreground">Features</span>
                   </div>
                   <div className="h-4 w-px bg-border" />
@@ -970,18 +976,29 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-1 text-xs">
                     <div className="w-2 h-2 rounded-full bg-primary" />
-                    <span className="font-medium">{inputStats.implemented}/{inputStats.total}</span>
+                    <span className="font-medium">{categoryStats.implemented}/{categoryStats.total}</span>
                     <span className="text-muted-foreground">Implemented</span>
                   </div>
                   {editMode && (
-                    <AddFeatureDialog onAdd={handleAddFeature} existingCategories={['INPUT']} />
+                    <AddFeatureDialog onAdd={handleAddFeature} existingCategories={[categoryToShow]} />
                   )}
                 </div>
               </div>
             );
           })()}
 
-          {/* Flat Table - No Scrolling, Fit to Page */}
+          {/* Category prompt when 'all' is selected */}
+          {selectedCategory === 'all' && (
+            <div className="p-3 rounded-lg border bg-muted/30 text-center">
+              <p className="text-sm text-muted-foreground">
+                Select a specific category from the dropdown above to see detailed feature information.
+                <br />
+                <span className="text-xs">Showing INPUT category as default. Use category filter to switch.</span>
+              </p>
+            </div>
+          )}
+
+          {/* Dynamic Category Table */}
           <div className="border rounded-lg overflow-hidden">
             <Table>
               <TableHeader className="bg-muted/30">
@@ -996,126 +1013,141 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {localFeatures.filter(f => f.category === 'INPUT').map(feature => {
-                  const useCase = FEATURE_USE_CASES[feature.id];
-                  const featureImpl = localMatrix[feature.id] || {};
-                  const stats = computeFeatureStats(feature.id);
-                  const providers = Object.entries(featureImpl)
-                    .filter(([_, impl]) => impl?.implementation === 'implemented')
-                    .map(([id]) => PROVIDER_SUMMARIES.find(p => p.id === id)?.name || id);
+                {(() => {
+                  const categoryToShow = selectedCategory === 'all' ? 'INPUT' : selectedCategory;
+                  const categoryFeatures = localFeatures.filter(f => f.category === categoryToShow);
                   
-                  return (
-                    <TableRow key={feature.id} className="hover:bg-muted/30">
-                      {/* Feature Column */}
-                      <TableCell className="py-2 align-top">
-                        <div className="font-medium text-xs text-foreground">{feature.name}</div>
-                        {feature.description && (
-                          <p className="text-[9px] text-muted-foreground mt-0.5 leading-tight">{feature.description}</p>
-                        )}
-                        <div className="flex items-center gap-1 mt-1">
-                          <span className="text-[9px] font-medium text-primary">{stats.implemented}✓</span>
-                          {stats.partial > 0 && <span className="text-[9px] text-amber-600">{stats.partial}⚠</span>}
-                          <span className="text-[9px] text-muted-foreground">/{stats.total}</span>
-                        </div>
-                      </TableCell>
-                      
-                      {/* Scenarios Column */}
-                      <TableCell className="py-2 align-top">
-                        {useCase?.scenarios ? (
-                          <div className="flex flex-wrap gap-0.5">
-                            {useCase.scenarios.map((s, i) => (
-                              <span key={i} className="text-[9px] px-1 py-0.5 rounded bg-muted/50 text-foreground leading-tight">{s}</span>
-                            ))}
+                  if (categoryFeatures.length === 0) {
+                    return (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                          No features found in {CATEGORY_LABELS[categoryToShow]}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  }
+                  
+                  return categoryFeatures.map(feature => {
+                    const useCase = FEATURE_USE_CASES[feature.id];
+                    const featureImpl = localMatrix[feature.id] || {};
+                    const stats = computeFeatureStats(feature.id);
+                    const providers = Object.entries(featureImpl)
+                      .filter(([_, impl]) => impl?.implementation === 'implemented')
+                      .map(([id]) => PROVIDER_SUMMARIES.find(p => p.id === id)?.name || id);
+                    
+                    return (
+                      <TableRow key={feature.id} className="hover:bg-muted/30">
+                        {/* Feature Column */}
+                        <TableCell className="py-2 align-top">
+                          <div className="font-medium text-xs text-foreground">{feature.name}</div>
+                          {feature.description && (
+                            <p className="text-[9px] text-muted-foreground mt-0.5 leading-tight">{feature.description}</p>
+                          )}
+                          <div className="flex items-center gap-1 mt-1">
+                            <span className="text-[9px] font-medium text-primary">{stats.implemented}✓</span>
+                            {stats.partial > 0 && <span className="text-[9px] text-amber-600">{stats.partial}⚠</span>}
+                            <span className="text-[9px] text-muted-foreground">/{stats.total}</span>
                           </div>
-                        ) : (
-                          <span className="text-[9px] text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-                      
-                      {/* Providers Column - with edit support */}
-                      <TableCell className="py-2 align-top">
-                        {editMode ? (
-                          <div className="flex flex-wrap gap-1">
-                            {PROVIDER_SUMMARIES.slice(0, 6).map(p => {
-                              const impl = featureImpl[p.id as ProviderId];
-                              const isEditing = editingCell?.featureId === feature.id && editingCell?.providerId === p.id;
-                              
-                              return isEditing ? (
-                                <Select
-                                  key={p.id}
-                                  value={impl?.implementation || 'not_applicable'}
-                                  onValueChange={(v) => handleStatusChange(feature.id, p.id, v as ImplementationStatus)}
-                                >
-                                  <SelectTrigger className="h-6 w-24 text-[9px]">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {STATUS_OPTIONS.map(opt => (
-                                      <SelectItem key={opt.value} value={opt.value}>
-                                        <span className="flex items-center gap-1 text-[9px]">
-                                          {opt.icon} {opt.label}
-                                        </span>
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              ) : (
-                                <button
-                                  key={p.id}
-                                  onClick={() => setEditingCell({ featureId: feature.id, providerId: p.id })}
-                                  className={`text-[8px] px-1.5 py-0.5 rounded border transition-colors ${
-                                    impl?.implementation === 'implemented' 
-                                      ? 'bg-primary/10 text-primary border-primary/20' 
-                                      : impl?.implementation === 'partial'
-                                      ? 'bg-secondary/50 text-secondary-foreground border-secondary/30'
-                                      : 'bg-muted/30 text-muted-foreground border-border'
-                                  }`}
-                                >
-                                  {p.name.split(' ')[0]}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        ) : (
-                          providers.length > 0 ? (
+                        </TableCell>
+                        
+                        {/* Scenarios Column */}
+                        <TableCell className="py-2 align-top">
+                          {useCase?.scenarios && useCase.scenarios.length > 0 ? (
                             <div className="flex flex-wrap gap-0.5">
-                              {providers.slice(0, 5).map(name => (
-                                <span key={name} className="text-[9px] px-1 py-0.5 rounded bg-primary/10 text-primary leading-tight">{name}</span>
+                              {useCase.scenarios.map((s, i) => (
+                                <span key={i} className="text-[9px] px-1 py-0.5 rounded bg-muted/50 text-foreground leading-tight">{s}</span>
                               ))}
-                              {providers.length > 5 && (
-                                <span className="text-[9px] text-muted-foreground">+{providers.length - 5}</span>
-                              )}
                             </div>
                           ) : (
                             <span className="text-[9px] text-muted-foreground">—</span>
-                          )
-                        )}
-                      </TableCell>
-                      
-                      {/* Best For Column */}
-                      <TableCell className="py-2 align-top">
-                        {useCase?.bestFor ? (
-                          <div className="flex flex-wrap gap-0.5">
-                            {useCase.bestFor.map((b, i) => (
-                              <span key={i} className="text-[9px] px-1 py-0.5 rounded bg-secondary/50 text-foreground leading-tight">{b}</span>
-                            ))}
-                          </div>
-                        ) : (
-                          <span className="text-[9px] text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-                      
-                      {/* Limitations Column */}
-                      <TableCell className="py-2 align-top">
-                        {useCase?.limitations && useCase.limitations.length > 0 ? (
-                          <span className="text-[9px] text-muted-foreground leading-tight">{useCase.limitations.join(' • ')}</span>
-                        ) : (
-                          <span className="text-[9px] text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
+                          )}
+                        </TableCell>
+                        
+                        {/* Providers Column - with edit support */}
+                        <TableCell className="py-2 align-top">
+                          {editMode ? (
+                            <div className="flex flex-wrap gap-1">
+                              {PROVIDER_SUMMARIES.slice(0, 6).map(p => {
+                                const impl = featureImpl[p.id as ProviderId];
+                                const isEditing = editingCell?.featureId === feature.id && editingCell?.providerId === p.id;
+                                
+                                return isEditing ? (
+                                  <Select
+                                    key={p.id}
+                                    value={impl?.implementation || 'not_applicable'}
+                                    onValueChange={(v) => handleStatusChange(feature.id, p.id, v as ImplementationStatus)}
+                                  >
+                                    <SelectTrigger className="h-6 w-24 text-[9px]">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {STATUS_OPTIONS.map(opt => (
+                                        <SelectItem key={opt.value} value={opt.value}>
+                                          <span className="flex items-center gap-1 text-[9px]">
+                                            {opt.icon} {opt.label}
+                                          </span>
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                ) : (
+                                  <button
+                                    key={p.id}
+                                    onClick={() => setEditingCell({ featureId: feature.id, providerId: p.id })}
+                                    className={`text-[8px] px-1.5 py-0.5 rounded border transition-colors ${
+                                      impl?.implementation === 'implemented' 
+                                        ? 'bg-primary/10 text-primary border-primary/20' 
+                                        : impl?.implementation === 'partial'
+                                        ? 'bg-secondary/50 text-secondary-foreground border-secondary/30'
+                                        : 'bg-muted/30 text-muted-foreground border-border'
+                                    }`}
+                                  >
+                                    {p.name.split(' ')[0]}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            providers.length > 0 ? (
+                              <div className="flex flex-wrap gap-0.5">
+                                {providers.slice(0, 5).map(name => (
+                                  <span key={name} className="text-[9px] px-1 py-0.5 rounded bg-primary/10 text-primary leading-tight">{name}</span>
+                                ))}
+                                {providers.length > 5 && (
+                                  <span className="text-[9px] text-muted-foreground">+{providers.length - 5}</span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-[9px] text-muted-foreground">—</span>
+                            )
+                          )}
+                        </TableCell>
+                        
+                        {/* Best For Column */}
+                        <TableCell className="py-2 align-top">
+                          {useCase?.bestFor && useCase.bestFor.length > 0 ? (
+                            <div className="flex flex-wrap gap-0.5">
+                              {useCase.bestFor.map((b, i) => (
+                                <span key={i} className="text-[9px] px-1 py-0.5 rounded bg-secondary/50 text-foreground leading-tight">{b}</span>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-[9px] text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        
+                        {/* Limitations Column */}
+                        <TableCell className="py-2 align-top">
+                          {useCase?.limitations && useCase.limitations.length > 0 ? (
+                            <span className="text-[9px] text-muted-foreground leading-tight">{useCase.limitations.join(' • ')}</span>
+                          ) : (
+                            <span className="text-[9px] text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  });
+                })()}
               </TableBody>
             </Table>
           </div>
