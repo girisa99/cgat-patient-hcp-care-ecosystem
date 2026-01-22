@@ -90,14 +90,25 @@ function* generateCoverageRows(
   
   const getMappingStatus = (mapping: ContextToCapabilityMapping): CoverageStatus => {
     const criticalCount = mapping.requiredFeatures.filter(f => f.priority === 'critical').length;
+    const recommendedCount = mapping.requiredFeatures.filter(f => f.priority === 'recommended').length;
     const hasWarnings = mapping.constraints.some(c => c.severity === 'warning' || c.severity === 'incompatible');
-    const hasProviders = Object.values(mapping.recommendedProviders).some(p => p && p.length > 0);
+    const providerEntries = Object.values(mapping.recommendedProviders).filter(Boolean);
+    const hasProviders = providerEntries.some(p => p && p.length > 0);
+    const providerCount = providerEntries.reduce((sum, p) => sum + (p?.reduce((s, x) => s + x.providers.length, 0) || 0), 0);
+    const hasModels = mapping.recommendedModels.length > 0;
+    const modelCount = mapping.recommendedModels.reduce((sum, m) => sum + m.modelIds.length, 0);
     
-    if (criticalCount > 0 && hasProviders && !hasWarnings) return 'complete';
-    if (criticalCount > 0 && hasProviders && hasWarnings) return 'partial';
-    if (criticalCount > 0 && !hasProviders) return 'pending';
-    if (!hasProviders) return 'gap';
-    return 'new-opportunity';
+    // Full coverage: critical features, multiple providers, multiple models, no warnings
+    if (criticalCount >= 2 && providerCount >= 3 && modelCount >= 2 && !hasWarnings) return 'complete';
+    // Partial: has critical features and some providers, but may have warnings or limited coverage
+    if (criticalCount >= 1 && hasProviders && hasModels) return hasWarnings ? 'partial' : 'complete';
+    // Pending: defined but missing providers/models
+    if (criticalCount > 0 && (!hasProviders || !hasModels)) return 'pending';
+    // Gap: no critical features or no providers at all
+    if (!hasProviders && !hasModels) return 'gap';
+    // New opportunity: has providers but no critical requirements defined
+    if (hasProviders && criticalCount === 0 && recommendedCount === 0) return 'new-opportunity';
+    return 'partial';
   };
   
   const getFeatureStatus = (mapping: CapabilityToContextMapping): CoverageStatus => {
@@ -107,10 +118,17 @@ function* generateCoverageRows(
                           mapping.usedByVisuals.length + 
                           mapping.usedByOutputs.length;
     const hasDeps = mapping.dependsOn.length > 0 || mapping.enablesFeatures.length > 0;
+    const primaryCount = mapping.usedByIndustries.filter(i => i.priority === 'primary').length;
     
-    if (totalContexts >= 3 && hasDeps) return 'complete';
-    if (totalContexts >= 1) return 'partial';
-    if (hasDeps) return 'pending';
+    // Complete: used by many contexts and has dependencies
+    if (totalContexts >= 5 && primaryCount >= 2 && hasDeps) return 'complete';
+    // Partial: used by some contexts
+    if (totalContexts >= 2 || primaryCount >= 1) return 'partial';
+    // Pending: has dependencies but not used anywhere
+    if (hasDeps && totalContexts === 0) return 'pending';
+    // New opportunity: used by 1 context, has potential
+    if (totalContexts === 1 && !hasDeps) return 'new-opportunity';
+    // Gap: no usage and no dependencies
     return 'gap';
   };
   
