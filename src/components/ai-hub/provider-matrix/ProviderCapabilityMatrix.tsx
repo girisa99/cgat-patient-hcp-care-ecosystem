@@ -66,6 +66,7 @@ const CATEGORY_LABELS: Record<FeatureCategory, string> = {
   EXPORT: '📤 Export',
   PUBLISHING: '🚀 Publishing',
   SECURITY: '🔐 Security',
+  BUSINESS: '💰 Business',
   USE_CASE: '💼 Use Case',
 };
 

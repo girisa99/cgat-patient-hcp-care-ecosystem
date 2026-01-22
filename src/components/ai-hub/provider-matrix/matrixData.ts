@@ -313,6 +313,78 @@ export const FEATURE_USE_CASES: Record<string, { scenarios: string[]; bestFor: s
     bestFor: ['Regulatory compliance', 'Security monitoring', 'Troubleshooting', 'Accountability'],
     limitations: ['Storage costs', 'Performance impact', 'Retention policies']
   },
+  
+  // BUSINESS & COMPLIANCE USE CASES
+  stripe_payments: {
+    scenarios: ['One-time purchases', 'Credit packs', 'Pay-per-use', 'Digital products'],
+    bestFor: ['E-commerce', 'SaaS', 'API credits', 'Token purchases'],
+    limitations: ['Transaction fees', 'Regional availability']
+  },
+  stripe_subscriptions: {
+    scenarios: ['Monthly plans', 'Annual subscriptions', 'Tiered pricing', 'Usage-based billing'],
+    bestFor: ['SaaS products', 'Content platforms', 'API access tiers', 'Premium features'],
+    limitations: ['Churn management', 'Proration complexity']
+  },
+  token_management: {
+    scenarios: ['AI credit allocation', 'Usage tracking', 'Balance management', 'Prepaid credits'],
+    bestFor: ['AI platforms', 'API services', 'Metered services', 'Freemium models'],
+    limitations: ['Token valuation', 'Expiry management']
+  },
+  api_rate_limits: {
+    scenarios: ['Throttling', 'Quota management', 'Fair usage', 'Burst control'],
+    bestFor: ['API protection', 'Cost control', 'DDoS prevention', 'SLA enforcement'],
+    limitations: ['User experience', 'Complex tier logic']
+  },
+  hipaa_compliance: {
+    scenarios: ['Healthcare data', 'PHI handling', 'Medical records', 'Patient portals'],
+    bestFor: ['Healthcare SaaS', 'Telehealth', 'Medical AI', 'Health records'],
+    limitations: ['BAA requirements', 'Audit burden', 'Infrastructure costs']
+  },
+  gdpr_compliance: {
+    scenarios: ['EU users', 'Data subject rights', 'Consent management', 'Data portability'],
+    bestFor: ['Global platforms', 'EU market', 'Privacy-first', 'B2C products'],
+    limitations: ['Consent complexity', 'Right to deletion']
+  },
+  ccpa_compliance: {
+    scenarios: ['California users', 'Opt-out rights', 'Data sales disclosure', 'Privacy notices'],
+    bestFor: ['US market', 'Consumer products', 'Data monetization', 'E-commerce'],
+    limitations: ['State-specific', 'Opt-out management']
+  },
+  terms_conditions: {
+    scenarios: ['User agreements', 'Service terms', 'Liability limits', 'Usage policies'],
+    bestFor: ['Legal protection', 'User clarity', 'Dispute prevention', 'Service boundaries'],
+    limitations: ['Legal review required', 'Jurisdiction complexity']
+  },
+  privacy_policy: {
+    scenarios: ['Data collection', 'Cookie usage', 'Third-party sharing', 'User rights'],
+    bestFor: ['Legal compliance', 'Transparency', 'Trust building', 'App store requirements'],
+    limitations: ['Frequent updates', 'Multi-jurisdiction']
+  },
+  ai_transparency: {
+    scenarios: ['AI disclosure', 'Model attribution', 'Bias warnings', 'Limitation statements'],
+    bestFor: ['AI products', 'Content generation', 'Automated decisions', 'Trust building'],
+    limitations: ['Evolving regulations', 'Technical complexity']
+  },
+  adult_protection: {
+    scenarios: ['Age-gated content', 'NSFW filtering', 'Content moderation', 'Safe search'],
+    bestFor: ['Content platforms', 'AI generators', 'User safety', 'Brand protection'],
+    limitations: ['False positives', 'Regional laws']
+  },
+  coppa_compliance: {
+    scenarios: ['Children under 13', 'Parental consent', 'Data minimization', 'Age verification'],
+    bestFor: ['Educational apps', 'Family products', 'Games', 'Social platforms'],
+    limitations: ['Age verification difficulty', 'Consent flow UX']
+  },
+  content_moderation: {
+    scenarios: ['User-generated content', 'AI output filtering', 'Harmful content detection', 'Policy enforcement'],
+    bestFor: ['Social platforms', 'AI generators', 'Community safety', 'Brand reputation'],
+    limitations: ['Context understanding', 'Bias in models']
+  },
+  baa_agreements: {
+    scenarios: ['Healthcare vendors', 'HIPAA partnerships', 'PHI sharing', 'Compliance chain'],
+    bestFor: ['Healthcare B2B', 'Medical SaaS', 'Health data processing', 'Telehealth'],
+    limitations: ['Legal negotiation', 'Liability allocation']
+  },
 };
 
 export const ALL_FEATURES: Feature[] = [
@@ -496,6 +568,28 @@ export const ALL_FEATURES: Feature[] = [
   { id: 'api_key_management', name: 'API Key Management', category: 'SECURITY', priority: 'high' },
   { id: 'session_management', name: 'Session Management', category: 'SECURITY', priority: 'high' },
   { id: 'audit_logging', name: 'Audit Logging', category: 'SECURITY', priority: 'medium' },
+  
+  // BUSINESS & COMPLIANCE FEATURES
+  { id: 'stripe_payments', name: 'Stripe Payment Gateway', category: 'BUSINESS', priority: 'critical' },
+  { id: 'stripe_subscriptions', name: 'Stripe Subscriptions', category: 'BUSINESS', priority: 'critical' },
+  { id: 'token_management', name: 'Token/Credit Management', category: 'BUSINESS', priority: 'high' },
+  { id: 'api_rate_limits', name: 'API Rate Limiting', category: 'BUSINESS', priority: 'high' },
+  { id: 'usage_metering', name: 'Usage Metering', category: 'BUSINESS', priority: 'high' },
+  { id: 'billing_portal', name: 'Customer Billing Portal', category: 'BUSINESS', priority: 'medium' },
+  { id: 'invoice_generation', name: 'Invoice Generation', category: 'BUSINESS', priority: 'medium' },
+  { id: 'hipaa_compliance', name: 'HIPAA Compliance', category: 'BUSINESS', priority: 'critical' },
+  { id: 'gdpr_compliance', name: 'GDPR Compliance', category: 'BUSINESS', priority: 'critical' },
+  { id: 'ccpa_compliance', name: 'CCPA Compliance', category: 'BUSINESS', priority: 'high' },
+  { id: 'terms_conditions', name: 'Terms & Conditions', category: 'BUSINESS', priority: 'critical' },
+  { id: 'privacy_policy', name: 'Privacy Policy', category: 'BUSINESS', priority: 'critical' },
+  { id: 'ai_transparency', name: 'AI Transparency Statement', category: 'BUSINESS', priority: 'high' },
+  { id: 'data_retention', name: 'Data Retention Policy', category: 'BUSINESS', priority: 'high' },
+  { id: 'adult_protection', name: 'Adult Content Protection', category: 'BUSINESS', priority: 'critical' },
+  { id: 'age_verification', name: 'Age Verification', category: 'BUSINESS', priority: 'high' },
+  { id: 'coppa_compliance', name: 'COPPA Compliance', category: 'BUSINESS', priority: 'high' },
+  { id: 'content_moderation', name: 'AI Content Moderation', category: 'BUSINESS', priority: 'high' },
+  { id: 'baa_agreements', name: 'BAA Agreements', category: 'BUSINESS', priority: 'critical' },
+  { id: 'soc2_compliance', name: 'SOC 2 Compliance', category: 'BUSINESS', priority: 'high' },
 ];
 
 // ============================================
@@ -636,6 +730,36 @@ export const PROVIDER_SUMMARIES: ProviderSummary[] = [
     capabilities: ['IMAGE', 'VIDEO', 'AUDIO'],
     strengths: ['Many models', 'SDXL', 'Video models', 'Pay-per-use'],
     weaknesses: ['Cold starts', 'Variable quality'],
+    costTier: 'standard',
+  },
+  {
+    id: 'google',
+    name: 'Google Cloud',
+    website: 'https://cloud.google.com',
+    status: 'configured',
+    secretKey: 'GOOGLE_CLIENT_ID',
+    totalFeatures: 25,
+    implementedFeatures: 15,
+    partialFeatures: 8,
+    missingFeatures: 2,
+    capabilities: ['PUBLISHING', 'SECURITY', 'TRANSLATION'],
+    strengths: ['OAuth', 'YouTube API', 'Drive API', 'Analytics'],
+    weaknesses: ['Complex setup', 'OAuth refresh'],
+    costTier: 'standard',
+  },
+  {
+    id: 'lovable',
+    name: 'Lovable Cloud',
+    website: 'https://lovable.dev',
+    status: 'configured',
+    secretKey: 'LOVABLE_API_KEY',
+    totalFeatures: 30,
+    implementedFeatures: 28,
+    partialFeatures: 2,
+    missingFeatures: 0,
+    capabilities: ['PUBLISHING', 'SECURITY', 'BUSINESS'],
+    strengths: ['Native hosting', 'Edge functions', 'Auth integration', 'Supabase'],
+    weaknesses: ['Lovable-specific'],
     costTier: 'standard',
   },
 ];
@@ -1230,6 +1354,70 @@ export const FEATURE_IMPLEMENTATION_MATRIX: Record<string, Partial<Record<Provid
   audit_logging: {
     lovable: { status: 'configured', implementation: 'partial', confidence: 65, notes: 'Basic logging via postgres_logs' },
   },
+  
+  // BUSINESS & COMPLIANCE FEATURES
+  stripe_payments: {
+    lovable: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'Stripe connector available' },
+  },
+  stripe_subscriptions: {
+    lovable: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'Create-checkout edge function' },
+  },
+  token_management: {
+    lovable: { status: 'configured', implementation: 'planned', confidence: 50, notes: 'Custom implementation needed' },
+  },
+  api_rate_limits: {
+    lovable: { status: 'configured', implementation: 'partial', confidence: 70, notes: 'Edge function rate limiting' },
+  },
+  usage_metering: {
+    lovable: { status: 'configured', implementation: 'planned', confidence: 40, notes: 'Stripe metered billing' },
+  },
+  billing_portal: {
+    lovable: { status: 'configured', implementation: 'implemented', confidence: 90, notes: 'Customer-portal edge function' },
+  },
+  invoice_generation: {
+    lovable: { status: 'configured', implementation: 'implemented', confidence: 85, notes: 'Stripe invoice API' },
+  },
+  hipaa_compliance: {
+    lovable: { status: 'configured', implementation: 'partial', confidence: 60, notes: 'Supabase HIPAA add-on available' },
+  },
+  gdpr_compliance: {
+    lovable: { status: 'configured', implementation: 'implemented', confidence: 85, notes: 'Data deletion, consent management' },
+  },
+  ccpa_compliance: {
+    lovable: { status: 'configured', implementation: 'partial', confidence: 75, notes: 'Opt-out mechanisms' },
+  },
+  terms_conditions: {
+    lovable: { status: 'configured', implementation: 'implemented', confidence: 90, notes: 'Legal page templates' },
+  },
+  privacy_policy: {
+    lovable: { status: 'configured', implementation: 'implemented', confidence: 90, notes: 'Privacy page templates' },
+  },
+  ai_transparency: {
+    lovable: { status: 'configured', implementation: 'partial', confidence: 65, notes: 'AI disclosure statements' },
+  },
+  data_retention: {
+    lovable: { status: 'configured', implementation: 'partial', confidence: 60, notes: 'Supabase data lifecycle' },
+  },
+  adult_protection: {
+    openai: { status: 'configured', implementation: 'implemented', confidence: 92, notes: 'Content moderation API' },
+    lovable: { status: 'configured', implementation: 'partial', confidence: 70, notes: 'Custom filters' },
+  },
+  age_verification: {
+    lovable: { status: 'configured', implementation: 'planned', confidence: 30, notes: 'Third-party integration needed' },
+  },
+  coppa_compliance: {
+    lovable: { status: 'configured', implementation: 'planned', confidence: 40, notes: 'Parental consent flow needed' },
+  },
+  content_moderation: {
+    openai: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'Moderation API' },
+    lovable: { status: 'configured', implementation: 'partial', confidence: 70, notes: 'Custom rules' },
+  },
+  baa_agreements: {
+    lovable: { status: 'configured', implementation: 'partial', confidence: 50, notes: 'Supabase BAA available' },
+  },
+  soc2_compliance: {
+    lovable: { status: 'configured', implementation: 'partial', confidence: 55, notes: 'Supabase SOC 2 Type II' },
+  },
 };
 
 // ============================================
@@ -1288,6 +1476,7 @@ export const CATEGORY_IMPLEMENTATION_SUMMARY: Record<FeatureCategory, {
   EXPORT: computeCategorySummary('EXPORT'),
   PUBLISHING: computeCategorySummary('PUBLISHING'),
   SECURITY: computeCategorySummary('SECURITY'),
+  BUSINESS: computeCategorySummary('BUSINESS'),
   USE_CASE: { total: 0, implemented: 0, partial: 0, planned: 0, notStarted: 0 },
 };
 

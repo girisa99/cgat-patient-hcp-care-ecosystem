@@ -21,6 +21,7 @@ export type FeatureCategory =
   | 'EXPORT'
   | 'PUBLISHING'
   | 'SECURITY'
+  | 'BUSINESS'
   | 'USE_CASE';
 
 // Implementation status
