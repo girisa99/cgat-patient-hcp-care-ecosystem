@@ -518,6 +518,21 @@ const ALL_FEATURE_IDS = [
   { id: 'pptx_export', name: 'PPTX Export', category: 'EXPORT' as FeatureCategory },
   { id: 'video_export', name: 'Video Export', category: 'EXPORT' as FeatureCategory },
   { id: 'web_embed', name: 'Web Embed', category: 'EXPORT' as FeatureCategory },
+  
+  // PUBLISHING (8-Step Wizard Integration)
+  { id: 'web_publish', name: 'Web Publishing', category: 'PUBLISHING' as FeatureCategory },
+  { id: 'embed_website', name: 'Embed on Website', category: 'PUBLISHING' as FeatureCategory },
+  { id: 'youtube_upload', name: 'YouTube Upload', category: 'PUBLISHING' as FeatureCategory },
+  { id: 'linkedin_post', name: 'LinkedIn Post', category: 'PUBLISHING' as FeatureCategory },
+  { id: 'vimeo_upload', name: 'Vimeo Upload', category: 'PUBLISHING' as FeatureCategory },
+  { id: 'social_schedule', name: 'Social Scheduling', category: 'PUBLISHING' as FeatureCategory },
+  { id: 'gdrive_integration', name: 'Google Drive Integration', category: 'PUBLISHING' as FeatureCategory },
+  { id: 'api_access', name: 'API Access', category: 'PUBLISHING' as FeatureCategory },
+  { id: 'custom_domain', name: 'Custom Domain', category: 'PUBLISHING' as FeatureCategory },
+  { id: 'password_protection', name: 'Password Protection', category: 'PUBLISHING' as FeatureCategory },
+  { id: 'analytics_embed', name: 'Analytics Dashboard', category: 'PUBLISHING' as FeatureCategory },
+  { id: 'qr_code_share', name: 'QR Code Sharing', category: 'PUBLISHING' as FeatureCategory },
+  { id: 'email_distribution', name: 'Email Distribution', category: 'PUBLISHING' as FeatureCategory },
 ];
 
 function generateFeatureContextMapping(featureDef: { id: string; name: string; category: FeatureCategory }): CapabilityToContextMapping {
