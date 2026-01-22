@@ -32,10 +32,6 @@ const PROVIDER_SECRETS: Record<string, string[]> = {
   supabase: ['SUPABASE_URL'],
   stripe: ['STRIPE_SECRET_KEY'],
 };
-  assemblyai: ['ASSEMBLYAI_API_KEY'],
-  suno: ['SUNO_API_KEY'],
-  runway: ['RUNWAY_API_KEY'],
-};
 
 // Provider capabilities mapping
 const PROVIDER_CAPABILITIES: Record<string, string[]> = {
