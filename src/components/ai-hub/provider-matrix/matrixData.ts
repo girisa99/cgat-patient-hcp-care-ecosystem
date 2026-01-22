@@ -1091,6 +1091,22 @@ export const CRITICAL_GAPS: CriticalGap[] = [
 ];
 
 // ============================================
+// GENIE SUITE PRODUCTS
+// ============================================
+
+export type GenieProduct = 'deck' | 'vibe' | 'spark' | 'mind' | 'arc' | 'hub' | 'ask_genie';
+
+export const GENIE_PRODUCT_LABELS: Record<GenieProduct, { name: string; emoji: string; description: string }> = {
+  deck: { name: 'Deck', emoji: '📊', description: 'Presentation & slides generation' },
+  vibe: { name: 'Vibe', emoji: '🎬', description: 'Video production & editing' },
+  spark: { name: 'Spark', emoji: '✨', description: 'Creative content & ideation' },
+  mind: { name: 'Mind', emoji: '🧠', description: 'Knowledge & document analysis' },
+  arc: { name: 'Arc', emoji: '🎯', description: 'Production hub & workflow' },
+  hub: { name: 'Hub', emoji: '🔗', description: 'AI model & provider management' },
+  ask_genie: { name: 'Ask Genie', emoji: '💬', description: 'Conversational AI assistant' },
+};
+
+// ============================================
 // CROSS-FUNCTIONAL FEATURE MAPPING
 // ============================================
 
@@ -1099,37 +1115,130 @@ export interface CrossFunctionalMapping {
   primaryCategory: FeatureCategory;
   relatedFeatures: { featureId: string; category: FeatureCategory; relationship: 'requires' | 'enhances' | 'enables' | 'alternative' }[];
   useCases: string[];
+  scenarios: string[];
   recommendedProviders: ProviderId[];
   recommendedLLMs: string[];
+  genieProducts: GenieProduct[];
 }
 
 export const CROSS_FUNCTIONAL_MAPPINGS: CrossFunctionalMapping[] = [
+  // INPUT CATEGORY
   {
-    primaryFeatureId: 'script_to_video',
-    primaryCategory: 'VIDEO',
+    primaryFeatureId: 'text_prompt',
+    primaryCategory: 'INPUT',
+    relatedFeatures: [
+      { featureId: 'ai_script_gen', category: 'SCRIPT', relationship: 'enables' },
+      { featureId: 'ai_image_gen', category: 'IMAGE', relationship: 'enables' },
+      { featureId: 'tts', category: 'VOICE', relationship: 'enables' },
+    ],
+    useCases: ['Content creation', 'Script writing', 'Image generation'],
+    scenarios: ['Quick ideation', 'Multi-turn dialogue', 'Creative writing'],
+    recommendedProviders: ['openai', 'gemini', 'claude', 'deepseek'],
+    recommendedLLMs: ['GPT-4o', 'Gemini 2.5 Pro', 'Claude 3.5'],
+    genieProducts: ['deck', 'vibe', 'spark', 'mind', 'arc', 'hub', 'ask_genie'],
+  },
+  {
+    primaryFeatureId: 'document_upload',
+    primaryCategory: 'INPUT',
+    relatedFeatures: [
+      { featureId: 'content_summary', category: 'SCRIPT', relationship: 'enables' },
+      { featureId: 'script_from_url', category: 'SCRIPT', relationship: 'alternative' },
+      { featureId: 'pptx_import', category: 'INPUT', relationship: 'alternative' },
+    ],
+    useCases: ['Document analysis', 'Contract review', 'Research summarization'],
+    scenarios: ['PDF analysis', 'DOCX editing', 'Report generation'],
+    recommendedProviders: ['openai', 'gemini', 'deepl'],
+    recommendedLLMs: ['GPT-4o', 'Gemini 2.5 Pro'],
+    genieProducts: ['deck', 'mind', 'arc', 'ask_genie'],
+  },
+  {
+    primaryFeatureId: 'image_upload',
+    primaryCategory: 'INPUT',
+    relatedFeatures: [
+      { featureId: 'image_to_image', category: 'IMAGE', relationship: 'enables' },
+      { featureId: 'controlnet', category: 'IMAGE', relationship: 'enables' },
+      { featureId: 'style_transfer', category: 'IMAGE', relationship: 'enables' },
+    ],
+    useCases: ['Vision analysis', 'Image editing', 'Style transfer'],
+    scenarios: ['Product photography', 'Medical imaging', 'Design iteration'],
+    recommendedProviders: ['openai', 'gemini', 'modelslab', 'replicate'],
+    recommendedLLMs: ['GPT-4o', 'Gemini 2.5 Pro'],
+    genieProducts: ['deck', 'vibe', 'spark', 'arc'],
+  },
+  {
+    primaryFeatureId: 'audio_upload',
+    primaryCategory: 'INPUT',
+    relatedFeatures: [
+      { featureId: 'stt', category: 'AUDIO', relationship: 'enables' },
+      { featureId: 'auto_subtitles', category: 'VIDEO', relationship: 'enables' },
+    ],
+    useCases: ['Transcription', 'Voice analysis', 'Meeting notes'],
+    scenarios: ['Podcast transcription', 'Interview capture', 'Voiceover QC'],
+    recommendedProviders: ['openai', 'elevenlabs', 'alibaba'],
+    recommendedLLMs: ['GPT-4o'],
+    genieProducts: ['vibe', 'mind', 'arc', 'ask_genie'],
+  },
+  // SCRIPT CATEGORY
+  {
+    primaryFeatureId: 'ai_script_gen',
+    primaryCategory: 'SCRIPT',
+    relatedFeatures: [
+      { featureId: 'text_prompt', category: 'INPUT', relationship: 'requires' },
+      { featureId: 'script_to_slides', category: 'SCRIPT', relationship: 'enables' },
+      { featureId: 'script_to_video_auto', category: 'SCRIPT', relationship: 'enables' },
+      { featureId: 'tts', category: 'VOICE', relationship: 'enables' },
+    ],
+    useCases: ['Presentation scripts', 'Video narration', 'Training content'],
+    scenarios: ['Quick ideation', 'Multi-scene generation', 'Brand voice'],
+    recommendedProviders: ['openai', 'claude', 'gemini', 'deepseek'],
+    recommendedLLMs: ['GPT-4o', 'Claude 3.5 Sonnet'],
+    genieProducts: ['deck', 'vibe', 'spark', 'arc'],
+  },
+  {
+    primaryFeatureId: 'script_to_slides',
+    primaryCategory: 'SCRIPT',
     relatedFeatures: [
       { featureId: 'ai_script_gen', category: 'SCRIPT', relationship: 'requires' },
-      { featureId: 'tts', category: 'VOICE', relationship: 'enhances' },
-      { featureId: 'ai_image_gen', category: 'IMAGE', relationship: 'enables' },
-      { featureId: 'auto_subtitles', category: 'VIDEO', relationship: 'enhances' },
+      { featureId: 'ai_image_gen', category: 'IMAGE', relationship: 'enhances' },
+      { featureId: 'speaker_notes', category: 'SCRIPT', relationship: 'enhances' },
     ],
-    useCases: ['Training videos', 'Marketing content', 'Educational material'],
-    recommendedProviders: ['gemini', 'openai', 'modelslab', 'elevenlabs'],
+    useCases: ['Auto-presentation', 'Training decks', 'Sales materials'],
+    scenarios: ['Pitch decks', 'Educational slides', 'Corporate training'],
+    recommendedProviders: ['openai', 'gemini'],
     recommendedLLMs: ['GPT-4o', 'Gemini 2.5 Pro'],
+    genieProducts: ['deck', 'arc'],
+  },
+  // VOICE CATEGORY
+  {
+    primaryFeatureId: 'tts',
+    primaryCategory: 'VOICE',
+    relatedFeatures: [
+      { featureId: 'voice_cloning', category: 'VOICE', relationship: 'enhances' },
+      { featureId: 'voice_emotion', category: 'VOICE', relationship: 'enhances' },
+      { featureId: 'lip_sync', category: 'VIDEO', relationship: 'enables' },
+      { featureId: 'auto_subtitles', category: 'VIDEO', relationship: 'enables' },
+    ],
+    useCases: ['Narration', 'Accessibility', 'Voiceovers'],
+    scenarios: ['Video narration', 'Podcast intro', 'E-learning modules'],
+    recommendedProviders: ['elevenlabs', 'openai', 'alibaba'],
+    recommendedLLMs: ['GPT-4o'],
+    genieProducts: ['deck', 'vibe', 'arc', 'ask_genie'],
   },
   {
-    primaryFeatureId: 'one_click_translate',
-    primaryCategory: 'TRANSLATION',
+    primaryFeatureId: 'voice_cloning',
+    primaryCategory: 'VOICE',
     relatedFeatures: [
-      { featureId: 'auto_subtitles_translate', category: 'TRANSLATION', relationship: 'enhances' },
-      { featureId: 'voice_dubbing', category: 'TRANSLATION', relationship: 'enables' },
-      { featureId: 'lip_sync_translate', category: 'TRANSLATION', relationship: 'enables' },
       { featureId: 'tts', category: 'VOICE', relationship: 'requires' },
+      { featureId: 'voice_dubbing', category: 'TRANSLATION', relationship: 'enables' },
+      { featureId: 'multilingual_avatars', category: 'TRANSLATION', relationship: 'enables' },
     ],
-    useCases: ['Global content', 'Localization', 'Multi-market distribution'],
-    recommendedProviders: ['deepl', 'alibaba', 'elevenlabs'],
-    recommendedLLMs: ['Qwen 2.5', 'Claude 3.5 Sonnet'],
+    useCases: ['Brand voice', 'Personalized content', 'Localization'],
+    scenarios: ['CEO message localization', 'Training personalization', 'Podcast'],
+    recommendedProviders: ['elevenlabs'],
+    recommendedLLMs: ['GPT-4o'],
+    genieProducts: ['vibe', 'arc'],
   },
+  // IMAGE CATEGORY
   {
     primaryFeatureId: 'ai_image_gen',
     primaryCategory: 'IMAGE',
@@ -1141,8 +1250,40 @@ export const CROSS_FUNCTIONAL_MAPPINGS: CrossFunctionalMapping[] = [
       { featureId: 'text_to_video', category: 'VIDEO', relationship: 'enables' },
     ],
     useCases: ['Visual content', 'Marketing assets', 'Product mockups'],
+    scenarios: ['Hero images', 'Social media', 'Slide visuals'],
     recommendedProviders: ['modelslab', 'openai', 'replicate'],
     recommendedLLMs: ['GPT-4o', 'Gemini 2.5 Pro'],
+    genieProducts: ['deck', 'vibe', 'spark', 'arc'],
+  },
+  {
+    primaryFeatureId: 'controlnet',
+    primaryCategory: 'IMAGE',
+    relatedFeatures: [
+      { featureId: 'image_upload', category: 'INPUT', relationship: 'requires' },
+      { featureId: 'ai_image_gen', category: 'IMAGE', relationship: 'enhances' },
+      { featureId: '3d_scene_gen', category: '3D', relationship: 'enables' },
+    ],
+    useCases: ['Pose control', 'Depth mapping', 'Edge detection'],
+    scenarios: ['Character design', 'Architectural viz', 'Product mockups'],
+    recommendedProviders: ['modelslab', 'replicate'],
+    recommendedLLMs: ['GPT-4o'],
+    genieProducts: ['vibe', 'spark', 'arc'],
+  },
+  // VIDEO CATEGORY
+  {
+    primaryFeatureId: 'script_to_video',
+    primaryCategory: 'VIDEO',
+    relatedFeatures: [
+      { featureId: 'ai_script_gen', category: 'SCRIPT', relationship: 'requires' },
+      { featureId: 'tts', category: 'VOICE', relationship: 'enhances' },
+      { featureId: 'ai_image_gen', category: 'IMAGE', relationship: 'enables' },
+      { featureId: 'auto_subtitles', category: 'VIDEO', relationship: 'enhances' },
+    ],
+    useCases: ['Training videos', 'Marketing content', 'Educational material'],
+    scenarios: ['Explainer videos', 'Product demos', 'Onboarding'],
+    recommendedProviders: ['gemini', 'openai', 'modelslab', 'elevenlabs'],
+    recommendedLLMs: ['GPT-4o', 'Gemini 2.5 Pro'],
+    genieProducts: ['vibe', 'arc'],
   },
   {
     primaryFeatureId: 'text_to_video',
@@ -1154,21 +1295,125 @@ export const CROSS_FUNCTIONAL_MAPPINGS: CrossFunctionalMapping[] = [
       { featureId: 'bg_music', category: 'AUDIO', relationship: 'enhances' },
     ],
     useCases: ['Social media', 'Ads', 'Explainer videos'],
+    scenarios: ['Short-form content', 'Reels', 'TikTok'],
     recommendedProviders: ['modelslab', 'replicate', 'alibaba'],
     recommendedLLMs: ['Gemini 2.5 Pro'],
+    genieProducts: ['vibe', 'spark', 'arc'],
   },
   {
-    primaryFeatureId: 'tts',
-    primaryCategory: 'VOICE',
+    primaryFeatureId: 'lip_sync',
+    primaryCategory: 'VIDEO',
     relatedFeatures: [
-      { featureId: 'voice_cloning', category: 'VOICE', relationship: 'enhances' },
-      { featureId: 'voice_emotion', category: 'VOICE', relationship: 'enhances' },
-      { featureId: 'lip_sync', category: 'VIDEO', relationship: 'enables' },
-      { featureId: 'auto_subtitles', category: 'VIDEO', relationship: 'enables' },
+      { featureId: 'tts', category: 'VOICE', relationship: 'requires' },
+      { featureId: 'ai_avatars', category: 'VIDEO', relationship: 'enhances' },
+      { featureId: 'lip_sync_translate', category: 'TRANSLATION', relationship: 'enables' },
     ],
-    useCases: ['Narration', 'Accessibility', 'Voiceovers'],
-    recommendedProviders: ['elevenlabs', 'openai', 'alibaba'],
+    useCases: ['Talking head videos', 'Localization', 'Personalized messages'],
+    scenarios: ['Training videos', 'Marketing', 'Corporate comms'],
+    recommendedProviders: ['modelslab', 'alibaba'],
     recommendedLLMs: ['GPT-4o'],
+    genieProducts: ['vibe', 'arc'],
+  },
+  // TRANSLATION CATEGORY
+  {
+    primaryFeatureId: 'one_click_translate',
+    primaryCategory: 'TRANSLATION',
+    relatedFeatures: [
+      { featureId: 'auto_subtitles_translate', category: 'TRANSLATION', relationship: 'enhances' },
+      { featureId: 'voice_dubbing', category: 'TRANSLATION', relationship: 'enables' },
+      { featureId: 'lip_sync_translate', category: 'TRANSLATION', relationship: 'enables' },
+      { featureId: 'tts', category: 'VOICE', relationship: 'requires' },
+    ],
+    useCases: ['Global content', 'Localization', 'Multi-market distribution'],
+    scenarios: ['Video translation', 'Document localization', 'Subtitle generation'],
+    recommendedProviders: ['deepl', 'alibaba', 'elevenlabs'],
+    recommendedLLMs: ['Qwen 2.5', 'Claude 3.5 Sonnet'],
+    genieProducts: ['vibe', 'deck', 'mind', 'arc'],
+  },
+  {
+    primaryFeatureId: 'voice_dubbing',
+    primaryCategory: 'TRANSLATION',
+    relatedFeatures: [
+      { featureId: 'tts', category: 'VOICE', relationship: 'requires' },
+      { featureId: 'voice_cloning', category: 'VOICE', relationship: 'enhances' },
+      { featureId: 'lip_sync_translate', category: 'TRANSLATION', relationship: 'enables' },
+    ],
+    useCases: ['Video localization', 'Film dubbing', 'E-learning'],
+    scenarios: ['Multi-language video', 'Training localization', 'Marketing'],
+    recommendedProviders: ['elevenlabs', 'alibaba', 'deepl'],
+    recommendedLLMs: ['Qwen 2.5'],
+    genieProducts: ['vibe', 'arc'],
+  },
+  // AUDIO CATEGORY
+  {
+    primaryFeatureId: 'stt',
+    primaryCategory: 'AUDIO',
+    relatedFeatures: [
+      { featureId: 'audio_upload', category: 'INPUT', relationship: 'requires' },
+      { featureId: 'auto_subtitles', category: 'VIDEO', relationship: 'enables' },
+      { featureId: 'content_summary', category: 'SCRIPT', relationship: 'enables' },
+    ],
+    useCases: ['Transcription', 'Subtitles', 'Meeting notes'],
+    scenarios: ['Podcast transcription', 'Video subtitles', 'Interview notes'],
+    recommendedProviders: ['openai', 'alibaba', 'elevenlabs'],
+    recommendedLLMs: ['GPT-4o'],
+    genieProducts: ['vibe', 'mind', 'arc', 'ask_genie'],
+  },
+  {
+    primaryFeatureId: 'ai_music_gen',
+    primaryCategory: 'AUDIO',
+    relatedFeatures: [
+      { featureId: 'bg_music', category: 'AUDIO', relationship: 'alternative' },
+      { featureId: 'text_to_video', category: 'VIDEO', relationship: 'enhances' },
+      { featureId: 'script_to_video', category: 'VIDEO', relationship: 'enhances' },
+    ],
+    useCases: ['Background music', 'Video scoring', 'Podcast intros'],
+    scenarios: ['Promo videos', 'Presentations', 'Social media'],
+    recommendedProviders: ['elevenlabs'],
+    recommendedLLMs: ['GPT-4o'],
+    genieProducts: ['vibe', 'arc'],
+  },
+  // 3D CATEGORY
+  {
+    primaryFeatureId: '3d_scene_gen',
+    primaryCategory: '3D',
+    relatedFeatures: [
+      { featureId: 'mesh_generation', category: '3D', relationship: 'enhances' },
+      { featureId: 'controlnet', category: 'IMAGE', relationship: 'requires' },
+      { featureId: 'ar_preview', category: 'AR_VR', relationship: 'enables' },
+    ],
+    useCases: ['Architectural viz', 'Product 3D', 'Virtual environments'],
+    scenarios: ['Real estate', 'E-commerce', 'Gaming'],
+    recommendedProviders: ['modelslab', 'replicate'],
+    recommendedLLMs: ['GPT-4o'],
+    genieProducts: ['vibe', 'arc'],
+  },
+  // EXPORT CATEGORY
+  {
+    primaryFeatureId: 'pptx_export',
+    primaryCategory: 'EXPORT',
+    relatedFeatures: [
+      { featureId: 'script_to_slides', category: 'SCRIPT', relationship: 'requires' },
+      { featureId: 'pdf_export', category: 'EXPORT', relationship: 'alternative' },
+    ],
+    useCases: ['Presentation sharing', 'Offline viewing', 'Client delivery'],
+    scenarios: ['Sales decks', 'Training materials', 'Reports'],
+    recommendedProviders: ['openai', 'gemini'],
+    recommendedLLMs: ['GPT-4o'],
+    genieProducts: ['deck', 'arc'],
+  },
+  {
+    primaryFeatureId: 'mp4_export',
+    primaryCategory: 'EXPORT',
+    relatedFeatures: [
+      { featureId: 'script_to_video', category: 'VIDEO', relationship: 'requires' },
+      { featureId: 'auto_subtitles', category: 'VIDEO', relationship: 'enhances' },
+    ],
+    useCases: ['Video distribution', 'Social sharing', 'Archival'],
+    scenarios: ['YouTube upload', 'Social media', 'Training'],
+    recommendedProviders: ['modelslab', 'replicate'],
+    recommendedLLMs: ['GPT-4o'],
+    genieProducts: ['vibe', 'arc'],
   },
 ];
 

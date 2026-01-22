@@ -31,7 +31,9 @@ import {
   LLM_COMPARISONS,
   ROUTING_STRATEGY,
   FEATURE_USE_CASES,
-  CROSS_FUNCTIONAL_MAPPINGS
+  CROSS_FUNCTIONAL_MAPPINGS,
+  GENIE_PRODUCT_LABELS,
+  type GenieProduct
 } from './matrixData';
 import type { FeatureCategory, ImplementationStatus, ProviderId, Feature } from './types';
 
@@ -171,7 +173,7 @@ const AddFeatureDialog: React.FC<{
 export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ className }) => {
   const [selectedCategory, setSelectedCategory] = useState<FeatureCategory | 'all'>('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [view, setView] = useState<'matrix' | 'providers' | 'gaps' | 'llm' | 'category'>('matrix');
+  const [view, setView] = useState<'matrix' | 'providers' | 'gaps' | 'llm' | 'category' | 'crossfunc'>('matrix');
   const [editMode, setEditMode] = useState(false);
   const [localFeatures, setLocalFeatures] = useState<Feature[]>([...ALL_FEATURES]);
   const [localMatrix, setLocalMatrix] = useState({ ...FEATURE_IMPLEMENTATION_MATRIX });
@@ -259,6 +261,54 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
     if (selectedCategory === 'all') return overallStats;
     return computeCategoryStats[selectedCategory] || { total: 0, implemented: 0, partial: 0, planned: 0, notStarted: 0 };
   }, [selectedCategory, computeCategoryStats, overallStats]);
+
+  // Dynamic cross-functional metrics based on category
+  const crossFunctionalMetrics = useMemo(() => {
+    const categoryFeatures = selectedCategory === 'all' 
+      ? localFeatures 
+      : localFeatures.filter(f => f.category === selectedCategory);
+    
+    const featureIds = new Set(categoryFeatures.map(f => f.id));
+    
+    // Get mappings for this category's features
+    const relevantMappings = CROSS_FUNCTIONAL_MAPPINGS.filter(m => 
+      selectedCategory === 'all' || m.primaryCategory === selectedCategory || featureIds.has(m.primaryFeatureId)
+    );
+    
+    // Collect unique scenarios, use cases, providers, LLMs, and Genie products
+    const scenarios = new Set<string>();
+    const useCases = new Set<string>();
+    const providers = new Set<ProviderId>();
+    const llms = new Set<string>();
+    const genieProducts = new Set<GenieProduct>();
+    
+    relevantMappings.forEach(m => {
+      m.scenarios?.forEach(s => scenarios.add(s));
+      m.useCases?.forEach(u => useCases.add(u));
+      m.recommendedProviders?.forEach(p => providers.add(p));
+      m.recommendedLLMs?.forEach(l => llms.add(l));
+      m.genieProducts?.forEach(g => genieProducts.add(g));
+    });
+    
+    // Also add use cases from FEATURE_USE_CASES
+    categoryFeatures.forEach(f => {
+      const uc = FEATURE_USE_CASES[f.id];
+      if (uc) {
+        uc.scenarios?.forEach(s => scenarios.add(s));
+        uc.bestFor?.forEach(b => useCases.add(b));
+      }
+    });
+    
+    return {
+      features: categoryFeatures.length,
+      scenarios: scenarios.size,
+      useCases: useCases.size,
+      providers: providers.size,
+      llms: llms.size,
+      genieProducts: Array.from(genieProducts),
+      mappings: relevantMappings,
+    };
+  }, [selectedCategory, localFeatures]);
 
   // Dynamic height - no scroll for single categories with few items
   const needsScroll = selectedCategory === 'all' || filteredFeatures.length > 15;
@@ -487,6 +537,7 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
 
       {/* Stats Summary - Dynamic based on selected category */}
       <div className="space-y-2">
+        {/* Implementation Stats Row */}
         <div className="flex flex-wrap gap-3 py-3 px-4 rounded-lg bg-muted/30 border">
           <div className="flex items-center gap-1.5">
             <span className="text-xs font-medium text-muted-foreground">
@@ -530,6 +581,54 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
           </div>
         </div>
         
+        {/* Dynamic Cross-Functional Metrics Row */}
+        <div className="flex flex-wrap gap-4 py-2 px-4 rounded-lg bg-primary/5 border border-primary/20">
+          <div className="flex items-center gap-1.5">
+            <Zap className="w-3.5 h-3.5 text-primary" />
+            <span className="text-xs font-medium text-primary">Cross-Functional:</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-sm font-bold text-foreground">{crossFunctionalMetrics.features}</span>
+            <span className="text-xs text-muted-foreground">Features</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-sm font-bold text-foreground">{crossFunctionalMetrics.scenarios}</span>
+            <span className="text-xs text-muted-foreground">Scenarios</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-sm font-bold text-foreground">{crossFunctionalMetrics.useCases}</span>
+            <span className="text-xs text-muted-foreground">Use Cases</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-sm font-bold text-foreground">{crossFunctionalMetrics.providers}</span>
+            <span className="text-xs text-muted-foreground">Providers</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-sm font-bold text-foreground">{crossFunctionalMetrics.llms}</span>
+            <span className="text-xs text-muted-foreground">LLMs</span>
+          </div>
+          {/* Genie Suite Products */}
+          <div className="flex items-center gap-1 ml-auto">
+            <span className="text-[10px] text-muted-foreground mr-1">Used in:</span>
+            {crossFunctionalMetrics.genieProducts.slice(0, 5).map(product => (
+              <TooltipProvider key={product}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="text-sm cursor-help">{GENIE_PRODUCT_LABELS[product]?.emoji}</span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="font-medium">{GENIE_PRODUCT_LABELS[product]?.name}</p>
+                    <p className="text-xs text-muted-foreground">{GENIE_PRODUCT_LABELS[product]?.description}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ))}
+            {crossFunctionalMetrics.genieProducts.length > 5 && (
+              <span className="text-[10px] text-muted-foreground">+{crossFunctionalMetrics.genieProducts.length - 5}</span>
+            )}
+          </div>
+        </div>
+        
         {/* Per-Category Breakdown when viewing all */}
         {selectedCategory === 'all' && (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
@@ -569,6 +668,7 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
             <TabsTrigger value="category">
               {selectedCategory === 'all' ? '📋 Category Details' : CATEGORY_LABELS[selectedCategory]}
             </TabsTrigger>
+            <TabsTrigger value="crossfunc">🔗 Cross-Functional</TabsTrigger>
             <TabsTrigger value="providers">By Provider</TabsTrigger>
             <TabsTrigger value="llm">LLM Analysis</TabsTrigger>
             <TabsTrigger value="gaps">Gap Analysis</TabsTrigger>
@@ -1261,6 +1361,203 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
                   <li>Government/public sector</li>
                 </ul>
               </div>
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* Cross-Functional Mapping Tab - Genie Suite Integration */}
+        <TabsContent value="crossfunc" className="mt-0 space-y-4">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <h3 className="font-semibold flex items-center gap-2">
+              🔗 Cross-Functional Mapping {selectedCategory !== 'all' ? `- ${CATEGORY_LABELS[selectedCategory]}` : ''}
+            </h3>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">
+                {crossFunctionalMetrics.mappings.length} feature mappings | {crossFunctionalMetrics.genieProducts.length} Genie products
+              </span>
+            </div>
+          </div>
+          
+          {/* Genie Suite Product Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
+            {Object.entries(GENIE_PRODUCT_LABELS).map(([id, product]) => {
+              const isUsed = crossFunctionalMetrics.genieProducts.includes(id as GenieProduct);
+              const featureCount = crossFunctionalMetrics.mappings.filter(m => 
+                m.genieProducts?.includes(id as GenieProduct)
+              ).length;
+              
+              return (
+                <div 
+                  key={id}
+                  className={`p-3 rounded-lg border text-center transition-colors ${
+                    isUsed 
+                      ? 'bg-primary/10 border-primary/30' 
+                      : 'bg-muted/30 border-muted opacity-50'
+                  }`}
+                >
+                  <span className="text-2xl">{product.emoji}</span>
+                  <div className="text-xs font-medium mt-1">{product.name}</div>
+                  <div className="text-[10px] text-muted-foreground">{featureCount} features</div>
+                </div>
+              );
+            })}
+          </div>
+          
+          {/* Cross-Functional Mapping Table */}
+          <div className="border rounded-lg overflow-hidden">
+            <Table>
+              <TableHeader className="bg-muted/30">
+                <TableRow>
+                  <TableHead className="text-xs w-[120px]">Feature</TableHead>
+                  <TableHead className="text-xs w-[70px]">Category</TableHead>
+                  <TableHead className="text-xs w-[140px]">Related Features</TableHead>
+                  <TableHead className="text-xs w-[100px]">Use Cases</TableHead>
+                  <TableHead className="text-xs w-[100px]">Scenarios</TableHead>
+                  <TableHead className="text-xs w-[80px]">Providers</TableHead>
+                  <TableHead className="text-xs w-[80px]">LLMs</TableHead>
+                  <TableHead className="text-xs w-[100px]">Genie Suite</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {crossFunctionalMetrics.mappings.map((mapping, i) => {
+                  const feature = localFeatures.find(f => f.id === mapping.primaryFeatureId);
+                  
+                  return (
+                    <TableRow key={i}>
+                      <TableCell className="py-2">
+                        <div className="font-medium text-xs">{feature?.name || mapping.primaryFeatureId}</div>
+                      </TableCell>
+                      <TableCell className="py-2">
+                        <span className="text-[9px] text-muted-foreground">
+                          {CATEGORY_LABELS[mapping.primaryCategory]?.split(' ')[0]}
+                          {CATEGORY_LABELS[mapping.primaryCategory]?.split(' ')[1]}
+                        </span>
+                      </TableCell>
+                      {/* Related Features with relationship badges */}
+                      <TableCell className="py-2">
+                        <div className="flex flex-wrap gap-0.5">
+                          {mapping.relatedFeatures?.slice(0, 3).map((rf, j) => (
+                            <TooltipProvider key={j}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className={`text-[8px] px-1 py-0.5 rounded cursor-help ${
+                                    rf.relationship === 'requires' ? 'bg-destructive/10 text-destructive border border-destructive/30' :
+                                    rf.relationship === 'enables' ? 'bg-primary/10 text-primary border border-primary/30' :
+                                    rf.relationship === 'alternative' ? 'bg-secondary/50 text-secondary-foreground border border-secondary/30' :
+                                    'bg-muted/50 text-foreground border border-muted'
+                                  }`}>
+                                    {rf.relationship === 'requires' && '🔴'}
+                                    {rf.relationship === 'enhances' && '🟡'}
+                                    {rf.relationship === 'enables' && '🟢'}
+                                    {rf.relationship === 'alternative' && '🔵'}
+                                    {' '}{localFeatures.find(f => f.id === rf.featureId)?.name?.split(' ')[0] || rf.featureId.split('_')[0]}
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent className="max-w-xs p-2">
+                                  <p className="font-medium text-sm">{localFeatures.find(f => f.id === rf.featureId)?.name || rf.featureId}</p>
+                                  <p className="text-xs text-muted-foreground mt-0.5">
+                                    {rf.relationship === 'requires' && '⚠️ Required for this feature'}
+                                    {rf.relationship === 'enhances' && '✨ Enhances this feature'}
+                                    {rf.relationship === 'enables' && '🚀 Enabled by this feature'}
+                                    {rf.relationship === 'alternative' && '↔️ Alternative approach'}
+                                  </p>
+                                  <p className="text-[10px] text-muted-foreground mt-1">{CATEGORY_LABELS[rf.category]}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          ))}
+                          {(mapping.relatedFeatures?.length || 0) > 3 && (
+                            <span className="text-[8px] text-muted-foreground">+{mapping.relatedFeatures!.length - 3}</span>
+                          )}
+                        </div>
+                      </TableCell>
+                      {/* Use Cases */}
+                      <TableCell className="py-2">
+                        <div className="flex flex-wrap gap-0.5">
+                          {mapping.useCases?.slice(0, 2).map((uc, j) => (
+                            <span key={j} className="text-[8px] px-1 py-0.5 rounded bg-muted/50 text-foreground">{uc}</span>
+                          ))}
+                          {(mapping.useCases?.length || 0) > 2 && (
+                            <span className="text-[8px] text-muted-foreground">+{mapping.useCases!.length - 2}</span>
+                          )}
+                        </div>
+                      </TableCell>
+                      {/* Scenarios */}
+                      <TableCell className="py-2">
+                        <div className="flex flex-wrap gap-0.5">
+                          {mapping.scenarios?.slice(0, 2).map((sc, j) => (
+                            <span key={j} className="text-[8px] px-1 py-0.5 rounded bg-secondary/30 text-secondary-foreground">{sc}</span>
+                          ))}
+                          {(mapping.scenarios?.length || 0) > 2 && (
+                            <span className="text-[8px] text-muted-foreground">+{mapping.scenarios!.length - 2}</span>
+                          )}
+                        </div>
+                      </TableCell>
+                      {/* Providers */}
+                      <TableCell className="py-2">
+                        <div className="flex flex-wrap gap-0.5">
+                          {mapping.recommendedProviders?.slice(0, 2).map(p => (
+                            <Badge key={p} variant="outline" className="text-[7px] px-1 py-0">
+                              {PROVIDER_SUMMARIES.find(pr => pr.id === p)?.name?.split(' ')[0] || p}
+                            </Badge>
+                          ))}
+                          {(mapping.recommendedProviders?.length || 0) > 2 && (
+                            <span className="text-[7px] text-muted-foreground">+{mapping.recommendedProviders!.length - 2}</span>
+                          )}
+                        </div>
+                      </TableCell>
+                      {/* LLMs */}
+                      <TableCell className="py-2">
+                        <div className="flex flex-wrap gap-0.5">
+                          {mapping.recommendedLLMs?.slice(0, 2).map((llm, j) => (
+                            <span key={j} className="text-[8px] px-1 py-0.5 rounded bg-primary/10 text-primary">{llm.split(' ')[0]}</span>
+                          ))}
+                        </div>
+                      </TableCell>
+                      {/* Genie Suite Products */}
+                      <TableCell className="py-2">
+                        <div className="flex gap-0.5">
+                          {mapping.genieProducts?.map(product => (
+                            <TooltipProvider key={product}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="text-sm cursor-help">{GENIE_PRODUCT_LABELS[product]?.emoji}</span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p className="font-medium text-xs">{GENIE_PRODUCT_LABELS[product]?.name}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          ))}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+          
+          {/* Relationship Legend */}
+          <div className="flex flex-wrap items-center gap-4 p-3 rounded-lg bg-muted/30 border text-xs">
+            <div className="flex items-center gap-1 font-medium text-muted-foreground">
+              <Info className="w-3.5 h-3.5" /> Relationships:
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-destructive/10 text-destructive border border-destructive/30">🔴 Requires</span>
+              <span className="text-muted-foreground">Must have</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted/50 border border-muted">🟡 Enhances</span>
+              <span className="text-muted-foreground">Optional boost</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/30">🟢 Enables</span>
+              <span className="text-muted-foreground">Unlocks feature</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary/50 border border-secondary/30">🔵 Alternative</span>
+              <span className="text-muted-foreground">Different approach</span>
             </div>
           </div>
         </TabsContent>
