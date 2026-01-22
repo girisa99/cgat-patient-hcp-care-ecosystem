@@ -66,6 +66,24 @@ const LOOKUP_MAPS = createLookupMaps();
 
 type CoverageStatus = 'complete' | 'partial' | 'pending' | 'gap' | 'new-opportunity';
 
+// Dependency and implementability info
+interface DependencyInfo {
+  featureId: string;
+  featureName: string;
+  category: string;
+  status: 'available' | 'partial' | 'missing';
+  source: 'cross-functional' | 'feature-matrix' | 'gen-coverage';
+}
+
+interface ImplementabilityAnalysis {
+  canImplementNow: boolean;
+  blockedBy: DependencyInfo[];
+  availableDeps: DependencyInfo[];
+  reason: string;
+  effort: 'low' | 'medium' | 'high';
+  priority: 'critical' | 'high' | 'medium' | 'low';
+}
+
 interface CoverageRow {
   id: string;
   contextType: 'industry' | 'framework' | 'visual' | 'output' | 'feature';
@@ -82,6 +100,9 @@ interface CoverageRow {
   crossDeps: number;
   gapReason?: string;
   opportunities?: string[];
+  // NEW: Dependency analysis
+  implementability?: ImplementabilityAnalysis;
+  warnings?: { type: string; message: string; source: string }[];
 }
 
 // Helper: Check if a context mapping has features matching the category filter
@@ -98,6 +119,120 @@ const contextMatchesCategory = (
     const featureMapping = FEATURE_CONTEXT_MAPPINGS.find(f => f.featureId === rf.featureId);
     return featureMapping?.category === categoryFilter;
   });
+};
+
+// Analyze implementability for a mapping
+const analyzeImplementability = (
+  mapping: ContextToCapabilityMapping | CapabilityToContextMapping,
+  status: CoverageStatus
+): ImplementabilityAnalysis => {
+  const blockedBy: DependencyInfo[] = [];
+  const availableDeps: DependencyInfo[] = [];
+  
+  if ('requiredFeatures' in mapping) {
+    // Context mapping - check required features
+    const contextMapping = mapping as ContextToCapabilityMapping;
+    contextMapping.requiredFeatures.forEach(rf => {
+      const featureMapping = FEATURE_CONTEXT_MAPPINGS.find(f => f.featureId === rf.featureId);
+      const hasProviders = (featureMapping?.recommendedProviders?.length || 0) > 0;
+      
+      const depInfo: DependencyInfo = {
+        featureId: rf.featureId,
+        featureName: featureMapping?.featureName || rf.featureId,
+        category: rf.category,
+        status: hasProviders ? 'available' : 'missing',
+        source: rf.category === 'INPUT' || rf.category === 'SCRIPT' ? 'feature-matrix' : 'cross-functional'
+      };
+      
+      if (rf.priority === 'critical' && !hasProviders) {
+        blockedBy.push(depInfo);
+      } else {
+        availableDeps.push(depInfo);
+      }
+    });
+  } else {
+    // Feature mapping - check dependsOn
+    const featureMapping = mapping as CapabilityToContextMapping;
+    featureMapping.dependsOn.forEach(dep => {
+      const targetFeature = FEATURE_CONTEXT_MAPPINGS.find(f => f.featureId === dep.featureId);
+      const hasProviders = (targetFeature?.recommendedProviders?.length || 0) > 0;
+      
+      const depInfo: DependencyInfo = {
+        featureId: dep.featureId,
+        featureName: targetFeature?.featureName || dep.featureId,
+        category: dep.category,
+        status: hasProviders ? 'available' : 'missing',
+        source: 'cross-functional'
+      };
+      
+      if (!hasProviders) {
+        blockedBy.push(depInfo);
+      } else {
+        availableDeps.push(depInfo);
+      }
+    });
+  }
+  
+  const canImplementNow = blockedBy.length === 0;
+  const criticalBlockers = blockedBy.filter(b => b.status === 'missing');
+  
+  let reason = '';
+  let effort: 'low' | 'medium' | 'high' = 'medium';
+  let priority: 'critical' | 'high' | 'medium' | 'low' = 'medium';
+  
+  if (status === 'complete') {
+    reason = '✅ Fully implemented - no action needed';
+    effort = 'low';
+    priority = 'low';
+  } else if (canImplementNow) {
+    reason = '🟢 Ready to implement - all dependencies available';
+    effort = availableDeps.length > 3 ? 'medium' : 'low';
+    priority = status === 'gap' ? 'high' : 'medium';
+  } else if (criticalBlockers.length === 1) {
+    reason = `🟡 Blocked by 1 feature: ${criticalBlockers[0].featureName} (${criticalBlockers[0].category})`;
+    effort = 'medium';
+    priority = 'high';
+  } else {
+    reason = `🔴 Blocked by ${criticalBlockers.length} missing features`;
+    effort = 'high';
+    priority = 'critical';
+  }
+  
+  return { canImplementNow, blockedBy, availableDeps, reason, effort, priority };
+};
+
+// Generate warnings for partial/gap items
+const generateWarnings = (
+  mapping: ContextToCapabilityMapping | CapabilityToContextMapping,
+  status: CoverageStatus
+): { type: string; message: string; source: string }[] => {
+  const warnings: { type: string; message: string; source: string }[] = [];
+  
+  if ('constraints' in mapping) {
+    const contextMapping = mapping as ContextToCapabilityMapping;
+    contextMapping.constraints.forEach(c => {
+      if (c.severity === 'warning' || c.severity === 'incompatible') {
+        warnings.push({
+          type: c.severity,
+          message: `${c.contextType}:${c.contextId} - ${c.reason}`,
+          source: 'gen-coverage'
+        });
+      }
+    });
+  }
+  
+  if ('limitations' in mapping) {
+    const featureMapping = mapping as CapabilityToContextMapping;
+    featureMapping.limitations?.forEach(l => {
+      warnings.push({
+        type: 'limitation',
+        message: l,
+        source: 'cross-functional'
+      });
+    });
+  }
+  
+  return warnings;
 };
 
 // Lazy computation - only compute what's needed for current view
@@ -169,12 +304,13 @@ function* generateCoverageRows(
         .filter(Boolean)
         .flatMap(p => p!.flatMap(x => x.providers));
       const models = mapping.recommendedModels.flatMap(m => m.modelIds);
+      const status = getMappingStatus(mapping);
       
       yield {
         id: `industry:${mapping.contextId}`,
         contextType: 'industry',
         name: mapping.contextName,
-        status: getMappingStatus(mapping),
+        status,
         criticalFeatures: mapping.requiredFeatures.filter(f => f.priority === 'critical').length,
         recommendedFeatures: mapping.requiredFeatures.filter(f => f.priority === 'recommended').length,
         optionalFeatures: mapping.requiredFeatures.filter(f => f.priority === 'optional').length,
@@ -184,7 +320,9 @@ function* generateCoverageRows(
         useCases: mapping.useCases.length,
         constraints: mapping.constraints.length,
         crossDeps: 0,
-        opportunities: mapping.useCases.slice(0, 2)
+        opportunities: mapping.useCases.slice(0, 2),
+        implementability: analyzeImplementability(mapping, status),
+        warnings: generateWarnings(mapping, status)
       };
     }
   }
@@ -199,12 +337,13 @@ function* generateCoverageRows(
         .filter(Boolean)
         .flatMap(p => p!.flatMap(x => x.providers));
       const models = mapping.recommendedModels.flatMap(m => m.modelIds);
+      const status = getMappingStatus(mapping);
       
       yield {
         id: `framework:${mapping.contextId}`,
         contextType: 'framework',
         name: mapping.contextName,
-        status: getMappingStatus(mapping),
+        status,
         criticalFeatures: mapping.requiredFeatures.filter(f => f.priority === 'critical').length,
         recommendedFeatures: mapping.requiredFeatures.filter(f => f.priority === 'recommended').length,
         optionalFeatures: mapping.requiredFeatures.filter(f => f.priority === 'optional').length,
@@ -214,7 +353,9 @@ function* generateCoverageRows(
         useCases: mapping.useCases.length,
         constraints: mapping.constraints.length,
         crossDeps: 0,
-        opportunities: mapping.useCases.slice(0, 2)
+        opportunities: mapping.useCases.slice(0, 2),
+        implementability: analyzeImplementability(mapping, status),
+        warnings: generateWarnings(mapping, status)
       };
     }
   }
@@ -229,12 +370,13 @@ function* generateCoverageRows(
         .filter(Boolean)
         .flatMap(p => p!.flatMap(x => x.providers));
       const models = mapping.recommendedModels.flatMap(m => m.modelIds);
+      const status = getMappingStatus(mapping);
       
       yield {
         id: `visual:${mapping.contextId}`,
         contextType: 'visual',
         name: mapping.contextName,
-        status: getMappingStatus(mapping),
+        status,
         criticalFeatures: mapping.requiredFeatures.filter(f => f.priority === 'critical').length,
         recommendedFeatures: mapping.requiredFeatures.filter(f => f.priority === 'recommended').length,
         optionalFeatures: mapping.requiredFeatures.filter(f => f.priority === 'optional').length,
@@ -244,7 +386,9 @@ function* generateCoverageRows(
         useCases: mapping.useCases.length,
         constraints: mapping.constraints.length,
         crossDeps: 0,
-        opportunities: mapping.useCases.slice(0, 2)
+        opportunities: mapping.useCases.slice(0, 2),
+        implementability: analyzeImplementability(mapping, status),
+        warnings: generateWarnings(mapping, status)
       };
     }
   }
@@ -259,12 +403,13 @@ function* generateCoverageRows(
         .filter(Boolean)
         .flatMap(p => p!.flatMap(x => x.providers));
       const models = mapping.recommendedModels.flatMap(m => m.modelIds);
+      const status = getMappingStatus(mapping);
       
       yield {
         id: `output:${mapping.contextId}`,
         contextType: 'output',
         name: mapping.contextName,
-        status: getMappingStatus(mapping),
+        status,
         criticalFeatures: mapping.requiredFeatures.filter(f => f.priority === 'critical').length,
         recommendedFeatures: mapping.requiredFeatures.filter(f => f.priority === 'recommended').length,
         optionalFeatures: mapping.requiredFeatures.filter(f => f.priority === 'optional').length,
@@ -274,7 +419,9 @@ function* generateCoverageRows(
         useCases: mapping.useCases.length,
         constraints: mapping.constraints.length,
         crossDeps: 0,
-        opportunities: mapping.useCases.slice(0, 2)
+        opportunities: mapping.useCases.slice(0, 2),
+        implementability: analyzeImplementability(mapping, status),
+        warnings: generateWarnings(mapping, status)
       };
     }
   }
@@ -296,11 +443,13 @@ function* generateCoverageRows(
       const inheritedScenarios = mapping.scenarios || [];
       const inheritedUseCases = mapping.useCases || [];
       
+      const status = getFeatureStatus(mapping);
+      
       yield {
         id: `feature:${mapping.featureId}`,
         contextType: 'feature',
         name: mapping.featureName,
-        status: getFeatureStatus(mapping),
+        status,
         criticalFeatures: mapping.usedByIndustries.filter(i => i.priority === 'primary').length,
         recommendedFeatures: mapping.usedByIndustries.filter(i => i.priority === 'secondary').length,
         optionalFeatures: 0,
@@ -311,7 +460,9 @@ function* generateCoverageRows(
         constraints: mapping.limitations?.length || 0,
         crossDeps: mapping.dependsOn.length + mapping.enablesFeatures.length,
         gapReason: contextCount === 0 && inheritedProviders.length === 0 ? 'No context mappings or providers defined' : undefined,
-        opportunities: inheritedUseCases.slice(0, 2)
+        opportunities: inheritedUseCases.slice(0, 2),
+        implementability: analyzeImplementability(mapping, status),
+        warnings: generateWarnings(mapping, status)
       };
     }
   }
@@ -382,11 +533,14 @@ export const GenerationCoverageTable: React.FC<GenerationCoverageTableProps> = (
       // USE UNIFIED METRICS for scenarios/useCases to match parent tab
       totalScenarios: unifiedMetrics.scenarios.total,
       totalUseCases: unifiedMetrics.useCases.total,
-      totalConstraints: all.reduce((sum, r) => sum + r.constraints, 0),
+      totalConstraints: all.reduce((sum, r) => sum + r.constraints + (r.warnings?.length || 0), 0),
       totalCrossDeps: all.reduce((sum, r) => sum + r.crossDeps, 0),
       // NEW: Show breakdown
       newScenarios: unifiedMetrics.scenarios.fromGenerationCoverage,
-      newUseCases: unifiedMetrics.useCases.fromGenerationCoverage
+      newUseCases: unifiedMetrics.useCases.fromGenerationCoverage,
+      // Implementability stats
+      readyToImplement: all.filter(r => r.implementability?.canImplementNow && r.status !== 'complete').length,
+      blockedByDeps: all.filter(r => !r.implementability?.canImplementNow && r.status !== 'complete').length
     };
   }, [selectedCategory, unifiedMetrics]);
   
@@ -461,15 +615,15 @@ export const GenerationCoverageTable: React.FC<GenerationCoverageTableProps> = (
           <TableHeader className="sticky top-0 z-10 bg-background">
             <TableRow>
               <TableHead className="w-10">Type</TableHead>
-              <TableHead className="w-40">Name</TableHead>
+              <TableHead className="w-36">Name</TableHead>
               <TableHead className="w-20 text-center">Status</TableHead>
               <TableHead className="w-24 text-center">Features</TableHead>
-              <TableHead className="w-32">Providers</TableHead>
-              <TableHead className="w-32">Models</TableHead>
-              <TableHead className="w-16 text-center">Scenarios</TableHead>
-              <TableHead className="w-16 text-center">Use Cases</TableHead>
-              <TableHead className="w-16 text-center">Deps</TableHead>
-              <TableHead className="w-16 text-center">Warnings</TableHead>
+              <TableHead className="w-28">Providers</TableHead>
+              <TableHead className="w-14 text-center">Scen.</TableHead>
+              <TableHead className="w-14 text-center">Cases</TableHead>
+              <TableHead className="w-14 text-center">Deps</TableHead>
+              <TableHead className="w-20 text-center">Can Impl?</TableHead>
+              <TableHead className="w-14 text-center">Warns</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -477,6 +631,7 @@ export const GenerationCoverageTable: React.FC<GenerationCoverageTableProps> = (
               const statusConfig = STATUS_CONFIG[row.status];
               const contextBadge = CONTEXT_BADGES[row.contextType];
               const StatusIcon = statusConfig.icon;
+              const impl = row.implementability;
               
               return (
                 <TableRow 
@@ -496,7 +651,7 @@ export const GenerationCoverageTable: React.FC<GenerationCoverageTableProps> = (
                   </TableCell>
                   
                   <TableCell className="py-1.5">
-                    <span className="text-xs font-medium truncate block max-w-[140px]" title={row.name}>
+                    <span className="text-xs font-medium truncate block max-w-[130px]" title={row.name}>
                       {row.name}
                     </span>
                   </TableCell>
@@ -511,39 +666,23 @@ export const GenerationCoverageTable: React.FC<GenerationCoverageTableProps> = (
                   <TableCell className="py-1.5 text-center">
                     <div className="flex items-center justify-center gap-0.5 text-[9px]">
                       <span className="text-destructive font-bold">{row.criticalFeatures}⚠</span>
-                      <span className="text-amber-500">/{row.recommendedFeatures}★</span>
+                      <span className="text-warning">/{row.recommendedFeatures}★</span>
                       <span className="text-muted-foreground">/{row.optionalFeatures}</span>
                     </div>
                   </TableCell>
                   
                   <TableCell className="py-1.5">
                     <div className="flex flex-wrap gap-0.5">
-                      {row.providers.slice(0, 3).map(p => (
+                      {row.providers.slice(0, 2).map(p => (
                         <span key={p} className="text-[8px] px-1 py-0.5 rounded bg-primary/10 text-primary">
                           {p}
                         </span>
                       ))}
-                      {row.providers.length > 3 && (
-                        <span className="text-[8px] text-muted-foreground">+{row.providers.length - 3}</span>
+                      {row.providers.length > 2 && (
+                        <span className="text-[8px] text-muted-foreground">+{row.providers.length - 2}</span>
                       )}
                       {row.providers.length === 0 && (
                         <span className="text-[8px] text-muted-foreground italic">None</span>
-                      )}
-                    </div>
-                  </TableCell>
-                  
-                  <TableCell className="py-1.5">
-                    <div className="flex flex-wrap gap-0.5">
-                      {row.models.slice(0, 2).map(m => (
-                        <span key={m} className="text-[8px] px-1 py-0.5 rounded bg-secondary/50">
-                          {m}
-                        </span>
-                      ))}
-                      {row.models.length > 2 && (
-                        <span className="text-[8px] text-muted-foreground">+{row.models.length - 2}</span>
-                      )}
-                      {row.models.length === 0 && (
-                        <span className="text-[8px] text-muted-foreground italic">—</span>
                       )}
                     </div>
                   </TableCell>
@@ -558,21 +697,104 @@ export const GenerationCoverageTable: React.FC<GenerationCoverageTableProps> = (
                   
                   <TableCell className="py-1.5 text-center">
                     {row.crossDeps > 0 ? (
-                      <Badge variant="outline" className="text-[9px] bg-cyan-500/10 text-cyan-400 border-cyan-500/30">
-                        {row.crossDeps}
-                      </Badge>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Badge variant="outline" className="text-[9px] bg-accent/50 text-accent-foreground border-accent">
+                              {row.crossDeps}
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">
+                            <div className="text-xs">
+                              <strong>Dependencies:</strong>
+                              {impl?.availableDeps?.map(d => (
+                                <div key={d.featureId} className="text-muted-foreground">
+                                  ✅ {d.featureName} ({d.category})
+                                </div>
+                              ))}
+                              {impl?.blockedBy?.map(d => (
+                                <div key={d.featureId} className="text-destructive">
+                                  ❌ {d.featureName} ({d.category}) - {d.source}
+                                </div>
+                              ))}
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : (
+                      <span className="text-[9px] text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  
+                  {/* Can Implement Now? */}
+                  <TableCell className="py-1.5 text-center">
+                    {impl ? (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Badge 
+                              variant="outline" 
+                              className={`text-[8px] ${
+                                impl.canImplementNow 
+                                  ? 'bg-primary/10 text-primary border-primary/30' 
+                                  : 'bg-destructive/10 text-destructive border-destructive/30'
+                              }`}
+                            >
+                              {impl.canImplementNow ? '✅ Ready' : `🔴 ${impl.blockedBy.length} blocked`}
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-sm">
+                            <div className="text-xs space-y-1">
+                              <div className="font-medium">{impl.reason}</div>
+                              <div className="flex gap-2 text-muted-foreground">
+                                <span>Effort: {impl.effort}</span>
+                                <span>Priority: {impl.priority}</span>
+                              </div>
+                              {impl.blockedBy.length > 0 && (
+                                <div className="pt-1 border-t border-border mt-1">
+                                  <strong className="text-destructive">Blocked by:</strong>
+                                  {impl.blockedBy.map(b => (
+                                    <div key={b.featureId}>
+                                      • {b.featureName} ({b.category}) - from {b.source}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     ) : (
                       <span className="text-[9px] text-muted-foreground">—</span>
                     )}
                   </TableCell>
                   
                   <TableCell className="py-1.5 text-center">
-                    {row.constraints > 0 ? (
-                      <Badge variant="outline" className="text-[9px] bg-yellow-500/10 text-yellow-400 border-yellow-500/30">
-                        {row.constraints}⚠
-                      </Badge>
+                    {(row.constraints > 0 || (row.warnings?.length || 0) > 0) ? (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Badge variant="outline" className="text-[9px] bg-warning/10 text-warning border-warning/30">
+                              {row.constraints + (row.warnings?.length || 0)}⚠
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-sm">
+                            <div className="text-xs space-y-1">
+                              <strong>Warnings:</strong>
+                              {row.warnings?.map((w, i) => (
+                                <div key={i} className="text-muted-foreground">
+                                  [{w.source}] {w.message}
+                                </div>
+                              ))}
+                              {row.constraints > 0 && !row.warnings?.length && (
+                                <div className="text-muted-foreground">{row.constraints} constraint(s)</div>
+                              )}
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     ) : (
-                      <span className="text-[9px] text-muted-foreground">✓</span>
+                      <span className="text-[9px] text-primary">✓</span>
                     )}
                   </TableCell>
                 </TableRow>
@@ -586,9 +808,101 @@ export const GenerationCoverageTable: React.FC<GenerationCoverageTableProps> = (
                 </TableCell>
               </TableRow>
             )}
+            
+            {/* TOTALS ROW */}
+            {rows.length > 0 && (
+              <TableRow className="bg-muted/30 font-medium border-t-2 sticky bottom-0">
+                <TableCell className="py-2" colSpan={2}>
+                  <span className="text-xs font-bold">TOTALS ({rows.length} items)</span>
+                </TableCell>
+                <TableCell className="py-2 text-center">
+                  <div className="flex flex-col gap-0.5 text-[9px]">
+                    <span className="text-primary">{stats.complete}✓</span>
+                    <span className="text-warning">{stats.partial}⚠</span>
+                  </div>
+                </TableCell>
+                <TableCell className="py-2 text-center">
+                  <span className="text-[9px]">
+                    {rows.reduce((sum, r) => sum + r.criticalFeatures, 0)} critical
+                  </span>
+                </TableCell>
+                <TableCell className="py-2">
+                  <span className="text-[9px]">
+                    {[...new Set(rows.flatMap(r => r.providers))].length} unique
+                  </span>
+                </TableCell>
+                <TableCell className="py-2 text-center">
+                  <span className="text-xs font-bold text-primary">{stats.totalScenarios}</span>
+                </TableCell>
+                <TableCell className="py-2 text-center">
+                  <span className="text-xs font-bold text-primary">{stats.totalUseCases}</span>
+                </TableCell>
+                <TableCell className="py-2 text-center">
+                  <span className="text-[9px]">{stats.totalCrossDeps}</span>
+                </TableCell>
+                <TableCell className="py-2 text-center">
+                  <div className="flex flex-col gap-0.5 text-[9px]">
+                    <span className="text-primary">
+                      {rows.filter(r => r.implementability?.canImplementNow).length} ready
+                    </span>
+                    <span className="text-destructive">
+                      {rows.filter(r => !r.implementability?.canImplementNow && r.status !== 'complete').length} blocked
+                    </span>
+                  </div>
+                </TableCell>
+                <TableCell className="py-2 text-center">
+                  <span className="text-[9px]">{stats.totalConstraints}</span>
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </ScrollArea>
+      
+      {/* Implementation Summary - NEW */}
+      <div className="grid grid-cols-2 gap-3">
+        {/* Ready to Implement */}
+        <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
+          <div className="flex items-center gap-2 text-sm font-medium text-primary mb-2">
+            <Zap className="w-4 h-4" />
+            {rows.filter(r => r.implementability?.canImplementNow && r.status !== 'complete').length} Ready to Implement Now
+          </div>
+          <div className="text-xs text-muted-foreground">
+            All dependencies available. Can start implementation immediately.
+          </div>
+          <div className="flex flex-wrap gap-1 mt-2">
+            {rows.filter(r => r.implementability?.canImplementNow && r.status !== 'complete').slice(0, 5).map(r => (
+              <Badge key={r.id} variant="outline" className="text-[8px]">{r.name}</Badge>
+            ))}
+            {rows.filter(r => r.implementability?.canImplementNow && r.status !== 'complete').length > 5 && (
+              <span className="text-[9px] text-muted-foreground">
+                +{rows.filter(r => r.implementability?.canImplementNow && r.status !== 'complete').length - 5} more
+              </span>
+            )}
+          </div>
+        </div>
+        
+        {/* Blocked - Need Dependencies */}
+        <div className="p-3 rounded-lg bg-destructive/5 border border-destructive/20">
+          <div className="flex items-center gap-2 text-sm font-medium text-destructive mb-2">
+            <X className="w-4 h-4" />
+            {rows.filter(r => !r.implementability?.canImplementNow && r.status !== 'complete').length} Blocked by Dependencies
+          </div>
+          <div className="text-xs text-muted-foreground">
+            Require cross-functional features from other categories first.
+          </div>
+          <div className="flex flex-wrap gap-1 mt-2">
+            {/* Show unique blockers */}
+            {[...new Set(
+              rows.filter(r => !r.implementability?.canImplementNow)
+                .flatMap(r => r.implementability?.blockedBy || [])
+                .map(b => `${b.featureName} (${b.category})`)
+            )].slice(0, 4).map(b => (
+              <Badge key={b} variant="outline" className="text-[8px] text-destructive border-destructive/30">{b}</Badge>
+            ))}
+          </div>
+        </div>
+      </div>
       
       {/* Gap Analysis Summary */}
       {stats.gap > 0 && (
@@ -605,8 +919,8 @@ export const GenerationCoverageTable: React.FC<GenerationCoverageTableProps> = (
       
       {/* Opportunities Summary */}
       {stats.opportunity > 0 && (
-        <div className="p-3 rounded-lg bg-purple-500/5 border border-purple-500/20">
-          <div className="flex items-center gap-2 text-sm font-medium text-purple-400 mb-2">
+        <div className="p-3 rounded-lg bg-accent/10 border border-accent/20">
+          <div className="flex items-center gap-2 text-sm font-medium text-accent-foreground mb-2">
             <TrendingUp className="w-4 h-4" />
             {stats.opportunity} New Opportunities
           </div>
