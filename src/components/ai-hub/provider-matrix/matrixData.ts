@@ -953,14 +953,223 @@ export const CATEGORY_IMPLEMENTATION_SUMMARY: Record<FeatureCategory, {
 // GAP ANALYSIS (Using configured providers only)
 // ============================================
 
-export const CRITICAL_GAPS = [
-  { feature: 'Lip-Sync Translation', provider: 'ModelsLab (Wav2Lip) / Alibaba (V-Express)', priority: 'high', effort: 'medium', notes: 'APIs available, need integration' },
-  { feature: 'AI Music Generation', provider: 'ElevenLabs SFX (Alternative)', priority: 'medium', effort: 'low', notes: 'Use ElevenLabs SFX as workaround' },
-  { feature: 'DeepSeek R1 Reasoning', provider: 'DeepSeek', priority: 'high', effort: 'low', notes: 'Model available, needs integration' },
-  { feature: 'ControlNet Depth/Canny', provider: 'ModelsLab', priority: 'medium', effort: 'medium', notes: 'Pose working, add depth' },
-  { feature: 'Image Inpainting', provider: 'ModelsLab / Replicate', priority: 'medium', effort: 'low', notes: 'APIs ready' },
-  { feature: 'Advanced AI Avatars', provider: 'ModelsLab / Alibaba EMO', priority: 'high', effort: 'high', notes: 'Complex integration' },
-  { feature: 'AR/VR Export', provider: 'ModelsLab', priority: 'low', effort: 'high', notes: 'Future roadmap' },
+export interface CriticalGap {
+  feature: string;
+  featureId?: string; // Links to ALL_FEATURES
+  category: FeatureCategory;
+  provider: string;
+  providerId?: ProviderId;
+  priority: 'critical' | 'high' | 'medium' | 'low';
+  effort: 'low' | 'medium' | 'high';
+  notes: string;
+  relatedUseCases?: string[];
+  relatedLLMs?: string[];
+  crossFunctional?: { category: FeatureCategory; features: string[] }[];
+}
+
+export const CRITICAL_GAPS: CriticalGap[] = [
+  { 
+    feature: 'Lip-Sync Translation', 
+    featureId: 'lip_sync_translate',
+    category: 'TRANSLATION',
+    provider: 'ModelsLab (Wav2Lip) / Alibaba (V-Express)', 
+    providerId: 'modelslab',
+    priority: 'high', 
+    effort: 'medium', 
+    notes: 'APIs available, need integration',
+    relatedUseCases: ['Voice dubbing', 'Multilingual video', 'Localization'],
+    relatedLLMs: ['Qwen 2.5', 'GPT-4o'],
+    crossFunctional: [
+      { category: 'VOICE', features: ['voice_cloning', 'multi_language_voice'] },
+      { category: 'VIDEO', features: ['lip_sync', 'ai_avatars'] }
+    ]
+  },
+  { 
+    feature: 'AI Music Generation', 
+    featureId: 'ai_music_gen',
+    category: 'AUDIO',
+    provider: 'ElevenLabs SFX (Alternative)', 
+    providerId: 'elevenlabs',
+    priority: 'medium', 
+    effort: 'low', 
+    notes: 'Use ElevenLabs SFX as workaround',
+    relatedUseCases: ['Background music', 'Video scoring', 'Podcast intros'],
+    crossFunctional: [
+      { category: 'VIDEO', features: ['text_to_video', 'script_to_video'] }
+    ]
+  },
+  { 
+    feature: 'DeepSeek R1 Reasoning', 
+    featureId: 'ai_script_gen',
+    category: 'SCRIPT',
+    provider: 'DeepSeek', 
+    providerId: 'deepseek',
+    priority: 'high', 
+    effort: 'low', 
+    notes: 'Model available, needs integration',
+    relatedUseCases: ['Complex analysis', 'Multi-step reasoning', 'Technical docs'],
+    relatedLLMs: ['DeepSeek V3', 'GPT-4o'],
+    crossFunctional: [
+      { category: 'INPUT', features: ['document_upload', 'csv_data'] }
+    ]
+  },
+  { 
+    feature: 'ControlNet Depth/Canny', 
+    featureId: 'controlnet',
+    category: 'IMAGE',
+    provider: 'ModelsLab', 
+    providerId: 'modelslab',
+    priority: 'medium', 
+    effort: 'medium', 
+    notes: 'Pose working, add depth/canny modes',
+    relatedUseCases: ['Architectural viz', 'Product mockups', 'Character design'],
+    crossFunctional: [
+      { category: '3D', features: ['3d_scene_gen', 'mesh_generation'] }
+    ]
+  },
+  { 
+    feature: 'Image Inpainting', 
+    featureId: 'inpainting',
+    category: 'IMAGE',
+    provider: 'ModelsLab / Replicate', 
+    providerId: 'modelslab',
+    priority: 'medium', 
+    effort: 'low', 
+    notes: 'APIs ready, need UI integration',
+    relatedUseCases: ['Object removal', 'Background editing', 'Photo restoration'],
+    crossFunctional: [
+      { category: 'VFX', features: ['ai_bg_replace', 'object_removal'] }
+    ]
+  },
+  { 
+    feature: 'Advanced AI Avatars', 
+    featureId: 'ai_avatars',
+    category: 'VIDEO',
+    provider: 'ModelsLab / Alibaba EMO', 
+    providerId: 'alibaba',
+    priority: 'high', 
+    effort: 'high', 
+    notes: 'Complex integration, multiple APIs',
+    relatedUseCases: ['Training videos', 'Marketing content', 'Personalized messages'],
+    relatedLLMs: ['GPT-4o', 'Claude 3.5'],
+    crossFunctional: [
+      { category: 'VOICE', features: ['tts', 'voice_cloning'] },
+      { category: 'ANIMATION', features: ['motion_graphics', 'auto_animate'] }
+    ]
+  },
+  { 
+    feature: 'AR/VR Export', 
+    featureId: 'ar_preview',
+    category: 'AR_VR',
+    provider: 'ModelsLab 3D', 
+    providerId: 'modelslab',
+    priority: 'low', 
+    effort: 'high', 
+    notes: 'Future roadmap - requires 3D pipeline',
+    relatedUseCases: ['Immersive training', 'Virtual tours', 'Product demos'],
+    crossFunctional: [
+      { category: '3D', features: ['3d_scene_gen', '360_view', 'mesh_generation'] },
+      { category: 'INTERACTIVE', features: ['spatial', 'immersive'] }
+    ]
+  },
+  { 
+    feature: 'Multilingual AI Avatars', 
+    featureId: 'multilingual_avatars',
+    category: 'TRANSLATION',
+    provider: 'Alibaba / ModelsLab', 
+    providerId: 'alibaba',
+    priority: 'medium', 
+    effort: 'high', 
+    notes: 'Combine avatar + translation + lip-sync',
+    relatedUseCases: ['Global marketing', 'E-learning localization', 'Corporate comms'],
+    relatedLLMs: ['Qwen 2.5', 'Gemini 2.5 Pro'],
+    crossFunctional: [
+      { category: 'VIDEO', features: ['ai_avatars', 'lip_sync'] },
+      { category: 'VOICE', features: ['multi_language_voice', 'voice_cloning'] }
+    ]
+  },
+];
+
+// ============================================
+// CROSS-FUNCTIONAL FEATURE MAPPING
+// ============================================
+
+export interface CrossFunctionalMapping {
+  primaryFeatureId: string;
+  primaryCategory: FeatureCategory;
+  relatedFeatures: { featureId: string; category: FeatureCategory; relationship: 'requires' | 'enhances' | 'enables' | 'alternative' }[];
+  useCases: string[];
+  recommendedProviders: ProviderId[];
+  recommendedLLMs: string[];
+}
+
+export const CROSS_FUNCTIONAL_MAPPINGS: CrossFunctionalMapping[] = [
+  {
+    primaryFeatureId: 'script_to_video',
+    primaryCategory: 'VIDEO',
+    relatedFeatures: [
+      { featureId: 'ai_script_gen', category: 'SCRIPT', relationship: 'requires' },
+      { featureId: 'tts', category: 'VOICE', relationship: 'enhances' },
+      { featureId: 'ai_image_gen', category: 'IMAGE', relationship: 'enables' },
+      { featureId: 'auto_subtitles', category: 'VIDEO', relationship: 'enhances' },
+    ],
+    useCases: ['Training videos', 'Marketing content', 'Educational material'],
+    recommendedProviders: ['gemini', 'openai', 'modelslab', 'elevenlabs'],
+    recommendedLLMs: ['GPT-4o', 'Gemini 2.5 Pro'],
+  },
+  {
+    primaryFeatureId: 'one_click_translate',
+    primaryCategory: 'TRANSLATION',
+    relatedFeatures: [
+      { featureId: 'auto_subtitles_translate', category: 'TRANSLATION', relationship: 'enhances' },
+      { featureId: 'voice_dubbing', category: 'TRANSLATION', relationship: 'enables' },
+      { featureId: 'lip_sync_translate', category: 'TRANSLATION', relationship: 'enables' },
+      { featureId: 'tts', category: 'VOICE', relationship: 'requires' },
+    ],
+    useCases: ['Global content', 'Localization', 'Multi-market distribution'],
+    recommendedProviders: ['deepl', 'alibaba', 'elevenlabs'],
+    recommendedLLMs: ['Qwen 2.5', 'Claude 3.5 Sonnet'],
+  },
+  {
+    primaryFeatureId: 'ai_image_gen',
+    primaryCategory: 'IMAGE',
+    relatedFeatures: [
+      { featureId: 'text_prompt', category: 'INPUT', relationship: 'requires' },
+      { featureId: 'image_to_image', category: 'IMAGE', relationship: 'enhances' },
+      { featureId: 'controlnet', category: 'IMAGE', relationship: 'enhances' },
+      { featureId: 'image_animation', category: 'IMAGE', relationship: 'enables' },
+      { featureId: 'text_to_video', category: 'VIDEO', relationship: 'enables' },
+    ],
+    useCases: ['Visual content', 'Marketing assets', 'Product mockups'],
+    recommendedProviders: ['modelslab', 'openai', 'replicate'],
+    recommendedLLMs: ['GPT-4o', 'Gemini 2.5 Pro'],
+  },
+  {
+    primaryFeatureId: 'text_to_video',
+    primaryCategory: 'VIDEO',
+    relatedFeatures: [
+      { featureId: 'text_prompt', category: 'INPUT', relationship: 'requires' },
+      { featureId: 'ai_image_gen', category: 'IMAGE', relationship: 'alternative' },
+      { featureId: 'image_to_video', category: 'VIDEO', relationship: 'alternative' },
+      { featureId: 'bg_music', category: 'AUDIO', relationship: 'enhances' },
+    ],
+    useCases: ['Social media', 'Ads', 'Explainer videos'],
+    recommendedProviders: ['modelslab', 'replicate', 'alibaba'],
+    recommendedLLMs: ['Gemini 2.5 Pro'],
+  },
+  {
+    primaryFeatureId: 'tts',
+    primaryCategory: 'VOICE',
+    relatedFeatures: [
+      { featureId: 'voice_cloning', category: 'VOICE', relationship: 'enhances' },
+      { featureId: 'voice_emotion', category: 'VOICE', relationship: 'enhances' },
+      { featureId: 'lip_sync', category: 'VIDEO', relationship: 'enables' },
+      { featureId: 'auto_subtitles', category: 'VIDEO', relationship: 'enables' },
+    ],
+    useCases: ['Narration', 'Accessibility', 'Voiceovers'],
+    recommendedProviders: ['elevenlabs', 'openai', 'alibaba'],
+    recommendedLLMs: ['GPT-4o'],
+  },
 ];
 
 // ============================================

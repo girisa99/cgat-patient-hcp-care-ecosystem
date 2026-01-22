@@ -30,7 +30,8 @@ import {
   CRITICAL_GAPS,
   LLM_COMPARISONS,
   ROUTING_STRATEGY,
-  FEATURE_USE_CASES 
+  FEATURE_USE_CASES,
+  CROSS_FUNCTIONAL_MAPPINGS
 } from './matrixData';
 import type { FeatureCategory, ImplementationStatus, ProviderId, Feature } from './types';
 
@@ -1264,7 +1265,7 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
           </div>
         </TabsContent>
 
-        {/* Gap Analysis Tab - Dynamic based on category with Edit Support */}
+        {/* Gap Analysis Tab - Fully Dynamic with Cross-Functional Mapping */}
         <TabsContent value="gaps" className="mt-0 space-y-4">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <h3 className="font-semibold flex items-center gap-2">
@@ -1306,6 +1307,15 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
               const plannedProviders = providers.filter(([_, p]) => p?.implementation === 'planned').map(([id]) => id);
               const missingProviders = PROVIDER_SUMMARIES.filter(p => !featureImpl[p.id as ProviderId] || featureImpl[p.id as ProviderId]?.implementation === 'not_started');
               
+              // Get use cases for this feature
+              const useCase = FEATURE_USE_CASES[feature.id];
+              
+              // Get cross-functional mapping
+              const crossFunc = CROSS_FUNCTIONAL_MAPPINGS.find(m => m.primaryFeatureId === feature.id);
+              
+              // Get related LLMs
+              const criticalGap = CRITICAL_GAPS.find(g => g.featureId === feature.id);
+              
               return {
                 featureId: feature.id,
                 feature: feature.name,
@@ -1316,6 +1326,11 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
                 missingProviders,
                 potentialProviders: missingProviders.slice(0, 3).map(p => p.name),
                 notes: providers.find(([_, p]) => p?.notes)?.[1]?.notes || 'Integration opportunity',
+                useCases: useCase?.scenarios?.slice(0, 3) || criticalGap?.relatedUseCases || [],
+                relatedLLMs: crossFunc?.recommendedLLMs || criticalGap?.relatedLLMs || [],
+                crossFunctional: crossFunc?.relatedFeatures?.slice(0, 3) || criticalGap?.crossFunctional?.flatMap(cf => 
+                  cf.features.map(f => ({ featureId: f, category: cf.category, relationship: 'enhances' as const }))
+                )?.slice(0, 3) || [],
               };
             });
 
@@ -1334,11 +1349,14 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
                 <Table>
                   <TableHeader className="bg-muted/30">
                     <TableRow>
-                      <TableHead className="text-xs">Feature</TableHead>
-                      <TableHead className="text-xs w-[80px]">Priority</TableHead>
-                      <TableHead className="text-xs">Partial In</TableHead>
-                      <TableHead className="text-xs">Could Add</TableHead>
-                      {editMode && <TableHead className="text-xs w-[100px]">Actions</TableHead>}
+                      <TableHead className="text-xs w-[120px]">Feature</TableHead>
+                      <TableHead className="text-xs w-[60px]">Priority</TableHead>
+                      <TableHead className="text-xs w-[100px]">Partial In</TableHead>
+                      <TableHead className="text-xs w-[100px]">Could Add</TableHead>
+                      <TableHead className="text-xs w-[120px]">Use Cases</TableHead>
+                      <TableHead className="text-xs w-[100px]">Cross-Functional</TableHead>
+                      <TableHead className="text-xs w-[80px]">LLMs</TableHead>
+                      {editMode && <TableHead className="text-xs w-[80px]">Actions</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1367,6 +1385,46 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
                             ))}
                           </div>
                         </TableCell>
+                        {/* Use Cases Column */}
+                        <TableCell className="py-2">
+                          <div className="flex flex-wrap gap-0.5">
+                            {gap.useCases.length > 0 ? gap.useCases.slice(0, 2).map((uc, j) => (
+                              <span key={j} className="text-[8px] px-1 py-0.5 rounded bg-muted/50 text-foreground">{uc}</span>
+                            )) : <span className="text-[9px] text-muted-foreground">—</span>}
+                          </div>
+                        </TableCell>
+                        {/* Cross-Functional Column */}
+                        <TableCell className="py-2">
+                          <div className="flex flex-wrap gap-0.5">
+                            {gap.crossFunctional.length > 0 ? gap.crossFunctional.slice(0, 2).map((cf, j) => (
+                              <TooltipProvider key={j}>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className={`text-[8px] px-1 py-0.5 rounded cursor-help ${
+                                      cf.relationship === 'requires' ? 'bg-destructive/10 text-destructive' :
+                                      cf.relationship === 'enables' ? 'bg-primary/10 text-primary' :
+                                      'bg-secondary/50 text-secondary-foreground'
+                                    }`}>
+                                      {CATEGORY_LABELS[cf.category]?.split(' ')[0]}
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent className="text-xs">
+                                    <p className="font-medium">{cf.featureId.replace(/_/g, ' ')}</p>
+                                    <p className="text-muted-foreground">{cf.relationship}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )) : <span className="text-[9px] text-muted-foreground">—</span>}
+                          </div>
+                        </TableCell>
+                        {/* LLMs Column */}
+                        <TableCell className="py-2">
+                          <div className="flex flex-wrap gap-0.5">
+                            {gap.relatedLLMs.length > 0 ? gap.relatedLLMs.slice(0, 2).map((llm, j) => (
+                              <span key={j} className="text-[8px] px-1 py-0.5 rounded bg-primary/10 text-primary">{llm.split(' ')[0]}</span>
+                            )) : <span className="text-[9px] text-muted-foreground">—</span>}
+                          </div>
+                        </TableCell>
                         {editMode && (
                           <TableCell className="py-2">
                             <div className="flex gap-1">
@@ -1376,11 +1434,10 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
                                   size="sm" 
                                   className="h-6 text-[9px] px-2"
                                   onClick={() => {
-                                    // Mark first partial provider as implemented
                                     handleStatusChange(gap.featureId, gap.partialProviders[0], 'implemented');
                                   }}
                                 >
-                                  ✓ Complete
+                                  ✓
                                 </Button>
                               )}
                               {gap.missingProviders.length > 0 && (
@@ -1389,11 +1446,10 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
                                   size="sm" 
                                   className="h-6 text-[9px] px-2"
                                   onClick={() => {
-                                    // Mark first missing provider as implemented
                                     handleStatusChange(gap.featureId, gap.missingProviders[0].id, 'implemented');
                                   }}
                                 >
-                                  + Add
+                                  +
                                 </Button>
                               )}
                             </div>
@@ -1407,21 +1463,93 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
             );
           })()}
           
-          {/* Static Critical Gaps */}
-          <div className="mt-4 space-y-2">
-            <h4 className="font-medium text-xs text-muted-foreground">Critical Integration Opportunities</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              {CRITICAL_GAPS.slice(0, 4).map((gap, i) => (
-                <div key={i} className="p-2 rounded border bg-card flex items-center justify-between">
-                  <div>
-                    <span className="text-xs font-medium">{gap.feature}</span>
-                    <span className="text-[9px] text-muted-foreground ml-2">{gap.provider}</span>
-                  </div>
-                  <Badge variant={gap.priority === 'high' ? 'destructive' : 'secondary'} className="text-[8px]">{gap.effort}</Badge>
+          {/* Critical Integration Opportunities - Now Dynamic by Category */}
+          {(() => {
+            const filteredCriticalGaps = selectedCategory === 'all' 
+              ? CRITICAL_GAPS 
+              : CRITICAL_GAPS.filter(g => g.category === selectedCategory);
+            
+            if (filteredCriticalGaps.length === 0) return null;
+            
+            return (
+              <div className="mt-4 space-y-2">
+                <h4 className="font-medium text-xs text-muted-foreground flex items-center gap-2">
+                  <Zap className="w-3 h-3" />
+                  Critical Integration Opportunities {selectedCategory !== 'all' && `(${CATEGORY_LABELS[selectedCategory]})`}
+                </h4>
+                <div className="border rounded-lg overflow-hidden">
+                  <Table>
+                    <TableHeader className="bg-muted/30">
+                      <TableRow>
+                        <TableHead className="text-xs w-[140px]">Feature</TableHead>
+                        <TableHead className="text-xs w-[100px]">Provider</TableHead>
+                        <TableHead className="text-xs w-[60px]">Priority</TableHead>
+                        <TableHead className="text-xs w-[60px]">Effort</TableHead>
+                        <TableHead className="text-xs w-[120px]">Use Cases</TableHead>
+                        <TableHead className="text-xs w-[100px]">Cross-Functional</TableHead>
+                        <TableHead className="text-xs">Notes</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredCriticalGaps.map((gap, i) => (
+                        <TableRow key={i}>
+                          <TableCell className="py-2">
+                            <div className="font-medium text-xs">{gap.feature}</div>
+                            <span className="text-[9px] text-muted-foreground">{CATEGORY_LABELS[gap.category]?.split(' ')[1]}</span>
+                          </TableCell>
+                          <TableCell className="py-2">
+                            <span className="text-[9px] text-muted-foreground">{gap.provider.split('/')[0].trim()}</span>
+                          </TableCell>
+                          <TableCell className="py-2">
+                            <Badge variant={gap.priority === 'critical' ? 'destructive' : gap.priority === 'high' ? 'default' : 'secondary'} className="text-[8px]">
+                              {gap.priority}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="py-2">
+                            <Badge variant="outline" className={`text-[8px] ${
+                              gap.effort === 'low' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30' :
+                              gap.effort === 'medium' ? 'bg-amber-500/10 text-amber-600 border-amber-500/30' :
+                              'bg-red-500/10 text-red-600 border-red-500/30'
+                            }`}>
+                              {gap.effort}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="py-2">
+                            <div className="flex flex-wrap gap-0.5">
+                              {gap.relatedUseCases?.slice(0, 2).map((uc, j) => (
+                                <span key={j} className="text-[8px] px-1 py-0.5 rounded bg-muted/50">{uc}</span>
+                              )) || <span className="text-[9px] text-muted-foreground">—</span>}
+                            </div>
+                          </TableCell>
+                          <TableCell className="py-2">
+                            <div className="flex flex-wrap gap-0.5">
+                              {gap.crossFunctional?.slice(0, 2).map((cf, j) => (
+                                <TooltipProvider key={j}>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className="text-[8px] px-1 py-0.5 rounded bg-secondary/50 cursor-help">
+                                        {CATEGORY_LABELS[cf.category]?.split(' ')[0]}
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent className="text-xs">
+                                      <p className="font-medium">{cf.features.join(', ')}</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )) || <span className="text-[9px] text-muted-foreground">—</span>}
+                            </div>
+                          </TableCell>
+                          <TableCell className="py-2">
+                            <span className="text-[9px] text-muted-foreground">{gap.notes}</span>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
-              ))}
-            </div>
-          </div>
+              </div>
+            );
+          })()}
         </TabsContent>
       </Tabs>
     </div>
