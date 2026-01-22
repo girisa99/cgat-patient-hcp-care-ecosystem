@@ -146,20 +146,31 @@ export const GenerationCoverageTab: React.FC<GenerationCoverageTabProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Category Indicator */}
-      {selectedCategory && selectedCategory !== 'all' && (
-        <div className="flex items-center gap-2 p-2 rounded-lg bg-primary/10 border border-primary/20">
-          <Info className="h-4 w-4 text-primary" />
-          <span className="text-sm">
-            Showing metrics filtered for <strong className="text-primary">{categoryLabel}</strong> category
-          </span>
-        </div>
-      )}
+      {/* Category Indicator - CLARIFIED */}
+      <div className={`flex items-center gap-2 p-2 rounded-lg border ${
+        selectedCategory && selectedCategory !== 'all' 
+          ? 'bg-primary/10 border-primary/20' 
+          : 'bg-muted/30 border-muted'
+      }`}>
+        <Info className="h-4 w-4 text-primary" />
+        <span className="text-sm">
+          {selectedCategory && selectedCategory !== 'all' ? (
+            <>
+              Showing <strong className="text-primary">{categoryLabel}</strong> category only - 
+              Industries, Frameworks, Visuals, Outputs that require <strong>{categoryLabel}</strong> features
+            </>
+          ) : (
+            <>
+              Showing <strong>ALL categories</strong> - select a category above to filter
+            </>
+          )}
+        </span>
+      </div>
 
-      {/* Header Stats Grid - Compact 2-row layout */}
+      {/* Header Stats Grid - Compact 2-row layout with CLEAR labels */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex flex-col gap-2 flex-1">
-          {/* Row 1: Context counts */}
+          {/* Row 1: Context counts - FILTERED by category */}
           <div className="flex items-center gap-2">
             {[
               { label: 'Industries', value: stats.industries, type: 'industry' as ContextType },
@@ -170,45 +181,92 @@ export const GenerationCoverageTab: React.FC<GenerationCoverageTabProps> = ({
             ].map((stat, idx) => {
               const Icon = CONTEXT_ICONS[stat.type];
               return (
-                <Card 
-                  key={`context-${idx}`} 
-                  className={`cursor-pointer transition-all flex-1 ${selectedContext === stat.type ? 'ring-2 ring-primary' : 'hover:bg-muted/50'}`}
-                  onClick={() => {
-                    setSelectedContext(stat.type);
-                    if (stat.type === 'feature') setViewMode('backward');
-                    else setViewMode('forward');
-                  }}
-                >
-                  <CardContent className="p-2 flex items-center gap-1.5">
-                    <Icon className="h-3.5 w-3.5 text-primary" />
-                    <div>
-                      <div className="text-sm font-bold">{stat.value}</div>
-                      <div className="text-[8px] text-muted-foreground">{stat.label}</div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <TooltipProvider key={`context-${idx}`}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Card 
+                        className={`cursor-pointer transition-all flex-1 ${selectedContext === stat.type ? 'ring-2 ring-primary' : 'hover:bg-muted/50'}`}
+                        onClick={() => {
+                          setSelectedContext(stat.type);
+                          if (stat.type === 'feature') setViewMode('backward');
+                          else setViewMode('forward');
+                        }}
+                      >
+                        <CardContent className="p-2 flex items-center gap-1.5">
+                          <Icon className="h-3.5 w-3.5 text-primary" />
+                          <div>
+                            <div className="text-sm font-bold">{stat.value}</div>
+                            <div className="text-[8px] text-muted-foreground">{stat.label}</div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <div className="text-xs">
+                        <strong>{stat.value} {stat.label}</strong>
+                        {selectedCategory && selectedCategory !== 'all' && (
+                          <div className="text-muted-foreground">
+                            That require {categoryLabel} features
+                          </div>
+                        )}
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               );
             })}
           </div>
           
-          {/* Row 2: Metrics with breakdown */}
+          {/* Row 2: Metrics with breakdown - NOW SHOWS SOURCE */}
           <div className="flex items-center gap-2 text-xs">
-            <div className="flex items-center gap-1 px-2 py-1 rounded bg-muted/30">
-              <Target className="h-3 w-3 text-primary" />
-              <span className="font-bold">{stats.scenarios}</span>
-              <span className="text-muted-foreground">Scenarios</span>
-              {stats.newScenarios > 0 && (
-                <Badge variant="outline" className="text-[8px] px-1 py-0 h-4 border-primary/30 text-primary">+{stats.newScenarios}</Badge>
-              )}
-            </div>
-            <div className="flex items-center gap-1 px-2 py-1 rounded bg-muted/30">
-              <Zap className="h-3 w-3 text-foreground" />
-              <span className="font-bold">{stats.useCases}</span>
-              <span className="text-muted-foreground">Use Cases</span>
-              {stats.newUseCases > 0 && (
-                <Badge variant="outline" className="text-[8px] px-1 py-0 h-4 border-primary/30 text-primary">+{stats.newUseCases}</Badge>
-              )}
-            </div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1 px-2 py-1 rounded bg-muted/30 cursor-help">
+                    <Target className="h-3 w-3 text-primary" />
+                    <span className="font-bold">{stats.scenarios}</span>
+                    <span className="text-muted-foreground">Scenarios</span>
+                    {stats.newScenarios > 0 && (
+                      <Badge variant="outline" className="text-[8px] px-1 py-0 h-4 border-primary/30 text-primary">+{stats.newScenarios} new</Badge>
+                    )}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <div className="text-xs space-y-1">
+                    <div><strong>{stats.scenarios} total scenarios</strong> for {categoryLabel}</div>
+                    <div className="text-muted-foreground">
+                      • From Feature Use Cases: {stats.scenarios - stats.newScenarios}<br/>
+                      • <span className="text-primary">New from Generation Coverage: +{stats.newScenarios}</span>
+                    </div>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1 px-2 py-1 rounded bg-muted/30 cursor-help">
+                    <Zap className="h-3 w-3 text-foreground" />
+                    <span className="font-bold">{stats.useCases}</span>
+                    <span className="text-muted-foreground">Use Cases</span>
+                    {stats.newUseCases > 0 && (
+                      <Badge variant="outline" className="text-[8px] px-1 py-0 h-4 border-primary/30 text-primary">+{stats.newUseCases} new</Badge>
+                    )}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <div className="text-xs space-y-1">
+                    <div><strong>{stats.useCases} total use cases</strong> for {categoryLabel}</div>
+                    <div className="text-muted-foreground">
+                      • From Feature Use Cases: {stats.useCases - stats.newUseCases}<br/>
+                      • <span className="text-primary">New from Generation Coverage: +{stats.newUseCases}</span>
+                    </div>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            
             <div className="flex items-center gap-1 px-2 py-1 rounded bg-muted/30">
               <span className="font-bold">{stats.providers}</span>
               <span className="text-muted-foreground">Providers</span>

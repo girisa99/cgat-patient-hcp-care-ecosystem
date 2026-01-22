@@ -369,7 +369,18 @@ export function calculateUnifiedMetrics(
 
 // ==========================================
 // CATEGORY-SPECIFIC GENERATION COVERAGE STATS
+// Now properly filters context mappings by which features they require
 // ==========================================
+
+// Helper: Check if a context mapping requires features from the given category
+function contextRequiresCategory(
+  mapping: { requiredFeatures: { featureId: string; category: FeatureCategory }[] },
+  categoryFilter: FeatureCategory | 'all',
+  featureIds: Set<string>
+): boolean {
+  if (categoryFilter === 'all') return true;
+  return mapping.requiredFeatures.some(rf => featureIds.has(rf.featureId));
+}
 
 export function getGenerationCoverageStatsForCategory(
   categoryFilter: FeatureCategory | 'all' = 'all'
@@ -394,23 +405,36 @@ export function getGenerationCoverageStatsForCategory(
   
   const featureIds = new Set(categoryFeatures.map(f => f.id));
   
-  // Filter context mappings by category
-  const filterByCategory = (mappings: typeof INDUSTRY_CAPABILITY_MAPPINGS) => {
-    if (categoryFilter === 'all') return mappings;
-    return mappings.filter(m =>
-      m.requiredFeatures.some(rf => featureIds.has(rf.featureId))
-    );
-  };
+  // Filter context mappings by category - ONLY include contexts that require features from this category
+  const filteredIndustries = categoryFilter === 'all' 
+    ? INDUSTRY_CAPABILITY_MAPPINGS
+    : INDUSTRY_CAPABILITY_MAPPINGS.filter(m =>
+        m.requiredFeatures.some(rf => featureIds.has(rf.featureId))
+      );
   
-  const filteredIndustries = filterByCategory(INDUSTRY_CAPABILITY_MAPPINGS);
-  const filteredFrameworks = filterByCategory(FRAMEWORK_CAPABILITY_MAPPINGS);
-  const filteredVisuals = filterByCategory(VISUAL_CAPABILITY_MAPPINGS);
-  const filteredOutputs = filterByCategory(OUTPUT_CAPABILITY_MAPPINGS);
+  const filteredFrameworks = categoryFilter === 'all'
+    ? FRAMEWORK_CAPABILITY_MAPPINGS
+    : FRAMEWORK_CAPABILITY_MAPPINGS.filter(m =>
+        m.requiredFeatures.some(rf => featureIds.has(rf.featureId))
+      );
+  
+  const filteredVisuals = categoryFilter === 'all'
+    ? VISUAL_CAPABILITY_MAPPINGS
+    : VISUAL_CAPABILITY_MAPPINGS.filter(m =>
+        m.requiredFeatures.some(rf => featureIds.has(rf.featureId))
+      );
+  
+  const filteredOutputs = categoryFilter === 'all'
+    ? OUTPUT_CAPABILITY_MAPPINGS
+    : OUTPUT_CAPABILITY_MAPPINGS.filter(m =>
+        m.requiredFeatures.some(rf => featureIds.has(rf.featureId))
+      );
+  
   const filteredFeatures = categoryFilter === 'all'
     ? FEATURE_CONTEXT_MAPPINGS
     : FEATURE_CONTEXT_MAPPINGS.filter(f => f.category === categoryFilter);
   
-  // Collect unique values
+  // Collect unique values from FILTERED mappings only
   const allScenarios = new Set<string>();
   const allUseCases = new Set<string>();
   const allProviders = new Set<string>();
@@ -418,14 +442,14 @@ export function getGenerationCoverageStatsForCategory(
   const baselineScenarios = new Set<string>();
   const baselineUseCases = new Set<string>();
   
-  // Get baseline from FEATURE_USE_CASES
+  // Get baseline from FEATURE_USE_CASES (for this category only)
   categoryFeatures.forEach(f => {
     const uc = FEATURE_USE_CASES[f.id];
     if (uc?.scenarios) uc.scenarios.forEach(s => baselineScenarios.add(s));
     if (uc?.bestFor) uc.bestFor.forEach(b => baselineUseCases.add(b));
   });
   
-  // Aggregate from filtered mappings
+  // Aggregate from FILTERED mappings only
   [...filteredIndustries, ...filteredFrameworks, ...filteredVisuals, ...filteredOutputs].forEach(m => {
     m.scenarios.forEach(s => allScenarios.add(s));
     m.useCases.forEach(u => allUseCases.add(u));
@@ -435,7 +459,7 @@ export function getGenerationCoverageStatsForCategory(
     m.recommendedModels.forEach(model => model.modelIds.forEach(id => allModels.add(id)));
   });
   
-  // Feature mappings
+  // Feature mappings (already filtered by category)
   filteredFeatures.forEach(f => {
     if (f.scenarios) f.scenarios.forEach(s => allScenarios.add(s));
     if (f.useCases) f.useCases.forEach(u => allUseCases.add(u));
@@ -443,7 +467,7 @@ export function getGenerationCoverageStatsForCategory(
     if (f.recommendedLLMs) f.recommendedLLMs.forEach(l => allModels.add(l));
   });
   
-  // Calculate new (not in baseline)
+  // Calculate new (not in baseline) - these are Generation Coverage's unique contributions
   const newScenarios = Array.from(allScenarios).filter(s => !baselineScenarios.has(s)).length;
   const newUseCases = Array.from(allUseCases).filter(u => !baselineUseCases.has(u)).length;
   

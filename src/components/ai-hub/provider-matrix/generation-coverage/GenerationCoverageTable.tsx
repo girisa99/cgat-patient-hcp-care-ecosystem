@@ -84,7 +84,24 @@ interface CoverageRow {
   opportunities?: string[];
 }
 
+// Helper: Check if a context mapping has features matching the category filter
+const contextMatchesCategory = (
+  mapping: ContextToCapabilityMapping,
+  categoryFilter?: string
+): boolean => {
+  if (!categoryFilter || categoryFilter === 'all') return true;
+  
+  // Check if any required feature's category matches the filter
+  return mapping.requiredFeatures.some(rf => {
+    // Get the feature category from the featureId
+    // Features like 'document_upload' belong to INPUT, 'tts' to VOICE, etc.
+    const featureMapping = FEATURE_CONTEXT_MAPPINGS.find(f => f.featureId === rf.featureId);
+    return featureMapping?.category === categoryFilter;
+  });
+};
+
 // Lazy computation - only compute what's needed for current view
+// NOW PROPERLY FILTERS BY CATEGORY
 function* generateCoverageRows(
   contextType: 'industry' | 'framework' | 'visual' | 'output' | 'feature' | 'all',
   categoryFilter?: string
@@ -142,9 +159,12 @@ function* generateCoverageRows(
     return 'partial';
   };
   
-  // Industry mappings
+  // Industry mappings - NOW FILTERED BY CATEGORY
   if (contextType === 'all' || contextType === 'industry') {
     for (const mapping of INDUSTRY_CAPABILITY_MAPPINGS) {
+      // Skip if doesn't match category filter
+      if (!contextMatchesCategory(mapping, categoryFilter)) continue;
+      
       const providers = Object.values(mapping.recommendedProviders)
         .filter(Boolean)
         .flatMap(p => p!.flatMap(x => x.providers));
@@ -169,9 +189,12 @@ function* generateCoverageRows(
     }
   }
   
-  // Framework mappings
+  // Framework mappings - NOW FILTERED BY CATEGORY
   if (contextType === 'all' || contextType === 'framework') {
     for (const mapping of FRAMEWORK_CAPABILITY_MAPPINGS) {
+      // Skip if doesn't match category filter
+      if (!contextMatchesCategory(mapping, categoryFilter)) continue;
+      
       const providers = Object.values(mapping.recommendedProviders)
         .filter(Boolean)
         .flatMap(p => p!.flatMap(x => x.providers));
@@ -196,9 +219,12 @@ function* generateCoverageRows(
     }
   }
   
-  // Visual mappings
+  // Visual mappings - NOW FILTERED BY CATEGORY
   if (contextType === 'all' || contextType === 'visual') {
     for (const mapping of VISUAL_CAPABILITY_MAPPINGS) {
+      // Skip if doesn't match category filter
+      if (!contextMatchesCategory(mapping, categoryFilter)) continue;
+      
       const providers = Object.values(mapping.recommendedProviders)
         .filter(Boolean)
         .flatMap(p => p!.flatMap(x => x.providers));
@@ -223,9 +249,12 @@ function* generateCoverageRows(
     }
   }
   
-  // Output mappings
+  // Output mappings - NOW FILTERED BY CATEGORY
   if (contextType === 'all' || contextType === 'output') {
     for (const mapping of OUTPUT_CAPABILITY_MAPPINGS) {
+      // Skip if doesn't match category filter
+      if (!contextMatchesCategory(mapping, categoryFilter)) continue;
+      
       const providers = Object.values(mapping.recommendedProviders)
         .filter(Boolean)
         .flatMap(p => p!.flatMap(x => x.providers));
