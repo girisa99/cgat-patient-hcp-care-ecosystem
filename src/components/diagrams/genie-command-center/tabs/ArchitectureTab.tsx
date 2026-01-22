@@ -24,13 +24,11 @@ import { GenieIntegrationsDiagram } from '@/components/diagrams/architecture/Gen
 import { GenieMicroservicesDiagram } from '@/components/diagrams/architecture/GenieMicroservicesDiagram';
 import { GenieDataArchitectureDiagram } from '@/components/diagrams/architecture/GenieDataArchitectureDiagram';
 import { GenieSecurityArchitectureDiagram } from '@/components/diagrams/architecture/GenieSecurityArchitectureDiagram';
-import { AIProviderMatrixDashboard } from '@/components/ai-hub/AIProviderMatrixDashboard';
 import { ProviderCapabilityMatrix } from '@/components/ai-hub/provider-matrix';
 
 const architectureDiagrams = [
   { id: 'full-suite', name: 'Full Genie Suite', icon: Layers, description: 'Complete system architecture showing all products and integrations' },
   { id: 'capability-matrix', name: 'Provider Capability Matrix', icon: Cpu, description: 'Comprehensive feature × provider matrix with implementation status' },
-  { id: 'ai-matrix', name: 'AI Provider Summary', icon: Cpu, description: 'Universal AI providers with confidence scores and fallback chains' },
   { id: 'mind', name: 'Genie Mind', icon: Brain, description: 'AI Intelligence Layer - Model Routing, Script Engine, TTS' },
   { id: 'vibe', name: 'Genie Vibe', icon: Film, description: 'Production Layer - Recording Studio, 6 AI Agents, Deployment Modes' },
   { id: 'spark', name: 'Genie Spark', icon: Zap, description: 'Quick-Start Engine - Idea to Content in Seconds' },
@@ -64,8 +62,6 @@ export const ArchitectureTab: React.FC = () => {
         return GenieStudioOverallArchitectureDiagram;
       case 'capability-matrix':
         return () => <ProviderCapabilityMatrix className="w-full" />;
-      case 'ai-matrix':
-        return () => <AIProviderMatrixDashboard isExpanded className="w-full" />;
       case 'mind':
         return GenieMindArchitectureDiagram;
       case 'vibe':

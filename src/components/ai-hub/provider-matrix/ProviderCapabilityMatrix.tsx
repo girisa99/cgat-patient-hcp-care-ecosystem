@@ -749,98 +749,152 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
           )}
         </TabsContent>
 
-        {/* Provider Summary Tab */}
+        {/* Provider Summary Tab - Table Format */}
         <TabsContent value="providers" className="mt-0 space-y-3">
-          {/* Edit Mode Header */}
-          {editMode && (
-            <div className="flex items-center justify-between p-2 rounded-lg border bg-muted/30">
-              <span className="text-xs text-muted-foreground">
-                Edit mode active — Click on status badges or features to modify provider data
-              </span>
-              <AddFeatureDialog onAdd={handleAddFeature} existingCategories={existingCategories} />
-            </div>
-          )}
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {PROVIDER_SUMMARIES.map(provider => {
-              // Compute dynamic stats for this provider
-              const providerFeatures = localFeatures.filter(f => {
-                const impl = localMatrix[f.id]?.[provider.id as ProviderId];
-                return impl?.implementation === 'implemented' || impl?.implementation === 'partial';
-              });
-              const implementedCount = localFeatures.filter(f => 
-                localMatrix[f.id]?.[provider.id as ProviderId]?.implementation === 'implemented'
+          {/* Summary Stats Bar */}
+          {(() => {
+            const configuredCount = PROVIDER_SUMMARIES.filter(p => p.status === 'configured').length;
+            const totalCoverage = PROVIDER_SUMMARIES.reduce((sum, p) => {
+              const implemented = localFeatures.filter(f => 
+                localMatrix[f.id]?.[p.id as ProviderId]?.implementation === 'implemented'
               ).length;
-              const partialCount = localFeatures.filter(f => 
-                localMatrix[f.id]?.[provider.id as ProviderId]?.implementation === 'partial'
-              ).length;
-              
-              return (
-                <div 
-                  key={provider.id} 
-                  className={`p-4 rounded-lg border-2 transition-colors ${
-                    provider.status === 'configured' 
-                      ? 'border-primary/30 bg-primary/5' 
-                      : 'border-secondary/30 bg-secondary/5'
-                  } ${editMode ? 'hover:border-primary cursor-pointer' : ''}`}
-                >
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <h3 className="font-semibold text-foreground">{provider.name}</h3>
-                      <Badge variant="outline" className={`text-[10px] mt-1 ${
-                        provider.costTier === 'budget' ? 'bg-primary/10 border-primary/30' :
-                        provider.costTier === 'standard' ? 'bg-secondary/30 border-secondary/50' :
-                        provider.costTier === 'premium' ? 'bg-accent/10 border-accent/30' :
-                        'bg-muted border-border'
-                      }`}>
-                        {provider.costTier}
-                      </Badge>
-                    </div>
-                    <Badge variant={provider.status === 'configured' ? 'default' : 'secondary'} className="text-[10px]">
-                      {provider.status === 'configured' ? '✅ Ready' : '⚠️ Needs Key'}
-                    </Badge>
+              return sum + (localFeatures.length > 0 ? (implemented / localFeatures.length) * 100 : 0);
+            }, 0) / PROVIDER_SUMMARIES.length;
+            
+            return (
+              <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-lg border bg-muted/20">
+                <div className="flex items-center gap-4 text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-lg text-primary">{PROVIDER_SUMMARIES.length}</span>
+                    <span className="text-muted-foreground">Providers</span>
                   </div>
-                  
-                  <Progress value={localFeatures.length > 0 ? ((implementedCount + partialCount * 0.5) / localFeatures.length) * 100 : 0} className="h-2 mb-2" />
-                  <p className="text-xs text-muted-foreground mb-3">
-                    <span className="text-primary font-medium">{implementedCount}</span>
-                    {partialCount > 0 && <span className="text-secondary-foreground"> + {partialCount} partial</span>}
-                    <span> / {localFeatures.length} features</span>
-                  </p>
-                  
-                  <div className="flex flex-wrap gap-1 mb-2">
-                    {provider.capabilities.slice(0, 4).map(cap => (
-                      <Badge key={cap} variant="outline" className="text-[9px]">{cap}</Badge>
-                    ))}
+                  <div className="h-4 w-px bg-border" />
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-lg text-foreground">{configuredCount}</span>
+                    <span className="text-muted-foreground">Configured</span>
                   </div>
-                  
-                  <div className="text-xs space-y-1">
-                    <p className="text-primary">✓ {provider.strengths.slice(0, 2).join(', ')}</p>
-                    {provider.weaknesses.length > 0 && (
-                      <p className="text-muted-foreground">⚠ {provider.weaknesses[0]}</p>
-                    )}
+                  <div className="h-4 w-px bg-border" />
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-lg text-foreground">{totalCoverage.toFixed(0)}%</span>
+                    <span className="text-muted-foreground">Avg Coverage</span>
                   </div>
-                  
-                  {editMode && (
-                    <div className="mt-3 pt-2 border-t">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="w-full text-xs h-7"
-                        onClick={() => {
-                          setSelectedCategory('all');
-                          setSearchTerm('');
-                          setView('matrix');
-                          toast.info(`Filtered to ${provider.name} features in Matrix view`);
-                        }}
-                      >
-                        <Edit2 className="w-3 h-3 mr-1" /> Edit Features
-                      </Button>
-                    </div>
-                  )}
+                  <div className="h-4 w-px bg-border" />
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-lg text-foreground">{localFeatures.length}</span>
+                    <span className="text-muted-foreground">Total Features</span>
+                  </div>
                 </div>
-              );
-            })}
+                {editMode && (
+                  <AddFeatureDialog onAdd={handleAddFeature} existingCategories={existingCategories} />
+                )}
+              </div>
+            );
+          })()}
+
+          {/* Provider Table */}
+          <div className="border rounded-lg overflow-hidden">
+            <Table>
+              <TableHeader className="bg-muted/30">
+                <TableRow>
+                  <TableHead className="w-[140px] text-xs font-semibold">Provider</TableHead>
+                  <TableHead className="w-[80px] text-xs font-semibold text-center">Status</TableHead>
+                  <TableHead className="w-[80px] text-xs font-semibold text-center">Cost Tier</TableHead>
+                  <TableHead className="w-[100px] text-xs font-semibold text-center">Coverage</TableHead>
+                  <TableHead className="text-xs font-semibold">Capabilities</TableHead>
+                  <TableHead className="text-xs font-semibold">Strengths</TableHead>
+                  <TableHead className="text-xs font-semibold">Weaknesses</TableHead>
+                  {editMode && <TableHead className="w-[80px] text-xs font-semibold text-center">Actions</TableHead>}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {PROVIDER_SUMMARIES.map(provider => {
+                  const implementedCount = localFeatures.filter(f => 
+                    localMatrix[f.id]?.[provider.id as ProviderId]?.implementation === 'implemented'
+                  ).length;
+                  const partialCount = localFeatures.filter(f => 
+                    localMatrix[f.id]?.[provider.id as ProviderId]?.implementation === 'partial'
+                  ).length;
+                  const coveragePercent = localFeatures.length > 0 
+                    ? ((implementedCount + partialCount * 0.5) / localFeatures.length) * 100 
+                    : 0;
+
+                  return (
+                    <TableRow key={provider.id} className="hover:bg-muted/20">
+                      <TableCell className="py-2">
+                        <div className="font-medium text-sm text-foreground">{provider.name}</div>
+                        <div className="text-[10px] text-muted-foreground font-mono">{provider.id}</div>
+                      </TableCell>
+                      <TableCell className="py-2 text-center">
+                        <Badge 
+                          variant={provider.status === 'configured' ? 'default' : 'secondary'} 
+                          className="text-[9px]"
+                        >
+                          {provider.status === 'configured' ? '✅ Ready' : '⚠️ Needs Key'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="py-2 text-center">
+                        <Badge variant="outline" className={`text-[9px] ${
+                          provider.costTier === 'budget' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30' :
+                          provider.costTier === 'standard' ? 'bg-blue-500/10 text-blue-600 border-blue-500/30' :
+                          provider.costTier === 'premium' ? 'bg-purple-500/10 text-purple-600 border-purple-500/30' :
+                          'bg-amber-500/10 text-amber-600 border-amber-500/30'
+                        }`}>
+                          {provider.costTier}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="py-2">
+                        <div className="flex items-center gap-2">
+                          <Progress value={coveragePercent} className="h-2 flex-1" />
+                          <span className="text-[10px] font-medium w-10 text-right">
+                            {implementedCount}
+                            {partialCount > 0 && <span className="text-muted-foreground">+{partialCount}</span>}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-2">
+                        <div className="flex flex-wrap gap-1">
+                          {provider.capabilities.slice(0, 5).map(cap => (
+                            <Badge key={cap} variant="outline" className="text-[8px] py-0 h-4">{cap}</Badge>
+                          ))}
+                          {provider.capabilities.length > 5 && (
+                            <Badge variant="outline" className="text-[8px] py-0 h-4 bg-muted">
+                              +{provider.capabilities.length - 5}
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-2">
+                        <div className="text-[10px] text-primary">
+                          {provider.strengths.slice(0, 2).join(' • ')}
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-2">
+                        <div className="text-[10px] text-muted-foreground">
+                          {provider.weaknesses.length > 0 ? provider.weaknesses[0] : '—'}
+                        </div>
+                      </TableCell>
+                      {editMode && (
+                        <TableCell className="py-2 text-center">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-6 text-[10px] px-2"
+                            onClick={() => {
+                              setSelectedCategory('all');
+                              setSearchTerm('');
+                              setView('matrix');
+                              toast.info(`View ${provider.name} in Matrix`);
+                            }}
+                          >
+                            <Edit2 className="w-3 h-3" />
+                          </Button>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
           </div>
         </TabsContent>
 
