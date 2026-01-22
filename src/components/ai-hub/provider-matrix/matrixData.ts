@@ -1025,31 +1025,54 @@ export const FEATURE_IMPLEMENTATION_MATRIX: Record<string, Partial<Record<Provid
     openai: { status: 'configured', implementation: 'not_started', confidence: 0 },
   },
   
-  // PUBLISHING FEATURES
+  // PUBLISHING FEATURES (Full 8-Step Wizard Integration)
   web_publish: {
-    openai: { status: 'configured', implementation: 'implemented', confidence: 88 },
+    openai: { status: 'configured', implementation: 'implemented', confidence: 88, notes: 'Cloud URL generation' },
+    lovable: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'Primary hosting' },
   },
   embed_website: {
     openai: { status: 'configured', implementation: 'implemented', confidence: 85 },
+    lovable: { status: 'configured', implementation: 'implemented', confidence: 90 },
   },
   youtube_upload: {
-    openai: { status: 'configured', implementation: 'partial', confidence: 60 },
+    google: { status: 'needs_key', implementation: 'planned', confidence: 0, notes: 'Requires OAuth2' },
   },
   social_schedule: {
-    openai: { status: 'configured', implementation: 'not_started', confidence: 0 },
+    lovable: { status: 'configured', implementation: 'planned', confidence: 0, notes: 'Scheduling backend pending' },
   },
   gdrive_integration: {
+    google: { status: 'needs_key', implementation: 'partial', confidence: 65, notes: 'Drive API setup needed' },
     gemini: { status: 'configured', implementation: 'partial', confidence: 65 },
   },
   api_access: {
     openai: { status: 'configured', implementation: 'implemented', confidence: 95 },
     gemini: { status: 'configured', implementation: 'implemented', confidence: 92 },
+    lovable: { status: 'configured', implementation: 'implemented', confidence: 98, notes: 'Edge function APIs' },
   },
   custom_domain: {
-    openai: { status: 'configured', implementation: 'partial', confidence: 50 },
+    lovable: { status: 'configured', implementation: 'partial', confidence: 50, notes: 'DNS setup required' },
   },
   password_protection: {
-    openai: { status: 'configured', implementation: 'implemented', confidence: 85 },
+    lovable: { status: 'configured', implementation: 'implemented', confidence: 85, notes: 'Server-side protection' },
+  },
+  linkedin_post: {
+    microsoft: { status: 'needs_key', implementation: 'planned', confidence: 0, notes: 'LinkedIn API credentials needed' },
+  },
+  vimeo_upload: {
+    lovable: { status: 'configured', implementation: 'planned', confidence: 0, notes: 'Vimeo API integration' },
+  },
+  slideshare_upload: {
+    lovable: { status: 'configured', implementation: 'not_started', confidence: 0, notes: 'SlideShare deprecated, alternatives needed' },
+  },
+  analytics_embed: {
+    google: { status: 'needs_key', implementation: 'partial', confidence: 50, notes: 'GA4 integration' },
+    lovable: { status: 'configured', implementation: 'partial', confidence: 60, notes: 'Internal analytics' },
+  },
+  qr_code_share: {
+    lovable: { status: 'configured', implementation: 'implemented', confidence: 90, notes: 'QR code generation library' },
+  },
+  email_distribution: {
+    lovable: { status: 'configured', implementation: 'partial', confidence: 60, notes: 'Email service integration pending' },
   },
 };
 
