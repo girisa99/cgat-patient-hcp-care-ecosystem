@@ -9,8 +9,29 @@
 export { UnifiedInputStep, type UnifiedInputStepProps, type UnifiedInputState } from './UnifiedInputStep';
 export { VoiceMusicStep, type VoiceMusicStepProps, type VoiceMusicState } from './VoiceMusicStep';
 
-// Re-export PublishingPanel (already created)
-export { PublishingPanel, type PublishingPanelProps, type PublishingState } from '../PublishingPanel';
+// Re-export PublishingPanel (component only - types defined locally)
+export { PublishingPanel } from '../PublishingPanel';
+
+// Publishing types (defined here since PublishingPanel doesn't export them)
+export interface PublishingState {
+  exportFormats: string[];
+  cloudEnabled: boolean;
+  cloudUrl: string | null;
+  platforms: string[];
+  scheduledDate: Date | null;
+  password: string | null;
+  embedEnabled: boolean;
+  analyticsEnabled: boolean;
+}
+
+export interface PublishingPanelProps {
+  value: PublishingState;
+  onChange: (value: PublishingState) => void;
+  isMobile?: boolean;
+  globalTier?: 'free' | 'pro' | 'enterprise';
+  contentTitle?: string;
+  contentType?: string;
+}
 
 // Types for step integration
 export interface StepComponentProps<T> {
@@ -30,7 +51,7 @@ export interface WizardStepStates {
   agents: AgentsState;
   voice: import('./VoiceMusicStep').VoiceMusicState;
   generate: GenerateState;
-  publish: import('../PublishingPanel').PublishingState;
+  publish: PublishingState;
 }
 
 // Placeholder types for other steps (to be refactored from PresentationWizard)
