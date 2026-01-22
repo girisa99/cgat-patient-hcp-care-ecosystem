@@ -35,6 +35,19 @@ export interface TierConfig {
     scriptsPerMonth: number;
     recordingHours: number;
     teamMembers: number;
+    // Killer Pipeline #1: Global Voice Dubbing
+    videoDubsPerMonth?: number;
+    dubbingMinutesPerDub?: number;
+    dubbingLanguages?: number;
+    lipSyncEnabled?: boolean;
+    voiceCloneEnabled?: boolean;
+    // Killer Pipeline #2: Mobile Record → Publish
+    mobileRecordsPerMonth?: number;
+    mobileRecordMinutes?: number;
+    offlineQueueMinutes?: number;
+    socialPlatforms?: number;
+    autoEditEnabled?: boolean;
+    advancedEditEnabled?: boolean;
   };
   features: string[];
   genieProducts: {
@@ -96,7 +109,16 @@ export const SUBSCRIPTION_TIERS: Record<SubscriptionTier, TierConfig> = {
       documentsPerMonth: 50,
       scriptsPerMonth: 25,
       recordingHours: 5,
-      teamMembers: 1
+      teamMembers: 1,
+      // Killer Pipeline #1: Global Dubbing
+      videoDubsPerMonth: 5,
+      dubbingMinutesPerDub: 2,
+      dubbingLanguages: 10,
+      // Killer Pipeline #2: Mobile Record
+      mobileRecordsPerMonth: 20,
+      mobileRecordMinutes: 5,
+      offlineQueueMinutes: 10,
+      socialPlatforms: 3
     },
     features: [
       'Core Genie features',
@@ -104,7 +126,11 @@ export const SUBSCRIPTION_TIERS: Record<SubscriptionTier, TierConfig> = {
       '5 projects',
       'Basic AI routing',
       'Email support',
-      'Basic templates'
+      'Basic templates',
+      '🌍 5 video dubs/mo (10 languages)',
+      '📱 20 mobile records/mo',
+      '⚡ 10 min offline queue',
+      '✅ Checkpoint restoration (no lost credits)'
     ],
     genieProducts: {
       mind: true,
@@ -133,7 +159,18 @@ export const SUBSCRIPTION_TIERS: Record<SubscriptionTier, TierConfig> = {
       documentsPerMonth: 500,
       scriptsPerMonth: 150,
       recordingHours: 25,
-      teamMembers: 5
+      teamMembers: 5,
+      // Killer Pipeline #1: Global Dubbing
+      videoDubsPerMonth: 20,
+      dubbingMinutesPerDub: 5,
+      dubbingLanguages: 40,
+      lipSyncEnabled: true,
+      // Killer Pipeline #2: Mobile Record
+      mobileRecordsPerMonth: 100,
+      mobileRecordMinutes: 10,
+      offlineQueueMinutes: 30,
+      socialPlatforms: 5,
+      autoEditEnabled: true
     },
     features: [
       'Full Genie Suite access',
@@ -143,7 +180,12 @@ export const SUBSCRIPTION_TIERS: Record<SubscriptionTier, TierConfig> = {
       'Background blur & effects',
       'Custom templates',
       'Priority support',
-      'Team feedback system'
+      'Team feedback system',
+      '🌍 20 video dubs/mo (40 languages + lip-sync)',
+      '📱 100 mobile records/mo',
+      '⚡ 30 min offline queue + auto-edit',
+      '🎬 5 social platforms',
+      '✅ Checkpoint restoration'
     ],
     genieProducts: {
       mind: true,
@@ -172,7 +214,20 @@ export const SUBSCRIPTION_TIERS: Record<SubscriptionTier, TierConfig> = {
       documentsPerMonth: -1,
       scriptsPerMonth: -1,
       recordingHours: -1,
-      teamMembers: 25
+      teamMembers: 25,
+      // Killer Pipeline #1: Global Dubbing (FULL)
+      videoDubsPerMonth: 100,
+      dubbingMinutesPerDub: 10,
+      dubbingLanguages: 70,
+      lipSyncEnabled: true,
+      voiceCloneEnabled: true,
+      // Killer Pipeline #2: Mobile Record (UNLIMITED)
+      mobileRecordsPerMonth: -1, // Unlimited
+      mobileRecordMinutes: -1, // Unlimited
+      offlineQueueMinutes: 60,
+      socialPlatforms: -1, // All
+      autoEditEnabled: true,
+      advancedEditEnabled: true
     },
     features: [
       'Unlimited projects',
@@ -184,7 +239,13 @@ export const SUBSCRIPTION_TIERS: Record<SubscriptionTier, TierConfig> = {
       'Knowledge graphs',
       'API access',
       'Approval workflows',
-      'Dedicated support'
+      'Dedicated support',
+      '🌍 100 video dubs/mo (70+ languages + voice clone)',
+      '📱 Unlimited mobile records',
+      '⚡ 60 min offline queue + advanced edit',
+      '🎬 All social platforms + API',
+      '🎤 Voice cloning included',
+      '✅ Checkpoint restoration + priority queue'
     ],
     genieProducts: {
       mind: true,
