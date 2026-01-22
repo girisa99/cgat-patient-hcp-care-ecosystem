@@ -18,7 +18,6 @@ import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import {
   Tooltip,
   TooltipContent,
@@ -120,25 +119,33 @@ export function EditorToolbar({ className }: EditorToolbarProps) {
 
         {/* Center: Tools */}
         <div className="flex items-center gap-1">
-          <ToggleGroup type="single" value={tool} onValueChange={(v) => v && setTool(v as any)}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <ToggleGroupItem value="select" size="sm">
-                  <MousePointer className="h-4 w-4" />
-                </ToggleGroupItem>
-              </TooltipTrigger>
-              <TooltipContent>Select (V)</TooltipContent>
-            </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant={tool === 'select' ? 'secondary' : 'ghost'} 
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setTool('select')}
+              >
+                <MousePointer className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Select (V)</TooltipContent>
+          </Tooltip>
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <ToggleGroupItem value="pan" size="sm">
-                  <Hand className="h-4 w-4" />
-                </ToggleGroupItem>
-              </TooltipTrigger>
-              <TooltipContent>Pan (Space + Drag)</TooltipContent>
-            </Tooltip>
-          </ToggleGroup>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant={tool === 'pan' ? 'secondary' : 'ghost'} 
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setTool('pan')}
+              >
+                <Hand className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Pan (Space + Drag)</TooltipContent>
+          </Tooltip>
 
           <Separator orientation="vertical" className="h-6 mx-1" />
 
@@ -179,13 +186,14 @@ export function EditorToolbar({ className }: EditorToolbarProps) {
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <Toggle
-                pressed={project.viewport.showGrid}
-                onPressedChange={(pressed) => updateViewport({ showGrid: pressed })}
-                size="sm"
+              <Button
+                variant={project.viewport.showGrid ? 'secondary' : 'ghost'}
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => updateViewport({ showGrid: !project.viewport.showGrid })}
               >
                 <Grid3X3 className="h-4 w-4" />
-              </Toggle>
+              </Button>
             </TooltipTrigger>
             <TooltipContent>Toggle Grid (G)</TooltipContent>
           </Tooltip>
