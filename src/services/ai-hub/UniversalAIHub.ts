@@ -623,34 +623,39 @@ export class UniversalAIHub {
   // ============================================
 
   async generateVideo(request: VideoGenRequest, context?: AIRequestContext): Promise<VideoGenResponse> {
-    return this.executeWithFallback('video_gen', async (provider) => {
-      const startTime = Date.now();
-      
-      const { data, error } = await supabase.functions.invoke('ai-video-generator', {
-        body: {
-          prompt: request.prompt,
-          provider: this.mapVideoProvider(provider),
-          duration: request.duration || 5,
-          aspectRatio: request.aspectRatio || '16:9',
-          quality: request.quality || 'standard',
-          referenceImage: request.referenceImage,
-        },
-      });
-
-      if (error) throw new Error(error.message);
-
-      return {
-        videoUrl: data.videoUrl || data.video_url,
-        thumbnailUrl: data.thumbnailUrl,
+    // Use unified video service with automatic fallback chain
+    const { unifiedVideoService } = await import('@/components/universal-editor/services/unifiedVideoService');
+    
+    const startTime = Date.now();
+    
+    const result = await unifiedVideoService.generateVideo({
+      type: request.referenceImage ? 'image-to-video' : 'text-to-video',
+      prompt: request.prompt,
+      provider: 'auto', // Let unified service handle fallback
+      options: {
         duration: request.duration || 5,
-        confidence: this.createConfidence(0.8, provider, Date.now() - startTime),
-        metadata: {
-          promptUsed: request.prompt,
-          estimatedCost: 0.05,
-          format: 'mp4',
-        },
-      };
-    }, context);
+        width: request.aspectRatio === '9:16' ? 720 : 1280,
+        height: request.aspectRatio === '9:16' ? 1280 : 720,
+        quality: request.quality as 'draft' | 'preview' | 'production' | 'ultra' || 'preview',
+        sourceImageUrl: request.referenceImage,
+      },
+    });
+
+    if (!result.success) {
+      throw new Error(result.error || 'Video generation failed');
+    }
+
+    return {
+      videoUrl: result.videoUrl!,
+      thumbnailUrl: result.thumbnailUrl,
+      duration: result.duration || request.duration || 5,
+      confidence: this.createConfidence(0.85, result.provider, Date.now() - startTime),
+      metadata: {
+        promptUsed: request.prompt,
+        estimatedCost: result.creditsUsed || 0.05,
+        format: 'mp4',
+      },
+    };
   }
 
   // ============================================
