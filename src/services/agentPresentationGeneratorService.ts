@@ -234,6 +234,65 @@ export function analyzeContentTypeForSlide(
 }
 
 // ============================================
+// MULTI-PROVIDER ROUTING CONFIGURATION
+// ============================================
+
+// Language-based provider routing for optimal quality
+const LANGUAGE_PROVIDER_ROUTING: Record<string, { 
+  id: string; 
+  defaultModel: string; 
+  fallbacks: string[]; 
+  reason: string;
+}> = {
+  // CJK Languages - Alibaba/DeepSeek primary
+  'zh': { id: 'alibaba', defaultModel: 'qwen-max', fallbacks: ['deepseek', 'gemini'], reason: 'Best CJK understanding' },
+  'ja': { id: 'alibaba', defaultModel: 'qwen-max', fallbacks: ['gemini', 'claude'], reason: 'Native Japanese support' },
+  'ko': { id: 'alibaba', defaultModel: 'qwen-max', fallbacks: ['gemini', 'deepseek'], reason: 'Native Korean support' },
+  
+  // European Languages - Claude/DeepL primary  
+  'de': { id: 'claude', defaultModel: 'claude-3-5-sonnet', fallbacks: ['gemini', 'openai'], reason: 'Best German nuance' },
+  'fr': { id: 'claude', defaultModel: 'claude-3-5-sonnet', fallbacks: ['gemini', 'openai'], reason: 'Best French nuance' },
+  'es': { id: 'claude', defaultModel: 'claude-3-5-sonnet', fallbacks: ['gemini', 'openai'], reason: 'Best Spanish nuance' },
+  'it': { id: 'claude', defaultModel: 'claude-3-5-sonnet', fallbacks: ['gemini', 'openai'], reason: 'Best Italian nuance' },
+  'pt': { id: 'claude', defaultModel: 'claude-3-5-sonnet', fallbacks: ['gemini', 'openai'], reason: 'Best Portuguese nuance' },
+  'nl': { id: 'claude', defaultModel: 'claude-3-5-sonnet', fallbacks: ['gemini', 'openai'], reason: 'Best Dutch nuance' },
+  
+  // RTL Languages - Azure primary
+  'ar': { id: 'azure', defaultModel: 'gpt-4o', fallbacks: ['gemini', 'openai'], reason: 'Best Arabic RTL handling' },
+  'he': { id: 'azure', defaultModel: 'gpt-4o', fallbacks: ['gemini', 'openai'], reason: 'Best Hebrew handling' },
+  'fa': { id: 'azure', defaultModel: 'gpt-4o', fallbacks: ['gemini', 'openai'], reason: 'Best Persian handling' },
+  'ur': { id: 'azure', defaultModel: 'gpt-4o', fallbacks: ['gemini', 'openai'], reason: 'Best Urdu handling' },
+  
+  // Indian Languages - Gemini primary
+  'hi': { id: 'gemini', defaultModel: 'gemini-2.5-flash', fallbacks: ['azure', 'openai'], reason: 'Best Hindi understanding' },
+  'bn': { id: 'gemini', defaultModel: 'gemini-2.5-flash', fallbacks: ['azure', 'openai'], reason: 'Best Bengali understanding' },
+  'ta': { id: 'gemini', defaultModel: 'gemini-2.5-flash', fallbacks: ['azure', 'openai'], reason: 'Best Tamil understanding' },
+  'te': { id: 'gemini', defaultModel: 'gemini-2.5-flash', fallbacks: ['azure', 'openai'], reason: 'Best Telugu understanding' },
+  
+  // Southeast Asian - Gemini primary
+  'th': { id: 'gemini', defaultModel: 'gemini-2.5-flash', fallbacks: ['google', 'openai'], reason: 'Best Thai understanding' },
+  'vi': { id: 'gemini', defaultModel: 'gemini-2.5-flash', fallbacks: ['google', 'openai'], reason: 'Best Vietnamese understanding' },
+  'id': { id: 'gemini', defaultModel: 'gemini-2.5-flash', fallbacks: ['google', 'openai'], reason: 'Best Indonesian support' },
+  
+  // Default - Gemini as universal fallback
+  'en': { id: 'gemini', defaultModel: 'gemini-2.5-flash', fallbacks: ['openai', 'claude'], reason: 'Fast & versatile' },
+  'default': { id: 'gemini', defaultModel: 'gemini-2.5-flash', fallbacks: ['openai', 'claude', 'azure'], reason: 'Universal fallback' },
+};
+
+// Content-type based provider routing
+const CONTENT_TYPE_PROVIDER_ROUTING: Record<string, {
+  id: string;
+  defaultModel: string;
+  fallbacks: string[];
+}> = {
+  'text': { id: 'gemini', defaultModel: 'gemini-2.5-flash', fallbacks: ['openai', 'claude', 'deepseek'] },
+  'image': { id: 'gemini', defaultModel: 'gemini-2.5-flash-image', fallbacks: ['openai', 'stability', 'replicate'] },
+  'infographic': { id: 'stability', defaultModel: 'stable-diffusion-xl', fallbacks: ['replicate', 'gemini'] },
+  'translation': { id: 'deepl', defaultModel: 'deepl-pro', fallbacks: ['gemini', 'google', 'azure'] },
+  'voice': { id: 'elevenlabs', defaultModel: 'eleven-multilingual-v2', fallbacks: ['azure', 'google', 'openai'] },
+};
+
+// ============================================
 // AGENT PRESENTATION GENERATOR SERVICE
 // ============================================
 
@@ -390,6 +449,49 @@ class AgentPresentationGeneratorService {
   }
 
   /**
+   * Select optimal provider based on language
+   */
+  private selectProviderForLanguage(
+    languageCode: string, 
+    contentType: 'text' | 'image' | 'translation' | 'voice' = 'text'
+  ): { id: string; defaultModel: string; fallbacks: string[]; reason: string } {
+    // First check language-specific routing
+    const langRouting = LANGUAGE_PROVIDER_ROUTING[languageCode] || LANGUAGE_PROVIDER_ROUTING['default'];
+    
+    // For non-text content, also consider content-type routing
+    if (contentType !== 'text') {
+      const contentRouting = CONTENT_TYPE_PROVIDER_ROUTING[contentType];
+      if (contentRouting) {
+        return { ...contentRouting, reason: `Optimal for ${contentType}` };
+      }
+    }
+    
+    return langRouting;
+  }
+
+  /**
+   * Select optimal provider based on content type
+   */
+  private selectProviderForContentType(
+    contentType: string
+  ): { id: string; defaultModel: string; fallbacks: string[] } {
+    // Map content types to provider categories
+    const contentTypeMapping: Record<string, string> = {
+      'image': 'image',
+      'infographic': 'infographic',
+      'journey_map': 'image',
+      'chart': 'infographic',
+      'stats': 'image',
+      'quote': 'text',
+      'table': 'text',
+      'text_only': 'text',
+    };
+    
+    const category = contentTypeMapping[contentType] || 'image';
+    return CONTENT_TYPE_PROVIDER_ROUTING[category] || CONTENT_TYPE_PROVIDER_ROUTING['image'];
+  }
+
+  /**
    * Generate slide content with streaming
    */
   async generateSlideWithStreaming(
@@ -448,13 +550,17 @@ Respond with JSON:
 }`;
 
     try {
-      // Use Universal AI processor with Gemini for text generation
+      // Use Universal AI processor with context-aware provider selection
+      // Provider priority: Based on language, content type, and configured keys
+      const provider = this.selectProviderForLanguage(languageCode, 'text');
+      
       const { data: aiData, error: aiError } = await supabase.functions.invoke('ai-universal-processor', {
         body: {
-          provider: 'gemini',
-          model: modelConfig.textModel || 'gemini-2.0-flash',
+          provider: provider.id,
+          model: modelConfig.textModel || provider.defaultModel,
           systemPrompt: 'You are a presentation content expert. Generate compelling slide content. Always respond with valid JSON.',
           prompt: slidePrompt,
+          fallbackChain: provider.fallbacks, // Enable automatic fallback
         },
       });
 
@@ -504,15 +610,19 @@ Respond with JSON:
         const imagePrompt = slideData.imagePrompt || `Professional ${contentDecision.contentType} for: ${slide.title}`;
         
         try {
-          // Use Universal AI processor with Gemini for image generation
+          // Select provider based on content type
+          const imageProvider = this.selectProviderForContentType(contentDecision.contentType as string);
+          
+          // Use Universal AI processor with multi-provider routing for image generation
           const { data: imageData } = await supabase.functions.invoke('ai-universal-processor', {
             body: {
-              provider: 'gemini',
-              model: 'google/gemini-2.5-flash-image',
+              provider: imageProvider.id,
+              model: imageProvider.defaultModel,
               prompt: `Create a professional ${contentDecision.contentType} image: ${imagePrompt}. Style: modern, clean, corporate. Safe for all audiences.`,
               imageGeneration: true,
               aspectRatio: '16:9',
               style: contentDecision.contentType === 'infographic' ? 'infographic' : 'professional',
+              fallbackChain: imageProvider.fallbacks,
             },
           });
 

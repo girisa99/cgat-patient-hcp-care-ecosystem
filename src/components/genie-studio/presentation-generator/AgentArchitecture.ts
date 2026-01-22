@@ -124,18 +124,25 @@
  *   - Error handling
  * 
  * ============================================
- * API PATTERN
+ * API PATTERN - MULTI-PROVIDER ROUTING
  * ============================================
  * 
- * All agents use the Universal AI Hub with multi-provider routing:
- *   - Default: google/gemini-3-flash-preview
- *   - Premium: google/gemini-2.5-pro, openai/gpt-5
- *   - Images: google/gemini-2.5-flash-image-preview, modelslab
+ * All agents use the Universal AI Hub with intelligent multi-provider routing:
+ * 
+ * | Task Type     | Primary Provider  | Fallbacks                    | Selection Logic      |
+ * |---------------|-------------------|------------------------------|---------------------|
+ * | Text (CJK)    | Alibaba/DeepSeek  | Gemini → Claude → OpenAI     | Language-based       |
+ * | Text (EU)     | Claude            | Gemini → OpenAI              | Language-based       |
+ * | Text (RTL)    | Azure             | Gemini → OpenAI              | Language-based       |
+ * | Text (Default)| Gemini            | OpenAI → Claude              | Speed-optimized      |
+ * | Images        | Gemini/Stability  | Replicate → OpenAI           | Content-type based   |
+ * | Translation   | DeepL/Alibaba     | Gemini → Google → Azure      | Language-pair based  |
+ * | Voice         | ElevenLabs        | Azure → Google → OpenAI      | Language-based       |
  * 
  * Per-language model selection allows:
- *   - Faster models for bulk languages
+ *   - Specialized models for specific language families
  *   - Premium models for primary language
- *   - Cost optimization
+ *   - Cost optimization with intelligent fallbacks
  */
 
 export const AGENT_TYPES = {
@@ -196,70 +203,70 @@ export const AGENT_CATALOG: Record<AgentType, AgentConfig> = {
     name: 'Coordinator Agent',
     description: 'Orchestrates all other agents and manages parallel execution',
     capabilities: ['task_distribution', 'progress_tracking', 'error_recovery', 'parallel_execution'],
-    defaultModel: 'google/gemini-3-flash-preview',
+    defaultModel: 'gemini-2.5-flash',
     supportsStreaming: false,
     architectureType: 'a2a',
-    providers: ['gemini', 'openai', 'claude'],
+    providers: ['gemini', 'openai', 'claude', 'azure'],
   },
   [AGENT_TYPES.CONTENT_GENERATOR]: {
     type: 'slide_generator',
     name: 'Content Generator Agent',
     description: 'Generates slide text, bullets, structure, and speaker notes',
     capabilities: ['text_generation', 'slide_structure', 'speaker_notes', 'topic_segmentation'],
-    defaultModel: 'google/gemini-3-flash-preview',
+    defaultModel: 'gemini-2.5-flash',
     supportsStreaming: true,
     architectureType: 'agentic',
-    providers: ['gemini', 'openai', 'claude', 'deepseek'],
+    providers: ['gemini', 'openai', 'claude', 'deepseek', 'alibaba', 'azure'],
   },
   [AGENT_TYPES.IMAGE_GENERATOR]: {
     type: 'image_generator',
     name: 'Image Generator Agent',
     description: 'Creates AI images, infographics, charts, and journey maps',
     capabilities: ['ai_images', 'infographics', 'charts', 'journey_maps', 'content_type_decision'],
-    defaultModel: 'google/gemini-2.5-flash-image-preview',
+    defaultModel: 'gemini-2.5-flash-image',
     supportsStreaming: false,
     architectureType: 'agentic',
-    providers: ['gemini', 'openai', 'stability', 'replicate'],
+    providers: ['gemini', 'openai', 'stability', 'replicate', 'alibaba'],
   },
   [AGENT_TYPES.TRANSLATOR]: {
     type: 'translator',
     name: 'Translator Agent',
     description: 'Translates content to target languages with cultural adaptation',
     capabilities: ['translation', 'cultural_adaptation', 'rtl_support', 'terminology_consistency'],
-    defaultModel: 'google/gemini-3-flash-preview',
+    defaultModel: 'deepl-pro',
     supportsStreaming: true,
     architectureType: 'agentic',
-    providers: ['gemini', 'openai', 'deepl', 'google_translate'],
+    providers: ['deepl', 'alibaba', 'gemini', 'azure', 'google', 'openai', 'claude'],
   },
   [AGENT_TYPES.ANALYZER]: {
     type: 'content_analyzer',
     name: 'Analyzer Agent',
     description: 'Calculates quality scores and compares against primary language',
     capabilities: ['quality_scoring', 'confidence_calculation', 'comparison_analysis', 'issue_detection'],
-    defaultModel: 'google/gemini-3-flash-preview',
+    defaultModel: 'gemini-2.5-flash',
     supportsStreaming: false,
     architectureType: 'single',
-    providers: ['gemini', 'openai'],
+    providers: ['gemini', 'openai', 'claude'],
   },
   [AGENT_TYPES.ENHANCER]: {
     type: 'enhancer',
     name: 'Enhancer Agent',
     description: 'Applies AI enhancements: rewrite, expand, summarize, polish',
     capabilities: ['rewrite', 'expand', 'summarize', 'polish', 'transitions', 'brand_voice'],
-    defaultModel: 'google/gemini-3-flash-preview',
+    defaultModel: 'claude-3-5-sonnet',
     supportsStreaming: true,
     architectureType: 'agentic',
-    providers: ['gemini', 'openai', 'claude'],
+    providers: ['claude', 'gemini', 'openai', 'deepseek'],
   },
   [AGENT_TYPES.VOICEOVER]: {
     type: 'voiceover',
     name: 'Voiceover Agent',
     description: 'Generates AI voiceovers for presentations',
     capabilities: ['tts_generation', 'voice_selection', 'pacing_control', 'multi_language'],
-    defaultModel: 'elevenlabs',
+    defaultModel: 'eleven-multilingual-v2',
     supportsStreaming: false,
     architectureType: 'single',
-    providers: ['elevenlabs', 'openai', 'google', 'azure', 'aws'],
+    providers: ['elevenlabs', 'azure', 'google', 'openai', 'alibaba', 'aws'],
   },
 };
 

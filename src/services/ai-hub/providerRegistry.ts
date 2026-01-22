@@ -192,7 +192,7 @@ export const AI_PROVIDER_REGISTRY: Record<AIProviderKey, AIProviderDefinition> =
     id: 'gemini',
     name: 'Google Gemini',
     description: 'Google Gemini models - multimodal, fast, excellent context window',
-    secretKeys: ['GEMINI_API_KEY', 'GOOGLE_API_KEY'],
+    secretKeys: ['GEMINI_API_KEY', 'GOOGLE_API_KEY'], // Either key works
     capabilities: ['llm', 'translation', 'ocr', 'tts', 'stt', 'image_gen', 'vision', 'nlp'],
     priority: 1,
     costTier: 'medium',

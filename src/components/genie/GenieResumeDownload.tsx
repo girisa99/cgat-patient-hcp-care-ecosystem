@@ -403,10 +403,11 @@ interface MemoryEntry {
 
 - **60+** Edge Functions deployed
 - **12+** Specialized AI Agents
-- **4** LLM Providers integrated (OpenAI, Anthropic, Google, Lovable)
+- **12** AI Providers integrated (OpenAI, Claude, Gemini, DeepSeek, Alibaba, Azure, DeepL, ElevenLabs, Stability, Replicate, Huggingface, ModelsLab)
 - **7** Document types supported with smart routing
 - **6** Healthcare MCP servers
 - **20+** Patient onboarding wizard steps
+- **70+** Languages supported with intelligent provider pairing
 - **99.5%** API availability with fallback chains
 - **70%** reduction in integration complexity
 
