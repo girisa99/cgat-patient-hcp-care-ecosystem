@@ -55,6 +55,19 @@ serve(async (req) => {
 
     console.log(`[A2A-Coordinator] Action: ${action}, UserTier: ${userTier}`);
 
+    // Handle status check without context
+    if (action === 'status' || !generationContext) {
+      return new Response(JSON.stringify({
+        success: true,
+        status: 'ready',
+        supportedActions: ['orchestrate', 'validate', 'route', 'status'],
+        version: '1.0.0',
+        pipelinesSupported: 100,
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // Compute A2A requirements from full context
     const a2aConfig = computeA2ARequirements(generationContext);
     
