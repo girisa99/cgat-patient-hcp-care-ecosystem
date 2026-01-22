@@ -320,3 +320,6 @@ verify_jwt = false
 
 [functions.distribution-agent]
 verify_jwt = false
+
+[functions.ai-a2a-coordinator]
+verify_jwt = false

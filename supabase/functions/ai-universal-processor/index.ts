@@ -1,5 +1,14 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { 
+  GenerationContext, 
+  computeA2ARequirements, 
+  validateTierAccess,
+  VISUAL_FEATURE_A2A_ROUTING,
+  FRAMEWORK_A2A_ROUTING,
+  CONTENT_TYPE_A2A_ROUTING,
+  GlobalTierLevel
+} from "../_shared/generationContext.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -29,6 +38,10 @@ interface AIRequest {
     nodes?: any[];
     edges?: any[];
   };
+  // NEW: Full Generation Context from 8-step wizard
+  generationContext?: GenerationContext;
+  // User tier for access validation
+  userTier?: GlobalTierLevel;
 }
 
 // Universal AI supported models registry - ALL providers are primary, no Lovable-first dependency
