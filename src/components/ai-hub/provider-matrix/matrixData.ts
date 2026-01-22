@@ -229,6 +229,90 @@ export const FEATURE_USE_CASES: Record<string, { scenarios: string[]; bestFor: s
     bestFor: ['Performance optimization', 'Content strategy', 'Stakeholder reporting', 'Conversion tracking'],
     limitations: ['Privacy compliance (GDPR)', 'Data retention limits']
   },
+  
+  // New Social Platforms
+  instagram_publish: {
+    scenarios: ['Reel publishing', 'Story posting', 'Carousel creation', 'IGTV uploads'],
+    bestFor: ['Visual content', 'B2C marketing', 'Influencer campaigns', 'Brand awareness'],
+    limitations: ['API restrictions', 'Business account required', 'Content format requirements']
+  },
+  tiktok_publish: {
+    scenarios: ['Short-form videos', 'Trending content', 'Viral marketing', 'Gen Z engagement'],
+    bestFor: ['Youth audience', 'Viral potential', 'Music integration', 'Creative content'],
+    limitations: ['Duration limits', 'API access requirements', 'Regional availability']
+  },
+  threads_publish: {
+    scenarios: ['Text updates', 'Thread conversations', 'Cross-posting from Instagram', 'Community engagement'],
+    bestFor: ['Text-first content', 'Meta ecosystem', 'Real-time updates', 'Professional discourse'],
+    limitations: ['Limited media support', 'New platform (evolving API)']
+  },
+  twitter_publish: {
+    scenarios: ['Tweets', 'Thread creation', 'Media sharing', 'Real-time updates'],
+    bestFor: ['News distribution', 'Customer service', 'Thought leadership', 'Quick updates'],
+    limitations: ['Character limits', 'API rate limits', 'Verification requirements']
+  },
+  facebook_publish: {
+    scenarios: ['Page posts', 'Group sharing', 'Event promotion', 'Video distribution'],
+    bestFor: ['Broad demographics', 'Community building', 'Event marketing', 'Video content'],
+    limitations: ['Algorithm changes', 'Organic reach decline', 'Business account required']
+  },
+  pinterest_publish: {
+    scenarios: ['Pin creation', 'Board curation', 'Idea sharing', 'Product marketing'],
+    bestFor: ['E-commerce', 'DIY/Craft', 'Recipe sharing', 'Visual discovery'],
+    limitations: ['Niche audience', 'Image-focused only']
+  },
+  
+  // OAuth & Security
+  google_oauth: {
+    scenarios: ['YouTube publishing', 'Drive integration', 'Calendar sync', 'Google Workspace'],
+    bestFor: ['Full Google ecosystem', 'Enterprise SSO', 'Workspace integration', 'API access'],
+    limitations: ['OAuth flow complexity', 'Token refresh management']
+  },
+  linkedin_oauth: {
+    scenarios: ['Profile access', 'Post publishing', 'Company pages', 'Recruiter tools'],
+    bestFor: ['B2B marketing', 'Professional networking', 'HR integration', 'Lead gen'],
+    limitations: ['Restrictive API', 'Application review required']
+  },
+  tiktok_oauth: {
+    scenarios: ['Video publishing', 'Analytics access', 'Creator tools', 'Business API'],
+    bestFor: ['Creator accounts', 'Branded content', 'Analytics integration', 'Automated posting'],
+    limitations: ['Developer account required', 'Regional restrictions']
+  },
+  instagram_oauth: {
+    scenarios: ['Business publishing', 'Insights access', 'Story management', 'DM automation'],
+    bestFor: ['Business accounts', 'Meta ecosystem', 'Cross-platform (Facebook)', 'Influencer tools'],
+    limitations: ['Business/Creator account only', 'Meta approval process']
+  },
+  twitter_oauth: {
+    scenarios: ['Tweet automation', 'Analytics access', 'DM management', 'Thread posting'],
+    bestFor: ['Real-time engagement', 'Customer service bots', 'News distribution', 'API automation'],
+    limitations: ['Rate limits', 'API tier pricing', 'Bot restrictions']
+  },
+  mfa_support: {
+    scenarios: ['User authentication', 'Admin protection', 'Sensitive data access', 'Compliance requirements'],
+    bestFor: ['Enterprise security', 'HIPAA compliance', 'Financial data', 'Healthcare'],
+    limitations: ['User friction', 'Backup code management']
+  },
+  sso_integration: {
+    scenarios: ['Enterprise login', 'Workspace integration', 'Multi-tenant access', 'Identity federation'],
+    bestFor: ['Large organizations', 'IT governance', 'Seamless experience', 'Audit compliance'],
+    limitations: ['SAML/OIDC complexity', 'Provider dependencies']
+  },
+  api_key_management: {
+    scenarios: ['Secret rotation', 'Key generation', 'Access control', 'Usage tracking'],
+    bestFor: ['Developer experience', 'Security best practices', 'API governance', 'Audit trails'],
+    limitations: ['Key exposure risk', 'Rotation complexity']
+  },
+  session_management: {
+    scenarios: ['Active session tracking', 'Force logout', 'Session timeout', 'Device management'],
+    bestFor: ['Security compliance', 'User protection', 'Admin oversight', 'Multi-device support'],
+    limitations: ['UX complexity', 'Storage requirements']
+  },
+  audit_logging: {
+    scenarios: ['Action tracking', 'Compliance reporting', 'Security forensics', 'User activity'],
+    bestFor: ['Regulatory compliance', 'Security monitoring', 'Troubleshooting', 'Accountability'],
+    limitations: ['Storage costs', 'Performance impact', 'Retention policies']
+  },
 };
 
 export const ALL_FEATURES: Feature[] = [
@@ -391,9 +475,27 @@ export const ALL_FEATURES: Feature[] = [
   { id: 'linkedin_post', name: 'LinkedIn Direct Post', category: 'PUBLISHING', priority: 'high' },
   { id: 'vimeo_upload', name: 'Vimeo Direct Upload', category: 'PUBLISHING', priority: 'low' },
   { id: 'slideshare_upload', name: 'SlideShare Upload', category: 'PUBLISHING', priority: 'low' },
+  { id: 'instagram_publish', name: 'Instagram Direct Publish', category: 'PUBLISHING', priority: 'high' },
+  { id: 'tiktok_publish', name: 'TikTok Direct Publish', category: 'PUBLISHING', priority: 'high' },
+  { id: 'threads_publish', name: 'Threads Direct Publish', category: 'PUBLISHING', priority: 'medium' },
+  { id: 'twitter_publish', name: 'X/Twitter Direct Publish', category: 'PUBLISHING', priority: 'medium' },
+  { id: 'facebook_publish', name: 'Facebook Direct Publish', category: 'PUBLISHING', priority: 'medium' },
+  { id: 'pinterest_publish', name: 'Pinterest Direct Publish', category: 'PUBLISHING', priority: 'low' },
   { id: 'analytics_embed', name: 'Analytics Dashboard', category: 'PUBLISHING', priority: 'medium' },
   { id: 'qr_code_share', name: 'QR Code Sharing', category: 'PUBLISHING', priority: 'low' },
   { id: 'email_distribution', name: 'Email Distribution', category: 'PUBLISHING', priority: 'medium' },
+  
+  // SECURITY & AUTH FEATURES
+  { id: 'google_oauth', name: 'Google OAuth', category: 'SECURITY', priority: 'critical' },
+  { id: 'linkedin_oauth', name: 'LinkedIn OAuth', category: 'SECURITY', priority: 'high' },
+  { id: 'tiktok_oauth', name: 'TikTok OAuth', category: 'SECURITY', priority: 'high' },
+  { id: 'instagram_oauth', name: 'Instagram/Meta OAuth', category: 'SECURITY', priority: 'high' },
+  { id: 'twitter_oauth', name: 'X/Twitter OAuth', category: 'SECURITY', priority: 'medium' },
+  { id: 'mfa_support', name: 'Multi-Factor Authentication', category: 'SECURITY', priority: 'critical' },
+  { id: 'sso_integration', name: 'SSO Integration', category: 'SECURITY', priority: 'high' },
+  { id: 'api_key_management', name: 'API Key Management', category: 'SECURITY', priority: 'high' },
+  { id: 'session_management', name: 'Session Management', category: 'SECURITY', priority: 'high' },
+  { id: 'audit_logging', name: 'Audit Logging', category: 'SECURITY', priority: 'medium' },
 ];
 
 // ============================================
@@ -1074,6 +1176,60 @@ export const FEATURE_IMPLEMENTATION_MATRIX: Record<string, Partial<Record<Provid
   email_distribution: {
     lovable: { status: 'configured', implementation: 'partial', confidence: 60, notes: 'Email service integration pending' },
   },
+  
+  // NEW SOCIAL PLATFORMS
+  instagram_publish: {
+    lovable: { status: 'needs_key', implementation: 'planned', confidence: 0, notes: 'Meta Business API required' },
+  },
+  tiktok_publish: {
+    lovable: { status: 'needs_key', implementation: 'planned', confidence: 0, notes: 'TikTok for Developers API' },
+  },
+  threads_publish: {
+    lovable: { status: 'needs_key', implementation: 'planned', confidence: 0, notes: 'Threads API (Meta Graph API)' },
+  },
+  twitter_publish: {
+    lovable: { status: 'needs_key', implementation: 'planned', confidence: 0, notes: 'X API v2 required' },
+  },
+  facebook_publish: {
+    lovable: { status: 'needs_key', implementation: 'planned', confidence: 0, notes: 'Meta Business API' },
+  },
+  pinterest_publish: {
+    lovable: { status: 'needs_key', implementation: 'not_started', confidence: 0, notes: 'Pinterest API' },
+  },
+  
+  // SECURITY & AUTH FEATURES
+  google_oauth: {
+    google: { status: 'configured', implementation: 'implemented', confidence: 92, notes: 'Supabase Google OAuth configured' },
+    lovable: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'Native OAuth support' },
+  },
+  linkedin_oauth: {
+    microsoft: { status: 'needs_key', implementation: 'planned', confidence: 0, notes: 'LinkedIn OAuth credentials needed' },
+    lovable: { status: 'configured', implementation: 'planned', confidence: 60, notes: 'OAuth flow available' },
+  },
+  tiktok_oauth: {
+    lovable: { status: 'needs_key', implementation: 'not_started', confidence: 0, notes: 'TikTok Login Kit' },
+  },
+  instagram_oauth: {
+    lovable: { status: 'needs_key', implementation: 'planned', confidence: 0, notes: 'Instagram Basic Display API / Graph API' },
+  },
+  twitter_oauth: {
+    lovable: { status: 'needs_key', implementation: 'not_started', confidence: 0, notes: 'X OAuth 2.0' },
+  },
+  mfa_support: {
+    lovable: { status: 'configured', implementation: 'implemented', confidence: 85, notes: 'Supabase MFA integration' },
+  },
+  sso_integration: {
+    lovable: { status: 'configured', implementation: 'partial', confidence: 70, notes: 'SAML/OIDC via Supabase' },
+  },
+  api_key_management: {
+    lovable: { status: 'configured', implementation: 'implemented', confidence: 90, notes: 'Edge function secrets' },
+  },
+  session_management: {
+    lovable: { status: 'configured', implementation: 'implemented', confidence: 88, notes: 'Supabase session handling' },
+  },
+  audit_logging: {
+    lovable: { status: 'configured', implementation: 'partial', confidence: 65, notes: 'Basic logging via postgres_logs' },
+  },
 };
 
 // ============================================
@@ -1131,6 +1287,7 @@ export const CATEGORY_IMPLEMENTATION_SUMMARY: Record<FeatureCategory, {
   TRANSLATION: computeCategorySummary('TRANSLATION'),
   EXPORT: computeCategorySummary('EXPORT'),
   PUBLISHING: computeCategorySummary('PUBLISHING'),
+  SECURITY: computeCategorySummary('SECURITY'),
   USE_CASE: { total: 0, implemented: 0, partial: 0, planned: 0, notStarted: 0 },
 };
 

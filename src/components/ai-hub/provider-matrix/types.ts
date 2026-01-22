@@ -20,6 +20,7 @@ export type FeatureCategory =
   | 'TRANSLATION'
   | 'EXPORT'
   | 'PUBLISHING'
+  | 'SECURITY'
   | 'USE_CASE';
 
 // Implementation status

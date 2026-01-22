@@ -51,6 +51,12 @@ export const PUBLISHING_MOBILE_SUPPORT = {
   linkedin_post: { mobile: true, offline: false, priority: 'P2' as const },
   vimeo_upload: { mobile: true, offline: false, priority: 'P3' as const },
   social_schedule: { mobile: true, offline: false, priority: 'P3' as const },
+  instagram_publish: { mobile: true, offline: false, priority: 'P1' as const },
+  tiktok_publish: { mobile: true, offline: false, priority: 'P1' as const },
+  threads_publish: { mobile: true, offline: false, priority: 'P2' as const },
+  twitter_publish: { mobile: true, offline: false, priority: 'P2' as const },
+  facebook_publish: { mobile: true, offline: false, priority: 'P2' as const },
+  pinterest_publish: { mobile: true, offline: false, priority: 'P3' as const },
   
   // Sharing
   qr_code_share: { mobile: true, offline: true, priority: 'P1' as const },
@@ -62,6 +68,15 @@ export const PUBLISHING_MOBILE_SUPPORT = {
   gdrive_integration: { mobile: true, offline: false, priority: 'P2' as const },
   api_access: { mobile: false, offline: false, priority: 'P3' as const },
   custom_domain: { mobile: false, offline: false, priority: 'P3' as const },
+  
+  // Security & Auth (online only)
+  google_oauth: { mobile: true, offline: false, priority: 'P1' as const },
+  linkedin_oauth: { mobile: true, offline: false, priority: 'P2' as const },
+  tiktok_oauth: { mobile: true, offline: false, priority: 'P2' as const },
+  instagram_oauth: { mobile: true, offline: false, priority: 'P2' as const },
+  twitter_oauth: { mobile: true, offline: false, priority: 'P3' as const },
+  mfa_support: { mobile: true, offline: false, priority: 'P1' as const },
+  sso_integration: { mobile: false, offline: false, priority: 'P3' as const },
 } as const;
 
 // Type for mobile support config
