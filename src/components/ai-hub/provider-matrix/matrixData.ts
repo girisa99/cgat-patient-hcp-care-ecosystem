@@ -578,20 +578,22 @@ export const FEATURE_IMPLEMENTATION_MATRIX: Record<string, Partial<Record<Provid
     alibaba: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'Best for CJK' },
   },
   script_to_slides: {
-    openai: { status: 'configured', implementation: 'implemented', confidence: 88 },
-    gemini: { status: 'configured', implementation: 'partial', confidence: 80 },
+    openai: { status: 'configured', implementation: 'implemented', confidence: 92, edgeFunctionUsed: 'ai-universal-processor', notes: 'Primary provider' },
+    gemini: { status: 'configured', implementation: 'implemented', confidence: 88, edgeFunctionUsed: 'ai-universal-processor', notes: 'Multi-modal support' },
+    claude: { status: 'configured', implementation: 'implemented', confidence: 85, notes: 'Fallback provider' },
   },
   script_to_video_auto: {
-    modelslab: { status: 'configured', implementation: 'partial', confidence: 70, notes: 'Manual workflow' },
-    alibaba: { status: 'configured', implementation: 'partial', confidence: 65 },
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 70, notes: 'Manual workflow - pending VOICE/tts integration' },
+    alibaba: { status: 'configured', implementation: 'partial', confidence: 65, notes: 'Pending VOICE/tts integration' },
   },
   ai_rewrite: {
     openai: { status: 'configured', implementation: 'implemented', confidence: 94 },
     claude: { status: 'configured', implementation: 'implemented', confidence: 96, notes: 'Best for rewrites' },
   },
   brand_voice: {
-    openai: { status: 'configured', implementation: 'partial', confidence: 70, notes: 'Prompt-based' },
-    claude: { status: 'configured', implementation: 'partial', confidence: 75 },
+    openai: { status: 'configured', implementation: 'implemented', confidence: 88, edgeFunctionUsed: 'ai-universal-processor', notes: 'System prompt customization' },
+    claude: { status: 'configured', implementation: 'implemented', confidence: 90, edgeFunctionUsed: 'ai-universal-processor', notes: 'Best for brand consistency' },
+    gemini: { status: 'configured', implementation: 'implemented', confidence: 82, notes: 'Alternative provider' },
   },
   
   // VOICE FEATURES
