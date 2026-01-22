@@ -98,47 +98,68 @@ export const GenerationCoverageTab: React.FC<GenerationCoverageTabProps> = ({
     }
   }, [viewMode, selectedContext]);
 
-  // Summary stats
-  const stats = useMemo(() => ({
-    industries: INDUSTRY_CAPABILITY_MAPPINGS.length,
-    frameworks: FRAMEWORK_CAPABILITY_MAPPINGS.length,
-    visuals: VISUAL_CAPABILITY_MAPPINGS.length,
-    outputs: OUTPUT_CAPABILITY_MAPPINGS.length,
-    features: FEATURE_CONTEXT_MAPPINGS.length,
-    totalMappings: INDUSTRY_CAPABILITY_MAPPINGS.length + 
-                   FRAMEWORK_CAPABILITY_MAPPINGS.length + 
-                   VISUAL_CAPABILITY_MAPPINGS.length + 
-                   OUTPUT_CAPABILITY_MAPPINGS.length
-  }), []);
+  // Summary stats - dynamic from registry
+  const stats = useMemo(() => {
+    const registryStats = (() => {
+      const allScenarios = new Set<string>();
+      const allUseCases = new Set<string>();
+      
+      [...INDUSTRY_CAPABILITY_MAPPINGS, ...FRAMEWORK_CAPABILITY_MAPPINGS, ...VISUAL_CAPABILITY_MAPPINGS, ...OUTPUT_CAPABILITY_MAPPINGS]
+        .forEach(m => {
+          m.scenarios.forEach(s => allScenarios.add(s));
+          m.useCases.forEach(u => allUseCases.add(u));
+        });
+      
+      return { scenarios: allScenarios.size, useCases: allUseCases.size };
+    })();
+    
+    return {
+      industries: INDUSTRY_CAPABILITY_MAPPINGS.length,
+      frameworks: FRAMEWORK_CAPABILITY_MAPPINGS.length,
+      visuals: VISUAL_CAPABILITY_MAPPINGS.length,
+      outputs: OUTPUT_CAPABILITY_MAPPINGS.length,
+      features: FEATURE_CONTEXT_MAPPINGS.length,
+      totalMappings: INDUSTRY_CAPABILITY_MAPPINGS.length + 
+                     FRAMEWORK_CAPABILITY_MAPPINGS.length + 
+                     VISUAL_CAPABILITY_MAPPINGS.length + 
+                     OUTPUT_CAPABILITY_MAPPINGS.length,
+      scenarios: registryStats.scenarios,
+      useCases: registryStats.useCases
+    };
+  }, []);
 
   return (
     <div className="space-y-4">
       {/* Header Stats + Display Toggle */}
       <div className="flex items-center justify-between gap-4">
-        <div className="grid grid-cols-5 gap-2 flex-1">
+        <div className="grid grid-cols-7 gap-2 flex-1">
           {[
-            { label: 'Industries', value: stats.industries, type: 'industry' as ContextType },
-            { label: 'Frameworks', value: stats.frameworks, type: 'framework' as ContextType },
-            { label: 'Visuals', value: stats.visuals, type: 'visual' as ContextType },
-            { label: 'Outputs', value: stats.outputs, type: 'output' as ContextType },
-            { label: 'Features', value: stats.features, type: 'feature' as ContextType },
-          ].map(stat => {
-            const Icon = CONTEXT_ICONS[stat.type];
+            { label: 'Industries', value: stats.industries, type: 'industry' as ContextType, color: 'text-blue-500' },
+            { label: 'Frameworks', value: stats.frameworks, type: 'framework' as ContextType, color: 'text-purple-500' },
+            { label: 'Visuals', value: stats.visuals, type: 'visual' as ContextType, color: 'text-green-500' },
+            { label: 'Outputs', value: stats.outputs, type: 'output' as ContextType, color: 'text-orange-500' },
+            { label: 'Features', value: stats.features, type: 'feature' as ContextType, color: 'text-cyan-500' },
+            { label: 'Scenarios', value: stats.scenarios, type: 'industry' as ContextType, color: 'text-pink-500' },
+            { label: 'Use Cases', value: stats.useCases, type: 'industry' as ContextType, color: 'text-amber-500' },
+          ].map((stat, idx) => {
+            const Icon = idx < 5 ? CONTEXT_ICONS[stat.type] : (idx === 5 ? Target : Zap);
+            const isClickable = idx < 5;
             return (
               <Card 
-                key={stat.type} 
-                className={`cursor-pointer transition-all ${selectedContext === stat.type ? 'ring-2 ring-primary' : 'hover:bg-muted/50'}`}
+                key={`${stat.type}-${idx}`} 
+                className={`transition-all ${isClickable ? 'cursor-pointer' : ''} ${selectedContext === stat.type && idx < 5 ? 'ring-2 ring-primary' : 'hover:bg-muted/50'}`}
                 onClick={() => {
+                  if (!isClickable) return;
                   setSelectedContext(stat.type);
                   if (stat.type === 'feature') setViewMode('backward');
                   else setViewMode('forward');
                 }}
               >
-                <CardContent className="p-3 flex items-center gap-2">
-                  <Icon className="h-4 w-4 text-muted-foreground" />
+                <CardContent className="p-2 flex items-center gap-1.5">
+                  <Icon className={`h-3.5 w-3.5 ${stat.color}`} />
                   <div>
-                    <div className="text-lg font-bold">{stat.value}</div>
-                    <div className="text-[10px] text-muted-foreground">{stat.label}</div>
+                    <div className={`text-base font-bold ${stat.color}`}>{stat.value}</div>
+                    <div className="text-[9px] text-muted-foreground">{stat.label}</div>
                   </div>
                 </CardContent>
               </Card>

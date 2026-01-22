@@ -1,7 +1,8 @@
 /**
- * Generation Coverage Registry
+ * Generation Coverage Registry - COMPREHENSIVE
  * 
  * Links existing constants to AI capabilities with bidirectional mapping.
+ * Programmatically generates mappings from ALL constants (Industries, Frameworks, Visuals, Outputs).
  * This is the single source of truth for Context ↔ Capability relationships.
  */
 
@@ -15,509 +16,497 @@ import {
   OutputFormatId,
   ModelType
 } from './types';
+import { 
+  EXPANDED_VISUAL_FEATURES,
+  type ExpandedVisualFeature 
+} from '@/components/genie-studio/presentation-generator/constants/expandedVisualFeatures';
+import { 
+  EXPANDED_FRAMEWORK_CATEGORIES,
+  type Framework,
+  type FrameworkCategory 
+} from '@/components/genie-studio/presentation-generator/constants/expandedFrameworks';
+import { 
+  EXPANDED_OUTPUT_CONFIGS,
+  type ExpandedOutputConfig 
+} from '@/components/genie-studio/presentation-generator/constants/expandedOutputTypes';
 
 // ==========================================
-// INDUSTRY → CAPABILITY MAPPINGS
+// COMPREHENSIVE INDUSTRY DEFINITIONS (25+ Industries)
 // ==========================================
 
-export const INDUSTRY_CAPABILITY_MAPPINGS: ContextToCapabilityMapping[] = [
-  {
-    contextType: 'industry',
-    contextId: 'healthcare',
-    contextName: 'Healthcare',
-    requiredFeatures: [
-      { featureId: 'text_prompt', category: 'INPUT', priority: 'critical' },
-      { featureId: 'document_upload', category: 'INPUT', priority: 'critical' },
-      { featureId: 'ai_script_gen', category: 'SCRIPT', priority: 'critical' },
-      { featureId: 'tts', category: 'VOICE', priority: 'recommended' },
-      { featureId: 'multi_language_voice', category: 'VOICE', priority: 'optional' },
-    ],
-    recommendedProviders: {
-      text: [
-        { providers: ['openai', 'claude'], reason: 'HIPAA-aware, high accuracy for medical terminology' },
-        { providers: ['azure'], reason: 'Enterprise compliance (SOC2, HIPAA)' }
-      ],
-      image: [
-        { providers: ['stability', 'modelslab'], reason: 'Medical illustration support' }
-      ],
-      voice: [
-        { providers: ['elevenlabs', 'azure'], reason: 'Professional narration quality' }
-      ],
-      translation: [
-        { providers: ['deepl', 'azure'], reason: 'Medical terminology accuracy' }
-      ]
-    },
-    recommendedModels: [
-      { type: 'text', modelIds: ['gpt-5', 'claude-3.5'], reason: 'Medical accuracy', tier: 3 },
-      { type: 'image', modelIds: ['flux-pro', 'stability-core'], reason: 'Clinical visuals', tier: 2 },
-      { type: 'voice', modelIds: ['elevenlabs', 'azure-neural'], reason: 'Professional TTS', tier: 2 }
-    ],
-    compatibleWith: {
-      frameworks: ['patient-journey', 'value-based-care', 'hipaa-compliance'],
-      templates: ['training-manual', 'case-study', 'research-report'],
-      visuals: ['journey-maps', 'timelines', 'diagrams', 'infographics'],
-      outputs: ['pdf-export', 'pptx-export', 'video-full', 'interactive']
-    },
-    constraints: [
-      { contextType: 'visual', contextId: 'ar-elements', severity: 'warning', reason: 'AR requires patient consent workflows' }
-    ],
-    scenarios: ['Patient education', 'Clinical training', 'Care pathway documentation', 'Compliance reporting'],
-    useCases: ['Hospital presentations', 'Medical device demos', 'HCP training', 'Patient onboarding']
-  },
-  {
-    contextType: 'industry',
-    contextId: 'finance',
-    contextName: 'Finance & Banking',
-    requiredFeatures: [
-      { featureId: 'text_prompt', category: 'INPUT', priority: 'critical' },
-      { featureId: 'document_upload', category: 'INPUT', priority: 'critical' },
-      { featureId: 'ai_script_gen', category: 'SCRIPT', priority: 'critical' },
-      { featureId: 'brand_voice', category: 'SCRIPT', priority: 'recommended' },
-    ],
-    recommendedProviders: {
-      text: [
-        { providers: ['openai', 'claude'], reason: 'Financial analysis accuracy' },
-        { providers: ['azure'], reason: 'Enterprise security requirements' }
-      ],
-      image: [
-        { providers: ['modelslab', 'stability'], reason: 'Corporate professional imagery' }
-      ],
-      voice: [
-        { providers: ['elevenlabs'], reason: 'Authoritative professional voice' }
-      ]
-    },
-    recommendedModels: [
-      { type: 'text', modelIds: ['gpt-5', 'claude-3.5'], reason: 'Financial precision', tier: 3 },
-      { type: 'image', modelIds: ['flux-pro', 'dall-e-3'], reason: 'Professional charts', tier: 2 }
-    ],
-    compatibleWith: {
-      frameworks: ['risk-assessment', 'regulatory', 'competitive-analysis'],
-      templates: ['investor-update', 'board-deck', 'quarterly-review', 'annual-report'],
-      visuals: ['charts', 'data-tables', 'infographics'],
-      outputs: ['pdf-export', 'pptx-export', 'print-ready']
-    },
-    constraints: [
-      { contextType: 'output', contextId: 'social-media', severity: 'warning', reason: 'Compliance review required for public content' }
-    ],
-    scenarios: ['Investor relations', 'Board reporting', 'Risk analysis', 'Regulatory compliance'],
-    useCases: ['Annual reports', 'Quarterly earnings', 'Risk dashboards', 'Client proposals']
-  },
-  {
-    contextType: 'industry',
-    contextId: 'technology',
-    contextName: 'Technology & SaaS',
-    requiredFeatures: [
-      { featureId: 'text_prompt', category: 'INPUT', priority: 'critical' },
-      { featureId: 'ai_script_gen', category: 'SCRIPT', priority: 'critical' },
-      { featureId: 'ai_image_gen', category: 'IMAGE', priority: 'critical' },
-      { featureId: 'video_generation', category: 'VIDEO', priority: 'recommended' },
-    ],
-    recommendedProviders: {
-      text: [
-        { providers: ['openai', 'claude'], reason: 'Technical documentation accuracy' },
-        { providers: ['gemini'], reason: 'Large context for codebases' }
-      ],
-      image: [
-        { providers: ['modelslab', 'stability'], reason: 'Product screenshots and mockups' }
-      ],
-      video: [
-        { providers: ['modelslab', 'runway'], reason: 'Product demos and animations' }
-      ]
-    },
-    recommendedModels: [
-      { type: 'text', modelIds: ['deepseek', 'gemini-2.5-pro'], reason: 'Technical accuracy', tier: 2 },
-      { type: 'image', modelIds: ['modelslab-flux', 'flux-pro'], reason: 'UI mockups', tier: 2 },
-      { type: 'video', modelIds: ['modelslab-animatediff', 'pika-labs'], reason: 'Product animations', tier: 2 }
-    ],
-    compatibleWith: {
-      frameworks: ['saas-metrics', 'product-led', 'pirate-metrics', 'okr'],
-      templates: ['pitch-deck', 'product-demo', 'sales-deck'],
-      visuals: ['diagrams', 'charts', 'animations', 'video-clips'],
-      outputs: ['video-short', 'interactive', 'web-embed', '2d-animated']
-    },
-    constraints: [],
-    scenarios: ['Product launches', 'Feature demos', 'API documentation', 'Developer onboarding'],
-    useCases: ['SaaS pitches', 'Product tours', 'Technical docs', 'Developer tutorials']
-  },
-  {
-    contextType: 'industry',
-    contextId: 'consulting',
-    contextName: 'Consulting & Professional Services',
-    requiredFeatures: [
-      { featureId: 'text_prompt', category: 'INPUT', priority: 'critical' },
-      { featureId: 'document_upload', category: 'INPUT', priority: 'critical' },
-      { featureId: 'ai_script_gen', category: 'SCRIPT', priority: 'critical' },
-      { featureId: 'brand_voice', category: 'SCRIPT', priority: 'critical' },
-      { featureId: 'multi_language', category: 'TRANSLATION', priority: 'recommended' },
-    ],
-    recommendedProviders: {
-      text: [
-        { providers: ['openai', 'claude'], reason: 'Executive communication quality' }
-      ],
-      image: [
-        { providers: ['stability', 'modelslab'], reason: 'Professional frameworks and diagrams' }
-      ],
-      translation: [
-        { providers: ['deepl'], reason: 'Business terminology accuracy' }
-      ]
-    },
-    recommendedModels: [
-      { type: 'text', modelIds: ['gpt-5', 'claude-3.5'], reason: 'Strategic precision', tier: 3 },
-      { type: 'image', modelIds: ['flux-pro', 'midjourney-v6'], reason: 'Framework visuals', tier: 3 }
-    ],
-    compatibleWith: {
-      frameworks: ['swot', 'porter-five', 'pestle', 'mece', 'pyramid', 'balanced-scorecard'],
-      templates: ['strategy-brief', 'case-study', 'whitepaper', 'competitive-analysis'],
-      visuals: ['diagrams', 'charts', 'data-tables', 'infographics'],
-      outputs: ['pdf-export', 'pptx-export', 'print-ready']
-    },
-    constraints: [],
-    scenarios: ['Strategy presentations', 'Client deliverables', 'Workshop facilitation', 'Executive briefings'],
-    useCases: ['Strategic plans', 'Due diligence', 'Market analysis', 'Transformation roadmaps']
-  }
+interface IndustryDefinition {
+  id: IndustryId;
+  name: string;
+  segment?: string;
+  requiredCategories: FeatureCategory[];
+  primaryProviders: ProviderId[];
+  primaryModels: { type: ModelType; modelIds: string[]; tier: 1 | 2 | 3 }[];
+  compatibleFrameworks: string[];
+  compatibleOutputs: string[];
+  scenarios: string[];
+  useCases: string[];
+}
+
+const ALL_INDUSTRIES: IndustryDefinition[] = [
+  // Healthcare & Life Sciences
+  { id: 'healthcare', name: 'Healthcare', segment: 'General', requiredCategories: ['INPUT', 'SCRIPT', 'VOICE'], primaryProviders: ['openai', 'claude', 'elevenlabs'], primaryModels: [{ type: 'text', modelIds: ['gpt-5', 'claude-3.5'], tier: 3 }], compatibleFrameworks: ['patient-journey', 'value-based-care', 'hipaa-compliance'], compatibleOutputs: ['pdf-export', 'pptx-export', 'video-full'], scenarios: ['Patient education', 'Clinical training', 'Care pathway'], useCases: ['Hospital presentations', 'HCP training', 'Patient onboarding'] },
+  { id: 'pharma', name: 'Pharmaceutical', segment: 'Pharma', requiredCategories: ['INPUT', 'SCRIPT', 'IMAGE'], primaryProviders: ['openai', 'claude', 'stability'], primaryModels: [{ type: 'text', modelIds: ['gpt-5', 'claude-3.5'], tier: 3 }], compatibleFrameworks: ['regulatory', 'patient-journey'], compatibleOutputs: ['pdf-export', 'pptx-export', 'print-ready'], scenarios: ['Drug launch', 'Clinical trials', 'Regulatory submission'], useCases: ['MLR reviews', 'KOL presentations', 'Formulary submissions'] },
+  { id: 'biotech', name: 'Biotechnology', segment: 'Biotech', requiredCategories: ['INPUT', 'SCRIPT', 'IMAGE', '3D'], primaryProviders: ['openai', 'claude', 'modelslab'], primaryModels: [{ type: 'text', modelIds: ['gpt-5', 'gemini-2.5-pro'], tier: 3 }, { type: '3d', modelIds: ['rodin-gen1'], tier: 3 }], compatibleFrameworks: ['regulatory', 'patient-journey'], compatibleOutputs: ['pdf-export', '3d-static', 'interactive'], scenarios: ['Research presentations', 'Investor pitches', 'Scientific publications'], useCases: ['Lab presentations', 'Grant proposals', 'Conference posters'] },
+  { id: 'medical-devices', name: 'Medical Devices', segment: 'MedTech', requiredCategories: ['INPUT', 'SCRIPT', 'IMAGE', '3D', 'VIDEO'], primaryProviders: ['openai', 'modelslab', 'runway'], primaryModels: [{ type: '3d', modelIds: ['meshy-ai', 'triposr'], tier: 2 }], compatibleFrameworks: ['regulatory', 'patient-journey'], compatibleOutputs: ['3d-static', '3d-animated', 'video-full', 'ar-overlay'], scenarios: ['Device demos', 'Surgical training', 'Product launches'], useCases: ['Trade shows', 'Surgeon education', 'Patient guides'] },
+  
+  // Finance & Insurance
+  { id: 'finance', name: 'Finance & Banking', segment: 'Financial Services', requiredCategories: ['INPUT', 'SCRIPT'], primaryProviders: ['openai', 'claude', 'azure'], primaryModels: [{ type: 'text', modelIds: ['gpt-5', 'claude-3.5'], tier: 3 }], compatibleFrameworks: ['risk-assessment', 'regulatory', 'competitive-analysis'], compatibleOutputs: ['pdf-export', 'pptx-export', 'print-ready'], scenarios: ['Investor relations', 'Board reporting', 'Risk analysis'], useCases: ['Annual reports', 'Quarterly earnings', 'Client proposals'] },
+  { id: 'fintech', name: 'FinTech', segment: 'FinTech', requiredCategories: ['INPUT', 'SCRIPT', 'IMAGE', 'INTERACTIVE'], primaryProviders: ['openai', 'modelslab'], primaryModels: [{ type: 'text', modelIds: ['gpt-5', 'deepseek'], tier: 2 }], compatibleFrameworks: ['saas-metrics', 'product-led', 'pirate-metrics'], compatibleOutputs: ['interactive', 'web-embed', 'video-short'], scenarios: ['Product demos', 'API documentation', 'Investor decks'], useCases: ['Pitch decks', 'Onboarding flows', 'Integration guides'] },
+  { id: 'insurance', name: 'Insurance', segment: 'Insurance', requiredCategories: ['INPUT', 'SCRIPT'], primaryProviders: ['openai', 'claude', 'azure'], primaryModels: [{ type: 'text', modelIds: ['gpt-5', 'claude-3.5'], tier: 3 }], compatibleFrameworks: ['risk-assessment', 'regulatory', 'customer-lifecycle'], compatibleOutputs: ['pdf-export', 'pptx-export', 'interactive'], scenarios: ['Policy explanations', 'Claims processing', 'Agent training'], useCases: ['Customer education', 'Underwriting guides', 'Risk reports'] },
+  { id: 'banking', name: 'Retail Banking', segment: 'Banking', requiredCategories: ['INPUT', 'SCRIPT', 'VOICE'], primaryProviders: ['openai', 'azure', 'elevenlabs'], primaryModels: [{ type: 'text', modelIds: ['gpt-5', 'azure-gpt-4'], tier: 3 }], compatibleFrameworks: ['customer-lifecycle', 'regulatory'], compatibleOutputs: ['pdf-export', 'video-short', 'interactive'], scenarios: ['Product education', 'Compliance training', 'Branch materials'], useCases: ['Customer onboarding', 'Teller training', 'Digital banking guides'] },
+  
+  // Technology & Software
+  { id: 'technology', name: 'Technology & SaaS', segment: 'Tech', requiredCategories: ['INPUT', 'SCRIPT', 'IMAGE', 'VIDEO'], primaryProviders: ['openai', 'gemini', 'modelslab', 'runway'], primaryModels: [{ type: 'text', modelIds: ['deepseek', 'gemini-2.5-pro'], tier: 2 }, { type: 'video', modelIds: ['runway-gen3', 'pika-labs'], tier: 2 }], compatibleFrameworks: ['saas-metrics', 'product-led', 'pirate-metrics', 'okr'], compatibleOutputs: ['video-short', 'interactive', 'web-embed', '2d-animated'], scenarios: ['Product launches', 'Feature demos', 'API docs', 'Developer onboarding'], useCases: ['SaaS pitches', 'Product tours', 'Technical docs', 'Tutorials'] },
+  { id: 'saas', name: 'SaaS', segment: 'Software', requiredCategories: ['INPUT', 'SCRIPT', 'IMAGE', 'VIDEO', 'INTERACTIVE'], primaryProviders: ['openai', 'modelslab', 'runway'], primaryModels: [{ type: 'text', modelIds: ['gpt-5', 'deepseek'], tier: 2 }], compatibleFrameworks: ['saas-metrics', 'product-led', 'pirate-metrics'], compatibleOutputs: ['interactive', 'video-short', 'web-embed'], scenarios: ['Onboarding', 'Feature releases', 'Customer success'], useCases: ['In-app guides', 'Release notes', 'Help center videos'] },
+  { id: 'ai-ml', name: 'AI & Machine Learning', segment: 'AI', requiredCategories: ['INPUT', 'SCRIPT', 'IMAGE', 'VIDEO', '3D'], primaryProviders: ['openai', 'claude', 'gemini', 'huggingface'], primaryModels: [{ type: 'text', modelIds: ['gpt-5', 'claude-3.5', 'gemini-2.5-pro'], tier: 3 }], compatibleFrameworks: ['design-thinking', 'lean-startup'], compatibleOutputs: ['interactive', 'video-full', '3d-animated'], scenarios: ['AI demos', 'Model explanations', 'Research presentations'], useCases: ['Conference talks', 'Investor pitches', 'Technical papers'] },
+  { id: 'cybersecurity', name: 'Cybersecurity', segment: 'Security', requiredCategories: ['INPUT', 'SCRIPT', 'IMAGE'], primaryProviders: ['openai', 'azure'], primaryModels: [{ type: 'text', modelIds: ['gpt-5', 'azure-gpt-4'], tier: 3 }], compatibleFrameworks: ['risk-assessment', 'regulatory', 'soc2'], compatibleOutputs: ['pdf-export', 'pptx-export', 'interactive'], scenarios: ['Threat briefings', 'Compliance audits', 'Security training'], useCases: ['Executive briefings', 'SOC reports', 'Employee training'] },
+  
+  // Professional Services
+  { id: 'consulting', name: 'Consulting', segment: 'Professional Services', requiredCategories: ['INPUT', 'SCRIPT', 'IMAGE', 'TRANSLATION'], primaryProviders: ['openai', 'claude', 'deepl'], primaryModels: [{ type: 'text', modelIds: ['gpt-5', 'claude-3.5'], tier: 3 }], compatibleFrameworks: ['swot', 'porter-five', 'pestle', 'mece', 'pyramid', 'balanced-scorecard'], compatibleOutputs: ['pdf-export', 'pptx-export', 'print-ready'], scenarios: ['Strategy presentations', 'Client deliverables', 'Workshop facilitation'], useCases: ['Strategic plans', 'Due diligence', 'Market analysis', 'Transformation roadmaps'] },
+  { id: 'legal', name: 'Legal', segment: 'Legal', requiredCategories: ['INPUT', 'SCRIPT'], primaryProviders: ['openai', 'claude'], primaryModels: [{ type: 'text', modelIds: ['gpt-5', 'claude-3.5'], tier: 3 }], compatibleFrameworks: ['regulatory', 'risk-assessment'], compatibleOutputs: ['pdf-export', 'pptx-export'], scenarios: ['Case presentations', 'Contract summaries', 'Compliance training'], useCases: ['Client briefings', 'Legal memos', 'Training materials'] },
+  { id: 'professional-services', name: 'Professional Services', segment: 'Services', requiredCategories: ['INPUT', 'SCRIPT', 'IMAGE'], primaryProviders: ['openai', 'claude', 'stability'], primaryModels: [{ type: 'text', modelIds: ['gpt-5', 'claude-3.5'], tier: 3 }], compatibleFrameworks: ['swot', 'competitive-analysis', 'customer-lifecycle'], compatibleOutputs: ['pdf-export', 'pptx-export', 'video-short'], scenarios: ['Client proposals', 'Case studies', 'Thought leadership'], useCases: ['Pitch decks', 'Capability decks', 'Testimonial videos'] },
+  
+  // Manufacturing & Industrial
+  { id: 'manufacturing', name: 'Manufacturing', segment: 'Industrial', requiredCategories: ['INPUT', 'SCRIPT', 'IMAGE', '3D'], primaryProviders: ['openai', 'modelslab'], primaryModels: [{ type: '3d', modelIds: ['meshy-ai', 'modelslab-3d'], tier: 2 }], compatibleFrameworks: ['lean-manufacturing', 'six-sigma', 'industry-4', 'kaizen'], compatibleOutputs: ['pdf-export', '3d-static', 'video-full', 'ar-overlay'], scenarios: ['Process documentation', 'Safety training', 'Product visualization'], useCases: ['SOPs', 'Assembly guides', 'Trade show demos'] },
+  { id: 'automotive', name: 'Automotive', segment: 'Automotive', requiredCategories: ['INPUT', 'SCRIPT', 'IMAGE', '3D', 'VIDEO', 'AR_VR'], primaryProviders: ['openai', 'modelslab', 'runway'], primaryModels: [{ type: '3d', modelIds: ['rodin-gen1', 'luma-genie'], tier: 3 }], compatibleFrameworks: ['lean-manufacturing', 'six-sigma'], compatibleOutputs: ['3d-animated', 'vr-experience', 'ar-overlay', 'video-full'], scenarios: ['Vehicle configurators', 'Dealer training', 'Customer experience'], useCases: ['Showroom displays', 'Virtual test drives', 'Parts catalogs'] },
+  { id: 'aerospace', name: 'Aerospace & Defense', segment: 'Aerospace', requiredCategories: ['INPUT', 'SCRIPT', 'IMAGE', '3D', 'VIDEO'], primaryProviders: ['openai', 'azure', 'modelslab'], primaryModels: [{ type: '3d', modelIds: ['rodin-gen1', 'csm-3d'], tier: 3 }], compatibleFrameworks: ['regulatory', 'six-sigma'], compatibleOutputs: ['3d-static', '3d-animated', 'vr-experience', 'pdf-export'], scenarios: ['Flight simulations', 'Maintenance training', 'Defense briefings'], useCases: ['Pilot training', 'Technical manuals', 'Mission briefings'] },
+  { id: 'energy', name: 'Energy & Utilities', segment: 'Energy', requiredCategories: ['INPUT', 'SCRIPT', 'IMAGE', '3D'], primaryProviders: ['openai', 'modelslab'], primaryModels: [{ type: '3d', modelIds: ['meshy-ai'], tier: 2 }], compatibleFrameworks: ['eu-sustainability', 'regulatory'], compatibleOutputs: ['pdf-export', '3d-static', 'interactive'], scenarios: ['Safety protocols', 'Infrastructure planning', 'Sustainability reports'], useCases: ['Field guides', 'Investor presentations', 'Community meetings'] },
+  
+  // Retail & Consumer
+  { id: 'retail', name: 'Retail', segment: 'Retail', requiredCategories: ['INPUT', 'SCRIPT', 'IMAGE', 'VIDEO', 'INTERACTIVE'], primaryProviders: ['openai', 'modelslab', 'runway'], primaryModels: [{ type: 'image', modelIds: ['flux-pro', 'dall-e-3'], tier: 2 }], compatibleFrameworks: ['omnichannel', 'customer-lifecycle', 'retail-analytics'], compatibleOutputs: ['social-media', 'video-short', 'interactive', 'ar-overlay'], scenarios: ['Product launches', 'Seasonal campaigns', 'Store displays'], useCases: ['Ad creatives', 'Digital signage', 'AR try-on'] },
+  { id: 'ecommerce', name: 'E-commerce', segment: 'E-commerce', requiredCategories: ['INPUT', 'SCRIPT', 'IMAGE', 'VIDEO', 'INTERACTIVE'], primaryProviders: ['openai', 'modelslab', 'elevenlabs'], primaryModels: [{ type: 'image', modelIds: ['flux-pro', 'modelslab-flux'], tier: 2 }], compatibleFrameworks: ['omnichannel', 'pirate-metrics', 'customer-lifecycle'], compatibleOutputs: ['social-media', 'video-short', 'interactive', 'web-embed'], scenarios: ['Product photography', 'Video ads', 'Personalization'], useCases: ['Catalog images', 'TikTok ads', 'Email campaigns'] },
+  { id: 'consumer-goods', name: 'Consumer Goods', segment: 'CPG', requiredCategories: ['INPUT', 'SCRIPT', 'IMAGE', 'VIDEO'], primaryProviders: ['openai', 'modelslab', 'runway'], primaryModels: [{ type: 'image', modelIds: ['flux-pro', 'midjourney-v6'], tier: 3 }], compatibleFrameworks: ['customer-lifecycle', 'omnichannel'], compatibleOutputs: ['social-media', 'video-short', 'print-ready'], scenarios: ['Brand campaigns', 'Package design', 'Trade shows'], useCases: ['Print ads', 'Social content', 'Packaging mockups'] },
+  { id: 'food-beverage', name: 'Food & Beverage', segment: 'F&B', requiredCategories: ['INPUT', 'SCRIPT', 'IMAGE', 'VIDEO'], primaryProviders: ['openai', 'modelslab'], primaryModels: [{ type: 'image', modelIds: ['flux-pro', 'dall-e-3'], tier: 2 }], compatibleFrameworks: ['customer-lifecycle', 'omnichannel'], compatibleOutputs: ['social-media', 'video-short', 'print-ready', 'ar-overlay'], scenarios: ['Menu design', 'Recipe content', 'Brand campaigns'], useCases: ['Food photography', 'Social media', 'Menu boards'] },
+  
+  // Education & Research
+  { id: 'education', name: 'Education', segment: 'Education', requiredCategories: ['INPUT', 'SCRIPT', 'VOICE', 'IMAGE', 'VIDEO', 'INTERACTIVE'], primaryProviders: ['openai', 'elevenlabs', 'modelslab'], primaryModels: [{ type: 'text', modelIds: ['gpt-5', 'gemini-2.5-pro'], tier: 2 }, { type: 'voice', modelIds: ['elevenlabs'], tier: 2 }], compatibleFrameworks: ['design-thinking', 'scrum'], compatibleOutputs: ['video-full', 'interactive', 'pptx-export'], scenarios: ['Course creation', 'Student engagement', 'Assessment'], useCases: ['E-learning modules', 'Interactive lessons', 'Educational videos'] },
+  { id: 'edtech', name: 'EdTech', segment: 'EdTech', requiredCategories: ['INPUT', 'SCRIPT', 'VOICE', 'IMAGE', 'VIDEO', 'INTERACTIVE'], primaryProviders: ['openai', 'elevenlabs', 'modelslab', 'runway'], primaryModels: [{ type: 'text', modelIds: ['gpt-5'], tier: 3 }, { type: 'video', modelIds: ['runway-gen3'], tier: 3 }], compatibleFrameworks: ['design-thinking', 'product-led', 'pirate-metrics'], compatibleOutputs: ['interactive', 'video-full', 'web-embed'], scenarios: ['Platform demos', 'User onboarding', 'Content creation'], useCases: ['Product tours', 'Tutorial videos', 'Help documentation'] },
+  { id: 'training', name: 'Corporate Training', segment: 'L&D', requiredCategories: ['INPUT', 'SCRIPT', 'VOICE', 'VIDEO', 'INTERACTIVE'], primaryProviders: ['openai', 'elevenlabs', 'runway'], primaryModels: [{ type: 'voice', modelIds: ['elevenlabs', 'azure-neural'], tier: 2 }], compatibleFrameworks: ['design-thinking', 'okr'], compatibleOutputs: ['video-full', 'interactive', 'vr-experience'], scenarios: ['Employee onboarding', 'Skills training', 'Compliance'], useCases: ['Training videos', 'Interactive modules', 'VR simulations'] },
+  { id: 'research', name: 'Research & Academia', segment: 'Research', requiredCategories: ['INPUT', 'SCRIPT', 'IMAGE', '3D'], primaryProviders: ['openai', 'claude', 'modelslab'], primaryModels: [{ type: 'text', modelIds: ['gpt-5', 'claude-3.5'], tier: 3 }], compatibleFrameworks: ['design-thinking'], compatibleOutputs: ['pdf-export', 'pptx-export', '3d-static', 'interactive'], scenarios: ['Conference presentations', 'Grant proposals', 'Data visualization'], useCases: ['Research papers', 'Poster presentations', 'Lab reports'] },
+  
+  // Media & Entertainment
+  { id: 'media', name: 'Media', segment: 'Media', requiredCategories: ['INPUT', 'SCRIPT', 'IMAGE', 'VIDEO', 'VOICE', 'AUDIO'], primaryProviders: ['openai', 'runway', 'elevenlabs', 'modelslab'], primaryModels: [{ type: 'video', modelIds: ['openai-sora', 'runway-gen3', 'luma-dream-machine'], tier: 3 }], compatibleFrameworks: ['design-thinking'], compatibleOutputs: ['video-full', 'social-media', '2d-animated'], scenarios: ['Content production', 'News graphics', 'Documentary'], useCases: ['Video content', 'Podcasts', 'Social media'] },
+  { id: 'entertainment', name: 'Entertainment', segment: 'Entertainment', requiredCategories: ['INPUT', 'SCRIPT', 'IMAGE', 'VIDEO', 'VOICE', '3D', 'VFX', 'AR_VR'], primaryProviders: ['openai', 'runway', 'elevenlabs', 'modelslab'], primaryModels: [{ type: 'video', modelIds: ['openai-sora', 'runway-gen3'], tier: 3 }, { type: '3d', modelIds: ['rodin-gen1', 'luma-genie'], tier: 3 }], compatibleFrameworks: ['design-thinking'], compatibleOutputs: ['video-full', '3d-animated', 'vr-experience', 'mixed-reality'], scenarios: ['Film production', 'Game assets', 'VFX'], useCases: ['Movie trailers', 'Game cinematics', 'VR experiences'] },
+  { id: 'gaming', name: 'Gaming', segment: 'Gaming', requiredCategories: ['INPUT', 'SCRIPT', 'IMAGE', '3D', 'VIDEO', 'AUDIO', 'AR_VR'], primaryProviders: ['openai', 'modelslab'], primaryModels: [{ type: '3d', modelIds: ['rodin-gen1', 'csm-3d', 'meshy-ai'], tier: 3 }], compatibleFrameworks: ['design-thinking', 'scrum', 'kanban'], compatibleOutputs: ['3d-animated', 'vr-experience', 'interactive'], scenarios: ['Asset creation', 'Trailer production', 'UI design'], useCases: ['Character models', 'Environment art', 'Promotional videos'] },
+  { id: 'sports', name: 'Sports', segment: 'Sports', requiredCategories: ['INPUT', 'SCRIPT', 'IMAGE', 'VIDEO'], primaryProviders: ['openai', 'runway', 'modelslab'], primaryModels: [{ type: 'video', modelIds: ['runway-gen3', 'pika-labs'], tier: 2 }], compatibleFrameworks: ['customer-lifecycle'], compatibleOutputs: ['video-short', 'social-media', 'interactive'], scenarios: ['Game highlights', 'Player profiles', 'Fan engagement'], useCases: ['Social clips', 'Broadcast graphics', 'Stadium displays'] },
+  { id: 'marketing', name: 'Marketing & Advertising', segment: 'Marketing', requiredCategories: ['INPUT', 'SCRIPT', 'IMAGE', 'VIDEO', 'VOICE'], primaryProviders: ['openai', 'modelslab', 'runway', 'elevenlabs'], primaryModels: [{ type: 'image', modelIds: ['flux-pro', 'midjourney-v6', 'dall-e-3'], tier: 3 }, { type: 'video', modelIds: ['runway-gen3', 'pika-labs'], tier: 2 }], compatibleFrameworks: ['pirate-metrics', 'customer-lifecycle', 'competitive-analysis'], compatibleOutputs: ['video-short', 'social-media', '2d-animated', 'interactive'], scenarios: ['Campaign creation', 'A/B testing', 'Brand refresh'], useCases: ['Ad creatives', 'Social content', 'Landing pages'] },
+  
+  // Public Sector & Other
+  { id: 'government', name: 'Government', segment: 'Public Sector', requiredCategories: ['INPUT', 'SCRIPT'], primaryProviders: ['openai', 'azure'], primaryModels: [{ type: 'text', modelIds: ['azure-gpt-4'], tier: 3 }], compatibleFrameworks: ['regulatory', 'balanced-scorecard'], compatibleOutputs: ['pdf-export', 'pptx-export', 'video-full'], scenarios: ['Policy communication', 'Public information', 'Training'], useCases: ['Town halls', 'Public notices', 'Employee training'] },
+  { id: 'nonprofit', name: 'Nonprofit', segment: 'Nonprofit', requiredCategories: ['INPUT', 'SCRIPT', 'IMAGE', 'VIDEO'], primaryProviders: ['openai', 'modelslab'], primaryModels: [{ type: 'text', modelIds: ['gpt-5'], tier: 2 }], compatibleFrameworks: ['balanced-scorecard', 'design-thinking'], compatibleOutputs: ['video-short', 'social-media', 'pdf-export'], scenarios: ['Fundraising', 'Awareness campaigns', 'Impact reports'], useCases: ['Donor presentations', 'Social campaigns', 'Annual reports'] },
+  { id: 'real-estate', name: 'Real Estate', segment: 'Real Estate', requiredCategories: ['INPUT', 'SCRIPT', 'IMAGE', '3D', 'VIDEO', 'AR_VR'], primaryProviders: ['openai', 'modelslab'], primaryModels: [{ type: '3d', modelIds: ['rodin-gen1', 'meshy-ai'], tier: 3 }], compatibleFrameworks: ['customer-lifecycle'], compatibleOutputs: ['3d-static', '3d-animated', 'vr-experience', 'video-full'], scenarios: ['Property tours', 'Development visualization', 'Marketing'], useCases: ['Virtual tours', 'Architectural renders', 'Listing videos'] },
+  { id: 'hospitality', name: 'Hospitality', segment: 'Hospitality', requiredCategories: ['INPUT', 'SCRIPT', 'IMAGE', 'VIDEO', 'TRANSLATION'], primaryProviders: ['openai', 'modelslab', 'deepl'], primaryModels: [{ type: 'image', modelIds: ['flux-pro', 'dall-e-3'], tier: 2 }], compatibleFrameworks: ['customer-lifecycle', 'omnichannel'], compatibleOutputs: ['video-short', 'social-media', 'interactive', 'ar-overlay'], scenarios: ['Property marketing', 'Guest experience', 'Staff training'], useCases: ['Virtual tours', 'Booking widgets', 'Concierge AI'] },
 ];
 
 // ==========================================
-// FRAMEWORK → CAPABILITY MAPPINGS
+// GENERATE INDUSTRY → CAPABILITY MAPPINGS
 // ==========================================
 
-export const FRAMEWORK_CAPABILITY_MAPPINGS: ContextToCapabilityMapping[] = [
-  {
-    contextType: 'framework',
-    contextId: 'swot',
-    contextName: 'SWOT Analysis',
-    requiredFeatures: [
-      { featureId: 'ai_script_gen', category: 'SCRIPT', priority: 'critical' },
-      { featureId: 'ai_image_gen', category: 'IMAGE', priority: 'recommended' },
-    ],
-    recommendedProviders: {
-      text: [{ providers: ['openai', 'claude'], reason: 'Strategic analysis quality' }],
-      image: [{ providers: ['stability', 'modelslab'], reason: '2x2 matrix visuals' }]
-    },
-    recommendedModels: [
-      { type: 'text', modelIds: ['gpt-5', 'claude-3.5'], reason: 'Strategic depth', tier: 2 },
-      { type: 'image', modelIds: ['flux-pro'], reason: 'Clean quadrant layouts', tier: 2 }
-    ],
-    compatibleWith: {
-      industries: ['consulting', 'finance', 'technology', 'healthcare'],
-      visuals: ['charts', 'diagrams', 'data-tables', 'infographics'],
-      outputs: ['pdf-export', 'pptx-export', '2d-static']
-    },
-    constraints: [],
-    scenarios: ['Strategic planning', 'Competitive analysis', 'Project evaluation'],
-    useCases: ['Business plans', 'Market entry', 'Product strategy']
-  },
-  {
-    contextType: 'framework',
-    contextId: 'porter-five',
-    contextName: "Porter's Five Forces",
-    requiredFeatures: [
-      { featureId: 'ai_script_gen', category: 'SCRIPT', priority: 'critical' },
-      { featureId: 'ai_image_gen', category: 'IMAGE', priority: 'critical' },
-    ],
-    recommendedProviders: {
-      text: [{ providers: ['openai', 'claude'], reason: 'Industry analysis depth' }],
-      image: [{ providers: ['stability', 'modelslab'], reason: 'Pentagon/radar visuals' }]
-    },
-    recommendedModels: [
-      { type: 'text', modelIds: ['gpt-5', 'gemini-2.5-pro'], reason: 'Market research depth', tier: 3 },
-      { type: 'image', modelIds: ['flux-pro', 'dall-e-3'], reason: 'Radar chart layouts', tier: 2 }
-    ],
-    compatibleWith: {
-      industries: ['consulting', 'finance', 'manufacturing', 'retail'],
-      visuals: ['charts', 'diagrams', 'infographics'],
-      outputs: ['pdf-export', 'pptx-export']
-    },
-    constraints: [],
-    scenarios: ['Industry analysis', 'Competitive landscape', 'Market entry assessment'],
-    useCases: ['Strategy decks', 'Investment memos', 'Due diligence']
-  },
-  {
-    contextType: 'framework',
-    contextId: 'patient-journey',
-    contextName: 'Patient Journey',
-    requiredFeatures: [
-      { featureId: 'ai_script_gen', category: 'SCRIPT', priority: 'critical' },
-      { featureId: 'ai_image_gen', category: 'IMAGE', priority: 'critical' },
-      { featureId: 'tts', category: 'VOICE', priority: 'recommended' },
-    ],
-    recommendedProviders: {
-      text: [{ providers: ['openai', 'claude'], reason: 'Healthcare terminology accuracy' }],
-      image: [{ providers: ['stability', 'modelslab'], reason: 'Medical illustration' }],
-      voice: [{ providers: ['elevenlabs', 'azure'], reason: 'Empathetic narration' }]
-    },
-    recommendedModels: [
-      { type: 'text', modelIds: ['gpt-5', 'claude-3.5'], reason: 'Medical accuracy', tier: 3 },
-      { type: 'image', modelIds: ['stability-core', 'modelslab-realvision'], reason: 'Healthcare visuals', tier: 2 }
-    ],
-    compatibleWith: {
-      industries: ['healthcare', 'pharma', 'biotech'],
-      visuals: ['journey-maps', 'timelines', 'diagrams', 'infographics'],
-      outputs: ['pdf-export', 'pptx-export', 'video-full', 'interactive']
-    },
-    constraints: [],
-    scenarios: ['Care pathway mapping', 'Treatment education', 'Clinical workflows'],
-    useCases: ['Patient education', 'HCP training', 'Care model design']
+function generateIndustryMapping(industry: IndustryDefinition): ContextToCapabilityMapping {
+  const requiredFeatures: ContextToCapabilityMapping['requiredFeatures'] = [];
+  
+  // Map categories to specific features
+  if (industry.requiredCategories.includes('INPUT')) {
+    requiredFeatures.push({ featureId: 'text_prompt', category: 'INPUT', priority: 'critical' });
+    requiredFeatures.push({ featureId: 'document_upload', category: 'INPUT', priority: 'recommended' });
   }
-];
-
-// ==========================================
-// VISUAL FEATURE → CAPABILITY MAPPINGS
-// ==========================================
-
-export const VISUAL_CAPABILITY_MAPPINGS: ContextToCapabilityMapping[] = [
-  {
-    contextType: 'visual',
-    contextId: 'charts',
-    contextName: 'Charts & Graphs',
-    requiredFeatures: [
-      { featureId: 'ai_image_gen', category: 'IMAGE', priority: 'critical' },
-    ],
-    recommendedProviders: {
-      image: [
-        { providers: ['stability', 'openai'], reason: 'Clean data visualization' },
-        { providers: ['modelslab'], reason: 'High-volume chart generation' }
-      ]
-    },
-    recommendedModels: [
-      { type: 'image', modelIds: ['flux-pro', 'dall-e-3'], reason: 'Text rendering in charts', tier: 2 }
-    ],
-    compatibleWith: {
-      industries: ['finance', 'consulting', 'technology', 'healthcare'],
-      frameworks: ['swot', 'balanced-scorecard', 'saas-metrics'],
-      outputs: ['pdf-export', 'pptx-export', '2d-static', 'print-ready']
-    },
-    constraints: [
-      { contextType: 'output', contextId: 'video-full', severity: 'warning', reason: 'Static charts may not translate well to video motion' }
-    ],
-    scenarios: ['Financial reporting', 'Data analysis', 'KPI dashboards'],
-    useCases: ['Board decks', 'Investor updates', 'Performance reviews']
-  },
-  {
-    contextType: 'visual',
-    contextId: 'video-clips',
-    contextName: 'Video Clips',
-    requiredFeatures: [
-      { featureId: 'video_generation', category: 'VIDEO', priority: 'critical' },
-      { featureId: 'tts', category: 'VOICE', priority: 'recommended' },
-    ],
-    recommendedProviders: {
-      video: [
-        { providers: ['modelslab', 'runway'], reason: 'High-quality video generation' },
-        { providers: ['pika'], reason: 'Creative effects' }
-      ],
-      voice: [
-        { providers: ['elevenlabs'], reason: 'Narration sync' }
-      ]
-    },
-    recommendedModels: [
-      { type: 'video', modelIds: ['openai-sora', 'runway-gen3'], reason: 'Cinematic quality', tier: 3 },
-      { type: 'video', modelIds: ['modelslab-animatediff', 'pika-labs'], reason: 'Fast generation', tier: 2 }
-    ],
-    compatibleWith: {
-      outputs: ['video-short', 'video-full', '2d-animated', 'social-media']
-    },
-    constraints: [
-      { contextType: 'output', contextId: 'pdf-export', severity: 'incompatible', reason: 'PDF cannot contain video' },
-      { contextType: 'output', contextId: 'print-ready', severity: 'incompatible', reason: 'Print cannot contain video' }
-    ],
-    scenarios: ['Product demos', 'Explainer videos', 'Social content'],
-    useCases: ['Marketing campaigns', 'Training videos', 'Product launches']
-  },
-  {
-    contextType: 'visual',
-    contextId: '3d-objects',
-    contextName: '3D Objects',
-    requiredFeatures: [
-      { featureId: 'mesh_3d_gen', category: '3D', priority: 'critical' },
-    ],
-    recommendedProviders: {
-      mesh3d: [
-        { providers: ['modelslab'], reason: '3D model generation' },
-        { providers: ['replicate'], reason: 'Open-source 3D models' }
-      ]
-    },
-    recommendedModels: [
-      { type: '3d', modelIds: ['rodin-gen1', 'luma-genie'], reason: 'High-fidelity 3D', tier: 3 },
-      { type: '3d', modelIds: ['modelslab-3d', 'meshy-ai'], reason: 'Fast 3D generation', tier: 2 }
-    ],
-    compatibleWith: {
-      outputs: ['3d-static', '3d-animated', 'vr-experience', 'ar-overlay', 'interactive']
-    },
-    constraints: [
-      { contextType: 'output', contextId: 'pdf-export', severity: 'warning', reason: '3D rendered as static images in PDF' },
-      { contextType: 'output', contextId: 'pptx-export', severity: 'warning', reason: '3D requires special embed in PPTX' }
-    ],
-    scenarios: ['Product visualization', 'Architecture', 'Gaming assets'],
-    useCases: ['Product demos', 'Virtual showrooms', 'Training simulations']
+  if (industry.requiredCategories.includes('SCRIPT')) {
+    requiredFeatures.push({ featureId: 'ai_script_gen', category: 'SCRIPT', priority: 'critical' });
+    requiredFeatures.push({ featureId: 'brand_voice', category: 'SCRIPT', priority: 'optional' });
   }
-];
+  if (industry.requiredCategories.includes('IMAGE')) {
+    requiredFeatures.push({ featureId: 'ai_image_gen', category: 'IMAGE', priority: 'critical' });
+  }
+  if (industry.requiredCategories.includes('VIDEO')) {
+    requiredFeatures.push({ featureId: 'video_generation', category: 'VIDEO', priority: 'recommended' });
+  }
+  if (industry.requiredCategories.includes('VOICE')) {
+    requiredFeatures.push({ featureId: 'tts', category: 'VOICE', priority: 'recommended' });
+  }
+  if (industry.requiredCategories.includes('3D')) {
+    requiredFeatures.push({ featureId: 'mesh_3d_gen', category: '3D', priority: 'recommended' });
+  }
+  if (industry.requiredCategories.includes('TRANSLATION')) {
+    requiredFeatures.push({ featureId: 'multi_language', category: 'TRANSLATION', priority: 'optional' });
+  }
+  if (industry.requiredCategories.includes('INTERACTIVE')) {
+    requiredFeatures.push({ featureId: 'interactive_elements', category: 'INTERACTIVE', priority: 'optional' });
+  }
+  if (industry.requiredCategories.includes('AR_VR')) {
+    requiredFeatures.push({ featureId: 'ar_vr_export', category: 'AR_VR', priority: 'optional' });
+  }
+  
+  // Build provider recommendations
+  const recommendedProviders: ContextToCapabilityMapping['recommendedProviders'] = {};
+  
+  const textProviders = industry.primaryProviders.filter(p => ['openai', 'claude', 'gemini', 'deepseek', 'azure', 'alibaba'].includes(p));
+  const imageProviders = industry.primaryProviders.filter(p => ['modelslab', 'stability', 'replicate'].includes(p));
+  const videoProviders = industry.primaryProviders.filter(p => ['runway', 'modelslab', 'pika'].includes(p));
+  const voiceProviders = industry.primaryProviders.filter(p => ['elevenlabs', 'azure'].includes(p));
+  const transProviders = industry.primaryProviders.filter(p => ['deepl', 'azure'].includes(p));
+  
+  if (textProviders.length > 0) recommendedProviders.text = [{ providers: textProviders, reason: `${industry.name} content expertise` }];
+  if (imageProviders.length > 0 || industry.requiredCategories.includes('IMAGE')) recommendedProviders.image = [{ providers: imageProviders.length > 0 ? imageProviders : ['modelslab', 'stability'], reason: `${industry.name} visual quality` }];
+  if (videoProviders.length > 0 || industry.requiredCategories.includes('VIDEO')) recommendedProviders.video = [{ providers: videoProviders.length > 0 ? videoProviders : ['modelslab', 'runway'], reason: `${industry.name} video production` }];
+  if (voiceProviders.length > 0 || industry.requiredCategories.includes('VOICE')) recommendedProviders.voice = [{ providers: voiceProviders.length > 0 ? voiceProviders : ['elevenlabs'], reason: 'Professional narration' }];
+  if (transProviders.length > 0 || industry.requiredCategories.includes('TRANSLATION')) recommendedProviders.translation = [{ providers: transProviders.length > 0 ? transProviders : ['deepl'], reason: 'Multi-language support' }];
+  
+  return {
+    contextType: 'industry',
+    contextId: industry.id,
+    contextName: industry.name,
+    requiredFeatures,
+    recommendedProviders,
+    recommendedModels: industry.primaryModels.map(m => ({
+      type: m.type,
+      modelIds: m.modelIds,
+      reason: `${industry.name} optimized`,
+      tier: m.tier
+    })),
+    compatibleWith: {
+      frameworks: industry.compatibleFrameworks as FrameworkId[],
+      outputs: industry.compatibleOutputs as OutputFormatId[]
+    },
+    constraints: [],
+    scenarios: industry.scenarios,
+    useCases: industry.useCases
+  };
+}
+
+export const INDUSTRY_CAPABILITY_MAPPINGS: ContextToCapabilityMapping[] = ALL_INDUSTRIES.map(generateIndustryMapping);
 
 // ==========================================
-// OUTPUT FORMAT → CAPABILITY MAPPINGS
+// GENERATE FRAMEWORK → CAPABILITY MAPPINGS
 // ==========================================
 
-export const OUTPUT_CAPABILITY_MAPPINGS: ContextToCapabilityMapping[] = [
-  {
+function generateFrameworkMapping(framework: Framework, category: FrameworkCategory): ContextToCapabilityMapping {
+  const isStrategy = category.type === 'consulting' || category.type === 'methodology';
+  const isIndustry = category.type === 'industry';
+  const isRegional = category.type === 'regional';
+  
+  const requiredFeatures: ContextToCapabilityMapping['requiredFeatures'] = [
+    { featureId: 'ai_script_gen', category: 'SCRIPT', priority: 'critical' },
+    { featureId: 'ai_image_gen', category: 'IMAGE', priority: isStrategy ? 'critical' : 'recommended' }
+  ];
+  
+  if (isIndustry) {
+    if (category.id === 'healthcare') {
+      requiredFeatures.push({ featureId: 'tts', category: 'VOICE', priority: 'recommended' });
+    }
+  }
+  
+  const providers: ProviderId[] = isStrategy ? ['openai', 'claude'] : ['openai', 'gemini'];
+  
+  return {
+    contextType: 'framework',
+    contextId: framework.id,
+    contextName: framework.name,
+    requiredFeatures,
+    recommendedProviders: {
+      text: [{ providers, reason: `${framework.name} analysis` }],
+      image: [{ providers: ['stability', 'modelslab'], reason: 'Framework diagrams' }]
+    },
+    recommendedModels: [
+      { type: 'text', modelIds: ['gpt-5', 'claude-3.5'], reason: `${framework.name} depth`, tier: framework.tier as 1 | 2 | 3 },
+      { type: 'image', modelIds: ['flux-pro'], reason: 'Diagram quality', tier: 2 }
+    ],
+    compatibleWith: {
+      industries: isIndustry ? [category.id as IndustryId] : ['consulting', 'finance', 'technology'] as IndustryId[],
+      visuals: ['charts', 'diagrams', 'infographics'] as VisualFeatureId[],
+      outputs: ['pdf-export', 'pptx-export'] as OutputFormatId[]
+    },
+    constraints: [],
+    scenarios: [framework.description, `${category.name} analysis`],
+    useCases: [`${framework.name} presentations`, `${category.name} deliverables`]
+  };
+}
+
+export const FRAMEWORK_CAPABILITY_MAPPINGS: ContextToCapabilityMapping[] = EXPANDED_FRAMEWORK_CATEGORIES.flatMap(
+  category => category.frameworks.map(framework => generateFrameworkMapping(framework, category))
+);
+
+// ==========================================
+// GENERATE VISUAL → CAPABILITY MAPPINGS
+// ==========================================
+
+function generateVisualMapping(visual: ExpandedVisualFeature): ContextToCapabilityMapping {
+  const is3D = visual.category === '3d-ar';
+  const isInteractive = visual.category === 'interactive';
+  const isMedia = visual.category === 'media';
+  const isData = visual.category === 'data';
+  
+  const requiredFeatures: ContextToCapabilityMapping['requiredFeatures'] = [];
+  const constraints: ContextToCapabilityMapping['constraints'] = [];
+  
+  if (isData) {
+    requiredFeatures.push({ featureId: 'ai_image_gen', category: 'IMAGE', priority: 'critical' });
+  }
+  if (is3D) {
+    requiredFeatures.push({ featureId: 'mesh_3d_gen', category: '3D', priority: 'critical' });
+    constraints.push({ contextType: 'output', contextId: 'pdf-export', severity: 'warning', reason: '3D rendered as static in PDF' });
+  }
+  if (isMedia && visual.id === 'video-clips') {
+    requiredFeatures.push({ featureId: 'video_generation', category: 'VIDEO', priority: 'critical' });
+    constraints.push({ contextType: 'output', contextId: 'pdf-export', severity: 'incompatible', reason: 'PDF cannot contain video' });
+  }
+  if (isMedia && visual.id === 'audio') {
+    requiredFeatures.push({ featureId: 'tts', category: 'VOICE', priority: 'critical' });
+  }
+  if (isInteractive) {
+    requiredFeatures.push({ featureId: 'interactive_elements', category: 'INTERACTIVE', priority: 'critical' });
+    constraints.push({ contextType: 'output', contextId: 'pdf-export', severity: 'warning', reason: 'Interactive elements not in PDF' });
+  }
+  
+  // Default to image gen if no specific requirements
+  if (requiredFeatures.length === 0) {
+    requiredFeatures.push({ featureId: 'ai_image_gen', category: 'IMAGE', priority: 'recommended' });
+  }
+  
+  // Build compatible outputs based on visual type
+  let compatibleOutputs: OutputFormatId[] = ['pptx-export', '2d-static'];
+  if (is3D) compatibleOutputs = ['3d-static', '3d-animated', 'vr-experience', 'ar-overlay'];
+  if (isMedia && (visual.id === 'video-clips' || visual.id === 'animations')) compatibleOutputs = ['video-short', 'video-full', 'social-media', '2d-animated'];
+  if (isInteractive) compatibleOutputs = ['interactive', 'web-embed'];
+  
+  return {
+    contextType: 'visual',
+    contextId: visual.id,
+    contextName: visual.name,
+    requiredFeatures,
+    recommendedProviders: {
+      image: [{ providers: ['modelslab', 'stability'], reason: visual.description }],
+      ...(is3D && { mesh3d: [{ providers: ['modelslab', 'replicate'], reason: '3D generation' }] }),
+      ...(isMedia && visual.id.includes('video') && { video: [{ providers: ['modelslab', 'runway'], reason: 'Video generation' }] })
+    },
+    recommendedModels: [
+      { type: 'image', modelIds: ['flux-pro', 'dall-e-3'], reason: visual.description, tier: visual.tier },
+      ...(is3D ? [{ type: '3d' as ModelType, modelIds: ['meshy-ai', 'rodin-gen1'], reason: '3D models', tier: visual.tier }] : [])
+    ],
+    compatibleWith: {
+      outputs: compatibleOutputs
+    },
+    constraints,
+    scenarios: visual.subOptions.slice(0, 3).map(s => s.name),
+    useCases: [`${visual.name} creation`, `${visual.category} design`]
+  };
+}
+
+export const VISUAL_CAPABILITY_MAPPINGS: ContextToCapabilityMapping[] = EXPANDED_VISUAL_FEATURES.map(generateVisualMapping);
+
+// ==========================================
+// GENERATE OUTPUT → CAPABILITY MAPPINGS
+// ==========================================
+
+function generateOutputMapping(output: ExpandedOutputConfig): ContextToCapabilityMapping {
+  const requiredFeatures: ContextToCapabilityMapping['requiredFeatures'] = [
+    { featureId: 'ai_script_gen', category: 'SCRIPT', priority: 'critical' },
+    { featureId: 'ai_image_gen', category: 'IMAGE', priority: 'critical' }
+  ];
+  
+  if (output.requiresVideo) {
+    requiredFeatures.push({ featureId: 'video_generation', category: 'VIDEO', priority: 'critical' });
+  }
+  if (output.requiresVoice) {
+    requiredFeatures.push({ featureId: 'tts', category: 'VOICE', priority: 'critical' });
+  }
+  if (output.requires3D) {
+    requiredFeatures.push({ featureId: 'mesh_3d_gen', category: '3D', priority: 'critical' });
+  }
+  
+  const constraints: ContextToCapabilityMapping['constraints'] = [];
+  
+  // Add constraints for incompatible visual features
+  if (output.category === 'document' || output.id === 'pdf-export') {
+    constraints.push({ contextType: 'visual', contextId: 'video-clips', severity: 'incompatible', reason: 'PDF cannot contain video' });
+    constraints.push({ contextType: 'visual', contextId: 'realtime', severity: 'incompatible', reason: 'PDF cannot contain realtime features' });
+  }
+  if (output.category === 'video') {
+    constraints.push({ contextType: 'visual', contextId: 'data-filters', severity: 'incompatible', reason: 'Interactive filters not in video' });
+  }
+  
+  return {
     contextType: 'output',
-    contextId: 'video-full',
-    contextName: 'Full Video',
-    requiredFeatures: [
-      { featureId: 'video_generation', category: 'VIDEO', priority: 'critical' },
-      { featureId: 'tts', category: 'VOICE', priority: 'critical' },
-      { featureId: 'ai_image_gen', category: 'IMAGE', priority: 'critical' },
-      { featureId: 'ai_script_gen', category: 'SCRIPT', priority: 'critical' },
-    ],
+    contextId: output.id,
+    contextName: output.name,
+    requiredFeatures,
     recommendedProviders: {
-      video: [{ providers: ['openai', 'runway'], reason: 'Cinematic quality' }],
-      voice: [{ providers: ['elevenlabs'], reason: 'Professional narration' }],
-      image: [{ providers: ['stability', 'modelslab'], reason: 'High-quality visuals' }]
+      image: [{ providers: output.imageModels.slice(0, 2) as ProviderId[], reason: output.description }],
+      ...(output.videoModels.length > 0 && { video: [{ providers: output.videoModels.slice(0, 2) as ProviderId[], reason: 'Video generation' }] }),
+      ...(output.voiceModels.length > 0 && { voice: [{ providers: output.voiceModels.slice(0, 2) as ProviderId[], reason: 'Voice narration' }] }),
+      ...(output.mesh3dModels.length > 0 && { mesh3d: [{ providers: output.mesh3dModels.slice(0, 2) as ProviderId[], reason: '3D models' }] })
     },
     recommendedModels: [
-      { type: 'video', modelIds: ['openai-sora', 'runway-gen3'], reason: 'Premium video', tier: 3 },
-      { type: 'voice', modelIds: ['elevenlabs', 'elevenlabs-ultra'], reason: 'Voice quality', tier: 3 }
+      { type: 'image', modelIds: output.imageModels.slice(0, 2), reason: output.description, tier: output.tier },
+      ...(output.videoModels.length > 0 ? [{ type: 'video' as ModelType, modelIds: output.videoModels.slice(0, 2), reason: 'Video quality', tier: output.tier }] : []),
+      ...(output.voiceModels.length > 0 ? [{ type: 'voice' as ModelType, modelIds: output.voiceModels.slice(0, 2), reason: 'Voice quality', tier: output.tier }] : [])
     ],
     compatibleWith: {
-      visuals: ['video-clips', 'animations', 'images', 'audio'],
-      industries: ['technology', 'education', 'marketing', 'entertainment']
+      visuals: output.category === 'video' 
+        ? ['video-clips', 'animations', 'images'] as VisualFeatureId[]
+        : output.category === '3d' || output.category === 'immersive'
+          ? ['3d-objects', '3d-scenes', '3d-animations'] as VisualFeatureId[]
+          : ['charts', 'diagrams', 'infographics', 'images'] as VisualFeatureId[]
     },
-    constraints: [
-      { contextType: 'visual', contextId: 'data-tables', severity: 'warning', reason: 'Complex tables hard to read in video' },
-      { contextType: 'visual', contextId: 'data-filters', severity: 'incompatible', reason: 'Interactive elements not in video' }
-    ],
-    scenarios: ['Marketing campaigns', 'Training content', 'Executive presentations'],
-    useCases: ['Product launches', 'Corporate videos', 'E-learning modules']
-  },
-  {
-    contextType: 'output',
-    contextId: 'interactive',
-    contextName: 'Interactive App',
-    requiredFeatures: [
-      { featureId: 'ai_script_gen', category: 'SCRIPT', priority: 'critical' },
-      { featureId: 'ai_image_gen', category: 'IMAGE', priority: 'critical' },
-    ],
-    recommendedProviders: {
-      text: [{ providers: ['openai', 'gemini'], reason: 'Interactive logic generation' }],
-      image: [{ providers: ['stability', 'modelslab'], reason: 'UI component visuals' }]
-    },
-    recommendedModels: [
-      { type: 'text', modelIds: ['gpt-5', 'gemini-2.5-pro'], reason: 'Code generation', tier: 2 },
-      { type: 'image', modelIds: ['flux-pro'], reason: 'UI mockups', tier: 2 }
-    ],
-    compatibleWith: {
-      visuals: ['clickable', 'forms', 'quizzes', 'data-filters', 'realtime', 'animations'],
-      industries: ['technology', 'education', 'retail']
-    },
-    constraints: [],
-    scenarios: ['Product configurators', 'Data dashboards', 'Training modules'],
-    useCases: ['Web apps', 'Kiosks', 'Self-service portals']
-  }
-];
+    constraints,
+    scenarios: output.capabilities.slice(0, 3),
+    useCases: output.exportFormats.map(f => `${f.toUpperCase()} export`)
+  };
+}
+
+export const OUTPUT_CAPABILITY_MAPPINGS: ContextToCapabilityMapping[] = EXPANDED_OUTPUT_CONFIGS.map(generateOutputMapping);
 
 // ==========================================
-// FEATURE → CONTEXT REVERSE MAPPINGS
+// COMPREHENSIVE FEATURE → CONTEXT MAPPINGS
 // ==========================================
 
-export const FEATURE_CONTEXT_MAPPINGS: CapabilityToContextMapping[] = [
-  {
-    featureId: 'tts',
-    featureName: 'Text-to-Speech',
-    category: 'VOICE',
-    usedByIndustries: [
-      { id: 'healthcare', priority: 'secondary' },
-      { id: 'education', priority: 'primary' },
-      { id: 'technology', priority: 'secondary' }
-    ],
-    usedByFrameworks: [
-      { id: 'patient-journey', priority: 'secondary' }
-    ],
-    usedByTemplates: [
-      { id: 'training-manual', priority: 'primary' },
-      { id: 'product-demo', priority: 'primary' }
-    ],
-    usedByVisuals: [
-      { id: 'video-clips', priority: 'primary' },
-      { id: 'audio', priority: 'primary' }
-    ],
-    usedByOutputs: [
-      { id: 'video-full', priority: 'primary' },
-      { id: 'video-short', priority: 'primary' },
-      { id: 'vr-experience', priority: 'secondary' }
-    ],
-    dependsOn: [
-      { featureId: 'ai_script_gen', category: 'SCRIPT' }
-    ],
-    enablesFeatures: [
-      { featureId: 'voice_cloning', category: 'VOICE' },
-      { featureId: 'multi_language_voice', category: 'VOICE' }
-    ]
-  },
-  {
-    featureId: 'video_generation',
-    featureName: 'AI Video Generation',
-    category: 'VIDEO',
-    usedByIndustries: [
-      { id: 'technology', priority: 'primary' },
-      { id: 'entertainment', priority: 'primary' },
-      { id: 'education', priority: 'secondary' }
-    ],
-    usedByFrameworks: [],
-    usedByTemplates: [
-      { id: 'product-demo', priority: 'primary' },
-      { id: 'marketing-campaign', priority: 'primary' }
-    ],
-    usedByVisuals: [
-      { id: 'video-clips', priority: 'primary' },
-      { id: 'animations', priority: 'primary' }
-    ],
-    usedByOutputs: [
-      { id: 'video-full', priority: 'primary' },
-      { id: 'video-short', priority: 'primary' },
-      { id: 'social-media', priority: 'secondary' }
-    ],
-    dependsOn: [
-      { featureId: 'ai_image_gen', category: 'IMAGE' }
-    ],
-    enablesFeatures: [
-      { featureId: 'avatar_generation', category: 'VIDEO' },
-      { featureId: 'lip_sync', category: 'VIDEO' }
-    ]
-  },
-  {
-    featureId: 'ai_script_gen',
-    featureName: 'AI Script Generation',
-    category: 'SCRIPT',
-    usedByIndustries: [
-      { id: 'consulting', priority: 'primary' },
-      { id: 'healthcare', priority: 'primary' },
-      { id: 'finance', priority: 'primary' },
-      { id: 'technology', priority: 'primary' }
-    ],
-    usedByFrameworks: [
-      { id: 'swot', priority: 'primary' },
-      { id: 'porter-five', priority: 'primary' },
-      { id: 'patient-journey', priority: 'primary' }
-    ],
-    usedByTemplates: [
-      { id: 'pitch-deck', priority: 'primary' },
-      { id: 'strategy-brief', priority: 'primary' },
-      { id: 'training-manual', priority: 'primary' }
-    ],
-    usedByVisuals: [],
-    usedByOutputs: [
-      { id: 'pdf-export', priority: 'primary' },
-      { id: 'pptx-export', priority: 'primary' },
-      { id: 'video-full', priority: 'primary' }
-    ],
-    dependsOn: [
-      { featureId: 'text_prompt', category: 'INPUT' }
-    ],
-    enablesFeatures: [
-      { featureId: 'tts', category: 'VOICE' },
-      { featureId: 'multi_language', category: 'TRANSLATION' }
-    ]
-  }
+const ALL_FEATURE_IDS = [
+  // INPUT
+  { id: 'text_prompt', name: 'Text Prompt', category: 'INPUT' as FeatureCategory },
+  { id: 'document_upload', name: 'Document Upload', category: 'INPUT' as FeatureCategory },
+  { id: 'image_upload', name: 'Image Upload', category: 'INPUT' as FeatureCategory },
+  { id: 'video_upload', name: 'Video Upload', category: 'INPUT' as FeatureCategory },
+  { id: 'audio_upload', name: 'Audio Upload', category: 'INPUT' as FeatureCategory },
+  { id: 'url_import', name: 'URL Import', category: 'INPUT' as FeatureCategory },
+  { id: 'screen_recording', name: 'Screen Recording', category: 'INPUT' as FeatureCategory },
+  
+  // SCRIPT
+  { id: 'ai_script_gen', name: 'AI Script Generation', category: 'SCRIPT' as FeatureCategory },
+  { id: 'brand_voice', name: 'Brand Voice', category: 'SCRIPT' as FeatureCategory },
+  { id: 'tone_control', name: 'Tone Control', category: 'SCRIPT' as FeatureCategory },
+  { id: 'script_to_slides', name: 'Script to Slides', category: 'SCRIPT' as FeatureCategory },
+  { id: 'outline_generation', name: 'Outline Generation', category: 'SCRIPT' as FeatureCategory },
+  
+  // VOICE
+  { id: 'tts', name: 'Text-to-Speech', category: 'VOICE' as FeatureCategory },
+  { id: 'voice_cloning', name: 'Voice Cloning', category: 'VOICE' as FeatureCategory },
+  { id: 'multi_language_voice', name: 'Multi-Language Voice', category: 'VOICE' as FeatureCategory },
+  { id: 'voice_styles', name: 'Voice Styles', category: 'VOICE' as FeatureCategory },
+  
+  // AUDIO
+  { id: 'background_music', name: 'Background Music', category: 'AUDIO' as FeatureCategory },
+  { id: 'sound_effects', name: 'Sound Effects', category: 'AUDIO' as FeatureCategory },
+  { id: 'audio_mixing', name: 'Audio Mixing', category: 'AUDIO' as FeatureCategory },
+  
+  // IMAGE
+  { id: 'ai_image_gen', name: 'AI Image Generation', category: 'IMAGE' as FeatureCategory },
+  { id: 'image_editing', name: 'Image Editing', category: 'IMAGE' as FeatureCategory },
+  { id: 'style_transfer', name: 'Style Transfer', category: 'IMAGE' as FeatureCategory },
+  { id: 'background_removal', name: 'Background Removal', category: 'IMAGE' as FeatureCategory },
+  
+  // VIDEO
+  { id: 'video_generation', name: 'AI Video Generation', category: 'VIDEO' as FeatureCategory },
+  { id: 'avatar_generation', name: 'Avatar Generation', category: 'VIDEO' as FeatureCategory },
+  { id: 'lip_sync', name: 'Lip Sync', category: 'VIDEO' as FeatureCategory },
+  { id: 'video_editing', name: 'Video Editing', category: 'VIDEO' as FeatureCategory },
+  
+  // ANIMATION
+  { id: 'motion_graphics', name: 'Motion Graphics', category: 'ANIMATION' as FeatureCategory },
+  { id: 'transitions', name: 'Transitions', category: 'ANIMATION' as FeatureCategory },
+  { id: 'lottie_support', name: 'Lottie Support', category: 'ANIMATION' as FeatureCategory },
+  
+  // 3D
+  { id: 'mesh_3d_gen', name: '3D Mesh Generation', category: '3D' as FeatureCategory },
+  { id: '3d_animation', name: '3D Animation', category: '3D' as FeatureCategory },
+  { id: '3d_scene_composition', name: '3D Scene Composition', category: '3D' as FeatureCategory },
+  
+  // AR_VR
+  { id: 'ar_vr_export', name: 'AR/VR Export', category: 'AR_VR' as FeatureCategory },
+  { id: 'spatial_audio', name: 'Spatial Audio', category: 'AR_VR' as FeatureCategory },
+  
+  // VFX
+  { id: 'particle_effects', name: 'Particle Effects', category: 'VFX' as FeatureCategory },
+  { id: 'compositing', name: 'Compositing', category: 'VFX' as FeatureCategory },
+  
+  // INTERACTIVE
+  { id: 'interactive_elements', name: 'Interactive Elements', category: 'INTERACTIVE' as FeatureCategory },
+  { id: 'forms_inputs', name: 'Forms & Inputs', category: 'INTERACTIVE' as FeatureCategory },
+  { id: 'quizzes', name: 'Quizzes', category: 'INTERACTIVE' as FeatureCategory },
+  
+  // TRANSLATION
+  { id: 'multi_language', name: 'Multi-Language', category: 'TRANSLATION' as FeatureCategory },
+  { id: 'subtitle_gen', name: 'Subtitle Generation', category: 'TRANSLATION' as FeatureCategory },
+  
+  // EXPORT
+  { id: 'pdf_export', name: 'PDF Export', category: 'EXPORT' as FeatureCategory },
+  { id: 'pptx_export', name: 'PPTX Export', category: 'EXPORT' as FeatureCategory },
+  { id: 'video_export', name: 'Video Export', category: 'EXPORT' as FeatureCategory },
+  { id: 'web_embed', name: 'Web Embed', category: 'EXPORT' as FeatureCategory },
 ];
+
+function generateFeatureContextMapping(featureDef: { id: string; name: string; category: FeatureCategory }): CapabilityToContextMapping {
+  // Find which industries use this feature
+  const usedByIndustries = INDUSTRY_CAPABILITY_MAPPINGS
+    .filter(m => m.requiredFeatures.some(f => f.featureId === featureDef.id))
+    .map(m => ({ id: m.contextId as IndustryId, priority: m.requiredFeatures.find(f => f.featureId === featureDef.id)?.priority === 'critical' ? 'primary' as const : 'secondary' as const }));
+  
+  // Find which frameworks use this feature
+  const usedByFrameworks = FRAMEWORK_CAPABILITY_MAPPINGS
+    .filter(m => m.requiredFeatures.some(f => f.featureId === featureDef.id))
+    .slice(0, 10) // Limit for performance
+    .map(m => ({ id: m.contextId as FrameworkId, priority: 'primary' as const }));
+  
+  // Find which visuals use this feature  
+  const usedByVisuals = VISUAL_CAPABILITY_MAPPINGS
+    .filter(m => m.requiredFeatures.some(f => f.featureId === featureDef.id))
+    .map(m => ({ id: m.contextId as VisualFeatureId, priority: 'primary' as const }));
+  
+  // Find which outputs use this feature
+  const usedByOutputs = OUTPUT_CAPABILITY_MAPPINGS
+    .filter(m => m.requiredFeatures.some(f => f.featureId === featureDef.id))
+    .map(m => ({ id: m.contextId as OutputFormatId, priority: 'primary' as const }));
+  
+  // Define dependencies
+  const dependsOn: CapabilityToContextMapping['dependsOn'] = [];
+  const enablesFeatures: CapabilityToContextMapping['enablesFeatures'] = [];
+  
+  // Define common dependencies
+  if (featureDef.id === 'tts') {
+    dependsOn.push({ featureId: 'ai_script_gen', category: 'SCRIPT' });
+    enablesFeatures.push({ featureId: 'voice_cloning', category: 'VOICE' });
+    enablesFeatures.push({ featureId: 'multi_language_voice', category: 'VOICE' });
+  }
+  if (featureDef.id === 'video_generation') {
+    dependsOn.push({ featureId: 'ai_image_gen', category: 'IMAGE' });
+    enablesFeatures.push({ featureId: 'avatar_generation', category: 'VIDEO' });
+  }
+  if (featureDef.id === 'mesh_3d_gen') {
+    dependsOn.push({ featureId: 'ai_image_gen', category: 'IMAGE' });
+    enablesFeatures.push({ featureId: '3d_animation', category: '3D' });
+    enablesFeatures.push({ featureId: 'ar_vr_export', category: 'AR_VR' });
+  }
+  if (featureDef.id === 'ai_script_gen') {
+    dependsOn.push({ featureId: 'text_prompt', category: 'INPUT' });
+    enablesFeatures.push({ featureId: 'tts', category: 'VOICE' });
+    enablesFeatures.push({ featureId: 'multi_language', category: 'TRANSLATION' });
+  }
+  if (featureDef.id === 'voice_cloning') {
+    dependsOn.push({ featureId: 'tts', category: 'VOICE' });
+  }
+  if (featureDef.id === 'avatar_generation') {
+    dependsOn.push({ featureId: 'video_generation', category: 'VIDEO' });
+    dependsOn.push({ featureId: 'tts', category: 'VOICE' });
+  }
+  
+  return {
+    featureId: featureDef.id,
+    featureName: featureDef.name,
+    category: featureDef.category,
+    usedByIndustries,
+    usedByFrameworks,
+    usedByTemplates: [], // Will be expanded when templates are added
+    usedByVisuals,
+    usedByOutputs,
+    dependsOn,
+    enablesFeatures
+  };
+}
+
+export const FEATURE_CONTEXT_MAPPINGS: CapabilityToContextMapping[] = ALL_FEATURE_IDS.map(generateFeatureContextMapping);
 
 // ==========================================
 // AGGREGATED REGISTRY
@@ -530,7 +519,6 @@ export const GENERATION_COVERAGE_REGISTRY = {
   outputs: OUTPUT_CAPABILITY_MAPPINGS,
   features: FEATURE_CONTEXT_MAPPINGS,
   
-  // Helper to get all mappings for a context type
   getMappingsByType(type: 'industry' | 'framework' | 'template' | 'visual' | 'output') {
     switch (type) {
       case 'industry': return this.industries;
@@ -541,56 +529,26 @@ export const GENERATION_COVERAGE_REGISTRY = {
     }
   },
   
-  // Get feature mapping by ID
   getFeatureMapping(featureId: string) {
     return this.features.find(f => f.featureId === featureId);
   },
   
-  // Get contexts that use a specific feature
   getContextsUsingFeature(featureId: string) {
-    const allMappings = [
-      ...this.industries,
-      ...this.frameworks,
-      ...this.visuals,
-      ...this.outputs
-    ];
-    
-    return allMappings.filter(m => 
-      m.requiredFeatures.some(f => f.featureId === featureId)
-    );
+    return [...this.industries, ...this.frameworks, ...this.visuals, ...this.outputs]
+      .filter(m => m.requiredFeatures.some(f => f.featureId === featureId));
   },
   
-  // Get all recommended providers for a context
-  getProvidersForContext(contextType: string, contextId: string) {
-    const mappings = this.getMappingsByType(contextType as any);
-    const mapping = mappings.find(m => m.contextId === contextId);
-    return mapping?.recommendedProviders || {};
-  },
-  
-  // Validate a combination of contexts
-  validateCombination(
-    industries: string[],
-    frameworks: string[],
-    visuals: string[],
-    outputs: string[]
-  ) {
+  validateCombination(industries: string[], frameworks: string[], visuals: string[], outputs: string[]) {
     const warnings: { context: string; reason: string; severity: string }[] = [];
     
-    // Check visual ↔ output constraints
     for (const visualId of visuals) {
       const visualMapping = this.visuals.find(v => v.contextId === visualId);
       if (!visualMapping) continue;
       
       for (const outputId of outputs) {
-        const constraint = visualMapping.constraints.find(
-          c => c.contextType === 'output' && c.contextId === outputId
-        );
+        const constraint = visualMapping.constraints.find(c => c.contextType === 'output' && c.contextId === outputId);
         if (constraint) {
-          warnings.push({
-            context: `${visualId} + ${outputId}`,
-            reason: constraint.reason,
-            severity: constraint.severity
-          });
+          warnings.push({ context: `${visualId} + ${outputId}`, reason: constraint.reason, severity: constraint.severity });
         }
       }
     }
@@ -603,64 +561,28 @@ export const GENERATION_COVERAGE_REGISTRY = {
 // DYNAMIC STATS FUNCTION
 // ==========================================
 
-/**
- * Get dynamic generation coverage stats based on category filter
- * Provides metrics that sync with the rest of the Provider Matrix dashboard
- */
 export function getGenerationCoverageStats(categoryFilter?: string) {
-  // Collect all scenarios and use cases from forward mappings
   const allScenarios = new Set<string>();
   const allUseCases = new Set<string>();
   const allProviders = new Set<string>();
   const allModels = new Set<string>();
   
-  const forwardMappings = [
-    ...INDUSTRY_CAPABILITY_MAPPINGS,
-    ...FRAMEWORK_CAPABILITY_MAPPINGS,
-    ...VISUAL_CAPABILITY_MAPPINGS,
-    ...OUTPUT_CAPABILITY_MAPPINGS
-  ];
+  const forwardMappings = [...INDUSTRY_CAPABILITY_MAPPINGS, ...FRAMEWORK_CAPABILITY_MAPPINGS, ...VISUAL_CAPABILITY_MAPPINGS, ...OUTPUT_CAPABILITY_MAPPINGS];
   
   forwardMappings.forEach(mapping => {
     mapping.scenarios.forEach(s => allScenarios.add(s));
     mapping.useCases.forEach(u => allUseCases.add(u));
-    
-    // Collect providers from recommendations
     Object.values(mapping.recommendedProviders).forEach(providerList => {
-      if (providerList) {
-        providerList.forEach(p => {
-          p.providers.forEach(provider => allProviders.add(provider));
-        });
-      }
+      if (providerList) providerList.forEach(p => p.providers.forEach(provider => allProviders.add(provider)));
     });
-    
-    // Collect models
-    mapping.recommendedModels.forEach(m => {
-      m.modelIds.forEach(model => allModels.add(model));
-    });
+    mapping.recommendedModels.forEach(m => m.modelIds.forEach(model => allModels.add(model)));
   });
   
-  // If category filter provided, filter feature context mappings by category
   const categoryFeatures = categoryFilter && categoryFilter !== 'all'
     ? FEATURE_CONTEXT_MAPPINGS.filter(f => f.category === categoryFilter)
     : FEATURE_CONTEXT_MAPPINGS;
   
-  // Count cross-dependencies from feature mappings
-  const crossDependencies = categoryFeatures.reduce(
-    (sum, f) => sum + f.dependsOn.length + f.enablesFeatures.length, 
-    0
-  );
-  
-  // Count unique contexts used by filtered features
-  const usedIndustries = new Set<string>();
-  const usedFrameworks = new Set<string>();
-  const usedOutputs = new Set<string>();
-  
-  categoryFeatures.forEach(feature => {
-    feature.usedByIndustries.forEach(i => usedIndustries.add(i.id));
-    feature.usedByFrameworks.forEach(f => usedFrameworks.add(f.id));
-    feature.usedByOutputs.forEach(o => usedOutputs.add(o.id));
-  });
+  const crossDependencies = categoryFeatures.reduce((sum, f) => sum + f.dependsOn.length + f.enablesFeatures.length, 0);
   
   return {
     industries: INDUSTRY_CAPABILITY_MAPPINGS.length,
@@ -674,10 +596,9 @@ export function getGenerationCoverageStats(categoryFilter?: string) {
     providers: allProviders.size,
     models: allModels.size,
     crossDependencies,
-    // Category-specific usage counts
-    usedIndustries: usedIndustries.size,
-    usedFrameworks: usedFrameworks.size,
-    usedOutputs: usedOutputs.size
+    // Sub-option counts
+    visualSubOptions: EXPANDED_VISUAL_FEATURES.reduce((sum, v) => sum + v.subOptions.length, 0),
+    frameworkCategories: EXPANDED_FRAMEWORK_CATEGORIES.length
   };
 }
 
