@@ -1810,7 +1810,6 @@ export const TRANSFORMATION_PIPELINE_ROUTING: Record<TransformationPipeline, Tra
     primaryProviders: ['three', 'openai', 'google'],
     requiredSecrets: ['OPENAI_API_KEY'],
   },
-},
 
   // ============================================================================
   // ═══ PRESENTATION PIPELINES (5 types) ═══
