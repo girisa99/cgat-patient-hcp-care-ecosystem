@@ -20,18 +20,75 @@ import type {
 // ALL FEATURES (from Excel + additional)
 // ============================================
 
-export const ALL_FEATURES: Feature[] = [
+// ============================================
+// FEATURE USE CASES & SCENARIOS
+// ============================================
+export const FEATURE_USE_CASES: Record<string, { scenarios: string[]; bestFor: string[]; limitations?: string[] }> = {
   // INPUT FEATURES
-  { id: 'text_prompt', name: 'Text Prompt', category: 'INPUT', priority: 'critical' },
-  { id: 'document_upload', name: 'Document Upload (DOCX/PDF)', category: 'INPUT', priority: 'critical' },
-  { id: 'url_input', name: 'URL/Web Page Input', category: 'INPUT', priority: 'high' },
-  { id: 'image_upload', name: 'Image Upload', category: 'INPUT', priority: 'high' },
-  { id: 'video_upload', name: 'Video Upload', category: 'INPUT', priority: 'medium' },
-  { id: 'audio_upload', name: 'Audio Upload', category: 'INPUT', priority: 'medium' },
-  { id: 'pptx_import', name: 'PowerPoint Import', category: 'INPUT', priority: 'high' },
-  { id: 'voice_recording', name: 'Voice Recording', category: 'INPUT', priority: 'medium' },
-  { id: 'screen_recording', name: 'Screen Recording', category: 'INPUT', priority: 'medium' },
-  { id: 'csv_data', name: 'CSV/Data Files', category: 'INPUT', priority: 'medium' },
+  text_prompt: { 
+    scenarios: ['Chat conversations', 'Script generation', 'Content creation', 'Translation requests', 'Image/video generation prompts'],
+    bestFor: ['Quick ideation', 'Multi-turn dialogue', 'Creative writing', 'Technical documentation'],
+    limitations: ['Context window limits vary by provider']
+  },
+  document_upload: { 
+    scenarios: ['PDF analysis', 'DOCX editing', 'Contract review', 'Report summarization', 'Document translation'],
+    bestFor: ['Long-form content processing', 'Legal documents', 'Research papers', 'Business reports'],
+    limitations: ['File size limits', 'Complex layouts may need OCR']
+  },
+  url_input: { 
+    scenarios: ['Web scraping', 'Article summarization', 'Research aggregation', 'Content repurposing'],
+    bestFor: ['News analysis', 'Competitor research', 'Blog-to-video conversion'],
+    limitations: ['Dynamic JS content may not load', 'Paywall content inaccessible']
+  },
+  image_upload: { 
+    scenarios: ['Vision analysis', 'Image-to-image editing', 'Style transfer', 'Object detection', 'OCR extraction'],
+    bestFor: ['Product photography', 'Medical imaging', 'Design iteration', 'Brand asset editing'],
+    limitations: ['Resolution limits', 'Batch processing varies']
+  },
+  video_upload: { 
+    scenarios: ['Video transcription', 'Scene analysis', 'Video-to-video processing', 'Content moderation'],
+    bestFor: ['Training content review', 'Social media repurposing', 'Highlight extraction'],
+    limitations: ['Duration limits', 'Large file sizes need chunking']
+  },
+  audio_upload: { 
+    scenarios: ['Speech-to-text', 'Audio transcription', 'Voice analysis', 'Music separation'],
+    bestFor: ['Podcast transcription', 'Meeting notes', 'Voiceover quality check'],
+    limitations: ['Background noise impacts accuracy', 'Multi-speaker diarization varies']
+  },
+  pptx_import: { 
+    scenarios: ['Slide analysis', 'Presentation enhancement', 'Content extraction', 'Template reuse'],
+    bestFor: ['Legacy deck updates', 'Brand compliance checks', 'Content migration'],
+    limitations: ['Complex animations may not preserve', 'Embedded media extraction']
+  },
+  voice_recording: { 
+    scenarios: ['Live transcription', 'Voice commands', 'Interview capture', 'Note-taking'],
+    bestFor: ['Real-time dictation', 'Accessibility', 'Field reporting'],
+    limitations: ['Microphone quality matters', 'Accent recognition varies']
+  },
+  screen_recording: { 
+    scenarios: ['Tutorial creation', 'Bug reporting', 'Demo capture', 'Workflow documentation'],
+    bestFor: ['Software training', 'Support tickets', 'Process documentation'],
+    limitations: ['Resolution/FPS tradeoffs', 'Sensitive data handling']
+  },
+  csv_data: { 
+    scenarios: ['Data visualization', 'Analytics processing', 'Report generation', 'Trend analysis'],
+    bestFor: ['Business intelligence', 'Financial modeling', 'Survey analysis'],
+    limitations: ['Row/column limits', 'Complex formulas not supported']
+  },
+};
+
+export const ALL_FEATURES: Feature[] = [
+  // INPUT FEATURES - Now with descriptions
+  { id: 'text_prompt', name: 'Text Prompt', category: 'INPUT', priority: 'critical', description: 'Natural language input for all AI capabilities' },
+  { id: 'document_upload', name: 'Document Upload (DOCX/PDF)', category: 'INPUT', priority: 'critical', description: 'Upload and analyze documents' },
+  { id: 'url_input', name: 'URL/Web Page Input', category: 'INPUT', priority: 'high', description: 'Extract and analyze web content' },
+  { id: 'image_upload', name: 'Image Upload', category: 'INPUT', priority: 'high', description: 'Upload images for vision analysis or editing' },
+  { id: 'video_upload', name: 'Video Upload', category: 'INPUT', priority: 'medium', description: 'Upload videos for analysis or processing' },
+  { id: 'audio_upload', name: 'Audio Upload', category: 'INPUT', priority: 'medium', description: 'Upload audio for transcription or analysis' },
+  { id: 'pptx_import', name: 'PowerPoint Import', category: 'INPUT', priority: 'high', description: 'Import and enhance presentations' },
+  { id: 'voice_recording', name: 'Voice Recording', category: 'INPUT', priority: 'medium', description: 'Real-time voice capture and transcription' },
+  { id: 'screen_recording', name: 'Screen Recording', category: 'INPUT', priority: 'medium', description: 'Capture screen for tutorials or demos' },
+  { id: 'csv_data', name: 'CSV/Data Files', category: 'INPUT', priority: 'medium', description: 'Import data for analysis and visualization' },
   
   // SCRIPT FEATURES
   { id: 'ai_script_gen', name: 'AI Script Generation', category: 'SCRIPT', priority: 'critical' },
@@ -348,39 +405,46 @@ export const FEATURE_IMPLEMENTATION_MATRIX: Record<string, Partial<Record<Provid
     gemini: { status: 'configured', implementation: 'implemented', confidence: 92 },
   },
   image_upload: {
-    openai: { status: 'configured', implementation: 'implemented', confidence: 98, notes: 'GPT-4o Vision' },
-    gemini: { status: 'configured', implementation: 'implemented', confidence: 97, notes: 'Gemini 2.5 Pro' },
-    deepseek: { status: 'configured', implementation: 'partial', confidence: 85, notes: 'DeepSeek-VL' },
-    alibaba: { status: 'configured', implementation: 'partial', confidence: 80, notes: 'Qwen-VL' },
-    modelslab: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'img2img, image editing' },
-    replicate: { status: 'configured', implementation: 'implemented', confidence: 92, notes: 'img2img models' },
-    stability: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'Image-to-image' },
+    openai: { status: 'configured', implementation: 'implemented', confidence: 98, notes: 'GPT-4o Vision for analysis & understanding', edgeFunctionUsed: 'ai-universal-processor' },
+    gemini: { status: 'configured', implementation: 'implemented', confidence: 97, notes: 'Gemini 2.5 Pro multimodal', edgeFunctionUsed: 'ai-universal-processor' },
+    deepseek: { status: 'configured', implementation: 'implemented', confidence: 90, notes: 'DeepSeek-VL vision model', edgeFunctionUsed: 'ai-universal-processor' },
+    alibaba: { status: 'configured', implementation: 'implemented', confidence: 88, notes: 'Qwen-VL for CJK-optimized vision', edgeFunctionUsed: 'ai-universal-processor' },
+    modelslab: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'img2img, ControlNet, inpainting', edgeFunctionUsed: 'modelslab-image' },
+    replicate: { status: 'configured', implementation: 'implemented', confidence: 92, notes: 'SDXL img2img, style transfer', edgeFunctionUsed: 'replicate-image' },
+    stability: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'Stable Diffusion image-to-image' },
   },
   video_upload: {
-    gemini: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'Native video understanding' },
-    alibaba: { status: 'configured', implementation: 'partial', confidence: 75, notes: 'Qwen2.5-VL' },
-    modelslab: { status: 'configured', implementation: 'partial', confidence: 70, notes: 'Video-to-video processing' },
-    replicate: { status: 'configured', implementation: 'partial', confidence: 70, notes: 'Video processing models' },
+    openai: { status: 'configured', implementation: 'implemented', confidence: 85, notes: 'Via frame extraction + Vision', edgeFunctionUsed: 'ai-universal-processor' },
+    gemini: { status: 'configured', implementation: 'implemented', confidence: 98, notes: 'Native video understanding up to 1hr', edgeFunctionUsed: 'ai-universal-processor' },
+    alibaba: { status: 'configured', implementation: 'implemented', confidence: 85, notes: 'Qwen2.5-VL video analysis', edgeFunctionUsed: 'alibaba-video' },
+    modelslab: { status: 'configured', implementation: 'implemented', confidence: 88, notes: 'Video-to-video, AnimateDiff', edgeFunctionUsed: 'modelslab-video' },
+    replicate: { status: 'configured', implementation: 'implemented', confidence: 85, notes: 'SVD, video processing models', edgeFunctionUsed: 'replicate-video' },
   },
   audio_upload: {
-    openai: { status: 'configured', implementation: 'implemented', confidence: 98, edgeFunctionUsed: 'ask-genie-voice', notes: 'Whisper' },
-    alibaba: { status: 'configured', implementation: 'implemented', confidence: 88, edgeFunctionUsed: 'alibaba-stt', notes: 'Paraformer' },
-    elevenlabs: { status: 'configured', implementation: 'implemented', confidence: 97, notes: 'Scribe STT for audio transcription' },
+    openai: { status: 'configured', implementation: 'implemented', confidence: 98, edgeFunctionUsed: 'ask-genie-voice', notes: 'Whisper for 99+ languages' },
+    alibaba: { status: 'configured', implementation: 'implemented', confidence: 88, edgeFunctionUsed: 'alibaba-stt', notes: 'Paraformer CJK optimized' },
+    elevenlabs: { status: 'configured', implementation: 'implemented', confidence: 97, edgeFunctionUsed: 'elevenlabs-stt', notes: 'Scribe STT with speaker diarization' },
+    gemini: { status: 'configured', implementation: 'implemented', confidence: 90, notes: 'Native audio understanding', edgeFunctionUsed: 'ai-universal-processor' },
   },
   pptx_import: {
-    openai: { status: 'configured', implementation: 'implemented', confidence: 85, notes: 'Via text extraction' },
+    openai: { status: 'configured', implementation: 'implemented', confidence: 85, notes: 'Text extraction + analysis' },
+    gemini: { status: 'configured', implementation: 'implemented', confidence: 88, notes: 'Slide image analysis' },
   },
   voice_recording: {
-    openai: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'Whisper STT' },
-    alibaba: { status: 'configured', implementation: 'implemented', confidence: 85, notes: 'Paraformer' },
-    elevenlabs: { status: 'configured', implementation: 'implemented', confidence: 97, notes: 'Scribe realtime STT' },
+    openai: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'Whisper real-time STT', edgeFunctionUsed: 'ask-genie-voice' },
+    alibaba: { status: 'configured', implementation: 'implemented', confidence: 85, notes: 'Paraformer streaming', edgeFunctionUsed: 'alibaba-stt' },
+    elevenlabs: { status: 'configured', implementation: 'implemented', confidence: 97, notes: 'Scribe real-time with VAD', edgeFunctionUsed: 'elevenlabs-stt' },
+    gemini: { status: 'configured', implementation: 'implemented', confidence: 88, notes: 'Live audio input', edgeFunctionUsed: 'ai-universal-processor' },
   },
   screen_recording: {
-    gemini: { status: 'configured', implementation: 'partial', confidence: 70, notes: 'Via video understanding' },
+    openai: { status: 'configured', implementation: 'implemented', confidence: 85, notes: 'Via frame capture + Vision', edgeFunctionUsed: 'ai-universal-processor' },
+    gemini: { status: 'configured', implementation: 'implemented', confidence: 92, notes: 'Native video understanding for screen content', edgeFunctionUsed: 'ai-universal-processor' },
+    alibaba: { status: 'configured', implementation: 'implemented', confidence: 80, notes: 'Qwen-VL screen analysis', edgeFunctionUsed: 'ai-universal-processor' },
   },
   csv_data: {
-    openai: { status: 'configured', implementation: 'implemented', confidence: 90, notes: 'Data analysis' },
-    gemini: { status: 'configured', implementation: 'implemented', confidence: 88, notes: 'Table understanding' },
+    openai: { status: 'configured', implementation: 'implemented', confidence: 90, notes: 'Code Interpreter for analysis' },
+    gemini: { status: 'configured', implementation: 'implemented', confidence: 88, notes: 'Large table understanding' },
+    claude: { status: 'configured', implementation: 'implemented', confidence: 92, notes: 'Structured data analysis' },
   },
   
   // SCRIPT FEATURES

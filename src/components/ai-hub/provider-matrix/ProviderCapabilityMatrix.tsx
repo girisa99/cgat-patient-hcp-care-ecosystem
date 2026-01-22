@@ -27,7 +27,8 @@ import {
   FEATURE_IMPLEMENTATION_MATRIX,
   CRITICAL_GAPS,
   LLM_COMPARISONS,
-  ROUTING_STRATEGY 
+  ROUTING_STRATEGY,
+  FEATURE_USE_CASES 
 } from './matrixData';
 import type { FeatureCategory, ImplementationStatus, ProviderId, Feature } from './types';
 
@@ -505,50 +506,76 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
                   return (
                     <TableRow key={feature.id} className="hover:bg-muted/50">
                       <TableCell className="sticky left-0 bg-background font-medium border-r z-10 w-[140px]">
-                        <div className="flex items-center gap-1">
-                          <span className="text-[11px] truncate max-w-[110px]">{feature.name}</span>
-                          {feature.priority === 'critical' && (
-                            <Badge variant="destructive" className="text-[6px] px-0.5">!</Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="w-[45px] px-0.5">
-                        <Badge variant="outline" className="text-[7px] px-0.5">
-                          {CATEGORY_LABELS[feature.category]?.split(' ')[0]}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="w-[80px] px-1">
                         <TooltipProvider>
                           <Tooltip>
-                            <TooltipTrigger className="cursor-help w-full">
-                              <div className="flex items-center gap-0.5 text-[9px]">
-                                <span className="text-emerald-600 font-bold">{featureStats.implemented}✓</span>
-                                {featureStats.partial > 0 && <span className="text-amber-500">/{featureStats.partial}⚠</span>}
-                                {featureStats.planned > 0 && <span className="text-blue-500">/{featureStats.planned}🕐</span>}
-                                <span className="text-muted-foreground">/{featureStats.notApplicable}—</span>
+                            <TooltipTrigger className="cursor-help text-left">
+                              <div className="flex items-center gap-1">
+                                <span className="text-[11px] truncate max-w-[110px]">{feature.name}</span>
+                                {feature.priority === 'critical' && (
+                                  <span className="text-[8px] text-destructive font-bold">●</span>
+                                )}
                               </div>
                             </TooltipTrigger>
-                            <TooltipContent side="right" className="max-w-xs">
-                              <div className="space-y-1">
-                                <p className="font-medium text-sm">{feature.name}</p>
-                                <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-xs">
-                                  <span className="text-emerald-500">✓ Implemented:</span><span>{featureStats.implemented} providers</span>
-                                  <span className="text-amber-500">⚠ Partial:</span><span>{featureStats.partial} providers</span>
-                                  <span className="text-blue-500">🕐 Planned:</span><span>{featureStats.planned} providers</span>
-                                  <span className="text-muted-foreground">— N/A:</span><span>{featureStats.notApplicable} providers</span>
+                            <TooltipContent side="right" className="max-w-sm p-3 bg-popover/95 backdrop-blur border border-border shadow-lg">
+                              <div className="space-y-2">
+                                <div>
+                                  <p className="font-semibold text-sm text-foreground">{feature.name}</p>
+                                  {feature.description && (
+                                    <p className="text-xs text-muted-foreground mt-0.5">{feature.description}</p>
+                                  )}
                                 </div>
-                                {!featureStats.hasAnyImplementation && (
-                                  <p className="text-xs text-red-500 mt-1">⚠️ No provider has implemented this feature yet!</p>
+                                
+                                {FEATURE_USE_CASES[feature.id] && (
+                                  <>
+                                    <div>
+                                      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">Use Cases</p>
+                                      <div className="flex flex-wrap gap-1">
+                                        {FEATURE_USE_CASES[feature.id].scenarios.slice(0, 4).map((s, i) => (
+                                          <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-foreground">{s}</span>
+                                        ))}
+                                      </div>
+                                    </div>
+                                    <div>
+                                      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">Best For</p>
+                                      <div className="flex flex-wrap gap-1">
+                                        {FEATURE_USE_CASES[feature.id].bestFor.slice(0, 3).map((b, i) => (
+                                          <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">{b}</span>
+                                        ))}
+                                      </div>
+                                    </div>
+                                    {FEATURE_USE_CASES[feature.id].limitations && (
+                                      <div>
+                                        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">Limitations</p>
+                                        <p className="text-[10px] text-muted-foreground">{FEATURE_USE_CASES[feature.id].limitations?.join(' • ')}</p>
+                                      </div>
+                                    )}
+                                  </>
                                 )}
-                                {featureStats.notApplicable > 0 && featureStats.implemented < PROVIDER_SUMMARIES.length && (
-                                  <p className="text-xs text-muted-foreground mt-1">
-                                    💡 {PROVIDER_SUMMARIES.length - featureStats.implemented - featureStats.partial} providers could potentially support this
-                                  </p>
-                                )}
+                                
+                                <div className="pt-1 border-t border-border">
+                                  <div className="flex items-center gap-2 text-[10px]">
+                                    <span className="text-emerald-600 font-medium">{featureStats.implemented} implemented</span>
+                                    {featureStats.partial > 0 && <span className="text-amber-600">{featureStats.partial} partial</span>}
+                                    {featureStats.planned > 0 && <span className="text-blue-600">{featureStats.planned} planned</span>}
+                                  </div>
+                                </div>
                               </div>
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
+                      </TableCell>
+                      <TableCell className="w-[45px] px-0.5">
+                        <span className="text-[8px] text-muted-foreground">
+                          {CATEGORY_LABELS[feature.category]?.split(' ')[0]}
+                        </span>
+                      </TableCell>
+                      <TableCell className="w-[80px] px-1">
+                        <div className="flex items-center gap-0.5 text-[9px]">
+                          <span className="text-emerald-600 font-bold">{featureStats.implemented}✓</span>
+                          {featureStats.partial > 0 && <span className="text-amber-500">/{featureStats.partial}⚠</span>}
+                          {featureStats.planned > 0 && <span className="text-blue-500">/{featureStats.planned}🕐</span>}
+                          <span className="text-muted-foreground">/{featureStats.notApplicable}—</span>
+                        </div>
                       </TableCell>
                       {PROVIDER_SUMMARIES.map(p => {
                         const impl = featureImpl[p.id as ProviderId];
@@ -589,11 +616,34 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
                                   <TooltipTrigger>
                                     {getStatusIcon(impl?.implementation)}
                                   </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p className="font-medium">{impl?.implementation || 'Not mapped'}</p>
-                                    {impl?.confidence && <p className="text-xs">Confidence: {impl.confidence}%</p>}
-                                    {impl?.notes && <p className="text-xs text-muted-foreground">{impl.notes}</p>}
-                                    {impl?.edgeFunctionUsed && <p className="text-xs">Edge: {impl.edgeFunctionUsed}</p>}
+                                  <TooltipContent className="max-w-xs p-2 bg-popover/95 backdrop-blur border border-border">
+                                    <div className="space-y-1">
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-medium text-sm text-foreground">{p.name}</span>
+                                        {impl?.implementation && (
+                                          <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+                                            impl.implementation === 'implemented' ? 'bg-emerald-500/10 text-emerald-600' :
+                                            impl.implementation === 'partial' ? 'bg-amber-500/10 text-amber-600' :
+                                            impl.implementation === 'planned' ? 'bg-blue-500/10 text-blue-600' :
+                                            'bg-muted text-muted-foreground'
+                                          }`}>
+                                            {impl.implementation}
+                                          </span>
+                                        )}
+                                      </div>
+                                      {impl?.confidence && (
+                                        <div className="flex items-center gap-2 text-xs">
+                                          <span className="text-muted-foreground">Confidence:</span>
+                                          <span className="font-medium text-foreground">{impl.confidence}%</span>
+                                        </div>
+                                      )}
+                                      {impl?.notes && (
+                                        <p className="text-xs text-muted-foreground">{impl.notes}</p>
+                                      )}
+                                      {impl?.edgeFunctionUsed && (
+                                        <p className="text-[10px] text-muted-foreground font-mono">fn: {impl.edgeFunctionUsed}</p>
+                                      )}
+                                    </div>
                                   </TooltipContent>
                                 </Tooltip>
                               </TooltipProvider>
