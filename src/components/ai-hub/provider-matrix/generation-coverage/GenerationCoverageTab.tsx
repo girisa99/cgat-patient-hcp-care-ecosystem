@@ -10,6 +10,7 @@
  * 2. Generator functions for lazy/on-demand row computation
  * 3. Flat table view for high-density display (no nested cards)
  * 4. Dynamic filtering synced with category selection
+ * 5. UNIFIED METRICS ENGINE - synced with other tabs
  */
 
 import React, { useState, useMemo } from 'react';
@@ -21,7 +22,8 @@ import { Button } from '@/components/ui/button';
 import { 
   Building2, Compass, Layers, Image, FileOutput, 
   ArrowRight, ArrowLeft, AlertTriangle, CheckCircle2,
-  ChevronDown, ChevronRight, Info, Zap, Target, Table2, LayoutGrid
+  ChevronDown, ChevronRight, Info, Zap, Target, Table2, LayoutGrid,
+  TrendingUp, Sparkles
 } from 'lucide-react';
 import { 
   GENERATION_COVERAGE_REGISTRY,
@@ -39,6 +41,8 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { GenerationCoverageTable } from './GenerationCoverageTable';
+import { calculateUnifiedMetrics, getGenerationCoverageStatsForCategory } from './unifiedMetricsEngine';
+import type { FeatureCategory } from '../types';
 
 type ViewMode = 'forward' | 'backward';
 type DisplayMode = 'table' | 'cards';
@@ -98,71 +102,121 @@ export const GenerationCoverageTab: React.FC<GenerationCoverageTabProps> = ({
     }
   }, [viewMode, selectedContext]);
 
-  // Summary stats - dynamic from registry
+  // USE UNIFIED METRICS ENGINE - synced with other tabs
+  const unifiedMetrics = useMemo(() => {
+    const categoryFilter = (selectedCategory === 'all' || !selectedCategory) 
+      ? 'all' 
+      : selectedCategory as FeatureCategory;
+    return calculateUnifiedMetrics(categoryFilter);
+  }, [selectedCategory]);
+  
+  // Get generation coverage specific stats (filtered by category)
+  const coverageStats = useMemo(() => {
+    const categoryFilter = (selectedCategory === 'all' || !selectedCategory) 
+      ? 'all' 
+      : selectedCategory as FeatureCategory;
+    return getGenerationCoverageStatsForCategory(categoryFilter);
+  }, [selectedCategory]);
+
+  // Summary stats - NOW FROM UNIFIED ENGINE
   const stats = useMemo(() => {
-    const registryStats = (() => {
-      const allScenarios = new Set<string>();
-      const allUseCases = new Set<string>();
-      
-      [...INDUSTRY_CAPABILITY_MAPPINGS, ...FRAMEWORK_CAPABILITY_MAPPINGS, ...VISUAL_CAPABILITY_MAPPINGS, ...OUTPUT_CAPABILITY_MAPPINGS]
-        .forEach(m => {
-          m.scenarios.forEach(s => allScenarios.add(s));
-          m.useCases.forEach(u => allUseCases.add(u));
-        });
-      
-      return { scenarios: allScenarios.size, useCases: allUseCases.size };
-    })();
-    
     return {
-      industries: INDUSTRY_CAPABILITY_MAPPINGS.length,
-      frameworks: FRAMEWORK_CAPABILITY_MAPPINGS.length,
-      visuals: VISUAL_CAPABILITY_MAPPINGS.length,
-      outputs: OUTPUT_CAPABILITY_MAPPINGS.length,
-      features: FEATURE_CONTEXT_MAPPINGS.length,
-      totalMappings: INDUSTRY_CAPABILITY_MAPPINGS.length + 
-                     FRAMEWORK_CAPABILITY_MAPPINGS.length + 
-                     VISUAL_CAPABILITY_MAPPINGS.length + 
-                     OUTPUT_CAPABILITY_MAPPINGS.length,
-      scenarios: registryStats.scenarios,
-      useCases: registryStats.useCases
+      industries: coverageStats.industries,
+      frameworks: coverageStats.frameworks,
+      visuals: coverageStats.visuals,
+      outputs: coverageStats.outputs,
+      features: unifiedMetrics.features.total,
+      totalMappings: coverageStats.industries + coverageStats.frameworks + coverageStats.visuals + coverageStats.outputs,
+      // These now match with other tabs!
+      scenarios: unifiedMetrics.scenarios.total,
+      useCases: unifiedMetrics.useCases.total,
+      // NEW: Breakdown info
+      newScenarios: coverageStats.newScenarios,
+      newUseCases: coverageStats.newUseCases,
+      providers: unifiedMetrics.providers.total,
+      gaps: coverageStats.gaps,
+      opportunities: coverageStats.opportunities
     };
-  }, []);
+  }, [unifiedMetrics, coverageStats]);
+
+  // Category label for display
+  const categoryLabel = selectedCategory === 'all' || !selectedCategory 
+    ? 'All Categories' 
+    : selectedCategory;
 
   return (
     <div className="space-y-4">
-      {/* Header Stats + Display Toggle */}
+      {/* Category Indicator */}
+      {selectedCategory && selectedCategory !== 'all' && (
+        <div className="flex items-center gap-2 p-2 rounded-lg bg-primary/10 border border-primary/20">
+          <Info className="h-4 w-4 text-primary" />
+          <span className="text-sm">
+            Showing metrics filtered for <strong className="text-primary">{categoryLabel}</strong> category
+          </span>
+        </div>
+      )}
+
+      {/* Header Stats Grid */}
       <div className="flex items-center justify-between gap-4">
-        <div className="grid grid-cols-7 gap-2 flex-1">
+        <div className="grid grid-cols-9 gap-2 flex-1">
           {[
-            { label: 'Industries', value: stats.industries, type: 'industry' as ContextType, color: 'text-blue-500' },
-            { label: 'Frameworks', value: stats.frameworks, type: 'framework' as ContextType, color: 'text-purple-500' },
-            { label: 'Visuals', value: stats.visuals, type: 'visual' as ContextType, color: 'text-green-500' },
-            { label: 'Outputs', value: stats.outputs, type: 'output' as ContextType, color: 'text-orange-500' },
-            { label: 'Features', value: stats.features, type: 'feature' as ContextType, color: 'text-cyan-500' },
-            { label: 'Scenarios', value: stats.scenarios, type: 'industry' as ContextType, color: 'text-pink-500' },
-            { label: 'Use Cases', value: stats.useCases, type: 'industry' as ContextType, color: 'text-amber-500' },
+            { label: 'Industries', value: stats.industries, type: 'industry' as ContextType, colorClass: 'text-primary' },
+            { label: 'Frameworks', value: stats.frameworks, type: 'framework' as ContextType, colorClass: 'text-secondary-foreground' },
+            { label: 'Visuals', value: stats.visuals, type: 'visual' as ContextType, colorClass: 'text-accent-foreground' },
+            { label: 'Outputs', value: stats.outputs, type: 'output' as ContextType, colorClass: 'text-muted-foreground' },
+            { label: 'Features', value: stats.features, type: 'feature' as ContextType, colorClass: 'text-foreground' },
+            { label: 'Scenarios', value: stats.scenarios, type: 'industry' as ContextType, colorClass: 'text-primary', newCount: stats.newScenarios },
+            { label: 'Use Cases', value: stats.useCases, type: 'industry' as ContextType, colorClass: 'text-foreground', newCount: stats.newUseCases },
+            { label: 'Gaps', value: stats.gaps, type: 'industry' as ContextType, colorClass: 'text-destructive', isAlert: true },
+            { label: 'Opps', value: stats.opportunities, type: 'industry' as ContextType, colorClass: 'text-primary', isOpportunity: true },
           ].map((stat, idx) => {
-            const Icon = idx < 5 ? CONTEXT_ICONS[stat.type] : (idx === 5 ? Target : Zap);
+            const Icon = idx < 5 ? CONTEXT_ICONS[stat.type] 
+              : idx === 5 ? Target 
+              : idx === 6 ? Zap 
+              : idx === 7 ? AlertTriangle 
+              : TrendingUp;
             const isClickable = idx < 5;
             return (
-              <Card 
-                key={`${stat.type}-${idx}`} 
-                className={`transition-all ${isClickable ? 'cursor-pointer' : ''} ${selectedContext === stat.type && idx < 5 ? 'ring-2 ring-primary' : 'hover:bg-muted/50'}`}
-                onClick={() => {
-                  if (!isClickable) return;
-                  setSelectedContext(stat.type);
-                  if (stat.type === 'feature') setViewMode('backward');
-                  else setViewMode('forward');
-                }}
-              >
-                <CardContent className="p-2 flex items-center gap-1.5">
-                  <Icon className={`h-3.5 w-3.5 ${stat.color}`} />
-                  <div>
-                    <div className={`text-base font-bold ${stat.color}`}>{stat.value}</div>
-                    <div className="text-[9px] text-muted-foreground">{stat.label}</div>
-                  </div>
-                </CardContent>
-              </Card>
+              <TooltipProvider key={`stat-${idx}`}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Card 
+                      className={`transition-all ${isClickable ? 'cursor-pointer' : ''} ${selectedContext === stat.type && idx < 5 ? 'ring-2 ring-primary' : 'hover:bg-muted/50'}`}
+                      onClick={() => {
+                        if (!isClickable) return;
+                        setSelectedContext(stat.type);
+                        if (stat.type === 'feature') setViewMode('backward');
+                        else setViewMode('forward');
+                      }}
+                    >
+                      <CardContent className="p-2 flex items-center gap-1.5">
+                        <Icon className={`h-3.5 w-3.5 ${stat.colorClass}`} />
+                        <div>
+                          <div className="flex items-center gap-1">
+                            <span className={`text-base font-bold ${stat.colorClass}`}>{stat.value}</span>
+                            {'newCount' in stat && stat.newCount > 0 && (
+                              <Badge variant="outline" className="text-[8px] px-1 py-0 h-4 bg-primary/10 text-primary border-primary/30">
+                                +{stat.newCount} new
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="text-[9px] text-muted-foreground">{stat.label}</div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {'newCount' in stat && stat.newCount > 0 ? (
+                      <div className="text-xs">
+                        <div>{stat.value} total {stat.label.toLowerCase()}</div>
+                        <div className="text-primary">+{stat.newCount} newly identified from Generation Coverage</div>
+                      </div>
+                    ) : (
+                      <span>{stat.value} {stat.label.toLowerCase()} for {categoryLabel}</span>
+                    )}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             );
           })}
         </div>
