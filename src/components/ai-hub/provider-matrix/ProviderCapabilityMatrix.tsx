@@ -1443,18 +1443,24 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
         {/* Cross-Functional Mapping Tab - Genie Suite Integration */}
         <TabsContent value="crossfunc" className="mt-0 space-y-4">
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <h3 className="font-semibold flex items-center gap-2">
+            <h3 className="font-semibold flex items-center gap-2 text-base">
               🔗 Cross-Functional Mapping {selectedCategory !== 'all' ? `- ${CATEGORY_LABELS[selectedCategory]}` : ''}
             </h3>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">
-                {crossFunctionalMetrics.mappings.length} feature mappings | {crossFunctionalMetrics.genieProducts.length} Genie products
-              </span>
+            <div className="flex items-center gap-3 text-xs">
+              <Badge variant="outline" className="bg-primary/10 border-primary/30">
+                {crossFunctionalMetrics.mappings.length} Mappings
+              </Badge>
+              <Badge variant="outline" className="bg-secondary/30">
+                {crossFunctionalMetrics.providers} Providers
+              </Badge>
+              <Badge variant="outline" className="bg-muted">
+                {crossFunctionalMetrics.genieProducts.length} Products
+              </Badge>
             </div>
           </div>
           
-          {/* Genie Suite Product Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
+          {/* Genie Suite Product Grid - Enhanced Visibility */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3">
             {Object.entries(GENIE_PRODUCT_LABELS).map(([id, product]) => {
               const isUsed = crossFunctionalMetrics.genieProducts.includes(id as GenieProduct);
               const featureCount = crossFunctionalMetrics.mappings.filter(m => 
@@ -1462,35 +1468,74 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
               ).length;
               
               return (
-                <div 
-                  key={id}
-                  className={`p-3 rounded-lg border text-center transition-colors ${
-                    isUsed 
-                      ? 'bg-primary/10 border-primary/30' 
-                      : 'bg-muted/30 border-muted opacity-50'
-                  }`}
-                >
-                  <span className="text-2xl">{product.emoji}</span>
-                  <div className="text-xs font-medium mt-1">{product.name}</div>
-                  <div className="text-[10px] text-muted-foreground">{featureCount} features</div>
-                </div>
+                <TooltipProvider key={id}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div 
+                        className={`p-3 rounded-lg border text-center cursor-help transition-all ${
+                          isUsed 
+                            ? 'bg-primary/15 border-primary/40 shadow-sm' 
+                            : 'bg-muted/20 border-muted/50 opacity-40'
+                        }`}
+                      >
+                        <span className="text-2xl block">{product.emoji}</span>
+                        <div className={`text-xs font-semibold mt-1 ${isUsed ? 'text-foreground' : 'text-muted-foreground'}`}>{product.name}</div>
+                        <div className={`text-[10px] font-medium ${isUsed ? 'text-primary' : 'text-muted-foreground'}`}>
+                          {featureCount} {featureCount === 1 ? 'feature' : 'features'}
+                        </div>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs p-3">
+                      <p className="font-semibold">{product.name}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{product.description}</p>
+                      {isUsed && (
+                        <p className="text-xs text-primary mt-2">
+                          ✓ {featureCount} features from {selectedCategory === 'all' ? 'all categories' : CATEGORY_LABELS[selectedCategory]} are used in {product.name}
+                        </p>
+                      )}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               );
             })}
           </div>
           
-          {/* Cross-Functional Mapping Table */}
+          {/* Summary Stats Bar */}
+          <div className="flex flex-wrap items-center gap-4 p-3 rounded-lg bg-muted/30 border text-xs">
+            <div className="flex items-center gap-1.5 font-medium text-muted-foreground">
+              <Info className="w-3.5 h-3.5" /> Summary:
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] px-2 py-0.5 rounded bg-destructive/10 text-destructive border border-destructive/30">🔴 Requires</span>
+              <span className="text-muted-foreground">= Must have dependency</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] px-2 py-0.5 rounded bg-muted/50 border border-muted">🟡 Enhances</span>
+              <span className="text-muted-foreground">= Optional improvement</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/30">🟢 Enables</span>
+              <span className="text-muted-foreground">= Unlocks capability</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 border border-blue-500/30">🔵 Alternative</span>
+              <span className="text-muted-foreground">= Different approach</span>
+            </div>
+          </div>
+          
+          {/* Cross-Functional Mapping Table - Enhanced */}
           <div className="border rounded-lg overflow-hidden">
             <Table>
-              <TableHeader className="bg-muted/30">
+              <TableHeader className="bg-muted/40">
                 <TableRow>
-                  <TableHead className="text-xs w-[120px]">Feature</TableHead>
-                  <TableHead className="text-xs w-[70px]">Category</TableHead>
-                  <TableHead className="text-xs w-[140px]">Related Features</TableHead>
-                  <TableHead className="text-xs w-[100px]">Use Cases</TableHead>
-                  <TableHead className="text-xs w-[100px]">Scenarios</TableHead>
-                  <TableHead className="text-xs w-[80px]">Providers</TableHead>
-                  <TableHead className="text-xs w-[80px]">LLMs</TableHead>
-                  <TableHead className="text-xs w-[100px]">Genie Suite</TableHead>
+                  <TableHead className="text-xs font-semibold w-[130px]">Feature</TableHead>
+                  <TableHead className="text-xs font-semibold w-[80px]">Category</TableHead>
+                  <TableHead className="text-xs font-semibold w-[180px]">Dependencies & Related</TableHead>
+                  <TableHead className="text-xs font-semibold w-[120px]">Use Cases</TableHead>
+                  <TableHead className="text-xs font-semibold w-[120px]">Scenarios</TableHead>
+                  <TableHead className="text-xs font-semibold w-[100px]">Providers</TableHead>
+                  <TableHead className="text-xs font-semibold w-[90px]">LLMs</TableHead>
+                  <TableHead className="text-xs font-semibold w-[110px]">Genie Suite</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -1508,15 +1553,18 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
                     }));
                   
                   return (
-                    <TableRow key={i}>
-                      <TableCell className="py-2">
-                        <div className="font-medium text-xs">{feature?.name || mapping.primaryFeatureId}</div>
+                    <TableRow key={i} className="hover:bg-muted/20">
+                      <TableCell className="py-2.5">
+                        <div className="font-semibold text-xs text-foreground">{feature?.name || mapping.primaryFeatureId}</div>
+                        {feature?.description && (
+                          <div className="text-[9px] text-muted-foreground mt-0.5 line-clamp-1">{feature.description}</div>
+                        )}
                       </TableCell>
-                      <TableCell className="py-2">
-                        <span className="text-[9px] text-muted-foreground">
+                      <TableCell className="py-2.5">
+                        <Badge variant="outline" className="text-[9px] py-0">
                           {CATEGORY_LABELS[mapping.primaryCategory]?.split(' ')[0]}
                           {CATEGORY_LABELS[mapping.primaryCategory]?.split(' ')[1]}
-                        </span>
+                        </Badge>
                       </TableCell>
                       {/* Related Features with relationship badges */}
                       <TableCell className="py-2">
@@ -1525,11 +1573,11 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
                             <TooltipProvider key={j}>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <span className={`text-[8px] px-1 py-0.5 rounded cursor-help ${
-                                    rf.relationship === 'requires' ? 'bg-destructive/10 text-destructive border border-destructive/30' :
-                                    rf.relationship === 'enables' ? 'bg-primary/10 text-primary border border-primary/30' :
-                                    rf.relationship === 'alternative' ? 'bg-secondary/50 text-secondary-foreground border border-secondary/30' :
-                                    'bg-muted/50 text-foreground border border-muted'
+                                  <span className={`text-[9px] px-1.5 py-0.5 rounded cursor-help font-medium ${
+                                    rf.relationship === 'requires' ? 'bg-destructive/15 text-destructive border border-destructive/30' :
+                                    rf.relationship === 'enables' ? 'bg-primary/15 text-primary border border-primary/30' :
+                                    rf.relationship === 'alternative' ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30' :
+                                    'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
                                   }`}>
                                     {rf.relationship === 'requires' && '🔴'}
                                     {rf.relationship === 'enhances' && '🟡'}
@@ -1648,29 +1696,6 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
                 })}
               </TableBody>
             </Table>
-          </div>
-          
-          {/* Relationship Legend */}
-          <div className="flex flex-wrap items-center gap-4 p-3 rounded-lg bg-muted/30 border text-xs">
-            <div className="flex items-center gap-1 font-medium text-muted-foreground">
-              <Info className="w-3.5 h-3.5" /> Relationships:
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-destructive/10 text-destructive border border-destructive/30">🔴 Requires</span>
-              <span className="text-muted-foreground">Must have</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted/50 border border-muted">🟡 Enhances</span>
-              <span className="text-muted-foreground">Optional boost</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/30">🟢 Enables</span>
-              <span className="text-muted-foreground">Unlocks feature</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary/50 border border-secondary/30">🔵 Alternative</span>
-              <span className="text-muted-foreground">Different approach</span>
-            </div>
           </div>
         </TabsContent>
 
