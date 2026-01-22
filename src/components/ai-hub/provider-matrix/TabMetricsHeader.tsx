@@ -163,20 +163,17 @@ export const TabMetricsHeader: React.FC<TabMetricsHeaderProps> = ({
           <Row label="LLMs" value={BASE.llms} muted />
           <Divider />
           <Row 
-            label="+Scenarios" 
-            value={SCENARIOS.newFromCross} 
-            highlight="purple" 
-            tooltip={`${SCENARIOS.newFromCross} NEW scenarios discovered via feature dependencies (not in Feature Matrix)`}
+            label="Deps" 
+            value={metrics.gaps.features.length} 
+            type="dependency"
+            tooltip="Feature dependencies requiring orchestration"
           />
           <Row 
-            label="+Use Cases" 
-            value={USECASES.newFromCross} 
-            highlight="purple"
-            tooltip={`${USECASES.newFromCross} NEW use cases from dependency mapping`}
+            label="Links" 
+            value={metrics.opportunities.potentialProviders.length} 
+            type="opportunity"
+            tooltip="Cross-functional provider connections"
           />
-          <Divider />
-          <Row label="Deps" value={metrics.gaps.features.length} type="dependency" />
-          <Row label="Links" value={metrics.opportunities.potentialProviders.length} type="opportunity" />
         </MetricCard>
 
         {/* GENERATION COVERAGE - Context Mappings */}
@@ -195,16 +192,10 @@ export const TabMetricsHeader: React.FC<TabMetricsHeaderProps> = ({
           <Row label="Outputs" value={CONTEXT.outputs} bold />
           <Divider />
           <Row 
-            label="+Scenarios" 
-            value={SCENARIOS.newFromGen} 
-            highlight="blue"
-            tooltip={`${SCENARIOS.newFromGen} NEW scenarios by mapping features to industries/frameworks/visuals/outputs`}
-          />
-          <Row 
-            label="+Use Cases" 
-            value={USECASES.newFromGen} 
-            highlight="blue"
-            tooltip={`${USECASES.newFromGen} NEW use cases from context analysis`}
+            label="Combos" 
+            value={CONTEXT.industries + CONTEXT.frameworks + CONTEXT.visuals + CONTEXT.outputs} 
+            bold
+            tooltip="Total context combinations: Industry × Framework × Visual × Output permutations for generation"
           />
         </MetricCard>
 
