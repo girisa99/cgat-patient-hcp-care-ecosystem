@@ -8,13 +8,16 @@
  * 4. Dynamic filtering based on category selection
  * 5. Status tracking (Complete/Partial/Pending/Gap)
  * 6. UNIFIED METRICS - synced with parent tab and other matrix tabs
+ * 7. Name-based filtering
+ * 8. Data source transparency (where scenarios/use cases come from)
  */
 
 import React, { useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Progress } from '@/components/ui/progress';
-import { Check, AlertCircle, Clock, X, Zap, Target, TrendingUp } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Check, AlertCircle, Clock, X, Zap, Target, TrendingUp, Search, Info, Database } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
@@ -334,8 +337,10 @@ function* generateCoverageRows(
       const models = mapping.recommendedModels.flatMap(m => m.modelIds);
       const status = getMappingStatus(mapping);
       
+      // Use index to ensure unique IDs for frameworks with same contextId
+      const frameworkIndex = FRAMEWORK_CAPABILITY_MAPPINGS.indexOf(mapping);
       yield {
-        id: `framework:${mapping.contextId}`,
+        id: `framework:${mapping.contextId}-${frameworkIndex}`,
         contextType: 'framework',
         name: mapping.contextName,
         status,
@@ -498,14 +503,26 @@ export const GenerationCoverageTable: React.FC<GenerationCoverageTableProps> = (
 }) => {
   const [contextFilter, setContextFilter] = useState<'all' | 'industry' | 'framework' | 'visual' | 'output' | 'feature'>('all');
   const [statusFilter, setStatusFilter] = useState<CoverageStatus | 'all'>('all');
+  const [nameFilter, setNameFilter] = useState('');
+  const [showDataSources, setShowDataSources] = useState(false);
   
   // Lazy computation with useMemo - only compute visible rows
   const rows = useMemo(() => {
-    const allRows = [...generateCoverageRows(contextFilter, selectedCategory)];
+    let allRows = [...generateCoverageRows(contextFilter, selectedCategory)];
     
-    if (statusFilter === 'all') return allRows;
-    return allRows.filter(r => r.status === statusFilter);
-  }, [contextFilter, selectedCategory, statusFilter]);
+    // Apply name filter (case-insensitive)
+    if (nameFilter.trim()) {
+      const search = nameFilter.toLowerCase().trim();
+      allRows = allRows.filter(r => r.name.toLowerCase().includes(search));
+    }
+    
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      allRows = allRows.filter(r => r.status === statusFilter);
+    }
+    
+    return allRows;
+  }, [contextFilter, selectedCategory, statusFilter, nameFilter]);
   
   // USE UNIFIED METRICS - synced with parent tab
   const unifiedMetrics = useMemo(() => {
@@ -533,9 +550,16 @@ export const GenerationCoverageTable: React.FC<GenerationCoverageTableProps> = (
       // NEW: Show breakdown
       newScenarios: unifiedMetrics.scenarios.fromGenerationCoverage,
       newUseCases: unifiedMetrics.useCases.fromGenerationCoverage,
+      scenariosBase: unifiedMetrics.scenarios.fromFeatureUseCases,
+      scenariosCF: unifiedMetrics.scenarios.fromCrossFunctional,
+      useCasesBase: unifiedMetrics.useCases.fromFeatureUseCases,
+      useCasesCF: unifiedMetrics.useCases.fromCrossFunctional,
       // Implementability stats
       readyToImplement: all.filter(r => r.implementability?.canImplementNow && r.status !== 'complete').length,
-      blockedByDeps: all.filter(r => !r.implementability?.canImplementNow && r.status !== 'complete').length
+      blockedByDeps: all.filter(r => !r.implementability?.canImplementNow && r.status !== 'complete').length,
+      // Provider stats
+      uniqueProviders: [...new Set(all.flatMap(r => r.providers))],
+      uniqueModels: [...new Set(all.flatMap(r => r.models))]
     };
   }, [selectedCategory, unifiedMetrics]);
   
@@ -554,8 +578,21 @@ export const GenerationCoverageTable: React.FC<GenerationCoverageTableProps> = (
 
   return (
     <div className="space-y-3">
-      {/* Compact Stats Bar */}
+      {/* Search & Filter Bar */}
       <div className="flex flex-wrap items-center gap-2 p-2 rounded-lg bg-muted/30 border text-[10px]">
+        {/* Name Filter */}
+        <div className="relative flex-1 min-w-[120px] max-w-[200px]">
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" />
+          <Input 
+            placeholder="Filter by name..." 
+            value={nameFilter}
+            onChange={(e) => setNameFilter(e.target.value)}
+            className="h-6 pl-6 text-[10px]"
+          />
+        </div>
+        
+        <div className="h-3 w-px bg-border" />
+        
         <div className="flex items-center gap-1 font-medium">
           <Target className="w-3 h-3 text-primary" />
           <span className="text-primary font-bold">{coveragePercent}%</span>
@@ -581,26 +618,99 @@ export const GenerationCoverageTable: React.FC<GenerationCoverageTableProps> = (
         
         <div className="h-3 w-px bg-border" />
         
-        <span className="text-muted-foreground">{stats.totalScenarios} scn</span>
-        <span className="text-muted-foreground">{stats.totalUseCases} uc</span>
+        {/* Type Filter */}
+        <Select value={contextFilter} onValueChange={(v) => setContextFilter(v as typeof contextFilter)}>
+          <SelectTrigger className="h-6 w-28 text-[10px]">
+            <SelectValue placeholder="Type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="industry">🏢 Industries</SelectItem>
+            <SelectItem value="framework">📐 Frameworks</SelectItem>
+            <SelectItem value="visual">🎨 Visuals</SelectItem>
+            <SelectItem value="output">📤 Outputs</SelectItem>
+            <SelectItem value="feature">⚡ Features</SelectItem>
+          </SelectContent>
+        </Select>
         
-        <div className="ml-auto flex items-center gap-2">
-          <Select value={contextFilter} onValueChange={(v) => setContextFilter(v as typeof contextFilter)}>
-            <SelectTrigger className="h-6 w-28 text-[10px]">
-              <SelectValue placeholder="Type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="industry">🏢 Industries</SelectItem>
-              <SelectItem value="framework">📐 Frameworks</SelectItem>
-              <SelectItem value="visual">🎨 Visuals</SelectItem>
-              <SelectItem value="output">📤 Outputs</SelectItem>
-              <SelectItem value="feature">⚡ Features</SelectItem>
-            </SelectContent>
-          </Select>
-          <Progress value={coveragePercent} className="w-16 h-1.5" />
-        </div>
+        {/* Data Sources Toggle */}
+        <button
+          onClick={() => setShowDataSources(!showDataSources)}
+          className={`flex items-center gap-1 px-1.5 py-0.5 rounded transition-all ${
+            showDataSources ? 'ring-1 ring-primary bg-primary/10' : 'hover:bg-muted/50'
+          }`}
+        >
+          <Info className="w-3 h-3" />
+          <span className="hidden sm:inline">Sources</span>
+        </button>
+        
+        <Progress value={coveragePercent} className="w-16 h-1.5 ml-auto" />
       </div>
+      
+      {/* Data Sources Info Panel */}
+      {showDataSources && (
+        <div className="p-3 rounded-lg bg-primary/10 border border-primary/30 text-[10px]">
+          <div className="flex items-center gap-2 mb-2">
+            <Database className="w-4 h-4 text-primary" />
+            <span className="font-bold text-primary">Data Sources & Origins</span>
+          </div>
+          
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {/* Scenarios Breakdown */}
+            <div className="space-y-1">
+              <div className="font-medium text-xs">Scenarios ({stats.totalScenarios} total)</div>
+              <div className="text-muted-foreground">
+                <div>• FEATURE_USE_CASES: <span className="text-foreground font-medium">{stats.scenariosBase}</span></div>
+                <div>• CROSS_FUNCTIONAL: <span className="text-foreground font-medium">{stats.scenariosCF}</span> <Badge variant="secondary" className="text-[7px] px-1">+new</Badge></div>
+                <div>• Generation Coverage: <span className="text-foreground font-medium">{stats.newScenarios}</span> <Badge variant="secondary" className="text-[7px] px-1">+new</Badge></div>
+              </div>
+            </div>
+            
+            {/* Use Cases Breakdown */}
+            <div className="space-y-1">
+              <div className="font-medium text-xs">Use Cases ({stats.totalUseCases} total)</div>
+              <div className="text-muted-foreground">
+                <div>• FEATURE_USE_CASES (bestFor): <span className="text-foreground font-medium">{stats.useCasesBase}</span></div>
+                <div>• CROSS_FUNCTIONAL: <span className="text-foreground font-medium">{stats.useCasesCF}</span> <Badge variant="secondary" className="text-[7px] px-1">+new</Badge></div>
+                <div>• Generation Coverage: <span className="text-foreground font-medium">{stats.newUseCases}</span> <Badge variant="secondary" className="text-[7px] px-1">+new</Badge></div>
+              </div>
+            </div>
+            
+            {/* Providers List */}
+            <div className="space-y-1">
+              <div className="font-medium text-xs">Providers ({stats.uniqueProviders.length} unique)</div>
+              <div className="flex flex-wrap gap-0.5">
+                {stats.uniqueProviders.slice(0, 10).map(p => (
+                  <Badge key={p} variant="outline" className="text-[8px] px-1">{p}</Badge>
+                ))}
+                {stats.uniqueProviders.length > 10 && (
+                  <Badge variant="secondary" className="text-[8px]">+{stats.uniqueProviders.length - 10}</Badge>
+                )}
+              </div>
+            </div>
+            
+            {/* Models List */}
+            <div className="space-y-1">
+              <div className="font-medium text-xs">Models ({stats.uniqueModels.length} unique)</div>
+              <div className="flex flex-wrap gap-0.5">
+                {stats.uniqueModels.slice(0, 8).map(m => (
+                  <Badge key={m} variant="outline" className="text-[8px] px-1">{m.slice(0, 12)}</Badge>
+                ))}
+                {stats.uniqueModels.length > 8 && (
+                  <Badge variant="secondary" className="text-[8px]">+{stats.uniqueModels.length - 8}</Badge>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          <div className="mt-2 pt-2 border-t border-primary/20 text-muted-foreground">
+            <strong>How it works:</strong> Scenarios/Use Cases are filtered by the active feature category. 
+            Base data comes from <code className="text-[9px] bg-muted px-1 rounded">matrixData.ts</code>. 
+            New discoveries come from cross-functional analysis and generation coverage mapping.
+            <strong className="text-foreground ml-1">All data is ecosystem-wide</strong> — changes propagate across all Genie products.
+          </div>
+        </div>
+      )}
       
       {/* Ready to Implement NOW - Priority Section */}
       {readyToImplementItems.length > 0 && (
