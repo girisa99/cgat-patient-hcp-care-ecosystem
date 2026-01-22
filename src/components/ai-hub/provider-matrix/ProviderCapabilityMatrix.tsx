@@ -7,10 +7,11 @@
  * - Dynamic height based on category selection
  * - Inline editing capability across all tabs
  * - Multi-sheet Excel export
+ * - Generation Coverage Tab for Context ↔ Capability mapping
  */
 
 import React, { useState, useMemo } from 'react';
-import { Check, X, AlertCircle, Clock, Download, Search, Zap, Target, Plus, Save, Edit2, Info, FileSpreadsheet } from 'lucide-react';
+import { Check, X, AlertCircle, Clock, Download, Search, Zap, Target, Plus, Save, Edit2, Info, FileSpreadsheet, Layers } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -36,6 +37,16 @@ import {
   type GenieProduct
 } from './matrixData';
 import type { FeatureCategory, ImplementationStatus, ProviderId, Feature } from './types';
+import { GenerationCoverageTab } from './generation-coverage';
+import { 
+  GENERATION_COVERAGE_REGISTRY,
+  INDUSTRY_CAPABILITY_MAPPINGS,
+  FRAMEWORK_CAPABILITY_MAPPINGS,
+  VISUAL_CAPABILITY_MAPPINGS,
+  OUTPUT_CAPABILITY_MAPPINGS,
+  FEATURE_CONTEXT_MAPPINGS,
+  getGenerationCoverageStats
+} from './generation-coverage/generationCoverageRegistry';
 
 const CATEGORY_LABELS: Record<FeatureCategory, string> = {
   INPUT: '📥 Input',
@@ -173,7 +184,7 @@ const AddFeatureDialog: React.FC<{
 export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ className }) => {
   const [selectedCategory, setSelectedCategory] = useState<FeatureCategory | 'all'>('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [view, setView] = useState<'matrix' | 'providers' | 'gaps' | 'llm' | 'category' | 'crossfunc'>('matrix');
+  const [view, setView] = useState<'matrix' | 'providers' | 'gaps' | 'llm' | 'category' | 'crossfunc' | 'coverage'>('matrix');
   const [editMode, setEditMode] = useState(false);
   const [localFeatures, setLocalFeatures] = useState<Feature[]>([...ALL_FEATURES]);
   const [localMatrix, setLocalMatrix] = useState({ ...FEATURE_IMPLEMENTATION_MATRIX });
@@ -714,6 +725,10 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
               {selectedCategory === 'all' ? '📋 Category Details' : CATEGORY_LABELS[selectedCategory]}
             </TabsTrigger>
             <TabsTrigger value="crossfunc">🔗 Cross-Functional</TabsTrigger>
+            <TabsTrigger value="coverage">
+              <Layers className="w-3 h-3 mr-1" />
+              Generation Coverage
+            </TabsTrigger>
             <TabsTrigger value="providers">By Provider</TabsTrigger>
             <TabsTrigger value="llm">LLM Analysis</TabsTrigger>
             <TabsTrigger value="gaps">Gap Analysis</TabsTrigger>
@@ -2073,6 +2088,11 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
               </div>
             );
           })()}
+        </TabsContent>
+
+        {/* Generation Coverage Tab */}
+        <TabsContent value="coverage" className="mt-0">
+          <GenerationCoverageTab />
         </TabsContent>
       </Tabs>
     </div>

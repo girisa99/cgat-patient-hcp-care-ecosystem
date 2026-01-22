@@ -599,4 +599,86 @@ export const GENERATION_COVERAGE_REGISTRY = {
   }
 };
 
+// ==========================================
+// DYNAMIC STATS FUNCTION
+// ==========================================
+
+/**
+ * Get dynamic generation coverage stats based on category filter
+ * Provides metrics that sync with the rest of the Provider Matrix dashboard
+ */
+export function getGenerationCoverageStats(categoryFilter?: string) {
+  // Collect all scenarios and use cases from forward mappings
+  const allScenarios = new Set<string>();
+  const allUseCases = new Set<string>();
+  const allProviders = new Set<string>();
+  const allModels = new Set<string>();
+  
+  const forwardMappings = [
+    ...INDUSTRY_CAPABILITY_MAPPINGS,
+    ...FRAMEWORK_CAPABILITY_MAPPINGS,
+    ...VISUAL_CAPABILITY_MAPPINGS,
+    ...OUTPUT_CAPABILITY_MAPPINGS
+  ];
+  
+  forwardMappings.forEach(mapping => {
+    mapping.scenarios.forEach(s => allScenarios.add(s));
+    mapping.useCases.forEach(u => allUseCases.add(u));
+    
+    // Collect providers from recommendations
+    Object.values(mapping.recommendedProviders).forEach(providerList => {
+      if (providerList) {
+        providerList.forEach(p => {
+          p.providers.forEach(provider => allProviders.add(provider));
+        });
+      }
+    });
+    
+    // Collect models
+    mapping.recommendedModels.forEach(m => {
+      m.modelIds.forEach(model => allModels.add(model));
+    });
+  });
+  
+  // If category filter provided, filter feature context mappings by category
+  const categoryFeatures = categoryFilter && categoryFilter !== 'all'
+    ? FEATURE_CONTEXT_MAPPINGS.filter(f => f.category === categoryFilter)
+    : FEATURE_CONTEXT_MAPPINGS;
+  
+  // Count cross-dependencies from feature mappings
+  const crossDependencies = categoryFeatures.reduce(
+    (sum, f) => sum + f.dependsOn.length + f.enablesFeatures.length, 
+    0
+  );
+  
+  // Count unique contexts used by filtered features
+  const usedIndustries = new Set<string>();
+  const usedFrameworks = new Set<string>();
+  const usedOutputs = new Set<string>();
+  
+  categoryFeatures.forEach(feature => {
+    feature.usedByIndustries.forEach(i => usedIndustries.add(i.id));
+    feature.usedByFrameworks.forEach(f => usedFrameworks.add(f.id));
+    feature.usedByOutputs.forEach(o => usedOutputs.add(o.id));
+  });
+  
+  return {
+    industries: INDUSTRY_CAPABILITY_MAPPINGS.length,
+    frameworks: FRAMEWORK_CAPABILITY_MAPPINGS.length,
+    visuals: VISUAL_CAPABILITY_MAPPINGS.length,
+    outputs: OUTPUT_CAPABILITY_MAPPINGS.length,
+    features: categoryFeatures.length,
+    totalMappings: forwardMappings.length,
+    scenarios: allScenarios.size,
+    useCases: allUseCases.size,
+    providers: allProviders.size,
+    models: allModels.size,
+    crossDependencies,
+    // Category-specific usage counts
+    usedIndustries: usedIndustries.size,
+    usedFrameworks: usedFrameworks.size,
+    usedOutputs: usedOutputs.size
+  };
+}
+
 export default GENERATION_COVERAGE_REGISTRY;
