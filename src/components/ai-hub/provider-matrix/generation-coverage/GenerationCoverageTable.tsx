@@ -13,7 +13,6 @@
 import React, { useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
 import { Check, AlertCircle, Clock, X, Zap, Target, TrendingUp } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -542,17 +541,27 @@ export const GenerationCoverageTable: React.FC<GenerationCoverageTableProps> = (
   
   const coveragePercent = unifiedMetrics.coverage;
 
+  // Items ready for immediate implementation
+  const readyToImplementItems = useMemo(() => 
+    rows.filter(r => r.implementability?.canImplementNow && r.status !== 'complete'),
+    [rows]
+  );
+  
+  const blockedItems = useMemo(() => 
+    rows.filter(r => !r.implementability?.canImplementNow && r.status !== 'complete'),
+    [rows]
+  );
+
   return (
-    <div className="space-y-4">
-      {/* Summary Stats Bar - NOW SYNCED with parent */}
-      <div className="flex flex-wrap items-center gap-3 p-3 rounded-lg bg-muted/30 border text-xs">
-        <div className="flex items-center gap-1.5 font-medium">
-          <Target className="w-3.5 h-3.5 text-primary" />
-          <span>Coverage:</span>
+    <div className="space-y-3">
+      {/* Compact Stats Bar */}
+      <div className="flex flex-wrap items-center gap-2 p-2 rounded-lg bg-muted/30 border text-[10px]">
+        <div className="flex items-center gap-1 font-medium">
+          <Target className="w-3 h-3 text-primary" />
           <span className="text-primary font-bold">{coveragePercent}%</span>
         </div>
         
-        <div className="h-4 w-px bg-border" />
+        <div className="h-3 w-px bg-border" />
         
         {Object.entries(STATUS_CONFIG).map(([status, config]) => {
           const count = stats[status === 'new-opportunity' ? 'opportunity' : status as keyof typeof stats] as number;
@@ -560,66 +569,82 @@ export const GenerationCoverageTable: React.FC<GenerationCoverageTableProps> = (
             <button
               key={status}
               onClick={() => setStatusFilter(status === statusFilter ? 'all' : status as CoverageStatus)}
-              className={`flex items-center gap-1 px-2 py-0.5 rounded transition-all ${
-                statusFilter === status ? 'ring-1 ring-primary' : 'hover:bg-muted/50'
+              className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded transition-all ${
+                statusFilter === status ? 'ring-1 ring-primary bg-primary/10' : 'hover:bg-muted/50'
               }`}
             >
-              <config.icon className={`w-3 h-3 ${config.color.split(' ')[0]}`} />
+              <config.icon className={`w-2.5 h-2.5 ${config.color.split(' ')[0]}`} />
               <span className="font-bold">{count}</span>
-              <span className="text-muted-foreground">{config.label}</span>
             </button>
           );
         })}
         
-        <div className="h-4 w-px bg-border" />
+        <div className="h-3 w-px bg-border" />
         
-        <div className="flex items-center gap-1.5 text-muted-foreground">
-          <span>{stats.totalScenarios} scenarios</span>
-          {stats.newScenarios > 0 && <Badge variant="outline" className="text-[8px] px-1 py-0 h-4 text-primary">+{stats.newScenarios}</Badge>}
-          <span>•</span>
-          <span>{stats.totalUseCases} use cases</span>
-          {stats.newUseCases > 0 && <Badge variant="outline" className="text-[8px] px-1 py-0 h-4 text-primary">+{stats.newUseCases}</Badge>}
-          <span>•</span>
-          <span>{stats.totalCrossDeps} deps</span>
-        </div>
+        <span className="text-muted-foreground">{stats.totalScenarios} scn</span>
+        <span className="text-muted-foreground">{stats.totalUseCases} uc</span>
         
-        <div className="ml-auto">
-          <Progress value={coveragePercent} className="w-24 h-2" />
+        <div className="ml-auto flex items-center gap-2">
+          <Select value={contextFilter} onValueChange={(v) => setContextFilter(v as typeof contextFilter)}>
+            <SelectTrigger className="h-6 w-28 text-[10px]">
+              <SelectValue placeholder="Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="industry">🏢 Industries</SelectItem>
+              <SelectItem value="framework">📐 Frameworks</SelectItem>
+              <SelectItem value="visual">🎨 Visuals</SelectItem>
+              <SelectItem value="output">📤 Outputs</SelectItem>
+              <SelectItem value="feature">⚡ Features</SelectItem>
+            </SelectContent>
+          </Select>
+          <Progress value={coveragePercent} className="w-16 h-1.5" />
         </div>
       </div>
       
-      {/* Filters */}
-      <div className="flex gap-2">
-        <Select value={contextFilter} onValueChange={(v) => setContextFilter(v as typeof contextFilter)}>
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder="Context Type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Contexts</SelectItem>
-            <SelectItem value="industry">🏢 Industries</SelectItem>
-            <SelectItem value="framework">📐 Frameworks</SelectItem>
-            <SelectItem value="visual">🎨 Visuals</SelectItem>
-            <SelectItem value="output">📤 Outputs</SelectItem>
-            <SelectItem value="feature">⚡ Features</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      {/* Ready to Implement NOW - Priority Section */}
+      {readyToImplementItems.length > 0 && (
+        <div className="p-2 rounded-lg bg-primary/10 border border-primary/30">
+          <div className="flex items-center gap-2 mb-1.5">
+            <Zap className="w-3.5 h-3.5 text-primary" />
+            <span className="text-xs font-bold text-primary">{readyToImplementItems.length} Ready to Implement Now</span>
+            <Badge variant="outline" className="text-[8px] ml-auto">All deps available</Badge>
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {readyToImplementItems.slice(0, 12).map(r => {
+              const contextBadge = CONTEXT_BADGES[r.contextType];
+              return (
+                <Badge 
+                  key={r.id} 
+                  variant="outline" 
+                  className="text-[9px] bg-background cursor-pointer hover:bg-primary/20"
+                  onClick={() => onRowSelect?.(r)}
+                >
+                  {contextBadge.emoji} {r.name}
+                </Badge>
+              );
+            })}
+            {readyToImplementItems.length > 12 && (
+              <Badge variant="secondary" className="text-[9px]">+{readyToImplementItems.length - 12} more</Badge>
+            )}
+          </div>
+        </div>
+      )}
       
-      {/* Main Table */}
-      <ScrollArea className="h-[450px] rounded-lg border">
-        <Table>
-          <TableHeader className="sticky top-0 z-10 bg-background">
-            <TableRow>
-              <TableHead className="w-10">Type</TableHead>
-              <TableHead className="w-36">Name</TableHead>
-              <TableHead className="w-20 text-center">Status</TableHead>
-              <TableHead className="w-24 text-center">Features</TableHead>
-              <TableHead className="w-28">Providers</TableHead>
-              <TableHead className="w-14 text-center">Scen.</TableHead>
-              <TableHead className="w-14 text-center">Cases</TableHead>
-              <TableHead className="w-14 text-center">Deps</TableHead>
-              <TableHead className="w-20 text-center">Can Impl?</TableHead>
-              <TableHead className="w-14 text-center">Warns</TableHead>
+      {/* Main Table - Full width, compact, minimal scrolling */}
+      <div className="rounded-lg border overflow-hidden">
+        <Table className="text-[10px]">
+          <TableHeader className="bg-muted/50">
+            <TableRow className="h-8">
+              <TableHead className="w-8 py-1 px-2">T</TableHead>
+              <TableHead className="w-32 py-1 px-2">Name</TableHead>
+              <TableHead className="w-16 py-1 px-1 text-center">Status</TableHead>
+              <TableHead className="w-16 py-1 px-1 text-center">Feat</TableHead>
+              <TableHead className="w-20 py-1 px-1">Providers</TableHead>
+              <TableHead className="w-10 py-1 px-1 text-center">Sc</TableHead>
+              <TableHead className="w-10 py-1 px-1 text-center">UC</TableHead>
+              <TableHead className="w-16 py-1 px-1 text-center">Impl?</TableHead>
+              <TableHead className="w-10 py-1 px-1 text-center">⚠</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -632,165 +657,95 @@ export const GenerationCoverageTable: React.FC<GenerationCoverageTableProps> = (
               return (
                 <TableRow 
                   key={row.id}
-                  className="cursor-pointer hover:bg-muted/50"
+                  className={`h-7 cursor-pointer hover:bg-muted/50 ${
+                    impl?.canImplementNow && row.status !== 'complete' ? 'bg-primary/5' : ''
+                  }`}
                   onClick={() => onRowSelect?.(row)}
                 >
-                  <TableCell className="py-1.5">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <span className="text-sm">{contextBadge.emoji}</span>
-                        </TooltipTrigger>
-                        <TooltipContent>{row.contextType}</TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                  <TableCell className="py-0.5 px-2">
+                    <span className="text-xs">{contextBadge.emoji}</span>
                   </TableCell>
                   
-                  <TableCell className="py-1.5">
-                    <span className="text-xs font-medium truncate block max-w-[130px]" title={row.name}>
+                  <TableCell className="py-0.5 px-2">
+                    <span className="text-[10px] font-medium truncate block max-w-[120px]" title={row.name}>
                       {row.name}
                     </span>
                   </TableCell>
                   
-                  <TableCell className="py-1.5 text-center">
-                    <Badge variant="outline" className={`text-[9px] ${statusConfig.color}`}>
-                      <StatusIcon className="w-2.5 h-2.5 mr-0.5" />
-                      {statusConfig.label}
+                  <TableCell className="py-0.5 px-1 text-center">
+                    <Badge variant="outline" className={`text-[8px] px-1 py-0 ${statusConfig.color}`}>
+                      <StatusIcon className="w-2 h-2 mr-0.5" />
+                      {statusConfig.label.slice(0, 4)}
                     </Badge>
                   </TableCell>
                   
-                  <TableCell className="py-1.5 text-center">
-                    <div className="flex items-center justify-center gap-0.5 text-[9px]">
-                      <span className="text-destructive font-bold">{row.criticalFeatures}⚠</span>
-                      <span className="text-warning">/{row.recommendedFeatures}★</span>
-                      <span className="text-muted-foreground">/{row.optionalFeatures}</span>
-                    </div>
+                  <TableCell className="py-0.5 px-1 text-center">
+                    <span className="text-[9px]">
+                      <span className="text-destructive font-bold">{row.criticalFeatures}</span>
+                      /<span className="text-muted-foreground">{row.recommendedFeatures}</span>
+                    </span>
                   </TableCell>
                   
-                  <TableCell className="py-1.5">
+                  <TableCell className="py-0.5 px-1">
                     <div className="flex flex-wrap gap-0.5">
                       {row.providers.slice(0, 2).map(p => (
-                        <span key={p} className="text-[8px] px-1 py-0.5 rounded bg-primary/10 text-primary">
-                          {p}
+                        <span key={p} className="text-[7px] px-0.5 rounded bg-primary/10 text-primary">
+                          {p.slice(0, 4)}
                         </span>
                       ))}
                       {row.providers.length > 2 && (
-                        <span className="text-[8px] text-muted-foreground">+{row.providers.length - 2}</span>
-                      )}
-                      {row.providers.length === 0 && (
-                        <span className="text-[8px] text-muted-foreground italic">None</span>
+                        <span className="text-[7px] text-muted-foreground">+{row.providers.length - 2}</span>
                       )}
                     </div>
                   </TableCell>
                   
-                  <TableCell className="py-1.5 text-center">
-                    <span className="text-xs font-medium">{row.scenarios}</span>
+                  <TableCell className="py-0.5 px-1 text-center">
+                    <span className="text-[9px]">{row.scenarios}</span>
                   </TableCell>
                   
-                  <TableCell className="py-1.5 text-center">
-                    <span className="text-xs font-medium">{row.useCases}</span>
+                  <TableCell className="py-0.5 px-1 text-center">
+                    <span className="text-[9px]">{row.useCases}</span>
                   </TableCell>
                   
-                  <TableCell className="py-1.5 text-center">
-                    {row.crossDeps > 0 ? (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Badge variant="outline" className="text-[9px] bg-accent/50 text-accent-foreground border-accent">
-                              {row.crossDeps}
-                            </Badge>
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-xs">
-                            <div className="text-xs">
-                              <strong>Dependencies:</strong>
-                              {impl?.availableDeps?.map(d => (
-                                <div key={d.featureId} className="text-muted-foreground">
-                                  ✅ {d.featureName} ({d.category})
-                                </div>
-                              ))}
-                              {impl?.blockedBy?.map(d => (
-                                <div key={d.featureId} className="text-destructive">
-                                  ❌ {d.featureName} ({d.category}) - {d.source}
-                                </div>
-                              ))}
-                            </div>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    ) : (
-                      <span className="text-[9px] text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
-                  
-                  {/* Can Implement Now? */}
-                  <TableCell className="py-1.5 text-center">
+                  <TableCell className="py-0.5 px-1 text-center">
                     {impl ? (
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger>
-                            <Badge 
-                              variant="outline" 
-                              className={`text-[8px] ${
-                                impl.canImplementNow 
-                                  ? 'bg-primary/10 text-primary border-primary/30' 
-                                  : 'bg-destructive/10 text-destructive border-destructive/30'
-                              }`}
-                            >
-                              {impl.canImplementNow ? '✅ Ready' : `🔴 ${impl.blockedBy.length} blocked`}
-                            </Badge>
+                            <span className={`text-[8px] font-medium ${
+                              impl.canImplementNow 
+                                ? 'text-primary' 
+                                : 'text-destructive'
+                            }`}>
+                              {impl.canImplementNow ? '✅' : `🔴${impl.blockedBy.length}`}
+                            </span>
                           </TooltipTrigger>
-                          <TooltipContent className="max-w-sm">
-                            <div className="text-xs space-y-1">
-                              <div className="font-medium">{impl.reason}</div>
-                              <div className="flex gap-2 text-muted-foreground">
-                                <span>Effort: {impl.effort}</span>
-                                <span>Priority: {impl.priority}</span>
+                          <TooltipContent className="max-w-sm text-xs">
+                            <div className="font-medium">{impl.reason}</div>
+                            {impl.blockedBy.length > 0 && (
+                              <div className="pt-1 mt-1 border-t">
+                                {impl.blockedBy.map(b => (
+                                  <div key={b.featureId} className="text-destructive">
+                                    • {b.featureName} ({b.category})
+                                  </div>
+                                ))}
                               </div>
-                              {impl.blockedBy.length > 0 && (
-                                <div className="pt-1 border-t border-border mt-1">
-                                  <strong className="text-destructive">Blocked by:</strong>
-                                  {impl.blockedBy.map(b => (
-                                    <div key={b.featureId}>
-                                      • {b.featureName} ({b.category}) - from {b.source}
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
+                            )}
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
                     ) : (
-                      <span className="text-[9px] text-muted-foreground">—</span>
+                      <span className="text-[8px] text-muted-foreground">—</span>
                     )}
                   </TableCell>
                   
-                  <TableCell className="py-1.5 text-center">
+                  <TableCell className="py-0.5 px-1 text-center">
                     {(row.constraints > 0 || (row.warnings?.length || 0) > 0) ? (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Badge variant="outline" className="text-[9px] bg-warning/10 text-warning border-warning/30">
-                              {row.constraints + (row.warnings?.length || 0)}⚠
-                            </Badge>
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-sm">
-                            <div className="text-xs space-y-1">
-                              <strong>Warnings:</strong>
-                              {row.warnings?.map((w, i) => (
-                                <div key={i} className="text-muted-foreground">
-                                  [{w.source}] {w.message}
-                                </div>
-                              ))}
-                              {row.constraints > 0 && !row.warnings?.length && (
-                                <div className="text-muted-foreground">{row.constraints} constraint(s)</div>
-                              )}
-                            </div>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                      <span className="text-[8px] text-warning">
+                        {row.constraints + (row.warnings?.length || 0)}
+                      </span>
                     ) : (
-                      <span className="text-[9px] text-primary">✓</span>
+                      <span className="text-[8px] text-primary">✓</span>
                     )}
                   </TableCell>
                 </TableRow>
@@ -799,7 +754,7 @@ export const GenerationCoverageTable: React.FC<GenerationCoverageTableProps> = (
             
             {rows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={9} className="text-center py-4 text-muted-foreground text-xs">
                   No mappings found for current filter
                 </TableCell>
               </TableRow>
@@ -807,121 +762,51 @@ export const GenerationCoverageTable: React.FC<GenerationCoverageTableProps> = (
             
             {/* TOTALS ROW */}
             {rows.length > 0 && (
-              <TableRow className="bg-muted/30 font-medium border-t-2 sticky bottom-0">
-                <TableCell className="py-2" colSpan={2}>
-                  <span className="text-xs font-bold">TOTALS ({rows.length} items)</span>
+              <TableRow className="bg-muted/50 font-medium border-t-2">
+                <TableCell className="py-1 px-2" colSpan={2}>
+                  <span className="text-[10px] font-bold">{rows.length} items</span>
                 </TableCell>
-                <TableCell className="py-2 text-center">
-                  <div className="flex flex-col gap-0.5 text-[9px]">
-                    <span className="text-primary">{stats.complete}✓</span>
-                    <span className="text-warning">{stats.partial}⚠</span>
-                  </div>
+                <TableCell className="py-1 px-1 text-center">
+                  <span className="text-[9px] text-primary">{stats.complete}✓/{stats.partial}⚠</span>
                 </TableCell>
-                <TableCell className="py-2 text-center">
-                  <span className="text-[9px]">
-                    {rows.reduce((sum, r) => sum + r.criticalFeatures, 0)} critical
-                  </span>
+                <TableCell className="py-1 px-1 text-center">
+                  <span className="text-[9px]">{rows.reduce((sum, r) => sum + r.criticalFeatures, 0)}</span>
                 </TableCell>
-                <TableCell className="py-2">
-                  <span className="text-[9px]">
-                    {[...new Set(rows.flatMap(r => r.providers))].length} unique
-                  </span>
+                <TableCell className="py-1 px-1">
+                  <span className="text-[9px]">{[...new Set(rows.flatMap(r => r.providers))].length}</span>
                 </TableCell>
-                <TableCell className="py-2 text-center">
-                  <span className="text-xs font-bold text-primary">{stats.totalScenarios}</span>
+                <TableCell className="py-1 px-1 text-center">
+                  <span className="text-[9px] font-bold text-primary">{stats.totalScenarios}</span>
                 </TableCell>
-                <TableCell className="py-2 text-center">
-                  <span className="text-xs font-bold text-primary">{stats.totalUseCases}</span>
+                <TableCell className="py-1 px-1 text-center">
+                  <span className="text-[9px] font-bold text-primary">{stats.totalUseCases}</span>
                 </TableCell>
-                <TableCell className="py-2 text-center">
-                  <span className="text-[9px]">{stats.totalCrossDeps}</span>
+                <TableCell className="py-1 px-1 text-center">
+                  <span className="text-[9px] text-primary">{readyToImplementItems.length}✅/{blockedItems.length}🔴</span>
                 </TableCell>
-                <TableCell className="py-2 text-center">
-                  <div className="flex flex-col gap-0.5 text-[9px]">
-                    <span className="text-primary">
-                      {rows.filter(r => r.implementability?.canImplementNow).length} ready
-                    </span>
-                    <span className="text-destructive">
-                      {rows.filter(r => !r.implementability?.canImplementNow && r.status !== 'complete').length} blocked
-                    </span>
-                  </div>
-                </TableCell>
-                <TableCell className="py-2 text-center">
+                <TableCell className="py-1 px-1 text-center">
                   <span className="text-[9px]">{stats.totalConstraints}</span>
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
-      </ScrollArea>
-      
-      {/* Implementation Summary - NEW */}
-      <div className="grid grid-cols-2 gap-3">
-        {/* Ready to Implement */}
-        <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
-          <div className="flex items-center gap-2 text-sm font-medium text-primary mb-2">
-            <Zap className="w-4 h-4" />
-            {rows.filter(r => r.implementability?.canImplementNow && r.status !== 'complete').length} Ready to Implement Now
-          </div>
-          <div className="text-xs text-muted-foreground">
-            All dependencies available. Can start implementation immediately.
-          </div>
-          <div className="flex flex-wrap gap-1 mt-2">
-            {rows.filter(r => r.implementability?.canImplementNow && r.status !== 'complete').slice(0, 5).map(r => (
-              <Badge key={r.id} variant="outline" className="text-[8px]">{r.name}</Badge>
-            ))}
-            {rows.filter(r => r.implementability?.canImplementNow && r.status !== 'complete').length > 5 && (
-              <span className="text-[9px] text-muted-foreground">
-                +{rows.filter(r => r.implementability?.canImplementNow && r.status !== 'complete').length - 5} more
-              </span>
-            )}
-          </div>
-        </div>
-        
-        {/* Blocked - Need Dependencies */}
-        <div className="p-3 rounded-lg bg-destructive/5 border border-destructive/20">
-          <div className="flex items-center gap-2 text-sm font-medium text-destructive mb-2">
-            <X className="w-4 h-4" />
-            {rows.filter(r => !r.implementability?.canImplementNow && r.status !== 'complete').length} Blocked by Dependencies
-          </div>
-          <div className="text-xs text-muted-foreground">
-            Require cross-functional features from other categories first.
-          </div>
-          <div className="flex flex-wrap gap-1 mt-2">
-            {/* Show unique blockers */}
-            {[...new Set(
-              rows.filter(r => !r.implementability?.canImplementNow)
-                .flatMap(r => r.implementability?.blockedBy || [])
-                .map(b => `${b.featureName} (${b.category})`)
-            )].slice(0, 4).map(b => (
-              <Badge key={b} variant="outline" className="text-[8px] text-destructive border-destructive/30">{b}</Badge>
-            ))}
-          </div>
-        </div>
       </div>
       
-      {/* Gap Analysis Summary */}
-      {stats.gap > 0 && (
-        <div className="p-3 rounded-lg bg-destructive/5 border border-destructive/20">
-          <div className="flex items-center gap-2 text-sm font-medium text-destructive mb-2">
-            <X className="w-4 h-4" />
-            {stats.gap} Coverage Gaps Identified
+      {/* Blocked Items Summary - Only show if there are blocked items */}
+      {blockedItems.length > 0 && (
+        <div className="p-2 rounded-lg bg-destructive/5 border border-destructive/20">
+          <div className="flex items-center gap-2 mb-1">
+            <X className="w-3 h-3 text-destructive" />
+            <span className="text-[10px] font-medium text-destructive">{blockedItems.length} Blocked by Dependencies</span>
           </div>
-          <div className="text-xs text-muted-foreground">
-            These contexts lack provider coverage or feature mappings. Review and expand mappings to increase coverage.
-          </div>
-        </div>
-      )}
-      
-      {/* Opportunities Summary */}
-      {stats.opportunity > 0 && (
-        <div className="p-3 rounded-lg bg-accent/10 border border-accent/20">
-          <div className="flex items-center gap-2 text-sm font-medium text-accent-foreground mb-2">
-            <TrendingUp className="w-4 h-4" />
-            {stats.opportunity} New Opportunities
-          </div>
-          <div className="text-xs text-muted-foreground">
-            These contexts have provider coverage but may benefit from additional scenarios and use cases.
+          <div className="flex flex-wrap gap-1">
+            {[...new Set(
+              blockedItems.flatMap(r => r.implementability?.blockedBy || [])
+                .map(b => `${b.featureName} (${b.category})`)
+            )].slice(0, 6).map(b => (
+              <Badge key={b} variant="outline" className="text-[8px] text-destructive border-destructive/30">{b}</Badge>
+            ))}
           </div>
         </div>
       )}
