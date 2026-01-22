@@ -24,7 +24,9 @@ import type {
 // FEATURE USE CASES & SCENARIOS
 // ============================================
 export const FEATURE_USE_CASES: Record<string, { scenarios: string[]; bestFor: string[]; limitations?: string[] }> = {
-  // INPUT FEATURES
+  // ============================================
+  // INPUT FEATURES - Comprehensive Documentation
+  // ============================================
   text_prompt: { 
     scenarios: ['Chat conversations', 'Script generation', 'Content creation', 'Translation requests', 'Image/video generation prompts'],
     bestFor: ['Quick ideation', 'Multi-turn dialogue', 'Creative writing', 'Technical documentation'],
@@ -74,6 +76,85 @@ export const FEATURE_USE_CASES: Record<string, { scenarios: string[]; bestFor: s
     scenarios: ['Data visualization', 'Analytics processing', 'Report generation', 'Trend analysis'],
     bestFor: ['Business intelligence', 'Financial modeling', 'Survey analysis'],
     limitations: ['Row/column limits', 'Complex formulas not supported']
+  },
+  
+  // ============================================
+  // SCRIPT FEATURES - Comprehensive Documentation
+  // ============================================
+  ai_script_gen: {
+    scenarios: ['Presentation scripts', 'Video narration', 'Training content', 'Marketing copy', 'Educational material'],
+    bestFor: ['Rapid content creation', 'Multi-language scripts', 'Brand-consistent messaging', 'Technical documentation'],
+    limitations: ['May need human review for accuracy', 'Brand voice requires fine-tuning']
+  },
+  script_from_url: {
+    scenarios: ['Blog-to-video conversion', 'Article repurposing', 'Research synthesis', 'News summarization'],
+    bestFor: ['Content repurposing', 'Research aggregation', 'Competitor analysis', 'SEO content'],
+    limitations: ['Dynamic content may not extract', 'Paywall restrictions']
+  },
+  script_editing: {
+    scenarios: ['Tone adjustment', 'Length optimization', 'Clarity improvement', 'Grammar correction'],
+    bestFor: ['Professional polish', 'Audience adaptation', 'Multi-iteration refinement', 'Translation prep'],
+    limitations: ['May alter original intent', 'Style consistency needs attention']
+  },
+  tone_style: {
+    scenarios: ['Professional vs casual', 'Technical vs conversational', 'Formal vs friendly', 'Industry-specific'],
+    bestFor: ['Brand alignment', 'Audience targeting', 'Cross-cultural communication', 'Multi-channel content'],
+    limitations: ['Subjective evaluation', 'Cultural nuances may need review']
+  },
+  audience_input: {
+    scenarios: ['B2B vs B2C targeting', 'Age-appropriate content', 'Technical level adjustment', 'Industry customization'],
+    bestFor: ['Personalized content', 'Targeted marketing', 'Educational materials', 'Healthcare communication'],
+    limitations: ['Requires clear audience definition', 'May oversimplify complex topics']
+  },
+  script_length: {
+    scenarios: ['Short social media', 'Medium blog posts', 'Long-form presentations', 'Video duration targeting'],
+    bestFor: ['Platform optimization', 'Attention span matching', 'Time-constrained delivery', 'Content series'],
+    limitations: ['Quality vs quantity tradeoff', 'May truncate important context']
+  },
+  multi_scene_script: {
+    scenarios: ['Multi-slide presentations', 'Video chapters', 'Training modules', 'Story-driven content'],
+    bestFor: ['Complex narratives', 'Educational sequences', 'Product demos', 'Onboarding flows'],
+    limitations: ['Scene coherence needs review', 'Timing estimates vary']
+  },
+  speaker_notes: {
+    scenarios: ['Presentation delivery', 'Training facilitation', 'Webinar hosting', 'Conference speaking'],
+    bestFor: ['Presenter preparation', 'Talking points', 'Q&A anticipation', 'Timing guidance'],
+    limitations: ['May not match presenter style', 'Needs personalization']
+  },
+  outline_gen: {
+    scenarios: ['Content planning', 'Research organization', 'Curriculum design', 'Project scoping'],
+    bestFor: ['Quick structuring', 'Brainstorming', 'Collaborative planning', 'Consistency across docs'],
+    limitations: ['High-level only', 'May miss nuanced requirements']
+  },
+  content_summary: {
+    scenarios: ['Document analysis', 'Meeting notes', 'Research synthesis', 'News briefings'],
+    bestFor: ['Time savings', 'Key point extraction', 'Executive summaries', 'Quick reviews'],
+    limitations: ['May miss nuanced details', 'Context dependency']
+  },
+  script_translation: {
+    scenarios: ['Multi-language content', 'Global campaigns', 'Localization workflows', 'Subtitle translation'],
+    bestFor: ['Rapid localization', 'Consistent terminology', 'Cost-effective translation', 'CJK markets'],
+    limitations: ['Cultural adaptation needs review', 'Technical terms may need glossary']
+  },
+  script_to_slides: {
+    scenarios: ['Auto-presentation', 'Training decks', 'Sales materials', 'Educational content'],
+    bestFor: ['Rapid deck creation', 'Consistent formatting', 'Time savings', 'Template reuse'],
+    limitations: ['May need visual refinement', 'Complex layouts need editing']
+  },
+  script_to_video_auto: {
+    scenarios: ['Explainer videos', 'Training content', 'Marketing videos', 'Social media content'],
+    bestFor: ['Rapid video production', 'Consistent branding', 'Scale content creation', 'Multi-language videos'],
+    limitations: ['Quality varies by complexity', 'May need manual editing']
+  },
+  ai_rewrite: {
+    scenarios: ['Style adaptation', 'Clarity improvement', 'Tone adjustment', 'SEO optimization'],
+    bestFor: ['Content refresh', 'A/B testing', 'Audience adaptation', 'Quality improvement'],
+    limitations: ['May lose original voice', 'Requires human validation']
+  },
+  brand_voice: {
+    scenarios: ['Corporate messaging', 'Marketing consistency', 'Multi-channel content', 'Team alignment'],
+    bestFor: ['Brand consistency', 'Team scaling', 'Content governance', 'Quality assurance'],
+    limitations: ['Requires training data', 'May drift over time']
   },
 };
 
@@ -1122,7 +1203,9 @@ export interface CrossFunctionalMapping {
 }
 
 export const CROSS_FUNCTIONAL_MAPPINGS: CrossFunctionalMapping[] = [
-  // INPUT CATEGORY
+  // ============================================
+  // INPUT CATEGORY - All 10 Input Features
+  // ============================================
   {
     primaryFeatureId: 'text_prompt',
     primaryCategory: 'INPUT',
@@ -1130,11 +1213,12 @@ export const CROSS_FUNCTIONAL_MAPPINGS: CrossFunctionalMapping[] = [
       { featureId: 'ai_script_gen', category: 'SCRIPT', relationship: 'enables' },
       { featureId: 'ai_image_gen', category: 'IMAGE', relationship: 'enables' },
       { featureId: 'tts', category: 'VOICE', relationship: 'enables' },
+      { featureId: 'one_click_translate', category: 'TRANSLATION', relationship: 'enables' },
     ],
-    useCases: ['Content creation', 'Script writing', 'Image generation'],
-    scenarios: ['Quick ideation', 'Multi-turn dialogue', 'Creative writing'],
-    recommendedProviders: ['openai', 'gemini', 'claude', 'deepseek'],
-    recommendedLLMs: ['GPT-4o', 'Gemini 2.5 Pro', 'Claude 3.5'],
+    useCases: ['Content creation', 'Script writing', 'Image generation', 'Translation requests'],
+    scenarios: ['Quick ideation', 'Multi-turn dialogue', 'Creative writing', 'Technical documentation'],
+    recommendedProviders: ['openai', 'gemini', 'claude', 'deepseek', 'alibaba', 'deepl', 'modelslab', 'replicate', 'elevenlabs'],
+    recommendedLLMs: ['GPT-4o', 'Gemini 2.5 Pro', 'Claude 3.5 Sonnet', 'DeepSeek V3', 'Qwen 2.5'],
     genieProducts: ['deck', 'vibe', 'spark', 'mind', 'arc', 'hub', 'ask_genie'],
   },
   {
@@ -1144,12 +1228,27 @@ export const CROSS_FUNCTIONAL_MAPPINGS: CrossFunctionalMapping[] = [
       { featureId: 'content_summary', category: 'SCRIPT', relationship: 'enables' },
       { featureId: 'script_from_url', category: 'SCRIPT', relationship: 'alternative' },
       { featureId: 'pptx_import', category: 'INPUT', relationship: 'alternative' },
+      { featureId: 'one_click_translate', category: 'TRANSLATION', relationship: 'enables' },
     ],
-    useCases: ['Document analysis', 'Contract review', 'Research summarization'],
-    scenarios: ['PDF analysis', 'DOCX editing', 'Report generation'],
+    useCases: ['Document analysis', 'Contract review', 'Research summarization', 'Document translation'],
+    scenarios: ['PDF analysis', 'DOCX editing', 'Report generation', 'Legal document review'],
     recommendedProviders: ['openai', 'gemini', 'deepl'],
-    recommendedLLMs: ['GPT-4o', 'Gemini 2.5 Pro'],
+    recommendedLLMs: ['GPT-4o', 'Gemini 2.5 Pro', 'Claude 3.5 Sonnet'],
     genieProducts: ['deck', 'mind', 'arc', 'ask_genie'],
+  },
+  {
+    primaryFeatureId: 'url_input',
+    primaryCategory: 'INPUT',
+    relatedFeatures: [
+      { featureId: 'script_from_url', category: 'SCRIPT', relationship: 'enables' },
+      { featureId: 'content_summary', category: 'SCRIPT', relationship: 'enables' },
+      { featureId: 'document_upload', category: 'INPUT', relationship: 'alternative' },
+    ],
+    useCases: ['Web scraping', 'Article summarization', 'Competitor research', 'Blog-to-video'],
+    scenarios: ['News analysis', 'Research aggregation', 'Content repurposing', 'SEO analysis'],
+    recommendedProviders: ['openai', 'gemini'],
+    recommendedLLMs: ['GPT-4o', 'Gemini 2.5 Pro'],
+    genieProducts: ['deck', 'mind', 'spark', 'ask_genie'],
   },
   {
     primaryFeatureId: 'image_upload',
@@ -1158,12 +1257,29 @@ export const CROSS_FUNCTIONAL_MAPPINGS: CrossFunctionalMapping[] = [
       { featureId: 'image_to_image', category: 'IMAGE', relationship: 'enables' },
       { featureId: 'controlnet', category: 'IMAGE', relationship: 'enables' },
       { featureId: 'style_transfer', category: 'IMAGE', relationship: 'enables' },
+      { featureId: 'bg_removal', category: 'IMAGE', relationship: 'enables' },
+      { featureId: 'inpainting', category: 'IMAGE', relationship: 'enables' },
     ],
-    useCases: ['Vision analysis', 'Image editing', 'Style transfer'],
-    scenarios: ['Product photography', 'Medical imaging', 'Design iteration'],
-    recommendedProviders: ['openai', 'gemini', 'modelslab', 'replicate'],
-    recommendedLLMs: ['GPT-4o', 'Gemini 2.5 Pro'],
+    useCases: ['Vision analysis', 'Image editing', 'Style transfer', 'OCR extraction', 'Object detection'],
+    scenarios: ['Product photography', 'Medical imaging', 'Design iteration', 'Brand asset editing'],
+    recommendedProviders: ['openai', 'gemini', 'deepseek', 'alibaba', 'modelslab', 'replicate', 'stability'],
+    recommendedLLMs: ['GPT-4o Vision', 'Gemini 2.5 Pro', 'DeepSeek-VL', 'Qwen-VL'],
     genieProducts: ['deck', 'vibe', 'spark', 'arc'],
+  },
+  {
+    primaryFeatureId: 'video_upload',
+    primaryCategory: 'INPUT',
+    relatedFeatures: [
+      { featureId: 'auto_subtitles', category: 'VIDEO', relationship: 'enables' },
+      { featureId: 'video_trimming', category: 'VIDEO', relationship: 'enables' },
+      { featureId: 'audio_upload', category: 'INPUT', relationship: 'alternative' },
+      { featureId: 'image_to_video', category: 'VIDEO', relationship: 'enhances' },
+    ],
+    useCases: ['Video transcription', 'Scene analysis', 'Video-to-video processing', 'Content moderation'],
+    scenarios: ['Training content review', 'Social media repurposing', 'Highlight extraction', 'Video summarization'],
+    recommendedProviders: ['openai', 'gemini', 'alibaba', 'modelslab', 'replicate'],
+    recommendedLLMs: ['Gemini 2.5 Pro', 'GPT-4o Vision', 'Qwen2.5-VL'],
+    genieProducts: ['vibe', 'arc', 'mind'],
   },
   {
     primaryFeatureId: 'audio_upload',
@@ -1171,14 +1287,74 @@ export const CROSS_FUNCTIONAL_MAPPINGS: CrossFunctionalMapping[] = [
     relatedFeatures: [
       { featureId: 'stt', category: 'AUDIO', relationship: 'enables' },
       { featureId: 'auto_subtitles', category: 'VIDEO', relationship: 'enables' },
+      { featureId: 'voice_recording', category: 'INPUT', relationship: 'alternative' },
+      { featureId: 'content_summary', category: 'SCRIPT', relationship: 'enables' },
     ],
-    useCases: ['Transcription', 'Voice analysis', 'Meeting notes'],
-    scenarios: ['Podcast transcription', 'Interview capture', 'Voiceover QC'],
-    recommendedProviders: ['openai', 'elevenlabs', 'alibaba'],
-    recommendedLLMs: ['GPT-4o'],
+    useCases: ['Transcription', 'Voice analysis', 'Meeting notes', 'Speaker diarization'],
+    scenarios: ['Podcast transcription', 'Interview capture', 'Voiceover QC', 'Multi-speaker meetings'],
+    recommendedProviders: ['openai', 'elevenlabs', 'alibaba', 'gemini'],
+    recommendedLLMs: ['Whisper', 'Scribe', 'Paraformer'],
     genieProducts: ['vibe', 'mind', 'arc', 'ask_genie'],
   },
-  // SCRIPT CATEGORY
+  {
+    primaryFeatureId: 'pptx_import',
+    primaryCategory: 'INPUT',
+    relatedFeatures: [
+      { featureId: 'document_upload', category: 'INPUT', relationship: 'alternative' },
+      { featureId: 'script_to_slides', category: 'SCRIPT', relationship: 'enhances' },
+      { featureId: 'pptx_export', category: 'EXPORT', relationship: 'enables' },
+    ],
+    useCases: ['Slide analysis', 'Presentation enhancement', 'Content extraction', 'Template reuse'],
+    scenarios: ['Legacy deck updates', 'Brand compliance checks', 'Content migration', 'Deck translation'],
+    recommendedProviders: ['openai', 'gemini'],
+    recommendedLLMs: ['GPT-4o', 'Gemini 2.5 Pro'],
+    genieProducts: ['deck', 'arc'],
+  },
+  {
+    primaryFeatureId: 'voice_recording',
+    primaryCategory: 'INPUT',
+    relatedFeatures: [
+      { featureId: 'stt', category: 'AUDIO', relationship: 'enables' },
+      { featureId: 'audio_upload', category: 'INPUT', relationship: 'alternative' },
+      { featureId: 'tts', category: 'VOICE', relationship: 'enhances' },
+    ],
+    useCases: ['Live transcription', 'Voice commands', 'Interview capture', 'Note-taking'],
+    scenarios: ['Real-time dictation', 'Accessibility', 'Field reporting', 'Voice search'],
+    recommendedProviders: ['openai', 'alibaba', 'elevenlabs', 'gemini'],
+    recommendedLLMs: ['Whisper', 'Paraformer', 'Scribe'],
+    genieProducts: ['ask_genie', 'mind', 'arc'],
+  },
+  {
+    primaryFeatureId: 'screen_recording',
+    primaryCategory: 'INPUT',
+    relatedFeatures: [
+      { featureId: 'video_upload', category: 'INPUT', relationship: 'alternative' },
+      { featureId: 'auto_subtitles', category: 'VIDEO', relationship: 'enables' },
+      { featureId: 'video_trimming', category: 'VIDEO', relationship: 'enables' },
+    ],
+    useCases: ['Tutorial creation', 'Bug reporting', 'Demo capture', 'Workflow documentation'],
+    scenarios: ['Software training', 'Support tickets', 'Process documentation', 'Product demos'],
+    recommendedProviders: ['openai', 'gemini', 'alibaba'],
+    recommendedLLMs: ['Gemini 2.5 Pro', 'GPT-4o Vision', 'Qwen-VL'],
+    genieProducts: ['vibe', 'arc', 'hub'],
+  },
+  {
+    primaryFeatureId: 'csv_data',
+    primaryCategory: 'INPUT',
+    relatedFeatures: [
+      { featureId: 'content_summary', category: 'SCRIPT', relationship: 'enables' },
+      { featureId: 'interactive_charts', category: 'INTERACTIVE', relationship: 'enables' },
+      { featureId: 'document_upload', category: 'INPUT', relationship: 'alternative' },
+    ],
+    useCases: ['Data visualization', 'Analytics processing', 'Report generation', 'Trend analysis'],
+    scenarios: ['Business intelligence', 'Financial modeling', 'Survey analysis', 'Dashboard creation'],
+    recommendedProviders: ['openai', 'gemini', 'claude'],
+    recommendedLLMs: ['GPT-4o', 'Gemini 2.5 Pro', 'Claude 3.5 Sonnet'],
+    genieProducts: ['deck', 'mind', 'arc'],
+  },
+  // ============================================
+  // SCRIPT CATEGORY - All 15 Script Features
+  // ============================================
   {
     primaryFeatureId: 'ai_script_gen',
     primaryCategory: 'SCRIPT',
@@ -1187,12 +1363,152 @@ export const CROSS_FUNCTIONAL_MAPPINGS: CrossFunctionalMapping[] = [
       { featureId: 'script_to_slides', category: 'SCRIPT', relationship: 'enables' },
       { featureId: 'script_to_video_auto', category: 'SCRIPT', relationship: 'enables' },
       { featureId: 'tts', category: 'VOICE', relationship: 'enables' },
+      { featureId: 'multi_scene_script', category: 'SCRIPT', relationship: 'enhances' },
     ],
-    useCases: ['Presentation scripts', 'Video narration', 'Training content'],
-    scenarios: ['Quick ideation', 'Multi-scene generation', 'Brand voice'],
-    recommendedProviders: ['openai', 'claude', 'gemini', 'deepseek'],
-    recommendedLLMs: ['GPT-4o', 'Claude 3.5 Sonnet'],
+    useCases: ['Presentation scripts', 'Video narration', 'Training content', 'Marketing copy', 'Educational material'],
+    scenarios: ['Quick ideation', 'Multi-scene generation', 'Brand voice', 'Multi-language scripts'],
+    recommendedProviders: ['openai', 'claude', 'gemini', 'deepseek', 'alibaba'],
+    recommendedLLMs: ['GPT-4o', 'Claude 3.5 Sonnet', 'Gemini 2.5 Pro', 'DeepSeek V3', 'Qwen 2.5'],
+    genieProducts: ['deck', 'vibe', 'spark', 'arc', 'ask_genie'],
+  },
+  {
+    primaryFeatureId: 'script_from_url',
+    primaryCategory: 'SCRIPT',
+    relatedFeatures: [
+      { featureId: 'url_input', category: 'INPUT', relationship: 'requires' },
+      { featureId: 'document_upload', category: 'INPUT', relationship: 'alternative' },
+      { featureId: 'content_summary', category: 'SCRIPT', relationship: 'enables' },
+      { featureId: 'ai_script_gen', category: 'SCRIPT', relationship: 'enhances' },
+    ],
+    useCases: ['Blog-to-video conversion', 'Article repurposing', 'Research synthesis', 'News summarization'],
+    scenarios: ['Content repurposing', 'SEO content', 'Competitor analysis', 'Aggregation'],
+    recommendedProviders: ['openai', 'gemini'],
+    recommendedLLMs: ['GPT-4o', 'Gemini 2.5 Pro'],
+    genieProducts: ['deck', 'vibe', 'mind', 'spark'],
+  },
+  {
+    primaryFeatureId: 'script_editing',
+    primaryCategory: 'SCRIPT',
+    relatedFeatures: [
+      { featureId: 'ai_script_gen', category: 'SCRIPT', relationship: 'requires' },
+      { featureId: 'tone_style', category: 'SCRIPT', relationship: 'enhances' },
+      { featureId: 'ai_rewrite', category: 'SCRIPT', relationship: 'alternative' },
+    ],
+    useCases: ['Tone adjustment', 'Length optimization', 'Clarity improvement', 'Grammar correction'],
+    scenarios: ['Professional polish', 'Audience adaptation', 'Multi-iteration refinement'],
+    recommendedProviders: ['openai', 'claude'],
+    recommendedLLMs: ['Claude 3.5 Sonnet', 'GPT-4o'],
+    genieProducts: ['deck', 'vibe', 'spark', 'mind'],
+  },
+  {
+    primaryFeatureId: 'tone_style',
+    primaryCategory: 'SCRIPT',
+    relatedFeatures: [
+      { featureId: 'ai_script_gen', category: 'SCRIPT', relationship: 'enhances' },
+      { featureId: 'brand_voice', category: 'SCRIPT', relationship: 'alternative' },
+      { featureId: 'audience_input', category: 'SCRIPT', relationship: 'enhances' },
+    ],
+    useCases: ['Professional vs casual', 'Technical vs conversational', 'Formal vs friendly'],
+    scenarios: ['Brand alignment', 'Audience targeting', 'Cross-cultural communication'],
+    recommendedProviders: ['openai', 'claude'],
+    recommendedLLMs: ['Claude 3.5 Sonnet', 'GPT-4o'],
     genieProducts: ['deck', 'vibe', 'spark', 'arc'],
+  },
+  {
+    primaryFeatureId: 'audience_input',
+    primaryCategory: 'SCRIPT',
+    relatedFeatures: [
+      { featureId: 'ai_script_gen', category: 'SCRIPT', relationship: 'enhances' },
+      { featureId: 'tone_style', category: 'SCRIPT', relationship: 'enhances' },
+      { featureId: 'script_length', category: 'SCRIPT', relationship: 'enhances' },
+    ],
+    useCases: ['B2B vs B2C targeting', 'Age-appropriate content', 'Technical level adjustment'],
+    scenarios: ['Personalized content', 'Targeted marketing', 'Educational materials'],
+    recommendedProviders: ['openai', 'gemini'],
+    recommendedLLMs: ['GPT-4o', 'Gemini 2.5 Pro'],
+    genieProducts: ['deck', 'vibe', 'spark', 'arc'],
+  },
+  {
+    primaryFeatureId: 'script_length',
+    primaryCategory: 'SCRIPT',
+    relatedFeatures: [
+      { featureId: 'ai_script_gen', category: 'SCRIPT', relationship: 'enhances' },
+      { featureId: 'content_summary', category: 'SCRIPT', relationship: 'alternative' },
+    ],
+    useCases: ['Short social media', 'Medium blog posts', 'Long-form presentations'],
+    scenarios: ['Platform optimization', 'Attention span matching', 'Time-constrained delivery'],
+    recommendedProviders: ['openai', 'claude'],
+    recommendedLLMs: ['GPT-4o', 'Claude 3.5 Sonnet'],
+    genieProducts: ['deck', 'vibe', 'spark'],
+  },
+  {
+    primaryFeatureId: 'multi_scene_script',
+    primaryCategory: 'SCRIPT',
+    relatedFeatures: [
+      { featureId: 'ai_script_gen', category: 'SCRIPT', relationship: 'requires' },
+      { featureId: 'script_to_video_auto', category: 'SCRIPT', relationship: 'enables' },
+      { featureId: 'outline_gen', category: 'SCRIPT', relationship: 'enhances' },
+    ],
+    useCases: ['Multi-slide presentations', 'Video chapters', 'Training modules', 'Story-driven content'],
+    scenarios: ['Complex narratives', 'Educational sequences', 'Product demos'],
+    recommendedProviders: ['openai', 'gemini'],
+    recommendedLLMs: ['GPT-4o', 'Gemini 2.5 Pro'],
+    genieProducts: ['deck', 'vibe', 'arc'],
+  },
+  {
+    primaryFeatureId: 'speaker_notes',
+    primaryCategory: 'SCRIPT',
+    relatedFeatures: [
+      { featureId: 'ai_script_gen', category: 'SCRIPT', relationship: 'requires' },
+      { featureId: 'script_to_slides', category: 'SCRIPT', relationship: 'enhances' },
+    ],
+    useCases: ['Presentation delivery', 'Training facilitation', 'Webinar hosting'],
+    scenarios: ['Presenter preparation', 'Talking points', 'Q&A anticipation'],
+    recommendedProviders: ['openai', 'claude'],
+    recommendedLLMs: ['GPT-4o', 'Claude 3.5 Sonnet'],
+    genieProducts: ['deck', 'arc'],
+  },
+  {
+    primaryFeatureId: 'outline_gen',
+    primaryCategory: 'SCRIPT',
+    relatedFeatures: [
+      { featureId: 'text_prompt', category: 'INPUT', relationship: 'requires' },
+      { featureId: 'ai_script_gen', category: 'SCRIPT', relationship: 'enables' },
+      { featureId: 'multi_scene_script', category: 'SCRIPT', relationship: 'enables' },
+    ],
+    useCases: ['Content planning', 'Research organization', 'Curriculum design'],
+    scenarios: ['Quick structuring', 'Brainstorming', 'Collaborative planning'],
+    recommendedProviders: ['openai', 'claude'],
+    recommendedLLMs: ['GPT-4o', 'Claude 3.5 Sonnet'],
+    genieProducts: ['deck', 'mind', 'spark'],
+  },
+  {
+    primaryFeatureId: 'content_summary',
+    primaryCategory: 'SCRIPT',
+    relatedFeatures: [
+      { featureId: 'document_upload', category: 'INPUT', relationship: 'requires' },
+      { featureId: 'audio_upload', category: 'INPUT', relationship: 'alternative' },
+      { featureId: 'ai_script_gen', category: 'SCRIPT', relationship: 'enables' },
+    ],
+    useCases: ['Document analysis', 'Meeting notes', 'Research synthesis'],
+    scenarios: ['Time savings', 'Key point extraction', 'Executive summaries'],
+    recommendedProviders: ['openai', 'gemini', 'claude'],
+    recommendedLLMs: ['Gemini 2.5 Pro', 'GPT-4o', 'Claude 3.5 Sonnet'],
+    genieProducts: ['deck', 'mind', 'arc', 'ask_genie'],
+  },
+  {
+    primaryFeatureId: 'script_translation',
+    primaryCategory: 'SCRIPT',
+    relatedFeatures: [
+      { featureId: 'ai_script_gen', category: 'SCRIPT', relationship: 'requires' },
+      { featureId: 'one_click_translate', category: 'TRANSLATION', relationship: 'enables' },
+      { featureId: 'voice_dubbing', category: 'TRANSLATION', relationship: 'enables' },
+    ],
+    useCases: ['Multi-language content', 'Global campaigns', 'Localization workflows'],
+    scenarios: ['Rapid localization', 'Consistent terminology', 'CJK markets'],
+    recommendedProviders: ['deepl', 'alibaba', 'gemini'],
+    recommendedLLMs: ['Qwen 2.5', 'Gemini 2.5 Pro'],
+    genieProducts: ['deck', 'vibe', 'mind', 'arc'],
   },
   {
     primaryFeatureId: 'script_to_slides',
@@ -1201,12 +1517,55 @@ export const CROSS_FUNCTIONAL_MAPPINGS: CrossFunctionalMapping[] = [
       { featureId: 'ai_script_gen', category: 'SCRIPT', relationship: 'requires' },
       { featureId: 'ai_image_gen', category: 'IMAGE', relationship: 'enhances' },
       { featureId: 'speaker_notes', category: 'SCRIPT', relationship: 'enhances' },
+      { featureId: 'pptx_export', category: 'EXPORT', relationship: 'enables' },
     ],
-    useCases: ['Auto-presentation', 'Training decks', 'Sales materials'],
-    scenarios: ['Pitch decks', 'Educational slides', 'Corporate training'],
+    useCases: ['Auto-presentation', 'Training decks', 'Sales materials', 'Educational content'],
+    scenarios: ['Pitch decks', 'Educational slides', 'Corporate training', 'Rapid deck creation'],
     recommendedProviders: ['openai', 'gemini'],
     recommendedLLMs: ['GPT-4o', 'Gemini 2.5 Pro'],
     genieProducts: ['deck', 'arc'],
+  },
+  {
+    primaryFeatureId: 'script_to_video_auto',
+    primaryCategory: 'SCRIPT',
+    relatedFeatures: [
+      { featureId: 'ai_script_gen', category: 'SCRIPT', relationship: 'requires' },
+      { featureId: 'tts', category: 'VOICE', relationship: 'requires' },
+      { featureId: 'ai_image_gen', category: 'IMAGE', relationship: 'enhances' },
+      { featureId: 'text_to_video', category: 'VIDEO', relationship: 'alternative' },
+    ],
+    useCases: ['Explainer videos', 'Training content', 'Marketing videos', 'Social media'],
+    scenarios: ['Rapid video production', 'Consistent branding', 'Multi-language videos'],
+    recommendedProviders: ['modelslab', 'alibaba', 'openai', 'elevenlabs'],
+    recommendedLLMs: ['GPT-4o', 'Qwen 2.5'],
+    genieProducts: ['vibe', 'arc'],
+  },
+  {
+    primaryFeatureId: 'ai_rewrite',
+    primaryCategory: 'SCRIPT',
+    relatedFeatures: [
+      { featureId: 'ai_script_gen', category: 'SCRIPT', relationship: 'requires' },
+      { featureId: 'script_editing', category: 'SCRIPT', relationship: 'alternative' },
+      { featureId: 'tone_style', category: 'SCRIPT', relationship: 'enhances' },
+    ],
+    useCases: ['Style adaptation', 'Clarity improvement', 'Tone adjustment', 'SEO optimization'],
+    scenarios: ['Content refresh', 'A/B testing', 'Audience adaptation'],
+    recommendedProviders: ['openai', 'claude'],
+    recommendedLLMs: ['Claude 3.5 Sonnet', 'GPT-4o'],
+    genieProducts: ['deck', 'vibe', 'spark', 'mind'],
+  },
+  {
+    primaryFeatureId: 'brand_voice',
+    primaryCategory: 'SCRIPT',
+    relatedFeatures: [
+      { featureId: 'ai_script_gen', category: 'SCRIPT', relationship: 'enhances' },
+      { featureId: 'tone_style', category: 'SCRIPT', relationship: 'alternative' },
+    ],
+    useCases: ['Corporate messaging', 'Marketing consistency', 'Multi-channel content'],
+    scenarios: ['Brand consistency', 'Team scaling', 'Content governance'],
+    recommendedProviders: ['openai', 'claude'],
+    recommendedLLMs: ['GPT-4o', 'Claude 3.5 Sonnet'],
+    genieProducts: ['deck', 'vibe', 'spark', 'arc'],
   },
   // VOICE CATEGORY
   {
