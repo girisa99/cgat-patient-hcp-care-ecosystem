@@ -29,8 +29,7 @@ export const AI_PROVIDER_KEYS = {
   ANTHROPIC: 'ANTHROPIC_API_KEY',     // Canonical name for Claude
   CLAUDE: 'CLAUDE_API_KEY',           // Alias (deprecated - use ANTHROPIC)
   GEMINI: 'GEMINI_API_KEY',           // Primary Gemini key
-  GOOGLE: 'GOOGLE_API_KEY',           // Google services (TTS, etc.)
-  LOVABLE: 'LOVABLE_API_KEY',         // Lovable AI (managed by connector)
+  GOOGLE: 'GOOGLE_API_KEY',           // Google services (TTS, OAuth, etc.)
   
   // Alibaba DashScope - UNIFIED key for ALL services (text, voice, video, image, OCR)
   ALIBABA: 'ALIBABA_API_KEY',         // Qwen LLM, Qwen-MT, Voice TTS/STT, Video Gen, Wanx Image, Qwen-VL OCR

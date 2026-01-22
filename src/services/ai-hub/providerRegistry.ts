@@ -191,8 +191,8 @@ export const AI_PROVIDER_REGISTRY: Record<AIProviderKey, AIProviderDefinition> =
   gemini: {
     id: 'gemini',
     name: 'Google Gemini',
-    description: 'Google Gemini models - multimodal, fast, via Lovable AI Gateway',
-    secretKeys: ['LOVABLE_API_KEY'], // Via Lovable AI Gateway
+    description: 'Google Gemini models - multimodal, fast, excellent context window',
+    secretKeys: ['GEMINI_API_KEY', 'GOOGLE_API_KEY'],
     capabilities: ['llm', 'translation', 'ocr', 'tts', 'stt', 'image_gen', 'vision', 'nlp'],
     priority: 1,
     costTier: 'medium',
@@ -200,7 +200,7 @@ export const AI_PROVIDER_REGISTRY: Record<AIProviderKey, AIProviderDefinition> =
     capabilityDetails: {
       llm: {
         models: ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-3-flash-preview', 'gemini-3-pro-preview'],
-        strengths: ['Fast', 'Multimodal native', 'Long context (1M)', 'Via Lovable AI'],
+        strengths: ['Fast', 'Multimodal native', 'Long context (1M)', 'Cost efficient'],
         weaknesses: ['Less consistent than GPT-4 on some tasks'],
         priority: 1,
         costPerUnit: 0.00001,

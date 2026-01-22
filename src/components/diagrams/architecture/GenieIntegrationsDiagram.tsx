@@ -21,7 +21,7 @@ const aiIntegrations = [
   { name: 'Anthropic', services: ['Claude 3.5 Sonnet', 'Claude 3 Opus'], status: 'active', type: 'AI', phase: 'P2' },
   { name: 'Google Gemini', services: ['Gemini 2.5 Pro', 'Gemini 2.5 Flash', 'Gemini Vision'], status: 'active', type: 'AI', phase: 'P2' },
   { name: 'ElevenLabs', services: ['TTS', 'Voice Cloning'], status: 'active', type: 'TTS', phase: 'P0' },
-  { name: 'Lovable AI Gateway', services: ['Multi-Model Router', 'Cost Tracking'], status: 'active', type: 'AI Gateway', phase: 'P2' },
+  { name: 'Universal AI Hub', services: ['Multi-Model Router', 'Cost Tracking', 'Fallback Logic'], status: 'active', type: 'AI Gateway', phase: 'P0' },
   { name: 'AWS Bedrock', services: ['Claude', 'Titan', 'Stable Diffusion'], status: 'planned', type: 'AI', phase: 'P4' },
 ];
 
