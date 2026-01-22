@@ -331,6 +331,30 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
     };
   }, [selectedCategory, localFeatures]);
 
+  // Reverse dependency lookup: Find features that DEPEND ON a given feature
+  const getRequiredByFeatures = useMemo(() => {
+    const reverseMap: Record<string, Array<{ featureId: string; featureName: string; category: FeatureCategory; relationship: string }>> = {};
+    
+    CROSS_FUNCTIONAL_MAPPINGS.forEach(mapping => {
+      mapping.relatedFeatures?.forEach(rf => {
+        if (rf.relationship === 'requires') {
+          if (!reverseMap[rf.featureId]) {
+            reverseMap[rf.featureId] = [];
+          }
+          const primaryFeature = localFeatures.find(f => f.id === mapping.primaryFeatureId);
+          reverseMap[rf.featureId].push({
+            featureId: mapping.primaryFeatureId,
+            featureName: primaryFeature?.name || mapping.primaryFeatureId,
+            category: mapping.primaryCategory,
+            relationship: 'required_by'
+          });
+        }
+      });
+    });
+    
+    return reverseMap;
+  }, [localFeatures]);
+
   // Dynamic height - no scroll for single categories with few items
   const needsScroll = selectedCategory === 'all' || filteredFeatures.length > 15;
 
@@ -1503,7 +1527,7 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
           {/* Summary Stats Bar */}
           <div className="flex flex-wrap items-center gap-4 p-3 rounded-lg bg-muted/30 border text-xs">
             <div className="flex items-center gap-1.5 font-medium text-muted-foreground">
-              <Info className="w-3.5 h-3.5" /> Summary:
+              <Info className="w-3.5 h-3.5" /> Legend:
             </div>
             <div className="flex items-center gap-1.5">
               <span className="text-[10px] px-2 py-0.5 rounded bg-destructive/10 text-destructive border border-destructive/30">🔴 Requires</span>
@@ -1521,6 +1545,10 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
               <span className="text-[10px] px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 border border-blue-500/30">🔵 Alternative</span>
               <span className="text-muted-foreground">= Different approach</span>
             </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] px-2 py-0.5 rounded bg-purple-500/10 text-purple-600 border border-purple-500/30">🟣 Required By</span>
+              <span className="text-muted-foreground">= Other features depend on this</span>
+            </div>
           </div>
           
           {/* Cross-Functional Mapping Table - Enhanced */}
@@ -1529,13 +1557,14 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
               <TableHeader className="bg-muted/40">
                 <TableRow>
                   <TableHead className="text-xs font-semibold w-[130px]">Feature</TableHead>
-                  <TableHead className="text-xs font-semibold w-[80px]">Category</TableHead>
-                  <TableHead className="text-xs font-semibold w-[180px]">Dependencies & Related</TableHead>
-                  <TableHead className="text-xs font-semibold w-[120px]">Use Cases</TableHead>
-                  <TableHead className="text-xs font-semibold w-[120px]">Scenarios</TableHead>
-                  <TableHead className="text-xs font-semibold w-[100px]">Providers</TableHead>
-                  <TableHead className="text-xs font-semibold w-[90px]">LLMs</TableHead>
-                  <TableHead className="text-xs font-semibold w-[110px]">Genie Suite</TableHead>
+                  <TableHead className="text-xs font-semibold w-[70px]">Category</TableHead>
+                  <TableHead className="text-xs font-semibold w-[140px]">Dependencies</TableHead>
+                  <TableHead className="text-xs font-semibold w-[140px]">🟣 Required By</TableHead>
+                  <TableHead className="text-xs font-semibold w-[100px]">Use Cases</TableHead>
+                  <TableHead className="text-xs font-semibold w-[100px]">Scenarios</TableHead>
+                  <TableHead className="text-xs font-semibold w-[90px]">Providers</TableHead>
+                  <TableHead className="text-xs font-semibold w-[80px]">LLMs</TableHead>
+                  <TableHead className="text-xs font-semibold w-[80px]">Genie Suite</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -1551,6 +1580,9 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
                       name: PROVIDER_SUMMARIES.find(p => p.id === providerId)?.name || providerId,
                       status: featureImpl[providerId as ProviderId]?.implementation
                     }));
+                  
+                  // Get reverse dependencies - features that REQUIRE this feature
+                  const requiredByFeatures = getRequiredByFeatures[mapping.primaryFeatureId] || [];
                   
                   return (
                     <TableRow key={i} className="hover:bg-muted/20">
@@ -1601,6 +1633,37 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
                           ))}
                           {(mapping.relatedFeatures?.length || 0) > 3 && (
                             <span className="text-[8px] text-muted-foreground">+{mapping.relatedFeatures!.length - 3}</span>
+                          )}
+                        </div>
+                      </TableCell>
+                      {/* Required By - Reverse Dependencies (features that REQUIRE this feature) */}
+                      <TableCell className="py-2">
+                        <div className="flex flex-wrap gap-0.5">
+                          {requiredByFeatures.length > 0 ? (
+                            requiredByFeatures.slice(0, 3).map((rb, j) => (
+                              <TooltipProvider key={j}>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="text-[9px] px-1.5 py-0.5 rounded cursor-help font-medium bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30">
+                                      🟣 {rb.featureName.split(' ')[0]}
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent className="max-w-xs p-2">
+                                    <p className="font-medium text-sm">{rb.featureName}</p>
+                                    <p className="text-xs text-muted-foreground mt-0.5">
+                                      ⚠️ This feature <strong>requires</strong> {feature?.name || mapping.primaryFeatureId}
+                                    </p>
+                                    <p className="text-[10px] text-muted-foreground mt-1">{CATEGORY_LABELS[rb.category]}</p>
+                                    <p className="text-[10px] text-primary mt-1.5">Completing this feature will unblock {rb.featureName}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            ))
+                          ) : (
+                            <span className="text-[9px] text-muted-foreground opacity-50">—</span>
+                          )}
+                          {requiredByFeatures.length > 3 && (
+                            <span className="text-[8px] text-muted-foreground">+{requiredByFeatures.length - 3}</span>
                           )}
                         </div>
                       </TableCell>
