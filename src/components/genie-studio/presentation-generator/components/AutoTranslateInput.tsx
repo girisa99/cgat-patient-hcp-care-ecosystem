@@ -135,42 +135,58 @@ const NATIVE_TYPE_HERE: Record<string, string> = {
   ms: 'Taip di sini',
 };
 
-// Provider recommendations based on language pairs (now using real providers)
-const PROVIDER_RECOMMENDATIONS: Record<string, { provider: string; model: string; reason: string }> = {
-  // European languages - DeepL is best
-  'de-en': { provider: 'deepl', model: 'DeepL Pro', reason: 'Best for DE↔EN' },
-  'fr-en': { provider: 'deepl', model: 'DeepL Pro', reason: 'Highest accuracy for French' },
-  'es-en': { provider: 'deepl', model: 'DeepL Pro', reason: 'Excellent for Spanish' },
-  'it-en': { provider: 'deepl', model: 'DeepL Pro', reason: 'Excellent for Italian' },
-  'nl-en': { provider: 'deepl', model: 'DeepL Pro', reason: 'Excellent for Dutch' },
-  'pl-en': { provider: 'deepl', model: 'DeepL Pro', reason: 'Excellent for Polish' },
-  'ru-en': { provider: 'deepl', model: 'DeepL Pro', reason: 'Excellent for Russian' },
+// Provider recommendations based on language pairs - multi-provider routing
+const PROVIDER_RECOMMENDATIONS: Record<string, { provider: string; model: string; reason: string; fallback?: string }> = {
+  // European languages - DeepL is primary, Claude fallback
+  'de-en': { provider: 'deepl', model: 'DeepL Pro', reason: 'Best for DE↔EN', fallback: 'claude' },
+  'fr-en': { provider: 'deepl', model: 'DeepL Pro', reason: 'Highest accuracy for French', fallback: 'claude' },
+  'es-en': { provider: 'deepl', model: 'DeepL Pro', reason: 'Excellent for Spanish', fallback: 'gemini' },
+  'it-en': { provider: 'deepl', model: 'DeepL Pro', reason: 'Excellent for Italian', fallback: 'gemini' },
+  'nl-en': { provider: 'deepl', model: 'DeepL Pro', reason: 'Excellent for Dutch', fallback: 'gemini' },
+  'pl-en': { provider: 'deepl', model: 'DeepL Pro', reason: 'Excellent for Polish', fallback: 'gemini' },
+  'ru-en': { provider: 'deepl', model: 'DeepL Pro', reason: 'Excellent for Russian', fallback: 'gemini' },
+  'pt-en': { provider: 'deepl', model: 'DeepL Pro', reason: 'Excellent for Portuguese', fallback: 'gemini' },
   
-  // CJK languages - Alibaba/Qwen-MT is best
-  'zh-en': { provider: 'alibaba', model: 'Qwen-MT', reason: 'Best for Chinese↔English' },
-  'ja-en': { provider: 'alibaba', model: 'Qwen-MT', reason: 'Superior Japanese handling' },
-  'ko-en': { provider: 'alibaba', model: 'Qwen-MT', reason: 'Excellent Korean accuracy' },
+  // CJK languages - Alibaba/Qwen-MT primary, DeepSeek fallback
+  'zh-en': { provider: 'alibaba', model: 'Qwen-MT', reason: 'Best for Chinese↔English', fallback: 'deepseek' },
+  'ja-en': { provider: 'alibaba', model: 'Qwen-MT', reason: 'Superior Japanese handling', fallback: 'deepseek' },
+  'ko-en': { provider: 'alibaba', model: 'Qwen-MT', reason: 'Excellent Korean accuracy', fallback: 'deepseek' },
+  'zh-ja': { provider: 'alibaba', model: 'Qwen-MT', reason: 'Native CJK cross-translation', fallback: 'deepseek' },
   
-  // Indian languages - Gemini is best
-  'hi-en': { provider: 'gemini', model: 'Gemini 3 Flash', reason: 'Best Hindi understanding' },
-  'te-en': { provider: 'gemini', model: 'Gemini 3 Flash', reason: 'Best Telugu understanding' },
-  'ta-en': { provider: 'gemini', model: 'Gemini 3 Flash', reason: 'Best Tamil understanding' },
-  'bn-en': { provider: 'gemini', model: 'Gemini 3 Flash', reason: 'Best Bengali understanding' },
-  'mr-en': { provider: 'gemini', model: 'Gemini 3 Flash', reason: 'Best Marathi understanding' },
-  'gu-en': { provider: 'gemini', model: 'Gemini 3 Flash', reason: 'Best Gujarati understanding' },
+  // Technical/Code documentation - DeepSeek primary
+  'code-en': { provider: 'deepseek', model: 'DeepSeek V3', reason: 'Best for technical docs', fallback: 'claude' },
   
-  // RTL languages - Google is best for Arabic
-  'ar-en': { provider: 'google', model: 'Google Translate', reason: 'Best Arabic RTL handling' },
-  'he-en': { provider: 'google', model: 'Google Translate', reason: 'Best Hebrew handling' },
+  // Indian languages - Gemini primary, Azure fallback
+  'hi-en': { provider: 'gemini', model: 'Gemini 3 Flash', reason: 'Best Hindi understanding', fallback: 'azure' },
+  'te-en': { provider: 'gemini', model: 'Gemini 3 Flash', reason: 'Best Telugu understanding', fallback: 'azure' },
+  'ta-en': { provider: 'gemini', model: 'Gemini 3 Flash', reason: 'Best Tamil understanding', fallback: 'azure' },
+  'bn-en': { provider: 'gemini', model: 'Gemini 3 Flash', reason: 'Best Bengali understanding', fallback: 'azure' },
+  'mr-en': { provider: 'gemini', model: 'Gemini 3 Flash', reason: 'Best Marathi understanding', fallback: 'azure' },
+  'gu-en': { provider: 'gemini', model: 'Gemini 3 Flash', reason: 'Best Gujarati understanding', fallback: 'azure' },
+  'kn-en': { provider: 'gemini', model: 'Gemini 3 Flash', reason: 'Best Kannada understanding', fallback: 'azure' },
+  'ml-en': { provider: 'gemini', model: 'Gemini 3 Flash', reason: 'Best Malayalam understanding', fallback: 'azure' },
   
-  // Southeast Asian - Gemini for complex scripts
-  'th-en': { provider: 'gemini', model: 'Gemini 3 Flash', reason: 'Best Thai understanding' },
-  'vi-en': { provider: 'gemini', model: 'Gemini 3 Flash', reason: 'Best Vietnamese understanding' },
-  'id-en': { provider: 'google', model: 'Google Translate', reason: 'Good Indonesian support' },
-  'ms-en': { provider: 'google', model: 'Google Translate', reason: 'Good Malay support' },
+  // RTL languages - Azure primary for Arabic, Google fallback
+  'ar-en': { provider: 'azure', model: 'Azure Translator', reason: 'Best Arabic RTL handling', fallback: 'google' },
+  'he-en': { provider: 'azure', model: 'Azure Translator', reason: 'Best Hebrew handling', fallback: 'google' },
+  'fa-en': { provider: 'azure', model: 'Azure Translator', reason: 'Best Persian handling', fallback: 'google' },
+  'ur-en': { provider: 'azure', model: 'Azure Translator', reason: 'Best Urdu handling', fallback: 'gemini' },
   
-  // Default - Universal AI with Gemini
-  'default': { provider: 'gemini', model: 'Gemini 3 Flash', reason: 'Universal - fast & accurate' },
+  // Southeast Asian - Gemini primary, Google fallback
+  'th-en': { provider: 'gemini', model: 'Gemini 3 Flash', reason: 'Best Thai understanding', fallback: 'google' },
+  'vi-en': { provider: 'gemini', model: 'Gemini 3 Flash', reason: 'Best Vietnamese understanding', fallback: 'google' },
+  'id-en': { provider: 'google', model: 'Google Translate', reason: 'Good Indonesian support', fallback: 'gemini' },
+  'ms-en': { provider: 'google', model: 'Google Translate', reason: 'Good Malay support', fallback: 'gemini' },
+  'tl-en': { provider: 'google', model: 'Google Translate', reason: 'Good Filipino support', fallback: 'gemini' },
+  
+  // Healthcare/Medical - Claude primary for accuracy
+  'medical-en': { provider: 'claude', model: 'Claude 3.5 Sonnet', reason: 'Best for medical terminology', fallback: 'gemini' },
+  
+  // Legal/Financial - Claude primary for precision
+  'legal-en': { provider: 'claude', model: 'Claude 3.5 Sonnet', reason: 'Best for legal terminology', fallback: 'openai' },
+  
+  // Default - Gemini with multi-provider fallback chain
+  'default': { provider: 'gemini', model: 'Gemini 3 Flash', reason: 'Universal - fast & accurate', fallback: 'deepl' },
 };
 
 function getRecommendedProvider(inputLang: string, outputLang: string) {
