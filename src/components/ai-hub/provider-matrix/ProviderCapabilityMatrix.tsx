@@ -593,12 +593,13 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
       {/* Legend */}
       <MatrixLegend />
 
-      {/* TAB-AWARE METRICS HEADER - Shows only relevant metrics for each tab */}
+      {/* TAB-AWARE METRICS HEADER - Shows comparison with clickable navigation */}
       <TabMetricsHeader 
         activeTab={view} 
         selectedCategory={selectedCategory}
         localFeatures={localFeatures}
         localMatrix={localMatrix}
+        onTabChange={(tab) => setView(tab)}
       />
 
       {/* Per-Category Breakdown when viewing all (only on matrix tab) */}
