@@ -143,6 +143,8 @@ import { AgentSelectorDialog, AgentCard, AgentModelConfig } from './AgentSelecto
 import { AgentLanguageConfigPanel } from './AgentLanguageConfigPanel';
 import { InlineTrainAIFeedback } from '../InlineTrainAIFeedback';
 import { StepGuidancePanel } from './components/StepGuidancePanel';
+import { EmbeddedEditorPanel } from './components/EmbeddedEditorPanel';
+import { useA2ACoordinatorService } from '@/hooks/useA2ACoordinatorService';
 import { StepAlertBanner, getStepAlerts } from './components/StepAlertBanner';
 import { StepFeedbackPanel } from './components/StepFeedbackPanel';
 import { HelpTooltip, SmartTooltip } from './components/SmartTooltip';
