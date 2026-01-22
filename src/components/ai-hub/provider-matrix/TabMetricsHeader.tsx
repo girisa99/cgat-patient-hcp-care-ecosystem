@@ -11,13 +11,11 @@
  */
 
 import React, { useMemo } from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Zap, Target, AlertTriangle, TrendingUp, Check, Layers, Users, Brain, Info } from 'lucide-react';
+import { Zap, Target, AlertTriangle, Check, Layers, Users, Brain, Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { calculateUnifiedMetrics, getGenerationCoverageStatsForCategory } from './generation-coverage/unifiedMetricsEngine';
-import { CROSS_FUNCTIONAL_MAPPINGS, FEATURE_USE_CASES, LLM_COMPARISONS, ALL_FEATURES, FEATURE_IMPLEMENTATION_MATRIX, PROVIDER_SUMMARIES } from './matrixData';
-import type { FeatureCategory, ProviderId } from './types';
+import { CROSS_FUNCTIONAL_MAPPINGS, FEATURE_USE_CASES, LLM_COMPARISONS, ALL_FEATURES, FEATURE_IMPLEMENTATION_MATRIX } from './matrixData';
+import type { FeatureCategory } from './types';
 
 export type TabView = 'matrix' | 'category' | 'crossfunc' | 'coverage' | 'providers' | 'llm' | 'gaps';
 
@@ -36,6 +34,13 @@ interface MetricSource {
   providers: number;
   llms: number;
   gaps: number;
+  // Optional: context counts for Generation Coverage
+  contexts?: {
+    industries: number;
+    frameworks: number;
+    visuals: number;
+    outputs: number;
+  };
 }
 
 export const TabMetricsHeader: React.FC<TabMetricsHeaderProps> = ({
@@ -140,22 +145,30 @@ export const TabMetricsHeader: React.FC<TabMetricsHeaderProps> = ({
         gaps: crossFuncGaps
       },
       generationCoverage: {
-        name: 'Generation Coverage',
-        features: coverageStats.industries + coverageStats.frameworks + coverageStats.visuals + coverageStats.outputs,
-        scenarios: coverageStats.newScenarios,
-        useCases: coverageStats.newUseCases,
-        providers: unifiedMetrics.providers.total,
-        llms: unifiedMetrics.llms.total,
-        gaps: coverageStats.gaps
+        name: 'Gen Coverage',
+        features: coverageStats.features, // Feature mappings count
+        scenarios: coverageStats.newScenarios, // Only NEW scenarios unique to generation coverage
+        useCases: coverageStats.newUseCases, // Only NEW use cases unique to generation coverage
+        providers: coverageStats.providers,
+        llms: coverageStats.models,
+        gaps: coverageStats.gaps,
+        // Context counts for display
+        contexts: {
+          industries: coverageStats.industries,
+          frameworks: coverageStats.frameworks,
+          visuals: coverageStats.visuals,
+          outputs: coverageStats.outputs
+        }
       },
       total: {
-        name: 'Total (Unified)',
+        name: 'Total',
         features: categoryFeatures.length,
-        scenarios: unifiedMetrics.scenarios.total,
-        useCases: unifiedMetrics.useCases.total,
-        providers: unifiedMetrics.providers.total,
-        llms: unifiedMetrics.llms.total,
-        gaps: unifiedMetrics.gaps.total
+        // Total = Feature Matrix + Cross-Functional (deduplicated) + Generation Coverage new
+        scenarios: featureMatrixScenarios.size + crossFuncScenarios.size + coverageStats.newScenarios,
+        useCases: featureMatrixUseCases.size + crossFuncUseCases.size + coverageStats.newUseCases,
+        providers: new Set([...matrixProviders, ...crossFuncProviders]).size,
+        llms: new Set([...matrixLLMs, ...crossFuncLLMs]).size,
+        gaps: matrixGaps
       }
     };
   }, [selectedCategory, localFeatures, localMatrix]);
@@ -211,20 +224,16 @@ export const TabMetricsHeader: React.FC<TabMetricsHeaderProps> = ({
             source={metricSources.crossFunctional}
             categoryLabel={categoryLabel}
             icon={<Zap className="h-4 w-4 text-purple-500" />}
-            color="purple"
             description="Cross-Functional mappings & dependencies"
           />
         );
         
       case 'coverage':
-        // Generation Coverage shows only its metrics
+        // Generation Coverage shows CONTEXT counts instead of features
         return (
-          <SingleSourceMetrics 
+          <GenerationCoverageMetrics 
             source={metricSources.generationCoverage}
             categoryLabel={categoryLabel}
-            icon={<Layers className="h-4 w-4 text-blue-500" />}
-            color="blue"
-            description="Industry/Framework/Visual/Output contexts"
           />
         );
         
@@ -235,7 +244,6 @@ export const TabMetricsHeader: React.FC<TabMetricsHeaderProps> = ({
             source={metricSources.featureMatrix}
             categoryLabel={categoryLabel}
             icon={<Users className="h-4 w-4 text-emerald-500" />}
-            color="emerald"
             description="Provider implementations"
             focusOn="providers"
           />
@@ -248,7 +256,6 @@ export const TabMetricsHeader: React.FC<TabMetricsHeaderProps> = ({
             source={metricSources.total}
             categoryLabel={categoryLabel}
             icon={<Brain className="h-4 w-4 text-cyan-500" />}
-            color="cyan"
             description="LLM models & routing"
             focusOn="llms"
           />
@@ -271,7 +278,6 @@ export const TabMetricsHeader: React.FC<TabMetricsHeaderProps> = ({
             source={metricSources.featureMatrix}
             categoryLabel={categoryLabel}
             icon={<Target className="h-4 w-4 text-primary" />}
-            color="primary"
             description="Feature implementation status"
           />
         );
@@ -285,7 +291,7 @@ export const TabMetricsHeader: React.FC<TabMetricsHeaderProps> = ({
   );
 };
 
-// Compact metric card for comparison view
+// Compact metric card for comparison view - ALIGNED GRID
 const MetricCard: React.FC<{
   source: MetricSource;
   color: string;
@@ -293,7 +299,7 @@ const MetricCard: React.FC<{
   isActive?: boolean;
   isTotal?: boolean;
 }> = ({ source, color, icon, isActive, isTotal }) => {
-  const colorClasses = {
+  const colorClasses: Record<string, string> = {
     emerald: 'border-emerald-500/30 bg-emerald-500/5',
     purple: 'border-purple-500/30 bg-purple-500/5',
     blue: 'border-blue-500/30 bg-blue-500/5',
@@ -302,50 +308,48 @@ const MetricCard: React.FC<{
   };
   
   return (
-    <div className={`p-2 rounded-lg border ${colorClasses[color as keyof typeof colorClasses] || colorClasses.primary} ${isActive ? 'ring-2 ring-primary' : ''} ${isTotal ? 'col-span-1' : ''}`}>
-      <div className="flex items-center gap-1.5 mb-1.5">
+    <div className={`p-2.5 rounded-lg border ${colorClasses[color] || colorClasses.primary} ${isActive ? 'ring-2 ring-primary' : ''}`}>
+      {/* Header */}
+      <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-border/50">
         {icon}
-        <span className="text-[10px] font-medium truncate">{source.name}</span>
+        <span className="text-[10px] font-semibold truncate">{source.name}</span>
       </div>
-      <div className="grid grid-cols-3 gap-x-2 gap-y-0.5 text-[9px]">
-        <div>
-          <span className="font-bold">{source.features}</span>
-          <span className="text-muted-foreground ml-0.5">feat</span>
-        </div>
-        <div>
-          <span className="font-bold">{source.scenarios}</span>
-          <span className="text-muted-foreground ml-0.5">scen</span>
-        </div>
-        <div>
-          <span className="font-bold">{source.useCases}</span>
-          <span className="text-muted-foreground ml-0.5">use</span>
-        </div>
-        <div>
-          <span className="font-bold">{source.providers}</span>
-          <span className="text-muted-foreground ml-0.5">prov</span>
-        </div>
-        <div>
-          <span className="font-bold">{source.llms}</span>
-          <span className="text-muted-foreground ml-0.5">llm</span>
-        </div>
-        <div>
-          <span className={`font-bold ${source.gaps > 0 ? 'text-destructive' : 'text-emerald-500'}`}>{source.gaps}</span>
-          <span className="text-muted-foreground ml-0.5">gap</span>
-        </div>
+      
+      {/* Metrics Grid - 2x3 aligned */}
+      <div className="grid grid-cols-3 gap-1.5 text-[9px]">
+        <MetricCell label="Feat" value={source.features} />
+        <MetricCell label="Scen" value={source.scenarios} />
+        <MetricCell label="Use" value={source.useCases} />
+        <MetricCell label="Prov" value={source.providers} />
+        <MetricCell label="LLM" value={source.llms} />
+        <MetricCell label="Gap" value={source.gaps} isGap />
       </div>
     </div>
   );
 };
+
+// Individual metric cell for consistent alignment
+const MetricCell: React.FC<{
+  label: string;
+  value: number;
+  isGap?: boolean;
+}> = ({ label, value, isGap }) => (
+  <div className="text-center py-0.5 px-1 rounded bg-background/50">
+    <div className={`font-bold text-xs leading-none ${isGap ? (value > 0 ? 'text-destructive' : 'text-emerald-500') : ''}`}>
+      {value}
+    </div>
+    <div className="text-[8px] text-muted-foreground uppercase tracking-wide">{label}</div>
+  </div>
+);
 
 // Single source metrics display
 const SingleSourceMetrics: React.FC<{
   source: MetricSource;
   categoryLabel: string;
   icon: React.ReactNode;
-  color: string;
   description: string;
   focusOn?: 'providers' | 'llms';
-}> = ({ source, categoryLabel, icon, color, description, focusOn }) => {
+}> = ({ source, categoryLabel, icon, description, focusOn }) => {
   return (
     <div className="flex items-center justify-between gap-4">
       <div className="flex items-center gap-2">
@@ -451,6 +455,74 @@ const GapMetrics: React.FC<{
           <span className="text-muted-foreground">Total to Implement:</span>
           <span className="font-bold text-lg">{totalGaps}</span>
         </div>
+      </div>
+    </div>
+  );
+};
+
+// Generation Coverage specific metrics display - shows CONTEXT counts
+const GenerationCoverageMetrics: React.FC<{
+  source: MetricSource;
+  categoryLabel: string;
+}> = ({ source, categoryLabel }) => {
+  const contexts = source.contexts || { industries: 0, frameworks: 0, visuals: 0, outputs: 0 };
+  const totalContexts = contexts.industries + contexts.frameworks + contexts.visuals + contexts.outputs;
+  
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center gap-2">
+        <Layers className="h-4 w-4 text-blue-500" />
+        <div>
+          <div className="text-sm font-medium">Generation Coverage</div>
+          <div className="text-[10px] text-muted-foreground">
+            Contexts that require <span className="text-primary">{categoryLabel}</span> features
+          </div>
+        </div>
+      </div>
+      
+      {/* Context Counts */}
+      <div className="flex items-center gap-2 text-xs">
+        <div className="flex items-center gap-1 px-2 py-1 rounded bg-blue-500/10 border border-blue-500/20">
+          <span className="font-bold">{contexts.industries}</span>
+          <span className="text-[9px] text-muted-foreground">Ind</span>
+        </div>
+        <div className="flex items-center gap-1 px-2 py-1 rounded bg-purple-500/10 border border-purple-500/20">
+          <span className="font-bold">{contexts.frameworks}</span>
+          <span className="text-[9px] text-muted-foreground">Frm</span>
+        </div>
+        <div className="flex items-center gap-1 px-2 py-1 rounded bg-green-500/10 border border-green-500/20">
+          <span className="font-bold">{contexts.visuals}</span>
+          <span className="text-[9px] text-muted-foreground">Vis</span>
+        </div>
+        <div className="flex items-center gap-1 px-2 py-1 rounded bg-orange-500/10 border border-orange-500/20">
+          <span className="font-bold">{contexts.outputs}</span>
+          <span className="text-[9px] text-muted-foreground">Out</span>
+        </div>
+        
+        {/* Divider */}
+        <div className="w-px h-6 bg-border mx-1" />
+        
+        {/* New Scenarios & Use Cases */}
+        <div className="text-center">
+          <div className="font-bold text-primary">{source.scenarios}</div>
+          <div className="text-[9px] text-muted-foreground">New Scen</div>
+        </div>
+        <div className="text-center">
+          <div className="font-bold text-primary">{source.useCases}</div>
+          <div className="text-[9px] text-muted-foreground">New Use</div>
+        </div>
+        
+        {/* Providers & Gaps */}
+        <div className="text-center">
+          <div className="font-bold">{source.providers}</div>
+          <div className="text-[9px] text-muted-foreground">Prov</div>
+        </div>
+        {source.gaps > 0 && (
+          <div className="text-center">
+            <div className="font-bold text-destructive">{source.gaps}</div>
+            <div className="text-[9px] text-muted-foreground">Gaps</div>
+          </div>
+        )}
       </div>
     </div>
   );
