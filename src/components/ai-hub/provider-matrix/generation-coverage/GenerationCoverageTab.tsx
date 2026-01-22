@@ -4,6 +4,12 @@
  * Visualizes bidirectional mappings between high-level generation context
  * (Industry, Framework, Template, Visual Features, Output Types)
  * and low-level AI capabilities (Providers, Models, Features)
+ * 
+ * OPTIMIZATIONS IMPLEMENTED:
+ * 1. Hash maps for O(1) lookups (LOOKUP_MAPS in GenerationCoverageTable)
+ * 2. Generator functions for lazy/on-demand row computation
+ * 3. Flat table view for high-density display (no nested cards)
+ * 4. Dynamic filtering synced with category selection
  */
 
 import React, { useState, useMemo } from 'react';
@@ -11,10 +17,11 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
 import { 
   Building2, Compass, Layers, Image, FileOutput, 
   ArrowRight, ArrowLeft, AlertTriangle, CheckCircle2,
-  ChevronDown, ChevronRight, Info, Zap, Target
+  ChevronDown, ChevronRight, Info, Zap, Target, Table2, LayoutGrid
 } from 'lucide-react';
 import { 
   GENERATION_COVERAGE_REGISTRY,
@@ -31,8 +38,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { GenerationCoverageTable } from './GenerationCoverageTable';
 
 type ViewMode = 'forward' | 'backward';
+type DisplayMode = 'table' | 'cards';
 type ContextType = 'industry' | 'framework' | 'visual' | 'output' | 'feature';
 
 const CONTEXT_ICONS: Record<ContextType, React.ElementType> = {
@@ -52,11 +61,16 @@ const CONTEXT_COLORS: Record<ContextType, string> = {
 };
 
 interface GenerationCoverageTabProps {
+  selectedCategory?: string;
   onSelectContext?: (type: ContextType, id: string) => void;
 }
 
-export const GenerationCoverageTab: React.FC<GenerationCoverageTabProps> = ({ onSelectContext }) => {
+export const GenerationCoverageTab: React.FC<GenerationCoverageTabProps> = ({ 
+  selectedCategory,
+  onSelectContext 
+}) => {
   const [viewMode, setViewMode] = useState<ViewMode>('forward');
+  const [displayMode, setDisplayMode] = useState<DisplayMode>('table');
   const [selectedContext, setSelectedContext] = useState<ContextType>('industry');
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
@@ -99,70 +113,104 @@ export const GenerationCoverageTab: React.FC<GenerationCoverageTabProps> = ({ on
 
   return (
     <div className="space-y-4">
-      {/* Header Stats */}
-      <div className="grid grid-cols-5 gap-2">
-        {[
-          { label: 'Industries', value: stats.industries, type: 'industry' as ContextType },
-          { label: 'Frameworks', value: stats.frameworks, type: 'framework' as ContextType },
-          { label: 'Visuals', value: stats.visuals, type: 'visual' as ContextType },
-          { label: 'Outputs', value: stats.outputs, type: 'output' as ContextType },
-          { label: 'Features', value: stats.features, type: 'feature' as ContextType },
-        ].map(stat => {
-          const Icon = CONTEXT_ICONS[stat.type];
-          return (
-            <Card 
-              key={stat.type} 
-              className={`cursor-pointer transition-all ${selectedContext === stat.type ? 'ring-2 ring-primary' : 'hover:bg-muted/50'}`}
-              onClick={() => {
-                setSelectedContext(stat.type);
-                if (stat.type === 'feature') setViewMode('backward');
-                else setViewMode('forward');
-              }}
+      {/* Header Stats + Display Toggle */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="grid grid-cols-5 gap-2 flex-1">
+          {[
+            { label: 'Industries', value: stats.industries, type: 'industry' as ContextType },
+            { label: 'Frameworks', value: stats.frameworks, type: 'framework' as ContextType },
+            { label: 'Visuals', value: stats.visuals, type: 'visual' as ContextType },
+            { label: 'Outputs', value: stats.outputs, type: 'output' as ContextType },
+            { label: 'Features', value: stats.features, type: 'feature' as ContextType },
+          ].map(stat => {
+            const Icon = CONTEXT_ICONS[stat.type];
+            return (
+              <Card 
+                key={stat.type} 
+                className={`cursor-pointer transition-all ${selectedContext === stat.type ? 'ring-2 ring-primary' : 'hover:bg-muted/50'}`}
+                onClick={() => {
+                  setSelectedContext(stat.type);
+                  if (stat.type === 'feature') setViewMode('backward');
+                  else setViewMode('forward');
+                }}
+              >
+                <CardContent className="p-3 flex items-center gap-2">
+                  <Icon className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <div className="text-lg font-bold">{stat.value}</div>
+                    <div className="text-[10px] text-muted-foreground">{stat.label}</div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+        
+        {/* Display Mode Toggle */}
+        <div className="flex items-center gap-1 p-1 bg-muted/30 rounded-lg">
+          <Button
+            variant={displayMode === 'table' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setDisplayMode('table')}
+            className="h-7 px-2"
+          >
+            <Table2 className="h-3.5 w-3.5 mr-1" />
+            Table
+          </Button>
+          <Button
+            variant={displayMode === 'cards' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setDisplayMode('cards')}
+            className="h-7 px-2"
+          >
+            <LayoutGrid className="h-3.5 w-3.5 mr-1" />
+            Cards
+          </Button>
+        </div>
+      </div>
+
+      {/* TABLE VIEW (Optimized) */}
+      {displayMode === 'table' && (
+        <GenerationCoverageTable selectedCategory={selectedCategory} />
+      )}
+
+      {/* CARDS VIEW (Original) */}
+      {displayMode === 'cards' && (
+        <>
+          {/* View Mode Toggle */}
+          <div className="flex items-center gap-4 p-2 bg-muted/30 rounded-lg">
+            <button 
+              className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm transition-all ${viewMode === 'forward' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
+              onClick={() => setViewMode('forward')}
             >
-              <CardContent className="p-3 flex items-center gap-2">
-                <Icon className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <div className="text-lg font-bold">{stat.value}</div>
-                  <div className="text-[10px] text-muted-foreground">{stat.label}</div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+              <ArrowRight className="h-4 w-4" />
+              Forward: Context → Capabilities
+            </button>
+            <button 
+              className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm transition-all ${viewMode === 'backward' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
+              onClick={() => setViewMode('backward')}
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Backward: Features → Contexts
+            </button>
+          </div>
 
-      {/* View Mode Toggle */}
-      <div className="flex items-center gap-4 p-2 bg-muted/30 rounded-lg">
-        <button 
-          className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm transition-all ${viewMode === 'forward' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
-          onClick={() => setViewMode('forward')}
-        >
-          <ArrowRight className="h-4 w-4" />
-          Forward: Context → Capabilities
-        </button>
-        <button 
-          className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm transition-all ${viewMode === 'backward' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
-          onClick={() => setViewMode('backward')}
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Backward: Features → Contexts
-        </button>
-      </div>
-
-      {/* Main Content */}
-      {viewMode === 'forward' ? (
-        <ForwardMappingView 
-          mappings={currentMappings as ContextToCapabilityMapping[]}
-          contextType={selectedContext}
-          expandedRows={expandedRows}
-          onToggleRow={toggleRow}
-        />
-      ) : (
-        <BackwardMappingView 
-          mappings={FEATURE_CONTEXT_MAPPINGS}
-          expandedRows={expandedRows}
-          onToggleRow={toggleRow}
-        />
+          {/* Main Content */}
+          {viewMode === 'forward' ? (
+            <ForwardMappingView 
+              mappings={currentMappings as ContextToCapabilityMapping[]}
+              contextType={selectedContext}
+              expandedRows={expandedRows}
+              onToggleRow={toggleRow}
+            />
+          ) : (
+            <BackwardMappingView 
+              mappings={FEATURE_CONTEXT_MAPPINGS}
+              expandedRows={expandedRows}
+              onToggleRow={toggleRow}
+            />
+          )}
+        </>
       )}
     </div>
   );
