@@ -1,5 +1,11 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { 
+  GenerationContext, 
+  computeA2ARequirements,
+  VISUAL_FEATURE_A2A_ROUTING,
+  GlobalTierLevel
+} from "../_shared/generationContext.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -52,8 +58,21 @@ serve(async (req) => {
       audioUrl,
       script,
       language = 'en-US',
-      voiceId
+      voiceId,
+      // NEW: Full Generation Context for A2A routing
+      generationContext,
+      userTier = 'starter' as GlobalTierLevel,
     } = body;
+    
+    // Log context if provided
+    if (generationContext) {
+      const a2aConfig = computeA2ARequirements(generationContext);
+      console.log('[Video-Gen] A2A Config:', {
+        a2aRequired: a2aConfig.a2aRequired,
+        tier: a2aConfig.tier,
+        agents: a2aConfig.requiredAgents.length,
+      });
+    }
 
     // Handle avatar/lip-sync generation
     if (type === 'avatar' || type === 'lipsync') {
