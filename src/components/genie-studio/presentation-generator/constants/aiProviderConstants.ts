@@ -401,15 +401,23 @@ export function getProvidersByCategory(category: AIProviderOption['category']): 
   }
 }
 
-// Tier badge colors
+// Tier badge colors - aligned with globalTierService
 export const TIER_COLORS: Record<string, string> = {
-  'tier-1': 'bg-yellow-500/10 text-yellow-600 border-yellow-500/30',
-  'tier-2': 'bg-blue-500/10 text-blue-600 border-blue-500/30',
-  'tier-3': 'bg-gray-500/10 text-gray-600 border-gray-500/30',
+  'tier-1': 'bg-green-500/10 text-green-600 border-green-500/30',  // Standard = Cost-effective
+  'tier-2': 'bg-blue-500/10 text-blue-600 border-blue-500/30',     // Advanced = Balanced
+  'tier-3': 'bg-yellow-500/10 text-yellow-600 border-yellow-500/30', // Premium = High quality
 };
 
+// Tier labels - aligned with Standard/Advanced/Premium global tier naming
 export const TIER_LABELS: Record<string, string> = {
-  'tier-1': 'Premium',
-  'tier-2': 'Standard',
-  'tier-3': 'Budget',
+  'tier-1': 'Standard',   // 1.0x credits
+  'tier-2': 'Advanced',   // 2.5x credits  
+  'tier-3': 'Premium',    // 5.0x credits
+};
+
+// Credit multipliers per tier (for token estimation)
+export const TIER_CREDIT_MULTIPLIERS: Record<string, number> = {
+  'tier-1': 1.0,
+  'tier-2': 2.5,
+  'tier-3': 5.0,
 };
