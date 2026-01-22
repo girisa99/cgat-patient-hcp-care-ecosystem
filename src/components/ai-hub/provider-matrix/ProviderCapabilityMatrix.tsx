@@ -168,7 +168,7 @@ const AddFeatureDialog: React.FC<{
 export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ className }) => {
   const [selectedCategory, setSelectedCategory] = useState<FeatureCategory | 'all'>('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [view, setView] = useState<'matrix' | 'providers' | 'gaps' | 'llm'>('matrix');
+  const [view, setView] = useState<'matrix' | 'providers' | 'gaps' | 'llm' | 'input'>('matrix');
   const [editMode, setEditMode] = useState(false);
   const [localFeatures, setLocalFeatures] = useState<Feature[]>([...ALL_FEATURES]);
   const [localMatrix, setLocalMatrix] = useState({ ...FEATURE_IMPLEMENTATION_MATRIX });
@@ -434,8 +434,9 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
       {/* Tabs */}
       <Tabs value={view} onValueChange={(v) => setView(v as typeof view)} className="space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <TabsList>
+          <TabsList className="flex-wrap h-auto">
             <TabsTrigger value="matrix">Feature Matrix</TabsTrigger>
+            <TabsTrigger value="input">📥 Input Features</TabsTrigger>
             <TabsTrigger value="providers">By Provider</TabsTrigger>
             <TabsTrigger value="llm">LLM Analysis</TabsTrigger>
             <TabsTrigger value="gaps">Gap Analysis</TabsTrigger>
@@ -516,7 +517,7 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
                                 )}
                               </div>
                             </TooltipTrigger>
-                            <TooltipContent side="right" className="max-w-sm p-3 bg-popover/95 backdrop-blur border border-border shadow-lg">
+                            <TooltipContent side="right" className="max-w-xs p-3 bg-popover border border-border shadow-lg">
                               <div className="space-y-2">
                                 <div>
                                   <p className="font-semibold text-sm text-foreground">{feature.name}</p>
@@ -527,37 +528,30 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
                                 
                                 {FEATURE_USE_CASES[feature.id] && (
                                   <>
-                                    <div>
-                                      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">Use Cases</p>
-                                      <div className="flex flex-wrap gap-1">
-                                        {FEATURE_USE_CASES[feature.id].scenarios.slice(0, 4).map((s, i) => (
-                                          <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-foreground">{s}</span>
-                                        ))}
-                                      </div>
+                                    <div className="pt-1 border-t border-border/50">
+                                      <p className="text-[10px] font-medium text-muted-foreground mb-1">
+                                        📋 Scenarios ({FEATURE_USE_CASES[feature.id].scenarios.length})
+                                      </p>
+                                      <p className="text-[10px] text-foreground">{FEATURE_USE_CASES[feature.id].scenarios.join(' • ')}</p>
                                     </div>
                                     <div>
-                                      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">Best For</p>
-                                      <div className="flex flex-wrap gap-1">
-                                        {FEATURE_USE_CASES[feature.id].bestFor.slice(0, 3).map((b, i) => (
-                                          <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">{b}</span>
-                                        ))}
-                                      </div>
+                                      <p className="text-[10px] font-medium text-muted-foreground mb-1">🎯 Best For</p>
+                                      <p className="text-[10px] text-foreground">{FEATURE_USE_CASES[feature.id].bestFor.join(' • ')}</p>
                                     </div>
                                     {FEATURE_USE_CASES[feature.id].limitations && (
                                       <div>
-                                        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">Limitations</p>
+                                        <p className="text-[10px] font-medium text-muted-foreground mb-1">⚠️ Limitations</p>
                                         <p className="text-[10px] text-muted-foreground">{FEATURE_USE_CASES[feature.id].limitations?.join(' • ')}</p>
                                       </div>
                                     )}
                                   </>
                                 )}
                                 
-                                <div className="pt-1 border-t border-border">
-                                  <div className="flex items-center gap-2 text-[10px]">
-                                    <span className="text-emerald-600 font-medium">{featureStats.implemented} implemented</span>
-                                    {featureStats.partial > 0 && <span className="text-amber-600">{featureStats.partial} partial</span>}
-                                    {featureStats.planned > 0 && <span className="text-blue-600">{featureStats.planned} planned</span>}
-                                  </div>
+                                <div className="pt-1 border-t border-border/50 flex items-center gap-2 text-[10px]">
+                                  <span className="text-primary font-medium">{featureStats.implemented}✓</span>
+                                  {featureStats.partial > 0 && <span className="text-secondary-foreground">{featureStats.partial}⚠</span>}
+                                  {featureStats.planned > 0 && <span className="text-muted-foreground">{featureStats.planned}🕐</span>}
+                                  <span className="text-muted-foreground ml-auto">of {featureStats.total} providers</span>
                                 </div>
                               </div>
                             </TooltipContent>
@@ -616,25 +610,17 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
                                   <TooltipTrigger>
                                     {getStatusIcon(impl?.implementation)}
                                   </TooltipTrigger>
-                                  <TooltipContent className="max-w-xs p-2 bg-popover/95 backdrop-blur border border-border">
+                                  <TooltipContent className="max-w-xs p-2 bg-popover border border-border">
                                     <div className="space-y-1">
                                       <div className="flex items-center gap-2">
                                         <span className="font-medium text-sm text-foreground">{p.name}</span>
                                         {impl?.implementation && (
-                                          <span className={`text-[10px] px-1.5 py-0.5 rounded ${
-                                            impl.implementation === 'implemented' ? 'bg-emerald-500/10 text-emerald-600' :
-                                            impl.implementation === 'partial' ? 'bg-amber-500/10 text-amber-600' :
-                                            impl.implementation === 'planned' ? 'bg-blue-500/10 text-blue-600' :
-                                            'bg-muted text-muted-foreground'
-                                          }`}>
-                                            {impl.implementation}
-                                          </span>
+                                          <Badge variant="outline" className="text-[9px]">{impl.implementation}</Badge>
                                         )}
                                       </div>
                                       {impl?.confidence && (
-                                        <div className="flex items-center gap-2 text-xs">
-                                          <span className="text-muted-foreground">Confidence:</span>
-                                          <span className="font-medium text-foreground">{impl.confidence}%</span>
+                                        <div className="text-xs text-muted-foreground">
+                                          Confidence: <span className="text-foreground font-medium">{impl.confidence}%</span>
                                         </div>
                                       )}
                                       {impl?.notes && (
@@ -717,165 +703,313 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
           </div>
         </TabsContent>
 
-        {/* LLM Analysis Tab */}
-        <TabsContent value="llm" className="mt-0">
-          <div className="max-h-[600px] overflow-auto space-y-6">
-            {/* Routing Strategy */}
-            <div className="p-4 rounded-lg border-2 border-dashed border-primary/30 bg-primary/5">
-              <h3 className="font-semibold text-sm flex items-center gap-2 mb-2">
-                <Zap className="w-4 h-4" />
-                Routing Strategy: {ROUTING_STRATEGY.primary} → {ROUTING_STRATEGY.fallback}
-              </h3>
-              <p className="text-xs text-muted-foreground mb-3">{ROUTING_STRATEGY.explanation}</p>
-              <div className="flex gap-2 text-xs">
-                <div className="flex-1 p-2 bg-emerald-500/10 rounded text-center">
-                  <div className="font-bold text-emerald-600">1st: Best Quality</div>
-                  <div className="text-muted-foreground">GPT-4o, Claude</div>
-                </div>
-                <div className="flex-1 p-2 bg-blue-500/10 rounded text-center">
-                  <div className="font-bold text-blue-600">2nd: Balanced</div>
-                  <div className="text-muted-foreground">Gemini, Qwen</div>
-                </div>
-                <div className="flex-1 p-2 bg-muted rounded text-center">
-                  <div className="font-bold">3rd: Budget</div>
-                  <div className="text-muted-foreground">DeepSeek</div>
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground mt-3 p-2 bg-muted/50 rounded">
-                <strong>Why not cheapest first?</strong> {ROUTING_STRATEGY.whyNotCheapestFirst}
-              </p>
-            </div>
-
-            {/* LLM Comparison Table */}
-            <div className="border rounded-lg overflow-auto">
-              <Table>
-                <TableHeader className="bg-muted/30">
-                  <TableRow>
-                    <TableHead className="min-w-[120px]">Model</TableHead>
-                    <TableHead className="min-w-[80px]">Cost</TableHead>
-                    <TableHead className="min-w-[60px]">Acc</TableHead>
-                    <TableHead className="min-w-[150px]">Best Industries</TableHead>
-                    <TableHead className="min-w-[150px]">Output Types</TableHead>
-                    <TableHead className="min-w-[150px]">Input Strengths</TableHead>
-                    <TableHead className="min-w-[200px]">Notes</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {LLM_COMPARISONS.map(llm => (
-                    <TableRow key={llm.model} className="hover:bg-muted/50">
-                      <TableCell>
-                        <div className="font-medium text-sm">{llm.model}</div>
-                        <Badge variant="outline" className="text-[8px]">{llm.provider}</Badge>
-                      </TableCell>
-                      <TableCell>{COST_BADGES[llm.costTier]}</TableCell>
-                      <TableCell>
-                        <div className={`text-sm font-bold ${
-                          llm.accuracy >= 95 ? 'text-emerald-600' :
-                          llm.accuracy >= 90 ? 'text-blue-600' : 'text-muted-foreground'
-                        }`}>
-                          {llm.accuracy}%
-                        </div>
-                      </TableCell>
-                      <TableCell>
+        {/* Input Features Tab - Comprehensive Guide */}
+        <TabsContent value="input" className="mt-0 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold flex items-center gap-2">
+              📥 Input Features - Complete Implementation Guide
+            </h3>
+            <Badge variant="outline" className="text-xs bg-primary/10 border-primary/30 text-primary">
+              {computeCategoryStats['INPUT']?.implemented || 0}/{computeCategoryStats['INPUT']?.total || 0} Implemented
+            </Badge>
+          </div>
+          
+          {/* Input Features Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {localFeatures.filter(f => f.category === 'INPUT').map(feature => {
+              const useCase = FEATURE_USE_CASES[feature.id];
+              const featureImpl = localMatrix[feature.id] || {};
+              const stats = computeFeatureStats(feature.id);
+              const providers = Object.entries(featureImpl)
+                .filter(([_, impl]) => impl?.implementation === 'implemented')
+                .map(([id]) => PROVIDER_SUMMARIES.find(p => p.id === id)?.name || id);
+              
+              return (
+                <div key={feature.id} className="p-4 rounded-lg border bg-card">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h4 className="font-medium text-sm text-foreground">{feature.name}</h4>
+                      {feature.description && (
+                        <p className="text-xs text-muted-foreground mt-0.5">{feature.description}</p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 text-xs">
+                      <span className="text-primary font-bold">{stats.implemented}</span>
+                      <span className="text-muted-foreground">/{stats.total}</span>
+                    </div>
+                  </div>
+                  
+                  {/* Providers */}
+                  <div className="mb-3">
+                    <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1.5">Supported Providers</p>
+                    <div className="flex flex-wrap gap-1">
+                      {providers.length > 0 ? providers.map(name => (
+                        <Badge key={name} variant="outline" className="text-[9px] bg-primary/5 border-primary/20">{name}</Badge>
+                      )) : (
+                        <span className="text-[10px] text-muted-foreground">No providers configured</span>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Use Cases & Scenarios */}
+                  {useCase && (
+                    <>
+                      <div className="mb-2">
+                        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">
+                          Scenarios ({useCase.scenarios.length})
+                        </p>
                         <div className="flex flex-wrap gap-1">
-                          {llm.bestForIndustries.map(ind => (
-                            <Badge key={ind} variant="secondary" className="text-[8px]">{ind}</Badge>
+                          {useCase.scenarios.map((s, i) => (
+                            <span key={i} className="text-[9px] px-1.5 py-0.5 rounded bg-muted text-foreground">{s}</span>
                           ))}
                         </div>
-                      </TableCell>
-                      <TableCell>
+                      </div>
+                      <div className="mb-2">
+                        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">Best For</p>
                         <div className="flex flex-wrap gap-1">
-                          {llm.bestForOutputTypes.map(out => (
-                            <Badge key={out} variant="outline" className="text-[8px]">{out}</Badge>
+                          {useCase.bestFor.map((b, i) => (
+                            <span key={i} className="text-[9px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">{b}</span>
                           ))}
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-xs text-muted-foreground">
-                          {llm.inputStrengths.join(', ')}
+                      </div>
+                      {useCase.limitations && useCase.limitations.length > 0 && (
+                        <div>
+                          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">Limitations</p>
+                          <p className="text-[9px] text-muted-foreground">{useCase.limitations.join(' • ')}</p>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-xs text-muted-foreground">{llm.notes}</div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-
-            {/* Azure vs OpenAI */}
-            <div className="p-4 rounded-lg border bg-muted/20">
-              <h3 className="font-semibold text-sm mb-2">🔷 Azure OpenAI vs Direct OpenAI</h3>
-              <p className="text-xs text-muted-foreground mb-3">
-                <strong>Current:</strong> Direct OpenAI. <strong>Azure OpenAI</strong> = same models + enterprise compliance.
-              </p>
-              <div className="grid grid-cols-2 gap-4 text-xs">
-                <div>
-                  <div className="font-medium text-primary mb-1">Azure Advantages:</div>
-                  <ul className="text-muted-foreground list-disc list-inside space-y-0.5">
-                    <li>HIPAA/SOC2/GDPR built-in</li>
-                    <li>Private VNet, Regional data</li>
-                    <li>99.9% SLA</li>
-                  </ul>
+                      )}
+                    </>
+                  )}
                 </div>
-                <div>
-                  <div className="font-medium mb-1">When to Use Azure:</div>
-                  <ul className="text-muted-foreground list-disc list-inside space-y-0.5">
-                    <li>Healthcare PHI data</li>
-                    <li>Financial services (PCI-DSS)</li>
-                    <li>Government/public sector</li>
-                  </ul>
-                </div>
-              </div>
-              <p className="text-xs bg-muted p-2 rounded mt-3">
-                <strong>Recommendation:</strong> Keep direct OpenAI for general use. Add Azure for HIPAA-required healthcare clients.
-              </p>
-            </div>
+              );
+            })}
           </div>
         </TabsContent>
 
-        {/* Gap Analysis Tab */}
-        <TabsContent value="gaps" className="mt-0">
-          <div className="max-h-[600px] overflow-auto">
-            <h3 className="font-semibold mb-3 flex items-center gap-2">
-              <Target className="w-4 h-4" />
-              Critical Gaps to Address (Using Configured Providers Only)
+        {/* LLM Analysis Tab - Flattened Layout */}
+        <TabsContent value="llm" className="mt-0 space-y-6">
+          {/* Routing Strategy - Flat Section */}
+          <div className="space-y-3">
+            <h3 className="font-semibold text-sm flex items-center gap-2">
+              <Zap className="w-4 h-4" />
+              Routing Strategy: {ROUTING_STRATEGY.primary} → {ROUTING_STRATEGY.fallback}
             </h3>
+            <p className="text-xs text-muted-foreground">{ROUTING_STRATEGY.explanation}</p>
+            <div className="grid grid-cols-3 gap-2 text-xs">
+              <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 text-center">
+                <div className="font-bold text-primary">1st: Best Quality</div>
+                <div className="text-muted-foreground mt-1">GPT-4o, Claude</div>
+              </div>
+              <div className="p-3 rounded-lg bg-secondary/50 border text-center">
+                <div className="font-bold text-foreground">2nd: Balanced</div>
+                <div className="text-muted-foreground mt-1">Gemini, Qwen</div>
+              </div>
+              <div className="p-3 rounded-lg bg-muted/50 border text-center">
+                <div className="font-bold text-muted-foreground">3rd: Budget</div>
+                <div className="text-muted-foreground mt-1">DeepSeek</div>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground p-2 bg-muted/30 rounded border">
+              <strong>Why not cheapest first?</strong> {ROUTING_STRATEGY.whyNotCheapestFirst}
+            </p>
+          </div>
+
+          {/* LLM Comparison Table - Direct, no card wrapper */}
+          <div className="space-y-2">
+            <h3 className="font-semibold text-sm">Model Comparison</h3>
             <div className="border rounded-lg overflow-hidden">
               <Table>
                 <TableHeader className="bg-muted/30">
                   <TableRow>
-                    <TableHead>Feature</TableHead>
-                    <TableHead>Best Provider</TableHead>
-                    <TableHead>Priority</TableHead>
-                    <TableHead>Effort</TableHead>
-                    <TableHead>Notes</TableHead>
+                    <TableHead className="min-w-[100px] text-xs">Model</TableHead>
+                    <TableHead className="w-[70px] text-xs">Cost</TableHead>
+                    <TableHead className="w-[50px] text-xs">Acc</TableHead>
+                    <TableHead className="min-w-[120px] text-xs">Industries</TableHead>
+                    <TableHead className="min-w-[120px] text-xs">Outputs</TableHead>
+                    <TableHead className="min-w-[120px] text-xs">Input Strengths</TableHead>
+                    <TableHead className="min-w-[150px] text-xs">Notes</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {CRITICAL_GAPS.map((gap, i) => (
-                    <TableRow key={`gap-${i}`} className="hover:bg-muted/50">
-                      <TableCell className="font-medium">{gap.feature}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{gap.provider}</TableCell>
-                      <TableCell>
-                        <Badge variant={gap.priority === 'high' ? 'destructive' : 'secondary'} className="text-[10px]">
-                          {gap.priority}
-                        </Badge>
+                  {LLM_COMPARISONS.map(llm => (
+                    <TableRow key={llm.model}>
+                      <TableCell className="py-2">
+                        <div className="font-medium text-xs">{llm.model}</div>
+                        <span className="text-[9px] text-muted-foreground">{llm.provider}</span>
                       </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="text-[10px]">{gap.effort}</Badge>
+                      <TableCell className="py-2">{COST_BADGES[llm.costTier]}</TableCell>
+                      <TableCell className="py-2">
+                        <span className={`text-xs font-bold ${
+                          llm.accuracy >= 95 ? 'text-primary' : 'text-muted-foreground'
+                        }`}>{llm.accuracy}%</span>
                       </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{gap.notes}</TableCell>
+                      <TableCell className="py-2">
+                        <div className="flex flex-wrap gap-0.5">
+                          {llm.bestForIndustries.slice(0, 3).map(ind => (
+                            <Badge key={ind} variant="secondary" className="text-[8px] px-1 py-0">{ind}</Badge>
+                          ))}
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-2">
+                        <div className="flex flex-wrap gap-0.5">
+                          {llm.bestForOutputTypes.slice(0, 3).map(out => (
+                            <Badge key={out} variant="outline" className="text-[8px] px-1 py-0">{out}</Badge>
+                          ))}
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-2">
+                        <span className="text-[9px] text-muted-foreground">{llm.inputStrengths.slice(0, 3).join(', ')}</span>
+                      </TableCell>
+                      <TableCell className="py-2">
+                        <span className="text-[9px] text-muted-foreground">{llm.notes}</span>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             </div>
+          </div>
+
+          {/* Azure vs OpenAI - Flat Section */}
+          <div className="space-y-2">
+            <h3 className="font-semibold text-sm">🔷 Azure OpenAI vs Direct OpenAI</h3>
+            <p className="text-xs text-muted-foreground">
+              <strong>Current:</strong> Direct OpenAI. <strong>Azure OpenAI</strong> = same models + enterprise compliance.
+            </p>
+            <div className="grid grid-cols-2 gap-4 text-xs">
+              <div>
+                <div className="font-medium text-primary mb-1">Azure Advantages:</div>
+                <ul className="text-muted-foreground list-disc list-inside space-y-0.5 text-[11px]">
+                  <li>HIPAA/SOC2/GDPR built-in</li>
+                  <li>Private VNet, Regional data</li>
+                  <li>99.9% SLA</li>
+                </ul>
+              </div>
+              <div>
+                <div className="font-medium mb-1">When to Use Azure:</div>
+                <ul className="text-muted-foreground list-disc list-inside space-y-0.5 text-[11px]">
+                  <li>Healthcare PHI data</li>
+                  <li>Financial services (PCI-DSS)</li>
+                  <li>Government/public sector</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* Gap Analysis Tab - Dynamic based on category */}
+        <TabsContent value="gaps" className="mt-0 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold flex items-center gap-2">
+              <Target className="w-4 h-4" />
+              Gap Analysis {selectedCategory !== 'all' ? `- ${CATEGORY_LABELS[selectedCategory]}` : ''}
+            </h3>
+            <span className="text-xs text-muted-foreground">
+              {selectedCategory === 'all' ? 'Showing all categories' : `Filtered by ${CATEGORY_LABELS[selectedCategory]}`}
+            </span>
+          </div>
+          
+          {/* Dynamic Gap Analysis based on category selection */}
+          {(() => {
+            const categoryFeatures = selectedCategory === 'all' 
+              ? localFeatures 
+              : localFeatures.filter(f => f.category === selectedCategory);
             
-            <div className="mt-4 p-3 rounded-lg bg-muted/30 border text-xs text-muted-foreground">
-              <strong>Note:</strong> All gaps can be addressed using currently configured providers (ModelsLab, ElevenLabs, Alibaba, etc.). 
-              No need for Suno or Runway—their features are covered by existing providers' APIs.
+            const gaps = categoryFeatures.filter(feature => {
+              const featureImpl = localMatrix[feature.id] || {};
+              const statuses = Object.values(featureImpl).map(p => p?.implementation);
+              // Show features that are partial, planned, or not started
+              return !statuses.includes('implemented') || statuses.includes('partial');
+            }).map(feature => {
+              const featureImpl = localMatrix[feature.id] || {};
+              const providers = Object.entries(featureImpl);
+              const partialProviders = providers.filter(([_, p]) => p?.implementation === 'partial').map(([id]) => id);
+              const plannedProviders = providers.filter(([_, p]) => p?.implementation === 'planned').map(([id]) => id);
+              const availableProviders = PROVIDER_SUMMARIES.filter(p => !featureImpl[p.id as ProviderId]).map(p => p.name);
+              
+              return {
+                feature: feature.name,
+                category: feature.category,
+                priority: feature.priority,
+                partialProviders,
+                plannedProviders,
+                potentialProviders: availableProviders.slice(0, 3),
+                notes: providers.find(([_, p]) => p?.notes)?.[1]?.notes || 'Integration opportunity',
+              };
+            });
+
+            if (gaps.length === 0) {
+              return (
+                <div className="p-8 text-center border rounded-lg bg-primary/5">
+                  <Check className="w-8 h-8 mx-auto text-primary mb-2" />
+                  <p className="font-medium text-foreground">All features in {selectedCategory === 'all' ? 'this view' : CATEGORY_LABELS[selectedCategory]} are fully implemented!</p>
+                  <p className="text-xs text-muted-foreground mt-1">Select a different category to see gap analysis.</p>
+                </div>
+              );
+            }
+
+            return (
+              <div className="border rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader className="bg-muted/30">
+                    <TableRow>
+                      <TableHead className="text-xs">Feature</TableHead>
+                      <TableHead className="text-xs w-[80px]">Priority</TableHead>
+                      <TableHead className="text-xs">Partial In</TableHead>
+                      <TableHead className="text-xs">Could Add</TableHead>
+                      <TableHead className="text-xs">Notes</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {gaps.slice(0, 15).map((gap, i) => (
+                      <TableRow key={`gap-${i}`}>
+                        <TableCell className="py-2">
+                          <div className="font-medium text-xs">{gap.feature}</div>
+                          <span className="text-[9px] text-muted-foreground">{CATEGORY_LABELS[gap.category]?.split(' ')[1]}</span>
+                        </TableCell>
+                        <TableCell className="py-2">
+                          <Badge variant={gap.priority === 'critical' ? 'destructive' : gap.priority === 'high' ? 'default' : 'secondary'} className="text-[9px]">
+                            {gap.priority}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="py-2">
+                          <div className="flex flex-wrap gap-0.5">
+                            {gap.partialProviders.length > 0 ? gap.partialProviders.map(p => (
+                              <Badge key={p} variant="outline" className="text-[8px] bg-secondary/30">{p}</Badge>
+                            )) : <span className="text-[9px] text-muted-foreground">—</span>}
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-2">
+                          <div className="flex flex-wrap gap-0.5">
+                            {gap.potentialProviders.map(p => (
+                              <Badge key={p} variant="outline" className="text-[8px] border-dashed">{p}</Badge>
+                            ))}
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-2">
+                          <span className="text-[9px] text-muted-foreground">{gap.notes}</span>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            );
+          })()}
+          
+          {/* Static Critical Gaps */}
+          <div className="mt-4 space-y-2">
+            <h4 className="font-medium text-xs text-muted-foreground">Critical Integration Opportunities</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {CRITICAL_GAPS.slice(0, 4).map((gap, i) => (
+                <div key={i} className="p-2 rounded border bg-card flex items-center justify-between">
+                  <div>
+                    <span className="text-xs font-medium">{gap.feature}</span>
+                    <span className="text-[9px] text-muted-foreground ml-2">{gap.provider}</span>
+                  </div>
+                  <Badge variant={gap.priority === 'high' ? 'destructive' : 'secondary'} className="text-[8px]">{gap.effort}</Badge>
+                </div>
+              ))}
             </div>
           </div>
         </TabsContent>
