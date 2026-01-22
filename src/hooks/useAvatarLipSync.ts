@@ -98,33 +98,28 @@ export function useAvatarLipSync() {
     try {
       toast.info('Generating AI avatar video...', { duration: 3000 });
 
-      const { data, error } = await supabase.functions.invoke('ai-video-generator', {
-        body: {
-          type: 'avatar',
-          sourceImage,
-          script,
-          language: options?.language || 'en-US',
-          voiceId: options?.voiceId,
-          provider: options?.preferredProvider || 'auto',
-        },
+      // Use unified video service for automatic fallback chain
+      const { generateAvatarVideo } = await import('@/components/universal-editor/services/unifiedVideoService');
+      
+      setProgress(30);
+      
+      const result = await generateAvatarVideo(script, sourceImage, {
+        voiceId: options?.voiceId,
       });
 
-      if (error) throw error;
-
       setProgress(100);
-      setCurrentProvider(data.provider);
+      setCurrentProvider(result.provider);
 
-      if (data.success) {
-        toast.success(`Avatar generated with ${data.provider}!`);
+      if (result.success) {
+        toast.success(`Avatar generated with ${result.provider}!`);
         return {
           success: true,
-          videoUrl: data.videoUrl,
-          audioUrl: data.audioUrl,
-          provider: data.provider,
-          model: data.model,
+          videoUrl: result.videoUrl,
+          provider: result.provider,
+          model: result.model,
         };
       } else {
-        throw new Error(data.error || 'Avatar generation failed');
+        throw new Error(result.error || 'Avatar generation failed');
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
@@ -153,33 +148,26 @@ export function useAvatarLipSync() {
     try {
       toast.info('Generating lip-sync video...', { duration: 3000 });
 
-      const { data, error } = await supabase.functions.invoke('ai-video-generator', {
-        body: {
-          type: 'lipsync',
-          sourceImage,
-          audioUrl,
-          language: options?.language || 'en-US',
-          provider: options?.preferredProvider || 'auto',
-        },
-      });
-
-      if (error) throw error;
+      // Use unified video service for automatic fallback chain
+      const { generateLipSyncVideo } = await import('@/components/universal-editor/services/unifiedVideoService');
+      
+      setProgress(30);
+      
+      const result = await generateLipSyncVideo(audioUrl, sourceImage);
 
       setProgress(100);
-      setCurrentProvider(data.provider);
+      setCurrentProvider(result.provider);
 
-      if (data.success) {
-        toast.success(`Lip-sync generated with ${data.provider}!`);
+      if (result.success) {
+        toast.success(`Lip-sync generated with ${result.provider}!`);
         return {
           success: true,
-          videoUrl: data.videoUrl,
-          audioUrl: data.audioUrl,
-          visemeData: data.visemeData,
-          provider: data.provider,
-          model: data.model,
+          videoUrl: result.videoUrl,
+          provider: result.provider,
+          model: result.model,
         };
       } else {
-        throw new Error(data.error || 'Lip-sync generation failed');
+        throw new Error(result.error || 'Lip-sync generation failed');
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
