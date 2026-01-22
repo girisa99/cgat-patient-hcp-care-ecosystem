@@ -100,12 +100,27 @@ const initialState: EditorState = {
   isProcessing: false,
 };
 
+// Maximum history entries to prevent memory leaks
+const MAX_HISTORY_SIZE = 50;
+
 function editorReducer(state: EditorState, action: EditorAction): EditorState {
   // Save to history for undo/redo (skip for certain actions)
   const shouldSaveHistory = !['UPDATE_VIEWPORT', 'UPDATE_INSPECTOR', 'SELECT_ELEMENTS'].includes(action.type);
-  const newHistory = shouldSaveHistory
-    ? [...state.history.slice(0, state.historyIndex + 1), state.project]
-    : state.history;
+  
+  // Bounded history: limit to MAX_HISTORY_SIZE entries
+  let newHistory = state.history;
+  if (shouldSaveHistory) {
+    // Deep clone to prevent mutation issues
+    const historyEntry = JSON.parse(JSON.stringify(state.project));
+    newHistory = [...state.history.slice(0, state.historyIndex + 1), historyEntry];
+    
+    // Enforce maximum history size
+    if (newHistory.length > MAX_HISTORY_SIZE) {
+      // Remove oldest entries
+      const overflow = newHistory.length - MAX_HISTORY_SIZE;
+      newHistory = newHistory.slice(overflow);
+    }
+  }
 
   switch (action.type) {
     case 'SET_MODE': {

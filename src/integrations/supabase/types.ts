@@ -5649,6 +5649,45 @@ export type Database = {
           },
         ]
       }
+      editor_drafts: {
+        Row: {
+          checkpoints: Json | null
+          created_at: string
+          id: string
+          last_saved_at: string
+          partial_results: Json | null
+          project_data: Json
+          project_id: string
+          updated_at: string
+          user_id: string
+          version: number
+        }
+        Insert: {
+          checkpoints?: Json | null
+          created_at?: string
+          id?: string
+          last_saved_at?: string
+          partial_results?: Json | null
+          project_data: Json
+          project_id: string
+          updated_at?: string
+          user_id: string
+          version?: number
+        }
+        Update: {
+          checkpoints?: Json | null
+          created_at?: string
+          id?: string
+          last_saved_at?: string
+          partial_results?: Json | null
+          project_data?: Json
+          project_id?: string
+          updated_at?: string
+          user_id?: string
+          version?: number
+        }
+        Relationships: []
+      }
       email_conversations: {
         Row: {
           created_at: string | null
@@ -11922,6 +11961,51 @@ export type Database = {
           project_id?: string | null
           space_key?: string | null
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      offline_sync_queue: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          id: string
+          max_retries: number
+          operation_type: string
+          payload: Json
+          processed_at: string | null
+          record_id: string
+          retry_count: number
+          status: string
+          table_name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          max_retries?: number
+          operation_type: string
+          payload: Json
+          processed_at?: string | null
+          record_id: string
+          retry_count?: number
+          status?: string
+          table_name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          max_retries?: number
+          operation_type?: string
+          payload?: Json
+          processed_at?: string | null
+          record_id?: string
+          retry_count?: number
+          status?: string
+          table_name?: string
           user_id?: string
         }
         Relationships: []

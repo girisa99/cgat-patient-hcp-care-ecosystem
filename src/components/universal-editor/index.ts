@@ -30,3 +30,17 @@ export { ConflictResolutionDialog } from './components/ConflictResolutionDialog'
 export { useAutoSave } from './hooks/useAutoSave';
 export { useErrorRecovery } from './hooks/useErrorRecovery';
 export { useEditorCollaboration } from './hooks/useEditorCollaboration';
+
+// Infrastructure Fixes - Critical/High/Medium/Low
+export { useSupabasePersistence } from './hooks/useSupabasePersistence';
+export { useBoundedHistory, createBoundedHistoryReducer } from './hooks/useBoundedHistory';
+export { useOfflineQueue, createQueuedFetch } from './hooks/useOfflineQueue';
+
+// Unified Video Service
+export { 
+  unifiedVideoService,
+  generateTextToVideo,
+  generateImageToVideo,
+  generateAvatarVideo,
+  generateLipSyncVideo,
+} from './services/unifiedVideoService';
