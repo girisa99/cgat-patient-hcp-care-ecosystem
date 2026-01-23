@@ -52,28 +52,121 @@ export interface ExportResult {
   warnings?: string[];
 }
 
-// Font mappings for different languages
+// Font mappings for all 70+ languages from regional bundle system
 const LANGUAGE_FONTS: Record<string, { heading: string; body: string; direction: 'ltr' | 'rtl' }> = {
-  // CJK Languages
+  // ========== CJK Languages ==========
   'zh': { heading: 'Noto Sans SC', body: 'Noto Sans SC', direction: 'ltr' },
   'zh-CN': { heading: 'Noto Sans SC', body: 'Noto Sans SC', direction: 'ltr' },
   'zh-TW': { heading: 'Noto Sans TC', body: 'Noto Sans TC', direction: 'ltr' },
+  'zh-HK': { heading: 'Noto Sans HK', body: 'Noto Sans HK', direction: 'ltr' },
   'ja': { heading: 'Noto Sans JP', body: 'Noto Sans JP', direction: 'ltr' },
   'ko': { heading: 'Noto Sans KR', body: 'Noto Sans KR', direction: 'ltr' },
   
-  // RTL Languages
+  // ========== RTL Languages (Arabic, Hebrew, Persian, Urdu) ==========
   'ar': { heading: 'Noto Sans Arabic', body: 'Noto Sans Arabic', direction: 'rtl' },
+  'ar-EG': { heading: 'Noto Sans Arabic', body: 'Noto Sans Arabic', direction: 'rtl' },
+  'ar-SA': { heading: 'Noto Sans Arabic', body: 'Noto Sans Arabic', direction: 'rtl' },
+  'ar-AE': { heading: 'Noto Sans Arabic', body: 'Noto Sans Arabic', direction: 'rtl' },
+  'ar-MA': { heading: 'Noto Sans Arabic', body: 'Noto Sans Arabic', direction: 'rtl' },
   'he': { heading: 'Noto Sans Hebrew', body: 'Noto Sans Hebrew', direction: 'rtl' },
   'fa': { heading: 'Noto Sans Arabic', body: 'Noto Sans Arabic', direction: 'rtl' },
   'ur': { heading: 'Noto Nastaliq Urdu', body: 'Noto Sans Arabic', direction: 'rtl' },
+  'ps': { heading: 'Noto Sans Arabic', body: 'Noto Sans Arabic', direction: 'rtl' }, // Pashto
   
-  // Indic Languages
+  // ========== South Asian / Indic Languages ==========
   'hi': { heading: 'Noto Sans Devanagari', body: 'Noto Sans Devanagari', direction: 'ltr' },
+  'bn': { heading: 'Noto Sans Bengali', body: 'Noto Sans Bengali', direction: 'ltr' },
   'ta': { heading: 'Noto Sans Tamil', body: 'Noto Sans Tamil', direction: 'ltr' },
-  'th': { heading: 'Noto Sans Thai', body: 'Noto Sans Thai', direction: 'ltr' },
+  'te': { heading: 'Noto Sans Telugu', body: 'Noto Sans Telugu', direction: 'ltr' },
+  'mr': { heading: 'Noto Sans Devanagari', body: 'Noto Sans Devanagari', direction: 'ltr' },
+  'gu': { heading: 'Noto Sans Gujarati', body: 'Noto Sans Gujarati', direction: 'ltr' },
+  'kn': { heading: 'Noto Sans Kannada', body: 'Noto Sans Kannada', direction: 'ltr' },
+  'ml': { heading: 'Noto Sans Malayalam', body: 'Noto Sans Malayalam', direction: 'ltr' },
+  'pa': { heading: 'Noto Sans Gurmukhi', body: 'Noto Sans Gurmukhi', direction: 'ltr' },
+  'or': { heading: 'Noto Sans Oriya', body: 'Noto Sans Oriya', direction: 'ltr' },
+  'as': { heading: 'Noto Sans Bengali', body: 'Noto Sans Bengali', direction: 'ltr' }, // Assamese
+  'ne': { heading: 'Noto Sans Devanagari', body: 'Noto Sans Devanagari', direction: 'ltr' }, // Nepali
+  'si': { heading: 'Noto Sans Sinhala', body: 'Noto Sans Sinhala', direction: 'ltr' },
   
-  // European Languages (default)
+  // ========== Southeast Asian Languages ==========
+  'th': { heading: 'Noto Sans Thai', body: 'Noto Sans Thai', direction: 'ltr' },
+  'vi': { heading: 'Noto Sans', body: 'Noto Sans', direction: 'ltr' },
+  'id': { heading: 'Noto Sans', body: 'Noto Sans', direction: 'ltr' },
+  'ms': { heading: 'Noto Sans', body: 'Noto Sans', direction: 'ltr' },
+  'tl': { heading: 'Noto Sans', body: 'Noto Sans', direction: 'ltr' }, // Tagalog/Filipino
+  'my': { heading: 'Noto Sans Myanmar', body: 'Noto Sans Myanmar', direction: 'ltr' }, // Burmese
+  'km': { heading: 'Noto Sans Khmer', body: 'Noto Sans Khmer', direction: 'ltr' },
+  'lo': { heading: 'Noto Sans Lao', body: 'Noto Sans Lao', direction: 'ltr' },
+  
+  // ========== European Languages ==========
   'en': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  'en-US': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  'en-GB': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  'en-AU': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  'en-CA': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  'en-IN': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  'de': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  'de-AT': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  'de-CH': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  'fr': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  'fr-CA': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  'fr-BE': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  'fr-CH': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  'es': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  'es-MX': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  'es-AR': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  'it': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  'pt': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  'pt-BR': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  'nl': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  'nl-BE': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  'pl': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  'cs': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  'sk': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  'hu': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  'ro': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  'bg': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  'hr': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  'sr': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  'sl': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  'uk': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  'el': { heading: 'Noto Sans', body: 'Noto Sans', direction: 'ltr' },
+  'da': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  'sv': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  'no': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  'nb': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  'fi': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  'et': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  'lv': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  'lt': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  
+  // ========== Slavic / Cyrillic ==========
+  'ru': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  'be': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  'mk': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  
+  // ========== Central Asian / Turkic ==========
+  'tr': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  'az': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  'kk': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  'uz': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' },
+  
+  // ========== African Languages ==========
+  'sw': { heading: 'Noto Sans', body: 'Noto Sans', direction: 'ltr' }, // Swahili
+  'am': { heading: 'Noto Sans Ethiopic', body: 'Noto Sans Ethiopic', direction: 'ltr' }, // Amharic
+  'ha': { heading: 'Noto Sans', body: 'Noto Sans', direction: 'ltr' }, // Hausa
+  'yo': { heading: 'Noto Sans', body: 'Noto Sans', direction: 'ltr' }, // Yoruba
+  'ig': { heading: 'Noto Sans', body: 'Noto Sans', direction: 'ltr' }, // Igbo
+  'zu': { heading: 'Noto Sans', body: 'Noto Sans', direction: 'ltr' }, // Zulu
+  'af': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' }, // Afrikaans
+  
+  // ========== Other ==========
+  'ka': { heading: 'Noto Sans Georgian', body: 'Noto Sans Georgian', direction: 'ltr' }, // Georgian
+  'hy': { heading: 'Noto Sans Armenian', body: 'Noto Sans Armenian', direction: 'ltr' }, // Armenian
+  'mn': { heading: 'Noto Sans Mongolian', body: 'Noto Sans Mongolian', direction: 'ltr' },
+  'bo': { heading: 'Noto Sans Tibetan', body: 'Noto Sans Tibetan', direction: 'ltr' },
+  
+  // Default fallback
   'default': { heading: 'Calibri', body: 'Calibri', direction: 'ltr' }
 };
 
