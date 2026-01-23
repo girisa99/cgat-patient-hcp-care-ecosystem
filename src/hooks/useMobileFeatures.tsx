@@ -1,17 +1,21 @@
 
 /**
  * Mobile Features Hook
- * Provides mobile-specific functionality
+ * Provides mobile-specific functionality with ecosystem routing integration
  */
 
 import { useState, useEffect, useCallback } from 'react';
 import { mobileAppManager, MobileCapabilities } from '@/utils/mobile/MobileAppManager';
+import { useEcosystemRouting } from '@/hooks/useEcosystemRouting';
 
 export const useMobileFeatures = () => {
   const [capabilities, setCapabilities] = useState<MobileCapabilities>(() => 
     mobileAppManager.getCapabilities()
   );
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  
+  // Integrate ecosystem routing for mobile
+  const ecosystemRouting = useEcosystemRouting('mobile');
 
   // Update capabilities when they change
   useEffect(() => {
@@ -148,6 +152,13 @@ export const useMobileFeatures = () => {
     hasCamera: capabilities.hasCamera,
     hasLocation: capabilities.hasLocation,
     hasNotifications: capabilities.hasNotifications,
-    hasBiometrics: capabilities.hasBiometrics
+    hasBiometrics: capabilities.hasBiometrics,
+    
+    // Ecosystem Routing (4-Zone LLM routing)
+    ecosystemRouting,
+    regionCode: ecosystemRouting.countryCode,
+    zone: ecosystemRouting.zone,
+    isRTL: ecosystemRouting.isRTL,
+    getProviderForTask: ecosystemRouting.getProviderForTask,
   };
 };
