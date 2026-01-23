@@ -312,11 +312,49 @@ PREMIUM TOKENS (100+ credits) - Enterprise Production
 - Video transformation suite
 - Complex multi-modal pipelines
 
-### Phase 4: Immersive Pipelines (Week 7-8) - 20 Pipelines
-**Focus**: VR/AR, highest complexity, premium tier
-- All VR/AR pipelines
-- Full production suite
-- Voice-to-VR/AR workflows
+### Phase 4: Enterprise Suite (Week 7-8) - 15 Pipelines
+**Focus**: Enterprise demand, custom training, white-label
+- Custom Avatar Training
+- API Access + White-Label
+- Advanced Team Collaboration
+- Brand Template System
+- SSO/SAML Integration
+
+### EXCLUDED: VR/AR Pipelines (Deferred 6-8 Months)
+**Reason**: Market not ready, prioritize high-conversion mobile/voice pipelines
+- text-to-vr, floor-plan-to-vr, image-to-3d (VR context)
+- ar-overlay, ar-product, ar-face-filter
+- mixed-reality, spatial-3d, binaural (VR-specific)
+- vr-experience, vr-360
+
+**Reactivation Criteria**:
+- Apple Vision Pro reaches 5M+ units
+- Enterprise VR adoption > 15%
+- Customer requests exceed 100/month
+
+---
+
+## Geographic A/B Testing Strategy
+
+### Phase 1-2 Regional Rollout
+
+| Region | Week 1-2 | Week 3-4 | Primary Test Focus |
+|--------|----------|----------|-------------------|
+| **India** | Mobile Record, Hindi Dub | Telugu/Tamil/Bengali | Mobile-first adoption |
+| **SEA** | Mobile Record, Bahasa | CJK Dubbing | Price sensitivity |
+| **MEA** | Arabic Dialects | RTL Layouts | Dialect quality |
+| **LatAm** | Mobile Record, PT-BR | Spanish variants | Short-form virality |
+| **Europe** | Export Quality, DeepL | Full translation | Enterprise conversion |
+| **US/Canada** | All-in-one demo | Avatar videos | Time-to-value |
+
+### A/B Test Matrix
+
+| Test ID | Hypothesis | Regions | Metric | Success Threshold |
+|---------|-----------|---------|--------|-------------------|
+| AB-001 | Mobile hook drives signups | India, SEA, LatAm | Free signups | +25% vs control |
+| AB-002 | CJK quality drives Pro | Japan, Korea | FREE→PRO | +15% conversion |
+| AB-003 | Arabic dialects drive retention | MEA | 30-day retention | +20% vs MSA-only |
+| AB-004 | Export quality drives Enterprise | Europe | Enterprise leads | +30% demo requests |
 
 ---
 

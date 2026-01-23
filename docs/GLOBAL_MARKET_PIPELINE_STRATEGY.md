@@ -433,12 +433,63 @@ Genie Suite: Restore from translation checkpoint, retry voice only
 3. SSO/SAML Integration
 4. Team Collaboration Features
 
-### DEFERRED (6-8 Months)
+### EXCLUDED FROM RELEASE: VR/AR Pipelines (Deferred 6-8 Months)
 
-- AR/VR Pipelines
-- Metaverse Integration
-- Holographic Presentations
-- Spatial Computing Features
+**Strategic Decision**: VR/AR market not ready. No competitor differentiation until Apple Vision Pro adoption > 5M units.
+
+**Excluded Pipelines (15 total)**:
+- `text-to-vr`, `floor-plan-to-vr`, `image-to-3d` (VR context)
+- `ar-overlay`, `ar-product`, `ar-face-filter`
+- `mixed-reality`, `spatial-3d`, `binaural` (VR-specific audio)
+- `vr-experience`, `vr-360`
+
+**Reactivation Criteria**:
+1. Apple Vision Pro reaches 5M+ units sold
+2. Enterprise VR training adoption exceeds 15%
+3. Customer requests exceed 100/month (tracked via feedback form)
+
+**Resources Redirected To**: Mobile-first workflows, global voice dubbing, regional dialect support
+
+---
+
+## GEOGRAPHIC A/B TESTING STRATEGY
+
+### Phased Regional Rollout with Learning Loops
+
+| Phase | Regions | Weeks | Primary Test | Secondary Test |
+|-------|---------|-------|--------------|----------------|
+| **1A** | India, SEA | 1-2 | Mobile Record adoption | Hindi/Bahasa quality |
+| **1B** | LatAm | 1-2 | Short-form virality | PT-BR vs PT-PT distinction |
+| **2A** | MEA | 3-4 | Arabic dialect satisfaction | RTL layout stability |
+| **2B** | Japan, Korea | 3-4 | CJK voice quality | Number formatting |
+| **3A** | Europe | 5-6 | Export quality → Enterprise | DeepL translation accuracy |
+| **3B** | US/Canada | 5-6 | All-in-one value prop | Time savings measurement |
+
+### A/B Test Registry
+
+| Test ID | Hypothesis | Control | Variant | Success Metric |
+|---------|-----------|---------|---------|----------------|
+| `GEO-001` | Mobile hook drives India signups | Desktop-first landing | Mobile-first PWA prompt | +25% free signups |
+| `GEO-002` | Arabic dialect voice drives MEA retention | MSA-only voices | 7 dialect options | +20% 30-day retention |
+| `GEO-003` | CJK quality drives Japan Pro conversion | Azure Japanese | Alibaba CosyVoice | +15% FREE→PRO |
+| `GEO-004` | Export quality drives Europe Enterprise | Standard PPT | Enhanced PPT engine | +30% demo requests |
+| `GEO-005` | Checkpoint restore reduces churn | No restore | Full checkpoint system | -25% churn at Day 7 |
+
+### Learning Loop Process
+
+```
+Week N: Deploy to Region A
+  ↓
+Week N+1: Analyze metrics + user feedback
+  ↓
+Week N+2: Iterate based on learnings
+  ↓
+Week N+3: Deploy improvements to Region B
+  ↓
+Repeat with next region pair
+```
+
+**Feedback Collection**: In-app NPS at Day 1, 7, 30 + optional interview requests
 
 ---
 
