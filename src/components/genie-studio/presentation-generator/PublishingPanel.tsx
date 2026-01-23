@@ -734,6 +734,8 @@ export function PublishingPanel({
               onConfigChange={onConfigChange}
               availableFormats={availableFormats}
               userTier={userTier}
+              slides={generatedContent?.slides}
+              title={generatedContent?.title}
             />
           </TabsContent>
 
