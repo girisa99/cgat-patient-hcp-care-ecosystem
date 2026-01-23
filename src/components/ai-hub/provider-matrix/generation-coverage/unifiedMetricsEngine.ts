@@ -5,8 +5,13 @@
  * Ensures consistent calculations for scenarios, use cases, providers, and LLMs
  * whether filtering by category or showing all data.
  * 
+ * UPDATED: Now provides comprehensive aggregation of ALL scenarios and use cases
+ * from ALL data sources (FEATURE_USE_CASES, CROSS_FUNCTIONAL_MAPPINGS, 
+ * INDUSTRY/FRAMEWORK/VISUAL/OUTPUT mappings, and FEATURE_CONTEXT_MAPPINGS).
+ * 
  * Tracks:
  * - Inherited data (from FEATURE_USE_CASES, CROSS_FUNCTIONAL_MAPPINGS)
+ * - Context-level data (from Industry, Framework, Visual, Output mappings)
  * - New identified data (from Generation Coverage registry)
  * - Gaps and opportunities
  */
@@ -50,7 +55,9 @@ export interface UnifiedCategoryMetrics {
     fromFeatureUseCases: number;   // From FEATURE_USE_CASES
     fromCrossFunctional: number;   // From CROSS_FUNCTIONAL_MAPPINGS
     fromGenerationCoverage: number; // From Generation Coverage registry (new identified)
+    fromContextMappings: number;   // From Industry/Framework/Visual/Output mappings
     unique: Set<string>;
+    list: string[];                // Array for iteration
   };
   
   useCases: {
@@ -58,7 +65,9 @@ export interface UnifiedCategoryMetrics {
     fromFeatureUseCases: number;   // From FEATURE_USE_CASES (bestFor)
     fromCrossFunctional: number;   // From CROSS_FUNCTIONAL_MAPPINGS
     fromGenerationCoverage: number; // From Generation Coverage registry (new identified)
+    fromContextMappings: number;   // From Industry/Framework/Visual/Output mappings
     unique: Set<string>;
+    list: string[];                // Array for iteration
   };
   
   // Providers - from actual implementations
@@ -67,6 +76,7 @@ export interface UnifiedCategoryMetrics {
     implemented: number; // Actually have implementations
     available: number;   // Available but not implemented
     unique: Set<ProviderId>;
+    list: ProviderId[];  // Array for iteration
   };
   
   // LLMs - from LLM_COMPARISONS
@@ -74,6 +84,7 @@ export interface UnifiedCategoryMetrics {
     total: number;
     forCategory: number;
     unique: Set<string>;
+    list: string[];      // Array for iteration
   };
   
   // Gaps & Opportunities
@@ -137,11 +148,12 @@ export function calculateUnifiedMetrics(
   });
   
   // ==========================================
-  // 2. SCENARIOS - From all sources
+  // 2. SCENARIOS - From all sources (including context mappings)
   // ==========================================
   const scenariosFromUseCases = new Set<string>();
   const scenariosFromCrossFunctional = new Set<string>();
   const scenariosFromGenerationCoverage = new Set<string>();
+  const scenariosFromContextMappings = new Set<string>();
   const allScenarios = new Set<string>();
   
   // From FEATURE_USE_CASES
@@ -169,12 +181,26 @@ export function calculateUnifiedMetrics(
     });
   });
   
-  // From Generation Coverage (NEW IDENTIFIED - not in other sources)
-  // IMPORTANT: We only count TRULY new scenarios/useCases that don't exist elsewhere
-  // We do NOT count context mappings (industries, frameworks) as "scenarios" - 
-  // those are CONTEXTS, not scenarios themselves
+  // From Context Mappings (Industry, Framework, Visual, Output)
+  const contextMappings = [
+    ...INDUSTRY_CAPABILITY_MAPPINGS,
+    ...FRAMEWORK_CAPABILITY_MAPPINGS,
+    ...VISUAL_CAPABILITY_MAPPINGS,
+    ...OUTPUT_CAPABILITY_MAPPINGS,
+  ].filter(m => categoryFilter === 'all' || 
+    m.requiredFeatures.some(rf => rf.category === categoryFilter || featureIds.has(rf.featureId))
+  );
   
-  // Get scenarios from FEATURE_CONTEXT_MAPPINGS only (these are feature-level, not context-level)
+  contextMappings.forEach(m => {
+    m.scenarios?.forEach(s => {
+      if (!scenariosFromUseCases.has(s) && !scenariosFromCrossFunctional.has(s)) {
+        scenariosFromContextMappings.add(s);
+      }
+      allScenarios.add(s);
+    });
+  });
+  
+  // From FEATURE_CONTEXT_MAPPINGS (generation coverage feature-level)
   const relevantFeatureMappings = FEATURE_CONTEXT_MAPPINGS.filter(mapping => {
     if (categoryFilter === 'all') return true;
     return mapping.category === categoryFilter;
@@ -182,7 +208,7 @@ export function calculateUnifiedMetrics(
   
   relevantFeatureMappings.forEach(m => {
     m.scenarios?.forEach(s => {
-      if (!scenariosFromUseCases.has(s) && !scenariosFromCrossFunctional.has(s)) {
+      if (!scenariosFromUseCases.has(s) && !scenariosFromCrossFunctional.has(s) && !scenariosFromContextMappings.has(s)) {
         scenariosFromGenerationCoverage.add(s);
       }
       allScenarios.add(s);
@@ -190,11 +216,12 @@ export function calculateUnifiedMetrics(
   });
   
   // ==========================================
-  // 3. USE CASES - From all sources
+  // 3. USE CASES - From all sources (including context mappings)
   // ==========================================
   const useCasesFromUseCases = new Set<string>();
   const useCasesFromCrossFunctional = new Set<string>();
   const useCasesFromGenerationCoverage = new Set<string>();
+  const useCasesFromContextMappings = new Set<string>();
   const allUseCases = new Set<string>();
   
   // From FEATURE_USE_CASES (bestFor field)
@@ -218,11 +245,20 @@ export function calculateUnifiedMetrics(
     });
   });
   
-  // From Generation Coverage (NEW IDENTIFIED)
-  // Use the same feature mappings - NOT industry/framework context mappings
-  relevantFeatureMappings.forEach(m => {
+  // From Context Mappings (Industry, Framework, Visual, Output)
+  contextMappings.forEach(m => {
     m.useCases?.forEach(u => {
       if (!useCasesFromUseCases.has(u) && !useCasesFromCrossFunctional.has(u)) {
+        useCasesFromContextMappings.add(u);
+      }
+      allUseCases.add(u);
+    });
+  });
+  
+  // From FEATURE_CONTEXT_MAPPINGS (new identified)
+  relevantFeatureMappings.forEach(m => {
+    m.useCases?.forEach(u => {
+      if (!useCasesFromUseCases.has(u) && !useCasesFromCrossFunctional.has(u) && !useCasesFromContextMappings.has(u)) {
         useCasesFromGenerationCoverage.add(u);
       }
       allUseCases.add(u);
@@ -328,25 +364,31 @@ export function calculateUnifiedMetrics(
       fromFeatureUseCases: scenariosFromUseCases.size,
       fromCrossFunctional: scenariosFromCrossFunctional.size,
       fromGenerationCoverage: scenariosFromGenerationCoverage.size,
-      unique: allScenarios
+      fromContextMappings: scenariosFromContextMappings.size,
+      unique: allScenarios,
+      list: Array.from(allScenarios)
     },
     useCases: {
       total: allUseCases.size,
       fromFeatureUseCases: useCasesFromUseCases.size,
       fromCrossFunctional: useCasesFromCrossFunctional.size,
       fromGenerationCoverage: useCasesFromGenerationCoverage.size,
-      unique: allUseCases
+      fromContextMappings: useCasesFromContextMappings.size,
+      unique: allUseCases,
+      list: Array.from(allUseCases)
     },
     providers: {
       total: allProviders.size,
       implemented: implementedProviders.size,
       available: availableProviders.size,
-      unique: allProviders
+      unique: allProviders,
+      list: Array.from(allProviders)
     },
     llms: {
       total: LLM_COMPARISONS.length,
       forCategory: categoryLLMs.size,
-      unique: categoryLLMs
+      unique: categoryLLMs,
+      list: Array.from(categoryLLMs)
     },
     gaps: {
       total: gapFeatures.length + gapProviders.length,
