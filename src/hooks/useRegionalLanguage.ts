@@ -1,65 +1,107 @@
 /**
- * useRegionalLanguage Hook
+ * useRegionalLanguage Hook - CONSOLIDATED SINGLE SOURCE OF TRUTH
  * 
- * React hook for managing regional language detection, preferences, and RTL support.
- * Provides automatic IP-based detection with user override capabilities.
+ * Central hook for ALL regional language management across the Genie ecosystem.
+ * Replaces and consolidates all previous language/region hooks.
  * 
- * NOW INTEGRATED WITH: useEcosystemRouting for 4-Zone LLM routing
+ * Features:
+ * - IP-based auto-detection of region and bundle
+ * - 7 Regional bundles (English Core, Europe, Asia, India, MEA, Africa, LatAm)
+ * - 4-Zone LLM routing integration (Claude, Alibaba, Gemini, Fallback)
+ * - User ability to add additional languages beyond bundle
+ * - RTL layout support
+ * - Persistent preferences
+ * 
+ * Used by: Spark, Mind, Vibe, Deck, Ask Genie, Arc, Production Hub, Mobile
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-  regionalLanguageService,
-  RegionalCluster,
-  RegionalLanguage,
-  RegionalProviderConfig,
-  UserLanguagePreferences,
-  RegionDetectionResult,
-  TextDirection,
-} from '@/services/regionalLanguageService';
-import { useEcosystemRouting, ZONE_SUMMARY } from '@/hooks/useEcosystemRouting';
+  regionLanguageBundleService,
+  LANGUAGE_BUNDLES,
+  ALL_AVAILABLE_LANGUAGES,
+  type BundleType,
+  type UserLanguageConfig,
+  type LanguageBundle,
+  type LanguageInfo,
+} from '@/services/regionLanguageBundles';
+import { 
+  useEcosystemRouting, 
+  ZONE_SUMMARY,
+} from '@/hooks/useEcosystemRouting';
+import {
+  selectTTS,
+  selectTranslation,
+  type LLMZone,
+} from '@/services/llmRoutingStrategy';
+
+// ============================================================================
+// TYPES
+// ============================================================================
+
+export type TextDirection = 'ltr' | 'rtl';
 
 export interface UseRegionalLanguageReturn {
-  // Current state
-  preferences: UserLanguagePreferences | null;
+  // Loading state
   isLoading: boolean;
+  
+  // Bundle info
+  currentBundle: LanguageBundle | null;
+  allBundles: LanguageBundle[];
+  
+  // Language state
+  config: UserLanguageConfig | null;
+  enabledLanguages: LanguageInfo[];
+  bundleLanguages: LanguageInfo[];
+  additionalLanguages: LanguageInfo[];
+  availableToAdd: LanguageInfo[];
+  primaryLanguage: LanguageInfo | null;
+  
+  // RTL support
   isRTL: boolean;
   textDirection: TextDirection;
   rtlClasses: string;
   
-  // Detected region info
-  detection: RegionDetectionResult | null;
-  currentRegion: RegionalCluster;
-  regionalLanguages: RegionalLanguage[];
-  
-  // Provider configuration
-  providerConfig: RegionalProviderConfig;
-  
-  // Actions
-  setLanguage: (languageCode: string) => void;
-  setRegion: (region: RegionalCluster) => void;
-  refreshDetection: () => Promise<void>;
-  getLanguagesForRegion: (region: RegionalCluster) => RegionalLanguage[];
-  isLanguageRTL: (languageCode: string) => boolean;
-  
-  // All regions for selection UI
-  allRegions: { id: RegionalCluster; name: string; flag: string }[];
-  
-  // 4-Zone LLM Routing integration
-  llmZone: 'claude' | 'alibaba' | 'gemini' | 'fallback';
+  // 4-Zone LLM Routing
+  llmZone: LLMZone;
   llmProvider: string;
   ttsProvider: string;
   sttProvider: string;
   translationProvider: string;
   zoneSummary: typeof ZONE_SUMMARY;
+  
+  // Actions
+  setLanguage: (code: string) => void;
+  setPrimaryLanguage: (code: string) => void;
+  addLanguage: (code: string) => void;
+  removeLanguage: (code: string) => void;
+  setBundle: (bundle: BundleType) => void;
+  setRegion: (bundle: BundleType) => void; // Alias for setBundle
+  refreshDetection: () => Promise<void>;
+  
+  // Helpers
+  getLanguageInfo: (code: string) => LanguageInfo | undefined;
+  isLanguageEnabled: (code: string) => boolean;
+  isLanguageInBundle: (code: string) => boolean;
+  isLanguageRTL: (code: string) => boolean;
+  
+  // Legacy compatibility
+  preferences: UserLanguageConfig | null;
+  detection: { countryCode: string; bundleType: BundleType } | null;
+  currentRegion: BundleType;
+  regionalLanguages: LanguageInfo[];
+  allRegions: { id: BundleType; name: string; flag: string }[];
 }
 
+// ============================================================================
+// HOOK IMPLEMENTATION
+// ============================================================================
+
 export function useRegionalLanguage(): UseRegionalLanguageReturn {
-  const [preferences, setPreferences] = useState<UserLanguagePreferences | null>(null);
-  const [detection, setDetection] = useState<RegionDetectionResult | null>(null);
+  const [config, setConfig] = useState<UserLanguageConfig | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
-  // Integrate 4-Zone LLM routing
+  // Integrate with ecosystem routing for LLM zone
   const ecosystemRouting = useEcosystemRouting();
 
   // Initialize on mount
@@ -67,24 +109,19 @@ export function useRegionalLanguage(): UseRegionalLanguageReturn {
     const initialize = async () => {
       setIsLoading(true);
       try {
-        // Load or detect preferences
-        const prefs = await regionalLanguageService.initializePreferences();
-        setPreferences(prefs);
-
-        // Get full detection info
-        const detectionResult = await regionalLanguageService.detectRegionFromIP();
-        setDetection(detectionResult);
+        const cfg = await regionLanguageBundleService.initializeFromIP();
+        setConfig(cfg);
+        
+        // Apply RTL to document if needed
+        if (typeof document !== 'undefined') {
+          const isRtl = regionLanguageBundleService.isRTL(cfg.primaryLanguage);
+          document.documentElement.dir = isRtl ? 'rtl' : 'ltr';
+          document.documentElement.lang = cfg.primaryLanguage;
+        }
       } catch (error) {
         console.error('[useRegionalLanguage] Initialization error:', error);
-        // Set defaults on error
-        setPreferences({
-          primaryLanguage: 'en',
-          regionCluster: 'global_english',
-          secondaryLanguages: [],
-          enableRTL: false,
-          detectedAutomatically: true,
-          lastUpdated: new Date().toISOString(),
-        });
+        const cfg = regionLanguageBundleService.createConfigForCountry('US', false);
+        setConfig(cfg);
       } finally {
         setIsLoading(false);
       }
@@ -93,114 +130,222 @@ export function useRegionalLanguage(): UseRegionalLanguageReturn {
     initialize();
   }, []);
 
-  // Computed values
-  const currentRegion = useMemo(() => {
-    return preferences?.regionCluster || detection?.regionCluster || 'global_english';
-  }, [preferences, detection]);
+  // Computed: Current bundle
+  const currentBundle = useMemo(() => {
+    if (!config) return null;
+    return LANGUAGE_BUNDLES[config.bundle];
+  }, [config]);
 
+  // Computed: All bundles
+  const allBundles = useMemo(() => {
+    return Object.values(LANGUAGE_BUNDLES);
+  }, []);
+
+  // Computed: Enabled languages with info
+  const enabledLanguages = useMemo(() => {
+    if (!config) return [];
+    const enabled = [...new Set([...config.bundleLanguages, ...config.additionalLanguages])];
+    return enabled
+      .map(code => regionLanguageBundleService.getLanguageInfo(code))
+      .filter((info): info is LanguageInfo => info !== undefined);
+  }, [config]);
+
+  // Computed: Bundle languages only
+  const bundleLanguages = useMemo(() => {
+    if (!config) return [];
+    return config.bundleLanguages
+      .map(code => regionLanguageBundleService.getLanguageInfo(code))
+      .filter((info): info is LanguageInfo => info !== undefined);
+  }, [config]);
+
+  // Computed: Additional languages only
+  const additionalLanguages = useMemo(() => {
+    if (!config) return [];
+    return config.additionalLanguages
+      .map(code => regionLanguageBundleService.getLanguageInfo(code))
+      .filter((info): info is LanguageInfo => info !== undefined);
+  }, [config]);
+
+  // Computed: Available to add
+  const availableToAdd = useMemo(() => {
+    return regionLanguageBundleService.getAvailableToAdd();
+  }, [config]);
+
+  // Computed: Primary language
+  const primaryLanguage = useMemo(() => {
+    if (!config) return null;
+    return regionLanguageBundleService.getLanguageInfo(config.primaryLanguage) || null;
+  }, [config]);
+
+  // Computed: RTL check
   const isRTL = useMemo(() => {
-    return preferences?.enableRTL || 
-           regionalLanguageService.isRTLLanguage(preferences?.primaryLanguage || 'en');
-  }, [preferences]);
+    if (!config) return false;
+    return regionLanguageBundleService.isRTL(config.primaryLanguage);
+  }, [config]);
 
   const textDirection = useMemo((): TextDirection => {
     return isRTL ? 'rtl' : 'ltr';
   }, [isRTL]);
 
   const rtlClasses = useMemo(() => {
-    return regionalLanguageService.getRTLClasses(preferences?.primaryLanguage);
-  }, [preferences]);
+    if (!isRTL) return '';
+    return 'text-right rtl';
+  }, [isRTL]);
 
-  const regionalLanguages = useMemo(() => {
-    return regionalLanguageService.getLanguagesForRegion(currentRegion);
-  }, [currentRegion]);
+  // Computed: LLM Zone (prefer ecosystem routing if available)
+  const llmZone = useMemo((): LLMZone => {
+    if (ecosystemRouting.zone !== 'fallback') {
+      return ecosystemRouting.zone;
+    }
+    return regionLanguageBundleService.getLLMZone();
+  }, [ecosystemRouting.zone]);
 
-  const providerConfig = useMemo(() => {
-    return regionalLanguageService.getProviderForLanguage(preferences?.primaryLanguage || 'en');
-  }, [preferences]);
-
-  const allRegions = useMemo(() => {
-    return regionalLanguageService.getAllRegions();
-  }, []);
+  // Computed: Provider config from ecosystem routing
+  const llmProvider = ecosystemRouting.routing.llm;
+  const ttsProvider = ecosystemRouting.routing.tts;
+  const sttProvider = ecosystemRouting.routing.stt;
+  const translationProvider = ecosystemRouting.routing.translation;
 
   // Actions
-  const setLanguage = useCallback((languageCode: string) => {
-    const updated = regionalLanguageService.updatePrimaryLanguage(languageCode);
-    setPreferences(updated);
-
-    // Apply RTL to document if needed
+  const setLanguage = useCallback((code: string) => {
+    const updated = regionLanguageBundleService.setPrimaryLanguage(code);
+    setConfig({ ...updated });
+    
+    // Apply RTL to document
     if (typeof document !== 'undefined') {
-      document.documentElement.dir = updated.enableRTL ? 'rtl' : 'ltr';
-      document.documentElement.lang = languageCode;
+      const isRtl = regionLanguageBundleService.isRTL(code);
+      document.documentElement.dir = isRtl ? 'rtl' : 'ltr';
+      document.documentElement.lang = code;
     }
   }, []);
 
-  const setRegion = useCallback((region: RegionalCluster) => {
-    const regionConfig = regionalLanguageService.getRegionConfig('', 'UTC');
-    const languages = regionalLanguageService.getLanguagesForRegion(region);
-    const defaultLang = languages.find(l => l.isDefault) || languages[0];
+  const setPrimaryLanguage = setLanguage; // Alias
 
-    const updated: UserLanguagePreferences = {
-      primaryLanguage: defaultLang?.code || 'en',
-      regionCluster: region,
-      secondaryLanguages: ['en'],
-      enableRTL: defaultLang ? regionalLanguageService.isRTLLanguage(defaultLang.code) : false,
-      detectedAutomatically: false,
-      lastUpdated: new Date().toISOString(),
-    };
+  const addLanguage = useCallback((code: string) => {
+    const updated = regionLanguageBundleService.addLanguage(code);
+    setConfig({ ...updated });
+  }, []);
 
-    regionalLanguageService.savePreferences(updated);
-    setPreferences(updated);
+  const removeLanguage = useCallback((code: string) => {
+    const updated = regionLanguageBundleService.removeLanguage(code);
+    setConfig({ ...updated });
+  }, []);
 
-    // Apply RTL to document if needed
+  const setBundle = useCallback((bundle: BundleType) => {
+    const updated = regionLanguageBundleService.setBundle(bundle);
+    setConfig({ ...updated });
+    
+    // Apply RTL to document
     if (typeof document !== 'undefined') {
-      document.documentElement.dir = updated.enableRTL ? 'rtl' : 'ltr';
+      const isRtl = regionLanguageBundleService.isRTL(updated.primaryLanguage);
+      document.documentElement.dir = isRtl ? 'rtl' : 'ltr';
       document.documentElement.lang = updated.primaryLanguage;
     }
   }, []);
 
+  const setRegion = setBundle; // Alias for backward compatibility
+
   const refreshDetection = useCallback(async () => {
     setIsLoading(true);
     try {
-      const detectionResult = await regionalLanguageService.detectRegionFromIP();
-      setDetection(detectionResult);
+      regionLanguageBundleService.clearConfig();
+      const cfg = await regionLanguageBundleService.initializeFromIP();
+      setConfig(cfg);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  const getLanguagesForRegion = useCallback((region: RegionalCluster) => {
-    return regionalLanguageService.getLanguagesForRegion(region);
+  // Helpers
+  const getLanguageInfo = useCallback((code: string) => {
+    return regionLanguageBundleService.getLanguageInfo(code);
   }, []);
 
-  const isLanguageRTL = useCallback((languageCode: string) => {
-    return regionalLanguageService.isRTLLanguage(languageCode);
+  const isLanguageEnabled = useCallback((code: string) => {
+    if (!config) return false;
+    return config.bundleLanguages.includes(code) || config.additionalLanguages.includes(code);
+  }, [config]);
+
+  const isLanguageInBundle = useCallback((code: string) => {
+    if (!config) return false;
+    return config.bundleLanguages.includes(code);
+  }, [config]);
+
+  const isLanguageRTL = useCallback((code: string) => {
+    return regionLanguageBundleService.isRTL(code);
   }, []);
+
+  // Legacy compatibility
+  const detection = useMemo(() => {
+    if (!config) return null;
+    return {
+      countryCode: config.detectedCountry,
+      bundleType: config.bundle,
+    };
+  }, [config]);
+
+  const allRegions = useMemo(() => {
+    return allBundles.map(b => ({
+      id: b.id,
+      name: b.name,
+      flag: b.flag,
+    }));
+  }, [allBundles]);
 
   return {
-    preferences,
+    // Loading
     isLoading,
+    
+    // Bundle info
+    currentBundle,
+    allBundles,
+    
+    // Language state
+    config,
+    enabledLanguages,
+    bundleLanguages,
+    additionalLanguages,
+    availableToAdd,
+    primaryLanguage,
+    
+    // RTL
     isRTL,
     textDirection,
     rtlClasses,
-    detection,
-    currentRegion,
-    regionalLanguages,
-    providerConfig,
+    
+    // LLM Zone
+    llmZone,
+    llmProvider,
+    ttsProvider,
+    sttProvider,
+    translationProvider,
+    zoneSummary: ZONE_SUMMARY,
+    
+    // Actions
     setLanguage,
+    setPrimaryLanguage,
+    addLanguage,
+    removeLanguage,
+    setBundle,
     setRegion,
     refreshDetection,
-    getLanguagesForRegion,
+    
+    // Helpers
+    getLanguageInfo,
+    isLanguageEnabled,
+    isLanguageInBundle,
     isLanguageRTL,
+    
+    // Legacy compatibility
+    preferences: config,
+    detection,
+    currentRegion: config?.bundle || 'english_core',
+    regionalLanguages: enabledLanguages,
     allRegions,
-    // 4-Zone LLM Routing integration
-    llmZone: ecosystemRouting.zone,
-    llmProvider: ecosystemRouting.routing.llm,
-    ttsProvider: ecosystemRouting.routing.tts,
-    sttProvider: ecosystemRouting.routing.stt,
-    translationProvider: ecosystemRouting.routing.translation,
-    zoneSummary: ZONE_SUMMARY,
   };
 }
+
+// Also export as useLanguageBundles for clarity
+export const useLanguageBundles = useRegionalLanguage;
 
 export default useRegionalLanguage;

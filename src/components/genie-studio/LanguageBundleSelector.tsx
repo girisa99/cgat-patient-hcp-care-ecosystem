@@ -42,7 +42,7 @@ import {
   Package,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useLanguageBundles } from '@/hooks/useLanguageBundles';
+import { useRegionalLanguage } from '@/hooks/useRegionalLanguage';
 import type { BundleType, LanguageInfo } from '@/services/regionLanguageBundles';
 
 interface LanguageBundleSelectorProps {
@@ -74,7 +74,7 @@ export function LanguageBundleSelector({
     setBundle,
     refreshDetection,
     isLanguageInBundle,
-  } = useLanguageBundles();
+  } = useRegionalLanguage();
 
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');

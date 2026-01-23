@@ -101,7 +101,11 @@ export { useMobileFeatures } from './useMobileFeatures';
 
 // 4-Zone LLM Ecosystem Routing (IP-based auto-detection)
 export { useEcosystemRouting, ZONE_SUMMARY, COMPLETE_ROUTING_TABLE } from './useEcosystemRouting';
-export { useRegionalLanguage } from './useRegionalLanguage';
+
+// SINGLE SOURCE OF TRUTH: Regional Language & Bundle Management
+// useRegionalLanguage is the ONLY hook for language/region management
+// useLanguageBundles is an alias for the same hook
+export { useRegionalLanguage, useLanguageBundles } from './useRegionalLanguage';
 
 // Universal AI Hub (cross-ecosystem AI with regional routing)
 export { useUniversalAIHub } from './useUniversalAIHub';
