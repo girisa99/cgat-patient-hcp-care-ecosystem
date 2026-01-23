@@ -1,16 +1,17 @@
 /**
  * Embedded Editor Panel for Step 7
  * Integrates Universal Editor into the wizard flow
- * Now with Universal Export for all 100+ pipelines
+ * Now with Universal Export and Dynamic Pipeline Selection
  */
 
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { 
   Edit3, 
   Layers, 
@@ -26,10 +27,13 @@ import {
   FileImage,
   FileType,
   Loader2,
+  ChevronDown,
+  Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { EditorProvider, useEditor } from '@/components/universal-editor';
 import { useUniversalExport } from '@/hooks/useUniversalExport';
+import { InlinePipelineSelector } from './DynamicPipelineSelector';
 import type { PresentationSlide } from '../types';
 import type { ActiveProject, UniversalElement } from '@/components/universal-editor/types';
 import type { GeneratedSlide } from '@/services/universalPresentationService';
@@ -38,6 +42,8 @@ interface EmbeddedEditorPanelProps {
   slides: PresentationSlide[];
   onSlidesUpdate: (slides: PresentationSlide[]) => void;
   outputType: string;
+  inputSource?: string;
+  onPipelineChange?: (pipelineId: string) => void;
   onOpenFullEditor?: () => void;
   className?: string;
 }
@@ -374,13 +380,22 @@ export function EmbeddedEditorPanel({
   slides,
   onSlidesUpdate,
   outputType,
+  inputSource,
+  onPipelineChange,
   onOpenFullEditor,
   className,
 }: EmbeddedEditorPanelProps) {
+  const [selectedPipelineId, setSelectedPipelineId] = useState<string | null>(null);
+  
   const initialProject = useMemo(
     () => createProjectFromSlides(slides, outputType),
     [slides, outputType]
   );
+
+  const handlePipelineSelect = (pipelineId: string) => {
+    setSelectedPipelineId(pipelineId);
+    onPipelineChange?.(pipelineId);
+  };
 
   if (slides.length === 0) {
     return (
@@ -402,7 +417,28 @@ export function EmbeddedEditorPanel({
           <Badge variant="secondary" className="ml-auto">{slides.length} slides</Badge>
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-3">
+        {/* Dynamic Pipeline Selector */}
+        <Collapsible>
+          <CollapsibleTrigger asChild>
+            <Button variant="outline" size="sm" className="w-full justify-between h-8">
+              <span className="flex items-center gap-2 text-xs">
+                <Sparkles className="h-3 w-3" />
+                {selectedPipelineId ? `Pipeline: ${selectedPipelineId}` : 'Select Transformation Pipeline'}
+              </span>
+              <ChevronDown className="h-3 w-3" />
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="pt-2">
+            <InlinePipelineSelector
+              inputSource={inputSource}
+              outputType={outputType}
+              selectedPipelineId={selectedPipelineId}
+              onPipelineSelect={handlePipelineSelect}
+            />
+          </CollapsibleContent>
+        </Collapsible>
+        
         <EditorProvider initialProject={initialProject}>
           <EditorContent slides={slides} onOpenFullEditor={onOpenFullEditor} />
         </EditorProvider>
