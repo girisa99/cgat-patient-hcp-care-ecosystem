@@ -148,7 +148,7 @@ export const TabMetricsHeader: React.FC<TabMetricsHeaderProps> = ({
           <Row label="○ Not" value={BASE.notStarted} type="muted" />
         </MetricCard>
 
-        {/* CROSS-FUNCTIONAL - Dependencies & Links */}
+        {/* CROSS-FUNCTIONAL - Dependencies & Scenarios/Use Cases */}
         <MetricCard
           icon={<Zap className="h-3 w-3 text-purple-500" />}
           title="Cross-Functional"
@@ -163,20 +163,23 @@ export const TabMetricsHeader: React.FC<TabMetricsHeaderProps> = ({
           <Row label="LLMs" value={BASE.llms} muted />
           <Divider />
           <Row 
-            label="Deps" 
-            value={metrics.gaps.features.length} 
-            type="dependency"
-            tooltip="Feature dependencies requiring orchestration"
+            label="Scenarios" 
+            value={`${SCENARIOS.base}+${SCENARIOS.newFromCross}`}
+            highlight="purple"
+            tooltip={`${SCENARIOS.base} base + ${SCENARIOS.newFromCross} NEW from cross-functional dependencies`}
           />
           <Row 
-            label="Links" 
-            value={metrics.opportunities.potentialProviders.length} 
-            type="opportunity"
-            tooltip="Cross-functional provider connections"
+            label="Use Cases" 
+            value={`${USECASES.base}+${USECASES.newFromCross}`}
+            highlight="purple"
+            tooltip={`${USECASES.base} base + ${USECASES.newFromCross} NEW from cross-functional dependencies`}
           />
+          <Divider />
+          <Row label="Deps" value={metrics.gaps.features.length} type="dependency" />
+          <Row label="Links" value={metrics.opportunities.potentialProviders.length} type="opportunity" />
         </MetricCard>
 
-        {/* GENERATION COVERAGE - Context Mappings */}
+        {/* GENERATION COVERAGE - Context Mappings + Scenarios/Use Cases */}
         <MetricCard
           icon={<Layers className="h-3 w-3 text-blue-500" />}
           title="Gen Coverage"
@@ -186,16 +189,22 @@ export const TabMetricsHeader: React.FC<TabMetricsHeaderProps> = ({
           hoverColor="hover:bg-blue-500/10"
           onClick={() => onTabChange?.('coverage')}
         >
-          <Row label="Industries" value={CONTEXT.industries} bold />
-          <Row label="Frameworks" value={CONTEXT.frameworks} bold />
-          <Row label="Visuals" value={CONTEXT.visuals} bold />
-          <Row label="Outputs" value={CONTEXT.outputs} bold />
+          <Row label="Industries" value={CONTEXT.industries} />
+          <Row label="Frameworks" value={CONTEXT.frameworks} />
+          <Row label="Visuals" value={CONTEXT.visuals} />
+          <Row label="Outputs" value={CONTEXT.outputs} />
           <Divider />
           <Row 
-            label="Combos" 
-            value={CONTEXT.industries + CONTEXT.frameworks + CONTEXT.visuals + CONTEXT.outputs} 
-            bold
-            tooltip="Total context combinations: Industry × Framework × Visual × Output permutations for generation"
+            label="Scenarios" 
+            value={`+${SCENARIOS.newFromGen}`}
+            highlight="blue"
+            tooltip={`${SCENARIOS.newFromGen} NEW scenarios discovered from generation coverage analysis`}
+          />
+          <Row 
+            label="Use Cases" 
+            value={`+${USECASES.newFromGen}`}
+            highlight="blue"
+            tooltip={`${USECASES.newFromGen} NEW use cases discovered from generation coverage analysis`}
           />
         </MetricCard>
 
@@ -210,24 +219,23 @@ export const TabMetricsHeader: React.FC<TabMetricsHeaderProps> = ({
           onClick={() => onTabChange?.('gaps')}
         >
           <Row label="Features" value={BASE.features} bold />
-          <Row label="Providers" value={BASE.providers} bold />
-          <Row label="LLMs" value={BASE.llms} bold />
-          <Divider />
           <Row 
             label="Scenarios" 
             value={SCENARIOS.total} 
             bold 
-            tooltip={`${SCENARIOS.total} unique scenarios (${scenarioDupes} duplicates removed)`}
+            tooltip={`${SCENARIOS.total} unique scenarios (${scenarioDupes > 0 ? scenarioDupes + ' duplicates removed' : 'no duplicates'})`}
           />
           <Row 
             label="Use Cases" 
             value={USECASES.total} 
             bold 
-            tooltip={`${USECASES.total} unique use cases (${useCaseDupes} duplicates removed)`}
+            tooltip={`${USECASES.total} unique use cases (${useCaseDupes > 0 ? useCaseDupes + ' duplicates removed' : 'no duplicates'})`}
           />
           <Divider />
-          <Row label="Gaps" value={STATUS.gaps} type="error" />
-          <Row label="Opps" value={STATUS.opportunities} type="opportunity" />
+          <Row label="✓ Impl" value={BASE.implemented} type="success" tooltip={`${BASE.implemented} features fully implemented`} />
+          <Row label="◐ Part" value={BASE.partial} type="warning" tooltip={`${BASE.partial} features partially implemented`} />
+          <Row label="○ Not" value={BASE.notStarted} type="muted" tooltip={`${BASE.notStarted} features not yet started`} />
+          <Divider />
           <Row label="Cover" value={`${STATUS.coverage}%`} type={STATUS.coverage >= 80 ? 'success' : STATUS.coverage >= 50 ? 'warning' : 'error'} />
         </MetricCard>
       </div>
