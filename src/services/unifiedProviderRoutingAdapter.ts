@@ -2,13 +2,12 @@
  * Unified Provider Routing Adapter
  * 
  * Central hub for routing ALL media requests (Video, Audio, Translation, Multi-Language)
- * through the competitive language matrix and regional language service.
+ * through the 4-Zone LLM Routing Strategy from Excel:
  * 
- * Ensures consistent provider selection with fallback chains across:
- * - Translation (DeepL, Google, Qwen-MT, Azure)
- * - TTS/Voice (ElevenLabs, Azure Neural, Alibaba CosyVoice, Google)
- * - STT (ElevenLabs Scribe, Azure, Google, Whisper)
- * - Video (ModelsLab, Replicate, Azure)
+ * 1. CLAUDE ZONE: US, UK, EU, Brazil, Israel, South Africa (Claude + ElevenLabs + DeepL)
+ * 2. ALIBABA ZONE: Japan, Korea, China, HK, Taiwan, MEA/Arabic (Qwen + CosyVoice + Qwen-MT)
+ * 3. GEMINI ZONE: India, Pakistan, SEA, Africa (Gemini + Azure + Google Translate)
+ * 4. FALLBACK: GPT-4o (When primary fails)
  * 
  * RTL Support: Automatic layout direction detection for Arabic, Hebrew, Persian, Urdu
  */
@@ -33,6 +32,17 @@ import {
   type TextDirection,
 } from './regionalLanguageService';
 
+import {
+  COMPLETE_ROUTING_TABLE,
+  ZONE_SUMMARY,
+  getLLMRouteByCountry,
+  selectLLM,
+  selectTTS,
+  selectTranslation,
+  type LLMZone,
+  type LLMRoutingConfig,
+} from './llmRoutingStrategy';
+
 // ============================================================================
 // TYPES & INTERFACES
 // ============================================================================
@@ -48,6 +58,7 @@ export interface ProviderRoute {
   isMoatLanguage: boolean;
   competitorGap: CompetitorGap | null;
   moat: LanguageMoat;
+  zone?: LLMZone;
 }
 
 export interface BadgeInfo {
@@ -63,8 +74,10 @@ export interface UnifiedProviderResult {
   direction: TextDirection;
   region: RegionalCluster | string;
   speakers: string;
+  zone: LLMZone;
   
   // Provider routes by media type
+  llm: ProviderRoute;
   translation: ProviderRoute;
   tts: ProviderRoute;
   stt: ProviderRoute;
@@ -84,45 +97,69 @@ export interface FallbackChain {
 }
 
 // ============================================================================
-// PROVIDER MAPPING (Based on Competitive Matrix Research)
+// LLM PROVIDER MAPPING BY ZONE (From Excel Strategy)
 // ============================================================================
 
-// TTS Provider Mapping by Language
+const LLM_PROVIDER_MAP: Record<string, { primary: string; fallback: string; zone: LLMZone; quality: number }> = {
+  // CLAUDE ZONE: US, UK, EU, Brazil, Israel, South Africa
+  'en': { primary: 'claude-3-5-sonnet', fallback: 'gpt-4o', zone: 'claude', quality: 5 },
+  'en-US': { primary: 'claude-3-5-sonnet', fallback: 'gpt-4o', zone: 'claude', quality: 5 },
+  'en-GB': { primary: 'claude-3-5-sonnet', fallback: 'gpt-4o', zone: 'claude', quality: 5 },
+  'de': { primary: 'claude-3-5-sonnet', fallback: 'gpt-4o', zone: 'claude', quality: 5 },
+  'fr': { primary: 'claude-3-5-sonnet', fallback: 'gpt-4o', zone: 'claude', quality: 5 },
+  'es': { primary: 'claude-3-5-sonnet', fallback: 'gpt-4o', zone: 'claude', quality: 5 },
+  'it': { primary: 'claude-3-5-sonnet', fallback: 'gpt-4o', zone: 'claude', quality: 5 },
+  'pt-BR': { primary: 'claude-3-5-sonnet', fallback: 'gpt-4o', zone: 'claude', quality: 5 },
+  'pt-PT': { primary: 'claude-3-5-sonnet', fallback: 'gpt-4o', zone: 'claude', quality: 5 },
+  'nl': { primary: 'claude-3-5-sonnet', fallback: 'gpt-4o', zone: 'claude', quality: 5 },
+  'pl': { primary: 'claude-3-5-sonnet', fallback: 'gpt-4o', zone: 'claude', quality: 5 },
+  'ru': { primary: 'claude-3-5-sonnet', fallback: 'gpt-4o', zone: 'claude', quality: 5 },
+  'he': { primary: 'claude-3-5-sonnet', fallback: 'gpt-4o', zone: 'claude', quality: 4 },
+  
+  // ALIBABA ZONE: CJK, Arabic
+  'ja': { primary: 'qwen-max', fallback: 'gpt-4o', zone: 'alibaba', quality: 5 },
+  'ko': { primary: 'qwen-max', fallback: 'gpt-4o', zone: 'alibaba', quality: 5 },
+  'zh-CN': { primary: 'qwen-max', fallback: 'gpt-4o', zone: 'alibaba', quality: 5 },
+  'zh-TW': { primary: 'qwen-max', fallback: 'gpt-4o', zone: 'alibaba', quality: 5 },
+  'zh-HK': { primary: 'qwen-max', fallback: 'gpt-4o', zone: 'alibaba', quality: 5 },
+  'ar': { primary: 'qwen-max', fallback: 'gpt-4o', zone: 'alibaba', quality: 5 },
+  'ar-EG': { primary: 'qwen-max', fallback: 'gpt-4o', zone: 'alibaba', quality: 5 },
+  'ar-SA': { primary: 'qwen-max', fallback: 'gpt-4o', zone: 'alibaba', quality: 5 },
+  'ar-AE': { primary: 'qwen-max', fallback: 'gpt-4o', zone: 'alibaba', quality: 5 },
+  'ar-MA': { primary: 'qwen-max', fallback: 'gpt-4o', zone: 'alibaba', quality: 4 },
+  'ar-IQ': { primary: 'qwen-max', fallback: 'gpt-4o', zone: 'alibaba', quality: 4 },
+  
+  // GEMINI ZONE: India, SEA, Africa
+  'hi': { primary: 'gemini-pro', fallback: 'gpt-4o', zone: 'gemini', quality: 5 },
+  'bn': { primary: 'gemini-pro', fallback: 'gpt-4o', zone: 'gemini', quality: 5 },
+  'te': { primary: 'gemini-pro', fallback: 'gpt-4o', zone: 'gemini', quality: 5 },
+  'ta': { primary: 'gemini-pro', fallback: 'gpt-4o', zone: 'gemini', quality: 5 },
+  'mr': { primary: 'gemini-pro', fallback: 'gpt-4o', zone: 'gemini', quality: 4 },
+  'gu': { primary: 'gemini-pro', fallback: 'gpt-4o', zone: 'gemini', quality: 4 },
+  'kn': { primary: 'gemini-pro', fallback: 'gpt-4o', zone: 'gemini', quality: 4 },
+  'ml': { primary: 'gemini-pro', fallback: 'gpt-4o', zone: 'gemini', quality: 4 },
+  'pa': { primary: 'gemini-pro', fallback: 'gpt-4o', zone: 'gemini', quality: 4 },
+  'ur': { primary: 'gemini-pro', fallback: 'gpt-4o', zone: 'gemini', quality: 4 },
+  'id': { primary: 'gemini-pro', fallback: 'gpt-4o', zone: 'gemini', quality: 4 },
+  'vi': { primary: 'gemini-pro', fallback: 'gpt-4o', zone: 'gemini', quality: 4 },
+  'th': { primary: 'gemini-pro', fallback: 'gpt-4o', zone: 'gemini', quality: 4 },
+  'fil': { primary: 'gemini-pro', fallback: 'gpt-4o', zone: 'gemini', quality: 4 },
+  'ms': { primary: 'gemini-pro', fallback: 'gpt-4o', zone: 'gemini', quality: 4 },
+  'sw': { primary: 'gemini-pro', fallback: 'gpt-4o', zone: 'gemini', quality: 5 },
+  'yo': { primary: 'gemini-pro', fallback: 'gpt-4o', zone: 'gemini', quality: 4 },
+  'ha': { primary: 'gemini-pro', fallback: 'gpt-4o', zone: 'gemini', quality: 3 },
+  'ig': { primary: 'gemini-pro', fallback: 'gpt-4o', zone: 'gemini', quality: 3 },
+  'am': { primary: 'gemini-pro', fallback: 'gpt-4o', zone: 'gemini', quality: 4 },
+  'zu': { primary: 'gemini-pro', fallback: 'gpt-4o', zone: 'gemini', quality: 4 },
+};
+
+// TTS Provider Mapping by Zone
 const TTS_PROVIDER_MAP: Record<string, { primary: string; fallback: string; quality: number }> = {
-  // Arabic Dialects - MOAT (NO ONE has this)
-  'ar': { primary: 'azure-neural', fallback: 'google-tts', quality: 5 },
-  'ar-EG': { primary: 'azure-neural', fallback: 'google-tts', quality: 5 },
-  'ar-SA': { primary: 'azure-neural', fallback: 'google-tts', quality: 5 },
-  'ar-AE': { primary: 'azure-neural', fallback: 'google-tts', quality: 5 },
-  'ar-MA': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
-  'ar-JO': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
-  'ar-IQ': { primary: 'azure-neural', fallback: 'google-tts', quality: 3 },
-  
-  // Indian Languages - MOAT (Competitors have 1-2 max)
-  'hi': { primary: 'azure-neural', fallback: 'google-tts', quality: 5 },
-  'bn': { primary: 'azure-neural', fallback: 'google-tts', quality: 5 },
-  'te': { primary: 'azure-neural', fallback: 'google-tts', quality: 5 },
-  'ta': { primary: 'azure-neural', fallback: 'google-tts', quality: 5 },
-  'mr': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
-  'kn': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
-  'gu': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
-  'ml': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
-  'pa': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
-  'or': { primary: 'azure-neural', fallback: 'google-tts', quality: 3 },
-  'as': { primary: 'azure-neural', fallback: 'google-tts', quality: 3 },
-  'ur': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
-  
-  // African Languages - FIRST MOVER (NO ONE has this)
-  'sw': { primary: 'azure-neural', fallback: 'google-tts', quality: 5 },
-  'yo': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
-  'ha': { primary: 'azure-neural', fallback: 'google-tts', quality: 3 },
-  'ig': { primary: 'azure-neural', fallback: 'google-tts', quality: 3 },
-  'zu': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
-  'am': { primary: 'google-tts', fallback: 'azure-neural', quality: 4 },
-  'xh': { primary: 'azure-neural', fallback: 'google-tts', quality: 3 },
-  'af': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
-  
-  // European - YOU WIN (ElevenLabs + DeepL)
+  // CLAUDE ZONE - ElevenLabs for premium European voices
+  'en': { primary: 'elevenlabs', fallback: 'openai-tts', quality: 5 },
+  'en-US': { primary: 'elevenlabs', fallback: 'openai-tts', quality: 5 },
+  'en-GB': { primary: 'elevenlabs', fallback: 'openai-tts', quality: 5 },
+  'en-AU': { primary: 'elevenlabs', fallback: 'openai-tts', quality: 5 },
   'de': { primary: 'elevenlabs', fallback: 'azure-neural', quality: 5 },
   'fr': { primary: 'elevenlabs', fallback: 'azure-neural', quality: 5 },
   'es': { primary: 'elevenlabs', fallback: 'azure-neural', quality: 5 },
@@ -134,55 +171,76 @@ const TTS_PROVIDER_MAP: Record<string, { primary: string; fallback: string; qual
   'pl': { primary: 'elevenlabs', fallback: 'azure-neural', quality: 5 },
   'ru': { primary: 'elevenlabs', fallback: 'azure-neural', quality: 5 },
   
-  // CJK - Premium (Alibaba CosyVoice)
+  // ALIBABA ZONE - CosyVoice for CJK, Azure for Arabic
   'ja': { primary: 'alibaba-cosyvoice', fallback: 'azure-neural', quality: 5 },
   'ko': { primary: 'alibaba-cosyvoice', fallback: 'azure-neural', quality: 5 },
   'zh-CN': { primary: 'alibaba-cosyvoice', fallback: 'azure-neural', quality: 5 },
   'zh-TW': { primary: 'alibaba-cosyvoice', fallback: 'azure-neural', quality: 5 },
   'zh-HK': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
+  'ar': { primary: 'azure-neural', fallback: 'google-tts', quality: 5 },
+  'ar-EG': { primary: 'azure-neural', fallback: 'google-tts', quality: 5 },
+  'ar-SA': { primary: 'azure-neural', fallback: 'google-tts', quality: 5 },
+  'ar-AE': { primary: 'azure-neural', fallback: 'google-tts', quality: 5 },
+  'ar-MA': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
+  'ar-JO': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
+  'ar-IQ': { primary: 'azure-neural', fallback: 'google-tts', quality: 3 },
   
-  // Southeast Asia
-  'th': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
-  'vi': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
+  // GEMINI ZONE - Azure Neural for India/SEA/Africa
+  'hi': { primary: 'azure-neural', fallback: 'google-tts', quality: 5 },
+  'bn': { primary: 'azure-neural', fallback: 'google-tts', quality: 5 },
+  'te': { primary: 'azure-neural', fallback: 'google-tts', quality: 5 },
+  'ta': { primary: 'azure-neural', fallback: 'google-tts', quality: 5 },
+  'mr': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
+  'kn': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
+  'gu': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
+  'ml': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
+  'pa': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
+  'ur': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
   'id': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
+  'vi': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
+  'th': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
+  'fil': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
   'ms': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
+  'sw': { primary: 'azure-neural', fallback: 'google-tts', quality: 5 },
+  'yo': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
+  'ha': { primary: 'azure-neural', fallback: 'google-tts', quality: 3 },
+  'ig': { primary: 'azure-neural', fallback: 'google-tts', quality: 3 },
+  'zu': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
+  'am': { primary: 'google-tts', fallback: 'azure-neural', quality: 4 },
+  'xh': { primary: 'azure-neural', fallback: 'google-tts', quality: 3 },
+  'af': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
   
   // RTL Languages
   'he': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
   'fa': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
-  
-  // English variants
-  'en': { primary: 'elevenlabs', fallback: 'openai-tts', quality: 5 },
-  'en-US': { primary: 'elevenlabs', fallback: 'openai-tts', quality: 5 },
-  'en-GB': { primary: 'elevenlabs', fallback: 'openai-tts', quality: 5 },
-  'en-AU': { primary: 'elevenlabs', fallback: 'openai-tts', quality: 5 },
 };
 
-// Translation Provider Mapping by Language
+// Translation Provider Mapping by Zone
 const TRANSLATION_PROVIDER_MAP: Record<string, { primary: string; fallback: string; quality: number }> = {
-  // European - DeepL Excellence
+  // CLAUDE ZONE - DeepL for European (best quality)
   'de': { primary: 'deepl', fallback: 'azure-translator', quality: 5 },
   'fr': { primary: 'deepl', fallback: 'azure-translator', quality: 5 },
   'es': { primary: 'deepl', fallback: 'azure-translator', quality: 5 },
   'it': { primary: 'deepl', fallback: 'azure-translator', quality: 5 },
   'pt': { primary: 'deepl', fallback: 'azure-translator', quality: 5 },
   'pt-BR': { primary: 'deepl', fallback: 'azure-translator', quality: 5 },
+  'pt-PT': { primary: 'deepl', fallback: 'azure-translator', quality: 5 },
   'nl': { primary: 'deepl', fallback: 'azure-translator', quality: 5 },
   'pl': { primary: 'deepl', fallback: 'azure-translator', quality: 5 },
   'ru': { primary: 'deepl', fallback: 'azure-translator', quality: 5 },
+  'en': { primary: 'deepl', fallback: 'google-translate', quality: 5 },
   
-  // CJK - Qwen-MT / Alibaba
+  // ALIBABA ZONE - Qwen-MT for CJK, Azure for Arabic
   'ja': { primary: 'qwen-mt', fallback: 'deepl', quality: 5 },
   'ko': { primary: 'qwen-mt', fallback: 'deepl', quality: 5 },
   'zh-CN': { primary: 'qwen-mt', fallback: 'google-translate', quality: 5 },
   'zh-TW': { primary: 'qwen-mt', fallback: 'google-translate', quality: 5 },
-  
-  // Arabic - Azure Translator
   'ar': { primary: 'azure-translator', fallback: 'google-translate', quality: 5 },
   'ar-EG': { primary: 'azure-translator', fallback: 'google-translate', quality: 5 },
   'ar-SA': { primary: 'azure-translator', fallback: 'google-translate', quality: 5 },
+  'ar-AE': { primary: 'azure-translator', fallback: 'google-translate', quality: 5 },
   
-  // Indian - Google Translate (best coverage)
+  // GEMINI ZONE - Google for India/SEA/Africa
   'hi': { primary: 'google-translate', fallback: 'azure-translator', quality: 5 },
   'bn': { primary: 'google-translate', fallback: 'azure-translator', quality: 5 },
   'te': { primary: 'google-translate', fallback: 'azure-translator', quality: 5 },
@@ -193,8 +251,11 @@ const TRANSLATION_PROVIDER_MAP: Record<string, { primary: string; fallback: stri
   'ml': { primary: 'google-translate', fallback: 'azure-translator', quality: 4 },
   'pa': { primary: 'google-translate', fallback: 'azure-translator', quality: 4 },
   'ur': { primary: 'google-translate', fallback: 'azure-translator', quality: 4 },
-  
-  // African - Google + NLLB
+  'id': { primary: 'google-translate', fallback: 'azure-translator', quality: 4 },
+  'vi': { primary: 'google-translate', fallback: 'azure-translator', quality: 4 },
+  'th': { primary: 'google-translate', fallback: 'azure-translator', quality: 4 },
+  'fil': { primary: 'google-translate', fallback: 'azure-translator', quality: 4 },
+  'ms': { primary: 'google-translate', fallback: 'azure-translator', quality: 4 },
   'sw': { primary: 'google-translate', fallback: 'nllb', quality: 5 },
   'yo': { primary: 'google-translate', fallback: 'nllb', quality: 4 },
   'ha': { primary: 'google-translate', fallback: 'nllb', quality: 3 },
@@ -202,49 +263,36 @@ const TRANSLATION_PROVIDER_MAP: Record<string, { primary: string; fallback: stri
   'zu': { primary: 'google-translate', fallback: 'nllb', quality: 4 },
   'am': { primary: 'google-translate', fallback: 'nllb', quality: 4 },
   
-  // Southeast Asia
-  'th': { primary: 'google-translate', fallback: 'azure-translator', quality: 4 },
-  'vi': { primary: 'google-translate', fallback: 'azure-translator', quality: 4 },
-  'id': { primary: 'google-translate', fallback: 'azure-translator', quality: 4 },
-  
   // RTL
   'he': { primary: 'azure-translator', fallback: 'google-translate', quality: 4 },
   'fa': { primary: 'azure-translator', fallback: 'google-translate', quality: 4 },
-  
-  // Default English
-  'en': { primary: 'deepl', fallback: 'google-translate', quality: 5 },
 };
 
 // STT Provider Mapping
 const STT_PROVIDER_MAP: Record<string, { primary: string; fallback: string; quality: number }> = {
-  // European
+  // CLAUDE ZONE - Whisper universal, ElevenLabs Scribe premium
   'en': { primary: 'elevenlabs-scribe', fallback: 'whisper', quality: 5 },
-  'de': { primary: 'deepgram', fallback: 'azure-stt', quality: 5 },
-  'fr': { primary: 'deepgram', fallback: 'azure-stt', quality: 5 },
-  'es': { primary: 'elevenlabs-scribe', fallback: 'azure-stt', quality: 5 },
+  'de': { primary: 'whisper', fallback: 'azure-stt', quality: 5 },
+  'fr': { primary: 'whisper', fallback: 'azure-stt', quality: 5 },
+  'es': { primary: 'whisper', fallback: 'azure-stt', quality: 5 },
   
-  // CJK
-  'ja': { primary: 'alibaba-paraformer', fallback: 'google-stt', quality: 5 },
-  'ko': { primary: 'alibaba-paraformer', fallback: 'google-stt', quality: 5 },
-  'zh-CN': { primary: 'alibaba-paraformer', fallback: 'google-stt', quality: 5 },
+  // ALIBABA ZONE - Paraformer for CJK
+  'ja': { primary: 'alibaba-paraformer', fallback: 'whisper', quality: 5 },
+  'ko': { primary: 'alibaba-paraformer', fallback: 'whisper', quality: 5 },
+  'zh-CN': { primary: 'alibaba-paraformer', fallback: 'whisper', quality: 5 },
+  'ar': { primary: 'whisper', fallback: 'azure-stt', quality: 5 },
   
-  // Arabic
-  'ar': { primary: 'azure-stt', fallback: 'google-stt', quality: 5 },
-  
-  // Indian
-  'hi': { primary: 'azure-stt', fallback: 'google-stt', quality: 5 },
-  'bn': { primary: 'azure-stt', fallback: 'google-stt', quality: 4 },
-  'te': { primary: 'azure-stt', fallback: 'google-stt', quality: 4 },
-  'ta': { primary: 'azure-stt', fallback: 'google-stt', quality: 4 },
-  
-  // African
-  'sw': { primary: 'azure-stt', fallback: 'google-stt', quality: 4 },
-  'am': { primary: 'google-stt', fallback: 'azure-stt', quality: 4 },
+  // GEMINI ZONE - Whisper universal
+  'hi': { primary: 'whisper', fallback: 'azure-stt', quality: 5 },
+  'bn': { primary: 'whisper', fallback: 'azure-stt', quality: 4 },
+  'te': { primary: 'whisper', fallback: 'azure-stt', quality: 4 },
+  'ta': { primary: 'whisper', fallback: 'azure-stt', quality: 4 },
+  'sw': { primary: 'whisper', fallback: 'azure-stt', quality: 4 },
+  'am': { primary: 'whisper', fallback: 'google-stt', quality: 4 },
 };
 
 // Video Provider Mapping (for AI video generation with narration)
 const VIDEO_PROVIDER_MAP: Record<string, { primary: string; fallback: string; quality: number }> = {
-  // Global - ModelsLab primary
   'en': { primary: 'modelslab', fallback: 'replicate', quality: 5 },
   'de': { primary: 'modelslab', fallback: 'azure-video', quality: 5 },
   'fr': { primary: 'modelslab', fallback: 'azure-video', quality: 5 },
@@ -278,6 +326,10 @@ export function getUnifiedProviderRouting(languageCode: string): UnifiedProvider
     e => e.code === languageCode || e.code === baseCode
   );
   
+  // Get LLM provider from zone mapping
+  const llmConfig = LLM_PROVIDER_MAP[languageCode] || LLM_PROVIDER_MAP[baseCode] || 
+    { primary: 'gpt-4o', fallback: 'claude-3-5-sonnet', zone: 'fallback' as LLMZone, quality: 4 };
+  
   // Get TTS provider
   const ttsConfig = TTS_PROVIDER_MAP[languageCode] || TTS_PROVIDER_MAP[baseCode] || 
     { primary: 'azure-neural', fallback: 'google-tts', quality: 3 };
@@ -288,7 +340,7 @@ export function getUnifiedProviderRouting(languageCode: string): UnifiedProvider
   
   // Get STT provider
   const sttConfig = STT_PROVIDER_MAP[languageCode] || STT_PROVIDER_MAP[baseCode] ||
-    { primary: 'azure-stt', fallback: 'google-stt', quality: 3 };
+    { primary: 'whisper', fallback: 'azure-stt', quality: 3 };
   
   // Get Video provider
   const videoConfig = VIDEO_PROVIDER_MAP[languageCode] || VIDEO_PROVIDER_MAP[baseCode] ||
@@ -297,6 +349,7 @@ export function getUnifiedProviderRouting(languageCode: string): UnifiedProvider
   const isMoatLanguage = matrixEntry?.moat !== null && matrixEntry?.moat !== undefined;
   const competitorGap = matrixEntry?.competitorGap || null;
   const moat = matrixEntry?.moat || null;
+  const zone = llmConfig.zone;
   
   // Build reason strings
   const getTTSReason = () => {
@@ -329,6 +382,13 @@ export function getUnifiedProviderRouting(languageCode: string): UnifiedProvider
     }
     return 'Standard provider routing';
   };
+
+  const getLLMReason = () => {
+    if (zone === 'claude') return 'Claude Zone: Best for EU/US formal tone';
+    if (zone === 'alibaba') return 'Alibaba Zone: Native CJK/Arabic handling';
+    if (zone === 'gemini') return 'Gemini Zone: Best for India/SEA/Africa';
+    return 'Fallback: GPT-4o general purpose';
+  };
   
   return {
     languageCode,
@@ -337,6 +397,19 @@ export function getUnifiedProviderRouting(languageCode: string): UnifiedProvider
     direction: isRTL ? 'rtl' : 'ltr',
     region: matrixEntry?.region || 'unknown',
     speakers: matrixEntry?.speakers || 'unknown',
+    zone,
+    
+    llm: {
+      primary: llmConfig.primary,
+      fallback: llmConfig.fallback,
+      quality: llmConfig.quality,
+      reason: getLLMReason(),
+      isRTL,
+      isMoatLanguage,
+      competitorGap,
+      moat,
+      zone,
+    },
     
     translation: {
       primary: translationConfig.primary,
@@ -396,7 +469,7 @@ export function getUnifiedProviderRouting(languageCode: string): UnifiedProvider
     marketAdvantage: isMoatLanguage 
       ? `Exclusive ${moat?.replace('_', ' ')} support - ${matrixEntry?.speakers} speakers`
       : `${translationConfig.quality >= 5 ? 'Premium' : 'Standard'} quality routing`,
-    badge: getCompetitorGapBadge(competitorGap || 'match'),
+    badge: getCompetitorGapBadge(competitorGap || 'match') as BadgeInfo,
   };
 }
 
