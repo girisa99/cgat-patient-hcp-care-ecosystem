@@ -10,6 +10,7 @@ export type FeatureCategory =
   | 'SCRIPT'
   | 'VOICE'
   | 'AUDIO'
+  | 'SFX'           // NEW: Sound Effects generation (ElevenLabs, Suno)
   | 'IMAGE'
   | 'VIDEO'
   | 'ANIMATION'
@@ -19,6 +20,7 @@ export type FeatureCategory =
   | 'INTERACTIVE'
   | 'TRANSLATION'
   | 'EXPORT'
+  | 'DOWNLOAD'      // NEW: Universal download/export distribution
   | 'EDITING'       // NEW: Generative editor refinement features
   | 'PIPELINE'      // NEW: Transformation pipeline orchestration
   | 'PUBLISHING'
