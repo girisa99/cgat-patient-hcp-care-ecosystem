@@ -8,6 +8,7 @@
  * - IP-based auto-detection of region and bundle
  * - 7 Regional bundles (English Core, Europe, Asia, India, MEA, Africa, LatAm)
  * - 4-Zone LLM routing integration (Claude, Alibaba, Gemini, Fallback)
+ * - Premium feature routing (Voice Clone, Avatar, Full-body Avatar, Priority Rendering)
  * - User ability to add additional languages beyond bundle
  * - RTL layout support
  * - Persistent preferences
@@ -34,12 +35,26 @@ import {
   selectTranslation,
   type LLMZone,
 } from '@/services/llmRoutingStrategy';
+import {
+  getUnifiedProviderRouting,
+  type ProviderRoute,
+} from '@/services/unifiedProviderRoutingAdapter';
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
 export type TextDirection = 'ltr' | 'rtl';
+
+/**
+ * Premium Features Routing - Global providers (not zone-based)
+ */
+export interface PremiumFeaturesRouting {
+  voiceClone: ProviderRoute;
+  avatar: ProviderRoute;
+  fullBodyAvatar: ProviderRoute;
+  priorityRendering: ProviderRoute;
+}
 
 export interface UseRegionalLanguageReturn {
   // Loading state
@@ -70,6 +85,13 @@ export interface UseRegionalLanguageReturn {
   translationProvider: string;
   zoneSummary: typeof ZONE_SUMMARY;
   
+  // Premium Features Routing (Global - not zone-based)
+  premiumRouting: PremiumFeaturesRouting;
+  voiceCloneProvider: string;
+  avatarProvider: string;
+  fullBodyAvatarProvider: string;
+  priorityRenderingProvider: string;
+  
   // Actions
   setLanguage: (code: string) => void;
   setPrimaryLanguage: (code: string) => void;
@@ -84,6 +106,7 @@ export interface UseRegionalLanguageReturn {
   isLanguageEnabled: (code: string) => boolean;
   isLanguageInBundle: (code: string) => boolean;
   isLanguageRTL: (code: string) => boolean;
+  getProviderForFeature: (feature: 'llm' | 'tts' | 'stt' | 'translation' | 'voiceClone' | 'avatar' | 'fullBodyAvatar' | 'priorityRendering') => string;
   
   // Legacy compatibility
   preferences: UserLanguageConfig | null;
@@ -205,6 +228,23 @@ export function useRegionalLanguage(): UseRegionalLanguageReturn {
   const ttsProvider = ecosystemRouting.routing.tts;
   const sttProvider = ecosystemRouting.routing.stt;
   const translationProvider = ecosystemRouting.routing.translation;
+  
+  // Computed: Premium features routing (global - not zone-based)
+  const premiumRouting = useMemo((): PremiumFeaturesRouting => {
+    const languageCode = config?.primaryLanguage || 'en';
+    const unified = getUnifiedProviderRouting(languageCode);
+    return {
+      voiceClone: unified.voiceClone,
+      avatar: unified.avatar,
+      fullBodyAvatar: unified.fullBodyAvatar,
+      priorityRendering: unified.priorityRendering,
+    };
+  }, [config?.primaryLanguage]);
+  
+  const voiceCloneProvider = premiumRouting.voiceClone.primary;
+  const avatarProvider = premiumRouting.avatar.primary;
+  const fullBodyAvatarProvider = premiumRouting.fullBodyAvatar.primary;
+  const priorityRenderingProvider = premiumRouting.priorityRendering.primary;
 
   // Actions
   const setLanguage = useCallback((code: string) => {
@@ -321,6 +361,13 @@ export function useRegionalLanguage(): UseRegionalLanguageReturn {
     translationProvider,
     zoneSummary: ZONE_SUMMARY,
     
+    // Premium Features Routing (Global - not zone-based)
+    premiumRouting,
+    voiceCloneProvider,
+    avatarProvider,
+    fullBodyAvatarProvider,
+    priorityRenderingProvider,
+    
     // Actions
     setLanguage,
     setPrimaryLanguage,
@@ -335,6 +382,19 @@ export function useRegionalLanguage(): UseRegionalLanguageReturn {
     isLanguageEnabled,
     isLanguageInBundle,
     isLanguageRTL,
+    getProviderForFeature: (feature) => {
+      switch (feature) {
+        case 'llm': return llmProvider;
+        case 'tts': return ttsProvider;
+        case 'stt': return sttProvider;
+        case 'translation': return translationProvider;
+        case 'voiceClone': return voiceCloneProvider;
+        case 'avatar': return avatarProvider;
+        case 'fullBodyAvatar': return fullBodyAvatarProvider;
+        case 'priorityRendering': return priorityRenderingProvider;
+        default: return llmProvider;
+      }
+    },
     
     // Legacy compatibility
     preferences: config,
