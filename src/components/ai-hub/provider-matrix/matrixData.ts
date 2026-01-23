@@ -492,6 +492,104 @@ export const FEATURE_USE_CASES: Record<string, { scenarios: string[]; bestFor: s
     bestFor: ['Enterprise automation', 'Complex content production', 'Multi-modal generation', 'Scale operations'],
     limitations: ['Orchestration complexity', 'Error handling across agents']
   },
+
+  // ============================================
+  // SFX FEATURES - Sound Effects Use Cases
+  // ============================================
+  ai_sfx_generation: {
+    scenarios: ['Video sound design', 'Podcast effects', 'Game audio', 'App sounds', 'Presentation audio'],
+    bestFor: ['Custom sound creation', 'Unique audio branding', 'Rapid prototyping', 'Content enhancement'],
+    limitations: ['Quality varies by prompt', 'Complex sounds may need editing']
+  },
+  elevenlabs_sfx: {
+    scenarios: ['Professional SFX', 'Trailer audio', 'Advertisement sounds', 'Interactive media'],
+    bestFor: ['High-quality effects', 'Commercial production', 'Brand audio', 'Premium content'],
+    limitations: ['Credit consumption', 'Rate limits']
+  },
+  ambient_audio: {
+    scenarios: ['Background ambience', 'Meditation apps', 'ASMR content', 'Atmospheric videos'],
+    bestFor: ['Mood setting', 'Focus content', 'Relaxation audio', 'Immersive experiences'],
+    limitations: ['Loop continuity', 'Genre variety']
+  },
+  sound_library: {
+    scenarios: ['Quick sound selection', 'Royalty-free audio', 'Common effects', 'Standard sounds'],
+    bestFor: ['Fast turnaround', 'Budget production', 'Template content', 'Basic needs'],
+    limitations: ['Limited uniqueness', 'Overused sounds']
+  },
+  audio_effects: {
+    scenarios: ['Voice effects', 'Audio styling', 'Sound manipulation', 'Creative audio'],
+    bestFor: ['Post-production', 'Audio enhancement', 'Special effects', 'Artistic expression'],
+    limitations: ['Processing time', 'Quality degradation with heavy effects']
+  },
+  foley_generation: {
+    scenarios: ['Film sound design', 'Video games', 'Animation', 'Documentary'],
+    bestFor: ['Realistic sounds', 'Scene enhancement', 'Immersive audio', 'Professional production'],
+    limitations: ['Context accuracy', 'Complex actions']
+  },
+  music_stems: {
+    scenarios: ['Remix creation', 'Karaoke tracks', 'Music production', 'Content adaptation'],
+    bestFor: ['Audio isolation', 'Creative remixing', 'Educational content', 'Cover versions'],
+    limitations: ['Separation quality', 'Complex mixes']
+  },
+  audio_mix_master: {
+    scenarios: ['Final audio polish', 'Podcast production', 'Video mastering', 'Music finishing'],
+    bestFor: ['Professional output', 'Consistent levels', 'Broadcast ready', 'Quality assurance'],
+    limitations: ['Automated limitations', 'Genre-specific needs']
+  },
+
+  // ============================================
+  // DOWNLOAD FEATURES - Export & Distribution Use Cases
+  // ============================================
+  universal_download: {
+    scenarios: ['One-click export', 'Multi-format download', 'Quick sharing', 'Archive creation'],
+    bestFor: ['Convenience', 'Time savings', 'Workflow efficiency', 'Universal access'],
+    limitations: ['File size limits', 'Network dependency']
+  },
+  platform_downloads: {
+    scenarios: ['Social media optimization', 'Platform-specific formats', 'Vertical video', 'Thumbnail generation'],
+    bestFor: ['Social content', 'Marketing assets', 'Cross-platform distribution', 'Optimized delivery'],
+    limitations: ['Platform API changes', 'Format restrictions']
+  },
+  vfx_download: {
+    scenarios: ['VFX asset library', 'Effect templates', 'Animation exports', 'Creative assets'],
+    bestFor: ['Professional editing', 'Asset reuse', 'Template creation', 'Creative workflow'],
+    limitations: ['Large file sizes', 'Format compatibility']
+  },
+  media_library_export: {
+    scenarios: ['Bulk download', 'Asset backup', 'Project archival', 'Team sharing'],
+    bestFor: ['Organization', 'Backup strategy', 'Migration', 'Collaboration'],
+    limitations: ['Storage requirements', 'Download time']
+  },
+  cloud_sync_download: {
+    scenarios: ['Google Drive sync', 'Dropbox integration', 'OneDrive backup', 'Cloud collaboration'],
+    bestFor: ['Remote access', 'Team workflows', 'Automatic backup', 'Cross-device access'],
+    limitations: ['Sync conflicts', 'API quotas']
+  },
+  batch_download: {
+    scenarios: ['Multi-asset export', 'Project completion', 'Bulk delivery', 'Archive creation'],
+    bestFor: ['Efficiency', 'Project handoffs', 'Client delivery', 'Asset organization'],
+    limitations: ['Processing time', 'Memory usage']
+  },
+  offline_package: {
+    scenarios: ['Internet-free viewing', 'Kiosk presentations', 'Trade show displays', 'Portable content'],
+    bestFor: ['Reliable playback', 'No-network environments', 'Embedded displays', 'Self-contained delivery'],
+    limitations: ['File size', 'No live updates']
+  },
+  source_files_export: {
+    scenarios: ['Editable handoff', 'Team collaboration', 'Future modifications', 'Version control'],
+    bestFor: ['Client delivery', 'Ongoing projects', 'Design flexibility', 'Professional workflows'],
+    limitations: ['Format support', 'Feature preservation']
+  },
+  branding_kit_export: {
+    scenarios: ['Brand guidelines', 'Asset packages', 'Marketing kits', 'Partner distribution'],
+    bestFor: ['Brand consistency', 'Team alignment', 'External agencies', 'Franchise distribution'],
+    limitations: ['Customization limits', 'Update management']
+  },
+  api_download: {
+    scenarios: ['Programmatic access', 'Integration workflows', 'Automated exports', 'Custom applications'],
+    bestFor: ['Developer workflows', 'Enterprise integration', 'Custom pipelines', 'Automation'],
+    limitations: ['API rate limits', 'Authentication complexity']
+  },
 };
 
 export const ALL_FEATURES: Feature[] = [
@@ -667,6 +765,28 @@ export const ALL_FEATURES: Feature[] = [
   { id: 'model_change', name: 'Change AI Model', category: 'EDITING', priority: 'medium', description: 'Switch to different AI provider mid-edit' },
   { id: 'version_history', name: 'Version History', category: 'EDITING', priority: 'high', description: 'Track and revert element changes' },
   { id: 'batch_edit', name: 'Batch Edit', category: 'EDITING', priority: 'medium', description: 'Apply changes to multiple elements' },
+
+  // SFX FEATURES (Sound Effects Generation)
+  { id: 'ai_sfx_generation', name: 'AI SFX Generation', category: 'SFX', priority: 'high', description: 'Generate custom sound effects via AI' },
+  { id: 'elevenlabs_sfx', name: 'ElevenLabs Sound Effects', category: 'SFX', priority: 'high', description: 'Premium AI sound effects via ElevenLabs' },
+  { id: 'ambient_audio', name: 'Ambient Audio Generation', category: 'SFX', priority: 'medium', description: 'Generate background ambience' },
+  { id: 'sound_library', name: 'Sound Effects Library', category: 'SFX', priority: 'medium', description: 'Pre-made SFX library access' },
+  { id: 'audio_effects', name: 'Audio Effects Processing', category: 'SFX', priority: 'medium', description: 'Apply reverb, echo, distortion' },
+  { id: 'foley_generation', name: 'Foley Sound Generation', category: 'SFX', priority: 'low', description: 'Generate realistic foley sounds' },
+  { id: 'music_stems', name: 'AI Music Stems', category: 'SFX', priority: 'medium', description: 'Generate separated music tracks' },
+  { id: 'audio_mix_master', name: 'Audio Mix & Master', category: 'SFX', priority: 'medium', description: 'Automated audio mixing' },
+
+  // DOWNLOAD FEATURES (Universal Export & Distribution)
+  { id: 'universal_download', name: 'Universal Download', category: 'DOWNLOAD', priority: 'critical', description: 'One-click export to all formats' },
+  { id: 'platform_downloads', name: 'Platform-Optimized Downloads', category: 'DOWNLOAD', priority: 'high', description: 'Format presets for YouTube, LinkedIn, TikTok' },
+  { id: 'vfx_download', name: 'VFX Asset Download', category: 'DOWNLOAD', priority: 'medium', description: 'Download visual effects as assets' },
+  { id: 'media_library_export', name: 'Media Library Export', category: 'DOWNLOAD', priority: 'medium', description: 'Export entire media library' },
+  { id: 'cloud_sync_download', name: 'Cloud Sync Download', category: 'DOWNLOAD', priority: 'medium', description: 'Sync to Dropbox, GDrive, OneDrive' },
+  { id: 'batch_download', name: 'Batch Download', category: 'DOWNLOAD', priority: 'high', description: 'Download multiple assets at once' },
+  { id: 'offline_package', name: 'Offline Package', category: 'DOWNLOAD', priority: 'medium', description: 'Self-contained offline presentation' },
+  { id: 'source_files_export', name: 'Source Files Export', category: 'DOWNLOAD', priority: 'medium', description: 'Export editable source files' },
+  { id: 'branding_kit_export', name: 'Branding Kit Export', category: 'DOWNLOAD', priority: 'low', description: 'Export brand assets package' },
+  { id: 'api_download', name: 'API Download Endpoints', category: 'DOWNLOAD', priority: 'high', description: 'Programmatic download via API' },
 
   // PIPELINE FEATURES (Transformation Orchestration)
   { id: 'idea_to_presentation', name: 'Idea → Presentation', category: 'PIPELINE', priority: 'critical', description: 'Full automated deck creation' },
@@ -1284,18 +1404,18 @@ export const FEATURE_IMPLEMENTATION_MATRIX: Record<string, Partial<Record<Provid
     modelslab: { status: 'configured', implementation: 'implemented', confidence: 75, edgeFunctionUsed: 'modelslab-media' },
   },
   
-  // AR/VR FEATURES
+  // AR/VR FEATURES (Updated with partial implementations)
   ar_preview: {
-    modelslab: { status: 'configured', implementation: 'not_started', confidence: 0 },
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 45, notes: '3D model export for AR viewing' },
   },
   vr_export: {
-    modelslab: { status: 'configured', implementation: 'not_started', confidence: 0 },
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 40, notes: '360° video support pending' },
   },
   spatial: {
-    modelslab: { status: 'configured', implementation: 'not_started', confidence: 0 },
+    modelslab: { status: 'configured', implementation: 'not_started', confidence: 25, notes: 'Apple Vision Pro format planned' },
   },
   immersive: {
-    modelslab: { status: 'configured', implementation: 'not_started', confidence: 0 },
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 50, notes: '3D scene immersion mode' },
   },
   
   // VFX FEATURES
@@ -1563,6 +1683,72 @@ export const FEATURE_IMPLEMENTATION_MATRIX: Record<string, Partial<Record<Provid
   a2a_orchestration: {
     supabase: { status: 'configured', implementation: 'implemented', confidence: 88, edgeFunctionUsed: 'ai-a2a-coordinator' },
     openai: { status: 'configured', implementation: 'implemented', confidence: 92, notes: 'Primary LLM router' },
+  },
+
+  // SFX FEATURES (Sound Effects Generation)
+  ai_sfx_generation: {
+    elevenlabs: { status: 'configured', implementation: 'implemented', confidence: 92, edgeFunctionUsed: 'elevenlabs-sfx', notes: 'AI Sound Effects API' },
+    alibaba: { status: 'configured', implementation: 'partial', confidence: 65, notes: 'Audio generation via CosyVoice' },
+  },
+  elevenlabs_sfx: {
+    elevenlabs: { status: 'configured', implementation: 'implemented', confidence: 95, edgeFunctionUsed: 'elevenlabs-sfx' },
+  },
+  ambient_audio: {
+    elevenlabs: { status: 'configured', implementation: 'partial', confidence: 70, notes: 'Via SFX + composition' },
+    replicate: { status: 'configured', implementation: 'partial', confidence: 60 },
+  },
+  sound_library: {
+    elevenlabs: { status: 'configured', implementation: 'implemented', confidence: 88, notes: 'Sound effect library access' },
+    supabase: { status: 'configured', implementation: 'partial', confidence: 60, notes: 'Static assets storage' },
+  },
+  audio_effects: {
+    elevenlabs: { status: 'configured', implementation: 'partial', confidence: 65, notes: 'Basic effects processing' },
+    replicate: { status: 'configured', implementation: 'partial', confidence: 55 },
+  },
+  foley_generation: {
+    elevenlabs: { status: 'configured', implementation: 'partial', confidence: 55, notes: 'Via SFX prompts' },
+  },
+  music_stems: {
+    replicate: { status: 'configured', implementation: 'partial', confidence: 60, notes: 'Demucs audio separation' },
+    elevenlabs: { status: 'configured', implementation: 'not_started', confidence: 40 },
+  },
+  audio_mix_master: {
+    elevenlabs: { status: 'configured', implementation: 'partial', confidence: 50 },
+    replicate: { status: 'configured', implementation: 'partial', confidence: 45 },
+  },
+
+  // DOWNLOAD FEATURES (Universal Export & Distribution)
+  universal_download: {
+    supabase: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'useUniversalExport hook' },
+  },
+  platform_downloads: {
+    supabase: { status: 'configured', implementation: 'implemented', confidence: 88, notes: 'Format presets for social platforms' },
+  },
+  vfx_download: {
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 65, notes: 'VFX asset export' },
+    supabase: { status: 'configured', implementation: 'partial', confidence: 60 },
+  },
+  media_library_export: {
+    supabase: { status: 'configured', implementation: 'implemented', confidence: 85, notes: 'Bulk export via JSZip' },
+  },
+  cloud_sync_download: {
+    google: { status: 'needs_key', implementation: 'partial', confidence: 55, notes: 'Google Drive sync' },
+    supabase: { status: 'configured', implementation: 'partial', confidence: 50 },
+  },
+  batch_download: {
+    supabase: { status: 'configured', implementation: 'implemented', confidence: 88, notes: 'ZIP batch export' },
+  },
+  offline_package: {
+    supabase: { status: 'configured', implementation: 'implemented', confidence: 85, notes: 'Self-contained HTML export' },
+  },
+  source_files_export: {
+    supabase: { status: 'configured', implementation: 'partial', confidence: 70, notes: 'Editable formats export' },
+  },
+  branding_kit_export: {
+    supabase: { status: 'configured', implementation: 'partial', confidence: 55, notes: 'Brand asset packaging' },
+  },
+  api_download: {
+    supabase: { status: 'configured', implementation: 'implemented', confidence: 92, notes: 'Edge function download endpoints' },
   },
 
   web_publish: {
