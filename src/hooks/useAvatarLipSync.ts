@@ -1,16 +1,19 @@
 /**
  * Avatar & Lip-Sync Generation Hook
  * 
- * Uses existing providers (Alibaba WAN 2.2, ModelsLab, Azure) for:
- * - AI Avatar Videos (talking head animation)
- * - Lip-Sync Translation (synchronized dubbing)
+ * NOW INTEGRATED with useRegionalLanguage for central provider routing.
+ * Uses premium routing from the ecosystem hook for consistent provider selection.
  * 
- * NO new providers needed - leverages configured API keys.
+ * Providers:
+ * - Avatar: Alibaba Wan2.2 (global)
+ * - Full-body Avatar: Alibaba OmniAvatar (global, premium)
+ * - Priority Rendering: RunPod (global, premium)
  */
 
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useRegionalLanguage } from '@/hooks/useRegionalLanguage';
 
 export interface AvatarRequest {
   type: 'avatar' | 'lipsync';
@@ -79,6 +82,14 @@ export function useAvatarLipSync() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState(0);
   const [currentProvider, setCurrentProvider] = useState<string | null>(null);
+  
+  // Get central routing from ecosystem hook
+  const { 
+    avatarProvider, 
+    fullBodyAvatarProvider, 
+    priorityRenderingProvider,
+    premiumRouting,
+  } = useRegionalLanguage();
 
   /**
    * Generate AI Avatar video from a still image + script
