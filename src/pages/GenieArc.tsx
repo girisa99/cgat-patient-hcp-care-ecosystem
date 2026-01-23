@@ -46,8 +46,9 @@ import { InlineTrainAIFeedback } from '@/components/genie-studio/InlineTrainAIFe
 import genieArcLogo from '@/assets/logos/genie-arc-combined.png';
 import { AutoPublishScheduler } from '@/components/genie-studio/publishing/AutoPublishScheduler';
 // Unified infrastructure imports
-import { GlobalTierFilter, type GlobalTier } from '@/components/genie-studio/presentation-generator/components/GlobalTierFilter';
-import { useGlobalTier } from '@/hooks/useGlobalTier';
+import { GlobalTierFilter } from '@/components/genie-studio/presentation-generator/components/GlobalTierFilter';
+import { useRegionalLanguage } from '@/hooks/useRegionalLanguage';
+import type { GlobalTier } from '@/services/shared/globalTierService';
 
 const SHOW_TYPES = [
   { value: 'podcast', label: 'Podcast', icon: Podcast, color: 'from-purple-500 to-pink-500' },
@@ -62,8 +63,8 @@ const GenieArc: React.FC = () => {
   const navigate = useNavigate();
   const { shows, isLoading, createShow, deleteShow } = useShows();
   
-  // Unified Global Tier - affects all AI processing in show production
-  const { globalTier, setGlobalTier, tierConfig } = useGlobalTier({ defaultTier: 'advanced' });
+  // Unified Regional + Tier routing - affects all AI processing in show production
+  const { globalTier, setGlobalTier, tierConfig } = useRegionalLanguage({ defaultTier: 'advanced' });
   
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('all');

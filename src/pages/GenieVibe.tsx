@@ -46,8 +46,9 @@ import {
   DollarSign
 } from 'lucide-react';
 // Unified infrastructure imports
-import { GlobalTierFilter, type GlobalTier } from '@/components/genie-studio/presentation-generator/components/GlobalTierFilter';
-import { useGlobalTier } from '@/hooks/useGlobalTier';
+import { GlobalTierFilter } from '@/components/genie-studio/presentation-generator/components/GlobalTierFilter';
+import { useRegionalLanguage } from '@/hooks/useRegionalLanguage';
+import type { GlobalTier } from '@/services/shared/globalTierService';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { InlineTrainAIFeedback } from '@/components/genie-studio/InlineTrainAIFeedback';
@@ -143,8 +144,8 @@ const GenieVibe: React.FC = () => {
   const [searchParams] = useSearchParams();
   const isMobileOrTablet = useIsMobileOrTablet();
   
-  // Unified Global Tier - affects all AI processing (TTS, music, video generation)
-  const { globalTier, setGlobalTier, tierConfig } = useGlobalTier({ defaultTier: 'advanced' });
+  // Unified Regional + Tier routing - affects all AI processing (TTS, music, video generation)
+  const { globalTier, setGlobalTier, tierConfig } = useRegionalLanguage({ defaultTier: 'advanced' });
   
   // Get context from URL params (from MeetingRoom or ProductionHub)
   const showId = searchParams.get('showId');
