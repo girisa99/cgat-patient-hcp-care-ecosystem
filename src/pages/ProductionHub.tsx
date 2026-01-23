@@ -70,8 +70,9 @@ import { AskGenie } from '@/components/genie-studio/AskGenie';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 // Unified infrastructure imports
-import { GlobalTierFilter, type GlobalTier } from '@/components/genie-studio/presentation-generator/components/GlobalTierFilter';
-import { useGlobalTier } from '@/hooks/useGlobalTier';
+import { GlobalTierFilter } from '@/components/genie-studio/presentation-generator/components/GlobalTierFilter';
+import { useRegionalLanguage } from '@/hooks/useRegionalLanguage';
+import type { GlobalTier } from '@/services/shared/globalTierService';
 import { 
   PRODUCTION_STAGES,
   MEETING_STAGES,
@@ -116,8 +117,8 @@ const getStageRequirements = (stage: ProductionStage) => {
 export default function ProductionHub() {
   const navigate = useNavigate();
   
-  // Unified Global Tier - affects all AI processing in production pipeline
-  const { globalTier, setGlobalTier, tierConfig } = useGlobalTier({ defaultTier: 'advanced' });
+  // Unified Regional + Tier routing - affects all AI processing in production pipeline
+  const { globalTier, setGlobalTier, tierConfig } = useRegionalLanguage({ defaultTier: 'advanced' });
   
   const { 
     shows, 

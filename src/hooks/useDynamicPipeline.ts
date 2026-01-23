@@ -13,7 +13,7 @@ import {
   type ProductVertical,
   type PricingTier,
 } from '@/components/ai-hub/provider-matrix/pipelineCapabilityMatrix';
-import { useGlobalTier } from '@/hooks/useGlobalTier';
+import { useRegionalLanguage } from '@/hooks/useRegionalLanguage';
 
 // Input source to pipeline category mapping
 const INPUT_TO_CATEGORY_MAP: Record<string, PipelineCategory[]> = {
@@ -196,7 +196,7 @@ function getUniqueCategories(pipelines: PipelineCapabilityEntry[]): PipelineCate
 export function useDynamicPipeline(initialContext?: PipelineContext): UseDynamicPipelineReturn {
   const [context, setContextState] = useState<PipelineContext>(initialContext || {});
   const [selectedPipelineId, setSelectedPipelineId] = useState<string | null>(null);
-  const { globalTier } = useGlobalTier();
+  const { globalTier } = useRegionalLanguage();
   
   // Map global tier to pricing tier
   const userTier: PricingTier = useMemo(() => {
