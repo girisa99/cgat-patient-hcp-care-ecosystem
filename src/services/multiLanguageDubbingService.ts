@@ -4,11 +4,25 @@
  * AI-powered dubbing and translation for video content.
  * Supports 50+ languages with voice cloning.
  * 
+ * NOW INTEGRATED with Unified Provider Routing for:
+ * - Regional language-specific provider selection
+ * - RTL layout support
+ * - Competitive moat awareness (Arabic, Indian, African languages)
+ * - Fallback chains per language
+ * 
  * Phase: P3 Week 14-15
  * Priority: Cross-Functional (All Products)
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { 
+  unifiedProviderRouter, 
+  getProviderForMediaType,
+  requiresRTLLayout,
+  type ProviderRoute,
+  type MediaType,
+} from './unifiedProviderRoutingAdapter';
+import { COMPLETE_LANGUAGE_MATRIX } from './competitiveLanguageMatrix';
 
 export interface DubbingJob {
   id: string;
@@ -38,6 +52,8 @@ export interface DubbingResult {
   transcript: string;
   quality_score: number;
   duration_match: number;
+  provider_used?: string;
+  is_rtl?: boolean;
 }
 
 export interface SupportedLanguage {
@@ -46,6 +62,11 @@ export interface SupportedLanguage {
   native_name: string;
   voice_available: boolean;
   voice_cloning_available: boolean;
+  is_moat_language?: boolean;
+  primary_provider?: string;
+  fallback_provider?: string;
+  is_rtl?: boolean;
+  speakers?: string;
 }
 
 export interface TranslationResult {
@@ -54,33 +75,31 @@ export interface TranslationResult {
   target_language: string;
   translated_text: string;
   confidence: number;
+  provider_used?: string;
 }
 
-class MultiLanguageDubbingService {
-  private static instance: MultiLanguageDubbingService;
+// Build supported languages from unified provider router
+const buildSupportedLanguages = (): SupportedLanguage[] => {
+  return COMPLETE_LANGUAGE_MATRIX.map(entry => {
+    const ttsRoute = getProviderForMediaType(entry.code, 'tts');
+    const voiceCloningProviders = ['elevenlabs', 'azure-neural'];
+    
+    return {
+      code: entry.code,
+      name: entry.name,
+      native_name: entry.nativeName,
+      voice_available: true,
+      voice_cloning_available: voiceCloningProviders.includes(ttsRoute.primary),
+      is_moat_language: entry.moat !== null,
+      primary_provider: ttsRoute.primary,
+      fallback_provider: ttsRoute.fallback,
+      is_rtl: entry.direction === 'rtl',
+      speakers: entry.speakers,
+    };
+  });
+};
 
-  private readonly supportedLanguages: SupportedLanguage[] = [
-    { code: 'en', name: 'English', native_name: 'English', voice_available: true, voice_cloning_available: true },
-    { code: 'es', name: 'Spanish', native_name: 'Español', voice_available: true, voice_cloning_available: true },
-    { code: 'fr', name: 'French', native_name: 'Français', voice_available: true, voice_cloning_available: true },
-    { code: 'de', name: 'German', native_name: 'Deutsch', voice_available: true, voice_cloning_available: true },
-    { code: 'it', name: 'Italian', native_name: 'Italiano', voice_available: true, voice_cloning_available: true },
-    { code: 'pt', name: 'Portuguese', native_name: 'Português', voice_available: true, voice_cloning_available: true },
-    { code: 'ru', name: 'Russian', native_name: 'Русский', voice_available: true, voice_cloning_available: true },
-    { code: 'zh', name: 'Chinese', native_name: '中文', voice_available: true, voice_cloning_available: true },
-    { code: 'ja', name: 'Japanese', native_name: '日本語', voice_available: true, voice_cloning_available: true },
-    { code: 'ko', name: 'Korean', native_name: '한국어', voice_available: true, voice_cloning_available: true },
-    { code: 'ar', name: 'Arabic', native_name: 'العربية', voice_available: true, voice_cloning_available: false },
-    { code: 'hi', name: 'Hindi', native_name: 'हिन्दी', voice_available: true, voice_cloning_available: true },
-    { code: 'nl', name: 'Dutch', native_name: 'Nederlands', voice_available: true, voice_cloning_available: false },
-    { code: 'pl', name: 'Polish', native_name: 'Polski', voice_available: true, voice_cloning_available: false },
-    { code: 'tr', name: 'Turkish', native_name: 'Türkçe', voice_available: true, voice_cloning_available: false },
-    { code: 'vi', name: 'Vietnamese', native_name: 'Tiếng Việt', voice_available: true, voice_cloning_available: false },
-    { code: 'th', name: 'Thai', native_name: 'ไทย', voice_available: true, voice_cloning_available: false },
-    { code: 'id', name: 'Indonesian', native_name: 'Bahasa Indonesia', voice_available: true, voice_cloning_available: false },
-    { code: 'sv', name: 'Swedish', native_name: 'Svenska', voice_available: true, voice_cloning_available: false },
-    { code: 'no', name: 'Norwegian', native_name: 'Norsk', voice_available: true, voice_cloning_available: false },
-  ];
+  private supportedLanguages: SupportedLanguage[] = buildSupportedLanguages();
 
   private constructor() {}
 
@@ -92,14 +111,28 @@ class MultiLanguageDubbingService {
   }
 
   /**
-   * Get all supported languages
+   * Get all supported languages with provider info
    */
   getSupportedLanguages(): SupportedLanguage[] {
     return this.supportedLanguages;
   }
 
   /**
-   * Start a dubbing job
+   * Get provider routing for a specific language
+   */
+  getProviderForLanguage(languageCode: string): ProviderRoute {
+    return getProviderForMediaType(languageCode, 'dubbing');
+  }
+
+  /**
+   * Check if language needs RTL layout
+   */
+  isRTLLanguage(languageCode: string): boolean {
+    return requiresRTLLayout(languageCode);
+  }
+
+  /**
+   * Start a dubbing job with intelligent provider routing
    */
   async startDubbingJob(
     contentId: string,
@@ -108,6 +141,15 @@ class MultiLanguageDubbingService {
     voiceSettings: VoiceSettings
   ): Promise<DubbingJob | null> {
     try {
+      // Get provider routes for each target language
+      const languageRoutes = targetLanguages.map(lang => ({
+        language: lang,
+        route: this.getProviderForLanguage(lang),
+        isRTL: this.isRTLLanguage(lang),
+      }));
+
+      console.log('[MultiLanguageDubbing] Provider routes:', languageRoutes);
+
       const job: DubbingJob = {
         id: `dub_${Date.now()}_${Math.random().toString(36).substring(2)}`,
         content_id: contentId,
@@ -141,7 +183,7 @@ class MultiLanguageDubbingService {
   }
 
   /**
-   * Translate text to target language
+   * Translate text with provider routing
    */
   async translateText(
     text: string,
@@ -149,13 +191,17 @@ class MultiLanguageDubbingService {
     targetLanguage: string
   ): Promise<TranslationResult | null> {
     try {
-      // Would integrate with AI translation service
+      const translationRoute = getProviderForMediaType(targetLanguage, 'translation');
+      console.log(`[MultiLanguageDubbing] Translation route: ${translationRoute.primary} (fallback: ${translationRoute.fallback})`);
+
+      // In production, this would call the actual translation service
       return {
         source_text: text,
         source_language: sourceLanguage,
         target_language: targetLanguage,
         translated_text: `[${targetLanguage}] ${text}`,
         confidence: 0.95,
+        provider_used: translationRoute.primary,
       };
     } catch (error) {
       console.error('Failed to translate text:', error);
@@ -164,7 +210,7 @@ class MultiLanguageDubbingService {
   }
 
   /**
-   * Generate dubbed audio
+   * Generate dubbed audio with provider routing
    */
   async generateDubbedAudio(
     transcript: string,
@@ -172,9 +218,14 @@ class MultiLanguageDubbingService {
     voiceSettings: VoiceSettings
   ): Promise<string | null> {
     try {
-      // Would integrate with ElevenLabs or similar
-      console.log('[MultiLanguageDubbing] Generating audio for:', targetLanguage);
-      return `audio_${targetLanguage}_${Date.now()}.mp3`;
+      const ttsRoute = this.getProviderForLanguage(targetLanguage);
+      const isRTL = this.isRTLLanguage(targetLanguage);
+      
+      console.log(`[MultiLanguageDubbing] TTS route: ${ttsRoute.primary} (RTL: ${isRTL})`);
+      console.log(`[MultiLanguageDubbing] Reason: ${ttsRoute.reason}`);
+
+      // In production, this would call the actual TTS service
+      return `audio_${targetLanguage}_${ttsRoute.primary}_${Date.now()}.mp3`;
     } catch (error) {
       console.error('Failed to generate dubbed audio:', error);
       return null;
