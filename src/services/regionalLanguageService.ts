@@ -1,14 +1,28 @@
 /**
  * Regional Language Detection & Provider Routing Service
  * 
+ * COMPETITIVE MOATS (Zero competitor coverage):
+ * 1. Arabic Dialects - 7 dialects vs competitors' MSA only (420M speakers)
+ * 2. Indian Languages - 22 official languages vs competitors' 1-2 (1.4B users)
+ * 3. African Languages - 10 languages vs competitors' ZERO (600M users)
+ * 
  * Provides:
  * - IP-based automatic region/language detection
- * - Regional language clustering (MEA, India, LatAm, CJK, Europe)
- * - RTL layout support for Arabic/Hebrew/Persian
- * - Provider mapping per region with fallbacks
+ * - Regional language clustering (MEA, India, LatAm, CJK, Europe, Africa)
+ * - RTL layout support for Arabic/Hebrew/Persian/Urdu
+ * - Provider mapping per language with quality-based fallbacks
+ * - Competitive gap awareness for sales/marketing
  * - User preference override management
  * - Persistent language preferences
  */
+
+import {
+  COMPLETE_LANGUAGE_MATRIX,
+  getProviderForLanguage as getCompetitiveProvider,
+  isCompetitiveMoatLanguage,
+  getCompetitorGapBadge,
+  type CompetitorGap,
+} from './competitiveLanguageMatrix';
 
 // ============================================================================
 // TYPES & INTERFACES
@@ -179,107 +193,132 @@ export const REGIONAL_LANGUAGES: Record<RegionalCluster, RegionalLanguage[]> = {
 };
 
 // ============================================================================
-// REGIONAL PROVIDER MAPPING
+// REGIONAL PROVIDER MAPPING (Based on Competitive Intelligence Matrix)
 // ============================================================================
 
 export const REGIONAL_PROVIDER_CONFIG: Record<RegionalCluster, RegionalProviderConfig> = {
   mea: {
+    // BIGGEST MOAT: Arabic dialects - NO competitors have this
     textProvider: 'azure-gpt-4o',
     textFallback: 'gemini-2.5-pro',
     translationProvider: 'azure-translator',
     translationFallback: 'google-translate',
-    voiceProvider: 'azure-neural',
-    voiceFallback: 'elevenlabs',
+    voiceProvider: 'azure-neural', // Best for Arabic dialects + ElevenLabs for MSA
+    voiceFallback: 'google-tts',
     sttProvider: 'azure-stt',
     sttFallback: 'google-stt',
     rtlSupport: true,
-    qualityScore: 4.4,
-    reason: 'Azure specializes in RTL scripts (Arabic, Hebrew, Persian) with proper bidirectional text handling',
+    qualityScore: 5.0, // Upgraded - our biggest competitive advantage
+    reason: 'MOAT: 7 Arabic dialects (Egyptian, Gulf, Saudi, Levantine, Maghrebi, Iraqi) - competitors only have MSA',
   },
   
   india: {
-    textProvider: 'gemini-2.5-pro',
-    textFallback: 'azure-gpt-4o',
+    // MOAT: 22 Official Languages - competitors max 1-2
+    textProvider: 'azure-gpt-4o',
+    textFallback: 'gemini-2.5-pro',
     translationProvider: 'google-translate',
-    translationFallback: 'nllb',
-    voiceProvider: 'google-tts',
-    voiceFallback: 'azure-neural',
-    sttProvider: 'google-stt',
-    sttFallback: 'azure-stt',
+    translationFallback: 'azure-translator',
+    voiceProvider: 'azure-neural', // Best coverage for 22 Indian languages
+    voiceFallback: 'google-tts',
+    sttProvider: 'azure-stt',
+    sttFallback: 'google-stt',
     rtlSupport: false, // Urdu uses RTL but is handled specially
-    qualityScore: 4.5,
-    reason: 'Google/Gemini has strongest coverage for 22+ Indian languages including regional dialects',
+    qualityScore: 5.0, // Upgraded - major competitive advantage
+    reason: 'MOAT: 22 official Indian languages (Hindi, Bengali, Telugu, Tamil, Marathi, Kannada, Gujarati, Malayalam, Punjabi) - competitors have 1-2 max',
   },
   
   cjk: {
+    // Premium Quality - Alibaba CosyVoice for native handling
     textProvider: 'qwen-max',
     textFallback: 'gemini-2.5-pro',
     translationProvider: 'qwen-mt',
     translationFallback: 'deepl',
-    voiceProvider: 'alibaba-cosyvoice',
+    voiceProvider: 'alibaba-cosyvoice', // Better keigo/number handling
     voiceFallback: 'azure-neural',
     sttProvider: 'alibaba-paraformer',
     sttFallback: 'google-stt',
     rtlSupport: false,
-    qualityScore: 4.7,
-    reason: 'Alibaba Qwen natively handles CJK characters, number formatting, and cultural context',
+    qualityScore: 5.0,
+    reason: 'Premium: Alibaba CosyVoice for native CJK with better keigo handling (Japanese) and number formatting',
   },
   
   latam: {
+    // European Excellence: ElevenLabs + DeepL - You WIN
     textProvider: 'claude-3-sonnet',
     textFallback: 'gemini-2.5-pro',
-    translationProvider: 'deepl',
+    translationProvider: 'deepl', // You WIN with DeepL for Spanish/Portuguese
     translationFallback: 'google-translate',
-    voiceProvider: 'elevenlabs',
+    voiceProvider: 'elevenlabs', // Natural prosody for Spanish/Portuguese
     voiceFallback: 'azure-neural',
     sttProvider: 'elevenlabs-scribe',
     sttFallback: 'google-stt',
     rtlSupport: false,
-    qualityScore: 4.5,
-    reason: 'ElevenLabs provides natural prosody for Spanish/Portuguese with regional accent support',
+    qualityScore: 5.0,
+    reason: 'You WIN: ElevenLabs + DeepL for Spanish (550M) and Portuguese-BR (215M) with regional accent support',
   },
   
   europe: {
+    // European Excellence: ElevenLabs + DeepL - You WIN
     textProvider: 'claude-3-sonnet',
     textFallback: 'gemini-2.5-pro',
-    translationProvider: 'deepl',
+    translationProvider: 'deepl', // Highest accuracy for European languages
     translationFallback: 'azure-translator',
-    voiceProvider: 'elevenlabs',
+    voiceProvider: 'elevenlabs', // Best quality for German, French, Italian, etc.
     voiceFallback: 'azure-neural',
     sttProvider: 'deepgram',
     sttFallback: 'google-stt',
     rtlSupport: false,
-    qualityScore: 4.6,
-    reason: 'DeepL has highest accuracy for European languages; ElevenLabs for natural voice',
+    qualityScore: 5.0,
+    reason: 'You WIN: ElevenLabs + DeepL for German (95M), French (280M), Italian (65M), Dutch (25M), Polish (45M), Russian (250M)',
   },
   
   southeast_asia: {
+    // Strategic coverage - Azure Neural for tonal languages
     textProvider: 'gemini-2.5-pro',
     textFallback: 'claude-3-sonnet',
     translationProvider: 'google-translate',
-    translationFallback: 'nllb',
-    voiceProvider: 'google-tts',
-    voiceFallback: 'azure-neural',
+    translationFallback: 'azure-translator',
+    voiceProvider: 'azure-neural', // Best for Thai, Vietnamese, Indonesian
+    voiceFallback: 'google-tts',
     sttProvider: 'google-stt',
     sttFallback: 'azure-stt',
     rtlSupport: false,
-    qualityScore: 4.3,
-    reason: 'Google has broad coverage for SEA languages including tonal languages (Thai, Vietnamese)',
+    qualityScore: 4.0,
+    reason: 'Strategic: Azure Neural for Thai (60M), Vietnamese (85M), Indonesian (275M) - Match competitors',
   },
   
   global_english: {
+    // Premium English with ElevenLabs
     textProvider: 'gemini-2.5-flash',
     textFallback: 'claude-3-sonnet',
     translationProvider: 'deepl',
     translationFallback: 'google-translate',
-    voiceProvider: 'elevenlabs',
+    voiceProvider: 'elevenlabs', // Most natural English across US, UK, AU accents
     voiceFallback: 'openai-tts',
     sttProvider: 'elevenlabs-scribe',
     sttFallback: 'whisper',
     rtlSupport: false,
-    qualityScore: 4.8,
-    reason: 'ElevenLabs provides most natural English voices across accents',
+    qualityScore: 5.0,
+    reason: 'Premium: ElevenLabs for most natural English voices (US, UK, AU accents)',
   },
+};
+
+// ============================================================================
+// AFRICAN LANGUAGES CONFIG (First Mover - NO ONE has this)
+// ============================================================================
+
+export const AFRICAN_LANGUAGE_CONFIG: RegionalProviderConfig = {
+  textProvider: 'azure-gpt-4o',
+  textFallback: 'gemini-2.5-pro',
+  translationProvider: 'google-translate',
+  translationFallback: 'nllb',
+  voiceProvider: 'azure-neural', // Best coverage for African languages
+  voiceFallback: 'google-tts',
+  sttProvider: 'azure-stt',
+  sttFallback: 'google-stt',
+  rtlSupport: false,
+  qualityScore: 4.5,
+  reason: 'FIRST MOVER: Swahili (100M), Yoruba (45M), Hausa (80M), Igbo (45M), Zulu (12M), Amharic (57M) - ZERO competitors',
 };
 
 // ============================================================================
@@ -425,20 +464,83 @@ class RegionalLanguageService {
 
   /**
    * Get provider configuration for a specific language
+   * Uses competitive matrix for exact per-language provider mapping
    */
-  getProviderForLanguage(languageCode: string): RegionalProviderConfig {
+  getProviderForLanguage(languageCode: string): RegionalProviderConfig & { 
+    competitorGap?: CompetitorGap; 
+    isMoatLanguage?: boolean;
+    qualityRating?: number;
+  } {
     const baseCode = languageCode.split('-')[0];
+    
+    // First check competitive matrix for exact language mapping
+    const competitiveInfo = getCompetitiveProvider(languageCode);
+    const isMoat = isCompetitiveMoatLanguage(languageCode);
     
     // Find which region this language belongs to
     for (const [region, languages] of Object.entries(REGIONAL_LANGUAGES)) {
       const found = languages.find(l => l.code === languageCode || l.code === baseCode);
       if (found) {
-        return REGIONAL_PROVIDER_CONFIG[region as RegionalCluster];
+        const regionConfig = REGIONAL_PROVIDER_CONFIG[region as RegionalCluster];
+        
+        // Enhance with competitive data
+        const matrixEntry = COMPLETE_LANGUAGE_MATRIX.find(
+          l => l.code === languageCode || l.code === baseCode
+        );
+        
+        return {
+          ...regionConfig,
+          // Override with specific language provider if available
+          voiceProvider: matrixEntry?.primaryProvider || regionConfig.voiceProvider,
+          voiceFallback: matrixEntry?.fallbackProvider || regionConfig.voiceFallback,
+          competitorGap: matrixEntry?.competitorGap,
+          isMoatLanguage: isMoat,
+          qualityRating: matrixEntry?.quality || regionConfig.qualityScore,
+        };
       }
+    }
+    
+    // Check African languages specifically (our first-mover advantage)
+    const africanLanguages = ['sw', 'yo', 'ha', 'ig', 'zu', 'am', 'xh', 'af'];
+    if (africanLanguages.includes(baseCode)) {
+      const matrixEntry = COMPLETE_LANGUAGE_MATRIX.find(l => l.code === baseCode);
+      return {
+        ...AFRICAN_LANGUAGE_CONFIG,
+        competitorGap: matrixEntry?.competitorGap || 'no_one_has_this',
+        isMoatLanguage: true,
+        qualityRating: matrixEntry?.quality || 4,
+      };
     }
     
     // Default to global English
     return REGIONAL_PROVIDER_CONFIG.global_english;
+  }
+
+  /**
+   * Get competitive advantage info for a language
+   */
+  getCompetitiveInfo(languageCode: string): {
+    isAdvantage: boolean;
+    gap: CompetitorGap | null;
+    badge: { label: string; color: string; icon: string } | null;
+    moat: string | null;
+  } {
+    const matrixEntry = COMPLETE_LANGUAGE_MATRIX.find(
+      l => l.code === languageCode || l.code.split('-')[0] === languageCode.split('-')[0]
+    );
+    
+    if (!matrixEntry) {
+      return { isAdvantage: false, gap: null, badge: null, moat: null };
+    }
+    
+    const isAdvantage = ['no_one_has_this', 'you_win', 'most_missing'].includes(matrixEntry.competitorGap);
+    
+    return {
+      isAdvantage,
+      gap: matrixEntry.competitorGap,
+      badge: getCompetitorGapBadge(matrixEntry.competitorGap),
+      moat: matrixEntry.moat,
+    };
   }
 
   /**
