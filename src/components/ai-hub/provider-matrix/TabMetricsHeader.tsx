@@ -21,7 +21,7 @@ import { CROSS_FUNCTIONAL_MAPPINGS, FEATURE_USE_CASES, ALL_FEATURES, FEATURE_IMP
 import type { FeatureCategory } from './types';
 import { MetricsExplainer } from './MetricsExplainer';
 
-export type TabView = 'matrix' | 'category' | 'crossfunc' | 'coverage' | 'providers' | 'llm' | 'gaps';
+export type TabView = 'matrix' | 'category' | 'crossfunc' | 'coverage' | 'providers' | 'llm' | 'gaps' | 'pipeline' | 'ecosystem' | 'priority' | 'blockers';
 
 interface TabMetricsHeaderProps {
   activeTab: TabView;
