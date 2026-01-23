@@ -419,7 +419,7 @@ export interface SubscriptionStatus {
   product_id: string | null;
   price_id: string | null;
   subscription_end: string | null;
-  source: 'stripe' | 'database' | null;
+  source: 'stripe' | 'database' | 'dev_mode' | null;
   isTrialActive?: boolean;
   trialEndsAt?: string | null;
 }
@@ -455,6 +455,29 @@ export const useSubscription = (): UseSubscriptionReturn => {
     try {
       setIsLoading(true);
       setError(null);
+
+      // DEV MODE OVERRIDE: Grant full beta access during development
+      // This bypasses all subscription checks for dev/testing
+      // Remove or set VITE_DEV_MODE=false for production
+      const isDevMode = import.meta.env.DEV || 
+                        import.meta.env.VITE_DEV_MODE === 'true' || 
+                        localStorage.getItem('genie_dev_mode') === 'true';
+      
+      if (isDevMode) {
+        console.log('[DEV MODE] Full subscription access enabled - Beta tier active');
+        setSubscription({
+          subscribed: true,
+          tier: 'beta',
+          product_id: 'dev_mode_full_access',
+          price_id: 'dev_mode',
+          subscription_end: null,
+          source: 'dev_mode',
+          isTrialActive: false,
+          trialEndsAt: null
+        });
+        setIsLoading(false);
+        return;
+      }
 
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
