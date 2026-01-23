@@ -1,11 +1,11 @@
 /**
- * Regional Language Selector Component
+ * Language Bundle Selector Component
  * 
- * Provides a unified UI for:
- * - Viewing auto-detected region & language
- * - Selecting preferred language from regional options
- * - Switching between regions
- * - Visual RTL indicator
+ * Unified UI for:
+ * - Viewing auto-detected bundle & languages
+ * - Adding additional languages beyond bundle
+ * - Removing custom languages
+ * - Switching bundles/regions
  */
 
 import React, { useState } from 'react';
@@ -20,99 +20,110 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Globe, 
   Languages, 
   ChevronDown, 
   Check, 
-  MapPin, 
-  Settings,
+  MapPin,
+  Plus,
+  X,
   RefreshCw,
   AlignRight,
-  AlignLeft,
+  Search,
+  Package,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRegionalLanguage } from '@/hooks/useRegionalLanguage';
-import { RegionalCluster, RegionalLanguage } from '@/services/regionalLanguageService';
+import type { BundleType, LanguageInfo } from '@/services/regionLanguageBundles';
 
-interface RegionalLanguageSelectorProps {
+interface LanguageBundleSelectorProps {
   className?: string;
-  showRegionSelector?: boolean;
-  showProviderInfo?: boolean;
+  showBundleInfo?: boolean;
   compact?: boolean;
 }
 
-export function RegionalLanguageSelector({
+export function LanguageBundleSelector({
   className,
-  showRegionSelector = true,
-  showProviderInfo = false,
+  showBundleInfo = true,
   compact = false,
-}: RegionalLanguageSelectorProps) {
+}: LanguageBundleSelectorProps) {
   const {
-    preferences,
+    config,
     isLoading,
+    currentBundle,
+    allBundles,
+    enabledLanguages,
+    additionalLanguages,
+    availableToAdd,
+    primaryLanguage,
     isRTL,
-    detection,
-    currentRegion,
-    regionalLanguages,
-    providerConfig,
-    setLanguage,
-    setRegion,
+    llmZone,
+    addLanguage,
+    removeLanguage,
+    setPrimaryLanguage,
+    setBundle,
     refreshDetection,
-    allRegions,
+    isLanguageInBundle,
   } = useRegionalLanguage();
 
   const [isOpen, setIsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const currentLanguage = regionalLanguages.find(
-    (l) => l.code === preferences?.primaryLanguage
-  ) || regionalLanguages[0];
+  const filteredAvailable = availableToAdd.filter(lang =>
+    lang.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    lang.nativeName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    lang.code.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   if (isLoading) {
     return (
       <div className={cn('flex items-center gap-2 animate-pulse', className)}>
-        <div className="h-8 w-24 bg-muted rounded" />
+        <div className="h-9 w-32 bg-muted rounded-md" />
       </div>
     );
   }
 
-  // Compact version - just a select dropdown
+  // Compact version
   if (compact) {
     return (
       <div className={cn('flex items-center gap-2', className)}>
         <Select
-          value={preferences?.primaryLanguage || 'en'}
-          onValueChange={setLanguage}
+          value={primaryLanguage?.code || 'en'}
+          onValueChange={setPrimaryLanguage}
         >
           <SelectTrigger className="w-[180px]">
             <Globe className="h-4 w-4 mr-2" />
             <SelectValue>
-              {currentLanguage?.nativeName || 'English'}
+              {primaryLanguage?.nativeName || 'English'}
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
-            {regionalLanguages.map((lang) => (
-              <SelectItem key={lang.code} value={lang.code}>
-                <div className="flex items-center justify-between w-full">
-                  <span>{lang.nativeName}</span>
-                  {lang.direction === 'rtl' && (
-                    <AlignRight className="h-3 w-3 ml-2 text-muted-foreground" />
-                  )}
-                </div>
-              </SelectItem>
-            ))}
+            <SelectGroup>
+              <SelectLabel>Enabled Languages</SelectLabel>
+              {enabledLanguages.map((lang) => (
+                <SelectItem key={lang.code} value={lang.code}>
+                  <div className="flex items-center justify-between w-full">
+                    <span>{lang.nativeName}</span>
+                    {lang.direction === 'rtl' && (
+                      <AlignRight className="h-3 w-3 ml-2 text-muted-foreground" />
+                    )}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectGroup>
           </SelectContent>
         </Select>
         {isRTL && (
-          <Badge variant="outline" className="text-xs">
-            RTL
-          </Badge>
+          <Badge variant="outline" className="text-xs">RTL</Badge>
         )}
       </div>
     );
@@ -124,49 +135,56 @@ export function RegionalLanguageSelector({
       <PopoverTrigger asChild>
         <Button
           variant="outline"
-          className={cn('flex items-center gap-2 min-w-[200px]', className)}
+          className={cn('flex items-center gap-2 min-w-[220px] justify-between', className)}
         >
-          <Globe className="h-4 w-4" />
-          <span className="flex-1 text-left truncate">
-            {currentLanguage?.nativeName || 'English'}
-          </span>
-          {isRTL && (
-            <Badge variant="secondary" className="text-[10px] px-1">
-              RTL
-            </Badge>
-          )}
-          {preferences?.detectedAutomatically && (
+          <div className="flex items-center gap-2">
+            <Globe className="h-4 w-4" />
+            <span className="truncate">
+              {primaryLanguage?.nativeName || 'English'}
+            </span>
+          </div>
+          <div className="flex items-center gap-1">
+            {isRTL && (
+              <Badge variant="secondary" className="text-[10px] px-1">RTL</Badge>
+            )}
             <Badge variant="outline" className="text-[10px] px-1">
-              Auto
+              {enabledLanguages.length}
             </Badge>
-          )}
-          <ChevronDown className="h-4 w-4 opacity-50" />
+            <ChevronDown className="h-4 w-4 opacity-50" />
+          </div>
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent className="w-[400px] p-0" align="start">
-        <Tabs defaultValue="language" className="w-full">
-          <TabsList className="w-full grid grid-cols-2">
-            <TabsTrigger value="language" className="flex items-center gap-1">
+      <PopoverContent className="w-[450px] p-0" align="start">
+        <Tabs defaultValue="languages" className="w-full">
+          <TabsList className="w-full grid grid-cols-3">
+            <TabsTrigger value="languages" className="flex items-center gap-1">
               <Languages className="h-4 w-4" />
-              Language
+              Languages
             </TabsTrigger>
-            {showRegionSelector && (
-              <TabsTrigger value="region" className="flex items-center gap-1">
-                <MapPin className="h-4 w-4" />
-                Region
-              </TabsTrigger>
-            )}
+            <TabsTrigger value="add" className="flex items-center gap-1">
+              <Plus className="h-4 w-4" />
+              Add More
+            </TabsTrigger>
+            <TabsTrigger value="bundle" className="flex items-center gap-1">
+              <Package className="h-4 w-4" />
+              Bundle
+            </TabsTrigger>
           </TabsList>
 
-          {/* Language Selection Tab */}
-          <TabsContent value="language" className="p-4 space-y-4">
-            {/* Detection Info */}
-            {detection && preferences?.detectedAutomatically && (
+          {/* Languages Tab */}
+          <TabsContent value="languages" className="p-4 space-y-4">
+            {/* Bundle Info */}
+            {showBundleInfo && currentBundle && (
               <div className="flex items-center justify-between p-2 bg-muted/50 rounded-lg text-sm">
                 <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-muted-foreground" />
-                  <span>Detected: {detection.countryName}</span>
+                  <span className="text-lg">{currentBundle.flag}</span>
+                  <div>
+                    <span className="font-medium">{currentBundle.name}</span>
+                    <Badge variant="outline" className="ml-2 text-[10px]">
+                      {llmZone.toUpperCase()} Zone
+                    </Badge>
+                  </div>
                 </div>
                 <Button
                   variant="ghost"
@@ -179,95 +197,163 @@ export function RegionalLanguageSelector({
               </div>
             )}
 
-            {/* Language Grid */}
-            <div className="grid grid-cols-2 gap-2 max-h-[300px] overflow-y-auto">
-              {regionalLanguages.map((lang) => (
-                <Button
-                  key={lang.code}
-                  variant={
-                    preferences?.primaryLanguage === lang.code
-                      ? 'default'
-                      : 'outline'
-                  }
-                  className="justify-start h-auto py-2 px-3"
-                  onClick={() => {
-                    setLanguage(lang.code);
-                    setIsOpen(false);
-                  }}
-                >
-                  <div className="flex items-center justify-between w-full">
-                    <div className="flex flex-col items-start">
-                      <span className="font-medium">{lang.nativeName}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {lang.name}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      {lang.direction === 'rtl' && (
-                        <AlignRight className="h-3 w-3 text-muted-foreground" />
-                      )}
-                      {preferences?.primaryLanguage === lang.code && (
-                        <Check className="h-4 w-4" />
-                      )}
-                    </div>
-                  </div>
-                </Button>
-              ))}
+            {/* Primary Language Selection */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Primary Language</label>
+              <Select
+                value={primaryLanguage?.code || 'en'}
+                onValueChange={setPrimaryLanguage}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {enabledLanguages.map((lang) => (
+                    <SelectItem key={lang.code} value={lang.code}>
+                      <div className="flex items-center gap-2">
+                        <span>{lang.nativeName}</span>
+                        <span className="text-muted-foreground">({lang.name})</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            {/* Provider Info */}
-            {showProviderInfo && (
-              <div className="pt-2 border-t">
-                <div className="text-xs text-muted-foreground space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span>Text AI:</span>
-                    <span className="font-mono">
-                      {providerConfig.textProvider}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Translation:</span>
-                    <span className="font-mono">
-                      {providerConfig.translationProvider}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Voice:</span>
-                    <span className="font-mono">
-                      {providerConfig.voiceProvider}
-                    </span>
-                  </div>
+            {/* Enabled Languages Grid */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Enabled Languages ({enabledLanguages.length})
+              </label>
+              <ScrollArea className="h-[200px]">
+                <div className="grid grid-cols-2 gap-2">
+                  {enabledLanguages.map((lang) => (
+                    <div
+                      key={lang.code}
+                      className={cn(
+                        "flex items-center justify-between p-2 rounded-md border",
+                        primaryLanguage?.code === lang.code && "border-primary bg-primary/5"
+                      )}
+                    >
+                      <div className="flex flex-col">
+                        <span className="font-medium text-sm">{lang.nativeName}</span>
+                        <span className="text-xs text-muted-foreground">{lang.code}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {lang.direction === 'rtl' && (
+                          <AlignRight className="h-3 w-3 text-muted-foreground" />
+                        )}
+                        {isLanguageInBundle(lang.code) ? (
+                          <Badge variant="secondary" className="text-[10px]">Bundle</Badge>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => removeLanguage(lang.code)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
-            )}
+              </ScrollArea>
+            </div>
           </TabsContent>
 
-          {/* Region Selection Tab */}
-          {showRegionSelector && (
-            <TabsContent value="region" className="p-4 space-y-2">
-              {allRegions.map((region) => (
-                <Button
-                  key={region.id}
-                  variant={currentRegion === region.id ? 'default' : 'outline'}
-                  className="w-full justify-start"
-                  onClick={() => {
-                    setRegion(region.id);
-                  }}
-                >
-                  <span className="text-xl mr-2">{region.flag}</span>
-                  <span>{region.name}</span>
-                  {currentRegion === region.id && (
-                    <Check className="h-4 w-4 ml-auto" />
+          {/* Add Languages Tab */}
+          <TabsContent value="add" className="p-4 space-y-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search languages..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+
+            <ScrollArea className="h-[280px]">
+              <div className="space-y-1">
+                {filteredAvailable.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    {searchQuery ? 'No languages found' : 'All languages enabled'}
+                  </p>
+                ) : (
+                  filteredAvailable.map((lang) => (
+                    <Button
+                      key={lang.code}
+                      variant="ghost"
+                      className="w-full justify-between h-auto py-2"
+                      onClick={() => {
+                        addLanguage(lang.code);
+                        setSearchQuery('');
+                      }}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{lang.nativeName}</span>
+                        <span className="text-muted-foreground text-sm">
+                          ({lang.name})
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {lang.direction === 'rtl' && (
+                          <Badge variant="outline" className="text-[10px]">RTL</Badge>
+                        )}
+                        <Badge variant="outline" className="text-[10px]">
+                          {lang.region}
+                        </Badge>
+                        <Plus className="h-4 w-4" />
+                      </div>
+                    </Button>
+                  ))
+                )}
+              </div>
+            </ScrollArea>
+          </TabsContent>
+
+          {/* Bundle Selection Tab */}
+          <TabsContent value="bundle" className="p-4 space-y-2">
+            <p className="text-sm text-muted-foreground mb-3">
+              Select a regional bundle to get pre-configured language support
+            </p>
+            {allBundles.map((bundle) => (
+              <Button
+                key={bundle.id}
+                variant={currentBundle?.id === bundle.id ? 'default' : 'outline'}
+                className="w-full justify-start h-auto py-3"
+                onClick={() => {
+                  setBundle(bundle.id);
+                }}
+              >
+                <span className="text-xl mr-3">{bundle.flag}</span>
+                <div className="flex flex-col items-start flex-1">
+                  <span className="font-medium">{bundle.name}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {bundle.description} • {bundle.languages.length} languages
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="text-[10px]">
+                    {bundle.llmZone.toUpperCase()}
+                  </Badge>
+                  {currentBundle?.id === bundle.id && (
+                    <Check className="h-4 w-4" />
                   )}
-                </Button>
-              ))}
-            </TabsContent>
-          )}
+                </div>
+              </Button>
+            ))}
+          </TabsContent>
         </Tabs>
       </PopoverContent>
     </Popover>
   );
 }
+
+// Keep RegionalLanguageSelector as alias for backward compatibility
+export const RegionalLanguageSelector = LanguageBundleSelector;
 
 /**
  * RTL Layout Wrapper Component
@@ -284,7 +370,7 @@ export function RTLLayoutWrapper({
   className,
   forceDirection,
 }: RTLLayoutWrapperProps) {
-  const { isRTL, rtlClasses } = useRegionalLanguage();
+  const { isRTL } = useRegionalLanguage();
   
   const direction = forceDirection || (isRTL ? 'rtl' : 'ltr');
   
@@ -301,4 +387,4 @@ export function RTLLayoutWrapper({
   );
 }
 
-export default RegionalLanguageSelector;
+export default LanguageBundleSelector;
