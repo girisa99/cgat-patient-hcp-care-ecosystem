@@ -2,8 +2,30 @@
 
 > **Purpose**: Map 100+ pipelines to global market frustrations for maximum conversion
 > **Methodology**: Reddit/G2/Trustpilot analysis + regional market research + competitor gaps
+> **Data Source**: AI_Presentation_Competitor_Analysis_Enhanced_11.xlsx (Jan 2026)
 > **Exclusions**: AR/VR pipelines deferred for 6-8 months
-> **Last Updated**: January 2025
+> **Last Updated**: January 2026
+
+---
+
+## MARKET OVERVIEW (Updated Jan 2026)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| AI Presentation Generation Market (2024) | $1.54 Billion | Research and Markets |
+| AI Presentation Generation Market (2029 Est.) | $4.79 Billion | Research and Markets |
+| CAGR (2025-2029) | 25.4% | Research and Markets |
+| AI Video Generator Market (2024) | $4.1 Billion | MRFR |
+| AI Video Generator Market (2035 Est.) | $82.64 Billion | MRFR |
+| CAGR AI Video (2025-2035) | 31.38% | MRFR |
+| Healthcare AI Video Market (2024→2029) | $2.5B → $15B (43% CAGR) | Industry Analysis |
+
+### Key Market Trends 2025-2026
+
+1. **Mobile Gap**: Most AI platforms remain web-based; mobile-first AI creation underserved
+2. **Vertical Specialization**: Healthcare, Financial, Education verticals demand compliance
+3. **Social Algorithm Shift**: Platform algorithms favor native content; Facebook demoting repurposed content
+4. **Geographic Diversification**: AI startup hotspots expanding beyond US to France, Germany, Korea, Israel
 
 ---
 
@@ -236,16 +258,56 @@ Genie Suite: Restore from translation checkpoint, retry voice only
 
 ---
 
-## 3. FOUR-TIER PRICING MODEL (Based on Market Research)
+## 3. CREDIT-BASED PRICING MODEL (Competitor Analysis Aligned)
 
-### Tier Philosophy
+> **Updated**: Based on AI_Presentation_Competitor_Analysis_Enhanced_11.xlsx (Jan 2026)
+> **Philosophy**: Credits are the currency. Users buy credits, spend on any feature. Simple to understand, flexible to use.
 
-| Tier | Target | Conversion Driver | Price Point |
-|------|--------|-------------------|-------------|
-| **FREE** | Trial seekers | "Holy shit this works!" moment | $0 |
-| **BASIC** | Prosumers, students | "This replaces 3 tools" | $9.99/mo |
-| **PRO** | Creators, SMBs | "Unlimited global dubbing" | $29.99/mo |
-| **ENTERPRISE** | Teams, agencies | "Custom avatars + API" | Custom |
+### Credit System Definition
+
+| 1 CREDIT = $0.10 value to user (costs you $0.025-0.05 = 50-75% gross margin) |
+|-------------------------------------------------------------------------------|
+
+### Revised 6-Tier Model (Excel Recommendations)
+
+| Tier | Monthly Price | Credits | Credit Value | Effective $/Credit | Features |
+|------|---------------|---------|--------------|-------------------|----------|
+| **Free** | $0 | 30 | $3 | N/A | Watermark, 720p, 3 projects, basic features |
+| **Starter** | $12 | 150 | $15 | $0.08 | No watermark, 1080p, 10 projects |
+| **Creator** | $29 | 400 | $40 | $0.073 | + Brand kit, templates, priority queue |
+| **Pro** | $59 | 1,000 | $100 | $0.059 | + API access, 4K export, voice clone |
+| **Business** | $149 | 3,000 | $300 | $0.050 | + 5 team seats, SSO, priority support |
+| **Enterprise** | Custom | Custom | Custom | $0.040 | + Unlimited seats, SLA, dedicated success |
+
+**Annual Discount**: 20% off (2 months free)
+
+---
+
+### Credit Conversion Matrix
+
+| Operation | Your Cost | Credits Charged | User Pays | Margin % |
+|-----------|-----------|-----------------|-----------|----------|
+| **── Basic Operations (High Margin) ──** |
+| Script generation (500 words) | $0.01 | 1 credit | $0.10 | 90% |
+| Image generation (FLUX Schnell) | $0.003 | 1 credit | $0.10 | 97% |
+| Background removal | $0.004 | 1 credit | $0.10 | 96% |
+| Image upscale (2x) | $0.002 | 1 credit | $0.10 | 98% |
+| Translation (1K chars) | $0.01 | 1 credit | $0.10 | 90% |
+| Transcription (5 min) | $0.03 | 1 credit | $0.10 | 70% |
+| **── Standard Operations (Good Margin) ──** |
+| Script + TTS (1 min, Azure) | $0.03 | 2 credits | $0.20 | 85% |
+| Image generation (FLUX Pro) | $0.05 | 2 credits | $0.20 | 75% |
+| Script + TTS (1 min, ElevenLabs) | $0.30 | 5 credits | $0.50 | 40% |
+| Short video (5 sec) | $0.07 | 3 credits | $0.30 | 77% |
+| Lip sync (30 sec) | $0.05 | 2 credits | $0.20 | 75% |
+| **── Premium Operations (Lower Margin, Higher Value) ──** |
+| Avatar video (1 min, basic) | $0.35 | 8 credits | $0.80 | 56% |
+| Avatar video (1 min, premium) | $0.60 | 15 credits | $1.50 | 60% |
+| Video generation (10 sec) | $0.15 | 5 credits | $0.50 | 70% |
+| Full presentation (10 slides) | $0.15 | 5 credits | $0.50 | 70% |
+| Presentation + narration | $0.50 | 12 credits | $1.20 | 58% |
+
+**Average Blended Margin: 55-60%** (healthy SaaS)
 
 ---
 
@@ -255,57 +317,90 @@ Genie Suite: Restore from translation checkpoint, retry voice only
 
 | Feature | Limit | Why This Hooks |
 |---------|-------|----------------|
+| **Credits** | 30/month (10/day max) | Forces focused usage |
+| **Resolution** | 720p | Quality limitation drives upgrade |
 | **AI Presentations** | 3/month | Proves quality fast, watermark drives upgrade |
 | **Voice Dub (Any Language)** | 1 video (2 min) | Shows 70+ language power - viral sharing |
-| **Voice Clone TTS** | 5 minutes | Personal & sticky - they hear THEIR voice |
 | **Mobile Recording** | 3 sessions | Demonstrates offline-first magic |
 | **Export** | Watermarked | Professional output requires upgrade |
 
-**Hook Psychology**: 
-- Asian users: Try Japanese/Korean/Chinese dub → "It sounds HUMAN!"
-- MEA users: Try Arabic dialect → "Finally not news anchor Arabic!"
-- India users: Try Telugu/Tamil → "My language actually works!"
-- LatAm users: Try mobile record → "I can create anywhere!"
+**Anti-Abuse Measures**:
+- Phone verification required
+- 10 credits/day max
+- 3 active projects limit
+- Rate limiting: 60 requests/minute
 
 ---
 
-### BASIC TIER ($9.99/mo) - "The Replacement"
+### STARTER TIER ($12/mo) - "The Replacement"
 
 **Goal**: Replace 2-3 separate tool subscriptions
 
 | Feature | Limit | Replaces |
 |---------|-------|----------|
+| **Credits** | 150/month | ~12-15 full presentations |
+| **Resolution** | 1080p | Professional quality |
 | **AI Presentations** | 15/month (no watermark) | Gamma Free ($0) |
 | **Voice Dub** | 5 videos (5 min each) | ElevenLabs Starter ($5) |
 | **Mobile Recording** | 15 sessions | Nothing - unique |
 | **Languages** | 20 | Most tools: 5-10 |
 | **Export** | Clean PPT/PDF | Gamma: broken exports |
-| **Offline Queue** | 30 minutes | Nothing - unique |
 
-**Value Proposition**: "One tool for $9.99 vs $30+ for 3 tools"
-
-**Target Markets**: India, SEA, LatAm (price sensitive, mobile-first)
+**Overage Rate**: $0.12/credit (encourages upgrade to Creator)
 
 ---
 
-### PRO TIER ($29.99/mo) - "The Creator's Arsenal"
+### CREATOR TIER ($29/mo) - "The Creator's Arsenal"
+
+**Goal**: Sweet spot for content creators and freelancers
+
+| Feature | Limit | Value |
+|---------|-------|-------|
+| **Credits** | 400/month | ~40 presentations or 26 avatar videos |
+| **Brand Kit** | Yes | Template enforcement |
+| **Priority Queue** | Yes | 2x faster processing |
+| **Templates** | Premium access | Professional designs |
+| **Avatar Videos** | 8/month | Beats Synthesia Starter |
+| **Voice Clone** | 1 voice | Personal branding |
+
+**Overage Rate**: $0.10/credit (standard rate)
+
+---
+
+### PRO TIER ($59/mo) - "The Professional Platform"
 
 **Goal**: Make switching from HeyGen/Synthesia a no-brainer
 
 | Feature | Limit | Beats Competitor |
 |---------|-------|------------------|
-| **AI Presentations** | 50/month | Gamma Pro: $10 (but broken exports) |
+| **Credits** | 1,000/month | ~100 presentations |
 | **Avatar Videos** | 15/month | Synthesia: $89 for similar |
-| **Voice Dub** | Unlimited | ElevenLabs Pro: $99 |
-| **Languages** | 70+ | HeyGen: 40 |
-| **Lip-Sync** | Full | HeyGen: buggy at this tier |
+| **Voice Dub** | 70+ languages | HeyGen: 40 |
+| **4K Export** | Full | Premium output |
+| **API Access** | Basic | Developer integration |
 | **Voice Clone** | 3 voices | ElevenLabs: $22+ add-on |
-| **Mobile Recording** | Unlimited | Nothing - unique |
-| **Checkpoint Restore** | Full | Nothing - unique |
+| **Custom Avatars** | Upload own | Personal avatars |
 
 **Migration Offer**: "Import your HeyGen/ElevenLabs projects, get 30% off first 3 months"
 
-**Target Markets**: US, Canada, Europe, Japan, Korea
+**Overage Rate**: $0.08/credit (loyalty discount)
+
+---
+
+### BUSINESS TIER ($149/mo) - "The Team Platform"
+
+**Goal**: Lock in growing teams and agencies
+
+| Feature | Included | Business Value |
+|---------|----------|----------------|
+| **Credits** | 3,000/month | Shared pool |
+| **Team Seats** | 5 included (+$10/seat) | Collaboration |
+| **SSO** | Yes | IT compliance |
+| **Priority Support** | Yes | SLA response |
+| **Brand Templates** | Unlimited | Enforce guidelines |
+| **Analytics** | Team dashboard | Usage insights |
+
+**Overage Rate**: $0.06/credit (volume discount)
 
 ---
 
@@ -316,15 +411,15 @@ Genie Suite: Restore from translation checkpoint, retry voice only
 | Feature | Included | Enterprise Value |
 |---------|----------|------------------|
 | **Custom Avatar Training** | 5 executives | "Our CEO in every video" |
-| **API Access** | Full | Embed in their platform |
+| **API Access** | Full + Webhooks | Deep integration |
 | **White-Label** | Full | Resell to clients |
-| **SSO + SAML** | Full | IT compliance |
+| **SSO + SAML + SCIM** | Full | IT compliance |
 | **Team Collaboration** | Unlimited seats | Department-wide |
-| **Brand Templates** | Unlimited | Enforce guidelines |
 | **SLA** | 99.9% uptime | Mission-critical |
-| **Dedicated Support** | Named CSM | Enterprise expectation |
+| **Dedicated CSM** | Named manager | Strategic support |
+| **On-Premise Option** | Available | Data residency |
 
-**Target Markets**: Global enterprises, agencies, healthcare, education
+**Overage Rate**: $0.040/credit (enterprise discount)
 
 ---
 
@@ -399,11 +494,34 @@ Genie Suite: Restore from translation checkpoint, retry voice only
 | **US/Canada** | 8% | 18% | All-in-one + time savings |
 | **Japan/Korea** | 11% | 14% | CJK voice quality |
 
-**Global Average**: 12% FREE→BASIC, 12% BASIC→PRO
+**Global Average**: 12% FREE→STARTER, 12% STARTER→CREATOR, 8% CREATOR→PRO
 
 ---
 
-## 7. IMPLEMENTATION PRIORITY
+## 7. INDUSTRY VERTICAL OPPORTUNITIES (From Excel Analysis)
+
+### Vertical Market TAM Analysis
+
+| Vertical | 2024 TAM | 2029 TAM | CAGR | AI Video Penetration | Key Compliance |
+|----------|----------|----------|------|---------------------|----------------|
+| **Healthcare** | $2.5B | $15B | 43% | 12% | HIPAA, FDA |
+| **Financial Services** | $1.8B | $8B | 35% | 18% | SOC 2, PCI-DSS, SEC |
+| **EdTech** | $3.2B | $12B | 30% | 22% | FERPA, WCAG |
+| **E-commerce** | $4.5B | $20B | 35% | 15% | FTC, CCPA |
+| **Hospitality** | $0.8B | $4B | 38% | 8% | GDPR, Data localization |
+
+### Vertical-Specific Feature Requirements
+
+| Vertical | Must-Have Features | Pipeline Priority |
+|----------|-------------------|-------------------|
+| **Healthcare** | HIPAA compliance, medical terminology, patient education templates | `video-dubbing`, `ppt-to-video`, avatar videos |
+| **Financial** | Audit trails, compliance verification, secure handling | `document-to-deck`, `video-translation`, branded templates |
+| **Education** | SCORM/xAPI export, accessibility, LMS integration | `text-to-course`, `ppt-to-video`, quiz generation |
+| **E-commerce** | Product showcase, shoppable video, social commerce | `product-demo`, `ugc-style`, `mobile-record` |
+
+---
+
+## 8. IMPLEMENTATION PRIORITY
 
 ### Phase 1 (Weeks 1-2): Core Killer Features
 
@@ -493,15 +611,27 @@ Repeat with next region pair
 
 ---
 
-## 8. SUCCESS METRICS
+## 9. SUCCESS METRICS (6-Tier Model)
 
-| Metric | Target (Month 1) | Target (Month 3) |
-|--------|------------------|------------------|
-| Free Signups | 10,000 | 50,000 |
-| FREE → BASIC Conversion | 8% | 12% |
-| BASIC → PRO Conversion | 5% | 12% |
-| Average Revenue Per User | $15 | $22 |
-| Gross Margin | 75% | 80% |
+| Metric | Target (Month 1) | Target (Month 3) | Target (Month 6) |
+|--------|------------------|------------------|------------------|
+| Free Signups | 10,000 | 50,000 | 150,000 |
+| FREE → STARTER Conversion | 8% | 12% | 15% |
+| STARTER → CREATOR Conversion | 5% | 10% | 12% |
+| CREATOR → PRO Conversion | 3% | 6% | 8% |
+| Average Revenue Per User | $12 | $22 | $30 |
+| Gross Margin | 55% | 60% | 65% |
+| Monthly Churn (Paid) | 8% | 6% | 4% |
+
+### Credit Usage Economics
+
+| Tier | Typical Credits/Mo | Your Cost | Revenue | Net Margin |
+|------|-------------------|-----------|---------|------------|
+| Free | 20 used | $0.70 | $0 | -$0.70 (CAC) |
+| Starter | 120 used | $4.20 | $12 | 65% |
+| Creator | 350 used | $12.25 | $29 | 58% |
+| Pro | 800 used | $28 | $59 | 53% |
+| Business | 2,500 used | $87.50 | $149 | 41% |
 | NPS Score | 40 | 55 |
 | Churn Rate (Monthly) | 8% | 5% |
 

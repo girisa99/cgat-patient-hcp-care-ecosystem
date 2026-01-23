@@ -1,11 +1,17 @@
 /**
  * Subscription Tiers Configuration
  * 
- * MARKET RESEARCH-BACKED 4-TIER MODEL (Jan 2025):
- * 1. Free - $0, "Holy shit this works!" hook features
- * 2. Basic - $9.99/mo, replaces 2-3 tool subscriptions  
- * 3. Pro - $29.99/mo, creator's arsenal (beats HeyGen/Synthesia)
- * 4. Enterprise - Custom, platform + API + white-label
+ * CREDIT-BASED 6-TIER MODEL (Jan 2026 - Excel Analysis Aligned):
+ * Based on: AI_Presentation_Competitor_Analysis_Enhanced_11.xlsx
+ * 
+ * 1. Free - $0, 30 credits, watermark, 720p (Hook tier)
+ * 2. Starter - $12/mo, 150 credits (Replaces 2-3 tools)
+ * 3. Creator - $29/mo, 400 credits (Sweet spot for creators)
+ * 4. Pro - $59/mo, 1,000 credits (Beats HeyGen/Synthesia)
+ * 5. Business - $149/mo, 3,000 credits (Teams)
+ * 6. Enterprise - Custom (White-label, SSO, unlimited)
+ * 
+ * CREDIT SYSTEM: 1 Credit = $0.10 user value (costs $0.025-0.05 = 50-75% margin)
  * 
  * KILLER PIPELINES:
  * #1: Global Voice Dubbing + Repair (70+ languages, checkpoint restoration)
@@ -20,7 +26,7 @@
  * - US/Canada: "All-in-one + no credit loss on failures" → Checkpoint restore
  */
 
-export type SubscriptionTier = 'free' | 'basic' | 'pro' | 'enterprise' | 'beta';
+export type SubscriptionTier = 'free' | 'starter' | 'creator' | 'pro' | 'business' | 'enterprise' | 'beta';
 
 export interface TierConfig {
   id: SubscriptionTier;
@@ -154,10 +160,10 @@ export const SUBSCRIPTION_TIERS: Record<SubscriptionTier, TierConfig> = {
   },
   
   /**
-   * BASIC TIER ($9.99/mo) - "The Replacement"
+   * STARTER TIER ($12/mo) - "The Replacement"
    * Goal: Replace 2-3 separate tool subscriptions
    * 
-   * Value: "One tool for $9.99 vs $30+ for 3 tools"
+   * Value: "One tool for $12 vs $30+ for 3 tools"
    * Target: India, SEA, LatAm (price sensitive, mobile-first)
    * 
    * Replaces:
@@ -165,11 +171,11 @@ export const SUBSCRIPTION_TIERS: Record<SubscriptionTier, TierConfig> = {
    * - ElevenLabs Starter ($5) - voice dubbing
    * - No mobile equivalent exists
    */
-  basic: {
-    id: 'basic',
-    name: 'basic',
-    displayName: 'Basic',
-    price: { monthly: 9.99, yearly: 99.99 },
+  starter: {
+    id: 'starter',
+    name: 'starter',
+    displayName: 'Starter',
+    price: { monthly: 12, yearly: 120 },
     credits: { monthly: 150, daily: 15 },
     limits: {
       projects: 10,
@@ -192,13 +198,14 @@ export const SUBSCRIPTION_TIERS: Record<SubscriptionTier, TierConfig> = {
       socialPlatforms: 3,
     },
     features: [
+      '150 credits/month ($0.08/credit)',
       '15 AI presentations/mo (no watermark)',
+      '1080p resolution (upgrade from 720p)',
       '5 video dubs (20 languages, 5 min each)',
       '15 mobile recordings',
       '30 min offline queue',
       '3 social platforms (TikTok, Reels, LinkedIn)',
       'Clean PPT/PDF export (no broken layouts!)',
-      'Checkpoint restore',
       'Email support',
     ],
     hookFeatures: [
@@ -222,11 +229,85 @@ export const SUBSCRIPTION_TIERS: Record<SubscriptionTier, TierConfig> = {
       hub: false
     },
     stripeIds: {
-      productId: 'prod_basic_genie',
-      priceIdMonthly: 'price_basic_monthly',
-      priceIdYearly: 'price_basic_yearly'
+      productId: 'prod_starter_genie',
+      priceIdMonthly: 'price_starter_monthly',
+      priceIdYearly: 'price_starter_yearly'
     },
-    recommendedFor: ['creator', 'traveler', 'individual', 'student', 'small_business']
+    recommendedFor: ['hobbyist', 'student', 'individual']
+  },
+  
+  /**
+   * CREATOR TIER ($29/mo) - "The Sweet Spot"
+   * Goal: Sweet spot for content creators and freelancers
+   * 
+   * Value: Brand kit, templates, priority queue
+   * Target: Content creators, freelancers, small teams
+   */
+  creator: {
+    id: 'creator',
+    name: 'creator',
+    displayName: 'Creator',
+    price: { monthly: 29, yearly: 290 },
+    credits: { monthly: 400, daily: 40 },
+    limits: {
+      projects: 25,
+      agents: 10,
+      documentsPerMonth: 150,
+      scriptsPerMonth: 75,
+      recordingHours: 15,
+      teamMembers: 2,
+      presentationsPerMonth: 30,
+      avatarVideosPerMonth: 8,
+      videoDubsPerMonth: 10,
+      dubbingMinutesPerDub: 8,
+      dubbingLanguages: 40,
+      lipSyncEnabled: true,
+      voiceCloneEnabled: true, // 1 voice
+      checkpointRestoreEnabled: true,
+      mobileRecordsPerMonth: 30,
+      mobileRecordMinutes: 10,
+      offlineQueueMinutes: 45,
+      socialPlatforms: 5,
+      autoEditEnabled: true,
+    },
+    features: [
+      '400 credits/month ($0.073/credit)',
+      '30 AI presentations/mo',
+      '8 avatar videos/mo',
+      '10 video dubs (40 languages)',
+      'Brand kit + templates',
+      'Priority queue (2x faster)',
+      '1 voice clone',
+      'Premium template library',
+      'Basic analytics',
+      'Priority email support',
+    ],
+    hookFeatures: [
+      '🎨 Brand kit to maintain consistency',
+      '⚡ Priority queue - 2x faster processing',
+      '🎤 Voice clone included',
+    ],
+    regionalValue: {
+      asia: '40 Asian languages with brand templates',
+      india: 'Full Indian language pack + brand kit',
+      mea: 'Arabic dialects + brand templates',
+      latam: 'Unlimited short-form + brand kit',
+      europe: 'DeepL + brand governance',
+      north_america: 'Creator toolkit + priority support',
+    },
+    genieProducts: {
+      mind: true,
+      spark: true,
+      vibe: true,
+      arc: true,
+      hub: false
+    },
+    stripeIds: {
+      productId: 'prod_creator_genie',
+      priceIdMonthly: 'price_creator_monthly',
+      priceIdYearly: 'price_creator_yearly'
+    },
+    recommendedFor: ['creator', 'freelancer', 'small_team', 'traveler']
   },
   
   /**
