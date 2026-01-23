@@ -500,4 +500,224 @@ export function getGenerationCoverageStatsForCategory(
   };
 }
 
+// ==========================================
+// BLOCKER DATA FOR DEPENDENCY ANALYSIS
+// Provides unified blocker information across all sources
+// ==========================================
+
+export interface BlockedItem {
+  id: string;
+  name: string;
+  type: 'feature' | 'context';
+  contextType?: 'industry' | 'framework' | 'visual' | 'output';
+  category: FeatureCategory | 'all';
+  blockedBy: {
+    featureId: string;
+    featureName: string;
+    category: FeatureCategory;
+  }[];
+  blocksCount: number;
+  blocks: string[];
+  criticalPath: boolean;
+  source: 'cross-functional' | 'feature-matrix' | 'gen-coverage';
+}
+
+export interface ReadyItem {
+  id: string;
+  name: string;
+  type: 'feature' | 'context';
+  contextType?: 'industry' | 'framework' | 'visual' | 'output';
+  category: FeatureCategory | 'all';
+  unlocksCount: number;
+  unlocks: string[];
+  effort: 'low' | 'medium' | 'high';
+  priority: 'critical' | 'high' | 'medium' | 'low';
+  source: 'cross-functional' | 'feature-matrix' | 'gen-coverage';
+}
+
+export function getBlockerAnalysisData(
+  categoryFilter: FeatureCategory | 'all' = 'all'
+): {
+  blockedItems: BlockedItem[];
+  readyItems: ReadyItem[];
+  stats: {
+    total: number;
+    blocked: number;
+    ready: number;
+    implemented: number;
+    criticalBlockers: number;
+  };
+} {
+  const blockedItems: BlockedItem[] = [];
+  const readyItems: ReadyItem[] = [];
+  
+  const categoryFeatures = categoryFilter === 'all'
+    ? ALL_FEATURES
+    : ALL_FEATURES.filter(f => f.category === categoryFilter);
+  
+  const featureIds = new Set(categoryFeatures.map(f => f.id));
+  
+  // Build dependency graph from CROSS_FUNCTIONAL_MAPPINGS
+  const reverseDepMap = new Map<string, Set<string>>(); // feature → features that depend on it
+  const forwardDepMap = new Map<string, Set<string>>(); // feature → features it depends on
+  
+  CROSS_FUNCTIONAL_MAPPINGS.forEach(m => {
+    if (categoryFilter !== 'all' && m.primaryCategory !== categoryFilter && !featureIds.has(m.primaryFeatureId)) {
+      return;
+    }
+    
+    m.relatedFeatures?.forEach(rf => {
+      if (rf.relationship === 'requires') {
+        // m.primaryFeatureId requires rf.featureId
+        if (!forwardDepMap.has(m.primaryFeatureId)) {
+          forwardDepMap.set(m.primaryFeatureId, new Set());
+        }
+        forwardDepMap.get(m.primaryFeatureId)!.add(rf.featureId);
+        
+        // rf.featureId is required by m.primaryFeatureId
+        if (!reverseDepMap.has(rf.featureId)) {
+          reverseDepMap.set(rf.featureId, new Set());
+        }
+        reverseDepMap.get(rf.featureId)!.add(m.primaryFeatureId);
+      }
+    });
+  });
+  
+  // Also add blockers from Generation Coverage context mappings
+  const contextMappings = [
+    ...INDUSTRY_CAPABILITY_MAPPINGS.map(m => ({ ...m, ctxType: 'industry' as const })),
+    ...FRAMEWORK_CAPABILITY_MAPPINGS.map(m => ({ ...m, ctxType: 'framework' as const })),
+    ...VISUAL_CAPABILITY_MAPPINGS.map(m => ({ ...m, ctxType: 'visual' as const })),
+    ...OUTPUT_CAPABILITY_MAPPINGS.map(m => ({ ...m, ctxType: 'output' as const })),
+  ];
+  
+  // Process context mappings for blockers
+  contextMappings.forEach(mapping => {
+    // Check if context matches category filter
+    const matchesCategory = categoryFilter === 'all' || 
+      mapping.requiredFeatures.some(rf => rf.category === categoryFilter || featureIds.has(rf.featureId));
+    
+    if (!matchesCategory) return;
+    
+    const missingCritical = mapping.requiredFeatures.filter(rf => {
+      if (rf.priority !== 'critical') return false;
+      const featureMapping = FEATURE_CONTEXT_MAPPINGS.find(f => f.featureId === rf.featureId);
+      return !featureMapping?.recommendedProviders?.length;
+    });
+    
+    const contextId = `${mapping.ctxType}:${mapping.contextId}`;
+    
+    if (missingCritical.length > 0) {
+      blockedItems.push({
+        id: contextId,
+        name: mapping.contextName,
+        type: 'context',
+        contextType: mapping.ctxType,
+        category: categoryFilter,
+        blockedBy: missingCritical.map(rf => ({
+          featureId: rf.featureId,
+          featureName: rf.featureId,
+          category: rf.category as FeatureCategory
+        })),
+        blocksCount: 0,
+        blocks: [],
+        criticalPath: missingCritical.length >= 2,
+        source: 'gen-coverage'
+      });
+    } else {
+      // This context is ready to implement
+      readyItems.push({
+        id: contextId,
+        name: mapping.contextName,
+        type: 'context',
+        contextType: mapping.ctxType,
+        category: categoryFilter,
+        unlocksCount: 0,
+        unlocks: [],
+        effort: mapping.requiredFeatures.length > 3 ? 'medium' : 'low',
+        priority: 'medium',
+        source: 'gen-coverage'
+      });
+    }
+  });
+  
+  // Process features
+  categoryFeatures.forEach(feature => {
+    const featureImpl = FEATURE_IMPLEMENTATION_MATRIX[feature.id];
+    const isImplemented = featureImpl && Object.values(featureImpl).some(p => p?.implementation === 'implemented');
+    
+    if (isImplemented) return; // Skip implemented features
+    
+    const blockedByFeatures = forwardDepMap.get(feature.id);
+    const blocksFeatures = reverseDepMap.get(feature.id);
+    
+    // Check which blockers are not implemented
+    const unresolvedBlockers: { featureId: string; featureName: string; category: FeatureCategory }[] = [];
+    
+    if (blockedByFeatures) {
+      blockedByFeatures.forEach(blockerId => {
+        const blockerImpl = FEATURE_IMPLEMENTATION_MATRIX[blockerId];
+        const blockerIsImplemented = blockerImpl && Object.values(blockerImpl).some(p => p?.implementation === 'implemented');
+        
+        if (!blockerIsImplemented) {
+          const blockerFeature = ALL_FEATURES.find(f => f.id === blockerId);
+          unresolvedBlockers.push({
+            featureId: blockerId,
+            featureName: blockerFeature?.name || blockerId,
+            category: blockerFeature?.category as FeatureCategory || 'INPUT'
+          });
+        }
+      });
+    }
+    
+    if (unresolvedBlockers.length > 0) {
+      blockedItems.push({
+        id: feature.id,
+        name: feature.name,
+        type: 'feature',
+        category: feature.category,
+        blockedBy: unresolvedBlockers,
+        blocksCount: blocksFeatures?.size || 0,
+        blocks: blocksFeatures ? Array.from(blocksFeatures) : [],
+        criticalPath: (blocksFeatures?.size || 0) >= 3,
+        source: 'cross-functional'
+      });
+    } else {
+      // Feature is ready to implement
+      readyItems.push({
+        id: feature.id,
+        name: feature.name,
+        type: 'feature',
+        category: feature.category,
+        unlocksCount: blocksFeatures?.size || 0,
+        unlocks: blocksFeatures ? Array.from(blocksFeatures) : [],
+        effort: feature.priority === 'critical' ? 'high' : 'medium',
+        priority: feature.priority as 'critical' | 'high' | 'medium' | 'low',
+        source: 'cross-functional'
+      });
+    }
+  });
+  
+  // Sort by impact
+  blockedItems.sort((a, b) => b.blocksCount - a.blocksCount);
+  readyItems.sort((a, b) => b.unlocksCount - a.unlocksCount);
+  
+  return {
+    blockedItems,
+    readyItems,
+    stats: {
+      total: categoryFeatures.length + contextMappings.filter(m => 
+        categoryFilter === 'all' || m.requiredFeatures.some(rf => rf.category === categoryFilter)
+      ).length,
+      blocked: blockedItems.length,
+      ready: readyItems.length,
+      implemented: categoryFeatures.filter(f => {
+        const impl = FEATURE_IMPLEMENTATION_MATRIX[f.id];
+        return impl && Object.values(impl).some(p => p?.implementation === 'implemented');
+      }).length,
+      criticalBlockers: blockedItems.filter(b => b.criticalPath).length
+    }
+  };
+}
+
 export default calculateUnifiedMetrics;
