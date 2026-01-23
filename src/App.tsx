@@ -289,6 +289,13 @@ const AppContent = () => {
                       </Suspense>
                     </ProtectedRoute>
                   } />
+                  <Route path="/marketing-materials" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'onboardingTeam', 'healthcareProvider', 'demoUser']}>
+                      <Suspense fallback={<PageLoading message="Loading Marketing Materials..." />}>
+                        {React.createElement(React.lazy(() => import('@/pages/marketing/MarketingMaterialsPage')))}
+                      </Suspense>
+                    </ProtectedRoute>
+                  } />
                   <Route path="/genie-studio/feedback-analytics" element={
                     <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'onboardingTeam', 'healthcareProvider', 'caseManager']}>
                       <Suspense fallback={<PageLoading message="Loading Feedback Analytics..." />}>
