@@ -225,8 +225,9 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
   };
 
   // Compute category stats dynamically from localMatrix
+  // Use ALL categories from CATEGORY_LABELS to ensure alignment with unified metrics
   const computeCategoryStats = useMemo(() => {
-    const categories: FeatureCategory[] = ['INPUT', 'SCRIPT', 'VOICE', 'AUDIO', 'IMAGE', 'VIDEO', 'ANIMATION', '3D', 'AR_VR', 'VFX', 'INTERACTIVE', 'TRANSLATION', 'EXPORT', 'PUBLISHING', 'USE_CASE'];
+    const categories: FeatureCategory[] = Object.keys(CATEGORY_LABELS) as FeatureCategory[];
     
     const result: Record<FeatureCategory, { total: number; implemented: number; partial: number; planned: number; notStarted: number }> = {} as any;
     
@@ -573,7 +574,7 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
           <p className="text-sm text-muted-foreground mt-1">
             {selectedCategory === 'all' ? (
               <>
-                {overallStats.total} features × {PROVIDER_SUMMARIES.length} providers | {overallStats.coverage}% coverage
+                {unifiedMetrics.features.total} features × {unifiedMetrics.providers.implemented} providers | {unifiedMetrics.coverage}% coverage
               </>
             ) : (
               <>
