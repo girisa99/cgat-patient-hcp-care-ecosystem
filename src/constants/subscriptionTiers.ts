@@ -1,20 +1,26 @@
 /**
  * Subscription Tiers Configuration
  * 
- * FINALIZED 5-TIER MODEL:
- * 1. Free Trial - $0, 14 days, basic access
- * 2. Starter - $9.99/mo, solo creators
- * 3. Business - $29.99/mo, small teams
- * 4. Pro - $79.99/mo, professionals
- * 5. Enterprise - Custom, organizations
+ * MARKET RESEARCH-BACKED 4-TIER MODEL (Jan 2025):
+ * 1. Free - $0, "Holy shit this works!" hook features
+ * 2. Basic - $9.99/mo, replaces 2-3 tool subscriptions  
+ * 3. Pro - $29.99/mo, creator's arsenal (beats HeyGen/Synthesia)
+ * 4. Enterprise - Custom, platform + API + white-label
  * 
- * SEGMENT-BASED RECOMMENDATIONS:
- * - Creator/Traveler → Starter
- * - Small Business → Business
- * - Education/Healthcare/Enterprise → Pro/Enterprise
+ * KILLER PIPELINES:
+ * #1: Global Voice Dubbing + Repair (70+ languages, checkpoint restoration)
+ * #2: Mobile One-Tap Record → Publish (0% competitor coverage)
+ * 
+ * REGIONAL CONVERSION DRIVERS:
+ * - Asia (CJK): "Voice sounds HUMAN, not robot" → CosyVoice
+ * - India: "My language (Telugu/Tamil/Bengali) actually works!" → 22 languages
+ * - MEA: "My dialect, not news anchor Arabic" → 7 Arabic dialects
+ * - LatAm: "Mobile-first + unlimited short-form" → One-tap publish
+ * - Europe: "Export that WORKS + full deck translation" → DeepL routing
+ * - US/Canada: "All-in-one + no credit loss on failures" → Checkpoint restore
  */
 
-export type SubscriptionTier = 'free' | 'starter' | 'business' | 'pro' | 'enterprise' | 'beta';
+export type SubscriptionTier = 'free' | 'basic' | 'pro' | 'enterprise' | 'beta';
 
 export interface TierConfig {
   id: SubscriptionTier;
@@ -41,6 +47,7 @@ export interface TierConfig {
     dubbingLanguages?: number;
     lipSyncEnabled?: boolean;
     voiceCloneEnabled?: boolean;
+    checkpointRestoreEnabled?: boolean;
     // Killer Pipeline #2: Mobile Record → Publish
     mobileRecordsPerMonth?: number;
     mobileRecordMinutes?: number;
@@ -48,6 +55,14 @@ export interface TierConfig {
     socialPlatforms?: number;
     autoEditEnabled?: boolean;
     advancedEditEnabled?: boolean;
+    // Presentation Features
+    presentationsPerMonth?: number;
+    avatarVideosPerMonth?: number;
+    // Enterprise Features
+    customAvatarTraining?: boolean;
+    apiAccess?: boolean;
+    whiteLabel?: boolean;
+    ssoSaml?: boolean;
   };
   features: string[];
   genieProducts: {
@@ -63,96 +78,176 @@ export interface TierConfig {
     priceIdYearly: string;
   } | null;
   recommendedFor: string[];
+  hookFeatures?: string[]; // "Aha moment" features for conversion
+  regionalValue?: Record<string, string>; // Region-specific value props
 }
 
 export const SUBSCRIPTION_TIERS: Record<SubscriptionTier, TierConfig> = {
+  /**
+   * FREE TIER - "The Hook"
+   * Goal: Create "aha moment" in first 2 minutes
+   * 
+   * Hook Psychology:
+   * - Asia: Try Japanese/Korean/Chinese dub → "It sounds HUMAN!"
+   * - MEA: Try Arabic dialect → "Finally not news anchor Arabic!"
+   * - India: Try Telugu/Tamil → "My language actually works!"
+   * - LatAm: Try mobile record → "I can create anywhere!"
+   */
   free: {
     id: 'free',
     name: 'free',
-    displayName: 'Free Trial',
+    displayName: 'Free',
     price: { monthly: 0, yearly: 0 },
-    credits: { monthly: 10, daily: 5 },
+    credits: { monthly: 25, daily: 5 },
     limits: {
       projects: 2,
       agents: 1,
       documentsPerMonth: 10,
       scriptsPerMonth: 5,
       recordingHours: 0.5,
-      teamMembers: 1
+      teamMembers: 1,
+      // HOOK: 3 AI presentations with watermark
+      presentationsPerMonth: 3,
+      // HOOK: 1 video dub (any language!) - shows 70+ language power
+      videoDubsPerMonth: 1,
+      dubbingMinutesPerDub: 2,
+      dubbingLanguages: 70, // ALL languages available to hook!
+      checkpointRestoreEnabled: true, // Show value even in free
+      // HOOK: 5 min voice clone - personal & sticky
+      voiceCloneEnabled: false, // Tease only
+      // HOOK: 3 mobile records - demonstrates offline magic
+      mobileRecordsPerMonth: 3,
+      mobileRecordMinutes: 2,
+      offlineQueueMinutes: 5,
     },
     features: [
-      'Basic Studio access',
-      'Basic Spark generation',
-      'Watermarked exports',
-      '14-day trial period'
+      '3 AI presentations/mo (watermarked)',
+      '1 video dub (any of 70+ languages!)',
+      '5 min voice clone preview',
+      '3 mobile recordings',
+      'Offline mode (5 min queue)',
+      'Checkpoint restore (no lost credits)',
+      'Export with watermark',
     ],
+    hookFeatures: [
+      '🌍 Try ANY language - Japanese, Arabic dialects, Telugu - sounds HUMAN!',
+      '📱 Mobile record anywhere - even offline!',
+      '✅ Never lose credits on failed generations',
+    ],
+    regionalValue: {
+      asia: 'CJK voice that sounds natural - Alibaba CosyVoice',
+      india: 'Telugu, Tamil, Bengali, Kannada actually work!',
+      mea: 'Your Arabic dialect, not news anchor Arabic',
+      latam: 'Create on your phone, anywhere, anytime',
+      europe: 'Full deck translation that preserves layout',
+      north_america: 'One tool, no credit traps',
+    },
     genieProducts: {
-      mind: true, // Limited
-      spark: true, // Limited
+      mind: true,
+      spark: true,
       vibe: false,
       arc: false,
       hub: false
     },
     stripeIds: null,
-    recommendedFor: ['trial', 'testing']
+    recommendedFor: ['trial', 'testing', 'first_time']
   },
   
-  starter: {
-    id: 'starter',
-    name: 'starter',
-    displayName: 'Starter',
+  /**
+   * BASIC TIER ($9.99/mo) - "The Replacement"
+   * Goal: Replace 2-3 separate tool subscriptions
+   * 
+   * Value: "One tool for $9.99 vs $30+ for 3 tools"
+   * Target: India, SEA, LatAm (price sensitive, mobile-first)
+   * 
+   * Replaces:
+   * - Gamma Free ($0) - but with working exports
+   * - ElevenLabs Starter ($5) - voice dubbing
+   * - No mobile equivalent exists
+   */
+  basic: {
+    id: 'basic',
+    name: 'basic',
+    displayName: 'Basic',
     price: { monthly: 9.99, yearly: 99.99 },
-    credits: { monthly: 100, daily: 10 },
+    credits: { monthly: 150, daily: 15 },
     limits: {
-      projects: 5,
+      projects: 10,
       agents: 5,
       documentsPerMonth: 50,
       scriptsPerMonth: 25,
       recordingHours: 5,
       teamMembers: 1,
-      // Killer Pipeline #1: Global Dubbing
+      // 15 presentations (no watermark) - beats Gamma Free
+      presentationsPerMonth: 15,
+      // 5 video dubs (5 min each) - replaces ElevenLabs Starter
       videoDubsPerMonth: 5,
-      dubbingMinutesPerDub: 2,
-      dubbingLanguages: 10,
-      // Killer Pipeline #2: Mobile Record
-      mobileRecordsPerMonth: 20,
+      dubbingMinutesPerDub: 5,
+      dubbingLanguages: 20,
+      checkpointRestoreEnabled: true,
+      // 15 mobile sessions - unique feature
+      mobileRecordsPerMonth: 15,
       mobileRecordMinutes: 5,
-      offlineQueueMinutes: 10,
-      socialPlatforms: 3
+      offlineQueueMinutes: 30,
+      socialPlatforms: 3,
     },
     features: [
-      'Core Genie features',
-      'No watermarks',
-      '5 projects',
-      'Basic AI routing',
+      '15 AI presentations/mo (no watermark)',
+      '5 video dubs (20 languages, 5 min each)',
+      '15 mobile recordings',
+      '30 min offline queue',
+      '3 social platforms (TikTok, Reels, LinkedIn)',
+      'Clean PPT/PDF export (no broken layouts!)',
+      'Checkpoint restore',
       'Email support',
-      'Basic templates',
-      '🌍 5 video dubs/mo (10 languages)',
-      '📱 20 mobile records/mo',
-      '⚡ 10 min offline queue',
-      '✅ Checkpoint restoration (no lost credits)'
     ],
+    hookFeatures: [
+      '🎯 Replaces Gamma Free + ElevenLabs Starter',
+      '📱 Mobile-first workflow (unique in market)',
+      '✅ Exports that actually work',
+    ],
+    regionalValue: {
+      asia: '20 Asian languages including CJK variants',
+      india: 'Indian language pack + mobile workflow',
+      mea: 'Arabic dialects + RTL export',
+      latam: 'Mobile-first + Brazilian Portuguese',
+      europe: 'DeepL translation + clean exports',
+      north_america: 'All-in-one replacement',
+    },
     genieProducts: {
       mind: true,
       spark: true,
-      vibe: true, // Limited hours
+      vibe: true,
       arc: false,
       hub: false
     },
     stripeIds: {
-      productId: 'prod_starter_genie',
-      priceIdMonthly: 'price_starter_monthly',
-      priceIdYearly: 'price_starter_yearly'
+      productId: 'prod_basic_genie',
+      priceIdMonthly: 'price_basic_monthly',
+      priceIdYearly: 'price_basic_yearly'
     },
-    recommendedFor: ['creator', 'traveler', 'individual']
+    recommendedFor: ['creator', 'traveler', 'individual', 'student', 'small_business']
   },
   
-  business: {
-    id: 'business',
-    name: 'business',
-    displayName: 'Business',
+  /**
+   * PRO TIER ($29.99/mo) - "The Creator's Arsenal"
+   * Goal: Make switching from HeyGen/Synthesia a no-brainer
+   * 
+   * Value Comparison:
+   * - Synthesia $89/mo = 120 credits ≈ 10 videos
+   * - HeyGen Business $149/mo = 1,000 credits ≈ 8 dubs
+   * - ElevenLabs Pro $99/mo = 500k chars
+   * - Genie Pro $29.99/mo = 15 avatars + unlimited dubbing + presentations
+   * 
+   * Migration Offer: "Import HeyGen/ElevenLabs projects, 30% off first 3 months"
+   * Target: US, Canada, Europe, Japan, Korea (value-conscious professionals)
+   */
+  pro: {
+    id: 'pro',
+    name: 'pro',
+    displayName: 'Pro',
     price: { monthly: 29.99, yearly: 299.99 },
-    credits: { monthly: 500, daily: 25 },
+    credits: { monthly: 500, daily: 50 },
     limits: {
       projects: 50,
       agents: 25,
@@ -160,93 +255,51 @@ export const SUBSCRIPTION_TIERS: Record<SubscriptionTier, TierConfig> = {
       scriptsPerMonth: 150,
       recordingHours: 25,
       teamMembers: 5,
-      // Killer Pipeline #1: Global Dubbing
-      videoDubsPerMonth: 20,
-      dubbingMinutesPerDub: 5,
-      dubbingLanguages: 40,
-      lipSyncEnabled: true,
-      // Killer Pipeline #2: Mobile Record
-      mobileRecordsPerMonth: 100,
-      mobileRecordMinutes: 10,
-      offlineQueueMinutes: 30,
-      socialPlatforms: 5,
-      autoEditEnabled: true
-    },
-    features: [
-      'Full Genie Suite access',
-      '50 projects',
-      'Team collaboration',
-      'Premium AI voices',
-      'Background blur & effects',
-      'Custom templates',
-      'Priority support',
-      'Team feedback system',
-      '🌍 20 video dubs/mo (40 languages + lip-sync)',
-      '📱 100 mobile records/mo',
-      '⚡ 30 min offline queue + auto-edit',
-      '🎬 5 social platforms',
-      '✅ Checkpoint restoration'
-    ],
-    genieProducts: {
-      mind: true,
-      spark: true,
-      vibe: true,
-      arc: false,
-      hub: true // Limited
-    },
-    stripeIds: {
-      productId: 'prod_business_genie',
-      priceIdMonthly: 'price_business_monthly',
-      priceIdYearly: 'price_business_yearly'
-    },
-    recommendedFor: ['small_business', 'agency', 'marketing_team']
-  },
-  
-  pro: {
-    id: 'pro',
-    name: 'pro',
-    displayName: 'Pro',
-    price: { monthly: 79.99, yearly: 799.99 },
-    credits: { monthly: 2000, daily: 100 },
-    limits: {
-      projects: -1, // Unlimited
-      agents: -1, // Unlimited
-      documentsPerMonth: -1,
-      scriptsPerMonth: -1,
-      recordingHours: -1,
-      teamMembers: 25,
-      // Killer Pipeline #1: Global Dubbing (FULL)
-      videoDubsPerMonth: 100,
+      // 50 presentations - unlimited for most users
+      presentationsPerMonth: 50,
+      // 15 avatar videos - beats Synthesia $89
+      avatarVideosPerMonth: 15,
+      // UNLIMITED dubbing - beats ElevenLabs Pro $99
+      videoDubsPerMonth: -1, // Unlimited
       dubbingMinutesPerDub: 10,
       dubbingLanguages: 70,
       lipSyncEnabled: true,
-      voiceCloneEnabled: true,
-      // Killer Pipeline #2: Mobile Record (UNLIMITED)
-      mobileRecordsPerMonth: -1, // Unlimited
-      mobileRecordMinutes: -1, // Unlimited
+      voiceCloneEnabled: true, // 3 voices
+      checkpointRestoreEnabled: true,
+      // Unlimited mobile - unique
+      mobileRecordsPerMonth: -1,
+      mobileRecordMinutes: -1,
       offlineQueueMinutes: 60,
       socialPlatforms: -1, // All
       autoEditEnabled: true,
-      advancedEditEnabled: true
     },
     features: [
-      'Unlimited projects',
-      'Full Genie Suite + Arc',
-      'White-label exports',
-      'Voice cloning',
-      'Virtual sets',
-      'Custom embeddings',
-      'Knowledge graphs',
-      'API access',
-      'Approval workflows',
-      'Dedicated support',
-      '🌍 100 video dubs/mo (70+ languages + voice clone)',
-      '📱 Unlimited mobile records',
-      '⚡ 60 min offline queue + advanced edit',
-      '🎬 All social platforms + API',
-      '🎤 Voice cloning included',
-      '✅ Checkpoint restoration + priority queue'
+      '50 AI presentations/mo',
+      '15 avatar videos/mo (beats Synthesia $89)',
+      'UNLIMITED voice dubbing (beats ElevenLabs $99)',
+      '70+ languages + lip-sync',
+      '3 voice clones included',
+      'Unlimited mobile recordings',
+      '60 min offline queue',
+      'All social platforms',
+      'AI auto-edit',
+      'Team collaboration (5 seats)',
+      'Priority support',
+      'API access (basic)',
     ],
+    hookFeatures: [
+      '🚀 Beats HeyGen Business ($149) + Synthesia ($89) combined',
+      '🌍 70+ languages with native-quality voice',
+      '🎤 Voice cloning included (not $22/mo add-on)',
+    ],
+    regionalValue: {
+      asia: 'CJK voice cloning + lip-sync with Alibaba CosyVoice',
+      india: '22 Indian languages + Dravidian dialects',
+      mea: '7 Arabic dialects + RTL avatar videos',
+      latam: 'Brazilian Portuguese distinction + unlimited dubbing',
+      europe: 'GDPR-compliant + DeepL translation',
+      north_america: 'All-in-one creator arsenal',
+    },
     genieProducts: {
       mind: true,
       spark: true,
@@ -259,9 +312,20 @@ export const SUBSCRIPTION_TIERS: Record<SubscriptionTier, TierConfig> = {
       priceIdMonthly: 'price_pro_monthly',
       priceIdYearly: 'price_pro_yearly'
     },
-    recommendedFor: ['education', 'healthcare', 'media_company', 'professional']
+    recommendedFor: ['creator', 'agency', 'marketing_team', 'education', 'healthcare', 'professional']
   },
   
+  /**
+   * ENTERPRISE TIER (Custom) - "The Platform"
+   * Goal: Lock in agencies, L&D teams, enterprises
+   * 
+   * Unique Enterprise Value:
+   * - Custom Avatar Training: "Our CEO in every video"
+   * - API + White-Label: Resell to clients
+   * - SSO/SAML: IT compliance
+   * 
+   * Target: Global enterprises, agencies, healthcare, education
+   */
   enterprise: {
     id: 'enterprise',
     name: 'enterprise',
@@ -274,19 +338,55 @@ export const SUBSCRIPTION_TIERS: Record<SubscriptionTier, TierConfig> = {
       documentsPerMonth: -1,
       scriptsPerMonth: -1,
       recordingHours: -1,
-      teamMembers: -1
+      teamMembers: -1,
+      presentationsPerMonth: -1,
+      avatarVideosPerMonth: -1,
+      videoDubsPerMonth: -1,
+      dubbingMinutesPerDub: -1,
+      dubbingLanguages: 70,
+      lipSyncEnabled: true,
+      voiceCloneEnabled: true,
+      checkpointRestoreEnabled: true,
+      mobileRecordsPerMonth: -1,
+      mobileRecordMinutes: -1,
+      offlineQueueMinutes: -1,
+      socialPlatforms: -1,
+      autoEditEnabled: true,
+      advancedEditEnabled: true,
+      // Enterprise exclusives
+      customAvatarTraining: true,
+      apiAccess: true,
+      whiteLabel: true,
+      ssoSaml: true,
     },
     features: [
-      'Everything in Pro',
-      'HIPAA compliance',
+      'Everything in Pro (unlimited)',
+      'Custom avatar training (5 executives)',
+      'Full API access',
+      'White-label + resell',
       'SSO/SAML',
-      'Custom integrations',
+      'HIPAA compliance',
       'Dedicated infrastructure',
-      'SLA guarantees',
-      'Custom training',
-      'Account manager',
-      'On-premise option'
+      '99.9% SLA',
+      'Named account manager',
+      'Custom integrations',
+      'On-premise option',
+      'Unlimited team seats',
+      'Brand template enforcement',
     ],
+    hookFeatures: [
+      '🎭 Train AI on executive faces/voices',
+      '🏢 White-label and resell to your clients',
+      '🔒 Enterprise security (SSO, HIPAA, on-prem)',
+    ],
+    regionalValue: {
+      asia: 'Regional data residency options',
+      india: 'India-hosted infrastructure available',
+      mea: 'Arabic-first enterprise support',
+      latam: 'LatAm-specific compliance',
+      europe: 'EU data residency + GDPR',
+      north_america: 'SOC2 + HIPAA compliance',
+    },
     genieProducts: {
       mind: true,
       spark: true,
@@ -295,7 +395,7 @@ export const SUBSCRIPTION_TIERS: Record<SubscriptionTier, TierConfig> = {
       hub: true
     },
     stripeIds: null, // Custom sales
-    recommendedFor: ['enterprise', 'healthcare_org', 'government', 'large_team']
+    recommendedFor: ['enterprise', 'healthcare_org', 'government', 'large_team', 'agency']
   },
   
   beta: {
@@ -331,31 +431,74 @@ export const SUBSCRIPTION_TIERS: Record<SubscriptionTier, TierConfig> = {
 };
 
 /**
- * Segment-based tier recommendations
+ * Segment-based tier recommendations (4-tier model)
  */
 export const SEGMENT_TIER_MAPPING: Record<string, SubscriptionTier> = {
-  // Individuals
-  creator: 'starter',
-  traveler: 'starter',
-  individual: 'starter',
-  student: 'starter',
+  // Free trial seekers
+  trial: 'free',
+  testing: 'free',
+  first_time: 'free',
   
-  // Small teams
-  small_business: 'business',
-  agency: 'business',
-  marketing_team: 'business',
+  // Basic - Price-sensitive, mobile-first
+  creator: 'basic',
+  traveler: 'basic',
+  individual: 'basic',
+  student: 'basic',
+  small_business: 'basic',
   
-  // Professionals
+  // Pro - Value-conscious professionals
+  agency: 'pro',
+  marketing_team: 'pro',
   education: 'pro',
   healthcare: 'pro',
   media_company: 'pro',
   professional: 'pro',
   
-  // Organizations
+  // Enterprise - Organizations
   enterprise: 'enterprise',
   healthcare_org: 'enterprise',
   government: 'enterprise',
   large_team: 'enterprise'
+};
+
+/**
+ * Regional tier recommendations based on market research
+ */
+export const REGIONAL_TIER_RECOMMENDATIONS: Record<string, { 
+  suggestedTier: SubscriptionTier;
+  hookFeature: string;
+  conversionDriver: string;
+}> = {
+  asia: {
+    suggestedTier: 'pro',
+    hookFeature: 'CJK voice that sounds HUMAN via Alibaba CosyVoice',
+    conversionDriver: 'Numbers/dates handled correctly in dubbing',
+  },
+  india: {
+    suggestedTier: 'basic',
+    hookFeature: '22 Indian languages including Dravidian (Telugu, Tamil, Kannada)',
+    conversionDriver: 'Mobile-first workflow + affordable pricing',
+  },
+  mea: {
+    suggestedTier: 'pro',
+    hookFeature: '7 Arabic dialects (not just MSA "news anchor" Arabic)',
+    conversionDriver: 'RTL layout that exports correctly',
+  },
+  latam: {
+    suggestedTier: 'basic',
+    hookFeature: 'Mobile one-tap record → social publish',
+    conversionDriver: 'Brazilian vs Portugal Portuguese distinction',
+  },
+  europe: {
+    suggestedTier: 'pro',
+    hookFeature: 'Full deck translation via DeepL (preserves layout)',
+    conversionDriver: 'PPT exports that actually work',
+  },
+  north_america: {
+    suggestedTier: 'pro',
+    hookFeature: 'All-in-one (replaces HeyGen + ElevenLabs + Gamma)',
+    conversionDriver: 'Checkpoint restore - no credit loss on failures',
+  },
 };
 
 /**
