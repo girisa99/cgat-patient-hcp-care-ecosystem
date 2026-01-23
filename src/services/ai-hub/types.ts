@@ -26,6 +26,10 @@ export interface AIRequestContext {
   language?: string;
   domain?: string;
   metadata?: Record<string, any>;
+  // Regional routing context
+  regionCode?: string;
+  zone?: 'claude' | 'alibaba' | 'gemini' | 'fallback';
+  isRTL?: boolean;
 }
 
 // ============================================

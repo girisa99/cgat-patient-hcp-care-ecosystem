@@ -99,6 +99,14 @@ export { useBiometricAuth } from './useBiometricAuth';
 export { useOfflineSync } from './useOfflineSync';
 export { useMobileFeatures } from './useMobileFeatures';
 
+// 4-Zone LLM Ecosystem Routing (IP-based auto-detection)
+export { useEcosystemRouting, ZONE_SUMMARY, COMPLETE_ROUTING_TABLE } from './useEcosystemRouting';
+export { useRegionalLanguage } from './useRegionalLanguage';
+
+// Universal AI Hub (cross-ecosystem AI with regional routing)
+export { useUniversalAIHub } from './useUniversalAIHub';
+export { useGlobalTier } from './useGlobalTier';
+
 /**
  * ✅ SINGLE SOURCE OF TRUTH ARCHITECTURE - COMPLETE!
  * 

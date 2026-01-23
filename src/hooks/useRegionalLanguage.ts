@@ -3,6 +3,8 @@
  * 
  * React hook for managing regional language detection, preferences, and RTL support.
  * Provides automatic IP-based detection with user override capabilities.
+ * 
+ * NOW INTEGRATED WITH: useEcosystemRouting for 4-Zone LLM routing
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -15,6 +17,7 @@ import {
   RegionDetectionResult,
   TextDirection,
 } from '@/services/regionalLanguageService';
+import { useEcosystemRouting, ZONE_SUMMARY } from '@/hooks/useEcosystemRouting';
 
 export interface UseRegionalLanguageReturn {
   // Current state
@@ -41,12 +44,23 @@ export interface UseRegionalLanguageReturn {
   
   // All regions for selection UI
   allRegions: { id: RegionalCluster; name: string; flag: string }[];
+  
+  // 4-Zone LLM Routing integration
+  llmZone: 'claude' | 'alibaba' | 'gemini' | 'fallback';
+  llmProvider: string;
+  ttsProvider: string;
+  sttProvider: string;
+  translationProvider: string;
+  zoneSummary: typeof ZONE_SUMMARY;
 }
 
 export function useRegionalLanguage(): UseRegionalLanguageReturn {
   const [preferences, setPreferences] = useState<UserLanguagePreferences | null>(null);
   const [detection, setDetection] = useState<RegionDetectionResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Integrate 4-Zone LLM routing
+  const ecosystemRouting = useEcosystemRouting();
 
   // Initialize on mount
   useEffect(() => {
@@ -179,6 +193,13 @@ export function useRegionalLanguage(): UseRegionalLanguageReturn {
     getLanguagesForRegion,
     isLanguageRTL,
     allRegions,
+    // 4-Zone LLM Routing integration
+    llmZone: ecosystemRouting.zone,
+    llmProvider: ecosystemRouting.routing.llm,
+    ttsProvider: ecosystemRouting.routing.tts,
+    sttProvider: ecosystemRouting.routing.stt,
+    translationProvider: ecosystemRouting.routing.translation,
+    zoneSummary: ZONE_SUMMARY,
   };
 }
 

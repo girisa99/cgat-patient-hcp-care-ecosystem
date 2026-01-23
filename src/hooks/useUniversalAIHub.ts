@@ -18,7 +18,7 @@
  * await ai.generateSpeech({ text: "Hello", voice: "nova" });
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useMasterToast } from '@/hooks/useMasterToast';
 import { UniversalAIHub, getUniversalAIHub } from '@/services/ai-hub/UniversalAIHub';
 import { getProvidersForCapability } from '@/services/ai-hub/providerRegistry';
@@ -28,6 +28,7 @@ import {
   type TaskScenario,
   type ProviderRecommendation 
 } from '@/hooks/useContextualAIProviders';
+import { useEcosystemRouting } from '@/hooks/useEcosystemRouting';
 import type {
   AICapability,
   AIProviderKey,
@@ -79,6 +80,9 @@ export function useUniversalAIHub(options: UseUniversalAIHubOptions = {}) {
   
   const { showError, showSuccess, showInfo } = useMasterToast();
 
+  // Integrate ecosystem routing with IP-based detection
+  const ecosystemRouting = useEcosystemRouting(product as any);
+
   // Integrate contextual provider selection
   const contextualProviders = useContextualAIProviders(
     product as ContextualGenieProduct,
@@ -93,20 +97,30 @@ export function useUniversalAIHub(options: UseUniversalAIHubOptions = {}) {
     configuredProviders: new Set(),
   });
 
-  // Get hub instance
+  // Get hub instance with ecosystem routing
   const hub = useMemo(() => {
     const hubConfig: Partial<AIHubConfig> = {
       ...config,
       costSensitive,
       qualityFirst,
     };
-    if (preferredProviders) {
+    
+    // Apply ecosystem routing defaults based on detected region
+    if (ecosystemRouting.isDetected && !preferredProviders) {
+      hubConfig.defaultProviders = {
+        llm: ecosystemRouting.routing.llm as AIProviderKey,
+        tts: ecosystemRouting.routing.tts as AIProviderKey,
+        stt: ecosystemRouting.routing.stt as AIProviderKey,
+        translation: ecosystemRouting.routing.translation as AIProviderKey,
+      };
+    } else if (preferredProviders) {
       hubConfig.defaultProviders = preferredProviders;
     }
+    
     return getUniversalAIHub(hubConfig);
-  }, [config, preferredProviders, costSensitive, qualityFirst]);
+  }, [config, preferredProviders, costSensitive, qualityFirst, ecosystemRouting.isDetected, ecosystemRouting.routing]);
 
-  // Create context for operations
+  // Create context for operations with regional info
   const createContext = useCallback((
     overrides?: Partial<AIRequestContext>
   ): AIRequestContext => ({
@@ -114,8 +128,11 @@ export function useUniversalAIHub(options: UseUniversalAIHubOptions = {}) {
     correlationId: crypto.randomUUID(),
     costSensitive,
     qualityFirst,
+    regionCode: ecosystemRouting.countryCode,
+    zone: ecosystemRouting.zone,
+    isRTL: ecosystemRouting.isRTL,
     ...overrides,
-  }), [product, costSensitive, qualityFirst]);
+  }), [product, costSensitive, qualityFirst, ecosystemRouting.countryCode, ecosystemRouting.zone, ecosystemRouting.isRTL]);
 
   // Generic executor with state management
   const execute = useCallback(async <T>(
@@ -430,6 +447,13 @@ export function useUniversalAIHub(options: UseUniversalAIHubOptions = {}) {
     fallbackChain: contextualProviders.fallbackChain,
     getBestProvider: contextualProviders.getBestProvider,
     hasCapability: contextualProviders.hasCapability,
+    
+    // Ecosystem Routing (4-Zone LLM routing with IP detection)
+    ecosystemRouting,
+    regionCode: ecosystemRouting.countryCode,
+    zone: ecosystemRouting.zone,
+    isRTL: ecosystemRouting.isRTL,
+    regionalMoat: ecosystemRouting.moat,
   };
 }
 
