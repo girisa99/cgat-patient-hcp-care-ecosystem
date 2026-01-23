@@ -2,6 +2,9 @@
  * Hook for Universal Presentation Generator
  * Wraps the universalPresentationService with React state management
  * Supports: PPTX, PDF, Images downloads + RAG storage
+ * 
+ * UPDATED: Now uses comprehensiveExportService for proper image embedding,
+ * font support, language handling, and DOM capture for animations/3D
  */
 
 import { useState, useCallback } from 'react';
@@ -11,6 +14,7 @@ import {
   PresentationResult,
   GeneratedSlide 
 } from '@/services/universalPresentationService';
+import { comprehensiveExportService } from '@/services/comprehensiveExportService';
 import { useMasterToast } from './useMasterToast';
 import { supabase } from '@/integrations/supabase/client';
 import html2canvas from 'html2canvas';
@@ -23,6 +27,8 @@ export interface PresentationDownloadOptions {
   includeNotes?: boolean;
   includeReferences?: boolean;
   quality?: 'standard' | 'high';
+  language?: string;
+  captureFromDOM?: boolean; // NEW: Capture actual rendered slides
 }
 
 export function useUniversalPresentation() {
@@ -59,19 +65,35 @@ export function useUniversalPresentation() {
     }
   }, [showSuccess, showError]);
 
-  // Download as PPTX
-  const downloadPPTX = useCallback(async (slides: GeneratedSlide[], title: string, options?: { includeReferences?: boolean }) => {
+  // Download as PPTX - NOW WITH PROPER IMAGE EMBEDDING
+  const downloadPPTX = useCallback(async (
+    slides: GeneratedSlide[], 
+    title: string, 
+    options?: { includeReferences?: boolean; language?: string; captureFromDOM?: boolean }
+  ) => {
     setIsDownloading(true);
     try {
-      const blob = await universalPresentationService.downloadAsPPTX(slides, title);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${title.replace(/[^a-z0-9]/gi, '_')}.pptx`;
-      a.click();
-      URL.revokeObjectURL(url);
-      showSuccess('PowerPoint downloaded!');
+      if (options?.captureFromDOM) {
+        // Use DOM capture for animations, 3D, interactive content
+        const result = await comprehensiveExportService.exportFromDOM(slides, title, 'pptx');
+        if (result.success && result.blob) {
+          const url = URL.createObjectURL(result.blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${title.replace(/[^a-z0-9]/gi, '_')}.pptx`;
+          a.click();
+          URL.revokeObjectURL(url);
+        }
+      } else {
+        // Standard export with image URL-to-base64 conversion
+        await comprehensiveExportService.download(slides, title, 'pptx', {
+          language: options?.language,
+          quality: 'high'
+        });
+      }
+      showSuccess('PowerPoint downloaded with all images!');
     } catch (err) {
+      console.error('PPTX download error:', err);
       showError('PPTX download failed');
     } finally {
       setIsDownloading(false);
