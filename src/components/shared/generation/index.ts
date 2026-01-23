@@ -173,6 +173,225 @@ export type {
 } from '@/components/genie-studio/shared/types';
 
 // ============================================================================
+// ADAPTIVE EDITOR INTEGRATION
+// ============================================================================
+
+/**
+ * EmbeddedEditorPanel - Bridge between wizard and Adaptive Hybrid Workspace
+ * Converts PresentationSlide[] → UniversalElement[] for canvas/timeline editing
+ * Includes InlinePipelineSelector for on-the-fly pipeline changes
+ */
+export { 
+  EmbeddedEditorPanel,
+} from '@/components/genie-studio/presentation-generator/components/EmbeddedEditorPanel';
+
+// ============================================================================
+// OUTPUT COMPATIBILITY & VALIDATION
+// ============================================================================
+
+/**
+ * OutputCompatibilityWarning - Visual feature vs output medium validation
+ * Shows warnings when features are incompatible with selected outputs
+ */
+export { 
+  OutputCompatibilityWarning,
+  useOutputCompatibility,
+  OUTPUT_COMPATIBILITY_CONFIGS,
+} from '@/components/genie-studio/presentation-generator/components/OutputCompatibilityWarning';
+
+/**
+ * ProviderTierBadge - Visual indicator for provider quality tiers
+ * Consistent tier styling across all products
+ */
+export { 
+  ProviderTierBadge,
+  ProviderItem,
+  GroupedProviderList,
+  TIER_STYLES,
+} from '@/components/genie-studio/presentation-generator/components/ProviderTierBadge';
+
+// ============================================================================
+// TOKEN & CREDIT MANAGEMENT
+// ============================================================================
+
+/**
+ * TokenBalanceHeader - Real-time token/credit balance display
+ * Shows remaining credits and usage status
+ */
+export { 
+  TokenBalanceHeader,
+} from '@/components/genie-studio/presentation-generator/components/TokenBalanceHeader';
+
+/**
+ * TokenBreakdownPanel - Detailed token cost estimation
+ * Shows per-feature cost breakdown before generation
+ */
+export { 
+  TokenBreakdownPanel,
+} from '@/components/genie-studio/presentation-generator/components/TokenBreakdownPanel';
+
+/**
+ * TokenUsageDashboard - Comprehensive usage analytics
+ * Historical usage, trends, and optimization suggestions
+ */
+export { 
+  TokenUsageDashboard,
+} from '@/components/genie-studio/presentation-generator/components/TokenUsageDashboard';
+
+/**
+ * CreditBurnDisplay - Visual credit consumption indicator
+ * Shows multiplier-based cost for different output types
+ */
+export { 
+  CreditBurnDisplay,
+} from '@/components/genie-studio/presentation-generator/components/CreditBurnDisplay';
+
+/**
+ * RefreshCapsDisplay - Rate limit and refresh cap indicator
+ * Shows remaining API calls and reset timing
+ */
+export { 
+  RefreshCapsDisplay,
+} from '@/components/genie-studio/presentation-generator/components/RefreshCapsDisplay';
+
+// ============================================================================
+// WIZARD NAVIGATION & PROGRESS
+// ============================================================================
+
+/**
+ * SmartStepIndicator - Intelligent wizard step progress
+ * Shows completion status, validation state, and step navigation
+ */
+export { 
+  SmartStepIndicator,
+} from '@/components/genie-studio/presentation-generator/components/SmartStepIndicator';
+
+/**
+ * StepGuidancePanel - Contextual help for each wizard step
+ * Provides tips and best practices for current step
+ */
+export { 
+  StepGuidancePanel,
+} from '@/components/genie-studio/presentation-generator/components/StepGuidancePanel';
+
+/**
+ * StepAlertBanner - Warning/info banners for step-specific issues
+ * Shows tier limitations, missing configs, etc.
+ */
+export { 
+  StepAlertBanner,
+} from '@/components/genie-studio/presentation-generator/components/StepAlertBanner';
+
+/**
+ * StepFeedbackPanel - Post-generation feedback collection
+ * Allows users to rate and improve generation quality
+ */
+export { 
+  StepFeedbackPanel,
+} from '@/components/genie-studio/presentation-generator/components/StepFeedbackPanel';
+
+// ============================================================================
+// PRE-GENERATION VALIDATION
+// ============================================================================
+
+/**
+ * PreGenerationConfirmationPanel - Final validation before generation
+ * Shows summary, cost estimate, and confirms user intent
+ */
+export { 
+  PreGenerationConfirmationPanel,
+} from '@/components/genie-studio/presentation-generator/components/PreGenerationConfirmationPanel';
+
+/**
+ * SlideCountRecommendation - AI-recommended slide/chapter counts
+ * Based on content length and output type
+ */
+export { 
+  SlideCountRecommendation,
+} from '@/components/genie-studio/presentation-generator/components/SlideCountRecommendation';
+
+/**
+ * ContentFitIndicator - Content length vs output capacity
+ * Warns when content may not fit selected format
+ */
+export { 
+  ContentFitIndicator,
+} from '@/components/genie-studio/presentation-generator/components/ContentFitIndicator';
+
+// ============================================================================
+// LANGUAGE & TRANSLATION
+// ============================================================================
+
+/**
+ * LanguageMultiSelectDropdown - Multi-language selection for generation
+ * Supports 120+ languages with regional grouping
+ */
+export { 
+  LanguageMultiSelectDropdown,
+} from '@/components/genie-studio/presentation-generator/components/LanguageMultiSelectDropdown';
+
+/**
+ * AutoTranslateInput - Real-time translation preview
+ * Shows how content translates to selected languages
+ */
+export { 
+  AutoTranslateInput,
+} from '@/components/genie-studio/presentation-generator/components/AutoTranslateInput';
+
+// ============================================================================
+// FRAMEWORK & TEMPLATE SELECTION
+// ============================================================================
+
+/**
+ * ConsultingFrameworkQuickSelect - Fast framework picker
+ * One-click selection of common business frameworks
+ */
+export { 
+  ConsultingFrameworkQuickSelect,
+} from '@/components/genie-studio/presentation-generator/components/ConsultingFrameworkQuickSelect';
+
+/**
+ * TemplateRecommendationPanel - AI-suggested templates
+ * Based on industry, content type, and past preferences
+ */
+export { 
+  TemplateRecommendationPanel,
+} from '@/components/genie-studio/presentation-generator/components/TemplateRecommendationPanel';
+
+/**
+ * TemplateAIModelSelector - Template-specific AI model config
+ * Allows overriding default models per template
+ */
+export { 
+  TemplateAIModelSelector,
+} from '@/components/genie-studio/presentation-generator/components/TemplateAIModelSelector';
+
+// ============================================================================
+// OUTPUT TYPE SELECTION
+// ============================================================================
+
+/**
+ * OutputTypeDropdown - Comprehensive output format selector
+ * Doc, Static, Video, Immersive categories with tier gating
+ */
+export { 
+  OutputTypeDropdown,
+} from '@/components/genie-studio/presentation-generator/components/OutputTypeDropdown';
+
+// ============================================================================
+// VISUALIZATION RECOMMENDATIONS
+// ============================================================================
+
+/**
+ * VisualizationRecommendationBadges - AI-suggested visual elements
+ * Shows recommended charts, diagrams based on content analysis
+ */
+export { 
+  VisualizationRecommendationBadges,
+  VisualizationRecommendationChips,
+} from '@/components/genie-studio/presentation-generator/components/VisualizationRecommendationBadges';
+
+// ============================================================================
 // PUBLISHING SUPPORT (Mobile Compatibility)
 // ============================================================================
 
@@ -183,3 +402,15 @@ export {
   getOfflinePublishingFeatures,
   type PublishingMobileSupportKey,
 } from '@/components/mobile/shared-wizard';
+
+// ============================================================================
+// A2A ORCHESTRATION SERVICE
+// ============================================================================
+
+/**
+ * useA2ACoordinatorService - Agent-to-Agent orchestration hook
+ * Validates, routes, and executes multi-agent generation tasks
+ */
+export { 
+  useA2ACoordinatorService,
+} from '@/hooks/useA2ACoordinatorService';
