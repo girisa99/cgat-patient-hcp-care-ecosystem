@@ -1,6 +1,7 @@
 /**
  * Embedded Editor Panel for Step 7
  * Integrates Universal Editor into the wizard flow
+ * Now with Universal Export for all 100+ pipelines
  */
 
 import React, { useEffect, useMemo } from 'react';
@@ -9,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 import { 
   Edit3, 
   Layers, 
@@ -18,11 +20,19 @@ import {
   Maximize2,
   Grid3X3,
   Film,
+  Download,
+  FileText,
+  Presentation,
+  FileImage,
+  FileType,
+  Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { EditorProvider, useEditor } from '@/components/universal-editor';
+import { useUniversalExport } from '@/hooks/useUniversalExport';
 import type { PresentationSlide } from '../types';
 import type { ActiveProject, UniversalElement } from '@/components/universal-editor/types';
+import type { GeneratedSlide } from '@/services/universalPresentationService';
 
 interface EmbeddedEditorPanelProps {
   slides: PresentationSlide[];
@@ -135,11 +145,77 @@ function EditorContent({
 }) {
   const editor = useEditor();
   const [activeTab, setActiveTab] = React.useState('preview');
+  const { 
+    isExporting, 
+    exportToPPTX, 
+    exportToPDF, 
+    exportToImages, 
+    exportToJSON 
+  } = useUniversalExport();
 
   if (!editor) return null;
 
   const { project, setMode, selectElements, getSelectedElements } = editor;
   const selectedElements = getSelectedElements();
+
+  // Convert PresentationSlide to GeneratedSlide for export
+  const convertToGeneratedSlides = (): GeneratedSlide[] => {
+    return slides.map((slide, index) => {
+      // Map slide type to GeneratedSlide compatible types
+      const typeMap: Record<string, 'title' | 'content' | 'section' | 'conclusion' | 'stats' | 'journey' | 'cta' | 'infographic'> = {
+        'title': 'title',
+        'content': 'content',
+        'section': 'section',
+        'closing': 'conclusion',
+        'conclusion': 'conclusion',
+        'stats': 'stats',
+        'journey': 'journey',
+        'cta': 'cta',
+        'infographic': 'infographic',
+      };
+      
+      return {
+        id: slide.id || `slide-${index}`,
+        slideNumber: slide.slideNumber || index + 1,
+        title: slide.title,
+        subtitle: slide.subtitle,
+        type: typeMap[slide.type] || 'content',
+        content: {
+          type: 'bullets' as const, // Always use bullets as fallback for export compatibility
+          bullets: slide.content?.bullets?.map(b => typeof b === 'string' ? b : b.text || '') || [],
+          paragraphs: slide.content?.paragraphs,
+          stats: slide.content?.stats,
+          journeySteps: slide.content?.journeySteps,
+          quote: slide.content?.quote,
+        },
+        image: slide.image,
+        speakerNotes: slide.speakerNotes,
+      } as GeneratedSlide;
+    });
+  };
+
+  const handleExport = async (format: 'pptx' | 'pdf' | 'images' | 'json') => {
+    const generatedSlides = convertToGeneratedSlides();
+    const input = {
+      slides: generatedSlides,
+      title: 'Generated Presentation',
+    };
+
+    switch (format) {
+      case 'pptx':
+        await exportToPPTX(input, { captureFromDOM: true, containerSelector: '[data-slide-content]' });
+        break;
+      case 'pdf':
+        await exportToPDF(input, { captureFromDOM: true, containerSelector: '[data-slide-content]' });
+        break;
+      case 'images':
+        await exportToImages(input, { captureFromDOM: true, containerSelector: '[data-slide-content]' });
+        break;
+      case 'json':
+        exportToJSON(input);
+        break;
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -164,13 +240,50 @@ function EditorContent({
           </Button>
         </div>
         
-        {onOpenFullEditor && (
-          <Button variant="outline" size="sm" onClick={onOpenFullEditor}>
-            <Maximize2 className="h-4 w-4 mr-1" />
-            Full Editor
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {/* Universal Export Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" disabled={isExporting}>
+                {isExporting ? (
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4 mr-1" />
+                )}
+                Export
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuLabel>Export Format</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => handleExport('pptx')}>
+                <Presentation className="h-4 w-4 mr-2" />
+                PowerPoint (.pptx)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport('pdf')}>
+                <FileType className="h-4 w-4 mr-2" />
+                PDF Document
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport('images')}>
+                <FileImage className="h-4 w-4 mr-2" />
+                Images (ZIP)
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => handleExport('json')}>
+                <FileText className="h-4 w-4 mr-2" />
+                JSON (Re-import)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          {onOpenFullEditor && (
+            <Button variant="outline" size="sm" onClick={onOpenFullEditor}>
+              <Maximize2 className="h-4 w-4 mr-1" />
+              Full Editor
+            </Button>
+          )}
       </div>
+    </div>
 
       {/* Editor Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
