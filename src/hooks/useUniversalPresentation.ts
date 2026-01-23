@@ -17,8 +17,6 @@ import {
 import { comprehensiveExportService } from '@/services/comprehensiveExportService';
 import { useMasterToast } from './useMasterToast';
 import { supabase } from '@/integrations/supabase/client';
-import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
 
 export type DownloadFormat = 'pptx' | 'pdf' | 'images' | 'json';
 
@@ -100,94 +98,70 @@ export function useUniversalPresentation() {
     }
   }, [showSuccess, showError]);
 
-  // Download as PDF
-  const downloadPDF = useCallback(async (slides: GeneratedSlide[], title: string) => {
+  // Download as PDF - NOW WITH PROPER IMAGE EMBEDDING & 120+ LANGUAGES
+  const downloadPDF = useCallback(async (
+    slides: GeneratedSlide[], 
+    title: string,
+    options?: { language?: string; captureFromDOM?: boolean }
+  ) => {
     setIsDownloading(true);
     try {
-      const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [960, 540] });
-      
-      for (let i = 0; i < slides.length; i++) {
-        const slide = slides[i];
-        if (i > 0) pdf.addPage();
-        
-        // Title
-        pdf.setFontSize(28);
-        pdf.setTextColor(30, 41, 59);
-        pdf.text(slide.title, 40, 60);
-        
-        // Subtitle
-        if (slide.subtitle) {
-          pdf.setFontSize(14);
-          pdf.setTextColor(100, 116, 139);
-          pdf.text(slide.subtitle, 40, 85);
+      if (options?.captureFromDOM) {
+        // Use DOM capture for animations, 3D, interactive content
+        const result = await comprehensiveExportService.exportFromDOM(slides, title, 'pdf');
+        if (result.success && result.blob) {
+          const url = URL.createObjectURL(result.blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${title.replace(/[^a-z0-9]/gi, '_')}.pdf`;
+          a.click();
+          URL.revokeObjectURL(url);
         }
-        
-        // Bullets
-        if (slide.content.bullets && slide.content.bullets.length > 0) {
-          pdf.setFontSize(14);
-          pdf.setTextColor(30, 41, 59);
-          slide.content.bullets.forEach((bullet, idx) => {
-            const bulletText = typeof bullet === 'string' ? bullet : bullet;
-            pdf.text(`• ${bulletText}`, 50, 120 + (idx * 30));
-          });
-        }
-        
-        // Stats
-        if (slide.content.stats && slide.content.stats.length > 0) {
-          pdf.setFontSize(24);
-          pdf.setTextColor(139, 92, 246);
-          slide.content.stats.forEach((stat, idx) => {
-            pdf.text(`${stat.value}`, 50 + (idx * 200), 200);
-            pdf.setFontSize(12);
-            pdf.setTextColor(100, 116, 139);
-            pdf.text(stat.label, 50 + (idx * 200), 220);
-            pdf.setFontSize(24);
-            pdf.setTextColor(139, 92, 246);
-          });
-        }
-        
-        // Slide number
-        pdf.setFontSize(10);
-        pdf.setTextColor(148, 163, 184);
-        pdf.text(`${i + 1} / ${slides.length}`, 900, 520);
+      } else {
+        // Standard export with image URL-to-base64 conversion
+        await comprehensiveExportService.download(slides, title, 'pdf', {
+          language: options?.language,
+          quality: 'high'
+        });
       }
-      
-      pdf.save(`${title.replace(/[^a-z0-9]/gi, '_')}.pdf`);
-      showSuccess('PDF downloaded!');
+      showSuccess('PDF downloaded with all images and fonts!');
     } catch (err) {
-      console.error('PDF generation error:', err);
+      console.error('PDF download error:', err);
       showError('PDF download failed');
     } finally {
       setIsDownloading(false);
     }
   }, [showSuccess, showError]);
 
-  // Download slides as images (ZIP)
-  const downloadImages = useCallback(async (slides: GeneratedSlide[], title: string) => {
+  // Download slides as images (ZIP) - NOW WITH COMPREHENSIVE CAPTURE
+  const downloadImages = useCallback(async (
+    slides: GeneratedSlide[], 
+    title: string,
+    options?: { captureFromDOM?: boolean }
+  ) => {
     setIsDownloading(true);
     try {
-      // For now, download individual images from slides that have them
-      const imagesWithUrls = slides.filter(s => s.image?.url);
-      
-      if (imagesWithUrls.length === 0) {
-        showError('No images to download');
-        return;
-      }
-      
-      // Download each image
-      for (let i = 0; i < imagesWithUrls.length; i++) {
-        const slide = imagesWithUrls[i];
-        if (slide.image?.url) {
+      if (options?.captureFromDOM) {
+        // Capture actual rendered slides including animations, 3D, avatars
+        const capturedSlides = await comprehensiveExportService.captureAllSlidesFromDOM('[data-slide-content]', slides);
+        const result = await comprehensiveExportService.exportToImages(slides, title, capturedSlides);
+        
+        if (result.success && result.blob) {
+          const url = URL.createObjectURL(result.blob);
           const a = document.createElement('a');
-          a.href = slide.image.url;
-          a.download = `${title.replace(/[^a-z0-9]/gi, '_')}_slide_${slide.slideNumber}.png`;
+          a.href = url;
+          a.download = `${title.replace(/[^a-z0-9]/gi, '_')}_images.zip`;
           a.click();
-          await new Promise(r => setTimeout(r, 300)); // Stagger downloads
+          URL.revokeObjectURL(url);
+          showSuccess('Downloaded images as ZIP (including animations/3D as static)!');
         }
+      } else {
+        // Use comprehensive service for ZIP export
+        await comprehensiveExportService.download(slides, title, 'images');
+        showSuccess('Downloaded images as ZIP!');
       }
-      
-      showSuccess(`Downloaded ${imagesWithUrls.length} images!`);
     } catch (err) {
+      console.error('Images download error:', err);
       showError('Image download failed');
     } finally {
       setIsDownloading(false);
