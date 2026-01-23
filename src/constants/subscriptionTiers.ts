@@ -64,7 +64,10 @@ export interface TierConfig {
     // Presentation Features
     presentationsPerMonth?: number;
     avatarVideosPerMonth?: number;
-    // Enterprise Features
+    // Premium Upsell Features
+    fullBodyAvatarEnabled?: boolean;
+    fullBodyAvatarVideos?: number;
+    priorityRenderingEnabled?: boolean;
     customAvatarTraining?: boolean;
     apiAccess?: boolean;
     whiteLabel?: boolean;

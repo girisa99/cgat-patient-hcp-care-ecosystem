@@ -47,7 +47,7 @@ import {
 // TYPES & INTERFACES
 // ============================================================================
 
-export type MediaType = 'translation' | 'tts' | 'stt' | 'video' | 'image' | 'dubbing';
+export type MediaType = 'translation' | 'tts' | 'stt' | 'video' | 'image' | 'dubbing' | 'voiceClone' | 'avatar' | 'fullBodyAvatar' | 'priorityRendering';
 
 export interface ProviderRoute {
   primary: string;
@@ -59,6 +59,7 @@ export interface ProviderRoute {
   competitorGap: CompetitorGap | null;
   moat: LanguageMoat;
   zone?: LLMZone;
+  isGlobal?: boolean; // True for non-regional routing (avatar, priority rendering)
 }
 
 export interface BadgeInfo {
@@ -83,6 +84,12 @@ export interface UnifiedProviderResult {
   stt: ProviderRoute;
   video: ProviderRoute;
   dubbing: ProviderRoute;
+  
+  // Premium/Upsell features - Global routing (not zone-based)
+  voiceClone: ProviderRoute;
+  avatar: ProviderRoute;
+  fullBodyAvatar: ProviderRoute;
+  priorityRendering: ProviderRoute;
   
   // Competitive intelligence
   marketAdvantage: string;
@@ -304,6 +311,48 @@ const VIDEO_PROVIDER_MAP: Record<string, { primary: string; fallback: string; qu
   'hi': { primary: 'modelslab', fallback: 'azure-video', quality: 4 },
 };
 
+// ============================================================================
+// PREMIUM FEATURES - GLOBAL ROUTING (Not Zone-Based)
+// These features use the same provider globally, regardless of user region
+// ============================================================================
+
+/**
+ * AVATAR PROVIDERS - Global Routing
+ * Primary: Alibaba Wan2.2 (S2V) for all regions
+ * Fallback: Replicate
+ * NOT zone-based - same provider everywhere for consistency
+ */
+const AVATAR_PROVIDER_CONFIG = {
+  primary: 'alibaba-wan2.2',
+  fallback: 'replicate',
+  quality: 5,
+  reason: 'Alibaba Wan2.2-S2V: Best-in-class avatar animation globally',
+};
+
+/**
+ * FULL-BODY AVATAR PROVIDERS - Global Routing
+ * Primary: Alibaba OmniAvatar (premium upsell feature)
+ * Fallback: NONE (premium feature, no fallback)
+ */
+const FULL_BODY_AVATAR_PROVIDER_CONFIG = {
+  primary: 'alibaba-omniavatar',
+  fallback: 'none', // Premium feature, no fallback
+  quality: 5,
+  reason: 'Alibaba OmniAvatar: Full-body animation - premium feature',
+};
+
+/**
+ * PRIORITY RENDERING - Global Routing
+ * Primary: RunPod (dedicated GPU resources)
+ * Fallback: Replicate (shared resources)
+ */
+const PRIORITY_RENDERING_PROVIDER_CONFIG = {
+  primary: 'runpod',
+  fallback: 'replicate',
+  quality: 5,
+  reason: 'RunPod: Dedicated GPU for priority rendering',
+};
+
 // RTL Languages Set
 const RTL_LANGUAGES = new Set([
   'ar', 'ar-EG', 'ar-SA', 'ar-AE', 'ar-MA', 'ar-JO', 'ar-IQ', 'ar-DZ',
@@ -464,6 +513,58 @@ export function getUnifiedProviderRouting(languageCode: string): UnifiedProvider
       isMoatLanguage,
       competitorGap,
       moat,
+    },
+    
+    // Voice Clone follows TTS zone routing (same as dubbing)
+    voiceClone: {
+      primary: ttsConfig.primary,
+      fallback: ttsConfig.fallback,
+      quality: ttsConfig.quality,
+      reason: `Voice Clone: ${getTTSReason()} - follows TTS zone routing`,
+      isRTL,
+      isMoatLanguage,
+      competitorGap,
+      moat,
+      isGlobal: false, // Zone-based, same as TTS
+    },
+    
+    // Avatar - Global routing (Alibaba Wan2.2 everywhere)
+    avatar: {
+      primary: AVATAR_PROVIDER_CONFIG.primary,
+      fallback: AVATAR_PROVIDER_CONFIG.fallback,
+      quality: AVATAR_PROVIDER_CONFIG.quality,
+      reason: AVATAR_PROVIDER_CONFIG.reason,
+      isRTL,
+      isMoatLanguage: false,
+      competitorGap: null,
+      moat: null,
+      isGlobal: true, // NOT zone-based
+    },
+    
+    // Full-body Avatar - Global routing (Alibaba OmniAvatar, premium)
+    fullBodyAvatar: {
+      primary: FULL_BODY_AVATAR_PROVIDER_CONFIG.primary,
+      fallback: FULL_BODY_AVATAR_PROVIDER_CONFIG.fallback,
+      quality: FULL_BODY_AVATAR_PROVIDER_CONFIG.quality,
+      reason: FULL_BODY_AVATAR_PROVIDER_CONFIG.reason,
+      isRTL,
+      isMoatLanguage: false,
+      competitorGap: null,
+      moat: null,
+      isGlobal: true, // NOT zone-based
+    },
+    
+    // Priority Rendering - Global routing (RunPod)
+    priorityRendering: {
+      primary: PRIORITY_RENDERING_PROVIDER_CONFIG.primary,
+      fallback: PRIORITY_RENDERING_PROVIDER_CONFIG.fallback,
+      quality: PRIORITY_RENDERING_PROVIDER_CONFIG.quality,
+      reason: PRIORITY_RENDERING_PROVIDER_CONFIG.reason,
+      isRTL,
+      isMoatLanguage: false,
+      competitorGap: null,
+      moat: null,
+      isGlobal: true, // NOT zone-based
     },
     
     marketAdvantage: isMoatLanguage 
