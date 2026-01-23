@@ -67,6 +67,8 @@ const CATEGORY_LABELS: Record<FeatureCategory, string> = {
   INTERACTIVE: '🎯 Interactive',
   TRANSLATION: '🌍 Translation',
   EXPORT: '📤 Export',
+  EDITING: '✏️ Editing',
+  PIPELINE: '🔄 Pipeline',
   PUBLISHING: '🚀 Publishing',
   SECURITY: '🔐 Security',
   BUSINESS: '💰 Business',

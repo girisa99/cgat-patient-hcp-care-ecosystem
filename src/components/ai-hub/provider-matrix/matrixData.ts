@@ -385,6 +385,113 @@ export const FEATURE_USE_CASES: Record<string, { scenarios: string[]; bestFor: s
     bestFor: ['Healthcare B2B', 'Medical SaaS', 'Health data processing', 'Telehealth'],
     limitations: ['Legal negotiation', 'Liability allocation']
   },
+
+  // ============================================
+  // EXPORT FEATURES - Enhanced with 120+ Language Support
+  // ============================================
+  pptx_export: {
+    scenarios: ['Presentation download', 'Offline sharing', 'Enterprise distribution', 'Template reuse'],
+    bestFor: ['Executive decks', 'Sales materials', 'Training content', 'Editable handoffs'],
+    limitations: ['Complex animations may not preserve', 'Large file sizes']
+  },
+  pdf_export: {
+    scenarios: ['Print-ready documents', 'Static sharing', 'Archival', 'Compliance documentation'],
+    bestFor: ['Legal documents', 'Reports', 'Handouts', 'Print materials'],
+    limitations: ['Not editable', 'No animation support']
+  },
+  mp4_export: {
+    scenarios: ['Video sharing', 'Social media', 'LMS upload', 'Webinar recordings'],
+    bestFor: ['Marketing videos', 'Training modules', 'Social content', 'Presentations'],
+    limitations: ['File size', 'Encoding time for 4K']
+  },
+  html_export: {
+    scenarios: ['Web embedding', 'Self-hosted presentations', 'Interactive content', 'Documentation'],
+    bestFor: ['Developer docs', 'Product demos', 'Interactive training', 'Web publishing'],
+    limitations: ['Browser dependencies', 'Hosting required']
+  },
+  multilang_export: {
+    scenarios: ['Global distribution', 'CJK font embedding', 'RTL language support', 'African script support'],
+    bestFor: ['Multinational companies', 'Localized content', 'Inclusive design', 'Government documents'],
+    limitations: ['Larger file sizes for font embedding', 'Complex layout for mixed scripts']
+  },
+  dom_capture: {
+    scenarios: ['3D content export', 'Animation capture', 'Interactive element preservation', 'Avatar screenshots'],
+    bestFor: ['Immersive presentations', '3D product demos', 'Animated infographics', 'Dynamic dashboards'],
+    limitations: ['Static representation of dynamic content', 'Performance for complex scenes']
+  },
+
+  // ============================================
+  // EDITING FEATURES - Generative Editor Refinement
+  // ============================================
+  regenerate: {
+    scenarios: ['Complete redo', 'Alternative versions', 'Creative exploration', 'Quality improvement'],
+    bestFor: ['Unsatisfactory results', 'A/B testing', 'Iterative design', 'Brainstorming'],
+    limitations: ['Credit consumption', 'May lose desired elements']
+  },
+  enhance: {
+    scenarios: ['Quality boost', 'Resolution improvement', 'Detail addition', 'Professional polish'],
+    bestFor: ['Draft refinement', 'Pre-publish cleanup', 'Image upscaling', 'Voice clarity'],
+    limitations: ['May alter original intent', 'Processing time']
+  },
+  refine: {
+    scenarios: ['Targeted adjustments', 'Minor corrections', 'Style tweaks', 'Tone shifts'],
+    bestFor: ['Fine-tuning', 'Client feedback', 'Brand alignment', 'Consistency checks'],
+    limitations: ['Subtle changes only', 'May need multiple iterations']
+  },
+  polish: {
+    scenarios: ['Professional review', 'Grammar correction', 'Clarity improvement', 'Executive ready'],
+    bestFor: ['Final review', 'C-suite presentations', 'Published content', 'External communications'],
+    limitations: ['May change voice', 'Requires human validation']
+  },
+  translate_element: {
+    scenarios: ['In-place localization', 'Mixed-language content', 'Subtitle translation', 'Element-level targeting'],
+    bestFor: ['Multilingual decks', 'Global teams', 'Quick localization', 'Partial translations'],
+    limitations: ['Cultural context needs review', 'Layout shifts for different text lengths']
+  },
+  version_history: {
+    scenarios: ['Change tracking', 'Rollback', 'Comparison', 'Audit trail'],
+    bestFor: ['Collaborative editing', 'Client revisions', 'Compliance', 'Learning from changes'],
+    limitations: ['Storage overhead', 'History depth limits']
+  },
+  batch_edit: {
+    scenarios: ['Bulk updates', 'Style propagation', 'Mass translation', 'Template application'],
+    bestFor: ['Large decks', 'Brand refreshes', 'Consistency enforcement', 'Time savings'],
+    limitations: ['May introduce errors', 'Review overhead']
+  },
+
+  // ============================================
+  // PIPELINE FEATURES - Transformation Orchestration
+  // ============================================
+  idea_to_presentation: {
+    scenarios: ['Rapid prototyping', 'Pitch deck creation', 'Conference talks', 'Training outlines'],
+    bestFor: ['Quick starts', 'Idea validation', 'Time-pressed executives', 'Non-designers'],
+    limitations: ['May need refinement', 'Generic without context']
+  },
+  document_to_presentation: {
+    scenarios: ['Report conversion', 'Research summarization', 'Proposal visualization', 'Document repurposing'],
+    bestFor: ['Academic presentations', 'Business reports', 'Technical documentation', 'Content reuse'],
+    limitations: ['Complex formatting may not translate', 'Image extraction quality']
+  },
+  presentation_to_video: {
+    scenarios: ['Video marketing', 'E-learning modules', 'Webinar recordings', 'Social clips'],
+    bestFor: ['Async training', 'YouTube content', 'Marketing campaigns', 'Sales enablement'],
+    limitations: ['Voice quality depends on TTS provider', 'Timing synchronization']
+  },
+  script_to_avatar: {
+    scenarios: ['Training videos', 'Product explainers', 'Customer support', 'Corporate messaging'],
+    bestFor: ['Scalable video production', 'Multilingual content', 'Consistent branding', 'Cost reduction'],
+    limitations: ['Avatar realism varies', 'Lip-sync quality']
+  },
+  multilingual_dub: {
+    scenarios: ['Global campaigns', 'International training', 'Localized marketing', 'Accessibility'],
+    bestFor: ['Multinational companies', 'E-learning platforms', 'Media companies', 'Government'],
+    limitations: ['Voice matching across languages', 'Cultural adaptation needs review']
+  },
+  a2a_orchestration: {
+    scenarios: ['Multi-step workflows', 'Complex generation', 'Pipeline coordination', 'Agent handoffs'],
+    bestFor: ['Enterprise automation', 'Complex content production', 'Multi-modal generation', 'Scale operations'],
+    limitations: ['Orchestration complexity', 'Error handling across agents']
+  },
 };
 
 export const ALL_FEATURES: Feature[] = [
@@ -527,14 +634,58 @@ export const ALL_FEATURES: Feature[] = [
   { id: 'multilingual_avatars', name: 'Multilingual Avatars', category: 'TRANSLATION', priority: 'low' },
   { id: 'languages_70plus', name: '70+ Languages Support', category: 'TRANSLATION', priority: 'high' },
   
-  // EXPORT FEATURES
-  { id: 'pptx_export', name: 'PPTX Export', category: 'EXPORT', priority: 'critical' },
-  { id: 'pdf_export', name: 'PDF Export', category: 'EXPORT', priority: 'high' },
-  { id: 'mp4_export', name: 'MP4 Video Export', category: 'EXPORT', priority: 'critical' },
-  { id: '4k_export', name: '4K Resolution Export', category: 'EXPORT', priority: 'medium' },
-  { id: 'watermark_free', name: 'Watermark-Free Export', category: 'EXPORT', priority: 'high' },
-  { id: 'scorm_export', name: 'LMS Integration (SCORM)', category: 'EXPORT', priority: 'medium' },
-  
+  // EXPORT FEATURES (Enhanced for 120+ language support)
+  { id: 'pptx_export', name: 'PPTX Export', category: 'EXPORT', priority: 'critical', description: 'Export to PowerPoint with full formatting' },
+  { id: 'pdf_export', name: 'PDF Export', category: 'EXPORT', priority: 'high', description: 'Export to PDF with embedded fonts' },
+  { id: 'mp4_export', name: 'MP4 Video Export', category: 'EXPORT', priority: 'critical', description: 'Export animated content to video' },
+  { id: '4k_export', name: '4K Resolution Export', category: 'EXPORT', priority: 'medium', description: 'High resolution video export' },
+  { id: 'watermark_free', name: 'Watermark-Free Export', category: 'EXPORT', priority: 'high', description: 'Clean export without branding' },
+  { id: 'scorm_export', name: 'LMS Integration (SCORM)', category: 'EXPORT', priority: 'medium', description: 'Export for learning management systems' },
+  { id: 'html_export', name: 'HTML Package Export', category: 'EXPORT', priority: 'high', description: 'Self-contained web presentation' },
+  { id: 'json_export', name: 'JSON Data Export', category: 'EXPORT', priority: 'medium', description: 'Raw data export for integrations' },
+  { id: 'image_zip_export', name: 'Image ZIP Export', category: 'EXPORT', priority: 'medium', description: 'Export all slides as images' },
+  { id: 'svg_export', name: 'SVG Vector Export', category: 'EXPORT', priority: 'medium', description: 'Scalable vector graphics export' },
+  { id: 'markdown_export', name: 'Markdown Export', category: 'EXPORT', priority: 'medium', description: 'Export content as markdown' },
+  { id: 'csv_export', name: 'CSV Data Export', category: 'EXPORT', priority: 'low', description: 'Export data tables to CSV' },
+  { id: 'multilang_export', name: '120+ Language Export', category: 'EXPORT', priority: 'high', description: 'Font embedding for all languages including CJK, RTL, Indic' },
+  { id: 'dom_capture', name: 'DOM Capture Export', category: 'EXPORT', priority: 'high', description: 'Capture 3D, animations, and interactive elements' },
+
+  // EDITING FEATURES (Generative Editor Refinement)
+  { id: 'regenerate', name: 'AI Regenerate', category: 'EDITING', priority: 'critical', description: 'Completely regenerate selected element' },
+  { id: 'enhance', name: 'AI Enhance', category: 'EDITING', priority: 'high', description: 'Improve quality of existing content' },
+  { id: 'refine', name: 'AI Refine', category: 'EDITING', priority: 'high', description: 'Make targeted adjustments' },
+  { id: 'rewrite', name: 'AI Rewrite', category: 'EDITING', priority: 'high', description: 'Rewrite with different style or tone' },
+  { id: 'expand', name: 'AI Expand', category: 'EDITING', priority: 'medium', description: 'Add more detail to content' },
+  { id: 'summarize', name: 'AI Summarize', category: 'EDITING', priority: 'medium', description: 'Make content more concise' },
+  { id: 'polish', name: 'AI Polish', category: 'EDITING', priority: 'high', description: 'Professional refinement pass' },
+  { id: 'add_stats', name: 'Add Statistics', category: 'EDITING', priority: 'medium', description: 'Insert relevant data and stats' },
+  { id: 'add_visuals', name: 'Add Visuals', category: 'EDITING', priority: 'medium', description: 'Enhance with images and graphics' },
+  { id: 'simplify', name: 'Simplify Language', category: 'EDITING', priority: 'medium', description: 'Reduce complexity of content' },
+  { id: 'add_table', name: 'Convert to Table', category: 'EDITING', priority: 'medium', description: 'Transform content into table format' },
+  { id: 'translate_element', name: 'Translate Element', category: 'EDITING', priority: 'high', description: 'Translate specific elements in-place' },
+  { id: 'style_update', name: 'Update Style', category: 'EDITING', priority: 'medium', description: 'Change visual styling of elements' },
+  { id: 'model_change', name: 'Change AI Model', category: 'EDITING', priority: 'medium', description: 'Switch to different AI provider mid-edit' },
+  { id: 'version_history', name: 'Version History', category: 'EDITING', priority: 'high', description: 'Track and revert element changes' },
+  { id: 'batch_edit', name: 'Batch Edit', category: 'EDITING', priority: 'medium', description: 'Apply changes to multiple elements' },
+
+  // PIPELINE FEATURES (Transformation Orchestration)
+  { id: 'idea_to_presentation', name: 'Idea → Presentation', category: 'PIPELINE', priority: 'critical', description: 'Full automated deck creation' },
+  { id: 'document_to_presentation', name: 'Document → Presentation', category: 'PIPELINE', priority: 'high', description: 'Convert documents to slides' },
+  { id: 'presentation_to_video', name: 'Presentation → Video', category: 'PIPELINE', priority: 'high', description: 'Convert slides to narrated video' },
+  { id: 'script_to_avatar', name: 'Script → Avatar Video', category: 'PIPELINE', priority: 'high', description: 'AI avatar reads script' },
+  { id: 'text_to_video_pipeline', name: 'Text → Video', category: 'PIPELINE', priority: 'high', description: 'Generate video from text prompt' },
+  { id: 'image_to_video_pipeline', name: 'Image → Video', category: 'PIPELINE', priority: 'medium', description: 'Animate static images' },
+  { id: 'url_to_video', name: 'URL → Video', category: 'PIPELINE', priority: 'medium', description: 'Convert web content to video' },
+  { id: 'ppt_to_video', name: 'PPT → Video', category: 'PIPELINE', priority: 'high', description: 'Convert PowerPoint to video' },
+  { id: 'long_to_short', name: 'Long → Short Clips', category: 'PIPELINE', priority: 'medium', description: 'Extract social clips from long videos' },
+  { id: 'multilingual_dub', name: 'Multilingual Dubbing', category: 'PIPELINE', priority: 'high', description: 'Dub video into multiple languages' },
+  { id: 'avatar_lip_sync', name: 'Avatar Lip-Sync', category: 'PIPELINE', priority: 'high', description: 'Sync avatar to voiceover' },
+  { id: 'data_to_dashboard', name: 'Data → Dashboard', category: 'PIPELINE', priority: 'medium', description: 'Generate visual dashboards from data' },
+  { id: 'auto_record_to_avatar', name: 'Recording → Avatar', category: 'PIPELINE', priority: 'medium', description: 'Replace presenter with AI avatar' },
+  { id: 'text_to_3d_scene', name: 'Text → 3D Scene', category: 'PIPELINE', priority: 'low', description: 'Generate 3D environments from text' },
+  { id: 'image_to_3d_mesh', name: 'Image → 3D Mesh', category: 'PIPELINE', priority: 'medium', description: 'Convert 2D images to 3D models' },
+  { id: 'a2a_orchestration', name: 'A2A Orchestration', category: 'PIPELINE', priority: 'critical', description: 'Agent-to-agent coordination for complex workflows' },
+
   // PUBLISHING FEATURES (Expanded for 8-Step Wizard)
   { id: 'web_publish', name: 'Web Publishing/Link Sharing', category: 'PUBLISHING', priority: 'high' },
   { id: 'embed_website', name: 'Embed on Website', category: 'PUBLISHING', priority: 'medium' },
@@ -1265,8 +1416,155 @@ export const FEATURE_IMPLEMENTATION_MATRIX: Record<string, Partial<Record<Provid
   scorm_export: {
     openai: { status: 'configured', implementation: 'not_started', confidence: 0 },
   },
-  
-  // PUBLISHING FEATURES (Full 8-Step Wizard Integration)
+  html_export: {
+    supabase: { status: 'configured', implementation: 'implemented', confidence: 90, notes: 'comprehensiveExportService' },
+  },
+  json_export: {
+    supabase: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'Universal export hook' },
+  },
+  image_zip_export: {
+    supabase: { status: 'configured', implementation: 'implemented', confidence: 85, notes: 'JSZip integration' },
+  },
+  svg_export: {
+    supabase: { status: 'configured', implementation: 'partial', confidence: 70 },
+  },
+  markdown_export: {
+    supabase: { status: 'configured', implementation: 'implemented', confidence: 90 },
+  },
+  csv_export: {
+    supabase: { status: 'configured', implementation: 'implemented', confidence: 95 },
+  },
+  multilang_export: {
+    supabase: { status: 'configured', implementation: 'implemented', confidence: 95, notes: '120+ language font mappings in comprehensiveExportService' },
+    deepl: { status: 'configured', implementation: 'implemented', confidence: 90, notes: 'Translation integration' },
+  },
+  dom_capture: {
+    supabase: { status: 'configured', implementation: 'implemented', confidence: 85, notes: 'html2canvas for 3D/animation capture' },
+  },
+
+  // EDITING FEATURES (Generative Editor - useElementEditor)
+  regenerate: {
+    openai: { status: 'configured', implementation: 'implemented', confidence: 95, edgeFunctionUsed: 'ai-universal-processor' },
+    claude: { status: 'configured', implementation: 'implemented', confidence: 93 },
+    gemini: { status: 'configured', implementation: 'implemented', confidence: 90 },
+  },
+  enhance: {
+    openai: { status: 'configured', implementation: 'implemented', confidence: 92 },
+    modelslab: { status: 'configured', implementation: 'implemented', confidence: 88, notes: 'Image upscaling' },
+  },
+  refine: {
+    openai: { status: 'configured', implementation: 'implemented', confidence: 90 },
+    claude: { status: 'configured', implementation: 'implemented', confidence: 92, notes: 'Best for nuanced refinements' },
+  },
+  rewrite: {
+    openai: { status: 'configured', implementation: 'implemented', confidence: 94 },
+    claude: { status: 'configured', implementation: 'implemented', confidence: 96, notes: 'Best for rewrites' },
+  },
+  expand: {
+    openai: { status: 'configured', implementation: 'implemented', confidence: 88 },
+    claude: { status: 'configured', implementation: 'implemented', confidence: 90 },
+  },
+  summarize: {
+    openai: { status: 'configured', implementation: 'implemented', confidence: 95 },
+    gemini: { status: 'configured', implementation: 'implemented', confidence: 98, notes: 'Great for long docs' },
+  },
+  polish: {
+    openai: { status: 'configured', implementation: 'implemented', confidence: 90 },
+    claude: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'SlideAIEnhancer integration' },
+  },
+  add_stats: {
+    openai: { status: 'configured', implementation: 'partial', confidence: 75, notes: 'Web search integration needed' },
+    gemini: { status: 'configured', implementation: 'partial', confidence: 70 },
+  },
+  add_visuals: {
+    modelslab: { status: 'configured', implementation: 'implemented', confidence: 88, edgeFunctionUsed: 'modelslab-media' },
+    openai: { status: 'configured', implementation: 'implemented', confidence: 85, notes: 'DALL-E 3' },
+  },
+  simplify: {
+    openai: { status: 'configured', implementation: 'implemented', confidence: 88 },
+    claude: { status: 'configured', implementation: 'implemented', confidence: 90 },
+  },
+  add_table: {
+    openai: { status: 'configured', implementation: 'implemented', confidence: 85 },
+    claude: { status: 'configured', implementation: 'implemented', confidence: 88 },
+  },
+  translate_element: {
+    deepl: { status: 'configured', implementation: 'implemented', confidence: 98, edgeFunctionUsed: 'translate' },
+    alibaba: { status: 'configured', implementation: 'implemented', confidence: 92, notes: 'Qwen-MT for CJK' },
+  },
+  style_update: {
+    supabase: { status: 'configured', implementation: 'implemented', confidence: 85, notes: 'Client-side styling' },
+  },
+  model_change: {
+    supabase: { status: 'configured', implementation: 'implemented', confidence: 90, notes: 'FlexibleAgentConfigService' },
+  },
+  version_history: {
+    supabase: { status: 'configured', implementation: 'implemented', confidence: 88, notes: 'useElementEditor tracking' },
+  },
+  batch_edit: {
+    openai: { status: 'configured', implementation: 'partial', confidence: 65 },
+    supabase: { status: 'configured', implementation: 'partial', confidence: 60 },
+  },
+
+  // PIPELINE FEATURES (Transformation Orchestration - ai-a2a-coordinator)
+  idea_to_presentation: {
+    openai: { status: 'configured', implementation: 'implemented', confidence: 95, edgeFunctionUsed: 'ai-universal-processor' },
+    gemini: { status: 'configured', implementation: 'implemented', confidence: 92 },
+    claude: { status: 'configured', implementation: 'implemented', confidence: 90 },
+  },
+  document_to_presentation: {
+    openai: { status: 'configured', implementation: 'implemented', confidence: 88, notes: 'GPT-4o Vision for document parsing' },
+    gemini: { status: 'configured', implementation: 'implemented', confidence: 92, notes: '1M context for large docs' },
+  },
+  presentation_to_video: {
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 70 },
+    elevenlabs: { status: 'configured', implementation: 'implemented', confidence: 88, notes: 'TTS narration' },
+  },
+  script_to_avatar: {
+    alibaba: { status: 'configured', implementation: 'partial', confidence: 65, notes: 'WAN 2.2 Avatar' },
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 60 },
+  },
+  text_to_video_pipeline: {
+    modelslab: { status: 'configured', implementation: 'implemented', confidence: 85, edgeFunctionUsed: 'modelslab-video' },
+    alibaba: { status: 'configured', implementation: 'implemented', confidence: 80, notes: 'WAN 2.2' },
+  },
+  image_to_video_pipeline: {
+    modelslab: { status: 'configured', implementation: 'implemented', confidence: 88, notes: 'AnimateDiff/SVD' },
+    replicate: { status: 'configured', implementation: 'implemented', confidence: 82 },
+  },
+  // Note: url_to_video and ppt_to_video already defined in VIDEO FEATURES section
+  long_to_short: {
+    openai: { status: 'configured', implementation: 'partial', confidence: 55, notes: 'AI highlight detection' },
+    gemini: { status: 'configured', implementation: 'partial', confidence: 60, notes: 'Video understanding' },
+  },
+  multilingual_dub: {
+    elevenlabs: { status: 'configured', implementation: 'implemented', confidence: 90, notes: 'Multi-language TTS' },
+    alibaba: { status: 'configured', implementation: 'implemented', confidence: 88, notes: 'CosyVoice for CJK' },
+    deepl: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'Script translation' },
+  },
+  avatar_lip_sync: {
+    alibaba: { status: 'configured', implementation: 'not_started', confidence: 0, notes: 'V-Express API available' },
+    modelslab: { status: 'configured', implementation: 'not_started', confidence: 0, notes: 'Wav2Lip API available' },
+  },
+  data_to_dashboard: {
+    openai: { status: 'configured', implementation: 'partial', confidence: 70, notes: 'Chart generation' },
+    gemini: { status: 'configured', implementation: 'partial', confidence: 65 },
+  },
+  auto_record_to_avatar: {
+    alibaba: { status: 'configured', implementation: 'not_started', confidence: 0, notes: 'OmniAvatar pending' },
+  },
+  text_to_3d_scene: {
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 55, notes: '3D mesh generation' },
+  },
+  image_to_3d_mesh: {
+    modelslab: { status: 'configured', implementation: 'implemented', confidence: 78, edgeFunctionUsed: 'modelslab-3d' },
+    replicate: { status: 'configured', implementation: 'partial', confidence: 65 },
+  },
+  a2a_orchestration: {
+    supabase: { status: 'configured', implementation: 'implemented', confidence: 88, edgeFunctionUsed: 'ai-a2a-coordinator' },
+    openai: { status: 'configured', implementation: 'implemented', confidence: 92, notes: 'Primary LLM router' },
+  },
+
   web_publish: {
     openai: { status: 'configured', implementation: 'implemented', confidence: 88, notes: 'Cloud URL generation' },
     supabase: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'Edge function hosting' },
@@ -1500,6 +1798,8 @@ export const CATEGORY_IMPLEMENTATION_SUMMARY: Record<FeatureCategory, {
   INTERACTIVE: computeCategorySummary('INTERACTIVE'),
   TRANSLATION: computeCategorySummary('TRANSLATION'),
   EXPORT: computeCategorySummary('EXPORT'),
+  EDITING: computeCategorySummary('EDITING'),
+  PIPELINE: computeCategorySummary('PIPELINE'),
   PUBLISHING: computeCategorySummary('PUBLISHING'),
   SECURITY: computeCategorySummary('SECURITY'),
   BUSINESS: computeCategorySummary('BUSINESS'),

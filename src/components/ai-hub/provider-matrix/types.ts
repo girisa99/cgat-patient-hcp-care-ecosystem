@@ -4,7 +4,7 @@
  * Comprehensive type definitions for tracking all providers × all capabilities
  */
 
-// Feature categories from Excel analysis
+// Feature categories from Excel analysis + Ecosystem Alignment
 export type FeatureCategory = 
   | 'INPUT'
   | 'SCRIPT'
@@ -19,6 +19,8 @@ export type FeatureCategory =
   | 'INTERACTIVE'
   | 'TRANSLATION'
   | 'EXPORT'
+  | 'EDITING'       // NEW: Generative editor refinement features
+  | 'PIPELINE'      // NEW: Transformation pipeline orchestration
   | 'PUBLISHING'
   | 'SECURITY'
   | 'BUSINESS'
