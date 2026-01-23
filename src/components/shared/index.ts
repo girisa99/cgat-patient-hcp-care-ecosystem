@@ -2,8 +2,15 @@
  * Shared Components - Cross-Product Universal Components
  * These components are used across multiple Genie products (Vibe, Spark, Mind, Arc, ProductionHub)
  * 
- * Last Updated: 2026-01-13
+ * Last Updated: 2026-01-23
  */
+
+// ============================================================================
+// GENERATION COMPONENTS (New Suite-Wide Standard)
+// ============================================================================
+
+// Re-export all generation components for unified access
+export * from './generation';
 
 // ============================================================================
 // AUDIO & VOICE COMPONENTS
