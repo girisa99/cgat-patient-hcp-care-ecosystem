@@ -1,10 +1,50 @@
 /**
  * AI MEDIA GENERATION SERVICE
- * Handles image and video generation using various AI providers
+ * 
+ * Handles image and video generation using various AI providers.
+ * Now integrated with unified provider routing for consistent
+ * provider selection across the ecosystem.
  */
 import { supabase } from '@/integrations/supabase/client';
+import { 
+  getUnifiedProviderRouting, 
+  type ProviderRoute 
+} from '@/services/unifiedProviderRoutingAdapter';
+
+// ============================================================================
+// TYPES
+// ============================================================================
+
+export interface MediaGenerationOptions {
+  prompt: string;
+  language?: string;
+  provider?: string; // Override from central routing
+  priorityRendering?: boolean;
+  userTier?: string;
+}
+
+export interface AvatarGenerationOptions {
+  sourceImage: string;
+  script?: string;
+  audioUrl?: string;
+  language?: string;
+  provider?: string; // From useRegionalLanguage.avatarProvider
+  fullBody?: boolean; // Use full-body avatar (OmniAvatar)
+  priorityRendering?: boolean;
+}
+
+// ============================================================================
+// AI MEDIA SERVICE
+// ============================================================================
 
 export class AIMediaService {
+  
+  /**
+   * Get provider routing for current language context
+   */
+  static getProviderRouting(language: string = 'en') {
+    return getUnifiedProviderRouting(language);
+  }
   
   // Generate image using OpenAI DALL-E
   static async generateImageWithOpenAI(prompt: string): Promise<string> {
@@ -83,6 +123,153 @@ export class AIMediaService {
       console.error('Error generating video with Replicate:', error);
       throw new Error('Failed to generate video with Replicate');
     }
+  }
+
+  /**
+   * Generate video with central routing support
+   * Uses provider from useRegionalLanguage or falls back to auto-selection
+   */
+  static async generateVideoWithRouting(options: MediaGenerationOptions): Promise<string> {
+    const { prompt, language = 'en', provider, priorityRendering } = options;
+    
+    // Get routing for language context
+    const routing = this.getProviderRouting(language);
+    
+    // Determine provider: explicit override > priority rendering > routing
+    let selectedProvider = provider;
+    if (!selectedProvider) {
+      selectedProvider = priorityRendering 
+        ? routing.priorityRendering.primary 
+        : routing.video.primary;
+    }
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-video-generator', {
+        body: {
+          prompt,
+          provider: selectedProvider,
+          priorityRendering,
+          language,
+        }
+      });
+
+      if (error) throw error;
+      return data.videoUrl;
+    } catch (error) {
+      console.error(`Error generating video with ${selectedProvider}:`, error);
+      
+      // Try fallback
+      const fallbackProvider = priorityRendering 
+        ? routing.priorityRendering.fallback 
+        : routing.video.fallback;
+        
+      if (fallbackProvider && fallbackProvider !== 'none') {
+        console.log(`Trying fallback provider: ${fallbackProvider}`);
+        return this.generateVideoWithProvider(prompt, fallbackProvider);
+      }
+      
+      throw new Error('Video generation failed');
+    }
+  }
+
+  /**
+   * Generate avatar video with central routing
+   * Uses Alibaba Wan2.2 (avatar) or OmniAvatar (full-body)
+   */
+  static async generateAvatarWithRouting(options: AvatarGenerationOptions): Promise<{
+    videoUrl: string;
+    provider: string;
+    model: string;
+  }> {
+    const { 
+      sourceImage, 
+      script, 
+      audioUrl, 
+      language = 'en', 
+      provider,
+      fullBody = false,
+      priorityRendering = false 
+    } = options;
+    
+    // Get routing
+    const routing = this.getProviderRouting(language);
+    
+    // Select provider based on feature type
+    let selectedProvider = provider;
+    if (!selectedProvider) {
+      if (fullBody) {
+        selectedProvider = routing.fullBodyAvatar.primary; // alibaba-omniavatar
+      } else {
+        selectedProvider = routing.avatar.primary; // alibaba-wan2.2
+      }
+    }
+    
+    // Determine model based on provider
+    const model = fullBody ? 'omniavatar' : 'wan2.2-s2v';
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-video-generator', {
+        body: {
+          type: 'avatar',
+          sourceImage,
+          script,
+          audioUrl,
+          language,
+          provider: selectedProvider,
+          model,
+          priorityRendering,
+          fullBody,
+        }
+      });
+
+      if (error) throw error;
+      
+      return {
+        videoUrl: data.videoUrl,
+        provider: selectedProvider,
+        model,
+      };
+    } catch (error) {
+      console.error(`Error generating avatar with ${selectedProvider}:`, error);
+      
+      // Try fallback (only for regular avatar, not full-body)
+      if (!fullBody) {
+        const fallbackProvider = routing.avatar.fallback;
+        if (fallbackProvider && fallbackProvider !== 'none') {
+          console.log(`Trying fallback avatar provider: ${fallbackProvider}`);
+          const { data, error: fallbackError } = await supabase.functions.invoke('ai-video-generator', {
+            body: {
+              type: 'avatar',
+              sourceImage,
+              script,
+              audioUrl,
+              language,
+              provider: fallbackProvider,
+            }
+          });
+          
+          if (!fallbackError) {
+            return {
+              videoUrl: data.videoUrl,
+              provider: fallbackProvider,
+              model: 'fallback',
+            };
+          }
+        }
+      }
+      
+      throw new Error(`Avatar generation failed: ${fullBody ? 'Full-body avatar has no fallback' : 'All providers failed'}`);
+    }
+  }
+
+  // Helper: Generate video with specific provider
+  private static async generateVideoWithProvider(prompt: string, provider: string): Promise<string> {
+    const { data, error } = await supabase.functions.invoke('ai-video-generator', {
+      body: { prompt, provider }
+    });
+    
+    if (error) throw error;
+    return data.videoUrl;
   }
 
   // Fallback: Generate static image when video generation fails

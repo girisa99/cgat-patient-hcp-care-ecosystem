@@ -59,6 +59,9 @@ serve(async (req) => {
       script,
       language = 'en-US',
       voiceId,
+      // NEW: Premium feature routing from frontend
+      priorityRendering = false, // Use RunPod for dedicated GPU
+      fullBody = false, // Use OmniAvatar for full-body
       // NEW: Full Generation Context for A2A routing
       generationContext,
       userTier = 'starter' as GlobalTierLevel,
@@ -76,14 +79,20 @@ serve(async (req) => {
 
     // Handle avatar/lip-sync generation
     if (type === 'avatar' || type === 'lipsync') {
-      console.log(`🎭 Generating ${type} with existing providers`);
+      console.log(`🎭 Generating ${type} with ${provider !== 'auto' ? provider : 'auto-selected'} provider`);
+      console.log(`   Priority Rendering: ${priorityRendering}, Full Body: ${fullBody}`);
+      
       const avatarResult = await generateAvatarOrLipSync({
         type,
         sourceImage: sourceImage || referenceImage,
         audioUrl,
         script: script || prompt,
         language,
-        voiceId
+        voiceId,
+        // Pass provider override from frontend (determined by useRegionalLanguage)
+        providerOverride: provider !== 'auto' ? provider : undefined,
+        fullBody,
+        priorityRendering,
       });
       
       return new Response(JSON.stringify({
@@ -233,7 +242,24 @@ function selectProvider(requestedProvider: string): string {
   throw new Error('No video generation API keys configured. Please add OPENAI_API_KEY, MODELSLAB_API_KEY, ALIBABA_API_KEY, or GOOGLE_API_KEY.');
 }
 
-function selectAvatarProvider(): string {
+/**
+ * Select avatar provider - Now supports frontend override from useRegionalLanguage
+ * Priority: Frontend Override > Alibaba (default) > ModelsLab > Azure
+ */
+function selectAvatarProvider(providerOverride?: string, fullBody = false): string {
+  // If frontend specified provider, use it (from useRegionalLanguage hook)
+  if (providerOverride && providerOverride !== 'auto') {
+    console.log(`🎯 Using frontend-specified avatar provider: ${providerOverride}`);
+    return providerOverride.replace('alibaba-wan2.2', 'alibaba').replace('alibaba-omniavatar', 'alibaba');
+  }
+  
+  // Full-body uses OmniAvatar (always Alibaba)
+  if (fullBody) {
+    const alibabaKey = Deno.env.get('ALIBABA_API_KEY');
+    if (alibabaKey) return 'alibaba';
+    throw new Error('ALIBABA_API_KEY is required for full-body avatar (OmniAvatar)');
+  }
+  
   // Priority for avatar/lip-sync: Alibaba WAN > ModelsLab > Azure
   const alibabaKey = Deno.env.get('ALIBABA_API_KEY');
   const modelsLabKey = Deno.env.get('MODELSLAB_API_KEY');
@@ -697,32 +723,45 @@ async function pollAlibabaTask(taskId: string, apiKey: string): Promise<VideoRes
 }
 
 // =============================================================================
-// AVATAR & LIP-SYNC GENERATION - Using Existing Providers
+// AVATAR & LIP-SYNC GENERATION - Using Central Routing from Frontend
 // =============================================================================
-async function generateAvatarOrLipSync(request: AvatarRequest): Promise<{
+interface AvatarRequestWithRouting extends AvatarRequest {
+  providerOverride?: string; // From useRegionalLanguage.avatarProvider
+  fullBody?: boolean; // Use OmniAvatar for full-body
+  priorityRendering?: boolean; // Use RunPod for priority
+}
+
+async function generateAvatarOrLipSync(request: AvatarRequestWithRouting): Promise<{
   videoUrl: string;
   audioUrl?: string;
   visemeData?: VisemeData[];
   provider: string;
   model: string;
 }> {
-  const avatarProvider = selectAvatarProvider();
+  // Select provider using frontend override or auto-selection
+  const avatarProvider = selectAvatarProvider(request.providerOverride, request.fullBody);
+  const modelName = request.fullBody ? 'omniavatar' : 'wan2.2-s2v';
+  
   console.log(`🎭 Using ${avatarProvider} for ${request.type} generation`);
+  console.log(`   Model: ${modelName}, Full Body: ${request.fullBody}, Priority: ${request.priorityRendering}`);
 
   switch (avatarProvider) {
     case 'alibaba':
-      return await generateAvatarWithAlibaba(request);
+      return await generateAvatarWithAlibaba(request, request.fullBody);
     case 'modelslab':
       return await generateAvatarWithModelsLab(request);
     case 'azure':
       return await generateLipSyncWithAzure(request);
+    case 'replicate':
+      // Fallback provider from routing
+      return await generateAvatarWithModelsLab(request);
     default:
       throw new Error(`Unsupported avatar provider: ${avatarProvider}`);
   }
 }
 
-// Alibaba WAN Avatar Animation
-async function generateAvatarWithAlibaba(request: AvatarRequest): Promise<{
+// Alibaba WAN Avatar Animation (supports regular + full-body OmniAvatar)
+async function generateAvatarWithAlibaba(request: AvatarRequest, fullBody = false): Promise<{
   videoUrl: string;
   audioUrl?: string;
   provider: string;
@@ -731,7 +770,8 @@ async function generateAvatarWithAlibaba(request: AvatarRequest): Promise<{
   const apiKey = Deno.env.get('ALIBABA_API_KEY');
   if (!apiKey) throw new Error('ALIBABA_API_KEY is not configured');
 
-  console.log('🎭 Generating avatar with Alibaba WAN 2.2 Animate');
+  const modelName = fullBody ? 'omniavatar' : 'wan-2.2';
+  console.log(`🎭 Generating avatar with Alibaba ${fullBody ? 'OmniAvatar (full-body)' : 'WAN 2.2 Animate'}`);
 
   // Step 1: Generate audio with Alibaba CosyVoice if script provided
   let audioUrl = request.audioUrl;
@@ -740,19 +780,24 @@ async function generateAvatarWithAlibaba(request: AvatarRequest): Promise<{
   }
 
   // Step 2: Animate the source image with lip-sync
-  const endpoint = 'https://dashscope.aliyuncs.com/api/v1/services/aigc/video-generation/generation';
+  const endpoint = fullBody 
+    ? 'https://dashscope.aliyuncs.com/api/v1/services/aigc/omniavatar/generation'
+    : 'https://dashscope.aliyuncs.com/api/v1/services/aigc/video-generation/generation';
   
   const requestBody = {
-    model: 'wan-2.2',
+    model: modelName,
     input: {
       image_url: request.sourceImage,
       audio_url: audioUrl,
-      mode: request.type === 'lipsync' ? 'lip_sync' : 'talking_head',
+      mode: fullBody 
+        ? 'full_body_animation' 
+        : (request.type === 'lipsync' ? 'lip_sync' : 'talking_head'),
     },
     parameters: {
-      resolution: '720p',
+      resolution: fullBody ? '1080p' : '720p',
       preserve_expression: true,
       smooth_motion: true,
+      ...(fullBody && { body_motion: 'natural', gesture_sync: true }),
     }
   };
 
