@@ -11,7 +11,7 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { Check, X, AlertCircle, Clock, Download, Search, Zap, Target, Plus, Save, Edit2, Info, FileSpreadsheet, Layers } from 'lucide-react';
+import { Check, X, AlertCircle, Clock, Download, Search, Zap, Target, Plus, Save, Edit2, Info, FileSpreadsheet, Layers, GitBranch, Map, ListOrdered, Ban } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -49,6 +49,10 @@ import {
 } from './generation-coverage/generationCoverageRegistry';
 import { calculateUnifiedMetrics } from './generation-coverage/unifiedMetricsEngine';
 import { TabMetricsHeader, type TabView } from './TabMetricsHeader';
+import { PipelineCapabilityTab } from './PipelineCapabilityTab';
+import { EcosystemIntegrationMap } from './EcosystemIntegrationMap';
+import { ImplementationPriorityQueue } from './ImplementationPriorityQueue';
+import { DependencyBlockerAnalysis } from './DependencyBlockerAnalysis';
 
 const CATEGORY_LABELS: Record<FeatureCategory, string> = {
   INPUT: '📥 Input',
@@ -651,7 +655,7 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
       {/* Tabs */}
       <Tabs value={view} onValueChange={(v) => setView(v as typeof view)} className="space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <TabsList className="flex-wrap h-auto">
+          <TabsList className="flex-wrap h-auto gap-0.5">
             <TabsTrigger value="matrix">Feature Matrix</TabsTrigger>
             <TabsTrigger value="category">
               {selectedCategory === 'all' ? '📋 Category Details' : CATEGORY_LABELS[selectedCategory]}
@@ -659,7 +663,23 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
             <TabsTrigger value="crossfunc">🔗 Cross-Functional</TabsTrigger>
             <TabsTrigger value="coverage">
               <Layers className="w-3 h-3 mr-1" />
-              Generation Coverage
+              Gen Coverage
+            </TabsTrigger>
+            <TabsTrigger value="pipeline" className="text-violet-400">
+              <GitBranch className="w-3 h-3 mr-1" />
+              Pipeline
+            </TabsTrigger>
+            <TabsTrigger value="ecosystem" className="text-emerald-400">
+              <Map className="w-3 h-3 mr-1" />
+              Ecosystem
+            </TabsTrigger>
+            <TabsTrigger value="priority" className="text-amber-400">
+              <ListOrdered className="w-3 h-3 mr-1" />
+              Priority Queue
+            </TabsTrigger>
+            <TabsTrigger value="blockers" className="text-red-400">
+              <Ban className="w-3 h-3 mr-1" />
+              Blockers
             </TabsTrigger>
             <TabsTrigger value="providers">By Provider</TabsTrigger>
             <TabsTrigger value="llm">LLM Analysis</TabsTrigger>
@@ -2025,6 +2045,26 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
         {/* Generation Coverage Tab */}
         <TabsContent value="coverage" className="mt-0">
           <GenerationCoverageTab selectedCategory={selectedCategory} />
+        </TabsContent>
+
+        {/* NEW: Pipeline Capability Tab */}
+        <TabsContent value="pipeline" className="mt-0">
+          <PipelineCapabilityTab selectedCategory={selectedCategory} />
+        </TabsContent>
+
+        {/* NEW: Ecosystem Integration Map Tab */}
+        <TabsContent value="ecosystem" className="mt-0">
+          <EcosystemIntegrationMap selectedCategory={selectedCategory} />
+        </TabsContent>
+
+        {/* NEW: Implementation Priority Queue Tab */}
+        <TabsContent value="priority" className="mt-0">
+          <ImplementationPriorityQueue selectedCategory={selectedCategory} />
+        </TabsContent>
+
+        {/* NEW: Dependency Blocker Analysis Tab */}
+        <TabsContent value="blockers" className="mt-0">
+          <DependencyBlockerAnalysis selectedCategory={selectedCategory} />
         </TabsContent>
       </Tabs>
     </div>

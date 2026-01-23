@@ -36,6 +36,7 @@ import {
   type ProductVertical,
   type SupportLevel
 } from './pipelineCapabilityMatrix';
+import type { FeatureCategory } from './types';
 
 const CATEGORY_LABELS: Record<PipelineCategory, { label: string; icon: string }> = {
   presentation: { label: 'Presentation', icon: '📊' },
@@ -82,9 +83,13 @@ const SUPPORT_ICONS: Record<SupportLevel, { icon: React.ReactNode; color: string
 
 interface PipelineCapabilityTabProps {
   className?: string;
+  selectedCategory?: FeatureCategory | 'all';
 }
 
-export const PipelineCapabilityTab: React.FC<PipelineCapabilityTabProps> = ({ className }) => {
+export const PipelineCapabilityTab: React.FC<PipelineCapabilityTabProps> = ({ 
+  className,
+  selectedCategory: externalCategory = 'all'
+}) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<PipelineCategory | 'all'>('all');
   const [selectedVertical, setSelectedVertical] = useState<ProductVertical | 'all'>('all');
