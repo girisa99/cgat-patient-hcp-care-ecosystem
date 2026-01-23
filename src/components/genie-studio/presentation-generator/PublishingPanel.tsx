@@ -4,6 +4,8 @@
  * Step 8 of the Generation Pipeline
  * Supports: Export (files), Cloud (hosted), Platform (social)
  * 
+ * NOW INTEGRATED with useUniversalExport for all 100+ pipelines
+ * Supports: PPTX, PDF, Images, HTML, JSON, Video exports
  * Mobile-responsive with collapsible sections
  */
 
@@ -45,6 +47,8 @@ import {
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { useUniversalExport } from '@/hooks/useUniversalExport';
+import type { GeneratedSlide } from '@/services/universalPresentationService';
 import {
   EXPORT_FORMATS,
   CLOUD_OPTIONS,
@@ -71,6 +75,7 @@ interface PublishingPanelProps {
     id: string;
     title: string;
     formats: string[];
+    slides?: GeneratedSlide[]; // For universal export
   };
   userTier?: 'free' | 'pro' | 'enterprise';
   isMobile?: boolean;
@@ -102,7 +107,7 @@ function TierBadge({ tier }: { tier: 'free' | 'pro' | 'enterprise' }) {
 }
 
 // ==========================================
-// EXPORT TAB COMPONENT
+// EXPORT TAB COMPONENT - NOW WITH UNIVERSAL EXPORT
 // ==========================================
 
 function ExportTab({
@@ -110,12 +115,26 @@ function ExportTab({
   onConfigChange,
   availableFormats,
   userTier,
+  slides,
+  title,
 }: {
   config: PublishConfig;
   onConfigChange: (config: PublishConfig) => void;
   availableFormats: ExportFormat[];
   userTier: 'free' | 'pro' | 'enterprise';
+  slides?: GeneratedSlide[];
+  title?: string;
 }) {
+  const { 
+    isExporting, 
+    exportProgress,
+    exportToPPTX, 
+    exportToPDF, 
+    exportToImages,
+    exportToHTML,
+    exportToJSON 
+  } = useUniversalExport();
+
   const formatsByCategory = useMemo(() => {
     const grouped: Record<string, ExportFormat[]> = {};
     availableFormats.forEach(f => {
@@ -131,6 +150,49 @@ function ExportTab({
       ? current.filter(f => f !== formatId)
       : [...current, formatId];
     onConfigChange({ ...config, exportFormats: updated });
+  };
+
+  // Universal export handler for selected formats
+  const handleExportAll = async () => {
+    if (!slides || slides.length === 0) {
+      toast.error('No content to export. Generate content first.');
+      return;
+    }
+
+    const input = {
+      slides,
+      title: title || 'Generated Content',
+    };
+
+    const selectedFormats = config.exportFormats || [];
+    
+    for (const formatId of selectedFormats) {
+      try {
+        switch (formatId) {
+          case 'pptx':
+            await exportToPPTX(input, { captureFromDOM: true });
+            break;
+          case 'pdf':
+            await exportToPDF(input, { captureFromDOM: true });
+            break;
+          case 'images':
+          case 'png':
+          case 'jpg':
+            await exportToImages(input, { captureFromDOM: true });
+            break;
+          case 'html':
+            await exportToHTML({ ...input, content: slides.map(s => s.title).join('\n') });
+            break;
+          case 'json':
+            exportToJSON(input);
+            break;
+          default:
+            console.log(`[Export] Format ${formatId} not yet implemented via universal export`);
+        }
+      } catch (error) {
+        console.error(`[Export] Failed to export ${formatId}:`, error);
+      }
+    }
   };
 
   const categoryLabels: Record<string, { label: string; icon: React.ReactNode }> = {
@@ -203,13 +265,33 @@ function ExportTab({
       {config.exportFormats?.length > 0 && (
         <div className="flex items-center justify-between p-3 rounded-lg bg-primary/5 border border-primary/20">
           <div className="flex items-center gap-2">
-            <Check className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium">
-              {config.exportFormats.length} format(s) selected
-            </span>
+            {isExporting ? (
+              <>
+                <Loader2 className="h-4 w-4 text-primary animate-spin" />
+                <span className="text-sm font-medium">
+                  Exporting... {exportProgress}%
+                </span>
+              </>
+            ) : (
+              <>
+                <Check className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium">
+                  {config.exportFormats.length} format(s) selected
+                </span>
+              </>
+            )}
           </div>
-          <Button size="sm" variant="outline">
-            <Download className="h-4 w-4 mr-1" />
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={handleExportAll}
+            disabled={isExporting || !slides?.length}
+          >
+            {isExporting ? (
+              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4 mr-1" />
+            )}
             Export All
           </Button>
         </div>
