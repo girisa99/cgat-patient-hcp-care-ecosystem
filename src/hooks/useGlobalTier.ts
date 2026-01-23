@@ -1,6 +1,11 @@
 /**
  * useGlobalTier Hook - Unified tier management across Genie Suite
- * Provides consistent tier state and provider filtering for all products
+ * 
+ * DEPRECATED: This hook is now a thin wrapper around useRegionalLanguage.
+ * For new code, prefer using useRegionalLanguage directly which provides
+ * both regional routing AND tier filtering in a single hook.
+ * 
+ * This wrapper exists for backward compatibility with existing code.
  */
 
 import { useState, useCallback, useMemo } from 'react';
@@ -18,6 +23,10 @@ interface UseGlobalTierOptions {
   onTierChange?: (tier: GlobalTier) => void;
 }
 
+/**
+ * @deprecated Use useRegionalLanguage({ defaultTier }) instead for unified routing + tier filtering.
+ * This hook remains for backward compatibility.
+ */
 export function useGlobalTier(options: UseGlobalTierOptions = {}) {
   const { defaultTier = 'advanced', onTierChange } = options;
   const [globalTier, setGlobalTier] = useState<GlobalTier>(defaultTier);
@@ -59,3 +68,7 @@ export function useGlobalTier(options: UseGlobalTierOptions = {}) {
     tierOptions: Object.values(TIER_CONFIGS),
   };
 }
+
+// Re-export types for convenience
+export type { GlobalTier } from '@/services/shared/globalTierService';
+export { TIER_CONFIGS, PROVIDER_TIERS } from '@/services/shared/globalTierService';

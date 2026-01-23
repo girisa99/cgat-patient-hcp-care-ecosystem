@@ -39,6 +39,16 @@ import {
   getUnifiedProviderRouting,
   type ProviderRoute,
 } from '@/services/unifiedProviderRoutingAdapter';
+import {
+  type GlobalTier,
+  TIER_CONFIGS,
+  PROVIDER_TIERS,
+  getProviderTier,
+  filterProvidersByTier,
+  calculateTierCost,
+  getOutputQualityFromTier,
+  type TierConfig,
+} from '@/services/shared/globalTierService';
 
 // ============================================================================
 // TYPES
@@ -92,6 +102,25 @@ export interface UseRegionalLanguageReturn {
   fullBodyAvatarProvider: string;
   priorityRenderingProvider: string;
   
+  // ==========================================
+  // UNIFIED TIER SYSTEM (consolidated from useGlobalTier)
+  // ==========================================
+  globalTier: GlobalTier;
+  setGlobalTier: (tier: GlobalTier) => void;
+  tierConfig: TierConfig;
+  tierOptions: TierConfig[];
+  outputQuality: '720p' | '1080p' | '4k';
+  
+  // Tier-aware provider filtering
+  filterProvidersByTier: (providers: string[]) => string[];
+  getProviderTierInfo: (providerId: string) => { tier: GlobalTier; config: TierConfig; isAllowed: boolean };
+  calculateTierCost: (baseCost: number) => number;
+  
+  // Tier-filtered providers (auto-filtered based on current tier)
+  filteredLlmProvider: string;
+  filteredTtsProvider: string;
+  filteredTranslationProvider: string;
+  
   // Actions
   setLanguage: (code: string) => void;
   setPrimaryLanguage: (code: string) => void;
@@ -117,15 +146,33 @@ export interface UseRegionalLanguageReturn {
 }
 
 // ============================================================================
+// HOOK OPTIONS
+// ============================================================================
+
+export interface UseRegionalLanguageOptions {
+  defaultTier?: GlobalTier;
+  onTierChange?: (tier: GlobalTier) => void;
+}
+
+// ============================================================================
 // HOOK IMPLEMENTATION
 // ============================================================================
 
-export function useRegionalLanguage(): UseRegionalLanguageReturn {
+export function useRegionalLanguage(options: UseRegionalLanguageOptions = {}): UseRegionalLanguageReturn {
+  const { defaultTier = 'advanced', onTierChange } = options;
+  
   const [config, setConfig] = useState<UserLanguageConfig | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [globalTier, setGlobalTierState] = useState<GlobalTier>(defaultTier);
   
   // Integrate with ecosystem routing for LLM zone
   const ecosystemRouting = useEcosystemRouting();
+  
+  // Tier change handler
+  const setGlobalTier = useCallback((tier: GlobalTier) => {
+    setGlobalTierState(tier);
+    onTierChange?.(tier);
+  }, [onTierChange]);
 
   // Initialize on mount
   useEffect(() => {
@@ -245,6 +292,67 @@ export function useRegionalLanguage(): UseRegionalLanguageReturn {
   const avatarProvider = premiumRouting.avatar.primary;
   const fullBodyAvatarProvider = premiumRouting.fullBodyAvatar.primary;
   const priorityRenderingProvider = premiumRouting.priorityRendering.primary;
+
+  // ==========================================
+  // UNIFIED TIER SYSTEM
+  // ==========================================
+  
+  const tierConfig = useMemo(() => TIER_CONFIGS[globalTier], [globalTier]);
+  
+  const tierOptions = useMemo(() => Object.values(TIER_CONFIGS), []);
+  
+  const outputQuality = useMemo(() => getOutputQualityFromTier(globalTier), [globalTier]);
+  
+  // Tier-aware provider filtering function
+  const filterProvidersByTierFn = useCallback((providers: string[]) => {
+    return filterProvidersByTier(providers, globalTier);
+  }, [globalTier]);
+  
+  // Get provider tier info with allowance check
+  const getProviderTierInfoFn = useCallback((providerId: string) => {
+    const tier = getProviderTier(providerId);
+    return {
+      tier,
+      config: TIER_CONFIGS[tier],
+      isAllowed: filterProvidersByTier([providerId], globalTier).length > 0,
+    };
+  }, [globalTier]);
+  
+  // Calculate cost based on tier
+  const calculateTierCostFn = useCallback((baseCost: number) => {
+    return calculateTierCost(baseCost, globalTier);
+  }, [globalTier]);
+  
+  // Tier-filtered providers (auto-select fallback if primary exceeds tier)
+  const filteredLlmProvider = useMemo(() => {
+    const primaryTier = getProviderTier(llmProvider);
+    const tierOrder: GlobalTier[] = ['standard', 'advanced', 'premium'];
+    if (tierOrder.indexOf(primaryTier) <= tierOrder.indexOf(globalTier)) {
+      return llmProvider;
+    }
+    // Return fallback based on zone
+    return llmZone === 'alibaba' ? 'qwen-turbo' : 
+           llmZone === 'gemini' ? 'gemini-flash' : 
+           'gpt-4o-mini';
+  }, [llmProvider, globalTier, llmZone]);
+  
+  const filteredTtsProvider = useMemo(() => {
+    const primaryTier = getProviderTier(ttsProvider);
+    const tierOrder: GlobalTier[] = ['standard', 'advanced', 'premium'];
+    if (tierOrder.indexOf(primaryTier) <= tierOrder.indexOf(globalTier)) {
+      return ttsProvider;
+    }
+    return 'azure-neural'; // Universal fallback for TTS
+  }, [ttsProvider, globalTier]);
+  
+  const filteredTranslationProvider = useMemo(() => {
+    const primaryTier = getProviderTier(translationProvider);
+    const tierOrder: GlobalTier[] = ['standard', 'advanced', 'premium'];
+    if (tierOrder.indexOf(primaryTier) <= tierOrder.indexOf(globalTier)) {
+      return translationProvider;
+    }
+    return 'google-translate'; // Universal fallback for translation
+  }, [translationProvider, globalTier]);
 
   // Actions
   const setLanguage = useCallback((code: string) => {
@@ -368,6 +476,25 @@ export function useRegionalLanguage(): UseRegionalLanguageReturn {
     fullBodyAvatarProvider,
     priorityRenderingProvider,
     
+    // ==========================================
+    // UNIFIED TIER SYSTEM
+    // ==========================================
+    globalTier,
+    setGlobalTier,
+    tierConfig,
+    tierOptions,
+    outputQuality,
+    
+    // Tier-aware provider filtering
+    filterProvidersByTier: filterProvidersByTierFn,
+    getProviderTierInfo: getProviderTierInfoFn,
+    calculateTierCost: calculateTierCostFn,
+    
+    // Tier-filtered providers
+    filteredLlmProvider,
+    filteredTtsProvider,
+    filteredTranslationProvider,
+    
     // Actions
     setLanguage,
     setPrimaryLanguage,
@@ -384,15 +511,15 @@ export function useRegionalLanguage(): UseRegionalLanguageReturn {
     isLanguageRTL,
     getProviderForFeature: (feature) => {
       switch (feature) {
-        case 'llm': return llmProvider;
-        case 'tts': return ttsProvider;
+        case 'llm': return filteredLlmProvider;
+        case 'tts': return filteredTtsProvider;
         case 'stt': return sttProvider;
-        case 'translation': return translationProvider;
+        case 'translation': return filteredTranslationProvider;
         case 'voiceClone': return voiceCloneProvider;
         case 'avatar': return avatarProvider;
         case 'fullBodyAvatar': return fullBodyAvatarProvider;
         case 'priorityRendering': return priorityRenderingProvider;
-        default: return llmProvider;
+        default: return filteredLlmProvider;
       }
     },
     
