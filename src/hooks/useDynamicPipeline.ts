@@ -52,6 +52,7 @@ const TIER_MAP: Record<string, PricingTier> = {
   'standard': 'starter',
   'advanced': 'pro',
   'premium': 'enterprise',
+  'beta': 'enterprise', // Dev mode gets full access
 };
 
 export interface PipelineContext {
