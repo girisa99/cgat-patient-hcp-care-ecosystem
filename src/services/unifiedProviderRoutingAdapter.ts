@@ -50,6 +50,12 @@ export interface ProviderRoute {
   moat: LanguageMoat;
 }
 
+export interface BadgeInfo {
+  label: string;
+  color: string;
+  icon: string;
+}
+
 export interface UnifiedProviderResult {
   languageCode: string;
   languageName: string;
@@ -67,7 +73,7 @@ export interface UnifiedProviderResult {
   
   // Competitive intelligence
   marketAdvantage: string;
-  badge: string;
+  badge: BadgeInfo;
 }
 
 export interface FallbackChain {

@@ -14,13 +14,10 @@
  * Priority: Cross-Functional (All Products)
  */
 
-import { supabase } from '@/integrations/supabase/client';
 import { 
-  unifiedProviderRouter, 
   getProviderForMediaType,
   requiresRTLLayout,
   type ProviderRoute,
-  type MediaType,
 } from './unifiedProviderRoutingAdapter';
 import { COMPLETE_LANGUAGE_MATRIX } from './competitiveLanguageMatrix';
 
@@ -99,6 +96,8 @@ const buildSupportedLanguages = (): SupportedLanguage[] => {
   });
 };
 
+class MultiLanguageDubbingService {
+  private static instance: MultiLanguageDubbingService;
   private supportedLanguages: SupportedLanguage[] = buildSupportedLanguages();
 
   private constructor() {}
@@ -141,7 +140,6 @@ const buildSupportedLanguages = (): SupportedLanguage[] => {
     voiceSettings: VoiceSettings
   ): Promise<DubbingJob | null> {
     try {
-      // Get provider routes for each target language
       const languageRoutes = targetLanguages.map(lang => ({
         language: lang,
         route: this.getProviderForLanguage(lang),
@@ -175,6 +173,7 @@ const buildSupportedLanguages = (): SupportedLanguage[] => {
    */
   async getJobStatus(jobId: string): Promise<DubbingJob | null> {
     try {
+      console.log('[MultiLanguageDubbing] Getting job status:', jobId);
       return null;
     } catch (error) {
       console.error('Failed to get job status:', error);
@@ -194,7 +193,6 @@ const buildSupportedLanguages = (): SupportedLanguage[] => {
       const translationRoute = getProviderForMediaType(targetLanguage, 'translation');
       console.log(`[MultiLanguageDubbing] Translation route: ${translationRoute.primary} (fallback: ${translationRoute.fallback})`);
 
-      // In production, this would call the actual translation service
       return {
         source_text: text,
         source_language: sourceLanguage,
@@ -224,7 +222,6 @@ const buildSupportedLanguages = (): SupportedLanguage[] => {
       console.log(`[MultiLanguageDubbing] TTS route: ${ttsRoute.primary} (RTL: ${isRTL})`);
       console.log(`[MultiLanguageDubbing] Reason: ${ttsRoute.reason}`);
 
-      // In production, this would call the actual TTS service
       return `audio_${targetLanguage}_${ttsRoute.primary}_${Date.now()}.mp3`;
     } catch (error) {
       console.error('Failed to generate dubbed audio:', error);
@@ -237,18 +234,19 @@ const buildSupportedLanguages = (): SupportedLanguage[] => {
    */
   async detectLanguage(text: string): Promise<{ language: string; confidence: number } | null> {
     try {
-      // Simple detection based on character sets
       const hasKorean = /[\uAC00-\uD7AF]/.test(text);
       const hasJapanese = /[\u3040-\u30FF]/.test(text);
       const hasChinese = /[\u4E00-\u9FFF]/.test(text);
       const hasArabic = /[\u0600-\u06FF]/.test(text);
       const hasCyrillic = /[\u0400-\u04FF]/.test(text);
+      const hasDevanagari = /[\u0900-\u097F]/.test(text);
 
       if (hasKorean) return { language: 'ko', confidence: 0.95 };
       if (hasJapanese) return { language: 'ja', confidence: 0.95 };
-      if (hasChinese) return { language: 'zh', confidence: 0.90 };
+      if (hasChinese) return { language: 'zh-CN', confidence: 0.90 };
       if (hasArabic) return { language: 'ar', confidence: 0.95 };
       if (hasCyrillic) return { language: 'ru', confidence: 0.85 };
+      if (hasDevanagari) return { language: 'hi', confidence: 0.90 };
 
       return { language: 'en', confidence: 0.70 };
     } catch (error) {
@@ -272,6 +270,20 @@ const buildSupportedLanguages = (): SupportedLanguage[] => {
     const usd = credits * 0.01;
 
     return { credits, usd };
+  }
+
+  /**
+   * Get moat languages (competitive advantage)
+   */
+  getMoatLanguages(): SupportedLanguage[] {
+    return this.supportedLanguages.filter(lang => lang.is_moat_language);
+  }
+
+  /**
+   * Get RTL languages
+   */
+  getRTLLanguages(): SupportedLanguage[] {
+    return this.supportedLanguages.filter(lang => lang.is_rtl);
   }
 }
 
