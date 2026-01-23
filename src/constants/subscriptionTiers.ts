@@ -397,6 +397,84 @@ export const SUBSCRIPTION_TIERS: Record<SubscriptionTier, TierConfig> = {
   },
   
   /**
+   * BUSINESS TIER ($149/mo) - "The Team Platform"
+   * Goal: Teams and departments with brand governance
+   * 
+   * Value: Team management, analytics, compliance
+   * Target: Marketing teams, L&D, agencies
+   */
+  business: {
+    id: 'business',
+    name: 'business',
+    displayName: 'Business',
+    price: { monthly: 149, yearly: 1490 },
+    credits: { monthly: 3000, daily: 300 },
+    limits: {
+      projects: 100,
+      agents: 50,
+      documentsPerMonth: 1000,
+      scriptsPerMonth: 500,
+      recordingHours: 100,
+      teamMembers: 15,
+      presentationsPerMonth: -1, // Unlimited
+      avatarVideosPerMonth: 50,
+      videoDubsPerMonth: -1,
+      dubbingMinutesPerDub: 15,
+      dubbingLanguages: 70,
+      lipSyncEnabled: true,
+      voiceCloneEnabled: true, // 10 voices
+      checkpointRestoreEnabled: true,
+      mobileRecordsPerMonth: -1,
+      mobileRecordMinutes: -1,
+      offlineQueueMinutes: -1,
+      socialPlatforms: -1,
+      autoEditEnabled: true,
+      advancedEditEnabled: true,
+      apiAccess: true,
+    },
+    features: [
+      '3,000 credits/month ($0.05/credit)',
+      'Unlimited presentations',
+      '50 avatar videos/mo',
+      'Unlimited dubbing (70+ languages)',
+      '10 voice clones',
+      'Team management (15 seats)',
+      'Brand governance & templates',
+      'Advanced analytics',
+      'API access (full)',
+      'Priority support + SLA',
+      'Audit logs',
+      'Custom integrations',
+    ],
+    hookFeatures: [
+      '👥 Team management with role-based access',
+      '📊 Advanced analytics and reporting',
+      '🎨 Brand governance and template enforcement',
+    ],
+    regionalValue: {
+      asia: 'Team localization workflows',
+      india: 'Multi-language team collaboration',
+      mea: 'Enterprise Arabic support',
+      latam: 'Team mobile workflows',
+      europe: 'GDPR team compliance',
+      north_america: 'Enterprise team features',
+    },
+    genieProducts: {
+      mind: true,
+      spark: true,
+      vibe: true,
+      arc: true,
+      hub: true
+    },
+    stripeIds: {
+      productId: 'prod_business_genie',
+      priceIdMonthly: 'price_business_monthly',
+      priceIdYearly: 'price_business_yearly'
+    },
+    recommendedFor: ['team', 'department', 'agency', 'marketing_team']
+  },
+  
+  /**
    * ENTERPRISE TIER (Custom) - "The Platform"
    * Goal: Lock in agencies, L&D teams, enterprises
    * 
@@ -520,12 +598,16 @@ export const SEGMENT_TIER_MAPPING: Record<string, SubscriptionTier> = {
   testing: 'free',
   first_time: 'free',
   
-  // Basic - Price-sensitive, mobile-first
-  creator: 'basic',
-  traveler: 'basic',
-  individual: 'basic',
-  student: 'basic',
-  small_business: 'basic',
+  // Starter - Price-sensitive, mobile-first
+  hobbyist: 'starter',
+  student: 'starter',
+  individual: 'starter',
+  
+  // Creator - Content creators and freelancers
+  creator: 'creator',
+  freelancer: 'creator',
+  traveler: 'creator',
+  small_team: 'creator',
   
   // Pro - Value-conscious professionals
   agency: 'pro',
@@ -534,6 +616,11 @@ export const SEGMENT_TIER_MAPPING: Record<string, SubscriptionTier> = {
   healthcare: 'pro',
   media_company: 'pro',
   professional: 'pro',
+  
+  // Business - Teams and departments
+  team: 'business',
+  department: 'business',
+  small_business: 'business',
   
   // Enterprise - Organizations
   enterprise: 'enterprise',
@@ -556,7 +643,7 @@ export const REGIONAL_TIER_RECOMMENDATIONS: Record<string, {
     conversionDriver: 'Numbers/dates handled correctly in dubbing',
   },
   india: {
-    suggestedTier: 'basic',
+    suggestedTier: 'starter',
     hookFeature: '22 Indian languages including Dravidian (Telugu, Tamil, Kannada)',
     conversionDriver: 'Mobile-first workflow + affordable pricing',
   },
@@ -566,7 +653,7 @@ export const REGIONAL_TIER_RECOMMENDATIONS: Record<string, {
     conversionDriver: 'RTL layout that exports correctly',
   },
   latam: {
-    suggestedTier: 'basic',
+    suggestedTier: 'starter',
     hookFeature: 'Mobile one-tap record → social publish',
     conversionDriver: 'Brazilian vs Portugal Portuguese distinction',
   },
