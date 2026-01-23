@@ -95,7 +95,7 @@ export const EcosystemIntegrationMap: React.FC<EcosystemIntegrationMapProps> = (
 }) => {
   const [selectedProduct, setSelectedProduct] = useState<GenieProduct | null>(null);
 
-  // Build product nodes with dependency analysis
+  // Build product nodes with dependency analysis (filtered by category)
   const productNodes = useMemo<ProductNode[]>(() => {
     const nodes: ProductNode[] = [];
     
@@ -103,10 +103,16 @@ export const EcosystemIntegrationMap: React.FC<EcosystemIntegrationMapProps> = (
       const config = PRODUCT_CONFIG[productId];
       const labelData = GENIE_PRODUCT_LABELS[productId];
       
-      // Find features for this product
-      const productFeatures = ALL_FEATURES.filter(f => 
-        config.categories.includes(f.category)
-      );
+      // Check if this product matches the category filter
+      const matchesCategory = selectedCategory === 'all' || 
+        config.categories.includes(selectedCategory as FeatureCategory);
+      
+      // Find features for this product (filtered by category if specified)
+      const productFeatures = ALL_FEATURES.filter(f => {
+        const matchesProductCategory = config.categories.includes(f.category);
+        const matchesFilter = selectedCategory === 'all' || f.category === selectedCategory;
+        return matchesProductCategory && matchesFilter;
+      });
       
       // Count implementations
       const implemented = productFeatures.filter(f => {
@@ -117,7 +123,8 @@ export const EcosystemIntegrationMap: React.FC<EcosystemIntegrationMapProps> = (
       
       // Find cross-functional dependencies
       const mappings = CROSS_FUNCTIONAL_MAPPINGS.filter(m => 
-        m.genieProducts?.includes(productId)
+        m.genieProducts?.includes(productId) &&
+        (selectedCategory === 'all' || m.primaryCategory === selectedCategory)
       );
       
       const inboundDeps: Set<GenieProduct> = new Set();
@@ -156,7 +163,7 @@ export const EcosystemIntegrationMap: React.FC<EcosystemIntegrationMapProps> = (
     });
     
     return nodes;
-  }, []);
+  }, [selectedCategory]);
 
   // Overall ecosystem health
   const ecosystemHealth = useMemo(() => {
