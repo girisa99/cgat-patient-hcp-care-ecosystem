@@ -284,7 +284,22 @@ export const PROVIDER_VERTICAL_MATRIX: Record<ProviderId, {
     strengths: ['Payments', 'Subscriptions', 'Billing Portal', 'Usage metering'],
   },
   // ═══════════════════════════════════════════════════════════════
-  // DEPRECATED PROVIDERS - REMAPPED TO CORE 12 AT RUNTIME
+  // MESHY AI - High-Fidelity 3D Generation (Added to Core 13)
+  // ═══════════════════════════════════════════════════════════════
+  meshy: {
+    name: 'Meshy AI',
+    verticals: {
+      immersive_3d: 'full',
+      ai_avatar: 'full',
+      generative_video: 'partial',
+      marketing_ads: 'partial',
+      customer_education: 'partial',
+    },
+    pricingTier: 'pro',
+    strengths: ['High-fidelity 3D mesh', 'PBR textures', 'Auto-rigging', 'Image-to-3D', 'Text-to-3D', 'Stylized 3D'],
+  },
+  // ═══════════════════════════════════════════════════════════════
+  // DEPRECATED PROVIDERS - REMAPPED TO CORE 13 AT RUNTIME
   // These entries retained for type compatibility but route to core providers
   // ═══════════════════════════════════════════════════════════════
   stability: { name: 'Stability AI → ModelsLab', verticals: { generative_video: 'full', marketing_ads: 'full' }, pricingTier: 'pro', strengths: ['→ Use ModelsLab FLUX/SDXL'] },
