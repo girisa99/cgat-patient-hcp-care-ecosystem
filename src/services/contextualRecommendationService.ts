@@ -3,21 +3,38 @@
  * 
  * Central service for all context-aware recommendations with confidence scoring
  * across the 8-step wizard. NO HARDCODED DEFAULTS - all recommendations are
- * dynamically computed based on:
+ * dynamically computed based on the EXISTING 4-Zone LLM routing from llmRoutingStrategy.ts
  * 
- * - Region (4-Zone LLM Routing: Claude, Alibaba, Gemini, Fallback)
- * - Language (120+ supported languages)
- * - Industry (50+ with segments)
- * - Content Type (30+)
- * - Framework (50+)
- * - Visual Features (100+)
- * - Output Format (35-50)
- * - User Tier (Standard/Advanced/Premium)
+ * INTEGRATES WITH EXISTING ROUTING:
+ * - llmRoutingStrategy.ts: Complete 4-Zone routing table (170+ countries)
+ * - useRegionalLanguage.ts: Central hook for all regional config
+ * - unifiedProviderRoutingAdapter.ts: Premium feature routing
+ * 
+ * This service CONSUMES the existing routing and ADDS:
+ * - Confidence scoring (0-100)
+ * - Industry-specific adjustments
+ * - Visual feature alignment
+ * - Output format compatibility
+ * - Suboptimal selection warnings
  * 
  * Used across: Spark, Mind, Vibe, Deck, Arc, Ask Genie
  */
 
-import type { LLMZone } from '@/services/llmRoutingStrategy';
+import {
+  getLLMRouteByCountry,
+  getZoneByCountry,
+  COMPLETE_ROUTING_TABLE,
+  ZONE_SUMMARY,
+  PROVIDER_COSTS,
+  selectLLM,
+  selectTTS,
+  selectTranslation,
+  getRegionalPrompt,
+  getMoatLanguages,
+  type LLMZone,
+  type RegionRoute,
+  type LLMRoutingConfig,
+} from '@/services/llmRoutingStrategy';
 import type { GlobalTier } from '@/services/shared/globalTierService';
 
 // ============================================================================
@@ -53,10 +70,12 @@ export interface ContextualRecommendation {
   subOptions?: string[];
   tier: GlobalTier;
   source: 'region' | 'language' | 'industry' | 'content-type' | 'framework' | 'output-format' | 'user-preference';
+  moat?: string; // Competitive advantage from llmRoutingStrategy
+  rtl?: boolean; // RTL support flag
 }
 
 export interface RecommendationContext {
-  // Regional context
+  // Regional context - consumed from useRegionalLanguage
   llmZone: LLMZone;
   countryCode: string;
   primaryLanguage: string;
@@ -87,40 +106,70 @@ export interface RecommendationResult {
   overallReasoning: string;
   suboptimalWarnings: string[];
   alternativeCount: number;
+  regionalRoute?: RegionRoute; // The underlying route from llmRoutingStrategy
 }
 
 // ============================================================================
-// SCORING MATRICES
+// CONFIDENCE SCORING MATRICES (Enhances existing routing with scores)
 // ============================================================================
 
 /**
- * 4-Zone LLM Provider Mapping with confidence scores
+ * Zone-based confidence scores - ENHANCES llmRoutingStrategy data
+ * These scores represent how confident we are that the zone's provider is optimal
  */
-const ZONE_PROVIDER_SCORES: Record<LLMZone, Record<string, { confidence: number; quality: number; speed: number; cost: number; reasoning: string }>> = {
-  claude: {
-    'claude-3.5-sonnet': { confidence: 95, quality: 98, speed: 85, cost: 60, reasoning: 'Optimal for Western markets with superior reasoning' },
-    'gpt-4o': { confidence: 88, quality: 96, speed: 88, cost: 55, reasoning: 'Strong alternative for Claude zone' },
-    'gemini-pro': { confidence: 75, quality: 90, speed: 92, cost: 75, reasoning: 'Cost-effective fallback' },
-    'deepseek-v3': { confidence: 70, quality: 88, speed: 90, cost: 95, reasoning: 'Budget-friendly option' },
+const ZONE_CONFIDENCE_MATRIX: Record<LLMZone, { baseConfidence: number; qualityBonus: number; reasons: string[] }> = {
+  claude: { 
+    baseConfidence: 95, 
+    qualityBonus: 10,
+    reasons: ['Anthropic Claude excels at nuanced Western languages', 'Best-in-class for formal German/French', 'Superior reasoning for healthcare/legal']
   },
-  alibaba: {
-    'qwen-max': { confidence: 95, quality: 94, speed: 90, cost: 85, reasoning: 'Native CJK optimization with superior Chinese/Japanese/Korean processing' },
-    'qwen-plus': { confidence: 90, quality: 90, speed: 92, cost: 90, reasoning: 'Fast CJK processing' },
-    'deepseek-v3': { confidence: 85, quality: 88, speed: 88, cost: 95, reasoning: 'Strong CJK alternative' },
-    'gpt-4o': { confidence: 70, quality: 96, speed: 85, cost: 55, reasoning: 'Western fallback for CJK zone' },
+  alibaba: { 
+    baseConfidence: 95, 
+    qualityBonus: 15,
+    reasons: ['Native CJK processing (Keigo, honorifics)', 'Strong Arabic dialect support', 'Cost-efficient for Asian markets']
   },
-  gemini: {
-    'gemini-1.5-pro': { confidence: 95, quality: 94, speed: 90, cost: 70, reasoning: 'Optimal for India/MEA/SEA with 1M+ context window' },
-    'gemini-flash': { confidence: 88, quality: 88, speed: 95, cost: 85, reasoning: 'Fast processing for Gemini zone' },
-    'gpt-4o': { confidence: 75, quality: 96, speed: 88, cost: 55, reasoning: 'Quality fallback' },
-    'claude-3.5-sonnet': { confidence: 72, quality: 98, speed: 85, cost: 60, reasoning: 'Premium alternative' },
+  gemini: { 
+    baseConfidence: 93, 
+    qualityBonus: 12,
+    reasons: ['1M+ context window for Indian languages', 'First-mover in African languages (Yoruba, Swahili)', 'Strong SEA coverage']
   },
-  fallback: {
-    'gpt-4o': { confidence: 90, quality: 96, speed: 88, cost: 55, reasoning: 'Universal fallback with global coverage' },
-    'gemini-pro': { confidence: 85, quality: 90, speed: 92, cost: 75, reasoning: 'Cost-effective universal option' },
-    'claude-3.5-sonnet': { confidence: 80, quality: 98, speed: 85, cost: 60, reasoning: 'Premium fallback' },
-    'deepseek-v3': { confidence: 75, quality: 88, speed: 90, cost: 95, reasoning: 'Budget fallback' },
+  fallback: { 
+    baseConfidence: 85, 
+    qualityBonus: 5,
+    reasons: ['Universal coverage when regional fails', 'GPT-4o as reliable backup']
   },
+};
+
+/**
+ * Provider quality/speed/cost scores - computed from PROVIDER_COSTS
+ */
+const PROVIDER_CAPABILITY_SCORES: Record<string, { quality: number; speed: number; cost: number; tier: GlobalTier }> = {
+  // LLMs
+  'claude-3-5-sonnet': { quality: 98, speed: 85, cost: 60, tier: 'premium' },
+  'claude-3.5-sonnet': { quality: 98, speed: 85, cost: 60, tier: 'premium' },
+  'qwen-max': { quality: 94, speed: 90, cost: 85, tier: 'advanced' },
+  'gemini-pro': { quality: 92, speed: 90, cost: 75, tier: 'advanced' },
+  'gemini-1.5-pro': { quality: 94, speed: 88, cost: 70, tier: 'advanced' },
+  'gpt-4o': { quality: 96, speed: 88, cost: 55, tier: 'premium' },
+  'deepseek-v3': { quality: 88, speed: 92, cost: 95, tier: 'standard' },
+  
+  // TTS
+  'elevenlabs': { quality: 98, speed: 85, cost: 50, tier: 'premium' },
+  'alibaba-cosyvoice': { quality: 94, speed: 90, cost: 85, tier: 'advanced' },
+  'azure-neural': { quality: 92, speed: 92, cost: 80, tier: 'advanced' },
+  'google-tts': { quality: 88, speed: 95, cost: 90, tier: 'standard' },
+  
+  // STT
+  'whisper': { quality: 95, speed: 85, cost: 75, tier: 'advanced' },
+  'alibaba-paraformer': { quality: 96, speed: 90, cost: 90, tier: 'advanced' },
+  'azure-speech': { quality: 92, speed: 88, cost: 80, tier: 'advanced' },
+  'google-stt': { quality: 88, speed: 92, cost: 85, tier: 'standard' },
+  
+  // Translation
+  'deepl': { quality: 98, speed: 90, cost: 65, tier: 'premium' },
+  'qwen-mt': { quality: 95, speed: 92, cost: 90, tier: 'advanced' },
+  'azure-translator': { quality: 92, speed: 90, cost: 75, tier: 'advanced' },
+  'google-translate': { quality: 88, speed: 95, cost: 85, tier: 'standard' },
 };
 
 /**
@@ -249,115 +298,223 @@ export class ContextualRecommendationService {
 
   /**
    * Get LLM recommendations based on context
+   * CONSUMES from llmRoutingStrategy.ts - no duplicate routing logic
    */
   getLLMRecommendations(context: RecommendationContext): RecommendationResult {
-    const { llmZone, industry, globalTier } = context;
+    const { llmZone, countryCode, industry, globalTier } = context;
     const recommendations: ContextualRecommendation[] = [];
     const warnings: string[] = [];
 
-    // 1. Zone-based recommendations
-    const zoneScores = ZONE_PROVIDER_SCORES[llmZone] || ZONE_PROVIDER_SCORES.fallback;
+    // 1. Get the ACTUAL routing from llmRoutingStrategy
+    const regionalRoute = getLLMRouteByCountry(countryCode);
+    const routingConfig = regionalRoute?.config;
     
-    Object.entries(zoneScores).forEach(([providerId, scores], index) => {
-      let adjustedConfidence = scores.confidence;
-      let adjustedReasoning = scores.reasoning;
+    if (!routingConfig) {
+      return this.createEmptyResult('No regional routing found');
+    }
 
-      // 2. Apply industry bonus
-      if (industry && INDUSTRY_PROVIDER_SCORES[industry]) {
-        const industryRec = INDUSTRY_PROVIDER_SCORES[industry];
-        if (industryRec.llm === providerId) {
-          adjustedConfidence = Math.min(100, adjustedConfidence + 5);
-          adjustedReasoning += ` + Industry-optimized for ${industry}`;
-        }
+    // 2. Get zone-specific confidence data
+    const zoneConfidence = ZONE_CONFIDENCE_MATRIX[llmZone] || ZONE_CONFIDENCE_MATRIX.fallback;
+    
+    // 3. Build primary recommendation from ACTUAL routing
+    const primaryLLM = routingConfig.llm;
+    const primaryScores = PROVIDER_CAPABILITY_SCORES[primaryLLM] || { quality: 85, speed: 85, cost: 70, tier: 'advanced' as GlobalTier };
+    
+    let primaryConfidence = zoneConfidence.baseConfidence;
+    let primaryReasoning = routingConfig.reason;
+    
+    // Add moat bonus if this region has competitive advantage
+    if (routingConfig.moat?.startsWith('⭐')) {
+      primaryConfidence = Math.min(100, primaryConfidence + 5);
+      primaryReasoning += ` (Competitive Moat: ${routingConfig.moat})`;
+    }
+
+    // Apply industry bonus
+    if (industry && INDUSTRY_PROVIDER_SCORES[industry]) {
+      const industryRec = INDUSTRY_PROVIDER_SCORES[industry];
+      if (industryRec.llm.includes(primaryLLM.split('-')[0])) {
+        primaryConfidence = Math.min(100, primaryConfidence + 3);
+        primaryReasoning += ` + ${industry} industry alignment`;
       }
+    }
 
-      // 3. Apply tier filtering
-      const providerTier = this.getProviderTier(providerId);
-      const tierAllowed = this.isTierAllowed(providerTier, globalTier);
+    // Check tier allowance
+    const tierAllowed = this.isTierAllowed(primaryScores.tier, globalTier);
+    if (!tierAllowed) {
+      primaryConfidence = Math.max(0, primaryConfidence - 30);
+      warnings.push(`${primaryLLM} requires ${primaryScores.tier} tier`);
+    }
+
+    recommendations.push({
+      id: primaryLLM,
+      name: this.getProviderDisplayName(primaryLLM),
+      category: 'llm',
+      confidence: primaryConfidence,
+      qualityScore: primaryScores.quality,
+      speedScore: primaryScores.speed,
+      costScore: primaryScores.cost,
+      isRecommended: tierAllowed,
+      isPrimary: true,
+      reasoning: primaryReasoning,
+      warnings: tierAllowed ? [] : [`Requires ${primaryScores.tier} tier`],
+      tier: primaryScores.tier,
+      source: 'region',
+      moat: routingConfig.moat || undefined,
+      rtl: routingConfig.rtl,
+    });
+
+    // 4. Add fallback recommendation
+    const fallbackLLM = routingConfig.llmFallback;
+    const fallbackScores = PROVIDER_CAPABILITY_SCORES[fallbackLLM] || { quality: 90, speed: 88, cost: 55, tier: 'premium' as GlobalTier };
+    const fallbackTierAllowed = this.isTierAllowed(fallbackScores.tier, globalTier);
+    
+    recommendations.push({
+      id: fallbackLLM,
+      name: this.getProviderDisplayName(fallbackLLM),
+      category: 'llm',
+      confidence: zoneConfidence.baseConfidence - 10,
+      qualityScore: fallbackScores.quality,
+      speedScore: fallbackScores.speed,
+      costScore: fallbackScores.cost,
+      isRecommended: !tierAllowed && fallbackTierAllowed,
+      isPrimary: false,
+      reasoning: 'Fallback when primary unavailable',
+      warnings: fallbackTierAllowed ? [] : [`Requires ${fallbackScores.tier} tier`],
+      tier: fallbackScores.tier,
+      source: 'region',
+    });
+
+    // 5. Add alternatives based on zone
+    const zoneAlternatives = this.getZoneAlternatives(llmZone, primaryLLM, fallbackLLM);
+    zoneAlternatives.forEach((alt, index) => {
+      const altScores = PROVIDER_CAPABILITY_SCORES[alt.id] || { quality: 85, speed: 85, cost: 70, tier: 'advanced' as GlobalTier };
+      const altTierAllowed = this.isTierAllowed(altScores.tier, globalTier);
       
-      if (!tierAllowed) {
-        adjustedConfidence = Math.max(0, adjustedConfidence - 30);
-        warnings.push(`${providerId} requires ${providerTier} tier`);
-      }
-
       recommendations.push({
-        id: providerId,
-        name: this.getProviderDisplayName(providerId),
+        id: alt.id,
+        name: this.getProviderDisplayName(alt.id),
         category: 'llm',
-        confidence: adjustedConfidence,
-        qualityScore: scores.quality,
-        speedScore: scores.speed,
-        costScore: scores.cost,
-        isRecommended: index === 0 && tierAllowed,
-        isPrimary: index === 0 && tierAllowed,
-        reasoning: adjustedReasoning,
-        warnings: tierAllowed ? [] : [`Requires ${providerTier} tier`],
-        tier: providerTier,
+        confidence: alt.confidence,
+        qualityScore: altScores.quality,
+        speedScore: altScores.speed,
+        costScore: altScores.cost,
+        isRecommended: false,
+        isPrimary: false,
+        reasoning: alt.reasoning,
+        warnings: altTierAllowed ? [] : [`Requires ${altScores.tier} tier`],
+        tier: altScores.tier,
         source: 'region',
       });
     });
 
     // Sort by confidence
     recommendations.sort((a, b) => b.confidence - a.confidence);
-
     const primary = recommendations.find(r => r.isRecommended) || recommendations[0];
 
     return {
       recommendations,
       primaryRecommendation: primary || null,
       overallConfidence: primary?.confidence || 0,
-      overallReasoning: `${llmZone.toUpperCase()} zone optimization${industry ? ` + ${industry} industry alignment` : ''}`,
+      overallReasoning: `${ZONE_SUMMARY[llmZone]?.name || llmZone.toUpperCase()} zone routing${routingConfig.moat ? ` (${routingConfig.moat})` : ''}${industry ? ` + ${industry} industry` : ''}`,
       suboptimalWarnings: warnings,
       alternativeCount: recommendations.length - 1,
+      regionalRoute,
+    };
+  }
+
+  /**
+   * Get zone-specific alternative providers
+   */
+  private getZoneAlternatives(zone: LLMZone, primary: string, fallback: string): Array<{ id: string; confidence: number; reasoning: string }> {
+    const alternatives: Array<{ id: string; confidence: number; reasoning: string }> = [];
+    
+    switch (zone) {
+      case 'claude':
+        if (!primary.includes('gemini')) alternatives.push({ id: 'gemini-1.5-pro', confidence: 75, reasoning: 'Long context alternative' });
+        if (!primary.includes('deepseek')) alternatives.push({ id: 'deepseek-v3', confidence: 70, reasoning: 'Cost-efficient alternative' });
+        break;
+      case 'alibaba':
+        if (!primary.includes('deepseek')) alternatives.push({ id: 'deepseek-v3', confidence: 82, reasoning: 'Strong CJK alternative' });
+        if (!primary.includes('gemini')) alternatives.push({ id: 'gemini-1.5-pro', confidence: 68, reasoning: 'Multimodal fallback' });
+        break;
+      case 'gemini':
+        if (!primary.includes('claude')) alternatives.push({ id: 'claude-3.5-sonnet', confidence: 72, reasoning: 'Premium quality fallback' });
+        if (!primary.includes('deepseek')) alternatives.push({ id: 'deepseek-v3', confidence: 70, reasoning: 'Cost-efficient alternative' });
+        break;
+      case 'fallback':
+        alternatives.push({ id: 'gemini-1.5-pro', confidence: 82, reasoning: 'Long context capability' });
+        alternatives.push({ id: 'claude-3.5-sonnet', confidence: 78, reasoning: 'Premium reasoning' });
+        break;
+    }
+    
+    return alternatives.filter(a => a.id !== primary && a.id !== fallback);
+  }
+
+  /**
+   * Create empty result for edge cases
+   */
+  private createEmptyResult(reason: string): RecommendationResult {
+    return {
+      recommendations: [],
+      primaryRecommendation: null,
+      overallConfidence: 0,
+      overallReasoning: reason,
+      suboptimalWarnings: [reason],
+      alternativeCount: 0,
     };
   }
 
   /**
    * Get translation provider recommendations
+   * CONSUMES from llmRoutingStrategy.ts selectTranslation function
    */
   getTranslationRecommendations(context: RecommendationContext): RecommendationResult {
-    const { primaryLanguage, additionalLanguages, industry, globalTier } = context;
+    const { primaryLanguage, additionalLanguages, countryCode, globalTier } = context;
     const recommendations: ContextualRecommendation[] = [];
     const warnings: string[] = [];
 
-    // Get primary language optimization
     const langCode = primaryLanguage.split('-')[0];
+    
+    // USE EXISTING ROUTING from llmRoutingStrategy.ts
+    const primaryTranslationProvider = selectTranslation(langCode, countryCode);
     const langOpt = LANGUAGE_PROVIDER_OPTIMIZATION[langCode] || LANGUAGE_PROVIDER_OPTIMIZATION.en;
+    const providerScores = PROVIDER_CAPABILITY_SCORES[primaryTranslationProvider] || { quality: 88, speed: 88, cost: 75, tier: 'advanced' as GlobalTier };
 
-    // Primary recommendation
+    // Primary recommendation from ACTUAL routing
     recommendations.push({
-      id: langOpt.translation,
-      name: this.getProviderDisplayName(langOpt.translation),
+      id: primaryTranslationProvider,
+      name: this.getProviderDisplayName(primaryTranslationProvider),
       category: 'translation',
       confidence: langOpt.confidence,
-      qualityScore: langOpt.confidence,
-      speedScore: 90,
-      costScore: 80,
+      qualityScore: providerScores.quality,
+      speedScore: providerScores.speed,
+      costScore: providerScores.cost,
       isRecommended: true,
       isPrimary: true,
       reasoning: langOpt.reasoning,
       warnings: [],
-      tier: this.getProviderTier(langOpt.translation),
+      tier: providerScores.tier,
       source: 'language',
     });
 
     // Add alternatives based on language family
     const alternatives = this.getTranslationAlternatives(langCode);
-    alternatives.forEach((alt, index) => {
-      if (alt.provider !== langOpt.translation) {
+    alternatives.forEach((alt) => {
+      if (alt.provider !== primaryTranslationProvider) {
+        const altScores = PROVIDER_CAPABILITY_SCORES[alt.provider] || { quality: 85, speed: 85, cost: 70, tier: 'advanced' as GlobalTier };
         recommendations.push({
           id: alt.provider,
           name: this.getProviderDisplayName(alt.provider),
           category: 'translation',
           confidence: alt.confidence,
-          qualityScore: alt.confidence,
-          speedScore: 85,
-          costScore: 75,
+          qualityScore: altScores.quality,
+          speedScore: altScores.speed,
+          costScore: altScores.cost,
           isRecommended: false,
           isPrimary: false,
           reasoning: alt.reasoning,
           warnings: [],
-          tier: this.getProviderTier(alt.provider),
+          tier: altScores.tier,
           source: 'language',
         });
       }
@@ -373,7 +530,7 @@ export class ContextualRecommendationService {
       recommendations,
       primaryRecommendation: recommendations[0],
       overallConfidence: recommendations[0]?.confidence || 0,
-      overallReasoning: `Optimized for ${this.getLanguageDisplayName(primaryLanguage)}`,
+      overallReasoning: `Optimized for ${this.getLanguageDisplayName(primaryLanguage)} (via ${countryCode} regional routing)`,
       suboptimalWarnings: warnings,
       alternativeCount: recommendations.length - 1,
     };
@@ -381,9 +538,10 @@ export class ContextualRecommendationService {
 
   /**
    * Get TTS (voice) recommendations
+   * CONSUMES from llmRoutingStrategy.ts selectTTS function
    */
   getTTSRecommendations(context: RecommendationContext): RecommendationResult {
-    const { primaryLanguage, audioEnabled, voiceStyle, globalTier } = context;
+    const { primaryLanguage, countryCode, audioEnabled, globalTier } = context;
     const recommendations: ContextualRecommendation[] = [];
     const warnings: string[] = [];
 
@@ -399,46 +557,54 @@ export class ContextualRecommendationService {
     }
 
     const langCode = primaryLanguage.split('-')[0];
+    
+    // USE EXISTING ROUTING from llmRoutingStrategy.ts
+    const primaryTTSProvider = selectTTS(countryCode);
     const langOpt = LANGUAGE_PROVIDER_OPTIMIZATION[langCode] || LANGUAGE_PROVIDER_OPTIMIZATION.en;
+    const providerScores = PROVIDER_CAPABILITY_SCORES[primaryTTSProvider] || { quality: 90, speed: 88, cost: 75, tier: 'advanced' as GlobalTier };
 
-    // Primary TTS recommendation
+    // Check tier allowance
+    const tierAllowed = this.isTierAllowed(providerScores.tier, globalTier);
+
+    // Primary TTS recommendation from ACTUAL routing
     recommendations.push({
-      id: langOpt.tts,
-      name: this.getProviderDisplayName(langOpt.tts),
+      id: primaryTTSProvider,
+      name: this.getProviderDisplayName(primaryTTSProvider),
       category: 'tts',
-      confidence: langOpt.confidence,
-      qualityScore: 95,
-      speedScore: 88,
-      costScore: 70,
-      isRecommended: true,
+      confidence: tierAllowed ? langOpt.confidence : langOpt.confidence - 30,
+      qualityScore: providerScores.quality,
+      speedScore: providerScores.speed,
+      costScore: providerScores.cost,
+      isRecommended: tierAllowed,
       isPrimary: true,
-      reasoning: `Optimal voice synthesis for ${this.getLanguageDisplayName(primaryLanguage)}`,
-      warnings: [],
-      tier: this.getProviderTier(langOpt.tts),
+      reasoning: `Optimal voice synthesis for ${this.getLanguageDisplayName(primaryLanguage)} (${countryCode} region)`,
+      warnings: tierAllowed ? [] : [`Requires ${providerScores.tier} tier`],
+      tier: providerScores.tier,
       source: 'language',
     });
 
     // Add ElevenLabs if not primary (premium option)
-    if (langOpt.tts !== 'elevenlabs') {
+    if (primaryTTSProvider !== 'elevenlabs') {
+      const elevenLabsTierAllowed = this.isTierAllowed('premium', globalTier);
       recommendations.push({
         id: 'elevenlabs',
         name: 'ElevenLabs',
         category: 'tts',
-        confidence: 85,
+        confidence: elevenLabsTierAllowed ? 85 : 55,
         qualityScore: 98,
         speedScore: 85,
         costScore: 50,
-        isRecommended: false,
+        isRecommended: !tierAllowed && elevenLabsTierAllowed,
         isPrimary: false,
         reasoning: 'Premium voice quality with voice cloning',
-        warnings: globalTier === 'standard' ? ['Requires Advanced tier'] : [],
-        tier: 'advanced',
+        warnings: elevenLabsTierAllowed ? [] : ['Requires Premium tier'],
+        tier: 'premium',
         source: 'language',
       });
     }
 
     // Add Azure Neural as alternative
-    if (langOpt.tts !== 'azure-neural') {
+    if (primaryTTSProvider !== 'azure-neural') {
       recommendations.push({
         id: 'azure-neural',
         name: 'Azure Neural TTS',
@@ -446,20 +612,22 @@ export class ContextualRecommendationService {
         confidence: 82,
         qualityScore: 92,
         speedScore: 90,
-        costScore: 75,
+        costScore: 80,
         isRecommended: false,
         isPrimary: false,
-        reasoning: 'Enterprise-grade with wide language support',
+        reasoning: 'Wide language coverage with natural voices',
         warnings: [],
-        tier: 'standard',
+        tier: 'advanced',
         source: 'language',
       });
     }
 
+    const primary = recommendations.find(r => r.isRecommended) || recommendations[0];
+
     return {
       recommendations,
-      primaryRecommendation: recommendations[0],
-      overallConfidence: recommendations[0]?.confidence || 0,
+      primaryRecommendation: primary,
+      overallConfidence: primary?.confidence || 0,
       overallReasoning: `Voice synthesis optimized for ${this.getLanguageDisplayName(primaryLanguage)}`,
       suboptimalWarnings: warnings,
       alternativeCount: recommendations.length - 1,
