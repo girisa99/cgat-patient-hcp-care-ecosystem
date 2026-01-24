@@ -99,3 +99,27 @@ export type {
   VideoFormatSpec,
   RegionalVideoContentPreference
 } from './regionalVideoStylesRegistry';
+
+// Regional Avatar & Character Guidelines Registry
+export {
+  RegionalAvatarGuidelinesRegistry,
+  AVATAR_APPEARANCE_PREFERENCES,
+  AVATAR_GESTURE_GUIDELINES,
+  AVATAR_VOICE_CHARACTERISTICS,
+  getAvatarAppearanceForRegion,
+  getAvatarGestureGuidelinesForRegion,
+  getAvatarVoiceCharacteristicsForRegion,
+  buildAvatarConfigForRegion,
+  getRecommendedAvatarStyle,
+  validateAvatarForRegion,
+  getSupportedAvatarRegions
+} from './regionalAvatarGuidelines';
+export type {
+  GenderOption,
+  EyeContactLevel,
+  VoicePace,
+  FormalityLevel,
+  AvatarAppearancePreference,
+  AvatarGestureGuideline,
+  AvatarVoiceCharacteristic
+} from './regionalAvatarGuidelines';
