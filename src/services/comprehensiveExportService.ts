@@ -14,6 +14,13 @@ import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import JSZip from 'jszip';
 import { GeneratedSlide, GeneratedImage } from './universalPresentationService';
+import { 
+  WizardMetadata, 
+  SlideMetadata, 
+  createDefaultWizardMetadata,
+  formatMetadataForNotes,
+  formatSlideMetadataForNotes
+} from '@/types/wizardMetadata';
 
 // ============================================
 // TYPES & INTERFACES
@@ -30,6 +37,11 @@ export interface ExportConfig {
   embedFonts: boolean;
   language?: string;
   isRTL?: boolean;
+  
+  // NEW: Wizard metadata for full traceability
+  wizardMetadata?: WizardMetadata;
+  includeMetadataInNotes?: boolean; // Add metadata to speaker notes
+  includeMetadataSlide?: boolean; // Add a metadata summary slide at the end
 }
 
 export interface CapturedSlide {
@@ -256,7 +268,10 @@ class ComprehensiveExportService {
     includeAvatarsAsStatic: true,
     embedFonts: true,
     language: 'en',
-    isRTL: false
+    isRTL: false,
+    // NEW: Metadata defaults
+    includeMetadataInNotes: true,
+    includeMetadataSlide: false,
   };
 
   // ============================================
@@ -400,13 +415,34 @@ class ComprehensiveExportService {
   ): Promise<ExportResult> {
     const mergedConfig = { ...this.defaultConfig, ...config };
     const warnings: string[] = [];
+    const wizardMeta = mergedConfig.wizardMetadata;
 
     try {
       const pptx = new pptxgen();
+      
+      // ============================================
+      // DOCUMENT PROPERTIES WITH WIZARD METADATA
+      // ============================================
       pptx.title = title;
       pptx.author = 'Genie AI';
-      pptx.subject = 'AI-Generated Presentation';
       pptx.company = 'Genie Suite';
+      
+      // Enhanced subject with wizard context
+      if (wizardMeta) {
+        pptx.subject = [
+          `Industry: ${wizardMeta.step1_configuration.industryLabel}`,
+          `Segment: ${wizardMeta.step1_configuration.segmentLabel}`,
+          `Template: ${wizardMeta.step2_template.templateName}`,
+          `Pipeline: ${wizardMeta.generation.pipelineName}`,
+          `Tier: ${wizardMeta.generation.tier}`,
+          `Generated: ${wizardMeta.generation.generatedAt}`,
+        ].join(' | ');
+        
+        // Add revision info
+        pptx.revision = `v${wizardMeta.version}`;
+      } else {
+        pptx.subject = 'AI-Generated Presentation';
+      }
       
       // Set layout
       pptx.layout = 'LAYOUT_16x9';
@@ -638,9 +674,55 @@ class ComprehensiveExportService {
           }
         }
 
-        // Speaker notes
+        // ============================================
+        // SPEAKER NOTES WITH METADATA
+        // ============================================
+        const noteParts: string[] = [];
+        
+        // Original speaker notes
         if (slide.speakerNotes) {
-          pptSlide.addNotes(slide.speakerNotes);
+          noteParts.push(slide.speakerNotes);
+        }
+        
+        // Add slide-level metadata if enabled
+        if (mergedConfig.includeMetadataInNotes) {
+          noteParts.push('');
+          noteParts.push('--- SLIDE METADATA ---');
+          noteParts.push(`Type: ${slide.type}`);
+          
+          if ((slide as any).topic) {
+            noteParts.push(`Topic: ${(slide as any).topic}`);
+          }
+          if ((slide as any).segment) {
+            noteParts.push(`Segment: ${(slide as any).segment}`);
+          }
+          if ((slide as any).importance) {
+            noteParts.push(`Importance: ${(slide as any).importance}`);
+          }
+          if ((slide as any).imagePrompt) {
+            noteParts.push(`Image Prompt: ${(slide as any).imagePrompt}`);
+          }
+          
+          // Add wizard metadata to first slide only
+          if (slide.slideNumber === 1 && wizardMeta) {
+            noteParts.push('');
+            noteParts.push('--- GENERATION CONTEXT ---');
+            noteParts.push(`Industry: ${wizardMeta.step1_configuration.industryLabel}`);
+            noteParts.push(`Segment: ${wizardMeta.step1_configuration.segmentLabel}`);
+            noteParts.push(`Template: ${wizardMeta.step2_template.templateName}`);
+            noteParts.push(`LLM: ${wizardMeta.generation.llmProvider} (${wizardMeta.generation.llmModel})`);
+            noteParts.push(`Zone: ${wizardMeta.providerRouting.llmZone}`);
+            noteParts.push(`Translation: ${wizardMeta.providerRouting.providers.translation.primary}`);
+            noteParts.push(`TTS: ${wizardMeta.providerRouting.providers.tts.primary}`);
+            noteParts.push(`Tier: ${wizardMeta.generation.tier}`);
+            noteParts.push(`Pipeline: ${wizardMeta.generation.pipelineName}`);
+            noteParts.push(`Languages: ${wizardMeta.step4_agents.targetLanguages.join(', ')}`);
+            noteParts.push(`Generated: ${wizardMeta.generation.generatedAt}`);
+          }
+        }
+        
+        if (noteParts.length > 0) {
+          pptSlide.addNotes(noteParts.join('\n'));
         }
 
         // Footer
@@ -663,6 +745,65 @@ class ComprehensiveExportService {
           fontSize: 10,
           color: '94a3b8',
           align: 'right'
+        });
+      }
+
+      // ============================================
+      // ADD METADATA SUMMARY SLIDE (Optional)
+      // ============================================
+      if (wizardMeta && mergedConfig.includeMetadataSlide) {
+        const metaSlide = pptx.addSlide();
+        metaSlide.background = { color: '0f172a' };
+        
+        metaSlide.addText('Generation Metadata', {
+          x: 0.5, y: 0.3, w: 9, h: 0.6,
+          fontSize: 28, bold: true, color: 'ffffff',
+          fontFace: langConfig.heading
+        });
+        
+        // Two-column metadata layout
+        const leftColMeta = [
+          `📋 Industry: ${wizardMeta.step1_configuration.industryLabel}`,
+          `📊 Segment: ${wizardMeta.step1_configuration.segmentLabel}`,
+          `🎨 Template: ${wizardMeta.step2_template.templateName}`,
+          `🖼️ Theme: ${wizardMeta.step2_template.themeName}`,
+          `📐 Output: ${wizardMeta.step3_output.outputType}`,
+          `📄 Slides: ${slides.length}`,
+        ].join('\n');
+        
+        const rightColMeta = [
+          `🤖 LLM: ${wizardMeta.generation.llmProvider}`,
+          `🌐 Zone: ${wizardMeta.providerRouting.llmZone}`,
+          `🔄 Translation: ${wizardMeta.providerRouting.providers.translation.primary}`,
+          `🗣️ TTS: ${wizardMeta.providerRouting.providers.tts.primary}`,
+          `⚡ Tier: ${wizardMeta.generation.tier}`,
+          `📆 Generated: ${new Date(wizardMeta.generation.generatedAt).toLocaleDateString()}`,
+        ].join('\n');
+        
+        metaSlide.addText(leftColMeta, {
+          x: 0.5, y: 1.2, w: 4.5, h: 3.5,
+          fontSize: 14, color: 'e2e8f0', fontFace: langConfig.body,
+          valign: 'top'
+        });
+        
+        metaSlide.addText(rightColMeta, {
+          x: 5, y: 1.2, w: 4.5, h: 3.5,
+          fontSize: 14, color: 'e2e8f0', fontFace: langConfig.body,
+          valign: 'top'
+        });
+        
+        // Languages section
+        if (wizardMeta.step4_agents.targetLanguages.length > 1) {
+          metaSlide.addText(`🌍 Languages: ${wizardMeta.step4_agents.targetLanguages.join(', ')}`, {
+            x: 0.5, y: 4.5, w: 9, h: 0.4,
+            fontSize: 12, color: '94a3b8', fontFace: langConfig.body
+          });
+        }
+        
+        // Footer with version
+        metaSlide.addText(`Genie AI v${wizardMeta.version} | ${wizardMeta.exportedAt}`, {
+          x: 0.5, y: 5, w: 9, h: 0.3,
+          fontSize: 10, color: '64748b', fontFace: langConfig.body
         });
       }
 

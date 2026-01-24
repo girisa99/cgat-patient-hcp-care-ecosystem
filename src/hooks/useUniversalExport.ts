@@ -17,6 +17,7 @@ import { useState, useCallback } from 'react';
 import { comprehensiveExportService, ExportConfig, ExportResult } from '@/services/comprehensiveExportService';
 import { GeneratedSlide } from '@/services/universalPresentationService';
 import { useMasterToast } from './useMasterToast';
+import { WizardMetadata } from '@/types/wizardMetadata';
 
 export type UniversalExportFormat = 'pptx' | 'pdf' | 'images' | 'html' | 'video' | 'json' | 'csv' | 'txt' | 'md';
 
@@ -30,6 +31,11 @@ export interface UniversalExportOptions {
   includeAvatarsAsStatic?: boolean;
   embedFonts?: boolean;
   containerSelector?: string;
+  
+  // NEW: Wizard metadata for full traceability
+  wizardMetadata?: WizardMetadata;
+  includeMetadataInNotes?: boolean;
+  includeMetadataSlide?: boolean;
 }
 
 export interface UniversalContentInput {
@@ -46,6 +52,9 @@ export interface UniversalContentInput {
   title: string;
   contentType?: 'presentation' | 'text' | 'html' | 'table' | 'code' | 'markdown';
   metadata?: Record<string, any>;
+  
+  // NEW: Full wizard metadata
+  wizardMetadata?: WizardMetadata;
 }
 
 export function useUniversalExport() {
@@ -97,9 +106,16 @@ export function useUniversalExport() {
         );
       } else {
         setExportProgress(50);
+        
+        // Get wizard metadata from input or options
+        const wizardMeta = options?.wizardMetadata || input.wizardMetadata;
+        
         result = await comprehensiveExportService.exportToPPTX(input.slides, input.title, {
           language: options?.language,
-          quality: options?.quality || 'high'
+          quality: options?.quality || 'high',
+          wizardMetadata: wizardMeta,
+          includeMetadataInNotes: options?.includeMetadataInNotes ?? true,
+          includeMetadataSlide: options?.includeMetadataSlide ?? false,
         });
       }
 
