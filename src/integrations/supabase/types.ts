@@ -9236,6 +9236,127 @@ export type Database = {
         }
         Relationships: []
       }
+      genie_studio_team_invitations: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string
+          role: Database["public"]["Enums"]["genie_team_role"]
+          team_id: string
+          token: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by: string
+          role?: Database["public"]["Enums"]["genie_team_role"]
+          team_id: string
+          token?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string
+          role?: Database["public"]["Enums"]["genie_team_role"]
+          team_id?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "genie_studio_team_invitations_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "genie_studio_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      genie_studio_team_members: {
+        Row: {
+          id: string
+          invited_by: string | null
+          joined_at: string
+          role: Database["public"]["Enums"]["genie_team_role"]
+          team_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          invited_by?: string | null
+          joined_at?: string
+          role?: Database["public"]["Enums"]["genie_team_role"]
+          team_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          invited_by?: string | null
+          joined_at?: string
+          role?: Database["public"]["Enums"]["genie_team_role"]
+          team_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "genie_studio_team_members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "genie_studio_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      genie_studio_teams: {
+        Row: {
+          created_at: string
+          current_seat_count: number
+          id: string
+          is_active: boolean
+          max_seats: number
+          name: string
+          owner_user_id: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          subscription_tier: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_seat_count?: number
+          id?: string
+          is_active?: boolean
+          max_seats?: number
+          name: string
+          owner_user_id: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_tier?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_seat_count?: number
+          id?: string
+          is_active?: boolean
+          max_seats?: number
+          name?: string
+          owner_user_id?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_tier?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       genie_studio_user_roles: {
         Row: {
           expires_at: string | null
@@ -9335,6 +9456,60 @@ export type Database = {
           subscription_start_at?: string | null
           subscription_status?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      genie_subscription_tier_config: {
+        Row: {
+          created_at: string
+          credits_monthly: number
+          display_name: string
+          features: Json | null
+          has_collaboration: boolean
+          has_role_permissions: boolean
+          has_shared_assets: boolean
+          has_team_analytics: boolean
+          has_team_invite: boolean
+          has_workspace: boolean
+          id: string
+          max_seats: number | null
+          price_monthly_usd: number | null
+          price_yearly_usd: number | null
+          tier_name: string
+        }
+        Insert: {
+          created_at?: string
+          credits_monthly?: number
+          display_name: string
+          features?: Json | null
+          has_collaboration?: boolean
+          has_role_permissions?: boolean
+          has_shared_assets?: boolean
+          has_team_analytics?: boolean
+          has_team_invite?: boolean
+          has_workspace?: boolean
+          id?: string
+          max_seats?: number | null
+          price_monthly_usd?: number | null
+          price_yearly_usd?: number | null
+          tier_name: string
+        }
+        Update: {
+          created_at?: string
+          credits_monthly?: number
+          display_name?: string
+          features?: Json | null
+          has_collaboration?: boolean
+          has_role_permissions?: boolean
+          has_shared_assets?: boolean
+          has_team_analytics?: boolean
+          has_team_invite?: boolean
+          has_workspace?: boolean
+          id?: string
+          max_seats?: number | null
+          price_monthly_usd?: number | null
+          price_yearly_usd?: number | null
+          tier_name?: string
         }
         Relationships: []
       }
@@ -21302,6 +21477,7 @@ export type Database = {
             Returns: number
           }
         | { Args: { p_enrollment_id: string }; Returns: number }
+      can_add_team_member: { Args: { p_team_id: string }; Returns: boolean }
       check_access_override: {
         Args: { p_ip_address: string; p_user_email?: string }
         Returns: Json
@@ -21539,6 +21715,10 @@ export type Database = {
         Args: { _user_id: string }
         Returns: string
       }
+      get_user_team_role: {
+        Args: { p_team_id: string; p_user_id: string }
+        Returns: Database["public"]["Enums"]["genie_team_role"]
+      }
       get_visitor_analytics_summary: {
         Args: { days_back?: number }
         Returns: Json
@@ -21574,6 +21754,10 @@ export type Database = {
           _role_name: Database["public"]["Enums"]["user_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      has_team_feature: {
+        Args: { p_feature: string; p_user_id: string }
         Returns: boolean
       }
       increment_knowledge_usage: {
@@ -22020,6 +22204,7 @@ export type Database = {
         | "subscriber_business"
         | "subscriber_enterprise"
         | "freelancer"
+      genie_team_role: "owner" | "admin" | "member" | "viewer"
       inventory_model:
         | "traditional_wholesale"
         | "consignment"
@@ -22413,6 +22598,7 @@ export const Constants = {
         "subscriber_enterprise",
         "freelancer",
       ],
+      genie_team_role: ["owner", "admin", "member", "viewer"],
       inventory_model: [
         "traditional_wholesale",
         "consignment",
