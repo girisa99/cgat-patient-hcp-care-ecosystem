@@ -21,6 +21,8 @@ import { GenieStudioProvider } from '@/contexts/GenieStudioSharedContext';
 import { LazyPages, lazyWithRetry } from '@/utils/lazyWithRetry';
 import { SmartDefaultRoute, RouteTracker } from '@/components/routing/SmartDefaultRoute';
 import { EnhancedComplianceGate } from '@/components/compliance/EnhancedComplianceGate';
+import { RegionalComplianceProvider } from '@/hooks/useRegionalCompliance';
+import { ContentModerationGate } from '@/components/compliance/ContentModerationGate';
 
 // Import pages that exist
 import Index from '@/pages/Index';
@@ -598,10 +600,16 @@ const App = () => {
         <QueryClientProvider client={queryClient}>
           {/* Enhanced Compliance Gate - Blocks sanctioned regions + VPN/proxy bypass attempts */}
           <EnhancedComplianceGate>
-            <RalphWiggumProvider>
-              <AppRouter />
-              {isDev && <RalphWiggumGlobalPanel />}
-            </RalphWiggumProvider>
+            {/* Regional Compliance - Dynamic privacy/terms based on user region */}
+            <RegionalComplianceProvider>
+              {/* Content Moderation Gate - Blocks adult/explicit/prohibited content */}
+              <ContentModerationGate showPreview={false}>
+                <RalphWiggumProvider>
+                  <AppRouter />
+                  {isDev && <RalphWiggumGlobalPanel />}
+                </RalphWiggumProvider>
+              </ContentModerationGate>
+            </RegionalComplianceProvider>
           </EnhancedComplianceGate>
         </QueryClientProvider>
       </ErrorBoundary>
