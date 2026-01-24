@@ -164,8 +164,8 @@ export function useTeaserIntegration(options: UseTeaserIntegrationOptions) {
     }
 
     const recommendations = getContextualRecommendations({
-      industry,
-      contentType,
+      industry: wizardContext?.industry,
+      contentType: wizardContext?.contentType,
       ...slideContext
     });
 
@@ -174,7 +174,7 @@ export function useTeaserIntegration(options: UseTeaserIntegrationOptions) {
       .slice(0, 2)
       .map(type => TEASER_CATALOG[type])
       .filter(Boolean);
-  }, [userTier, industry, contentType, getContextualRecommendations, TEASER_CATALOG]);
+  }, [userTier, wizardContext, getContextualRecommendations, TEASER_CATALOG]);
 
   /**
    * Manually trigger a specific teaser (for testing or explicit selection)
