@@ -343,9 +343,13 @@
 | Alibaba | `ALIBABA_API_KEY` | ✅ Configured |
 | Replicate | `REPLICATE_API_TOKEN` | ✅ Configured |
 | HuggingFace | `HUGGING_FACE_ACCESS_TOKEN` | ✅ Configured |
-| Azure Speech | `AZURE_SPEECH_KEY`, `AZURE_SPEECH_REGION` | ⚠️ Needed |
+| Azure Speech | `AZURE_SPEECH_KEY`, `AZURE_SPEECH_REGION` | ✅ Configured |
 | Azure Translate | `MICROSOFT_TRANSLATE_API_KEY`, `MICROSOFT_TRANSLATE_REGION` | ✅ Configured |
-| Azure OCR | `AZURE_FORM_RECOGNIZER_KEY`, `AZURE_FORM_RECOGNIZER_ENDPOINT` | ⚠️ Needed |
+| Azure OCR | `AZURE_FORM_RECOGNIZER_KEY`, `AZURE_FORM_RECOGNIZER_ENDPOINT` | ✅ Configured |
+| Arize | `ARIZE_API_KEY` | ✅ Configured |
+| LangWatch | `LANGWATCH_API_KEY` | ✅ Configured |
+
+> **Note**: Azure OpenAI is **NOT required** - we use OpenAI API directly. All Core 13+ providers are now fully configured.
 | Stripe | `STRIPE_SECRET_KEY` | ✅ Via Connector |
 
 ---
