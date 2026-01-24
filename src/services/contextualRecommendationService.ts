@@ -141,33 +141,61 @@ const ZONE_CONFIDENCE_MATRIX: Record<LLMZone, { baseConfidence: number; qualityB
 };
 
 /**
- * Provider quality/speed/cost scores - computed from PROVIDER_COSTS
+ * Provider quality/speed/cost scores - FULL 10+ LLM matrix
+ * Computed from PROVIDER_COSTS and expanded for complete coverage
  */
 const PROVIDER_CAPABILITY_SCORES: Record<string, { quality: number; speed: number; cost: number; tier: GlobalTier }> = {
-  // LLMs
+  // ═══════════════════════════════════════════════════════════════════════════
+  // LLMs - Tier 3 (Premium)
+  // ═══════════════════════════════════════════════════════════════════════════
   'claude-3-5-sonnet': { quality: 98, speed: 85, cost: 60, tier: 'premium' },
   'claude-3.5-sonnet': { quality: 98, speed: 85, cost: 60, tier: 'premium' },
+  'claude-3-opus': { quality: 99, speed: 70, cost: 40, tier: 'premium' },
+  'gpt-4o': { quality: 96, speed: 88, cost: 55, tier: 'premium' },
+  'gpt-5': { quality: 99, speed: 80, cost: 45, tier: 'premium' },
+  
+  // ═══════════════════════════════════════════════════════════════════════════
+  // LLMs - Tier 2 (Advanced)
+  // ═══════════════════════════════════════════════════════════════════════════
   'qwen-max': { quality: 94, speed: 90, cost: 85, tier: 'advanced' },
+  'qwen-plus': { quality: 90, speed: 92, cost: 88, tier: 'advanced' },
   'gemini-pro': { quality: 92, speed: 90, cost: 75, tier: 'advanced' },
   'gemini-1.5-pro': { quality: 94, speed: 88, cost: 70, tier: 'advanced' },
-  'gpt-4o': { quality: 96, speed: 88, cost: 55, tier: 'premium' },
-  'deepseek-v3': { quality: 88, speed: 92, cost: 95, tier: 'standard' },
+  'deepseek-v3': { quality: 88, speed: 92, cost: 95, tier: 'advanced' },
+  'deepseek-r1': { quality: 92, speed: 75, cost: 90, tier: 'advanced' },
   
+  // ═══════════════════════════════════════════════════════════════════════════
+  // LLMs - Tier 1 (Standard)
+  // ═══════════════════════════════════════════════════════════════════════════
+  'qwen-turbo': { quality: 85, speed: 95, cost: 95, tier: 'standard' },
+  'gemini-flash': { quality: 86, speed: 96, cost: 92, tier: 'standard' },
+  'gemini-2.0-flash': { quality: 86, speed: 96, cost: 92, tier: 'standard' },
+  'gpt-4o-mini': { quality: 88, speed: 94, cost: 90, tier: 'standard' },
+  'claude-3-haiku': { quality: 85, speed: 95, cost: 92, tier: 'standard' },
+  
+  // ═══════════════════════════════════════════════════════════════════════════
   // TTS
+  // ═══════════════════════════════════════════════════════════════════════════
   'elevenlabs': { quality: 98, speed: 85, cost: 50, tier: 'premium' },
   'alibaba-cosyvoice': { quality: 94, speed: 90, cost: 85, tier: 'advanced' },
   'azure-neural': { quality: 92, speed: 92, cost: 80, tier: 'advanced' },
   'google-tts': { quality: 88, speed: 95, cost: 90, tier: 'standard' },
   
+  // ═══════════════════════════════════════════════════════════════════════════
   // STT
+  // ═══════════════════════════════════════════════════════════════════════════
   'whisper': { quality: 95, speed: 85, cost: 75, tier: 'advanced' },
   'alibaba-paraformer': { quality: 96, speed: 90, cost: 90, tier: 'advanced' },
   'azure-speech': { quality: 92, speed: 88, cost: 80, tier: 'advanced' },
+  'azure-stt': { quality: 92, speed: 88, cost: 80, tier: 'advanced' },
   'google-stt': { quality: 88, speed: 92, cost: 85, tier: 'standard' },
   
+  // ═══════════════════════════════════════════════════════════════════════════
   // Translation
+  // ═══════════════════════════════════════════════════════════════════════════
   'deepl': { quality: 98, speed: 90, cost: 65, tier: 'premium' },
   'qwen-mt': { quality: 95, speed: 92, cost: 90, tier: 'advanced' },
+  'alibaba-qwen-mt': { quality: 95, speed: 92, cost: 90, tier: 'advanced' },
   'azure-translator': { quality: 92, speed: 90, cost: 75, tier: 'advanced' },
   'google-translate': { quality: 88, speed: 95, cost: 85, tier: 'standard' },
 };
