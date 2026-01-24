@@ -314,3 +314,34 @@ export type {
   ViolationType,
   ContentCategory as ModerationContentCategory
 } from './enhancedContentModerationService';
+
+// Unified Routing Logic (LLM, TTS, STT, Translation)
+export {
+  selectLLM,
+  selectTTS,
+  selectSTT,
+  selectTranslation,
+  getUnifiedRouting,
+  getRegionalCostEstimate,
+  getAllZoneConfigurations,
+  REGIONAL_CONTEXT_PROMPTS,
+  CLAUDE_REGIONS,
+  QWEN_REGIONS,
+  GPT4_ARABIC_REGIONS,
+  GEMINI_REGIONS,
+  ELEVENLABS_REGIONS,
+  CJK_REGIONS
+} from './unifiedRoutingLogic';
+export type {
+  TaskType,
+  QualityTier,
+  RoutingZone,
+  LLMRoutingResult,
+  TTSRoutingResult,
+  STTRoutingResult,
+  TranslationRoutingResult,
+  RegionalContextPrompt,
+  RegionalCostEstimate,
+  UnifiedRoutingConfig,
+  UnifiedRoutingResult
+} from './unifiedRoutingLogic';
