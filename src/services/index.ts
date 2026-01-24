@@ -247,3 +247,36 @@ export type {
   CompliancePhase,
   ProhibitedService
 } from './sanctionsComplianceRegistry';
+
+// Arabic & MENA Localization Registry
+export {
+  ArabicMenaLocalizationRegistry,
+  ARABIC_LANGUAGE_REQUIREMENTS,
+  DIALECT_MAPPINGS,
+  CULTURAL_CONSIDERATIONS,
+  COUNTRY_CONFIGS,
+  ARABIC_FONTS,
+  getDialectForCountry,
+  getDialectMapping,
+  getVoiceProviderForCountry,
+  getCountryConfig,
+  isRTLCountry,
+  getRecommendedArabicFont,
+  getCulturalGuidelines,
+  toEasternArabicNumerals,
+  toWesternNumerals,
+  buildMenaLocalizationConfig,
+  getMenaImplementationStrategy
+} from './arabicMenaLocalizationRegistry';
+export type {
+  ArabicDialect,
+  MenaCountryCode,
+  NumeralSystem,
+  CalendarSystem,
+  WeekendDays,
+  ArabicLanguageRequirement,
+  DialectMapping,
+  CulturalConsideration,
+  CountryLocalizationConfig,
+  ArabicFontConfig
+} from './arabicMenaLocalizationRegistry';
