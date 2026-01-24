@@ -4,7 +4,7 @@
  * Supports Export (files), Cloud (hosted), and Platform (social) publishing.
  */
 
-import { LucideIcon, Download, Cloud, Share2, Youtube, Linkedin, Twitter, Facebook, Instagram, Globe, Mail, MessageSquare, FileText, Video, Image, Presentation, Link2 } from 'lucide-react';
+import { LucideIcon, Download, Cloud, Share2, Youtube, Linkedin, Twitter, Facebook, Instagram, Globe, Mail, MessageSquare, FileText, Video, Image, Presentation, Link2, LayoutGrid, Printer, MousePointer2, MonitorPlay, Package } from 'lucide-react';
 
 // ==========================================
 // TYPES
@@ -17,7 +17,7 @@ export interface ExportFormat {
   name: string;
   extension: string;
   icon: LucideIcon;
-  category: 'document' | 'video' | 'image' | 'data';
+  category: 'document' | 'video' | 'image' | 'data' | 'marketing';
   tier: 'free' | 'pro' | 'enterprise';
   description: string;
 }
@@ -171,6 +171,73 @@ export const EXPORT_FORMATS: ExportFormat[] = [
     category: 'data',
     tier: 'pro',
     description: 'Raw presentation data',
+  },
+
+  // ═══ NEW MARKETING EXPORTS ═══
+  
+  // Marketing Packs
+  {
+    id: 'social-media-pack',
+    name: 'Social Media Pack',
+    extension: '.zip',
+    icon: Share2,
+    category: 'marketing',
+    tier: 'pro',
+    description: 'Auto-resize for IG, FB, LinkedIn, Twitter, TikTok',
+  },
+  {
+    id: 'email-html',
+    name: 'Email HTML',
+    extension: '.zip',
+    icon: Mail,
+    category: 'marketing',
+    tier: 'pro',
+    description: 'MJML → HTML with Resend integration',
+  },
+  {
+    id: 'ad-pack',
+    name: 'Ad Creative Pack',
+    extension: '.zip',
+    icon: LayoutGrid,
+    category: 'marketing',
+    tier: 'pro',
+    description: 'All standard ad sizes (300x250, 728x90, 1200x628)',
+  },
+  {
+    id: 'print-ready',
+    name: 'Print-Ready PDF',
+    extension: '.pdf',
+    icon: Printer,
+    category: 'marketing',
+    tier: 'pro',
+    description: '300dpi CMYK PDF for professional printing',
+  },
+  {
+    id: 'interactive-pdf',
+    name: 'Interactive PDF',
+    extension: '.pdf',
+    icon: MousePointer2,
+    category: 'marketing',
+    tier: 'enterprise',
+    description: 'Clickable PDF with embedded video & forms',
+  },
+  {
+    id: 'webinar-kit',
+    name: 'Webinar Kit',
+    extension: '.zip',
+    icon: MonitorPlay,
+    category: 'marketing',
+    tier: 'pro',
+    description: 'Slides + script + thumbnail + email invite',
+  },
+  {
+    id: 'campaign-bundle',
+    name: 'Campaign Bundle',
+    extension: '.zip',
+    icon: Package,
+    category: 'marketing',
+    tier: 'enterprise',
+    description: 'All assets for a full campaign in one ZIP',
   },
 ];
 
