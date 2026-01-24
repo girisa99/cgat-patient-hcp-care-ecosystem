@@ -414,3 +414,38 @@ export {
 export { 
   useA2ACoordinatorService,
 } from '@/hooks/useA2ACoordinatorService';
+
+// ============================================================================
+// COMPETITIVE DIFFERENTIATOR: SMART REGENERATION
+// ============================================================================
+
+/**
+ * RegenerationFeedbackPanel - RLHF-powered regeneration with:
+ * 1. "Why didn't you like it?" feedback capture
+ * 2. Smart AI suggestions based on feedback
+ * 3. Free regeneration credits per session
+ * 4. 50% discount for providing feedback
+ */
+export { RegenerationFeedbackPanel } from './RegenerationFeedbackPanel';
+
+/**
+ * VersionComparisonPanel - Side-by-side version history
+ * Unlike competitors: We keep all versions, revert anytime
+ */
+export { VersionComparisonPanel } from './VersionComparisonPanel';
+
+/**
+ * useSmartRegeneration - Hook for competitive regeneration features
+ * Integrates: RLHF, smart suggestions, version history, free credits
+ */
+export { 
+  useSmartRegeneration,
+  FREE_REGENS_BY_TIER,
+  FEEDBACK_DISCOUNT_PERCENT,
+  REGENERATION_REASONS,
+  type RegenerationFeedback,
+  type RegenerationReason,
+  type SmartSuggestion,
+  type VersionSnapshot,
+  type FreeCreditsState,
+} from '@/hooks/useSmartRegeneration';
