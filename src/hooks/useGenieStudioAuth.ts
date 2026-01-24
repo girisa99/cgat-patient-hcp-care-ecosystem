@@ -1,0 +1,409 @@
+/**
+ * GENIE STUDIO AUTH HOOK
+ * Clean, separate authentication system for Genie Studio
+ * Uses Google OAuth as primary authentication method
+ */
+
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import type { User, Session } from '@supabase/supabase-js';
+
+// Genie Studio Role Types (matches database enum)
+export type GenieStudioRole = 
+  | 'super_admin'
+  | 'content_manager'
+  | 'marketing_lead'
+  | 'creator'
+  | 'subscriber_free'
+  | 'subscriber_starter'
+  | 'subscriber_creator'
+  | 'subscriber_pro'
+  | 'subscriber_business'
+  | 'subscriber_enterprise'
+  | 'freelancer';
+
+// Genie Studio User Profile
+export interface GenieStudioUser {
+  id: string;
+  auth_user_id: string;
+  email: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  stripe_customer_id: string | null;
+  current_subscription_tier: string;
+  subscription_status: string;
+  credit_balance: number;
+  is_internal: boolean;
+  is_verified: boolean;
+  created_at: string;
+  roles: GenieStudioRole[];
+  marketing_access?: {
+    access_level: string;
+    can_generate: boolean;
+    can_publish: boolean;
+    can_schedule: boolean;
+    can_manage_templates: boolean;
+    monthly_generation_limit: number;
+    generations_used_this_month: number;
+    is_active: boolean;
+  } | null;
+}
+
+interface GenieStudioAuthState {
+  user: User | null;
+  session: Session | null;
+  genieUser: GenieStudioUser | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  hasMarketingAccess: boolean;
+  isInternalUser: boolean;
+}
+
+export function useGenieStudioAuth() {
+  const { toast } = useToast();
+  const [state, setState] = useState<GenieStudioAuthState>({
+    user: null,
+    session: null,
+    genieUser: null,
+    isLoading: true,
+    isAuthenticated: false,
+    hasMarketingAccess: false,
+    isInternalUser: false,
+  });
+
+  // Fetch Genie Studio user profile
+  const fetchGenieUserProfile = useCallback(async (authUserId: string): Promise<GenieStudioUser | null> => {
+    try {
+      // Get user profile
+      const { data: userProfile, error: userError } = await supabase
+        .from('genie_studio_users')
+        .select('*')
+        .eq('auth_user_id', authUserId)
+        .single();
+
+      if (userError || !userProfile) {
+        console.log('🔍 No Genie Studio profile found, will create on first login');
+        return null;
+      }
+
+      // Get user roles
+      const { data: rolesData } = await supabase
+        .from('genie_studio_user_roles')
+        .select('role')
+        .eq('user_id', userProfile.id);
+
+      // Get marketing access
+      const { data: marketingAccess } = await supabase
+        .from('genie_marketing_access')
+        .select('*')
+        .eq('user_id', userProfile.id)
+        .single();
+
+      return {
+        ...userProfile,
+        roles: (rolesData?.map(r => r.role) || []) as GenieStudioRole[],
+        marketing_access: marketingAccess || null,
+      };
+    } catch (error) {
+      console.error('❌ Error fetching Genie Studio profile:', error);
+      return null;
+    }
+  }, []);
+
+  // Create Genie Studio user profile (for new users)
+  const createGenieUserProfile = useCallback(async (authUser: User): Promise<GenieStudioUser | null> => {
+    try {
+      const displayName = authUser.user_metadata?.full_name || 
+                          authUser.user_metadata?.name || 
+                          authUser.email?.split('@')[0] || 
+                          'Genie User';
+
+      // Insert new user
+      const { data: newUser, error: insertError } = await supabase
+        .from('genie_studio_users')
+        .insert({
+          auth_user_id: authUser.id,
+          email: authUser.email!,
+          display_name: displayName,
+          avatar_url: authUser.user_metadata?.avatar_url || null,
+          is_verified: !!authUser.email_confirmed_at,
+          email_verified_at: authUser.email_confirmed_at || null,
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        // If conflict (user exists), fetch existing
+        if (insertError.code === '23505') {
+          return await fetchGenieUserProfile(authUser.id);
+        }
+        throw insertError;
+      }
+
+      // Assign free subscriber role
+      await supabase
+        .from('genie_studio_user_roles')
+        .insert({
+          user_id: newUser.id,
+          role: 'subscriber_free',
+        });
+
+      console.log('✅ Created new Genie Studio user:', newUser.email);
+
+      return {
+        ...newUser,
+        roles: ['subscriber_free'] as GenieStudioRole[],
+        marketing_access: null,
+      };
+    } catch (error) {
+      console.error('❌ Error creating Genie Studio profile:', error);
+      return null;
+    }
+  }, [fetchGenieUserProfile]);
+
+  // Initialize auth state
+  useEffect(() => {
+    let mounted = true;
+
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (!mounted) return;
+
+        setState(prev => ({
+          ...prev,
+          user: session?.user ?? null,
+          session: session,
+          isAuthenticated: !!session?.user,
+        }));
+
+        // Defer profile fetch to avoid deadlock
+        if (session?.user) {
+          setTimeout(async () => {
+            if (!mounted) return;
+            let genieUser = await fetchGenieUserProfile(session.user.id);
+            
+            // Create profile if doesn't exist
+            if (!genieUser) {
+              genieUser = await createGenieUserProfile(session.user);
+            }
+
+            if (mounted && genieUser) {
+              setState(prev => ({
+                ...prev,
+                genieUser,
+                hasMarketingAccess: !!genieUser.marketing_access?.is_active,
+                isInternalUser: genieUser.is_internal,
+                isLoading: false,
+              }));
+            } else if (mounted) {
+              setState(prev => ({ ...prev, isLoading: false }));
+            }
+          }, 0);
+        } else {
+          setState(prev => ({
+            ...prev,
+            genieUser: null,
+            hasMarketingAccess: false,
+            isInternalUser: false,
+            isLoading: false,
+          }));
+        }
+      }
+    );
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!mounted) return;
+
+      setState(prev => ({
+        ...prev,
+        user: session?.user ?? null,
+        session: session,
+        isAuthenticated: !!session?.user,
+      }));
+
+      if (session?.user) {
+        let genieUser = await fetchGenieUserProfile(session.user.id);
+        if (!genieUser) {
+          genieUser = await createGenieUserProfile(session.user);
+        }
+
+        if (mounted) {
+          setState(prev => ({
+            ...prev,
+            genieUser,
+            hasMarketingAccess: !!genieUser?.marketing_access?.is_active,
+            isInternalUser: genieUser?.is_internal || false,
+            isLoading: false,
+          }));
+        }
+      } else {
+        if (mounted) {
+          setState(prev => ({ ...prev, isLoading: false }));
+        }
+      }
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [fetchGenieUserProfile, createGenieUserProfile]);
+
+  // Sign in with Google (PRIMARY method)
+  const signInWithGoogle = useCallback(async (redirectTo?: string) => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectTo || `${window.location.origin}/genie-studio`,
+        },
+      });
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('❌ Google sign-in error:', error);
+      toast({
+        title: 'Sign-in Failed',
+        description: error instanceof Error ? error.message : 'Failed to sign in with Google',
+        variant: 'destructive',
+      });
+    }
+  }, [toast]);
+
+  // Sign in with email/password (backup method)
+  const signInWithEmail = useCallback(async (email: string, password: string) => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Welcome to Genie Studio! 🎉',
+        description: 'Redirecting to your creative workspace...',
+      });
+
+      return { success: true, user: data.user };
+    } catch (error) {
+      console.error('❌ Email sign-in error:', error);
+      toast({
+        title: 'Sign-in Failed',
+        description: error instanceof Error ? error.message : 'Invalid email or password',
+        variant: 'destructive',
+      });
+      return { success: false, error };
+    }
+  }, [toast]);
+
+  // Sign up with email/password
+  const signUpWithEmail = useCallback(async (
+    email: string, 
+    password: string, 
+    metadata?: { firstName?: string; lastName?: string }
+  ) => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/genie-studio`,
+          data: {
+            first_name: metadata?.firstName,
+            last_name: metadata?.lastName,
+            full_name: [metadata?.firstName, metadata?.lastName].filter(Boolean).join(' '),
+            signup_source: 'genie_studio',
+          },
+        },
+      });
+
+      if (error) throw error;
+
+      if (data.user?.email_confirmed_at) {
+        toast({
+          title: 'Account Created! 🎉',
+          description: 'Welcome to Genie Studio!',
+        });
+      } else {
+        toast({
+          title: 'Account Created! ✨',
+          description: 'Please check your email to confirm your account.',
+        });
+      }
+
+      return { success: true, user: data.user, needsConfirmation: !data.user?.email_confirmed_at };
+    } catch (error) {
+      console.error('❌ Sign-up error:', error);
+      toast({
+        title: 'Sign-up Failed',
+        description: error instanceof Error ? error.message : 'Failed to create account',
+        variant: 'destructive',
+      });
+      return { success: false, error };
+    }
+  }, [toast]);
+
+  // Sign out
+  const signOut = useCallback(async () => {
+    try {
+      await supabase.auth.signOut();
+      setState({
+        user: null,
+        session: null,
+        genieUser: null,
+        isLoading: false,
+        isAuthenticated: false,
+        hasMarketingAccess: false,
+        isInternalUser: false,
+      });
+      toast({
+        title: 'Signed Out',
+        description: 'Come back soon!',
+      });
+    } catch (error) {
+      console.error('❌ Sign-out error:', error);
+    }
+  }, [toast]);
+
+  // Check if user has specific role
+  const hasRole = useCallback((role: GenieStudioRole): boolean => {
+    return state.genieUser?.roles.includes(role) || false;
+  }, [state.genieUser]);
+
+  // Check if user has any of the specified roles
+  const hasAnyRole = useCallback((roles: GenieStudioRole[]): boolean => {
+    return roles.some(role => state.genieUser?.roles.includes(role));
+  }, [state.genieUser]);
+
+  // Check subscription tier
+  const hasSubscriptionTier = useCallback((minTier: 'free' | 'starter' | 'creator' | 'pro' | 'business' | 'enterprise'): boolean => {
+    const tierHierarchy = ['free', 'starter', 'creator', 'pro', 'business', 'enterprise'];
+    const userTier = state.genieUser?.current_subscription_tier || 'free';
+    return tierHierarchy.indexOf(userTier) >= tierHierarchy.indexOf(minTier);
+  }, [state.genieUser]);
+
+  return {
+    // State
+    ...state,
+    
+    // Auth methods
+    signInWithGoogle,
+    signInWithEmail,
+    signUpWithEmail,
+    signOut,
+    
+    // Role checks
+    hasRole,
+    hasAnyRole,
+    hasSubscriptionTier,
+    
+    // Convenience
+    isSuperAdmin: hasRole('super_admin'),
+    isMarketingLead: hasRole('marketing_lead'),
+    isCreator: hasRole('creator'),
+  };
+}
