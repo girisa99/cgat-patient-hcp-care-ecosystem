@@ -20,27 +20,32 @@ export interface ProviderSecretMapping {
   configurationStatus: 'configured' | 'partial' | 'not_configured';
 }
 
-// Map of providers to their secret requirements
+// Map of providers to their secret requirements - Core 13 Ecosystem
 export const PROVIDER_SECRET_REQUIREMENTS: Record<AIProviderKey, string[]> = {
+  // Core 13 Ecosystem - Primary Production Providers
   openai: ['OPENAI_API_KEY'],
   claude: ['ANTHROPIC_API_KEY', 'CLAUDE_API_KEY'], // Either works
   gemini: ['GEMINI_API_KEY', 'GOOGLE_API_KEY', 'LOVABLE_API_KEY'], // Any works
   deepseek: ['DEEPSEEK_API_KEY'],
   alibaba: ['ALIBABA_API_KEY'],
-  azure: ['AZURE_OPENAI_KEY', 'AZURE_SPEECH_KEY', 'AZURE_FORM_RECOGNIZER_KEY'],
-  aws: ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY'],
+  // Azure: Speech + Form Recognizer (NOT Azure OpenAI - we use OpenAI directly)
+  azure: ['AZURE_SPEECH_KEY', 'AZURE_FORM_RECOGNIZER_KEY'],
   deepl: ['DEEPL_API_KEY'],
   elevenlabs: ['ELEVENLABS_API_KEY'],
   google: ['GOOGLE_API_KEY', 'GEMINI_API_KEY'],
   replicate: ['REPLICATE_API_TOKEN'],
-  stability: ['STABILITY_API_KEY'],
+  modelslab: ['MODELSLAB_API_KEY'], // FLUX Pro, AnimateDiff, 3D Mesh
+  meshy: ['MESHY_API_KEY'], // High-fidelity 3D, PBR textures, Rigging
+  // Deprecated/Legacy (route to Core 13)
+  aws: ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY'], // Not required
+  stability: ['STABILITY_API_KEY'], // Use ModelsLab instead
   huggingface: ['HUGGING_FACE_ACCESS_TOKEN'],
-  modelslab: ['MODELSLAB_API_KEY'], // Unified hub for Image/Video/Audio/3D/Training
 };
 
 // Known configured secrets from the project
-// This is the source of truth based on secrets--fetch_secrets
+// This is the source of truth based on secrets--fetch_secrets (39 secrets)
 export const KNOWN_CONFIGURED_SECRETS = new Set([
+  // Core 13 Ecosystem
   'ALIBABA_API_KEY',
   'ANTHROPIC_API_KEY',
   'CLAUDE_API_KEY',
@@ -51,10 +56,17 @@ export const KNOWN_CONFIGURED_SECRETS = new Set([
   'GOOGLE_API_KEY',
   'HUGGING_FACE_ACCESS_TOKEN',
   'LOVABLE_API_KEY',
-  'MICROSOFT_TRANSLATE_API_KEY',
-  'MODELSLAB_API_KEY', // Unified hub for Image/Video/Audio/3D/Training
+  'MODELSLAB_API_KEY', // FLUX Pro, AnimateDiff, 3D Mesh
+  'MESHY_API_KEY', // High-fidelity 3D, PBR textures, Rigging
   'OPENAI_API_KEY',
   'REPLICATE_API_TOKEN',
+  // Azure (Speech + Form Recognizer + Translate - NOT Azure OpenAI)
+  'AZURE_SPEECH_KEY',
+  'AZURE_SPEECH_REGION',
+  'AZURE_FORM_RECOGNIZER_KEY',
+  'AZURE_FORM_RECOGNIZER_ENDPOINT',
+  'MICROSOFT_TRANSLATE_API_KEY',
+  'MICROSOFT_TRANSLATE_REGION',
 ]);
 
 // ============================================
@@ -169,22 +181,34 @@ export function getProvidersConfigurationStatus(): ProviderConfig[] {
       notes: 'Unified hub: Stable Diffusion, FLUX, Midjourney-style, AnimateDiff, CivitAI models, 3D gen, voice clone',
     },
 
-    // Not Configured Providers
+    // Azure - NOW CONFIGURED (Speech + Form Recognizer + Translate)
     {
       providerId: 'azure',
       name: 'Azure Cognitive Services',
-      status: 'not_configured',
-      missingSecrets: ['AZURE_OPENAI_KEY', 'AZURE_SPEECH_KEY', 'AZURE_FORM_RECOGNIZER_KEY'],
-      availableCapabilities: [],
-      notes: 'Requires Azure subscription - enterprise features',
+      status: 'configured',
+      missingSecrets: [],
+      availableCapabilities: ['translation', 'ocr', 'tts', 'stt', 'vision', 'nlp'],
+      notes: 'Enterprise-grade: Speech (400+ voices, Visemes), Form Recognizer (documents), Translate',
     },
+
+    // Meshy AI - NEW Core 13 Provider
+    {
+      providerId: 'meshy',
+      name: 'Meshy AI',
+      status: 'configured',
+      missingSecrets: [],
+      availableCapabilities: ['image_gen', 'video_gen'],
+      notes: 'High-fidelity 3D: PBR textures, Auto-rigging, USDZ/GLTF export, Image-to-3D',
+    },
+
+    // Not Configured (Legacy/Not Required)
     {
       providerId: 'aws',
       name: 'AWS AI Services',
       status: 'not_configured',
       missingSecrets: ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY'],
       availableCapabilities: [],
-      notes: 'Enterprise fallback - requires AWS account',
+      notes: 'Not required - Using Azure and Core 13 ecosystem instead',
     },
     {
       providerId: 'stability',
@@ -192,7 +216,7 @@ export function getProvidersConfigurationStatus(): ProviderConfig[] {
       status: 'not_configured',
       missingSecrets: ['STABILITY_API_KEY'],
       availableCapabilities: [],
-      notes: 'Use ModelsLab instead - hosts same models at lower cost',
+      notes: 'Not required - Using ModelsLab instead (hosts same models at lower cost)',
     },
   ];
 }

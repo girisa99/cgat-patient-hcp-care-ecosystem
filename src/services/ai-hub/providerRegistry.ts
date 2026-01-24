@@ -23,20 +23,23 @@ export type AICapability =
   | 'nlp';          // NLP (entity extraction, sentiment, etc.)
 
 export type AIProviderKey = 
-  | 'openai'
-  | 'claude'
-  | 'gemini'
-  | 'deepseek'
-  | 'alibaba'
-  | 'azure'
-  | 'aws'
-  | 'deepl'
-  | 'elevenlabs'
-  | 'google'
-  | 'replicate'
-  | 'stability'
-  | 'huggingface'
-  | 'modelslab';  // Unified hub for Image/Video/Audio/3D/Training
+  // Core 13 Ecosystem - Primary Production Providers
+  | 'openai'      // GPT-4o, DALL-E 3, Whisper, TTS
+  | 'claude'      // Claude 3.5 Sonnet - Claude Zone (West)
+  | 'gemini'      // Gemini 2.5 Pro - Gemini Zone (India/SEA/Africa)
+  | 'deepseek'    // DeepSeek V3 - Cost-efficient fallback
+  | 'alibaba'     // Qwen-Max, CosyVoice, WAN 2.2 - Alibaba Zone (CJK)
+  | 'azure'       // Azure Neural TTS, Visemes, Form Recognizer
+  | 'modelslab'   // FLUX Pro, AnimateDiff, 3D Mesh
+  | 'meshy'       // High-fidelity 3D, PBR textures, Rigging
+  | 'replicate'   // Open-source models, TripoSR (Image-to-3D)
+  | 'elevenlabs'  // Premium TTS, Voice Cloning, SFX
+  | 'deepl'       // European languages, Context-aware
+  // Legacy/Deprecated (route to Core 13)
+  | 'aws'         // Not required - Route to Azure
+  | 'google'      // Route to Gemini
+  | 'stability'   // Route to ModelsLab
+  | 'huggingface';// Route to Replicate
 
 // ============================================
 // PROVIDER DEFINITION
@@ -390,20 +393,14 @@ export const AI_PROVIDER_REGISTRY: Record<AIProviderKey, AIProviderDefinition> =
   azure: {
     id: 'azure',
     name: 'Azure Cognitive Services',
-    description: 'Microsoft Azure AI - enterprise-grade, HIPAA compliant',
-    secretKeys: ['AZURE_OPENAI_KEY', 'AZURE_SPEECH_KEY', 'AZURE_FORM_RECOGNIZER_KEY', 'AZURE_COGNITIVE_KEY'],
-    capabilities: ['llm', 'translation', 'ocr', 'tts', 'stt', 'image_gen', 'vision', 'nlp'],
+    description: 'Microsoft Azure AI - enterprise-grade, HIPAA compliant (Speech, Form Recognizer, Translate)',
+    // NOTE: We do NOT use Azure OpenAI - we use OpenAI API directly
+    secretKeys: ['AZURE_SPEECH_KEY', 'AZURE_FORM_RECOGNIZER_KEY', 'MICROSOFT_TRANSLATE_API_KEY'],
+    capabilities: ['translation', 'ocr', 'tts', 'stt', 'vision', 'nlp'],
     priority: 2,
     costTier: 'medium',
     status: 'active',
     capabilityDetails: {
-      llm: {
-        models: ['gpt-4o', 'gpt-4', 'gpt-35-turbo'],
-        strengths: ['Enterprise SLA', 'HIPAA compliant', 'Private endpoints'],
-        weaknesses: ['Requires Azure subscription', 'Deployment overhead'],
-        priority: 2,
-        costPerUnit: 0.00003,
-      },
       translation: {
         models: ['microsoft-translator'],
         strengths: ['135+ languages', 'Enterprise-grade', 'Custom translator'],
@@ -421,9 +418,9 @@ export const AI_PROVIDER_REGISTRY: Record<AIProviderKey, AIProviderDefinition> =
       },
       tts: {
         models: ['neural-tts'],
-        strengths: ['Huge voice selection', 'Speaking styles', 'SSML support', 'Multilingual'],
+        strengths: ['400+ voices', 'Speaking styles', 'SSML support', 'Visemes (lip-sync)', 'Multilingual'],
         weaknesses: ['Complex pricing'],
-        priority: 1,
+        priority: 1, // Best for TTS variety and enterprise
         costPerUnit: 0.000016,
       },
       stt: {
@@ -432,13 +429,6 @@ export const AI_PROVIDER_REGISTRY: Record<AIProviderKey, AIProviderDefinition> =
         weaknesses: ['Requires region config'],
         priority: 2,
         costPerUnit: 0.00001,
-      },
-      image_gen: {
-        models: ['dall-e-3'],
-        strengths: ['Via Azure OpenAI', 'Enterprise security'],
-        weaknesses: ['Requires Azure OpenAI access'],
-        priority: 3,
-        costPerUnit: 0.04,
       },
       vision: {
         models: ['computer-vision', 'document-intelligence'],
@@ -811,6 +801,46 @@ export const AI_PROVIDER_REGISTRY: Record<AIProviderKey, AIProviderDefinition> =
         weaknesses: ['Smaller than GPT-5/Claude'],
         priority: 6,
         costPerUnit: 0.0001,
+      },
+    },
+  },
+
+  // ============================================
+  // MESHY AI - HIGH-FIDELITY 3D SPECIALIST
+  // ============================================
+  meshy: {
+    id: 'meshy',
+    name: 'Meshy AI',
+    description: 'High-fidelity 3D generation - PBR textures, Auto-rigging, USDZ/GLTF export',
+    secretKeys: ['MESHY_API_KEY'],
+    capabilities: ['image_gen', 'video_gen'], // Using existing types for 3D
+    priority: 3,
+    costTier: 'medium',
+    status: 'active',
+    capabilityDetails: {
+      image_gen: {
+        models: ['meshy-text-to-3d', 'meshy-image-to-3d', 'meshy-text-to-texture'],
+        strengths: [
+          'High-fidelity 3D mesh generation',
+          'PBR (Physically Based Rendering) textures',
+          'Auto-rigging for animation',
+          'Multiple export formats (USDZ, GLTF, GLB, FBX, OBJ)',
+          'Image-to-3D conversion',
+          'Stylized and realistic modes',
+          '4 concurrent tasks + 5 free retries (Pro tier)'
+        ],
+        weaknesses: ['400 assets/month on Pro', 'Specialized for 3D only'],
+        priority: 1, // Primary for high-fidelity 3D
+        costPerUnit: 0.05,
+        notes: 'Best for e-commerce product visualization, gaming assets, AR/VR, and metaverse content',
+      },
+      video_gen: {
+        models: ['meshy-3d-animation'],
+        strengths: ['Animated 3D with rigging', 'Character turntables', '360° product views'],
+        weaknesses: ['Limited to 3D animation only'],
+        priority: 3,
+        costPerUnit: 0.10,
+        notes: 'For animated 3D assets - use ModelsLab AnimateDiff for 2D video',
       },
     },
   },
