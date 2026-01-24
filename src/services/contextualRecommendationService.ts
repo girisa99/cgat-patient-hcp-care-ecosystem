@@ -126,7 +126,12 @@ const ZONE_CONFIDENCE_MATRIX: Record<LLMZone, { baseConfidence: number; qualityB
   alibaba: { 
     baseConfidence: 95, 
     qualityBonus: 15,
-    reasons: ['Native CJK processing (Keigo, honorifics)', 'Strong Arabic dialect support', 'Cost-efficient for Asian markets']
+    reasons: ['Native CJK processing (Keigo, honorifics)', 'Strong Japanese pitch accent', 'Cost-efficient for Asian markets']
+  },
+  arabic: {
+    baseConfidence: 92,
+    qualityBonus: 12,
+    reasons: ['GPT-4o best for Arabic (AraBench validated)', 'Azure TTS for Gulf/Egyptian dialects', 'RTL layout optimization']
   },
   gemini: { 
     baseConfidence: 93, 
