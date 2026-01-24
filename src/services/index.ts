@@ -280,3 +280,37 @@ export type {
   CountryLocalizationConfig,
   ArabicFontConfig
 } from './arabicMenaLocalizationRegistry';
+
+// Regional Compliance Registry (Privacy, Terms, Content Policies)
+export {
+  REGIONAL_PRIVACY_POLICIES,
+  REGIONAL_CONTENT_POLICIES,
+  REGIONAL_TERMS,
+  COUNTRY_TO_REGION,
+  getRegionFromCountry,
+  getPrivacyPolicy,
+  getContentPolicy,
+  getTermsOfService,
+  getFullComplianceConfig
+} from './regionalComplianceRegistry';
+export type {
+  ComplianceRegion,
+  ContentRestrictionLevel,
+  RegionalPrivacyPolicy,
+  RegionalContentPolicy,
+  RegionalTermsOfService
+} from './regionalComplianceRegistry';
+
+// Enhanced Content Moderation Service
+export {
+  enhancedContentModeration
+} from './enhancedContentModerationService';
+export type {
+  ContentModerationConfig,
+  ModerationResult,
+  ContentViolation,
+  ContentWarning,
+  RegionalFlag,
+  ViolationType,
+  ContentCategory as ModerationContentCategory
+} from './enhancedContentModerationService';
