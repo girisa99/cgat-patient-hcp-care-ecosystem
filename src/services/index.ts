@@ -73,3 +73,29 @@ export type {
   AnimationLevel,
   AspectRatio
 } from './regionalPresentationTemplates';
+
+// Regional Video Styles & Formats Registry
+export {
+  RegionalVideoStylesRegistry,
+  VIDEO_AESTHETIC_PREFERENCES,
+  VIDEO_DURATION_PREFERENCES,
+  VIDEO_FORMAT_SPECIFICATIONS,
+  REGIONAL_VIDEO_CONTENT_PREFERENCES,
+  getVideoAestheticForRegion,
+  getVideoDurationForRegion,
+  getVideoFormatForPlatform,
+  getVideoFormatsForAspectRatio,
+  getVideoContentPreferencesForRegion,
+  buildVideoConfigForRegion,
+  getRecommendedPlatformsForRegion,
+  getSupportedVideoRegions
+} from './regionalVideoStylesRegistry';
+export type {
+  VideoPacing,
+  MusicStyle,
+  MotionGraphicsStyle,
+  VideoAestheticPreference,
+  VideoDurationPreference,
+  VideoFormatSpec,
+  RegionalVideoContentPreference
+} from './regionalVideoStylesRegistry';
