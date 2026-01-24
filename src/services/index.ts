@@ -178,3 +178,45 @@ export type {
   ContentToneGuideline,
   ContentLengthPreference
 } from './regionalContentTypesRegistry';
+
+// Regional Output Formats & File Types Registry
+export {
+  RegionalOutputFormatsRegistry,
+  DOCUMENT_FORMAT_PREFERENCES,
+  VIDEO_FORMAT_SPECS,
+  REGIONAL_VIDEO_NOTES,
+  IMAGE_FORMAT_SPECS,
+  AUDIO_FORMAT_SPECS,
+  PLATFORM_EXPORT_PRESETS,
+  REGION_FORMAT_NOTES,
+  getDocumentFormatDemand,
+  getTopDocumentFormatsForRegion,
+  getVideoFormatSpec,
+  getImageFormatSpec,
+  getAudioFormatSpec,
+  getPlatformExportPreset,
+  getPlatformsForRegion,
+  getFormatNotesForRegion,
+  getVideoNotesForRegion,
+  buildOutputConfigForRegion,
+  getRecommendedVideoResolution,
+  requiresRTLSupport,
+  getSupportedOutputFormatRegions
+} from './regionalOutputFormatsRegistry';
+export type {
+  FormatDemand,
+  FileSize,
+  QualityType,
+  SupportLevel,
+  DocumentFormat,
+  VideoFormat,
+  ImageFormat,
+  AudioFormat,
+  DocumentFormatPreference,
+  OutputVideoFormatSpec,
+  ImageFormatSpec,
+  AudioFormatSpec,
+  PlatformExportPreset,
+  RegionFormatNote,
+  RegionalVideoNote
+} from './regionalOutputFormatsRegistry';
