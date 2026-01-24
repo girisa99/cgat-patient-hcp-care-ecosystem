@@ -1,23 +1,46 @@
 /**
  * Teaser Integration Hook
  * 
- * PURPOSE: Manage teaser display logic within the wizard/editor
- * - Determines when to show teasers based on generation flow
- * - Tracks user journey through generations
- * - Coordinates with subscription tier for upgrade prompts
+ * TEASER FLOW DOCUMENTATION:
+ * 
+ * 1. USER DECISION OPTIONS:
+ *    - "Skip" → User gets PLAIN slide/deck (no combination applied)
+ *    - "Apply to Slide" → Combination applied to SPECIFIC slide only
+ *    - "Apply to All" → Combination applied to ENTIRE deck
+ *    - "Replace Slide" → Original slide REPLACED with combination version
+ *    - "Add Slide" → NEW slide added with combination (keeps original)
+ * 
+ * 2. TEASER INTERVALS:
+ *    - Generation 1: Show animation/kinetic (low barrier)
+ *    - Generation 3-4: Show avatar/talking photo (high value)
+ *    - Generation 5-6: Show data viz/3D (practical + wow)
+ *    - Generation 7+: Show immersive/full-body (premium)
+ *    - Cooldown: 2-3 generations between teasers
+ *    - Max per session: 3 teasers
+ * 
+ * 3. PERSONALIZATION (from 8-step wizard):
+ *    - Industry: Matches teaser to industry (e.g., 3D for manufacturing)
+ *    - Content Type: Matches teaser to purpose (e.g., avatar for training)
+ *    - Visual Features: Matches teaser to selected features
+ *    - Framework: Context for storytelling teasers
+ * 
+ * 4. LEARNING:
+ *    - Like/Dislike/Interested sent to Label Studio
+ *    - Preference scores adjust future recommendations
  */
 
 import { useState, useCallback, useEffect } from 'react';
 import { 
   useCombinationTeaser, 
   type TeaserPreview,
-  type CombinationType 
+  type CombinationType,
+  type TeaserDecision,
+  type WizardTeaserContext
 } from '@/services/combinationTeaserService';
 
 interface UseTeaserIntegrationOptions {
   userTier: 'free' | 'starter' | 'creator' | 'pro' | 'business' | 'enterprise';
-  industry?: string;
-  contentType?: string;
+  wizardContext?: WizardTeaserContext; // Full 8-step wizard context
 }
 
 interface TeaserState {
@@ -26,10 +49,12 @@ interface TeaserState {
   generationCount: number;
   showUpgradePrompt: boolean;
   selectedCombination: CombinationType | null;
+  userDecision: TeaserDecision | null;
+  targetSlide: number | null; // Which slide to apply combination to
 }
 
 export function useTeaserIntegration(options: UseTeaserIntegrationOptions) {
-  const { userTier, industry, contentType } = options;
+  const { userTier, wizardContext } = options;
   const { 
     shouldShowTeaser, 
     recordEngagement,
@@ -44,7 +69,9 @@ export function useTeaserIntegration(options: UseTeaserIntegrationOptions) {
     isVisible: false,
     generationCount: 0,
     showUpgradePrompt: false,
-    selectedCombination: null
+    selectedCombination: null,
+    userDecision: null,
+    targetSlide: null
   });
 
   // Reset session on mount
@@ -58,12 +85,12 @@ export function useTeaserIntegration(options: UseTeaserIntegrationOptions) {
   const onGenerationComplete = useCallback((slideCount?: number) => {
     const newCount = state.generationCount + 1;
     
-    // Check if we should show a teaser
+    // Check if we should show a teaser (using wizard context for personalization)
     const teaser = shouldShowTeaser({
       generationNumber: newCount,
       userTier,
-      industry,
-      contentType
+      industry: wizardContext?.industry,
+      contentType: wizardContext?.contentType
     });
 
     setState(prev => ({
@@ -74,7 +101,7 @@ export function useTeaserIntegration(options: UseTeaserIntegrationOptions) {
     }));
 
     return teaser;
-  }, [state.generationCount, userTier, industry, contentType, shouldShowTeaser]);
+  }, [state.generationCount, userTier, wizardContext, shouldShowTeaser]);
 
   /**
    * User expressed interest in a teaser

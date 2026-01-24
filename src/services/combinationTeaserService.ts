@@ -32,6 +32,16 @@ export type CombinationType =
 
 export type TeaserScope = 'per_slide' | 'full_deck' | 'infographic' | 'journey_flow';
 
+/**
+ * User decision on teaser application
+ */
+export type TeaserDecision = 
+  | 'skip'           // User doesn't want it → gets plain slide/deck
+  | 'apply_slide'    // Apply combination to this specific slide only
+  | 'apply_all'      // Apply combination to entire deck
+  | 'replace_slide'  // Replace current slide with combination version
+  | 'add_slide';     // Add new slide with combination (keep original)
+
 export interface TeaserPreview {
   id: string;
   combinationType: CombinationType;
@@ -44,19 +54,43 @@ export interface TeaserPreview {
   watermarkText: string;
   creditCost: number;
   tier: 'pro' | 'business' | 'enterprise';
+  // Wizard context matching
+  matchingIndustries: string[];
+  matchingContentTypes: string[];
+  matchingVisualFeatures: string[];
 }
 
 export interface TeaserEngagement {
   teaserId: string;
   combinationType: CombinationType;
   action: 'like' | 'dislike' | 'skip' | 'interested' | 'not_now';
+  decision?: TeaserDecision;
   timestamp: string;
-  generationNumber: number; // Which generation this was shown on
+  generationNumber: number;
   context: {
     industry?: string;
+    segment?: string;
     contentType?: string;
+    framework?: string;
+    visualFeatures?: string[];
     slideNumber?: number;
+    outputType?: string;
   };
+}
+
+/**
+ * Wizard context for personalization (from 8-step wizard)
+ */
+export interface WizardTeaserContext {
+  industry?: string;
+  segment?: string;
+  contentType?: string;
+  framework?: string;
+  visualFeatures?: string[];
+  outputType?: string;
+  template?: { id: string; name: string } | null;
+  primaryLanguage?: string;
+  slideCount?: number;
 }
 
 export interface UserTeaserProfile {
@@ -67,6 +101,15 @@ export interface UserTeaserProfile {
   preferences: Record<CombinationType, number>; // Score -100 to +100
   dismissedForSession: CombinationType[];
   convertedTypes: CombinationType[]; // Types user has purchased/used
+  // Track wizard context patterns for personalization
+  preferredIndustries: string[];
+  preferredContentTypes: string[];
+  interactionHistory: Array<{
+    type: CombinationType;
+    action: string;
+    wizardContext: WizardTeaserContext;
+    timestamp: string;
+  }>;
 }
 
 // ============================================
@@ -85,7 +128,10 @@ export const TEASER_CATALOG: Record<CombinationType, TeaserPreview> = {
     durationSeconds: 30,
     watermarkText: 'PREVIEW • Upgrade to Pro for full access',
     creditCost: 50,
-    tier: 'pro'
+    tier: 'pro',
+    matchingIndustries: ['technology', 'entertainment', 'marketing', 'retail'],
+    matchingContentTypes: ['pitch_deck', 'sales', 'marketing', 'demo'],
+    matchingVisualFeatures: ['motion', 'transitions', 'dynamic']
   },
   avatar_narrator: {
     id: 'teaser_avatar_narrator',
@@ -98,7 +144,10 @@ export const TEASER_CATALOG: Record<CombinationType, TeaserPreview> = {
     durationSeconds: 30,
     watermarkText: 'PREVIEW • Unlock AI Avatars with Pro',
     creditCost: 100,
-    tier: 'pro'
+    tier: 'pro',
+    matchingIndustries: ['education', 'healthcare', 'training', 'consulting', 'corporate'],
+    matchingContentTypes: ['training', 'explainer', 'tutorial', 'onboarding'],
+    matchingVisualFeatures: ['presenter', 'narration', 'voice']
   },
   '3d_elements': {
     id: 'teaser_3d_elements',
@@ -111,7 +160,10 @@ export const TEASER_CATALOG: Record<CombinationType, TeaserPreview> = {
     durationSeconds: 30,
     watermarkText: 'PREVIEW • 3D Elements in Business tier',
     creditCost: 150,
-    tier: 'business'
+    tier: 'business',
+    matchingIndustries: ['manufacturing', 'automotive', 'real_estate', 'retail', 'ecommerce', 'architecture'],
+    matchingContentTypes: ['product_demo', 'catalog', 'sales', 'showcase'],
+    matchingVisualFeatures: ['3d', 'product', 'interactive', 'model']
   },
   immersive_journey: {
     id: 'teaser_immersive_journey',
@@ -124,7 +176,10 @@ export const TEASER_CATALOG: Record<CombinationType, TeaserPreview> = {
     durationSeconds: 60,
     watermarkText: 'PREVIEW • Immersive mode in Business',
     creditCost: 200,
-    tier: 'business'
+    tier: 'business',
+    matchingIndustries: ['entertainment', 'tourism', 'hospitality', 'nonprofit', 'education'],
+    matchingContentTypes: ['storytelling', 'brand_story', 'journey', 'emotional'],
+    matchingVisualFeatures: ['immersive', 'cinematic', 'ambient', 'spatial']
   },
   kinetic_typography: {
     id: 'teaser_kinetic_typography',
@@ -137,7 +192,10 @@ export const TEASER_CATALOG: Record<CombinationType, TeaserPreview> = {
     durationSeconds: 30,
     watermarkText: 'PREVIEW • Kinetic Text in Pro',
     creditCost: 40,
-    tier: 'pro'
+    tier: 'pro',
+    matchingIndustries: ['creative', 'marketing', 'media', 'entertainment'],
+    matchingContentTypes: ['quote', 'message', 'announcement', 'social'],
+    matchingVisualFeatures: ['typography', 'text', 'motion', 'emphasis']
   },
   data_visualization: {
     id: 'teaser_data_viz',
@@ -150,7 +208,10 @@ export const TEASER_CATALOG: Record<CombinationType, TeaserPreview> = {
     durationSeconds: 30,
     watermarkText: 'PREVIEW • Animated Charts in Pro',
     creditCost: 60,
-    tier: 'pro'
+    tier: 'pro',
+    matchingIndustries: ['finance', 'consulting', 'analytics', 'research', 'technology'],
+    matchingContentTypes: ['report', 'analysis', 'investor', 'metrics', 'dashboard'],
+    matchingVisualFeatures: ['charts', 'data', 'graphs', 'infographic']
   },
   talking_photo: {
     id: 'teaser_talking_photo',
@@ -163,7 +224,10 @@ export const TEASER_CATALOG: Record<CombinationType, TeaserPreview> = {
     durationSeconds: 30,
     watermarkText: 'PREVIEW • Talking Photos in Pro',
     creditCost: 80,
-    tier: 'pro'
+    tier: 'pro',
+    matchingIndustries: ['education', 'history', 'museum', 'biography', 'memorial'],
+    matchingContentTypes: ['biography', 'team_intro', 'testimonial', 'mascot'],
+    matchingVisualFeatures: ['photo', 'portrait', 'face', 'person']
   },
   full_body_avatar: {
     id: 'teaser_full_body_avatar',
@@ -176,7 +240,10 @@ export const TEASER_CATALOG: Record<CombinationType, TeaserPreview> = {
     durationSeconds: 60,
     watermarkText: 'PREVIEW • Full-Body Avatar in Business',
     creditCost: 300,
-    tier: 'business'
+    tier: 'business',
+    matchingIndustries: ['corporate', 'enterprise', 'training', 'keynote'],
+    matchingContentTypes: ['keynote', 'executive', 'all_hands', 'conference'],
+    matchingVisualFeatures: ['presenter', 'full_body', 'professional', 'avatar']
   }
 };
 
@@ -467,7 +534,10 @@ class CombinationTeaserService {
       lastTeaserTimestamp: null,
       preferences: {} as Record<CombinationType, number>,
       dismissedForSession: [],
-      convertedTypes: []
+      convertedTypes: [],
+      preferredIndustries: [],
+      preferredContentTypes: [],
+      interactionHistory: []
     };
 
     return this.userProfile;
