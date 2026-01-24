@@ -320,7 +320,13 @@ export const FEATURE_SHOWCASE_TOPICS = [
 // REGIONAL CONTENT VARIATIONS
 // ============================================================================
 
-const REGIONAL_HOOKS: Record<BundleType, { style: string; ctaStyle: string; emotionalTone: string }> = {
+interface RegionalHookStyle {
+  style: string;
+  ctaStyle: string;
+  emotionalTone: string;
+}
+
+const REGIONAL_HOOKS: Partial<Record<BundleType, RegionalHookStyle>> & Record<string, RegionalHookStyle> = {
   english_core: { 
     style: 'Direct benefit-focused', 
     ctaStyle: 'Action-oriented (Try now, Get started)', 
@@ -355,41 +361,6 @@ const REGIONAL_HOOKS: Record<BundleType, { style: string; ctaStyle: string; emot
     style: 'Passion and connection', 
     ctaStyle: 'Warm (Join us, Let\'s go)', 
     emotionalTone: 'Enthusiastic, friendly' 
-  },
-  cjk: { 
-    style: 'Technical excellence', 
-    ctaStyle: 'Subtle (Discover more)', 
-    emotionalTone: 'Precise, modern' 
-  },
-  dach: { 
-    style: 'Engineering precision', 
-    ctaStyle: 'Informative (Learn details)', 
-    emotionalTone: 'Trustworthy, thorough' 
-  },
-  france: { 
-    style: 'Artistic and elegant', 
-    ctaStyle: 'Sophisticated (Explore)', 
-    emotionalTone: 'Chic, refined' 
-  },
-  nordics: { 
-    style: 'Minimal and functional', 
-    ctaStyle: 'Clean (Start simple)', 
-    emotionalTone: 'Calm, efficient' 
-  },
-  southern_europe: { 
-    style: 'Warm and expressive', 
-    ctaStyle: 'Personal (Connect with us)', 
-    emotionalTone: 'Friendly, passionate' 
-  },
-  eastern_europe: { 
-    style: 'Practical and value-focused', 
-    ctaStyle: 'Direct (Get started)', 
-    emotionalTone: 'Pragmatic, reliable' 
-  },
-  oceania: { 
-    style: 'Casual and authentic', 
-    ctaStyle: 'Friendly (Give it a go)', 
-    emotionalTone: 'Relaxed, genuine' 
   },
 };
 
