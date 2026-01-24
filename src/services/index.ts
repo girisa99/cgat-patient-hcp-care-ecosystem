@@ -50,3 +50,26 @@ export type {
   RegionalFrameworkPreference,
   FrameworkContentType
 } from './contentFrameworksRegistry';
+
+// Regional Presentation Templates (Slide Layouts, Formats, Components)
+export {
+  RegionalPresentationTemplatesRegistry,
+  REGIONAL_SLIDE_PREFERENCES,
+  TEMPLATE_CATEGORIES_BY_USE_CASE,
+  REGIONAL_SLIDE_FORMATS,
+  DEFAULT_SLIDE_COMPONENTS,
+  getSlidePreferencesForRegion,
+  getTemplateStyleForRegion,
+  getSlideFormatForRegion,
+  getComponentVariations,
+  buildTemplateConfigForRegion
+} from './regionalPresentationTemplates';
+export type {
+  RegionalSlidePreference,
+  TemplateCategoryByRegion,
+  RegionalSlideFormat,
+  SlideComponent,
+  SlideDensity,
+  AnimationLevel,
+  AspectRatio
+} from './regionalPresentationTemplates';
