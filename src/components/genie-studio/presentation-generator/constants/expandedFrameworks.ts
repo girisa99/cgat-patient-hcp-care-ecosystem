@@ -1,8 +1,24 @@
 /**
  * Expanded Framework Categories
- * Regional + Industry-Specific + Methodology Types
+ * Regional + Industry-Specific + Methodology Types + Content Frameworks
  * Generic names (no trademarked firm names)
+ * 
+ * Now integrated with ContentFrameworksRegistry for full coverage:
+ * - Business Presentation Frameworks (14 frameworks)
+ * - Video Content Frameworks (12 frameworks)
+ * - Training Content Frameworks (12 frameworks)
+ * - Marketing Content Frameworks (12 frameworks)
+ * - Regional Framework Preferences (14 regions)
  */
+
+import {
+  ContentFrameworksRegistry,
+  BUSINESS_PRESENTATION_FRAMEWORKS,
+  VIDEO_CONTENT_FRAMEWORKS,
+  TRAINING_CONTENT_FRAMEWORKS,
+  MARKETING_CONTENT_FRAMEWORKS,
+  REGIONAL_FRAMEWORK_PREFERENCES
+} from '@/services/contentFrameworksRegistry';
 
 export interface Framework {
   id: string;
@@ -19,11 +35,14 @@ export interface FrameworkCategory {
   color: string;
   bgColor: string;
   description: string;
-  type: 'consulting' | 'industry' | 'methodology' | 'regional';
+  type: 'consulting' | 'industry' | 'methodology' | 'regional' | 'business' | 'video' | 'training' | 'marketing';
   frameworks: Framework[];
 }
 
-export const EXPANDED_FRAMEWORK_CATEGORIES: FrameworkCategory[] = [
+// ==================== LEGACY FRAMEWORK CATEGORIES ====================
+// These are the original consulting/industry/methodology frameworks
+
+export const LEGACY_FRAMEWORK_CATEGORIES: FrameworkCategory[] = [
   // ==================== CONSULTING STYLES (Generic Names) ====================
   { id: 'tier1-strategy', name: 'Tier 1 Strategy', subtitle: 'Executive Consulting', icon: 'Building2', color: 'text-blue-600', bgColor: 'bg-blue-50', description: 'Strategic analysis frameworks', type: 'consulting',
     frameworks: [
@@ -135,6 +154,87 @@ export const EXPANDED_FRAMEWORK_CATEGORIES: FrameworkCategory[] = [
     ]}
 ];
 
+// ==================== CONTENT FRAMEWORK CATEGORIES (NEW) ====================
+// These are mapped from the ContentFrameworksRegistry
+
+export const CONTENT_FRAMEWORK_CATEGORIES: FrameworkCategory[] = [
+  // Business Presentation Frameworks
+  {
+    id: 'business-presentation',
+    name: 'Business Presentation',
+    subtitle: 'Slides & Decks',
+    icon: 'Presentation',
+    color: 'text-blue-600',
+    bgColor: 'bg-blue-50',
+    description: 'Frameworks for business presentations and pitches',
+    type: 'business',
+    frameworks: BUSINESS_PRESENTATION_FRAMEWORKS.map(f => ({
+      id: f.id,
+      name: f.name,
+      description: f.structure,
+      tier: f.tier
+    }))
+  },
+  // Video Content Frameworks
+  {
+    id: 'video-content',
+    name: 'Video Content',
+    subtitle: 'Videos & Ads',
+    icon: 'Video',
+    color: 'text-red-600',
+    bgColor: 'bg-red-50',
+    description: 'Frameworks for video content creation',
+    type: 'video',
+    frameworks: VIDEO_CONTENT_FRAMEWORKS.map(f => ({
+      id: f.id,
+      name: f.name,
+      description: f.structure,
+      tier: f.tier
+    }))
+  },
+  // Training Content Frameworks
+  {
+    id: 'training-content',
+    name: 'Training & L&D',
+    subtitle: 'Learning & Development',
+    icon: 'GraduationCap',
+    color: 'text-green-600',
+    bgColor: 'bg-green-50',
+    description: 'Frameworks for training and educational content',
+    type: 'training',
+    frameworks: TRAINING_CONTENT_FRAMEWORKS.map(f => ({
+      id: f.id,
+      name: f.name,
+      description: f.structure,
+      tier: f.tier
+    }))
+  },
+  // Marketing Content Frameworks
+  {
+    id: 'marketing-content',
+    name: 'Marketing & Sales',
+    subtitle: 'Campaigns & Funnels',
+    icon: 'Megaphone',
+    color: 'text-purple-600',
+    bgColor: 'bg-purple-50',
+    description: 'Frameworks for marketing and sales content',
+    type: 'marketing',
+    frameworks: MARKETING_CONTENT_FRAMEWORKS.map(f => ({
+      id: f.id,
+      name: f.name,
+      description: f.structure,
+      tier: f.tier
+    }))
+  }
+];
+
+// ==================== COMBINED FRAMEWORK CATEGORIES ====================
+
+export const EXPANDED_FRAMEWORK_CATEGORIES: FrameworkCategory[] = [
+  ...CONTENT_FRAMEWORK_CATEGORIES,
+  ...LEGACY_FRAMEWORK_CATEGORIES
+];
+
 // Helper functions
 export const getFrameworksByType = (type: FrameworkCategory['type']) => 
   EXPANDED_FRAMEWORK_CATEGORIES.filter(c => c.type === type);
@@ -142,9 +242,22 @@ export const getFrameworksByType = (type: FrameworkCategory['type']) =>
 export const getAllFrameworks = () => 
   EXPANDED_FRAMEWORK_CATEGORIES.flatMap(c => c.frameworks);
 
+export const getContentFrameworks = () => CONTENT_FRAMEWORK_CATEGORIES;
+
+export const getLegacyFrameworks = () => LEGACY_FRAMEWORK_CATEGORIES;
+
 export const FRAMEWORK_TYPE_LABELS = {
+  // Content types (new)
+  business: 'Business Presentation',
+  video: 'Video Content',
+  training: 'Training & L&D',
+  marketing: 'Marketing & Sales',
+  // Legacy types
   consulting: 'Top Consulting Firms',
   methodology: 'Methodology Types', 
   industry: 'Industry-Specific',
   regional: 'Regional Frameworks'
 };
+
+// Re-export from ContentFrameworksRegistry for convenience
+export { ContentFrameworksRegistry, REGIONAL_FRAMEWORK_PREFERENCES };
