@@ -345,3 +345,33 @@ export type {
   UnifiedRoutingConfig,
   UnifiedRoutingResult
 } from './unifiedRoutingLogic';
+
+// Quality Benchmarks & Testing Strategy Service
+export {
+  LLM_QUALITY_BENCHMARKS,
+  TTS_QUALITY_BENCHMARKS,
+  PROVIDER_LATENCY,
+  TESTING_MATRIX,
+  AB_TEST_CONFIGS,
+  QUALITY_MONITORING_METRICS,
+  getLLMQualityForLanguage,
+  getTTSQualityForLanguage,
+  getProviderLatency,
+  assessQualityScore,
+  validateTestCriteria,
+  getProviderRecommendation,
+  getQualityDashboardData
+} from './qualityBenchmarkService';
+export type {
+  QualityRating,
+  NaturalnessRating,
+  TestStatus,
+  LLMQualityBenchmark,
+  TTSQualityBenchmark,
+  ProviderLatency,
+  TestCriteria,
+  ABTestConfig,
+  QualityMetric,
+  ProviderRecommendation,
+  QualityDashboardData
+} from './qualityBenchmarkService';
