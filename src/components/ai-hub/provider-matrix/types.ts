@@ -42,36 +42,42 @@ export type ProviderStatus =
   | 'needs_key'        // Missing API key
   | 'not_supported';   // Not supported by this provider
 
-// All supported providers
+// All supported providers - Core 13 Ecosystem + Legacy Compatibility
 export type ProviderId = 
-  // Core LLM
-  | 'openai'
-  | 'claude'
-  | 'gemini'
-  | 'deepseek'
-  | 'alibaba'
-  | 'azure'
-  // Media
-  | 'modelslab'
-  | 'replicate'
-  | 'stability'
-  | 'runway'
-  | 'pika'
+  // ═══════════════════════════════════════════════════════════════
+  // CORE 13 ECOSYSTEM (Primary Production Providers)
+  // ═══════════════════════════════════════════════════════════════
+  // LLM Providers (5-Zone Routing)
+  | 'openai'      // GPT-4o, Whisper, DALL-E 3
+  | 'claude'      // Claude 3.5 Sonnet - Claude Zone (West)
+  | 'gemini'      // Gemini 2.5 Pro - Gemini Zone (India/SEA/Africa)
+  | 'deepseek'    // DeepSeek V3 - Cost-efficient fallback
+  | 'alibaba'     // Qwen-Max, CosyVoice, WAN 2.2 - Alibaba Zone (CJK)
+  | 'azure'       // Azure Neural TTS, Visemes, Form Recognizer
+  // Media Providers (Global Routing)
+  | 'modelslab'   // FLUX Pro, AnimateDiff, 3D Mesh
+  | 'meshy'       // Meshy AI - High-fidelity 3D, PBR textures, Rigging
+  | 'replicate'   // Open-source models, TripoSR (Image-to-3D)
   // Voice/Audio
-  | 'elevenlabs'
-  | 'assemblyai'
-  | 'suno'
-  | 'udio'
+  | 'elevenlabs'  // Premium TTS, Voice Cloning, SFX
   // Translation
-  | 'deepl'
-  | 'microsoft'
-  | 'google'
+  | 'deepl'       // European languages, Context-aware
   // Infrastructure
-  | 'supabase'
-  | 'stripe'
-  // Specialized
-  | 'huggingface'
-  | 'cohere';
+  | 'supabase'    // Auth, Database, Storage, Edge Functions
+  | 'stripe'      // Payments, Subscriptions, Billing
+  // ═══════════════════════════════════════════════════════════════
+  // DEPRECATED PROVIDERS (Legacy Compatibility - Route to Core 13)
+  // ═══════════════════════════════════════════════════════════════
+  | 'stability'   // → ModelsLab (FLUX/SDXL)
+  | 'runway'      // → ModelsLab (AnimateDiff) / Alibaba (WAN 2.2)
+  | 'pika'        // → Alibaba (WAN 2.2)
+  | 'assemblyai'  // → Azure STT / OpenAI Whisper
+  | 'suno'        // → ElevenLabs Music/SFX
+  | 'udio'        // → ElevenLabs Music/SFX
+  | 'microsoft'   // → Azure
+  | 'google'      // → Gemini
+  | 'huggingface' // → Replicate
+  | 'cohere';     // → OpenAI/Gemini Embeddings
 
 // Feature definition
 export interface Feature {

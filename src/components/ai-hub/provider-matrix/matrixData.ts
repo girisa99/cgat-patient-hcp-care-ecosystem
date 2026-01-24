@@ -590,6 +590,202 @@ export const FEATURE_USE_CASES: Record<string, { scenarios: string[]; bestFor: s
     bestFor: ['Developer workflows', 'Enterprise integration', 'Custom pipelines', 'Automation'],
     limitations: ['API rate limits', 'Authentication complexity']
   },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 3D FEATURES - Comprehensive Scenario Mappings
+  // ═══════════════════════════════════════════════════════════════
+  '3d_text': {
+    scenarios: ['Product titles', 'Logo animations', 'Title sequences', 'Brand elements'],
+    bestFor: ['Marketing videos', 'Title cards', 'Logo reveals', 'Promotional content'],
+    limitations: ['Font compatibility', 'Complex scripts need testing']
+  },
+  '3d_objects': {
+    scenarios: ['Product visualization', 'Architectural demos', 'Educational models', 'Interactive presentations'],
+    bestFor: ['E-commerce', 'Real estate', 'Science education', 'Manufacturing'],
+    limitations: ['File size for complex models', 'Rendering performance']
+  },
+  '3d_scene_gen': {
+    scenarios: ['Virtual environments', 'Game levels', 'Architectural viz', 'Training simulations'],
+    bestFor: ['VR experiences', 'Metaverse content', 'Film previs', 'Product staging'],
+    limitations: ['Complexity limits', 'Generation time for detailed scenes']
+  },
+  '3d_avatar': {
+    scenarios: ['Digital humans', 'Game characters', 'Virtual influencers', 'Training personas'],
+    bestFor: ['Gaming', 'Metaverse', 'Corporate training', 'Brand mascots'],
+    limitations: ['Uncanny valley risk', 'Rigging complexity']
+  },
+  mesh_generation: {
+    scenarios: ['Product prototyping', 'Game assets', 'Architectural elements', 'Custom objects'],
+    bestFor: ['Rapid prototyping', 'Asset creation', 'Concept visualization', 'Manufacturing preview'],
+    limitations: ['Quality varies by complexity', 'May need manual refinement']
+  },
+  image_to_3d: {
+    scenarios: ['Photo-to-product', 'Character creation', 'Asset digitization', 'Reference-based modeling'],
+    bestFor: ['E-commerce', 'Digital twins', 'Asset libraries', 'Quick prototyping'],
+    limitations: ['Single view limitations', 'Texture accuracy']
+  },
+  pbr_textures: {
+    scenarios: ['Realistic materials', 'Product renders', 'Game assets', 'Architectural viz'],
+    bestFor: ['High-fidelity rendering', 'Professional visualization', 'AAA quality assets'],
+    limitations: ['Large file sizes', 'Requires compatible renderer']
+  },
+  '3d_rigging': {
+    scenarios: ['Character animation', 'Product demonstrations', 'Tutorial animations', 'Game development'],
+    bestFor: ['Animation pipelines', 'Interactive 3D', 'Game characters', 'Educational content'],
+    limitations: ['Complex characters need manual adjustment', 'Bone count limits']
+  },
+  '3d_animation': {
+    scenarios: ['Product demos', 'Explainer videos', 'Game cutscenes', 'Marketing content'],
+    bestFor: ['Dynamic presentations', 'Animated explainers', 'Interactive experiences'],
+    limitations: ['Rendering time', 'File size for long animations']
+  },
+  '3d_export_formats': {
+    scenarios: ['Web deployment', 'AR apps', 'Game engines', 'CAD integration'],
+    bestFor: ['Cross-platform delivery', 'AR Quick Look', 'Unity/Unreal', 'Web 3D'],
+    limitations: ['Format-specific features may not transfer', 'Optimization needed per platform']
+  },
+  stylized_3d: {
+    scenarios: ['Cartoon characters', 'Anime assets', 'Children content', 'Brand mascots'],
+    bestFor: ['Entertainment', 'Educational games', 'Social media', 'Unique brand identity'],
+    limitations: ['Style consistency', 'Less suitable for professional/corporate']
+  },
+  product_3d: {
+    scenarios: ['E-commerce catalogs', 'Configurators', 'Marketing materials', 'Packaging preview'],
+    bestFor: ['Online retail', 'Product launches', 'Customer engagement', 'Reduced photography costs'],
+    limitations: ['Material accuracy', 'Complex product assembly']
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // AR/VR FEATURES - Comprehensive Scenario Mappings
+  // ═══════════════════════════════════════════════════════════════
+  ar_preview: {
+    scenarios: ['Furniture placement', 'Product try-on', 'Architecture preview', 'Educational AR'],
+    bestFor: ['E-commerce AR', 'Real estate', 'Manufacturing', 'Training simulations'],
+    limitations: ['Device compatibility', 'Lighting conditions affect quality']
+  },
+  vr_export: {
+    scenarios: ['Immersive training', 'Virtual tours', 'Entertainment', 'Therapeutic applications'],
+    bestFor: ['Corporate training', 'Tourism', 'Healthcare', 'Education'],
+    limitations: ['Headset requirements', 'Motion sickness considerations']
+  },
+  spatial: {
+    scenarios: ['Apple Vision Pro apps', 'Mixed reality presentations', '3D document viewing', 'Collaborative workspaces'],
+    bestFor: ['Enterprise presentations', 'Design review', 'Remote collaboration', 'Premium experiences'],
+    limitations: ['Limited device adoption', 'Development complexity']
+  },
+  immersive: {
+    scenarios: ['Keynote presentations', 'Product showcases', 'Virtual showrooms', 'Brand experiences'],
+    bestFor: ['Executive presentations', 'Trade shows', 'Investor pitches', 'Marketing events'],
+    limitations: ['Requires preparation', 'Hardware dependencies']
+  },
+  webxr: {
+    scenarios: ['Browser AR/VR', 'No-app experiences', 'Web-based training', 'Interactive demos'],
+    bestFor: ['Accessibility', 'Low-friction experiences', 'Wide reach', 'Marketing campaigns'],
+    limitations: ['Browser performance', 'Feature limitations vs native']
+  },
+  ar_filters: {
+    scenarios: ['Social media content', 'Brand activations', 'Try-before-buy', 'Entertainment'],
+    bestFor: ['Gen Z marketing', 'Product trials', 'User-generated content', 'Viral campaigns'],
+    limitations: ['Platform-specific formats', 'Face tracking accuracy']
+  },
+  ar_product_view: {
+    scenarios: ['Furniture visualization', 'Appliance sizing', 'Art placement', 'Decor preview'],
+    bestFor: ['Home goods retail', 'Automotive', 'Luxury products', 'Real estate staging'],
+    limitations: ['Scale accuracy', 'Surface detection quality']
+  },
+  mixed_reality: {
+    scenarios: ['Industrial training', 'Surgery simulation', 'Remote assistance', 'Design review'],
+    bestFor: ['Manufacturing', 'Healthcare', 'Architecture', 'Field service'],
+    limitations: ['High hardware costs', 'Complex content creation']
+  },
+  vr_360_video: {
+    scenarios: ['Virtual tours', 'Event coverage', 'Documentary', 'Training environments'],
+    bestFor: ['Real estate', 'Tourism', 'Journalism', 'Safety training'],
+    limitations: ['Large file sizes', 'Stitching quality', 'Motion sickness']
+  },
+  hand_tracking: {
+    scenarios: ['Gesture control', 'Sign language', 'Medical training', 'Interactive installations'],
+    bestFor: ['Accessibility', 'Natural interaction', 'Medical simulation', 'Art exhibitions'],
+    limitations: ['Tracking accuracy', 'Gesture recognition limits']
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // EXPANDED VIDEO/AVATAR FEATURES - Comprehensive Scenario Mappings
+  // ═══════════════════════════════════════════════════════════════
+  ai_avatars: {
+    scenarios: ['Training videos', 'Product demos', 'Customer support', 'Corporate communications', 'E-learning'],
+    bestFor: ['Scalable video production', 'Multilingual content', 'Cost reduction', 'Brand consistency'],
+    limitations: ['Avatar realism varies', 'Limited customization on basic tiers']
+  },
+  custom_avatar: {
+    scenarios: ['Brand spokesperson', 'Personal avatar', 'Influencer clone', 'Executive presenter'],
+    bestFor: ['Brand personalization', 'CEO messages', 'Consistent narrator', 'Unique identity'],
+    limitations: ['Photo/video input quality', 'Training time', 'Premium tier required']
+  },
+  full_body_avatar: {
+    scenarios: ['Product demos with gestures', 'Training with physical demonstrations', 'Metaverse presence', 'Virtual events'],
+    bestFor: ['Physical product demos', 'Exercise/fitness content', 'Interactive presentations', 'Virtual influencers'],
+    limitations: ['Alibaba OmniAvatar only', 'Enterprise tier', 'Higher costs']
+  },
+  avatar_gestures: {
+    scenarios: ['Emphasizing points', 'Product pointing', 'Emotional expression', 'Cultural gestures'],
+    bestFor: ['Engaging presentations', 'Sales demos', 'Training with emphasis', 'Regional customization'],
+    limitations: ['Limited gesture library', 'Regional appropriateness needs review']
+  },
+  avatar_expressions: {
+    scenarios: ['Emotional storytelling', 'Customer service empathy', 'Children content', 'Entertainment'],
+    bestFor: ['Narrative videos', 'Support videos', 'Educational content', 'Brand personality'],
+    limitations: ['Subtle expressions hard to control', 'Uncanny valley risk']
+  },
+  lip_sync: {
+    scenarios: ['Talking head videos', 'Dubbing', 'Audio-to-video sync', 'Personalized messages'],
+    bestFor: ['Training videos', 'Marketing', 'Localization', 'Corporate comms'],
+    limitations: ['Audio quality affects results', 'Complex mouth movements']
+  },
+  lip_sync_audio: {
+    scenarios: ['Voice-over sync', 'Podcast visualization', 'Audio book videos', 'Music videos'],
+    bestFor: ['Audio content visualization', 'Accessible content', 'Podcast promotion'],
+    limitations: ['Requires clean audio', 'Timing sync precision']
+  },
+  lip_sync_realtime: {
+    scenarios: ['Live streaming', 'Virtual meetings', 'Real-time avatars', 'Gaming'],
+    bestFor: ['Live events', 'Virtual influencers', 'Interactive experiences'],
+    limitations: ['Latency', 'Compute requirements', 'Quality trade-offs']
+  },
+  talking_photo: {
+    scenarios: ['Historical figures', 'Memorial videos', 'Photo revival', 'Marketing campaigns'],
+    bestFor: ['Educational content', 'Personal memories', 'Creative marketing', 'Storytelling'],
+    limitations: ['Photo quality requirements', 'Ethical considerations']
+  },
+  video_dubbing: {
+    scenarios: ['Movie/show dubbing', 'Training localization', 'Marketing adaptation', 'Accessibility'],
+    bestFor: ['Global content distribution', 'E-learning platforms', 'Media companies'],
+    limitations: ['Voice matching', 'Lip-sync alignment', 'Cultural adaptation']
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // EXPANDED ANIMATION FEATURES - Comprehensive Scenario Mappings
+  // ═══════════════════════════════════════════════════════════════
+  kinetic_typography: {
+    scenarios: ['Lyric videos', 'Quote animations', 'Title sequences', 'Social media content'],
+    bestFor: ['Music videos', 'Inspirational content', 'Brand messaging', 'Reels/TikTok'],
+    limitations: ['Text-heavy content only', 'Language/script complexity']
+  },
+  character_animation: {
+    scenarios: ['Mascot animation', 'Explainer videos', 'Game cutscenes', 'Educational content'],
+    bestFor: ['Brand storytelling', 'Children content', 'Gaming', 'Entertainment'],
+    limitations: ['Rigging required', 'Animation keyframing needed']
+  },
+  skeletal_animation: {
+    scenarios: ['Character movement', 'Dance sequences', 'Action scenes', 'Motion transfer'],
+    bestFor: ['Gaming', 'Film production', 'Sports analysis', 'Medical training'],
+    limitations: ['Complex setup', 'Retargeting for different characters']
+  },
+  procedural_animation: {
+    scenarios: ['Crowds', 'Nature simulations', 'Abstract visuals', 'Data visualization'],
+    bestFor: ['Large-scale scenes', 'Dynamic backgrounds', 'Artistic content', 'Scientific viz'],
+    limitations: ['Control precision', 'Rendering complexity']
+  },
 };
 
 export const ALL_FEATURES: Feature[] = [
@@ -657,47 +853,79 @@ export const ALL_FEATURES: Feature[] = [
   { id: 'controlnet', name: 'ControlNet (Pose/Depth)', category: 'IMAGE', priority: 'high' },
   { id: 'inpainting', name: 'Inpainting', category: 'IMAGE', priority: 'high' },
   
-  // VIDEO FEATURES
-  { id: 'text_to_video', name: 'Text-to-Video (AI Gen)', category: 'VIDEO', priority: 'high' },
-  { id: 'image_to_video', name: 'Image-to-Video', category: 'VIDEO', priority: 'high' },
-  { id: 'script_to_video', name: 'Script-to-Video', category: 'VIDEO', priority: 'high' },
-  { id: 'url_to_video', name: 'URL/Blog to Video', category: 'VIDEO', priority: 'medium' },
-  { id: 'ppt_to_video', name: 'PPT to Video', category: 'VIDEO', priority: 'high' },
-  { id: 'video_trimming', name: 'Video Trimming/Cutting', category: 'VIDEO', priority: 'medium' },
-  { id: 'video_merging', name: 'Video Merging', category: 'VIDEO', priority: 'medium' },
-  { id: 'speed_control', name: 'Speed Control', category: 'VIDEO', priority: 'low' },
-  { id: 'video_transitions', name: 'Video Transitions', category: 'VIDEO', priority: 'medium' },
-  { id: 'ai_avatars', name: 'AI Avatars', category: 'VIDEO', priority: 'high' },
-  { id: 'custom_avatar', name: 'Custom Avatar Creation', category: 'VIDEO', priority: 'medium' },
-  { id: 'lip_sync', name: 'Lip-Sync Video', category: 'VIDEO', priority: 'high' },
-  { id: 'video_enhancement', name: 'AI Video Enhancement', category: 'VIDEO', priority: 'medium' },
-  { id: 'stock_video', name: 'Stock Video Library', category: 'VIDEO', priority: 'medium' },
-  { id: 'auto_subtitles', name: 'Auto Subtitles/Captions', category: 'VIDEO', priority: 'high' },
+  // ═══════════════════════════════════════════════════════════════
+  // VIDEO FEATURES - Expanded for AI Avatar & Lip-sync
+  // ═══════════════════════════════════════════════════════════════
+  { id: 'text_to_video', name: 'Text-to-Video (AI Gen)', category: 'VIDEO', priority: 'critical', description: 'Generate video from text prompts' },
+  { id: 'image_to_video', name: 'Image-to-Video', category: 'VIDEO', priority: 'high', description: 'Animate still images' },
+  { id: 'script_to_video', name: 'Script-to-Video', category: 'VIDEO', priority: 'high', description: 'Full video from script' },
+  { id: 'url_to_video', name: 'URL/Blog to Video', category: 'VIDEO', priority: 'medium', description: 'Convert web content to video' },
+  { id: 'ppt_to_video', name: 'PPT to Video', category: 'VIDEO', priority: 'high', description: 'Convert presentations to video' },
+  { id: 'video_trimming', name: 'Video Trimming/Cutting', category: 'VIDEO', priority: 'medium', description: 'Cut and trim video segments' },
+  { id: 'video_merging', name: 'Video Merging', category: 'VIDEO', priority: 'medium', description: 'Combine multiple video clips' },
+  { id: 'speed_control', name: 'Speed Control', category: 'VIDEO', priority: 'medium', description: 'Slow-mo and speed up' },
+  { id: 'video_transitions', name: 'Video Transitions', category: 'VIDEO', priority: 'medium', description: 'Smooth scene transitions' },
+  { id: 'ai_avatars', name: 'AI Avatars', category: 'VIDEO', priority: 'critical', description: 'AI-generated talking avatars' },
+  { id: 'custom_avatar', name: 'Custom Avatar Creation', category: 'VIDEO', priority: 'high', description: 'Create personalized avatars' },
+  { id: 'full_body_avatar', name: 'Full-Body Avatar', category: 'VIDEO', priority: 'high', description: 'Full-body animated characters' },
+  { id: 'avatar_gestures', name: 'Avatar Gestures', category: 'VIDEO', priority: 'medium', description: 'Hand and body gestures' },
+  { id: 'avatar_expressions', name: 'Avatar Facial Expressions', category: 'VIDEO', priority: 'medium', description: 'Emotional facial animations' },
+  { id: 'lip_sync', name: 'Lip-Sync Video', category: 'VIDEO', priority: 'critical', description: 'Sync audio to mouth movements' },
+  { id: 'lip_sync_audio', name: 'Audio-Driven Lip-Sync', category: 'VIDEO', priority: 'high', description: 'Lip-sync from audio file' },
+  { id: 'lip_sync_realtime', name: 'Real-Time Lip-Sync', category: 'VIDEO', priority: 'medium', description: 'Live lip-sync generation' },
+  { id: 'video_enhancement', name: 'AI Video Enhancement', category: 'VIDEO', priority: 'medium', description: 'Upscale and enhance video' },
+  { id: 'stock_video', name: 'Stock Video Library', category: 'VIDEO', priority: 'medium', description: 'Pre-made video clips' },
+  { id: 'auto_subtitles', name: 'Auto Subtitles/Captions', category: 'VIDEO', priority: 'high', description: 'AI-generated captions' },
+  { id: 'talking_photo', name: 'Talking Photo', category: 'VIDEO', priority: 'high', description: 'Animate photos with speech' },
+  { id: 'video_dubbing', name: 'Video Dubbing (Voice Replace)', category: 'VIDEO', priority: 'high', description: 'Replace voice in video' },
   
-  // ANIMATION FEATURES
-  { id: 'text_animation', name: 'Text Animation', category: 'ANIMATION', priority: 'high' },
-  { id: 'object_animation', name: 'Object Animation', category: 'ANIMATION', priority: 'medium' },
-  { id: 'slide_transitions', name: 'Slide Transitions', category: 'ANIMATION', priority: 'high' },
-  { id: 'motion_graphics', name: 'Motion Graphics', category: 'ANIMATION', priority: 'medium' },
-  { id: 'animated_stickers', name: 'Animated Stickers/GIFs', category: 'ANIMATION', priority: 'low' },
-  { id: 'lottie', name: 'Lottie Animations', category: 'ANIMATION', priority: 'medium' },
-  { id: 'custom_paths', name: 'Custom Animation Paths', category: 'ANIMATION', priority: 'low' },
-  { id: 'auto_animate', name: 'Auto-Animate (AI)', category: 'ANIMATION', priority: 'medium' },
+  // ═══════════════════════════════════════════════════════════════
+  // ANIMATION FEATURES - Expanded for Motion Graphics
+  // ═══════════════════════════════════════════════════════════════
+  { id: 'text_animation', name: 'Text Animation', category: 'ANIMATION', priority: 'high', description: 'Animated typography' },
+  { id: 'object_animation', name: 'Object Animation', category: 'ANIMATION', priority: 'medium', description: 'Animate objects on screen' },
+  { id: 'slide_transitions', name: 'Slide Transitions', category: 'ANIMATION', priority: 'high', description: 'Smooth slide changes' },
+  { id: 'motion_graphics', name: 'Motion Graphics', category: 'ANIMATION', priority: 'high', description: 'Professional animated graphics' },
+  { id: 'animated_stickers', name: 'Animated Stickers/GIFs', category: 'ANIMATION', priority: 'medium', description: 'Animated emoji and stickers' },
+  { id: 'lottie', name: 'Lottie Animations', category: 'ANIMATION', priority: 'high', description: 'Vector-based animations' },
+  { id: 'custom_paths', name: 'Custom Animation Paths', category: 'ANIMATION', priority: 'medium', description: 'Custom motion paths' },
+  { id: 'auto_animate', name: 'Auto-Animate (AI)', category: 'ANIMATION', priority: 'high', description: 'AI-generated animations' },
+  { id: 'kinetic_typography', name: 'Kinetic Typography', category: 'ANIMATION', priority: 'medium', description: 'Moving text sequences' },
+  { id: 'character_animation', name: 'Character Animation', category: 'ANIMATION', priority: 'high', description: '2D/3D character movement' },
+  { id: 'skeletal_animation', name: 'Skeletal Animation', category: 'ANIMATION', priority: 'medium', description: 'Bone-based animation' },
+  { id: 'procedural_animation', name: 'Procedural Animation', category: 'ANIMATION', priority: 'medium', description: 'Algorithm-driven motion' },
   
-  // 3D FEATURES
-  { id: '3d_text', name: '3D Text', category: '3D', priority: 'medium' },
-  { id: '3d_objects', name: '3D Objects/Models', category: '3D', priority: 'medium' },
-  { id: '3d_scene_gen', name: '3D Scene Generation', category: '3D', priority: 'low' },
-  { id: '3d_avatar', name: '3D Avatar/Character', category: '3D', priority: 'medium' },
-  { id: '360_view', name: '360° View Support', category: '3D', priority: 'low' },
-  { id: '3d_import', name: '3D Model Import', category: '3D', priority: 'low' },
-  { id: 'mesh_generation', name: 'AI Mesh Generation', category: '3D', priority: 'medium' },
+  // ═══════════════════════════════════════════════════════════════
+  // 3D FEATURES - Expanded for Meshy AI, ModelsLab, Replicate
+  // ═══════════════════════════════════════════════════════════════
+  { id: '3d_text', name: '3D Text', category: '3D', priority: 'medium', description: 'Extruded text with materials and lighting' },
+  { id: '3d_objects', name: '3D Objects/Models', category: '3D', priority: 'high', description: 'Pre-built 3D model library' },
+  { id: '3d_scene_gen', name: '3D Scene Generation', category: '3D', priority: 'high', description: 'AI-generated 3D environments from text' },
+  { id: '3d_avatar', name: '3D Avatar/Character', category: '3D', priority: 'high', description: '3D character meshes with rigging' },
+  { id: '360_view', name: '360° View Support', category: '3D', priority: 'medium', description: 'Panoramic and spherical content' },
+  { id: '3d_import', name: '3D Model Import', category: '3D', priority: 'medium', description: 'Import GLTF/GLB/OBJ/FBX files' },
+  { id: 'mesh_generation', name: 'AI Mesh Generation', category: '3D', priority: 'critical', description: 'Text-to-3D mesh with textures' },
+  { id: 'image_to_3d', name: 'Image-to-3D', category: '3D', priority: 'high', description: 'Convert 2D images to 3D models' },
+  { id: 'pbr_textures', name: 'PBR Texture Generation', category: '3D', priority: 'high', description: 'Physically-based rendering textures' },
+  { id: '3d_rigging', name: '3D Auto-Rigging', category: '3D', priority: 'high', description: 'Automatic skeleton rigging for animation' },
+  { id: '3d_animation', name: '3D Animation', category: '3D', priority: 'high', description: 'Animated 3D models and sequences' },
+  { id: '3d_export_formats', name: '3D Export (GLTF/USDZ)', category: '3D', priority: 'high', description: 'Export for web, AR, and apps' },
+  { id: 'stylized_3d', name: 'Stylized 3D (Cartoon/Anime)', category: '3D', priority: 'medium', description: 'Non-photorealistic 3D styles' },
+  { id: 'product_3d', name: '3D Product Visualization', category: '3D', priority: 'high', description: 'E-commerce product renders' },
   
-  // AR/VR FEATURES
-  { id: 'ar_preview', name: 'AR Preview/Export', category: 'AR_VR', priority: 'low' },
-  { id: 'vr_export', name: 'VR-Ready Export', category: 'AR_VR', priority: 'low' },
-  { id: 'spatial', name: 'Spatial Presentations', category: 'AR_VR', priority: 'low' },
-  { id: 'immersive', name: 'Immersive Mode', category: 'AR_VR', priority: 'low' },
+  // ═══════════════════════════════════════════════════════════════
+  // AR/VR FEATURES - Expanded for Immersive Experiences
+  // ═══════════════════════════════════════════════════════════════
+  { id: 'ar_preview', name: 'AR Preview/Export', category: 'AR_VR', priority: 'high', description: 'Export USDZ for iOS Quick Look' },
+  { id: 'vr_export', name: 'VR-Ready Export', category: 'AR_VR', priority: 'medium', description: '360° video for VR headsets' },
+  { id: 'spatial', name: 'Spatial Presentations', category: 'AR_VR', priority: 'medium', description: 'Apple Vision Pro spatial computing' },
+  { id: 'immersive', name: 'Immersive Mode', category: 'AR_VR', priority: 'medium', description: 'Full-screen immersive viewing' },
+  { id: 'webxr', name: 'WebXR Support', category: 'AR_VR', priority: 'high', description: 'Browser-based AR/VR experiences' },
+  { id: 'ar_filters', name: 'AR Face Filters', category: 'AR_VR', priority: 'medium', description: 'Face-tracking AR effects' },
+  { id: 'ar_product_view', name: 'AR Product Viewer', category: 'AR_VR', priority: 'high', description: 'Place 3D products in real space' },
+  { id: 'mixed_reality', name: 'Mixed Reality Content', category: 'AR_VR', priority: 'low', description: 'Blend virtual and real world' },
+  { id: 'vr_360_video', name: 'VR 360° Video', category: 'AR_VR', priority: 'medium', description: 'Immersive spherical video' },
+  { id: 'hand_tracking', name: 'Hand Tracking Support', category: 'AR_VR', priority: 'low', description: 'Gesture-based VR interaction' },
   
   // VFX FEATURES
   { id: 'video_filters', name: 'Video Filters', category: 'VFX', priority: 'medium' },
@@ -1381,41 +1609,146 @@ export const FEATURE_IMPLEMENTATION_MATRIX: Record<string, Partial<Record<Provid
     modelslab: { status: 'configured', implementation: 'partial', confidence: 55 },
   },
   
-  // 3D FEATURES
+  // ═══════════════════════════════════════════════════════════════
+  // 3D FEATURES - Updated with Meshy AI (Core 13)
+  // ═══════════════════════════════════════════════════════════════
   '3d_text': {
     modelslab: { status: 'configured', implementation: 'partial', confidence: 60 },
+    meshy: { status: 'configured', implementation: 'implemented', confidence: 85, notes: 'High-quality 3D text' },
   },
   '3d_objects': {
     modelslab: { status: 'configured', implementation: 'partial', confidence: 65 },
+    meshy: { status: 'configured', implementation: 'implemented', confidence: 90, notes: 'Text-to-3D objects' },
+    replicate: { status: 'configured', implementation: 'partial', confidence: 70, notes: 'TripoSR' },
   },
   '3d_scene_gen': {
-    modelslab: { status: 'configured', implementation: 'not_started', confidence: 40 },
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 50 },
+    meshy: { status: 'configured', implementation: 'partial', confidence: 60, notes: 'Scene composition from objects' },
   },
   '3d_avatar': {
     modelslab: { status: 'configured', implementation: 'partial', confidence: 60 },
+    meshy: { status: 'configured', implementation: 'implemented', confidence: 88, notes: 'Stylized 3D characters' },
+    alibaba: { status: 'configured', implementation: 'implemented', confidence: 92, notes: 'OmniAvatar for full-body' },
   },
   '360_view': {
-    modelslab: { status: 'configured', implementation: 'not_started', confidence: 0 },
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 40 },
   },
   '3d_import': {
     modelslab: { status: 'configured', implementation: 'partial', confidence: 50 },
+    meshy: { status: 'configured', implementation: 'implemented', confidence: 85, notes: 'GLTF/GLB/OBJ import' },
   },
   mesh_generation: {
     modelslab: { status: 'configured', implementation: 'implemented', confidence: 75, edgeFunctionUsed: 'modelslab-media' },
+    meshy: { status: 'configured', implementation: 'implemented', confidence: 95, edgeFunctionUsed: 'meshy-3d', notes: 'Best-in-class mesh' },
+    replicate: { status: 'configured', implementation: 'implemented', confidence: 80, notes: 'TripoSR Image-to-3D' },
+  },
+  image_to_3d: {
+    meshy: { status: 'configured', implementation: 'implemented', confidence: 92, notes: 'Photo-to-3D model' },
+    replicate: { status: 'configured', implementation: 'implemented', confidence: 85, notes: 'TripoSR' },
+  },
+  pbr_textures: {
+    meshy: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'High-fidelity PBR' },
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 65 },
+  },
+  '3d_rigging': {
+    meshy: { status: 'configured', implementation: 'implemented', confidence: 90, notes: 'Auto-rigging' },
+    modelslab: { status: 'configured', implementation: 'not_started', confidence: 30 },
+  },
+  '3d_animation': {
+    meshy: { status: 'configured', implementation: 'partial', confidence: 70, notes: 'Basic animation support' },
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 55 },
+  },
+  '3d_export_formats': {
+    meshy: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'GLTF/USDZ/FBX export' },
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 60 },
+  },
+  stylized_3d: {
+    meshy: { status: 'configured', implementation: 'implemented', confidence: 92, notes: 'Cartoon/Anime styles' },
+  },
+  product_3d: {
+    meshy: { status: 'configured', implementation: 'implemented', confidence: 90, notes: 'E-commerce ready' },
+    replicate: { status: 'configured', implementation: 'partial', confidence: 70 },
   },
   
-  // AR/VR FEATURES (Updated with partial implementations)
+  // ═══════════════════════════════════════════════════════════════
+  // AR/VR FEATURES - Updated with WebXR and expanded providers
+  // ═══════════════════════════════════════════════════════════════
   ar_preview: {
-    modelslab: { status: 'configured', implementation: 'partial', confidence: 45, notes: '3D model export for AR viewing' },
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 55, notes: '3D model export for AR' },
+    meshy: { status: 'configured', implementation: 'implemented', confidence: 85, notes: 'USDZ export for iOS AR' },
   },
   vr_export: {
-    modelslab: { status: 'configured', implementation: 'partial', confidence: 40, notes: '360° video support pending' },
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 45, notes: '360° video support' },
   },
   spatial: {
-    modelslab: { status: 'configured', implementation: 'not_started', confidence: 25, notes: 'Apple Vision Pro format planned' },
+    modelslab: { status: 'configured', implementation: 'planned', confidence: 30, notes: 'Apple Vision Pro format planned' },
   },
   immersive: {
-    modelslab: { status: 'configured', implementation: 'partial', confidence: 50, notes: '3D scene immersion mode' },
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 55, notes: '3D scene immersion mode' },
+  },
+  webxr: {
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 60, notes: 'WebGL/Three.js export' },
+    meshy: { status: 'configured', implementation: 'implemented', confidence: 80, notes: 'Web-ready GLTF' },
+  },
+  ar_filters: {
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 50 },
+  },
+  ar_product_view: {
+    meshy: { status: 'configured', implementation: 'implemented', confidence: 88, notes: 'Product AR via USDZ' },
+  },
+  mixed_reality: {
+    modelslab: { status: 'configured', implementation: 'not_started', confidence: 25 },
+  },
+  vr_360_video: {
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 45 },
+  },
+  hand_tracking: {
+    modelslab: { status: 'configured', implementation: 'not_started', confidence: 15, notes: 'Hardware dependent' },
+  },
+  
+  // ═══════════════════════════════════════════════════════════════
+  // EXPANDED VIDEO/AVATAR - Alibaba WAN 2.2 & OmniAvatar
+  // ═══════════════════════════════════════════════════════════════
+  full_body_avatar: {
+    alibaba: { status: 'configured', implementation: 'implemented', confidence: 92, notes: 'OmniAvatar - Premium' },
+  },
+  avatar_gestures: {
+    alibaba: { status: 'configured', implementation: 'partial', confidence: 70, notes: 'WAN 2.2' },
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 55 },
+  },
+  avatar_expressions: {
+    alibaba: { status: 'configured', implementation: 'partial', confidence: 75 },
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 60 },
+  },
+  lip_sync_audio: {
+    alibaba: { status: 'configured', implementation: 'implemented', confidence: 85, notes: 'V-Express' },
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 70, notes: 'Wav2Lip' },
+  },
+  lip_sync_realtime: {
+    alibaba: { status: 'configured', implementation: 'partial', confidence: 60 },
+  },
+  talking_photo: {
+    alibaba: { status: 'configured', implementation: 'implemented', confidence: 88, notes: 'EMO/WAN 2.2' },
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 65 },
+  },
+  video_dubbing: {
+    elevenlabs: { status: 'configured', implementation: 'implemented', confidence: 90, notes: 'Voice clone + TTS' },
+    alibaba: { status: 'configured', implementation: 'partial', confidence: 70, notes: 'CosyVoice' },
+  },
+  
+  // EXPANDED ANIMATION
+  kinetic_typography: {
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 55 },
+  },
+  character_animation: {
+    meshy: { status: 'configured', implementation: 'partial', confidence: 65, notes: 'Rigged characters' },
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 50 },
+  },
+  skeletal_animation: {
+    meshy: { status: 'configured', implementation: 'implemented', confidence: 85, notes: 'Auto-rigging' },
+  },
+  procedural_animation: {
+    modelslab: { status: 'configured', implementation: 'partial', confidence: 45 },
   },
   
   // VFX FEATURES
