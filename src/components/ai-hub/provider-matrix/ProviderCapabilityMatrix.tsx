@@ -53,6 +53,7 @@ import { PipelineCapabilityTab } from './PipelineCapabilityTab';
 import { EcosystemIntegrationMap } from './EcosystemIntegrationMap';
 import { ImplementationPriorityQueue } from './ImplementationPriorityQueue';
 import { DependencyBlockerAnalysis } from './DependencyBlockerAnalysis';
+import { PipelineTestingDashboard } from './PipelineTestingDashboard';
 
 const CATEGORY_LABELS: Record<FeatureCategory, string> = {
   INPUT: '📥 Input',
@@ -685,6 +686,10 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
             <TabsTrigger value="blockers" className="text-red-400">
               <Ban className="w-3 h-3 mr-1" />
               Blockers
+            </TabsTrigger>
+            <TabsTrigger value="testing" className="text-cyan-400">
+              <Zap className="w-3 h-3 mr-1" />
+              Pipeline Testing
             </TabsTrigger>
             <TabsTrigger value="providers">By Provider</TabsTrigger>
             <TabsTrigger value="llm">LLM Analysis</TabsTrigger>
@@ -2070,6 +2075,11 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
         {/* NEW: Dependency Blocker Analysis Tab */}
         <TabsContent value="blockers" className="mt-0">
           <DependencyBlockerAnalysis selectedCategory={selectedCategory} />
+        </TabsContent>
+
+        {/* NEW: Pipeline Testing Dashboard Tab */}
+        <TabsContent value="testing" className="mt-0">
+          <PipelineTestingDashboard />
         </TabsContent>
       </Tabs>
     </div>

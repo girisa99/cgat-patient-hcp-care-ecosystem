@@ -6,6 +6,7 @@ export { PipelineCapabilityTab } from './PipelineCapabilityTab';
 export { EcosystemIntegrationMap } from './EcosystemIntegrationMap';
 export { ImplementationPriorityQueue } from './ImplementationPriorityQueue';
 export { DependencyBlockerAnalysis } from './DependencyBlockerAnalysis';
+export { PipelineTestingDashboard } from './PipelineTestingDashboard';
 export * from './types';
 export * from './matrixData';
 export * from './generation-coverage';
