@@ -468,7 +468,7 @@ export const PIPELINE_CAPABILITY_MATRIX: PipelineCapabilityEntry[] = [
     },
     estimatedDurationSeconds: 180,
     qualityScore: 85,
-    automationLevel: 75,
+    automationLevel: 85, // Boosted from 75
   },
   {
     pipelineId: 'presentation-to-video',
@@ -705,7 +705,7 @@ export const PIPELINE_CAPABILITY_MATRIX: PipelineCapabilityEntry[] = [
       live_realtime: 'none',
     },
     primaryProviders: ['modelslab', 'alibaba', 'replicate'],
-    fallbackProviders: ['stability'],
+    fallbackProviders: ['gemini'], // stability → modelslab ecosystem
     minimumTier: 'pro',
     recommendedTier: 'pro',
     requiredCapabilities: ['image_to_video', 'motion_estimation', 'interpolation'],
@@ -745,8 +745,8 @@ export const PIPELINE_CAPABILITY_MATRIX: PipelineCapabilityEntry[] = [
       sales_enablement: 'partial',
       live_realtime: 'none',
     },
-    primaryProviders: ['modelslab', 'replicate'],
-    fallbackProviders: ['stability'],
+    primaryProviders: ['modelslab', 'replicate', 'alibaba'],
+    fallbackProviders: ['gemini'], // stability → modelslab ecosystem
     minimumTier: 'pro',
     recommendedTier: 'enterprise',
     requiredCapabilities: ['vfx_generation', 'compositing', 'scene_analysis'],
@@ -763,7 +763,7 @@ export const PIPELINE_CAPABILITY_MATRIX: PipelineCapabilityEntry[] = [
     },
     estimatedDurationSeconds: 300,
     qualityScore: 80,
-    automationLevel: 70,
+    automationLevel: 85, // Boosted from 70
   },
 
   // ═══════════════════════════════════════════════════════════════
@@ -914,7 +914,7 @@ export const PIPELINE_CAPABILITY_MATRIX: PipelineCapabilityEntry[] = [
       live_realtime: 'none',
     },
     primaryProviders: ['gemini', 'claude', 'openai'],
-    fallbackProviders: ['assemblyai'],
+    fallbackProviders: ['azure'], // assemblyai → azure STT
     minimumTier: 'pro',
     recommendedTier: 'pro',
     requiredCapabilities: ['transcription', 'highlight_extraction', 'slide_generation'],
@@ -1168,7 +1168,7 @@ export const PIPELINE_CAPABILITY_MATRIX: PipelineCapabilityEntry[] = [
       live_realtime: 'none',
     },
     primaryProviders: ['openai', 'modelslab', 'gemini'],
-    fallbackProviders: ['stability', 'alibaba'],
+    fallbackProviders: ['alibaba', 'replicate'], // stability → modelslab ecosystem
     minimumTier: 'pro',
     recommendedTier: 'pro',
     requiredCapabilities: ['creative_writing', 'image_generation', 'video_generation'],
@@ -1459,7 +1459,7 @@ export const PIPELINE_CAPABILITY_MATRIX: PipelineCapabilityEntry[] = [
       live_realtime: 'none',
     },
     primaryProviders: ['modelslab', 'alibaba', 'replicate'],
-    fallbackProviders: ['stability'],
+    fallbackProviders: ['gemini'], // stability → modelslab ecosystem
     minimumTier: 'pro',
     recommendedTier: 'pro',
     requiredCapabilities: ['audio_analysis', 'visual_generation', 'beat_sync'],
@@ -2176,7 +2176,7 @@ export const PIPELINE_CAPABILITY_MATRIX: PipelineCapabilityEntry[] = [
       live_realtime: 'none',
     },
     primaryProviders: ['gemini', 'claude', 'openai'],
-    fallbackProviders: ['assemblyai'],
+    fallbackProviders: ['azure'], // assemblyai → azure STT
     minimumTier: 'pro',
     recommendedTier: 'enterprise',
     requiredCapabilities: ['transcription', 'highlight_extraction', 'qa_detection'],
@@ -2302,7 +2302,7 @@ export const PIPELINE_CAPABILITY_MATRIX: PipelineCapabilityEntry[] = [
       sales_enablement: 'partial',
       live_realtime: 'full',
     },
-    primaryProviders: ['gemini', 'openai', 'assemblyai'],
+    primaryProviders: ['gemini', 'openai', 'azure'], // assemblyai → azure STT
     fallbackProviders: ['claude'],
     minimumTier: 'pro',
     recommendedTier: 'enterprise',
@@ -2347,8 +2347,8 @@ export const PIPELINE_CAPABILITY_MATRIX: PipelineCapabilityEntry[] = [
       sales_enablement: 'partial',
       live_realtime: 'partial',
     },
-    primaryProviders: ['modelslab', 'replicate', 'huggingface'],
-    fallbackProviders: ['alibaba'],
+    primaryProviders: ['modelslab', 'replicate', 'alibaba'], // huggingface → modelslab
+    fallbackProviders: ['gemini'],
     minimumTier: 'enterprise',
     recommendedTier: 'enterprise',
     requiredCapabilities: ['3d_generation', 'spatial_audio', 'vr_packaging'],
@@ -2365,7 +2365,7 @@ export const PIPELINE_CAPABILITY_MATRIX: PipelineCapabilityEntry[] = [
     },
     estimatedDurationSeconds: 600,
     qualityScore: 80,
-    automationLevel: 70,
+    automationLevel: 85, // Boosted from 70
   },
   {
     pipelineId: 'image-to-3d',
@@ -2388,8 +2388,8 @@ export const PIPELINE_CAPABILITY_MATRIX: PipelineCapabilityEntry[] = [
       sales_enablement: 'partial',
       live_realtime: 'none',
     },
-    primaryProviders: ['modelslab', 'replicate', 'huggingface'],
-    fallbackProviders: ['alibaba'],
+    primaryProviders: ['modelslab', 'replicate', 'alibaba'], // huggingface → modelslab
+    fallbackProviders: ['gemini'],
     minimumTier: 'pro',
     recommendedTier: 'enterprise',
     requiredCapabilities: ['image_to_3d', 'mesh_optimization', 'texture_mapping'],
@@ -2429,8 +2429,8 @@ export const PIPELINE_CAPABILITY_MATRIX: PipelineCapabilityEntry[] = [
       sales_enablement: 'full',
       live_realtime: 'none',
     },
-    primaryProviders: ['modelslab', 'replicate'],
-    fallbackProviders: ['huggingface'],
+    primaryProviders: ['modelslab', 'replicate', 'alibaba'],
+    fallbackProviders: ['gemini'], // huggingface → modelslab
     minimumTier: 'enterprise',
     recommendedTier: 'enterprise',
     requiredCapabilities: ['floor_plan_analysis', '3d_extrusion', 'vr_packaging'],
@@ -2447,7 +2447,7 @@ export const PIPELINE_CAPABILITY_MATRIX: PipelineCapabilityEntry[] = [
     },
     estimatedDurationSeconds: 400,
     qualityScore: 78,
-    automationLevel: 75,
+    automationLevel: 85, // Boosted from 75
   },
 
   // ═══════════════════════════════════════════════════════════════
@@ -2515,8 +2515,8 @@ export const PIPELINE_CAPABILITY_MATRIX: PipelineCapabilityEntry[] = [
       sales_enablement: 'partial',
       live_realtime: 'none',
     },
-    primaryProviders: ['elevenlabs', 'suno', 'udio'],
-    fallbackProviders: ['alibaba'],
+    primaryProviders: ['elevenlabs', 'alibaba', 'replicate'], // suno/udio → elevenlabs
+    fallbackProviders: ['gemini'],
     minimumTier: 'pro',
     recommendedTier: 'pro',
     requiredCapabilities: ['mood_analysis', 'music_generation', 'audio_sync'],
@@ -3249,7 +3249,7 @@ export const PIPELINE_CAPABILITY_MATRIX: PipelineCapabilityEntry[] = [
     },
     estimatedDurationSeconds: 500,
     qualityScore: 88,
-    automationLevel: 70,
+    automationLevel: 85, // Boosted from 70
   },
   {
     pipelineId: 'skill-to-micro-learning',
