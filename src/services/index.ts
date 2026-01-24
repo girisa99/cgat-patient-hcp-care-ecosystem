@@ -149,3 +149,32 @@ export type {
   ToolRecommendation,
   MotionTemplateCategory
 } from './regional3DMotionGraphicsRegistry';
+
+// Regional Content Types & Categories Registry
+export {
+  RegionalContentTypesRegistry,
+  CONTENT_CATEGORY_DEMAND,
+  REGIONAL_USE_CASES,
+  CONTENT_TONE_GUIDELINES,
+  CONTENT_LENGTH_PREFERENCES,
+  getCategoryDemand,
+  getTopCategoriesForRegion,
+  getUseCasesForRegion,
+  getToneGuidelinesForRegion,
+  getToneForRegion,
+  getContentLengthForRegion,
+  buildContentConfigForRegion,
+  getSupportedContentRegions,
+  isHighDemandCategory,
+  getRecommendedContentTypes
+} from './regionalContentTypesRegistry';
+export type {
+  DemandLevel,
+  ContentCategory,
+  ContentToneType,
+  ContentLengthType,
+  ContentCategoryDemand,
+  RegionalUseCase,
+  ContentToneGuideline,
+  ContentLengthPreference
+} from './regionalContentTypesRegistry';
