@@ -326,3 +326,6 @@ verify_jwt = false
 
 [functions.geo-compliance-check]
 verify_jwt = false
+
+[functions.marketing-auto-scheduler]
+verify_jwt = true

@@ -221,7 +221,6 @@ export function MarketingContentDashboard() {
           <Button
             onClick={handleGenerateContent}
             disabled={isGenerating}
-            className="bg-gradient-to-r from-primary to-purple-500"
           >
             {isGenerating ? (
               <>
@@ -261,8 +260,8 @@ export function MarketingContentDashboard() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                <Workflow className="h-5 w-5 text-blue-500" />
+              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Workflow className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <p className="text-2xl font-bold">{PIPELINE_MARKETING_CATALOG.length}</p>
@@ -275,8 +274,8 @@ export function MarketingContentDashboard() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                <Target className="h-5 w-5 text-purple-500" />
+              <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center">
+                <Target className="h-5 w-5 text-secondary-foreground" />
               </div>
               <div>
                 <p className="text-2xl font-bold">{categories.length}</p>
@@ -289,8 +288,8 @@ export function MarketingContentDashboard() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-yellow-500/10 flex items-center justify-center">
-                <Clock className="h-5 w-5 text-yellow-500" />
+              <div className="h-10 w-10 rounded-lg bg-accent flex items-center justify-center">
+                <Clock className="h-5 w-5 text-accent-foreground" />
               </div>
               <div>
                 <p className="text-2xl font-bold">{reviewQueue.length}</p>
@@ -303,8 +302,8 @@ export function MarketingContentDashboard() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center">
-                <CheckCircle className="h-5 w-5 text-green-500" />
+              <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
+                <CheckCircle className="h-5 w-5 text-muted-foreground" />
               </div>
               <div>
                 <p className="text-2xl font-bold">{publishedContent.length}</p>
@@ -317,12 +316,13 @@ export function MarketingContentDashboard() {
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="pipelines">Pipelines ({pipelines.length})</TabsTrigger>
           <TabsTrigger value="review">Review Queue ({reviewQueue.length})</TabsTrigger>
           <TabsTrigger value="templates">Templates</TabsTrigger>
           <TabsTrigger value="schedule">Schedule</TabsTrigger>
+          <TabsTrigger value="rewards">Rewards</TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
@@ -600,6 +600,133 @@ export function MarketingContentDashboard() {
                       </Badge>
                     ))}
                   </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Rewards Tab - Internal Team Only */}
+        <TabsContent value="rewards" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                Creator Leaderboard & Incentives
+              </CardTitle>
+              <CardDescription>
+                Internal rewards program for Genie Studio team members
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Weekly Leaderboard */}
+                <div>
+                  <h3 className="font-semibold mb-3 flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4" />
+                    This Week's Top Creators
+                  </h3>
+                  <div className="space-y-2">
+                    {[
+                      { rank: 1, name: 'Team Member 1', impressions: 45200, badge: '🥇' },
+                      { rank: 2, name: 'Team Member 2', impressions: 38100, badge: '🥈' },
+                      { rank: 3, name: 'Team Member 3', impressions: 29500, badge: '🥉' },
+                      { rank: 4, name: 'Team Member 4', impressions: 21300, badge: '' },
+                      { rank: 5, name: 'Team Member 5', impressions: 18700, badge: '' },
+                    ].map((creator) => (
+                      <div 
+                        key={creator.rank}
+                        className={cn(
+                          "flex items-center gap-3 p-2 rounded-lg",
+                          creator.rank <= 3 ? "bg-primary/5" : "bg-muted/50"
+                        )}
+                      >
+                        <span className="text-lg w-8">{creator.badge || `#${creator.rank}`}</span>
+                        <span className="flex-1 font-medium">{creator.name}</span>
+                        <span className="text-sm text-muted-foreground">
+                          {creator.impressions.toLocaleString()} impressions
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Active Incentives */}
+                <div>
+                  <h3 className="font-semibold mb-3 flex items-center gap-2">
+                    <Target className="h-4 w-4" />
+                    Active Incentive Programs
+                  </h3>
+                  <div className="space-y-3">
+                    <Card className="border-primary/20">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-medium">January Creator Challenge</h4>
+                          <Badge className="bg-primary/10 text-primary">Active</Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-3">
+                          Top 3 creators win Genie Credits + Featured Profile
+                        </p>
+                        <div className="text-xs space-y-1">
+                          <div className="flex justify-between">
+                            <span>🥇 1st Place:</span>
+                            <span className="font-medium">1,000 Credits</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>🥈 2nd Place:</span>
+                            <span className="font-medium">500 Credits</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>🥉 3rd Place:</span>
+                            <span className="font-medium">250 Credits</span>
+                          </div>
+                        </div>
+                        <div className="mt-3 text-xs text-muted-foreground">
+                          Ends: January 31, 2025
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-medium">7-Day Streak Challenge</h4>
+                          <Badge variant="secondary">Ongoing</Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Publish content 7 days in a row for a bonus badge
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              </div>
+
+              {/* Badges Section */}
+              <div className="mt-6 pt-6 border-t">
+                <h3 className="font-semibold mb-3">Available Badges</h3>
+                <div className="flex flex-wrap gap-3">
+                  {[
+                    { icon: '🚀', name: 'First Steps', desc: 'First publish' },
+                    { icon: '🔥', name: 'Going Viral', desc: '10K impressions' },
+                    { icon: '📅', name: 'Week Warrior', desc: '7-day streak' },
+                    { icon: '💯', name: 'Century', desc: '100 posts' },
+                    { icon: '🌟', name: 'Million Club', desc: '1M total views' },
+                    { icon: '🎨', name: 'Format Explorer', desc: '5 formats used' },
+                    { icon: '🌐', name: 'Platform Master', desc: 'All platforms' },
+                    { icon: '🤖', name: 'AI Pioneer', desc: 'New feature first' },
+                  ].map((badge) => (
+                    <div
+                      key={badge.name}
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                    >
+                      <span className="text-xl">{badge.icon}</span>
+                      <div>
+                        <div className="text-sm font-medium">{badge.name}</div>
+                        <div className="text-xs text-muted-foreground">{badge.desc}</div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </CardContent>
