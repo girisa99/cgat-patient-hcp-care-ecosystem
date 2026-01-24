@@ -123,3 +123,29 @@ export type {
   AvatarGestureGuideline,
   AvatarVoiceCharacteristic
 } from './regionalAvatarGuidelines';
+
+// Regional 3D & Motion Graphics Registry
+export {
+  Regional3DMotionGraphicsRegistry,
+  REGIONAL_3D_STYLE_PREFERENCES,
+  REGIONAL_MOTION_GRAPHICS_STYLES,
+  TOOL_RECOMMENDATIONS,
+  MOTION_TEMPLATE_CATEGORIES,
+  get3DStyleForRegion,
+  getMotionGraphicsStyleForRegion,
+  getRecommendedToolsForUseCase,
+  getRTLCompatibleTemplates,
+  getTemplatesForUseCase,
+  build3DMotionConfigForRegion,
+  getAnimationPresetForRegion,
+  getSupported3DRegions
+} from './regional3DMotionGraphicsRegistry';
+export type {
+  AnimationSpeed,
+  LearningCurve,
+  EasingStyle,
+  Regional3DStylePreference,
+  RegionalMotionGraphicsStyle,
+  ToolRecommendation,
+  MotionTemplateCategory
+} from './regional3DMotionGraphicsRegistry';
