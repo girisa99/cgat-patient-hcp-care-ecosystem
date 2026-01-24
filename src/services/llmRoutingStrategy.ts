@@ -1,23 +1,26 @@
 /**
  * LLM Regional Routing Strategy
  * 
- * Based on the 4-Zone Intelligent LLM Routing from:
+ * Based on the 5-Zone Intelligent LLM Routing from:
  * "INTELLIGENT LLM ROUTING: Your Differentiation Strategy"
  * 
  * Competitors use ONE LLM for everything. We use the BEST LLM for each region/task.
  * 
- * 4 ROUTING ZONES:
+ * 5 ROUTING ZONES:
  * 1. CLAUDE ZONE: US, UK, EU, Brazil, Israel, South Africa (Claude + ElevenLabs + DeepL)
- * 2. ALIBABA ZONE: Japan, Korea, China, HK, Taiwan, MEA/Arabic (Qwen + CosyVoice + Qwen-MT)
- * 3. GEMINI ZONE: India, Pakistan, SEA, Africa (Gemini + Azure + Google Translate)
- * 4. FALLBACK: GPT-4o (When primary fails)
+ * 2. ALIBABA ZONE: Japan, Korea, China, HK, Taiwan, Singapore (Qwen + CosyVoice + Qwen-MT) - CJK ONLY
+ * 3. ARABIC ZONE: Saudi Arabia, UAE, Egypt, Morocco, Jordan, etc. (GPT-4o + Azure TTS + Azure Translator)
+ * 4. GEMINI ZONE: India, Pakistan, SEA, Africa (Gemini + Azure + Google Translate)
+ * 5. FALLBACK: GPT-4o (When primary fails)
+ * 
+ * ⚠️ KEY FINDING: Qwen struggles with Arabic - use GPT-4o instead (per AraBench)
  */
 
 // ============================================================================
 // TYPES & INTERFACES
 // ============================================================================
 
-export type LLMZone = 'claude' | 'alibaba' | 'gemini' | 'fallback';
+export type LLMZone = 'claude' | 'alibaba' | 'arabic' | 'gemini' | 'fallback';
 
 export interface LLMRoutingConfig {
   llm: string;
@@ -391,6 +394,7 @@ export function calculateMonthlyCost(zone: LLMZone, usersCount: number): number 
   const costPer100Users: Record<LLMZone, number> = {
     claude: 150,
     alibaba: 80,
+    arabic: 120, // GPT-4o based - higher cost than Alibaba but lower than Claude
     gemini: 70,
     fallback: 30,
   };

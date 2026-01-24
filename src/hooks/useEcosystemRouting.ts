@@ -301,6 +301,7 @@ export function useEcosystemRouting(
     const costPer100: Record<LLMZone, number> = {
       claude: 150,
       alibaba: 80,
+      arabic: 120, // GPT-4o based - higher cost than Alibaba
       gemini: 70,
       fallback: 30,
     };
