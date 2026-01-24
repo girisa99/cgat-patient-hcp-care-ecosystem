@@ -323,3 +323,6 @@ verify_jwt = false
 
 [functions.ai-a2a-coordinator]
 verify_jwt = false
+
+[functions.geo-compliance-check]
+verify_jwt = false

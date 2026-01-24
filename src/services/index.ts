@@ -220,3 +220,30 @@ export type {
   RegionFormatNote,
   RegionalVideoNote
 } from './regionalOutputFormatsRegistry';
+
+// Sanctions & Compliance Registry
+export {
+  SanctionsComplianceRegistry,
+  SANCTIONED_REGIONS,
+  BLOCKED_COUNTRY_CODES,
+  PROHIBITED_SERVICES_RUSSIA,
+  DATA_RESIDENCY_REQUIREMENTS,
+  COMPLIANCE_PHASES,
+  isSanctionedCountry,
+  getSanctionDetails,
+  requiresDataResidency,
+  getBlockedCountryCodes,
+  getAllSanctionedRegions,
+  getComplianceStatus,
+  getBlockingMessage,
+  isRegionAllowed
+} from './sanctionsComplianceRegistry';
+export type {
+  SanctionStatus,
+  CompliancePriority,
+  BlockAction,
+  SanctionedRegion,
+  DataResidencyRequirement,
+  CompliancePhase,
+  ProhibitedService
+} from './sanctionsComplianceRegistry';
