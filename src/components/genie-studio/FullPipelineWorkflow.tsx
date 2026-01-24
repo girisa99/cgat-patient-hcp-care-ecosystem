@@ -420,7 +420,9 @@ export function FullPipelineWorkflow({
         'gemini': 'gemini',
         'openai': 'openai',
         'claude': 'claude',
-        'huggingface': 'gemini' // Fallback to gemini for huggingface
+        'huggingface': 'gemini', // Fallback to gemini for huggingface
+        'alibaba': 'gemini',     // Fallback to gemini for alibaba (Qwen)
+        'deepseek': 'openai'     // Fallback to openai for deepseek
       };
       
       const result = await genieScriptService.generateScriptFromSources(
