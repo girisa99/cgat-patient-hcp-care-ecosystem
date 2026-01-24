@@ -283,106 +283,20 @@ export const PROVIDER_VERTICAL_MATRIX: Record<ProviderId, {
     pricingTier: 'starter',
     strengths: ['Payments', 'Subscriptions', 'Billing Portal', 'Usage metering'],
   },
-  stability: {
-    name: 'Stability AI',
-    verticals: {
-      presentations: 'full',
-      generative_video: 'full',
-      marketing_ads: 'full',
-    },
-    pricingTier: 'pro',
-    strengths: ['Stable Diffusion', 'SDXL', 'Stable Video'],
-  },
-  huggingface: {
-    name: 'Hugging Face',
-    verticals: {
-      presentations: 'partial',
-      generative_video: 'partial',
-      immersive_3d: 'full',
-    },
-    pricingTier: 'free',
-    strengths: ['Open-source models', 'Custom fine-tuning', '3D models'],
-  },
-  google: {
-    name: 'Google Cloud',
-    verticals: {
-      presentations: 'full',
-      localization: 'full',
-      enterprise: 'full',
-      data_analytics: 'full',
-    },
-    pricingTier: 'pro',
-    strengths: ['Cloud Translation', 'Speech-to-Text', 'Vision API'],
-  },
-  microsoft: {
-    name: 'Microsoft',
-    verticals: {
-      presentations: 'full',
-      localization: 'full',
-      enterprise: 'full',
-      internal_comms: 'full',
-    },
-    pricingTier: 'pro',
-    strengths: ['Translator API', 'Office integration', 'Teams integration'],
-  },
-  assemblyai: {
-    name: 'AssemblyAI',
-    verticals: {
-      video_repurposing: 'full',
-      ld_training: 'full',
-      customer_education: 'full',
-    },
-    pricingTier: 'pro',
-    strengths: ['Transcription', 'Speaker diarization', 'Summarization'],
-  },
-  cohere: {
-    name: 'Cohere',
-    verticals: {
-      presentations: 'partial',
-      enterprise: 'full',
-    },
-    pricingTier: 'pro',
-    strengths: ['Embeddings', 'Semantic search', 'RAG optimization'],
-  },
-  runway: {
-    name: 'Runway',
-    verticals: {
-      generative_video: 'full',
-      ai_avatar: 'partial',
-      marketing_ads: 'full',
-    },
-    pricingTier: 'pro',
-    strengths: ['Gen-2 video', 'Video editing', 'Motion brush'],
-  },
-  pika: {
-    name: 'Pika Labs',
-    verticals: {
-      generative_video: 'full',
-      social_publishing: 'full',
-    },
-    pricingTier: 'pro',
-    strengths: ['Fast video generation', 'Social-optimized'],
-  },
-  suno: {
-    name: 'Suno',
-    verticals: {
-      presentations: 'partial',
-      generative_video: 'partial',
-      marketing_ads: 'partial',
-    },
-    pricingTier: 'pro',
-    strengths: ['AI music generation', 'Custom jingles'],
-  },
-  udio: {
-    name: 'Udio',
-    verticals: {
-      presentations: 'partial',
-      generative_video: 'partial',
-      marketing_ads: 'partial',
-    },
-    pricingTier: 'pro',
-    strengths: ['AI music generation', 'Instrumental tracks'],
-  },
+  // ═══════════════════════════════════════════════════════════════
+  // DEPRECATED PROVIDERS - REMAPPED TO CORE 12 AT RUNTIME
+  // These entries retained for type compatibility but route to core providers
+  // ═══════════════════════════════════════════════════════════════
+  stability: { name: 'Stability AI → ModelsLab', verticals: { generative_video: 'full', marketing_ads: 'full' }, pricingTier: 'pro', strengths: ['→ Use ModelsLab FLUX/SDXL'] },
+  huggingface: { name: 'HuggingFace → Replicate', verticals: { immersive_3d: 'full' }, pricingTier: 'free', strengths: ['→ Use Replicate/ModelsLab'] },
+  google: { name: 'Google Cloud', verticals: { presentations: 'full', localization: 'full', enterprise: 'full', data_analytics: 'full' }, pricingTier: 'pro', strengths: ['Cloud Translation', 'Speech-to-Text', 'Vision API'] },
+  microsoft: { name: 'Microsoft', verticals: { presentations: 'full', localization: 'full', enterprise: 'full', internal_comms: 'full' }, pricingTier: 'pro', strengths: ['Translator API', 'Office integration'] },
+  assemblyai: { name: 'AssemblyAI → Azure/OpenAI', verticals: { video_repurposing: 'full', ld_training: 'full' }, pricingTier: 'pro', strengths: ['→ Use Azure STT/OpenAI Whisper'] },
+  cohere: { name: 'Cohere → OpenAI/Gemini', verticals: { enterprise: 'full' }, pricingTier: 'pro', strengths: ['→ Use OpenAI/Gemini Embeddings'] },
+  runway: { name: 'Runway → ModelsLab', verticals: { generative_video: 'full', ai_avatar: 'partial' }, pricingTier: 'pro', strengths: ['→ Use ModelsLab AnimateDiff'] },
+  pika: { name: 'Pika → Alibaba', verticals: { generative_video: 'full', social_publishing: 'full' }, pricingTier: 'pro', strengths: ['→ Use Alibaba WAN 2.2'] },
+  suno: { name: 'Suno → ElevenLabs', verticals: { presentations: 'partial', generative_video: 'partial' }, pricingTier: 'pro', strengths: ['→ Use ElevenLabs Music'] },
+  udio: { name: 'Udio → ElevenLabs', verticals: { presentations: 'partial', generative_video: 'partial' }, pricingTier: 'pro', strengths: ['→ Use ElevenLabs Music'] },
 };
 
 // ============================================

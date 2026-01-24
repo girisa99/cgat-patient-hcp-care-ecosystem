@@ -161,15 +161,16 @@ const PROVIDER_AVAILABILITY: Partial<Record<ProviderId, { configured: boolean; h
   // Also include google/microsoft as they're part of azure/gemini ecosystem
   google: { configured: true, healthy: true },
   microsoft: { configured: true, healthy: true },
-  // DEPRECATED → remapped to core (marked as available via remap)
-  huggingface: { configured: true, healthy: true }, // → modelslab/replicate
-  stability: { configured: true, healthy: true },    // → modelslab
-  assemblyai: { configured: true, healthy: true },   // → azure/openai
-  cohere: { configured: true, healthy: true },       // → openai/gemini
-  suno: { configured: true, healthy: true },         // → elevenlabs
-  udio: { configured: true, healthy: true },         // → elevenlabs
-  runway: { configured: true, healthy: true },       // → modelslab/alibaba
-  pika: { configured: true, healthy: true },         // → alibaba/modelslab
+  // ═══════════════════════════════════════════════════════════════
+  // CORE 12 PROVIDER REMAPPING (Deprecated → Active)
+  // All external providers remapped to core 12 ecosystem
+  // ═══════════════════════════════════════════════════════════════
+  // Image: stability → modelslab (hosts FLUX, SDXL, ControlNet)
+  // Video: runway/pika → modelslab (AnimateDiff) + alibaba (WAN 2.2)
+  // Audio: suno/udio → elevenlabs (SFX + Music)
+  // STT: assemblyai → azure (Speech) + openai (Whisper)
+  // NLP: cohere → openai (Embeddings) + gemini (Fast)
+  // 3D: huggingface → modelslab (3D Mesh) + replicate
 };
 
 // ============================================================================

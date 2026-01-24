@@ -99,23 +99,25 @@ const PROVIDER_CAPABILITY_SCORES: Record<string, Record<string, ProviderScore>> 
     deepgram: { providerId: 'deepgram', name: 'Deepgram', confidence: 95, quality: 92, speed: 99, cost: 'medium', status: 'needs_key', features: ['Fastest', 'Real-time'], notes: 'Lowest latency' },
   },
   image_gen: {
+    // Core 12 Providers Only - No stability/runway/pika
     openai: { providerId: 'openai', name: 'DALL-E 3', confidence: 95, quality: 92, speed: 80, cost: 'high', status: 'configured', features: ['Best prompts', 'Inpainting'] },
+    modelslab: { providerId: 'modelslab', name: 'ModelsLab FLUX', confidence: 96, quality: 95, speed: 85, cost: 'medium', status: 'configured', features: ['FLUX Pro', 'ControlNet', 'Best quality'] },
     replicate: { providerId: 'replicate', name: 'Replicate SDXL', confidence: 92, quality: 90, speed: 75, cost: 'medium', status: 'configured', features: ['ControlNet', 'Editing', 'Flux'] },
     gemini: { providerId: 'gemini', name: 'Gemini Imagen', confidence: 88, quality: 85, speed: 90, cost: 'medium', status: 'configured', features: ['Fast', 'Integrated'] },
     alibaba: { providerId: 'alibaba', name: 'Alibaba Wanx', confidence: 82, quality: 80, speed: 85, cost: 'low', status: 'configured', features: ['Low cost', 'CJK style'] },
-    stability: { providerId: 'stability', name: 'Stability AI', confidence: 96, quality: 95, speed: 70, cost: 'medium', status: 'needs_key', features: ['ControlNet', 'Best quality'], notes: 'Add for advanced editing' },
   },
   video_gen: {
-    replicate: { providerId: 'replicate', name: 'Replicate Video', confidence: 85, quality: 80, speed: 60, cost: 'high', status: 'configured', features: ['Multiple models', 'Flexible'] },
-    alibaba: { providerId: 'alibaba', name: 'Alibaba Video', confidence: 80, quality: 75, speed: 70, cost: 'medium', status: 'configured', features: ['5s clips', 'Image-to-video'] },
-    runway: { providerId: 'runway', name: 'Runway Gen-3', confidence: 95, quality: 95, speed: 65, cost: 'high', status: 'needs_key', features: ['Best quality', '10s'], notes: 'Recommended for quality' },
-    pika: { providerId: 'pika', name: 'Pika Labs', confidence: 92, quality: 90, speed: 70, cost: 'medium', status: 'needs_key', features: ['4s clips', 'Fast'] },
+    // Core 12 Providers Only - runway/pika remapped to modelslab/alibaba
+    modelslab: { providerId: 'modelslab', name: 'ModelsLab AnimateDiff', confidence: 95, quality: 92, speed: 75, cost: 'medium', status: 'configured', features: ['AnimateDiff', 'SVD', '10s clips'] },
+    alibaba: { providerId: 'alibaba', name: 'Alibaba WAN 2.2', confidence: 92, quality: 90, speed: 80, cost: 'low', status: 'configured', features: ['WAN 2.2', 'Image-to-video', 'CJK'] },
+    replicate: { providerId: 'replicate', name: 'Replicate Video', confidence: 88, quality: 85, speed: 70, cost: 'medium', status: 'configured', features: ['Multiple models', 'Flexible'] },
+    gemini: { providerId: 'gemini', name: 'Gemini Veo', confidence: 90, quality: 88, speed: 65, cost: 'medium', status: 'configured', features: ['Long-form', 'Google ecosystem'] },
   },
   music_gen: {
-    elevenlabs: { providerId: 'elevenlabs', name: 'ElevenLabs Music', confidence: 85, quality: 82, speed: 80, cost: 'high', status: 'configured', features: ['SFX', 'Voice', 'New feature'] },
-    replicate: { providerId: 'replicate', name: 'Replicate Audio', confidence: 75, quality: 72, speed: 75, cost: 'medium', status: 'configured', features: ['Various models'] },
-    suno: { providerId: 'suno', name: 'Suno AI', confidence: 98, quality: 98, speed: 70, cost: 'medium', status: 'needs_key', features: ['Best music', 'Vocals'], notes: 'Add for music creation' },
-    udio: { providerId: 'udio', name: 'Udio', confidence: 95, quality: 95, speed: 72, cost: 'medium', status: 'needs_key', features: ['High quality', 'Genres'] },
+    // Core 12 Providers Only - suno/udio remapped to elevenlabs
+    elevenlabs: { providerId: 'elevenlabs', name: 'ElevenLabs Music', confidence: 95, quality: 92, speed: 80, cost: 'medium', status: 'configured', features: ['SFX', 'Music', 'Voice'] },
+    replicate: { providerId: 'replicate', name: 'Replicate Audio', confidence: 80, quality: 78, speed: 75, cost: 'medium', status: 'configured', features: ['Various models', 'Open source'] },
+    alibaba: { providerId: 'alibaba', name: 'Alibaba Audio', confidence: 78, quality: 75, speed: 85, cost: 'low', status: 'configured', features: ['CJK music', 'Fast'] },
   },
   ocr: {
     openai: { providerId: 'openai', name: 'GPT-4 Vision', confidence: 95, quality: 92, speed: 80, cost: 'high', status: 'configured', features: ['Complex docs', 'Forms', 'Medical'] },
