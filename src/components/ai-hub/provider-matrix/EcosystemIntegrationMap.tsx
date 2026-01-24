@@ -52,7 +52,7 @@ const PRODUCT_CONFIG: Record<GenieProduct, { icon: React.ReactNode; color: strin
   spark: { 
     icon: <Sparkles className="h-5 w-5" />, 
     color: 'bg-amber-500', 
-    categories: ['SCRIPT', 'INPUT']
+    categories: ['SCRIPT', 'INPUT', 'ANIMATION']
   },
   mind: { 
     icon: <Brain className="h-5 w-5" />, 
@@ -62,27 +62,27 @@ const PRODUCT_CONFIG: Record<GenieProduct, { icon: React.ReactNode; color: strin
   vibe: { 
     icon: <Film className="h-5 w-5" />, 
     color: 'bg-rose-500', 
-    categories: ['VIDEO', 'VOICE', 'AUDIO']
+    categories: ['VIDEO', 'VOICE', 'AUDIO', '3D', 'ANIMATION', 'SFX']
   },
   arc: { 
     icon: <Target className="h-5 w-5" />, 
     color: 'bg-blue-500', 
-    categories: ['PUBLISHING', 'EXPORT']
+    categories: ['PUBLISHING', 'EXPORT', 'DOWNLOAD', '3D']
   },
   deck: { 
     icon: <LayoutDashboard className="h-5 w-5" />, 
     color: 'bg-emerald-500', 
-    categories: ['IMAGE', 'EXPORT', 'TRANSLATION']
+    categories: ['IMAGE', 'EXPORT', 'TRANSLATION', 'ANIMATION']
   },
   hub: { 
     icon: <Layers className="h-5 w-5" />, 
     color: 'bg-slate-600', 
-    categories: ['INTERACTIVE', 'EXPORT', 'PUBLISHING']
+    categories: ['INTERACTIVE', 'EXPORT', 'PUBLISHING', '3D', 'AR_VR', 'PIPELINE']
   },
   ask_genie: { 
     icon: <MessageSquare className="h-5 w-5" />, 
     color: 'bg-indigo-500', 
-    categories: ['INPUT', 'SCRIPT']
+    categories: ['INPUT', 'SCRIPT', 'VOICE']
   },
 };
 
