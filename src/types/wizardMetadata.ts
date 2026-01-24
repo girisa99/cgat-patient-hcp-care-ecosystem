@@ -50,13 +50,27 @@ export interface TemplateMetadata {
     logoUrl?: string;
     companyName?: string;
   };
+  
+  // Framework selection - MULTI-SELECT PRESERVED
   selectedFrameworkCategories: string[];
+  selectedFrameworkCategoryLabels: string[]; // Human-readable names
   selectedFrameworkIds: string[];
+  selectedFrameworkLabels: string[]; // Human-readable names
+  
+  // Visual Features - FULL MULTI-SELECT WITH ALL SUB-OPTIONS
   visualFeatures: Array<{
     featureId: string;
     featureName: string;
+    category: string;
+    tier: 'standard' | 'advanced' | 'premium';
     subOptions: string[];
+    subOptionLabels: string[];
   }>;
+  
+  // Content Type Categories - MULTI-SELECT
+  contentCategories: string[];
+  contentCategoryLabels: string[];
+  
   step2Mode: 'quick' | 'custom';
 }
 
@@ -65,7 +79,16 @@ export interface TemplateMetadata {
 // ============================================
 export interface OutputMetadata {
   outputType: string;
-  outputTypes: string[]; // Multi-format support
+  outputTypes: string[]; // Multi-format support (animation, interactive, 3D, avatar, etc.)
+  
+  // Output format details - WYSIWYG
+  outputFormats: Array<{
+    formatId: string;
+    formatName: string;
+    category: 'static' | 'animated' | 'interactive' | 'immersive' | 'collaboration';
+    tier: 'standard' | 'advanced' | 'premium';
+  }>;
+  
   structureMode: 'chapters' | 'flat';
   slideCount: number;
   chapterCount?: number;
@@ -73,6 +96,17 @@ export interface OutputMetadata {
   resolution?: '720p' | '1080p' | '4k';
   aspectRatio?: '16:9' | '4:3' | '1:1' | '9:16';
   quality?: 'draft' | 'standard' | 'high' | 'ultra';
+  
+  // Avatar & 3D specific
+  avatarEnabled?: boolean;
+  avatarType?: 'standard' | 'full-body';
+  avatarProvider?: string;
+  meshEnabled?: boolean;
+  mesh3DProvider?: string;
+  
+  // Animation specific
+  animationType?: 'none' | 'basic' | 'advanced' | 'cinematic';
+  transitionStyle?: string;
 }
 
 // ============================================
@@ -122,33 +156,103 @@ export interface GenerationMetadata {
   pipelineId: string;
   pipelineName: string;
   tier: 'standard' | 'advanced' | 'premium';
+  
+  // Text/LLM providers - CONTEXT AWARE
   llmProvider: string;
   llmModel: string;
   llmZone: string;
+  llmReason: string; // Why this provider was selected
+  
+  // Translation providers - INCLUDING ALIBABA, DEEPSEEK
   translationProvider?: string;
+  translationModel?: string;
+  translationReason?: string;
+  
+  // Voice/Audio providers
   ttsProvider?: string;
+  ttsVoiceId?: string;
+  sttProvider?: string;
+  
+  // Image providers
   imageProvider?: string;
+  imageModel?: string;
+  
+  // Video/Avatar providers
   videoProvider?: string;
+  avatarProvider?: string;
+  mesh3DProvider?: string;
+  
   generatedAt: string;
   generationDurationMs?: number;
   creditsUsed?: number;
 }
 
 // ============================================
-// PROVIDER ROUTING METADATA
+// PROVIDER ROUTING METADATA - FULL 4-ZONE SUPPORT
 // ============================================
 export interface ProviderRoutingMetadata {
   regionalBundle: string;
+  regionalBundleName: string;
   llmZone: 'claude' | 'alibaba' | 'gemini' | 'fallback';
+  llmZoneReason: string; // Why this zone was selected
   isRTL: boolean;
   isMoatLanguage: boolean;
+  detectedCountry?: string;
+  detectedLanguage?: string;
+  
+  // Full provider routing with reasons
   providers: {
-    llm: { primary: string; fallback: string; reason: string };
-    translation: { primary: string; fallback: string; reason: string };
-    tts: { primary: string; fallback: string; reason: string };
-    stt: { primary: string; fallback: string; reason: string };
-    image: { primary: string; fallback: string };
-    video: { primary: string; fallback: string };
+    // Text/LLM - Regional routing
+    llm: { 
+      primary: string; 
+      primaryModel: string;
+      fallback: string; 
+      fallbackModel: string;
+      zone: string;
+      reason: string;
+    };
+    // Translation - Language-pair routing (DeepL EU, Qwen-MT CJK, NLLB African)
+    translation: { 
+      primary: string; 
+      fallback: string; 
+      reason: string;
+      supportedPairs: string[];
+    };
+    // TTS - Regional voices
+    tts: { 
+      primary: string; 
+      fallback: string; 
+      reason: string;
+    };
+    // STT - Language-specific
+    stt: { 
+      primary: string; 
+      fallback: string; 
+      reason: string;
+    };
+    // Image - Global (not regional)
+    image: { 
+      primary: string; 
+      fallback: string;
+      model: string;
+    };
+    // Video - Global
+    video: { 
+      primary: string; 
+      fallback: string;
+      model: string;
+    };
+    // Avatar - Global (Alibaba Wan2.2)
+    avatar: {
+      primary: string;
+      fallback: string;
+      type: 'standard' | 'full-body';
+    };
+    // 3D Mesh - Global (ModelsLab)
+    mesh3D: {
+      primary: string;
+      fallback: string;
+    };
   };
 }
 
@@ -249,14 +353,19 @@ export function createDefaultWizardMetadata(): WizardMetadata {
       themeName: 'Default Theme',
       brandConfig: {},
       selectedFrameworkCategories: [],
+      selectedFrameworkCategoryLabels: [],
       selectedFrameworkIds: [],
+      selectedFrameworkLabels: [],
       visualFeatures: [],
+      contentCategories: [],
+      contentCategoryLabels: [],
       step2Mode: 'quick',
     },
     
     step3_output: {
       outputType: '2d-static',
       outputTypes: ['2d-static'],
+      outputFormats: [{ formatId: '2d-static', formatName: 'Static Slides', category: 'static', tier: 'standard' }],
       structureMode: 'flat',
       slideCount: 10,
     },
@@ -283,21 +392,26 @@ export function createDefaultWizardMetadata(): WizardMetadata {
       llmProvider: 'openai',
       llmModel: 'gpt-4o-mini',
       llmZone: 'fallback',
+      llmReason: 'Default provider',
       generatedAt: new Date().toISOString(),
     },
     
     providerRouting: {
       regionalBundle: 'english',
+      regionalBundleName: 'English Core',
       llmZone: 'fallback',
+      llmZoneReason: 'Default zone',
       isRTL: false,
       isMoatLanguage: false,
       providers: {
-        llm: { primary: 'gpt-4o-mini', fallback: 'gemini-flash', reason: 'Default' },
-        translation: { primary: 'google-translate', fallback: 'azure-translator', reason: 'Default' },
+        llm: { primary: 'gpt-4o-mini', primaryModel: 'gpt-4o-mini', fallback: 'gemini-flash', fallbackModel: 'gemini-1.5-flash', zone: 'fallback', reason: 'Default' },
+        translation: { primary: 'google-translate', fallback: 'azure-translator', reason: 'Default', supportedPairs: ['en-*'] },
         tts: { primary: 'azure-neural', fallback: 'google-tts', reason: 'Default' },
         stt: { primary: 'whisper', fallback: 'azure-stt', reason: 'Default' },
-        image: { primary: 'flux-schnell', fallback: 'stability-core' },
-        video: { primary: 'modelslab', fallback: 'replicate' },
+        image: { primary: 'flux-schnell', fallback: 'stability-core', model: 'flux-schnell' },
+        video: { primary: 'modelslab', fallback: 'replicate', model: 'animatediff' },
+        avatar: { primary: 'alibaba-wan22', fallback: 'replicate', type: 'standard' },
+        mesh3D: { primary: 'modelslab', fallback: 'replicate' },
       },
     },
     
