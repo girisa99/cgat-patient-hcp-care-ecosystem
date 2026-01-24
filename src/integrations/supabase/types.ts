@@ -7859,6 +7859,237 @@ export type Database = {
           },
         ]
       }
+      genie_community_categories: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          slug: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          slug?: string
+        }
+        Relationships: []
+      }
+      genie_community_posts: {
+        Row: {
+          accepted_answer_id: string | null
+          author_id: string | null
+          category_id: string | null
+          content: string
+          content_language: string | null
+          created_at: string | null
+          id: string
+          is_approved: boolean | null
+          is_locked: boolean | null
+          is_pinned: boolean | null
+          is_solved: boolean | null
+          moderated_by: string | null
+          moderation_notes: string | null
+          post_type: string | null
+          reply_count: number | null
+          title: string
+          updated_at: string | null
+          upvote_count: number | null
+          view_count: number | null
+        }
+        Insert: {
+          accepted_answer_id?: string | null
+          author_id?: string | null
+          category_id?: string | null
+          content: string
+          content_language?: string | null
+          created_at?: string | null
+          id?: string
+          is_approved?: boolean | null
+          is_locked?: boolean | null
+          is_pinned?: boolean | null
+          is_solved?: boolean | null
+          moderated_by?: string | null
+          moderation_notes?: string | null
+          post_type?: string | null
+          reply_count?: number | null
+          title: string
+          updated_at?: string | null
+          upvote_count?: number | null
+          view_count?: number | null
+        }
+        Update: {
+          accepted_answer_id?: string | null
+          author_id?: string | null
+          category_id?: string | null
+          content?: string
+          content_language?: string | null
+          created_at?: string | null
+          id?: string
+          is_approved?: boolean | null
+          is_locked?: boolean | null
+          is_pinned?: boolean | null
+          is_solved?: boolean | null
+          moderated_by?: string | null
+          moderation_notes?: string | null
+          post_type?: string | null
+          reply_count?: number | null
+          title?: string
+          updated_at?: string | null
+          upvote_count?: number | null
+          view_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "genie_community_posts_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "genie_studio_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "genie_community_posts_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "genie_community_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "genie_community_posts_moderated_by_fkey"
+            columns: ["moderated_by"]
+            isOneToOne: false
+            referencedRelation: "genie_studio_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      genie_community_replies: {
+        Row: {
+          author_id: string | null
+          content: string
+          content_language: string | null
+          created_at: string | null
+          id: string
+          is_accepted_answer: boolean | null
+          is_approved: boolean | null
+          parent_reply_id: string | null
+          post_id: string
+          updated_at: string | null
+          upvote_count: number | null
+        }
+        Insert: {
+          author_id?: string | null
+          content: string
+          content_language?: string | null
+          created_at?: string | null
+          id?: string
+          is_accepted_answer?: boolean | null
+          is_approved?: boolean | null
+          parent_reply_id?: string | null
+          post_id: string
+          updated_at?: string | null
+          upvote_count?: number | null
+        }
+        Update: {
+          author_id?: string | null
+          content?: string
+          content_language?: string | null
+          created_at?: string | null
+          id?: string
+          is_accepted_answer?: boolean | null
+          is_approved?: boolean | null
+          parent_reply_id?: string | null
+          post_id?: string
+          updated_at?: string | null
+          upvote_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "genie_community_replies_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "genie_studio_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "genie_community_replies_parent_reply_id_fkey"
+            columns: ["parent_reply_id"]
+            isOneToOne: false
+            referencedRelation: "genie_community_replies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "genie_community_replies_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "genie_community_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      genie_community_upvotes: {
+        Row: {
+          created_at: string | null
+          id: string
+          post_id: string | null
+          reply_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          post_id?: string | null
+          reply_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          post_id?: string | null
+          reply_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "genie_community_upvotes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "genie_community_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "genie_community_upvotes_reply_id_fkey"
+            columns: ["reply_id"]
+            isOneToOne: false
+            referencedRelation: "genie_community_replies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "genie_community_upvotes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "genie_studio_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       genie_configuration_analytics: {
         Row: {
           context: string | null
@@ -9236,6 +9467,63 @@ export type Database = {
         }
         Relationships: []
       }
+      genie_sla_config: {
+        Row: {
+          created_at: string | null
+          dedicated_agent: boolean | null
+          id: string
+          phone_support: boolean | null
+          priority_queue: boolean | null
+          resolution_time_critical: number | null
+          resolution_time_high: number | null
+          resolution_time_low: number | null
+          resolution_time_medium: number | null
+          resolution_time_urgent: number | null
+          response_time_critical: number | null
+          response_time_high: number | null
+          response_time_low: number | null
+          response_time_medium: number | null
+          response_time_urgent: number | null
+          tier: string
+        }
+        Insert: {
+          created_at?: string | null
+          dedicated_agent?: boolean | null
+          id?: string
+          phone_support?: boolean | null
+          priority_queue?: boolean | null
+          resolution_time_critical?: number | null
+          resolution_time_high?: number | null
+          resolution_time_low?: number | null
+          resolution_time_medium?: number | null
+          resolution_time_urgent?: number | null
+          response_time_critical?: number | null
+          response_time_high?: number | null
+          response_time_low?: number | null
+          response_time_medium?: number | null
+          response_time_urgent?: number | null
+          tier: string
+        }
+        Update: {
+          created_at?: string | null
+          dedicated_agent?: boolean | null
+          id?: string
+          phone_support?: boolean | null
+          priority_queue?: boolean | null
+          resolution_time_critical?: number | null
+          resolution_time_high?: number | null
+          resolution_time_low?: number | null
+          resolution_time_medium?: number | null
+          resolution_time_urgent?: number | null
+          response_time_critical?: number | null
+          response_time_high?: number | null
+          response_time_low?: number | null
+          response_time_medium?: number | null
+          response_time_urgent?: number | null
+          tier?: string
+        }
+        Relationships: []
+      }
       genie_studio_team_invitations: {
         Row: {
           accepted_at: string | null
@@ -9512,6 +9800,499 @@ export type Database = {
           tier_name?: string
         }
         Relationships: []
+      }
+      genie_support_agents: {
+        Row: {
+          avatar_url: string | null
+          avg_resolution_time_hours: number | null
+          avg_response_time_minutes: number | null
+          created_at: string | null
+          current_ticket_count: number | null
+          display_name: string
+          id: string
+          is_active: boolean | null
+          is_available: boolean | null
+          languages: string[] | null
+          max_concurrent_tickets: number | null
+          satisfaction_rating: number | null
+          specializations: string[] | null
+          team_id: string | null
+          total_tickets_handled: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          avg_resolution_time_hours?: number | null
+          avg_response_time_minutes?: number | null
+          created_at?: string | null
+          current_ticket_count?: number | null
+          display_name: string
+          id?: string
+          is_active?: boolean | null
+          is_available?: boolean | null
+          languages?: string[] | null
+          max_concurrent_tickets?: number | null
+          satisfaction_rating?: number | null
+          specializations?: string[] | null
+          team_id?: string | null
+          total_tickets_handled?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          avg_resolution_time_hours?: number | null
+          avg_response_time_minutes?: number | null
+          created_at?: string | null
+          current_ticket_count?: number | null
+          display_name?: string
+          id?: string
+          is_active?: boolean | null
+          is_available?: boolean | null
+          languages?: string[] | null
+          max_concurrent_tickets?: number | null
+          satisfaction_rating?: number | null
+          specializations?: string[] | null
+          team_id?: string | null
+          total_tickets_handled?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "genie_support_agents_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "genie_support_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "genie_support_agents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "genie_studio_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      genie_support_knowledge: {
+        Row: {
+          ai_embedding_updated_at: string | null
+          applicable_products: string[] | null
+          applicable_tiers: string[] | null
+          author_id: string | null
+          category: string
+          content: string
+          created_at: string | null
+          helpful_count: number | null
+          id: string
+          is_published: boolean | null
+          not_helpful_count: number | null
+          primary_language: string | null
+          published_at: string | null
+          search_keywords: string[] | null
+          slug: string
+          subcategory: string | null
+          summary: string | null
+          tags: string[] | null
+          title: string
+          translations: Json | null
+          updated_at: string | null
+          view_count: number | null
+        }
+        Insert: {
+          ai_embedding_updated_at?: string | null
+          applicable_products?: string[] | null
+          applicable_tiers?: string[] | null
+          author_id?: string | null
+          category: string
+          content: string
+          created_at?: string | null
+          helpful_count?: number | null
+          id?: string
+          is_published?: boolean | null
+          not_helpful_count?: number | null
+          primary_language?: string | null
+          published_at?: string | null
+          search_keywords?: string[] | null
+          slug: string
+          subcategory?: string | null
+          summary?: string | null
+          tags?: string[] | null
+          title: string
+          translations?: Json | null
+          updated_at?: string | null
+          view_count?: number | null
+        }
+        Update: {
+          ai_embedding_updated_at?: string | null
+          applicable_products?: string[] | null
+          applicable_tiers?: string[] | null
+          author_id?: string | null
+          category?: string
+          content?: string
+          created_at?: string | null
+          helpful_count?: number | null
+          id?: string
+          is_published?: boolean | null
+          not_helpful_count?: number | null
+          primary_language?: string | null
+          published_at?: string | null
+          search_keywords?: string[] | null
+          slug?: string
+          subcategory?: string | null
+          summary?: string | null
+          tags?: string[] | null
+          title?: string
+          translations?: Json | null
+          updated_at?: string | null
+          view_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "genie_support_knowledge_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "genie_studio_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      genie_support_messages: {
+        Row: {
+          ai_confidence: number | null
+          ai_model_used: string | null
+          content: string
+          content_language: string | null
+          created_at: string | null
+          id: string
+          knowledge_sources: Json | null
+          role: string
+          session_id: string
+          suggested_actions: Json | null
+          user_feedback: string | null
+          was_helpful: boolean | null
+        }
+        Insert: {
+          ai_confidence?: number | null
+          ai_model_used?: string | null
+          content: string
+          content_language?: string | null
+          created_at?: string | null
+          id?: string
+          knowledge_sources?: Json | null
+          role: string
+          session_id: string
+          suggested_actions?: Json | null
+          user_feedback?: string | null
+          was_helpful?: boolean | null
+        }
+        Update: {
+          ai_confidence?: number | null
+          ai_model_used?: string | null
+          content?: string
+          content_language?: string | null
+          created_at?: string | null
+          id?: string
+          knowledge_sources?: Json | null
+          role?: string
+          session_id?: string
+          suggested_actions?: Json | null
+          user_feedback?: string | null
+          was_helpful?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "genie_support_messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "genie_support_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      genie_support_sessions: {
+        Row: {
+          ai_handled_count: number | null
+          ai_resolution_rate: number | null
+          created_at: string | null
+          ended_at: string | null
+          escalated_to_ticket: boolean | null
+          id: string
+          last_activity_at: string | null
+          product_context: string | null
+          session_token: string | null
+          started_at: string | null
+          user_id: string | null
+          user_language: string | null
+          user_region: string | null
+        }
+        Insert: {
+          ai_handled_count?: number | null
+          ai_resolution_rate?: number | null
+          created_at?: string | null
+          ended_at?: string | null
+          escalated_to_ticket?: boolean | null
+          id?: string
+          last_activity_at?: string | null
+          product_context?: string | null
+          session_token?: string | null
+          started_at?: string | null
+          user_id?: string | null
+          user_language?: string | null
+          user_region?: string | null
+        }
+        Update: {
+          ai_handled_count?: number | null
+          ai_resolution_rate?: number | null
+          created_at?: string | null
+          ended_at?: string | null
+          escalated_to_ticket?: boolean | null
+          id?: string
+          last_activity_at?: string | null
+          product_context?: string | null
+          session_token?: string | null
+          started_at?: string | null
+          user_id?: string | null
+          user_language?: string | null
+          user_region?: string | null
+        }
+        Relationships: []
+      }
+      genie_support_teams: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          escalation_target_id: string | null
+          handles_categories:
+            | Database["public"]["Enums"]["genie_ticket_category"][]
+            | null
+          handles_tiers: string[] | null
+          id: string
+          is_active: boolean | null
+          name: string
+          slug: string
+          timezone: string | null
+          working_hours: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          escalation_target_id?: string | null
+          handles_categories?:
+            | Database["public"]["Enums"]["genie_ticket_category"][]
+            | null
+          handles_tiers?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          slug: string
+          timezone?: string | null
+          working_hours?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          escalation_target_id?: string | null
+          handles_categories?:
+            | Database["public"]["Enums"]["genie_ticket_category"][]
+            | null
+          handles_tiers?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          slug?: string
+          timezone?: string | null
+          working_hours?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "genie_support_teams_escalation_target_id_fkey"
+            columns: ["escalation_target_id"]
+            isOneToOne: false
+            referencedRelation: "genie_support_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      genie_support_tickets: {
+        Row: {
+          ai_initial_response: string | null
+          ai_knowledge_matches: Json | null
+          ai_suggested_category:
+            | Database["public"]["Enums"]["genie_ticket_category"]
+            | null
+          ai_suggested_priority:
+            | Database["public"]["Enums"]["genie_ticket_priority"]
+            | null
+          assigned_agent: string | null
+          assigned_team: string | null
+          category: Database["public"]["Enums"]["genie_ticket_category"] | null
+          created_at: string | null
+          description: string
+          escalated_from_session: string | null
+          escalation_reason: string | null
+          first_response_at: string | null
+          genie_studio_user_id: string | null
+          id: string
+          metadata: Json | null
+          priority: Database["public"]["Enums"]["genie_ticket_priority"] | null
+          resolved_at: string | null
+          sla_resolution_deadline: string | null
+          sla_response_deadline: string | null
+          status: Database["public"]["Enums"]["genie_ticket_status"] | null
+          subject: string
+          tags: string[] | null
+          ticket_number: string | null
+          updated_at: string | null
+          user_email: string
+          user_id: string | null
+          user_name: string | null
+          user_tier: string | null
+        }
+        Insert: {
+          ai_initial_response?: string | null
+          ai_knowledge_matches?: Json | null
+          ai_suggested_category?:
+            | Database["public"]["Enums"]["genie_ticket_category"]
+            | null
+          ai_suggested_priority?:
+            | Database["public"]["Enums"]["genie_ticket_priority"]
+            | null
+          assigned_agent?: string | null
+          assigned_team?: string | null
+          category?: Database["public"]["Enums"]["genie_ticket_category"] | null
+          created_at?: string | null
+          description: string
+          escalated_from_session?: string | null
+          escalation_reason?: string | null
+          first_response_at?: string | null
+          genie_studio_user_id?: string | null
+          id?: string
+          metadata?: Json | null
+          priority?: Database["public"]["Enums"]["genie_ticket_priority"] | null
+          resolved_at?: string | null
+          sla_resolution_deadline?: string | null
+          sla_response_deadline?: string | null
+          status?: Database["public"]["Enums"]["genie_ticket_status"] | null
+          subject: string
+          tags?: string[] | null
+          ticket_number?: string | null
+          updated_at?: string | null
+          user_email: string
+          user_id?: string | null
+          user_name?: string | null
+          user_tier?: string | null
+        }
+        Update: {
+          ai_initial_response?: string | null
+          ai_knowledge_matches?: Json | null
+          ai_suggested_category?:
+            | Database["public"]["Enums"]["genie_ticket_category"]
+            | null
+          ai_suggested_priority?:
+            | Database["public"]["Enums"]["genie_ticket_priority"]
+            | null
+          assigned_agent?: string | null
+          assigned_team?: string | null
+          category?: Database["public"]["Enums"]["genie_ticket_category"] | null
+          created_at?: string | null
+          description?: string
+          escalated_from_session?: string | null
+          escalation_reason?: string | null
+          first_response_at?: string | null
+          genie_studio_user_id?: string | null
+          id?: string
+          metadata?: Json | null
+          priority?: Database["public"]["Enums"]["genie_ticket_priority"] | null
+          resolved_at?: string | null
+          sla_resolution_deadline?: string | null
+          sla_response_deadline?: string | null
+          status?: Database["public"]["Enums"]["genie_ticket_status"] | null
+          subject?: string
+          tags?: string[] | null
+          ticket_number?: string | null
+          updated_at?: string | null
+          user_email?: string
+          user_id?: string | null
+          user_name?: string | null
+          user_tier?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "genie_support_tickets_assigned_agent_fkey"
+            columns: ["assigned_agent"]
+            isOneToOne: false
+            referencedRelation: "genie_studio_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "genie_support_tickets_escalated_from_session_fkey"
+            columns: ["escalated_from_session"]
+            isOneToOne: false
+            referencedRelation: "genie_support_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "genie_support_tickets_genie_studio_user_id_fkey"
+            columns: ["genie_studio_user_id"]
+            isOneToOne: false
+            referencedRelation: "genie_studio_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      genie_ticket_responses: {
+        Row: {
+          ai_drafted: boolean | null
+          ai_translated_from: string | null
+          content: string
+          created_at: string | null
+          id: string
+          is_internal_note: boolean | null
+          responder_id: string | null
+          responder_type: string
+          ticket_id: string
+        }
+        Insert: {
+          ai_drafted?: boolean | null
+          ai_translated_from?: string | null
+          content: string
+          created_at?: string | null
+          id?: string
+          is_internal_note?: boolean | null
+          responder_id?: string | null
+          responder_type: string
+          ticket_id: string
+        }
+        Update: {
+          ai_drafted?: boolean | null
+          ai_translated_from?: string | null
+          content?: string
+          created_at?: string | null
+          id?: string
+          is_internal_note?: boolean | null
+          responder_id?: string | null
+          responder_type?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "genie_ticket_responses_responder_id_fkey"
+            columns: ["responder_id"]
+            isOneToOne: false
+            referencedRelation: "genie_studio_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "genie_ticket_responses_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "genie_support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       genie_token_budgets: {
         Row: {
@@ -21791,6 +22572,10 @@ export type Database = {
         Args: { _auth_user_id: string }
         Returns: boolean
       }
+      is_genie_support_agent: {
+        Args: { check_user_id?: string }
+        Returns: boolean
+      }
       log_credit_application_audit: {
         Args: {
           p_action_type: string
@@ -22205,6 +22990,24 @@ export type Database = {
         | "subscriber_enterprise"
         | "freelancer"
       genie_team_role: "owner" | "admin" | "member" | "viewer"
+      genie_ticket_category:
+        | "account"
+        | "billing"
+        | "technical"
+        | "feature_request"
+        | "bug_report"
+        | "content_generation"
+        | "integration"
+        | "other"
+      genie_ticket_priority: "low" | "medium" | "high" | "urgent" | "critical"
+      genie_ticket_status:
+        | "open"
+        | "pending_ai"
+        | "pending_user"
+        | "in_progress"
+        | "escalated"
+        | "resolved"
+        | "closed"
       inventory_model:
         | "traditional_wholesale"
         | "consignment"
@@ -22599,6 +23402,26 @@ export const Constants = {
         "freelancer",
       ],
       genie_team_role: ["owner", "admin", "member", "viewer"],
+      genie_ticket_category: [
+        "account",
+        "billing",
+        "technical",
+        "feature_request",
+        "bug_report",
+        "content_generation",
+        "integration",
+        "other",
+      ],
+      genie_ticket_priority: ["low", "medium", "high", "urgent", "critical"],
+      genie_ticket_status: [
+        "open",
+        "pending_ai",
+        "pending_user",
+        "in_progress",
+        "escalated",
+        "resolved",
+        "closed",
+      ],
       inventory_model: [
         "traditional_wholesale",
         "consignment",
