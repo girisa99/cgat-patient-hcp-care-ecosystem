@@ -93,10 +93,12 @@ const PROVIDER_CAPABILITY_SCORES: Record<string, Record<string, ProviderScore>> 
     azure: { providerId: 'azure', name: 'Azure Speech', confidence: 95, quality: 95, speed: 90, cost: 'medium', status: 'needs_key', features: ['400+ voices', 'SSML', 'Cloning'], notes: 'Best enterprise TTS' },
   },
   stt: {
+    // Core 12 Providers Only - assemblyai remapped to azure/openai
     openai: { providerId: 'openai', name: 'OpenAI Whisper', confidence: 98, quality: 98, speed: 85, cost: 'medium', status: 'configured', features: ['99 languages', 'Real-time', 'Accurate'] },
+    azure: { providerId: 'azure', name: 'Azure Speech', confidence: 97, quality: 97, speed: 90, cost: 'medium', status: 'configured', features: ['125+ languages', 'Diarization', 'Medical vocab'] },
     google: { providerId: 'google', name: 'Google Speech', confidence: 92, quality: 90, speed: 90, cost: 'medium', status: 'configured', features: ['125+ languages', 'Diarization'] },
-    assemblyai: { providerId: 'assemblyai', name: 'AssemblyAI', confidence: 97, quality: 97, speed: 85, cost: 'medium', status: 'needs_key', features: ['Medical vocab', 'Diarization'], notes: 'Best for medical' },
-    deepgram: { providerId: 'deepgram', name: 'Deepgram', confidence: 95, quality: 92, speed: 99, cost: 'medium', status: 'needs_key', features: ['Fastest', 'Real-time'], notes: 'Lowest latency' },
+    alibaba: { providerId: 'alibaba', name: 'Alibaba Paraformer', confidence: 90, quality: 88, speed: 92, cost: 'low', status: 'configured', features: ['CJK expert', 'Fast transcription'] },
+    gemini: { providerId: 'gemini', name: 'Gemini Audio', confidence: 88, quality: 85, speed: 95, cost: 'medium', status: 'configured', features: ['Multimodal', 'Fast'] },
   },
   image_gen: {
     // Core 12 Providers Only - No stability/runway/pika
@@ -135,11 +137,12 @@ const PROVIDER_CAPABILITY_SCORES: Record<string, Record<string, ProviderScore>> 
     alibaba: { providerId: 'alibaba', name: 'Qwen-VL', confidence: 82, quality: 80, speed: 85, cost: 'low', status: 'configured', features: ['CJK native', 'Fast'] },
   },
   nlp: {
-    openai: { providerId: 'openai', name: 'OpenAI NLP', confidence: 96, quality: 94, speed: 85, cost: 'high', status: 'configured', features: ['Embeddings', 'Summarization', 'NER'] },
-    claude: { providerId: 'claude', name: 'Claude NLP', confidence: 95, quality: 95, speed: 80, cost: 'high', status: 'configured', features: ['Summarization', 'Sentiment'] },
-    gemini: { providerId: 'gemini', name: 'Gemini NLP', confidence: 92, quality: 88, speed: 90, cost: 'medium', status: 'configured', features: ['Embeddings', 'Fast'] },
-    google: { providerId: 'google', name: 'Google NLP', confidence: 88, quality: 85, speed: 95, cost: 'low', status: 'configured', features: ['Entity analysis', 'Sentiment'] },
-    cohere: { providerId: 'cohere', name: 'Cohere', confidence: 94, quality: 92, speed: 88, cost: 'medium', status: 'needs_key', features: ['Rerank', 'Embeddings'], notes: 'Best for reranking' },
+    // Core 12 Providers Only - cohere remapped to openai/gemini
+    openai: { providerId: 'openai', name: 'OpenAI NLP', confidence: 98, quality: 96, speed: 85, cost: 'high', status: 'configured', features: ['Embeddings', 'Summarization', 'NER', 'Rerank'] },
+    claude: { providerId: 'claude', name: 'Claude NLP', confidence: 95, quality: 95, speed: 80, cost: 'high', status: 'configured', features: ['Summarization', 'Sentiment', 'Entity extraction'] },
+    gemini: { providerId: 'gemini', name: 'Gemini NLP', confidence: 94, quality: 90, speed: 90, cost: 'medium', status: 'configured', features: ['Embeddings', 'Fast', 'Rerank'] },
+    deepseek: { providerId: 'deepseek', name: 'DeepSeek NLP', confidence: 90, quality: 88, speed: 88, cost: 'low', status: 'configured', features: ['CJK analysis', 'Code NLP'] },
+    alibaba: { providerId: 'alibaba', name: 'Alibaba NLP', confidence: 85, quality: 82, speed: 90, cost: 'low', status: 'configured', features: ['CJK native', 'Entity analysis'] },
   },
   sfx_gen: {
     elevenlabs: { providerId: 'elevenlabs', name: 'ElevenLabs SFX', confidence: 90, quality: 88, speed: 85, cost: 'medium', status: 'configured', features: ['Sound effects', 'Voice'] },
