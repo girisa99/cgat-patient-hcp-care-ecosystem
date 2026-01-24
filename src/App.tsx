@@ -20,6 +20,7 @@ import { LSUniversalProvider } from '@/components/label-studio/LSUniversalProvid
 import { GenieStudioProvider } from '@/contexts/GenieStudioSharedContext';
 import { LazyPages, lazyWithRetry } from '@/utils/lazyWithRetry';
 import { SmartDefaultRoute, RouteTracker } from '@/components/routing/SmartDefaultRoute';
+import { EnhancedComplianceGate } from '@/components/compliance/EnhancedComplianceGate';
 
 // Import pages that exist
 import Index from '@/pages/Index';
@@ -595,10 +596,13 @@ const App = () => {
     <BrowserRouter>
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
-          <RalphWiggumProvider>
-            <AppRouter />
-            {isDev && <RalphWiggumGlobalPanel />}
-          </RalphWiggumProvider>
+          {/* Enhanced Compliance Gate - Blocks sanctioned regions + VPN/proxy bypass attempts */}
+          <EnhancedComplianceGate>
+            <RalphWiggumProvider>
+              <AppRouter />
+              {isDev && <RalphWiggumGlobalPanel />}
+            </RalphWiggumProvider>
+          </EnhancedComplianceGate>
         </QueryClientProvider>
       </ErrorBoundary>
     </BrowserRouter>
