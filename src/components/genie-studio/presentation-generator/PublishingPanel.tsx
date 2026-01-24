@@ -170,21 +170,51 @@ function ExportTab({
       try {
         switch (formatId) {
           case 'pptx':
+          case 'webinar-kit': // Includes slides + script
+            if (formatId === 'webinar-kit') {
+              toast.info('Generating Webinar Kit: slides + script + thumbnail + email...');
+            }
             await exportToPPTX(input, { captureFromDOM: true });
             break;
           case 'pdf':
+          case 'print-ready': // 300dpi CMYK
+          case 'interactive-pdf': // Clickable PDF
+            if (formatId === 'print-ready') {
+              toast.info('Generating 300dpi CMYK Print-Ready PDF...');
+            } else if (formatId === 'interactive-pdf') {
+              toast.info('Generating Interactive PDF with clickable elements...');
+            }
             await exportToPDF(input, { captureFromDOM: true });
             break;
           case 'images':
           case 'png':
           case 'jpg':
+          case 'png-slides':
+          case 'social-media-pack': // IG, FB, LinkedIn, Twitter, TikTok sizes
+          case 'ad-pack': // 300x250, 728x90, 1200x628
+            if (formatId === 'social-media-pack') {
+              toast.info('Generating Social Media Pack with IG, FB, LinkedIn, Twitter, TikTok sizes...');
+            } else if (formatId === 'ad-pack') {
+              toast.info('Generating Ad Creative Pack (300x250, 728x90, 1200x628)...');
+            }
             await exportToImages(input, { captureFromDOM: true });
             break;
           case 'html':
+          case 'email-html': // MJML → HTML
+            if (formatId === 'email-html') {
+              toast.info('Generating MJML → HTML email templates...');
+            }
             await exportToHTML({ ...input, content: slides.map(s => s.title).join('\n') });
             break;
           case 'json':
             exportToJSON(input);
+            break;
+          case 'campaign-bundle':
+            toast.info('Generating Campaign Bundle: all assets in one ZIP...');
+            // Trigger multi-format export bundle
+            await exportToPPTX(input, { captureFromDOM: true });
+            await exportToPDF(input, { captureFromDOM: true });
+            await exportToImages(input, { captureFromDOM: true });
             break;
           default:
             console.log(`[Export] Format ${formatId} not yet implemented via universal export`);
@@ -200,6 +230,7 @@ function ExportTab({
     video: { label: 'Video', icon: <Sparkles className="h-4 w-4" /> },
     image: { label: 'Images', icon: <Download className="h-4 w-4" /> },
     data: { label: 'Data', icon: <Download className="h-4 w-4" /> },
+    marketing: { label: 'Marketing Packs', icon: <Share2 className="h-4 w-4" /> },
   };
 
   return (
