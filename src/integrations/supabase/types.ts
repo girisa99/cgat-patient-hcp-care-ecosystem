@@ -8407,6 +8407,65 @@ export type Database = {
           },
         ]
       }
+      genie_marketing_access: {
+        Row: {
+          access_level: string | null
+          can_generate: boolean | null
+          can_manage_templates: boolean | null
+          can_publish: boolean | null
+          can_schedule: boolean | null
+          created_at: string
+          generations_used_this_month: number | null
+          id: string
+          is_active: boolean | null
+          limit_reset_at: string | null
+          monthly_generation_limit: number | null
+          notes: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_level?: string | null
+          can_generate?: boolean | null
+          can_manage_templates?: boolean | null
+          can_publish?: boolean | null
+          can_schedule?: boolean | null
+          created_at?: string
+          generations_used_this_month?: number | null
+          id?: string
+          is_active?: boolean | null
+          limit_reset_at?: string | null
+          monthly_generation_limit?: number | null
+          notes?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_level?: string | null
+          can_generate?: boolean | null
+          can_manage_templates?: boolean | null
+          can_publish?: boolean | null
+          can_schedule?: boolean | null
+          created_at?: string
+          generations_used_this_month?: number | null
+          id?: string
+          is_active?: boolean | null
+          limit_reset_at?: string | null
+          monthly_generation_limit?: number | null
+          notes?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "genie_marketing_access_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "genie_studio_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       genie_popup_analytics: {
         Row: {
           context: string | null
@@ -9174,6 +9233,108 @@ export type Database = {
           updated_at?: string | null
           user_id?: string | null
           waiting_room_enabled?: boolean | null
+        }
+        Relationships: []
+      }
+      genie_studio_user_roles: {
+        Row: {
+          expires_at: string | null
+          granted_at: string
+          granted_by: string | null
+          id: string
+          role: Database["public"]["Enums"]["genie_studio_role"]
+          user_id: string
+        }
+        Insert: {
+          expires_at?: string | null
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["genie_studio_role"]
+          user_id: string
+        }
+        Update: {
+          expires_at?: string | null
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["genie_studio_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "genie_studio_user_roles_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "genie_studio_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "genie_studio_user_roles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "genie_studio_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      genie_studio_users: {
+        Row: {
+          auth_user_id: string
+          avatar_url: string | null
+          created_at: string
+          credit_balance: number | null
+          current_subscription_tier: string | null
+          display_name: string | null
+          email: string
+          email_verified_at: string | null
+          id: string
+          is_internal: boolean | null
+          is_verified: boolean | null
+          last_login_at: string | null
+          stripe_customer_id: string | null
+          subscription_end_at: string | null
+          subscription_start_at: string | null
+          subscription_status: string | null
+          updated_at: string
+        }
+        Insert: {
+          auth_user_id: string
+          avatar_url?: string | null
+          created_at?: string
+          credit_balance?: number | null
+          current_subscription_tier?: string | null
+          display_name?: string | null
+          email: string
+          email_verified_at?: string | null
+          id?: string
+          is_internal?: boolean | null
+          is_verified?: boolean | null
+          last_login_at?: string | null
+          stripe_customer_id?: string | null
+          subscription_end_at?: string | null
+          subscription_start_at?: string | null
+          subscription_status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          auth_user_id?: string
+          avatar_url?: string | null
+          created_at?: string
+          credit_balance?: number | null
+          current_subscription_tier?: string | null
+          display_name?: string | null
+          email?: string
+          email_verified_at?: string | null
+          id?: string
+          is_internal?: boolean | null
+          is_verified?: boolean | null
+          last_login_at?: string | null
+          stripe_customer_id?: string | null
+          subscription_end_at?: string | null
+          subscription_start_at?: string | null
+          subscription_status?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -21382,6 +21543,17 @@ export type Database = {
         Args: { days_back?: number }
         Returns: Json
       }
+      has_genie_studio_role: {
+        Args: {
+          _auth_user_id: string
+          _role: Database["public"]["Enums"]["genie_studio_role"]
+        }
+        Returns: boolean
+      }
+      has_marketing_engine_access: {
+        Args: { _auth_user_id: string }
+        Returns: boolean
+      }
       has_module_access: {
         Args: { _module_id: string; _user_id: string }
         Returns: boolean
@@ -21429,6 +21601,10 @@ export type Database = {
       is_demo_user: { Args: { check_user_id?: string }; Returns: boolean }
       is_demo_user_or_admin: {
         Args: { check_user_id?: string }
+        Returns: boolean
+      }
+      is_genie_internal_user: {
+        Args: { _auth_user_id: string }
         Returns: boolean
       }
       log_credit_application_audit: {
@@ -21832,6 +22008,18 @@ export type Database = {
         | "universal"
         | "industry-specific"
         | "custom"
+      genie_studio_role:
+        | "super_admin"
+        | "content_manager"
+        | "marketing_lead"
+        | "creator"
+        | "subscriber_free"
+        | "subscriber_starter"
+        | "subscriber_creator"
+        | "subscriber_pro"
+        | "subscriber_business"
+        | "subscriber_enterprise"
+        | "freelancer"
       inventory_model:
         | "traditional_wholesale"
         | "consignment"
@@ -22211,6 +22399,19 @@ export const Constants = {
         "universal",
         "industry-specific",
         "custom",
+      ],
+      genie_studio_role: [
+        "super_admin",
+        "content_manager",
+        "marketing_lead",
+        "creator",
+        "subscriber_free",
+        "subscriber_starter",
+        "subscriber_creator",
+        "subscriber_pro",
+        "subscriber_business",
+        "subscriber_enterprise",
+        "freelancer",
       ],
       inventory_model: [
         "traditional_wholesale",
