@@ -8508,6 +8508,66 @@ export type Database = {
           },
         ]
       }
+      genie_dev_context_exports: {
+        Row: {
+          ai_prompt_markdown: string | null
+          created_at: string | null
+          engineering_context_id: string | null
+          expected_vs_actual: string | null
+          export_content: Json
+          export_format: string
+          export_url: string | null
+          exported_at: string | null
+          exported_by: string | null
+          id: string
+          reproduction_steps_markdown: string | null
+          ticket_id: string | null
+        }
+        Insert: {
+          ai_prompt_markdown?: string | null
+          created_at?: string | null
+          engineering_context_id?: string | null
+          expected_vs_actual?: string | null
+          export_content: Json
+          export_format?: string
+          export_url?: string | null
+          exported_at?: string | null
+          exported_by?: string | null
+          id?: string
+          reproduction_steps_markdown?: string | null
+          ticket_id?: string | null
+        }
+        Update: {
+          ai_prompt_markdown?: string | null
+          created_at?: string | null
+          engineering_context_id?: string | null
+          expected_vs_actual?: string | null
+          export_content?: Json
+          export_format?: string
+          export_url?: string | null
+          exported_at?: string | null
+          exported_by?: string | null
+          id?: string
+          reproduction_steps_markdown?: string | null
+          ticket_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "genie_dev_context_exports_engineering_context_id_fkey"
+            columns: ["engineering_context_id"]
+            isOneToOne: false
+            referencedRelation: "genie_engineering_context"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "genie_dev_context_exports_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "genie_support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       genie_domain_verifications: {
         Row: {
           approval_status: string | null
@@ -8560,6 +8620,92 @@ export type Database = {
             columns: ["brand_config_id"]
             isOneToOne: false
             referencedRelation: "genie_brand_configs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      genie_engineering_context: {
+        Row: {
+          ai_affected_files: Json | null
+          ai_related_issues: Json | null
+          ai_root_cause_analysis: string | null
+          ai_suggested_fix: string | null
+          api_responses: Json | null
+          browser_info: Json | null
+          click_events: Json | null
+          console_errors: Json | null
+          created_at: string | null
+          current_page_state: Json | null
+          device_info: Json | null
+          error_stack_trace: string | null
+          feature_flags: Json | null
+          form_submissions: Json | null
+          id: string
+          local_storage_snapshot: Json | null
+          navigation_path: Json | null
+          network_failures: Json | null
+          os_info: Json | null
+          ticket_id: string | null
+          updated_at: string | null
+          user_actions: Json | null
+          user_tier: string | null
+        }
+        Insert: {
+          ai_affected_files?: Json | null
+          ai_related_issues?: Json | null
+          ai_root_cause_analysis?: string | null
+          ai_suggested_fix?: string | null
+          api_responses?: Json | null
+          browser_info?: Json | null
+          click_events?: Json | null
+          console_errors?: Json | null
+          created_at?: string | null
+          current_page_state?: Json | null
+          device_info?: Json | null
+          error_stack_trace?: string | null
+          feature_flags?: Json | null
+          form_submissions?: Json | null
+          id?: string
+          local_storage_snapshot?: Json | null
+          navigation_path?: Json | null
+          network_failures?: Json | null
+          os_info?: Json | null
+          ticket_id?: string | null
+          updated_at?: string | null
+          user_actions?: Json | null
+          user_tier?: string | null
+        }
+        Update: {
+          ai_affected_files?: Json | null
+          ai_related_issues?: Json | null
+          ai_root_cause_analysis?: string | null
+          ai_suggested_fix?: string | null
+          api_responses?: Json | null
+          browser_info?: Json | null
+          click_events?: Json | null
+          console_errors?: Json | null
+          created_at?: string | null
+          current_page_state?: Json | null
+          device_info?: Json | null
+          error_stack_trace?: string | null
+          feature_flags?: Json | null
+          form_submissions?: Json | null
+          id?: string
+          local_storage_snapshot?: Json | null
+          navigation_path?: Json | null
+          network_failures?: Json | null
+          os_info?: Json | null
+          ticket_id?: string | null
+          updated_at?: string | null
+          user_actions?: Json | null
+          user_tier?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "genie_engineering_context_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "genie_support_tickets"
             referencedColumns: ["id"]
           },
         ]
@@ -8757,6 +8903,127 @@ export type Database = {
           },
         ]
       }
+      genie_fix_deployments: {
+        Row: {
+          created_at: string | null
+          current_environment:
+            | Database["public"]["Enums"]["genie_environment"]
+            | null
+          deployed_to_dev_at: string | null
+          deployed_to_main_at: string | null
+          deployed_to_uat_at: string | null
+          developer_notes: string | null
+          fix_status: string | null
+          github_branch: string | null
+          github_commit_sha: string | null
+          github_pr_number: number | null
+          github_pr_url: string | null
+          id: string
+          test_results: Json | null
+          ticket_id: string | null
+          updated_at: string | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          current_environment?:
+            | Database["public"]["Enums"]["genie_environment"]
+            | null
+          deployed_to_dev_at?: string | null
+          deployed_to_main_at?: string | null
+          deployed_to_uat_at?: string | null
+          developer_notes?: string | null
+          fix_status?: string | null
+          github_branch?: string | null
+          github_commit_sha?: string | null
+          github_pr_number?: number | null
+          github_pr_url?: string | null
+          id?: string
+          test_results?: Json | null
+          ticket_id?: string | null
+          updated_at?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          current_environment?:
+            | Database["public"]["Enums"]["genie_environment"]
+            | null
+          deployed_to_dev_at?: string | null
+          deployed_to_main_at?: string | null
+          deployed_to_uat_at?: string | null
+          developer_notes?: string | null
+          fix_status?: string | null
+          github_branch?: string | null
+          github_commit_sha?: string | null
+          github_pr_number?: number | null
+          github_pr_url?: string | null
+          id?: string
+          test_results?: Json | null
+          ticket_id?: string | null
+          updated_at?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "genie_fix_deployments_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "genie_support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      genie_interactive_tutorials: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          difficulty_level: string | null
+          estimated_duration_minutes: number | null
+          id: string
+          knowledge_article_id: string | null
+          steps: Json
+          title: string
+          total_steps: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          difficulty_level?: string | null
+          estimated_duration_minutes?: number | null
+          id?: string
+          knowledge_article_id?: string | null
+          steps?: Json
+          title: string
+          total_steps?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          difficulty_level?: string | null
+          estimated_duration_minutes?: number | null
+          id?: string
+          knowledge_article_id?: string | null
+          steps?: Json
+          title?: string
+          total_steps?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "genie_interactive_tutorials_knowledge_article_id_fkey"
+            columns: ["knowledge_article_id"]
+            isOneToOne: false
+            referencedRelation: "genie_knowledge_articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       genie_ip_tracking: {
         Row: {
           blocked_count: number | null
@@ -8898,6 +9165,93 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "genie_support_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      genie_knowledge_articles: {
+        Row: {
+          category_id: string | null
+          content_markdown: string
+          created_at: string | null
+          helpful_votes: number | null
+          id: string
+          is_published: boolean | null
+          issue_type_id: string | null
+          keywords: string[] | null
+          last_updated_by: string | null
+          not_helpful_votes: number | null
+          screenshots: Json | null
+          search_vector: unknown
+          slug: string | null
+          summary: string | null
+          title: string
+          tutorial_steps: Json | null
+          updated_at: string | null
+          version: number | null
+          video_embed_code: string | null
+          video_url: string | null
+          view_count: number | null
+        }
+        Insert: {
+          category_id?: string | null
+          content_markdown: string
+          created_at?: string | null
+          helpful_votes?: number | null
+          id?: string
+          is_published?: boolean | null
+          issue_type_id?: string | null
+          keywords?: string[] | null
+          last_updated_by?: string | null
+          not_helpful_votes?: number | null
+          screenshots?: Json | null
+          search_vector?: unknown
+          slug?: string | null
+          summary?: string | null
+          title: string
+          tutorial_steps?: Json | null
+          updated_at?: string | null
+          version?: number | null
+          video_embed_code?: string | null
+          video_url?: string | null
+          view_count?: number | null
+        }
+        Update: {
+          category_id?: string | null
+          content_markdown?: string
+          created_at?: string | null
+          helpful_votes?: number | null
+          id?: string
+          is_published?: boolean | null
+          issue_type_id?: string | null
+          keywords?: string[] | null
+          last_updated_by?: string | null
+          not_helpful_votes?: number | null
+          screenshots?: Json | null
+          search_vector?: unknown
+          slug?: string | null
+          summary?: string | null
+          title?: string
+          tutorial_steps?: Json | null
+          updated_at?: string | null
+          version?: number | null
+          video_embed_code?: string | null
+          video_url?: string | null
+          view_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "genie_knowledge_articles_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "genie_support_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "genie_knowledge_articles_issue_type_id_fkey"
+            columns: ["issue_type_id"]
+            isOneToOne: false
+            referencedRelation: "genie_issue_types"
             referencedColumns: ["id"]
           },
         ]
@@ -11064,6 +11418,128 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "genie_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      genie_tutorial_progress: {
+        Row: {
+          completed_at: string | null
+          completed_steps: number[] | null
+          created_at: string | null
+          current_step: number | null
+          id: string
+          is_completed: boolean | null
+          started_at: string | null
+          time_spent_seconds: number | null
+          tutorial_id: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          completed_steps?: number[] | null
+          created_at?: string | null
+          current_step?: number | null
+          id?: string
+          is_completed?: boolean | null
+          started_at?: string | null
+          time_spent_seconds?: number | null
+          tutorial_id?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          completed_steps?: number[] | null
+          created_at?: string | null
+          current_step?: number | null
+          id?: string
+          is_completed?: boolean | null
+          started_at?: string | null
+          time_spent_seconds?: number | null
+          tutorial_id?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "genie_tutorial_progress_tutorial_id_fkey"
+            columns: ["tutorial_id"]
+            isOneToOne: false
+            referencedRelation: "genie_interactive_tutorials"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      genie_video_walkthroughs: {
+        Row: {
+          average_watch_percentage: number | null
+          category_id: string | null
+          chapters: Json | null
+          created_at: string | null
+          description: string | null
+          duration_seconds: number | null
+          id: string
+          is_published: boolean | null
+          knowledge_article_id: string | null
+          language_code: string | null
+          thumbnail_url: string | null
+          title: string
+          transcript: string | null
+          updated_at: string | null
+          video_url: string
+          view_count: number | null
+        }
+        Insert: {
+          average_watch_percentage?: number | null
+          category_id?: string | null
+          chapters?: Json | null
+          created_at?: string | null
+          description?: string | null
+          duration_seconds?: number | null
+          id?: string
+          is_published?: boolean | null
+          knowledge_article_id?: string | null
+          language_code?: string | null
+          thumbnail_url?: string | null
+          title: string
+          transcript?: string | null
+          updated_at?: string | null
+          video_url: string
+          view_count?: number | null
+        }
+        Update: {
+          average_watch_percentage?: number | null
+          category_id?: string | null
+          chapters?: Json | null
+          created_at?: string | null
+          description?: string | null
+          duration_seconds?: number | null
+          id?: string
+          is_published?: boolean | null
+          knowledge_article_id?: string | null
+          language_code?: string | null
+          thumbnail_url?: string | null
+          title?: string
+          transcript?: string | null
+          updated_at?: string | null
+          video_url?: string
+          view_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "genie_video_walkthroughs_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "genie_support_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "genie_video_walkthroughs_knowledge_article_id_fkey"
+            columns: ["knowledge_article_id"]
+            isOneToOne: false
+            referencedRelation: "genie_knowledge_articles"
             referencedColumns: ["id"]
           },
         ]
@@ -23007,6 +23483,7 @@ export type Database = {
             Returns: boolean
           }
         | { Args: { p_role_name: string; p_user_id: string }; Returns: boolean }
+      classify_issue_type: { Args: { p_ticket_id: string }; Returns: string }
       cleanup_agent_sessions: { Args: never; Returns: Json }
       cleanup_duplicate_test_cases: { Args: never; Returns: Json }
       cleanup_old_draft_agents: {
@@ -23072,6 +23549,10 @@ export type Database = {
       execute_comprehensive_test_suite: {
         Args: { batch_size?: number; suite_type?: string }
         Returns: Json
+      }
+      generate_ai_context_export: {
+        Args: { p_export_format?: string; p_ticket_id: string }
+        Returns: string
       }
       generate_api_key: { Args: { key_type: string }; Returns: string }
       generate_comprehensive_documentation: {
@@ -23428,6 +23909,17 @@ export type Database = {
       run_automated_cleanup: { Args: never; Returns: Json }
       run_comprehensive_system_update: { Args: never; Returns: Json }
       schedule_maintenance: { Args: never; Returns: undefined }
+      search_knowledge_articles: {
+        Args: { p_category_id?: string; p_limit?: number; p_query: string }
+        Returns: {
+          category_name: string
+          id: string
+          relevance: number
+          summary: string
+          title: string
+          video_url: string
+        }[]
+      }
       search_knowledge_by_dataset: {
         Args: { dataset_name: string; limit_count?: number }
         Returns: {
@@ -23704,6 +24196,7 @@ export type Database = {
         | "universal"
         | "industry-specific"
         | "custom"
+      genie_environment: "dev" | "uat" | "staging" | "main" | "production"
       genie_escalation_level:
         | "l1_ai"
         | "l2_support"
@@ -24121,6 +24614,7 @@ export const Constants = {
         "industry-specific",
         "custom",
       ],
+      genie_environment: ["dev", "uat", "staging", "main", "production"],
       genie_escalation_level: [
         "l1_ai",
         "l2_support",
