@@ -43,28 +43,43 @@ export interface RegionRoute {
 
 export const PROVIDER_COSTS = {
   llm: {
-    'claude-3-5-sonnet': { cost: 15, unit: '1M tokens' },
-    'qwen-max': { cost: 8, unit: '1M tokens' },
-    'gemini-pro': { cost: 7, unit: '1M tokens' },
-    'gpt-4o': { cost: 15, unit: '1M tokens' },
-    'deepseek': { cost: 2, unit: '1M tokens' },
+    // Tier 3 - Premium
+    'claude-3-5-sonnet': { cost: 15, unit: '1M tokens', tier: 'premium' },
+    'claude-3-opus': { cost: 30, unit: '1M tokens', tier: 'premium' },
+    'gpt-4o': { cost: 15, unit: '1M tokens', tier: 'premium' },
+    'gpt-5': { cost: 25, unit: '1M tokens', tier: 'premium' },
+    
+    // Tier 2 - Advanced
+    'qwen-max': { cost: 8, unit: '1M tokens', tier: 'advanced' },
+    'qwen-plus': { cost: 5, unit: '1M tokens', tier: 'advanced' },
+    'gemini-pro': { cost: 7, unit: '1M tokens', tier: 'advanced' },
+    'gemini-1.5-pro': { cost: 7, unit: '1M tokens', tier: 'advanced' },
+    'deepseek-v3': { cost: 2, unit: '1M tokens', tier: 'advanced' },
+    'deepseek-r1': { cost: 3, unit: '1M tokens', tier: 'advanced' },
+    
+    // Tier 1 - Standard
+    'qwen-turbo': { cost: 2, unit: '1M tokens', tier: 'standard' },
+    'gemini-flash': { cost: 3, unit: '1M tokens', tier: 'standard' },
+    'gpt-4o-mini': { cost: 5, unit: '1M tokens', tier: 'standard' },
+    'claude-3-haiku': { cost: 3, unit: '1M tokens', tier: 'standard' },
   },
   tts: {
-    'elevenlabs': { cost: 0.30, unit: '1k chars' },
-    'azure-neural': { cost: 0.016, unit: '1k chars' },
-    'alibaba-cosyvoice': { cost: 0.02, unit: '1k chars' },
-    'google-tts': { cost: 0.016, unit: '1k chars' },
+    'elevenlabs': { cost: 0.30, unit: '1k chars', tier: 'premium' },
+    'azure-neural': { cost: 0.016, unit: '1k chars', tier: 'advanced' },
+    'alibaba-cosyvoice': { cost: 0.02, unit: '1k chars', tier: 'advanced' },
+    'google-tts': { cost: 0.016, unit: '1k chars', tier: 'standard' },
   },
   stt: {
-    'whisper': { cost: 0.006, unit: 'minute' },
-    'alibaba-paraformer': { cost: 0, unit: 'minute', note: 'included with Qwen' },
-    'azure-stt': { cost: 0.016, unit: 'minute' },
+    'whisper': { cost: 0.006, unit: 'minute', tier: 'advanced' },
+    'alibaba-paraformer': { cost: 0, unit: 'minute', note: 'included with Qwen', tier: 'advanced' },
+    'azure-stt': { cost: 0.016, unit: 'minute', tier: 'advanced' },
+    'google-stt': { cost: 0.006, unit: 'minute', tier: 'standard' },
   },
   translation: {
-    'deepl': { cost: 0.02, unit: '1k chars' },
-    'qwen-mt': { cost: 0, unit: '1k chars', note: 'included with Qwen' },
-    'google-translate': { cost: 0.02, unit: '1k chars' },
-    'azure-translator': { cost: 0.02, unit: '1k chars' },
+    'deepl': { cost: 0.02, unit: '1k chars', tier: 'premium' },
+    'qwen-mt': { cost: 0, unit: '1k chars', note: 'included with Qwen', tier: 'advanced' },
+    'google-translate': { cost: 0.02, unit: '1k chars', tier: 'standard' },
+    'azure-translator': { cost: 0.02, unit: '1k chars', tier: 'advanced' },
   },
 };
 
