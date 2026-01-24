@@ -375,3 +375,21 @@ export type {
   ProviderRecommendation,
   QualityDashboardData
 } from './qualityBenchmarkService';
+
+// Generation Pipeline Integration (Step 7 Pre-Generation)
+export {
+  validateGenerationPipeline,
+  validateContent,
+  getProvidersForWizardStep,
+  buildEnhancedGenerationRequest,
+  createQualityLog,
+  getStep7ValidationSummary
+} from './generationPipelineIntegration';
+export type {
+  GenerationPipelineConfig,
+  PipelineValidationResult,
+  ContentValidationResult,
+  StepProviderConfig,
+  EnhancedGenerationRequest,
+  GenerationQualityLog
+} from './generationPipelineIntegration';
