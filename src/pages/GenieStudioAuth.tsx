@@ -2,6 +2,7 @@
  * GENIE STUDIO AUTH PAGE
  * Clean authentication page for Genie Studio
  * Google OAuth as PRIMARY method - separate from patient/provider auth
+ * Supports tier selection from pricing page via URL params
  */
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,11 +10,24 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Sparkles, Mail, Lock, User } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, Sparkles, Mail, Lock, User, Crown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useGenieStudioAuth } from '@/hooks/useGenieStudioAuth';
 import GenieStudioAuthLayout from '@/components/auth/GenieStudioAuthLayout';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+
+// Tier display config
+const TIER_CONFIG: Record<string, { label: string; color: string; icon?: React.ReactNode }> = {
+  free: { label: 'Free', color: 'bg-muted text-muted-foreground' },
+  starter: { label: 'Starter', color: 'bg-blue-500/20 text-blue-400' },
+  creator: { label: 'Creator', color: 'bg-purple-500/20 text-purple-400', icon: <Crown className="w-3 h-3" /> },
+  pro: { label: 'Pro', color: 'bg-orange-500/20 text-orange-400', icon: <Crown className="w-3 h-3" /> },
+  business: { label: 'Business', color: 'bg-emerald-500/20 text-emerald-400', icon: <Crown className="w-3 h-3" /> },
+  enterprise: { label: 'Enterprise', color: 'bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-400', icon: <Crown className="w-3 h-3" /> },
+};
+
+type SubscriptionTier = 'free' | 'starter' | 'creator' | 'pro' | 'business' | 'enterprise';
 
 const GenieStudioAuth: React.FC = () => {
   const { 
@@ -26,6 +40,11 @@ const GenieStudioAuth: React.FC = () => {
   
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  
+  // Get selected tier from URL (from pricing page)
+  const selectedTier = (searchParams.get('tier') as SubscriptionTier) || 'free';
+  const tierConfig = TIER_CONFIG[selectedTier] || TIER_CONFIG.free;
   
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
   const [isLoading, setIsLoading] = useState(false);
@@ -47,7 +66,8 @@ const GenieStudioAuth: React.FC = () => {
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
-    await signInWithGoogle(`${window.location.origin}/genie-studio`);
+    // Pass tier in redirect URL so it can be captured after OAuth callback
+    await signInWithGoogle(`${window.location.origin}/genie-studio?tier=${selectedTier}`);
     // Note: This will redirect, so loading state may not reset
   };
 
@@ -135,6 +155,16 @@ const GenieStudioAuth: React.FC = () => {
           <CardDescription className="text-base text-muted-foreground mt-2">
             Sign in to access your AI-powered creative workspace
           </CardDescription>
+          
+          {/* Show selected tier if coming from pricing */}
+          {selectedTier && selectedTier !== 'free' && (
+            <div className="mt-4">
+              <Badge className={`${tierConfig.color} text-sm px-3 py-1`}>
+                {tierConfig.icon}
+                <span className="ml-1">Selected Plan: {tierConfig.label}</span>
+              </Badge>
+            </div>
+          )}
         </CardHeader>
         
         <CardContent className="px-6 pb-6 space-y-6">
