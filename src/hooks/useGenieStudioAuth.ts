@@ -112,11 +112,15 @@ export function useGenieStudioAuth() {
   }, []);
 
   // Create Genie Studio user profile (for new users) + sync to profiles table
+  // Also checks for domain whitelist to auto-flag internal users
   const createGenieUserProfile = useCallback(async (
     authUser: User, 
     selectedTier?: 'free' | 'starter' | 'creator' | 'pro' | 'business' | 'enterprise'
   ): Promise<GenieStudioUser | null> => {
     try {
+      // Import domain whitelist check
+      const { isInternalDomain } = await import('@/utils/genie/internalDomainWhitelist');
+      
       // Extract name from Google metadata or email
       const fullName = authUser.user_metadata?.full_name || 
                        authUser.user_metadata?.name || 
@@ -125,6 +129,9 @@ export function useGenieStudioAuth() {
       const firstName = authUser.user_metadata?.given_name || nameParts[0] || authUser.email?.split('@')[0] || 'Genie';
       const lastName = authUser.user_metadata?.family_name || nameParts.slice(1).join(' ') || 'User';
       const displayName = fullName || `${firstName} ${lastName}`;
+      
+      // Check if user email is from internal domain
+      const isInternal = isInternalDomain(authUser.email || '');
 
       // Determine subscription tier and role
       const tier = selectedTier || 'free';
@@ -150,6 +157,7 @@ export function useGenieStudioAuth() {
           email_verified_at: authUser.email_confirmed_at || null,
           current_subscription_tier: tier,
           subscription_status: tier === 'free' ? 'active' : 'pending',
+          is_internal: isInternal, // Auto-flag internal users based on domain
         })
         .select()
         .single();
