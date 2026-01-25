@@ -128,12 +128,15 @@ const AppContent = () => {
                 </Suspense>
               } />
               
-              {/* Root path - Landing for unauthenticated, Genie Studio for authenticated */}
+              {/* Public landing page route */}
+              <Route path="/genie-landing" element={<GenieStudioLanding />} />
+              
+              {/* Root path - Dashboard redirect */}
               <Route path="/" element={
                 isAuthenticated ? (
-                  <Navigate to="/genie-studio" replace />
+                  <SmartDefaultRoute userRoles={userRoles} />
                 ) : (
-                  <GenieStudioLanding />
+                  <Navigate to="/genie-landing" replace />
                 )
               } />
               
