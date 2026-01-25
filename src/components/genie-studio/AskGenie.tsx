@@ -57,6 +57,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { InlineTrainAIFeedback } from './InlineTrainAIFeedback';
+import { regionalResponseService } from '@/services/regionalResponseService';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUniversalAI } from '@/hooks/useUniversalAI';
 import { useAskGenieVoice, LANGUAGE_VOICE_PAIRINGS, REGION_LABELS, getLanguagesByRegion, detectCountryFromIP } from '@/hooks/useAskGenieVoice';
@@ -1157,8 +1158,11 @@ export const AskGenie: React.FC<AskGenieProps> = ({
     const diagram = shouldShowDiagram(text);
 
     try {
-      // Build context-aware, personality-rich prompt
-      const contextPrompt = `
+      // Build context-aware, personality-rich prompt with regional language support
+      const userLanguage = voice.userLanguage || 'en';
+      const isTechnicalQuery = regionalResponseService.isTechnicalContent(text);
+      
+      const basePrompt = `
 ${productContext.systemContext}
 
 IMPORTANT RESPONSE GUIDELINES:
@@ -1180,9 +1184,15 @@ CURRENT CONTEXT:
 ${diagram ? 'NOTE: User is asking about a workflow. Explain it AND offer to show the visual diagram.' : ''}
 
 USER MESSAGE: ${text}
-
-Respond helpfully, warmly, and with genuine care for their creative journey.
       `.trim();
+
+      // Apply regional language localization (regional for usage, English for technical)
+      const contextPrompt = regionalResponseService.buildLocalizedSystemPrompt(
+        basePrompt,
+        userLanguage,
+        text,
+        isTechnicalQuery
+      );
 
       const response = await generateResponse({
         prompt: contextPrompt,
