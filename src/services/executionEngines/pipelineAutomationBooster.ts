@@ -45,6 +45,7 @@ export const HIGH_AUTOMATION_CATEGORIES = [
   'data_analytics',
   'internal_comms',
   'audio_sfx',
+  'creator_enhancement', // NEW: 22 creator tools with 98%+ automation
 ] as const;
 
 /**
@@ -224,6 +225,37 @@ export const BOOSTED_AUTOMATION_LEVELS: Record<string, number> = {
   'voice-to-voice-clone': 98,
   'audio-restoration': 98,
   'podcast-to-clips': 98,
+  
+  // ══════════════════════════════════════════
+  // CREATOR ENHANCEMENT (98%) - 22 NEW HIGH-DEMAND PIPELINES
+  // ══════════════════════════════════════════
+  // Video/Audio Enhancement
+  'ai-background-removal': 98,
+  'ai-video-upscaling-4k': 98,
+  'ai-audio-enhancement': 98,
+  'ai-filler-word-removal': 98,
+  'ai-beat-sync-editing': 98,
+  'ai-color-grading': 98,
+  // Captions & Subtitles
+  'ai-auto-captions': 98,
+  'ai-styled-captions': 98,
+  'ai-kinetic-captions': 98,
+  'ai-realtime-translation-captions': 98,
+  // Creator Utility
+  'ai-teleprompter': 98,
+  'ai-thumbnail-creator': 98,
+  'ai-screen-recording-edit': 98,
+  'ai-podcast-to-clips': 98,
+  'ai-meeting-notes': 98,
+  'ai-content-scheduler': 98,
+  // Avatar & Voice
+  'ai-voice-cloning-video': 98,
+  'ai-streaming-avatars': 98,
+  'ai-avatar-library': 98,
+  // Advanced Tools
+  'ai-eye-contact-correction': 98,
+  'ai-green-screen-removal': 98,
+  'ai-noise-suppression': 98,
   
   // ══════════════════════════════════════════
   // LIVE/REALTIME (75-90% - Streaming dependencies)
