@@ -50,6 +50,7 @@ import Agents from '@/pages/Agents';
 import Login from '@/pages/Login';
 import GenieStudioAuth from '@/pages/GenieStudioAuth';
 import GenieStudioPricing from '@/pages/GenieStudioPricing';
+import GenieStudioLanding from '@/pages/GenieStudioLanding';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 import EmailConfirmation from '@/pages/EmailConfirmation';
@@ -127,13 +128,18 @@ const AppContent = () => {
                 </Suspense>
               } />
               
+              {/* Root path - Landing for unauthenticated, Genie Studio for authenticated */}
+              <Route path="/" element={
+                isAuthenticated ? (
+                  <Navigate to="/genie-studio" replace />
+                ) : (
+                  <GenieStudioLanding />
+                )
+              } />
+              
               {/* Protected routes */}
               {isAuthenticated ? (
                 <>
-                  {/* Smart default route - preserves last visited page on refresh */}
-                  <Route path="/" element={
-                    <SmartDefaultRoute userRoles={userRoles} />
-                  } />
                   
                   {/* SuperAdmin & Admin & Healthcare Staff routes */}
                   <Route path="/dashboard" element={
