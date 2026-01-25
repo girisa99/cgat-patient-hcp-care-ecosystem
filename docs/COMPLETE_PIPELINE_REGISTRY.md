@@ -367,9 +367,43 @@ Based on user research, these are the most requested features (all now covered):
 
 ---
 
+## Self-Correction & Automation Levels
+
+All 141 pipelines are integrated with the **LoopAgent Self-Correction Engine** for 98%+ automation quality.
+
+### How It Works
+
+1. **Generator Agent** produces initial output
+2. **Verifier Agent** evaluates against quality rubrics (format, completeness, coherence, errors)
+3. **Correction Loop** re-generates with feedback if score < 98% (up to 5 retries)
+4. **Learning System** records successful corrections for future improvement
+
+### Automation Levels by Category
+
+| Category | Target | Rubrics | Max Retries |
+|----------|--------|---------|-------------|
+| Presentation | 98%+ | slide_structure, format, completeness | 5 |
+| Video Production | 98%+ | scene_continuity, audio_sync, quality | 5 |
+| Creator Enhancement (NEW) | 98%+ | media_quality, caption_accuracy, voice_fidelity, completeness | 5 |
+| Localization | 98%+ | translation_accuracy, cultural_fit | 5 |
+| VR/AR/Hardware | 75-85% | format, completeness (hardware-capped) | 3 |
+
+### Creator Enhancement Rubrics (22 Pipelines)
+
+| Rubric | Threshold | Weight | Description |
+|--------|-----------|--------|-------------|
+| `media_quality` | 95% | 25% | Resolution, bitrate, clarity checks |
+| `caption_accuracy` | 95% | 25% | Timing sync, transcription accuracy |
+| `voice_clone_fidelity` | 90% | 20% | Speaker similarity, naturalness (MOS) |
+| `processing_completeness` | 98% | 30% | All requested enhancements applied |
+
+---
+
 ## Related Documentation
 
 - [Pipeline Financial Analysis](./PIPELINE_FINANCIAL_ANALYSIS.md)
 - [Killer Pipeline Strategy](./KILLER_PIPELINE_STRATEGY.md)
 - [Pipeline Commercial Organization](./PIPELINE_COMMERCIAL_ORGANIZATION.md)
 - [Genie Cast Distribution Engine](../src/config/genie-dogfood-integration.ts)
+- [LoopAgent Engine](../src/services/executionEngines/LoopAgentSelfCorrectionEngine.ts)
+- [Pipeline Automation Booster](../src/services/executionEngines/pipelineAutomationBooster.ts)

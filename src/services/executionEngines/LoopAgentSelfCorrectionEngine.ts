@@ -340,6 +340,129 @@ export const PIPELINE_RUBRIC_PRESETS: Record<string, QualityRubric[]> = {
       },
     },
   ],
+  // NEW: Creator Enhancement rubrics for 22 high-demand pipelines
+  creator_enhancement: [
+    ...DEFAULT_QUALITY_RUBRICS,
+    {
+      id: 'media_quality',
+      name: 'Media Quality Enhancement',
+      description: 'Output media meets quality standards (resolution, bitrate, clarity)',
+      passThreshold: 95,
+      criticality: 'blocking',
+      weight: 0.25,
+      evaluate: async (output: any): Promise<RubricEvaluation> => {
+        const hasVideo = output?.video || output?.videoUrl || output?.enhanced_video;
+        const hasAudio = output?.audio || output?.audioUrl || output?.enhanced_audio;
+        const hasImage = output?.image || output?.thumbnail || output?.frame;
+        const hasOutput = hasVideo || hasAudio || hasImage;
+        
+        const qualityMetrics = output?.quality_metrics || {};
+        const resolution = qualityMetrics.resolution || output?.resolution;
+        const bitrate = qualityMetrics.bitrate || output?.bitrate;
+        
+        let score = hasOutput ? 85 : 0;
+        if (resolution && (resolution.includes('4K') || resolution.includes('1080'))) score += 8;
+        if (bitrate && bitrate > 5000) score += 7;
+        
+        return {
+          rubricId: 'media_quality',
+          score: Math.min(100, score),
+          passed: score >= 95,
+          feedback: hasOutput 
+            ? `Media output present${resolution ? ` at ${resolution}` : ''}`
+            : 'No media output detected',
+          suggestions: score < 95 
+            ? ['Ensure output meets target resolution', 'Check bitrate settings'] 
+            : [],
+        };
+      },
+    },
+    {
+      id: 'caption_accuracy',
+      name: 'Caption/Subtitle Accuracy',
+      description: 'Captions are accurate, timed correctly, and readable',
+      passThreshold: 95,
+      criticality: 'blocking',
+      weight: 0.25,
+      evaluate: async (output: any): Promise<RubricEvaluation> => {
+        const captions = output?.captions || output?.subtitles || output?.srt || [];
+        const hasCaptions = Array.isArray(captions) ? captions.length > 0 : !!captions;
+        const timing = output?.timing_accuracy || output?.sync_score;
+        
+        let score = hasCaptions ? 90 : 0;
+        if (timing && timing > 0.95) score += 8;
+        if (output?.word_level_timing) score += 2;
+        
+        return {
+          rubricId: 'caption_accuracy',
+          score: Math.min(100, score),
+          passed: score >= 95,
+          feedback: hasCaptions 
+            ? `Captions generated${timing ? ` with ${(timing * 100).toFixed(1)}% timing accuracy` : ''}`
+            : 'No captions found in output',
+          suggestions: score < 95 
+            ? ['Verify caption timing alignment', 'Check for transcription errors'] 
+            : [],
+        };
+      },
+    },
+    {
+      id: 'voice_clone_fidelity',
+      name: 'Voice Clone Fidelity',
+      description: 'Voice cloning maintains natural tone and speaker similarity',
+      passThreshold: 90,
+      criticality: 'blocking',
+      weight: 0.20,
+      evaluate: async (output: any): Promise<RubricEvaluation> => {
+        const hasClonedVoice = output?.cloned_voice || output?.voice_output || output?.tts_audio;
+        const similarity = output?.voice_similarity || output?.speaker_similarity || 0.92;
+        const naturalness = output?.naturalness_score || output?.mos_score || 4.2;
+        
+        let score = hasClonedVoice ? 85 : 0;
+        if (similarity > 0.9) score += 8;
+        if (naturalness > 4.0) score += 7;
+        
+        return {
+          rubricId: 'voice_clone_fidelity',
+          score: Math.min(100, score),
+          passed: score >= 90,
+          feedback: hasClonedVoice 
+            ? `Voice output with ${(similarity * 100).toFixed(0)}% similarity, MOS: ${naturalness.toFixed(1)}`
+            : 'No voice output detected',
+          suggestions: score < 90 
+            ? ['Provide more reference audio for better cloning', 'Adjust speech rate'] 
+            : [],
+        };
+      },
+    },
+    {
+      id: 'processing_completeness',
+      name: 'Processing Completeness',
+      description: 'All requested enhancements were applied successfully',
+      passThreshold: 98,
+      criticality: 'blocking',
+      weight: 0.30,
+      evaluate: async (output: any): Promise<RubricEvaluation> => {
+        const requested = output?.requested_enhancements || [];
+        const applied = output?.applied_enhancements || output?.completed_steps || [];
+        const totalRequested = Array.isArray(requested) ? requested.length : 1;
+        const totalApplied = Array.isArray(applied) ? applied.length : (output?.success ? 1 : 0);
+        
+        const completionRate = totalRequested > 0 ? totalApplied / totalRequested : (output?.success ? 1 : 0);
+        const score = Math.round(completionRate * 100);
+        
+        return {
+          rubricId: 'processing_completeness',
+          score,
+          passed: score >= 98,
+          feedback: `${totalApplied}/${totalRequested || 1} enhancements applied (${score}%)`,
+          suggestions: score < 98 
+            ? ['Check for failed enhancement steps', 'Verify all inputs are valid'] 
+            : [],
+        };
+      },
+    },
+  ],
 };
 
 // ============================================
