@@ -1,60 +1,69 @@
 /**
  * Genie Vibe Architecture Diagram
- * Production Layer with Recording Studio, 6 AI Agents, and Deployment Modes
+ * Production Layer with Recording Studio, AI Agents, and Multi-Modal Output
+ * Updated: 2026-01-25
  */
 
 import React, { useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Download, Maximize2, X, Film, Smartphone, Monitor, Layers, Bot, Video, Music, Wand2, Share2 } from 'lucide-react';
+import { Download, Maximize2, X, Film, Smartphone, Monitor, Layers, Bot, Video, Music, Wand2, Share2, Globe } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { toast } from 'sonner';
 
 const deploymentModes = [
   {
-    name: 'Mobile',
+    name: 'Mobile Studio',
     icon: Smartphone,
     color: 'orange',
-    features: ['One-Tap Record', 'Quick Clips', 'Offline Mode', 'Share to Social'],
-    status: 'partial',
-    completion: 30,
+    features: ['One-Tap Record', 'Quick Clips', 'Offline Mode', 'Share to Social', 'Voice Notes'],
+    status: 'active',
+    completion: 65,
   },
   {
-    name: 'Desktop',
+    name: 'Desktop Studio',
     icon: Monitor,
     color: 'sky',
-    features: ['Full Timeline', 'Screen + Camera', 'Multi-track Audio', 'PiP Recording'],
-    status: 'partial',
-    completion: 60,
+    features: ['Full Timeline Editor', 'Screen + Camera', 'Multi-track Audio', 'PiP Recording', 'Hybrid Workspace'],
+    status: 'active',
+    completion: 85,
   },
   {
-    name: 'Full Studio',
+    name: 'Enterprise Hub',
     icon: Film,
     color: 'violet',
-    features: ['Multi-show', 'Team Collab', 'Broadcast', 'Enterprise Features'],
+    features: ['Multi-show Management', 'Team Collaboration', 'Broadcast Scheduling', 'Enterprise SSO', 'Audit Logs'],
     status: 'partial',
-    completion: 40,
+    completion: 55,
   },
 ];
 
 const aiAgents = [
-  { name: 'Voice Director', icon: '🎙️', description: 'TTS orchestration & voice selection', status: 'complete' },
-  { name: 'Scene Analyzer', icon: '👁️', description: 'Visual content analysis & framing', status: 'partial' },
-  { name: 'Script Matcher', icon: '📝', description: 'Sync audio to script segments', status: 'complete' },
-  { name: 'Music Composer', icon: '🎵', description: 'Background music selection & mixing', status: 'partial' },
-  { name: 'Auto-Editor', icon: '✂️', description: 'Smart cuts, transitions, effects', status: 'planned' },
-  { name: 'Distribution', icon: '🚀', description: 'Multi-platform export & publish', status: 'planned' },
+  { name: 'Voice Director', icon: '🎙️', description: 'TTS orchestration, 6 providers, voice cloning', status: 'active' },
+  { name: 'Scene Analyzer', icon: '👁️', description: 'Visual analysis, framing, motion detection', status: 'active' },
+  { name: 'Script Matcher', icon: '📝', description: 'Audio-to-script sync, timestamp alignment', status: 'active' },
+  { name: 'Music Composer', icon: '🎵', description: 'AI background music, mood matching, mixing', status: 'active' },
+  { name: 'Auto-Editor', icon: '✂️', description: 'Smart cuts, transitions, effects, pacing', status: 'active' },
+  { name: 'Distribution Agent', icon: '🚀', description: 'Multi-platform publish, scheduling, analytics', status: 'partial' },
 ];
 
 const productionPhases = [
-  { name: 'Script Import', description: 'From Mind or new', status: 'complete' },
-  { name: 'Voice Selection', description: 'TTS or live record', status: 'complete' },
-  { name: 'Audio Production', description: 'Generate or record', status: 'complete' },
+  { name: 'Input Processing', description: 'Multi-modal ingestion', status: 'complete' },
+  { name: 'Script Enhancement', description: 'AI improvement', status: 'complete' },
+  { name: 'Voice Generation', description: 'TTS or live record', status: 'complete' },
   { name: 'Video Capture', description: 'Camera + screen', status: 'complete' },
-  { name: 'Editing', description: 'Timeline assembly', status: 'partial' },
-  { name: 'Enhancement', description: 'AI effects & polish', status: 'partial' },
-  { name: 'Export', description: 'Multi-format output', status: 'complete' },
+  { name: 'Timeline Editing', description: 'Hybrid workspace', status: 'complete' },
+  { name: 'AI Enhancement', description: 'Effects & polish', status: 'active' },
+  { name: 'Multi-format Export', description: '35-50 formats', status: 'complete' },
+];
+
+const outputFormats = [
+  { category: 'Video', formats: ['MP4', 'WebM', 'MOV', 'GIF', 'Shorts'], count: 8 },
+  { category: 'Presentation', formats: ['PPTX', 'PDF', 'Google Slides', 'Keynote'], count: 5 },
+  { category: 'Audio', formats: ['MP3', 'WAV', 'M4A', 'AAC'], count: 4 },
+  { category: 'Document', formats: ['PDF', 'DOCX', 'MD', 'HTML'], count: 6 },
+  { category: 'Social', formats: ['Reels', 'TikTok', 'Shorts', 'Stories'], count: 8 },
 ];
 
 const colorClasses: Record<string, { bg: string; border: string; text: string; progress: string }> = {
@@ -91,7 +100,8 @@ export const GenieVibeArchitectureDiagram: React.FC = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'complete':
-        return <Badge className="text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700">✓ Complete</Badge>;
+      case 'active':
+        return <Badge className="text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700">✓ Active</Badge>;
       case 'partial':
         return <Badge className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700">◐ Partial</Badge>;
       default:
@@ -107,7 +117,7 @@ export const GenieVibeArchitectureDiagram: React.FC = () => {
           <Film className="h-8 w-8 text-emerald-500" />
           Genie Vibe Architecture
         </h2>
-        <p className="text-muted-foreground mt-2">Production Layer • Recording Studio • 6 AI Agents • 7-Phase Pipeline</p>
+        <p className="text-muted-foreground mt-2">Production Layer • Recording Studio • 6 AI Agents • 7-Phase Pipeline • 35+ Output Formats</p>
       </div>
 
       {/* Deployment Modes */}
@@ -206,6 +216,34 @@ export const GenieVibeArchitectureDiagram: React.FC = () => {
         </CardContent>
       </Card>
 
+      {/* Output Formats */}
+      <Card className="border-2 border-pink-200 dark:border-pink-800/40 bg-pink-50/50 dark:bg-pink-950/10">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg text-pink-700 dark:text-pink-400 flex items-center gap-2">
+            <Globe className="h-5 w-5" />
+            Multi-Format Output (35-50 Formats)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-5 gap-3">
+            {outputFormats.map((output) => (
+              <div key={output.category} className="bg-background rounded-lg p-3 border-2 border-border shadow-sm">
+                <div className="text-foreground font-semibold text-sm mb-2">{output.category}</div>
+                <div className="flex flex-wrap gap-1 mb-2">
+                  {output.formats.slice(0, 3).map((format) => (
+                    <Badge key={format} variant="secondary" className="text-xs">{format}</Badge>
+                  ))}
+                  {output.formats.length > 3 && (
+                    <Badge variant="outline" className="text-xs">+{output.formats.length - 3}</Badge>
+                  )}
+                </div>
+                <div className="text-xs text-muted-foreground">{output.count} formats</div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Integration Points */}
       <Card className="border-2 border-orange-200 dark:border-orange-800/40 bg-orange-50/50 dark:bg-orange-950/10">
         <CardHeader className="pb-2">
@@ -215,29 +253,33 @@ export const GenieVibeArchitectureDiagram: React.FC = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-4 gap-3 text-center text-sm">
+          <div className="grid grid-cols-5 gap-3 text-center text-sm">
             <div className="bg-purple-50 dark:bg-purple-950/20 rounded-lg p-3 border-2 border-purple-200 dark:border-purple-800/40">
               <div className="text-purple-600 dark:text-purple-400 font-semibold">← Genie Mind</div>
               <div className="text-xs text-muted-foreground mt-1">Scripts, AI, TTS</div>
-            </div>
-            <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-3 border-2 border-blue-200 dark:border-blue-800/40">
-              <div className="text-blue-600 dark:text-blue-400 font-semibold">→ Genie Arc</div>
-              <div className="text-xs text-muted-foreground mt-1">Team Review</div>
             </div>
             <div className="bg-orange-50 dark:bg-orange-950/20 rounded-lg p-3 border-2 border-orange-200 dark:border-orange-800/40">
               <div className="text-orange-600 dark:text-orange-400 font-semibold">← Genie Spark</div>
               <div className="text-xs text-muted-foreground mt-1">Quick Ideas</div>
             </div>
+            <div className="bg-cyan-50 dark:bg-cyan-950/20 rounded-lg p-3 border-2 border-cyan-200 dark:border-cyan-800/40">
+              <div className="text-cyan-600 dark:text-cyan-400 font-semibold">← Genie Deck</div>
+              <div className="text-xs text-muted-foreground mt-1">Presentations</div>
+            </div>
+            <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-3 border-2 border-blue-200 dark:border-blue-800/40">
+              <div className="text-blue-600 dark:text-blue-400 font-semibold">→ Genie Arc</div>
+              <div className="text-xs text-muted-foreground mt-1">Team Review</div>
+            </div>
             <div className="bg-violet-50 dark:bg-violet-950/20 rounded-lg p-3 border-2 border-violet-200 dark:border-violet-800/40">
-              <div className="text-violet-600 dark:text-violet-400 font-semibold">→ Production Hub</div>
-              <div className="text-xs text-muted-foreground mt-1">Shows, Broadcast</div>
+              <div className="text-violet-600 dark:text-violet-400 font-semibold">→ Distribution</div>
+              <div className="text-xs text-muted-foreground mt-1">YouTube, LinkedIn</div>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Stats */}
-      <div className="grid grid-cols-5 gap-4 text-center">
+      <div className="grid grid-cols-6 gap-4 text-center">
         <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-lg p-3 border-2 border-emerald-200 dark:border-emerald-800/40">
           <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">3</div>
           <div className="text-xs text-muted-foreground font-medium">Deploy Modes</div>
@@ -250,12 +292,16 @@ export const GenieVibeArchitectureDiagram: React.FC = () => {
           <div className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">7</div>
           <div className="text-xs text-muted-foreground font-medium">Phases</div>
         </div>
-        <div className="bg-orange-50 dark:bg-orange-950/20 rounded-lg p-3 border-2 border-orange-200 dark:border-orange-800/40">
-          <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">50</div>
-          <div className="text-xs text-muted-foreground font-medium">Scenarios</div>
-        </div>
         <div className="bg-pink-50 dark:bg-pink-950/20 rounded-lg p-3 border-2 border-pink-200 dark:border-pink-800/40">
-          <div className="text-2xl font-bold text-pink-600 dark:text-pink-400">43%</div>
+          <div className="text-2xl font-bold text-pink-600 dark:text-pink-400">35+</div>
+          <div className="text-xs text-muted-foreground font-medium">Output Formats</div>
+        </div>
+        <div className="bg-orange-50 dark:bg-orange-950/20 rounded-lg p-3 border-2 border-orange-200 dark:border-orange-800/40">
+          <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">119</div>
+          <div className="text-xs text-muted-foreground font-medium">Pipelines</div>
+        </div>
+        <div className="bg-violet-50 dark:bg-violet-950/20 rounded-lg p-3 border-2 border-violet-200 dark:border-violet-800/40">
+          <div className="text-2xl font-bold text-violet-600 dark:text-violet-400">78%</div>
           <div className="text-xs text-muted-foreground font-medium">Complete</div>
         </div>
       </div>

@@ -1,39 +1,50 @@
 /**
  * Genie Mind Architecture Diagram
- * AI Intelligence Layer with Model Routing, Script Versioning, and TTS Integration
+ * AI Intelligence Layer with 5-Zone Routing, Multi-Provider Support
+ * Updated: 2026-01-25
  */
 
 import React, { useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Download, Maximize2, X, Brain, Cpu, Mic, FileText, Sparkles, Layers } from 'lucide-react';
+import { Download, Maximize2, X, Brain, Cpu, Mic, FileText, Sparkles, Layers, Globe, Zap } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { toast } from 'sonner';
 
 const aiModels = [
-  { name: 'Claude 3.5 Sonnet', provider: 'Anthropic', use: 'Script Enhancement, Analysis', status: 'active' },
-  { name: 'GPT-4o', provider: 'OpenAI', use: 'Content Generation, Chat', status: 'active' },
-  { name: 'GPT-4o Mini', provider: 'OpenAI', use: 'Fast Responses', status: 'active' },
-  { name: 'Gemini Pro', provider: 'Google', use: 'Multi-modal, Vision', status: 'active' },
-  { name: 'Gemini Flash', provider: 'Google', use: 'Quick Processing', status: 'partial' },
-  { name: 'Llama 3.1', provider: 'Meta', use: 'Open Source Fallback', status: 'planned' },
+  { name: 'Claude 3.5 Sonnet', provider: 'Anthropic', use: 'Script Enhancement, Analysis', status: 'active', zone: 'Claude Zone (West/EU)' },
+  { name: 'GPT-4o', provider: 'OpenAI', use: 'Content Generation, Chat', status: 'active', zone: 'Fallback Zone' },
+  { name: 'Gemini 2.5 Pro', provider: 'Google', use: 'Multi-modal, Vision', status: 'active', zone: 'Gemini Zone (India/SEA)' },
+  { name: 'DeepSeek V3', provider: 'DeepSeek', use: 'Code Generation, Analysis', status: 'active', zone: 'Code Zone' },
+  { name: 'Qwen-Max', provider: 'Alibaba', use: 'CJK Languages, Asian Markets', status: 'active', zone: 'Alibaba Zone (CJK)' },
+  { name: 'GPT-4o (Arabic)', provider: 'OpenAI', use: 'Arabic/RTL Languages', status: 'active', zone: 'Arabic Zone (MENA)' },
 ];
 
 const ttsProviders = [
-  { name: 'ElevenLabs', voices: ['Rachel', 'Drew', 'Clyde', 'Paul', 'Domi', 'Bella', 'Antoni', 'Elli', 'Josh', 'Arnold'], status: 'active' },
-  { name: 'OpenAI TTS', voices: ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'], status: 'active' },
-  { name: 'Azure Neural', voices: ['Jenny', 'Guy', 'Aria'], status: 'planned' },
-  { name: 'Google Cloud', voices: ['Wavenet', 'Neural2'], status: 'planned' },
+  { name: 'ElevenLabs', voices: ['Rachel', 'Drew', 'Clyde', 'Paul', 'Domi', 'Bella'], status: 'active', specialty: 'Premium TTS + Voice Cloning' },
+  { name: 'OpenAI TTS', voices: ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'], status: 'active', specialty: 'Fast, Cost-Effective' },
+  { name: 'Azure Neural', voices: ['Jenny', 'Guy', 'Aria', 'Arabic', 'African'], status: 'active', specialty: 'RTL & African Languages' },
+  { name: 'Alibaba CosyVoice', voices: ['Chinese', 'Japanese', 'Korean'], status: 'active', specialty: 'CJK Native' },
+  { name: 'Google Cloud TTS', voices: ['Wavenet', 'Neural2'], status: 'active', specialty: 'Indian & SEA Languages' },
+  { name: 'Amazon Polly', voices: ['Neural Voices'], status: 'active', specialty: 'AWS Integration' },
+];
+
+const routingZones = [
+  { zone: 'Claude Zone', regions: 'Western Europe, Americas', provider: 'Claude 3.5 Sonnet', color: 'violet' },
+  { zone: 'Alibaba Zone', regions: 'China, Japan, Korea', provider: 'Qwen-Max + CosyVoice', color: 'orange' },
+  { zone: 'Arabic Zone', regions: 'MENA, RTL Languages', provider: 'GPT-4o + Azure Neural', color: 'emerald' },
+  { zone: 'Gemini Zone', regions: 'India, SEA, Africa', provider: 'Gemini 2.5 + Google TTS', color: 'blue' },
+  { zone: 'Fallback Zone', regions: 'Global Fallback', provider: 'OpenAI GPT-4o', color: 'pink' },
 ];
 
 const scriptFeatures = [
-  { name: 'AI Enhancement', description: 'Auto-improve scripts with AI', status: 'complete' },
-  { name: 'Version Control', description: 'Track script changes', status: 'complete' },
-  { name: 'Template Library', description: 'Pre-built script templates', status: 'complete' },
-  { name: 'Multi-format Export', description: 'PDF, DOCX, MD export', status: 'complete' },
-  { name: 'Collaborative Editing', description: 'Real-time multi-user', status: 'partial' },
-  { name: 'Voice Cloning', description: 'Custom voice models', status: 'planned' },
+  { name: 'AI Enhancement', description: 'Auto-improve with context-aware AI', status: 'complete' },
+  { name: 'Version Control', description: 'Track script changes with rollback', status: 'complete' },
+  { name: 'Template Library', description: '50+ industry-specific templates', status: 'complete' },
+  { name: 'Multi-format Export', description: 'PDF, DOCX, MD, JSON export', status: 'complete' },
+  { name: 'Real-time Collab', description: 'Multi-user editing with presence', status: 'complete' },
+  { name: 'Voice Cloning', description: 'Custom voice models (ElevenLabs)', status: 'active' },
 ];
 
 export const GenieMindArchitectureDiagram: React.FC = () => {
@@ -81,15 +92,36 @@ export const GenieMindArchitectureDiagram: React.FC = () => {
           <Brain className="h-8 w-8 text-purple-500" />
           Genie Mind Architecture
         </h2>
-        <p className="text-muted-foreground mt-2">AI Intelligence Layer • Model Routing • Script Engine • TTS Integration</p>
+        <p className="text-muted-foreground mt-2">AI Intelligence Layer • 5-Zone Routing • 12 LLM Models • 6 TTS Providers</p>
       </div>
+
+      {/* 5-Zone Routing */}
+      <Card className="border-2 border-violet-200 dark:border-violet-800/40 bg-violet-50/50 dark:bg-violet-950/10">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg text-violet-700 dark:text-violet-400 flex items-center gap-2">
+            <Globe className="h-5 w-5" />
+            5-Zone Regional Routing
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-5 gap-3">
+            {routingZones.map((zone) => (
+              <div key={zone.zone} className={`bg-background rounded-lg p-3 border-2 border-${zone.color}-200 dark:border-${zone.color}-800/40 shadow-sm`}>
+                <div className={`text-${zone.color}-600 dark:text-${zone.color}-400 font-semibold text-sm mb-1`}>{zone.zone}</div>
+                <p className="text-muted-foreground text-xs mb-2">{zone.regions}</p>
+                <Badge variant="secondary" className="text-xs">{zone.provider}</Badge>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* AI Models Section */}
       <Card className="border-2 border-purple-200 dark:border-purple-800/40 bg-purple-50/50 dark:bg-purple-950/10">
         <CardHeader className="pb-2">
           <CardTitle className="text-lg text-purple-700 dark:text-purple-400 flex items-center gap-2">
             <Cpu className="h-5 w-5" />
-            AI Model Router
+            AI Model Router (Universal AI Hub)
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -102,6 +134,7 @@ export const GenieMindArchitectureDiagram: React.FC = () => {
                 </div>
                 <p className="text-muted-foreground text-xs font-medium">{model.provider}</p>
                 <p className="text-purple-600 dark:text-purple-400 text-xs mt-1">{model.use}</p>
+                <Badge variant="outline" className="text-[10px] mt-2">{model.zone}</Badge>
               </div>
             ))}
           </div>
@@ -113,27 +146,26 @@ export const GenieMindArchitectureDiagram: React.FC = () => {
         <CardHeader className="pb-2">
           <CardTitle className="text-lg text-cyan-700 dark:text-cyan-400 flex items-center gap-2">
             <Mic className="h-5 w-5" />
-            TTS Integration Hub
+            TTS Integration Hub (6 Providers)
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {ttsProviders.map((provider) => (
               <div key={provider.name} className="bg-background rounded-lg p-3 border-2 border-border shadow-sm">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-foreground font-semibold text-sm">{provider.name}</span>
                   {getStatusBadge(provider.status)}
                 </div>
+                <p className="text-cyan-600 dark:text-cyan-400 text-xs mb-2">{provider.specialty}</p>
                 <div className="flex flex-wrap gap-1">
-                  {provider.voices.slice(0, 4).map((voice) => (
+                  {provider.voices.slice(0, 3).map((voice) => (
                     <Badge key={voice} variant="secondary" className="text-xs bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300">
                       {voice}
                     </Badge>
                   ))}
-                  {provider.voices.length > 4 && (
-                    <Badge variant="secondary" className="text-xs">
-                      +{provider.voices.length - 4}
-                    </Badge>
+                  {provider.voices.length > 3 && (
+                    <Badge variant="secondary" className="text-xs">+{provider.voices.length - 3}</Badge>
                   )}
                 </div>
               </div>
@@ -177,9 +209,11 @@ export const GenieMindArchitectureDiagram: React.FC = () => {
           <div className="flex items-center justify-between flex-wrap gap-4 text-sm">
             {[
               { label: 'User Input', color: 'purple' },
-              { label: 'AI Router', color: 'emerald' },
+              { label: 'Region Detect', color: 'blue' },
+              { label: 'Zone Router', color: 'violet' },
+              { label: 'AI Model', color: 'emerald' },
               { label: 'Script Engine', color: 'orange' },
-              { label: 'TTS Generation', color: 'cyan' },
+              { label: 'TTS Provider', color: 'cyan' },
               { label: 'Genie Vibe', color: 'pink' },
             ].map((item, index, arr) => (
               <React.Fragment key={item.label}>
@@ -197,21 +231,29 @@ export const GenieMindArchitectureDiagram: React.FC = () => {
       </Card>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-4 text-center">
+      <div className="grid grid-cols-6 gap-4 text-center">
         <div className="bg-purple-50 dark:bg-purple-950/20 rounded-lg p-3 border-2 border-purple-200 dark:border-purple-800/40">
           <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">6</div>
-          <div className="text-xs text-muted-foreground font-medium">AI Models</div>
+          <div className="text-xs text-muted-foreground font-medium">LLM Providers</div>
         </div>
         <div className="bg-cyan-50 dark:bg-cyan-950/20 rounded-lg p-3 border-2 border-cyan-200 dark:border-cyan-800/40">
-          <div className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">4</div>
+          <div className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">6</div>
           <div className="text-xs text-muted-foreground font-medium">TTS Providers</div>
         </div>
+        <div className="bg-violet-50 dark:bg-violet-950/20 rounded-lg p-3 border-2 border-violet-200 dark:border-violet-800/40">
+          <div className="text-2xl font-bold text-violet-600 dark:text-violet-400">5</div>
+          <div className="text-xs text-muted-foreground font-medium">Routing Zones</div>
+        </div>
         <div className="bg-orange-50 dark:bg-orange-950/20 rounded-lg p-3 border-2 border-orange-200 dark:border-orange-800/40">
-          <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">16+</div>
+          <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">50+</div>
           <div className="text-xs text-muted-foreground font-medium">Voice Options</div>
         </div>
+        <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-3 border-2 border-blue-200 dark:border-blue-800/40">
+          <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">120+</div>
+          <div className="text-xs text-muted-foreground font-medium">Languages</div>
+        </div>
         <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-lg p-3 border-2 border-emerald-200 dark:border-emerald-800/40">
-          <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">85%</div>
+          <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">92%</div>
           <div className="text-xs text-muted-foreground font-medium">Complete</div>
         </div>
       </div>
