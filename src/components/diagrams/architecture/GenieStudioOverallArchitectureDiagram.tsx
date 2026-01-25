@@ -19,7 +19,7 @@ const modules = [
   { id: 'spark', name: 'Genie Spark', icon: '⚡', color: 'orange', description: 'Quick-Start Engine', status: 'active', completion: 85 },
   { id: 'arc', name: 'Genie Arc', icon: '🌈', color: 'blue', description: 'Team Collaboration', status: 'partial', completion: 45 },
   { id: 'hub', name: 'Production Hub', icon: '🎥', color: 'purple', description: 'Enterprise Center', status: 'partial', completion: 40 },
-  { id: 'ask', name: 'Ask Genie', icon: '💬', color: 'pink', description: 'Conversational AI', status: 'active', completion: 88 },
+  { id: 'cast', name: 'Genie Cast', icon: '📡', color: 'rose', description: 'Marketing Engine', status: 'active', completion: 75 },
 ];
 
 const coreProviders = [
@@ -71,6 +71,7 @@ const moduleColorClasses: Record<string, { border: string; bg: string; text: str
   blue: { border: 'border-blue-400/40', bg: 'bg-blue-500/10', text: 'text-blue-600 dark:text-blue-400', progress: 'bg-blue-500' },
   purple: { border: 'border-purple-400/40', bg: 'bg-purple-500/10', text: 'text-purple-600 dark:text-purple-400', progress: 'bg-purple-500' },
   pink: { border: 'border-pink-400/40', bg: 'bg-pink-500/10', text: 'text-pink-600 dark:text-pink-400', progress: 'bg-pink-500' },
+  rose: { border: 'border-rose-400/40', bg: 'bg-rose-500/10', text: 'text-rose-600 dark:text-rose-400', progress: 'bg-rose-500' },
 };
 
 export const GenieStudioOverallArchitectureDiagram: React.FC = () => {
@@ -106,7 +107,7 @@ export const GenieStudioOverallArchitectureDiagram: React.FC = () => {
           <Layers className="h-8 w-8 text-violet-500" />
           Genie Studio - Complete Architecture
         </h2>
-        <p className="text-muted-foreground mt-2">Mind to Media • 119 Pipelines • 12 Core Providers • 5-Zone Routing • 7 Products</p>
+        <p className="text-muted-foreground mt-2">Mind to Media • 119 Pipelines • 12 Core Providers • 5-Zone Routing • 7 Products (incl. Genie Cast)</p>
       </div>
 
       {/* Implementation Summary */}

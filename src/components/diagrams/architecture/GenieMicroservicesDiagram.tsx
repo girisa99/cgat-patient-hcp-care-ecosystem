@@ -43,11 +43,12 @@ const domainServices = [
     { name: 'team-management', responsibility: 'RBAC & seat management', status: 'active' },
     { name: 'asset-manager', responsibility: 'Shared asset library', status: 'active' },
   ]},
-  { domain: 'Distribution', color: 'pink', icon: '🚀', services: [
-    { name: 'marketing-scheduler', responsibility: 'Dogfooding auto-publish', status: 'active' },
-    { name: 'social-connectors', responsibility: 'YouTube/TikTok/LinkedIn', status: 'partial' },
+  { domain: 'Distribution (Genie Cast)', color: 'pink', icon: '📡', services: [
+    { name: 'genie-cast-scheduler', responsibility: '14-region content scheduling', status: 'active' },
+    { name: 'genie-cast-publisher', responsibility: '6-platform auto-publish', status: 'active' },
+    { name: 'social-connectors', responsibility: 'YouTube/TikTok/LinkedIn/IG/X', status: 'partial' },
     { name: 'analytics-collector', responsibility: 'Usage & performance tracking', status: 'active' },
-    { name: 'cdn-manager', responsibility: 'Content delivery', status: 'active' },
+    { name: 'cdn-manager', responsibility: 'Global content delivery', status: 'active' },
   ]},
 ];
 
@@ -99,9 +100,9 @@ export const GenieMicroservicesDiagram: React.FC = () => {
       <div className="text-center border-b border-border pb-4">
         <h2 className="text-2xl font-bold text-foreground flex items-center justify-center gap-3">
           <Layers className="h-8 w-8 text-violet-500" />
-          Genie Microservices Architecture
+          Genie Microservices Architecture (7 Products)
         </h2>
-        <p className="text-muted-foreground mt-2">6 Domains • 24 Services • 143+ Edge Functions • 12 Providers</p>
+        <p className="text-muted-foreground mt-2">6 Domains • 25 Services • 143+ Edge Functions • 12 Providers • incl. Genie Cast</p>
       </div>
 
       <Card className="bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-950/20 dark:to-purple-950/20 border-2 border-violet-200 dark:border-violet-800/40">
