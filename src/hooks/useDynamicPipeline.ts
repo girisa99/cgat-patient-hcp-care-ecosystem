@@ -15,25 +15,30 @@ import {
 } from '@/components/ai-hub/provider-matrix/pipelineCapabilityMatrix';
 import { useRegionalLanguage } from '@/hooks/useRegionalLanguage';
 
-// Input source to pipeline category mapping
+// Input source to pipeline category mapping (includes creator_enhancement for 22 new pipelines)
 const INPUT_TO_CATEGORY_MAP: Record<string, PipelineCategory[]> = {
-  'prompt': ['presentation', 'video_production', 'content_repurposing', 'marketing_advertising'],
-  'text': ['presentation', 'video_production', 'content_repurposing'],
-  'document': ['presentation', 'content_repurposing', 'training_ld'],
-  'image': ['video_production', 'content_repurposing', 'marketing_advertising', 'social_media'],
-  'url': ['presentation', 'content_repurposing', 'social_media'],
+  'prompt': ['presentation', 'video_production', 'content_repurposing', 'marketing_advertising', 'creator_enhancement'],
+  'text': ['presentation', 'video_production', 'content_repurposing', 'creator_enhancement'],
+  'document': ['presentation', 'content_repurposing', 'training_ld', 'creator_enhancement'],
+  'image': ['video_production', 'content_repurposing', 'marketing_advertising', 'social_media', 'creator_enhancement'],
+  'url': ['presentation', 'content_repurposing', 'social_media', 'creator_enhancement'],
   'figma': ['presentation', 'video_production'],
   'miro': ['presentation', 'video_production'],
   'canva': ['presentation', 'content_repurposing'],
-  'video': ['video_production', 'content_repurposing', 'localization'],
-  'audio': ['content_repurposing', 'localization', 'audio_sfx'],
+  'video': ['video_production', 'content_repurposing', 'localization', 'creator_enhancement'],
+  'audio': ['content_repurposing', 'localization', 'audio_sfx', 'creator_enhancement'],
   'data': ['presentation', 'data_analytics'],
+  // NEW: Creator enhancement specific inputs
+  'screen_recording': ['creator_enhancement', 'video_production'],
+  'podcast': ['creator_enhancement', 'content_repurposing', 'audio_sfx'],
+  'meeting': ['creator_enhancement', 'content_repurposing', 'training_ld'],
+  'live_stream': ['creator_enhancement', 'live_realtime'],
 };
 
-// Output type to vertical mapping
+// Output type to vertical mapping (enhanced for creator tools)
 const OUTPUT_TO_VERTICAL_MAP: Record<string, ProductVertical[]> = {
   'presentation': ['presentations', 'enterprise', 'sales_enablement'],
-  'video': ['generative_video', 'video_repurposing', 'marketing_ads'],
+  'video': ['generative_video', 'video_repurposing', 'marketing_ads', 'social_publishing'],
   'pdf': ['presentations', 'enterprise', 'customer_education'],
   'scorm': ['ld_training', 'customer_education'],
   'social': ['social_publishing', 'marketing_ads'],
@@ -45,6 +50,13 @@ const OUTPUT_TO_VERTICAL_MAP: Record<string, ProductVertical[]> = {
   'podcast': ['ld_training', 'customer_education'],
   'webinar': ['ld_training', 'internal_comms'],
   'storyboard': ['generative_video', 'marketing_ads'],
+  // NEW: Creator enhancement specific outputs
+  'captions': ['social_publishing', 'video_repurposing', 'localization'],
+  'thumbnail': ['social_publishing', 'marketing_ads'],
+  'clips': ['social_publishing', 'video_repurposing', 'marketing_ads'],
+  'upscaled_video': ['generative_video', 'video_repurposing'],
+  'enhanced_audio': ['ld_training', 'customer_education'],
+  'avatar_video': ['ai_avatar', 'customer_education', 'marketing_ads'],
 };
 
 // Tier to pricing tier mapping

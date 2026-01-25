@@ -123,6 +123,7 @@ const CATEGORY_DISPLAY_NAMES: Record<PipelineCategory, string> = {
   live_realtime: 'Live & Realtime',
   immersive_3d: 'Immersive 3D',
   audio_sfx: 'Audio & SFX',
+  creator_enhancement: 'Creator Tools',
 };
 
 const CATEGORY_ICONS: Record<PipelineCategory, React.ReactNode> = {
@@ -140,6 +141,7 @@ const CATEGORY_ICONS: Record<PipelineCategory, React.ReactNode> = {
   live_realtime: <Zap className="h-4 w-4" />,
   immersive_3d: <Layers className="h-4 w-4" />,
   audio_sfx: <Activity className="h-4 w-4" />,
+  creator_enhancement: <Zap className="h-4 w-4" />,
 };
 
 // CORE 12 PROVIDERS - All configured and available

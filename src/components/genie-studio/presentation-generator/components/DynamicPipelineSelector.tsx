@@ -51,6 +51,7 @@ const CATEGORY_CONFIG: Record<PipelineCategory, { label: string; icon: string; c
   live_realtime: { label: 'Live', icon: '🔴', color: 'bg-red-500/10 text-red-500 border-red-500/20' },
   immersive_3d: { label: '3D/VR', icon: '🥽', color: 'bg-violet-500/10 text-violet-500 border-violet-500/20' },
   audio_sfx: { label: 'Audio', icon: '🎵', color: 'bg-fuchsia-500/10 text-fuchsia-500 border-fuchsia-500/20' },
+  creator_enhancement: { label: 'Creator', icon: '✨', color: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20' },
 };
 
 interface DynamicPipelineSelectorProps {

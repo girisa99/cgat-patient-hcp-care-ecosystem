@@ -53,6 +53,7 @@ const CATEGORY_LABELS: Record<PipelineCategory, { label: string; icon: string }>
   live_realtime: { label: 'Live & Real-time', icon: '🔴' },
   immersive_3d: { label: 'Immersive 3D', icon: '🥽' },
   audio_sfx: { label: 'Audio & SFX', icon: '🎵' },
+  creator_enhancement: { label: 'Creator Tools', icon: '✨' },
 };
 
 const VERTICAL_LABELS: Record<ProductVertical, { label: string; short: string }> = {
