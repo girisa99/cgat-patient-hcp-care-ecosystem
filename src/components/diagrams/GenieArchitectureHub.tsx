@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Layers, Brain, Film, Users, Zap, Plug, Server, Target, Sparkles, Database, Shield, GitBranch } from 'lucide-react';
+import { Layers, Brain, Film, Users, Zap, Plug, Server, Target, Sparkles, Database, Shield, GitBranch, Radio, Grid3X3, Bot, Presentation, BarChart3, HeadphonesIcon } from 'lucide-react';
 
 // Import all architecture diagrams
 import { GenieStudioOverallArchitectureDiagram } from './architecture/GenieStudioOverallArchitectureDiagram';
@@ -22,15 +22,29 @@ import { GenieStageGateDashboard } from './architecture/GenieStageGateDashboard'
 import { GenieP3IntegrationDashboard } from './architecture/GenieP3IntegrationDashboard';
 import { ParallelStreamsDashboard } from './genie-command-center/tabs/ParallelStreamsDashboard';
 
+// New diagrams
+import { GenieCastArchitectureDiagram } from './architecture/GenieCastArchitectureDiagram';
+import { GenieProviderCapabilityMatrix } from './architecture/GenieProviderCapabilityMatrix';
+import { GenieAskGenieArchitectureDiagram } from './architecture/GenieAskGenieArchitectureDiagram';
+import { GenieDeckArchitectureDiagram } from './architecture/GenieDeckArchitectureDiagram';
+import { GenieAnalyticsArchitectureDiagram } from './architecture/GenieAnalyticsArchitectureDiagram';
+import { GenieSupportArchitectureDiagram } from './architecture/GenieSupportArchitectureDiagram';
+
 const architectureTabs = [
   { id: 'overall', label: 'Overview', icon: Layers, description: 'Complete system architecture' },
   { id: 'stage-gates', label: 'Stage Gates', icon: Target, description: 'P0-P5 Readiness' },
   { id: 'parallel-streams', label: 'Parallel Streams', icon: GitBranch, description: 'A/B/C Implementation' },
+  { id: 'providers', label: 'Providers', icon: Grid3X3, description: '12-Provider Matrix' },
   { id: 'p3-features', label: 'P3 Features', icon: Sparkles, description: 'Enterprise Capabilities' },
   { id: 'mind', label: 'Genie Mind', icon: Brain, description: 'AI Intelligence Layer' },
-  { id: 'vibe', label: 'Genie Vibe', icon: Film, description: 'Production Layer' },
-  { id: 'arc-hub', label: 'Arc & Hub', icon: Users, description: 'Collaboration & Enterprise' },
   { id: 'spark', label: 'Genie Spark', icon: Zap, description: 'Quick-Start Engine' },
+  { id: 'vibe', label: 'Genie Vibe', icon: Film, description: 'Production Layer' },
+  { id: 'deck', label: 'Genie Deck', icon: Presentation, description: 'Presentations' },
+  { id: 'arc-hub', label: 'Arc & Hub', icon: Users, description: 'Collaboration & Enterprise' },
+  { id: 'cast', label: 'Genie Cast', icon: Radio, description: 'Marketing Engine' },
+  { id: 'ask-genie', label: 'Ask Genie', icon: Bot, description: 'AI Assistant' },
+  { id: 'analytics', label: 'Analytics', icon: BarChart3, description: 'Insights Engine' },
+  { id: 'support', label: 'Support', icon: HeadphonesIcon, description: 'Help Center' },
   { id: 'integrations', label: 'Integrations', icon: Plug, description: 'APIs & Services' },
   { id: 'microservices', label: 'Microservices', icon: Server, description: 'Service Architecture' },
   { id: 'data', label: 'Data Arch', icon: Database, description: 'Schema & ER Diagram' },
@@ -71,6 +85,10 @@ export const GenieArchitectureHub: React.FC = () => {
             <ParallelStreamsDashboard />
           </TabsContent>
 
+          <TabsContent value="providers" className="m-0">
+            <GenieProviderCapabilityMatrix />
+          </TabsContent>
+
           <TabsContent value="p3-features" className="m-0">
             <GenieP3IntegrationDashboard />
           </TabsContent>
@@ -79,16 +97,36 @@ export const GenieArchitectureHub: React.FC = () => {
             <GenieMindArchitectureDiagram />
           </TabsContent>
 
+          <TabsContent value="spark" className="m-0">
+            <GenieSparkArchitectureDiagram />
+          </TabsContent>
+
           <TabsContent value="vibe" className="m-0">
             <GenieVibeArchitectureDiagram />
+          </TabsContent>
+
+          <TabsContent value="deck" className="m-0">
+            <GenieDeckArchitectureDiagram />
           </TabsContent>
 
           <TabsContent value="arc-hub" className="m-0">
             <GenieArcProductionHubDiagram />
           </TabsContent>
 
-          <TabsContent value="spark" className="m-0">
-            <GenieSparkArchitectureDiagram />
+          <TabsContent value="cast" className="m-0">
+            <GenieCastArchitectureDiagram />
+          </TabsContent>
+
+          <TabsContent value="ask-genie" className="m-0">
+            <GenieAskGenieArchitectureDiagram />
+          </TabsContent>
+
+          <TabsContent value="analytics" className="m-0">
+            <GenieAnalyticsArchitectureDiagram />
+          </TabsContent>
+
+          <TabsContent value="support" className="m-0">
+            <GenieSupportArchitectureDiagram />
           </TabsContent>
 
           <TabsContent value="integrations" className="m-0">
