@@ -7,9 +7,16 @@
  * - Context feeding to generation systems (Deck, Spark, etc.)
  * - Language pairing recommendations
  * - Flow guidance and recovery suggestions
+ * - Full 141 pipeline awareness via askGeniePipelineKnowledgeBase
+ * - A2A agent orchestration support
+ * - 8-step wizard and editing workflow knowledge
  */
 
 import { LANGUAGE_VOICE_PAIRINGS } from '@/hooks/useAskGenieVoice';
+import { askGeniePipelineKnowledgeBase, WIZARD_STEPS_KNOWLEDGE, EDITING_KNOWLEDGE, A2A_AGENT_KNOWLEDGE } from '@/services/askGeniePipelineKnowledgeBase';
+
+// Re-export for convenience
+export { askGeniePipelineKnowledgeBase, WIZARD_STEPS_KNOWLEDGE, EDITING_KNOWLEDGE, A2A_AGENT_KNOWLEDGE };
 
 // ==================== TYPES ====================
 
