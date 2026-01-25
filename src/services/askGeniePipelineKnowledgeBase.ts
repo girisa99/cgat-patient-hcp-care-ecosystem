@@ -491,34 +491,165 @@ export const PIPELINE_CATEGORIES_DETAILED = {
   }
 };
 
-// ==================== SUPPORT KNOWLEDGE ====================
+// ==================== COMPREHENSIVE SUPPORT TIER CONFIGURATION ====================
+
+/**
+ * 6-TIER SUPPORT STRUCTURE
+ * Response times, channels, and SLA priority per subscription tier
+ */
+export const SUPPORT_TIERS = {
+  free: {
+    tier: 'Free',
+    supportType: 'AI Chat (Ask Genie) + Community',
+    responseTime: '< 1 min (AI)',
+    channels: ['In-app chat', 'Docs'],
+    slaPriority: 6,
+    hasEmail: false,
+    hasPhone: false,
+    hasSlack: false,
+    hasAccountManager: false,
+    hasDedicatedTeam: false
+  },
+  creator: {
+    tier: 'Creator',
+    supportType: 'AI Chat + Email',
+    responseTime: '< 24 hours',
+    channels: ['In-app', 'Email'],
+    slaPriority: 5,
+    hasEmail: true,
+    hasPhone: false,
+    hasSlack: false,
+    hasAccountManager: false,
+    hasDedicatedTeam: false
+  },
+  pro: {
+    tier: 'Pro',
+    supportType: 'AI Chat + Priority Email',
+    responseTime: '< 4 hours',
+    channels: ['In-app', 'Email', 'Priority queue'],
+    slaPriority: 4,
+    hasEmail: true,
+    hasPhone: false,
+    hasSlack: false,
+    hasAccountManager: false,
+    hasDedicatedTeam: false
+  },
+  team: {
+    tier: 'Team',
+    supportType: 'AI Chat + Dedicated Support',
+    responseTime: '< 1 hour',
+    channels: ['In-app', 'Email', 'Slack'],
+    slaPriority: 3,
+    hasEmail: true,
+    hasPhone: false,
+    hasSlack: true,
+    hasAccountManager: false,
+    hasDedicatedTeam: false
+  },
+  business: {
+    tier: 'Business',
+    supportType: 'AI Chat + Account Manager',
+    responseTime: '< 30 min',
+    channels: ['All channels + Phone'],
+    slaPriority: 2,
+    hasEmail: true,
+    hasPhone: true,
+    hasSlack: true,
+    hasAccountManager: true,
+    hasDedicatedTeam: false
+  },
+  enterprise: {
+    tier: 'Enterprise',
+    supportType: 'AI Chat + Dedicated Team + SLA',
+    responseTime: 'Custom SLA',
+    channels: ['All + Dedicated Slack'],
+    slaPriority: 1,
+    hasEmail: true,
+    hasPhone: true,
+    hasSlack: true,
+    hasAccountManager: true,
+    hasDedicatedTeam: true
+  }
+};
+
+/**
+ * ASK GENIE AI SUPPORT CAPABILITIES
+ * Resolution rates by question type
+ */
+export const ASK_GENIE_AI_CAPABILITIES = {
+  description: 'AI-powered Level 1 support with full 141 pipeline awareness',
+  capabilities: [
+    { type: 'how_to_questions', description: 'How do I add an avatar to my video?', resolutionRate: 95 },
+    { type: 'error_explanation', description: 'What does this error mean?', resolutionRate: 90 },
+    { type: 'feature_discovery', description: 'Can Genie do X?', resolutionRate: 98 },
+    { type: 'troubleshooting', description: 'My export isn\'t working', resolutionRate: 70 },
+    { type: 'account_questions', description: 'How do I upgrade?', resolutionRate: 95 },
+    { type: 'pipeline_selection', description: 'Which pipeline should I use for X?', resolutionRate: 90 },
+    { type: 'best_practices', description: 'How do I get better results?', resolutionRate: 95 }
+  ],
+  averageResolutionRate: 90,
+  pipelineAwareness: { totalPipelines: 141, categories: 15, wizardSteps: 8, editingModes: 4, a2aAgents: 8 }
+};
+
+/**
+ * 7-STEP ESCALATION FLOW
+ */
+export const ESCALATION_FLOW = {
+  steps: [
+    { step: 1, action: 'User asks question', criteria: 'Any question', handler: 'Ask Genie AI' },
+    { step: 2, action: 'Ask Genie responds', criteria: 'AI processes with full context', handler: 'Ask Genie AI' },
+    { step: 3, action: 'Check satisfaction', criteria: '"Did this help?" prompt', handler: 'Ask Genie AI' },
+    { step: '4a', action: 'If Yes → Close', criteria: 'User satisfied', handler: 'System' },
+    { step: '4b', action: 'If No → Suggest alternatives', criteria: 'AI tries again', handler: 'Ask Genie AI' },
+    { step: 5, action: 'If still No → "Would you like human help?"', criteria: 'User frustrated', handler: 'Ask Genie AI' },
+    { step: 6, action: 'Create ticket with full context', criteria: 'AI summary included', handler: 'System' },
+    { step: 7, action: 'Human support with AI context', criteria: 'Agent sees entire history', handler: 'Support Agent' }
+  ]
+};
+
+/**
+ * ENGINEERING CONTEXT EXPORT
+ * Auto-captured for technical issues
+ */
+export const ENGINEERING_CONTEXT_EXPORT = {
+  dataCaptures: [
+    { data: 'Error stack traces', purpose: 'Dev debugging' },
+    { data: 'Network failures', purpose: 'API issue identification' },
+    { data: 'Browser/OS info', purpose: 'Environment reproduction' },
+    { data: 'Session replay URL', purpose: 'Visual debugging' },
+    { data: 'Reproduction steps', purpose: 'Issue recreation' },
+    { data: 'User\'s recent actions', purpose: 'Context for debugging' }
+  ],
+  exportFormats: ['markdown', 'json', 'lovable', 'cursor', 'claude', 'github_issue']
+};
+
+/**
+ * COMPETITIVE DIFFERENTIATORS
+ */
+export const SUPPORT_DIFFERENTIATORS = [
+  { feature: 'First response', us: 'Instant (AI)', competitor: '2-24 hours' },
+  { feature: 'Context awareness', us: 'AI knows user\'s projects', competitor: 'User explains from scratch' },
+  { feature: 'Pipeline-specific help', us: 'AI understands all 141 pipelines', competitor: 'Generic FAQ' },
+  { feature: 'Language support', us: '70+ languages via AI', competitor: 'English only usually' },
+  { feature: '24/7 availability', us: 'AI always available', competitor: 'Business hours only' },
+  { feature: 'Ticket context', us: 'Full conversation + tech context exported', competitor: 'User re-explains' }
+];
 
 export const SUPPORT_KNOWLEDGE = {
   escalationLevels: [
-    { level: 1, name: 'Ask Genie AI', description: 'AI-powered first response with full pipeline knowledge' },
-    { level: 2, name: 'Community Support', description: 'User-to-user assistance forum' },
-    { level: 3, name: 'Support Agent', description: 'Human support agent' },
-    { level: 4, name: 'Technical Specialist', description: 'Engineering escalation' },
-    { level: 5, name: 'Management', description: 'Critical issue escalation' }
+    { level: 1, name: 'Ask Genie AI', description: 'AI-powered first response with full 141 pipeline knowledge', responseTime: '< 1 min' },
+    { level: 2, name: 'Community Support', description: 'User-to-user assistance forum', responseTime: '< 4 hours' },
+    { level: 3, name: 'Support Agent', description: 'Human support agent (Tier-based SLA)', responseTime: 'Per tier SLA' },
+    { level: 4, name: 'Technical Specialist', description: 'Engineering escalation with context export', responseTime: '< 24 hours' },
+    { level: 5, name: 'Management', description: 'Critical issue escalation', responseTime: 'Custom' }
   ],
-  
-  selfServiceResources: [
-    'Knowledge Base articles',
-    'Video walkthroughs',
-    'Interactive tutorials',
-    'FAQ database',
-    'Community discussions'
-  ],
-  
-  commonCategories: [
-    'Generation issues',
-    'Credit/billing questions',
-    'Feature requests',
-    'Quality concerns',
-    'Account/access issues',
-    'Integration problems',
-    'Performance issues'
-  ]
+  selfServiceResources: ['Knowledge Base articles', 'Video walkthroughs', 'Interactive tutorials', 'FAQ database', 'Community discussions'],
+  commonCategories: ['Generation issues', 'Credit/billing questions', 'Feature requests', 'Quality concerns', 'Account/access issues', 'Integration problems', 'Performance issues'],
+  tiers: SUPPORT_TIERS,
+  aiCapabilities: ASK_GENIE_AI_CAPABILITIES,
+  escalationFlow: ESCALATION_FLOW,
+  engineeringContext: ENGINEERING_CONTEXT_EXPORT,
+  differentiators: SUPPORT_DIFFERENTIATORS
 };
 
 // ==================== MAIN KNOWLEDGE BASE CLASS ====================
