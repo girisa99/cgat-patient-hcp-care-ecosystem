@@ -51,6 +51,8 @@ import Login from '@/pages/Login';
 import GenieStudioAuth from '@/pages/GenieStudioAuth';
 import GenieStudioPricing from '@/pages/GenieStudioPricing';
 import GenieStudioLanding from '@/pages/GenieStudioLanding';
+import GenieAdminPage from '@/pages/GenieAdminPage';
+import GenieSupportPage from '@/pages/GenieSupportPage';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 import EmailConfirmation from '@/pages/EmailConfirmation';
@@ -130,6 +132,12 @@ const AppContent = () => {
               
               {/* Public landing page route */}
               <Route path="/genie-landing" element={<GenieStudioLanding />} />
+              
+              {/* Genie Support - accessible to all (with auth prompt for tickets) */}
+              <Route path="/genie-support" element={<GenieSupportPage />} />
+              
+              {/* Genie Admin - internal users only (self-protected) */}
+              <Route path="/genie-admin" element={<GenieAdminPage />} />
               
               {/* Root path - Dashboard redirect */}
               <Route path="/" element={
