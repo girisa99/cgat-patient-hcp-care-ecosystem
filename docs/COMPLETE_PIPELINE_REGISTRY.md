@@ -1,7 +1,7 @@
-# Complete Pipeline Registry - 119 Production-Ready Pipelines
+# Complete Pipeline Registry - 141 Production-Ready Pipelines
 
 > **Last Updated:** 2026-01-25  
-> **Status:** 100% Production-Ready (119/119 Covered)  
+> **Status:** 100% Production-Ready (141/141 Covered)  
 > **Source:** `src/components/ai-hub/provider-matrix/pipelineIORegistry.ts`
 
 ---
@@ -10,20 +10,20 @@
 
 | Metric | Value |
 |--------|-------|
-| **Total Pipelines** | 119 |
-| **Covered/Production-Ready** | 119 (100%) |
-| **Categories** | 14 |
+| **Total Pipelines** | 141 |
+| **Covered/Production-Ready** | 141 (100%) |
+| **Categories** | 15 |
 | **Core Providers** | 12 |
-| **Input Formats** | 50+ |
-| **Output Formats** | 35+ |
+| **Input Formats** | 55+ |
+| **Output Formats** | 40+ |
 
 ### By Subscription Tier
 
 | Tier | Count |
 |------|-------|
-| Starter | 6 |
-| Pro | 89 |
-| Enterprise | 24 |
+| Starter | 8 |
+| Pro | 103 |
+| Enterprise | 30 |
 
 ---
 
@@ -244,6 +244,59 @@
 
 ---
 
+## Category 15: Creator/Enhancement - CRITICAL USER DEMAND (22 NEW Pipelines)
+
+> 🔥 **NEW** - These pipelines address the most frequently requested features by users
+
+### Video Enhancement
+
+| # | Pipeline ID | Name | Tier | Input Formats | Output Formats | Providers | Demand |
+|---|-------------|------|------|---------------|----------------|-----------|--------|
+| 120 | `ai-background-removal` | AI Background Removal | Pro | mp4, mov, webm, png, jpg | mp4, webm, png, mov_prores | ModelsLab, Replicate, Azure | **HIGH** |
+| 121 | `ai-video-upscaling` | AI Video Upscaling | Pro | mp4, mov, webm | mp4, mov, webm | ModelsLab, Replicate, Alibaba | **HIGH** |
+| 122 | `ai-audio-enhancement` | AI Audio Enhancement | Pro | mp3, wav, mp4, mov | mp3, wav, mp4 | ElevenLabs, Azure, Alibaba | **HIGH** |
+| 123 | `ai-green-screen` | AI Green Screen | Pro | mp4, mov, webm | mp4, mov, webm | ModelsLab, Replicate | MEDIUM |
+| 124 | `ai-filler-removal` | AI Filler Word Removal | Pro | mp4, mp3, wav | mp4, mp3, wav | ElevenLabs, Azure, OpenAI | **HIGH** |
+| 125 | `ai-beat-sync-editing` | AI Beat-Sync Editing | Pro | mp4, mp3, clips_folder | mp4, webm | OpenAI, Gemini, ModelsLab | **HIGH** |
+
+### Captions & Subtitles
+
+| # | Pipeline ID | Name | Tier | Input Formats | Output Formats | Providers | Demand |
+|---|-------------|------|------|---------------|----------------|-----------|--------|
+| 126 | `ai-auto-captions` | AI Auto-Captions | Starter | mp4, mov, mp3, wav | mp4, srt, vtt, ass | Azure, OpenAI, Alibaba, ElevenLabs | **VERY HIGH** |
+| 127 | `ai-styled-captions` | AI Styled Captions | Pro | mp4, srt, vtt | mp4, mov | ModelsLab, OpenAI | **HIGH** |
+| 128 | `ai-realtime-translation` | AI Real-time Translation | Enterprise | webrtc, mp4_stream | webrtc, srt_live | Azure, DeepL, Alibaba | MEDIUM |
+
+### Recording Tools
+
+| # | Pipeline ID | Name | Tier | Input Formats | Output Formats | Providers | Demand |
+|---|-------------|------|------|---------------|----------------|-----------|--------|
+| 129 | `ai-teleprompter` | AI Teleprompter | Pro | txt, docx, json | overlay_stream, mp4 | OpenAI, Claude | **HIGH** |
+| 130 | `ai-screen-recording-edit` | Screen Recording + AI Edit | Pro | screen_capture, webrtc | mp4, gif, webm | Gemini, OpenAI, ModelsLab | **HIGH** |
+| 131 | `ai-meeting-clips` | AI Meeting Clips | Pro | mp4, webrtc, zoom_recording | mp4, txt, json | Gemini, Claude, OpenAI | MEDIUM |
+
+### Content Generation
+
+| # | Pipeline ID | Name | Tier | Input Formats | Output Formats | Providers | Demand |
+|---|-------------|------|------|---------------|----------------|-----------|--------|
+| 132 | `ai-thumbnail-creator` | AI Thumbnail Creator | Starter | mp4, png, txt | png, jpg, webp | OpenAI, ModelsLab, Alibaba | **HIGH** |
+| 133 | `ai-b-roll-generator` | AI B-Roll Generator | Pro | txt, mp4, json | mp4, gif | ModelsLab, Alibaba, Replicate | MEDIUM |
+| 134 | `ai-meme-generator` | AI Meme Generator | Starter | txt, trend_topic | png, gif, mp4 | OpenAI, Claude, ModelsLab | MEDIUM |
+| 135 | `ai-photo-slideshow` | AI Photo Slideshow | Starter | png, jpg, photos_folder | mp4, webm | ModelsLab, OpenAI | MEDIUM |
+| 136 | `ai-progress-bar-animations` | AI Progress Bar Animations | Pro | mp4, json | mp4, webm | ModelsLab, OpenAI | **HIGH** |
+| 137 | `ai-trending-templates` | AI Trending Templates | Pro | content, platform | mp4, pptx, png | Claude, Gemini, ModelsLab | **HIGH** |
+
+### Avatar & Voice
+
+| # | Pipeline ID | Name | Tier | Input Formats | Output Formats | Providers | Demand |
+|---|-------------|------|------|---------------|----------------|-----------|--------|
+| 138 | `ai-voice-clone-reuse` | AI Voice Clone for Videos | Enterprise | mp3, wav, voice_sample | mp3, wav, mp4 | ElevenLabs, Alibaba, Azure | **HIGH** |
+| 139 | `ai-streaming-avatars` | AI Streaming Avatars | Enterprise | webrtc, avatar_config | webrtc_stream, mp4 | Alibaba, ModelsLab, Azure | **HIGH** |
+| 140 | `ai-avatar-library` | Pre-built Avatar Library | Pro | selection, script | mp4, webm | Alibaba, ModelsLab | **HIGH** |
+| 141 | `ai-podcast-to-clips` | AI Podcast to Clips | Pro | mp3, mp4, wav | mp4, mp3, json | Gemini, OpenAI, ElevenLabs | **HIGH** |
+
+---
+
 ## Core 12 Providers
 
 | Provider | Specialization |
@@ -266,7 +319,7 @@
 ## Quick Stats
 
 ```
-Total Pipelines: 119
+Total Pipelines: 141
 ├── Text-Based: 10
 ├── Image-Based: 8
 ├── Voice/Audio: 8
@@ -280,15 +333,37 @@ Total Pipelines: 119
 ├── Training/L&D: 6
 ├── Marketing/Sales Base: 6
 ├── Localization: 6
-└── Marketing-Specific: 25
+├── Marketing-Specific: 25
+└── Creator/Enhancement: 22 ⭐ NEW
 
 By Tier:
-├── Starter: 6 (5%)
-├── Pro: 89 (75%)
-└── Enterprise: 24 (20%)
+├── Starter: 8 (6%)
+├── Pro: 103 (73%)
+└── Enterprise: 30 (21%)
 
-Coverage: 119/119 (100%)
+Coverage: 141/141 (100%)
 ```
+
+---
+
+## User Demand Reference
+
+Based on user research, these are the most requested features (all now covered):
+
+| User Request | Frequency | Pipeline |
+|--------------|-----------|----------|
+| "Auto-captions that look good" | **VERY HIGH** | `ai-auto-captions`, `ai-styled-captions` |
+| "Remove my background" | **VERY HIGH** | `ai-background-removal` |
+| "Make TikToks faster" | **VERY HIGH** | `ai-beat-sync-editing`, `long-to-shorts` |
+| "Make my video look better quality" | **HIGH** | `ai-video-upscaling` |
+| "Clean up bad audio" | **HIGH** | `ai-audio-enhancement`, `ai-filler-removal` |
+| "Clone my voice for other videos" | **HIGH** | `ai-voice-clone-reuse`, `voice-clone-dub` |
+| "Create thumbnails automatically" | **HIGH** | `ai-thumbnail-creator` |
+| "Teleprompter while recording" | **HIGH** | `ai-teleprompter` |
+| "Turn my podcast into clips" | **HIGH** | `ai-podcast-to-clips` |
+| "Avatar that looks like me" | **HIGH** | `ai-streaming-avatars`, `ai-avatar-library` |
+| "Translate my video to Spanish" | **HIGH** | `translate-video`, `dub-video` |
+| "Same voice in other languages" | MEDIUM | `voice-clone-dub`, `ai-realtime-translation` |
 
 ---
 
