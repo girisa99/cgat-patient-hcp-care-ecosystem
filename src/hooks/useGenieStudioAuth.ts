@@ -111,24 +111,45 @@ export function useGenieStudioAuth() {
     }
   }, []);
 
-  // Create Genie Studio user profile (for new users)
-  const createGenieUserProfile = useCallback(async (authUser: User): Promise<GenieStudioUser | null> => {
+  // Create Genie Studio user profile (for new users) + sync to profiles table
+  const createGenieUserProfile = useCallback(async (
+    authUser: User, 
+    selectedTier?: 'free' | 'starter' | 'creator' | 'pro' | 'business' | 'enterprise'
+  ): Promise<GenieStudioUser | null> => {
     try {
-      const displayName = authUser.user_metadata?.full_name || 
-                          authUser.user_metadata?.name || 
-                          authUser.email?.split('@')[0] || 
-                          'Genie User';
+      // Extract name from Google metadata or email
+      const fullName = authUser.user_metadata?.full_name || 
+                       authUser.user_metadata?.name || 
+                       '';
+      const nameParts = fullName.split(' ');
+      const firstName = authUser.user_metadata?.given_name || nameParts[0] || authUser.email?.split('@')[0] || 'Genie';
+      const lastName = authUser.user_metadata?.family_name || nameParts.slice(1).join(' ') || 'User';
+      const displayName = fullName || `${firstName} ${lastName}`;
 
-      // Insert new user
+      // Determine subscription tier and role
+      const tier = selectedTier || 'free';
+      const roleMap: Record<string, GenieStudioRole> = {
+        'free': 'subscriber_free',
+        'starter': 'subscriber_starter',
+        'creator': 'subscriber_creator',
+        'pro': 'subscriber_pro',
+        'business': 'subscriber_business',
+        'enterprise': 'subscriber_enterprise',
+      };
+      const subscriberRole = roleMap[tier] || 'subscriber_free';
+
+      // 1. Insert into genie_studio_users
       const { data: newUser, error: insertError } = await supabase
         .from('genie_studio_users')
         .insert({
           auth_user_id: authUser.id,
           email: authUser.email!,
           display_name: displayName,
-          avatar_url: authUser.user_metadata?.avatar_url || null,
+          avatar_url: authUser.user_metadata?.avatar_url || authUser.user_metadata?.picture || null,
           is_verified: !!authUser.email_confirmed_at,
           email_verified_at: authUser.email_confirmed_at || null,
+          current_subscription_tier: tier,
+          subscription_status: tier === 'free' ? 'active' : 'pending',
         })
         .select()
         .single();
@@ -141,19 +162,41 @@ export function useGenieStudioAuth() {
         throw insertError;
       }
 
-      // Assign free subscriber role
+      // 2. Assign subscriber role
       await supabase
         .from('genie_studio_user_roles')
         .insert({
           user_id: newUser.id,
-          role: 'subscriber_free',
+          role: subscriberRole,
         });
 
-      console.log('✅ Created new Genie Studio user:', newUser.email);
+      // 3. ALSO sync to profiles table for compatibility
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: authUser.id,
+          email: authUser.email!,
+          first_name: firstName,
+          last_name: lastName,
+          avatar_url: authUser.user_metadata?.avatar_url || authUser.user_metadata?.picture || null,
+          is_email_verified: !!authUser.email_confirmed_at,
+        }, {
+          onConflict: 'id',
+          ignoreDuplicates: false,
+        });
+
+      if (profileError) {
+        console.warn('⚠️ Could not sync to profiles table:', profileError.message);
+        // Non-blocking - continue even if profiles sync fails
+      } else {
+        console.log('✅ Synced user to profiles table');
+      }
+
+      console.log('✅ Created new Genie Studio user:', newUser.email, 'with tier:', tier);
 
       return {
         ...newUser,
-        roles: ['subscriber_free'] as GenieStudioRole[],
+        roles: [subscriberRole] as GenieStudioRole[],
         marketing_access: null,
       };
     } catch (error) {
