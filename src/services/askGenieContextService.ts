@@ -13,10 +13,33 @@
  */
 
 import { LANGUAGE_VOICE_PAIRINGS } from '@/hooks/useAskGenieVoice';
-import { askGeniePipelineKnowledgeBase, WIZARD_STEPS_KNOWLEDGE, EDITING_KNOWLEDGE, A2A_AGENT_KNOWLEDGE } from '@/services/askGeniePipelineKnowledgeBase';
+import { 
+  askGeniePipelineKnowledgeBase, 
+  WIZARD_STEPS_KNOWLEDGE, 
+  EDITING_KNOWLEDGE, 
+  A2A_AGENT_KNOWLEDGE,
+  SUPPORT_KNOWLEDGE,
+  ENGINEERING_CONTEXT_EXPORT,
+  SUPPORT_TIERS,
+  ASK_GENIE_AI_CAPABILITIES,
+  ESCALATION_FLOW
+} from '@/services/askGeniePipelineKnowledgeBase';
+import { developerHandoffService, AI_TOOL_TEMPLATES } from '@/services/developerHandoffService';
 
 // Re-export for convenience
-export { askGeniePipelineKnowledgeBase, WIZARD_STEPS_KNOWLEDGE, EDITING_KNOWLEDGE, A2A_AGENT_KNOWLEDGE };
+export { 
+  askGeniePipelineKnowledgeBase, 
+  WIZARD_STEPS_KNOWLEDGE, 
+  EDITING_KNOWLEDGE, 
+  A2A_AGENT_KNOWLEDGE,
+  SUPPORT_KNOWLEDGE,
+  ENGINEERING_CONTEXT_EXPORT,
+  SUPPORT_TIERS,
+  ASK_GENIE_AI_CAPABILITIES,
+  ESCALATION_FLOW,
+  developerHandoffService,
+  AI_TOOL_TEMPLATES
+};
 
 // ==================== TYPES ====================
 

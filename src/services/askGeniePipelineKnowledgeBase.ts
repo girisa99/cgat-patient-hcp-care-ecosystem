@@ -618,9 +618,44 @@ export const ENGINEERING_CONTEXT_EXPORT = {
     { data: 'Browser/OS info', purpose: 'Environment reproduction' },
     { data: 'Session replay URL', purpose: 'Visual debugging' },
     { data: 'Reproduction steps', purpose: 'Issue recreation' },
-    { data: 'User\'s recent actions', purpose: 'Context for debugging' }
+    { data: 'User\'s recent actions', purpose: 'Context for debugging' },
+    { data: 'Affected pipelines', purpose: 'Scope identification (141 pipelines)' },
+    { data: 'Affected wizard steps', purpose: 'Workflow stage identification (8 steps)' },
+    { data: 'Affected components', purpose: 'Code location identification' },
+    { data: 'AI pre-analysis', purpose: 'Root cause and suggested fix from Ask Genie' }
   ],
-  exportFormats: ['markdown', 'json', 'lovable', 'cursor', 'claude', 'github_issue']
+  exportFormats: ['markdown', 'json', 'lovable', 'cursor', 'replica', 'claude', 'github_issue'],
+  
+  // Developer handoff tracking
+  handoffTracking: {
+    idFormat: 'GH-{timestamp}-{random}',
+    commitFormats: {
+      lovable: '[GENIE-FIX: {handoffId}]',
+      cursor: 'fix: [GENIE-{handoffId}]',
+      replica: 'GENIE-{handoffId}',
+      github: 'Fixes GENIE-{handoffId}'
+    },
+    autoResolve: {
+      enabled: true,
+      triggerEnvironment: 'main',
+      verificationMethods: ['automated', 'manual', 'user_confirmed']
+    }
+  },
+  
+  // Context loop - ensures fixes come back connected
+  contextLoop: {
+    description: 'Bi-directional context tracking between support and AI coding tools',
+    steps: [
+      { step: 1, action: 'User reports issue in Ask Genie', system: 'Support' },
+      { step: 2, action: 'Ask Genie captures full engineering context', system: 'Support' },
+      { step: 3, action: 'Context exported to Lovable/Cursor/Replica with tracking ID', system: 'Handoff' },
+      { step: 4, action: 'Developer fixes issue with tracking ID in commit', system: 'Development' },
+      { step: 5, action: 'Fix deployed to dev → uat → main', system: 'CI/CD' },
+      { step: 6, action: 'Webhook detects tracking ID in commit', system: 'Integration' },
+      { step: 7, action: 'Support ticket auto-resolved with fix reference', system: 'Support' },
+      { step: 8, action: 'User notified of resolution', system: 'Notification' }
+    ]
+  }
 };
 
 /**
