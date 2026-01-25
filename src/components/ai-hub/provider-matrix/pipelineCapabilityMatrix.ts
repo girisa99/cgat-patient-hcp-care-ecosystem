@@ -93,7 +93,8 @@ export type PipelineCategory =
   | 'internal_comms'
   | 'live_realtime'
   | 'immersive_3d'
-  | 'audio_sfx';
+  | 'audio_sfx'
+  | 'creator_enhancement'; // NEW: 22 critical user-demand pipelines (Category 15)
 
 // ============================================
 // RICH CONTENT FEATURES
