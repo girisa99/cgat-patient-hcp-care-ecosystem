@@ -10,3 +10,11 @@ export { GenieDataArchitectureDiagram } from './GenieDataArchitectureDiagram';
 export { GenieSecurityArchitectureDiagram } from './GenieSecurityArchitectureDiagram';
 export { GenieStageGateDashboard } from './GenieStageGateDashboard';
 export { GenieP3IntegrationDashboard } from './GenieP3IntegrationDashboard';
+
+// New Product & Feature Diagrams
+export { GenieCastArchitectureDiagram } from './GenieCastArchitectureDiagram';
+export { GenieProviderCapabilityMatrix } from './GenieProviderCapabilityMatrix';
+export { GenieAskGenieArchitectureDiagram } from './GenieAskGenieArchitectureDiagram';
+export { GenieDeckArchitectureDiagram } from './GenieDeckArchitectureDiagram';
+export { GenieAnalyticsArchitectureDiagram } from './GenieAnalyticsArchitectureDiagram';
+export { GenieSupportArchitectureDiagram } from './GenieSupportArchitectureDiagram';
