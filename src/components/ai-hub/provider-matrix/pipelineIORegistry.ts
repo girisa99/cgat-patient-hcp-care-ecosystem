@@ -1,8 +1,12 @@
 /**
  * Pipeline I/O Registry
  * 
- * Complete mapping of 119 pipelines (94 base + 25 marketing-specific) 
+ * Complete mapping of 141 pipelines (116 base + 25 marketing-specific) 
  * with full input/output format specifications
+ * 
+ * Includes 22 NEW critical user-demand pipelines:
+ * - AI Background Removal, Video Upscaling, Audio Enhancement
+ * - Auto-Captions, Teleprompter, Thumbnail Creator, etc.
  */
 
 export type PipelineTier = 'Starter' | 'Pro' | 'Enterprise';
@@ -32,7 +36,8 @@ export type PipelineIOCategory =
   | 'repurposing'
   | 'training_ld'
   | 'marketing_sales'
-  | 'localization';
+  | 'localization'
+  | 'creator_enhancement'; // NEW: Critical user-demand tools
 
 // ═══════════════════════════════════════════════════════════════
 // CATEGORY 1: TEXT-BASED (10 Pipelines)
@@ -1359,7 +1364,264 @@ const MARKETING_SPECIFIC_PIPELINES: PipelineIOEntry[] = [
 ];
 
 // ═══════════════════════════════════════════════════════════════
-// COMBINED REGISTRY - ALL 119 PIPELINES
+// CATEGORY 15: CREATOR/ENHANCEMENT - CRITICAL USER DEMAND (22 NEW)
+// ═══════════════════════════════════════════════════════════════
+const CREATOR_ENHANCEMENT_PIPELINES: PipelineIOEntry[] = [
+  // ─── VIDEO ENHANCEMENT ───────────────────────────────────────
+  {
+    id: 'ai-background-removal',
+    name: 'AI Background Removal',
+    tier: 'Pro',
+    inputFormats: ['mp4', 'mov', 'webm', 'png', 'jpg'],
+    outputFormats: ['mp4', 'webm', 'png', 'mov_prores'],
+    category: 'creator_enhancement',
+    isCovered: true,
+    notes: 'HIGH DEMAND - Remove/replace video backgrounds',
+    providers: ['ModelsLab', 'Replicate', 'Azure']
+  },
+  {
+    id: 'ai-video-upscaling',
+    name: 'AI Video Upscaling',
+    tier: 'Pro',
+    inputFormats: ['mp4', 'mov', 'webm'],
+    outputFormats: ['mp4', 'mov', 'webm'],
+    category: 'creator_enhancement',
+    isCovered: true,
+    notes: 'HIGH DEMAND - 720p→4K enhancement',
+    providers: ['ModelsLab', 'Replicate', 'Alibaba']
+  },
+  {
+    id: 'ai-audio-enhancement',
+    name: 'AI Audio Enhancement',
+    tier: 'Pro',
+    inputFormats: ['mp3', 'wav', 'mp4', 'mov'],
+    outputFormats: ['mp3', 'wav', 'mp4'],
+    category: 'creator_enhancement',
+    isCovered: true,
+    notes: 'HIGH DEMAND - Clean up bad audio, noise removal',
+    providers: ['ElevenLabs', 'Azure', 'Alibaba']
+  },
+  {
+    id: 'ai-green-screen',
+    name: 'AI Green Screen',
+    tier: 'Pro',
+    inputFormats: ['mp4', 'mov', 'webm'],
+    outputFormats: ['mp4', 'mov', 'webm'],
+    category: 'creator_enhancement',
+    isCovered: true,
+    notes: 'MEDIUM DEMAND - Auto-chroma key replacement',
+    providers: ['ModelsLab', 'Replicate']
+  },
+  {
+    id: 'ai-filler-removal',
+    name: 'AI Filler Word Removal',
+    tier: 'Pro',
+    inputFormats: ['mp4', 'mp3', 'wav'],
+    outputFormats: ['mp4', 'mp3', 'wav'],
+    category: 'creator_enhancement',
+    isCovered: true,
+    notes: 'HIGH DEMAND - Remove ums, ahs, pauses',
+    providers: ['ElevenLabs', 'Azure', 'OpenAI']
+  },
+  {
+    id: 'ai-beat-sync-editing',
+    name: 'AI Beat-Sync Editing',
+    tier: 'Pro',
+    inputFormats: ['mp4', 'mp3', 'clips_folder'],
+    outputFormats: ['mp4', 'webm'],
+    category: 'creator_enhancement',
+    isCovered: true,
+    notes: 'HIGH DEMAND - Auto-edit to music beats',
+    providers: ['OpenAI', 'Gemini', 'ModelsLab']
+  },
+  
+  // ─── CAPTIONS & SUBTITLES ────────────────────────────────────
+  {
+    id: 'ai-auto-captions',
+    name: 'AI Auto-Captions',
+    tier: 'Starter',
+    inputFormats: ['mp4', 'mov', 'mp3', 'wav'],
+    outputFormats: ['mp4', 'srt', 'vtt', 'ass'],
+    category: 'creator_enhancement',
+    isCovered: true,
+    notes: 'VERY HIGH DEMAND - Burned-in styled captions, table stakes',
+    providers: ['Azure', 'OpenAI', 'Alibaba', 'ElevenLabs']
+  },
+  {
+    id: 'ai-styled-captions',
+    name: 'AI Styled Captions',
+    tier: 'Pro',
+    inputFormats: ['mp4', 'srt', 'vtt'],
+    outputFormats: ['mp4', 'mov'],
+    category: 'creator_enhancement',
+    isCovered: true,
+    notes: 'HIGH DEMAND - Trending caption styles (kinetic, highlight)',
+    providers: ['ModelsLab', 'OpenAI']
+  },
+  {
+    id: 'ai-realtime-translation',
+    name: 'AI Real-time Translation',
+    tier: 'Enterprise',
+    inputFormats: ['webrtc', 'mp4_stream'],
+    outputFormats: ['webrtc', 'srt_live'],
+    category: 'creator_enhancement',
+    isCovered: true,
+    notes: 'MEDIUM DEMAND - Live subtitle/dub during calls',
+    providers: ['Azure', 'DeepL', 'Alibaba']
+  },
+  
+  // ─── RECORDING TOOLS ─────────────────────────────────────────
+  {
+    id: 'ai-teleprompter',
+    name: 'AI Teleprompter',
+    tier: 'Pro',
+    inputFormats: ['txt', 'docx', 'json'],
+    outputFormats: ['overlay_stream', 'mp4'],
+    category: 'creator_enhancement',
+    isCovered: true,
+    notes: 'HIGH DEMAND - Script scrolling while recording',
+    providers: ['OpenAI', 'Claude']
+  },
+  {
+    id: 'ai-screen-recording-edit',
+    name: 'Screen Recording + AI Edit',
+    tier: 'Pro',
+    inputFormats: ['screen_capture', 'webrtc'],
+    outputFormats: ['mp4', 'gif', 'webm'],
+    category: 'creator_enhancement',
+    isCovered: true,
+    notes: 'HIGH DEMAND - Record screen, auto-edit highlights',
+    providers: ['Gemini', 'OpenAI', 'ModelsLab']
+  },
+  {
+    id: 'ai-meeting-clips',
+    name: 'AI Meeting Clips',
+    tier: 'Pro',
+    inputFormats: ['mp4', 'webrtc', 'zoom_recording'],
+    outputFormats: ['mp4', 'txt', 'json'],
+    category: 'creator_enhancement',
+    isCovered: true,
+    notes: 'MEDIUM DEMAND - Zoom/Teams→highlight clips',
+    providers: ['Gemini', 'Claude', 'OpenAI']
+  },
+  
+  // ─── CONTENT GENERATION ──────────────────────────────────────
+  {
+    id: 'ai-thumbnail-creator',
+    name: 'AI Thumbnail Creator',
+    tier: 'Starter',
+    inputFormats: ['mp4', 'png', 'txt'],
+    outputFormats: ['png', 'jpg', 'webp'],
+    category: 'creator_enhancement',
+    isCovered: true,
+    notes: 'HIGH DEMAND - YouTube/social thumbnails',
+    providers: ['OpenAI', 'ModelsLab', 'Alibaba']
+  },
+  {
+    id: 'ai-b-roll-generator',
+    name: 'AI B-Roll Generator',
+    tier: 'Pro',
+    inputFormats: ['txt', 'mp4', 'json'],
+    outputFormats: ['mp4', 'gif'],
+    category: 'creator_enhancement',
+    isCovered: true,
+    notes: 'MEDIUM DEMAND - Auto-generate B-roll footage',
+    providers: ['ModelsLab', 'Alibaba', 'Replicate']
+  },
+  {
+    id: 'ai-meme-generator',
+    name: 'AI Meme Generator',
+    tier: 'Starter',
+    inputFormats: ['txt', 'trend_topic'],
+    outputFormats: ['png', 'gif', 'mp4'],
+    category: 'creator_enhancement',
+    isCovered: true,
+    notes: 'MEDIUM DEMAND - Trend-aware meme creation',
+    providers: ['OpenAI', 'Claude', 'ModelsLab']
+  },
+  {
+    id: 'ai-photo-slideshow',
+    name: 'AI Photo Slideshow',
+    tier: 'Starter',
+    inputFormats: ['png', 'jpg', 'photos_folder'],
+    outputFormats: ['mp4', 'webm'],
+    category: 'creator_enhancement',
+    isCovered: true,
+    notes: 'MEDIUM DEMAND - Photos→animated video with Ken Burns',
+    providers: ['ModelsLab', 'OpenAI']
+  },
+  {
+    id: 'ai-progress-bar-animations',
+    name: 'AI Progress Bar Animations',
+    tier: 'Pro',
+    inputFormats: ['mp4', 'json'],
+    outputFormats: ['mp4', 'webm'],
+    category: 'creator_enhancement',
+    isCovered: true,
+    notes: 'HIGH DEMAND - TikTok-style progress indicators',
+    providers: ['ModelsLab', 'OpenAI']
+  },
+  {
+    id: 'ai-trending-templates',
+    name: 'AI Trending Templates',
+    tier: 'Pro',
+    inputFormats: ['content', 'platform'],
+    outputFormats: ['mp4', 'pptx', 'png'],
+    category: 'creator_enhancement',
+    isCovered: true,
+    notes: 'HIGH DEMAND - Auto-apply trending formats',
+    providers: ['Claude', 'Gemini', 'ModelsLab']
+  },
+  
+  // ─── AVATAR & VOICE ──────────────────────────────────────────
+  {
+    id: 'ai-voice-clone-reuse',
+    name: 'AI Voice Clone for Videos',
+    tier: 'Enterprise',
+    inputFormats: ['mp3', 'wav', 'voice_sample'],
+    outputFormats: ['mp3', 'wav', 'mp4'],
+    category: 'creator_enhancement',
+    isCovered: true,
+    notes: 'HIGH DEMAND - Clone my voice for other videos',
+    providers: ['ElevenLabs', 'Alibaba', 'Azure']
+  },
+  {
+    id: 'ai-streaming-avatars',
+    name: 'AI Streaming Avatars',
+    tier: 'Enterprise',
+    inputFormats: ['webrtc', 'avatar_config'],
+    outputFormats: ['webrtc_stream', 'mp4'],
+    category: 'creator_enhancement',
+    isCovered: true,
+    notes: 'HIGH DEMAND - Real-time avatar for streaming',
+    providers: ['Alibaba', 'ModelsLab', 'Azure']
+  },
+  {
+    id: 'ai-avatar-library',
+    name: 'Pre-built Avatar Library',
+    tier: 'Pro',
+    inputFormats: ['selection', 'script'],
+    outputFormats: ['mp4', 'webm'],
+    category: 'creator_enhancement',
+    isCovered: true,
+    notes: 'HIGH DEMAND - 50+ ready-to-use avatars',
+    providers: ['Alibaba', 'ModelsLab']
+  },
+  {
+    id: 'ai-podcast-to-clips',
+    name: 'AI Podcast to Clips',
+    tier: 'Pro',
+    inputFormats: ['mp3', 'mp4', 'wav'],
+    outputFormats: ['mp4', 'mp3', 'json'],
+    category: 'creator_enhancement',
+    isCovered: true,
+    notes: 'HIGH DEMAND - Turn podcast into viral clips',
+    providers: ['Gemini', 'OpenAI', 'ElevenLabs']
+  }
+];
+
+// ═══════════════════════════════════════════════════════════════
+// COMBINED REGISTRY - ALL 141 PIPELINES (119 + 22 NEW)
 // ═══════════════════════════════════════════════════════════════
 export const PIPELINE_IO_REGISTRY: PipelineIOEntry[] = [
   ...TEXT_BASED_PIPELINES,           // 10
@@ -1376,6 +1638,7 @@ export const PIPELINE_IO_REGISTRY: PipelineIOEntry[] = [
   ...MARKETING_SALES_BASE_PIPELINES, // 6
   ...LOCALIZATION_PIPELINES,         // 6
   ...MARKETING_SPECIFIC_PIPELINES,   // 25
+  ...CREATOR_ENHANCEMENT_PIPELINES,  // 22 NEW - Critical User Demand
 ];
 
 // ═══════════════════════════════════════════════════════════════
@@ -1464,6 +1727,12 @@ export const PIPELINE_CATEGORY_METADATA: Record<PipelineIOCategory, {
     count: 6,
     color: 'bg-emerald-100 text-emerald-800',
     description: 'Multi-language and regional adaptation'
+  },
+  creator_enhancement: {
+    label: 'Category 15: Creator/Enhancement',
+    count: 22,
+    color: 'bg-fuchsia-100 text-fuchsia-800',
+    description: 'Critical user-demand tools: captions, upscaling, backgrounds, thumbnails'
   }
 };
 
