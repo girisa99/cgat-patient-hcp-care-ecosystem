@@ -9,7 +9,20 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "0.0.0.0",
     port: 8080,
-    allowedHosts: ["localhost", "dev.geniecellgene.com", "genieaiexpermentationhub.com"],
+    allowedHosts: [
+      "localhost",
+      // Legacy domains
+      "dev.geniecellgene.com", 
+      "genieaiexpermentationhub.com",
+      // New 3-tier deployment subdomains
+      "geniestudiodev.genieaisuite.com",  // Development
+      "geniestudiouat.genieaisuite.com",  // UAT (Netlify)
+      "www.genieaisuite.com",             // Production
+      "genieaisuite.com",                 // Production (non-www)
+      // Lovable preview domains
+      ".lovable.app",
+      ".lovableproject.com",
+    ],
   },
   build: {
     rollupOptions: {
