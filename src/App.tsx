@@ -53,6 +53,8 @@ import GenieStudioPricing from '@/pages/GenieStudioPricing';
 import GenieStudioLanding from '@/pages/GenieStudioLanding';
 import GenieAdminPage from '@/pages/GenieAdminPage';
 import GenieSupportPage from '@/pages/GenieSupportPage';
+const GenieExplorePage = React.lazy(() => import('@/pages/GenieExplorePage'));
+const GenieProductsPage = React.lazy(() => import('@/pages/GenieProductsPage'));
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 import EmailConfirmation from '@/pages/EmailConfirmation';
@@ -133,11 +135,40 @@ const AppContent = () => {
               {/* Public landing page route */}
               <Route path="/genie-landing" element={<GenieStudioLanding />} />
               
+              {/* Genie Explore - Interactive Journey */}
+              <Route path="/explore" element={
+                <Suspense fallback={<PageLoading message="Loading..." />}>
+                  <GenieExplorePage />
+                </Suspense>
+              } />
+              <Route path="/explore/:step" element={
+                <Suspense fallback={<PageLoading message="Loading..." />}>
+                  <GenieExplorePage />
+                </Suspense>
+              } />
+              
+              {/* Genie Products */}
+              <Route path="/products" element={
+                <Suspense fallback={<PageLoading message="Loading..." />}>
+                  <GenieProductsPage />
+                </Suspense>
+              } />
+              <Route path="/products/:productSlug" element={
+                <Suspense fallback={<PageLoading message="Loading..." />}>
+                  <GenieProductsPage />
+                </Suspense>
+              } />
+              
+              {/* Genie Pricing - Public */}
+              <Route path="/pricing" element={<GenieStudioPricing />} />
+              
               {/* Genie Support - accessible to all (with auth prompt for tickets) */}
               <Route path="/genie-support" element={<GenieSupportPage />} />
+              <Route path="/support" element={<GenieSupportPage />} />
               
               {/* Genie Admin - internal users only (self-protected) */}
               <Route path="/genie-admin" element={<GenieAdminPage />} />
+              <Route path="/internal/users" element={<GenieAdminPage />} />
               
               {/* Root path - Dashboard redirect */}
               <Route path="/" element={
