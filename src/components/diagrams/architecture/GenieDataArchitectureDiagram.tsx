@@ -31,7 +31,8 @@ const mediaEntities = [
 const pipelineEntities = [
   { name: 'pipeline_executions', description: '119 pipeline run history', fields: ['id', 'pipeline_type', 'input_data', 'output_data', 'status'], rowCount: '~100K', status: 'active' },
   { name: 'ai_credit_transactions', description: 'Credit usage tracking', fields: ['id', 'user_id', 'credits', 'provider', 'operation'], rowCount: '~200K', status: 'active' },
-  { name: 'marketing_content', description: 'Dogfooding content', fields: ['id', 'product', 'platform', 'content_type', 'status'], rowCount: '~5K', status: 'active' },
+  { name: 'genie_cast_content', description: 'Genie Cast marketing content', fields: ['id', 'product', 'platform', 'region', 'status'], rowCount: '~10K', status: 'active' },
+  { name: 'genie_cast_schedules', description: 'Genie Cast scheduling', fields: ['id', 'content_id', 'scheduled_at', 'timezone', 'status'], rowCount: '~5K', status: 'active' },
   { name: 'genie_deployments', description: 'Agent deployments', fields: ['id', 'agent_id', 'channel', 'config', 'status'], rowCount: '~500', status: 'active' },
 ];
 

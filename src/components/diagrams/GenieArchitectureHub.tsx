@@ -1,12 +1,14 @@
 /**
  * Genie Architecture Hub
  * Consolidated Architecture Tab with All Diagrams + P0-P5 Stage Gates
+ * FIXED: Removed nested cards, improved scroll, better tab layout
  */
 
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Layers, Brain, Film, Users, Zap, Plug, Server, Target, Sparkles, Database, Shield, GitBranch, Radio, Grid3X3, Bot, Presentation, BarChart3, HeadphonesIcon } from 'lucide-react';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Layers, Brain, Film, Users, Zap, Plug, Server, Target, Sparkles, Database, Shield, GitBranch, Radio, Grid3X3, Bot, Presentation, BarChart3, HeadphonesIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 // Import all architecture diagrams
 import { GenieStudioOverallArchitectureDiagram } from './architecture/GenieStudioOverallArchitectureDiagram';
@@ -33,119 +35,87 @@ import { GenieSupportArchitectureDiagram } from './architecture/GenieSupportArch
 const architectureTabs = [
   { id: 'overall', label: 'Overview', icon: Layers, description: 'Complete system architecture' },
   { id: 'stage-gates', label: 'Stage Gates', icon: Target, description: 'P0-P5 Readiness' },
-  { id: 'parallel-streams', label: 'Parallel Streams', icon: GitBranch, description: 'A/B/C Implementation' },
+  { id: 'parallel-streams', label: 'Streams', icon: GitBranch, description: 'A/B/C Implementation' },
   { id: 'providers', label: 'Providers', icon: Grid3X3, description: '12-Provider Matrix' },
-  { id: 'p3-features', label: 'P3 Features', icon: Sparkles, description: 'Enterprise Capabilities' },
-  { id: 'mind', label: 'Genie Mind', icon: Brain, description: 'AI Intelligence Layer' },
-  { id: 'spark', label: 'Genie Spark', icon: Zap, description: 'Quick-Start Engine' },
-  { id: 'vibe', label: 'Genie Vibe', icon: Film, description: 'Production Layer' },
-  { id: 'deck', label: 'Genie Deck', icon: Presentation, description: 'Presentations' },
-  { id: 'arc-hub', label: 'Arc & Hub', icon: Users, description: 'Collaboration & Enterprise' },
-  { id: 'cast', label: 'Genie Cast', icon: Radio, description: 'Marketing Engine' },
-  { id: 'ask-genie', label: 'Ask Genie', icon: Bot, description: 'AI Assistant' },
-  { id: 'analytics', label: 'Analytics', icon: BarChart3, description: 'Insights Engine' },
-  { id: 'support', label: 'Support', icon: HeadphonesIcon, description: 'Help Center' },
-  { id: 'integrations', label: 'Integrations', icon: Plug, description: 'APIs & Services' },
-  { id: 'microservices', label: 'Microservices', icon: Server, description: 'Service Architecture' },
-  { id: 'data', label: 'Data Arch', icon: Database, description: 'Schema & ER Diagram' },
-  { id: 'security', label: 'Security', icon: Shield, description: 'Auth & Compliance' },
+  { id: 'p3-features', label: 'P3', icon: Sparkles, description: 'Enterprise Capabilities' },
+  { id: 'mind', label: 'Mind', icon: Brain, description: 'AI Intelligence' },
+  { id: 'spark', label: 'Spark', icon: Zap, description: 'Quick-Start' },
+  { id: 'vibe', label: 'Vibe', icon: Film, description: 'Production' },
+  { id: 'deck', label: 'Deck', icon: Presentation, description: 'Presentations' },
+  { id: 'arc-hub', label: 'Arc/Hub', icon: Users, description: 'Collaboration' },
+  { id: 'cast', label: 'Cast', icon: Radio, description: 'Marketing' },
+  { id: 'ask-genie', label: 'Ask', icon: Bot, description: 'AI Assistant' },
+  { id: 'analytics', label: 'Analytics', icon: BarChart3, description: 'Insights' },
+  { id: 'support', label: 'Support', icon: HeadphonesIcon, description: 'Help' },
+  { id: 'integrations', label: 'Integrations', icon: Plug, description: 'APIs' },
+  { id: 'microservices', label: 'Services', icon: Server, description: 'Architecture' },
+  { id: 'data', label: 'Data', icon: Database, description: 'Schema' },
+  { id: 'security', label: 'Security', icon: Shield, description: 'Auth' },
 ];
 
 export const GenieArchitectureHub: React.FC = () => {
   const [activeTab, setActiveTab] = useState('stage-gates');
 
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'overall': return <GenieStudioOverallArchitectureDiagram />;
+      case 'stage-gates': return <GenieStageGateDashboard />;
+      case 'parallel-streams': return <ParallelStreamsDashboard />;
+      case 'providers': return <GenieProviderCapabilityMatrix />;
+      case 'p3-features': return <GenieP3IntegrationDashboard />;
+      case 'mind': return <GenieMindArchitectureDiagram />;
+      case 'spark': return <GenieSparkArchitectureDiagram />;
+      case 'vibe': return <GenieVibeArchitectureDiagram />;
+      case 'deck': return <GenieDeckArchitectureDiagram />;
+      case 'arc-hub': return <GenieArcProductionHubDiagram />;
+      case 'cast': return <GenieCastArchitectureDiagram />;
+      case 'ask-genie': return <GenieAskGenieArchitectureDiagram />;
+      case 'analytics': return <GenieAnalyticsArchitectureDiagram />;
+      case 'support': return <GenieSupportArchitectureDiagram />;
+      case 'integrations': return <GenieIntegrationsDiagram />;
+      case 'microservices': return <GenieMicroservicesDiagram />;
+      case 'data': return <GenieDataArchitectureDiagram />;
+      case 'security': return <GenieSecurityArchitectureDiagram />;
+      default: return <GenieStageGateDashboard />;
+    }
+  };
+
   return (
-    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <ScrollArea className="w-full">
-          <TabsList className="inline-flex h-auto p-1 bg-slate-800/50 border border-slate-700 rounded-lg">
+    <div className="w-full space-y-4">
+      {/* Tab Navigation - Horizontal Scroll */}
+      <div className="relative">
+        <ScrollArea className="w-full pb-2">
+          <div className="flex gap-1 p-1 bg-muted/50 rounded-lg border border-border min-w-max">
             {architectureTabs.map((tab) => (
-              <TabsTrigger
+              <button
                 key={tab.id}
-                value={tab.id}
-                className="flex items-center gap-2 px-4 py-2 data-[state=active]:bg-violet-600 data-[state=active]:text-white rounded-md"
+                onClick={() => setActiveTab(tab.id)}
+                className={`
+                  flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium
+                  transition-all duration-200 whitespace-nowrap
+                  ${activeTab === tab.id 
+                    ? 'bg-primary text-primary-foreground shadow-sm' 
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                  }
+                `}
               >
-                <tab.icon className="h-4 w-4" />
-                <span className="hidden md:inline">{tab.label}</span>
-              </TabsTrigger>
+                <tab.icon className="h-3.5 w-3.5" />
+                <span>{tab.label}</span>
+              </button>
             ))}
-          </TabsList>
+          </div>
+          <ScrollBar orientation="horizontal" />
         </ScrollArea>
+      </div>
 
-        {/* Tab Content */}
-        <div className="mt-4">
-          <TabsContent value="overall" className="m-0">
-            <GenieStudioOverallArchitectureDiagram />
-          </TabsContent>
-
-          <TabsContent value="stage-gates" className="m-0">
-            <GenieStageGateDashboard />
-          </TabsContent>
-
-          <TabsContent value="parallel-streams" className="m-0">
-            <ParallelStreamsDashboard />
-          </TabsContent>
-
-          <TabsContent value="providers" className="m-0">
-            <GenieProviderCapabilityMatrix />
-          </TabsContent>
-
-          <TabsContent value="p3-features" className="m-0">
-            <GenieP3IntegrationDashboard />
-          </TabsContent>
-
-          <TabsContent value="mind" className="m-0">
-            <GenieMindArchitectureDiagram />
-          </TabsContent>
-
-          <TabsContent value="spark" className="m-0">
-            <GenieSparkArchitectureDiagram />
-          </TabsContent>
-
-          <TabsContent value="vibe" className="m-0">
-            <GenieVibeArchitectureDiagram />
-          </TabsContent>
-
-          <TabsContent value="deck" className="m-0">
-            <GenieDeckArchitectureDiagram />
-          </TabsContent>
-
-          <TabsContent value="arc-hub" className="m-0">
-            <GenieArcProductionHubDiagram />
-          </TabsContent>
-
-          <TabsContent value="cast" className="m-0">
-            <GenieCastArchitectureDiagram />
-          </TabsContent>
-
-          <TabsContent value="ask-genie" className="m-0">
-            <GenieAskGenieArchitectureDiagram />
-          </TabsContent>
-
-          <TabsContent value="analytics" className="m-0">
-            <GenieAnalyticsArchitectureDiagram />
-          </TabsContent>
-
-          <TabsContent value="support" className="m-0">
-            <GenieSupportArchitectureDiagram />
-          </TabsContent>
-
-          <TabsContent value="integrations" className="m-0">
-            <GenieIntegrationsDiagram />
-          </TabsContent>
-
-          <TabsContent value="microservices" className="m-0">
-            <GenieMicroservicesDiagram />
-          </TabsContent>
-
-          <TabsContent value="data" className="m-0">
-            <GenieDataArchitectureDiagram />
-          </TabsContent>
-
-          <TabsContent value="security" className="m-0">
-            <GenieSecurityArchitectureDiagram />
-          </TabsContent>
+      {/* Content Area - Scrollable */}
+      <ScrollArea className="h-[calc(100vh-200px)] w-full rounded-lg border border-border bg-background">
+        <div className="p-4 min-h-full">
+          {renderContent()}
         </div>
-    </Tabs>
+        <ScrollBar orientation="vertical" />
+      </ScrollArea>
+    </div>
   );
 };
 

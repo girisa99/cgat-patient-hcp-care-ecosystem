@@ -40,9 +40,11 @@ const routingZones = [
 const platformIntegrations = [
   { name: 'n8n', services: ['Workflow Automation', 'MCP Integration'], status: 'active', type: 'Automation' },
   { name: 'Resend', services: ['Transactional Email', 'Templates'], status: 'active', type: 'Email' },
-  { name: 'YouTube', services: ['Upload API', 'Analytics'], status: 'partial', type: 'Social' },
-  { name: 'LinkedIn', services: ['Video Upload', 'Post API'], status: 'partial', type: 'Social' },
-  { name: 'TikTok', services: ['Short-form Video'], status: 'planned', type: 'Social' },
+  { name: 'YouTube', services: ['Upload API', 'Analytics'], status: 'partial', type: 'Genie Cast' },
+  { name: 'LinkedIn', services: ['Video Upload', 'Post API'], status: 'partial', type: 'Genie Cast' },
+  { name: 'TikTok', services: ['Short-form Video'], status: 'planned', type: 'Genie Cast' },
+  { name: 'Instagram', services: ['Reels', 'Stories'], status: 'planned', type: 'Genie Cast' },
+  { name: 'Twitter/X', services: ['Post API', 'Media Upload'], status: 'planned', type: 'Genie Cast' },
   { name: 'Zapier', services: ['5000+ App Integrations'], status: 'active', type: 'Automation' },
 ];
 
@@ -97,7 +99,7 @@ export const GenieIntegrationsDiagram: React.FC = () => {
       <div className="text-center border-b border-border pb-4">
         <h2 className="text-2xl font-bold text-foreground flex items-center justify-center gap-3">
           <Plug className="h-8 w-8 text-cyan-500" />
-          Genie Suite Integration Architecture
+          Genie Suite Integration Architecture (7 Products)
         </h2>
         <p className="text-muted-foreground mt-2">12 Core Providers • 5-Zone Routing • 143+ Edge Functions • 119 Pipelines</p>
       </div>

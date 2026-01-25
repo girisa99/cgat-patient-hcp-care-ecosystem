@@ -95,7 +95,7 @@ export const GenieSecurityArchitectureDiagram: React.FC = () => {
           <Shield className="h-8 w-8 text-red-500" />
           Genie Security Architecture
         </h2>
-        <p className="text-muted-foreground mt-2">Auth • RLS • Compliance • Content Moderation • Geo-Blocking</p>
+        <p className="text-muted-foreground mt-2">7 Products (incl. Genie Cast) • Auth • RLS • Compliance • Geo-Blocking</p>
       </div>
 
       <Card className="bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-950/20 dark:to-orange-950/20 border-2 border-red-200 dark:border-red-800/40">

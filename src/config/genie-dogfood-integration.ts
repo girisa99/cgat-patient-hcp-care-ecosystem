@@ -1,11 +1,12 @@
 /**
- * GENIE DOGFOOD INTEGRATION CONFIG
+ * GENIE CAST INTEGRATION CONFIG
+ * "Make It. Show It. Scale It."
  * Maps landing page sections to internal AI generation pipelines
  * 
- * This bridges the marketing website with the 119+ production pipelines
+ * Genie Cast is the 7th core product - the global distribution and marketing engine
  */
 
-export type DogfoodFeatureType = 
+export type GenieCastFeatureType = 
   | 'daily_showcase'
   | 'avatar_presenter'
   | '3d_hero'
@@ -17,28 +18,33 @@ export type DogfoodFeatureType =
   | 'use_case_selector'
   | 'mini_generation'
   | 'limited_generation'
-  | 'preview_output';
+  | 'preview_output'
+  | 'regional_content'
+  | 'platform_distribution';
 
-export interface DogfoodPipelineMapping {
-  feature: DogfoodFeatureType;
+export interface GenieCastPipelineMapping {
+  feature: GenieCastFeatureType;
   pipelines: string[];
   providers: string[];
   refreshInterval?: number; // in hours
   regionalVariants: boolean;
+  platforms?: string[];
   description: string;
 }
 
 /**
- * LANDING PAGE DOGFOOD FEATURES
+ * GENIE CAST FEATURE MAPPINGS
+ * "Make It. Show It. Scale It."
  * Maps each visual element to the generation pipeline that powers it
  */
-export const LANDING_PAGE_DOGFOOD_MAPPINGS: DogfoodPipelineMapping[] = [
+export const GENIE_CAST_PIPELINE_MAPPINGS: GenieCastPipelineMapping[] = [
   {
     feature: 'daily_showcase',
     pipelines: ['text-to-video', 'script-to-avatar', 'ppt-to-video'],
     providers: ['ModelsLab', 'ElevenLabs', 'Alibaba'],
     refreshInterval: 24, // Daily rotation
     regionalVariants: true,
+    platforms: ['YouTube', 'LinkedIn', 'TikTok', 'Instagram', 'Twitter', 'Blog'],
     description: 'Hero section rotating showcase of daily AI-generated content',
   },
   {
@@ -181,10 +187,10 @@ export const LANDING_3D_SCENES = {
 };
 
 /**
- * Get dogfood mapping for a specific feature
+ * Get Genie Cast mapping for a specific feature
  */
-export const getDogfoodMapping = (feature: DogfoodFeatureType): DogfoodPipelineMapping | undefined => {
-  return LANDING_PAGE_DOGFOOD_MAPPINGS.find(m => m.feature === feature);
+export const getGenieCastMapping = (feature: GenieCastFeatureType): GenieCastPipelineMapping | undefined => {
+  return GENIE_CAST_PIPELINE_MAPPINGS.find(m => m.feature === feature);
 };
 
 /**
