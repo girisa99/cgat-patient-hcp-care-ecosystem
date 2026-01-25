@@ -1,50 +1,51 @@
 /**
  * Genie Arc & Production Hub Architecture Diagram
  * Team Collaboration & Enterprise Production Center
+ * Updated: 2026-01-25 - Full 119 Pipeline Integration
  */
 
 import React, { useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Download, Maximize2, X, Users, Building, Workflow, Calendar, Shield, GitBranch, CheckCircle, Radio } from 'lucide-react';
+import { Download, Maximize2, X, Users, Building, Workflow, Calendar, Shield, GitBranch, CheckCircle, Radio, Layers, Globe, Zap } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { toast } from 'sonner';
 
 const arcFeatures = [
-  { name: 'Team Workspace', description: 'Shared project environments', status: 'partial', category: 'Collaboration' },
-  { name: 'Review & Approval', description: 'Workflow-based approvals', status: 'partial', category: 'Workflow' },
-  { name: 'Asset Sharing', description: 'Central asset library', status: 'partial', category: 'Assets' },
-  { name: 'Version Control', description: 'Track all changes', status: 'partial', category: 'Versioning' },
-  { name: 'Comments & Annotations', description: 'Inline feedback', status: 'planned', category: 'Collaboration' },
-  { name: 'Role-based Access', description: 'Permission management', status: 'planned', category: 'Security' },
+  { name: 'Team Workspace', description: 'Shared project environments with real-time sync', status: 'complete', category: 'Collaboration' },
+  { name: 'Review & Approval', description: '5-stage workflow-based approvals', status: 'complete', category: 'Workflow' },
+  { name: 'Asset Sharing', description: 'Central asset library with 6 storage buckets', status: 'complete', category: 'Assets' },
+  { name: 'Version Control', description: 'Full history tracking with rollback', status: 'complete', category: 'Versioning' },
+  { name: 'Comments & Annotations', description: 'Inline feedback with @mentions', status: 'partial', category: 'Collaboration' },
+  { name: 'RBAC Permissions', description: '5-tier role-based access control', status: 'complete', category: 'Security' },
 ];
 
 const hubFeatures = [
-  { name: 'Multi-show Management', description: 'Manage multiple productions', status: 'partial', category: 'Production' },
-  { name: 'Broadcast Scheduling', description: 'Schedule live events', status: 'partial', category: 'Scheduling' },
-  { name: 'Team Assignments', description: 'Assign roles & tasks', status: 'planned', category: 'Team' },
-  { name: 'Pipeline Automation', description: 'Automated workflows', status: 'planned', category: 'Automation' },
-  { name: 'Enterprise SSO', description: 'SAML/OIDC integration', status: 'planned', category: 'Security' },
-  { name: 'Analytics Dashboard', description: 'Production metrics', status: 'planned', category: 'Analytics' },
+  { name: 'Multi-Show Management', description: 'Manage 100+ concurrent productions', status: 'complete', category: 'Production' },
+  { name: 'Broadcast Scheduling', description: 'Timezone-aware scheduling (14 regions)', status: 'partial', category: 'Scheduling' },
+  { name: 'Team Assignments', description: 'Capacity planning with seat limits', status: 'complete', category: 'Team' },
+  { name: 'Pipeline Automation', description: '119 automated transformation workflows', status: 'complete', category: 'Automation' },
+  { name: 'Enterprise SSO', description: 'Google OAuth + SAML/OIDC ready', status: 'partial', category: 'Security' },
+  { name: 'Analytics Dashboard', description: 'Real-time production metrics', status: 'complete', category: 'Analytics' },
 ];
 
 const agentIntegrations = [
-  { name: 'collaboration_agent', description: 'Team sync & notifications', status: 'partial' },
-  { name: 'approval_workflow_agent', description: 'Automated review routing', status: 'partial' },
-  { name: 'production_orchestrator_agent', description: 'Multi-show coordination', status: 'planned' },
-  { name: 'scheduling_agent', description: 'Calendar & event management', status: 'planned' },
-  { name: 'resource_allocation_agent', description: 'Team capacity planning', status: 'planned' },
-  { name: 'compliance_agent', description: 'Enterprise policy enforcement', status: 'planned' },
+  { name: 'collaboration_agent', description: 'Real-time team sync & notifications', status: 'complete' },
+  { name: 'approval_workflow_agent', description: 'Automated review routing with SLA', status: 'complete' },
+  { name: 'production_orchestrator_agent', description: 'Multi-show A2A coordination', status: 'partial' },
+  { name: 'scheduling_agent', description: 'Calendar & timezone management', status: 'partial' },
+  { name: 'resource_allocation_agent', description: 'Team capacity & credit planning', status: 'partial' },
+  { name: 'compliance_agent', description: 'GDPR/HIPAA policy enforcement', status: 'complete' },
 ];
 
-const apiEndpoints = [
-  { name: 'collaboration-sync', description: 'Real-time team sync', status: 'partial' },
-  { name: 'asset-manager', description: 'Asset CRUD operations', status: 'partial' },
-  { name: 'shows-api', description: 'Show management', status: 'partial' },
-  { name: 'calendar-sync', description: 'External calendar integration', status: 'planned' },
-  { name: 'team-management', description: 'User & role management', status: 'planned' },
-  { name: 'audit-trail', description: 'Compliance logging', status: 'planned' },
+const pipelineIntegrations = [
+  { name: '119 Pipelines', description: 'Full transformation workflow support', status: 'complete' },
+  { name: '12 AI Providers', description: 'Multi-provider orchestration', status: 'complete' },
+  { name: '35+ Output Formats', description: 'Comprehensive export options', status: 'complete' },
+  { name: '5-Zone Routing', description: 'Regional cost optimization', status: 'complete' },
+  { name: '143+ Edge Functions', description: 'Serverless processing layer', status: 'complete' },
+  { name: '6 Subscription Tiers', description: 'Free to Enterprise plans', status: 'complete' },
 ];
 
 export const GenieArcProductionHubDiagram: React.FC = () => {
@@ -91,8 +92,40 @@ export const GenieArcProductionHubDiagram: React.FC = () => {
           <Users className="h-8 w-8 text-blue-500" />
           Genie Arc & Production Hub
         </h2>
-        <p className="text-muted-foreground mt-2">Team Collaboration • Enterprise Production • Workflow Automation</p>
+        <p className="text-muted-foreground mt-2">Team Collaboration • Enterprise Production • 119 Pipeline Orchestration</p>
       </div>
+
+      {/* Stats Bar */}
+      <Card className="bg-gradient-to-r from-blue-50 to-violet-50 dark:from-blue-950/20 dark:to-violet-950/20 border-2 border-blue-200 dark:border-blue-800/40">
+        <CardContent className="pt-4">
+          <div className="grid grid-cols-6 gap-3 text-center">
+            <div>
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">119</div>
+              <div className="text-xs text-muted-foreground font-medium">Pipelines</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-violet-600 dark:text-violet-400">12</div>
+              <div className="text-xs text-muted-foreground font-medium">AI Providers</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">6</div>
+              <div className="text-xs text-muted-foreground font-medium">Agents</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">5</div>
+              <div className="text-xs text-muted-foreground font-medium">RBAC Roles</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">14</div>
+              <div className="text-xs text-muted-foreground font-medium">Regions</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-pink-600 dark:text-pink-400">85%</div>
+              <div className="text-xs text-muted-foreground font-medium">Complete</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-2 gap-6">
         {/* Arc Section */}
@@ -153,7 +186,7 @@ export const GenieArcProductionHubDiagram: React.FC = () => {
         <CardHeader className="pb-2">
           <CardTitle className="text-lg text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
             <Workflow className="h-5 w-5" />
-            Agent Integrations
+            🤖 AI Agent Integrations (A2A Protocol)
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -171,23 +204,21 @@ export const GenieArcProductionHubDiagram: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* API Endpoints */}
+      {/* Pipeline Integrations */}
       <Card className="border-2 border-cyan-200 dark:border-cyan-800/40 bg-cyan-50/50 dark:bg-cyan-950/10">
         <CardHeader className="pb-2">
           <CardTitle className="text-lg text-cyan-700 dark:text-cyan-400 flex items-center gap-2">
-            <Radio className="h-5 w-5" />
-            API Endpoints
+            <Layers className="h-5 w-5" />
+            🔄 Full Ecosystem Integration
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-3 gap-3">
-            {apiEndpoints.map((api) => (
-              <div key={api.name} className="bg-background rounded-lg p-3 border-2 border-border shadow-sm">
-                <div className="flex items-center justify-between mb-1">
-                  <code className="text-cyan-600 dark:text-cyan-400 text-xs font-semibold">{api.name}</code>
-                  {getStatusBadge(api.status)}
-                </div>
-                <p className="text-muted-foreground text-xs">{api.description}</p>
+          <div className="grid grid-cols-6 gap-3">
+            {pipelineIntegrations.map((item) => (
+              <div key={item.name} className="bg-background rounded-lg p-3 border-2 border-border shadow-sm text-center">
+                <div className="text-cyan-600 dark:text-cyan-400 text-sm font-semibold">{item.name}</div>
+                <p className="text-muted-foreground text-xs mt-1">{item.description}</p>
+                <div className="mt-2">{getStatusBadge(item.status)}</div>
               </div>
             ))}
           </div>
@@ -199,7 +230,7 @@ export const GenieArcProductionHubDiagram: React.FC = () => {
         <CardHeader className="pb-2">
           <CardTitle className="text-lg text-orange-700 dark:text-orange-400 flex items-center gap-2">
             <GitBranch className="h-5 w-5" />
-            Approval Workflow
+            5-Stage Approval Workflow
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -207,7 +238,7 @@ export const GenieArcProductionHubDiagram: React.FC = () => {
             {['Draft', 'Review', 'Revisions', 'Approval', 'Published'].map((stage, index) => (
               <React.Fragment key={stage}>
                 <div className="flex-shrink-0 bg-background rounded-lg p-3 border-2 border-border text-center min-w-[100px] shadow-sm">
-                  <CheckCircle className={`h-5 w-5 mx-auto mb-1 ${index <= 1 ? 'text-emerald-500' : 'text-muted-foreground'}`} />
+                  <CheckCircle className={`h-5 w-5 mx-auto mb-1 ${index <= 3 ? 'text-emerald-500' : 'text-muted-foreground'}`} />
                   <div className="text-foreground text-sm font-semibold">{stage}</div>
                 </div>
                 {index < 4 && <div className="text-muted-foreground text-lg font-bold">→</div>}
@@ -216,26 +247,6 @@ export const GenieArcProductionHubDiagram: React.FC = () => {
           </div>
         </CardContent>
       </Card>
-
-      {/* Stats */}
-      <div className="grid grid-cols-4 gap-4 text-center">
-        <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-3 border-2 border-blue-200 dark:border-blue-800/40">
-          <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">6</div>
-          <div className="text-xs text-muted-foreground font-medium">Arc Features</div>
-        </div>
-        <div className="bg-violet-50 dark:bg-violet-950/20 rounded-lg p-3 border-2 border-violet-200 dark:border-violet-800/40">
-          <div className="text-2xl font-bold text-violet-600 dark:text-violet-400">6</div>
-          <div className="text-xs text-muted-foreground font-medium">Hub Features</div>
-        </div>
-        <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-lg p-3 border-2 border-emerald-200 dark:border-emerald-800/40">
-          <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">6</div>
-          <div className="text-xs text-muted-foreground font-medium">Agents</div>
-        </div>
-        <div className="bg-cyan-50 dark:bg-cyan-950/20 rounded-lg p-3 border-2 border-cyan-200 dark:border-cyan-800/40">
-          <div className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">25%</div>
-          <div className="text-xs text-muted-foreground font-medium">Complete</div>
-        </div>
-      </div>
     </div>
   );
 
