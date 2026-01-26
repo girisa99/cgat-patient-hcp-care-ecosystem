@@ -115,23 +115,27 @@ const STYLE_ICONS: Record<TemplateStyle, React.ElementType> = {
   'mixed-adaptive': Sparkles,
 };
 
-// Framework categories (using generic names - NO trademarked names)
-const FRAMEWORK_CATEGORIES = [
-  { id: 'tier1-strategy', label: 'Strategic Planning', description: 'High-level strategy & alignment frameworks' },
-  { id: 'tier1-growth', label: 'Growth & Portfolio', description: 'Market expansion & portfolio analysis' },
-  { id: 'tier1-operations', label: 'Operations Excellence', description: 'Customer & execution optimization' },
-  { id: 'universal', label: 'Universal Frameworks', description: 'Industry-standard methodologies' },
-];
+// ==================== UNIFIED REGISTRY IMPORTS ====================
+// Using central registry for consistency across ecosystem
+import { INDUSTRIES as REGISTRY_INDUSTRIES, FRAMEWORKS as REGISTRY_FRAMEWORKS, getIconComponent } from '../registry/contextRegistry';
+import { EXPANDED_FRAMEWORK_CATEGORIES } from '../constants/expandedFrameworks';
 
-// Industry categories for templates
-const INDUSTRY_CATEGORIES = [
-  { id: 'healthcare', label: 'Healthcare & Life Sciences', icon: HeartPulse },
-  { id: 'technology', label: 'Technology & SaaS', icon: Cpu },
-  { id: 'manufacturing', label: 'Manufacturing & Industrial', icon: Factory },
-  { id: 'retail', label: 'Retail & E-commerce', icon: ShoppingCart },
-  { id: 'finance', label: 'Financial Services', icon: Building2 },
-  { id: 'travel', label: 'Travel & Hospitality', icon: Plane },
-];
+// Framework categories - derived from central registry
+const FRAMEWORK_CATEGORIES = EXPANDED_FRAMEWORK_CATEGORIES
+  .filter(cat => ['consulting', 'methodology', 'business'].includes(cat.type))
+  .slice(0, 6)
+  .map(cat => ({
+    id: cat.id,
+    label: cat.name,
+    description: cat.description
+  }));
+
+// Industry categories - derived from central registry (first 10 for UI)
+const INDUSTRY_CATEGORIES = REGISTRY_INDUSTRIES.slice(0, 10).map(industry => ({
+  id: industry.id,
+  label: industry.name,
+  icon: getIconComponent(industry.icon || 'Briefcase') || Briefcase
+}));
 
 // Template style options
 const STYLE_OPTIONS = [

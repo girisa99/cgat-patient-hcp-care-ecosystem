@@ -296,69 +296,22 @@ export const COLLATERAL_TYPES: CollateralType[] = [
 ];
 
 // ==================== INDUSTRY CATEGORIES ====================
+// NOTE: This is a legacy export for backward compatibility.
+// The authoritative source is: src/components/genie-studio/presentation-generator/registry/contextRegistry.ts
+// Import from there for new code: import { INDUSTRIES } from './registry';
 
-export const INDUSTRY_CATEGORIES: IndustryCategory[] = [
-  {
-    id: 'healthcare',
-    name: 'Healthcare',
-    icon: React.createElement(Heart, { className: 'h-5 w-5' }),
-    subcategories: ['Hospitals', 'Clinics', 'Nursing', 'Pharma', 'Biotech', 'Medical Devices']
-  },
-  {
-    id: 'energy',
-    name: 'Energy',
-    icon: React.createElement(Droplets, { className: 'h-5 w-5' }),
-    subcategories: ['Oil & Gas', 'Renewable', 'Utilities', 'Mining']
-  },
-  {
-    id: 'finance',
-    name: 'Finance',
-    icon: React.createElement(DollarSign, { className: 'h-5 w-5' }),
-    subcategories: ['Banking', 'Insurance', 'Investment', 'Fintech', 'Crypto']
-  },
-  {
-    id: 'technology',
-    name: 'Technology',
-    icon: React.createElement(Cpu, { className: 'h-5 w-5' }),
-    subcategories: ['SaaS', 'AI/ML', 'Cybersecurity', 'Cloud', 'Hardware']
-  },
-  {
-    id: 'startup',
-    name: 'Startup & VC',
-    icon: React.createElement(Rocket, { className: 'h-5 w-5' }),
-    subcategories: ['Seed Stage', 'Series A-C', 'Late Stage', 'Accelerator']
-  },
-  {
-    id: 'travel',
-    name: 'Travel & Hospitality',
-    icon: React.createElement(Plane, { className: 'h-5 w-5' }),
-    subcategories: ['Airlines', 'Hotels', 'Tourism', 'Cruise', 'Events']
-  },
-  {
-    id: 'manufacturing',
-    name: 'Manufacturing',
-    icon: React.createElement(Factory, { className: 'h-5 w-5' }),
-    subcategories: ['Automotive', 'Aerospace', 'Electronics', 'Industrial']
-  },
-  {
-    id: 'veterinary',
-    name: 'Veterinary & Pets',
-    icon: React.createElement(PawPrint, { className: 'h-5 w-5' }),
-    subcategories: ['Vet Clinics', 'Pet Products', 'Animal Health']
-  },
-  {
-    id: 'consulting',
-    name: 'Consulting',
-    icon: React.createElement(Briefcase, { className: 'h-5 w-5' }),
-    subcategories: ['Strategy', 'Management', 'Technology', 'HR']
-  },
-  {
-    id: 'education',
-    name: 'Education',
-    icon: React.createElement(GraduationCap, { className: 'h-5 w-5' }),
-    subcategories: ['K-12', 'Higher Ed', 'EdTech', 'Corporate Training']
-  },
-];
+import { INDUSTRIES as REGISTRY_INDUSTRIES, getIconComponent } from './registry/contextRegistry';
+
+// Map registry industries to legacy format with React icons
+export const INDUSTRY_CATEGORIES: IndustryCategory[] = REGISTRY_INDUSTRIES.map(industry => ({
+  id: industry.id,
+  name: industry.name,
+  icon: React.createElement(
+    getIconComponent(industry.icon || 'Briefcase') || Briefcase, 
+    { className: 'h-5 w-5' }
+  ),
+  subcategories: industry.subcategories
+}));
 
 // ==================== FRAMEWORK TEMPLATES ====================
 
