@@ -5,20 +5,19 @@
  * Used in Wizard Step 7 (EmbeddedEditorPanel) and standalone editors.
  */
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { 
   proactivePipelineEditorService, 
   ProactiveEditSuggestion,
   EditorType,
   EditorPriority,
-  EDIT_CAPABILITIES
+  DeviceContext
 } from '@/services/proactivePipelineEditorService';
 import { useMasterToast } from '@/hooks/useMasterToast';
 
 export interface UseProactiveEditingOptions {
   pipelineId?: string;
   outputType?: string;
-  userTier?: 'Starter' | 'Pro' | 'Enterprise';
   autoShow?: boolean;
 }
 
@@ -27,15 +26,15 @@ export interface UseProactiveEditingReturn {
   editorType: EditorType;
   shouldShowEditor: boolean;
   isAnalyzing: boolean;
-  analyzePipeline: (pipelineId: string) => Promise<ProactiveEditSuggestion[]>;
+  analyzePipeline: (pipelineId: string, outputContent?: any) => Promise<ProactiveEditSuggestion[]>;
   triggerEdit: (suggestionIndex: number) => void;
   dismissSuggestion: (pipelineId: string) => void;
   getByPriority: (priority: EditorPriority) => ProactiveEditSuggestion[];
 }
 
 export const useProactiveEditing = (options: UseProactiveEditingOptions = {}): UseProactiveEditingReturn => {
-  const { pipelineId, outputType, userTier = 'Starter', autoShow = true } = options;
-  const { showSuccess, showInfo } = useMasterToast();
+  const { pipelineId, outputType, autoShow = true } = options;
+  const { showSuccess } = useMasterToast();
 
   const [suggestions, setSuggestions] = useState<ProactiveEditSuggestion[]>([]);
   const [editorType, setEditorType] = useState<EditorType>('none');
@@ -43,17 +42,27 @@ export const useProactiveEditing = (options: UseProactiveEditingOptions = {}): U
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
 
-  const analyzePipeline = useCallback(async (targetPipelineId: string): Promise<ProactiveEditSuggestion[]> => {
+  const getDeviceContext = (): DeviceContext => {
+    if (/iPhone|iPad|Android/i.test(navigator.userAgent)) {
+      return /iPad|Android(?!.*Mobile)/i.test(navigator.userAgent) ? 'tablet' : 'mobile';
+    }
+    return 'desktop';
+  };
+
+  const analyzePipeline = useCallback(async (
+    targetPipelineId: string, 
+    outputContent?: any
+  ): Promise<ProactiveEditSuggestion[]> => {
     setIsAnalyzing(true);
     try {
       const detectedType = proactivePipelineEditorService.getEditorType(targetPipelineId);
       setEditorType(detectedType);
 
-      const deviceContext = /iPhone|iPad|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop';
-      const newSuggestions = proactivePipelineEditorService.suggestEditingPipelines(
+      const deviceContext = getDeviceContext();
+      const newSuggestions = proactivePipelineEditorService.getProactiveSuggestions(
         targetPipelineId,
-        deviceContext,
-        userTier
+        outputContent || {},
+        deviceContext
       );
 
       const filtered = newSuggestions.filter(s => !dismissed.has(s.pipelineId));
@@ -67,7 +76,7 @@ export const useProactiveEditing = (options: UseProactiveEditingOptions = {}): U
     } finally {
       setIsAnalyzing(false);
     }
-  }, [userTier, autoShow, dismissed]);
+  }, [autoShow, dismissed]);
 
   useEffect(() => {
     if (pipelineId) {
