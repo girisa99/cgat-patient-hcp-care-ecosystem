@@ -528,3 +528,168 @@ const ICON_MAP: Record<string, LucideIcon> = {
 export function getIconComponent(iconName: string): LucideIcon | undefined {
   return ICON_MAP[iconName];
 }
+
+// ==========================================
+// ECOSYSTEM BRIDGE - Connects to 21 Categories
+// ==========================================
+
+import type { GenieProduct } from '@/constants/genie-products';
+
+/**
+ * Maps OUTPUT_TYPES to their primary pipeline categories
+ * This bridges the dropdown selections to the 21-category ecosystem
+ */
+export const OUTPUT_TO_CATEGORY_MAP: Record<string, { 
+  category: string; 
+  product: GenieProduct; 
+  edgeFunction: string;
+  pipelineCount: number;
+}> = {
+  // Document outputs → Deck/Spark
+  'pdf': { category: 'presentation', product: 'deck', edgeFunction: 'share-presentation', pipelineCount: 12 },
+  'pptx': { category: 'presentation', product: 'deck', edgeFunction: 'share-presentation', pipelineCount: 12 },
+  'docx': { category: 'script-enhancement', product: 'mind', edgeFunction: 'enhance-script', pipelineCount: 10 },
+  
+  // Static outputs → Deck
+  'presentation': { category: 'presentation', product: 'deck', edgeFunction: 'share-presentation', pipelineCount: 12 },
+  'infographic': { category: 'visual-design', product: 'deck', edgeFunction: 'ai-image-generator', pipelineCount: 10 },
+  
+  // Video outputs → Vibe
+  'video-mp4': { category: 'video-generation', product: 'vibe', edgeFunction: 'ai-video-generator', pipelineCount: 15 },
+  'video-webm': { category: 'video-editing', product: 'vibe', edgeFunction: 'pipeline-editor-processor', pipelineCount: 15 },
+  'animated-gif': { category: 'video-editing', product: 'vibe', edgeFunction: 'pipeline-editor-processor', pipelineCount: 15 },
+  
+  // Immersive outputs → Deck (3D)
+  '3d-presentation': { category: '3d-immersive', product: 'deck', edgeFunction: 'modelslab-media', pipelineCount: 12 },
+  'vr-experience': { category: '3d-immersive', product: 'deck', edgeFunction: 'modelslab-media', pipelineCount: 12 },
+  
+  // Interactive outputs → Cast/Deck
+  'interactive-web': { category: 'distribution', product: 'cast', edgeFunction: 'social-publish', pipelineCount: 12 },
+  'embed-widget': { category: 'distribution', product: 'cast', edgeFunction: 'social-publish', pipelineCount: 12 },
+};
+
+/**
+ * Maps VISUAL_FEATURES to their enabling categories
+ */
+export const VISUAL_FEATURE_TO_CATEGORY_MAP: Record<string, {
+  category: string;
+  product: GenieProduct;
+  edgeFunction: string;
+}> = {
+  // Charts → Deck visual
+  'bar-chart': { category: 'visual-design', product: 'deck', edgeFunction: 'ai-image-generator' },
+  'line-chart': { category: 'visual-design', product: 'deck', edgeFunction: 'ai-image-generator' },
+  'pie-chart': { category: 'visual-design', product: 'deck', edgeFunction: 'ai-image-generator' },
+  'scatter-plot': { category: 'visual-design', product: 'deck', edgeFunction: 'ai-image-generator' },
+  'heatmap': { category: 'visual-design', product: 'deck', edgeFunction: 'ai-image-generator' },
+  
+  // Diagrams → Deck
+  'flowchart': { category: 'visual-design', product: 'deck', edgeFunction: 'ai-image-generator' },
+  'org-chart': { category: 'visual-design', product: 'deck', edgeFunction: 'ai-image-generator' },
+  'mind-map': { category: 'visual-design', product: 'deck', edgeFunction: 'ai-image-generator' },
+  'timeline': { category: 'visual-design', product: 'deck', edgeFunction: 'ai-image-generator' },
+  
+  // Media → Spark/Deck
+  'ai-images': { category: 'visual-design', product: 'deck', edgeFunction: 'ai-image-generator' },
+  'stock-photos': { category: 'content-extraction', product: 'spark', edgeFunction: 'document-processor' },
+  'icons': { category: 'visual-design', product: 'deck', edgeFunction: 'ai-image-generator' },
+  
+  // Animation → Vibe
+  'slide-transitions': { category: 'video-editing', product: 'vibe', edgeFunction: 'pipeline-editor-processor' },
+  'element-animations': { category: 'video-editing', product: 'vibe', edgeFunction: 'pipeline-editor-processor' },
+  'data-animations': { category: 'video-editing', product: 'vibe', edgeFunction: 'pipeline-editor-processor' },
+  
+  // 3D → Deck 3D
+  '3d-charts': { category: '3d-immersive', product: 'deck', edgeFunction: 'modelslab-media' },
+  '3d-models': { category: '3d-immersive', product: 'deck', edgeFunction: 'modelslab-media' },
+  '3d-scenes': { category: '3d-immersive', product: 'deck', edgeFunction: 'modelslab-media' },
+  
+  // Interactive → Cast
+  'clickable-hotspots': { category: 'distribution', product: 'cast', edgeFunction: 'social-publish' },
+  'data-filters': { category: 'distribution', product: 'cast', edgeFunction: 'social-publish' },
+  'embedded-forms': { category: 'distribution', product: 'cast', edgeFunction: 'social-publish' },
+};
+
+/**
+ * Get the target product and category for an output type selection
+ */
+export function getOutputProductRouting(outputId: string): { 
+  product: GenieProduct; 
+  category: string; 
+  edgeFunction: string;
+} | undefined {
+  return OUTPUT_TO_CATEGORY_MAP[outputId];
+}
+
+/**
+ * Get all outputs that route to a specific product
+ */
+export function getOutputsForProduct(product: GenieProduct): OutputTypeItem[] {
+  return OUTPUT_TYPES.filter(output => 
+    OUTPUT_TO_CATEGORY_MAP[output.id]?.product === product
+  );
+}
+
+/**
+ * Get visual features that belong to a specific category
+ */
+export function getVisualFeaturesForCategory(categoryId: string): VisualFeatureItem[] {
+  return VISUAL_FEATURES.filter(feature => 
+    VISUAL_FEATURE_TO_CATEGORY_MAP[feature.id]?.category === categoryId
+  );
+}
+
+/**
+ * PIPELINE CATEGORY DROPDOWN OPTIONS
+ * These 21 categories can be exposed in wizard dropdowns for advanced users
+ */
+export const PIPELINE_CATEGORIES_DROPDOWN = [
+  // Spark (Input/Script)
+  { id: 'input-processing', name: 'Input Processing', product: 'spark', pipelines: 8, icon: 'Upload' },
+  { id: 'script-generation', name: 'Script Generation', product: 'spark', pipelines: 12, icon: 'FileText' },
+  { id: 'content-extraction', name: 'Content Extraction', product: 'spark', pipelines: 8, icon: 'Search' },
+  
+  // Mind (Enhancement)
+  { id: 'script-enhancement', name: 'Script Enhancement', product: 'mind', pipelines: 10, icon: 'Sparkles' },
+  { id: 'tts-generation', name: 'Text-to-Speech', product: 'mind', pipelines: 8, icon: 'Volume2' },
+  { id: 'music-generation', name: 'Music Generation', product: 'mind', pipelines: 6, icon: 'Music' },
+  { id: 'translation', name: 'Translation', product: 'mind', pipelines: 6, icon: 'Languages' },
+  
+  // Vibe (Production)
+  { id: 'video-generation', name: 'Video Generation', product: 'vibe', pipelines: 15, icon: 'Video' },
+  { id: 'video-editing', name: 'Video Editing', product: 'vibe', pipelines: 15, icon: 'Film' },
+  { id: 'audio-production', name: 'Audio Production', product: 'vibe', pipelines: 10, icon: 'Mic' },
+  { id: 'podcast-webcast', name: 'Podcast & Webcast', product: 'vibe', pipelines: 16, icon: 'Radio' },
+  { id: 'avatar-lipsync', name: 'Avatar & Lip-Sync', product: 'vibe', pipelines: 10, icon: 'User' },
+  { id: 'dubbing', name: 'Dubbing & Localization', product: 'vibe', pipelines: 8, icon: 'Globe' },
+  
+  // Deck (Visual)
+  { id: 'presentation', name: 'Presentation', product: 'deck', pipelines: 12, icon: 'Presentation' },
+  { id: 'visual-design', name: 'Visual Design', product: 'deck', pipelines: 10, icon: 'Palette' },
+  { id: '3d-immersive', name: '3D & Immersive', product: 'deck', pipelines: 12, icon: 'Box' },
+  
+  // Arc (Production)
+  { id: 'scheduling', name: 'Scheduling', product: 'arc', pipelines: 8, icon: 'Calendar' },
+  { id: 'collaboration', name: 'Collaboration', product: 'arc', pipelines: 6, icon: 'Users' },
+  
+  // Cast (Distribution)
+  { id: 'distribution', name: 'Distribution', product: 'cast', pipelines: 12, icon: 'Share2' },
+  { id: 'marketing', name: 'Marketing', product: 'cast', pipelines: 8, icon: 'Megaphone' },
+  { id: 'analytics', name: 'Analytics', product: 'cast', pipelines: 6, icon: 'BarChart' },
+] as const;
+
+export type PipelineCategoryId = typeof PIPELINE_CATEGORIES_DROPDOWN[number]['id'];
+
+/**
+ * Get pipeline categories filtered by product
+ */
+export function getPipelineCategoriesForProduct(product: GenieProduct) {
+  return PIPELINE_CATEGORIES_DROPDOWN.filter(cat => cat.product === product);
+}
+
+/**
+ * Get pipeline category by ID
+ */
+export function getPipelineCategory(categoryId: string) {
+  return PIPELINE_CATEGORIES_DROPDOWN.find(cat => cat.id === categoryId);
+}
