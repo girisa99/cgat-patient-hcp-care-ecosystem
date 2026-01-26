@@ -458,57 +458,45 @@ class BetaAwardsService {
   }
 
   private async updateParticipantBadges(userId: string, badgeId: string, credits: number): Promise<void> {
-    const { data } = await supabase
-      .from('beta_participants')
-      .select('badges, total_credits_earned')
-      .eq('user_id', userId)
-      .single();
-
-    const currentBadges = (data?.badges as string[]) || [];
-    const currentCredits = data?.total_credits_earned || 0;
-
-    await supabase
-      .from('beta_participants')
-      .update({
-        badges: [...currentBadges, badgeId],
-        total_credits_earned: currentCredits + credits,
-      })
-      .eq('user_id', userId);
+    // Use localStorage for beta phase
+    const stored = localStorage.getItem(`beta_participant_${userId}`);
+    const participant = stored ? JSON.parse(stored) : { badges: [], total_credits_earned: 0 };
+    
+    const currentBadges = participant.badges || [];
+    const currentCredits = participant.total_credits_earned || 0;
+    
+    participant.badges = [...currentBadges, badgeId];
+    participant.total_credits_earned = currentCredits + credits;
+    
+    localStorage.setItem(`beta_participant_${userId}`, JSON.stringify(participant));
   }
 
   private async updateParticipantCredits(userId: string, amount: number): Promise<void> {
-    const { data } = await supabase
-      .from('beta_participants')
-      .select('total_credits_earned')
-      .eq('user_id', userId)
-      .single();
-
-    const currentCredits = data?.total_credits_earned || 0;
-
-    await supabase
-      .from('beta_participants')
-      .update({
-        total_credits_earned: currentCredits + amount,
-      })
-      .eq('user_id', userId);
+    // Use localStorage for beta phase
+    const stored = localStorage.getItem(`beta_participant_${userId}`);
+    const participant = stored ? JSON.parse(stored) : { total_credits_earned: 0 };
+    
+    const currentCredits = participant.total_credits_earned || 0;
+    participant.total_credits_earned = currentCredits + amount;
+    
+    localStorage.setItem(`beta_participant_${userId}`, JSON.stringify(participant));
   }
 
   private async updateStreaks(userId: string): Promise<void> {
-    // Calculate current streak from daily_streaks table
-    const { data } = await supabase
-      .from('daily_streaks')
-      .select('activity_date')
-      .eq('user_id', userId)
-      .order('activity_date', { ascending: false });
+    // Use localStorage for beta phase - calculate streak from stored activity dates
+    const stored = localStorage.getItem(`beta_streaks_${userId}`);
+    const streakData: string[] = stored ? JSON.parse(stored) : [];
 
-    if (!data || data.length === 0) return;
+    if (streakData.length === 0) return;
 
+    // Sort dates descending
+    const sortedDates = streakData.sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+    
     let streak = 1;
-    const today = new Date();
-    let currentDate = new Date(data[0].activity_date);
+    let currentDate = new Date(sortedDates[0]);
 
-    for (let i = 1; i < data.length; i++) {
-      const prevDate = new Date(data[i].activity_date);
+    for (let i = 1; i < sortedDates.length; i++) {
+      const prevDate = new Date(sortedDates[i]);
       const diffDays = (currentDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24);
       
       if (diffDays === 1) {
@@ -519,22 +507,15 @@ class BetaAwardsService {
       }
     }
 
-    // Update participant streak
-    const { data: participant } = await supabase
-      .from('beta_participants')
-      .select('longest_streak')
-      .eq('user_id', userId)
-      .single();
-
-    const longestStreak = Math.max(participant?.longest_streak || 0, streak);
-
-    await supabase
-      .from('beta_participants')
-      .update({
-        current_streak: streak,
-        longest_streak: longestStreak,
-      })
-      .eq('user_id', userId);
+    // Update participant streak in localStorage
+    const participantStored = localStorage.getItem(`beta_participant_${userId}`);
+    const participant = participantStored ? JSON.parse(participantStored) : { current_streak: 0, longest_streak: 0 };
+    
+    const longestStreak = Math.max(participant.longest_streak || 0, streak);
+    participant.current_streak = streak;
+    participant.longest_streak = longestStreak;
+    
+    localStorage.setItem(`beta_participant_${userId}`, JSON.stringify(participant));
   }
 
   private getDefaultStats(): ParticipantStats {
