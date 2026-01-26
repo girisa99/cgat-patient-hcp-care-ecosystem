@@ -81,8 +81,17 @@ export type VideoGenProvider =
   | 'replicate';              // Replicate (general)
 
 export type SFXGenProvider =
-  | 'elevenlabs'         // ElevenLabs SFX
-  | 'modelslab_audio';   // ModelsLab Audio
+  | 'elevenlabs'         // ElevenLabs SFX (Western/EU/LatAm)
+  | 'alibaba_sfx'        // Alibaba Audio SFX (CJK)
+  | 'azure_sfx'          // Azure Audio SFX (MENA/Arabic)
+  | 'google_sfx'         // Google Cloud Audio (India/SEA/Africa)
+  | 'modelslab_audio';   // ModelsLab Audio (Fallback)
+
+export type MusicGenProvider =
+  | 'elevenlabs_music'   // ElevenLabs Music (Western/EU/LatAm)
+  | 'suno'               // Suno AI (Premium full songs)
+  | 'alibaba_music'      // Alibaba Music (CJK)
+  | 'modelslab_music';   // ModelsLab MusicGen (Budget/Fallback)
 
 export type NLPProvider = 
   | 'gemini'             // Google Gemini
@@ -389,6 +398,8 @@ export interface MediaProviderConfig {
   qualityScore?: number;   // 0-100
   speedScore?: number;     // 0-100
   reliabilityScore?: number; // 0-100
+  // Regional routing support
+  regions?: string[];      // Country codes this provider is optimized for
 }
 
 export interface MediaAdapterConfig {

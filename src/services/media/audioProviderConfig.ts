@@ -276,7 +276,7 @@ export const STT_PROVIDERS: Record<STTProvider, MediaProviderConfig> = {
 };
 
 // ============================================
-// SFX GENERATION PROVIDERS
+// SFX GENERATION PROVIDERS (5-Zone Regional)
 // ============================================
 
 export const SFX_GEN_PROVIDERS: Record<SFXGenProvider, MediaProviderConfig> = {
@@ -288,8 +288,48 @@ export const SFX_GEN_PROVIDERS: Record<SFXGenProvider, MediaProviderConfig> = {
     isConfigured: true,
     priority: 1,
     costPerUnit: 0.005,
-    strengths: ['High quality', 'Text-to-SFX', 'Diverse sounds'],
+    strengths: ['High quality', 'Text-to-SFX', 'Diverse sounds', 'Western/EU/LatAm'],
     weaknesses: ['Credit-based pricing'],
+    regions: ['US', 'UK', 'AU', 'CA', 'NZ', 'DE', 'FR', 'ES', 'IT', 'NL', 'PT', 'PL', 'BR', 'MX', 'AR'],
+  },
+  alibaba_sfx: {
+    id: 'alibaba_sfx',
+    name: 'Alibaba Audio SFX',
+    capabilities: ['sfx_gen'],
+    secretKey: 'ALIBABA_API_KEY',
+    isConfigured: true,
+    priority: 2,
+    costPerUnit: 0.002,
+    supportedLanguages: ['zh', 'ja', 'ko'],
+    strengths: ['CJK optimized', 'Low cost', 'Asian sound styles'],
+    weaknesses: ['Limited Western styles'],
+    regions: ['CN', 'HK', 'TW', 'JP', 'KR', 'SG', 'MO'],
+  },
+  azure_sfx: {
+    id: 'azure_sfx',
+    name: 'Azure Audio SFX',
+    capabilities: ['sfx_gen'],
+    secretKey: 'AZURE_SPEECH_KEY',
+    isConfigured: true,
+    priority: 3,
+    costPerUnit: 0.003,
+    supportedLanguages: ['ar', 'he', 'fa'],
+    strengths: ['MENA region', 'Arabic styles', 'Enterprise'],
+    weaknesses: ['Limited SFX variety'],
+    regions: ['SA', 'AE', 'EG', 'MA', 'JO', 'IQ', 'KW', 'QA', 'BH', 'OM'],
+  },
+  google_sfx: {
+    id: 'google_sfx',
+    name: 'Google Cloud Audio',
+    capabilities: ['sfx_gen'],
+    secretKey: 'GOOGLE_API_KEY',
+    isConfigured: true,
+    priority: 4,
+    costPerUnit: 0.002,
+    supportedLanguages: ['hi', 'ta', 'te', 'bn', 'id', 'vi', 'th'],
+    strengths: ['India/SEA/Africa', 'Wide coverage', 'Reliable'],
+    weaknesses: ['Basic SFX quality'],
+    regions: ['IN', 'PK', 'BD', 'ID', 'VN', 'TH', 'PH', 'MY', 'NG', 'KE', 'GH'],
   },
   modelslab_audio: {
     id: 'modelslab_audio',
@@ -297,10 +337,66 @@ export const SFX_GEN_PROVIDERS: Record<SFXGenProvider, MediaProviderConfig> = {
     capabilities: ['sfx_gen', 'music_gen'],
     secretKey: 'MODELSLAB_API_KEY',
     isConfigured: true,
-    priority: 2,
+    priority: 5,
     costPerUnit: 0.003,
-    strengths: ['MusicGen', 'Bark model', 'Low cost'],
+    strengths: ['MusicGen', 'Bark model', 'Low cost', 'Fallback'],
     weaknesses: ['Less refined than ElevenLabs'],
+  },
+};
+
+// ============================================
+// MUSIC GENERATION PROVIDERS (5-Zone Regional)
+// ============================================
+
+export type MusicGenProvider = 'elevenlabs_music' | 'suno' | 'alibaba_music' | 'modelslab_music';
+
+export const MUSIC_GEN_PROVIDERS: Record<MusicGenProvider, MediaProviderConfig> = {
+  elevenlabs_music: {
+    id: 'elevenlabs_music',
+    name: 'ElevenLabs Music',
+    capabilities: ['music_gen'],
+    secretKey: 'ELEVENLABS_API_KEY',
+    isConfigured: true,
+    priority: 1,
+    costPerUnit: 0.03,
+    strengths: ['High quality', 'Western styles', 'Fast generation'],
+    weaknesses: ['Duration limits'],
+    regions: ['US', 'UK', 'AU', 'CA', 'NZ', 'DE', 'FR', 'ES', 'IT', 'NL', 'PT', 'PL', 'BR', 'MX', 'AR'],
+  },
+  suno: {
+    id: 'suno',
+    name: 'Suno AI',
+    capabilities: ['music_gen'],
+    secretKey: 'SUNO_API_KEY',
+    isConfigured: false,
+    priority: 0, // Premium tier
+    costPerUnit: 0.10,
+    strengths: ['Full songs', 'Vocals', 'Lyrics', 'Premium quality'],
+    weaknesses: ['Higher cost', 'Longer generation time'],
+  },
+  alibaba_music: {
+    id: 'alibaba_music',
+    name: 'Alibaba Music Generation',
+    capabilities: ['music_gen'],
+    secretKey: 'ALIBABA_API_KEY',
+    isConfigured: true,
+    priority: 2,
+    costPerUnit: 0.015,
+    supportedLanguages: ['zh', 'ja', 'ko'],
+    strengths: ['CJK music styles', 'Traditional Asian', 'Low cost'],
+    weaknesses: ['Limited Western genres'],
+    regions: ['CN', 'HK', 'TW', 'JP', 'KR', 'SG', 'MO'],
+  },
+  modelslab_music: {
+    id: 'modelslab_music',
+    name: 'ModelsLab MusicGen',
+    capabilities: ['music_gen'],
+    secretKey: 'MODELSLAB_API_KEY',
+    isConfigured: true,
+    priority: 3,
+    costPerUnit: 0.01,
+    strengths: ['Cost-effective', 'Wide coverage', 'Fallback option'],
+    weaknesses: ['Basic quality'],
   },
 };
 

@@ -332,3 +332,9 @@ verify_jwt = true
 
 [functions.pipeline-editor-processor]
 verify_jwt = false
+
+[functions.multi-provider-sfx]
+verify_jwt = false
+
+[functions.multi-provider-music]
+verify_jwt = false
