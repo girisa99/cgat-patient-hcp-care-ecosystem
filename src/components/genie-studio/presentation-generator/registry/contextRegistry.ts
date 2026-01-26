@@ -180,6 +180,96 @@ export const INDUSTRIES: IndustryItem[] = [
     defaultFrameworks: ['pyramid-principle', 'circular-flow', 'funnel-analysis'],
     tags: ['impact', 'fundraising', 'mission'],
   },
+  // ==========================================
+  // NEW INDUSTRIES (10 Added)
+  // ==========================================
+  {
+    id: 'government',
+    name: 'Government & Public Sector',
+    icon: 'Building2',
+    subcategories: ['Federal', 'State/Local', 'Defense', 'Public Services', 'Regulatory'],
+    defaultFrameworks: ['mece-structure', 'strategic-roadmap', 'comparison-matrix'],
+    complianceRequirements: ['FedRAMP', 'FISMA', 'ADA'],
+    tags: ['public', 'policy', 'compliance'],
+  },
+  {
+    id: 'agriculture',
+    name: 'Agriculture & Farming',
+    icon: 'PawPrint',
+    subcategories: ['Crop Production', 'Livestock', 'AgTech', 'Food Processing', 'Organic'],
+    defaultFrameworks: ['value-chain', 'strategic-roadmap', 'swot-analysis'],
+    tags: ['sustainability', 'supply-chain', 'seasonal'],
+  },
+  {
+    id: 'mining',
+    name: 'Mining & Resources',
+    icon: 'Droplets',
+    subcategories: ['Metals', 'Minerals', 'Coal', 'Rare Earth', 'Quarrying'],
+    defaultFrameworks: ['value-chain', 'swot-analysis', 'strategic-roadmap'],
+    complianceRequirements: ['MSHA', 'EPA'],
+    tags: ['extraction', 'sustainability', 'heavy-industry'],
+  },
+  {
+    id: 'utilities',
+    name: 'Utilities',
+    icon: 'Zap',
+    subcategories: ['Electric', 'Water', 'Gas', 'Waste Management', 'Telecom'],
+    defaultFrameworks: ['value-chain', 'strategic-roadmap', 'gear-diagram'],
+    complianceRequirements: ['NERC', 'EPA'],
+    tags: ['infrastructure', 'regulated', 'essential-services'],
+  },
+  {
+    id: 'insurance',
+    name: 'Insurance',
+    icon: 'Shield',
+    subcategories: ['Life', 'Health', 'Property & Casualty', 'Reinsurance', 'InsurTech'],
+    defaultFrameworks: ['funnel-analysis', 'comparison-matrix', 'growth-share-matrix'],
+    complianceRequirements: ['NAIC', 'GDPR'],
+    tags: ['risk', 'underwriting', 'claims'],
+  },
+  {
+    id: 'automotive',
+    name: 'Automotive',
+    icon: 'Truck',
+    subcategories: ['OEM', 'Suppliers', 'Dealerships', 'EV', 'Autonomous'],
+    defaultFrameworks: ['value-chain', 'technology-lifecycle', 'gear-diagram'],
+    tags: ['manufacturing', 'innovation', 'mobility'],
+  },
+  {
+    id: 'aerospace',
+    name: 'Aerospace & Defense',
+    icon: 'Plane',
+    subcategories: ['Commercial Aviation', 'Defense', 'Space', 'Satellites', 'Drones'],
+    defaultFrameworks: ['strategic-roadmap', 'technology-lifecycle', 'value-chain'],
+    complianceRequirements: ['ITAR', 'FAA', 'DoD'],
+    tags: ['high-precision', 'regulated', 'innovation'],
+  },
+  {
+    id: 'entertainment',
+    name: 'Entertainment & Sports',
+    icon: 'Gamepad2',
+    subcategories: ['Film', 'Television', 'Music', 'Gaming', 'Live Events', 'Sports'],
+    defaultFrameworks: ['funnel-analysis', 'comparison-matrix', 'technology-lifecycle'],
+    tags: ['content', 'audience', 'monetization'],
+  },
+  {
+    id: 'food-beverage',
+    name: 'Food & Beverage',
+    icon: 'Utensils',
+    subcategories: ['Restaurants', 'CPG', 'Beverages', 'Food Service', 'Specialty Foods'],
+    defaultFrameworks: ['value-chain', 'funnel-analysis', 'comparison-matrix'],
+    complianceRequirements: ['FDA', 'USDA'],
+    tags: ['consumer', 'supply-chain', 'brand'],
+  },
+  {
+    id: 'telecommunications',
+    name: 'Telecommunications',
+    icon: 'Radio',
+    subcategories: ['Wireless', 'Broadband', '5G', 'Infrastructure', 'IoT'],
+    defaultFrameworks: ['technology-lifecycle', 'strategic-roadmap', 'value-chain'],
+    complianceRequirements: ['FCC', 'GDPR'],
+    tags: ['connectivity', 'infrastructure', 'innovation'],
+  },
 ];
 
 // ==========================================
@@ -470,6 +560,33 @@ export const VISUAL_FEATURES: VisualFeatureItem[] = [
   { id: 'clickable-hotspots', name: 'Clickable Hotspots', category: 'interactive', providers: ['custom'], tier: 'pro', compatibleOutputs: ['interactive-web', 'presentation'] },
   { id: 'data-filters', name: 'Data Filters', category: 'interactive', providers: ['react', 'd3'], tier: 'pro', compatibleOutputs: ['interactive-web'] },
   { id: 'embedded-forms', name: 'Embedded Forms', category: 'interactive', providers: ['react-hook-form'], tier: 'pro', compatibleOutputs: ['interactive-web', 'embed-widget'] },
+  
+  // ==========================================
+  // NEW: MAPS & GEOSPATIAL
+  // ==========================================
+  { id: 'world-map', name: 'World Map', category: 'diagrams', providers: ['mapbox', 'd3-geo'], tier: 'pro', compatibleOutputs: ['presentation', 'interactive', 'video'] },
+  { id: 'choropleth-map', name: 'Choropleth Map', category: 'diagrams', providers: ['d3-geo', 'plotly'], tier: 'pro', compatibleOutputs: ['presentation', 'interactive'] },
+  { id: 'route-map', name: 'Route Map', category: 'diagrams', providers: ['mapbox', 'leaflet'], tier: 'pro', compatibleOutputs: ['presentation', 'interactive', 'video'] },
+  { id: 'location-pins', name: 'Location Pins', category: 'diagrams', providers: ['mapbox', 'leaflet'], tier: 'free', compatibleOutputs: ['presentation', 'pdf', 'interactive'] },
+  { id: 'geo-heatmap', name: 'Geographic Heatmap', category: 'diagrams', providers: ['d3-geo', 'mapbox'], tier: 'enterprise', compatibleOutputs: ['interactive', '3d-presentation'] },
+  
+  // ==========================================
+  // NEW: SOCIAL PROOF ELEMENTS
+  // ==========================================
+  { id: 'review-widget', name: 'Review Widget', category: 'interactive', providers: ['custom'], tier: 'pro', compatibleOutputs: ['interactive-web', 'embed-widget', 'presentation'] },
+  { id: 'star-ratings', name: 'Star Ratings', category: 'media', providers: ['custom'], tier: 'free', compatibleOutputs: ['presentation', 'pdf', 'infographic'] },
+  { id: 'trust-badges', name: 'Trust Badges', category: 'media', providers: ['custom', 'lucide'], tier: 'free', compatibleOutputs: ['presentation', 'pdf', 'interactive-web'] },
+  { id: 'social-feeds', name: 'Social Feeds', category: 'interactive', providers: ['embed-api'], tier: 'pro', compatibleOutputs: ['interactive-web', 'embed-widget'] },
+  { id: 'testimonial-cards', name: 'Testimonial Cards', category: 'media', providers: ['custom'], tier: 'free', compatibleOutputs: ['presentation', 'pdf', 'video'] },
+  
+  // ==========================================
+  // NEW: AVATAR & CHARACTER ELEMENTS
+  // ==========================================
+  { id: 'ai-avatar', name: 'AI Avatar', category: 'media', providers: ['heygen', 'alibaba-wan', 'synthesia'], tier: 'enterprise', compatibleOutputs: ['video-mp4', 'interactive-web'] },
+  { id: 'talking-head', name: 'Talking Head', category: 'media', providers: ['heygen', 'd-id', 'alibaba-wan'], tier: 'enterprise', compatibleOutputs: ['video-mp4', 'interactive-web'] },
+  { id: 'character-illustration', name: 'Character Illustration', category: 'media', providers: ['modelslab', 'dalle', 'midjourney'], tier: 'pro', compatibleOutputs: ['presentation', 'pdf', 'video', 'infographic'] },
+  { id: 'mascot', name: 'Brand Mascot', category: 'media', providers: ['modelslab', 'dalle'], tier: 'pro', compatibleOutputs: ['presentation', 'pdf', 'video', 'infographic'] },
+  { id: 'animated-character', name: 'Animated Character', category: 'animation', providers: ['heygen', 'modelslab'], tier: 'enterprise', compatibleOutputs: ['video-mp4', '3d-presentation'] },
 ];
 
 // ==========================================
