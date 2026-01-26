@@ -1,382 +1,535 @@
 # Genie Product Ecosystem & Pipeline Mapping
 
-> **Last Updated:** January 2026  
-> **Total Pipelines:** 181 Production-Ready  
-> **Categories:** 18  
-> **Products:** 7 Core + 1 Support System
+> **Last Updated:** 2026-01-26  
+> **Status:** AUTHORITATIVE REFERENCE  
+> **Total Pipelines:** 181 across 18 categories  
+> **Products:** 7 Core + 1 AI Support
 
 ---
 
-## 📊 Executive Summary
+## 🧞 Product Overview (Official Taglines)
 
-The Genie Suite is a **"Mind to Media"** AI-powered content creation platform with 7 core products sharing a unified pool of **181 transformation pipelines**. Each product specializes in specific workflows while leveraging the full pipeline ecosystem through intelligent orchestration.
+| Product | Official Tagline | Primary Function |
+|---------|------------------|------------------|
+| **Genie Studio** | Mind to Media — AI-Powered Production Suite | Master Orchestrator |
+| **Genie Spark** | Ignite your Ideas | Script Generation (from any input) |
+| **Genie Mind** | AI That Understands | Script Editing, TTS, Voice, Music |
+| **Genie Vibe** | Script to Screen | Audio/Video Recording & Production |
+| **Genie Deck** | Ideas to Impact | Presentation Generation |
+| **Genie Arc** | Your Production Journey With Infinite Possibilities | Scheduling, Kanban, Project Management |
+| **Genie Cast** | Make It. Show It. Scale It. | Distribution & Publishing |
+| **Ask Genie** | Your wish is my command | AI Support Layer |
+
+---
+
+## 🎨 Genie Studio — Master Orchestrator
+
+**Tagline:** "Mind to Media — AI-Powered Production Suite"
+
+**Role:** The complete creative studio that orchestrates all products and all 181 pipelines.
+
+### Key Capabilities
+- Full access to ALL 181 pipelines
+- Cross-product workflow orchestration
+- Unified asset management
+- A2A (Agent-to-Agent) coordination
+
+### Product Workflow Integration
+```
+[Any Input] → Spark (Generate) → Mind (Edit) → Vibe (Produce) → Deck (Present) → Arc (Manage) → Cast (Publish)
+```
+
+---
+
+## ✨ Genie Spark — Script Generation
+
+**Tagline:** "Ignite your Ideas"
+
+**Role:** Generate scripts from ANY input source. If no image exists, generate one first.
+
+### Input Sources Supported
+| Input Type | Description | Auto-Generation |
+|------------|-------------|-----------------|
+| **Document** | PDF, DOCX, TXT → Script | ✅ |
+| **Presentation** | PPT, PPTX → Script | ✅ |
+| **Video** | MP4, MOV → Script with timestamps | ✅ |
+| **Audio** | MP3, WAV → Transcribed script | ✅ |
+| **URL** | Web page → Summarized script | ✅ |
+| **Image** | Photo → Descriptive script | ✅ Generate if missing |
+
+### Primary Pipelines (28 Total)
+
+#### Input-to-Script Conversion (12)
+| Pipeline | Description |
+|----------|-------------|
+| `document-to-script` | PDF/DOCX/TXT → structured script |
+| `ppt-to-script` | PowerPoint → narration script |
+| `video-to-script` | Video → timestamped script |
+| `audio-to-script` | Audio → transcribed script |
+| `url-to-script` | Web URL → summarized script |
+| `image-to-script` | Image → descriptive script |
+| `data-to-script` | CSV/Excel → narrative script |
+| `meeting-to-script` | Recording → meeting summary |
+| `research-to-brief` | Papers → executive brief |
+| `social-to-script` | Social posts → video script |
+| `email-to-script` | Email thread → summary |
+| `chat-to-script` | Chat logs → narrative |
+
+#### Script Generation (10)
+| Pipeline | Description |
+|----------|-------------|
+| `topic-to-script` | Topic → full script |
+| `outline-to-script` | Outline → expanded script |
+| `bullet-to-script` | Bullet points → narrative |
+| `story-generator` | Theme → complete story |
+| `pitch-generator` | Business idea → pitch script |
+| `tutorial-generator` | Process → step-by-step script |
+| `comparison-generator` | Products → comparison script |
+| `interview-generator` | Topic → Q&A format |
+| `explainer-generator` | Concept → explainer script |
+| `case-study-generator` | Data → case study narrative |
+
+#### Image Generation (If Missing) (6)
+| Pipeline | Description |
+|----------|-------------|
+| `prompt-to-image` | Text → generated image |
+| `style-transfer` | Image → styled version |
+| `scene-generator` | Description → scene image |
+| `character-generator` | Description → character image |
+| `product-shot` | Product → professional photo |
+| `infographic-generator` | Data → visual infographic |
+
+---
+
+## 🧠 Genie Mind — Script Editing & Enhancement
+
+**Tagline:** "AI That Understands"
+
+**Role:** Edit and enhance scripts, add audio layers (TTS, voice, music).
+
+### Key Capabilities
+- **Script Editing**: Rewrite, enhance, restructure, translate
+- **Audio Addition**: TTS, voice cloning, music, SFX
+- **Intelligence**: Context memory, style learning, brand voice
+
+### Primary Pipelines (24 Total)
+
+#### Script Editing (8)
+| Pipeline | Description |
+|----------|-------------|
+| `script-rewrite` | Improve tone and clarity |
+| `script-expand` | Add more detail/content |
+| `script-condense` | Shorten while keeping meaning |
+| `script-localize` | Adapt for regional audience |
+| `script-tone-shift` | Formal ↔ Casual ↔ Professional |
+| `script-segment` | Split into sections/chapters |
+| `script-merge` | Combine multiple scripts |
+| `script-translate` | Multi-language translation (70+) |
+
+#### Audio Enhancement (10)
+| Pipeline | Description |
+|----------|-------------|
+| `add-tts` | Script → AI voiceover |
+| `add-voice-clone` | Script → cloned voice |
+| `add-music` | Script + background music |
+| `add-sfx` | Script + sound effects |
+| `voice-to-voice` | Transform voice style |
+| `multi-voice` | Multiple speakers/characters |
+| `podcast-audio` | Podcast format with intro/outro |
+| `audio-ducking` | Voice + auto-balanced music |
+| `jingle-generator` | Create custom jingle |
+| `soundscape-generator` | Create ambient audio |
+
+#### Intelligence Features (6)
+| Pipeline | Description |
+|----------|-------------|
+| `context-memory` | Remember user preferences |
+| `style-learning` | Learn writing style |
+| `brand-voice` | Apply brand guidelines |
+| `sentiment-analysis` | Analyze emotional tone |
+| `readability-check` | Grade level analysis |
+| `fact-check` | Verify claims and data |
+
+---
+
+## 🎬 Genie Vibe — Audio/Video Production
+
+**Tagline:** "Script to Screen"
+
+**Role:** Recording studio for audio/video production, podcasts, TTS, STT, and editing.
+
+### Key Capabilities
+- **Podcast Production**: Multi-track recording, editing, publishing
+- **Video Recording**: Screen/camera capture, trim, stitch
+- **Audio Tools**: TTS, STT, voice cloning, music, effects
+- **Editing**: Trim, cut, merge, transitions, effects
+
+### Primary Pipelines (45 Total)
+
+#### Audio Recording & Production (15)
+| Pipeline | Description |
+|----------|-------------|
+| `podcast-record` | Multi-track podcast recording |
+| `voice-record` | Single voice recording |
+| `audio-trim` | Cut audio segments |
+| `audio-stitch` | Combine audio clips |
+| `audio-merge` | Mix multiple tracks |
+| `audio-normalize` | Level balancing |
+| `noise-reduction` | Remove background noise |
+| `audio-enhance` | Improve audio quality |
+| `audio-compress` | Format/size optimization |
+| `audio-convert` | Format conversion |
+| `audio-speed` | Speed up/slow down |
+| `audio-pitch` | Pitch shifting |
+| `audio-fade` | Fade in/out effects |
+| `audio-loop` | Create loops |
+| `audio-reverse` | Reverse playback |
+
+#### TTS/STT (Text-to-Speech / Speech-to-Text) (10)
+| Pipeline | Description |
+|----------|-------------|
+| `text-to-speech` | Script → natural voice (70+ languages) |
+| `speech-to-text` | Audio → text transcription |
+| `voice-clone` | Clone any voice for TTS |
+| `multi-language-tts` | 70+ language TTS |
+| `real-time-stt` | Live transcription |
+| `speaker-diarization` | Identify multiple speakers |
+| `subtitle-generation` | Auto-generate subtitles |
+| `caption-sync` | Sync captions to audio |
+| `translation-tts` | Translate + speak |
+| `dubbing-auto` | Auto-dub video (70+ languages) |
+
+#### Music & SFX (8)
+| Pipeline | Description |
+|----------|-------------|
+| `music-generation` | AI-generated music |
+| `music-selection` | Licensed music library |
+| `sfx-library` | Sound effects library |
+| `sfx-generation` | AI-generated SFX |
+| `music-remix` | Remix/edit music |
+| `beat-sync` | Sync video to beat |
+| `mood-music` | Mood-based selection |
+| `jingle-creation` | Custom jingles |
+
+#### Video Recording & Editing (12)
+| Pipeline | Description |
+|----------|-------------|
+| `video-record` | Screen/camera recording |
+| `video-trim` | Cut video segments |
+| `video-stitch` | Combine video clips |
+| `video-merge` | Layer multiple videos |
+| `video-effects` | Add visual effects |
+| `video-transitions` | Scene transitions |
+| `video-text-overlay` | Add text/titles |
+| `video-crop` | Crop/resize video |
+| `video-speed` | Speed adjustment |
+| `video-stabilize` | Remove camera shake |
+| `video-color-grade` | Color correction |
+| `video-render` | Final export |
+
+---
+
+## 📊 Genie Deck — Presentation Generation
+
+**Tagline:** "Ideas to Impact"
+
+**Role:** Transform ideas into stunning presentations with AI-powered slide generation.
+
+### Key Capabilities
+- **Slide Generation**: AI-powered slide creation from any input
+- **Multi-language Export**: 70+ languages
+- **Smart Design**: Automatic visual layouts
+- **Brand Integration**: Custom theming and templates
+
+### Primary Pipelines (35 Total)
+
+#### Slide Generation (12)
+| Pipeline | Description |
+|----------|-------------|
+| `topic-to-slides` | Topic → full presentation |
+| `script-to-slides` | Script → visual slides |
+| `outline-to-slides` | Outline → structured deck |
+| `data-to-slides` | Data → chart slides |
+| `document-to-slides` | Document → presentation |
+| `image-to-slides` | Images → slide deck |
+| `template-apply` | Apply design template |
+| `slide-reorder` | AI-suggested order |
+| `slide-enhance` | Improve existing slides |
+| `slide-summarize` | Condense to key points |
+| `slide-expand` | Add more detail |
+| `slide-localize` | Regional adaptation |
+
+#### Visual Design (10)
+| Pipeline | Description |
+|----------|-------------|
+| `auto-layout` | Automatic slide layout |
+| `chart-generation` | Data → visual charts |
+| `icon-placement` | Smart icon selection |
+| `image-placement` | Optimal image positioning |
+| `color-scheme` | Brand color application |
+| `typography-optimize` | Font optimization |
+| `animation-add` | Slide animations |
+| `transition-design` | Scene transitions |
+| `infographic-slide` | Complex infographics |
+| `diagram-generation` | Flow/process diagrams |
+
+#### Export & Publishing (8)
+| Pipeline | Description |
+|----------|-------------|
+| `export-pptx` | PowerPoint export |
+| `export-pdf` | PDF export |
+| `export-google-slides` | Google Slides export |
+| `export-video` | Video presentation |
+| `export-web` | Web-based slideshow |
+| `export-print` | Print-optimized |
+| `multi-language-export` | 70+ language exports |
+| `accessibility-export` | A11y-compliant export |
+
+#### Interactive Features (5)
+| Pipeline | Description |
+|----------|-------------|
+| `presenter-notes` | Generate speaker notes |
+| `audience-qa` | Q&A slide generation |
+| `interactive-elements` | Clickable elements |
+| `quiz-slides` | Knowledge check slides |
+| `feedback-collection` | Audience feedback |
+
+---
+
+## 🎯 Genie Arc — Project Management
+
+**Tagline:** "Your Production Journey With Infinite Possibilities"
+
+**Role:** Project scheduling, Kanban boards, workflow orchestration, and team collaboration.
+
+### Key Capabilities
+- **Scheduling**: Timeline and calendar management
+- **Kanban**: Visual workflow boards
+- **Team Collaboration**: Multi-user coordination
+- **Resource Management**: Asset and capacity tracking
+
+### Primary Pipelines (30 Total)
+
+#### Scheduling & Timeline (10)
+| Pipeline | Description |
+|----------|-------------|
+| `timeline-create` | Build production timeline |
+| `milestone-track` | Track key milestones |
+| `deadline-manage` | Deadline alerts/management |
+| `calendar-sync` | External calendar sync |
+| `schedule-optimize` | AI-optimized scheduling |
+| `dependency-map` | Task dependencies |
+| `critical-path` | Identify critical path |
+| `buffer-allocate` | Time buffer management |
+| `recurring-schedule` | Repeating events |
+| `timezone-coordinate` | Multi-timezone support |
+
+#### Kanban & Workflow (10)
+| Pipeline | Description |
+|----------|-------------|
+| `kanban-board` | Visual task boards |
+| `workflow-create` | Custom workflows |
+| `stage-automation` | Auto-move between stages |
+| `bottleneck-detect` | Identify slowdowns |
+| `workload-balance` | Balance team capacity |
+| `priority-sort` | Smart prioritization |
+| `status-update` | Bulk status updates |
+| `template-workflow` | Reusable workflows |
+| `approval-gate` | Review/approval stages |
+| `completion-tracking` | Progress monitoring |
+
+#### Team & Resources (10)
+| Pipeline | Description |
+|----------|-------------|
+| `team-assign` | Task assignment |
+| `capacity-plan` | Resource capacity |
+| `skill-match` | Match skills to tasks |
+| `availability-check` | Team availability |
+| `notification-route` | Smart notifications |
+| `handoff-manage` | Smooth handoffs |
+| `feedback-collect` | Team feedback |
+| `performance-track` | Productivity metrics |
+| `asset-library` | Shared asset management |
+| `version-control` | Asset versioning |
+
+---
+
+## 📢 Genie Cast — Distribution Engine
+
+**Tagline:** "Make It. Show It. Scale It."
+
+**Role:** Global content distribution across platforms and regions.
+
+### Key Capabilities
+- **Multi-Platform Publishing**: YouTube, TikTok, LinkedIn, Instagram, X, Blogs
+- **Regional Localization**: 14 regions, 70+ languages
+- **Automated Scheduling**: Optimal posting times
+- **Analytics**: Performance tracking and optimization
+
+### Primary Pipelines (25 Total)
+
+#### Platform Publishing (10)
+| Pipeline | Description |
+|----------|-------------|
+| `youtube-publish` | YouTube upload/optimize |
+| `tiktok-publish` | TikTok format/publish |
+| `linkedin-publish` | LinkedIn article/video |
+| `instagram-publish` | Instagram post/reel |
+| `twitter-publish` | X/Twitter thread |
+| `blog-publish` | Blog post generation |
+| `podcast-distribute` | Podcast platforms |
+| `newsletter-send` | Email newsletter |
+| `website-embed` | Web embedding |
+| `cross-post` | Multi-platform sync |
+
+#### Regional Localization (8)
+| Pipeline | Description |
+|----------|-------------|
+| `region-adapt` | Regional content adaptation |
+| `timezone-schedule` | Timezone-aware scheduling |
+| `language-localize` | Multi-language versions |
+| `cultural-adapt` | Cultural customization |
+| `compliance-check` | Regional compliance |
+| `format-convert` | Platform format conversion |
+| `thumbnail-localize` | Regional thumbnails |
+| `metadata-localize` | SEO for regions |
+
+#### Analytics & Optimization (7)
+| Pipeline | Description |
+|----------|-------------|
+| `performance-track` | Engagement metrics |
+| `audience-insight` | Audience analysis |
+| `best-time-publish` | Optimal posting times |
+| `a-b-test` | Content A/B testing |
+| `trend-detect` | Trending topic detection |
+| `competitor-analyze` | Competitor insights |
+| `roi-calculate` | Content ROI tracking |
+
+---
+
+## 🧞 Ask Genie — AI Support
+
+**Tagline:** "Your wish is my command"
+
+**Role:** Intelligent AI assistant with full awareness of all 181 pipelines.
+
+### Capabilities
+- **Pipeline Knowledge**: Knows all 181 pipelines
+- **Troubleshooting**: Level 1 support (90%+ resolution)
+- **Guidance**: Step-by-step assistance
+- **Proactive**: Suggestions and recommendations
+
+### Support Coverage
+- All 7 products and their features
+- All 181 pipelines and usage
+- 8-step wizard navigation
+- Tier-based feature access
+- Regional routing recommendations
+
+---
+
+## 🔄 Complete Product Flow
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                        GENIE STUDIO (Master Hub)                        │
-│               "Your Complete AI Creative Command Center"                │
-│                     Access to ALL 181 Pipelines                         │
-├─────────┬─────────┬─────────┬─────────┬─────────┬─────────┬────────────┤
-│  Mind   │  Spark  │  Vibe   │  Deck   │   Arc   │  Cast   │ Ask Genie  │
-│Knowledge│ Script  │Recording│Presenta-│Produc-  │Distri-  │  Support   │
-│  Base   │Generator│ Studio  │  tion   │  tion   │ bution  │    AI      │
-└─────────┴─────────┴─────────┴─────────┴─────────┴─────────┴────────────┘
+│                    GENIE STUDIO (Master Orchestrator)                    │
+│                   "Mind to Media — AI-Powered Production Suite"          │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│   ┌──────────────┐                                                       │
+│   │    SPARK     │   INPUT: Doc, PPT, Video, Audio, URL, Image           │
+│   │ "Ignite your │ → OUTPUT: Generated Script                            │
+│   │    Ideas"    │   (+ generate image if missing)                       │
+│   └──────┬───────┘                                                       │
+│          │                                                               │
+│          ▼                                                               │
+│   ┌──────────────┐                                                       │
+│   │     MIND     │   INPUT: Raw Script                                   │
+│   │"AI That      │ → OUTPUT: Edited Script + TTS + Voice + Music         │
+│   │ Understands" │                                                       │
+│   └──────┬───────┘                                                       │
+│          │                                                               │
+│          ▼                                                               │
+│   ┌──────────────┐                                                       │
+│   │     VIBE     │   INPUT: Enhanced Script                              │
+│   │ "Script to   │ → OUTPUT: Audio/Video Production                      │
+│   │   Screen"    │   (Podcast, Recording, Editing)                       │
+│   └──────┬───────┘                                                       │
+│          │                                                               │
+│          ▼                                                               │
+│   ┌──────────────┐                                                       │
+│   │     DECK     │   INPUT: Any content                                  │
+│   │ "Ideas to    │ → OUTPUT: Presentation (PPTX, PDF, Video)             │
+│   │   Impact"    │                                                       │
+│   └──────┬───────┘                                                       │
+│          │                                                               │
+│          ▼                                                               │
+│   ┌──────────────┐                                                       │
+│   │      ARC     │   INPUT: All production assets                        │
+│   │"Your Journey │ → OUTPUT: Scheduled, tracked, managed projects        │
+│   │With Infinite │   (Kanban, Timeline, Team)                            │
+│   │Possibilities"│                                                       │
+│   └──────┬───────┘                                                       │
+│          │                                                               │
+│          ▼                                                               │
+│   ┌──────────────┐                                                       │
+│   │     CAST     │   INPUT: Final content                                │
+│   │"Make It.Show │ → OUTPUT: Published across platforms                  │
+│   │It.Scale It." │   (14 regions, 70+ languages)                         │
+│   └──────────────┘                                                       │
+│                                                                          │
+│   ┌──────────────────────────────────────────────────────────────────┐   │
+│   │                         ASK GENIE                                 │   │
+│   │                  "Your wish is my command"                        │   │
+│   │            AI Support across all products (181 pipelines)         │   │
+│   └──────────────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 🎯 Product Definitions
+## 📊 Pipeline Summary by Product
 
-### 1. Genie Studio (Master Orchestrator)
-| Attribute | Details |
-|-----------|---------|
-| **Tagline** | "Your Complete AI Creative Command Center" |
-| **Description** | The unified platform that coordinates all 7 products and orchestrates 181 pipelines through A2A (Agent-to-Agent) protocol |
-| **Primary Role** | Master orchestrator, ecosystem coordinator, single access point |
-| **Key Capabilities** | Full pipeline access, cross-product workflows, team collaboration, analytics |
+| Product | Tagline | Pipelines | Primary Categories |
+|---------|---------|-----------|-------------------|
+| **Studio** | Mind to Media | 181 (all) | Master orchestration |
+| **Spark** | Ignite your Ideas | 28 | Input conversion, Script generation |
+| **Mind** | AI That Understands | 24 | Script editing, Audio enhancement |
+| **Vibe** | Script to Screen | 45 | Audio/Video, TTS/STT, Podcast |
+| **Deck** | Ideas to Impact | 35 | Slide generation, Visual design |
+| **Arc** | Infinite Possibilities | 30 | Scheduling, Kanban, Team |
+| **Cast** | Make It. Show It. Scale It. | 25 | Publishing, Localization |
+| **Ask Genie** | Your wish is my command | 181 (knowledge) | Support awareness |
 
-**Pipeline Access:** ALL 181 PIPELINES (Full ecosystem access)
-
----
-
-### 2. Genie Mind
-| Attribute | Details |
-|-----------|---------|
-| **Tagline** | "AI Knowledge Base & Enhancement Engine" |
-| **Description** | Build intelligent knowledge bases with semantic search, RAG, and AI-powered content enhancement |
-| **Primary Role** | Content analysis, knowledge management, text enhancement |
-| **Key Capabilities** | Semantic search, document Q&A, auto-categorization, content refinement |
-
-**Primary Pipelines (24 Pipelines):**
-
-| Category | Pipelines | Tier |
-|----------|-----------|------|
-| **Text-Based** | text-to-image, text-to-video, text-to-interactive | Starter-Pro |
-| **Document/PPT** | doc-to-ppt, pdf-to-slides, doc-to-summary, doc-to-infographic | Starter-Pro |
-| **Voice/Audio** | voice-to-text, audio-translate | Starter-Pro |
-| **Repurposing** | blog-to-social, article-to-video, content-refresh | Pro |
-| **Localization** | full-localization, cultural-adaptation | Pro-Enterprise |
-
-**A2A Agents Used:**
-- Content Analyst (primary)
-- Translator
-- Quality Verifier
+**Total Unique Pipelines:** 181 (some shared across products)
 
 ---
 
-### 3. Genie Spark
-| Attribute | Details |
-|-----------|---------|
-| **Tagline** | "AI Script & Ideation Engine" |
-| **Description** | Generate scripts, outlines, story structures, and creative content with intelligent AI assistance |
-| **Primary Role** | Creative ideation, script writing, content structure |
-| **Key Capabilities** | Script generation, story frameworks, outline creation, multi-format export |
+## 🎨 Product Branding Reference
 
-**Primary Pipelines (28 Pipelines):**
-
-| Category | Pipelines | Tier |
-|----------|-----------|------|
-| **Text-Based** | text-to-animation, text-to-avatar, text-to-vr, text-to-ar | Pro-Enterprise |
-| **Complex Multi-modal** | research-to-presentation, meeting-to-content | Pro |
-| **Presentation** | smart-context, quick-generate, branded-deck | Starter-Pro |
-| **Training/L&D** | scenario-builder, quiz-generator, onboarding-flow | Pro |
-| **Marketing/Sales** | pitch-deck, case-study, explainer-video, email-campaign | Starter-Pro |
-
-**A2A Agents Used:**
-- Content Analyst (primary)
-- Visual Designer
-- Translator
+| Product | Emoji | Color Gradient | Border |
+|---------|-------|----------------|--------|
+| Studio | 🎨 | Indigo → Violet | `border-indigo-200` |
+| Spark | ✨ | Amber → Orange | `border-amber-200` |
+| Mind | 🧠 | Blue → Cyan | `border-blue-200` |
+| Vibe | 🎬 | Purple → Pink | `border-purple-200` |
+| Deck | 📊 | Purple → Violet | `border-purple-200` |
+| Arc | 🎯 | Emerald → Teal | `border-emerald-200` |
+| Cast | 📢 | Rose → Pink | `border-rose-200` |
+| Ask Genie | 🧞 | Violet → Fuchsia | `border-violet-200` |
 
 ---
 
-### 4. Genie Vibe
-| Attribute | Details |
-|-----------|---------|
-| **Tagline** | "AI Recording Studio & Voice Lab" |
-| **Description** | Record, transcribe, clone voices, enhance audio/video, and transform media with AI |
-| **Primary Role** | Audio/video recording, voice cloning, media enhancement |
-| **Key Capabilities** | Voice cloning, transcription, audio enhancement, podcast production, teleprompter |
+## 📍 Source Files
 
-**Primary Pipelines (45 Pipelines):**
-
-| Category | Pipelines | Tier |
-|----------|-----------|------|
-| **Voice/Audio** | voice-clone, audio-enhance, voice-to-avatar, podcast-to-clips, audio-translate | Pro-Enterprise |
-| **Video-Based** | video-to-clips, video-upscale, video-enhance, video-translate | Starter-Pro |
-| **Podcast/Webcast** | podcast-script-to-audio, podcast-remote-record, podcast-to-youtube, webcast-record-to-replay, webcast-add-overlays, podcast-chaptering, podcast-audiogram | Pro-Enterprise |
-| **Editing** | trim-cut, merge-concat, audio-replace, add-tts-narration, add-stt-captions, speed-control, lip-sync-fix | Starter-Pro |
-| **Mobile** | mobile-record-to-shorts, mobile-one-tap-publish, mobile-voice-note-to-content | Starter-Pro |
-| **Creator Enhancement** | ai-auto-captions, video-upscaling-4k, audio-enhancement, ai-teleprompter, ai-voice-clone, ai-lip-sync | Pro-Enterprise |
-
-**A2A Agents Used:**
-- Voice Narrator (primary)
-- Video Producer
-- Quality Verifier
+| File | Purpose |
+|------|---------|
+| `src/constants/genie-products.ts` | Official product definitions & taglines |
+| `src/assets/logos/` | Product logos |
+| `src/hooks/useSubscription.ts` | Subscription & product access |
+| `src/hooks/useEcosystemIntegration.ts` | Cross-product integration |
+| `src/services/askGeniePipelineKnowledgeBase.ts` | Ask Genie knowledge |
 
 ---
 
-### 5. Genie Deck
-| Attribute | Details |
-|-----------|---------|
-| **Tagline** | "AI Presentation Builder" |
-| **Description** | Create stunning presentations with AI-generated slides, visuals, animations, and multi-language support |
-| **Primary Role** | Presentation creation, visual design, slide generation |
-| **Key Capabilities** | Slide generation, visual design, animations, brand application, multi-language |
-
-**Primary Pipelines (35 Pipelines):**
-
-| Category | Pipelines | Tier |
-|----------|-----------|------|
-| **Document/PPT** | doc-to-ppt, ppt-to-video, pdf-to-slides, ppt-to-web, ppt-to-social, ppt-to-training | Starter-Pro |
-| **Presentation** | smart-context, quick-generate, branded-deck, template-apply, slide-enhance | Starter-Pro |
-| **Image-Based** | image-to-animation, image-to-video, image-upscale, image-variation | Starter-Pro |
-| **Text-Based** | text-to-image, text-to-animation | Starter-Pro |
-| **Marketing/Sales** | pitch-deck, product-demo, ad-creative, landing-page | Pro |
-| **Localization** | full-localization, subtitle-generation, multi-market-launch | Pro-Enterprise |
-
-**A2A Agents Used:**
-- Visual Designer (primary)
-- Content Analyst
-- Image Generator
-- Translator
-
----
-
-### 6. Genie Arc (Production Hub)
-| Attribute | Details |
-|-----------|---------|
-| **Tagline** | "AI Production & Orchestration Hub" |
-| **Description** | Orchestrate complex multi-modal content production with 181 pipelines, A2A coordination, and end-to-end workflows |
-| **Primary Role** | Production orchestration, complex workflows, multi-modal output |
-| **Key Capabilities** | Video production, avatar generation, 3D assets, A2A orchestration, batch processing |
-
-**Primary Pipelines (55 Pipelines):**
-
-| Category | Pipelines | Tier |
-|----------|-----------|------|
-| **Complex Multi-modal** | full-production, auto-record-to-avatar, data-to-dashboard, podcast-to-video, live-to-clips | Enterprise |
-| **3D-Based** | 3d-to-video, 3d-to-image, 3d-to-vr, 3d-to-ar, 3d-enhance | Pro-Enterprise |
-| **AR/VR Scene** | scene-to-vr, scene-to-ar, vr-to-video, ar-to-video, immersive-training, spatial-presentation | Enterprise |
-| **Video-Based** | video-to-3d, video-to-avatar, video-upscale | Pro-Enterprise |
-| **Image-Based** | image-to-3d, image-to-avatar | Pro-Enterprise |
-| **Text-Based** | text-to-3d, text-to-avatar, text-to-vr, text-to-ar | Pro-Enterprise |
-| **Training/L&D** | doc-to-elearning, video-to-training, compliance-training | Pro-Enterprise |
-
-**A2A Agents Used:**
-- Video Producer (primary)
-- 3D Artist
-- Image Generator
-- Voice Narrator
-- Quality Verifier
-
----
-
-### 7. Genie Cast
-| Attribute | Details |
-|-----------|---------|
-| **Tagline** | "Make It. Show It. Scale It." |
-| **Description** | Global distribution engine for multi-platform publishing, regional content scheduling, and automated marketing |
-| **Primary Role** | Content distribution, social publishing, regional marketing |
-| **Key Capabilities** | Multi-platform scheduling, regional content rotation, AI avatar presenters, analytics |
-
-**Primary Pipelines (25 Pipelines):**
-
-| Category | Pipelines | Tier |
-|----------|-----------|------|
-| **Marketing/Sales** | social-campaign, ad-creative, testimonial-video, brand-video, product-demo | Pro-Enterprise |
-| **Repurposing** | video-to-blog, podcast-to-article, webinar-to-clips, long-to-short | Pro |
-| **Localization** | full-localization, voice-localization, regional-compliance, multi-market-launch | Pro-Enterprise |
-| **Creator Enhancement** | ai-thumbnail-creator, ai-shorts-generator, ai-aspect-ratio | Starter-Pro |
-
-**Distribution Platforms:**
-- YouTube, LinkedIn, TikTok, Instagram, Twitter/X, Vimeo
-
-**Regional Coverage:**
-- 14 regions with localized AI avatar presenters
-- 70+ language support
-
-**A2A Agents Used:**
-- Content Analyst
-- Translator
-- Video Producer
-
----
-
-### 8. Ask Genie (Support AI)
-| Attribute | Details |
-|-----------|---------|
-| **Tagline** | "AI-Powered Level 1 Support" |
-| **Description** | Intelligent support system with full awareness of 181 pipelines, wizard steps, and editing workflows |
-| **Primary Role** | User support, troubleshooting, proactive suggestions |
-| **Key Capabilities** | 90% resolution rate, pipeline guidance, editing suggestions, escalation management |
-
-**Knowledge Coverage:**
-- All 181 pipelines across 18 categories
-- 8-step wizard flow
-- 4 editing modes (Canvas, Timeline, Document, Hybrid)
-- 8 A2A agents
-- 6-tier support structure
-
-**Resolution Rates:**
-| Query Type | Resolution Rate |
-|------------|-----------------|
-| How-to questions | 95% |
-| Feature discovery | 98% |
-| Pipeline selection | 90% |
-| Editing guidance | 92% |
-| Troubleshooting | 70% |
-
----
-
-## 📋 Complete Pipeline Category Breakdown
-
-### 18 Pipeline Categories (181 Total)
-
-| # | Category | Count | Primary Products |
-|---|----------|-------|------------------|
-| 1 | Text-Based | 10 | Mind, Spark, Deck |
-| 2 | Image-Based | 8 | Deck, Arc |
-| 3 | Voice/Audio | 8 | Vibe |
-| 4 | Document/PPT | 10 | Mind, Deck |
-| 5 | Video-Based | 9 | Vibe, Arc |
-| 6 | 3D-Based | 5 | Arc |
-| 7 | AR/VR Scene | 6 | Arc |
-| 8 | Complex Multi-modal | 7 | Arc, Studio |
-| 9 | Presentation | 5 | Deck, Spark |
-| 10 | Repurposing | 8 | Cast, Mind |
-| 11 | Training/L&D | 6 | Spark, Arc |
-| 12 | Marketing/Sales | 31 | Cast, Spark, Deck |
-| 13 | Localization | 6 | Cast, All Products |
-| 14 | Creator Enhancement | 22 | Vibe, Cast |
-| 15 | Podcast/Webcast | 16 | Vibe |
-| 16 | Editing | 15 | Vibe, All Products |
-| 17 | Mobile | 5 | Vibe, Cast |
-| 18 | Training Additions | 14 | Arc, Spark |
-
----
-
-## 🔄 Cross-Product Pipeline Flow
-
-```
-                    ┌─────────────────┐
-                    │   USER INPUT    │
-                    │ (UIG - Step 0)  │
-                    └────────┬────────┘
-                             │
-                             ▼
-┌────────────────────────────────────────────────────────────────────┐
-│                     GENIE STUDIO (Orchestrator)                     │
-│                    Routes to appropriate product                    │
-└──────┬─────────┬─────────┬─────────┬─────────┬─────────┬───────────┘
-       │         │         │         │         │         │
-       ▼         ▼         ▼         ▼         ▼         ▼
-   ┌───────┐ ┌───────┐ ┌───────┐ ┌───────┐ ┌───────┐ ┌───────┐
-   │ MIND  │ │ SPARK │ │ VIBE  │ │ DECK  │ │  ARC  │ │ CAST  │
-   │Enhance│→│Script │→│Record │→│Present│→│Produce│→│Publish│
-   │ 24    │ │  28   │ │  45   │ │  35   │ │  55   │ │  25   │
-   └───────┘ └───────┘ └───────┘ └───────┘ └───────┘ └───────┘
-       │         │         │         │         │         │
-       └─────────┴─────────┴────┬────┴─────────┴─────────┘
-                                │
-                                ▼
-                    ┌─────────────────┐
-                    │   ASK GENIE     │
-                    │ (Support Layer) │
-                    │  181 Pipelines  │
-                    └─────────────────┘
-```
-
----
-
-## 🎭 A2A Agent Orchestration
-
-### 8 Specialized AI Agents
-
-| Agent | Primary Role | Products Using | Providers |
-|-------|--------------|----------------|-----------|
-| Content Analyst | Topic extraction, outline creation | Mind, Spark | Claude, GPT-4, Gemini |
-| Visual Designer | Layout, colors, typography | Deck, Spark | Claude, Gemini |
-| Image Generator | AI images, graphics | Deck, Arc | ModelsLab, Replicate, DALL-E |
-| Translator | Multi-language translation | All Products | DeepL, Alibaba, Azure |
-| Voice Narrator | TTS, voice synthesis | Vibe | ElevenLabs, Azure, Alibaba |
-| Video Producer | Video generation, animation | Vibe, Arc | ModelsLab, Alibaba Wan2.2 |
-| 3D Artist | 3D modeling, VR/AR | Arc | ModelsLab, Meshy AI |
-| Quality Verifier | Quality assessment, self-correction | All Products | Claude, GPT-4 |
-
-### Self-Correction Engine
-- **Target Automation:** 98%
-- **Max Retries:** 5
-- **Quality Rubrics:** Media quality (25%), Caption accuracy (25%), Voice fidelity (20%), Completeness (30%)
-
----
-
-## 🌍 Regional Routing (5-Zone Model)
-
-| Zone | Languages | Primary Provider |
-|------|-----------|------------------|
-| Claude Zone | English, French, German, Spanish, Portuguese, Italian | Anthropic Claude |
-| Alibaba Zone | Chinese, Japanese, Korean, Vietnamese, Thai | Alibaba Qwen |
-| Arabic Zone | Arabic, Hebrew, Persian, Urdu | GPT-4o (via Azure) |
-| Gemini Zone | Hindi, Bengali, Tamil, Telugu, Indonesian, Swahili | Google Gemini |
-| Fallback Zone | Other languages | DeepSeek or Google |
-
----
-
-## 💰 Tier-Based Access
-
-| Pipeline Category | Free | Creator | Pro | Business | Enterprise |
-|-------------------|------|---------|-----|----------|------------|
-| Text-Based (Basic) | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Image-Based | ❌ | ✅ | ✅ | ✅ | ✅ |
-| Voice/Audio | ❌ | ⚡ | ✅ | ✅ | ✅ |
-| Video-Based | ❌ | ⚡ | ✅ | ✅ | ✅ |
-| 3D/VR/AR | ❌ | ❌ | ⚡ | ✅ | ✅ |
-| Complex Multi-modal | ❌ | ❌ | ❌ | ⚡ | ✅ |
-| Full Production | ❌ | ❌ | ❌ | ❌ | ✅ |
-
-**Legend:** ✅ Full Access | ⚡ Limited Access | ❌ Not Available
-
----
-
-## 📈 Ecosystem Integration Points
-
-### Unified Systems
-1. **Beta Awards** - Gamification and engagement tracking
-2. **Confidence Loop** - Quality scoring and improvement
-3. **RLHF (Label Studio)** - Feedback-based learning
-4. **Ask Genie** - AI support with full ecosystem awareness
-
-### Event Tracking
-- `generation_completed` - Tracked across all products
-- `feedback_submitted` - RLHF integration
-- `wizard_step_completed` - Progress analytics
-- `editor_action` - Post-generation tracking
-
----
-
-## 🚀 Quick Reference: Product → Pipeline Mapping
-
-| Product | Primary Focus | Pipeline Count | Key Pipelines |
-|---------|---------------|----------------|---------------|
-| **Studio** | Full Access | 181 | All pipelines |
-| **Mind** | Knowledge/Text | 24 | doc-to-*, voice-to-text, content-refresh |
-| **Spark** | Scripts/Ideas | 28 | text-to-*, scenario-builder, pitch-deck |
-| **Vibe** | Audio/Video | 45 | voice-clone, podcast-*, editing-*, mobile-* |
-| **Deck** | Presentations | 35 | ppt-to-*, slide-*, image-to-animation |
-| **Arc** | Production | 55 | 3d-*, vr-*, full-production, avatar-* |
-| **Cast** | Distribution | 25 | social-*, localization-*, shorts-generator |
-| **Ask Genie** | Support | 181 (knowledge) | All pipelines (support awareness) |
-
----
-
-## 📚 Related Documentation
-
-- [Pipeline I/O Registry](../src/components/ai-hub/provider-matrix/pipelineIORegistry.ts)
-- [Ask Genie Knowledge Base](../src/services/askGeniePipelineKnowledgeBase.ts)
-- [Ecosystem Integration Service](../src/services/ecosystemIntegrationService.ts)
-- [Genie Studio Scenario Map](./GENIE_STUDIO_SCENARIO_MAP.md)
-- [Commercial Pricing Strategy](./GENIE_COMMERCIAL_PRICING.md)
-
----
-
-*Document Version: 2.0 | January 2026*
+*Document Version: 3.0 | January 2026 | AUTHORITATIVE REFERENCE*
