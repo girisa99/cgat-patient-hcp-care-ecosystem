@@ -125,11 +125,18 @@ describe('Wizard Dropdown Bridge', () => {
   });
 
   it('should have industries defined', () => {
-    expect(INDUSTRIES.length).toBeGreaterThan(0);
+    // Updated: Now 25 industries (15 original + 10 new)
+    expect(INDUSTRIES.length).toBe(25);
   });
 
   it('should have frameworks defined', () => {
+    // Frameworks include legacy, content, and new (academic, legal, technical)
     expect(FRAMEWORKS.length).toBeGreaterThan(0);
+  });
+
+  it('should have visual features including new categories', () => {
+    // Updated: 21 original + 15 new (maps, social proof, avatars) = 36
+    expect(VISUAL_FEATURES.length).toBe(36);
   });
 });
 

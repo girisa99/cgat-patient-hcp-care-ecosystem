@@ -326,23 +326,176 @@ export const EXPANDED_OUTPUT_CONFIGS: ExpandedOutputConfig[] = [
 ];
 
 // ==========================================
+// NEW: AUDIO-ONLY OUTPUTS
+// ==========================================
+
+export const AUDIO_OUTPUT_CONFIGS: ExpandedOutputConfig[] = [
+  {
+    id: 'podcast-mp3' as ExpandedOutputType,
+    name: 'Podcast MP3',
+    description: 'High-quality podcast audio export',
+    tier: 2,
+    icon: 'Podcast',
+    category: 'audio' as any,
+    imageModels: [],
+    videoModels: [],
+    mesh3dModels: [],
+    voiceModels: ['elevenlabs', 'azure-neural', 'google-tts'],
+    capabilities: ['Multi-voice', 'Background music', 'Sound effects', 'Chapters'],
+    exportFormats: ['mp3', 'wav', 'aac'],
+    costMultiplier: 1.5,
+    estimatedTimeMinutes: { min: 5, max: 15 },
+    requiresVoice: true
+  },
+  {
+    id: 'audiobook' as ExpandedOutputType,
+    name: 'Audiobook',
+    description: 'Long-form narrated audio content',
+    tier: 3,
+    icon: 'BookOpen',
+    category: 'audio' as any,
+    imageModels: [],
+    videoModels: [],
+    mesh3dModels: [],
+    voiceModels: ['elevenlabs-ultra', 'azure-neural', 'alibaba-cosyvoice'],
+    capabilities: ['Voice cloning', 'Chapters', 'Multi-narrator', 'Background score'],
+    exportFormats: ['mp3', 'm4b', 'wav'],
+    costMultiplier: 3.0,
+    estimatedTimeMinutes: { min: 20, max: 60 },
+    requiresVoice: true
+  },
+  {
+    id: 'voice-memo' as ExpandedOutputType,
+    name: 'Voice Memo',
+    description: 'Quick audio summary or note',
+    tier: 1,
+    icon: 'Mic',
+    category: 'audio' as any,
+    imageModels: [],
+    videoModels: [],
+    mesh3dModels: [],
+    voiceModels: ['google-tts', 'openai-tts'],
+    capabilities: ['Quick export', 'Single voice', 'Compact file'],
+    exportFormats: ['mp3', 'wav'],
+    costMultiplier: 0.5,
+    estimatedTimeMinutes: { min: 1, max: 3 },
+    requiresVoice: true
+  },
+  {
+    id: 'sound-design' as ExpandedOutputType,
+    name: 'Sound Design',
+    description: 'Custom sound effects and audio design',
+    tier: 3,
+    icon: 'AudioLines',
+    category: 'audio' as any,
+    imageModels: [],
+    videoModels: [],
+    mesh3dModels: [],
+    voiceModels: ['elevenlabs', 'azure-neural'],
+    capabilities: ['SFX', 'Ambient sounds', 'Foley', 'Music beds'],
+    exportFormats: ['mp3', 'wav', 'flac'],
+    costMultiplier: 2.5,
+    estimatedTimeMinutes: { min: 10, max: 30 },
+    requiresVoice: false
+  }
+];
+
+// ==========================================
+// NEW: DOCUMENT OUTPUTS
+// ==========================================
+
+export const DOCUMENT_OUTPUT_CONFIGS: ExpandedOutputConfig[] = [
+  {
+    id: 'markdown' as ExpandedOutputType,
+    name: 'Markdown',
+    description: 'Clean markdown for documentation',
+    tier: 1,
+    icon: 'FileCode',
+    category: 'document',
+    imageModels: ['gemini-image'],
+    videoModels: [],
+    mesh3dModels: [],
+    voiceModels: [],
+    capabilities: ['GitHub compatible', 'Code blocks', 'Tables', 'Images'],
+    exportFormats: ['md', 'mdx'],
+    costMultiplier: 0.5,
+    estimatedTimeMinutes: { min: 1, max: 2 }
+  },
+  {
+    id: 'latex' as ExpandedOutputType,
+    name: 'LaTeX',
+    description: 'Academic-quality typeset documents',
+    tier: 2,
+    icon: 'FileType',
+    category: 'document',
+    imageModels: ['gemini-image'],
+    videoModels: [],
+    mesh3dModels: [],
+    voiceModels: [],
+    capabilities: ['Math equations', 'Citations', 'Figures', 'Tables'],
+    exportFormats: ['tex', 'pdf'],
+    costMultiplier: 1.2,
+    estimatedTimeMinutes: { min: 2, max: 5 }
+  },
+  {
+    id: 'ebook-epub' as ExpandedOutputType,
+    name: 'eBook (EPUB)',
+    description: 'Digital book format for readers',
+    tier: 2,
+    icon: 'BookOpen',
+    category: 'document',
+    imageModels: ['flux-pro', 'modelslab-flux'],
+    videoModels: [],
+    mesh3dModels: [],
+    voiceModels: [],
+    capabilities: ['Chapters', 'TOC', 'Reflowable text', 'Cover image'],
+    exportFormats: ['epub', 'mobi'],
+    costMultiplier: 1.5,
+    estimatedTimeMinutes: { min: 5, max: 12 }
+  },
+  {
+    id: 'report-bundle' as ExpandedOutputType,
+    name: 'Report Bundle',
+    description: 'Complete report package with appendices',
+    tier: 2,
+    icon: 'FolderArchive',
+    category: 'document',
+    imageModels: ['flux-pro', 'gemini-image'],
+    videoModels: [],
+    mesh3dModels: [],
+    voiceModels: [],
+    capabilities: ['Executive summary', 'Appendices', 'Data tables', 'Charts'],
+    exportFormats: ['pdf', 'docx', 'zip'],
+    costMultiplier: 2.0,
+    estimatedTimeMinutes: { min: 5, max: 15 }
+  }
+];
+
+// Combined all output configs
+export const ALL_OUTPUT_CONFIGS = [
+  ...EXPANDED_OUTPUT_CONFIGS,
+  ...AUDIO_OUTPUT_CONFIGS,
+  ...DOCUMENT_OUTPUT_CONFIGS
+];
+
+// ==========================================
 // HELPER FUNCTIONS
 // ==========================================
 
 export function getOutputsByTier(tier: 1 | 2 | 3): ExpandedOutputConfig[] {
-  return EXPANDED_OUTPUT_CONFIGS.filter(c => c.tier === tier);
+  return ALL_OUTPUT_CONFIGS.filter(c => c.tier === tier);
 }
 
-export function getOutputsByCategory(category: ExpandedOutputConfig['category']): ExpandedOutputConfig[] {
-  return EXPANDED_OUTPUT_CONFIGS.filter(c => c.category === category);
+export function getOutputsByCategory(category: ExpandedOutputConfig['category'] | 'audio'): ExpandedOutputConfig[] {
+  return ALL_OUTPUT_CONFIGS.filter(c => c.category === category);
 }
 
-export function getOutputById(id: ExpandedOutputType): ExpandedOutputConfig | undefined {
-  return EXPANDED_OUTPUT_CONFIGS.find(c => c.id === id);
+export function getOutputById(id: ExpandedOutputType | string): ExpandedOutputConfig | undefined {
+  return ALL_OUTPUT_CONFIGS.find(c => c.id === id);
 }
 
 export function getRecommendedOutput(hasVoice: boolean, has3D: boolean, hasVideo: boolean): ExpandedOutputConfig[] {
-  return EXPANDED_OUTPUT_CONFIGS.filter(c => {
+  return ALL_OUTPUT_CONFIGS.filter(c => {
     if (c.requiresVoice && !hasVoice) return false;
     if (c.requires3D && !has3D) return false;
     if (c.requiresVideo && !hasVideo) return false;
@@ -363,6 +516,7 @@ export const OUTPUT_CATEGORIES = {
   static: getOutputsByCategory('static'),
   animated: getOutputsByCategory('animated'),
   video: getOutputsByCategory('video'),
+  audio: getOutputsByCategory('audio'),
   threeD: getOutputsByCategory('3d'),
   interactive: getOutputsByCategory('interactive'),
   immersive: getOutputsByCategory('immersive')

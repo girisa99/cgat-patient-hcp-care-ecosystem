@@ -228,10 +228,77 @@ export const CONTENT_FRAMEWORK_CATEGORIES: FrameworkCategory[] = [
   }
 ];
 
+// ==================== NEW FRAMEWORK CATEGORIES ====================
+
+export const NEW_FRAMEWORK_CATEGORIES: FrameworkCategory[] = [
+  // Academic/Research Frameworks
+  {
+    id: 'academic-research',
+    name: 'Academic & Research',
+    subtitle: 'Scholarly & Scientific',
+    icon: 'GraduationCap',
+    color: 'text-indigo-600',
+    bgColor: 'bg-indigo-50',
+    description: 'Frameworks for academic and research presentations',
+    type: 'methodology',
+    frameworks: [
+      { id: 'thesis-structure', name: 'Thesis Structure', description: 'Introduction, Literature, Methods, Results, Discussion', tier: 1 },
+      { id: 'literature-review', name: 'Literature Review', description: 'Systematic review of existing research', tier: 1 },
+      { id: 'research-methodology', name: 'Research Methodology', description: 'Qualitative, Quantitative, Mixed methods', tier: 1 },
+      { id: 'case-study', name: 'Case Study Framework', description: 'In-depth analysis of specific cases', tier: 1 },
+      { id: 'hypothesis-testing', name: 'Hypothesis Testing', description: 'Scientific method presentation', tier: 2 },
+      { id: 'meta-analysis', name: 'Meta-Analysis', description: 'Statistical analysis of multiple studies', tier: 2 },
+      { id: 'systematic-review', name: 'Systematic Review', description: 'PRISMA-style systematic reviews', tier: 2 }
+    ]
+  },
+  // Legal/Compliance Frameworks
+  {
+    id: 'legal-compliance',
+    name: 'Legal & Compliance',
+    subtitle: 'Regulatory & Contracts',
+    icon: 'Scale',
+    color: 'text-gray-600',
+    bgColor: 'bg-gray-50',
+    description: 'Frameworks for legal and compliance documentation',
+    type: 'industry',
+    frameworks: [
+      { id: 'contract-analysis', name: 'Contract Analysis', description: 'Terms, obligations, risks breakdown', tier: 1 },
+      { id: 'due-diligence', name: 'Due Diligence', description: 'M&A and investment due diligence', tier: 2 },
+      { id: 'regulatory-submission', name: 'Regulatory Submission', description: 'FDA, SEC, compliance filings', tier: 2 },
+      { id: 'audit-report', name: 'Audit Report', description: 'Financial and operational audits', tier: 1 },
+      { id: 'risk-compliance', name: 'Risk & Compliance Matrix', description: 'Risk identification and mitigation', tier: 1 },
+      { id: 'legal-brief', name: 'Legal Brief', description: 'Court filings and legal arguments', tier: 2 },
+      { id: 'privacy-impact', name: 'Privacy Impact Assessment', description: 'GDPR, CCPA compliance analysis', tier: 2 }
+    ]
+  },
+  // Technical/Engineering Frameworks
+  {
+    id: 'technical-engineering',
+    name: 'Technical & Engineering',
+    subtitle: 'System Design & Architecture',
+    icon: 'Cpu',
+    color: 'text-orange-600',
+    bgColor: 'bg-orange-50',
+    description: 'Frameworks for technical documentation and system design',
+    type: 'methodology',
+    frameworks: [
+      { id: 'system-design', name: 'System Design', description: 'High-level and low-level system architecture', tier: 1 },
+      { id: 'api-documentation', name: 'API Documentation', description: 'Endpoints, schemas, examples', tier: 1 },
+      { id: 'architecture-review', name: 'Architecture Review', description: 'ADRs and architecture decision records', tier: 2 },
+      { id: 'tech-spec', name: 'Technical Specification', description: 'Detailed technical requirements', tier: 1 },
+      { id: 'incident-postmortem', name: 'Incident Postmortem', description: 'Root cause analysis and prevention', tier: 1 },
+      { id: 'capacity-planning', name: 'Capacity Planning', description: 'Scalability and resource planning', tier: 2 },
+      { id: 'security-review', name: 'Security Review', description: 'Threat modeling and security analysis', tier: 2 },
+      { id: 'migration-plan', name: 'Migration Plan', description: 'System migration and cutover strategy', tier: 2 }
+    ]
+  }
+];
+
 // ==================== COMBINED FRAMEWORK CATEGORIES ====================
 
 export const EXPANDED_FRAMEWORK_CATEGORIES: FrameworkCategory[] = [
   ...CONTENT_FRAMEWORK_CATEGORIES,
+  ...NEW_FRAMEWORK_CATEGORIES,
   ...LEGACY_FRAMEWORK_CATEGORIES
 ];
 
@@ -245,6 +312,8 @@ export const getAllFrameworks = () =>
 export const getContentFrameworks = () => CONTENT_FRAMEWORK_CATEGORIES;
 
 export const getLegacyFrameworks = () => LEGACY_FRAMEWORK_CATEGORIES;
+
+export const getNewFrameworks = () => NEW_FRAMEWORK_CATEGORIES;
 
 export const FRAMEWORK_TYPE_LABELS = {
   // Content types (new)
