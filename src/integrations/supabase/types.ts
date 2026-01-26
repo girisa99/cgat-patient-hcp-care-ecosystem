@@ -15834,6 +15834,51 @@ export type Database = {
           },
         ]
       }
+      pipeline_edit_sessions: {
+        Row: {
+          completed_at: string | null
+          confidence_score: number | null
+          created_at: string | null
+          device_context: string | null
+          id: string
+          media_url: string | null
+          operations: Json | null
+          output_url: string | null
+          pipeline_id: string
+          status: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          confidence_score?: number | null
+          created_at?: string | null
+          device_context?: string | null
+          id?: string
+          media_url?: string | null
+          operations?: Json | null
+          output_url?: string | null
+          pipeline_id: string
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          confidence_score?: number | null
+          created_at?: string | null
+          device_context?: string | null
+          id?: string
+          media_url?: string | null
+          operations?: Json | null
+          output_url?: string | null
+          pipeline_id?: string
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       presentation_shares: {
         Row: {
           id: string
@@ -16155,6 +16200,59 @@ export type Database = {
           view_count?: number | null
         }
         Relationships: []
+      }
+      proactive_edit_suggestions: {
+        Row: {
+          applied_at: string | null
+          created_at: string | null
+          credit_cost: number | null
+          dismissed_at: string | null
+          id: string
+          pipeline_id: string
+          priority: string | null
+          reason: string | null
+          session_id: string | null
+          status: string | null
+          suggestion_type: string
+          user_id: string
+        }
+        Insert: {
+          applied_at?: string | null
+          created_at?: string | null
+          credit_cost?: number | null
+          dismissed_at?: string | null
+          id?: string
+          pipeline_id: string
+          priority?: string | null
+          reason?: string | null
+          session_id?: string | null
+          status?: string | null
+          suggestion_type: string
+          user_id: string
+        }
+        Update: {
+          applied_at?: string | null
+          created_at?: string | null
+          credit_cost?: number | null
+          dismissed_at?: string | null
+          id?: string
+          pipeline_id?: string
+          priority?: string | null
+          reason?: string | null
+          session_id?: string | null
+          status?: string | null
+          suggestion_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proactive_edit_suggestions_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "pipeline_edit_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       products: {
         Row: {
