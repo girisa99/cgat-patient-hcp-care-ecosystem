@@ -5,6 +5,16 @@
  * Each step is self-contained with its own component, validation, and metadata.
  * 
  * Architecture: Registry Pattern + Lazy Loading
+ * 
+ * Product Mapping:
+ * - Step 0 (Input): Spark pipelines
+ * - Step 1 (Configure): Mind enhancement
+ * - Step 2 (Template): Deck visual design
+ * - Step 3 (Output): Routes to Vibe (video), Deck (slides), or Cast (distribution)
+ * - Step 4 (Agents): Cross-product orchestration
+ * - Step 5 (Voice): Mind TTS + Vibe production
+ * - Step 6 (Generate): Executes selected product pipeline
+ * - Step 7 (Publish): Cast distribution engine
  */
 
 import { ComponentType, lazy } from 'react';
@@ -20,20 +30,21 @@ import {
   Share2,
   Upload
 } from 'lucide-react';
+import { GenieProduct } from '@/constants/genie-products';
 
 // ==========================================
 // TYPES
 // ==========================================
 
 export type StepId = 
-  | 'input'      // Step 0: Universal Input Gateway
-  | 'configure'  // Step 1: Industry, Segment, Content Type
-  | 'template'   // Step 2: Template & Branding
-  | 'output'     // Step 3: Output Type (2D, 3D, Video, Interactive)
-  | 'agents'     // Step 4: AI Agent Selection
-  | 'voice'      // Step 5: Voice & Music Orchestration
-  | 'generate'   // Step 6: Generation Engine
-  | 'publish';   // Step 7: Publishing & Distribution
+  | 'input'      // Step 0: Universal Input Gateway (Spark)
+  | 'configure'  // Step 1: Industry, Segment, Content Type (Mind)
+  | 'template'   // Step 2: Template & Branding (Deck)
+  | 'output'     // Step 3: Output Type (Vibe/Deck/Cast routing)
+  | 'agents'     // Step 4: AI Agent Selection (Cross-product)
+  | 'voice'      // Step 5: Voice & Music Orchestration (Mind + Vibe)
+  | 'generate'   // Step 6: Generation Engine (Selected product)
+  | 'publish';   // Step 7: Publishing & Distribution (Cast)
 
 export type StepCategory = 'input' | 'context' | 'agent' | 'execution';
 
@@ -51,6 +62,10 @@ export interface StepMetadata {
   description: string;
   category: StepCategory;
   order: number;
+  
+  // Product association
+  primaryProduct?: GenieProduct;
+  sharedProducts?: GenieProduct[];
   
   // Display options
   optional?: boolean;
@@ -94,6 +109,7 @@ export interface WizardContext {
   mode: 'auto' | 'hybrid' | 'custom';
   isMobile: boolean;
   isOffline: boolean;
+  selectedProduct?: GenieProduct; // Track which product is being used
 }
 
 // ==========================================
@@ -169,17 +185,19 @@ export function isStepAccessible(stepId: StepId, context: WizardContext): boolea
 // DEFAULT STEP CONFIGURATIONS
 // ==========================================
 
-// Step 0: Universal Input
+// Step 0: Universal Input (Spark - Script Generation)
 registerStep({
   metadata: {
     id: 'input',
     label: 'Input',
     shortLabel: 'In',
     icon: Upload,
-    description: 'Add your source material',
+    description: 'Add your source material (Document, PPT, Video, Audio, URL, Image)',
     category: 'input',
     order: 0,
     estimatedMinutes: 2,
+    primaryProduct: 'spark', // Spark owns input processing
+    sharedProducts: ['studio'],
   },
   defaultValue: {
     type: null,
@@ -200,18 +218,20 @@ registerStep({
   },
 });
 
-// Step 1: Configure (Industry, Segment, Content Type)
+// Step 1: Configure (Mind - Enhancement Context)
 registerStep({
   metadata: {
     id: 'configure',
     label: 'Configure',
     shortLabel: 'Cfg',
     icon: Settings2,
-    description: 'Select industry, segment & content type',
+    description: 'Select industry, segment & content type for AI optimization',
     category: 'context',
     order: 1,
     requiredSteps: ['input'],
     estimatedMinutes: 2,
+    primaryProduct: 'mind', // Mind handles enhancement context
+    sharedProducts: ['spark', 'studio'],
   },
   defaultValue: {
     industry: null,
@@ -231,18 +251,20 @@ registerStep({
   },
 });
 
-// Step 2: Template & Branding
+// Step 2: Template & Branding (Deck - Visual Design)
 registerStep({
   metadata: {
     id: 'template',
     label: 'Template & Branding',
     shortLabel: 'Brand',
     icon: Layout,
-    description: 'Choose templates, themes and branding',
+    description: 'Choose templates, themes and branding for visual output',
     category: 'context',
     order: 2,
     collapsibleOnMobile: true,
     estimatedMinutes: 3,
+    primaryProduct: 'deck', // Deck owns visual design
+    sharedProducts: ['vibe', 'studio'],
   },
   defaultValue: {
     template: null,
@@ -257,22 +279,25 @@ registerStep({
   },
 });
 
-// Step 3: Output Type
+// Step 3: Output Type (Routes to Vibe, Deck, or Cast)
 registerStep({
   metadata: {
     id: 'output',
     label: 'Output Type',
     shortLabel: 'Out',
     icon: Layers,
-    description: 'Choose 2D, 3D, Video or Interactive output',
+    description: 'Choose output: Slides (Deck), Video (Vibe), or Distribution (Cast)',
     category: 'context',
     order: 3,
     estimatedMinutes: 2,
+    // This step determines which product handles the output
+    // Video/Audio → Vibe, Slides/Infographic → Deck, Social → Cast
   },
   defaultValue: {
-    outputType: 'presentation', // Default to standard presentation
+    outputType: 'presentation', // Default to Deck
     visualFeatures: [],
     quality: 'balanced',
+    targetProduct: 'deck', // Tracks which product handles output
   },
   validate: (value) => {
     const errors: string[] = [];
@@ -285,7 +310,7 @@ registerStep({
   },
 });
 
-// Step 4: Agents & Languages
+// Step 4: Agents & Languages (Cross-product orchestration)
 registerStep({
   metadata: {
     id: 'agents',
@@ -296,6 +321,8 @@ registerStep({
     category: 'agent',
     order: 4,
     estimatedMinutes: 3,
+    // Cross-product: Orchestrates all products via A2A
+    sharedProducts: ['spark', 'mind', 'vibe', 'deck', 'cast'],
   },
   defaultValue: {
     agents: [],
@@ -314,20 +341,22 @@ registerStep({
   },
 });
 
-// Step 5: Voice & Music Orchestration (NEW)
+// Step 5: Voice & Music Orchestration (Mind TTS + Vibe production)
 registerStep({
   metadata: {
     id: 'voice',
     label: 'Voice & Music',
     shortLabel: 'Voice',
     icon: Mic,
-    description: 'Configure voiceover and background music',
+    description: 'Configure TTS voiceover (Mind) and music (Vibe)',
     category: 'agent',
     order: 5,
     optional: true,
     collapsibleOnMobile: true,
     estimatedMinutes: 3,
     creditMultiplier: 1.5,
+    primaryProduct: 'mind', // Mind handles TTS
+    sharedProducts: ['vibe'], // Vibe handles audio production
   },
   defaultValue: {
     enabled: false,
@@ -356,18 +385,20 @@ registerStep({
   },
 });
 
-// Step 6: Generate
+// Step 6: Generate (Executes selected product pipeline)
 registerStep({
   metadata: {
     id: 'generate',
     label: 'Generate',
     shortLabel: 'Gen',
     icon: Wand2,
-    description: 'Review and create your presentation',
+    description: 'Review and generate content with selected pipeline',
     category: 'execution',
     order: 6,
     requiredSteps: ['input', 'configure', 'output'],
     estimatedMinutes: 5,
+    // Product determined by output type selection
+    sharedProducts: ['spark', 'mind', 'vibe', 'deck'],
   },
   defaultValue: {
     status: 'idle',
@@ -382,19 +413,21 @@ registerStep({
   },
 });
 
-// Step 7: Publish & Distribute (NEW)
+// Step 7: Publish & Distribute (Cast - Distribution Engine)
 registerStep({
   metadata: {
     id: 'publish',
     label: 'Publish',
     shortLabel: 'Pub',
     icon: Share2,
-    description: 'Export and distribute your content',
+    description: 'Export and distribute via Genie Cast (multi-platform)',
     category: 'execution',
     order: 7,
     requiredSteps: ['generate'],
     optional: true,
     estimatedMinutes: 2,
+    primaryProduct: 'cast', // Cast owns distribution
+    sharedProducts: ['arc'], // Arc handles scheduling
   },
   defaultValue: {
     exportFormats: [],
@@ -459,6 +492,79 @@ export const WIZARD_STEPS_V2 = getAllSteps().map(step => ({
   label: step.metadata.label,
   icon: step.metadata.icon,
   description: step.metadata.description,
+  primaryProduct: step.metadata.primaryProduct,
+  sharedProducts: step.metadata.sharedProducts,
 }));
 
 export { stepRegistry };
+
+// ==========================================
+// PRODUCT-AWARE ROUTING HELPERS
+// ==========================================
+
+/**
+ * Get the primary product for a wizard step
+ */
+export function getStepProduct(stepId: StepId): GenieProduct | undefined {
+  const step = getStep(stepId);
+  return step?.metadata.primaryProduct;
+}
+
+/**
+ * Get all products involved in a step
+ */
+export function getStepProducts(stepId: StepId): GenieProduct[] {
+  const step = getStep(stepId);
+  if (!step) return [];
+  
+  const products: GenieProduct[] = [];
+  if (step.metadata.primaryProduct) {
+    products.push(step.metadata.primaryProduct);
+  }
+  if (step.metadata.sharedProducts) {
+    products.push(...step.metadata.sharedProducts);
+  }
+  return [...new Set(products)];
+}
+
+/**
+ * Determine target product based on output type selection
+ */
+export function getTargetProductForOutput(outputType: string): GenieProduct {
+  const videoOutputs = ['video-mp4', 'video-webm', 'animated-gif', 'podcast', 'webcast'];
+  const slideOutputs = ['presentation', 'pptx', 'pdf', 'infographic', '3d-presentation'];
+  const distributionOutputs = ['social-post', 'blog-post', 'youtube', 'tiktok', 'linkedin'];
+  
+  if (videoOutputs.includes(outputType)) return 'vibe';
+  if (distributionOutputs.includes(outputType)) return 'cast';
+  return 'deck'; // Default to Deck for slide-based outputs
+}
+
+/**
+ * Get editor mode based on target product
+ */
+export function getEditorModeForProduct(product: GenieProduct): 'canvas' | 'timeline' | 'document' | 'hybrid' {
+  switch (product) {
+    case 'vibe': return 'timeline'; // Video/audio editing
+    case 'deck': return 'canvas'; // Slide editing
+    case 'spark': return 'document'; // Script editing
+    case 'mind': return 'document'; // Content editing
+    case 'cast': return 'canvas'; // Distribution dashboard
+    case 'arc': return 'canvas'; // Kanban/scheduling
+    default: return 'hybrid';
+  }
+}
+
+/**
+ * Step to product flow mapping
+ */
+export const STEP_PRODUCT_FLOW: Record<StepId, { primary: GenieProduct; triggers: GenieProduct[] }> = {
+  input: { primary: 'spark', triggers: [] },
+  configure: { primary: 'mind', triggers: ['spark'] },
+  template: { primary: 'deck', triggers: [] },
+  output: { primary: 'deck', triggers: ['vibe', 'cast'] }, // Routes based on selection
+  agents: { primary: 'studio', triggers: ['spark', 'mind', 'vibe', 'deck'] },
+  voice: { primary: 'mind', triggers: ['vibe'] },
+  generate: { primary: 'studio', triggers: ['spark', 'mind', 'vibe', 'deck'] },
+  publish: { primary: 'cast', triggers: ['arc'] },
+};

@@ -14,7 +14,8 @@ const productRoutes: Record<GenieProduct, string> = {
   vibe: '/genie-vibe',
   studio: '/genie-studio',
   arc: '/production-hub', // Arc maps to production hub
-  deck: '/genie-deck'
+  deck: '/genie-deck',
+  cast: '/genie-cast', // Cast is distribution/marketing engine
 };
 
 export const HorizontalProductShowcase = () => {

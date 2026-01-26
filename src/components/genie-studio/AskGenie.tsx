@@ -204,8 +204,9 @@ const getUpgradeHint = (product: GenieProduct, tier: 'free' | 'starter' | 'busin
   const access = SUBSCRIPTION_FEATURE_ACCESS[tier];
   if (!access) return null;
   
-  const hints = access.upgradeHints as Record<string, string>;
-  return hints[product] || null;
+  // upgradeHints is optional in new structure - use type guard
+  const hints = 'upgradeHints' in access ? (access.upgradeHints as Record<string, string>) : null;
+  return hints?.[product] || null;
 };
 
 // Check if feature is available for tier
