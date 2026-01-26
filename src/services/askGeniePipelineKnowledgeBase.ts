@@ -2,29 +2,35 @@
  * ASK GENIE PIPELINE KNOWLEDGE BASE
  * 
  * Comprehensive knowledge base for Ask Genie to provide Level 1 support
- * with full awareness of all 180 pipelines, editing workflows, wizard steps,
+ * with full awareness of all 181 pipelines, editing workflows, wizard steps,
  * and A2A agent orchestration.
  * 
- * Updated: Now includes 39 NEW pipelines:
- * - 16 Podcast/Webcast pipelines (Category 16)
- * - 15 Editing pipelines with FFmpeg (Category 17)
- * - 5 Mobile record-to-publish (Category 18)
- * - 3 Training additions
+ * PRODUCT-AWARE PIPELINE MAPPING:
+ * - Spark (28 pipelines): Input processing, script generation, content extraction
+ * - Mind (30 pipelines): Script enhancement, TTS, music generation, translation
+ * - Vibe (64 pipelines): Video/audio production, podcast, editing, avatar, dubbing
+ * - Deck (34 pipelines): Presentation, visual design, 3D/immersive
+ * - Arc (14 pipelines): Scheduling, collaboration
+ * - Cast (26 pipelines): Distribution, marketing, analytics
+ * - Studio (181 pipelines): Master orchestrator (access to all)
  * 
  * This is the "brain" that trains Ask Genie on:
- * - All 180 production pipelines (18 categories)
- * - 8-step wizard flow and context
+ * - All 181 production pipelines (21 categories)
+ * - 8-step wizard flow and product context
  * - Post-generation editing capabilities (125 pipelines need editing)
  * - A2A agent orchestration and handoffs
  * - Self-correction and automation levels
- * - Proactive pipeline suggestions
+ * - Proactive pipeline suggestions per product
  */
 
 import { PIPELINE_IO_REGISTRY, PIPELINE_CATEGORY_METADATA, getPipelineStats, type PipelineIOEntry, type PipelineIOCategory } from '@/components/ai-hub/provider-matrix/pipelineIORegistry';
 import { PODCAST_WEBCAST_PIPELINES, EDITING_PIPELINES, MOBILE_PIPELINES, TRAINING_ADDITIONS } from '@/components/ai-hub/provider-matrix/pendingPipelines180';
 import { proactivePipelineEditorService, PIPELINE_EDITOR_CONFIGS, EDIT_CAPABILITIES } from '@/services/proactivePipelineEditorService';
+import { GenieProduct, GENIE_PRODUCTS, PRODUCT_KEYS } from '@/constants/genie-products';
+import { PIPELINE_CATEGORY_MAPPING, PRODUCT_PIPELINE_SUMMARY } from '@/constants/pipelineProductMapping';
+import { CROSS_FUNCTIONAL_CAPABILITIES, getCapabilitiesByProduct } from '@/constants/crossFunctionalCapabilities';
 
-// ==================== PIPELINE KNOWLEDGE ====================
+// ==================== PRODUCT-AWARE PIPELINE KNOWLEDGE ====================
 
 export interface PipelineKnowledge {
   id: string;
@@ -42,9 +48,93 @@ export interface PipelineKnowledge {
   editCapabilities: string[];
   commonIssues: string[];
   troubleshootingSteps: string[];
+  primaryProduct: GenieProduct; // NEW: Product ownership
+  sharedProducts?: GenieProduct[]; // NEW: Cross-functional sharing
 }
 
-// ==================== WIZARD KNOWLEDGE ====================
+// ==================== PRODUCT KNOWLEDGE ====================
+
+export const PRODUCT_KNOWLEDGE = {
+  spark: {
+    id: 'spark',
+    name: 'Genie Spark',
+    tagline: 'Ignite your Ideas',
+    description: 'Transform any input (Document, PPT, Video, Audio, URL, Image) into structured scripts.',
+    pipelineCount: PRODUCT_PIPELINE_SUMMARY.spark.totalAccess,
+    categories: ['input-processing', 'script-generation', 'content-extraction'],
+    editorMode: 'document',
+    wizardSteps: [0, 1, 2],
+    capabilities: ['Script generation', 'OCR', 'STT', 'Summarization', 'Multi-format input'],
+  },
+  mind: {
+    id: 'mind',
+    name: 'Genie Mind',
+    tagline: 'AI That Understands',
+    description: 'Edit and enhance scripts with AI. Add TTS voiceovers, voice cloning, and background music.',
+    pipelineCount: PRODUCT_PIPELINE_SUMMARY.mind.totalAccess,
+    categories: ['script-enhancement', 'tts-generation', 'music-generation', 'translation'],
+    editorMode: 'document',
+    wizardSteps: [2, 3, 5, 6],
+    capabilities: ['Script editing', 'TTS', 'Voice cloning', 'Music generation', 'Translation'],
+  },
+  vibe: {
+    id: 'vibe',
+    name: 'Genie Vibe',
+    tagline: 'Script to Screen',
+    description: 'Full audio and video production hub. Podcast, video capture, trim, stitch, dubbing, lip-sync.',
+    pipelineCount: PRODUCT_PIPELINE_SUMMARY.vibe.totalAccess,
+    categories: ['video-generation', 'video-editing', 'audio-production', 'podcast-webcast', 'avatar-lipsync', 'dubbing'],
+    editorMode: 'timeline',
+    wizardSteps: [5, 6, 7],
+    capabilities: ['Video generation', 'Audio production', 'Podcast', 'Dubbing', 'Lip-sync', 'Avatar'],
+  },
+  deck: {
+    id: 'deck',
+    name: 'Genie Deck',
+    tagline: 'Ideas to Impact',
+    description: 'AI-powered presentation and slide generation with smart layouts and branding.',
+    pipelineCount: PRODUCT_PIPELINE_SUMMARY.deck.totalAccess,
+    categories: ['presentation', 'visual-design', '3d-immersive'],
+    editorMode: 'canvas',
+    wizardSteps: [3, 4, 5, 7],
+    capabilities: ['Slide generation', 'Infographics', 'Charts', '3D', 'Animation', 'Branding'],
+  },
+  arc: {
+    id: 'arc',
+    name: 'Genie Arc',
+    tagline: 'Your Production Journey With Infinite Possibilities',
+    description: 'Enterprise production hub for project scheduling, Kanban workflows, and team collaboration.',
+    pipelineCount: PRODUCT_PIPELINE_SUMMARY.arc.totalAccess,
+    categories: ['scheduling', 'collaboration'],
+    editorMode: 'canvas',
+    wizardSteps: [],
+    capabilities: ['Scheduling', 'Kanban', 'Collaboration', 'Review', 'Approval'],
+  },
+  cast: {
+    id: 'cast',
+    name: 'Genie Cast',
+    tagline: 'Make It. Show It. Scale It.',
+    description: 'Global distribution and marketing engine. Multi-platform publishing, 14-region localization.',
+    pipelineCount: PRODUCT_PIPELINE_SUMMARY.cast.totalAccess,
+    categories: ['distribution', 'marketing', 'analytics'],
+    editorMode: 'canvas',
+    wizardSteps: [8],
+    capabilities: ['Multi-platform publishing', 'Localization', 'Scheduling', 'Analytics', 'Social'],
+  },
+  studio: {
+    id: 'studio',
+    name: 'Genie Studio',
+    tagline: 'Mind to Media',
+    description: 'The master orchestrator that coordinates all Genie products. Access to all 181 pipelines.',
+    pipelineCount: PRODUCT_PIPELINE_SUMMARY.studio.totalAccess,
+    categories: ['all-categories'],
+    editorMode: 'hybrid',
+    wizardSteps: [0, 1, 2, 3, 4, 5, 6, 7, 8],
+    capabilities: ['Full orchestration', 'All pipelines', 'A2A coordination', 'Enterprise integration'],
+  },
+};
+
+// ==================== WIZARD KNOWLEDGE (PRODUCT-AWARE) ====================
 
 export const WIZARD_STEPS_KNOWLEDGE = {
   steps: [
