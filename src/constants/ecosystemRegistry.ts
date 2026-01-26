@@ -133,8 +133,8 @@ export const getEcosystemSummary = (): EcosystemSummary => {
     });
   });
 
-  // 4. Verify pipeline counts match expected
-  const expectedPipelines = 181;
+  // 4. Verify pipeline counts match expected (206 = 28+30+74+34+14+26)
+  const expectedPipelines = 206;
   if (totalPipelines !== expectedPipelines) {
     warnings.push(`Pipeline count mismatch: expected ${expectedPipelines}, got ${totalPipelines}`);
   }
@@ -174,12 +174,12 @@ export const getEcosystemSummary = (): EcosystemSummary => {
 /**
  * CATEGORY_REGISTRY - 21 Categories across 7 Products
  * 
- * Total: 181 pipelines | 21 categories
+ * Total: 206 pipelines | 21 categories
  * 
  * Distribution:
  * - SPARK: 3 categories, 28 pipelines (Input → Script)
  * - MIND: 4 categories, 30 pipelines (Script → Enhancement)
- * - VIBE: 6 categories, 64 pipelines (Script → Screen)
+ * - VIBE: 6 categories, 74 pipelines (Script → Screen)
  * - DECK: 3 categories, 34 pipelines (Visual → Presentation)
  * - ARC: 2 categories, 14 pipelines (Production Journey)
  * - CAST: 3 categories, 26 pipelines (Distribution → Scale)

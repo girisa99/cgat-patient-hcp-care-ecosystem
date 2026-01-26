@@ -5,9 +5,25 @@
  * 7 products, and 25 capabilities are properly wired.
  * 
  * Usage:
- *   import { verifyEcosystem } from '@/utils/ecosystemVerification';
+ *   import { verifyEcosystem, logEcosystemVerification } from '@/utils/ecosystemVerification';
+ *   
+ *   // Get full report
  *   const report = verifyEcosystem();
  *   console.log(report.summary);
+ *   
+ *   // Quick health check
+ *   if (!isEcosystemHealthy()) {
+ *     console.error('Ecosystem connection issues detected!');
+ *   }
+ *   
+ *   // Log to console (dev mode)
+ *   logEcosystemVerification();
+ * 
+ * AUTOMATED TESTS:
+ *   Run `npm test src/test/ecosystemVerification.test.ts` to verify all connections.
+ * 
+ * DEV INDICATOR:
+ *   Add <EcosystemHealthIndicator /> to your layout for real-time monitoring.
  */
 
 import { getEcosystemSummary, CATEGORY_REGISTRY } from '@/constants/ecosystemRegistry';
@@ -126,8 +142,8 @@ export function verifyEcosystem(): VerificationReport {
     }
   });
   
-  // 6. Verify pipeline counts
-  const expectedPipelines = 181;
+  // 6. Verify pipeline counts (206 = 28+30+74+34+14+26)
+  const expectedPipelines = 206;
   const expectedCategories = 21;
   
   if (ecosystem.pipelines.total !== expectedPipelines) {
@@ -153,7 +169,7 @@ Status: ${status.toUpperCase()}
 
 Products: ${ecosystem.products.total} (Spark, Mind, Vibe, Deck, Arc, Cast, Studio)
 Categories: ${Object.keys(CATEGORY_REGISTRY).length} / 21 expected
-Pipelines: ${ecosystem.pipelines.total} / 181 expected
+Pipelines: ${ecosystem.pipelines.total} / 206 expected
 Capabilities: ${ecosystem.capabilities.total}
 
 Wizard Dropdowns:
