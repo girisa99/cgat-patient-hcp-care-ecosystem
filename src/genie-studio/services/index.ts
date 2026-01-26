@@ -1,52 +1,35 @@
 /**
- * Genie Studio Services - Barrel Export
- * Re-exports all Genie Studio-specific services
+ * Genie Studio Services Barrel Export
+ * 
+ * Central export for all Genie ecosystem services.
  */
 
-// Script generation services
-export { audioToScriptService } from '@/services/audioToScriptService';
-export { documentToScriptService } from '@/services/documentToScriptService';
-export { imageToScriptService } from '@/services/imageToScriptService';
-export { urlToScriptService } from '@/services/urlToScriptService';
-export { videoToScriptService } from '@/services/videoToScriptService';
-export { genieScriptService } from '@/services/genieScriptService';
+// Core Generation Services
+export { universalPresentationService } from '@/services/universalPresentationService';
+export { generationConfigService } from '@/services/generationConfigService';
 
-// Media production services
-export { AIMediaService } from '@/services/aiMediaService';
-export { universalMediaService } from '@/services/universalMediaService';
-export { bulkVideoGenerationService } from '@/services/bulkVideoGenerationService';
-export { externalVisualContentService } from '@/services/externalVisualContentService';
-export { geminiMediaService } from '@/services/geminiMediaService';
-export { mediaProductionOrchestrator } from '@/services/mediaProductionOrchestrator';
-export { multiLanguageDubbingService } from '@/services/multiLanguageDubbingService';
-export { socialCutsService } from '@/services/socialCutsService';
+// Audio & Media Services
+export { audioGenerationConfigService } from '@/services/audioGenerationConfigService';
+export { multiLanguageAudioOrchestrator } from '@/services/multiLanguageAudioOrchestrator';
 
-// Content safety and compliance
-export type { ContentViolation } from '@/services/contentViolationTracker';
-export { seoOptimizationService } from '@/services/seoOptimizationService';
+// Tier & Framework Services
+export { frameworkTierFilterService } from '@/services/frameworkTierFilterService';
 
-// Publishing and distribution
-export { scheduledPublishingService } from '@/services/scheduledPublishingService';
+// Beta Awards & Gamification
+export { betaAwardsService, BETA_BADGES } from '@/services/betaAwardsService';
+export type { BetaBadge, BetaParticipant, BetaReward, LeaderboardEntry } from '@/services/betaAwardsService';
 
-// AI provider services
-export { aiProviderService } from '@/services/aiProviderService';
-export { enhancedAIService } from '@/services/enhancedAIService';
-export { unifiedAIConnector } from '@/services/unifiedAIConnector';
+// Ecosystem Integration
+export { ecosystemIntegrationService } from '@/services/ecosystemIntegrationService';
+export type { EcosystemEvent, EcosystemContext, GenerationResult, FeedbackPayload } from '@/services/ecosystemIntegrationService';
 
-// Proactive editing services (NEW)
-export { 
-  proactivePipelineEditorService, 
-  PIPELINE_EDITOR_CONFIGS,
-  EDIT_CAPABILITIES,
-  type ProactiveEditSuggestion,
-  type PipelineEditorConfig,
-  type EditCapability,
-  type EditorType,
-  type EditorPriority,
-  type DeviceContext
-} from '@/services/proactivePipelineEditorService';
+// Confidence Loop & Quality
+export { confidenceLoopEngine } from '@/services/executionEngines/ConfidenceLoopEngine';
 
-// Ask Genie Knowledge Base (updated with 180 pipelines + editing)
+// Feedback & RLHF
+export { labelStudioService } from '@/services/labelStudioService';
+
+// Ask Genie Knowledge Base (updated with 181 pipelines + editing)
 export { 
   askGeniePipelineKnowledgeBase,
   WIZARD_STEPS_KNOWLEDGE,
@@ -55,3 +38,14 @@ export {
   SUPPORT_KNOWLEDGE,
   ASK_GENIE_AI_CAPABILITIES
 } from '@/services/askGeniePipelineKnowledgeBase';
+
+// Routing & Provider Services
+export { unifiedProviderRoutingAdapter } from '@/services/unifiedProviderRoutingAdapter';
+export { contextualRecommendationService } from '@/services/contextualRecommendationService';
+
+// Proactive Editing
+export { proactivePipelineEditorService } from '@/services/proactivePipelineEditorService';
+
+// Combination Workflows
+export { combinationWorkflowService } from '@/services/combinationWorkflowService';
+export { combinationTeaserService } from '@/services/combinationTeaserService';
