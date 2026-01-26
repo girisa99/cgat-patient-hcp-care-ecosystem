@@ -54,15 +54,16 @@ import useTemplateLibrary, {
 } from '@/hooks/useTemplateLibrary';
 import { TemplateAIModelSelector } from './TemplateAIModelSelector';
 
-// Framework categories
-const FRAMEWORK_CATEGORIES = [
-  { id: 'strategy', label: 'Strategy' },
-  { id: 'growth', label: 'Growth' },
-  { id: 'operations', label: 'Operations' },
-  { id: 'universal', label: 'Universal' },
-  { id: 'industry-specific', label: 'Industry-Specific' },
-  { id: 'custom', label: 'Custom' },
-] as const;
+// ==================== UNIFIED REGISTRY IMPORTS ====================
+// Using central registry for consistency across ecosystem
+import { INDUSTRIES as REGISTRY_INDUSTRIES } from '../registry/contextRegistry';
+import { FRAMEWORK_TYPE_LABELS } from '../constants/expandedFrameworks';
+
+// Framework categories - derived from central registry types
+const FRAMEWORK_CATEGORIES = Object.entries(FRAMEWORK_TYPE_LABELS).map(([id, label]) => ({
+  id,
+  label
+}));
 
 // Visual styles
 const VISUAL_STYLES = [
@@ -71,12 +72,8 @@ const VISUAL_STYLES = [
   { id: 'data-heavy', label: 'Data Heavy', description: 'Charts, graphs, dashboards' },
 ] as const;
 
-// Industries
-const INDUSTRIES = [
-  'Healthcare', 'Technology', 'Finance', 'Manufacturing', 'Retail',
-  'Consulting', 'Education', 'Energy', 'Pharma', 'Legal', 'Real Estate',
-  'Travel', 'Media', 'Automotive', 'Aerospace', 'Government', 'Other',
-];
+// Industries - derived from central registry (25 industries)
+const INDUSTRIES = REGISTRY_INDUSTRIES.map(i => i.name);
 
 // Template types
 const TEMPLATE_TYPES = [
