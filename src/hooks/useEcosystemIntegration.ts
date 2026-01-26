@@ -21,11 +21,11 @@ interface UseEcosystemIntegrationOptions {
 
 export function useEcosystemIntegration(options: UseEcosystemIntegrationOptions) {
   const { product, tier = 2, language, industry } = options;
-  const { user, profile } = useGenieStudioAuth();
+  const { user, genieUser } = useGenieStudioAuth();
 
   const userId = user?.id || 'anonymous';
-  const email = user?.email || profile?.email;
-  const displayName = profile?.display_name || user?.email?.split('@')[0];
+  const email = user?.email || genieUser?.email;
+  const displayName = genieUser?.display_name || user?.email?.split('@')[0];
 
   // Beta awards integration
   const betaAwards = useBetaAwards({

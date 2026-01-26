@@ -96,12 +96,30 @@ export function useBetaAwards(options: UseBetaAwardsOptions): UseBetaAwardsRetur
     
     try {
       setIsLoading(true);
-      const enrolled = await betaAwardsService.enrollParticipant(
-        userId, 
-        email, 
-        displayName || email.split('@')[0]
-      );
-      setParticipant(enrolled);
+      // Create a basic participant entry in localStorage
+      const newParticipant: BetaParticipant = {
+        id: userId,
+        userId,
+        email,
+        displayName: displayName || email.split('@')[0],
+        joinedAt: new Date(),
+        tier: 'explorer',
+        totalCreditsEarned: 0,
+        currentStreak: 0,
+        longestStreak: 0,
+        badges: [],
+        stats: {
+          generationsCompleted: 0,
+          feedbackSubmitted: 0,
+          bugsReported: 0,
+          featuresRequested: 0,
+          referralsMade: 0,
+          tutorialsCompleted: 0,
+          communityPosts: 0,
+        }
+      };
+      localStorage.setItem(`beta_participant_${userId}`, JSON.stringify(newParticipant));
+      setParticipant(newParticipant);
       
       if (showNotifications) {
         toast.success('🎉 Welcome to the Beta Program!', {
@@ -142,49 +160,49 @@ export function useBetaAwards(options: UseBetaAwardsOptions): UseBetaAwardsRetur
   // Activity tracking functions
   const trackGeneration = useCallback(async () => {
     await trackWithNotification(
-      () => betaAwardsService.trackActivity(userId, 'generation'),
+      () => betaAwardsService.recordActivity(userId, 'generation'),
       'Generation'
     );
   }, [userId, trackWithNotification]);
 
   const trackFeedback = useCallback(async () => {
     await trackWithNotification(
-      () => betaAwardsService.trackActivity(userId, 'feedback'),
+      () => betaAwardsService.recordActivity(userId, 'feedback'),
       'Feedback'
     );
   }, [userId, trackWithNotification]);
 
   const trackBugReport = useCallback(async () => {
     await trackWithNotification(
-      () => betaAwardsService.trackActivity(userId, 'bug_report'),
+      () => betaAwardsService.recordActivity(userId, 'bug_report'),
       'Bug Report'
     );
   }, [userId, trackWithNotification]);
 
   const trackFeatureRequest = useCallback(async () => {
     await trackWithNotification(
-      () => betaAwardsService.trackActivity(userId, 'feature_request'),
+      () => betaAwardsService.recordActivity(userId, 'feature_request'),
       'Feature Request'
     );
   }, [userId, trackWithNotification]);
 
   const trackReferral = useCallback(async () => {
     await trackWithNotification(
-      () => betaAwardsService.trackActivity(userId, 'referral'),
+      () => betaAwardsService.recordActivity(userId, 'referral'),
       'Referral'
     );
   }, [userId, trackWithNotification]);
 
   const trackTutorialComplete = useCallback(async () => {
     await trackWithNotification(
-      () => betaAwardsService.trackActivity(userId, 'tutorial'),
+      () => betaAwardsService.recordActivity(userId, 'tutorial'),
       'Tutorial'
     );
   }, [userId, trackWithNotification]);
 
   const trackCommunityPost = useCallback(async () => {
     await trackWithNotification(
-      () => betaAwardsService.trackActivity(userId, 'community'),
+      () => betaAwardsService.recordActivity(userId, 'community'),
       'Community Post'
     );
   }, [userId, trackWithNotification]);

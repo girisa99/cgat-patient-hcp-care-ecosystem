@@ -26,8 +26,9 @@ export type { EcosystemEvent, EcosystemContext, GenerationResult, FeedbackPayloa
 // Confidence Loop & Quality
 export { confidenceLoopEngine } from '@/services/executionEngines/ConfidenceLoopEngine';
 
-// Feedback & RLHF
-export { labelStudioService } from '@/services/labelStudioService';
+// Feedback & RLHF (Label Studio Background Service)
+export { labelStudioService, useLabelStudioBackground } from '@/services/labelStudioBackgroundService';
+export type { TrainingEvent, InlineHint } from '@/services/labelStudioBackgroundService';
 
 // Ask Genie Knowledge Base (updated with 181 pipelines + editing)
 export { 
@@ -40,12 +41,8 @@ export {
 } from '@/services/askGeniePipelineKnowledgeBase';
 
 // Routing & Provider Services
-export { unifiedProviderRoutingAdapter } from '@/services/unifiedProviderRoutingAdapter';
+export { unifiedProviderRouter } from '@/services/unifiedProviderRoutingAdapter';
 export { contextualRecommendationService } from '@/services/contextualRecommendationService';
 
 // Proactive Editing
 export { proactivePipelineEditorService } from '@/services/proactivePipelineEditorService';
-
-// Combination Workflows
-export { combinationWorkflowService } from '@/services/combinationWorkflowService';
-export { combinationTeaserService } from '@/services/combinationTeaserService';

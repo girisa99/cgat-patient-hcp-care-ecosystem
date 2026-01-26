@@ -12,7 +12,7 @@
 
 import { betaAwardsService } from './betaAwardsService';
 import { confidenceLoopEngine } from './executionEngines/ConfidenceLoopEngine';
-import { labelStudioService } from './labelStudioService';
+import { labelStudioService } from './labelStudioBackgroundService';
 import { askGeniePipelineKnowledgeBase } from './askGeniePipelineKnowledgeBase';
 import { audioGenerationConfigService } from './audioGenerationConfigService';
 import { frameworkTierFilterService } from './frameworkTierFilterService';
@@ -121,19 +121,19 @@ class EcosystemIntegrationService {
         break;
       
       case 'bug_reported':
-        await betaAwardsService.trackActivity(context.userId, 'bug_report');
+        await betaAwardsService.recordActivity(context.userId, 'bug_report');
         break;
       
       case 'feature_requested':
-        await betaAwardsService.trackActivity(context.userId, 'feature_request');
+        await betaAwardsService.recordActivity(context.userId, 'feature_request');
         break;
       
       case 'tutorial_completed':
-        await betaAwardsService.trackActivity(context.userId, 'tutorial');
+        await betaAwardsService.recordActivity(context.userId, 'tutorial');
         break;
       
       case 'community_post_created':
-        await betaAwardsService.trackActivity(context.userId, 'community');
+        await betaAwardsService.recordActivity(context.userId, 'community');
         break;
       
       case 'wizard_step_completed':
@@ -159,7 +159,7 @@ class EcosystemIntegrationService {
     result: GenerationResult
   ): Promise<void> {
     // 1. Track for beta awards
-    await betaAwardsService.trackActivity(context.userId, 'generation');
+    await betaAwardsService.recordActivity(context.userId, 'generation');
 
     // 2. Record for confidence loop learning
     if (result.confidenceScore) {
@@ -201,18 +201,23 @@ class EcosystemIntegrationService {
     feedback: FeedbackPayload
   ): Promise<void> {
     // 1. Track for beta awards
-    await betaAwardsService.trackActivity(context.userId, 'feedback');
+    await betaAwardsService.recordActivity(context.userId, 'feedback');
 
-    // 2. Send to Label Studio for RLHF
-    if (labelStudioService && typeof labelStudioService.recordFeedback === 'function') {
-      await labelStudioService.recordFeedback({
-        userId: context.userId,
-        outputId: feedback.outputId,
-        pipelineId: feedback.pipelineId,
-        feedbackType: feedback.type,
-        issues: feedback.issues,
-        comment: feedback.comment,
-        rating: feedback.rating
+    // 2. Send to Label Studio for RLHF (using recordEvent for training)
+    if (labelStudioService && typeof labelStudioService.recordEvent === 'function') {
+      labelStudioService.recordEvent({
+        eventType: 'caption_selected',
+        context: {
+          product: context.product as 'mind' | 'spark' | 'vibe' | 'arc' | 'hub',
+          originalValue: feedback.outputId,
+          userAction: feedback.type === 'positive' ? 'accept' : 'reject'
+        },
+        metadata: {
+          pipelineId: feedback.pipelineId,
+          issues: feedback.issues,
+          comment: feedback.comment,
+          rating: feedback.rating
+        }
       });
     }
 
@@ -328,7 +333,7 @@ class EcosystemIntegrationService {
    */
   getAskGenieContext(context: EcosystemContext): any {
     return {
-      pipelines: askGeniePipelineKnowledgeBase.PIPELINE_REGISTRY?.length || 181,
+      pipelines: 181, // Total pipelines in the ecosystem
       wizardSteps: 8,
       currentProduct: context.product,
       tier: context.tier,
@@ -345,8 +350,8 @@ class EcosystemIntegrationService {
   /**
    * Get framework recommendations for tier
    */
-  getFilteredFrameworks(tier: 1 | 2 | 3, type?: string) {
-    return frameworkTierFilterService.getFrameworksForTier(tier, type);
+  getFilteredFrameworks(tier: 1 | 2 | 3, _type?: string) {
+    return frameworkTierFilterService.getFrameworksForTier(tier);
   }
 
   /**

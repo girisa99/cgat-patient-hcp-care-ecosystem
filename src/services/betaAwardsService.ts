@@ -529,6 +529,92 @@ class BetaAwardsService {
       communityPosts: 0,
     };
   }
+
+  // ==================== PUBLIC API METHODS ====================
+
+  /**
+   * Enroll a new participant in the beta program (client-side)
+   */
+  async enrollParticipant(userId: string, email: string, displayName: string): Promise<BetaParticipant> {
+    const now = new Date();
+    const participant: BetaParticipant = {
+      id: userId,
+      userId,
+      email,
+      displayName,
+      joinedAt: now,
+      tier: 'explorer',
+      totalCreditsEarned: 0,
+      currentStreak: 0,
+      longestStreak: 0,
+      badges: [],
+      stats: this.getDefaultStats(),
+    };
+
+    localStorage.setItem(`beta_participant_${userId}`, JSON.stringify(participant));
+    
+    // Auto-award early adopter badge if within launch week
+    const launchWeekEnd = new Date('2025-02-07');
+    if (now <= launchWeekEnd) {
+      await this.awardBadge(userId, 'early_adopter');
+    }
+
+    return participant;
+  }
+
+  /**
+   * Track user activity and check for badge eligibility
+   */
+  async trackActivity(
+    userId: string, 
+    activityType: 'generation' | 'feedback' | 'bug_report' | 'feature_request' | 'referral' | 'tutorial' | 'community'
+  ): Promise<void> {
+    // Record the activity
+    await this.recordActivity(userId, activityType);
+
+    // Update participant stats
+    const stored = localStorage.getItem(`beta_participant_${userId}`);
+    const participant = stored ? JSON.parse(stored) : { stats: this.getDefaultStats() };
+    const stats = participant.stats || this.getDefaultStats();
+
+    // Increment the relevant stat
+    switch (activityType) {
+      case 'generation':
+        stats.generationsCompleted = (stats.generationsCompleted || 0) + 1;
+        break;
+      case 'feedback':
+        stats.feedbackSubmitted = (stats.feedbackSubmitted || 0) + 1;
+        break;
+      case 'bug_report':
+        stats.bugsReported = (stats.bugsReported || 0) + 1;
+        break;
+      case 'feature_request':
+        stats.featuresRequested = (stats.featuresRequested || 0) + 1;
+        break;
+      case 'referral':
+        stats.referralsMade = (stats.referralsMade || 0) + 1;
+        break;
+      case 'tutorial':
+        stats.tutorialsCompleted = (stats.tutorialsCompleted || 0) + 1;
+        break;
+      case 'community':
+        stats.communityPosts = (stats.communityPosts || 0) + 1;
+        break;
+    }
+
+    participant.stats = stats;
+    localStorage.setItem(`beta_participant_${userId}`, JSON.stringify(participant));
+
+    // Update streaks
+    await this.updateStreaks(userId);
+
+    // Check for new badges
+    const newBadges = await this.checkBadgeEligibility(userId);
+    for (const badge of newBadges) {
+      await this.awardBadge(userId, badge.id);
+      await this.updateParticipantBadges(userId, badge.id, badge.creditsAwarded);
+    }
+  }
 }
 
 export const betaAwardsService = new BetaAwardsService();
