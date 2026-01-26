@@ -5,16 +5,28 @@
  * - Analyzes content to suggest relevant editing pipelines
  * - Triggers appropriate editors (video, audio, image, document)
  * - Integrates with Ask Genie, Support, and Confidence Loop
- * - Works across all Genie Studio products (Deck, Vibe, Spark, Mind, Arc, Hub)
+ * - Works across all Genie Studio products (Spark, Mind, Vibe, Deck, Arc, Cast)
+ * 
+ * PRODUCT-AWARE FILTERING:
+ * - Each pipeline is now mapped to its primary product owner
+ * - Editor mode automatically switches based on product context
+ * - Capabilities are filtered by product compatibility
  * 
  * Based on PIPELINE_EDITOR_REQUIREMENTS.md:
- * - 125 out of 180 pipelines (69%) need post-generation editing
+ * - 125 out of 181 pipelines (69%) need post-generation editing
  * - 67 CRITICAL pipelines always show editor
  * - 35 HIGH pipelines usually show editor
  * - 23 MEDIUM pipelines optional editor
  */
 
 import type { PipelineIOCategory, PipelineIOEntry } from '@/components/ai-hub/provider-matrix/pipelineIORegistry';
+import { GenieProduct } from '@/constants/genie-products';
+import { 
+  getPrimaryProductForCategory, 
+  getEditorModeForCategory,
+  PIPELINE_CATEGORY_MAPPING 
+} from '@/constants/pipelineProductMapping';
+import { getCapabilitiesByProduct } from '@/constants/crossFunctionalCapabilities';
 
 // ==================== TYPES ====================
 
@@ -30,6 +42,7 @@ export interface EditCapability {
   description: string;
   requiresOnline: boolean;
   tier: 'Starter' | 'Pro' | 'Enterprise';
+  compatibleProducts?: GenieProduct[]; // NEW: Product filtering
 }
 
 export interface ProactiveEditSuggestion {
@@ -43,6 +56,7 @@ export interface ProactiveEditSuggestion {
   creditCost: number;
   confidence: number;
   triggerAction: () => void;
+  primaryProduct?: GenieProduct; // NEW: Product context
 }
 
 export interface PipelineEditorConfig {
@@ -52,6 +66,9 @@ export interface PipelineEditorConfig {
   capabilities: string[];
   commonIssues: string[];
   suggestedActions: string[];
+  primaryProduct: GenieProduct; // NEW: Required product assignment
+  sharedProducts?: GenieProduct[]; // NEW: Cross-functional sharing
+  categoryId?: string; // NEW: Link to category mapping
 }
 
 // ==================== EDIT CAPABILITIES ====================
@@ -64,7 +81,8 @@ export const EDIT_CAPABILITIES: Record<string, EditCapability> = {
     category: 'trim',
     description: 'Remove unwanted sections',
     requiresOnline: false,
-    tier: 'Starter'
+    tier: 'Starter',
+    compatibleProducts: ['vibe', 'cast'],
   },
   addVoiceTTS: {
     id: 'addVoiceTTS',
@@ -73,7 +91,8 @@ export const EDIT_CAPABILITIES: Record<string, EditCapability> = {
     category: 'voice',
     description: 'Generate voiceover with TTS',
     requiresOnline: true,
-    tier: 'Pro'
+    tier: 'Pro',
+    compatibleProducts: ['mind', 'vibe', 'deck', 'cast'],
   },
   addVoiceRecord: {
     id: 'addVoiceRecord',
@@ -82,7 +101,8 @@ export const EDIT_CAPABILITIES: Record<string, EditCapability> = {
     category: 'voice',
     description: 'Record your own voiceover',
     requiresOnline: false,
-    tier: 'Starter'
+    tier: 'Starter',
+    compatibleProducts: ['vibe'],
   },
   replaceVoice: {
     id: 'replaceVoice',
@@ -91,7 +111,8 @@ export const EDIT_CAPABILITIES: Record<string, EditCapability> = {
     category: 'voice',
     description: 'Replace existing voiceover',
     requiresOnline: true,
-    tier: 'Pro'
+    tier: 'Pro',
+    compatibleProducts: ['vibe', 'cast'],
   },
   addMusic: {
     id: 'addMusic',
@@ -100,7 +121,8 @@ export const EDIT_CAPABILITIES: Record<string, EditCapability> = {
     category: 'music',
     description: 'Add background music',
     requiresOnline: false,
-    tier: 'Starter'
+    tier: 'Starter',
+    compatibleProducts: ['mind', 'vibe', 'deck'],
   },
   audioDucking: {
     id: 'audioDucking',
@@ -109,7 +131,8 @@ export const EDIT_CAPABILITIES: Record<string, EditCapability> = {
     category: 'music',
     description: 'Lower music during speech',
     requiresOnline: false,
-    tier: 'Starter'
+    tier: 'Starter',
+    compatibleProducts: ['vibe'],
   },
   addCaptions: {
     id: 'addCaptions',
@@ -118,7 +141,8 @@ export const EDIT_CAPABILITIES: Record<string, EditCapability> = {
     category: 'captions',
     description: 'Generate auto-captions',
     requiresOnline: true,
-    tier: 'Starter'
+    tier: 'Starter',
+    compatibleProducts: ['vibe', 'cast'],
   },
   styleCaptions: {
     id: 'styleCaptions',
@@ -127,7 +151,8 @@ export const EDIT_CAPABILITIES: Record<string, EditCapability> = {
     category: 'captions',
     description: 'TikTok, Hormozi style captions',
     requiresOnline: false,
-    tier: 'Pro'
+    tier: 'Pro',
+    compatibleProducts: ['vibe', 'cast'],
   },
   textOverlay: {
     id: 'textOverlay',
@@ -136,7 +161,8 @@ export const EDIT_CAPABILITIES: Record<string, EditCapability> = {
     category: 'overlay',
     description: 'Add text on video',
     requiresOnline: false,
-    tier: 'Starter'
+    tier: 'Starter',
+    compatibleProducts: ['vibe', 'deck', 'cast'],
   },
   imageOverlay: {
     id: 'imageOverlay',
@@ -145,7 +171,8 @@ export const EDIT_CAPABILITIES: Record<string, EditCapability> = {
     category: 'overlay',
     description: 'Add logo, images',
     requiresOnline: false,
-    tier: 'Starter'
+    tier: 'Starter',
+    compatibleProducts: ['vibe', 'deck', 'cast'],
   },
   speedControl: {
     id: 'speedControl',
@@ -154,7 +181,8 @@ export const EDIT_CAPABILITIES: Record<string, EditCapability> = {
     category: 'effects',
     description: 'Speed up or slow down',
     requiresOnline: false,
-    tier: 'Starter'
+    tier: 'Starter',
+    compatibleProducts: ['vibe'],
   },
   cropResize: {
     id: 'cropResize',
@@ -163,7 +191,8 @@ export const EDIT_CAPABILITIES: Record<string, EditCapability> = {
     category: 'effects',
     description: 'Platform formats (9:16, 16:9)',
     requiresOnline: false,
-    tier: 'Starter'
+    tier: 'Starter',
+    compatibleProducts: ['vibe', 'deck', 'cast'],
   },
   transitions: {
     id: 'transitions',
@@ -172,7 +201,8 @@ export const EDIT_CAPABILITIES: Record<string, EditCapability> = {
     category: 'effects',
     description: 'Add video transitions',
     requiresOnline: false,
-    tier: 'Starter'
+    tier: 'Starter',
+    compatibleProducts: ['vibe', 'deck'],
   },
   lipSyncFix: {
     id: 'lipSyncFix',
@@ -181,7 +211,8 @@ export const EDIT_CAPABILITIES: Record<string, EditCapability> = {
     category: 'effects',
     description: 'Adjust avatar lip sync',
     requiresOnline: true,
-    tier: 'Pro'
+    tier: 'Pro',
+    compatibleProducts: ['vibe', 'cast'],
   },
   mergeVideos: {
     id: 'mergeVideos',
@@ -190,7 +221,8 @@ export const EDIT_CAPABILITIES: Record<string, EditCapability> = {
     category: 'trim',
     description: 'Combine multiple clips',
     requiresOnline: false,
-    tier: 'Starter'
+    tier: 'Starter',
+    compatibleProducts: ['vibe'],
   },
   batchExport: {
     id: 'batchExport',
@@ -199,41 +231,100 @@ export const EDIT_CAPABILITIES: Record<string, EditCapability> = {
     category: 'export',
     description: 'Export to multiple platforms',
     requiresOnline: false,
-    tier: 'Pro'
-  }
+    tier: 'Pro',
+    compatibleProducts: ['cast', 'deck'],
+  },
+  scriptEdit: {
+    id: 'scriptEdit',
+    name: 'Script Editing',
+    icon: '📝',
+    category: 'effects',
+    description: 'Edit and enhance scripts',
+    requiresOnline: false,
+    tier: 'Starter',
+    compatibleProducts: ['spark', 'mind'],
+  },
+  slideDesign: {
+    id: 'slideDesign',
+    name: 'Slide Design',
+    icon: '🎨',
+    category: 'overlay',
+    description: 'Adjust slide layouts and visuals',
+    requiresOnline: false,
+    tier: 'Starter',
+    compatibleProducts: ['deck'],
+  },
 };
 
-// ==================== PIPELINE EDITOR MAPPINGS ====================
+// ==================== PIPELINE EDITOR MAPPINGS (PRODUCT-AWARE) ====================
 
 export const PIPELINE_EDITOR_CONFIGS: PipelineEditorConfig[] = [
-  // CRITICAL VIDEO PIPELINES (Always show editor)
-  { pipelineId: 'text-to-video', editorType: 'video', priority: 'CRITICAL', capabilities: ['trim', 'addVoiceTTS', 'addMusic', 'addCaptions'], commonIssues: ['Voice sounds robotic', 'Too long'], suggestedActions: ['Replace voice', 'Trim to 30s'] },
-  { pipelineId: 'ppt-to-video', editorType: 'video', priority: 'CRITICAL', capabilities: ['trim', 'replaceVoice', 'addMusic', 'addCaptions'], commonIssues: ['Slide timing off', 'Voice mismatch'], suggestedActions: ['Adjust timing', 'Replace voiceover'] },
-  { pipelineId: 'text-to-avatar', editorType: 'video', priority: 'CRITICAL', capabilities: ['trim', 'lipSyncFix', 'addMusic'], commonIssues: ['Lip sync issues', 'Avatar expression'], suggestedActions: ['Fix lip sync', 'Adjust timing'] },
-  { pipelineId: 'image-to-video', editorType: 'video', priority: 'CRITICAL', capabilities: ['trim', 'addVoiceTTS', 'addMusic'], commonIssues: ['No voiceover', 'Timing'], suggestedActions: ['Add AI voice', 'Add music'] },
-  { pipelineId: 'script-to-video', editorType: 'video', priority: 'CRITICAL', capabilities: ['trim', 'replaceVoice', 'addMusic', 'addCaptions'], commonIssues: ['Voice doesn\'t match script'], suggestedActions: ['Regenerate voice', 'Fine-tune'] },
-  { pipelineId: 'podcast-to-video', editorType: 'video', priority: 'CRITICAL', capabilities: ['trim', 'addCaptions', 'textOverlay'], commonIssues: ['Visuals don\'t match audio'], suggestedActions: ['Add captions', 'Trim segments'] },
-  { pipelineId: 'webinar-to-clips', editorType: 'video', priority: 'CRITICAL', capabilities: ['trim', 'addCaptions', 'cropResize'], commonIssues: ['Cuts too abrupt'], suggestedActions: ['Fine-tune cuts', 'Add transitions'] },
-  { pipelineId: 'long-to-shorts', editorType: 'video', priority: 'CRITICAL', capabilities: ['trim', 'addCaptions', 'cropResize'], commonIssues: ['Missing key moments'], suggestedActions: ['Adjust cuts', 'Add hook text'] },
-  { pipelineId: 'dub-video', editorType: 'video', priority: 'CRITICAL', capabilities: ['lipSyncFix', 'audioDucking'], commonIssues: ['Lip sync off by 200ms'], suggestedActions: ['Shift audio', 'Fine-tune words'] },
+  // ============================================
+  // SPARK - Script Generation Pipelines
+  // ============================================
+  { pipelineId: 'doc-to-script', editorType: 'document', priority: 'MEDIUM', primaryProduct: 'spark', capabilities: ['scriptEdit'], commonIssues: ['Script structure unclear'], suggestedActions: ['Review structure', 'Enhance sections'], categoryId: 'script-generation' },
+  { pipelineId: 'ppt-to-script', editorType: 'document', priority: 'MEDIUM', primaryProduct: 'spark', capabilities: ['scriptEdit'], commonIssues: ['Missing context'], suggestedActions: ['Add context', 'Expand points'], categoryId: 'script-generation' },
+  { pipelineId: 'video-to-script', editorType: 'document', priority: 'MEDIUM', primaryProduct: 'spark', sharedProducts: ['vibe'], capabilities: ['scriptEdit'], commonIssues: ['Transcription errors'], suggestedActions: ['Review transcript', 'Fix errors'], categoryId: 'script-generation' },
   
-  // PODCAST/WEBCAST PIPELINES (NEW)
-  { pipelineId: 'audio-to-podcast', editorType: 'audio', priority: 'CRITICAL', capabilities: ['trim', 'addMusic', 'audioDucking'], commonIssues: ['Dead air', 'Volume inconsistent'], suggestedActions: ['Trim silence', 'Normalize audio'] },
-  { pipelineId: 'text-to-podcast', editorType: 'audio', priority: 'CRITICAL', capabilities: ['trim', 'addMusic', 'speedControl'], commonIssues: ['AI artifacts', 'Pacing off'], suggestedActions: ['Remove artifacts', 'Adjust pacing'] },
-  { pipelineId: 'interview-to-podcast', editorType: 'audio', priority: 'HIGH', capabilities: ['trim', 'audioDucking'], commonIssues: ['Long pauses', 'Cross-talk'], suggestedActions: ['Remove silence', 'Clean audio'] },
-  { pipelineId: 'podcast-to-clips', editorType: 'video', priority: 'CRITICAL', capabilities: ['trim', 'addCaptions'], commonIssues: ['Clip boundaries wrong'], suggestedActions: ['Fine-tune cuts', 'Add captions'] },
+  // ============================================
+  // MIND - Enhancement Pipelines
+  // ============================================
+  { pipelineId: 'text-to-speech', editorType: 'audio', priority: 'HIGH', primaryProduct: 'mind', sharedProducts: ['vibe', 'deck'], capabilities: ['addVoiceTTS', 'speedControl'], commonIssues: ['Voice tone off', 'Pacing issues'], suggestedActions: ['Adjust speed', 'Try different voice'], categoryId: 'tts-generation' },
+  { pipelineId: 'voice-clone', editorType: 'audio', priority: 'CRITICAL', primaryProduct: 'mind', sharedProducts: ['vibe'], capabilities: ['replaceVoice'], commonIssues: ['Clone not accurate'], suggestedActions: ['Provide cleaner sample', 'Adjust settings'], categoryId: 'tts-generation' },
+  { pipelineId: 'text-to-music', editorType: 'audio', priority: 'MEDIUM', primaryProduct: 'mind', sharedProducts: ['vibe'], capabilities: ['addMusic', 'audioDucking'], commonIssues: ['Music doesn\'t fit mood'], suggestedActions: ['Try different genre', 'Adjust tempo'], categoryId: 'music-generation' },
+  { pipelineId: 'script-translation', editorType: 'document', priority: 'HIGH', primaryProduct: 'mind', sharedProducts: ['cast'], capabilities: ['scriptEdit'], commonIssues: ['Translation context lost'], suggestedActions: ['Review context', 'Manual adjustments'], categoryId: 'translation' },
   
-  // EDITING PIPELINES (NEW)
-  { pipelineId: 'video-trim-split', editorType: 'video', priority: 'HIGH', capabilities: ['trim', 'mergeVideos'], commonIssues: ['Need precise cuts'], suggestedActions: ['Use timeline', 'Set in/out points'] },
-  { pipelineId: 'video-stitch-merge', editorType: 'video', priority: 'HIGH', capabilities: ['mergeVideos', 'transitions'], commonIssues: ['Transitions jarring'], suggestedActions: ['Add crossfade', 'Match audio levels'] },
-  { pipelineId: 'audio-replace-track', editorType: 'video', priority: 'CRITICAL', capabilities: ['replaceVoice', 'audioDucking'], commonIssues: ['Audio sync lost'], suggestedActions: ['Realign tracks', 'Adjust ducking'] },
-  { pipelineId: 'add-tts-voiceover', editorType: 'video', priority: 'CRITICAL', capabilities: ['addVoiceTTS', 'audioDucking'], commonIssues: ['Voice doesn\'t fit'], suggestedActions: ['Try different voice', 'Adjust speed'] },
-  { pipelineId: 'add-stt-captions', editorType: 'video', priority: 'HIGH', capabilities: ['addCaptions', 'styleCaptions'], commonIssues: ['Transcription errors'], suggestedActions: ['Edit text', 'Adjust timing'] },
+  // ============================================
+  // VIBE - Video/Audio Production Pipelines (CRITICAL)
+  // ============================================
+  { pipelineId: 'text-to-video', editorType: 'video', priority: 'CRITICAL', primaryProduct: 'vibe', sharedProducts: ['deck', 'cast'], capabilities: ['trim', 'addVoiceTTS', 'addMusic', 'addCaptions'], commonIssues: ['Voice sounds robotic', 'Too long'], suggestedActions: ['Replace voice', 'Trim to 30s'], categoryId: 'video-generation' },
+  { pipelineId: 'ppt-to-video', editorType: 'video', priority: 'CRITICAL', primaryProduct: 'vibe', sharedProducts: ['deck'], capabilities: ['trim', 'replaceVoice', 'addMusic', 'addCaptions'], commonIssues: ['Slide timing off', 'Voice mismatch'], suggestedActions: ['Adjust timing', 'Replace voiceover'], categoryId: 'video-generation' },
+  { pipelineId: 'text-to-avatar', editorType: 'video', priority: 'CRITICAL', primaryProduct: 'vibe', sharedProducts: ['deck', 'cast'], capabilities: ['trim', 'lipSyncFix', 'addMusic'], commonIssues: ['Lip sync issues', 'Avatar expression'], suggestedActions: ['Fix lip sync', 'Adjust timing'], categoryId: 'avatar-lipsync' },
+  { pipelineId: 'image-to-video', editorType: 'video', priority: 'CRITICAL', primaryProduct: 'vibe', capabilities: ['trim', 'addVoiceTTS', 'addMusic'], commonIssues: ['No voiceover', 'Timing'], suggestedActions: ['Add AI voice', 'Add music'], categoryId: 'video-generation' },
+  { pipelineId: 'script-to-video', editorType: 'video', priority: 'CRITICAL', primaryProduct: 'vibe', capabilities: ['trim', 'replaceVoice', 'addMusic', 'addCaptions'], commonIssues: ['Voice doesn\'t match script'], suggestedActions: ['Regenerate voice', 'Fine-tune'], categoryId: 'video-generation' },
+  { pipelineId: 'dub-video', editorType: 'video', priority: 'CRITICAL', primaryProduct: 'vibe', sharedProducts: ['cast'], capabilities: ['lipSyncFix', 'audioDucking'], commonIssues: ['Lip sync off by 200ms'], suggestedActions: ['Shift audio', 'Fine-tune words'], categoryId: 'dubbing' },
   
-  // MOBILE PIPELINES (NEW)
-  { pipelineId: 'mobile-record-to-reel', editorType: 'video', priority: 'HIGH', capabilities: ['trim', 'addMusic', 'addCaptions', 'cropResize'], commonIssues: ['Need quick polish'], suggestedActions: ['Add music', 'Trim to 60s'] },
-  { pipelineId: 'mobile-quick-edit', editorType: 'video', priority: 'MEDIUM', capabilities: ['trim', 'addCaptions'], commonIssues: ['Basic editing needed'], suggestedActions: ['Quick trim', 'Add filter'] },
-  { pipelineId: 'mobile-voice-memo-to-video', editorType: 'video', priority: 'CRITICAL', capabilities: ['addVoiceTTS', 'addMusic', 'addCaptions'], commonIssues: ['Need visuals'], suggestedActions: ['Add AI visuals', 'Add captions'] },
+  // PODCAST/WEBCAST (Vibe)
+  { pipelineId: 'audio-to-podcast', editorType: 'audio', priority: 'CRITICAL', primaryProduct: 'vibe', sharedProducts: ['cast'], capabilities: ['trim', 'addMusic', 'audioDucking'], commonIssues: ['Dead air', 'Volume inconsistent'], suggestedActions: ['Trim silence', 'Normalize audio'], categoryId: 'podcast-webcast' },
+  { pipelineId: 'text-to-podcast', editorType: 'audio', priority: 'CRITICAL', primaryProduct: 'vibe', capabilities: ['trim', 'addMusic', 'speedControl'], commonIssues: ['AI artifacts', 'Pacing off'], suggestedActions: ['Remove artifacts', 'Adjust pacing'], categoryId: 'podcast-webcast' },
+  { pipelineId: 'interview-to-podcast', editorType: 'audio', priority: 'HIGH', primaryProduct: 'vibe', capabilities: ['trim', 'audioDucking'], commonIssues: ['Long pauses', 'Cross-talk'], suggestedActions: ['Remove silence', 'Clean audio'], categoryId: 'podcast-webcast' },
+  { pipelineId: 'podcast-to-video', editorType: 'video', priority: 'CRITICAL', primaryProduct: 'vibe', sharedProducts: ['cast'], capabilities: ['trim', 'addCaptions', 'textOverlay'], commonIssues: ['Visuals don\'t match audio'], suggestedActions: ['Add captions', 'Trim segments'], categoryId: 'podcast-webcast' },
+  { pipelineId: 'podcast-to-clips', editorType: 'video', priority: 'CRITICAL', primaryProduct: 'vibe', sharedProducts: ['cast'], capabilities: ['trim', 'addCaptions'], commonIssues: ['Clip boundaries wrong'], suggestedActions: ['Fine-tune cuts', 'Add captions'], categoryId: 'podcast-webcast' },
+  { pipelineId: 'webinar-to-clips', editorType: 'video', priority: 'CRITICAL', primaryProduct: 'vibe', sharedProducts: ['cast'], capabilities: ['trim', 'addCaptions', 'cropResize'], commonIssues: ['Cuts too abrupt'], suggestedActions: ['Fine-tune cuts', 'Add transitions'], categoryId: 'podcast-webcast' },
+  { pipelineId: 'long-to-shorts', editorType: 'video', priority: 'CRITICAL', primaryProduct: 'vibe', sharedProducts: ['cast'], capabilities: ['trim', 'addCaptions', 'cropResize'], commonIssues: ['Missing key moments'], suggestedActions: ['Adjust cuts', 'Add hook text'], categoryId: 'video-editing' },
+  
+  // EDITING PIPELINES (Vibe)
+  { pipelineId: 'video-trim-split', editorType: 'video', priority: 'HIGH', primaryProduct: 'vibe', capabilities: ['trim', 'mergeVideos'], commonIssues: ['Need precise cuts'], suggestedActions: ['Use timeline', 'Set in/out points'], categoryId: 'video-editing' },
+  { pipelineId: 'video-stitch-merge', editorType: 'video', priority: 'HIGH', primaryProduct: 'vibe', capabilities: ['mergeVideos', 'transitions'], commonIssues: ['Transitions jarring'], suggestedActions: ['Add crossfade', 'Match audio levels'], categoryId: 'video-editing' },
+  { pipelineId: 'audio-replace-track', editorType: 'video', priority: 'CRITICAL', primaryProduct: 'vibe', capabilities: ['replaceVoice', 'audioDucking'], commonIssues: ['Audio sync lost'], suggestedActions: ['Realign tracks', 'Adjust ducking'], categoryId: 'video-editing' },
+  { pipelineId: 'add-tts-voiceover', editorType: 'video', priority: 'CRITICAL', primaryProduct: 'vibe', sharedProducts: ['mind'], capabilities: ['addVoiceTTS', 'audioDucking'], commonIssues: ['Voice doesn\'t fit'], suggestedActions: ['Try different voice', 'Adjust speed'], categoryId: 'video-editing' },
+  { pipelineId: 'add-stt-captions', editorType: 'video', priority: 'HIGH', primaryProduct: 'vibe', capabilities: ['addCaptions', 'styleCaptions'], commonIssues: ['Transcription errors'], suggestedActions: ['Edit text', 'Adjust timing'], categoryId: 'video-editing' },
+  
+  // MOBILE PIPELINES (Vibe)
+  { pipelineId: 'mobile-record-to-reel', editorType: 'video', priority: 'HIGH', primaryProduct: 'vibe', sharedProducts: ['cast'], capabilities: ['trim', 'addMusic', 'addCaptions', 'cropResize'], commonIssues: ['Need quick polish'], suggestedActions: ['Add music', 'Trim to 60s'], categoryId: 'video-editing' },
+  { pipelineId: 'mobile-quick-edit', editorType: 'video', priority: 'MEDIUM', primaryProduct: 'vibe', capabilities: ['trim', 'addCaptions'], commonIssues: ['Basic editing needed'], suggestedActions: ['Quick trim', 'Add filter'], categoryId: 'video-editing' },
+  { pipelineId: 'mobile-voice-memo-to-video', editorType: 'video', priority: 'CRITICAL', primaryProduct: 'vibe', capabilities: ['addVoiceTTS', 'addMusic', 'addCaptions'], commonIssues: ['Need visuals'], suggestedActions: ['Add AI visuals', 'Add captions'], categoryId: 'video-editing' },
+  
+  // ============================================
+  // DECK - Presentation Pipelines
+  // ============================================
+  { pipelineId: 'text-to-slides', editorType: 'document', priority: 'HIGH', primaryProduct: 'deck', capabilities: ['slideDesign', 'textOverlay', 'imageOverlay'], commonIssues: ['Layout doesn\'t fit content'], suggestedActions: ['Adjust layout', 'Resize elements'], categoryId: 'presentation' },
+  { pipelineId: 'doc-to-ppt', editorType: 'document', priority: 'HIGH', primaryProduct: 'deck', capabilities: ['slideDesign'], commonIssues: ['Too much text per slide'], suggestedActions: ['Split slides', 'Summarize content'], categoryId: 'presentation' },
+  { pipelineId: 'text-to-3d', editorType: '3d', priority: 'HIGH', primaryProduct: 'deck', sharedProducts: ['vibe'], capabilities: ['slideDesign'], commonIssues: ['3D model quality'], suggestedActions: ['Adjust mesh', 'Change angle'], categoryId: '3d-immersive' },
+  { pipelineId: 'image-to-3d', editorType: '3d', priority: 'HIGH', primaryProduct: 'deck', sharedProducts: ['vibe'], capabilities: [], commonIssues: ['Mesh artifacts'], suggestedActions: ['Provide cleaner image', 'Adjust depth'], categoryId: '3d-immersive' },
+  
+  // ============================================
+  // CAST - Distribution Pipelines
+  // ============================================
+  { pipelineId: 'youtube-publish', editorType: 'video', priority: 'MEDIUM', primaryProduct: 'cast', capabilities: ['cropResize', 'batchExport'], commonIssues: ['Thumbnail not generated'], suggestedActions: ['Generate thumbnail', 'Add end screen'], categoryId: 'distribution' },
+  { pipelineId: 'linkedin-publish', editorType: 'video', priority: 'MEDIUM', primaryProduct: 'cast', capabilities: ['cropResize', 'batchExport', 'addCaptions'], commonIssues: ['Video too long for feed'], suggestedActions: ['Create shorter version', 'Add captions'], categoryId: 'distribution' },
+  { pipelineId: 'tiktok-publish', editorType: 'video', priority: 'MEDIUM', primaryProduct: 'cast', capabilities: ['cropResize', 'styleCaptions'], commonIssues: ['Wrong aspect ratio'], suggestedActions: ['Convert to 9:16', 'Add trending captions'], categoryId: 'distribution' },
+  { pipelineId: 'multi-platform-publish', editorType: 'video', priority: 'HIGH', primaryProduct: 'cast', capabilities: ['cropResize', 'batchExport'], commonIssues: ['Platform requirements differ'], suggestedActions: ['Generate variants', 'Review each platform'], categoryId: 'distribution' },
+  
+  // ============================================
+  // ARC - Scheduling/Workflow (No direct editing)
+  // ============================================
+  { pipelineId: 'project-schedule', editorType: 'none', priority: 'LOW', primaryProduct: 'arc', capabilities: [], commonIssues: ['Schedule conflicts'], suggestedActions: ['Review calendar', 'Adjust timeline'], categoryId: 'scheduling' },
 ];
 
 // ==================== PROACTIVE SUGGESTION ENGINE ====================
@@ -251,8 +342,34 @@ class ProactivePipelineEditorService {
     if (pipelineId.includes('audio') || pipelineId.includes('podcast') || pipelineId.includes('voice')) return 'audio';
     if (pipelineId.includes('image') || pipelineId.includes('photo')) return 'image';
     if (pipelineId.includes('3d') || pipelineId.includes('vr') || pipelineId.includes('ar')) return '3d';
-    if (pipelineId.includes('ppt') || pipelineId.includes('doc') || pipelineId.includes('pdf')) return 'document';
+    if (pipelineId.includes('ppt') || pipelineId.includes('doc') || pipelineId.includes('pdf') || pipelineId.includes('slide')) return 'document';
     return 'none';
+  }
+
+  /**
+   * Get primary product for a pipeline
+   */
+  getPrimaryProduct(pipelineId: string): GenieProduct | null {
+    const config = PIPELINE_EDITOR_CONFIGS.find(c => c.pipelineId === pipelineId);
+    return config?.primaryProduct || null;
+  }
+
+  /**
+   * Get pipelines filtered by product
+   */
+  getPipelinesByProduct(product: GenieProduct): PipelineEditorConfig[] {
+    return PIPELINE_EDITOR_CONFIGS.filter(
+      c => c.primaryProduct === product || c.sharedProducts?.includes(product)
+    );
+  }
+
+  /**
+   * Get capabilities filtered by product
+   */
+  getCapabilitiesByProduct(product: GenieProduct): EditCapability[] {
+    return Object.values(EDIT_CAPABILITIES).filter(
+      cap => !cap.compatibleProducts || cap.compatibleProducts.includes(product)
+    );
   }
 
   /**
@@ -261,14 +378,23 @@ class ProactivePipelineEditorService {
   getProactiveSuggestions(
     pipelineId: string,
     outputContent: any,
-    deviceContext: DeviceContext = 'desktop'
+    deviceContext: DeviceContext = 'desktop',
+    productContext?: GenieProduct
   ): ProactiveEditSuggestion[] {
     const suggestions: ProactiveEditSuggestion[] = [];
     const config = PIPELINE_EDITOR_CONFIGS.find(c => c.pipelineId === pipelineId);
     
     if (!config) return suggestions;
 
-    const capabilities = config.capabilities.map(c => EDIT_CAPABILITIES[c]).filter(Boolean);
+    // Get capabilities, filtering by product context if provided
+    let capabilities = config.capabilities.map(c => EDIT_CAPABILITIES[c]).filter(Boolean);
+    
+    // Filter by product context
+    if (productContext) {
+      capabilities = capabilities.filter(
+        cap => !cap.compatibleProducts || cap.compatibleProducts.includes(productContext)
+      );
+    }
     
     // Filter for mobile if needed
     const filteredCapabilities = deviceContext === 'mobile' 
@@ -286,11 +412,12 @@ class ProactivePipelineEditorService {
       estimatedTime: this.estimateEditTime(config.capabilities.length),
       creditCost: this.estimateCreditCost(config.capabilities),
       confidence: config.priority === 'CRITICAL' ? 95 : config.priority === 'HIGH' ? 85 : 70,
-      triggerAction: () => this.openEditor(pipelineId, config.editorType)
+      triggerAction: () => this.openEditor(pipelineId, config.editorType),
+      primaryProduct: config.primaryProduct,
     });
 
-    // Add related suggestions
-    const relatedPipelines = this.getRelatedPipelines(pipelineId);
+    // Add related suggestions (same product)
+    const relatedPipelines = this.getRelatedPipelines(pipelineId, config.primaryProduct);
     relatedPipelines.forEach(related => {
       suggestions.push({
         pipelineId: related.pipelineId,
@@ -302,7 +429,8 @@ class ProactivePipelineEditorService {
         estimatedTime: this.estimateEditTime(related.capabilities.length),
         creditCost: this.estimateCreditCost(related.capabilities),
         confidence: 70,
-        triggerAction: () => this.openEditor(related.pipelineId, related.editorType)
+        triggerAction: () => this.openEditor(related.pipelineId, related.editorType),
+        primaryProduct: related.primaryProduct,
       });
     });
 
@@ -314,9 +442,10 @@ class ProactivePipelineEditorService {
    */
   suggestEditingPipelines(
     contentType: 'video' | 'audio' | 'image' | 'document' | '3d',
-    userIntent?: string
+    userIntent?: string,
+    productContext?: GenieProduct
   ): string[] {
-    const suggestions: string[] = [];
+    let suggestions: string[] = [];
 
     if (contentType === 'video') {
       suggestions.push('video-trim-split', 'add-tts-voiceover', 'add-stt-captions', 'video-stitch-merge');
@@ -332,18 +461,37 @@ class ProactivePipelineEditorService {
       suggestions.push('audio-to-podcast', 'podcast-to-clips', 'podcast-to-video');
     }
 
+    if (contentType === 'document') {
+      suggestions.push('text-to-slides', 'doc-to-ppt');
+    }
+
+    // Filter by product context if provided
+    if (productContext) {
+      const productPipelines = this.getPipelinesByProduct(productContext);
+      const productPipelineIds = productPipelines.map(p => p.pipelineId);
+      suggestions = suggestions.filter(s => productPipelineIds.includes(s));
+    }
+
     return suggestions;
   }
 
   /**
-   * Get related pipelines for cross-suggestions
+   * Get related pipelines for cross-suggestions (filtered by product)
    */
-  private getRelatedPipelines(pipelineId: string): PipelineEditorConfig[] {
+  private getRelatedPipelines(pipelineId: string, product?: GenieProduct): PipelineEditorConfig[] {
     const config = PIPELINE_EDITOR_CONFIGS.find(c => c.pipelineId === pipelineId);
     if (!config) return [];
 
     return PIPELINE_EDITOR_CONFIGS
-      .filter(c => c.pipelineId !== pipelineId && c.editorType === config.editorType)
+      .filter(c => {
+        if (c.pipelineId === pipelineId) return false;
+        if (c.editorType !== config.editorType) return false;
+        // Prioritize same product
+        if (product && c.primaryProduct !== product && !c.sharedProducts?.includes(product)) {
+          return false;
+        }
+        return true;
+      })
       .slice(0, 3);
   }
 
@@ -391,6 +539,13 @@ class ProactivePipelineEditorService {
   }
 
   /**
+   * Get pipelines by category
+   */
+  getPipelinesByCategory(categoryId: string): PipelineEditorConfig[] {
+    return PIPELINE_EDITOR_CONFIGS.filter(c => c.categoryId === categoryId);
+  }
+
+  /**
    * For Ask Genie: Get troubleshooting for common issues
    */
   getTroubleshooting(pipelineId: string, issue: string): string[] {
@@ -406,6 +561,27 @@ class ProactivePipelineEditorService {
     }
 
     return config.suggestedActions;
+  }
+
+  /**
+   * Get editor mode for product context
+   */
+  getEditorModeForProduct(product: GenieProduct): 'canvas' | 'timeline' | 'document' | 'hybrid' {
+    switch (product) {
+      case 'vibe':
+        return 'timeline';
+      case 'deck':
+        return 'canvas';
+      case 'spark':
+      case 'mind':
+        return 'document';
+      case 'cast':
+        return 'canvas'; // Distribution uses canvas for scheduling view
+      case 'arc':
+        return 'canvas'; // Kanban/scheduling
+      default:
+        return 'hybrid';
+    }
   }
 }
 

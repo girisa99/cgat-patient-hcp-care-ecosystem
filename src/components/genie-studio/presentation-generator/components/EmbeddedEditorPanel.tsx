@@ -7,10 +7,16 @@
  * - Proactive editing suggestions from proactivePipelineEditorService
  * - Confidence loop integration for quality assurance
  * - Ask Genie support awareness
- * - Works across all Genie Studio products (Deck, Vibe, Spark, Mind, Arc, Hub)
+ * - Works across all Genie Studio products (Spark, Mind, Vibe, Deck, Arc, Cast)
+ * 
+ * PRODUCT-AWARE MODE SWITCHING:
+ * - Vibe: Timeline mode (video/audio production)
+ * - Deck: Canvas mode (presentations)
+ * - Spark/Mind: Document mode (scripts/enhancement)
+ * - Cast: Canvas mode (distribution scheduling)
  */
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -26,14 +32,17 @@ import {
   Maximize2,
   Grid3X3,
   Film,
-  Download,
   FileText,
+  Download,
   Presentation,
   FileImage,
   FileType,
   Loader2,
   ChevronDown,
   Sparkles,
+  Music,
+  Video,
+  FileEdit,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { EditorProvider, useEditor } from '@/components/universal-editor';
@@ -41,6 +50,8 @@ import { useUniversalExport } from '@/hooks/useUniversalExport';
 import { useProactiveEditing } from '@/hooks/useProactiveEditing';
 import { ProactiveEditingSuggestions } from '@/components/editor/ProactiveEditingSuggestions';
 import { InlinePipelineSelector } from './DynamicPipelineSelector';
+import { proactivePipelineEditorService } from '@/services/proactivePipelineEditorService';
+import { GenieProduct, GENIE_PRODUCTS } from '@/constants/genie-products';
 import type { PresentationSlide } from '../types';
 import type { ActiveProject, UniversalElement } from '@/components/universal-editor/types';
 import type { GeneratedSlide } from '@/services/universalPresentationService';
@@ -53,6 +64,51 @@ interface EmbeddedEditorPanelProps {
   onPipelineChange?: (pipelineId: string) => void;
   onOpenFullEditor?: () => void;
   className?: string;
+  productContext?: GenieProduct; // NEW: Product context for mode switching
+}
+
+// Product to icon mapping
+const PRODUCT_ICONS: Record<GenieProduct, React.ReactNode> = {
+  spark: <Sparkles className="h-4 w-4" />,
+  mind: <FileEdit className="h-4 w-4" />,
+  vibe: <Music className="h-4 w-4" />,
+  deck: <Presentation className="h-4 w-4" />,
+  arc: <Grid3X3 className="h-4 w-4" />,
+  cast: <Video className="h-4 w-4" />,
+  studio: <Layers className="h-4 w-4" />,
+};
+
+// Product to mode mapping
+const PRODUCT_MODES: Record<GenieProduct, 'canvas' | 'timeline' | 'document'> = {
+  spark: 'document',
+  mind: 'document',
+  vibe: 'timeline',
+  deck: 'canvas',
+  arc: 'canvas',
+  cast: 'canvas',
+  studio: 'canvas',
+};
+
+/**
+ * Determine product from output type
+ */
+function getProductFromOutputType(outputType: string): GenieProduct {
+  const lowerOutput = outputType.toLowerCase();
+  
+  if (lowerOutput.includes('video') || lowerOutput.includes('audio') || lowerOutput.includes('podcast')) {
+    return 'vibe';
+  }
+  if (lowerOutput.includes('presentation') || lowerOutput.includes('slide') || lowerOutput.includes('ppt')) {
+    return 'deck';
+  }
+  if (lowerOutput.includes('script') || lowerOutput.includes('doc')) {
+    return 'spark';
+  }
+  if (lowerOutput.includes('social') || lowerOutput.includes('publish')) {
+    return 'cast';
+  }
+  
+  return 'studio'; // Default to studio (master orchestrator)
 }
 
 /**
@@ -91,10 +147,16 @@ function slidesToElements(slides: PresentationSlide[]): UniversalElement[] {
 }
 
 /**
- * Create initial project from slides
+ * Create initial project from slides with product-aware mode
  */
-function createProjectFromSlides(slides: PresentationSlide[], outputType: string): ActiveProject {
-  const mode = outputType.includes('video') ? 'timeline' : 'canvas';
+function createProjectFromSlides(
+  slides: PresentationSlide[], 
+  outputType: string,
+  productContext?: GenieProduct
+): ActiveProject {
+  // Determine mode from product context or output type
+  const product = productContext || getProductFromOutputType(outputType);
+  const mode = PRODUCT_MODES[product] || 'canvas';
   
   return {
     id: `wizard-project-${Date.now()}`,
@@ -152,14 +214,16 @@ function createProjectFromSlides(slides: PresentationSlide[], outputType: string
 function EditorContent({ 
   slides, 
   onOpenFullEditor,
-  pipelineId
+  pipelineId,
+  productContext,
 }: { 
   slides: PresentationSlide[]; 
   onOpenFullEditor?: () => void;
   pipelineId?: string | null;
+  productContext: GenieProduct;
 }) {
   const editor = useEditor();
-  const [activeTab, setActiveTab] = React.useState('preview');
+  const [activeTab, setActiveTab] = useState('preview');
   const { 
     isExporting, 
     exportToPPTX, 
@@ -168,15 +232,27 @@ function EditorContent({
     exportToJSON 
   } = useUniversalExport();
 
+  // Auto-switch mode based on product context
+  useEffect(() => {
+    if (editor && productContext) {
+      const targetMode = PRODUCT_MODES[productContext];
+      if (targetMode && editor.project.mode !== targetMode) {
+        editor.setMode(targetMode);
+      }
+    }
+  }, [productContext, editor]);
+
   if (!editor) return null;
 
   const { project, setMode, selectElements, getSelectedElements } = editor;
   const selectedElements = getSelectedElements();
 
+  // Get product info for display
+  const productInfo = GENIE_PRODUCTS[productContext];
+
   // Convert PresentationSlide to GeneratedSlide for export
   const convertToGeneratedSlides = (): GeneratedSlide[] => {
     return slides.map((slide, index) => {
-      // Map slide type to GeneratedSlide compatible types
       const typeMap: Record<string, 'title' | 'content' | 'section' | 'conclusion' | 'stats' | 'journey' | 'cta' | 'infographic'> = {
         'title': 'title',
         'content': 'content',
@@ -196,7 +272,7 @@ function EditorContent({
         subtitle: slide.subtitle,
         type: typeMap[slide.type] || 'content',
         content: {
-          type: 'bullets' as const, // Always use bullets as fallback for export compatibility
+          type: 'bullets' as const,
           bullets: slide.content?.bullets?.map(b => typeof b === 'string' ? b : b.text || '') || [],
           paragraphs: slide.content?.paragraphs,
           stats: slide.content?.stats,
@@ -232,27 +308,59 @@ function EditorContent({
     }
   };
 
+  // Get available modes based on product
+  const availableModes = productContext === 'vibe' 
+    ? ['timeline', 'canvas'] 
+    : productContext === 'deck' 
+    ? ['canvas', 'timeline'] 
+    : ['canvas', 'timeline', 'document'];
+
   return (
     <div className="space-y-4">
-      {/* Mode Switcher */}
+      {/* Product Context Badge */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Button
-            variant={project.mode === 'canvas' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setMode('canvas')}
-          >
-            <Grid3X3 className="h-4 w-4 mr-1" />
-            Canvas
-          </Button>
-          <Button
-            variant={project.mode === 'timeline' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setMode('timeline')}
-          >
-            <Film className="h-4 w-4 mr-1" />
-            Timeline
-          </Button>
+          <Badge variant="outline" className={cn("flex items-center gap-1", productInfo?.bgColor)}>
+            {PRODUCT_ICONS[productContext]}
+            <span>{productInfo?.name || 'Genie Studio'}</span>
+          </Badge>
+          <span className="text-xs text-muted-foreground">{productInfo?.tagline}</span>
+        </div>
+      </div>
+
+      {/* Mode Switcher - Product Aware */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          {availableModes.includes('canvas') && (
+            <Button
+              variant={project.mode === 'canvas' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setMode('canvas')}
+            >
+              <Grid3X3 className="h-4 w-4 mr-1" />
+              Canvas
+            </Button>
+          )}
+          {availableModes.includes('timeline') && (
+            <Button
+              variant={project.mode === 'timeline' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setMode('timeline')}
+            >
+              <Film className="h-4 w-4 mr-1" />
+              Timeline
+            </Button>
+          )}
+          {availableModes.includes('document') && (
+            <Button
+              variant={project.mode === 'document' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setMode('document' as any)}
+            >
+              <FileText className="h-4 w-4 mr-1" />
+              Document
+            </Button>
+          )}
         </div>
         
         <div className="flex items-center gap-2">
@@ -297,8 +405,8 @@ function EditorContent({
               Full Editor
             </Button>
           )}
+        </div>
       </div>
-    </div>
 
       {/* Editor Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -353,12 +461,18 @@ function EditorContent({
               <Edit3 className="h-8 w-8 mx-auto mb-2" />
               <p>Select an element to edit</p>
               <p className="text-xs mt-1">{project.elements.length} elements available</p>
+              <p className="text-xs mt-2 text-primary">
+                Mode: {project.mode} ({productInfo?.name})
+              </p>
             </div>
           </div>
         </TabsContent>
 
         <TabsContent value="enhance" className="mt-4">
-          <EnhanceTabContent pipelineId={pipelineId || undefined} />
+          <EnhanceTabContent 
+            pipelineId={pipelineId || undefined} 
+            productContext={productContext}
+          />
         </TabsContent>
       </Tabs>
 
@@ -366,33 +480,62 @@ function EditorContent({
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <span>{project.elements.length} slides</span>
         <span>Mode: {project.mode}</span>
-        <span>Ready</span>
+        <span className="flex items-center gap-1">
+          {PRODUCT_ICONS[productContext]}
+          {productInfo?.name}
+        </span>
       </div>
     </div>
   );
 }
 
 /**
- * Main Embedded Editor Panel
+ * Enhance Tab Content - Integrated with Proactive Editing (Product-Aware)
  */
-/**
- * Enhance Tab Content - Integrated with Proactive Editing
- */
-function EnhanceTabContent({ pipelineId }: { pipelineId?: string }) {
+function EnhanceTabContent({ 
+  pipelineId,
+  productContext,
+}: { 
+  pipelineId?: string;
+  productContext: GenieProduct;
+}) {
   const { 
     suggestions, 
     isAnalyzing, 
     triggerEdit, 
     dismissSuggestion,
     analyzePipeline 
-  } = useProactiveEditing({ pipelineId, autoShow: true });
+  } = useProactiveEditing({ 
+    pipelineId, 
+    autoShow: true,
+    productContext, // Pass product context for filtering
+  });
+
+  // Filter suggestions by product context
+  const filteredSuggestions = suggestions.filter(s => {
+    if (!s.primaryProduct) return true;
+    return s.primaryProduct === productContext || productContext === 'studio';
+  });
+
+  // Get product-specific capabilities
+  const productCapabilities = proactivePipelineEditorService.getCapabilitiesByProduct(productContext);
+  const productInfo = GENIE_PRODUCTS[productContext];
 
   return (
     <div className="space-y-4">
+      {/* Product Context Info */}
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <span>Editing capabilities for</span>
+        <Badge variant="outline" className="text-xs">
+          {productInfo?.name}
+        </Badge>
+        <span>({productCapabilities.length} tools available)</span>
+      </div>
+
       {/* Proactive AI Suggestions */}
-      {suggestions.length > 0 && (
+      {filteredSuggestions.length > 0 && (
         <ProactiveEditingSuggestions
-          suggestions={suggestions}
+          suggestions={filteredSuggestions}
           onApply={triggerEdit}
           onDismiss={dismissSuggestion}
         />
@@ -407,16 +550,25 @@ function EnhanceTabContent({ pipelineId }: { pipelineId?: string }) {
       )}
       
       {/* Default actions when no suggestions */}
-      {!isAnalyzing && suggestions.length === 0 && (
+      {!isAnalyzing && filteredSuggestions.length === 0 && (
         <div className="h-[300px] rounded-lg border bg-muted/30 flex items-center justify-center">
           <div className="text-center text-muted-foreground">
             <Wand2 className="h-8 w-8 mx-auto mb-2" />
             <p>AI Enhancement Options</p>
-            <p className="text-xs mt-1">Generate content to see proactive suggestions</p>
+            <p className="text-xs mt-1">
+              {productContext === 'vibe' && 'Trim, add voiceover, music, captions'}
+              {productContext === 'deck' && 'Adjust layout, enhance visuals, add animations'}
+              {productContext === 'mind' && 'Refine script, adjust tone, translate'}
+              {productContext === 'spark' && 'Restructure, expand, summarize'}
+              {productContext === 'cast' && 'Optimize for platforms, schedule distribution'}
+              {!['vibe', 'deck', 'mind', 'spark', 'cast'].includes(productContext) && 'Generate content to see proactive suggestions'}
+            </p>
             <div className="flex flex-wrap gap-2 justify-center mt-3">
-              <Button variant="outline" size="sm">Regenerate</Button>
-              <Button variant="outline" size="sm">Improve</Button>
-              <Button variant="outline" size="sm">Translate</Button>
+              {productCapabilities.slice(0, 3).map(cap => (
+                <Button key={cap.id} variant="outline" size="sm">
+                  {cap.icon} {cap.name}
+                </Button>
+              ))}
             </div>
           </div>
         </div>
@@ -426,7 +578,7 @@ function EnhanceTabContent({ pipelineId }: { pipelineId?: string }) {
 }
 
 /**
- * Main Embedded Editor Panel
+ * Main Embedded Editor Panel - Product Aware
  */
 export function EmbeddedEditorPanel({
   slides,
@@ -436,12 +588,17 @@ export function EmbeddedEditorPanel({
   onPipelineChange,
   onOpenFullEditor,
   className,
+  productContext: propProductContext,
 }: EmbeddedEditorPanelProps) {
   const [selectedPipelineId, setSelectedPipelineId] = useState<string | null>(null);
   
+  // Determine product context from props or output type
+  const productContext = propProductContext || getProductFromOutputType(outputType);
+  const productInfo = GENIE_PRODUCTS[productContext];
+  
   const initialProject = useMemo(
-    () => createProjectFromSlides(slides, outputType),
-    [slides, outputType]
+    () => createProjectFromSlides(slides, outputType, productContext),
+    [slides, outputType, productContext]
   );
 
   const handlePipelineSelect = (pipelineId: string) => {
@@ -455,6 +612,9 @@ export function EmbeddedEditorPanel({
         <CardContent className="py-8 text-center text-muted-foreground">
           <Layers className="h-8 w-8 mx-auto mb-2" />
           <p>Generate content first to enable editing</p>
+          <p className="text-xs mt-2">
+            Editor will open in {PRODUCT_MODES[productContext]} mode for {productInfo?.name}
+          </p>
         </CardContent>
       </Card>
     );
@@ -464,7 +624,7 @@ export function EmbeddedEditorPanel({
     <Card className={className}>
       <CardHeader className="py-3">
         <CardTitle className="text-sm flex items-center gap-2">
-          <Edit3 className="h-4 w-4" />
+          {PRODUCT_ICONS[productContext]}
           Review & Edit Content
           <Badge variant="secondary" className="ml-auto">{slides.length} slides</Badge>
         </CardTitle>
@@ -492,7 +652,12 @@ export function EmbeddedEditorPanel({
         </Collapsible>
         
         <EditorProvider initialProject={initialProject}>
-          <EditorContent slides={slides} onOpenFullEditor={onOpenFullEditor} pipelineId={selectedPipelineId} />
+          <EditorContent 
+            slides={slides} 
+            onOpenFullEditor={onOpenFullEditor} 
+            pipelineId={selectedPipelineId}
+            productContext={productContext}
+          />
         </EditorProvider>
       </CardContent>
     </Card>

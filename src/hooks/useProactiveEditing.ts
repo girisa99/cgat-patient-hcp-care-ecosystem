@@ -3,6 +3,8 @@
  * 
  * Frontend hook for proactive editing suggestions across the Genie ecosystem.
  * Used in Wizard Step 7 (EmbeddedEditorPanel) and standalone editors.
+ * 
+ * PRODUCT-AWARE: Filters suggestions by product context (Vibe, Deck, etc.)
  */
 
 import { useState, useCallback, useEffect } from 'react';
@@ -14,11 +16,13 @@ import {
   DeviceContext
 } from '@/services/proactivePipelineEditorService';
 import { useMasterToast } from '@/hooks/useMasterToast';
+import { GenieProduct } from '@/constants/genie-products';
 
 export interface UseProactiveEditingOptions {
   pipelineId?: string;
   outputType?: string;
   autoShow?: boolean;
+  productContext?: GenieProduct; // NEW: Product context for filtering
 }
 
 export interface UseProactiveEditingReturn {
@@ -33,7 +37,7 @@ export interface UseProactiveEditingReturn {
 }
 
 export const useProactiveEditing = (options: UseProactiveEditingOptions = {}): UseProactiveEditingReturn => {
-  const { pipelineId, outputType, autoShow = true } = options;
+  const { pipelineId, outputType, autoShow = true, productContext } = options;
   const { showSuccess } = useMasterToast();
 
   const [suggestions, setSuggestions] = useState<ProactiveEditSuggestion[]>([]);
@@ -62,7 +66,8 @@ export const useProactiveEditing = (options: UseProactiveEditingOptions = {}): U
       const newSuggestions = proactivePipelineEditorService.getProactiveSuggestions(
         targetPipelineId,
         outputContent || {},
-        deviceContext
+        deviceContext,
+        productContext // Pass product context for filtering
       );
 
       const filtered = newSuggestions.filter(s => !dismissed.has(s.pipelineId));
@@ -76,7 +81,7 @@ export const useProactiveEditing = (options: UseProactiveEditingOptions = {}): U
     } finally {
       setIsAnalyzing(false);
     }
-  }, [autoShow, dismissed]);
+  }, [autoShow, dismissed, productContext]);
 
   useEffect(() => {
     if (pipelineId) {
