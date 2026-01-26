@@ -2,18 +2,27 @@
  * ASK GENIE PIPELINE KNOWLEDGE BASE
  * 
  * Comprehensive knowledge base for Ask Genie to provide Level 1 support
- * with full awareness of all 141 pipelines, editing workflows, wizard steps,
+ * with full awareness of all 180 pipelines, editing workflows, wizard steps,
  * and A2A agent orchestration.
  * 
+ * Updated: Now includes 39 NEW pipelines:
+ * - 16 Podcast/Webcast pipelines (Category 16)
+ * - 15 Editing pipelines with FFmpeg (Category 17)
+ * - 5 Mobile record-to-publish (Category 18)
+ * - 3 Training additions
+ * 
  * This is the "brain" that trains Ask Genie on:
- * - All 141 production pipelines (15 categories)
+ * - All 180 production pipelines (18 categories)
  * - 8-step wizard flow and context
- * - Post-generation editing capabilities
+ * - Post-generation editing capabilities (125 pipelines need editing)
  * - A2A agent orchestration and handoffs
  * - Self-correction and automation levels
+ * - Proactive pipeline suggestions
  */
 
 import { PIPELINE_IO_REGISTRY, PIPELINE_CATEGORY_METADATA, getPipelineStats, type PipelineIOEntry, type PipelineIOCategory } from '@/components/ai-hub/provider-matrix/pipelineIORegistry';
+import { PODCAST_WEBCAST_PIPELINES, EDITING_PIPELINES, MOBILE_PIPELINES, TRAINING_ADDITIONS } from '@/components/ai-hub/provider-matrix/pendingPipelines180';
+import { proactivePipelineEditorService, PIPELINE_EDITOR_CONFIGS, EDIT_CAPABILITIES } from '@/services/proactivePipelineEditorService';
 
 // ==================== PIPELINE KNOWLEDGE ====================
 
