@@ -171,39 +171,53 @@ export const getEcosystemSummary = (): EcosystemSummary => {
 // CATEGORY REGISTRY
 // ============================================
 
+/**
+ * CATEGORY_REGISTRY - 21 Categories across 7 Products
+ * 
+ * Total: 181 pipelines | 21 categories
+ * 
+ * Distribution:
+ * - SPARK: 3 categories, 28 pipelines (Input → Script)
+ * - MIND: 4 categories, 30 pipelines (Script → Enhancement)
+ * - VIBE: 6 categories, 64 pipelines (Script → Screen)
+ * - DECK: 3 categories, 34 pipelines (Visual → Presentation)
+ * - ARC: 2 categories, 14 pipelines (Production Journey)
+ * - CAST: 3 categories, 26 pipelines (Distribution → Scale)
+ * - STUDIO: Orchestrator (all pipelines access)
+ */
 export const CATEGORY_REGISTRY = {
-  // SPARK Categories (3)
-  'input-processing': { product: 'spark', pipelines: 8 },
-  'script-generation': { product: 'spark', pipelines: 12 },
-  'content-extraction': { product: 'spark', pipelines: 8 },
+  // SPARK Categories (3) - "Ignite your Ideas"
+  'input-processing': { product: 'spark', pipelines: 8, edgeFunction: 'document-processor' },
+  'script-generation': { product: 'spark', pipelines: 12, edgeFunction: 'ai-universal-processor' },
+  'content-extraction': { product: 'spark', pipelines: 8, edgeFunction: 'azure-form-recognizer' },
   
-  // MIND Categories (4)
-  'script-enhancement': { product: 'mind', pipelines: 10 },
-  'tts-generation': { product: 'mind', pipelines: 8 },
-  'music-generation': { product: 'mind', pipelines: 6 },
-  'translation': { product: 'mind', pipelines: 6 },
+  // MIND Categories (4) - "AI That Understands"
+  'script-enhancement': { product: 'mind', pipelines: 10, edgeFunction: 'enhance-script' },
+  'tts-generation': { product: 'mind', pipelines: 8, edgeFunction: 'elevenlabs-voice' },
+  'music-generation': { product: 'mind', pipelines: 6, edgeFunction: 'multi-provider-music' },
+  'translation': { product: 'mind', pipelines: 6, edgeFunction: 'translation-service' },
   
-  // VIBE Categories (6)
-  'video-generation': { product: 'vibe', pipelines: 15 },
-  'video-editing': { product: 'vibe', pipelines: 15 },
-  'audio-production': { product: 'vibe', pipelines: 10 },
-  'podcast-webcast': { product: 'vibe', pipelines: 16 },
-  'avatar-lipsync': { product: 'vibe', pipelines: 10 },
-  'dubbing': { product: 'vibe', pipelines: 8 },
+  // VIBE Categories (6) - "Script to Screen"
+  'video-generation': { product: 'vibe', pipelines: 15, edgeFunction: 'ai-video-generator' },
+  'video-editing': { product: 'vibe', pipelines: 15, edgeFunction: 'pipeline-editor-processor' },
+  'audio-production': { product: 'vibe', pipelines: 10, edgeFunction: 'audio-mixer' },
+  'podcast-webcast': { product: 'vibe', pipelines: 16, edgeFunction: 'extract-video-audio' },
+  'avatar-lipsync': { product: 'vibe', pipelines: 10, edgeFunction: 'ai-video-generator' },
+  'dubbing': { product: 'vibe', pipelines: 8, edgeFunction: 'multi-language-audio-orchestrator' },
   
-  // DECK Categories (3)
-  'presentation': { product: 'deck', pipelines: 12 },
-  'visual-design': { product: 'deck', pipelines: 10 },
-  '3d-immersive': { product: 'deck', pipelines: 12 },
+  // DECK Categories (3) - "Ideas to Impact"
+  'presentation': { product: 'deck', pipelines: 12, edgeFunction: 'share-presentation' },
+  'visual-design': { product: 'deck', pipelines: 10, edgeFunction: 'ai-image-generator' },
+  '3d-immersive': { product: 'deck', pipelines: 12, edgeFunction: 'modelslab-media' },
   
-  // ARC Categories (2)
-  'scheduling': { product: 'arc', pipelines: 8 },
-  'collaboration': { product: 'arc', pipelines: 6 },
+  // ARC Categories (2) - "Production Journey"
+  'scheduling': { product: 'arc', pipelines: 8, edgeFunction: 'calendar-sync' },
+  'collaboration': { product: 'arc', pipelines: 6, edgeFunction: 'workspace-collaboration' },
   
-  // CAST Categories (3)
-  'distribution': { product: 'cast', pipelines: 12 },
-  'marketing': { product: 'cast', pipelines: 8 },
-  'analytics': { product: 'cast', pipelines: 6 },
+  // CAST Categories (3) - "Make It. Show It. Scale It."
+  'distribution': { product: 'cast', pipelines: 12, edgeFunction: 'social-publish' },
+  'marketing': { product: 'cast', pipelines: 8, edgeFunction: 'marketing-auto-scheduler' },
+  'analytics': { product: 'cast', pipelines: 6, edgeFunction: 'analytics-dashboard' },
 } as const;
 
 export type CategoryId = keyof typeof CATEGORY_REGISTRY;
