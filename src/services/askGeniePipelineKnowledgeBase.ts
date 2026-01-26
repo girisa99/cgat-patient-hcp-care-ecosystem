@@ -165,18 +165,27 @@ export const WIZARD_STEPS_KNOWLEDGE = {
     {
       step: 7,
       name: 'Generation & Editing',
-      description: 'Dynamic pipeline selection, generation, and embedded editor',
-      capabilities: ['141 pipeline selection', 'Real-time preview', 'Embedded editor', 'Credit preview'],
+      description: 'Dynamic pipeline selection, generation, embedded editor, and proactive editing suggestions',
+      capabilities: ['180 pipeline selection', 'Real-time preview', 'Embedded editor', 'Credit preview', 'Proactive editing suggestions'],
       editingModes: ['Canvas (Presentations)', 'Timeline (Video)', 'Document (Reports)', 'Hybrid'],
+      editingPipelines: {
+        categories: ['Podcast/Webcast (16 pipelines)', 'FFmpeg Editing (15 pipelines)', 'Mobile (5 pipelines)'],
+        operations: ['trim', 'split', 'merge', 'audio-replace', 'add-tts', 'add-stt', 'lip-sync', 'crop', 'speed'],
+        triggerConditions: ['CRITICAL priority auto-shows editor', 'HIGH priority suggests editor', 'MEDIUM optional']
+      },
       commonIssues: [
         'Generation taking too long',
         'Wrong pipeline selected',
-        'Credit cost too high'
+        'Credit cost too high',
+        'Editor suggestions not appearing',
+        'Lip sync off after dubbing'
       ],
       troubleshooting: [
         'Complex pipelines may take 2-5 minutes - check progress indicator',
         'Use "Change Pipeline" button to select different workflow',
-        'Lower tier or reduce visual features to reduce credits'
+        'Lower tier or reduce visual features to reduce credits',
+        'Proactive suggestions appear based on content analysis - generate first',
+        'Use lip-sync fix tool in Enhance tab for avatar alignment issues'
       ]
     },
     {
@@ -586,7 +595,7 @@ export const SUPPORT_TIERS = {
  * Resolution rates by question type
  */
 export const ASK_GENIE_AI_CAPABILITIES = {
-  description: 'AI-powered Level 1 support with full 141 pipeline awareness',
+  description: 'AI-powered Level 1 support with full 180 pipeline awareness including editing',
   capabilities: [
     { type: 'how_to_questions', description: 'How do I add an avatar to my video?', resolutionRate: 95 },
     { type: 'error_explanation', description: 'What does this error mean?', resolutionRate: 90 },
@@ -594,10 +603,12 @@ export const ASK_GENIE_AI_CAPABILITIES = {
     { type: 'troubleshooting', description: 'My export isn\'t working', resolutionRate: 70 },
     { type: 'account_questions', description: 'How do I upgrade?', resolutionRate: 95 },
     { type: 'pipeline_selection', description: 'Which pipeline should I use for X?', resolutionRate: 90 },
-    { type: 'best_practices', description: 'How do I get better results?', resolutionRate: 95 }
+    { type: 'best_practices', description: 'How do I get better results?', resolutionRate: 95 },
+    { type: 'editing_guidance', description: 'How do I fix lip sync / add captions?', resolutionRate: 92 },
+    { type: 'proactive_suggestions', description: 'What edits should I make?', resolutionRate: 88 }
   ],
   averageResolutionRate: 90,
-  pipelineAwareness: { totalPipelines: 141, categories: 15, wizardSteps: 8, editingModes: 4, a2aAgents: 8 }
+  pipelineAwareness: { totalPipelines: 180, categories: 18, wizardSteps: 8, editingModes: 4, a2aAgents: 8, editOperations: 10 }
 };
 
 /**
@@ -681,19 +692,26 @@ export const SUPPORT_DIFFERENTIATORS = [
 
 export const SUPPORT_KNOWLEDGE = {
   escalationLevels: [
-    { level: 1, name: 'Ask Genie AI', description: 'AI-powered first response with full 141 pipeline knowledge', responseTime: '< 1 min' },
+    { level: 1, name: 'Ask Genie AI', description: 'AI-powered first response with full 180 pipeline + editing knowledge', responseTime: '< 1 min' },
     { level: 2, name: 'Community Support', description: 'User-to-user assistance forum', responseTime: '< 4 hours' },
     { level: 3, name: 'Support Agent', description: 'Human support agent (Tier-based SLA)', responseTime: 'Per tier SLA' },
     { level: 4, name: 'Technical Specialist', description: 'Engineering escalation with context export', responseTime: '< 24 hours' },
     { level: 5, name: 'Management', description: 'Critical issue escalation', responseTime: 'Custom' }
   ],
-  selfServiceResources: ['Knowledge Base articles', 'Video walkthroughs', 'Interactive tutorials', 'FAQ database', 'Community discussions'],
-  commonCategories: ['Generation issues', 'Credit/billing questions', 'Feature requests', 'Quality concerns', 'Account/access issues', 'Integration problems', 'Performance issues'],
+  selfServiceResources: ['Knowledge Base articles', 'Video walkthroughs', 'Interactive tutorials', 'FAQ database', 'Community discussions', 'Proactive editing suggestions'],
+  commonCategories: ['Generation issues', 'Credit/billing questions', 'Feature requests', 'Quality concerns', 'Account/access issues', 'Integration problems', 'Performance issues', 'Editing/Post-production issues'],
   tiers: SUPPORT_TIERS,
   aiCapabilities: ASK_GENIE_AI_CAPABILITIES,
   escalationFlow: ESCALATION_FLOW,
   engineeringContext: ENGINEERING_CONTEXT_EXPORT,
-  differentiators: SUPPORT_DIFFERENTIATORS
+  differentiators: SUPPORT_DIFFERENTIATORS,
+  // Editing-specific support
+  editingSupport: {
+    pipelineEditorConfigs: PIPELINE_EDITOR_CONFIGS,
+    editCapabilities: EDIT_CAPABILITIES,
+    proactiveSuggestionsEnabled: true,
+    confidenceLoopIntegration: true
+  }
 };
 
 // ==================== MAIN KNOWLEDGE BASE CLASS ====================

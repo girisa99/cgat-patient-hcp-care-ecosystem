@@ -32,3 +32,26 @@ export { scheduledPublishingService } from '@/services/scheduledPublishingServic
 export { aiProviderService } from '@/services/aiProviderService';
 export { enhancedAIService } from '@/services/enhancedAIService';
 export { unifiedAIConnector } from '@/services/unifiedAIConnector';
+
+// Proactive editing services (NEW)
+export { 
+  proactivePipelineEditorService, 
+  PIPELINE_EDITOR_CONFIGS,
+  EDIT_CAPABILITIES,
+  type ProactiveEditSuggestion,
+  type PipelineEditorConfig,
+  type EditCapability,
+  type EditorType,
+  type EditorPriority,
+  type DeviceContext
+} from '@/services/proactivePipelineEditorService';
+
+// Ask Genie Knowledge Base (updated with 180 pipelines + editing)
+export { 
+  askGeniePipelineKnowledgeBase,
+  WIZARD_STEPS_KNOWLEDGE,
+  EDITING_KNOWLEDGE,
+  A2A_AGENT_KNOWLEDGE,
+  SUPPORT_KNOWLEDGE,
+  ASK_GENIE_AI_CAPABILITIES
+} from '@/services/askGeniePipelineKnowledgeBase';
