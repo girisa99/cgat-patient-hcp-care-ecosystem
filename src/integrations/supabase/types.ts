@@ -3304,6 +3304,110 @@ export type Database = {
         }
         Relationships: []
       }
+      beta_participants: {
+        Row: {
+          bugs_reported: number | null
+          created_at: string | null
+          email: string
+          features_tested: number | null
+          feedback_count: number | null
+          id: string
+          invited_by: string | null
+          joined_at: string | null
+          metadata: Json | null
+          referral_code: string | null
+          status: string | null
+          tier: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          bugs_reported?: number | null
+          created_at?: string | null
+          email: string
+          features_tested?: number | null
+          feedback_count?: number | null
+          id?: string
+          invited_by?: string | null
+          joined_at?: string | null
+          metadata?: Json | null
+          referral_code?: string | null
+          status?: string | null
+          tier?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          bugs_reported?: number | null
+          created_at?: string | null
+          email?: string
+          features_tested?: number | null
+          feedback_count?: number | null
+          id?: string
+          invited_by?: string | null
+          joined_at?: string | null
+          metadata?: Json | null
+          referral_code?: string | null
+          status?: string | null
+          tier?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "beta_participants_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "beta_participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      beta_rewards: {
+        Row: {
+          claimed_at: string | null
+          created_at: string | null
+          earned_at: string | null
+          expires_at: string | null
+          id: string
+          metadata: Json | null
+          reward_name: string
+          reward_type: string
+          reward_value: Json
+          source_action: string
+          source_pipeline: string | null
+          user_id: string
+        }
+        Insert: {
+          claimed_at?: string | null
+          created_at?: string | null
+          earned_at?: string | null
+          expires_at?: string | null
+          id?: string
+          metadata?: Json | null
+          reward_name: string
+          reward_type: string
+          reward_value: Json
+          source_action: string
+          source_pipeline?: string | null
+          user_id: string
+        }
+        Update: {
+          claimed_at?: string | null
+          created_at?: string | null
+          earned_at?: string | null
+          expires_at?: string | null
+          id?: string
+          metadata?: Json | null
+          reward_name?: string
+          reward_type?: string
+          reward_value?: Json
+          source_action?: string
+          source_pipeline?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       bulk_jobs: {
         Row: {
           completed_at: string | null
@@ -4398,6 +4502,60 @@ export type Database = {
         }
         Relationships: []
       }
+      creator_profiles: {
+        Row: {
+          avatar_url: string | null
+          badges: Json | null
+          created_at: string | null
+          display_name: string | null
+          id: string
+          level: string | null
+          lifetime_points: number | null
+          longest_streak: number | null
+          pipelines_used: string[] | null
+          preferred_language: string | null
+          streak_count: number | null
+          timezone: string | null
+          total_points: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          badges?: Json | null
+          created_at?: string | null
+          display_name?: string | null
+          id?: string
+          level?: string | null
+          lifetime_points?: number | null
+          longest_streak?: number | null
+          pipelines_used?: string[] | null
+          preferred_language?: string | null
+          streak_count?: number | null
+          timezone?: string | null
+          total_points?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          badges?: Json | null
+          created_at?: string | null
+          display_name?: string | null
+          id?: string
+          level?: string | null
+          lifetime_points?: number | null
+          longest_streak?: number | null
+          pipelines_used?: string[] | null
+          preferred_language?: string | null
+          streak_count?: number | null
+          timezone?: string | null
+          total_points?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       credit_application_audit: {
         Row: {
           action_type: string
@@ -4776,6 +4934,42 @@ export type Database = {
           use_cases?: string[]
           visibility?: Database["public"]["Enums"]["template_visibility"] | null
           visual_style?: string | null
+        }
+        Relationships: []
+      }
+      daily_streaks: {
+        Row: {
+          activity_type: string
+          content_id: string | null
+          created_at: string | null
+          id: string
+          pipeline_id: string | null
+          points_earned: number | null
+          streak_date: string
+          streak_day: number | null
+          user_id: string
+        }
+        Insert: {
+          activity_type: string
+          content_id?: string | null
+          created_at?: string | null
+          id?: string
+          pipeline_id?: string | null
+          points_earned?: number | null
+          streak_date?: string
+          streak_day?: number | null
+          user_id: string
+        }
+        Update: {
+          activity_type?: string
+          content_id?: string | null
+          created_at?: string | null
+          id?: string
+          pipeline_id?: string | null
+          points_earned?: number | null
+          streak_date?: string
+          streak_day?: number | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -15647,6 +15841,57 @@ export type Database = {
           },
         ]
       }
+      optimal_post_times: {
+        Row: {
+          avg_engagement: number | null
+          created_at: string | null
+          day_of_week: number
+          engagement_score: number | null
+          hour_utc: number
+          id: string
+          is_recommended: boolean | null
+          language: string | null
+          last_calculated_at: string | null
+          platform: string
+          post_count: number | null
+          region: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          avg_engagement?: number | null
+          created_at?: string | null
+          day_of_week: number
+          engagement_score?: number | null
+          hour_utc: number
+          id?: string
+          is_recommended?: boolean | null
+          language?: string | null
+          last_calculated_at?: string | null
+          platform: string
+          post_count?: number | null
+          region?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          avg_engagement?: number | null
+          created_at?: string | null
+          day_of_week?: number
+          engagement_score?: number | null
+          hour_utc?: number
+          id?: string
+          is_recommended?: boolean | null
+          language?: string | null
+          last_calculated_at?: string | null
+          platform?: string
+          post_count?: number | null
+          region?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       patient_enrollments: {
         Row: {
           agent_channel: string | null
@@ -17433,6 +17678,54 @@ export type Database = {
         }
         Relationships: []
       }
+      referrals: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          referral_code: string
+          referred_at: string | null
+          referred_id: string
+          referrer_id: string
+          reward_type: string | null
+          reward_value: Json | null
+          rewarded_at: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          referral_code: string
+          referred_at?: string | null
+          referred_id: string
+          referrer_id: string
+          reward_type?: string | null
+          reward_value?: Json | null
+          rewarded_at?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          referral_code?: string
+          referred_at?: string | null
+          referred_id?: string
+          referrer_id?: string
+          reward_type?: string | null
+          reward_value?: Json | null
+          rewarded_at?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       role_api_access: {
         Row: {
           access_level: string
@@ -17635,6 +17928,72 @@ export type Database = {
           id?: string
           is_default?: boolean | null
           name?: Database["public"]["Enums"]["user_role"]
+        }
+        Relationships: []
+      }
+      scheduled_posts: {
+        Row: {
+          content_data: Json
+          content_id: string | null
+          created_at: string | null
+          error_message: string | null
+          hashtags: string[] | null
+          id: string
+          media_urls: string[] | null
+          mentions: string[] | null
+          pipeline_id: string | null
+          platform: string
+          platform_config: Json | null
+          publish_result: Json | null
+          published_at: string | null
+          retry_count: number | null
+          scheduled_time: string
+          status: string | null
+          timezone: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          content_data: Json
+          content_id?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          hashtags?: string[] | null
+          id?: string
+          media_urls?: string[] | null
+          mentions?: string[] | null
+          pipeline_id?: string | null
+          platform: string
+          platform_config?: Json | null
+          publish_result?: Json | null
+          published_at?: string | null
+          retry_count?: number | null
+          scheduled_time: string
+          status?: string | null
+          timezone?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          content_data?: Json
+          content_id?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          hashtags?: string[] | null
+          id?: string
+          media_urls?: string[] | null
+          mentions?: string[] | null
+          pipeline_id?: string | null
+          platform?: string
+          platform_config?: Json | null
+          publish_result?: Json | null
+          published_at?: string | null
+          retry_count?: number | null
+          scheduled_time?: string
+          status?: string | null
+          timezone?: string | null
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
