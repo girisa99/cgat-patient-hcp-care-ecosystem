@@ -37,7 +37,10 @@ export type PipelineIOCategory =
   | 'training_ld'
   | 'marketing_sales'
   | 'localization'
-  | 'creator_enhancement'; // NEW: Critical user-demand tools
+  | 'creator_enhancement'
+  | 'podcast_webcast'  // NEW: 16 Podcast/Webcast pipelines
+  | 'editing'          // NEW: 15 FFmpeg-wrapped editing pipelines
+  | 'mobile';          // NEW: 5 Mobile record-to-publish pipelines
 
 // ═══════════════════════════════════════════════════════════════
 // CATEGORY 1: TEXT-BASED (10 Pipelines)
@@ -1733,6 +1736,24 @@ export const PIPELINE_CATEGORY_METADATA: Record<PipelineIOCategory, {
     count: 22,
     color: 'bg-fuchsia-100 text-fuchsia-800',
     description: 'Critical user-demand tools: captions, upscaling, backgrounds, thumbnails'
+  },
+  podcast_webcast: {
+    label: 'Category 16: Podcast/Webcast',
+    count: 16,
+    color: 'bg-violet-100 text-violet-800',
+    description: 'Podcast and webcast creation pipelines'
+  },
+  editing: {
+    label: 'Category 17: Editing',
+    count: 15,
+    color: 'bg-slate-100 text-slate-800',
+    description: 'FFmpeg-wrapped video/audio editing pipelines'
+  },
+  mobile: {
+    label: 'Category 18: Mobile',
+    count: 5,
+    color: 'bg-lime-100 text-lime-800',
+    description: 'Mobile record-to-publish pipelines'
   }
 };
 
