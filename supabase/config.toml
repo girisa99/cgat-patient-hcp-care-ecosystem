@@ -329,3 +329,6 @@ verify_jwt = false
 
 [functions.marketing-auto-scheduler]
 verify_jwt = true
+
+[functions.pipeline-editor-processor]
+verify_jwt = false

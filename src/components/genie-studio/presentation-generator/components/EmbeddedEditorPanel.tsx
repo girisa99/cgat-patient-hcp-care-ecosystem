@@ -1,10 +1,16 @@
 /**
  * Embedded Editor Panel for Step 7
  * Integrates Universal Editor into the wizard flow
- * Now with Universal Export and Dynamic Pipeline Selection
+ * Now with Universal Export, Dynamic Pipeline Selection, and Proactive Editing
+ * 
+ * ECOSYSTEM INTEGRATION:
+ * - Proactive editing suggestions from proactivePipelineEditorService
+ * - Confidence loop integration for quality assurance
+ * - Ask Genie support awareness
+ * - Works across all Genie Studio products (Deck, Vibe, Spark, Mind, Arc, Hub)
  */
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,7 +23,6 @@ import {
   Layers, 
   Eye, 
   Wand2, 
-  Save,
   Maximize2,
   Grid3X3,
   Film,
@@ -33,6 +38,8 @@ import {
 import { cn } from '@/lib/utils';
 import { EditorProvider, useEditor } from '@/components/universal-editor';
 import { useUniversalExport } from '@/hooks/useUniversalExport';
+import { useProactiveEditing } from '@/hooks/useProactiveEditing';
+import { ProactiveEditingSuggestions } from '@/components/editor/ProactiveEditingSuggestions';
 import { InlinePipelineSelector } from './DynamicPipelineSelector';
 import type { PresentationSlide } from '../types';
 import type { ActiveProject, UniversalElement } from '@/components/universal-editor/types';
@@ -144,10 +151,12 @@ function createProjectFromSlides(slides: PresentationSlide[], outputType: string
  */
 function EditorContent({ 
   slides, 
-  onOpenFullEditor 
+  onOpenFullEditor,
+  pipelineId
 }: { 
   slides: PresentationSlide[]; 
   onOpenFullEditor?: () => void;
+  pipelineId?: string | null;
 }) {
   const editor = useEditor();
   const [activeTab, setActiveTab] = React.useState('preview');
@@ -349,17 +358,7 @@ function EditorContent({
         </TabsContent>
 
         <TabsContent value="enhance" className="mt-4">
-          <div className="h-[400px] rounded-lg border bg-muted/30 flex items-center justify-center">
-            <div className="text-center text-muted-foreground">
-              <Wand2 className="h-8 w-8 mx-auto mb-2" />
-              <p>AI Enhancement Options</p>
-              <div className="flex flex-wrap gap-2 justify-center mt-3">
-                <Button variant="outline" size="sm">Regenerate</Button>
-                <Button variant="outline" size="sm">Improve</Button>
-                <Button variant="outline" size="sm">Translate</Button>
-              </div>
-            </div>
-          </div>
+          <EnhanceTabContent pipelineId={pipelineId || undefined} />
         </TabsContent>
       </Tabs>
 
@@ -369,6 +368,59 @@ function EditorContent({
         <span>Mode: {project.mode}</span>
         <span>Ready</span>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Main Embedded Editor Panel
+ */
+/**
+ * Enhance Tab Content - Integrated with Proactive Editing
+ */
+function EnhanceTabContent({ pipelineId }: { pipelineId?: string }) {
+  const { 
+    suggestions, 
+    isAnalyzing, 
+    triggerEdit, 
+    dismissSuggestion,
+    analyzePipeline 
+  } = useProactiveEditing({ pipelineId, autoShow: true });
+
+  return (
+    <div className="space-y-4">
+      {/* Proactive AI Suggestions */}
+      {suggestions.length > 0 && (
+        <ProactiveEditingSuggestions
+          suggestions={suggestions}
+          onApply={triggerEdit}
+          onDismiss={dismissSuggestion}
+        />
+      )}
+      
+      {/* Loading state */}
+      {isAnalyzing && (
+        <div className="flex items-center justify-center py-8 text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin mr-2" />
+          <span>Analyzing content for suggestions...</span>
+        </div>
+      )}
+      
+      {/* Default actions when no suggestions */}
+      {!isAnalyzing && suggestions.length === 0 && (
+        <div className="h-[300px] rounded-lg border bg-muted/30 flex items-center justify-center">
+          <div className="text-center text-muted-foreground">
+            <Wand2 className="h-8 w-8 mx-auto mb-2" />
+            <p>AI Enhancement Options</p>
+            <p className="text-xs mt-1">Generate content to see proactive suggestions</p>
+            <div className="flex flex-wrap gap-2 justify-center mt-3">
+              <Button variant="outline" size="sm">Regenerate</Button>
+              <Button variant="outline" size="sm">Improve</Button>
+              <Button variant="outline" size="sm">Translate</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -440,7 +492,7 @@ export function EmbeddedEditorPanel({
         </Collapsible>
         
         <EditorProvider initialProject={initialProject}>
-          <EditorContent slides={slides} onOpenFullEditor={onOpenFullEditor} />
+          <EditorContent slides={slides} onOpenFullEditor={onOpenFullEditor} pipelineId={selectedPipelineId} />
         </EditorProvider>
       </CardContent>
     </Card>
