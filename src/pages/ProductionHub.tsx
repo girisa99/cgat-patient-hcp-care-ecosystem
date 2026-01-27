@@ -6,7 +6,7 @@
  * UNIFIED INFRASTRUCTURE: GlobalTierFilter, OutputCompatibility, ProviderTierBadge
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -56,7 +56,7 @@ import {
   Wand2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useShows } from '@/hooks/useShows';
 import { useProjects } from '@/hooks/useProjects';
 import { useGenieScripts } from '@/components/genie-studio/useGenieScripts';
@@ -116,6 +116,7 @@ const getStageRequirements = (stage: ProductionStage) => {
 
 export default function ProductionHub() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   
   // Unified Regional + Tier routing - affects all AI processing in production pipeline
   const { globalTier, setGlobalTier, tierConfig } = useRegionalLanguage({ defaultTier: 'advanced' });
@@ -146,6 +147,32 @@ export default function ProductionHub() {
   const [selectedShow, setSelectedShow] = useState<ShowWithParticipants | null>(null);
   const [newProjectName, setNewProjectName] = useState('');
   const [newEventCategory, setNewEventCategory] = useState<EventCategory>('media_production');
+  
+  // Handle URL params for pre-selecting a show or linking a script
+  useEffect(() => {
+    if (isLoading || shows.length === 0) return;
+    
+    const showId = searchParams.get('show');
+    const linkScriptId = searchParams.get('linkScript');
+    
+    // Pre-select show from URL param
+    if (showId) {
+      const targetShow = shows.find(s => s.id === showId);
+      if (targetShow) {
+        setSelectedShow(targetShow);
+        // Set the category tab to match the show's category
+        if (targetShow.event_category) {
+          setActiveCategory(targetShow.event_category as EventCategory);
+        }
+      }
+    }
+    
+    // If linking a script, open the create dialog with the script pre-selected
+    if (linkScriptId && !showId) {
+      setNewShow(prev => ({ ...prev, linked_script_id: linkScriptId }));
+      setIsCreateDialogOpen(true);
+    }
+  }, [isLoading, shows, searchParams]);
   const [newShow, setNewShow] = useState({
     title: '',
     description: '',
