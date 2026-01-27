@@ -1,28 +1,27 @@
 /**
  * PRODUCTION HUB ADMIN PANEL
  * 
- * Comprehensive admin panel for managing:
- * - Landing video generation with AI (TTS, Avatars, 3D)
- * - Advanced Avatar & 3D generation (Alibaba, Meshy, ModelsLab, DeepSeek)
+ * Unified admin panel for managing:
+ * - Composition Studio: Multi-modal, multi-language content creation
  * - Content scheduler across 14 regions and 6 platforms
  * - Analytics and monitoring for videos and scheduler
+ * - Workspace and team management
  * 
  * Tied to Arc/Production Hub functionality
  */
 
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { 
-  Video, Calendar, BarChart3, Settings, 
-  Globe, Wand2, Play, RefreshCw, User, Box,
+  Video, Calendar, BarChart3, 
+  Globe, Wand2, Sparkles,
   Building2, Users, Paintbrush
 } from 'lucide-react';
-import { VideoGenerationStudio } from './VideoGenerationStudio';
+import { UnifiedCompositionStudio } from './composition-studio';
 import { ContentSchedulerDashboard } from './ContentSchedulerDashboard';
 import { ProductionAnalytics } from './ProductionAnalytics';
-import { AdvancedAvatarGenerationPanel } from './AdvancedAvatarGenerationPanel';
 import { WorkspaceManagement } from './WorkspaceManagement';
 import { TeamInviteManagement } from './TeamInviteManagement';
 import { WhitelabelConfiguration } from './WhitelabelConfiguration';
@@ -32,7 +31,7 @@ interface ProductionHubAdminProps {
 }
 
 export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ className }) => {
-  const [activeTab, setActiveTab] = useState('video-studio');
+  const [activeTab, setActiveTab] = useState('composition');
 
   return (
     <div className={`space-y-6 ${className || ''}`}>
@@ -44,7 +43,7 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
             Production Hub Admin
           </h1>
           <p className="text-muted-foreground">
-            Manage AI video generation, avatars, 3D content, scheduling, and analytics
+            Create multi-modal content, manage scheduling, and monitor analytics
           </p>
         </div>
         <div className="flex gap-2">
@@ -76,11 +75,11 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
           <CardContent className="pt-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-violet-500/10 rounded-lg">
-                <User className="w-5 h-5 text-violet-500" />
+                <Sparkles className="w-5 h-5 text-violet-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold">8</p>
-                <p className="text-xs text-muted-foreground">Avatars Created</p>
+                <p className="text-2xl font-bold">24</p>
+                <p className="text-xs text-muted-foreground">Compositions</p>
               </div>
             </div>
           </CardContent>
@@ -89,11 +88,11 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
           <CardContent className="pt-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-cyan-500/10 rounded-lg">
-                <Box className="w-5 h-5 text-cyan-500" />
+                <Globe className="w-5 h-5 text-cyan-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold">5</p>
-                <p className="text-xs text-muted-foreground">3D Models</p>
+                <p className="text-2xl font-bold">14</p>
+                <p className="text-xs text-muted-foreground">Languages</p>
               </div>
             </div>
           </CardContent>
@@ -102,11 +101,11 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
           <CardContent className="pt-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-amber-500/10 rounded-lg">
-                <Globe className="w-5 h-5 text-amber-500" />
+                <Calendar className="w-5 h-5 text-amber-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold">14</p>
-                <p className="text-xs text-muted-foreground">Active Regions</p>
+                <p className="text-2xl font-bold">8</p>
+                <p className="text-xs text-muted-foreground">Scheduled</p>
               </div>
             </div>
           </CardContent>
@@ -126,16 +125,13 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
         </Card>
       </div>
 
-      {/* Main Tabs */}
+      {/* Main Tabs - Simplified with Composition Studio as primary */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-7">
-          <TabsTrigger value="video-studio" className="flex items-center gap-2">
-            <Video className="w-4 h-4" />
-            <span className="hidden lg:inline">Video Studio</span>
-          </TabsTrigger>
-          <TabsTrigger value="avatar-3d" className="flex items-center gap-2">
-            <User className="w-4 h-4" />
-            <span className="hidden lg:inline">Avatar & 3D</span>
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="composition" className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4" />
+            <span className="hidden lg:inline">Composition Studio</span>
+            <span className="lg:hidden">Create</span>
           </TabsTrigger>
           <TabsTrigger value="scheduler" className="flex items-center gap-2">
             <Calendar className="w-4 h-4" />
@@ -159,12 +155,9 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="video-studio" className="mt-6">
-          <VideoGenerationStudio />
-        </TabsContent>
-
-        <TabsContent value="avatar-3d" className="mt-6">
-          <AdvancedAvatarGenerationPanel />
+        {/* Composition Studio - Primary Tab (replaces fragmented Video + Avatar/3D) */}
+        <TabsContent value="composition" className="mt-6">
+          <UnifiedCompositionStudio />
         </TabsContent>
 
         <TabsContent value="scheduler" className="mt-6">
