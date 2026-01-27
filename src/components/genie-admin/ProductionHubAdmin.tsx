@@ -2,36 +2,83 @@
  * PRODUCTION HUB ADMIN PANEL
  * 
  * Unified admin panel for managing:
+ * - Content Library: View/edit existing generated content
  * - Composition Studio: Multi-modal, multi-language content creation
  * - Content scheduler across 14 regions and 6 platforms
  * - Analytics and monitoring for videos and scheduler
  * - Workspace and team management
  * 
  * Tied to Arc/Production Hub functionality
+ * Supports deep-linking via URL params (?show=id, ?linkScript=id, ?tab=xxx)
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { 
   Video, Calendar, BarChart3, 
   Globe, Wand2, Sparkles,
-  Building2, Users, Paintbrush
+  Building2, Users, Paintbrush,
+  FolderOpen, Layers
 } from 'lucide-react';
-import { UnifiedCompositionStudio } from './composition-studio';
+import { UnifiedCompositionStudio, ContentLibrary } from './composition-studio';
 import { ContentSchedulerDashboard } from './ContentSchedulerDashboard';
 import { ProductionAnalytics } from './ProductionAnalytics';
 import { WorkspaceManagement } from './WorkspaceManagement';
 import { TeamInviteManagement } from './TeamInviteManagement';
 import { WhitelabelConfiguration } from './WhitelabelConfiguration';
+import { toast } from 'sonner';
 
 interface ProductionHubAdminProps {
   className?: string;
 }
 
+type AdminTab = 'library' | 'composition' | 'scheduler' | 'analytics' | 'workspaces' | 'team' | 'whitelabel';
+
 export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ className }) => {
-  const [activeTab, setActiveTab] = useState('composition');
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Get initial tab from URL or default to 'library'
+  const initialTab = (searchParams.get('tab') as AdminTab) || 'library';
+  const [activeTab, setActiveTab] = useState<AdminTab>(initialTab);
+  
+  // Handle deep-linking for show/script
+  const showId = searchParams.get('show');
+  const linkScriptId = searchParams.get('linkScript');
+
+  useEffect(() => {
+    // If coming with show or script params, switch to composition tab
+    if (showId || linkScriptId) {
+      setActiveTab('composition');
+      if (showId) {
+        toast.info(`Opening show: ${showId}`);
+      } else if (linkScriptId) {
+        toast.info('Ready to link script to new composition');
+      }
+    }
+  }, [showId, linkScriptId]);
+
+  // Sync tab changes to URL
+  const handleTabChange = (newTab: string) => {
+    setActiveTab(newTab as AdminTab);
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('tab', newTab);
+    // Clear show/script params when changing tabs
+    newParams.delete('show');
+    newParams.delete('linkScript');
+    setSearchParams(newParams);
+  };
+
+  const handleEditComposition = (compositionId: string) => {
+    setActiveTab('composition');
+    toast.info(`Editing composition: ${compositionId}`);
+  };
+
+  const handleCreateNew = () => {
+    setActiveTab('composition');
+  };
 
   return (
     <div className={`space-y-6 ${className || ''}`}>
@@ -43,7 +90,7 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
             Production Hub Admin
           </h1>
           <p className="text-muted-foreground">
-            Create multi-modal content, manage scheduling, and monitor analytics
+            Create, manage, and publish multi-modal content across all platforms
           </p>
         </div>
         <div className="flex gap-2">
@@ -75,7 +122,7 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
           <CardContent className="pt-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-violet-500/10 rounded-lg">
-                <Sparkles className="w-5 h-5 text-violet-500" />
+                <Sparkles className="w-5 h-5" style={{ color: '#8B5CF6' }} />
               </div>
               <div>
                 <p className="text-2xl font-bold">24</p>
@@ -88,7 +135,7 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
           <CardContent className="pt-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-cyan-500/10 rounded-lg">
-                <Globe className="w-5 h-5 text-cyan-500" />
+                <Globe className="w-5 h-5" style={{ color: '#06B6D4' }} />
               </div>
               <div>
                 <p className="text-2xl font-bold">14</p>
@@ -101,7 +148,7 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
           <CardContent className="pt-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-amber-500/10 rounded-lg">
-                <Calendar className="w-5 h-5 text-amber-500" />
+                <Calendar className="w-5 h-5" style={{ color: '#F59E0B' }} />
               </div>
               <div>
                 <p className="text-2xl font-bold">8</p>
@@ -114,7 +161,7 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
           <CardContent className="pt-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-500/10 rounded-lg">
-                <BarChart3 className="w-5 h-5 text-blue-500" />
+                <BarChart3 className="w-5 h-5" style={{ color: '#3B82F6' }} />
               </div>
               <div>
                 <p className="text-2xl font-bold">8.5K</p>
@@ -125,12 +172,17 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
         </Card>
       </div>
 
-      {/* Main Tabs - Simplified with Composition Studio as primary */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+      {/* Main Tabs - Content Library as primary, then Composition Studio */}
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+        <TabsList className="grid w-full grid-cols-7">
+          <TabsTrigger value="library" className="flex items-center gap-2">
+            <FolderOpen className="w-4 h-4" />
+            <span className="hidden lg:inline">Content Library</span>
+            <span className="lg:hidden">Library</span>
+          </TabsTrigger>
           <TabsTrigger value="composition" className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4" />
-            <span className="hidden lg:inline">Composition Studio</span>
+            <Layers className="w-4 h-4" />
+            <span className="hidden lg:inline">Create New</span>
             <span className="lg:hidden">Create</span>
           </TabsTrigger>
           <TabsTrigger value="scheduler" className="flex items-center gap-2">
@@ -155,7 +207,15 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
           </TabsTrigger>
         </TabsList>
 
-        {/* Composition Studio - Primary Tab (replaces fragmented Video + Avatar/3D) */}
+        {/* Content Library - View existing content */}
+        <TabsContent value="library" className="mt-6">
+          <ContentLibrary 
+            onEdit={handleEditComposition}
+            onCreateNew={handleCreateNew}
+          />
+        </TabsContent>
+
+        {/* Composition Studio - Create new content */}
         <TabsContent value="composition" className="mt-6">
           <UnifiedCompositionStudio />
         </TabsContent>

@@ -332,12 +332,9 @@ const AppContent = () => {
                       </Suspense>
                     </ProtectedRoute>
                   } />
+                  {/* Redirect /genie-studio/productions to /genie-admin - consolidated admin panel */}
                   <Route path="/genie-studio/productions" element={
-                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider', 'onboardingTeam', 'demoUser']}>
-                      <Suspense fallback={<PageLoading message="Loading Production Hub..." />}>
-                        <LazyPages.ProductionHub />
-                      </Suspense>
-                    </ProtectedRoute>
+                    <Navigate to="/genie-admin?tab=library" replace />
                   } />
                   <Route path="/production-hub" element={
                     <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider', 'onboardingTeam', 'demoUser']}>
