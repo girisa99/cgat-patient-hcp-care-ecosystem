@@ -52,14 +52,19 @@ export const hasAnyRole = (userRoles: string[] = [], required: string[] = []): b
 };
 
 // Centralized default route resolver based on normalized roles
-export const getDefaultRouteForRoles = (roles: string[] = []): string => {
+// Role-based routing: Internal/Admin → Production Hub, Others → Studio/Dashboard
+export const getDefaultRouteForRoles = (roles: string[] = [], isInternal?: boolean): string => {
   const r = normalizeRoles(roles);
 
-  // Priority: superAdmin > onboardingTeam > healthcareProvider > demoUser > default
-  if (r.includes('superAdmin')) return '/dashboard';
-  if (r.includes('onboardingTeam')) return '/onboarding';
-  if (r.includes('healthcareProvider')) return '/dashboard';
+  // Internal admins go directly to Production Hub
+  if (isInternal) return '/genie-admin';
+
+  // Priority: superAdmin → Admin Hub, onboardingTeam → Production Hub, others → Dashboard
+  if (r.includes('superAdmin')) return '/genie-admin';
+  if (r.includes('admin')) return '/genie-admin';
+  if (r.includes('onboardingTeam')) return '/genie-admin';
+  if (r.includes('healthcareProvider')) return '/genie-studio';
   if (r.includes('demoUser')) return '/demo-dashboard';
 
-  return '/dashboard';
+  return '/genie-studio';
 };

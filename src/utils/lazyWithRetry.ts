@@ -95,11 +95,11 @@ export function lazyWithRetry<T extends React.ComponentType<any>>(
 /**
  * Pre-defined lazy loaders for commonly used pages
  * GenieStudio has extended timeout (60s) due to its size
+ * Note: GenieArc removed - merged into Production Hub (/genie-admin)
  */
 export const LazyPages = {
   GenieStudio: lazyWithRetry(() => import('@/pages/GenieStudio'), 3, 2000, 60000), // 60s timeout for large file
   GenieSpark: lazyWithRetry(() => import('@/pages/GenieSpark')),
-  GenieArc: lazyWithRetry(() => import('@/pages/GenieArc')),
   GenieMind: lazyWithRetry(() => import('@/pages/GenieMind')),
   GenieVibe: lazyWithRetry(() => import('@/pages/GenieVibe')),
   ProductionHub: lazyWithRetry(() => import('@/pages/ProductionHub')),

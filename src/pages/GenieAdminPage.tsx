@@ -1,23 +1,51 @@
 /**
- * GENIE ADMIN PAGE
- * Admin page for managing internal Genie Studio users and Production Hub
- * Restricted to internal users with super_admin role
+ * GENIE ADMIN PAGE - UNIFIED PRODUCTION HUB
+ * Consolidated admin page with:
+ * - Production Hub (Kanban, Calendar, Library, Create, Scheduler)
+ * - Arc features merged (Appointments, Schedule flow)
+ * - User Management (internal users only)
+ * 
+ * Role-based access:
+ * - Internal users: Full access
+ * - superAdmin/admin: Full access
+ * - Others: Access via /genie-studio card navigation
  */
-import React, { useState } from 'react';
+import React, { Suspense, lazy } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
-import InternalUserAdminPanel from '@/components/genie-admin/InternalUserAdminPanel';
-import ProductionHubAdmin from '@/components/genie-admin/ProductionHubAdmin';
 import { useGenieStudioAuth } from '@/hooks/useGenieStudioAuth';
-import { Shield, AlertTriangle, Users, Video } from 'lucide-react';
+import { useMasterAuth } from '@/hooks/useMasterAuth';
+import { Shield, AlertTriangle, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useNavigate } from 'react-router-dom';
 
+// Lazy load the heavy ProductionHubAdmin to fix loading issues
+const ProductionHubAdmin = lazy(() => 
+  import('@/components/genie-admin/ProductionHubAdmin').then(m => ({ default: m.ProductionHubAdmin }))
+);
+
+const LoadingFallback = () => (
+  <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+    <Loader2 className="w-10 h-10 animate-spin text-primary" />
+    <p className="text-muted-foreground">Loading Production Hub...</p>
+  </div>
+);
+
 const GenieAdminPage: React.FC = () => {
-  const { isAuthenticated, isInternalUser } = useGenieStudioAuth();
+  const { isAuthenticated: isGenieAuth, isInternalUser } = useGenieStudioAuth();
+  const { isAuthenticated: isMasterAuth, userRoles } = useMasterAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('production');
+  
+  // Allow access if either auth system confirms user
+  const isAuthenticated = isGenieAuth || isMasterAuth;
+  
+  // Check if user has admin-level roles in master auth
+  const hasAdminRole = userRoles?.some(role => 
+    ['superAdmin', 'admin', 'onboardingTeam'].includes(role)
+  );
+  
+  // Allow access for internal users OR users with admin roles
+  const hasAccess = isInternalUser || hasAdminRole;
   
   if (!isAuthenticated) {
     return (
@@ -30,7 +58,7 @@ const GenieAdminPage: React.FC = () => {
                 Authentication Required
               </CardTitle>
               <CardDescription>
-                Please sign in to access the admin panel
+                Please sign in to access the Production Hub
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -42,7 +70,7 @@ const GenieAdminPage: React.FC = () => {
     );
   }
   
-  if (!isInternalUser) {
+  if (!hasAccess) {
     return (
       <AppLayout>
         <div className="container max-w-4xl py-8">
@@ -50,14 +78,19 @@ const GenieAdminPage: React.FC = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Shield className="h-5 w-5 text-destructive" />
-                Access Denied
+                Access Restricted
               </CardTitle>
               <CardDescription>
-                This page is restricted to internal administrators only
+                The Production Hub is available to administrators and internal team members
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <Button variant="outline" onClick={() => navigate('/genie-studio')}>Go to Dashboard</Button>
+            <CardContent className="flex gap-3">
+              <Button variant="outline" onClick={() => navigate('/genie-studio')}>
+                Go to Genie Studio
+              </Button>
+              <Button variant="outline" onClick={() => navigate('/genie-arc')}>
+                Go to Genie Arc
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -67,28 +100,9 @@ const GenieAdminPage: React.FC = () => {
   
   return (
     <AppLayout>
-      <div className="container py-8">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-6">
-            <TabsTrigger value="production" className="flex items-center gap-2">
-              <Video className="w-4 h-4" />
-              Production Hub
-            </TabsTrigger>
-            <TabsTrigger value="users" className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              User Management
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="production">
-            <ProductionHubAdmin />
-          </TabsContent>
-          
-          <TabsContent value="users">
-            <InternalUserAdminPanel />
-          </TabsContent>
-        </Tabs>
-      </div>
+      <Suspense fallback={<LoadingFallback />}>
+        <ProductionHubAdmin />
+      </Suspense>
     </AppLayout>
   );
 };

@@ -304,12 +304,9 @@ const AppContent = () => {
                       </Suspense>
                     </ProtectedRoute>
                   } />
+                  {/* Genie Arc - Redirect to Production Hub with calendar tab (schedule flow merged) */}
                   <Route path="/genie-arc" element={
-                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider', 'onboardingTeam', 'demoUser']}>
-                      <Suspense fallback={<PageLoading message="Loading Genie Arc..." />}>
-                        <LazyPages.GenieArc />
-                      </Suspense>
-                    </ProtectedRoute>
+                    <Navigate to="/genie-admin?tab=calendar" replace />
                   } />
                   <Route path="/genie-mind" element={
                     <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider', 'onboardingTeam', 'demoUser']}>
@@ -332,13 +329,15 @@ const AppContent = () => {
                       </Suspense>
                     </ProtectedRoute>
                   } />
-                  {/* Redirect /genie-studio/productions to /genie-admin - consolidated admin panel */}
+                  {/* Redirect all production routes to consolidated /genie-admin */}
                   <Route path="/genie-studio/productions" element={
                     <Navigate to="/genie-admin?tab=library" replace />
                   } />
-                  {/* Redirect /production-hub to /genie-admin - consolidated admin panel */}
                   <Route path="/production-hub" element={
                     <Navigate to="/genie-admin?tab=kanban" replace />
+                  } />
+                  <Route path="/arc/*" element={
+                    <Navigate to="/genie-admin?tab=calendar" replace />
                   } />
                   <Route path="/marketing-materials" element={
                     <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'onboardingTeam', 'healthcareProvider', 'demoUser']}>
