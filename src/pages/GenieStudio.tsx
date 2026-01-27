@@ -11,7 +11,7 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import AppLayout from '@/components/layout/AppLayout';
+import { GenieStudioLayout } from '@/components/layout/GenieStudioLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -1574,7 +1574,7 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
   // DESKTOP VIEW - Full studio with all features
   // ============================================================
   return (
-    <AppLayout>
+    <GenieStudioLayout variant="topbar">
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
         {/* Hero Carousel Section */}
         <div className="relative border-b border-border/50">
@@ -3835,6 +3835,6 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
         
         {/* Ralph Wiggum is now rendered globally from App.tsx */}
       </div>
-    </AppLayout>
+    </GenieStudioLayout>
   );
 }

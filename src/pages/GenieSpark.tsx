@@ -8,7 +8,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import AppLayout from '@/components/layout/AppLayout';
+import { GenieStudioLayout } from '@/components/layout/GenieStudioLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -100,7 +100,7 @@ const GenieSpark: React.FC = () => {
   };
 
   return (
-    <AppLayout>
+    <GenieStudioLayout variant="topbar">
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-orange-950/10">
         {/* Hero Header */}
         <div className="relative overflow-hidden border-b border-border/50 bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-yellow-500/10">
@@ -266,7 +266,7 @@ const GenieSpark: React.FC = () => {
           />
         </div>
       </div>
-    </AppLayout>
+    </GenieStudioLayout>
   );
 };
 

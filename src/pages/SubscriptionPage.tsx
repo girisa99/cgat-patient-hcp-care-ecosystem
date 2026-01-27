@@ -2,7 +2,7 @@ import React from 'react';
 import { SubscriptionProvider, SubscriptionStatus } from '@/components/subscription';
 import { EnhancedPricingSection } from '@/components/subscription/EnhancedPricingSection';
 import { HorizontalProductShowcase } from '@/components/subscription/HorizontalProductShowcase';
-import AppLayout from '@/components/layout/AppLayout';
+import { GenieStudioLayout } from '@/components/layout/GenieStudioLayout';
 import { CreditCard, TrendingUp, Users, Zap, Shield, Package, Sparkles, Check, Play, Brain, Mic, Film, Target, ArrowRight } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -22,7 +22,7 @@ const SubscriptionPage = () => {
 
   return (
     <SubscriptionProvider>
-      <AppLayout>
+      <GenieStudioLayout variant="topbar">
         <div className="min-h-screen">
           {/* Enhanced Hero Header */}
           <div className="relative border-b border-border/50 bg-gradient-to-br from-primary/5 via-background to-purple-500/5">
@@ -246,7 +246,7 @@ const SubscriptionPage = () => {
             </section>
           </div>
         </div>
-      </AppLayout>
+      </GenieStudioLayout>
     </SubscriptionProvider>
   );
 };

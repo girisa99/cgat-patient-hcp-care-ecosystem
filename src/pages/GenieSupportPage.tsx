@@ -4,7 +4,7 @@
  * Accessible to all authenticated Genie Studio users
  */
 import React from 'react';
-import AppLayout from '@/components/layout/AppLayout';
+import { GenieStudioLayout } from '@/components/layout/GenieStudioLayout';
 import SupportTicketCreator from '@/components/genie-support/SupportTicketCreator';
 import { useGenieStudioAuth } from '@/hooks/useGenieStudioAuth';
 import { HelpCircle, ArrowRight } from 'lucide-react';
@@ -17,7 +17,7 @@ const GenieSupportPage: React.FC = () => {
   const navigate = useNavigate();
   
   return (
-    <AppLayout>
+    <GenieStudioLayout variant="topbar">
       <div className="container max-w-4xl py-8">
         {/* Header */}
         <div className="text-center mb-8">
@@ -88,7 +88,7 @@ const GenieSupportPage: React.FC = () => {
           </Card>
         </div>
       </div>
-    </AppLayout>
+    </GenieStudioLayout>
   );
 };
 

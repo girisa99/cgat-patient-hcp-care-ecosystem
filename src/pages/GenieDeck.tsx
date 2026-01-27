@@ -5,7 +5,7 @@
 
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import AppLayout from '@/components/layout/AppLayout';
+import { GenieStudioLayout } from '@/components/layout/GenieStudioLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -196,7 +196,7 @@ const GenieDeck = () => {
   }, []);
 
   return (
-    <AppLayout showNavigation={false}>
+    <GenieStudioLayout variant="none">
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-purple-950/5">
         {/* Compact Header - Matches reference design */}
         <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -299,7 +299,7 @@ const GenieDeck = () => {
           sessionData={{ hasGeneratedContent }}
         />
       </div>
-    </AppLayout>
+    </GenieStudioLayout>
   );
 };
 
