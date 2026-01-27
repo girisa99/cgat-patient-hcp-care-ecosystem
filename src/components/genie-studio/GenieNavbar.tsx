@@ -39,18 +39,18 @@ export const GenieNavbar: React.FC<GenieNavbarProps> = ({
 
         {/* Center Navigation */}
         <div className="hidden md:flex items-center gap-6">
-          <Link 
-            to="/genie-landing#products" 
-            className={`text-sm font-medium transition ${isActive('/genie-landing') ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+          <a 
+            href="/genie-landing#products" 
+            className="text-sm font-medium transition text-muted-foreground hover:text-foreground"
           >
             Products
-          </Link>
-          <Link 
-            to="/pricing" 
-            className={`text-sm font-medium transition ${isActive('/pricing') ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+          </a>
+          <a 
+            href="/genie-landing#pricing" 
+            className="text-sm font-medium transition text-muted-foreground hover:text-foreground"
           >
             Pricing
-          </Link>
+          </a>
           <Link 
             to="/explore" 
             className={`text-sm font-medium transition ${isActive('/explore') ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
