@@ -22,6 +22,10 @@ import {
 } from 'lucide-react';
 import genieSuiteLogo from '@/assets/logos/genie-studio-suite-logo.png';
 
+// Landing page components
+import { HeroVideoPlayer } from '@/components/landing/HeroVideoPlayer';
+import { InteractiveLanguageDemo } from '@/components/landing/InteractiveLanguageDemo';
+
 // Product logos
 import genieSparkLogo from '@/assets/logos/products/genie-spark.png';
 import genieMindLogo from '@/assets/logos/products/genie-mind.png';
@@ -150,15 +154,7 @@ const HERO_CONTENT: Record<RegionCode, HeroContent> = {
   },
 };
 
-const ARABIC_DIALECTS = [
-  { code: 'ar-msa', name: 'MSA', region: 'Formal/News', example: 'ابدأ بإنشاء مقاطع فيديو رائعة' },
-  { code: 'ar-SA', name: 'Saudi', region: 'Saudi Arabia', example: 'ابدأ تسوي فيديوهات روعة' },
-  { code: 'ar-gulf', name: 'Gulf', region: 'UAE/Kuwait/Qatar', example: 'ابدا سوّي فيديوهات حلوة' },
-  { code: 'ar-EG', name: 'Egyptian', region: 'Egypt', example: 'ابدأ اعمل فيديوهات جامدة' },
-  { code: 'ar-levantine', name: 'Levantine', region: 'Lebanon/Syria', example: 'بلّش اعمل فيديوهات كتير حلوة' },
-  { code: 'ar-maghrebi', name: 'Maghrebi', region: 'Morocco/Algeria', example: 'بدا دير فيديوهات زوينين' },
-  { code: 'ar-IQ', name: 'Iraqi', region: 'Iraq', example: 'ابدي سوّي فيديوهات روعة' },
-];
+// Arabic dialects moved to InteractiveLanguageDemo component
 
 const PRICING_TIERS = [
   { name: 'Free', price: 0, pipelines: 41, languages: 10, credits: 50, features: ['720p', '5 exports/mo', 'Watermark'] },
@@ -196,14 +192,11 @@ const socialLinks = [
 // ============================================
 
 const GenieStudioLanding: React.FC = () => {
-  const navigate = useNavigate();
   const productCarouselRef = useRef<HTMLDivElement>(null);
   const providerCarouselRef = useRef<HTMLDivElement>(null);
   const [region, setRegion] = useState<RegionCode>('NAM');
   const [isSimulated, setIsSimulated] = useState(false);
   const [activeProduct, setActiveProduct] = useState('vibe');
-  const [showTranscreation, setShowTranscreation] = useState(true);
-  const [langTab, setLangTab] = useState<'arabic' | 'indian' | 'african'>('arabic');
   const [isProductHovered, setIsProductHovered] = useState(false);
   const [isProviderHovered, setIsProviderHovered] = useState(false);
 
@@ -404,33 +397,11 @@ const GenieStudioLanding: React.FC = () => {
 
             {/* Right: Video showcase */}
             <div className="relative">
-              <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-primary/20 border border-border">
-                <img 
-                  src={hero.video} 
-                  alt={hero.theme}
-                  className="w-full aspect-video object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                
-                {/* Video overlay */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <button className="w-20 h-20 bg-primary/20 backdrop-blur rounded-full flex items-center justify-center hover:bg-primary/30 transition">
-                    <Play className="h-8 w-8 ml-1 text-primary-foreground" />
-                  </button>
-                </div>
-
-                {/* Bottom info */}
-                <div className="absolute bottom-4 left-4 right-4 flex justify-between items-center">
-                  <div className="flex items-center gap-2 px-3 py-1 bg-black/50 rounded-full backdrop-blur">
-                    <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                    <span className="text-xs text-green-400">95% AI Confidence</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <span className="px-2 py-1 bg-black/50 rounded text-xs backdrop-blur text-white">4K</span>
-                    <span className="px-2 py-1 bg-black/50 rounded text-xs backdrop-blur text-white">AI Avatar</span>
-                  </div>
-                </div>
-              </div>
+              <HeroVideoPlayer 
+                region={region} 
+                theme={hero.theme}
+                languageCount={hero.stats.languages || hero.stats.dialects || '70+'}
+              />
 
               {/* Floating badges */}
               <div className="absolute -top-4 -right-4 px-4 py-2 bg-primary rounded-lg shadow-lg animate-bounce" style={{ animationDuration: '3s' }}>
@@ -667,7 +638,7 @@ const GenieStudioLanding: React.FC = () => {
         </div>
       </section>
 
-      {/* SECTION 4: LANGUAGE POWER */}
+      {/* SECTION 4: LANGUAGE POWER - Interactive Demo */}
       <section id="languages" className="py-24 relative">
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-background to-background" />
         
@@ -681,144 +652,8 @@ const GenieStudioLanding: React.FC = () => {
             </p>
           </div>
 
-          {/* Stats */}
-          <div className="flex justify-center gap-8 mb-12">
-            <div className="text-center">
-              <p className="text-4xl font-bold text-foreground">70+</p>
-              <p className="text-muted-foreground">Core Languages</p>
-            </div>
-            <div className="w-px bg-border" />
-            <div className="text-center">
-              <p className="text-4xl font-bold text-primary">140+</p>
-              <p className="text-muted-foreground">Extended</p>
-            </div>
-            <div className="w-px bg-border" />
-            <div className="text-center">
-              <p className="text-4xl font-bold text-accent">249+</p>
-              <p className="text-muted-foreground">Translation</p>
-            </div>
-          </div>
-
-          {/* Tabs */}
-          <div className="flex flex-wrap justify-center gap-4 mb-8">
-            {[
-              { id: 'arabic' as const, label: '🇸🇦 7 Arabic Dialects', badge: 'Exclusive' },
-              { id: 'indian' as const, label: '🇮🇳 22 Indian Languages', badge: 'Most complete' },
-              { id: 'african' as const, label: '🌍 10 African Languages', badge: 'First mover' },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setLangTab(tab.id)}
-                className={`relative px-6 py-3 rounded-full transition ${
-                  langTab === tab.id
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-card border border-border text-foreground hover:bg-muted'
-                }`}
-              >
-                {tab.label}
-                <span className="absolute -top-2 -right-2 px-2 py-0.5 bg-accent text-accent-foreground text-xs font-bold rounded-full">
-                  {tab.badge}
-                </span>
-              </button>
-            ))}
-          </div>
-
-          {/* Arabic dialects */}
-          {langTab === 'arabic' && (
-            <div className="bg-card border border-border rounded-2xl p-8 shadow-md">
-              <h3 className="text-2xl font-bold mb-6 text-center text-foreground">
-                Same Message, 7 Different Dialects
-              </h3>
-              <p className="text-muted-foreground text-center mb-8">
-                "Start creating amazing videos today!" — naturally localized
-              </p>
-              
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {ARABIC_DIALECTS.map((dialect) => (
-                  <div key={dialect.code} className="p-4 bg-muted rounded-xl hover:bg-muted/80 transition">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-primary font-bold">{dialect.name}</span>
-                      <span className="text-muted-foreground text-sm">{dialect.region}</span>
-                    </div>
-                    <p className="text-xl text-right text-foreground" dir="rtl">{dialect.example}</p>
-                  </div>
-                ))}
-              </div>
-              
-              <div className="mt-6 p-4 bg-green-500/10 rounded-xl border border-green-500/30 text-center">
-                <p className="text-green-600 dark:text-green-400">
-                  ⭐ <strong>NO competitor offers all 7 Arabic dialects</strong> — this is our moat!
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Indian languages */}
-          {langTab === 'indian' && (
-            <div className="bg-card border border-border rounded-2xl p-8 shadow-md">
-              <h3 className="text-2xl font-bold mb-6 text-center text-foreground">
-                22 Indian Languages + Code-Mixing
-              </h3>
-              
-              {/* Toggle */}
-              <div className="flex justify-center mb-8">
-                <div className="inline-flex p-1 bg-muted rounded-full">
-                  <button
-                    onClick={() => setShowTranscreation(false)}
-                    className={`px-4 py-2 rounded-full transition ${!showTranscreation ? 'bg-destructive text-destructive-foreground' : 'text-muted-foreground'}`}
-                  >
-                    ❌ Literal Translation
-                  </button>
-                  <button
-                    onClick={() => setShowTranscreation(true)}
-                    className={`px-4 py-2 rounded-full transition ${showTranscreation ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
-                  >
-                    ✅ Genie Transcreation
-                  </button>
-                </div>
-              </div>
-
-              {/* Comparison */}
-              <div className="grid md:grid-cols-2 gap-8">
-                <div className={`p-6 rounded-xl ${!showTranscreation ? 'bg-destructive/10 border border-destructive/30' : 'bg-muted'}`}>
-                  <p className="text-muted-foreground mb-2">Hindi (Literal - Robotic):</p>
-                  <p className="text-xl text-foreground">"कृपया हमारे AI-संचालित पाठ्यक्रम निर्माता को मुफ्त में आज़माएं"</p>
-                  {!showTranscreation && <p className="text-destructive text-sm mt-2">❌ Textbook style. Nobody talks like this.</p>}
-                </div>
-                <div className={`p-6 rounded-xl ${showTranscreation ? 'bg-green-500/10 border border-green-500/30' : 'bg-muted'}`}>
-                  <p className="text-muted-foreground mb-2">Hinglish (Natural speech):</p>
-                  <p className="text-xl text-foreground">"AI course creator free में try करो! एकदम मस्त है!"</p>
-                  {showTranscreation && <p className="text-green-600 dark:text-green-400 text-sm mt-2">✅ Natural urban speech with English terms</p>}
-                </div>
-              </div>
-
-              <div className="mt-6 flex flex-wrap justify-center gap-2">
-                {['Hindi', 'Bengali', 'Telugu', 'Tamil', 'Marathi', 'Gujarati', 'Kannada', 'Malayalam'].map((lang) => (
-                  <span key={lang} className="px-3 py-1 bg-muted rounded-full text-sm text-foreground">{lang}</span>
-                ))}
-                <span className="px-3 py-1 bg-primary/20 rounded-full text-sm text-primary">+14 more</span>
-              </div>
-            </div>
-          )}
-
-          {/* African languages */}
-          {langTab === 'african' && (
-            <div className="bg-card border border-border rounded-2xl p-8 shadow-md">
-              <h3 className="text-2xl font-bold mb-6 text-center text-foreground">
-                10 African Languages — First Mover Advantage
-              </h3>
-              <div className="flex flex-wrap justify-center gap-4 mb-6">
-                {['Swahili', 'Yoruba', 'Hausa', 'Zulu', 'Amharic', 'Igbo', 'Xhosa', 'Afrikaans', 'Kinyarwanda', 'Somali'].map((lang) => (
-                  <span key={lang} className="px-4 py-2 bg-muted rounded-full text-foreground">{lang}</span>
-                ))}
-              </div>
-              <div className="p-4 bg-yellow-500/10 rounded-xl border border-yellow-500/30 text-center">
-                <p className="text-yellow-600 dark:text-yellow-400">
-                  🌍 <strong>First mover in African language AI content</strong> — 500M+ potential users
-                </p>
-              </div>
-            </div>
-          )}
+          {/* Interactive Language Demo Component */}
+          <InteractiveLanguageDemo initialTab="arabic" />
         </div>
       </section>
 
