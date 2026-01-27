@@ -23,7 +23,7 @@ import {
 import genieSuiteLogo from '@/assets/logos/genie-studio-suite-logo.png';
 
 // Landing page components
-import { HeroLandingVideo } from '@/components/landing/HeroLandingVideo';
+import { HeroLiveVideoPlayer } from '@/components/landing/HeroLiveVideoPlayer';
 import { InteractiveLanguageDemo } from '@/components/landing/InteractiveLanguageDemo';
 import { IndustryShowcases } from '@/components/landing/IndustryShowcases';
 import { CrossFunctionalSection } from '@/components/landing/CrossFunctionalSection';
@@ -401,7 +401,7 @@ const GenieStudioLanding: React.FC = () => {
 
             {/* Right: Pre-generated Video Player with AI Provider Attribution */}
             <div className="relative">
-              <HeroLandingVideo />
+              <HeroLiveVideoPlayer autoGenerate={false} />
               {/* Floating badges */}
               <div className="absolute -top-4 -right-4 px-4 py-2 bg-primary rounded-lg shadow-lg animate-bounce z-20" style={{ animationDuration: '3s' }}>
                 <p className="text-sm font-medium text-primary-foreground">🌍 {hero.stats.languages || hero.stats.dialects} Languages</p>
