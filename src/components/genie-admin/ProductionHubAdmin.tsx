@@ -16,12 +16,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { 
   Video, Calendar, BarChart3, Settings, 
-  Globe, Wand2, Play, RefreshCw, User, Box
+  Globe, Wand2, Play, RefreshCw, User, Box,
+  Building2, Users, Paintbrush
 } from 'lucide-react';
 import { VideoGenerationStudio } from './VideoGenerationStudio';
 import { ContentSchedulerDashboard } from './ContentSchedulerDashboard';
 import { ProductionAnalytics } from './ProductionAnalytics';
 import { AdvancedAvatarGenerationPanel } from './AdvancedAvatarGenerationPanel';
+import { WorkspaceManagement } from './WorkspaceManagement';
+import { TeamInviteManagement } from './TeamInviteManagement';
+import { WhitelabelConfiguration } from './WhitelabelConfiguration';
 
 interface ProductionHubAdminProps {
   className?: string;
@@ -124,22 +128,34 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="video-studio" className="flex items-center gap-2">
             <Video className="w-4 h-4" />
-            Video Studio
+            <span className="hidden lg:inline">Video Studio</span>
           </TabsTrigger>
           <TabsTrigger value="avatar-3d" className="flex items-center gap-2">
             <User className="w-4 h-4" />
-            Avatar & 3D
+            <span className="hidden lg:inline">Avatar & 3D</span>
           </TabsTrigger>
           <TabsTrigger value="scheduler" className="flex items-center gap-2">
             <Calendar className="w-4 h-4" />
-            Scheduler
+            <span className="hidden lg:inline">Scheduler</span>
           </TabsTrigger>
           <TabsTrigger value="analytics" className="flex items-center gap-2">
             <BarChart3 className="w-4 h-4" />
-            Analytics
+            <span className="hidden lg:inline">Analytics</span>
+          </TabsTrigger>
+          <TabsTrigger value="workspaces" className="flex items-center gap-2">
+            <Building2 className="w-4 h-4" />
+            <span className="hidden lg:inline">Workspaces</span>
+          </TabsTrigger>
+          <TabsTrigger value="team" className="flex items-center gap-2">
+            <Users className="w-4 h-4" />
+            <span className="hidden lg:inline">Team</span>
+          </TabsTrigger>
+          <TabsTrigger value="whitelabel" className="flex items-center gap-2">
+            <Paintbrush className="w-4 h-4" />
+            <span className="hidden lg:inline">Whitelabel</span>
           </TabsTrigger>
         </TabsList>
 
@@ -157,6 +173,18 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
 
         <TabsContent value="analytics" className="mt-6">
           <ProductionAnalytics />
+        </TabsContent>
+
+        <TabsContent value="workspaces" className="mt-6">
+          <WorkspaceManagement />
+        </TabsContent>
+
+        <TabsContent value="team" className="mt-6">
+          <TeamInviteManagement />
+        </TabsContent>
+
+        <TabsContent value="whitelabel" className="mt-6">
+          <WhitelabelConfiguration />
         </TabsContent>
       </Tabs>
     </div>

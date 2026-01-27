@@ -10428,6 +10428,7 @@ export type Database = {
           id: string
           invited_by: string
           role: Database["public"]["Enums"]["genie_team_role"]
+          status: string | null
           team_id: string
           token: string
         }
@@ -10439,6 +10440,7 @@ export type Database = {
           id?: string
           invited_by: string
           role?: Database["public"]["Enums"]["genie_team_role"]
+          status?: string | null
           team_id: string
           token?: string
         }
@@ -10450,6 +10452,7 @@ export type Database = {
           id?: string
           invited_by?: string
           role?: Database["public"]["Enums"]["genie_team_role"]
+          status?: string | null
           team_id?: string
           token?: string
         }
@@ -10641,6 +10644,74 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      genie_studio_whitelabel_configs: {
+        Row: {
+          accent_color: string | null
+          app_name: string | null
+          created_at: string | null
+          custom_css: string | null
+          custom_domain: string | null
+          favicon_url: string | null
+          footer_text: string | null
+          header_text: string | null
+          hide_powered_by: boolean | null
+          id: string
+          is_active: boolean | null
+          login_message: string | null
+          logo_url: string | null
+          primary_color: string | null
+          secondary_color: string | null
+          team_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          accent_color?: string | null
+          app_name?: string | null
+          created_at?: string | null
+          custom_css?: string | null
+          custom_domain?: string | null
+          favicon_url?: string | null
+          footer_text?: string | null
+          header_text?: string | null
+          hide_powered_by?: boolean | null
+          id?: string
+          is_active?: boolean | null
+          login_message?: string | null
+          logo_url?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          team_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          accent_color?: string | null
+          app_name?: string | null
+          created_at?: string | null
+          custom_css?: string | null
+          custom_domain?: string | null
+          favicon_url?: string | null
+          footer_text?: string | null
+          header_text?: string | null
+          hide_powered_by?: boolean | null
+          id?: string
+          is_active?: boolean | null
+          login_message?: string | null
+          logo_url?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          team_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "genie_studio_whitelabel_configs_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: true
+            referencedRelation: "genie_studio_teams"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       genie_subscription_tier_config: {
         Row: {
