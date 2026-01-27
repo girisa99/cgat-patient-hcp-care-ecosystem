@@ -2,6 +2,8 @@
  * HERO PRODUCT SHOWCASE - ANIMATED
  * Creative animated product overview with non-human avatars
  * Voice narration via TTS, language auto-detected by IP/browser
+ * 
+ * FIXES: Proper audio queue, sync with visuals, cleanup on unmount
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -18,7 +20,14 @@ import {
   Presentation,
   Target,
   Radio,
-  Layers
+  Layers,
+  Zap,
+  Wand2,
+  Music,
+  Mic,
+  Video,
+  BarChart3,
+  Send
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -30,16 +39,28 @@ import {
 import { GENIE_PRODUCTS, GenieProduct, PRODUCT_DISPLAY_ORDER } from '@/constants/genie-products';
 import { useRegionalDetection } from '@/hooks/useRegionalDetection';
 import { supabase } from '@/integrations/supabase/client';
+import { createManagedAudio } from '@/hooks/shared/useAudioElement';
 
 // Product icons mapping (creative non-human avatars)
 const PRODUCT_AVATARS: Record<GenieProduct, React.ReactNode> = {
-  spark: <Sparkles className="h-8 w-8" />,
-  mind: <Brain className="h-8 w-8" />,
-  vibe: <Film className="h-8 w-8" />,
-  deck: <Presentation className="h-8 w-8" />,
-  arc: <Target className="h-8 w-8" />,
-  cast: <Radio className="h-8 w-8" />,
-  studio: <Layers className="h-8 w-8" />,
+  spark: <Sparkles className="h-12 w-12" />,
+  mind: <Brain className="h-12 w-12" />,
+  vibe: <Film className="h-12 w-12" />,
+  deck: <Presentation className="h-12 w-12" />,
+  arc: <Target className="h-12 w-12" />,
+  cast: <Radio className="h-12 w-12" />,
+  studio: <Layers className="h-12 w-12" />,
+};
+
+// Feature icons for each product
+const PRODUCT_FEATURES: Record<GenieProduct, React.ReactNode[]> = {
+  spark: [<Zap key="z" className="h-4 w-4" />, <Wand2 key="w" className="h-4 w-4" />, <Mic key="m" className="h-4 w-4" />],
+  mind: [<Music key="m" className="h-4 w-4" />, <Mic key="mic" className="h-4 w-4" />, <Wand2 key="w" className="h-4 w-4" />],
+  vibe: [<Video key="v" className="h-4 w-4" />, <Music key="m" className="h-4 w-4" />, <Film key="f" className="h-4 w-4" />],
+  deck: [<Presentation key="p" className="h-4 w-4" />, <BarChart3 key="b" className="h-4 w-4" />, <Layers key="l" className="h-4 w-4" />],
+  arc: [<Target key="t" className="h-4 w-4" />, <BarChart3 key="b" className="h-4 w-4" />, <Zap key="z" className="h-4 w-4" />],
+  cast: [<Send key="s" className="h-4 w-4" />, <Globe key="g" className="h-4 w-4" />, <Radio key="r" className="h-4 w-4" />],
+  studio: [<Layers key="l" className="h-4 w-4" />, <Wand2 key="w" className="h-4 w-4" />, <Sparkles key="s" className="h-4 w-4" />],
 };
 
 // Translations for product content
@@ -170,14 +191,25 @@ const LANGUAGE_NAMES: Record<string, string> = {
   pt: 'Português',
 };
 
+// Audio queue manager for synchronized playback
+interface AudioQueueItem {
+  text: string;
+  productIndex: number;
+}
+
 export const HeroProductShowcaseAnimated: React.FC = () => {
   const { selectedRegion, setRegion, isRTL } = useRegionalDetection();
   const [currentProductIndex, setCurrentProductIndex] = useState(-1); // -1 for intro
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(true);
-  const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
+  const [audioReady, setAudioReady] = useState(false);
+  
+  // Refs for cleanup
+  const audioCleanupRef = useRef<(() => void) | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const mountedRef = useRef(true);
 
   const currentLanguage = TRANSLATIONS[selectedRegion] ? selectedRegion : 'en';
   const translations = TRANSLATIONS[currentLanguage];
@@ -191,6 +223,7 @@ export const HeroProductShowcaseAnimated: React.FC = () => {
         tagline: 'Mind to Media',
         description: translations.intro,
         product: null,
+        productKey: 'studio' as GenieProduct,
       };
     }
     const productKey = products[currentProductIndex];
@@ -205,76 +238,160 @@ export const HeroProductShowcaseAnimated: React.FC = () => {
     };
   }, [currentProductIndex, translations, products]);
 
-  // Auto-advance products
+  // Cleanup function for audio
+  const cleanupAudio = useCallback(() => {
+    if (audioCleanupRef.current) {
+      audioCleanupRef.current();
+      audioCleanupRef.current = null;
+    }
+    audioRef.current = null;
+  }, []);
+
+  // Generate and play TTS audio
+  const generateAndPlayAudio = useCallback(async (text: string) => {
+    if (!mountedRef.current) return;
+    
+    // Cleanup previous audio
+    cleanupAudio();
+    setIsGeneratingAudio(true);
+    setAudioReady(false);
+    
+    try {
+      console.log('[HeroShowcase] Generating audio for:', text.substring(0, 50) + '...');
+      
+      const response = await supabase.functions.invoke('elevenlabs-voice', {
+        body: {
+          text,
+          voice: 'george',
+        },
+      });
+
+      if (!mountedRef.current) return;
+
+      if (response.error) {
+        console.error('[HeroShowcase] TTS error:', response.error);
+        setIsGeneratingAudio(false);
+        return;
+      }
+
+      if (response.data?.audioContent) {
+        const audioUrl = `data:audio/mpeg;base64,${response.data.audioContent}`;
+        
+        const { audio, cleanup } = createManagedAudio(audioUrl, {
+          onPlay: () => {
+            console.log('[HeroShowcase] Audio started playing');
+            setAudioReady(true);
+          },
+          onEnded: () => {
+            console.log('[HeroShowcase] Audio ended');
+            // Auto-advance to next product when audio ends
+            if (mountedRef.current && isPlaying) {
+              setCurrentProductIndex(prev => {
+                const next = prev + 1;
+                return next >= products.length ? -1 : next;
+              });
+            }
+          },
+          onError: (error) => {
+            console.error('[HeroShowcase] Audio error:', error);
+          },
+        });
+        
+        audioRef.current = audio;
+        audioCleanupRef.current = cleanup;
+        
+        // Play the audio
+        await audio.play();
+        console.log('[HeroShowcase] Audio playing');
+      }
+    } catch (error) {
+      console.error('[HeroShowcase] TTS generation error:', error);
+    } finally {
+      if (mountedRef.current) {
+        setIsGeneratingAudio(false);
+      }
+    }
+  }, [cleanupAudio, isPlaying, products.length]);
+
+  // Cleanup on unmount
   useEffect(() => {
-    if (!isPlaying) return;
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      cleanupAudio();
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [cleanupAudio]);
+
+  // Handle product changes - trigger audio when unmuted
+  useEffect(() => {
+    if (!isMuted && isPlaying) {
+      const content = getCurrentContent();
+      const text = `${content.title}. ${content.tagline}. ${content.description}`;
+      generateAndPlayAudio(text);
+    }
+  }, [currentProductIndex, isMuted, currentLanguage]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-advance when muted (no audio sync needed)
+  useEffect(() => {
+    if (!isPlaying || !isMuted) {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      return;
+    }
     
     intervalRef.current = setInterval(() => {
       setCurrentProductIndex(prev => {
         const next = prev + 1;
         return next >= products.length ? -1 : next;
       });
-    }, 4000); // 4 seconds per product
+    }, 4000);
 
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
     };
-  }, [isPlaying, products.length]);
-
-  // Generate TTS audio for current content
-  const generateAudio = useCallback(async (text: string) => {
-    if (isMuted || isGeneratingAudio) return;
-    
-    setIsGeneratingAudio(true);
-    try {
-      // Stop previous audio
-      if (audioElement) {
-        audioElement.pause();
-        audioElement.src = '';
-      }
-
-      const response = await supabase.functions.invoke('elevenlabs-voice', {
-        body: {
-          text,
-          voice: 'george', // Professional male voice
-          action: 'generate',
-        },
-      });
-
-      if (response.data?.audioContent) {
-        // Use data URI for base64 audio
-        const audioUrl = `data:audio/mpeg;base64,${response.data.audioContent}`;
-        const audio = new Audio(audioUrl);
-        audio.play().catch(console.error);
-        setAudioElement(audio);
-      }
-    } catch (error) {
-      console.error('TTS error:', error);
-    } finally {
-      setIsGeneratingAudio(false);
-    }
-  }, [isMuted, isGeneratingAudio, audioElement]);
-
-  // Play audio when product changes and unmuted
-  useEffect(() => {
-    if (!isMuted && isPlaying) {
-      const content = getCurrentContent();
-      generateAudio(`${content.title}. ${content.tagline}. ${content.description}`);
-    }
-  }, [currentProductIndex, isMuted, isPlaying]);
+  }, [isPlaying, isMuted, products.length]);
 
   const togglePlay = () => {
-    setIsPlaying(!isPlaying);
-    if (audioElement) {
-      isPlaying ? audioElement.pause() : audioElement.play();
+    if (isPlaying) {
+      // Pause
+      if (audioRef.current && !audioRef.current.paused) {
+        audioRef.current.pause();
+      }
+    } else {
+      // Resume
+      if (audioRef.current && audioRef.current.paused) {
+        audioRef.current.play().catch(console.error);
+      }
     }
+    setIsPlaying(!isPlaying);
   };
 
   const toggleMute = () => {
-    setIsMuted(!isMuted);
-    if (audioElement) {
-      audioElement.muted = !isMuted;
+    const newMuted = !isMuted;
+    setIsMuted(newMuted);
+    
+    if (newMuted) {
+      // Muting - stop current audio
+      cleanupAudio();
+    } else {
+      // Unmuting - start audio for current product
+      const content = getCurrentContent();
+      const text = `${content.title}. ${content.tagline}. ${content.description}`;
+      generateAndPlayAudio(text);
     }
+  };
+
+  const goToProduct = (index: number) => {
+    setCurrentProductIndex(index);
+    // Audio will be triggered by the useEffect watching currentProductIndex
   };
 
   const content = getCurrentContent();
@@ -285,40 +402,66 @@ export const HeroProductShowcaseAnimated: React.FC = () => {
       className="relative rounded-2xl overflow-hidden shadow-2xl shadow-primary/20 border border-border bg-gradient-to-br from-background via-card to-muted"
       dir={isRTL ? 'rtl' : 'ltr'}
     >
-      <div className="aspect-video relative p-8 flex flex-col justify-center items-center">
+      <div className="aspect-video relative p-6 md:p-8 flex flex-col justify-center items-center min-h-[400px]">
         {/* Animated background particles */}
-        <div className="absolute inset-0 overflow-hidden">
-          {[...Array(20)].map((_, i) => (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {[...Array(30)].map((_, i) => (
             <motion.div
               key={i}
-              className="absolute w-2 h-2 rounded-full bg-primary/20"
+              className="absolute rounded-full"
+              style={{
+                width: 4 + Math.random() * 8,
+                height: 4 + Math.random() * 8,
+                background: `hsl(var(--primary) / ${0.1 + Math.random() * 0.3})`,
+              }}
               initial={{ 
-                x: Math.random() * 100 + '%',
-                y: Math.random() * 100 + '%',
+                x: `${Math.random() * 100}%`,
+                y: `${100 + Math.random() * 20}%`,
                 scale: 0 
               }}
               animate={{
-                y: [null, '-20%'],
-                scale: [0, 1, 0],
-                opacity: [0, 0.6, 0],
+                y: [null, `${-10 - Math.random() * 20}%`],
+                scale: [0, 1, 0.5, 0],
+                opacity: [0, 0.8, 0.4, 0],
               }}
               transition={{
-                duration: 4 + Math.random() * 2,
+                duration: 6 + Math.random() * 4,
                 repeat: Infinity,
-                delay: Math.random() * 2,
+                delay: Math.random() * 5,
+                ease: 'easeOut',
               }}
             />
           ))}
         </div>
 
+        {/* Animated gradient orbs in background */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <motion.div
+            className="absolute w-64 h-64 rounded-full bg-gradient-to-r from-primary/20 to-primary/5 blur-3xl"
+            animate={{
+              x: ['-20%', '60%', '-20%'],
+              y: ['20%', '60%', '20%'],
+            }}
+            transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
+          />
+          <motion.div
+            className="absolute w-48 h-48 rounded-full bg-gradient-to-r from-accent/20 to-accent/5 blur-3xl"
+            animate={{
+              x: ['80%', '20%', '80%'],
+              y: ['60%', '20%', '60%'],
+            }}
+            transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut' }}
+          />
+        </div>
+
         {/* Language Selector - Top Left */}
-        <div className={`absolute top-4 ${isRTL ? 'right-4' : 'left-4'} z-10`}>
+        <div className={`absolute top-4 ${isRTL ? 'right-4' : 'left-4'} z-20`}>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button 
                 variant="secondary" 
                 size="sm" 
-                className="bg-background/80 backdrop-blur gap-2 border"
+                className="bg-background/90 backdrop-blur gap-2 border shadow-lg"
               >
                 <Globe className="h-4 w-4" />
                 {LANGUAGE_NAMES[currentLanguage]}
@@ -340,78 +483,131 @@ export const HeroProductShowcaseAnimated: React.FC = () => {
         </div>
 
         {/* AI Badge - Top Right */}
-        <div className={`absolute top-4 ${isRTL ? 'left-4' : 'right-4'} flex items-center gap-2`}>
-          <div className="flex items-center gap-2 px-3 py-1 bg-background/80 rounded-full backdrop-blur border">
-            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-            <span className="text-xs text-green-600 dark:text-green-400">AI Animated</span>
+        <div className={`absolute top-4 ${isRTL ? 'left-4' : 'right-4'} flex items-center gap-2 z-20`}>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-background/90 rounded-full backdrop-blur border shadow-lg">
+            <motion.span 
+              className="w-2 h-2 bg-primary rounded-full"
+              animate={{ scale: [1, 1.2, 1], opacity: [1, 0.7, 1] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            />
+            <span className="text-xs font-medium text-primary">AI Powered</span>
           </div>
+          {isGeneratingAudio && (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-background/90 rounded-full backdrop-blur border shadow-lg">
+              <motion.div
+                className="w-2 h-2 bg-primary rounded-full"
+                animate={{ scale: [1, 1.5, 1] }}
+                transition={{ duration: 0.5, repeat: Infinity }}
+              />
+              <span className="text-xs text-muted-foreground">Loading audio...</span>
+            </div>
+          )}
         </div>
 
         {/* Main Content */}
         <AnimatePresence mode="wait">
           <motion.div
-            key={currentProductIndex}
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            key={`${currentProductIndex}-${currentLanguage}`}
+            initial={{ opacity: 0, y: 30, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -20, scale: 0.95 }}
-            transition={{ duration: 0.5 }}
-            className="relative z-10 text-center max-w-2xl mx-auto"
+            exit={{ opacity: 0, y: -30, scale: 0.9 }}
+            transition={{ duration: 0.6, ease: 'easeOut' }}
+            className="relative z-10 text-center max-w-3xl mx-auto"
           >
-            {/* Animated Avatar/Icon */}
+            {/* Animated Avatar/Icon with enhanced visuals */}
             <motion.div 
-              className="mx-auto mb-6 relative"
+              className="mx-auto mb-8 relative"
               animate={{ 
-                scale: [1, 1.1, 1],
-                rotate: [0, 5, -5, 0],
+                y: [0, -10, 0],
               }}
-              transition={{ duration: 2, repeat: Infinity }}
+              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
             >
-              <div className={`w-24 h-24 rounded-2xl bg-gradient-to-br ${
-                content.product?.color || 'from-primary to-primary/80'
-              } flex items-center justify-center text-white shadow-lg`}>
-                {content.productKey ? PRODUCT_AVATARS[content.productKey] : (
-                  <Layers className="h-10 w-10" />
-                )}
-              </div>
+              {/* Glow effect behind icon */}
+              <motion.div
+                className="absolute inset-0 rounded-3xl blur-xl"
+                style={{
+                  background: content.product?.color 
+                    ? `linear-gradient(135deg, ${content.product.color.replace('from-', '').replace('to-', ', ')})` 
+                    : 'hsl(var(--primary) / 0.3)',
+                }}
+                animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              />
               
-              {/* Orbiting particles */}
-              {[...Array(3)].map((_, i) => (
+              {/* Main icon container */}
+              <motion.div 
+                className={`relative w-28 h-28 rounded-3xl bg-gradient-to-br ${
+                  content.product?.color || 'from-primary to-primary/80'
+                } flex items-center justify-center text-white shadow-2xl`}
+                animate={{ 
+                  rotate: [0, 3, -3, 0],
+                }}
+                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+              >
+                {PRODUCT_AVATARS[content.productKey]}
+              </motion.div>
+              
+              {/* Orbiting feature icons */}
+              {PRODUCT_FEATURES[content.productKey]?.map((icon, i) => (
                 <motion.div
                   key={i}
-                  className="absolute w-3 h-3 rounded-full bg-primary/60"
+                  className="absolute w-8 h-8 rounded-full bg-background border-2 border-primary/30 flex items-center justify-center text-primary shadow-lg"
                   animate={{
                     rotate: 360,
                   }}
                   transition={{
-                    duration: 3,
+                    duration: 6,
                     repeat: Infinity,
-                    delay: i * 1,
+                    delay: i * 2,
                     ease: 'linear',
                   }}
                   style={{
                     top: '50%',
                     left: '50%',
-                    transformOrigin: `${40 + i * 10}px 0`,
+                    transformOrigin: `${70 + i * 15}px 0`,
+                  }}
+                >
+                  <motion.div
+                    animate={{ rotate: -360 }}
+                    transition={{ duration: 6, repeat: Infinity, delay: i * 2, ease: 'linear' }}
+                  >
+                    {icon}
+                  </motion.div>
+                </motion.div>
+              ))}
+
+              {/* Pulse rings */}
+              {[...Array(3)].map((_, i) => (
+                <motion.div
+                  key={`ring-${i}`}
+                  className="absolute inset-0 rounded-3xl border-2 border-primary/20"
+                  initial={{ scale: 1, opacity: 0.5 }}
+                  animate={{ scale: 1.5 + i * 0.3, opacity: 0 }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    delay: i * 0.6,
+                    ease: 'easeOut',
                   }}
                 />
               ))}
             </motion.div>
 
-            {/* Title */}
+            {/* Title with gradient */}
             <motion.h2
-              className="text-3xl md:text-4xl font-bold mb-2"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              className="text-4xl md:text-5xl font-bold mb-3 bg-gradient-to-r from-foreground via-foreground to-foreground/80 bg-clip-text"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
             >
               {content.title}
             </motion.h2>
 
-            {/* Tagline */}
+            {/* Tagline with primary color */}
             <motion.p
-              className="text-xl md:text-2xl font-medium text-primary mb-4"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              className="text-2xl md:text-3xl font-semibold text-primary mb-4"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
             >
               "{content.tagline}"
@@ -419,31 +615,59 @@ export const HeroProductShowcaseAnimated: React.FC = () => {
 
             {/* Description */}
             <motion.p
-              className="text-muted-foreground text-lg"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              className="text-muted-foreground text-lg md:text-xl max-w-xl mx-auto leading-relaxed"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
             >
               {content.description}
             </motion.p>
+
+            {/* Audio visualization when playing */}
+            {!isMuted && audioReady && (
+              <motion.div 
+                className="mt-6 flex justify-center items-end gap-1 h-8"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
+                {[...Array(5)].map((_, i) => (
+                  <motion.div
+                    key={i}
+                    className="w-1 bg-primary rounded-full"
+                    animate={{
+                      height: [8, 20 + Math.random() * 12, 8],
+                    }}
+                    transition={{
+                      duration: 0.5 + Math.random() * 0.3,
+                      repeat: Infinity,
+                      delay: i * 0.1,
+                    }}
+                  />
+                ))}
+              </motion.div>
+            )}
           </motion.div>
         </AnimatePresence>
 
         {/* Product Indicators */}
-        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 flex gap-2">
+        <div className="absolute bottom-24 left-1/2 -translate-x-1/2 flex gap-2 z-10">
           <button
-            onClick={() => setCurrentProductIndex(-1)}
-            className={`w-8 h-2 rounded-full transition-all ${
-              currentProductIndex === -1 ? 'bg-primary' : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
+            onClick={() => goToProduct(-1)}
+            className={`w-10 h-2 rounded-full transition-all duration-300 ${
+              currentProductIndex === -1 
+                ? 'bg-primary shadow-lg shadow-primary/30' 
+                : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
             }`}
             title="Genie Studio"
           />
           {products.map((product, idx) => (
             <button
               key={product}
-              onClick={() => setCurrentProductIndex(idx)}
-              className={`w-2 h-2 rounded-full transition-all ${
-                currentProductIndex === idx ? 'bg-primary scale-125' : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
+              onClick={() => goToProduct(idx)}
+              className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                currentProductIndex === idx 
+                  ? 'bg-primary scale-150 shadow-lg shadow-primary/30' 
+                  : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
               }`}
               title={GENIE_PRODUCTS[product].name}
             />
@@ -451,10 +675,10 @@ export const HeroProductShowcaseAnimated: React.FC = () => {
         </div>
 
         {/* Progress Bar */}
-        <div className="absolute bottom-12 left-8 right-8">
+        <div className="absolute bottom-16 left-6 right-6 md:left-8 md:right-8 z-10">
           <div className="w-full h-1 bg-muted rounded-full overflow-hidden">
             <motion.div 
-              className="h-full bg-primary rounded-full"
+              className="h-full bg-gradient-to-r from-primary to-primary/80 rounded-full"
               initial={{ width: 0 }}
               animate={{ width: `${progress}%` }}
               transition={{ duration: 0.5 }}
@@ -463,13 +687,13 @@ export const HeroProductShowcaseAnimated: React.FC = () => {
         </div>
 
         {/* Controls */}
-        <div className="absolute bottom-4 left-4 right-4 flex justify-between items-center">
+        <div className="absolute bottom-4 left-4 right-4 flex justify-between items-center z-10">
           <div className="flex items-center gap-2">
             <Button 
               variant="ghost" 
               size="icon" 
               onClick={togglePlay} 
-              className="h-8 w-8"
+              className="h-9 w-9 bg-background/50 backdrop-blur border"
             >
               {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
             </Button>
@@ -477,20 +701,17 @@ export const HeroProductShowcaseAnimated: React.FC = () => {
               variant="ghost" 
               size="icon" 
               onClick={toggleMute} 
-              className="h-8 w-8"
+              className="h-9 w-9 bg-background/50 backdrop-blur border"
             >
               {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
             </Button>
-            {isGeneratingAudio && (
-              <span className="text-xs text-muted-foreground">Loading audio...</span>
-            )}
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">
-              {currentProductIndex === -1 ? 'Intro' : `${currentProductIndex + 1}/${products.length}`}
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-muted-foreground font-medium">
+              {currentProductIndex === -1 ? 'Overview' : `${currentProductIndex + 1} of ${products.length}`}
             </span>
-            <span className="px-2 py-1 bg-muted rounded text-xs">
+            <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-semibold">
               7 Products
             </span>
           </div>
