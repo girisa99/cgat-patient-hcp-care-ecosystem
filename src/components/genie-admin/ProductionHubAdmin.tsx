@@ -3,6 +3,7 @@
  * 
  * Comprehensive admin panel for managing:
  * - Landing video generation with AI (TTS, Avatars, 3D)
+ * - Advanced Avatar & 3D generation (Alibaba, Meshy, ModelsLab, DeepSeek)
  * - Content scheduler across 14 regions and 6 platforms
  * - Analytics and monitoring for videos and scheduler
  * 
@@ -15,11 +16,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { 
   Video, Calendar, BarChart3, Settings, 
-  Globe, Wand2, Play, RefreshCw
+  Globe, Wand2, Play, RefreshCw, User, Box
 } from 'lucide-react';
 import { VideoGenerationStudio } from './VideoGenerationStudio';
 import { ContentSchedulerDashboard } from './ContentSchedulerDashboard';
 import { ProductionAnalytics } from './ProductionAnalytics';
+import { AdvancedAvatarGenerationPanel } from './AdvancedAvatarGenerationPanel';
 
 interface ProductionHubAdminProps {
   className?: string;
@@ -38,16 +40,21 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
             Production Hub Admin
           </h1>
           <p className="text-muted-foreground">
-            Manage AI video generation, content scheduling, and analytics
+            Manage AI video generation, avatars, 3D content, scheduling, and analytics
           </p>
         </div>
-        <Badge variant="outline" className="bg-primary/10 text-primary">
-          Arc Integration
-        </Badge>
+        <div className="flex gap-2">
+          <Badge variant="outline" className="bg-primary/10 text-primary">
+            Arc Integration
+          </Badge>
+          <Badge variant="outline" className="bg-secondary text-secondary-foreground">
+            13 AI Providers
+          </Badge>
+        </div>
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <Card>
           <CardContent className="pt-4">
             <div className="flex items-center gap-3">
@@ -64,12 +71,25 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
         <Card>
           <CardContent className="pt-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-emerald-500/10 rounded-lg">
-                <Calendar className="w-5 h-5 text-emerald-500" />
+              <div className="p-2 bg-violet-500/10 rounded-lg">
+                <User className="w-5 h-5 text-violet-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold">42</p>
-                <p className="text-xs text-muted-foreground">Scheduled Posts</p>
+                <p className="text-2xl font-bold">8</p>
+                <p className="text-xs text-muted-foreground">Avatars Created</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-cyan-500/10 rounded-lg">
+                <Box className="w-5 h-5 text-cyan-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">5</p>
+                <p className="text-xs text-muted-foreground">3D Models</p>
               </div>
             </div>
           </CardContent>
@@ -104,14 +124,18 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="video-studio" className="flex items-center gap-2">
             <Video className="w-4 h-4" />
             Video Studio
           </TabsTrigger>
+          <TabsTrigger value="avatar-3d" className="flex items-center gap-2">
+            <User className="w-4 h-4" />
+            Avatar & 3D
+          </TabsTrigger>
           <TabsTrigger value="scheduler" className="flex items-center gap-2">
             <Calendar className="w-4 h-4" />
-            Content Scheduler
+            Scheduler
           </TabsTrigger>
           <TabsTrigger value="analytics" className="flex items-center gap-2">
             <BarChart3 className="w-4 h-4" />
@@ -121,6 +145,10 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
 
         <TabsContent value="video-studio" className="mt-6">
           <VideoGenerationStudio />
+        </TabsContent>
+
+        <TabsContent value="avatar-3d" className="mt-6">
+          <AdvancedAvatarGenerationPanel />
         </TabsContent>
 
         <TabsContent value="scheduler" className="mt-6">
