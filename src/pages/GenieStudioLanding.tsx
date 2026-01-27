@@ -31,7 +31,7 @@ import genieArcLogo from '@/assets/logos/products/genie-arc.png';
 import genieCastLogo from '@/assets/logos/products/genie-cast.png';
 import askGenieLogo from '@/assets/logos/products/ask-genie.png';
 
-// AI Provider logos
+// AI Provider logos - Core 12 Providers
 import openaiLogo from '@/assets/logos/providers/openai.svg';
 import anthropicLogo from '@/assets/logos/providers/anthropic.png';
 import geminiLogo from '@/assets/logos/providers/gemini.svg';
@@ -39,10 +39,11 @@ import elevenlabsLogo from '@/assets/logos/providers/elevenlabs.png';
 import azureLogo from '@/assets/logos/providers/azure.svg';
 import deeplLogo from '@/assets/logos/providers/deepl.svg';
 import meshyLogo from '@/assets/logos/providers/meshy.png';
-import sunoLogo from '@/assets/logos/providers/suno.png';
-import metaLogo from '@/assets/logos/providers/meta.svg';
 import alibabaLogo from '@/assets/logos/providers/alibaba.jpg';
 import modelslabLogo from '@/assets/logos/providers/modelslab.jpg';
+import deepseekLogo from '@/assets/logos/providers/deepseek.svg';
+import replicateLogo from '@/assets/logos/providers/replicate.svg';
+import supabaseLogo from '@/assets/logos/providers/supabase.svg';
 
 // ============================================
 // CONSTANTS & DATA
@@ -166,19 +167,20 @@ const PRICING_TIERS = [
   { name: 'Enterprise', price: 299, pipelines: 206, languages: '140+', credits: '10K+', features: ['8K', 'White-label', 'SSO/SAML', 'VR/AR Labs'] },
 ];
 
+// Core 12 AI Providers - Accurate representation of implemented system
 const AI_PROVIDERS = [
-  { name: 'OpenAI', logo: openaiLogo, use: 'Script & Chat', color: 'from-emerald-500 to-teal-500' },
-  { name: 'Claude', logo: anthropicLogo, use: 'Analysis', color: 'from-orange-400 to-amber-500' },
-  { name: 'Gemini', logo: geminiLogo, use: 'Indian Langs', color: 'from-blue-500 to-indigo-500' },
-  { name: 'ElevenLabs', logo: elevenlabsLogo, use: 'Voice Clone', color: 'from-purple-500 to-pink-500' },
-  { name: 'Azure', logo: azureLogo, use: 'TTS & OCR', color: 'from-sky-500 to-blue-500' },
-  { name: 'Alibaba', logo: alibabaLogo, use: 'CJK & Avatar', color: 'from-orange-500 to-red-500' },
-  { name: 'DeepL', logo: deeplLogo, use: 'Translation', color: 'from-blue-600 to-cyan-500' },
-  { name: 'ModelsLab', logo: modelslabLogo, use: 'Video Gen', color: 'from-violet-500 to-purple-500' },
-  { name: 'Meshy', logo: meshyLogo, use: '3D Models', color: 'from-pink-500 to-rose-500' },
-  { name: 'Whisper', logo: openaiLogo, use: 'Speech-to-Text', color: 'from-green-500 to-emerald-500' },
-  { name: 'Suno', logo: sunoLogo, use: 'AI Music', color: 'from-amber-500 to-yellow-500' },
-  { name: 'NLLB', logo: metaLogo, use: 'Rare Langs', color: 'from-yellow-500 to-orange-500' },
+  { name: 'OpenAI', logo: openaiLogo, use: 'GPT-4o, Whisper STT, DALL-E 3', color: 'from-emerald-500 to-teal-500' },
+  { name: 'Claude', logo: anthropicLogo, use: 'Long Context, Narrative Writing', color: 'from-orange-400 to-amber-500' },
+  { name: 'Gemini', logo: geminiLogo, use: 'Vision, 1M Context, Indian/SEA Langs', color: 'from-blue-500 to-indigo-500' },
+  { name: 'DeepSeek', logo: deepseekLogo, use: 'CJK Optimized LLM & Vision', color: 'from-cyan-500 to-blue-500' },
+  { name: 'Alibaba', logo: alibabaLogo, use: 'Qwen LLM, CosyVoice, WAN 2.2 Avatar', color: 'from-orange-500 to-red-500' },
+  { name: 'Azure', logo: azureLogo, use: 'Neural TTS, OCR, Visemes, OAuth', color: 'from-sky-500 to-blue-500' },
+  { name: 'ModelsLab', logo: modelslabLogo, use: 'FLUX, AnimateDiff, Video, 3D Gen', color: 'from-violet-500 to-purple-500' },
+  { name: 'Replicate', logo: replicateLogo, use: 'Open-Source Models, 3D Fallback', color: 'from-gray-600 to-slate-700' },
+  { name: 'ElevenLabs', logo: elevenlabsLogo, use: 'Premium TTS, Voice Clone, SFX', color: 'from-purple-500 to-pink-500' },
+  { name: 'DeepL', logo: deeplLogo, use: 'European Translation', color: 'from-blue-600 to-cyan-500' },
+  { name: 'Meshy', logo: meshyLogo, use: 'Text-to-3D, Image-to-3D', color: 'from-green-500 to-emerald-500' },
+  { name: 'Supabase', logo: supabaseLogo, use: 'Auth, Database, Edge Functions', color: 'from-green-600 to-teal-500' },
 ];
 
 const socialLinks = [
