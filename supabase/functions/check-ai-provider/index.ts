@@ -7,54 +7,55 @@ import { corsHeaders } from '../_shared/cors.ts';
  * Used by UniversalAIHub to determine fallback chains.
  */
 
-// Provider secret mappings
+// Provider secret mappings - Core 12+ Providers
 const PROVIDER_SECRETS: Record<string, string[]> = {
-  openai: ['OPENAI_API_KEY'],
-  claude: ['ANTHROPIC_API_KEY', 'CLAUDE_API_KEY'],
-  gemini: ['GEMINI_API_KEY', 'GOOGLE_API_KEY'],
-  deepseek: ['DEEPSEEK_API_KEY'],
-  alibaba: ['ALIBABA_API_KEY'],
-  azure: ['AZURE_OPENAI_KEY'],
-  azure_speech: ['AZURE_SPEECH_KEY'],
-  azure_doc_intel: ['AZURE_FORM_RECOGNIZER_KEY'],
-  aws: ['AWS_ACCESS_KEY_ID'],
-  deepl: ['DEEPL_API_KEY'],
-  elevenlabs: ['ELEVENLABS_API_KEY'],
-  google: ['GOOGLE_API_KEY', 'GEMINI_API_KEY'],
-  replicate: ['REPLICATE_API_TOKEN'],
-  stability: ['STABILITY_API_KEY'],
-  huggingface: ['HUGGING_FACE_ACCESS_TOKEN'],
-  microsoft: ['MICROSOFT_TRANSLATE_API_KEY'],
-  cohere: ['COHERE_API_KEY'],
-  assemblyai: ['ASSEMBLYAI_API_KEY'],
-  suno: ['SUNO_API_KEY'],
-  runway: ['RUNWAY_API_KEY'],
-  supabase: ['SUPABASE_URL'],
-  stripe: ['STRIPE_SECRET_KEY'],
+  // LLM & Multimodal Providers
+  openai: ['OPENAI_API_KEY'],           // GPT-4o, Whisper STT, DALL-E 3
+  claude: ['ANTHROPIC_API_KEY', 'CLAUDE_API_KEY'], // Long context, narrative
+  gemini: ['GEMINI_API_KEY', 'GOOGLE_API_KEY'],    // Vision, 1M context
+  deepseek: ['DEEPSEEK_API_KEY'],       // CJK optimized LLM & Vision
+  alibaba: ['ALIBABA_API_KEY'],         // Qwen, CosyVoice, WAN 2.2 Avatar
+  
+  // GCP - Google Cloud Platform (OAuth, Calendar, Vision, STT/TTS)
+  gcp: ['GOOGLE_API_KEY', 'GCP_SERVICE_ACCOUNT_KEY'],
+  
+  // Azure Services
+  azure: ['AZURE_OPENAI_KEY'],          // Azure OpenAI
+  azure_speech: ['AZURE_SPEECH_KEY'],   // Neural TTS, STT, Visemes
+  azure_doc_intel: ['AZURE_FORM_RECOGNIZER_KEY'], // OCR, Document Intelligence
+  
+  // Media & Creative Providers
+  modelslab: ['MODELSLAB_API_KEY'],     // FLUX, AnimateDiff, Video, 3D, Voice Clone
+  meshy: ['MESHY_API_KEY'],             // Text-to-3D, Image-to-3D
+  replicate: ['REPLICATE_API_TOKEN'],   // Open-source models fallback
+  elevenlabs: ['ELEVENLABS_API_KEY'],   // Premium TTS, Voice Clone, SFX, Music
+  
+  // Translation
+  deepl: ['DEEPL_API_KEY'],             // European languages
+  microsoft: ['MICROSOFT_TRANSLATE_API_KEY'], // Azure Translator
+  
+  // Infrastructure
+  supabase: ['SUPABASE_URL'],           // Auth, Database, Storage, Edge Functions
+  stripe: ['STRIPE_SECRET_KEY'],        // Payments, Subscriptions
 };
 
 // Provider capabilities mapping
 const PROVIDER_CAPABILITIES: Record<string, string[]> = {
   openai: ['llm', 'translation', 'tts', 'stt', 'image_gen', 'vision', 'nlp', 'moderation'],
-  claude: ['llm', 'translation', 'vision', 'nlp'],
+  claude: ['llm', 'translation', 'vision', 'nlp', 'long_context'],
   gemini: ['llm', 'translation', 'ocr', 'tts', 'image_gen', 'vision', 'nlp'],
-  deepseek: ['llm', 'translation', 'ocr', 'vision', 'nlp'],
-  alibaba: ['llm', 'translation', 'ocr', 'tts', 'stt', 'image_gen', 'video_gen', 'vision', 'nlp'],
-  azure: ['llm', 'vision', 'image_gen', 'tts', 'stt', 'ocr'],
-  azure_speech: ['tts', 'stt'],
-  azure_doc_intel: ['ocr'],
-  aws: ['llm', 'translation', 'ocr', 'tts', 'stt', 'image_gen', 'vision', 'nlp', 'moderation'],
+  deepseek: ['llm', 'translation', 'ocr', 'vision', 'nlp', 'stt'],
+  alibaba: ['llm', 'translation', 'ocr', 'tts', 'stt', 'image_gen', 'video_gen', 'vision', 'nlp', 'avatar'],
+  gcp: ['oauth', 'calendar', 'vision', 'ocr', 'tts', 'stt', 'translation', 'nlp'],
+  azure: ['llm', 'vision', 'image_gen'],
+  azure_speech: ['tts', 'stt', 'visemes'],
+  azure_doc_intel: ['ocr', 'document_analysis'],
+  modelslab: ['image_gen', 'video_gen', '3d_gen', 'voice_clone', 'animation'],
+  meshy: ['3d_gen', 'texturing'],
+  replicate: ['image_gen', 'video_gen', '3d_gen'],
+  elevenlabs: ['tts', 'voice_clone', 'sfx_gen', 'music_gen'],
   deepl: ['translation'],
-  elevenlabs: ['tts', 'music_gen', 'sfx_gen'],
-  google: ['translation', 'ocr', 'tts', 'stt', 'vision', 'nlp'],
-  replicate: ['image_gen', 'video_gen'],
-  stability: ['image_gen'],
-  huggingface: ['llm', 'image_gen', 'nlp'],
   microsoft: ['translation'],
-  cohere: ['llm', 'nlp'],
-  assemblyai: ['stt'],
-  suno: ['music_gen'],
-  runway: ['video_gen'],
   supabase: ['auth', 'database', 'storage', 'edge_functions'],
   stripe: ['payments', 'subscriptions', 'invoicing'],
 };

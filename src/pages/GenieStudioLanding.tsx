@@ -44,6 +44,7 @@ import modelslabLogo from '@/assets/logos/providers/modelslab.jpg';
 import deepseekLogo from '@/assets/logos/providers/deepseek.png';
 import replicateLogo from '@/assets/logos/providers/replicate.png';
 import supabaseLogo from '@/assets/logos/providers/supabase.svg';
+import gcpLogo from '@/assets/logos/providers/gcp.svg';
 
 // ============================================
 // CONSTANTS & DATA
@@ -167,17 +168,18 @@ const PRICING_TIERS = [
   { name: 'Enterprise', price: 299, pipelines: 206, languages: '140+', credits: '10K+', features: ['8K', 'White-label', 'SSO/SAML', 'VR/AR Labs'] },
 ];
 
-// Core 12 AI Providers - Accurate representation of implemented system
+// Core 13 AI Providers - Accurate representation of implemented system
 const AI_PROVIDERS = [
   { name: 'OpenAI', logo: openaiLogo, use: 'GPT-4o, Whisper STT, DALL-E 3', color: 'from-emerald-500 to-teal-500' },
   { name: 'Claude', logo: anthropicLogo, use: 'Long Context, Narrative Writing', color: 'from-orange-400 to-amber-500' },
   { name: 'Gemini', logo: geminiLogo, use: 'Vision, 1M Context, Indian/SEA Langs', color: 'from-blue-500 to-indigo-500' },
-  { name: 'DeepSeek', logo: deepseekLogo, use: 'CJK Optimized LLM & Vision', color: 'from-cyan-500 to-blue-500' },
+  { name: 'GCP', logo: gcpLogo, use: 'OAuth, Calendar, Vision, STT/TTS', color: 'from-blue-500 to-green-500' },
+  { name: 'DeepSeek', logo: deepseekLogo, use: 'CJK Optimized LLM, Vision & STT', color: 'from-cyan-500 to-blue-500' },
   { name: 'Alibaba', logo: alibabaLogo, use: 'Qwen LLM, CosyVoice, WAN 2.2 Avatar', color: 'from-orange-500 to-red-500' },
-  { name: 'Azure', logo: azureLogo, use: 'Neural TTS, OCR, Visemes, OAuth', color: 'from-sky-500 to-blue-500' },
+  { name: 'Azure', logo: azureLogo, use: 'Neural TTS/STT, OCR, Visemes', color: 'from-sky-500 to-blue-500' },
   { name: 'ModelsLab', logo: modelslabLogo, use: 'FLUX, AnimateDiff, Video, 3D Gen', color: 'from-violet-500 to-purple-500' },
   { name: 'Replicate', logo: replicateLogo, use: 'Open-Source Models, 3D Fallback', color: 'from-gray-600 to-slate-700' },
-  { name: 'ElevenLabs', logo: elevenlabsLogo, use: 'Premium TTS, Voice Clone, SFX', color: 'from-purple-500 to-pink-500' },
+  { name: 'ElevenLabs', logo: elevenlabsLogo, use: 'Premium TTS, Voice Clone, SFX, Music', color: 'from-purple-500 to-pink-500' },
   { name: 'DeepL', logo: deeplLogo, use: 'European Translation', color: 'from-blue-600 to-cyan-500' },
   { name: 'Meshy', logo: meshyLogo, use: 'Text-to-3D, Image-to-3D', color: 'from-green-500 to-emerald-500' },
   { name: 'Supabase', logo: supabaseLogo, use: 'Auth, Database, Edge Functions', color: 'from-green-600 to-teal-500' },
