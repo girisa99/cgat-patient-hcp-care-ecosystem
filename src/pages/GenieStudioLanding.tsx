@@ -30,6 +30,7 @@ import { IndustryShowcases } from '@/components/landing/IndustryShowcases';
 import { CrossFunctionalSection } from '@/components/landing/CrossFunctionalSection';
 import { GlobalInspirationSection } from '@/components/landing/GlobalInspirationSection';
 import { DogfoodingProof } from '@/components/landing/DogfoodingProof';
+import { GenieVideoShowcaseSection } from '@/components/landing/GenieVideoShowcaseSection';
 
 // Product logos
 import genieSparkLogo from '@/assets/logos/products/genie-spark.png';
@@ -434,6 +435,9 @@ const GenieStudioLanding: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {/* VIDEO SHOWCASE SECTION - 9 Chapter Interactive Demo */}
+      <GenieVideoShowcaseSection className="bg-background" />
 
       {/* SECTION 2: PRODUCT ECOSYSTEM */}
       <section id="products" className="py-24 relative">
