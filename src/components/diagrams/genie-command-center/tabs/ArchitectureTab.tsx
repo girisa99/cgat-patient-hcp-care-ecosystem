@@ -7,7 +7,7 @@ import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
   Layers, Server, Database, Cloud, Shield,
-  Monitor, Globe, GitBranch, Network, Box, Cpu, Plug, Brain, Film, Users, Zap, Presentation
+  Monitor, Globe, GitBranch, Network, Box, Cpu, Plug, Brain, Film, Users, Zap, Presentation, Map
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
@@ -24,16 +24,20 @@ import { GenieIntegrationsDiagram } from '@/components/diagrams/architecture/Gen
 import { GenieMicroservicesDiagram } from '@/components/diagrams/architecture/GenieMicroservicesDiagram';
 import { GenieDataArchitectureDiagram } from '@/components/diagrams/architecture/GenieDataArchitectureDiagram';
 import { GenieSecurityArchitectureDiagram } from '@/components/diagrams/architecture/GenieSecurityArchitectureDiagram';
+import { GenieCastArchitectureDiagram } from '@/components/diagrams/architecture/GenieCastArchitectureDiagram';
+import { EcosystemMappingDiagram } from '@/components/diagrams/architecture/EcosystemMappingDiagram';
 import { ProviderCapabilityMatrix } from '@/components/ai-hub/provider-matrix';
 
 const architectureDiagrams = [
   { id: 'full-suite', name: 'Full Genie Suite', icon: Layers, description: 'Complete system architecture showing all products and integrations' },
+  { id: 'ecosystem-map', name: 'Ecosystem Mapping', icon: Map, description: '7 Products × 21 Categories × 206 Pipelines × 25 Capabilities' },
   { id: 'capability-matrix', name: 'Provider Capability Matrix', icon: Cpu, description: 'Comprehensive feature × provider matrix with implementation status' },
-  { id: 'mind', name: 'Genie Mind', icon: Brain, description: 'AI Intelligence Layer - Model Routing, Script Engine, TTS' },
-  { id: 'vibe', name: 'Genie Vibe', icon: Film, description: 'Production Layer - Recording Studio, 6 AI Agents, Deployment Modes' },
-  { id: 'spark', name: 'Genie Spark', icon: Zap, description: 'Quick-Start Engine - Idea to Content in Seconds' },
-  { id: 'arc', name: 'Genie Arc/Hub', icon: Users, description: 'Team Collaboration & Enterprise Production Center' },
-  { id: 'deck', name: 'Genie Deck', icon: Presentation, description: 'AI Presentation Generator - Ideas to Impact' },
+  { id: 'mind', name: 'Genie Mind', icon: Brain, description: 'AI Intelligence Layer - Model Routing, Script Engine, TTS (30 pipelines)' },
+  { id: 'vibe', name: 'Genie Vibe', icon: Film, description: 'Production Layer - Recording, Avatar, Dubbing (74 pipelines)' },
+  { id: 'spark', name: 'Genie Spark', icon: Zap, description: 'Quick-Start Engine - Idea to Script (28 pipelines)' },
+  { id: 'arc', name: 'Genie Arc/Hub', icon: Users, description: 'Production Journey - Scheduling, Collaboration (14 pipelines)' },
+  { id: 'deck', name: 'Genie Deck', icon: Presentation, description: 'Presentation Generator - Ideas to Impact (34 pipelines)' },
+  { id: 'cast', name: 'Genie Cast', icon: Globe, description: 'Distribution Engine - Make It. Show It. Scale It. (26 pipelines)' },
   { id: 'ask', name: 'Ask Genie', icon: Network, description: 'Conversational AI and context management' },
   { id: 'backend', name: 'Backend Services', icon: Server, description: 'Edge functions, APIs, and service layer (140+ functions)' },
   { id: 'integrations', name: 'Integrations', icon: Plug, description: 'External APIs - n8n, Resend, Gemini, OAuth, Stripe' },
@@ -60,6 +64,8 @@ export const ArchitectureTab: React.FC = () => {
     switch (selectedDiagram) {
       case 'full-suite':
         return GenieStudioOverallArchitectureDiagram;
+      case 'ecosystem-map':
+        return EcosystemMappingDiagram;
       case 'capability-matrix':
         return () => <ProviderCapabilityMatrix className="w-full" />;
       case 'mind':
@@ -72,6 +78,8 @@ export const ArchitectureTab: React.FC = () => {
         return GenieArcProductionHubDiagram;
       case 'deck':
         return GenieDeckArchitecture;
+      case 'cast':
+        return GenieCastArchitectureDiagram;
       case 'ask':
         return AskGenieArchitecture;
       case 'backend':

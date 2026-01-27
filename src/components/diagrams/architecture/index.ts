@@ -18,3 +18,6 @@ export { GenieAskGenieArchitectureDiagram } from './GenieAskGenieArchitectureDia
 export { GenieDeckArchitectureDiagram } from './GenieDeckArchitectureDiagram';
 export { GenieAnalyticsArchitectureDiagram } from './GenieAnalyticsArchitectureDiagram';
 export { GenieSupportArchitectureDiagram } from './GenieSupportArchitectureDiagram';
+
+// Ecosystem Mapping (7 Products × 21 Categories × 206 Pipelines × 25 Capabilities)
+export { EcosystemMappingDiagram } from './EcosystemMappingDiagram';
