@@ -1,27 +1,32 @@
 /**
- * PRODUCTION HUB ADMIN PANEL
+ * PRODUCTION HUB ADMIN PANEL - UNIFIED
  * 
- * Unified admin panel for managing:
+ * Consolidated admin panel for managing ALL production features:
+ * - Kanban: Vertical swimlane production pipeline
+ * - Calendar: Visual scheduling with week/month views
  * - Content Library: View/edit existing generated content
  * - Composition Studio: Multi-modal, multi-language content creation
- * - Content scheduler across 14 regions and 6 platforms
+ * - Content scheduler across 14 regions and 9 platforms
  * - Analytics and monitoring for videos and scheduler
  * - Workspace and team management
  * 
- * Tied to Arc/Production Hub functionality
+ * Replaces both /genie-admin and /production-hub routes
+ * Arc (/genie-arc) remains for project-level management
  * Supports deep-linking via URL params (?show=id, ?linkScript=id, ?tab=xxx)
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { 
   Video, Calendar, BarChart3, 
   Globe, Wand2, Sparkles,
   Building2, Users, Paintbrush,
-  FolderOpen, Layers
+  FolderOpen, Layers, KanbanSquare,
+  CalendarDays, Loader2
 } from 'lucide-react';
 import { UnifiedCompositionStudio, ContentLibrary } from './composition-studio';
 import { ContentSchedulerDashboard } from './ContentSchedulerDashboard';
@@ -30,23 +35,46 @@ import { WorkspaceManagement } from './WorkspaceManagement';
 import { TeamInviteManagement } from './TeamInviteManagement';
 import { WhitelabelConfiguration } from './WhitelabelConfiguration';
 import { toast } from 'sonner';
+import { useShows } from '@/hooks/useShows';
+import { useNavigate } from 'react-router-dom';
+import type { EventCategory } from '@/types/shows';
+
+// Lazy load heavy components to fix loading issues
+const VerticalKanban = lazy(() => import('@/components/production/VerticalKanban').then(m => ({ default: m.VerticalKanban })));
+const ProductionCalendar = lazy(() => import('@/components/production/ProductionCalendar').then(m => ({ default: m.ProductionCalendar })));
 
 interface ProductionHubAdminProps {
   className?: string;
 }
 
-type AdminTab = 'library' | 'composition' | 'scheduler' | 'analytics' | 'workspaces' | 'team' | 'whitelabel';
+type AdminTab = 'kanban' | 'calendar' | 'library' | 'composition' | 'scheduler' | 'analytics' | 'workspaces' | 'team' | 'whitelabel';
 
 export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ className }) => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   
-  // Get initial tab from URL or default to 'library'
-  const initialTab = (searchParams.get('tab') as AdminTab) || 'library';
+  // Get shows data for Kanban and Calendar
+  const { 
+    shows, 
+    isLoading: showsLoading, 
+    updateStage,
+    updateMeetingStage,
+    updateEventStage,
+    getShowsByStage 
+  } = useShows();
+  
+  // Get initial tab from URL or default to 'kanban' (primary view)
+  const initialTab = (searchParams.get('tab') as AdminTab) || 'kanban';
   const [activeTab, setActiveTab] = useState<AdminTab>(initialTab);
+  const [activeCategory, setActiveCategory] = useState<EventCategory>('media_production');
+  const [selectedShow, setSelectedShow] = useState<any>(null);
   
   // Handle deep-linking for show/script
   const showId = searchParams.get('show');
   const linkScriptId = searchParams.get('linkScript');
+
+  // Get shows by stage for the active category
+  const showsByStage = getShowsByStage(activeCategory);
 
   useEffect(() => {
     // If coming with show or script params, switch to composition tab
@@ -79,6 +107,33 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
   const handleCreateNew = () => {
     setActiveTab('composition');
   };
+
+  const handleShowClick = (show: any) => {
+    setSelectedShow(show);
+  };
+
+  const handleOpenRecordingStudio = (show: any) => {
+    navigate(`/genie-studio?showId=${show.id}`);
+  };
+
+  const handleStageChange = async (showId: string, newStage: any) => {
+    // Determine which update function to use based on category
+    if (activeCategory === 'business_meeting') {
+      await updateMeetingStage(showId, newStage);
+    } else if (activeCategory === 'event') {
+      await updateEventStage(showId, newStage);
+    } else {
+      await updateStage(showId, newStage);
+    }
+  };
+
+  // Loading fallback for lazy components
+  const TabLoading = () => (
+    <div className="flex items-center justify-center py-20">
+      <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <span className="ml-3 text-muted-foreground">Loading...</span>
+    </div>
+  );
 
   return (
     <div className={`space-y-6 ${className || ''}`}>
@@ -172,40 +227,104 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
         </Card>
       </div>
 
-      {/* Main Tabs - Content Library as primary, then Composition Studio */}
+      {/* Main Tabs - Kanban and Calendar first (production workflow), then content creation */}
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="grid w-full grid-cols-7">
-          <TabsTrigger value="library" className="flex items-center gap-2">
-            <FolderOpen className="w-4 h-4" />
-            <span className="hidden lg:inline">Content Library</span>
-            <span className="lg:hidden">Library</span>
-          </TabsTrigger>
-          <TabsTrigger value="composition" className="flex items-center gap-2">
-            <Layers className="w-4 h-4" />
-            <span className="hidden lg:inline">Create New</span>
-            <span className="lg:hidden">Create</span>
-          </TabsTrigger>
-          <TabsTrigger value="scheduler" className="flex items-center gap-2">
-            <Calendar className="w-4 h-4" />
-            <span className="hidden lg:inline">Scheduler</span>
-          </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center gap-2">
-            <BarChart3 className="w-4 h-4" />
-            <span className="hidden lg:inline">Analytics</span>
-          </TabsTrigger>
-          <TabsTrigger value="workspaces" className="flex items-center gap-2">
-            <Building2 className="w-4 h-4" />
-            <span className="hidden lg:inline">Workspaces</span>
-          </TabsTrigger>
-          <TabsTrigger value="team" className="flex items-center gap-2">
-            <Users className="w-4 h-4" />
-            <span className="hidden lg:inline">Team</span>
-          </TabsTrigger>
-          <TabsTrigger value="whitelabel" className="flex items-center gap-2">
-            <Paintbrush className="w-4 h-4" />
-            <span className="hidden lg:inline">Whitelabel</span>
-          </TabsTrigger>
-        </TabsList>
+        <ScrollArea className="w-full">
+          <TabsList className="inline-flex w-max gap-1 p-1">
+            <TabsTrigger value="kanban" className="flex items-center gap-2">
+              <KanbanSquare className="w-4 h-4" />
+              <span className="hidden lg:inline">Kanban</span>
+            </TabsTrigger>
+            <TabsTrigger value="calendar" className="flex items-center gap-2">
+              <CalendarDays className="w-4 h-4" />
+              <span className="hidden lg:inline">Calendar</span>
+            </TabsTrigger>
+            <TabsTrigger value="library" className="flex items-center gap-2">
+              <FolderOpen className="w-4 h-4" />
+              <span className="hidden lg:inline">Library</span>
+            </TabsTrigger>
+            <TabsTrigger value="composition" className="flex items-center gap-2">
+              <Layers className="w-4 h-4" />
+              <span className="hidden lg:inline">Create</span>
+            </TabsTrigger>
+            <TabsTrigger value="scheduler" className="flex items-center gap-2">
+              <Calendar className="w-4 h-4" />
+              <span className="hidden lg:inline">Scheduler</span>
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4" />
+              <span className="hidden lg:inline">Analytics</span>
+            </TabsTrigger>
+            <TabsTrigger value="workspaces" className="flex items-center gap-2">
+              <Building2 className="w-4 h-4" />
+              <span className="hidden lg:inline">Workspaces</span>
+            </TabsTrigger>
+            <TabsTrigger value="team" className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              <span className="hidden lg:inline">Team</span>
+            </TabsTrigger>
+            <TabsTrigger value="whitelabel" className="flex items-center gap-2">
+              <Paintbrush className="w-4 h-4" />
+              <span className="hidden lg:inline">Whitelabel</span>
+            </TabsTrigger>
+          </TabsList>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
+
+        {/* Kanban - Production Pipeline */}
+        <TabsContent value="kanban" className="mt-6 space-y-4">
+          {/* Category Selector */}
+          <div className="flex gap-2 pb-4 border-b">
+            <Badge 
+              variant={activeCategory === 'media_production' ? 'default' : 'outline'}
+              className="cursor-pointer"
+              onClick={() => setActiveCategory('media_production')}
+            >
+              🎬 Media Productions
+            </Badge>
+            <Badge 
+              variant={activeCategory === 'business_meeting' ? 'default' : 'outline'}
+              className="cursor-pointer"
+              onClick={() => setActiveCategory('business_meeting')}
+            >
+              💼 Business Meetings
+            </Badge>
+            <Badge 
+              variant={activeCategory === 'event' ? 'default' : 'outline'}
+              className="cursor-pointer"
+              onClick={() => setActiveCategory('event')}
+            >
+              📅 Events
+            </Badge>
+            <Badge 
+              variant={activeCategory === 'genie_demo' ? 'default' : 'outline'}
+              className="cursor-pointer"
+              onClick={() => setActiveCategory('genie_demo')}
+            >
+              ✨ Genie Demos
+            </Badge>
+          </div>
+          <Suspense fallback={<TabLoading />}>
+            <VerticalKanban 
+              showsByStage={showsByStage}
+              onSelectShow={handleShowClick}
+              onOpenRecordingStudio={handleOpenRecordingStudio}
+              onUpdateStage={handleStageChange}
+              isLoading={showsLoading}
+              eventCategory={activeCategory}
+            />
+          </Suspense>
+        </TabsContent>
+
+        {/* Calendar - Schedule View */}
+        <TabsContent value="calendar" className="mt-6">
+          <Suspense fallback={<TabLoading />}>
+            <ProductionCalendar 
+              shows={shows}
+              onShowClick={handleShowClick}
+            />
+          </Suspense>
+        </TabsContent>
 
         {/* Content Library - View existing content */}
         <TabsContent value="library" className="mt-6">
