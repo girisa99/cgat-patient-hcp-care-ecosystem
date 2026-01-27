@@ -41,6 +41,8 @@ import deeplLogo from '@/assets/logos/providers/deepl.svg';
 import meshyLogo from '@/assets/logos/providers/meshy.png';
 import sunoLogo from '@/assets/logos/providers/suno.png';
 import metaLogo from '@/assets/logos/providers/meta.svg';
+import alibabaLogo from '@/assets/logos/providers/alibaba.jpg';
+import modelslabLogo from '@/assets/logos/providers/modelslab.jpg';
 
 // ============================================
 // CONSTANTS & DATA
@@ -170,9 +172,9 @@ const AI_PROVIDERS = [
   { name: 'Gemini', logo: geminiLogo, use: 'Indian Langs', color: 'from-blue-500 to-indigo-500' },
   { name: 'ElevenLabs', logo: elevenlabsLogo, use: 'Voice Clone', color: 'from-purple-500 to-pink-500' },
   { name: 'Azure', logo: azureLogo, use: 'TTS & OCR', color: 'from-sky-500 to-blue-500' },
-  { name: 'Alibaba', logo: null, use: 'CJK & Avatar', color: 'from-orange-500 to-red-500', fallbackIcon: '🌏' },
+  { name: 'Alibaba', logo: alibabaLogo, use: 'CJK & Avatar', color: 'from-orange-500 to-red-500' },
   { name: 'DeepL', logo: deeplLogo, use: 'Translation', color: 'from-blue-600 to-cyan-500' },
-  { name: 'ModelsLab', logo: null, use: 'Video Gen', color: 'from-violet-500 to-purple-500', fallbackIcon: '🎬' },
+  { name: 'ModelsLab', logo: modelslabLogo, use: 'Video Gen', color: 'from-violet-500 to-purple-500' },
   { name: 'Meshy', logo: meshyLogo, use: '3D Models', color: 'from-pink-500 to-rose-500' },
   { name: 'Whisper', logo: openaiLogo, use: 'Speech-to-Text', color: 'from-green-500 to-emerald-500' },
   { name: 'Suno', logo: sunoLogo, use: 'AI Music', color: 'from-amber-500 to-yellow-500' },
@@ -201,36 +203,56 @@ const GenieStudioLanding: React.FC = () => {
   const [isProductHovered, setIsProductHovered] = useState(false);
   const [isProviderHovered, setIsProviderHovered] = useState(false);
 
-  // Auto-scroll for products carousel
+  // Auto-scroll using requestAnimationFrame for smooth animation (no flickering)
   useEffect(() => {
-    if (isProductHovered) return;
-    const interval = setInterval(() => {
-      if (productCarouselRef.current) {
-        const { scrollLeft, scrollWidth, clientWidth } = productCarouselRef.current;
-        if (scrollLeft + clientWidth >= scrollWidth - 10) {
-          productCarouselRef.current.scrollTo({ left: 0, behavior: 'smooth' });
-        } else {
-          productCarouselRef.current.scrollBy({ left: 1, behavior: 'auto' });
+    let animationId: number;
+    let lastTime = 0;
+    const speed = 0.5; // pixels per frame
+    
+    const animate = (currentTime: number) => {
+      if (!isProductHovered && productCarouselRef.current) {
+        const delta = currentTime - lastTime;
+        if (delta > 16) { // ~60fps
+          const { scrollLeft, scrollWidth, clientWidth } = productCarouselRef.current;
+          if (scrollLeft + clientWidth >= scrollWidth - 5) {
+            productCarouselRef.current.scrollLeft = 0;
+          } else {
+            productCarouselRef.current.scrollLeft += speed;
+          }
+          lastTime = currentTime;
         }
       }
-    }, 30);
-    return () => clearInterval(interval);
+      animationId = requestAnimationFrame(animate);
+    };
+    
+    animationId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animationId);
   }, [isProductHovered]);
 
-  // Auto-scroll for providers carousel
+  // Auto-scroll for providers carousel using requestAnimationFrame
   useEffect(() => {
-    if (isProviderHovered) return;
-    const interval = setInterval(() => {
-      if (providerCarouselRef.current) {
-        const { scrollLeft, scrollWidth, clientWidth } = providerCarouselRef.current;
-        if (scrollLeft + clientWidth >= scrollWidth - 10) {
-          providerCarouselRef.current.scrollTo({ left: 0, behavior: 'smooth' });
-        } else {
-          providerCarouselRef.current.scrollBy({ left: 1, behavior: 'auto' });
+    let animationId: number;
+    let lastTime = 0;
+    const speed = 0.5; // pixels per frame
+    
+    const animate = (currentTime: number) => {
+      if (!isProviderHovered && providerCarouselRef.current) {
+        const delta = currentTime - lastTime;
+        if (delta > 16) { // ~60fps
+          const { scrollLeft, scrollWidth, clientWidth } = providerCarouselRef.current;
+          if (scrollLeft + clientWidth >= scrollWidth - 5) {
+            providerCarouselRef.current.scrollLeft = 0;
+          } else {
+            providerCarouselRef.current.scrollLeft += speed;
+          }
+          lastTime = currentTime;
         }
       }
-    }, 30);
-    return () => clearInterval(interval);
+      animationId = requestAnimationFrame(animate);
+    };
+    
+    animationId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animationId);
   }, [isProviderHovered]);
 
   // Detect region on mount
@@ -616,15 +638,11 @@ const GenieStudioLanding: React.FC = () => {
                   className="flex-shrink-0 w-[160px] p-5 bg-card border border-border rounded-2xl hover:border-primary/50 hover:shadow-lg transition-all text-center group/provider"
                 >
                   <div className="w-16 h-16 mx-auto mb-3 rounded-xl bg-muted flex items-center justify-center overflow-hidden group-hover/provider:scale-110 transition-transform">
-                    {provider.logo ? (
-                      <img 
-                        src={provider.logo} 
-                        alt={provider.name}
-                        className="w-12 h-12 object-contain"
-                      />
-                    ) : (
-                      <span className="text-3xl">{provider.fallbackIcon}</span>
-                    )}
+                    <img 
+                      src={provider.logo} 
+                      alt={provider.name}
+                      className="w-12 h-12 object-contain"
+                    />
                   </div>
                   <p className="text-sm font-semibold text-foreground">{provider.name}</p>
                   <p className="text-xs text-muted-foreground mt-1">{provider.use}</p>
