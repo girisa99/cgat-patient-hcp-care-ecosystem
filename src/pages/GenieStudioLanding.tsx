@@ -44,7 +44,7 @@ import modelslabLogo from '@/assets/logos/providers/modelslab.jpg';
 import deepseekLogo from '@/assets/logos/providers/deepseek.png';
 import replicateLogo from '@/assets/logos/providers/replicate.png';
 import supabaseLogo from '@/assets/logos/providers/supabase.svg';
-import gcpLogo from '@/assets/logos/providers/gcp.svg';
+import gcpLogo from '@/assets/logos/providers/gcp-official.png';
 
 // ============================================
 // CONSTANTS & DATA
