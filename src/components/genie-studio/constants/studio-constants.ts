@@ -15,7 +15,8 @@ import {
   Film,
   Podcast,
   Tv,
-  Presentation
+  Presentation,
+  Shield,
 } from 'lucide-react';
 import type { FeatureCard, QuickTip, MusicGenre, ScriptTemplate } from '../types/studio-types';
 
@@ -106,6 +107,19 @@ export const FEATURES: FeatureCard[] = [
     badge: 'Coming Soon',
     stats: { label: 'Platforms', value: '10+' },
     tab: 'publish'
+  },
+  {
+    id: 'admin',
+    title: 'Admin Hub',
+    description: 'Manage users, approvals, workspaces & team settings',
+    icon: Shield,
+    color: 'from-slate-600 to-slate-800',
+    badge: 'Internal',
+    stats: { label: 'Access', value: 'Admin' },
+    tab: 'admin',
+    isExternal: true,
+    route: '/genie-admin',
+    internalOnly: true,
   }
 ];
 

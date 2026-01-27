@@ -119,6 +119,8 @@ import { AccessibilityToggle } from '@/components/genie-studio/AccessibilityEnha
 import { GenieStudioInfoBanner } from '@/components/genie-studio/GenieStudioInfoBanner';
 // Loading Spinner - Enhanced loading state feedback
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+// Genie Studio Auth - For internal user detection
+import { useGenieStudioAuth } from '@/hooks/useGenieStudioAuth';
 
 // ========================================
 // EXTRACTED MODULES - Phase 3 Refactoring
@@ -176,6 +178,9 @@ export default function GenieStudio() {
   // Mobile detection for responsive experience
   const [isMobile, setIsMobile] = useState(false);
   const [forceDesktopView, setForceDesktopView] = useState(false);
+  
+  // Genie Studio auth for internal user detection
+  const { isInternalUser } = useGenieStudioAuth();
   
   // User flow tracking for Ralph Wiggum journey analysis (DEV-ONLY)
   const { userFlow, loadedComponents, trackAction, registerComponent } = useUserFlowTracking(activeTab);
@@ -710,6 +715,8 @@ export default function GenieStudio() {
       navigate('/genie-vibe'); // Redirect to Genie Vibe full studio
     } else if (featureId === 'deck') {
       navigate('/genie-deck'); // Redirect to Genie Deck presentations
+    } else if (featureId === 'admin') {
+      navigate('/genie-admin'); // Redirect to Admin Hub for internal users
     } else if (featureId === 'voice') {
       setActiveTab('voice-generator');
     } else if (featureId === 'script') {
@@ -720,6 +727,12 @@ export default function GenieStudio() {
       setIsPublishDialogOpen(true);
     }
   };
+
+  // Filter features based on internal user status
+  const visibleFeatures = useMemo(() => 
+    FEATURES.filter(f => !f.internalOnly || isInternalUser), 
+    [isInternalUser]
+  );
 
   // Scroll features cards
   const scrollFeatures = (direction: 'left' | 'right') => {
@@ -2292,7 +2305,7 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
                   className="flex gap-4 overflow-x-auto pb-4 px-2 scrollbar-hide snap-x snap-mandatory scroll-smooth"
                   style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                 >
-                  {FEATURES.map((feature) => (
+                  {visibleFeatures.map((feature) => (
                     <Card 
                       key={feature.id}
                       className={cn(
@@ -2324,7 +2337,8 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
                                 feature.badge === 'New' && "bg-green-500/10 text-green-600 border-green-500/20",
                                 feature.badge === 'AI Powered' && "bg-purple-500/10 text-purple-600 border-purple-500/20",
                                 feature.badge === 'Popular' && "bg-orange-500/10 text-orange-600 border-orange-500/20",
-                                feature.badge === 'Coming Soon' && "bg-cyan-500/10 text-cyan-600 border-cyan-500/20"
+                                feature.badge === 'Coming Soon' && "bg-cyan-500/10 text-cyan-600 border-cyan-500/20",
+                                feature.badge === 'Internal' && "bg-slate-500/10 text-slate-600 border-slate-500/20"
                               )}
                             >
                               {feature.badge}
