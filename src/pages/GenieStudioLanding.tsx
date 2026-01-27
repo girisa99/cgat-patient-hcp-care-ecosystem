@@ -23,7 +23,7 @@ import {
 import genieSuiteLogo from '@/assets/logos/genie-studio-suite-logo.png';
 
 // Landing page components
-import { HeroUnifiedVideoPlayer } from '@/components/landing/HeroUnifiedVideoPlayer';
+import { HeroInteractiveVideo } from '@/components/landing/HeroInteractiveVideo';
 import { InteractiveLanguageDemo } from '@/components/landing/InteractiveLanguageDemo';
 import { IndustryShowcases } from '@/components/landing/IndustryShowcases';
 import { CrossFunctionalSection } from '@/components/landing/CrossFunctionalSection';
@@ -399,17 +399,18 @@ const GenieStudioLanding: React.FC = () => {
               </p>
             </div>
 
-            {/* Right: Unified Video Player - Admin + Live */}
+            {/* Right: Interactive Video with Genie Lamp & Auto-play */}
             <div className="relative">
-              <HeroUnifiedVideoPlayer 
+              <HeroInteractiveVideo 
                 onLanguageChange={(lang) => console.log('Language changed:', lang)}
+                autoStart={true}
               />
               {/* Floating badges */}
               <div className="absolute -top-4 -right-4 px-4 py-2 bg-primary rounded-lg shadow-lg animate-bounce z-20" style={{ animationDuration: '3s' }}>
                 <p className="text-sm font-medium text-primary-foreground">🌍 {hero.stats.languages || hero.stats.dialects} Languages</p>
               </div>
               <div className="absolute -bottom-4 -left-4 px-4 py-2 bg-accent rounded-lg shadow-lg z-20">
-                <p className="text-sm font-medium text-accent-foreground">⚡ 6-Zone Routing</p>
+                <p className="text-sm font-medium text-accent-foreground">⚡ Powered by Genie Vibe</p>
               </div>
             </div>
           </div>
