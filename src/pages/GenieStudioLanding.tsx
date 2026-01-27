@@ -31,6 +31,17 @@ import genieArcLogo from '@/assets/logos/products/genie-arc.png';
 import genieCastLogo from '@/assets/logos/products/genie-cast.png';
 import askGenieLogo from '@/assets/logos/products/ask-genie.png';
 
+// AI Provider logos
+import openaiLogo from '@/assets/logos/providers/openai.svg';
+import anthropicLogo from '@/assets/logos/providers/anthropic.png';
+import geminiLogo from '@/assets/logos/providers/gemini.svg';
+import elevenlabsLogo from '@/assets/logos/providers/elevenlabs.png';
+import azureLogo from '@/assets/logos/providers/azure.svg';
+import deeplLogo from '@/assets/logos/providers/deepl.svg';
+import meshyLogo from '@/assets/logos/providers/meshy.png';
+import sunoLogo from '@/assets/logos/providers/suno.png';
+import metaLogo from '@/assets/logos/providers/meta.svg';
+
 // ============================================
 // CONSTANTS & DATA
 // ============================================
@@ -154,18 +165,18 @@ const PRICING_TIERS = [
 ];
 
 const AI_PROVIDERS = [
-  { name: 'OpenAI', icon: '🤖', use: 'Script' },
-  { name: 'Claude', icon: '🧠', use: 'Analysis' },
-  { name: 'Gemini', icon: '💎', use: 'Indian' },
-  { name: 'ElevenLabs', icon: '🎙️', use: 'Voice' },
-  { name: 'Azure', icon: '☁️', use: 'TTS' },
-  { name: 'Alibaba', icon: '🌏', use: 'CJK' },
-  { name: 'DeepL', icon: '📝', use: 'Translation' },
-  { name: 'ModelsLab', icon: '🎬', use: 'Video' },
-  { name: 'Meshy', icon: '🎲', use: '3D' },
-  { name: 'Whisper', icon: '👂', use: 'STT' },
-  { name: 'Suno', icon: '🎵', use: 'Music' },
-  { name: 'NLLB', icon: '🌐', use: 'Rare langs' },
+  { name: 'OpenAI', logo: openaiLogo, use: 'Script & Chat', color: 'from-emerald-500 to-teal-500' },
+  { name: 'Claude', logo: anthropicLogo, use: 'Analysis', color: 'from-orange-400 to-amber-500' },
+  { name: 'Gemini', logo: geminiLogo, use: 'Indian Langs', color: 'from-blue-500 to-indigo-500' },
+  { name: 'ElevenLabs', logo: elevenlabsLogo, use: 'Voice Clone', color: 'from-purple-500 to-pink-500' },
+  { name: 'Azure', logo: azureLogo, use: 'TTS & OCR', color: 'from-sky-500 to-blue-500' },
+  { name: 'Alibaba', logo: null, use: 'CJK & Avatar', color: 'from-orange-500 to-red-500', fallbackIcon: '🌏' },
+  { name: 'DeepL', logo: deeplLogo, use: 'Translation', color: 'from-blue-600 to-cyan-500' },
+  { name: 'ModelsLab', logo: null, use: 'Video Gen', color: 'from-violet-500 to-purple-500', fallbackIcon: '🎬' },
+  { name: 'Meshy', logo: meshyLogo, use: '3D Models', color: 'from-pink-500 to-rose-500' },
+  { name: 'Whisper', logo: openaiLogo, use: 'Speech-to-Text', color: 'from-green-500 to-emerald-500' },
+  { name: 'Suno', logo: sunoLogo, use: 'AI Music', color: 'from-amber-500 to-yellow-500' },
+  { name: 'NLLB', logo: metaLogo, use: 'Rare Langs', color: 'from-yellow-500 to-orange-500' },
 ];
 
 const socialLinks = [
@@ -181,11 +192,46 @@ const socialLinks = [
 const GenieStudioLanding: React.FC = () => {
   const navigate = useNavigate();
   const productCarouselRef = useRef<HTMLDivElement>(null);
+  const providerCarouselRef = useRef<HTMLDivElement>(null);
   const [region, setRegion] = useState<RegionCode>('NAM');
   const [isSimulated, setIsSimulated] = useState(false);
   const [activeProduct, setActiveProduct] = useState('vibe');
   const [showTranscreation, setShowTranscreation] = useState(true);
   const [langTab, setLangTab] = useState<'arabic' | 'indian' | 'african'>('arabic');
+  const [isProductHovered, setIsProductHovered] = useState(false);
+  const [isProviderHovered, setIsProviderHovered] = useState(false);
+
+  // Auto-scroll for products carousel
+  useEffect(() => {
+    if (isProductHovered) return;
+    const interval = setInterval(() => {
+      if (productCarouselRef.current) {
+        const { scrollLeft, scrollWidth, clientWidth } = productCarouselRef.current;
+        if (scrollLeft + clientWidth >= scrollWidth - 10) {
+          productCarouselRef.current.scrollTo({ left: 0, behavior: 'smooth' });
+        } else {
+          productCarouselRef.current.scrollBy({ left: 1, behavior: 'auto' });
+        }
+      }
+    }, 30);
+    return () => clearInterval(interval);
+  }, [isProductHovered]);
+
+  // Auto-scroll for providers carousel
+  useEffect(() => {
+    if (isProviderHovered) return;
+    const interval = setInterval(() => {
+      if (providerCarouselRef.current) {
+        const { scrollLeft, scrollWidth, clientWidth } = providerCarouselRef.current;
+        if (scrollLeft + clientWidth >= scrollWidth - 10) {
+          providerCarouselRef.current.scrollTo({ left: 0, behavior: 'smooth' });
+        } else {
+          providerCarouselRef.current.scrollBy({ left: 1, behavior: 'auto' });
+        }
+      }
+    }, 30);
+    return () => clearInterval(interval);
+  }, [isProviderHovered]);
 
   // Detect region on mount
   useEffect(() => {
@@ -435,11 +481,13 @@ const GenieStudioLanding: React.FC = () => {
               <ChevronRight className="h-6 w-6" />
             </Button>
 
-            {/* Horizontal scroll container */}
+            {/* Horizontal scroll container with auto-scroll */}
             <div 
               ref={productCarouselRef}
-              className="flex gap-6 overflow-x-auto px-4 py-4 scrollbar-hide snap-x snap-mandatory"
+              className="flex gap-6 overflow-x-auto px-4 py-4 scrollbar-hide"
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              onMouseEnter={() => setIsProductHovered(true)}
+              onMouseLeave={() => setIsProductHovered(false)}
             >
               {PRODUCTS.map((product) => (
                 <button
@@ -522,19 +570,71 @@ const GenieStudioLanding: React.FC = () => {
             </p>
           </div>
 
-          {/* Provider grid */}
-          <div className="grid grid-cols-4 md:grid-cols-6 gap-4 mb-12">
-            {AI_PROVIDERS.map((provider) => (
-              <div key={provider.name} className="p-4 bg-card border border-border rounded-xl hover:bg-muted transition text-center shadow-sm">
-                <span className="text-3xl">{provider.icon}</span>
-                <p className="text-sm font-medium mt-2 text-foreground">{provider.name}</p>
-                <p className="text-xs text-muted-foreground">{provider.use}</p>
-              </div>
-            ))}
+          {/* Provider Carousel */}
+          <div 
+            className="relative group"
+            onMouseEnter={() => setIsProviderHovered(true)}
+            onMouseLeave={() => setIsProviderHovered(false)}
+          >
+            {/* Left scroll button */}
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-background/90 backdrop-blur shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={() => {
+                if (providerCarouselRef.current) {
+                  providerCarouselRef.current.scrollBy({ left: -280, behavior: 'smooth' });
+                }
+              }}
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </Button>
+
+            {/* Right scroll button */}
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-background/90 backdrop-blur shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={() => {
+                if (providerCarouselRef.current) {
+                  providerCarouselRef.current.scrollBy({ left: 280, behavior: 'smooth' });
+                }
+              }}
+            >
+              <ChevronRight className="h-5 w-5" />
+            </Button>
+
+            {/* Horizontal scroll container */}
+            <div 
+              ref={providerCarouselRef}
+              className="flex gap-4 overflow-x-auto px-4 py-4 scrollbar-hide"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
+              {AI_PROVIDERS.map((provider) => (
+                <div 
+                  key={provider.name} 
+                  className="flex-shrink-0 w-[160px] p-5 bg-card border border-border rounded-2xl hover:border-primary/50 hover:shadow-lg transition-all text-center group/provider"
+                >
+                  <div className="w-16 h-16 mx-auto mb-3 rounded-xl bg-muted flex items-center justify-center overflow-hidden group-hover/provider:scale-110 transition-transform">
+                    {provider.logo ? (
+                      <img 
+                        src={provider.logo} 
+                        alt={provider.name}
+                        className="w-12 h-12 object-contain"
+                      />
+                    ) : (
+                      <span className="text-3xl">{provider.fallbackIcon}</span>
+                    )}
+                  </div>
+                  <p className="text-sm font-semibold text-foreground">{provider.name}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{provider.use}</p>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Confidence guarantee */}
-          <div className="text-center">
+          <div className="text-center mt-12">
             <div className="inline-flex items-center gap-3 px-6 py-3 bg-green-500/10 rounded-full border border-green-500/30">
               <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
               <span className="text-green-600 dark:text-green-400">
