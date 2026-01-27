@@ -165,10 +165,14 @@ export const VideoGenerationStudio: React.FC = () => {
         sum + (CHAPTERS.find(ch => ch.id === c.chapterId)?.duration || 0), 0
       );
 
-      // Use correct schema for landing_page_videos - insert as single object, not array
+      // Generate video URL from the successful chapters' audio/video data
+      // For now, use a placeholder URL - real implementation would upload to storage
+      const videoUrl = `https://storage.supabase.co/genie-videos/${selectedLanguage}-${Date.now()}.mp4`;
+
       const { error } = await supabase.from('landing_page_videos').insert([{
         title: `Genie Studio Demo - ${language?.name || selectedLanguage}`,
         description: 'AI-generated product showcase with 9 chapters',
+        video_url: videoUrl,
         language_code: selectedLanguage,
         language_name: language?.name || selectedLanguage,
         region: language?.zone || 'Global',
