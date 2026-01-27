@@ -341,3 +341,9 @@ verify_jwt = false
 
 [functions.dialect-tts-demo]
 verify_jwt = false
+
+[functions.alibaba-avatar-generator]
+verify_jwt = false
+
+[functions.landing-video-generator]
+verify_jwt = false
