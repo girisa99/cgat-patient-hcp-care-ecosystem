@@ -74,23 +74,24 @@ export const HeroScriptVideo: React.FC<HeroScriptVideoProps> = ({
   
   const [showLanguageSelector, setShowLanguageSelector] = useState(false);
   const [hasAutoStarted, setHasAutoStarted] = useState(false);
-
-  // Auto-start generation (only once)
+  
+  // Cleanup audio when component unmounts or page is hidden
   useEffect(() => {
-    if (autoStart && !hasAutoStarted && !isGenerating && !result && adminVideos.length === 0) {
-      setHasAutoStarted(true);
-      generateVideo(selectedRegion);
-    }
-  }, [autoStart, hasAutoStarted, isGenerating, result, adminVideos.length, selectedRegion, generateVideo]);
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        stopPlayback();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      stopPlayback();
+    };
+  }, [stopPlayback]);
 
-  // Auto-play when ready (only once after generation)
+  // Don't auto-start - wait for user interaction
   const hasAutoPlayedRef = useRef(false);
-  useEffect(() => {
-    if (result && chapters.length > 0 && !isPlaying && hasAutoStarted && !hasAutoPlayedRef.current) {
-      hasAutoPlayedRef.current = true;
-      playChapter(0);
-    }
-  }, [result, chapters.length, isPlaying, hasAutoStarted, playChapter]);
 
   const handleLanguageChange = useCallback(async (langCode: string) => {
     setRegion(langCode as any);

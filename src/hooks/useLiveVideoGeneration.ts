@@ -1,17 +1,19 @@
 /**
- * LIVE VIDEO GENERATION HOOK (v2)
+ * LIVE VIDEO GENERATION HOOK (v3)
  * 
  * Fixed audio management:
  * - Single audio instance with proper cleanup
  * - Mute control support
  * - Chapter navigation without audio overlap
  * - Uses shared useAudioElement for memory safety
+ * - Global cleanup on page refresh/visibility change
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useRegionalDetection } from './useRegionalDetection';
 import { createManagedAudio } from './shared/useAudioElement';
+import { useGlobalAudioCleanup, cleanupAllAudio } from './useGlobalAudioCleanup';
 
 export interface ChapterResult {
   chapterId: string;
@@ -74,6 +76,7 @@ export interface UseLiveVideoGenerationReturn {
 
 export const useLiveVideoGeneration = (): UseLiveVideoGenerationReturn => {
   const { selectedRegion } = useRegionalDetection();
+  const { registerCleanup, forceCleanup } = useGlobalAudioCleanup();
   
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -89,25 +92,34 @@ export const useLiveVideoGeneration = (): UseLiveVideoGenerationReturn => {
   // Single audio instance management
   const audioCleanupRef = useRef<(() => void) | null>(null);
   const isPlayingRef = useRef(false);
+  const isMountedRef = useRef(true);
   
-  // Cleanup audio on unmount
+  // Track mounted state
   useEffect(() => {
+    isMountedRef.current = true;
     return () => {
+      isMountedRef.current = false;
+      // Force cleanup on unmount
       if (audioCleanupRef.current) {
         audioCleanupRef.current();
         audioCleanupRef.current = null;
       }
+      isPlayingRef.current = false;
     };
   }, []);
   
   // Stop any current audio
   const stopCurrentAudio = useCallback(() => {
+    console.log('[LiveVideoGen] Stopping current audio');
     if (audioCleanupRef.current) {
       audioCleanupRef.current();
       audioCleanupRef.current = null;
     }
     isPlayingRef.current = false;
-  }, []);
+    
+    // Also clean up from global registry
+    forceCleanup();
+  }, [forceCleanup]);
   
   const generateVideo = useCallback(async (language?: string, chapter = 'all') => {
     const targetLanguage = language || selectedRegion;
@@ -168,6 +180,7 @@ export const useLiveVideoGeneration = (): UseLiveVideoGenerationReturn => {
   
   const playChapter = useCallback((chapterIndex: number) => {
     if (!result?.chapters || chapterIndex >= result.chapters.length) return;
+    if (!isMountedRef.current) return;
     
     const chapter = result.chapters[chapterIndex];
     
@@ -178,13 +191,15 @@ export const useLiveVideoGeneration = (): UseLiveVideoGenerationReturn => {
     if (!chapter.audioBase64) {
       console.warn('[LiveVideoGen] No audio for chapter:', chapter.chapterId);
       // Still update UI but don't play audio
-      setIsPlaying(true);
-      isPlayingRef.current = true;
+      if (isMountedRef.current) {
+        setIsPlaying(true);
+        isPlayingRef.current = true;
+      }
       
       // Auto-advance after estimated duration
       const duration = (chapter.duration || 5) * 1000;
-      setTimeout(() => {
-        if (isPlayingRef.current) {
+      const timeoutId = setTimeout(() => {
+        if (isPlayingRef.current && isMountedRef.current) {
           const nextIndex = chapterIndex + 1;
           if (nextIndex < result.chapters.length) {
             playChapter(nextIndex);
@@ -195,6 +210,13 @@ export const useLiveVideoGeneration = (): UseLiveVideoGenerationReturn => {
           }
         }
       }, duration);
+      
+      // Register cleanup for the timeout
+      registerCleanup(() => {
+        clearTimeout(timeoutId);
+        isPlayingRef.current = false;
+      });
+      
       return;
     }
     
@@ -204,6 +226,7 @@ export const useLiveVideoGeneration = (): UseLiveVideoGenerationReturn => {
     const { audio, cleanup } = createManagedAudio(audioUrl, {
       volume: isMuted ? 0 : 1,
       onEnded: () => {
+        if (!isMountedRef.current) return;
         // Auto-play next chapter
         const nextIndex = chapterIndex + 1;
         if (nextIndex < result.chapters.length && isPlayingRef.current) {
@@ -217,22 +240,32 @@ export const useLiveVideoGeneration = (): UseLiveVideoGenerationReturn => {
       },
       onError: (err) => {
         console.error('[LiveVideoGen] Audio playback error:', err);
-        setIsPlaying(false);
-        isPlayingRef.current = false;
+        if (isMountedRef.current) {
+          setIsPlaying(false);
+          isPlayingRef.current = false;
+        }
       },
     });
     
+    // Store cleanup ref
     audioCleanupRef.current = cleanup;
     
-    setIsPlaying(true);
-    isPlayingRef.current = true;
+    // Register with global cleanup system
+    registerCleanup(cleanup);
+    
+    if (isMountedRef.current) {
+      setIsPlaying(true);
+      isPlayingRef.current = true;
+    }
     
     audio.play().catch((err) => {
       console.error('[LiveVideoGen] Play failed:', err);
-      setIsPlaying(false);
-      isPlayingRef.current = false;
+      if (isMountedRef.current) {
+        setIsPlaying(false);
+        isPlayingRef.current = false;
+      }
     });
-  }, [result, isMuted, stopCurrentAudio]);
+  }, [result, isMuted, stopCurrentAudio, registerCleanup]);
   
   const pausePlayback = useCallback(() => {
     // We can't pause a data URL audio easily, so just stop
