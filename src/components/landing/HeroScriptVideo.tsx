@@ -1,12 +1,11 @@
 /**
- * HERO SCRIPT VIDEO COMPONENT
+ * HERO SCRIPT VIDEO COMPONENT (v3)
  * 
- * Complete video experience matching the genie-studio-video-script.ts:
- * - Auto-plays on load
- * - Chapter-accurate visuals (Genie, avatars, demos)
- * - Provider attribution per chapter
- * - Language selector with true localization
- * - Interactive chapter navigation
+ * Clean implementation:
+ * - Single text layer (no duplicates)
+ * - Product logos displayed via ChapterVisualEngine
+ * - Correct "Powered by" badge synced to current chapter
+ * - Audio cleanup on unmount/visibility change
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -43,9 +42,22 @@ const CHAPTER_TITLES: Record<string, { title: string; subtitle: string }> = {
   closing: { title: 'Your Story Awaits', subtitle: 'Start Creating Today' },
 };
 
+// Technical highlights per chapter
+const CHAPTER_HIGHLIGHTS: Record<string, string[]> = {
+  opening: ['7 Products', '206 Pipelines', '12 AI Providers'],
+  spark: ['28 Pipelines', 'Multi-modal Input', '6-zone LLM Routing'],
+  mind: ['30 Pipelines', 'Multi-provider TTS', '7 Arabic Dialects'],
+  vibe: ['74 Pipelines', 'AI Teleprompter', '3D Avatars'],
+  deck: ['34 Pipelines', '3D Charts', 'AI Avatar Presenter'],
+  arc: ['14 Pipelines', 'Kanban Boards', 'Team Scheduling'],
+  askGenie: ['Universal AI Hub', 'Voice Mode', 'Context-Aware'],
+  cast: ['26 Pipelines', '14-Region Distribution', 'Auto-Localization'],
+  closing: ['Start Free', 'No Credit Card', 'Enterprise Ready'],
+};
+
 export const HeroScriptVideo: React.FC<HeroScriptVideoProps> = ({
   className = '',
-  autoStart = true,
+  autoStart = false,
 }) => {
   const {
     isGenerating,
@@ -73,7 +85,6 @@ export const HeroScriptVideo: React.FC<HeroScriptVideoProps> = ({
   });
   
   const [showLanguageSelector, setShowLanguageSelector] = useState(false);
-  const [hasAutoStarted, setHasAutoStarted] = useState(false);
   
   // Cleanup audio when component unmounts or page is hidden
   useEffect(() => {
@@ -90,21 +101,15 @@ export const HeroScriptVideo: React.FC<HeroScriptVideoProps> = ({
     };
   }, [stopPlayback]);
 
-  // Don't auto-start - wait for user interaction
-  const hasAutoPlayedRef = useRef(false);
-
   const handleLanguageChange = useCallback(async (langCode: string) => {
     setRegion(langCode as any);
     setShowLanguageSelector(false);
     reset();
-    setHasAutoStarted(false);
     await generateVideo(langCode);
-    setHasAutoStarted(true);
   }, [setRegion, reset, generateVideo]);
 
   const handlePlayPause = useCallback(() => {
     if (!result) {
-      setHasAutoStarted(true);
       generateVideo(selectedRegion);
       return;
     }
@@ -121,20 +126,22 @@ export const HeroScriptVideo: React.FC<HeroScriptVideoProps> = ({
   }, [result, isPlaying, currentPlayingChapter, generateVideo, selectedRegion, pausePlayback, playChapter, resumePlayback]);
 
   const currentChapter = chapters[currentPlayingChapter];
-  const chapterInfo = CHAPTER_TITLES[currentChapter?.chapterId || 'opening'];
+  const chapterId = currentChapter?.chapterId || 'opening';
+  const chapterInfo = CHAPTER_TITLES[chapterId];
+  const highlights = CHAPTER_HIGHLIGHTS[chapterId] || [];
 
   return (
     <div className={`relative w-full aspect-video rounded-2xl overflow-hidden shadow-2xl ${className}`}>
-      {/* Visual Engine - renders chapter-specific animations */}
+      {/* Visual Engine - renders product logos and lamp animations */}
       <ChapterVisualEngine
-        chapterId={currentChapter?.chapterId || 'opening'}
+        chapterId={chapterId}
         isPlaying={isPlaying}
         isGenerating={isGenerating}
       />
       
-      {/* UI Overlay */}
-      <div className="absolute inset-0 flex flex-col justify-between p-4 md:p-6 bg-gradient-to-t from-black/80 via-transparent to-black/40">
-        {/* Top bar */}
+      {/* UI Overlay - semi-transparent, only ONE text layer */}
+      <div className="absolute inset-0 flex flex-col justify-between p-4 md:p-6">
+        {/* Top bar - language + provider attribution */}
         <div className="flex items-center justify-between gap-2 flex-wrap z-20">
           {/* Language selector */}
           <div className="relative">
@@ -175,10 +182,10 @@ export const HeroScriptVideo: React.FC<HeroScriptVideoProps> = ({
             </AnimatePresence>
           </div>
           
-          {/* Provider attribution */}
+          {/* Provider attribution - shows correct product name */}
           <div className="hidden md:block">
             <ProviderAttribution
-              chapterId={currentChapter?.chapterId || 'opening'}
+              chapterId={chapterId}
               providers={currentChapter?.providers || activeProviders}
               isActive={isPlaying || isGenerating}
             />
@@ -195,22 +202,22 @@ export const HeroScriptVideo: React.FC<HeroScriptVideoProps> = ({
           </Button>
         </div>
         
-        {/* Center content */}
-        <div className="flex-1 flex items-center justify-center z-10">
+        {/* Center - loading state or chapter badge only */}
+        <div className="flex-1 flex items-end justify-center pb-20 z-10">
           {isGenerating ? (
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               className="text-center"
             >
-              <Loader2 className="w-16 h-16 text-amber-400 animate-spin mx-auto mb-4" />
-              <p className="text-xl font-medium text-white mb-2">
+              <Loader2 className="w-12 h-12 text-amber-400 animate-spin mx-auto mb-4" />
+              <p className="text-lg font-medium text-white mb-2">
                 The Genie is Awakening...
               </p>
-              <p className="text-white/60 mb-4">
-                Generating {regionName} version with 6-zone AI routing
+              <p className="text-white/60 mb-4 text-sm">
+                Generating {regionName} version
               </p>
-              <Progress value={progress} className="w-64 mx-auto" />
+              <Progress value={progress} className="w-48 mx-auto" />
             </motion.div>
           ) : error ? (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center">
@@ -226,25 +233,19 @@ export const HeroScriptVideo: React.FC<HeroScriptVideoProps> = ({
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="text-center max-w-2xl px-4"
+                className="text-center"
               >
-                <Badge className="mb-3 bg-amber-500/20 border-amber-500/30 text-amber-200">
+                <Badge className="mb-2 bg-amber-500/20 border-amber-500/30 text-amber-200">
                   Chapter {currentPlayingChapter + 1} of {chapters.length}
                 </Badge>
-                <h2 className="text-2xl md:text-4xl font-bold text-white mb-2">
-                  {chapterInfo.title}
-                </h2>
-                <p className="text-lg text-white/70">
-                  {chapterInfo.subtitle}
-                </p>
                 
-                {/* Technical highlights */}
-                <div className="flex flex-wrap gap-2 justify-center mt-4">
-                  {currentChapter.technicalHighlights?.slice(0, 3).map((highlight, idx) => (
+                {/* Technical highlights as badges */}
+                <div className="flex flex-wrap gap-2 justify-center mt-3">
+                  {highlights.map((highlight, idx) => (
                     <Badge 
                       key={idx}
                       variant="outline"
-                      className="bg-white/10 border-white/20 text-white/80 text-xs"
+                      className="bg-black/40 border-white/30 text-white text-xs"
                     >
                       {highlight}
                     </Badge>
@@ -270,13 +271,13 @@ export const HeroScriptVideo: React.FC<HeroScriptVideoProps> = ({
           {/* Mobile provider attribution */}
           <div className="md:hidden">
             <ProviderAttribution
-              chapterId={currentChapter?.chapterId || 'opening'}
+              chapterId={chapterId}
               providers={currentChapter?.providers || []}
               isActive={isPlaying}
             />
           </div>
           
-          {/* Chapter progress */}
+          {/* Chapter progress bar */}
           {result && chapters.length > 0 && (
             <div className="flex gap-1">
               {chapters.map((ch, idx) => (
@@ -328,7 +329,7 @@ export const HeroScriptVideo: React.FC<HeroScriptVideoProps> = ({
               </Button>
             </div>
             
-            {/* Current TTS provider */}
+            {/* Current TTS provider indicator */}
             {currentChapter && (
               <Badge variant="outline" className="bg-black/40 border-white/20 text-white/80">
                 🔊 {currentChapter.ttsProvider}
