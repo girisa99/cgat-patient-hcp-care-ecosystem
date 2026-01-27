@@ -198,28 +198,28 @@ const GenieStudioLanding: React.FC = () => {
   const activeProductData = PRODUCTS.find(p => p.id === activeProduct)!;
 
   return (
-    <main className={`min-h-screen bg-slate-950 text-white ${hero?.isRTL ? 'rtl' : 'ltr'}`}>
+    <main className={`min-h-screen bg-background text-foreground ${hero?.isRTL ? 'rtl' : 'ltr'}`}>
       
       {/* NAVBAR */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-white/10">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border shadow-md">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <img src={genieSuiteLogo} alt="Genie Suite" className="h-8 w-auto" />
-            <span className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+            <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               Genie Studio
             </span>
           </div>
           <div className="hidden md:flex items-center gap-6">
-            <a href="#products" className="text-gray-300 hover:text-white transition">Products</a>
-            <a href="#pricing" className="text-gray-300 hover:text-white transition">Pricing</a>
-            <a href="#languages" className="text-gray-300 hover:text-white transition">Languages</a>
+            <a href="#products" className="text-muted-foreground hover:text-foreground transition">Products</a>
+            <a href="#pricing" className="text-muted-foreground hover:text-foreground transition">Pricing</a>
+            <a href="#languages" className="text-muted-foreground hover:text-foreground transition">Languages</a>
             <Link to="/pricing">
-              <Button variant="ghost" className="text-gray-300 hover:text-white">
+              <Button variant="ghost" className="text-muted-foreground hover:text-foreground">
                 Full Pricing
               </Button>
             </Link>
             <Link to="/genie-studio-auth">
-              <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90">
+              <Button className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg">
                 Start Free
               </Button>
             </Link>
@@ -237,82 +237,90 @@ const GenieStudioLanding: React.FC = () => {
       {/* SECTION 1: HERO - GEO-CONTEXTUAL */}
       <section className="relative min-h-screen flex items-center pt-16">
         {/* Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/50 via-slate-900 to-pink-900/30" />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/5" />
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
         </div>
 
         <div className="relative max-w-7xl mx-auto px-4 py-20">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Left: Text */}
             <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 rounded-full backdrop-blur">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-muted rounded-full">
                 <span className="text-2xl">{hero.flag}</span>
-                <span className="text-gray-300 text-sm">Content optimized for {hero.region}</span>
+                <span className="text-muted-foreground text-sm">Content optimized for {hero.region}</span>
               </div>
 
               <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight">
-                <span className="bg-gradient-to-r from-white via-purple-200 to-pink-200 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent">
                   {hero.headline}
                 </span>
               </h1>
 
-              <p className="text-xl md:text-2xl text-gray-300 max-w-xl">
+              <p className="text-xl md:text-2xl text-muted-foreground max-w-xl">
                 {hero.subheadline}
               </p>
 
               {/* Stats */}
               <div className="flex flex-wrap gap-8">
                 <div>
-                  <p className="text-3xl font-bold text-white">{hero.stats.reach}</p>
-                  <p className="text-gray-400">Audience Reach</p>
+                  <p className="text-3xl font-bold text-foreground">{hero.stats.reach}</p>
+                  <p className="text-muted-foreground">Audience Reach</p>
                 </div>
                 <div>
-                  <p className="text-3xl font-bold text-purple-400">{hero.stats.languages || hero.stats.dialects}</p>
-                  <p className="text-gray-400">{hero.stats.dialects ? 'Arabic Dialects' : 'Languages'}</p>
+                  <p className="text-3xl font-bold text-primary">{hero.stats.languages || hero.stats.dialects}</p>
+                  <p className="text-muted-foreground">{hero.stats.dialects ? 'Arabic Dialects' : 'Languages'}</p>
                 </div>
                 <div>
-                  <p className="text-3xl font-bold text-pink-400">{hero.stats.savings}</p>
-                  <p className="text-gray-400">Cost Savings</p>
+                  <p className="text-3xl font-bold text-accent">{hero.stats.savings}</p>
+                  <p className="text-muted-foreground">Cost Savings</p>
                 </div>
               </div>
 
               {/* Platform stats */}
-              <div className="flex flex-wrap items-center gap-2 text-sm text-gray-400">
-                <span className="px-2 py-1 bg-white/10 rounded">7 Products</span>
+              <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                <span className="px-2 py-1 bg-muted rounded">7 Products</span>
                 <span>•</span>
-                <span className="px-2 py-1 bg-white/10 rounded">206 Pipelines</span>
+                <span className="px-2 py-1 bg-muted rounded">206 Pipelines</span>
                 <span>•</span>
-                <span className="px-2 py-1 bg-white/10 rounded">12 AI Providers</span>
+                <span className="px-2 py-1 bg-muted rounded">12 AI Providers</span>
                 <span>•</span>
-                <span className="px-2 py-1 bg-white/10 rounded">95% Confidence</span>
+                <span className="px-2 py-1 bg-muted rounded">95% Confidence</span>
               </div>
 
               {/* CTA */}
               <div className="flex flex-wrap gap-4">
                 <Link to="/genie-studio-auth?tab=signup">
-                  <Button size="lg" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 text-lg px-8 py-6">
+                  <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg text-lg px-8 py-6">
                     Start Creating Free
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
                 <Link to="/explore">
-                  <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10 text-lg px-8 py-6">
+                  <Button size="lg" variant="outline" className="border-primary text-primary hover:bg-primary/10 text-lg px-8 py-6">
                     <Play className="mr-2 h-4 w-4" />
                     See How It Works
                   </Button>
                 </Link>
               </div>
 
-              <p className="text-gray-500 text-sm">
+              {/* Returning user link */}
+              <p className="text-muted-foreground text-sm">
+                Already have an account?{' '}
+                <Link to="/genie-studio-auth" className="text-primary hover:underline font-medium">
+                  Sign in →
+                </Link>
+              </p>
+
+              <p className="text-muted-foreground text-sm">
                 ✓ 50 free credits • ✓ No credit card required • ✓ 41 pipelines included
               </p>
             </div>
 
             {/* Right: Video showcase */}
             <div className="relative">
-              <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-purple-500/20 border border-white/10">
+              <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-primary/20 border border-border">
                 <img 
                   src={hero.video} 
                   alt={hero.theme}
@@ -322,8 +330,8 @@ const GenieStudioLanding: React.FC = () => {
                 
                 {/* Video overlay */}
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <button className="w-20 h-20 bg-white/20 backdrop-blur rounded-full flex items-center justify-center hover:bg-white/30 transition">
-                    <Play className="h-8 w-8 ml-1" />
+                  <button className="w-20 h-20 bg-primary/20 backdrop-blur rounded-full flex items-center justify-center hover:bg-primary/30 transition">
+                    <Play className="h-8 w-8 ml-1 text-primary-foreground" />
                   </button>
                 </div>
 
@@ -334,28 +342,28 @@ const GenieStudioLanding: React.FC = () => {
                     <span className="text-xs text-green-400">95% AI Confidence</span>
                   </div>
                   <div className="flex gap-2">
-                    <span className="px-2 py-1 bg-black/50 rounded text-xs backdrop-blur">4K</span>
-                    <span className="px-2 py-1 bg-black/50 rounded text-xs backdrop-blur">AI Avatar</span>
+                    <span className="px-2 py-1 bg-black/50 rounded text-xs backdrop-blur text-white">4K</span>
+                    <span className="px-2 py-1 bg-black/50 rounded text-xs backdrop-blur text-white">AI Avatar</span>
                   </div>
                 </div>
               </div>
 
               {/* Floating badges */}
-              <div className="absolute -top-4 -right-4 px-4 py-2 bg-purple-600 rounded-lg shadow-lg animate-bounce" style={{ animationDuration: '3s' }}>
-                <p className="text-sm font-medium">🌍 {hero.stats.languages || hero.stats.dialects} Languages</p>
+              <div className="absolute -top-4 -right-4 px-4 py-2 bg-primary rounded-lg shadow-lg animate-bounce" style={{ animationDuration: '3s' }}>
+                <p className="text-sm font-medium text-primary-foreground">🌍 {hero.stats.languages || hero.stats.dialects} Languages</p>
               </div>
-              <div className="absolute -bottom-4 -left-4 px-4 py-2 bg-pink-600 rounded-lg shadow-lg">
-                <p className="text-sm font-medium">⚡ Generated in 4 min</p>
+              <div className="absolute -bottom-4 -left-4 px-4 py-2 bg-accent rounded-lg shadow-lg">
+                <p className="text-sm font-medium text-accent-foreground">⚡ Generated in 4 min</p>
               </div>
             </div>
           </div>
 
           {/* Industries for this region */}
           <div className="mt-16 text-center">
-            <p className="text-gray-400 mb-4">Trusted by {hero.region} leaders in:</p>
+            <p className="text-muted-foreground mb-4">Trusted by {hero.region} leaders in:</p>
             <div className="flex flex-wrap justify-center gap-4">
               {hero.industries.map((ind: string) => (
-                <span key={ind} className="px-4 py-2 bg-white/5 rounded-full text-gray-300 hover:bg-white/10 transition cursor-pointer">
+                <span key={ind} className="px-4 py-2 bg-muted rounded-full text-foreground hover:bg-muted/80 transition cursor-pointer">
                   {ind}
                 </span>
               ))}
@@ -365,22 +373,22 @@ const GenieStudioLanding: React.FC = () => {
 
         {/* Scroll indicator */}
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
-          <div className="w-6 h-10 border-2 border-white/30 rounded-full flex justify-center">
-            <div className="w-1 h-3 bg-white/50 rounded-full mt-2" />
+          <div className="w-6 h-10 border-2 border-border rounded-full flex justify-center">
+            <div className="w-1 h-3 bg-muted-foreground rounded-full mt-2" />
           </div>
         </div>
       </section>
 
       {/* SECTION 2: PRODUCT ECOSYSTEM */}
       <section id="products" className="py-24 relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-purple-950/30 to-slate-950" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background via-primary/5 to-background" />
         
         <div className="relative max-w-7xl mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-4">
+            <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
               7 Products. 206 Pipelines. One Platform.
             </h2>
-            <p className="text-xl text-gray-400">
+            <p className="text-xl text-muted-foreground">
               From idea to global distribution — every tool you need
             </p>
           </div>
@@ -389,7 +397,7 @@ const GenieStudioLanding: React.FC = () => {
           <div className="flex justify-center mb-12">
             <div className="relative">
               <span className="text-8xl">🪄</span>
-              <div className="absolute -inset-8 bg-purple-500/20 rounded-full blur-3xl -z-10" />
+              <div className="absolute -inset-8 bg-primary/20 rounded-full blur-3xl -z-10" />
             </div>
           </div>
 
@@ -401,15 +409,15 @@ const GenieStudioLanding: React.FC = () => {
                 onClick={() => setActiveProduct(product.id)}
                 className={`group relative p-4 rounded-xl transition-all ${
                   activeProduct === product.id
-                    ? 'bg-white/10 scale-105 shadow-xl'
-                    : 'bg-white/5 hover:bg-white/10'
+                    ? 'bg-primary text-primary-foreground scale-105 shadow-lg'
+                    : 'bg-card border border-border text-foreground hover:bg-muted'
                 }`}
               >
                 <div className="flex items-center gap-3">
                   <span className="text-3xl group-hover:scale-110 transition">{product.icon}</span>
                   <div className="text-left">
                     <p className="font-medium">{product.name}</p>
-                    <p className="text-gray-400 text-sm">{product.pipelines} pipelines</p>
+                    <p className={`text-sm ${activeProduct === product.id ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>{product.pipelines} pipelines</p>
                   </div>
                 </div>
                 {activeProduct === product.id && (
@@ -421,20 +429,20 @@ const GenieStudioLanding: React.FC = () => {
 
           {/* Active product detail */}
           <div className={`bg-gradient-to-r ${activeProductData.color} p-[1px] rounded-2xl max-w-4xl mx-auto`}>
-            <div className="bg-slate-900 rounded-2xl p-8">
+            <div className="bg-card rounded-2xl p-8">
               <div className="flex items-center gap-4 mb-4">
                 <span className="text-5xl">{activeProductData.icon}</span>
                 <div>
-                  <h3 className="text-2xl font-bold">{activeProductData.name}</h3>
+                  <h3 className="text-2xl font-bold text-foreground">{activeProductData.name}</h3>
                   <p className={`bg-gradient-to-r ${activeProductData.color} bg-clip-text text-transparent font-medium`}>
                     "{activeProductData.tagline}"
                   </p>
                 </div>
               </div>
-              <p className="text-gray-300 text-lg mb-4">{activeProductData.desc}</p>
+              <p className="text-muted-foreground text-lg mb-4">{activeProductData.desc}</p>
               <div className="flex items-center gap-4">
-                <span className="px-4 py-2 bg-white/10 rounded-full">{activeProductData.pipelines} Pipelines</span>
-                <Link to="/products" className="text-purple-400 hover:text-purple-300 transition">
+                <span className="px-4 py-2 bg-muted rounded-full text-foreground">{activeProductData.pipelines} Pipelines</span>
+                <Link to="/products" className="text-primary hover:text-primary/80 transition">
                   Explore {activeProductData.name} →
                 </Link>
               </div>
@@ -443,9 +451,9 @@ const GenieStudioLanding: React.FC = () => {
 
           {/* Ask Genie */}
           <div className="mt-8 text-center">
-            <div className="inline-flex items-center gap-3 px-6 py-3 bg-purple-500/20 rounded-full border border-purple-500/30">
+            <div className="inline-flex items-center gap-3 px-6 py-3 bg-primary/10 rounded-full border border-primary/30">
               <span className="text-2xl">🧞</span>
-              <span className="text-purple-300">
+              <span className="text-primary">
                 <strong>Ask Genie</strong> — "Your wish is my command" — Available everywhere
               </span>
             </div>
@@ -455,14 +463,14 @@ const GenieStudioLanding: React.FC = () => {
 
       {/* SECTION 3: AI ORCHESTRATION */}
       <section className="py-24 relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-950 to-purple-950/20" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background to-primary/5" />
         
         <div className="relative max-w-7xl mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-4">
+            <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
               12 AI Providers. Best for Each Task.
             </h2>
-            <p className="text-xl text-gray-400">
+            <p className="text-xl text-muted-foreground">
               We pick the right AI for YOUR context — automatically
             </p>
           </div>
@@ -470,19 +478,19 @@ const GenieStudioLanding: React.FC = () => {
           {/* Provider grid */}
           <div className="grid grid-cols-4 md:grid-cols-6 gap-4 mb-12">
             {AI_PROVIDERS.map((provider) => (
-              <div key={provider.name} className="p-4 bg-white/5 rounded-xl hover:bg-white/10 transition text-center">
+              <div key={provider.name} className="p-4 bg-card border border-border rounded-xl hover:bg-muted transition text-center shadow-sm">
                 <span className="text-3xl">{provider.icon}</span>
-                <p className="text-sm font-medium mt-2">{provider.name}</p>
-                <p className="text-xs text-gray-500">{provider.use}</p>
+                <p className="text-sm font-medium mt-2 text-foreground">{provider.name}</p>
+                <p className="text-xs text-muted-foreground">{provider.use}</p>
               </div>
             ))}
           </div>
 
           {/* Confidence guarantee */}
           <div className="text-center">
-            <div className="inline-flex items-center gap-3 px-6 py-3 bg-green-500/20 rounded-full border border-green-500/30">
+            <div className="inline-flex items-center gap-3 px-6 py-3 bg-green-500/10 rounded-full border border-green-500/30">
               <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
-              <span className="text-green-300">
+              <span className="text-green-600 dark:text-green-400">
                 <strong>95% Confidence Guarantee</strong> — or we regenerate for free
               </span>
             </div>
@@ -492,33 +500,33 @@ const GenieStudioLanding: React.FC = () => {
 
       {/* SECTION 4: LANGUAGE POWER */}
       <section id="languages" className="py-24 relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-purple-950/20 via-slate-950 to-slate-950" />
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-background to-background" />
         
         <div className="relative max-w-7xl mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-bold mb-4">
+            <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
               True Localization. Not Translation.
             </h2>
-            <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-              We adapt meaning, culture, and context. This is <span className="text-purple-400 font-bold">transcreation</span>.
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+              We adapt meaning, culture, and context. This is <span className="text-primary font-bold">transcreation</span>.
             </p>
           </div>
 
           {/* Stats */}
           <div className="flex justify-center gap-8 mb-12">
             <div className="text-center">
-              <p className="text-4xl font-bold">70+</p>
-              <p className="text-gray-400">Core Languages</p>
+              <p className="text-4xl font-bold text-foreground">70+</p>
+              <p className="text-muted-foreground">Core Languages</p>
             </div>
-            <div className="w-px bg-gray-700" />
+            <div className="w-px bg-border" />
             <div className="text-center">
-              <p className="text-4xl font-bold text-purple-400">140+</p>
-              <p className="text-gray-400">Extended</p>
+              <p className="text-4xl font-bold text-primary">140+</p>
+              <p className="text-muted-foreground">Extended</p>
             </div>
-            <div className="w-px bg-gray-700" />
+            <div className="w-px bg-border" />
             <div className="text-center">
-              <p className="text-4xl font-bold text-pink-400">249+</p>
-              <p className="text-gray-400">Translation</p>
+              <p className="text-4xl font-bold text-accent">249+</p>
+              <p className="text-muted-foreground">Translation</p>
             </div>
           </div>
 
@@ -534,12 +542,12 @@ const GenieStudioLanding: React.FC = () => {
                 onClick={() => setLangTab(tab.id)}
                 className={`relative px-6 py-3 rounded-full transition ${
                   langTab === tab.id
-                    ? 'bg-gradient-to-r from-purple-600 to-pink-600'
-                    : 'bg-white/10 hover:bg-white/20'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-card border border-border text-foreground hover:bg-muted'
                 }`}
               >
                 {tab.label}
-                <span className="absolute -top-2 -right-2 px-2 py-0.5 bg-yellow-500 text-black text-xs font-bold rounded-full">
+                <span className="absolute -top-2 -right-2 px-2 py-0.5 bg-accent text-accent-foreground text-xs font-bold rounded-full">
                   {tab.badge}
                 </span>
               </button>
@@ -548,28 +556,28 @@ const GenieStudioLanding: React.FC = () => {
 
           {/* Arabic dialects */}
           {langTab === 'arabic' && (
-            <div className="bg-white/5 rounded-2xl p-8">
-              <h3 className="text-2xl font-bold mb-6 text-center">
+            <div className="bg-card border border-border rounded-2xl p-8 shadow-md">
+              <h3 className="text-2xl font-bold mb-6 text-center text-foreground">
                 Same Message, 7 Different Dialects
               </h3>
-              <p className="text-gray-400 text-center mb-8">
+              <p className="text-muted-foreground text-center mb-8">
                 "Start creating amazing videos today!" — naturally localized
               </p>
               
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {ARABIC_DIALECTS.map((dialect) => (
-                  <div key={dialect.code} className="p-4 bg-white/5 rounded-xl hover:bg-white/10 transition">
+                  <div key={dialect.code} className="p-4 bg-muted rounded-xl hover:bg-muted/80 transition">
                     <div className="flex justify-between items-center mb-2">
-                      <span className="text-purple-400 font-bold">{dialect.name}</span>
-                      <span className="text-gray-500 text-sm">{dialect.region}</span>
+                      <span className="text-primary font-bold">{dialect.name}</span>
+                      <span className="text-muted-foreground text-sm">{dialect.region}</span>
                     </div>
-                    <p className="text-xl text-right" dir="rtl">{dialect.example}</p>
+                    <p className="text-xl text-right text-foreground" dir="rtl">{dialect.example}</p>
                   </div>
                 ))}
               </div>
               
               <div className="mt-6 p-4 bg-green-500/10 rounded-xl border border-green-500/30 text-center">
-                <p className="text-green-400">
+                <p className="text-green-600 dark:text-green-400">
                   ⭐ <strong>NO competitor offers all 7 Arabic dialects</strong> — this is our moat!
                 </p>
               </div>
@@ -578,23 +586,23 @@ const GenieStudioLanding: React.FC = () => {
 
           {/* Indian languages */}
           {langTab === 'indian' && (
-            <div className="bg-white/5 rounded-2xl p-8">
-              <h3 className="text-2xl font-bold mb-6 text-center">
+            <div className="bg-card border border-border rounded-2xl p-8 shadow-md">
+              <h3 className="text-2xl font-bold mb-6 text-center text-foreground">
                 22 Indian Languages + Code-Mixing
               </h3>
               
               {/* Toggle */}
               <div className="flex justify-center mb-8">
-                <div className="inline-flex p-1 bg-white/10 rounded-full">
+                <div className="inline-flex p-1 bg-muted rounded-full">
                   <button
                     onClick={() => setShowTranscreation(false)}
-                    className={`px-4 py-2 rounded-full transition ${!showTranscreation ? 'bg-red-500' : ''}`}
+                    className={`px-4 py-2 rounded-full transition ${!showTranscreation ? 'bg-destructive text-destructive-foreground' : 'text-muted-foreground'}`}
                   >
                     ❌ Literal Translation
                   </button>
                   <button
                     onClick={() => setShowTranscreation(true)}
-                    className={`px-4 py-2 rounded-full transition ${showTranscreation ? 'bg-green-500' : ''}`}
+                    className={`px-4 py-2 rounded-full transition ${showTranscreation ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
                   >
                     ✅ Genie Transcreation
                   </button>
@@ -603,40 +611,40 @@ const GenieStudioLanding: React.FC = () => {
 
               {/* Comparison */}
               <div className="grid md:grid-cols-2 gap-8">
-                <div className={`p-6 rounded-xl ${!showTranscreation ? 'bg-red-500/10 border border-red-500/30' : 'bg-white/5'}`}>
-                  <p className="text-gray-400 mb-2">Hindi (Literal - Robotic):</p>
-                  <p className="text-xl">"कृपया हमारे AI-संचालित पाठ्यक्रम निर्माता को मुफ्त में आज़माएं"</p>
-                  {!showTranscreation && <p className="text-red-400 text-sm mt-2">❌ Textbook style. Nobody talks like this.</p>}
+                <div className={`p-6 rounded-xl ${!showTranscreation ? 'bg-destructive/10 border border-destructive/30' : 'bg-muted'}`}>
+                  <p className="text-muted-foreground mb-2">Hindi (Literal - Robotic):</p>
+                  <p className="text-xl text-foreground">"कृपया हमारे AI-संचालित पाठ्यक्रम निर्माता को मुफ्त में आज़माएं"</p>
+                  {!showTranscreation && <p className="text-destructive text-sm mt-2">❌ Textbook style. Nobody talks like this.</p>}
                 </div>
-                <div className={`p-6 rounded-xl ${showTranscreation ? 'bg-green-500/10 border border-green-500/30' : 'bg-white/5'}`}>
-                  <p className="text-gray-400 mb-2">Hinglish (Natural speech):</p>
-                  <p className="text-xl">"AI course creator free में try करो! एकदम मस्त है!"</p>
-                  {showTranscreation && <p className="text-green-400 text-sm mt-2">✅ Natural urban speech with English terms</p>}
+                <div className={`p-6 rounded-xl ${showTranscreation ? 'bg-green-500/10 border border-green-500/30' : 'bg-muted'}`}>
+                  <p className="text-muted-foreground mb-2">Hinglish (Natural speech):</p>
+                  <p className="text-xl text-foreground">"AI course creator free में try करो! एकदम मस्त है!"</p>
+                  {showTranscreation && <p className="text-green-600 dark:text-green-400 text-sm mt-2">✅ Natural urban speech with English terms</p>}
                 </div>
               </div>
 
               <div className="mt-6 flex flex-wrap justify-center gap-2">
                 {['Hindi', 'Bengali', 'Telugu', 'Tamil', 'Marathi', 'Gujarati', 'Kannada', 'Malayalam'].map((lang) => (
-                  <span key={lang} className="px-3 py-1 bg-white/10 rounded-full text-sm">{lang}</span>
+                  <span key={lang} className="px-3 py-1 bg-muted rounded-full text-sm text-foreground">{lang}</span>
                 ))}
-                <span className="px-3 py-1 bg-purple-500/30 rounded-full text-sm text-purple-300">+14 more</span>
+                <span className="px-3 py-1 bg-primary/20 rounded-full text-sm text-primary">+14 more</span>
               </div>
             </div>
           )}
 
           {/* African languages */}
           {langTab === 'african' && (
-            <div className="bg-white/5 rounded-2xl p-8">
-              <h3 className="text-2xl font-bold mb-6 text-center">
+            <div className="bg-card border border-border rounded-2xl p-8 shadow-md">
+              <h3 className="text-2xl font-bold mb-6 text-center text-foreground">
                 10 African Languages — First Mover Advantage
               </h3>
               <div className="flex flex-wrap justify-center gap-4 mb-6">
                 {['Swahili', 'Yoruba', 'Hausa', 'Zulu', 'Amharic', 'Igbo', 'Xhosa', 'Afrikaans', 'Kinyarwanda', 'Somali'].map((lang) => (
-                  <span key={lang} className="px-4 py-2 bg-white/10 rounded-full">{lang}</span>
+                  <span key={lang} className="px-4 py-2 bg-muted rounded-full text-foreground">{lang}</span>
                 ))}
               </div>
               <div className="p-4 bg-yellow-500/10 rounded-xl border border-yellow-500/30 text-center">
-                <p className="text-yellow-400">
+                <p className="text-yellow-600 dark:text-yellow-400">
                   🌍 <strong>First mover in African language AI content</strong> — 500M+ potential users
                 </p>
               </div>
@@ -647,15 +655,15 @@ const GenieStudioLanding: React.FC = () => {
 
       {/* SECTION 5: PRICING */}
       <section id="pricing" className="py-24 relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-purple-950/20 to-slate-950" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background via-primary/5 to-background" />
         
         <div className="relative max-w-7xl mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-bold mb-4">
+            <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
               Simple, Transparent Pricing
             </h2>
-            <p className="text-xl text-gray-400">
-              Start free. Scale as you grow. <span className="text-green-400">Save 55%</span> vs separate tools.
+            <p className="text-xl text-muted-foreground">
+              Start free. Scale as you grow. <span className="text-green-600 dark:text-green-400">Save 55%</span> vs separate tools.
             </p>
           </div>
 
@@ -666,8 +674,8 @@ const GenieStudioLanding: React.FC = () => {
                 key={tier.name}
                 className={`rounded-2xl p-6 ${
                   tier.popular
-                    ? 'bg-gradient-to-b from-purple-600 to-pink-600 scale-105 shadow-xl shadow-purple-500/25 relative'
-                    : 'bg-white/5'
+                    ? 'bg-gradient-to-b from-primary to-accent text-white scale-105 shadow-xl relative'
+                    : 'bg-card border border-border text-foreground shadow-md'
                 }`}
               >
                 {tier.popular && (
@@ -679,18 +687,18 @@ const GenieStudioLanding: React.FC = () => {
                 <h3 className="text-xl font-bold">{tier.name}</h3>
                 <div className="my-4">
                   <span className="text-4xl font-bold">${tier.price}</span>
-                  <span className="text-gray-400">/mo</span>
+                  <span className={tier.popular ? 'text-white/80' : 'text-muted-foreground'}>/mo</span>
                 </div>
                 
                 <div className="space-y-1 text-sm mb-4">
-                  <p><span className="text-purple-300 font-bold">{tier.credits}</span> credits</p>
-                  <p><span className="text-purple-300 font-bold">{tier.pipelines}</span> pipelines</p>
-                  <p><span className="text-purple-300 font-bold">{tier.languages}</span> languages</p>
+                  <p><span className={tier.popular ? 'text-white font-bold' : 'text-primary font-bold'}>{tier.credits}</span> credits</p>
+                  <p><span className={tier.popular ? 'text-white font-bold' : 'text-primary font-bold'}>{tier.pipelines}</span> pipelines</p>
+                  <p><span className={tier.popular ? 'text-white font-bold' : 'text-primary font-bold'}>{tier.languages}</span> languages</p>
                 </div>
 
                 <ul className="space-y-1 mb-4">
                   {tier.features.map((f) => (
-                    <li key={f} className="text-xs text-gray-300 flex items-center gap-1">
+                    <li key={f} className={`text-xs flex items-center gap-1 ${tier.popular ? 'text-white/90' : 'text-muted-foreground'}`}>
                       <Check className="h-3 w-3 text-green-400" /> {f}
                     </li>
                   ))}
@@ -698,7 +706,7 @@ const GenieStudioLanding: React.FC = () => {
 
                 <Link to={`/genie-studio-auth?tier=${tier.name.toLowerCase()}`}>
                   <Button className={`w-full ${
-                    tier.popular ? 'bg-white text-purple-600 hover:bg-gray-100' : 'bg-white/10 hover:bg-white/20'
+                    tier.popular ? 'bg-white text-primary hover:bg-gray-100' : 'bg-primary text-primary-foreground hover:bg-primary/90'
                   }`}>
                     {tier.price === 0 ? 'Start Free' : 'Get Started'}
                   </Button>
@@ -709,10 +717,10 @@ const GenieStudioLanding: React.FC = () => {
 
           {/* Savings callout */}
           <div className="mt-12 p-6 bg-green-500/10 rounded-2xl border border-green-500/30 text-center">
-            <p className="text-green-400 text-lg">
+            <p className="text-green-600 dark:text-green-400 text-lg">
               💰 <strong>Save 55%</strong> compared to Synthesia + ElevenLabs + Descript + DeepL + InVideo + Buffer + Canva
             </p>
-            <p className="text-gray-400 mt-2">
+            <p className="text-muted-foreground mt-2">
               That's $220/month for just $99/month with Studio — plus features they don't have!
             </p>
           </div>
@@ -721,57 +729,57 @@ const GenieStudioLanding: React.FC = () => {
 
       {/* SECTION 6: DOGFOODING - GENIE CAST */}
       <section className="py-24 relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-950 to-purple-950/30" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background to-primary/10" />
         
         <div className="relative max-w-7xl mx-auto px-4">
-          <div className="bg-gradient-to-r from-green-500/20 via-emerald-500/20 to-teal-500/20 rounded-2xl p-8 md:p-12 border border-green-500/30">
+          <div className="bg-card border border-border rounded-2xl p-8 md:p-12 shadow-lg">
             <div className="text-center mb-8">
               <div className="inline-flex items-center gap-3 mb-4">
                 <span className="text-5xl">📡</span>
                 <div className="text-left">
-                  <h3 className="text-3xl font-bold">Genie Cast</h3>
-                  <p className="text-green-400 font-medium text-xl">"Make It. Show It. Scale It."</p>
+                  <h3 className="text-3xl font-bold text-foreground">Genie Cast</h3>
+                  <p className="text-green-600 dark:text-green-400 font-medium text-xl">"Make It. Show It. Scale It."</p>
                 </div>
               </div>
               
-              <h2 className="text-3xl md:text-4xl font-bold mt-6 mb-4">
+              <h2 className="text-3xl md:text-4xl font-bold mt-6 mb-4 text-foreground">
                 This Website? Built with Genie.
               </h2>
-              <p className="text-xl text-gray-300">
+              <p className="text-xl text-muted-foreground">
                 We don't just build AI tools. We use them. Every day.
               </p>
             </div>
 
             {/* What we built */}
             <div className="grid md:grid-cols-4 gap-6 mb-8">
-              <div className="text-center p-4 bg-white/5 rounded-xl">
-                <p className="text-3xl font-bold text-green-400">24</p>
-                <p className="text-gray-400">Regional Showcases</p>
-                <p className="text-xs text-gray-500 mt-1">Auto-generated per region</p>
+              <div className="text-center p-4 bg-muted rounded-xl">
+                <p className="text-3xl font-bold text-green-600 dark:text-green-400">24</p>
+                <p className="text-muted-foreground">Regional Showcases</p>
+                <p className="text-xs text-muted-foreground mt-1">Auto-generated per region</p>
               </div>
-              <div className="text-center p-4 bg-white/5 rounded-xl">
-                <p className="text-3xl font-bold text-emerald-400">72</p>
-                <p className="text-gray-400">Industry Templates</p>
-                <p className="text-xs text-gray-500 mt-1">AI-created examples</p>
+              <div className="text-center p-4 bg-muted rounded-xl">
+                <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">72</p>
+                <p className="text-muted-foreground">Industry Templates</p>
+                <p className="text-xs text-muted-foreground mt-1">AI-created examples</p>
               </div>
-              <div className="text-center p-4 bg-white/5 rounded-xl">
-                <p className="text-3xl font-bold text-teal-400">12</p>
-                <p className="text-gray-400">Language Versions</p>
-                <p className="text-xs text-gray-500 mt-1">Including RTL Arabic</p>
+              <div className="text-center p-4 bg-muted rounded-xl">
+                <p className="text-3xl font-bold text-teal-600 dark:text-teal-400">12</p>
+                <p className="text-muted-foreground">Language Versions</p>
+                <p className="text-xs text-muted-foreground mt-1">Including RTL Arabic</p>
               </div>
-              <div className="text-center p-4 bg-white/5 rounded-xl">
-                <p className="text-3xl font-bold text-cyan-400">4 min</p>
-                <p className="text-gray-400">Avg Generation Time</p>
-                <p className="text-xs text-gray-500 mt-1">Full video with avatar</p>
+              <div className="text-center p-4 bg-muted rounded-xl">
+                <p className="text-3xl font-bold text-cyan-600 dark:text-cyan-400">4 min</p>
+                <p className="text-muted-foreground">Avg Generation Time</p>
+                <p className="text-xs text-muted-foreground mt-1">Full video with avatar</p>
               </div>
             </div>
 
             {/* Genie Cast features used */}
-            <div className="bg-white/5 rounded-xl p-6">
-              <p className="text-gray-400 mb-4 text-center">Built using Genie Cast pipelines:</p>
+            <div className="bg-muted rounded-xl p-6">
+              <p className="text-muted-foreground mb-4 text-center">Built using Genie Cast pipelines:</p>
               <div className="flex flex-wrap justify-center gap-2">
                 {['social-publish', 'multi-platform', 'analytics-dash', 'campaign-auto', 'content-scheduler', 'a-b-testing', 'engagement-track'].map((pipeline) => (
-                  <span key={pipeline} className="px-3 py-1 bg-green-500/20 rounded-full text-green-300 text-sm">
+                  <span key={pipeline} className="px-3 py-1 bg-green-500/20 rounded-full text-green-600 dark:text-green-400 text-sm">
                     {pipeline}
                   </span>
                 ))}
@@ -780,7 +788,7 @@ const GenieStudioLanding: React.FC = () => {
 
             <div className="mt-8 text-center">
               <Link to="/explore">
-                <Button className="bg-gradient-to-r from-green-600 to-emerald-600 hover:opacity-90">
+                <Button className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg">
                   See Behind the Scenes
                   <ChevronRight className="ml-2 h-4 w-4" />
                 </Button>
@@ -792,47 +800,55 @@ const GenieStudioLanding: React.FC = () => {
 
       {/* SECTION 7: CTA FOOTER */}
       <section className="py-24 relative">
-        <div className="absolute inset-0 bg-gradient-to-t from-purple-900/50 to-slate-950" />
+        <div className="absolute inset-0 bg-gradient-to-t from-primary/10 to-background" />
         
         <div className="relative max-w-4xl mx-auto px-4 text-center">
-          <h2 className="text-4xl md:text-6xl font-bold mb-6">
+          <h2 className="text-4xl md:text-6xl font-bold mb-6 text-foreground">
             Mind to Media.
             <br />
-            <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               Start Now.
             </span>
           </h2>
           
-          <p className="text-xl text-gray-300 mb-8">
+          <p className="text-xl text-muted-foreground mb-8">
             Join thousands transforming their content with AI
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
             <Link to="/genie-studio-auth?tab=signup">
-              <Button size="lg" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 text-lg px-8 py-6">
+              <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg text-lg px-8 py-6">
                 Start Creating Free
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
             <Link to="/support">
-              <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10 text-lg px-8 py-6">
+              <Button size="lg" variant="outline" className="border-primary text-primary hover:bg-primary/10 text-lg px-8 py-6">
                 Schedule Demo
               </Button>
             </Link>
           </div>
 
-          <p className="text-gray-500">
+          {/* Returning user link */}
+          <p className="text-muted-foreground mb-4">
+            Already have an account?{' '}
+            <Link to="/genie-studio-auth" className="text-primary hover:underline font-medium">
+              Sign in →
+            </Link>
+          </p>
+
+          <p className="text-muted-foreground">
             ✓ 50 free credits • ✓ No credit card • ✓ 41 pipelines included
           </p>
 
           {/* Footer */}
-          <div className="mt-16 pt-8 border-t border-white/10">
-            <div className="flex flex-wrap justify-center gap-8 text-gray-400 text-sm mb-8">
-              <a href="#products" className="hover:text-white transition">Products</a>
-              <a href="#pricing" className="hover:text-white transition">Pricing</a>
-              <a href="#languages" className="hover:text-white transition">Languages</a>
-              <Link to="/products" className="hover:text-white transition">Templates</Link>
-              <Link to="/support" className="hover:text-white transition">Documentation</Link>
+          <div className="mt-16 pt-8 border-t border-border">
+            <div className="flex flex-wrap justify-center gap-8 text-muted-foreground text-sm mb-8">
+              <a href="#products" className="hover:text-foreground transition">Products</a>
+              <a href="#pricing" className="hover:text-foreground transition">Pricing</a>
+              <a href="#languages" className="hover:text-foreground transition">Languages</a>
+              <Link to="/products" className="hover:text-foreground transition">Templates</Link>
+              <Link to="/support" className="hover:text-foreground transition">Documentation</Link>
             </div>
             
             {/* Social Links */}
@@ -843,18 +859,18 @@ const GenieStudioLanding: React.FC = () => {
                   href={social.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors"
+                  className="p-2 rounded-full bg-muted hover:bg-muted/80 transition-colors"
                   aria-label={social.label}
                 >
-                  <social.icon className="h-5 w-5 text-white/60 hover:text-white" />
+                  <social.icon className="h-5 w-5 text-muted-foreground hover:text-foreground" />
                 </a>
               ))}
             </div>
             
             <div className="flex justify-center items-center gap-2">
               <img src={genieSuiteLogo} alt="Genie Suite" className="h-6 w-auto" />
-              <span className="font-bold">Genie Studio</span>
-              <span className="text-gray-500">© 2026</span>
+              <span className="font-bold text-foreground">Genie Studio</span>
+              <span className="text-muted-foreground">© 2026</span>
             </div>
           </div>
         </div>
@@ -862,8 +878,8 @@ const GenieStudioLanding: React.FC = () => {
 
       {/* REGION SWITCHER (DEV TOOL) */}
       <div className="fixed bottom-4 right-4 z-50">
-        <details className="bg-slate-800 rounded-lg shadow-xl border border-white/10">
-          <summary className="px-4 py-2 cursor-pointer text-sm text-gray-300 hover:text-white">
+        <details className="bg-card border border-border rounded-lg shadow-lg">
+          <summary className="px-4 py-2 cursor-pointer text-sm text-muted-foreground hover:text-foreground">
             🌍 Switch Region
           </summary>
           <div className="p-2 space-y-1">
@@ -874,7 +890,7 @@ const GenieStudioLanding: React.FC = () => {
                   window.location.href = `?simulate_region=${code}`;
                 }}
                 className={`block w-full text-left px-3 py-1 rounded text-sm transition ${
-                  region === code ? 'bg-purple-600' : 'hover:bg-white/10'
+                  region === code ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-muted'
                 }`}
               >
                 {HERO_CONTENT[code].flag} {code}
