@@ -23,8 +23,12 @@ import {
 import genieSuiteLogo from '@/assets/logos/genie-studio-suite-logo.png';
 
 // Landing page components
-import { HeroVideoPlayer } from '@/components/landing/HeroVideoPlayer';
+import { HeroProductShowcase } from '@/components/landing/HeroProductShowcase';
 import { InteractiveLanguageDemo } from '@/components/landing/InteractiveLanguageDemo';
+import { IndustryShowcases } from '@/components/landing/IndustryShowcases';
+import { CrossFunctionalSection } from '@/components/landing/CrossFunctionalSection';
+import { GlobalInspirationSection } from '@/components/landing/GlobalInspirationSection';
+import { DogfoodingProof } from '@/components/landing/DogfoodingProof';
 
 // Product logos
 import genieSparkLogo from '@/assets/logos/products/genie-spark.png';
@@ -395,9 +399,9 @@ const GenieStudioLanding: React.FC = () => {
               </p>
             </div>
 
-            {/* Right: Video showcase */}
+            {/* Right: Product showcase */}
             <div className="relative">
-              <HeroVideoPlayer 
+              <HeroProductShowcase 
                 region={region} 
                 theme={hero.theme}
                 languageCount={hero.stats.languages || hero.stats.dialects || '70+'}
@@ -657,7 +661,14 @@ const GenieStudioLanding: React.FC = () => {
         </div>
       </section>
 
-      {/* SECTION 5: PRICING */}
+      {/* SECTION 5: INDUSTRY SHOWCASES */}
+      <IndustryShowcases />
+
+      {/* SECTION 6: CROSS-FUNCTIONAL CAPABILITIES */}
+      <CrossFunctionalSection />
+
+      {/* SECTION 7: GLOBAL INSPIRATION */}
+      <GlobalInspirationSection />
       <section id="pricing" className="py-24 relative">
         <div className="absolute inset-0 bg-gradient-to-b from-background via-primary/5 to-background" />
         
@@ -731,76 +742,8 @@ const GenieStudioLanding: React.FC = () => {
         </div>
       </section>
 
-      {/* SECTION 6: DOGFOODING - GENIE CAST */}
-      <section className="py-24 relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-background to-primary/10" />
-        
-        <div className="relative max-w-7xl mx-auto px-4">
-          <div className="bg-card border border-border rounded-2xl p-8 md:p-12 shadow-lg">
-            <div className="text-center mb-8">
-              <div className="inline-flex items-center gap-3 mb-4">
-                <span className="text-5xl">📡</span>
-                <div className="text-left">
-                  <h3 className="text-3xl font-bold text-foreground">Genie Cast</h3>
-                  <p className="text-green-600 dark:text-green-400 font-medium text-xl">"Make It. Show It. Scale It."</p>
-                </div>
-              </div>
-              
-              <h2 className="text-3xl md:text-4xl font-bold mt-6 mb-4 text-foreground">
-                This Website? Built with Genie.
-              </h2>
-              <p className="text-xl text-muted-foreground">
-                We don't just build AI tools. We use them. Every day.
-              </p>
-            </div>
-
-            {/* What we built */}
-            <div className="grid md:grid-cols-4 gap-6 mb-8">
-              <div className="text-center p-4 bg-muted rounded-xl">
-                <p className="text-3xl font-bold text-green-600 dark:text-green-400">24</p>
-                <p className="text-muted-foreground">Regional Showcases</p>
-                <p className="text-xs text-muted-foreground mt-1">Auto-generated per region</p>
-              </div>
-              <div className="text-center p-4 bg-muted rounded-xl">
-                <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">72</p>
-                <p className="text-muted-foreground">Industry Templates</p>
-                <p className="text-xs text-muted-foreground mt-1">AI-created examples</p>
-              </div>
-              <div className="text-center p-4 bg-muted rounded-xl">
-                <p className="text-3xl font-bold text-teal-600 dark:text-teal-400">12</p>
-                <p className="text-muted-foreground">Language Versions</p>
-                <p className="text-xs text-muted-foreground mt-1">Including RTL Arabic</p>
-              </div>
-              <div className="text-center p-4 bg-muted rounded-xl">
-                <p className="text-3xl font-bold text-cyan-600 dark:text-cyan-400">4 min</p>
-                <p className="text-muted-foreground">Avg Generation Time</p>
-                <p className="text-xs text-muted-foreground mt-1">Full video with avatar</p>
-              </div>
-            </div>
-
-            {/* Genie Cast features used */}
-            <div className="bg-muted rounded-xl p-6">
-              <p className="text-muted-foreground mb-4 text-center">Built using Genie Cast pipelines:</p>
-              <div className="flex flex-wrap justify-center gap-2">
-                {['social-publish', 'multi-platform', 'analytics-dash', 'campaign-auto', 'content-scheduler', 'a-b-testing', 'engagement-track'].map((pipeline) => (
-                  <span key={pipeline} className="px-3 py-1 bg-green-500/20 rounded-full text-green-600 dark:text-green-400 text-sm">
-                    {pipeline}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <div className="mt-8 text-center">
-              <Link to="/explore">
-                <Button className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg">
-                  See Behind the Scenes
-                  <ChevronRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* SECTION 9: DOGFOODING PROOF */}
+      <DogfoodingProof />
 
       {/* SECTION 7: CTA FOOTER */}
       <section className="py-24 relative">
