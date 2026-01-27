@@ -4,7 +4,7 @@
  * 
  * Test regions: ?simulate_region=IND or ?simulate_region=MENA
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +12,7 @@ import {
   ArrowRight, 
   Check,
   ChevronRight,
+  ChevronLeft,
   Youtube,
   Twitter,
   Linkedin,
@@ -28,18 +29,20 @@ import genieVibeLogo from '@/assets/logos/products/genie-vibe.png';
 import genieDeckLogo from '@/assets/logos/products/genie-deck.png';
 import genieArcLogo from '@/assets/logos/products/genie-arc.png';
 import genieCastLogo from '@/assets/logos/products/genie-cast.png';
+import askGenieLogo from '@/assets/logos/products/ask-genie.png';
 
 // ============================================
 // CONSTANTS & DATA
 // ============================================
 
 const PRODUCTS = [
-  { id: 'spark', name: 'Genie Spark', tagline: 'Ignite your Ideas', logo: genieSparkLogo, color: 'from-orange-500 to-red-500', pipelines: 28, desc: 'Input processing & script generation' },
+  { id: 'spark', name: 'Genie Spark', tagline: 'Ignite Your Ideas', logo: genieSparkLogo, color: 'from-orange-500 to-red-500', pipelines: 28, desc: 'Input processing & script generation' },
   { id: 'mind', name: 'Genie Mind', tagline: 'AI That Understands', logo: genieMindLogo, color: 'from-cyan-500 to-teal-500', pipelines: 30, desc: 'Script enhancement, TTS, translation' },
   { id: 'vibe', name: 'Genie Vibe', tagline: 'Script to Screen', logo: genieVibeLogo, color: 'from-purple-500 to-violet-500', pipelines: 74, desc: 'Video production, avatar, dubbing' },
   { id: 'deck', name: 'Genie Deck', tagline: 'Ideas to Impact', logo: genieDeckLogo, color: 'from-blue-500 to-indigo-500', pipelines: 34, desc: 'Presentations, visual design, 3D' },
   { id: 'arc', name: 'Genie Arc', tagline: 'Your Production Journey', logo: genieArcLogo, color: 'from-red-500 to-orange-500', pipelines: 14, desc: 'Scheduling & collaboration' },
   { id: 'cast', name: 'Genie Cast', tagline: 'Make It. Show It. Scale It.', logo: genieCastLogo, color: 'from-green-500 to-emerald-500', pipelines: 26, desc: 'Distribution, marketing, analytics' },
+  { id: 'ask', name: 'Ask Genie', tagline: 'Your Wish is My Command', logo: askGenieLogo, color: 'from-amber-500 to-yellow-500', pipelines: 0, desc: 'AI assistant available everywhere' },
 ];
 
 type RegionCode = 'NAM' | 'EUR' | 'MENA' | 'IND' | 'AFR' | 'APAC' | 'LATAM' | 'CARIB';
@@ -177,6 +180,7 @@ const socialLinks = [
 
 const GenieStudioLanding: React.FC = () => {
   const navigate = useNavigate();
+  const productCarouselRef = useRef<HTMLDivElement>(null);
   const [region, setRegion] = useState<RegionCode>('NAM');
   const [isSimulated, setIsSimulated] = useState(false);
   const [activeProduct, setActiveProduct] = useState('vibe');
@@ -401,39 +405,81 @@ const GenieStudioLanding: React.FC = () => {
             </p>
           </div>
 
-          {/* Product cards - Grid layout with logos */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 mb-12">
-            {PRODUCTS.map((product) => (
-              <button
-                key={product.id}
-                onClick={() => setActiveProduct(product.id)}
-                className={`group relative p-4 rounded-2xl transition-all flex flex-col items-center text-center ${
-                  activeProduct === product.id
-                    ? 'bg-card border-2 border-primary scale-105 shadow-xl'
-                    : 'bg-card border border-border hover:border-primary/50 hover:shadow-lg'
-                }`}
-              >
-                <div className="w-20 h-20 mb-3 relative">
-                  <img 
-                    src={product.logo} 
-                    alt={product.name}
-                    className="w-full h-full object-contain group-hover:scale-110 transition-transform"
-                  />
-                </div>
-                <p className="font-semibold text-foreground text-sm">{product.name}</p>
-                <p className="text-xs text-muted-foreground mt-1">{product.tagline}</p>
-                <Badge variant="secondary" className="mt-2 text-xs">
-                  {product.pipelines} pipelines
-                </Badge>
-                {activeProduct === product.id && (
-                  <div className={`absolute -bottom-1 left-1/2 -translate-x-1/2 w-16 h-1 rounded-full bg-gradient-to-r ${product.color}`} />
-                )}
-              </button>
-            ))}
+          {/* Product Carousel */}
+          <div className="relative group">
+            {/* Left scroll button */}
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-12 w-12 rounded-full bg-background/90 backdrop-blur shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={() => {
+                if (productCarouselRef.current) {
+                  productCarouselRef.current.scrollBy({ left: -320, behavior: 'smooth' });
+                }
+              }}
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </Button>
+
+            {/* Right scroll button */}
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-12 w-12 rounded-full bg-background/90 backdrop-blur shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={() => {
+                if (productCarouselRef.current) {
+                  productCarouselRef.current.scrollBy({ left: 320, behavior: 'smooth' });
+                }
+              }}
+            >
+              <ChevronRight className="h-6 w-6" />
+            </Button>
+
+            {/* Horizontal scroll container */}
+            <div 
+              ref={productCarouselRef}
+              className="flex gap-6 overflow-x-auto px-4 py-4 scrollbar-hide snap-x snap-mandatory"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
+              {PRODUCTS.map((product) => (
+                <button
+                  key={product.id}
+                  onClick={() => setActiveProduct(product.id)}
+                  className={`group/card flex-shrink-0 w-[280px] relative p-6 rounded-2xl transition-all flex flex-col items-center text-center snap-center ${
+                    activeProduct === product.id
+                      ? 'bg-card border-2 border-primary scale-105 shadow-xl'
+                      : 'bg-card border border-border hover:border-primary/50 hover:shadow-lg'
+                  }`}
+                >
+                  <div className="w-32 h-32 mb-4 relative">
+                    <img 
+                      src={product.logo} 
+                      alt={product.name}
+                      className="w-full h-full object-contain group-hover/card:scale-110 transition-transform"
+                    />
+                  </div>
+                  <p className="font-bold text-foreground text-lg">{product.name}</p>
+                  <p className="text-sm text-muted-foreground mt-1 italic">"{product.tagline}"</p>
+                  {product.pipelines > 0 && (
+                    <Badge variant="secondary" className="mt-3">
+                      {product.pipelines} pipelines
+                    </Badge>
+                  )}
+                  {product.id === 'ask' && (
+                    <Badge variant="outline" className="mt-3 border-amber-500 text-amber-600">
+                      Available Everywhere
+                    </Badge>
+                  )}
+                  {activeProduct === product.id && (
+                    <div className={`absolute -bottom-1 left-1/2 -translate-x-1/2 w-20 h-1 rounded-full bg-gradient-to-r ${product.color}`} />
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Active product detail */}
-          <div className={`bg-gradient-to-r ${activeProductData.color} p-[1px] rounded-2xl max-w-4xl mx-auto`}>
+          <div className={`mt-8 bg-gradient-to-r ${activeProductData.color} p-[1px] rounded-2xl max-w-4xl mx-auto`}>
             <div className="bg-card rounded-2xl p-8">
               <div className="flex items-center gap-6 mb-4">
                 <img 
@@ -450,21 +496,13 @@ const GenieStudioLanding: React.FC = () => {
               </div>
               <p className="text-muted-foreground text-lg mb-4">{activeProductData.desc}</p>
               <div className="flex items-center gap-4">
-                <span className="px-4 py-2 bg-muted rounded-full text-foreground font-medium">{activeProductData.pipelines} Pipelines</span>
+                {activeProductData.pipelines > 0 && (
+                  <span className="px-4 py-2 bg-muted rounded-full text-foreground font-medium">{activeProductData.pipelines} Pipelines</span>
+                )}
                 <Link to="/products" className="text-primary hover:text-primary/80 transition font-medium">
                   Explore {activeProductData.name} →
                 </Link>
               </div>
-            </div>
-          </div>
-
-          {/* Ask Genie */}
-          <div className="mt-8 text-center">
-            <div className="inline-flex items-center gap-3 px-6 py-3 bg-primary/10 rounded-full border border-primary/30">
-              <span className="text-2xl">🧞</span>
-              <span className="text-primary">
-                <strong>Ask Genie</strong> — "Your wish is my command" — Available everywhere
-              </span>
             </div>
           </div>
         </div>
