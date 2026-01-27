@@ -23,7 +23,7 @@ import {
 import genieSuiteLogo from '@/assets/logos/genie-studio-suite-logo.png';
 
 // Landing page components
-import { HeroInteractiveVideo } from '@/components/landing/HeroInteractiveVideo';
+import { HeroScriptVideo } from '@/components/landing/HeroScriptVideo';
 import { InteractiveLanguageDemo } from '@/components/landing/InteractiveLanguageDemo';
 import { IndustryShowcases } from '@/components/landing/IndustryShowcases';
 import { CrossFunctionalSection } from '@/components/landing/CrossFunctionalSection';
@@ -401,10 +401,7 @@ const GenieStudioLanding: React.FC = () => {
 
             {/* Right: Interactive Video with Genie Lamp & Auto-play */}
             <div className="relative">
-              <HeroInteractiveVideo 
-                onLanguageChange={(lang) => console.log('Language changed:', lang)}
-                autoStart={true}
-              />
+              <HeroScriptVideo autoStart={true} />
               {/* Floating badges */}
               <div className="absolute -top-4 -right-4 px-4 py-2 bg-primary rounded-lg shadow-lg animate-bounce z-20" style={{ animationDuration: '3s' }}>
                 <p className="text-sm font-medium text-primary-foreground">🌍 {hero.stats.languages || hero.stats.dialects} Languages</p>
