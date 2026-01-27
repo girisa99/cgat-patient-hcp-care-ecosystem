@@ -49,7 +49,7 @@ import Governance from '@/pages/Governance';
 import Agents from '@/pages/Agents';
 import Login from '@/pages/Login';
 import GenieStudioAuth from '@/pages/GenieStudioAuth';
-import GenieStudioPricing from '@/pages/GenieStudioPricing';
+// GenieStudioPricing removed - pricing is now integrated into landing page
 import GenieStudioLanding from '@/pages/GenieStudioLanding';
 import GenieAdminPage from '@/pages/GenieAdminPage';
 import GenieSupportPage from '@/pages/GenieSupportPage';
@@ -122,7 +122,7 @@ const AppContent = () => {
               {/* Public routes - accessible without authentication */}
               <Route path="/login" element={<Login />} />
               <Route path="/genie-studio-auth" element={<GenieStudioAuth />} />
-              <Route path="/genie-studio-pricing" element={<GenieStudioPricing />} />
+              <Route path="/genie-studio-pricing" element={<Navigate to="/genie-landing#pricing" replace />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/email-confirmation" element={<EmailConfirmation />} />
@@ -159,8 +159,8 @@ const AppContent = () => {
                 </Suspense>
               } />
               
-              {/* Genie Pricing - Public */}
-              <Route path="/pricing" element={<GenieStudioPricing />} />
+              {/* Genie Pricing - Redirect to landing page pricing section */}
+              <Route path="/pricing" element={<Navigate to="/genie-landing#pricing" replace />} />
               
               {/* Genie Support - accessible to all (with auth prompt for tickets) */}
               <Route path="/genie-support" element={<GenieSupportPage />} />

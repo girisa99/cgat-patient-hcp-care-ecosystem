@@ -225,9 +225,9 @@ const GenieStudioLanding: React.FC = () => {
             <a href="#products" className="text-muted-foreground hover:text-foreground transition">Products</a>
             <a href="#pricing" className="text-muted-foreground hover:text-foreground transition">Pricing</a>
             <a href="#languages" className="text-muted-foreground hover:text-foreground transition">Languages</a>
-            <Link to="/pricing">
+            <Link to="/explore">
               <Button variant="ghost" className="text-muted-foreground hover:text-foreground">
-                Full Pricing
+                Explore
               </Button>
             </Link>
             <Link to="/genie-studio-auth">
