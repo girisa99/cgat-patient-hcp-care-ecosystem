@@ -23,7 +23,7 @@ import {
 import genieSuiteLogo from '@/assets/logos/genie-studio-suite-logo.png';
 
 // Landing page components
-import { HeroDynamicVideo } from '@/components/landing/HeroDynamicVideo';
+import { HeroProductShowcaseAnimated } from '@/components/landing/HeroProductShowcaseAnimated';
 import { HeroProductShowcase } from '@/components/landing/HeroProductShowcase';
 import { InteractiveLanguageDemo } from '@/components/landing/InteractiveLanguageDemo';
 import { IndustryShowcases } from '@/components/landing/IndustryShowcases';
@@ -400,19 +400,16 @@ const GenieStudioLanding: React.FC = () => {
               </p>
             </div>
 
-            {/* Right: Dynamic Video with Language Dropdown */}
+            {/* Right: Animated Product Showcase with Language Detection */}
             <div className="relative">
-              <HeroDynamicVideo 
-                region={region} 
-                placement="hero"
-              />
+              <HeroProductShowcaseAnimated />
 
               {/* Floating badges */}
               <div className="absolute -top-4 -right-4 px-4 py-2 bg-primary rounded-lg shadow-lg animate-bounce z-20" style={{ animationDuration: '3s' }}>
                 <p className="text-sm font-medium text-primary-foreground">🌍 {hero.stats.languages || hero.stats.dialects} Languages</p>
               </div>
               <div className="absolute -bottom-4 -left-4 px-4 py-2 bg-accent rounded-lg shadow-lg z-20">
-                <p className="text-sm font-medium text-accent-foreground">⚡ Generated in 4 min</p>
+                <p className="text-sm font-medium text-accent-foreground">⚡ AI Animated</p>
               </div>
             </div>
           </div>
