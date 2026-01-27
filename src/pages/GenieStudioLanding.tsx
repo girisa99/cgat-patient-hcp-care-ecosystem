@@ -23,14 +23,12 @@ import {
 import genieSuiteLogo from '@/assets/logos/genie-studio-suite-logo.png';
 
 // Landing page components
-import { HeroProductShowcaseAnimated } from '@/components/landing/HeroProductShowcaseAnimated';
-import { HeroProductShowcase } from '@/components/landing/HeroProductShowcase';
+import { HeroLandingVideo } from '@/components/landing/HeroLandingVideo';
 import { InteractiveLanguageDemo } from '@/components/landing/InteractiveLanguageDemo';
 import { IndustryShowcases } from '@/components/landing/IndustryShowcases';
 import { CrossFunctionalSection } from '@/components/landing/CrossFunctionalSection';
 import { GlobalInspirationSection } from '@/components/landing/GlobalInspirationSection';
 import { DogfoodingProof } from '@/components/landing/DogfoodingProof';
-import { GenieVideoShowcaseSection } from '@/components/landing/GenieVideoShowcaseSection';
 
 // Product logos
 import genieSparkLogo from '@/assets/logos/products/genie-spark.png';
@@ -401,16 +399,15 @@ const GenieStudioLanding: React.FC = () => {
               </p>
             </div>
 
-            {/* Right: Animated Product Showcase with Language Detection */}
+            {/* Right: Pre-generated Video Player with AI Provider Attribution */}
             <div className="relative">
-              <HeroProductShowcaseAnimated />
-
+              <HeroLandingVideo />
               {/* Floating badges */}
               <div className="absolute -top-4 -right-4 px-4 py-2 bg-primary rounded-lg shadow-lg animate-bounce z-20" style={{ animationDuration: '3s' }}>
                 <p className="text-sm font-medium text-primary-foreground">🌍 {hero.stats.languages || hero.stats.dialects} Languages</p>
               </div>
               <div className="absolute -bottom-4 -left-4 px-4 py-2 bg-accent rounded-lg shadow-lg z-20">
-                <p className="text-sm font-medium text-accent-foreground">⚡ AI Animated</p>
+                <p className="text-sm font-medium text-accent-foreground">⚡ Full Production</p>
               </div>
             </div>
           </div>
@@ -436,8 +433,7 @@ const GenieStudioLanding: React.FC = () => {
         </div>
       </section>
 
-      {/* VIDEO SHOWCASE SECTION - 9 Chapter Interactive Demo */}
-      <GenieVideoShowcaseSection className="bg-background" />
+      {/* Video showcase now integrated into hero section above */}
 
       {/* SECTION 2: PRODUCT ECOSYSTEM */}
       <section id="products" className="py-24 relative">
