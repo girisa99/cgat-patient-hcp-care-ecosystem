@@ -12825,6 +12825,81 @@ export type Database = {
         }
         Relationships: []
       }
+      landing_page_videos: {
+        Row: {
+          ai_confidence: number | null
+          content_type: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          display_order: number | null
+          duration_seconds: number | null
+          generation_pipeline: string | null
+          id: string
+          industry: string | null
+          is_active: boolean | null
+          is_featured: boolean | null
+          language_code: string
+          language_name: string
+          placement: string
+          published_at: string | null
+          region: string
+          thumbnail_url: string | null
+          title: string
+          updated_at: string | null
+          video_url: string
+          view_count: number | null
+        }
+        Insert: {
+          ai_confidence?: number | null
+          content_type?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          display_order?: number | null
+          duration_seconds?: number | null
+          generation_pipeline?: string | null
+          id?: string
+          industry?: string | null
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          language_code?: string
+          language_name?: string
+          placement?: string
+          published_at?: string | null
+          region?: string
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string | null
+          video_url: string
+          view_count?: number | null
+        }
+        Update: {
+          ai_confidence?: number | null
+          content_type?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          display_order?: number | null
+          duration_seconds?: number | null
+          generation_pipeline?: string | null
+          id?: string
+          industry?: string | null
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          language_code?: string
+          language_name?: string
+          placement?: string
+          published_at?: string | null
+          region?: string
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string | null
+          video_url?: string
+          view_count?: number | null
+        }
+        Relationships: []
+      }
       legal_reviews: {
         Row: {
           approval_type: string | null
