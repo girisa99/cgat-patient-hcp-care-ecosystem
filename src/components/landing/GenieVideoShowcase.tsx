@@ -26,15 +26,15 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { GENIE_STUDIO_FULL_SCRIPT, ChapterScript } from '@/config/genie-studio-video-script';
 
-// Product logos
-import genieStudioLogo from '@/assets/logos/genie-studio-logo.png';
-import genieSparkLogo from '@/assets/logos/genie-spark-logo.png';
-import genieMindLogo from '@/assets/logos/genie-mind-logo.png';
-import genieVibeLogo from '@/assets/logos/genie-vibe-logo.png';
+// Product logos - using uploaded combined versions
+import genieStudioLogo from '@/assets/logos/genie-studio-combined-6.png';
+import genieSparkLogo from '@/assets/logos/genie-spark-combined-2.png';
+import genieMindLogo from '@/assets/logos/genie-mind-combined-6.png';
+import genieVibeLogo from '@/assets/logos/genie-vibe-combined-7.png';
 import genieDeckLogo from '@/assets/logos/genie-deck-combined.png';
-import genieArcLogo from '@/assets/logos/genie-arc-logo.png';
-import askGenieLogo from '@/assets/logos/ask-genie-logo.png';
-import genieCastLogo from '@/assets/logos/genie-cast-logo.png';
+import genieArcLogo from '@/assets/logos/genie-arc-presentation-6.png';
+import askGenieLogo from '@/assets/logos/ask-genie-combined-7.png';
+import genieCastLogo from '@/assets/logos/genie-cast-logo-2.png';
 
 // Logo mapping
 const PRODUCT_LOGOS: Record<string, string> = {
