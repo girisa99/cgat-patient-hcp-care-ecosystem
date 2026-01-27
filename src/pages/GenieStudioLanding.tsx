@@ -41,8 +41,8 @@ import deeplLogo from '@/assets/logos/providers/deepl.svg';
 import meshyLogo from '@/assets/logos/providers/meshy.png';
 import alibabaLogo from '@/assets/logos/providers/alibaba.jpg';
 import modelslabLogo from '@/assets/logos/providers/modelslab.jpg';
-import deepseekLogo from '@/assets/logos/providers/deepseek.svg';
-import replicateLogo from '@/assets/logos/providers/replicate.svg';
+import deepseekLogo from '@/assets/logos/providers/deepseek.png';
+import replicateLogo from '@/assets/logos/providers/replicate.png';
 import supabaseLogo from '@/assets/logos/providers/supabase.svg';
 
 // ============================================
