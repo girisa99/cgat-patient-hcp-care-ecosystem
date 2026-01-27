@@ -4,15 +4,15 @@
  * Consolidated admin panel for managing ALL production features:
  * - Kanban: Vertical swimlane production pipeline
  * - Calendar: Visual scheduling with week/month views
+ * - Appointments: Meeting and event scheduling (merged from Arc)
  * - Content Library: View/edit existing generated content
  * - Composition Studio: Multi-modal, multi-language content creation
  * - Content scheduler across 14 regions and 9 platforms
  * - Analytics and monitoring for videos and scheduler
  * - Workspace and team management
  * 
- * Replaces both /genie-admin and /production-hub routes
- * Arc (/genie-arc) remains for project-level management
- * Supports deep-linking via URL params (?show=id, ?linkScript=id, ?tab=xxx)
+ * CONSOLIDATION: Replaces /genie-admin, /production-hub, and /genie-arc routes
+ * All production and scheduling features now unified in this single hub
  */
 
 import React, { useState, useEffect, lazy, Suspense } from 'react';

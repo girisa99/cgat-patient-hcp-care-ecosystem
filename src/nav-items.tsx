@@ -17,23 +17,50 @@ import {
   Brain,
   Bot,
   UserCheck,
-  Zap,
   Network,
-  Workflow,
   ShoppingCart,
   FileSearch,
   GitBranch,
   Sparkles,
   Wrench,
-  Presentation
+  Presentation,
+  Factory
 } from "lucide-react";
 
+/**
+ * CONSOLIDATED NAV ITEMS
+ * Duplicates removed - Production Hub/Arc merged into /genie-admin
+ */
 export const navItems = [
+  // === MAIN SECTION ===
   {
     title: "Dashboard",
     url: "/",
     icon: HomeIcon,
   },
+  {
+    title: "Genie Studio",
+    url: "/genie-studio",
+    icon: Sparkles,
+  },
+  {
+    title: "Production Hub",
+    url: "/genie-admin",
+    icon: Factory,
+    description: "Unified production management - Kanban, Calendar, Scheduling",
+  },
+  {
+    title: "Genie Deck",
+    url: "/genie-deck",
+    icon: Presentation,
+  },
+  {
+    title: "Content Tools",
+    url: "/content-tools",
+    icon: Wrench,
+  },
+  
+  // === HEALTHCARE SECTION ===
   {
     title: "Order Management",
     url: "/order-management",
@@ -50,36 +77,22 @@ export const navItems = [
     icon: FileSearch,
   },
   {
-    title: "Genie Studio",
-    url: "/genie-studio",
-    icon: Sparkles,
-  },
-  {
-    title: "Genie Deck",
-    url: "/genie-deck",
-    icon: Presentation,
-  },
-  {
-    title: "Content Tools",
-    url: "/content-tools",
-    icon: Wrench,
-  },
-  {
     title: "Patients",
     url: "/patients", 
     icon: Stethoscope,
-  },
-  {
-    title: "Agents",
-    url: "/agents",
-    icon: Bot,
   },
   {
     title: "Treatment Centers",
     url: "/treatment-centers",
     icon: Building2,
   },
-  // MANAGEMENT SECTION
+  
+  // === MANAGEMENT SECTION ===
+  {
+    title: "Agents",
+    url: "/agents",
+    icon: Bot,
+  },
   {
     title: "Users",
     url: "/users",
@@ -105,7 +118,8 @@ export const navItems = [
     url: "/role-management",
     icon: BarChart3,
   },
-  // SYSTEM INTEGRATION SECTION
+  
+  // === SYSTEM INTEGRATION SECTION ===
   {
     title: "API Services",
     url: "/api-services",
@@ -131,7 +145,8 @@ export const navItems = [
     url: "/testing",
     icon: TestTube,
   },
-  // REPORTS & COMPLIANCE SECTION  
+  
+  // === REPORTS & COMPLIANCE SECTION ===
   {
     title: "Reports",
     url: "/reports",
@@ -157,7 +172,8 @@ export const navItems = [
     url: "/active-verification",
     icon: BarChart3,
   },
-  // ARCHITECTURE & DIAGRAMS SECTION
+  
+  // === ARCHITECTURE & DIAGRAMS SECTION ===
   {
     title: "Presentations",
     url: "/presentations",
@@ -168,7 +184,8 @@ export const navItems = [
     url: "/architecture",
     icon: GitBranch,
   },
-  // SPECIALIZED TOOLS
+  
+  // === SPECIALIZED TOOLS ===
   {
     title: "Healthcare AI",
     url: "/healthcare-ai",
