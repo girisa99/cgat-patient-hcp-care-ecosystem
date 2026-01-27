@@ -9,7 +9,7 @@
  * - Interactive chapter navigation
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Play, Pause, Volume2, VolumeX, Loader2, RefreshCw,
@@ -54,10 +54,13 @@ export const HeroScriptVideo: React.FC<HeroScriptVideoProps> = ({
     error,
     isPlaying,
     currentPlayingChapter,
+    isMuted,
     generateVideo,
     playChapter,
     pausePlayback,
     resumePlayback,
+    stopPlayback,
+    setMuted,
     reset,
     chapters,
     activeProviders,
@@ -70,10 +73,9 @@ export const HeroScriptVideo: React.FC<HeroScriptVideoProps> = ({
   });
   
   const [showLanguageSelector, setShowLanguageSelector] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
   const [hasAutoStarted, setHasAutoStarted] = useState(false);
 
-  // Auto-start generation
+  // Auto-start generation (only once)
   useEffect(() => {
     if (autoStart && !hasAutoStarted && !isGenerating && !result && adminVideos.length === 0) {
       setHasAutoStarted(true);
@@ -81,9 +83,11 @@ export const HeroScriptVideo: React.FC<HeroScriptVideoProps> = ({
     }
   }, [autoStart, hasAutoStarted, isGenerating, result, adminVideos.length, selectedRegion, generateVideo]);
 
-  // Auto-play when ready
+  // Auto-play when ready (only once after generation)
+  const hasAutoPlayedRef = useRef(false);
   useEffect(() => {
-    if (result && chapters.length > 0 && !isPlaying && hasAutoStarted) {
+    if (result && chapters.length > 0 && !isPlaying && hasAutoStarted && !hasAutoPlayedRef.current) {
+      hasAutoPlayedRef.current = true;
       playChapter(0);
     }
   }, [result, chapters.length, isPlaying, hasAutoStarted, playChapter]);
@@ -184,7 +188,7 @@ export const HeroScriptVideo: React.FC<HeroScriptVideoProps> = ({
             variant="ghost"
             size="sm"
             className="text-white/70 hover:text-white"
-            onClick={() => setIsMuted(!isMuted)}
+            onClick={() => setMuted(!isMuted)}
           >
             {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
           </Button>
