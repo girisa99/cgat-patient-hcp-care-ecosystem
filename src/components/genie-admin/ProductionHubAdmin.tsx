@@ -26,7 +26,7 @@ import {
   Globe, Wand2, Sparkles,
   Building2, Users, Paintbrush,
   FolderOpen, Layers, KanbanSquare,
-  CalendarDays, Loader2
+  CalendarDays, Loader2, CalendarCheck
 } from 'lucide-react';
 import { UnifiedCompositionStudio, ContentLibrary } from './composition-studio';
 import { ContentSchedulerDashboard } from './ContentSchedulerDashboard';
@@ -42,12 +42,14 @@ import type { EventCategory } from '@/types/shows';
 // Lazy load heavy components to fix loading issues
 const VerticalKanban = lazy(() => import('@/components/production/VerticalKanban').then(m => ({ default: m.VerticalKanban })));
 const ProductionCalendar = lazy(() => import('@/components/production/ProductionCalendar').then(m => ({ default: m.ProductionCalendar })));
+// Arc Appointments merged into Production Hub
+const AppointmentScheduler = lazy(() => import('@/components/arc/AppointmentScheduler').catch(() => ({ default: () => <div className="p-8 text-center text-muted-foreground">Appointments module loading...</div> })));
 
 interface ProductionHubAdminProps {
   className?: string;
 }
 
-type AdminTab = 'kanban' | 'calendar' | 'library' | 'composition' | 'scheduler' | 'analytics' | 'workspaces' | 'team' | 'whitelabel';
+type AdminTab = 'kanban' | 'calendar' | 'appointments' | 'library' | 'composition' | 'scheduler' | 'analytics' | 'workspaces' | 'team' | 'whitelabel';
 
 export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ className }) => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -239,6 +241,10 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
               <CalendarDays className="w-4 h-4" />
               <span className="hidden lg:inline">Calendar</span>
             </TabsTrigger>
+            <TabsTrigger value="appointments" className="flex items-center gap-2">
+              <CalendarCheck className="w-4 h-4" />
+              <span className="hidden lg:inline">Appointments</span>
+            </TabsTrigger>
             <TabsTrigger value="library" className="flex items-center gap-2">
               <FolderOpen className="w-4 h-4" />
               <span className="hidden lg:inline">Library</span>
@@ -323,6 +329,13 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
               shows={shows}
               onShowClick={handleShowClick}
             />
+          </Suspense>
+        </TabsContent>
+
+        {/* Appointments - Merged from Arc */}
+        <TabsContent value="appointments" className="mt-6">
+          <Suspense fallback={<TabLoading />}>
+            <AppointmentScheduler />
           </Suspense>
         </TabsContent>
 

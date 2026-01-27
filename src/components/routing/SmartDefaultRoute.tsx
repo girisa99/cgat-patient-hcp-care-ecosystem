@@ -29,17 +29,16 @@ const shouldPersistRoute = (path: string): boolean => {
 
 interface SmartDefaultRouteProps {
   userRoles: string[];
+  isInternal?: boolean;
 }
 
-export const SmartDefaultRoute: React.FC<SmartDefaultRouteProps> = ({ userRoles }) => {
+export const SmartDefaultRoute: React.FC<SmartDefaultRouteProps> = ({ userRoles, isInternal }) => {
   const location = useLocation();
   const [targetRoute, setTargetRoute] = useState<string | null>(null);
 
   useEffect(() => {
     // Check if we have a stored route from before refresh
     const lastRoute = localStorage.getItem(ROUTE_STORAGE_KEY);
-    const isFromRefresh = performance.navigation?.type === 1 || 
-      (performance.getEntriesByType?.('navigation')?.[0] as PerformanceNavigationTiming)?.type === 'reload';
     
     // Check if the last route is still valid (should be persisted)
     if (lastRoute && shouldPersistRoute(lastRoute)) {
@@ -56,9 +55,9 @@ export const SmartDefaultRoute: React.FC<SmartDefaultRouteProps> = ({ userRoles 
       }
     }
     
-    // Fall back to role-based default
-    setTargetRoute(getDefaultRouteForRoles(normalizeRoles(userRoles)));
-  }, [userRoles]);
+    // Fall back to role-based default (with internal user check)
+    setTargetRoute(getDefaultRouteForRoles(normalizeRoles(userRoles), isInternal));
+  }, [userRoles, isInternal]);
 
   // Save current route when navigating
   useEffect(() => {
