@@ -338,3 +338,6 @@ verify_jwt = false
 
 [functions.multi-provider-music]
 verify_jwt = false
+
+[functions.dialect-tts-demo]
+verify_jwt = false

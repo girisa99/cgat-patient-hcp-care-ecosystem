@@ -81,6 +81,7 @@ const EnrollmentDemo = React.lazy(() =>
   }))
 );
 const SubscriptionPage = React.lazy(() => import('@/pages/SubscriptionPage'));
+const GenieExploreDemoPage = React.lazy(() => import('@/pages/GenieExploreDemoPage'));
 import { getDefaultRouteForRoles, normalizeRoles } from '@/utils/roles';
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -139,6 +140,11 @@ const AppContent = () => {
               <Route path="/explore" element={
                 <Suspense fallback={<PageLoading message="Loading..." />}>
                   <GenieExplorePage />
+                </Suspense>
+              } />
+              <Route path="/explore/demo" element={
+                <Suspense fallback={<PageLoading message="Loading demo..." />}>
+                  <GenieExploreDemoPage />
                 </Suspense>
               } />
               <Route path="/explore/:step" element={
