@@ -21,17 +21,25 @@ import {
 } from 'lucide-react';
 import genieSuiteLogo from '@/assets/logos/genie-studio-suite-logo.png';
 
+// Product logos
+import genieSparkLogo from '@/assets/logos/products/genie-spark.png';
+import genieMindLogo from '@/assets/logos/products/genie-mind.png';
+import genieVibeLogo from '@/assets/logos/products/genie-vibe.png';
+import genieDeckLogo from '@/assets/logos/products/genie-deck.png';
+import genieArcLogo from '@/assets/logos/products/genie-arc.png';
+import genieCastLogo from '@/assets/logos/products/genie-cast.png';
+
 // ============================================
 // CONSTANTS & DATA
 // ============================================
 
 const PRODUCTS = [
-  { id: 'spark', name: 'Genie Spark', tagline: 'Ignite your Ideas', icon: '✨', color: 'from-orange-500 to-red-500', pipelines: 28, desc: 'Input processing & script generation' },
-  { id: 'mind', name: 'Genie Mind', tagline: 'AI That Understands', icon: '🧠', color: 'from-cyan-500 to-teal-500', pipelines: 30, desc: 'Script enhancement, TTS, translation' },
-  { id: 'vibe', name: 'Genie Vibe', tagline: 'Script to Screen', icon: '🎬', color: 'from-purple-500 to-violet-500', pipelines: 74, desc: 'Video production, avatar, dubbing' },
-  { id: 'deck', name: 'Genie Deck', tagline: 'Ideas to Impact', icon: '📊', color: 'from-blue-500 to-indigo-500', pipelines: 34, desc: 'Presentations, visual design, 3D' },
-  { id: 'arc', name: 'Genie Arc', tagline: 'Your Production Journey', icon: '🧭', color: 'from-red-500 to-orange-500', pipelines: 14, desc: 'Scheduling & collaboration' },
-  { id: 'cast', name: 'Genie Cast', tagline: 'Make It. Show It. Scale It.', icon: '📡', color: 'from-green-500 to-emerald-500', pipelines: 26, desc: 'Distribution, marketing, analytics' },
+  { id: 'spark', name: 'Genie Spark', tagline: 'Ignite your Ideas', logo: genieSparkLogo, color: 'from-orange-500 to-red-500', pipelines: 28, desc: 'Input processing & script generation' },
+  { id: 'mind', name: 'Genie Mind', tagline: 'AI That Understands', logo: genieMindLogo, color: 'from-cyan-500 to-teal-500', pipelines: 30, desc: 'Script enhancement, TTS, translation' },
+  { id: 'vibe', name: 'Genie Vibe', tagline: 'Script to Screen', logo: genieVibeLogo, color: 'from-purple-500 to-violet-500', pipelines: 74, desc: 'Video production, avatar, dubbing' },
+  { id: 'deck', name: 'Genie Deck', tagline: 'Ideas to Impact', logo: genieDeckLogo, color: 'from-blue-500 to-indigo-500', pipelines: 34, desc: 'Presentations, visual design, 3D' },
+  { id: 'arc', name: 'Genie Arc', tagline: 'Your Production Journey', logo: genieArcLogo, color: 'from-red-500 to-orange-500', pipelines: 14, desc: 'Scheduling & collaboration' },
+  { id: 'cast', name: 'Genie Cast', tagline: 'Make It. Show It. Scale It.', logo: genieCastLogo, color: 'from-green-500 to-emerald-500', pipelines: 26, desc: 'Distribution, marketing, analytics' },
 ];
 
 type RegionCode = 'NAM' | 'EUR' | 'MENA' | 'IND' | 'AFR' | 'APAC' | 'LATAM' | 'CARIB';
@@ -393,35 +401,32 @@ const GenieStudioLanding: React.FC = () => {
             </p>
           </div>
 
-          {/* Genie lamp */}
-          <div className="flex justify-center mb-12">
-            <div className="relative">
-              <span className="text-8xl">🪄</span>
-              <div className="absolute -inset-8 bg-primary/20 rounded-full blur-3xl -z-10" />
-            </div>
-          </div>
-
-          {/* Product cards */}
-          <div className="flex flex-wrap justify-center gap-4 mb-12">
+          {/* Product cards - Grid layout with logos */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 mb-12">
             {PRODUCTS.map((product) => (
               <button
                 key={product.id}
                 onClick={() => setActiveProduct(product.id)}
-                className={`group relative p-4 rounded-xl transition-all ${
+                className={`group relative p-4 rounded-2xl transition-all flex flex-col items-center text-center ${
                   activeProduct === product.id
-                    ? 'bg-primary text-primary-foreground scale-105 shadow-lg'
-                    : 'bg-card border border-border text-foreground hover:bg-muted'
+                    ? 'bg-card border-2 border-primary scale-105 shadow-xl'
+                    : 'bg-card border border-border hover:border-primary/50 hover:shadow-lg'
                 }`}
               >
-                <div className="flex items-center gap-3">
-                  <span className="text-3xl group-hover:scale-110 transition">{product.icon}</span>
-                  <div className="text-left">
-                    <p className="font-medium">{product.name}</p>
-                    <p className={`text-sm ${activeProduct === product.id ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>{product.pipelines} pipelines</p>
-                  </div>
+                <div className="w-20 h-20 mb-3 relative">
+                  <img 
+                    src={product.logo} 
+                    alt={product.name}
+                    className="w-full h-full object-contain group-hover:scale-110 transition-transform"
+                  />
                 </div>
+                <p className="font-semibold text-foreground text-sm">{product.name}</p>
+                <p className="text-xs text-muted-foreground mt-1">{product.tagline}</p>
+                <Badge variant="secondary" className="mt-2 text-xs">
+                  {product.pipelines} pipelines
+                </Badge>
                 {activeProduct === product.id && (
-                  <div className={`absolute -bottom-1 left-1/2 -translate-x-1/2 w-12 h-1 rounded-full bg-gradient-to-r ${product.color}`} />
+                  <div className={`absolute -bottom-1 left-1/2 -translate-x-1/2 w-16 h-1 rounded-full bg-gradient-to-r ${product.color}`} />
                 )}
               </button>
             ))}
@@ -430,19 +435,23 @@ const GenieStudioLanding: React.FC = () => {
           {/* Active product detail */}
           <div className={`bg-gradient-to-r ${activeProductData.color} p-[1px] rounded-2xl max-w-4xl mx-auto`}>
             <div className="bg-card rounded-2xl p-8">
-              <div className="flex items-center gap-4 mb-4">
-                <span className="text-5xl">{activeProductData.icon}</span>
+              <div className="flex items-center gap-6 mb-4">
+                <img 
+                  src={activeProductData.logo} 
+                  alt={activeProductData.name}
+                  className="w-24 h-24 object-contain"
+                />
                 <div>
                   <h3 className="text-2xl font-bold text-foreground">{activeProductData.name}</h3>
-                  <p className={`bg-gradient-to-r ${activeProductData.color} bg-clip-text text-transparent font-medium`}>
+                  <p className={`bg-gradient-to-r ${activeProductData.color} bg-clip-text text-transparent font-medium text-lg`}>
                     "{activeProductData.tagline}"
                   </p>
                 </div>
               </div>
               <p className="text-muted-foreground text-lg mb-4">{activeProductData.desc}</p>
               <div className="flex items-center gap-4">
-                <span className="px-4 py-2 bg-muted rounded-full text-foreground">{activeProductData.pipelines} Pipelines</span>
-                <Link to="/products" className="text-primary hover:text-primary/80 transition">
+                <span className="px-4 py-2 bg-muted rounded-full text-foreground font-medium">{activeProductData.pipelines} Pipelines</span>
+                <Link to="/products" className="text-primary hover:text-primary/80 transition font-medium">
                   Explore {activeProductData.name} →
                 </Link>
               </div>
