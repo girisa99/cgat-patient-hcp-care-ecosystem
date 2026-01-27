@@ -2,11 +2,11 @@
  * GENIE VIDEO SHOWCASE - Landing Page Video Component
  * 
  * Features:
- * - 9 chapters with unique visual styles per slide
- * - Voice-over with background music
- * - Genie character with smoke transitions
- * - Product logos and taglines
- * - Multi-language support
+ * - Pre-generated video library from Supabase (admin-managed)
+ * - IP-based regional video delivery
+ * - AI Provider badges showing which providers powered each video
+ * - Multi-language support with dynamic video switching
+ * - Fallback to animated slides when no video available
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -20,11 +20,15 @@ import {
   ChevronRight,
   Globe,
   Sparkles,
-  Wand2
+  Cpu,
+  Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 import { GENIE_STUDIO_FULL_SCRIPT, ChapterScript } from '@/config/genie-studio-video-script';
+import { useLandingVideos, LandingVideo } from '@/hooks/useLandingVideos';
+import { useRegionalDetection } from '@/hooks/useRegionalDetection';
 
 // Product logos - using uploaded combined versions
 import genieStudioLogo from '@/assets/logos/genie-studio-combined-6.png';
@@ -35,6 +39,36 @@ import genieDeckLogo from '@/assets/logos/genie-deck-combined.png';
 import genieArcLogo from '@/assets/logos/genie-arc-presentation-6.png';
 import askGenieLogo from '@/assets/logos/ask-genie-combined-7.png';
 import genieCastLogo from '@/assets/logos/genie-cast-logo-2.png';
+
+// AI Provider configurations with colors and icons
+const AI_PROVIDERS: Record<string, { name: string; color: string; shortName: string }> = {
+  alibaba: { name: 'Alibaba Cloud', color: 'bg-orange-500', shortName: 'Alibaba' },
+  azure: { name: 'Azure AI', color: 'bg-blue-500', shortName: 'Azure' },
+  elevenlabs: { name: 'ElevenLabs', color: 'bg-purple-500', shortName: 'ElevenLabs' },
+  openai: { name: 'OpenAI', color: 'bg-green-500', shortName: 'OpenAI' },
+  claude: { name: 'Claude', color: 'bg-orange-400', shortName: 'Claude' },
+  deepseek: { name: 'DeepSeek', color: 'bg-cyan-500', shortName: 'DeepSeek' },
+  gemini: { name: 'Google Gemini', color: 'bg-blue-400', shortName: 'Gemini' },
+  meshy: { name: 'Meshy AI', color: 'bg-pink-500', shortName: 'Meshy' },
+  modelslab: { name: 'ModelsLab', color: 'bg-indigo-500', shortName: 'ModelsLab' },
+  deepl: { name: 'DeepL', color: 'bg-teal-500', shortName: 'DeepL' },
+  replicate: { name: 'Replicate', color: 'bg-gray-500', shortName: 'Replicate' },
+  gcp: { name: 'Google Cloud', color: 'bg-red-500', shortName: 'GCP' }
+};
+
+// Regional provider routing - which providers are used for which region
+const REGIONAL_PROVIDER_ROUTING: Record<string, { tts: string; avatar: string; llm: string; translation: string }> = {
+  en: { tts: 'elevenlabs', avatar: 'alibaba', llm: 'claude', translation: 'deepl' },
+  ar: { tts: 'azure', avatar: 'alibaba', llm: 'openai', translation: 'azure' },
+  zh: { tts: 'alibaba', avatar: 'alibaba', llm: 'deepseek', translation: 'alibaba' },
+  hi: { tts: 'azure', avatar: 'alibaba', llm: 'gemini', translation: 'azure' },
+  ja: { tts: 'alibaba', avatar: 'alibaba', llm: 'claude', translation: 'deepl' },
+  ko: { tts: 'azure', avatar: 'alibaba', llm: 'claude', translation: 'deepl' },
+  es: { tts: 'elevenlabs', avatar: 'alibaba', llm: 'claude', translation: 'deepl' },
+  fr: { tts: 'elevenlabs', avatar: 'alibaba', llm: 'claude', translation: 'deepl' },
+  pt: { tts: 'azure', avatar: 'alibaba', llm: 'claude', translation: 'deepl' },
+  de: { tts: 'azure', avatar: 'alibaba', llm: 'claude', translation: 'deepl' }
+};
 
 // Logo mapping
 const PRODUCT_LOGOS: Record<string, string> = {
@@ -112,19 +146,61 @@ export const GenieVideoShowcase: React.FC<GenieVideoShowcaseProps> = ({
   const [isPlaying, setIsPlaying] = useState(autoPlay);
   const [isMuted, setIsMuted] = useState(true);
   const [progress, setProgress] = useState(0);
-  const [selectedLanguage, setSelectedLanguage] = useState('en');
   const [showLangSelector, setShowLangSelector] = useState(false);
   const [isGenieVisible, setIsGenieVisible] = useState(true);
+  const [showProviderBadges, setShowProviderBadges] = useState(true);
+  const [videoError, setVideoError] = useState(false);
+  
+  const videoRef = useRef<HTMLVideoElement>(null);
+  
+  // Get regional detection for IP-based video serving
+  const { selectedRegion, detectedRegion, setRegion, isRTL } = useRegionalDetection();
+  
+  // Fetch pre-generated videos from Supabase
+  const { 
+    videos, 
+    loading: videosLoading, 
+    getVideosByLanguage, 
+    getFeaturedVideo,
+    recordView 
+  } = useLandingVideos({ 
+    placement: 'hero_showcase',
+    region: selectedRegion 
+  });
   
   const chapters = GENIE_STUDIO_FULL_SCRIPT.chapters;
   const currentChapter = chapters[currentChapterIndex];
   
-  // Auto-advance chapters
+  // Get current video for language/chapter
+  const currentVideo = videos.find(v => 
+    v.language_code === selectedRegion && 
+    v.content_type === currentChapter.id
+  ) || getFeaturedVideo(selectedRegion);
+  
+  // Get provider routing for current language
+  const currentProviders = REGIONAL_PROVIDER_ROUTING[selectedRegion] || REGIONAL_PROVIDER_ROUTING.en;
+  
+  // Handle video playback
   useEffect(() => {
-    if (!isPlaying) return;
+    if (currentVideo && videoRef.current) {
+      videoRef.current.src = currentVideo.video_url;
+      videoRef.current.muted = isMuted;
+      
+      if (isPlaying) {
+        videoRef.current.play().catch(() => setVideoError(true));
+      }
+      
+      // Record view for analytics
+      recordView(currentVideo.id);
+    }
+  }, [currentVideo, isPlaying, isMuted, recordView]);
+  
+  // Fallback: Auto-advance chapters when no video
+  useEffect(() => {
+    if (currentVideo || !isPlaying) return;
     
     const chapterDuration = parseInt(currentChapter.duration) * 1000 || 45000;
-    const interval = 100; // Update every 100ms
+    const interval = 100;
     let elapsed = 0;
     
     const timer = setInterval(() => {
@@ -144,7 +220,7 @@ export const GenieVideoShowcase: React.FC<GenieVideoShowcaseProps> = ({
     }, interval);
     
     return () => clearInterval(timer);
-  }, [isPlaying, currentChapterIndex, currentChapter, chapters.length]);
+  }, [isPlaying, currentChapterIndex, currentChapter, chapters.length, currentVideo]);
   
   // Genie smoke effect on chapter change
   useEffect(() => {
@@ -157,49 +233,157 @@ export const GenieVideoShowcase: React.FC<GenieVideoShowcaseProps> = ({
     if (index >= 0 && index < chapters.length) {
       setCurrentChapterIndex(index);
       setProgress(0);
+      setVideoError(false);
     }
   }, [chapters.length]);
   
-  const togglePlay = () => setIsPlaying(!isPlaying);
-  const toggleMute = () => setIsMuted(!isMuted);
+  const togglePlay = () => {
+    setIsPlaying(!isPlaying);
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play().catch(() => setVideoError(true));
+      }
+    }
+  };
+  
+  const toggleMute = () => {
+    setIsMuted(!isMuted);
+    if (videoRef.current) {
+      videoRef.current.muted = !isMuted;
+    }
+  };
+  
+  const handleLanguageChange = (langCode: string) => {
+    setRegion(langCode as any);
+    setShowLangSelector(false);
+    setVideoError(false);
+  };
   
   const getSlideStyle = (): React.CSSProperties => {
     const visualType = currentChapter.visual.type;
     return SLIDE_VISUALS[visualType] || SLIDE_VISUALS['3d_animated'];
   };
 
+  // Provider Badge Component
+  const ProviderBadge: React.FC<{ type: string; providerId: string }> = ({ type, providerId }) => {
+    const provider = AI_PROVIDERS[providerId];
+    if (!provider) return null;
+    
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="flex items-center gap-1"
+      >
+        <span className={`w-2 h-2 rounded-full ${provider.color}`} />
+        <span className="text-[10px] text-white/60 uppercase">{type}</span>
+        <span className="text-[10px] text-white/80">{provider.shortName}</span>
+      </motion.div>
+    );
+  };
+
   return (
-    <div className={`relative w-full aspect-video rounded-2xl overflow-hidden ${className}`}>
-      {/* Background with visual type styling */}
-      <motion.div 
-        className="absolute inset-0"
-        style={getSlideStyle()}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-      />
+    <div className={`relative w-full aspect-video rounded-2xl overflow-hidden ${className}`} dir={isRTL ? 'rtl' : 'ltr'}>
+      {/* Pre-generated Video Layer */}
+      {currentVideo && !videoError && (
+        <video
+          ref={videoRef}
+          className="absolute inset-0 w-full h-full object-cover z-5"
+          playsInline
+          loop={false}
+          onEnded={() => {
+            if (currentChapterIndex < chapters.length - 1) {
+              setCurrentChapterIndex(prev => prev + 1);
+            } else {
+              setIsPlaying(false);
+            }
+          }}
+          onError={() => setVideoError(true)}
+          onTimeUpdate={(e) => {
+            const video = e.currentTarget;
+            if (video.duration) {
+              setProgress((video.currentTime / video.duration) * 100);
+            }
+          }}
+        />
+      )}
       
-      {/* Animated stars/particles background */}
-      <div className="absolute inset-0 overflow-hidden">
-        {[...Array(30)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-1 h-1 bg-white rounded-full"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-            }}
-            animate={{
-              opacity: [0.2, 0.8, 0.2],
-              scale: [0.5, 1.2, 0.5],
-            }}
-            transition={{
-              duration: 2 + Math.random() * 2,
-              repeat: Infinity,
-              delay: Math.random() * 2,
-            }}
+      {/* Fallback: Animated Background when no video */}
+      {(!currentVideo || videoError) && (
+        <>
+          <motion.div 
+            className="absolute inset-0"
+            style={getSlideStyle()}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
           />
-        ))}
-      </div>
+          
+          {/* Animated stars/particles background */}
+          <div className="absolute inset-0 overflow-hidden">
+            {[...Array(30)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute w-1 h-1 bg-white rounded-full"
+                style={{
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                }}
+                animate={{
+                  opacity: [0.2, 0.8, 0.2],
+                  scale: [0.5, 1.2, 0.5],
+                }}
+                transition={{
+                  duration: 2 + Math.random() * 2,
+                  repeat: Infinity,
+                  delay: Math.random() * 2,
+                }}
+              />
+            ))}
+          </div>
+          
+          {/* Genie Lamp Effect */}
+          <motion.div
+            className="absolute bottom-20 left-1/2 transform -translate-x-1/2"
+            animate={{
+              y: [0, -5, 0],
+            }}
+            transition={{ duration: 3, repeat: Infinity }}
+          >
+            <div className="relative">
+              {/* Smoke coming from lamp */}
+              <motion.div
+                className="absolute -top-32 left-1/2 transform -translate-x-1/2 w-32 h-32"
+                animate={{
+                  opacity: [0.3, 0.6, 0.3],
+                  scale: [1, 1.3, 1],
+                }}
+                transition={{ duration: 4, repeat: Infinity }}
+              >
+                <div className="w-full h-full bg-gradient-to-t from-purple-500/40 via-purple-400/20 to-transparent blur-xl rounded-full" />
+              </motion.div>
+              
+              {/* Lamp glow */}
+              <motion.div
+                className="w-16 h-16 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full blur-lg opacity-60"
+                animate={{
+                  scale: [1, 1.2, 1],
+                  opacity: [0.4, 0.7, 0.4],
+                }}
+                transition={{ duration: 2, repeat: Infinity }}
+              />
+            </div>
+          </motion.div>
+        </>
+      )}
+      
+      {/* Loading overlay */}
+      {videosLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-20">
+          <Loader2 className="w-8 h-8 text-purple-400 animate-spin" />
+        </div>
+      )}
       
       {/* Main content area */}
       <AnimatePresence mode="wait">
@@ -211,14 +395,35 @@ export const GenieVideoShowcase: React.FC<GenieVideoShowcaseProps> = ({
           transition={{ duration: 0.5 }}
           className="relative z-10 h-full flex flex-col items-center justify-center p-8"
         >
-          {/* Slide type indicator */}
-          <div className="absolute top-4 left-4 flex items-center gap-2">
+          {/* AI Provider Badges - Top Left */}
+          {showProviderBadges && (
+            <div className="absolute top-4 left-4 flex flex-col gap-1">
+              <div className="flex items-center gap-2 px-2 py-1 bg-black/40 backdrop-blur-sm rounded-lg">
+                <Cpu className="w-3 h-3 text-purple-400" />
+                <span className="text-[10px] text-white/60 uppercase">Powered by</span>
+              </div>
+              <div className="flex flex-col gap-1 px-2 py-2 bg-black/30 backdrop-blur-sm rounded-lg">
+                <ProviderBadge type="Voice" providerId={currentProviders.tts} />
+                <ProviderBadge type="Avatar" providerId={currentProviders.avatar} />
+                <ProviderBadge type="LLM" providerId={currentProviders.llm} />
+                <ProviderBadge type="Trans" providerId={currentProviders.translation} />
+              </div>
+            </div>
+          )}
+          
+          {/* Slide type indicator & duration */}
+          <div className="absolute top-4 right-24 flex items-center gap-2">
             <span className="px-3 py-1 bg-white/10 backdrop-blur-sm rounded-full text-white/80 text-xs font-medium capitalize">
               {currentChapter.visual.type.replace(/_/g, ' ')}
             </span>
             <span className="px-3 py-1 bg-purple-500/20 backdrop-blur-sm rounded-full text-purple-200 text-xs">
               {currentChapter.duration}
             </span>
+            {currentVideo && (
+              <Badge variant="outline" className="text-[10px] border-green-500/50 text-green-400 bg-green-500/10">
+                Pre-rendered
+              </Badge>
+            )}
           </div>
           
           {/* Language selector */}
@@ -231,7 +436,7 @@ export const GenieVideoShowcase: React.FC<GenieVideoShowcaseProps> = ({
                 className="text-white/80 hover:text-white hover:bg-white/10"
               >
                 <Globe className="w-4 h-4 mr-2" />
-                {LANGUAGES.find(l => l.code === selectedLanguage)?.flag}
+                {LANGUAGES.find(l => l.code === selectedRegion)?.flag || '🌐'}
               </Button>
               
               <AnimatePresence>
@@ -242,168 +447,155 @@ export const GenieVideoShowcase: React.FC<GenieVideoShowcaseProps> = ({
                     exit={{ opacity: 0, y: -10 }}
                     className="absolute right-0 mt-2 bg-black/80 backdrop-blur-sm rounded-lg p-2 min-w-[150px] z-50"
                   >
-                    {LANGUAGES.map(lang => (
-                      <button
-                        key={lang.code}
-                        onClick={() => {
-                          setSelectedLanguage(lang.code);
-                          setShowLangSelector(false);
-                        }}
-                        className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
-                          selectedLanguage === lang.code
-                            ? 'bg-purple-500/30 text-white'
-                            : 'text-white/70 hover:bg-white/10 hover:text-white'
-                        }`}
-                      >
-                        <span>{lang.flag}</span>
-                        <span>{lang.name}</span>
-                      </button>
-                    ))}
+                    {LANGUAGES.map(lang => {
+                      const hasVideo = videos.some(v => v.language_code === lang.code);
+                      return (
+                        <button
+                          key={lang.code}
+                          onClick={() => handleLanguageChange(lang.code)}
+                          className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                            selectedRegion === lang.code
+                              ? 'bg-purple-500/30 text-white'
+                              : 'text-white/70 hover:bg-white/10 hover:text-white'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span>{lang.flag}</span>
+                            <span>{lang.name}</span>
+                          </div>
+                          {hasVideo && (
+                            <span className="w-2 h-2 bg-green-400 rounded-full" title="Video available" />
+                          )}
+                        </button>
+                      );
+                    })}
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
           </div>
           
-          {/* Product Logo with Genie effect */}
-          <motion.div
-            animate={{
-              opacity: isGenieVisible ? 1 : 0,
-              scale: isGenieVisible ? 1 : 0.8,
-            }}
-            transition={{ duration: 0.3 }}
-            className="relative mb-6"
-          >
-            {/* Smoke effect */}
+          {/* Product Logo with Genie effect - only show when no video */}
+          {(!currentVideo || videoError) && (
             <motion.div
-              className="absolute inset-0 bg-purple-400/20 blur-3xl rounded-full"
               animate={{
-                scale: [1, 1.2, 1],
-                opacity: [0.3, 0.5, 0.3],
+                opacity: isGenieVisible ? 1 : 0,
+                scale: isGenieVisible ? 1 : 0.8,
               }}
-              transition={{ duration: 3, repeat: Infinity }}
-            />
-            
-            <img
-              src={PRODUCT_LOGOS[currentChapter.id] || genieStudioLogo}
-              alt={currentChapter.title}
-              className="w-48 h-48 object-contain relative z-10 drop-shadow-2xl"
-            />
-            
-            {/* Orbiting sparkles for opening/closing */}
-            {(currentChapter.id === 'opening' || currentChapter.id === 'closing') && (
-              <>
-                {[...Array(7)].map((_, i) => (
-                  <motion.div
-                    key={i}
-                    className="absolute w-8 h-8"
-                    style={{
-                      left: '50%',
-                      top: '50%',
-                    }}
-                    animate={{
-                      rotate: 360,
-                    }}
-                    transition={{
-                      duration: 10,
-                      repeat: Infinity,
-                      ease: 'linear',
-                      delay: i * (10 / 7),
-                    }}
-                  >
-                    <motion.img
-                      src={Object.values(PRODUCT_LOGOS)[i + 1]}
-                      alt=""
-                      className="w-8 h-8 object-contain"
+              transition={{ duration: 0.3 }}
+              className="relative mb-6"
+            >
+              {/* Smoke effect */}
+              <motion.div
+                className="absolute inset-0 bg-purple-400/20 blur-3xl rounded-full"
+                animate={{
+                  scale: [1, 1.2, 1],
+                  opacity: [0.3, 0.5, 0.3],
+                }}
+                transition={{ duration: 3, repeat: Infinity }}
+              />
+              
+              <img
+                src={PRODUCT_LOGOS[currentChapter.id] || genieStudioLogo}
+                alt={currentChapter.title}
+                className="w-48 h-48 object-contain relative z-10 drop-shadow-2xl"
+              />
+              
+              {/* Orbiting sparkles for opening/closing */}
+              {(currentChapter.id === 'opening' || currentChapter.id === 'closing') && (
+                <>
+                  {[...Array(7)].map((_, i) => (
+                    <motion.div
+                      key={i}
+                      className="absolute w-8 h-8"
                       style={{
-                        transform: `translateX(${80 + i * 10}px)`,
+                        left: '50%',
+                        top: '50%',
                       }}
                       animate={{
-                        scale: [0.8, 1, 0.8],
-                        opacity: [0.6, 1, 0.6],
+                        rotate: 360,
                       }}
                       transition={{
-                        duration: 2,
+                        duration: 10,
                         repeat: Infinity,
-                        delay: i * 0.2,
+                        ease: 'linear',
+                        delay: i * (10 / 7),
                       }}
-                    />
-                  </motion.div>
-                ))}
-              </>
-            )}
-          </motion.div>
+                    >
+                      <motion.img
+                        src={Object.values(PRODUCT_LOGOS)[i + 1]}
+                        alt=""
+                        className="w-8 h-8 object-contain"
+                        style={{
+                          transform: `translateX(${80 + i * 10}px)`,
+                        }}
+                        animate={{
+                          scale: [0.8, 1, 0.8],
+                          opacity: [0.6, 1, 0.6],
+                        }}
+                        transition={{
+                          duration: 2,
+                          repeat: Infinity,
+                          delay: i * 0.2,
+                        }}
+                      />
+                    </motion.div>
+                  ))}
+                </>
+              )}
+            </motion.div>
+          )}
           
-          {/* Chapter title */}
-          <motion.h2
-            className="text-3xl md:text-4xl font-bold text-white text-center mb-2"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            {currentChapter.title}
-          </motion.h2>
-          
-          {/* Tagline */}
-          <motion.p
-            className="text-lg md:text-xl text-purple-200 text-center mb-6 italic"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-          >
-            "{PRODUCT_TAGLINES[currentChapter.id]}"
-          </motion.p>
-          
-          {/* Technical highlights */}
-          <motion.div
-            className="flex flex-wrap justify-center gap-2 max-w-3xl"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4 }}
-          >
-            {currentChapter.technicalHighlights.slice(0, 4).map((highlight, idx) => (
-              <motion.span
-                key={idx}
-                className="px-3 py-1 bg-white/10 backdrop-blur-sm rounded-full text-white/80 text-xs"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.4 + idx * 0.1 }}
+          {/* Chapter title - only show when no video */}
+          {(!currentVideo || videoError) && (
+            <>
+              <motion.h2
+                className="text-3xl md:text-4xl font-bold text-white text-center mb-2"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
               >
-                <Sparkles className="w-3 h-3 inline mr-1" />
-                {highlight}
-              </motion.span>
-            ))}
-          </motion.div>
-          
-          {/* Visual elements preview */}
-          <motion.div
-            className="absolute bottom-24 left-1/2 transform -translate-x-1/2 flex gap-2"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-          >
-            {currentChapter.visual.elements.slice(0, 5).map((element, idx) => (
+                {currentChapter.title}
+              </motion.h2>
+              
+              {/* Tagline */}
+              <motion.p
+                className="text-lg md:text-xl text-purple-200 text-center mb-6 italic"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+              >
+                "{PRODUCT_TAGLINES[currentChapter.id]}"
+              </motion.p>
+              
+              {/* Technical highlights */}
               <motion.div
-                key={idx}
-                className="w-2 h-2 bg-purple-400 rounded-full"
-                animate={{
-                  scale: [1, 1.5, 1],
-                  opacity: [0.5, 1, 0.5],
-                }}
-                transition={{
-                  duration: 1.5,
-                  repeat: Infinity,
-                  delay: idx * 0.2,
-                }}
-              />
-            ))}
-          </motion.div>
+                className="flex flex-wrap justify-center gap-2 max-w-3xl"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4 }}
+              >
+                {currentChapter.technicalHighlights.slice(0, 4).map((highlight, idx) => (
+                  <motion.span
+                    key={idx}
+                    className="px-3 py-1 bg-white/10 backdrop-blur-sm rounded-full text-white/80 text-xs"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.4 + idx * 0.1 }}
+                  >
+                    <Sparkles className="w-3 h-3 inline mr-1" />
+                    {highlight}
+                  </motion.span>
+                ))}
+              </motion.div>
+            </>
+          )}
         </motion.div>
       </AnimatePresence>
       
       {/* Controls */}
       {showControls && (
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 z-20">
           {/* Progress bar */}
           <Progress value={progress} className="h-1 mb-4" />
           
@@ -458,18 +650,35 @@ export const GenieVideoShowcase: React.FC<GenieVideoShowcaseProps> = ({
               </Button>
             </div>
             
-            <div className="text-white/80 text-sm">
-              {currentChapterIndex + 1} / {chapters.length}
+            <div className="flex items-center gap-3 text-white/80 text-sm">
+              <span>{currentChapterIndex + 1} / {chapters.length}</span>
+              {detectedRegion !== selectedRegion && (
+                <Badge variant="outline" className="text-[10px] border-blue-500/50 text-blue-400">
+                  {LANGUAGES.find(l => l.code === detectedRegion)?.flag} detected
+                </Badge>
+              )}
             </div>
             
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleMute}
-              className="text-white hover:bg-white/20"
-            >
-              {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowProviderBadges(!showProviderBadges)}
+                className="text-white/60 hover:bg-white/20 text-xs"
+              >
+                <Cpu className="w-3 h-3 mr-1" />
+                AI
+              </Button>
+              
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleMute}
+                className="text-white hover:bg-white/20"
+              >
+                {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+              </Button>
+            </div>
           </div>
         </div>
       )}
@@ -484,11 +693,15 @@ export const GenieVideoShowcase: React.FC<GenieVideoShowcaseProps> = ({
         >
           <motion.div
             className="absolute inset-0 flex items-center justify-center"
-            initial={{ opacity: 0, scale: 0.5 }}
-            animate={{ opacity: [0, 1, 0], scale: [0.5, 1, 1.5] }}
-            transition={{ duration: 2 }}
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.5 }}
           >
-            <Wand2 className="w-24 h-24 text-purple-300" />
+            <div className="text-center">
+              <img src={genieStudioLogo} alt="Genie Studio" className="w-32 h-32 mx-auto mb-4" />
+              <h3 className="text-2xl font-bold text-white">Your Wish is Our Command</h3>
+              <p className="text-purple-200 mt-2">7 Products • 206 Pipelines • 14 Providers</p>
+            </div>
           </motion.div>
         </motion.div>
       )}
