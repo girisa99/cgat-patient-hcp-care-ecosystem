@@ -84,6 +84,7 @@ export interface FeatureCard {
   tab?: string;
   isExternal?: boolean;
   route?: string;
+  internalOnly?: boolean; // Only show for internal users (is_internal = true)
 }
 
 // Quick tip type
