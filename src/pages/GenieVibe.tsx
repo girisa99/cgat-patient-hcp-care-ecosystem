@@ -17,7 +17,7 @@
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import AppLayout from '@/components/layout/AppLayout';
+import { GenieStudioLayout } from '@/components/layout/GenieStudioLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -436,7 +436,7 @@ const GenieVibe: React.FC = () => {
   // DESKTOP VIEW - Full 5-tab pipeline (Enterprise Ready, No Frame-in-Frame)
   // ============================================================
   return (
-    <AppLayout>
+    <GenieStudioLayout variant="topbar">
       <div className="min-h-screen bg-background">
         {/* Teleprompter Overlay */}
         <Teleprompter
@@ -939,7 +939,7 @@ const GenieVibe: React.FC = () => {
           currentTab={activeTab}
         />
       </div>
-    </AppLayout>
+    </GenieStudioLayout>
   );
 };
 

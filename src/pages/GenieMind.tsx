@@ -8,7 +8,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import AppLayout from '@/components/layout/AppLayout';
+import { GenieStudioLayout } from '@/components/layout/GenieStudioLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -69,7 +69,7 @@ const GenieMind: React.FC = () => {
   const allAudio = [...voiceovers, ...ttsFiles];
 
   return (
-    <AppLayout>
+    <GenieStudioLayout variant="topbar">
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-purple-950/10">
         {/* Hero Header */}
         <div className="relative overflow-hidden border-b border-border/50 bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-violet-500/10">
@@ -384,7 +384,7 @@ const GenieMind: React.FC = () => {
           />
         </div>
       </div>
-    </AppLayout>
+    </GenieStudioLayout>
   );
 };
 

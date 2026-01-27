@@ -4,7 +4,7 @@
  */
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import AppLayout from '@/components/layout/AppLayout';
+import { GenieStudioLayout } from '@/components/layout/GenieStudioLayout';
 import { GenieAnalyticsDashboard } from '@/components/genie-analytics/GenieAnalyticsDashboard';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
@@ -41,7 +41,7 @@ export const GenieAnalyticsPage: React.FC = () => {
   }
 
   return (
-    <AppLayout>
+    <GenieStudioLayout variant="topbar">
       <div className="space-y-4">
         <Link to="/admin">
           <Button variant="ghost" size="sm">
@@ -56,7 +56,7 @@ export const GenieAnalyticsPage: React.FC = () => {
           instanceName={instanceData?.brand_name || 'Genie Instance'}
         />
       </div>
-    </AppLayout>
+    </GenieStudioLayout>
   );
 };
 
