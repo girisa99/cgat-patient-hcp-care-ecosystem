@@ -5,6 +5,7 @@
  * - Chapter-based composition (each chapter can have different elements)
  * - Multi-language support
  * - Preview system
+ * - Extended publishing destinations (YouTube, LinkedIn, TikTok, etc.)
  */
 
 export type CompositionElementType = 
@@ -33,6 +34,52 @@ export type AvatarStyle =
   | 'custom';
 
 export type Resolution = '720p' | '1080p' | '4k';
+
+// Extended publishing destinations
+export type PublishingDestination =
+  | 'landing_page'     // Main website landing
+  | 'website'          // General website
+  | 'blog'             // Blog post embed
+  | 'youtube'          // YouTube
+  | 'linkedin'         // LinkedIn Personal
+  | 'linkedin_company' // LinkedIn Company Page
+  | 'facebook'         // Facebook
+  | 'instagram'        // Instagram (Reels/Stories)
+  | 'tiktok'           // TikTok
+  | 'twitter'          // Twitter/X
+  | 'download'         // Direct download
+  | 'storage';         // Cloud storage only
+
+export interface PublishingPlatformConfig {
+  id: PublishingDestination;
+  label: string;
+  icon: string;
+  supportsVideo: boolean;
+  supportedAspectRatios: string[];
+  maxDuration?: number; // in seconds
+  requiresAuth: boolean;
+  category: 'website' | 'social' | 'local';
+}
+
+export const PUBLISHING_PLATFORMS: PublishingPlatformConfig[] = [
+  // Website destinations
+  { id: 'landing_page', label: 'Landing Page', icon: 'Globe', supportsVideo: true, supportedAspectRatios: ['16:9', '1:1'], requiresAuth: false, category: 'website' },
+  { id: 'website', label: 'Website', icon: 'Layout', supportsVideo: true, supportedAspectRatios: ['16:9', '1:1', '4:3'], requiresAuth: false, category: 'website' },
+  { id: 'blog', label: 'Blog', icon: 'FileText', supportsVideo: true, supportedAspectRatios: ['16:9'], requiresAuth: false, category: 'website' },
+  
+  // Social platforms
+  { id: 'youtube', label: 'YouTube', icon: 'Youtube', supportsVideo: true, supportedAspectRatios: ['16:9', '9:16'], maxDuration: 3600, requiresAuth: true, category: 'social' },
+  { id: 'linkedin', label: 'LinkedIn Personal', icon: 'Linkedin', supportsVideo: true, supportedAspectRatios: ['16:9', '1:1', '9:16'], maxDuration: 600, requiresAuth: true, category: 'social' },
+  { id: 'linkedin_company', label: 'LinkedIn Company', icon: 'Building2', supportsVideo: true, supportedAspectRatios: ['16:9', '1:1', '9:16'], maxDuration: 600, requiresAuth: true, category: 'social' },
+  { id: 'facebook', label: 'Facebook', icon: 'Facebook', supportsVideo: true, supportedAspectRatios: ['16:9', '1:1', '9:16'], maxDuration: 240, requiresAuth: true, category: 'social' },
+  { id: 'instagram', label: 'Instagram', icon: 'Instagram', supportsVideo: true, supportedAspectRatios: ['1:1', '9:16', '4:5'], maxDuration: 90, requiresAuth: true, category: 'social' },
+  { id: 'tiktok', label: 'TikTok', icon: 'Music2', supportsVideo: true, supportedAspectRatios: ['9:16'], maxDuration: 180, requiresAuth: true, category: 'social' },
+  { id: 'twitter', label: 'Twitter/X', icon: 'Twitter', supportsVideo: true, supportedAspectRatios: ['16:9', '1:1'], maxDuration: 140, requiresAuth: true, category: 'social' },
+  
+  // Local/storage
+  { id: 'download', label: 'Download', icon: 'Download', supportsVideo: true, supportedAspectRatios: ['16:9', '9:16', '1:1', '4:3'], requiresAuth: false, category: 'local' },
+  { id: 'storage', label: 'Cloud Storage', icon: 'Cloud', supportsVideo: true, supportedAspectRatios: ['16:9', '9:16', '1:1', '4:3'], requiresAuth: false, category: 'local' },
+];
 
 export interface ChapterVoiceover {
   type: VoiceoverType;
@@ -119,8 +166,9 @@ export interface CompositionProject {
     watermarkEnabled?: boolean;
   };
   
-  // Output destination
-  destination: 'landing_page' | 'download' | 'storage';
+  // Output destinations - now supports multiple
+  destination: PublishingDestination;
+  destinations?: PublishingDestination[];
   placement?: string; // For landing page (hero, product_demo, etc.)
   
   // Metadata
@@ -128,6 +176,18 @@ export interface CompositionProject {
   updatedAt: Date;
   createdBy: string;
   status: 'draft' | 'in_progress' | 'ready' | 'published';
+  
+  // Publishing history
+  publishedAt?: Date;
+  publishedTo?: PublishingDestination[];
+  publishedUrls?: Record<PublishingDestination, string>;
+}
+
+// For ContentLibrary - saved compositions
+export interface SavedComposition extends CompositionProject {
+  thumbnailUrl?: string;
+  viewCount?: number;
+  lastPublished?: Date;
 }
 
 export interface LanguageConfig {
