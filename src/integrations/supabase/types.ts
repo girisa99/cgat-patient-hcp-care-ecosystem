@@ -11962,6 +11962,51 @@ export type Database = {
         }
         Relationships: []
       }
+      instagram_oauth_tokens: {
+        Row: {
+          access_token: string
+          business_accounts: Json | null
+          created_at: string
+          expires_at: string
+          facebook_page_id: string | null
+          facebook_page_name: string | null
+          id: string
+          instagram_user_id: string | null
+          profile_picture_url: string | null
+          updated_at: string
+          user_id: string
+          username: string | null
+        }
+        Insert: {
+          access_token: string
+          business_accounts?: Json | null
+          created_at?: string
+          expires_at: string
+          facebook_page_id?: string | null
+          facebook_page_name?: string | null
+          id?: string
+          instagram_user_id?: string | null
+          profile_picture_url?: string | null
+          updated_at?: string
+          user_id: string
+          username?: string | null
+        }
+        Update: {
+          access_token?: string
+          business_accounts?: Json | null
+          created_at?: string
+          expires_at?: string
+          facebook_page_id?: string | null
+          facebook_page_name?: string | null
+          id?: string
+          instagram_user_id?: string | null
+          profile_picture_url?: string | null
+          updated_at?: string
+          user_id?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
       insurance_coverages: {
         Row: {
           annual_deductible: number | null
@@ -19843,6 +19888,51 @@ export type Database = {
           target_population?: string | null
           therapy_type?: Database["public"]["Enums"]["therapy_type"]
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      tiktok_oauth_tokens: {
+        Row: {
+          access_token: string
+          avatar_url: string | null
+          business_info: Json | null
+          created_at: string
+          display_name: string | null
+          expires_at: string
+          id: string
+          is_business_account: boolean | null
+          open_id: string | null
+          refresh_token: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          avatar_url?: string | null
+          business_info?: Json | null
+          created_at?: string
+          display_name?: string | null
+          expires_at: string
+          id?: string
+          is_business_account?: boolean | null
+          open_id?: string | null
+          refresh_token?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          avatar_url?: string | null
+          business_info?: Json | null
+          created_at?: string
+          display_name?: string | null
+          expires_at?: string
+          id?: string
+          is_business_account?: boolean | null
+          open_id?: string | null
+          refresh_token?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }

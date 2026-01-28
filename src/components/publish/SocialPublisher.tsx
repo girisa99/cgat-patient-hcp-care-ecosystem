@@ -202,19 +202,21 @@ export const SocialPublisher: React.FC<SocialPublisherProps> = ({
       id: 'instagram', 
       name: 'Instagram', 
       icon: Instagram, 
-      type: 'download',
+      type: 'oauth',
       connected: false, 
       color: 'text-pink-500',
-      description: 'Download for Reels/Stories'
+      description: 'Post to Instagram Business',
+      supportsCompanyPages: true
     },
     { 
       id: 'tiktok', 
       name: 'TikTok', 
       icon: TikTokIcon, 
-      type: 'download',
+      type: 'oauth',
       connected: false, 
       color: 'text-foreground',
-      description: 'Download for TikTok'
+      description: 'Upload to TikTok Business',
+      supportsCompanyPages: true
     },
   ]);
 
