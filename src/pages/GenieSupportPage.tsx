@@ -77,10 +77,13 @@ const GenieSupportPage: React.FC = () => {
           </p>
           
           {/* Tier Badge & SLA */}
-          {isAuthenticated && (
+          {isAuthenticated && tierInfo && (
             <div className="flex items-center justify-center gap-4 mt-4">
               <Badge variant="outline" className="gap-1">
-                <tierInfo.icon className={`h-3 w-3 ${tierInfo.color}`} />
+                {(() => {
+                  const TierIcon = tierInfo.icon;
+                  return TierIcon ? <TierIcon className={`h-3 w-3 ${tierInfo.color}`} /> : null;
+                })()}
                 {tierInfo.name} Plan
               </Badge>
               <Badge variant="secondary" className="gap-1">
