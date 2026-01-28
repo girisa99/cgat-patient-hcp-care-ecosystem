@@ -55,7 +55,7 @@ export interface RoutingDecision {
   speedOptimizedOption: ModelRecommendation | null;
 }
 
-// Model capability registry
+// Model capability registry - Full 12+ Provider Coverage
 const MODEL_REGISTRY: Record<string, {
   provider: string;
   displayName: string;
@@ -67,7 +67,9 @@ const MODEL_REGISTRY: Record<string, {
   supportsVision: boolean;
   supportsReasoning: boolean;
   qualityScore: number; // 1-100
+  tier: 'economy' | 'standard' | 'premium' | 'enterprise';
 }> = {
+  // ============== GOOGLE GEMINI ==============
   'google/gemini-3-flash-preview': {
     provider: 'gemini',
     displayName: 'Gemini 3 Flash Preview',
@@ -78,7 +80,8 @@ const MODEL_REGISTRY: Record<string, {
     contextWindow: 1000000,
     supportsVision: true,
     supportsReasoning: true,
-    qualityScore: 88
+    qualityScore: 88,
+    tier: 'standard'
   },
   'google/gemini-2.5-pro': {
     provider: 'gemini',
@@ -90,7 +93,8 @@ const MODEL_REGISTRY: Record<string, {
     contextWindow: 1000000,
     supportsVision: true,
     supportsReasoning: true,
-    qualityScore: 95
+    qualityScore: 95,
+    tier: 'premium'
   },
   'google/gemini-2.5-flash': {
     provider: 'gemini',
@@ -102,7 +106,8 @@ const MODEL_REGISTRY: Record<string, {
     contextWindow: 1000000,
     supportsVision: true,
     supportsReasoning: false,
-    qualityScore: 82
+    qualityScore: 82,
+    tier: 'standard'
   },
   'google/gemini-2.5-flash-lite': {
     provider: 'gemini',
@@ -114,8 +119,11 @@ const MODEL_REGISTRY: Record<string, {
     contextWindow: 100000,
     supportsVision: false,
     supportsReasoning: false,
-    qualityScore: 72
+    qualityScore: 72,
+    tier: 'economy'
   },
+  
+  // ============== OPENAI ==============
   'openai/gpt-5': {
     provider: 'openai',
     displayName: 'GPT-5',
@@ -126,7 +134,8 @@ const MODEL_REGISTRY: Record<string, {
     contextWindow: 200000,
     supportsVision: true,
     supportsReasoning: true,
-    qualityScore: 98
+    qualityScore: 98,
+    tier: 'enterprise'
   },
   'openai/gpt-5-mini': {
     provider: 'openai',
@@ -138,7 +147,8 @@ const MODEL_REGISTRY: Record<string, {
     contextWindow: 128000,
     supportsVision: true,
     supportsReasoning: true,
-    qualityScore: 85
+    qualityScore: 85,
+    tier: 'standard'
   },
   'openai/gpt-5-nano': {
     provider: 'openai',
@@ -150,7 +160,305 @@ const MODEL_REGISTRY: Record<string, {
     contextWindow: 64000,
     supportsVision: false,
     supportsReasoning: false,
-    qualityScore: 70
+    qualityScore: 70,
+    tier: 'economy'
+  },
+  
+  // ============== ANTHROPIC CLAUDE ==============
+  'anthropic/claude-3-opus': {
+    provider: 'claude',
+    displayName: 'Claude 3 Opus',
+    strengths: ['reasoning', 'creative_writing', 'technical_analysis'],
+    costPerInputToken: 0.00004,
+    costPerOutputToken: 0.00012,
+    avgLatencyMs: 3000,
+    contextWindow: 200000,
+    supportsVision: true,
+    supportsReasoning: true,
+    qualityScore: 96,
+    tier: 'enterprise'
+  },
+  'anthropic/claude-3-sonnet': {
+    provider: 'claude',
+    displayName: 'Claude 3 Sonnet',
+    strengths: ['creative_writing', 'conversational', 'summarization', 'technical_analysis'],
+    costPerInputToken: 0.00001,
+    costPerOutputToken: 0.00003,
+    avgLatencyMs: 1500,
+    contextWindow: 200000,
+    supportsVision: true,
+    supportsReasoning: true,
+    qualityScore: 90,
+    tier: 'premium'
+  },
+  'anthropic/claude-3-haiku': {
+    provider: 'claude',
+    displayName: 'Claude 3 Haiku',
+    strengths: ['classification', 'summarization', 'conversational'],
+    costPerInputToken: 0.000003,
+    costPerOutputToken: 0.000006,
+    avgLatencyMs: 500,
+    contextWindow: 200000,
+    supportsVision: true,
+    supportsReasoning: false,
+    qualityScore: 78,
+    tier: 'economy'
+  },
+  
+  // ============== DEEPSEEK ==============
+  'deepseek/deepseek-v3': {
+    provider: 'deepseek',
+    displayName: 'DeepSeek V3',
+    strengths: ['technical_analysis', 'reasoning', 'translation'],
+    costPerInputToken: 0.000002,
+    costPerOutputToken: 0.000004,
+    avgLatencyMs: 1000,
+    contextWindow: 128000,
+    supportsVision: true,
+    supportsReasoning: true,
+    qualityScore: 85,
+    tier: 'economy'
+  },
+  'deepseek/deepseek-coder': {
+    provider: 'deepseek',
+    displayName: 'DeepSeek Coder',
+    strengths: ['technical_analysis', 'reasoning'],
+    costPerInputToken: 0.000002,
+    costPerOutputToken: 0.000004,
+    avgLatencyMs: 800,
+    contextWindow: 64000,
+    supportsVision: false,
+    supportsReasoning: true,
+    qualityScore: 88,
+    tier: 'economy'
+  },
+  
+  // ============== ALIBABA QWEN ==============
+  'alibaba/qwen-max': {
+    provider: 'alibaba',
+    displayName: 'Qwen Max',
+    strengths: ['reasoning', 'translation', 'creative_writing', 'multimodal'],
+    costPerInputToken: 0.00002,
+    costPerOutputToken: 0.00004,
+    avgLatencyMs: 1500,
+    contextWindow: 128000,
+    supportsVision: true,
+    supportsReasoning: true,
+    qualityScore: 92,
+    tier: 'premium'
+  },
+  'alibaba/qwen-turbo': {
+    provider: 'alibaba',
+    displayName: 'Qwen Turbo',
+    strengths: ['conversational', 'summarization', 'translation'],
+    costPerInputToken: 0.000005,
+    costPerOutputToken: 0.00001,
+    avgLatencyMs: 600,
+    contextWindow: 64000,
+    supportsVision: false,
+    supportsReasoning: false,
+    qualityScore: 80,
+    tier: 'standard'
+  },
+  'alibaba/qwen-vl': {
+    provider: 'alibaba',
+    displayName: 'Qwen VL (Vision)',
+    strengths: ['multimodal', 'document_processing'],
+    costPerInputToken: 0.00002,
+    costPerOutputToken: 0.00004,
+    avgLatencyMs: 2000,
+    contextWindow: 32000,
+    supportsVision: true,
+    supportsReasoning: false,
+    qualityScore: 85,
+    tier: 'standard'
+  },
+  
+  // ============== AZURE OPENAI ==============
+  'azure/gpt-4o': {
+    provider: 'azure',
+    displayName: 'Azure GPT-4o',
+    strengths: ['reasoning', 'creative_writing', 'multimodal', 'technical_analysis'],
+    costPerInputToken: 0.00003,
+    costPerOutputToken: 0.00009,
+    avgLatencyMs: 2000,
+    contextWindow: 128000,
+    supportsVision: true,
+    supportsReasoning: true,
+    qualityScore: 94,
+    tier: 'premium'
+  },
+  'azure/gpt-4o-mini': {
+    provider: 'azure',
+    displayName: 'Azure GPT-4o Mini',
+    strengths: ['conversational', 'summarization', 'classification'],
+    costPerInputToken: 0.000008,
+    costPerOutputToken: 0.000024,
+    avgLatencyMs: 800,
+    contextWindow: 128000,
+    supportsVision: true,
+    supportsReasoning: false,
+    qualityScore: 82,
+    tier: 'standard'
+  },
+  
+  // ============== MODELSLAB (Image/Video/3D) ==============
+  'modelslab/flux-pro': {
+    provider: 'modelslab',
+    displayName: 'FLUX Pro',
+    strengths: ['image_generation'],
+    costPerInputToken: 0.0001,
+    costPerOutputToken: 0,
+    avgLatencyMs: 15000,
+    contextWindow: 1000,
+    supportsVision: false,
+    supportsReasoning: false,
+    qualityScore: 95,
+    tier: 'premium'
+  },
+  'modelslab/flux-schnell': {
+    provider: 'modelslab',
+    displayName: 'FLUX Schnell',
+    strengths: ['image_generation'],
+    costPerInputToken: 0.00003,
+    costPerOutputToken: 0,
+    avgLatencyMs: 5000,
+    contextWindow: 1000,
+    supportsVision: false,
+    supportsReasoning: false,
+    qualityScore: 85,
+    tier: 'standard'
+  },
+  'modelslab/animatediff': {
+    provider: 'modelslab',
+    displayName: 'AnimateDiff',
+    strengths: ['video_generation'],
+    costPerInputToken: 0.0002,
+    costPerOutputToken: 0,
+    avgLatencyMs: 60000,
+    contextWindow: 500,
+    supportsVision: false,
+    supportsReasoning: false,
+    qualityScore: 88,
+    tier: 'premium'
+  },
+  
+  // ============== ELEVENLABS (Audio) ==============
+  'elevenlabs/multilingual-v2': {
+    provider: 'elevenlabs',
+    displayName: 'ElevenLabs Multilingual V2',
+    strengths: ['audio_generation'],
+    costPerInputToken: 0.0001,
+    costPerOutputToken: 0,
+    avgLatencyMs: 3000,
+    contextWindow: 10000,
+    supportsVision: false,
+    supportsReasoning: false,
+    qualityScore: 98,
+    tier: 'premium'
+  },
+  'elevenlabs/turbo-v2': {
+    provider: 'elevenlabs',
+    displayName: 'ElevenLabs Turbo V2',
+    strengths: ['audio_generation'],
+    costPerInputToken: 0.00005,
+    costPerOutputToken: 0,
+    avgLatencyMs: 1000,
+    contextWindow: 5000,
+    supportsVision: false,
+    supportsReasoning: false,
+    qualityScore: 90,
+    tier: 'standard'
+  },
+  
+  // ============== AZURE SPEECH (TTS/STT) ==============
+  'azure/neural-tts': {
+    provider: 'azure_speech',
+    displayName: 'Azure Neural TTS',
+    strengths: ['audio_generation'],
+    costPerInputToken: 0.00004,
+    costPerOutputToken: 0,
+    avgLatencyMs: 1500,
+    contextWindow: 10000,
+    supportsVision: false,
+    supportsReasoning: false,
+    qualityScore: 92,
+    tier: 'premium'
+  },
+  
+  // ============== ALIBABA COSYVOICE (Avatar TTS) ==============
+  'alibaba/cosyvoice': {
+    provider: 'alibaba',
+    displayName: 'CosyVoice',
+    strengths: ['audio_generation'],
+    costPerInputToken: 0.00003,
+    costPerOutputToken: 0,
+    avgLatencyMs: 2000,
+    contextWindow: 10000,
+    supportsVision: false,
+    supportsReasoning: false,
+    qualityScore: 90,
+    tier: 'premium'
+  },
+  
+  // ============== MESHY AI (3D) ==============
+  'meshy/text-to-3d': {
+    provider: 'meshy',
+    displayName: 'Meshy Text-to-3D',
+    strengths: ['image_generation'], // Using image_generation for 3D
+    costPerInputToken: 0.001,
+    costPerOutputToken: 0,
+    avgLatencyMs: 120000,
+    contextWindow: 500,
+    supportsVision: false,
+    supportsReasoning: false,
+    qualityScore: 85,
+    tier: 'premium'
+  },
+  
+  // ============== REPLICATE (Fallback) ==============
+  'replicate/llama-3-70b': {
+    provider: 'replicate',
+    displayName: 'Llama 3 70B',
+    strengths: ['conversational', 'summarization', 'creative_writing'],
+    costPerInputToken: 0.00001,
+    costPerOutputToken: 0.00002,
+    avgLatencyMs: 2000,
+    contextWindow: 8000,
+    supportsVision: false,
+    supportsReasoning: true,
+    qualityScore: 82,
+    tier: 'standard'
+  },
+  
+  // ============== DEEPL (Translation) ==============
+  'deepl/translator': {
+    provider: 'deepl',
+    displayName: 'DeepL Translator',
+    strengths: ['translation'],
+    costPerInputToken: 0.00005,
+    costPerOutputToken: 0,
+    avgLatencyMs: 500,
+    contextWindow: 50000,
+    supportsVision: false,
+    supportsReasoning: false,
+    qualityScore: 96,
+    tier: 'premium'
+  },
+  
+  // ============== AZURE DOC INTELLIGENCE (OCR) ==============
+  'azure/doc-intelligence': {
+    provider: 'azure_doc_intel',
+    displayName: 'Azure Document Intelligence',
+    strengths: ['document_processing'],
+    costPerInputToken: 0.0001,
+    costPerOutputToken: 0,
+    avgLatencyMs: 5000,
+    contextWindow: 100000,
+    supportsVision: true,
+    supportsReasoning: false,
+    qualityScore: 94,
+    tier: 'premium'
   }
 };
 
