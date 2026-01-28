@@ -22,6 +22,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { 
   Video, Calendar, BarChart3, 
   Globe, Wand2, Sparkles,
   Building2, Users, Paintbrush,
@@ -242,106 +248,206 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
         </Card>
       </div>
 
-      {/* Main Tabs - Kanban and Calendar first (production workflow), then content creation */}
+      {/* Main Tabs - Organized with tooltips for clarity */}
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <ScrollArea className="w-full">
-          <TabsList className="inline-flex w-max gap-1 p-1">
-            <TabsTrigger value="kanban" className="flex items-center gap-2">
-              <KanbanSquare className="w-4 h-4" />
-              <span className="hidden lg:inline">Kanban</span>
-            </TabsTrigger>
-            <TabsTrigger value="calendar" className="flex items-center gap-2">
-              <CalendarDays className="w-4 h-4" />
-              <span className="hidden lg:inline">Calendar</span>
-            </TabsTrigger>
-            <TabsTrigger value="appointments" className="flex items-center gap-2">
-              <CalendarCheck className="w-4 h-4" />
-              <span className="hidden lg:inline">Appointments</span>
-            </TabsTrigger>
-            <TabsTrigger value="library" className="flex items-center gap-2">
-              <FolderOpen className="w-4 h-4" />
-              <span className="hidden lg:inline">Library</span>
-            </TabsTrigger>
-            <TabsTrigger value="composition" className="flex items-center gap-2">
-              <Layers className="w-4 h-4" />
-              <span className="hidden lg:inline">Create</span>
-            </TabsTrigger>
-            <TabsTrigger value="scheduler" className="flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
-              <span className="hidden lg:inline">Scheduler</span>
-            </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex items-center gap-2">
-              <BarChart3 className="w-4 h-4" />
-              <span className="hidden lg:inline">Analytics</span>
-            </TabsTrigger>
-            <TabsTrigger value="enterprise-analytics" className="flex items-center gap-2">
-              <Globe className="w-4 h-4" />
-              <span className="hidden lg:inline">Enterprise</span>
-            </TabsTrigger>
-            <TabsTrigger value="error-analytics" className="flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4" />
-              <span className="hidden lg:inline">Errors</span>
-            </TabsTrigger>
-            <TabsTrigger value="collaboration" className="flex items-center gap-2">
-              <MessageSquare className="w-4 h-4" />
-              <span className="hidden lg:inline">Activity</span>
-            </TabsTrigger>
-            <TabsTrigger value="workspaces" className="flex items-center gap-2">
-              <Building2 className="w-4 h-4" />
-              <span className="hidden lg:inline">Workspaces</span>
-            </TabsTrigger>
-            <TabsTrigger value="team" className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              <span className="hidden lg:inline">Team</span>
-            </TabsTrigger>
-            <TabsTrigger value="whitelabel" className="flex items-center gap-2">
-              <Paintbrush className="w-4 h-4" />
-              <span className="hidden lg:inline">Whitelabel</span>
-            </TabsTrigger>
-            <TabsTrigger value="ai-intelligence" className="flex items-center gap-2 bg-gradient-to-r from-primary/10 to-purple-500/10">
-              <Brain className="w-4 h-4" />
-              <span className="hidden lg:inline">AI Intelligence</span>
-            </TabsTrigger>
-            <TabsTrigger value="command-center" className="flex items-center gap-2 bg-primary/10">
-              <Command className="w-4 h-4" />
-              <span className="hidden lg:inline">Command Center</span>
-            </TabsTrigger>
-          </TabsList>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
+        <TooltipProvider delayDuration={200}>
+          <ScrollArea className="w-full">
+            <TabsList className="inline-flex w-max gap-1 p-1">
+              {/* Production Workflow */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <TabsTrigger value="kanban" className="flex items-center gap-2">
+                    <KanbanSquare className="w-4 h-4" />
+                    <span className="hidden lg:inline">Kanban</span>
+                  </TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent>Production pipeline board</TooltipContent>
+              </Tooltip>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <TabsTrigger value="calendar" className="flex items-center gap-2">
+                    <CalendarDays className="w-4 h-4" />
+                    <span className="hidden lg:inline">Calendar</span>
+                  </TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent>Schedule view for all productions</TooltipContent>
+              </Tooltip>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <TabsTrigger value="appointments" className="flex items-center gap-2">
+                    <CalendarCheck className="w-4 h-4" />
+                    <span className="hidden lg:inline">Appointments</span>
+                  </TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent>Schedule meetings & events</TooltipContent>
+              </Tooltip>
+              
+              {/* Content Management */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <TabsTrigger value="library" className="flex items-center gap-2">
+                    <FolderOpen className="w-4 h-4" />
+                    <span className="hidden lg:inline">Library</span>
+                  </TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent>Browse generated content</TooltipContent>
+              </Tooltip>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <TabsTrigger value="composition" className="flex items-center gap-2">
+                    <Layers className="w-4 h-4" />
+                    <span className="hidden lg:inline">Create</span>
+                  </TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent>Composition Studio - Create new content</TooltipContent>
+              </Tooltip>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <TabsTrigger value="scheduler" className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4" />
+                    <span className="hidden lg:inline">Scheduler</span>
+                  </TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent>Multi-platform content scheduler</TooltipContent>
+              </Tooltip>
+              
+              {/* Analytics */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <TabsTrigger value="analytics" className="flex items-center gap-2">
+                    <BarChart3 className="w-4 h-4" />
+                    <span className="hidden lg:inline">Analytics</span>
+                  </TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent>Production performance metrics</TooltipContent>
+              </Tooltip>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <TabsTrigger value="enterprise-analytics" className="flex items-center gap-2">
+                    <Globe className="w-4 h-4" />
+                    <span className="hidden lg:inline">Enterprise</span>
+                  </TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent>Enterprise-level analytics</TooltipContent>
+              </Tooltip>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <TabsTrigger value="error-analytics" className="flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4" />
+                    <span className="hidden lg:inline">Errors</span>
+                  </TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent>Error tracking & diagnostics</TooltipContent>
+              </Tooltip>
+              
+              {/* Collaboration */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <TabsTrigger value="collaboration" className="flex items-center gap-2">
+                    <MessageSquare className="w-4 h-4" />
+                    <span className="hidden lg:inline">Activity</span>
+                  </TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent>Team activity feed</TooltipContent>
+              </Tooltip>
+              
+              {/* Administration */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <TabsTrigger value="workspaces" className="flex items-center gap-2">
+                    <Building2 className="w-4 h-4" />
+                    <span className="hidden lg:inline">Workspaces</span>
+                  </TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent>Manage workspaces</TooltipContent>
+              </Tooltip>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <TabsTrigger value="team" className="flex items-center gap-2">
+                    <Users className="w-4 h-4" />
+                    <span className="hidden lg:inline">Team</span>
+                  </TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent>Team member management</TooltipContent>
+              </Tooltip>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <TabsTrigger value="whitelabel" className="flex items-center gap-2">
+                    <Paintbrush className="w-4 h-4" />
+                    <span className="hidden lg:inline">Whitelabel</span>
+                  </TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent>Custom branding settings</TooltipContent>
+              </Tooltip>
+              
+              {/* AI & System */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <TabsTrigger value="ai-intelligence" className="flex items-center gap-2 bg-gradient-to-r from-primary/10 to-secondary/30">
+                    <Brain className="w-4 h-4" />
+                    <span className="hidden lg:inline">AI Intelligence</span>
+                  </TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent>AI model routing & comparison</TooltipContent>
+              </Tooltip>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <TabsTrigger value="command-center" className="flex items-center gap-2 bg-primary/10">
+                    <Command className="w-4 h-4" />
+                    <span className="hidden lg:inline">Command Center</span>
+                  </TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent>System command center (Internal)</TooltipContent>
+              </Tooltip>
+            </TabsList>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
+        </TooltipProvider>
 
         {/* Kanban - Production Pipeline */}
         <TabsContent value="kanban" className="mt-6 space-y-4">
-          {/* Category Selector */}
-          <div className="flex gap-2 pb-4 border-b">
-            <Badge 
-              variant={activeCategory === 'media_production' ? 'default' : 'outline'}
-              className="cursor-pointer"
-              onClick={() => setActiveCategory('media_production')}
-            >
-              🎬 Media Productions
-            </Badge>
-            <Badge 
-              variant={activeCategory === 'business_meeting' ? 'default' : 'outline'}
-              className="cursor-pointer"
-              onClick={() => setActiveCategory('business_meeting')}
-            >
-              💼 Business Meetings
-            </Badge>
-            <Badge 
-              variant={activeCategory === 'event' ? 'default' : 'outline'}
-              className="cursor-pointer"
-              onClick={() => setActiveCategory('event')}
-            >
-              📅 Events
-            </Badge>
-            <Badge 
-              variant={activeCategory === 'genie_demo' ? 'default' : 'outline'}
-              className="cursor-pointer"
-              onClick={() => setActiveCategory('genie_demo')}
-            >
-              ✨ Genie Demos
-            </Badge>
+          {/* Category Selector - Aligned tabs */}
+          <div className="flex flex-wrap items-center gap-2 pb-4 border-b">
+            <span className="text-sm font-medium text-muted-foreground mr-2">Category:</span>
+            <div className="inline-flex items-center gap-2">
+              <Badge 
+                variant={activeCategory === 'media_production' ? 'default' : 'outline'}
+                className="cursor-pointer px-3 py-1.5 text-sm"
+                onClick={() => setActiveCategory('media_production')}
+              >
+                🎬 Media Productions
+              </Badge>
+              <Badge 
+                variant={activeCategory === 'business_meeting' ? 'default' : 'outline'}
+                className="cursor-pointer px-3 py-1.5 text-sm"
+                onClick={() => setActiveCategory('business_meeting')}
+              >
+                💼 Business Meetings
+              </Badge>
+              <Badge 
+                variant={activeCategory === 'event' ? 'default' : 'outline'}
+                className="cursor-pointer px-3 py-1.5 text-sm"
+                onClick={() => setActiveCategory('event')}
+              >
+                📅 Events
+              </Badge>
+              <Badge 
+                variant={activeCategory === 'genie_demo' ? 'default' : 'outline'}
+                className="cursor-pointer px-3 py-1.5 text-sm"
+                onClick={() => setActiveCategory('genie_demo')}
+              >
+                ✨ Genie Demos
+              </Badge>
+            </div>
           </div>
           <Suspense fallback={<TabLoading />}>
             <VerticalKanban 
