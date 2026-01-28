@@ -2,14 +2,9 @@
  * GENIE STUDIO LAYOUT
  * Dedicated layout for Genie Studio users
  * Shows only Genie-related navigation based on subscription
- * 
- * P4 INTEGRATIONS:
- * - LanguageSwitcher: Multi-language support in header
- * - DebugModeToggle: Debug console for internal/enterprise users
- * - UserErrorReporting: Quick bug reporting FAB
  */
 
-import React, { Suspense, useEffect } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { GenieStudioNavigation } from '@/components/navigation/GenieStudioNavigation';
 import { AskGenieFAB } from '@/components/genie-support/AskGenieFAB';
@@ -19,10 +14,6 @@ import { Loader2, Lock, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { TIER_INFO } from '@/config/genieStudioNavItems';
-// P4 Resilience & Localization
-import { LanguageSwitcher } from '@/components/localization/LanguageSwitcher';
-import { DebugModeToggle, DebugPanel, useDebugMode } from '@/components/resilience/DebugModeToggle';
-import { UserErrorReporting } from '@/components/resilience/UserErrorReporting';
 
 interface GenieStudioLayoutProps {
   children: React.ReactNode;
@@ -30,18 +21,12 @@ interface GenieStudioLayoutProps {
   requireAuth?: boolean;
 }
 
-/**
- * Loading fallback for lazy components
- */
 const LoadingFallback = () => (
   <div className="flex h-[50vh] items-center justify-center">
     <Loader2 className="h-8 w-8 animate-spin text-primary" />
   </div>
 );
 
-/**
- * Upgrade prompt for tier-locked features
- */
 const UpgradePrompt: React.FC<{ requiredTier: string; tierName: string }> = ({ 
   requiredTier, 
   tierName 
@@ -80,9 +65,6 @@ const UpgradePrompt: React.FC<{ requiredTier: string; tierName: string }> = ({
   );
 };
 
-/**
- * Main Genie Studio Layout Component
- */
 export const GenieStudioLayout: React.FC<GenieStudioLayoutProps> = ({ 
   children, 
   variant = 'sidebar',
@@ -91,9 +73,9 @@ export const GenieStudioLayout: React.FC<GenieStudioLayoutProps> = ({
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated, isLoading, genieUser } = useGenieStudioAuth();
-  const { canAccessRoute, getUpgradePromptForPath } = useGenieStudioNavigation();
+  const { getUpgradePromptForPath } = useGenieStudioNavigation();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  // Redirect to auth if not authenticated (only for protected routes)
   useEffect(() => {
     if (!isLoading && requireAuth && !isAuthenticated) {
       navigate('/genie-studio-auth', { 
@@ -103,8 +85,6 @@ export const GenieStudioLayout: React.FC<GenieStudioLayoutProps> = ({
     }
   }, [isAuthenticated, isLoading, requireAuth, navigate, location.pathname]);
 
-  // Show loading ONLY when auth is required and we're still checking
-  // For non-auth pages, render immediately
   if (isLoading && requireAuth) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
@@ -113,18 +93,13 @@ export const GenieStudioLayout: React.FC<GenieStudioLayoutProps> = ({
     );
   }
 
-  // Not authenticated but auth is required
   if (requireAuth && !isAuthenticated) {
-    return null; // Will redirect
+    return null;
   }
 
-  // Check tier access for current route
   const upgradePrompt = getUpgradePromptForPath(location.pathname);
-  
-  // Don't show FAB on the support page (has full chat) 
   const showFAB = !location.pathname.includes('/genie-support');
 
-  // No navigation variant
   if (variant === 'none') {
     return (
       <div className="min-h-screen bg-background">
@@ -143,25 +118,10 @@ export const GenieStudioLayout: React.FC<GenieStudioLayoutProps> = ({
     );
   }
 
-  // Check if user is internal or enterprise (for debug mode visibility)
-  const showDebugTools = genieUser?.is_internal || 
-    genieUser?.current_subscription_tier === 'enterprise' ||
-    genieUser?.current_subscription_tier === 'business';
-
-  // Topbar variant
   if (variant === 'topbar') {
     return (
       <div className="min-h-screen bg-background">
         <GenieStudioNavigation variant="topbar" />
-        {/* P4: Language & Debug Tools Bar */}
-        <div className="border-b bg-muted/30">
-          <div className="container flex items-center justify-between py-2">
-            <LanguageSwitcher variant="compact" />
-            <div className="flex items-center gap-2">
-              {showDebugTools && <DebugModeToggle />}
-            </div>
-          </div>
-        </div>
         <main className="container py-6">
           <Suspense fallback={<LoadingFallback />}>
             {upgradePrompt ? (
@@ -175,18 +135,23 @@ export const GenieStudioLayout: React.FC<GenieStudioLayoutProps> = ({
           </Suspense>
         </main>
         {showFAB && <AskGenieFAB />}
-        <UserErrorReporting position="bottom-left" />
-        <DebugPanel />
       </div>
     );
   }
 
-  // Sidebar variant (default) - using CSS transition for smooth collapse
+  // Sidebar variant - main content adjusts based on sidebar state
   return (
     <div className="min-h-screen bg-background flex w-full">
-      <GenieStudioNavigation variant="sidebar" />
-      <main className="flex-1 ml-64 transition-all duration-300">
-        <div className="p-6">
+      <GenieStudioNavigation 
+        variant="sidebar" 
+        defaultCollapsed={sidebarCollapsed}
+        onCollapsedChange={setSidebarCollapsed}
+      />
+      <main 
+        className="flex-1 transition-all duration-300"
+        style={{ marginLeft: sidebarCollapsed ? '4rem' : '16rem' }}
+      >
+        <div className="h-full">
           <Suspense fallback={<LoadingFallback />}>
             {upgradePrompt ? (
               <UpgradePrompt 
@@ -200,8 +165,6 @@ export const GenieStudioLayout: React.FC<GenieStudioLayoutProps> = ({
         </div>
       </main>
       {showFAB && <AskGenieFAB />}
-      <UserErrorReporting position="bottom-left" />
-      <DebugPanel />
     </div>
   );
 };
