@@ -1,16 +1,22 @@
 /**
  * Genie Studio - AI-Powered Media Production Hub
  * "Mind to Media" - Complete production suite for content creation
- * Part of Genie Studio
  * 
- * REFACTORED: Phase 3 - Now imports from extracted modules
- * @see src/components/genie-studio/types/studio-types.ts
- * @see src/components/genie-studio/constants/studio-constants.ts
- * @see src/components/genie-studio/hooks/
+ * REFACTORED: 4-Quadrant Architecture
+ * - CREATE: Spark, Mind, Deck (Ideation & Scripts)
+ * - PRODUCE: Vibe (Audio/Video Production)
+ * - MANAGE: Arc, Hub (Scheduling & Assets)
+ * - PUBLISH: Cast (Distribution & Analytics)
+ * 
+ * @see src/components/navigation/QuadrantNavigation.tsx
+ * @see src/components/navigation/QuadrantDashboard.tsx
  */
 
 import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
+// NEW: 4-Quadrant Architecture
+import { QuadrantLayout, QuadrantDashboard } from '@/components/navigation';
+// Legacy layout kept for backward compatibility with existing tabs
 import { GenieStudioLayout } from '@/components/layout/GenieStudioLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -2260,7 +2266,7 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
               </TabsTrigger>
             </TabsList>
 
-            {/* Dashboard Tab */}
+            {/* Dashboard Tab - 4-Quadrant Architecture */}
             <TabsContent value="dashboard" className="space-y-8 mt-0">
               {/* Loading State - Ralph Wiggum: Loading State Indication */}
               {(isScriptsLoading || isProjectsLoading || isDbLoading) && (
@@ -2270,6 +2276,19 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
                     label="Loading your creative workspace..." 
                   />
                 </div>
+              )}
+              
+              {/* NEW: 4-Quadrant Dashboard - Primary Navigation */}
+              {!isScriptsLoading && !isProjectsLoading && (
+                <QuadrantDashboard 
+                  stats={[
+                    { quadrant: 'create', inProgress: savedScripts?.filter(s => s.draftStatus === 'in_progress').length || 0, completed: savedScripts?.length || 0, recentActivity: `${savedScripts?.length || 0} scripts ready` },
+                    { quadrant: 'produce', inProgress: mediaProjects?.filter((p: { status?: string }) => p.status === 'recording').length || 0, completed: mediaProjects?.length || 0, recentActivity: `${mediaProjects?.length || 0} recordings` },
+                    { quadrant: 'manage', inProgress: upcomingEvents?.length || 0, completed: 0, recentActivity: upcomingEvents?.length ? `${upcomingEvents.length} scheduled` : 'No upcoming shows' },
+                    { quadrant: 'publish', inProgress: 0, completed: 0, recentActivity: 'Ready to distribute' },
+                  ]}
+                  className="mb-8"
+                />
               )}
               
               {/* Welcome & Journey Progress - addresses Ralph Wiggum's feedback */}
