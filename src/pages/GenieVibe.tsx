@@ -17,7 +17,8 @@
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { GenieStudioLayout } from '@/components/layout/GenieStudioLayout';
+// NEW: 4-Quadrant Architecture - use QuadrantLayout for consistent navigation
+import { QuadrantLayout } from '@/components/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -436,7 +437,7 @@ const GenieVibe: React.FC = () => {
   // DESKTOP VIEW - Full 5-tab pipeline (Enterprise Ready, No Frame-in-Frame)
   // ============================================================
   return (
-    <GenieStudioLayout variant="topbar">
+    <QuadrantLayout>
       <div className="min-h-screen bg-background">
         {/* Teleprompter Overlay */}
         <Teleprompter
@@ -939,7 +940,7 @@ const GenieVibe: React.FC = () => {
           currentTab={activeTab}
         />
       </div>
-    </GenieStudioLayout>
+    </QuadrantLayout>
   );
 };
 
