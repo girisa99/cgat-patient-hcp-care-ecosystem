@@ -429,7 +429,7 @@ export interface UseSubscriptionReturn {
   isLoading: boolean;
   error: string | null;
   checkSubscription: () => Promise<void>;
-  createCheckout: (tier: SubscriptionTier) => Promise<string | null>;
+  createCheckout: (tier: SubscriptionTier, regionOverride?: string) => Promise<string | null>;
   openCustomerPortal: () => Promise<string | null>;
   hasModuleAccess: (moduleKey: string) => boolean;
   getTierFeatures: (tier: SubscriptionTier) => string[];
@@ -577,7 +577,7 @@ export const useSubscription = (): UseSubscriptionReturn => {
     }
   }, []);
 
-  const createCheckout = useCallback(async (tier: SubscriptionTier): Promise<string | null> => {
+  const createCheckout = useCallback(async (tier: SubscriptionTier, regionOverride?: string): Promise<string | null> => {
     try {
       const tierConfig = SUBSCRIPTION_TIERS[tier];
       if (!tierConfig.price_id) {
@@ -596,8 +596,15 @@ export const useSubscription = (): UseSubscriptionReturn => {
         return null;
       }
 
+      // Regional pricing integration:
+      // Pass the base price_id and let the edge function handle regional lookup
+      // This allows server-side region validation and price selection
       const { data, error: fnError } = await supabase.functions.invoke('create-checkout', {
-        body: { priceId: tierConfig.price_id }
+        body: { 
+          priceId: tierConfig.price_id,
+          tier: tier,
+          regionOverride: regionOverride // Optional: client can suggest region
+        }
       });
 
       if (fnError) throw new Error(fnError.message);
