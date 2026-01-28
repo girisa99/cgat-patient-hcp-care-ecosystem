@@ -243,6 +243,14 @@ const AppContent = () => {
                       <Agents />
                     </ProtectedRoute>
                   } />
+                  {/* Genie Analytics - Tiered access for subscribers */}
+                  <Route path="/genie-analytics" element={
+                    <GenieStudioProtectedRoute>
+                      <Suspense fallback={<PageLoading message="Loading analytics..." />}>
+                        {React.createElement(React.lazy(() => import('@/pages/GenieAnalyticsPage')))}
+                      </Suspense>
+                    </GenieStudioProtectedRoute>
+                  } />
                   <Route path="/genie-analytics/:genieId" element={
                     <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'onboardingTeam', 'healthcareProvider', 'demoUser']}>
                       {React.createElement(React.lazy(() => import('@/pages/GenieAnalyticsPage')))}
