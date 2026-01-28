@@ -17,9 +17,9 @@
 | **P2** | ✅ Complete | 100% | 6 AI Agents + Automation |
 | **P3** | ✅ Complete | 90% | Features + Access Control |
 | **P4** | ✅ Complete | 92% | All categories complete except Segment-Specific |
-| **P5** | ⏳ Planned | 10% | Commercialization |
+| **P5** | 🔄 In Progress | 40% | Segmentation complete, Stripe pending |
 
-### Overall Implementation: **88%** Complete
+### Overall Implementation: **90%** Complete
 
 ---
 
@@ -177,17 +177,21 @@ These features were implemented based on user requests and are now part of the s
 
 ---
 
-## ⏳ P5 Status: Commercialization
+## ⏳ P5 Status: Commercialization (40% Complete)
 
 | Feature | Status | Priority | Notes |
 |---------|--------|----------|-------|
-| User Segmentation | ⏳ Planned | CRITICAL | Blocking launch |
-| Stripe Checkout | ⏳ Planned | CRITICAL | Edge function ready |
-| Stripe Webhooks | ⏳ Planned | CRITICAL | Subscription updates |
+| User Segmentation | ✅ Complete | CRITICAL | `user_segments` table + 6 segment types |
+| Segment-Specific Features | ✅ Complete | CRITICAL | Per-segment feature flags in DB |
+| Segment Selection UI | ✅ Complete | CRITICAL | `EnhancedPricingSection.tsx` |
+| 6-Tier Pricing Model | ✅ Complete | CRITICAL | Free→Enterprise tiers defined |
+| Stripe Products Setup | ✅ Complete | HIGH | Products created via Stripe MCP |
+| Stripe Checkout | ⏳ Planned | CRITICAL | Edge function needed |
+| Stripe Webhooks | ⏳ Planned | CRITICAL | Subscription lifecycle updates |
 | Billing Portal | ⏳ Planned | HIGH | Self-service management |
 | Credit Top-ups | ⏳ Planned | HIGH | Usage-based billing |
-| Production API Upgrades | ⏳ Planned | HIGH | Gemini v1, DocuSign, Stripe live |
-| **Subtotal** | **10%** | | |
+| Production API Upgrades | ⏳ Planned | MEDIUM | Gemini v1, DocuSign production keys |
+| **Subtotal** | **40%** | | 4/10 items complete |
 
 ---
 
