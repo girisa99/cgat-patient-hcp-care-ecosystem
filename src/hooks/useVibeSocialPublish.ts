@@ -2,7 +2,10 @@
  * useVibeSocialPublish - Social media publishing for Vibe recordings
  * 
  * Uses social-publish edge function with n8n webhook support
- * Supports: YouTube, TikTok, Instagram, Twitter/X, LinkedIn, Facebook
+ * Supports: YouTube, TikTok, Instagram, Twitter/X, LinkedIn, Facebook, Bluesky
+ * 
+ * Zapier Integration: Configure via n8n webhook or use Zapier webhooks directly
+ * by calling setN8nWebhook with your Zapier webhook URL
  */
 
 import { useState, useCallback } from 'react';
@@ -10,7 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { VibeRecording } from './useVibeRecordingPersistence';
 
-export type SocialPlatform = 'youtube' | 'tiktok' | 'instagram' | 'twitter' | 'linkedin' | 'facebook';
+export type SocialPlatform = 'youtube' | 'tiktok' | 'instagram' | 'twitter' | 'linkedin' | 'facebook' | 'bluesky';
 export type ContentType = 'video' | 'image' | 'text' | 'carousel';
 
 export interface SocialPublishOptions {
@@ -81,6 +84,7 @@ const PLATFORM_LIMITS: Record<SocialPlatform, number> = {
   twitter: 280,
   linkedin: 3000,
   facebook: 63206,
+  bluesky: 300,
 };
 
 // Common hashtags for different content types

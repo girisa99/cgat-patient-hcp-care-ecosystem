@@ -93,12 +93,12 @@ export function useGenieStudioAuth() {
         .select('role')
         .eq('user_id', userProfile.id);
 
-      // Get marketing access
+      // Get marketing access (use maybeSingle to handle no rows)
       const { data: marketingAccess } = await supabase
         .from('genie_marketing_access')
         .select('*')
         .eq('user_id', userProfile.id)
-        .single();
+        .maybeSingle();
 
       return {
         ...userProfile,
