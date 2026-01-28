@@ -154,6 +154,23 @@ const AppContent = () => {
                 </Suspense>
               } />
               
+              {/* Legal Pages - Public */}
+              <Route path="/terms" element={
+                <Suspense fallback={<PageLoading message="Loading..." />}>
+                  {React.createElement(React.lazy(() => import('@/pages/TermsOfServicePage')))}
+                </Suspense>
+              } />
+              <Route path="/privacy" element={
+                <Suspense fallback={<PageLoading message="Loading..." />}>
+                  {React.createElement(React.lazy(() => import('@/pages/PrivacyPolicyPage')))}
+                </Suspense>
+              } />
+              <Route path="/cookies" element={
+                <Suspense fallback={<PageLoading message="Loading..." />}>
+                  {React.createElement(React.lazy(() => import('@/pages/CookiePolicyPage')))}
+                </Suspense>
+              } />
+              
               {/* Public landing page route */}
               <Route path="/genie-landing" element={<GenieStudioLanding />} />
               
