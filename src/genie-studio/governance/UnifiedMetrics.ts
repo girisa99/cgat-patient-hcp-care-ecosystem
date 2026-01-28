@@ -67,16 +67,16 @@ export const PHASES: Record<string, PhaseData> = {
   },
   P4: { 
     // PHASE 4 DETAILED (Enterprise & Analytics) - 108 total:
-    // - Recovery & Error Handling: 12 scenarios (7 done, 5 pending)
-    // - Multi-Language & Localization: 14 scenarios (10 done, 4 pending)
+    // - Recovery & Error Handling: 12 scenarios (11 done, 1 pending - health dashboard deferred)
+    // - Multi-Language & Localization: 14 scenarios (14 done, 0 pending) ✅ COMPLETE
     // - Collaboration Features: 10 scenarios (7 done, 3 pending)
-    // - Versioning & History: 8 scenarios (5 done, 3 pending)
+    // - Versioning & History: 8 scenarios (8 done, 0 pending) ✅ COMPLETE
     // - External API & Integrations: 12 scenarios (1 done, 11 pending)
     // - Advanced Analytics: 31 scenarios (10 done, 21 pending)
     // - Segment-Specific Features: 21 scenarios (0 done, 21 pending)
-    // TOTAL: 108 | IMPLEMENTED: 40 | COMPLETION: 37%
+    // TOTAL: 108 | IMPLEMENTED: 51 | COMPLETION: 47%
     total: 108, 
-    implemented: 40, // Updated: Recovery 7, Multi-lang 10, Collab 7, Versioning 5, API 1, Analytics 10
+    implemented: 51, // Updated: Recovery 11, Multi-lang 14, Collab 7, Versioning 8, API 1, Analytics 10
     status: 'in-progress', 
     weeks: '19-26',
     name: 'Advanced Features & Enterprise'
