@@ -480,7 +480,8 @@ export const useSubscription = (): UseSubscriptionReturn => {
       }
 
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      if (!session?.access_token) {
+        console.log('[useSubscription] No active session, defaulting to free tier');
         setSubscription({
           subscribed: false,
           tier: 'free',
@@ -494,7 +495,12 @@ export const useSubscription = (): UseSubscriptionReturn => {
         return;
       }
 
-      const { data, error: fnError } = await supabase.functions.invoke('check-subscription');
+      // Explicitly pass the access token as Authorization header
+      const { data, error: fnError } = await supabase.functions.invoke('check-subscription', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
       
       if (fnError) {
         console.error('Error checking subscription:', fnError);
