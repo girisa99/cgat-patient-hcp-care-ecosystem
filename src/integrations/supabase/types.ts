@@ -5090,6 +5090,93 @@ export type Database = {
         }
         Relationships: []
       }
+      data_residency_config: {
+        Row: {
+          allowed_regions: string[] | null
+          auto_delete_enabled: boolean | null
+          ccpa_compliant: boolean | null
+          created_at: string
+          cross_border_transfers_allowed: boolean | null
+          data_sovereignty_required: boolean | null
+          gdpr_compliant: boolean | null
+          hipaa_compliant: boolean | null
+          id: string
+          primary_region: string
+          restricted_regions: string[] | null
+          retention_policy_days: number | null
+          sccs_in_place: boolean | null
+          transfer_requires_consent: boolean | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          allowed_regions?: string[] | null
+          auto_delete_enabled?: boolean | null
+          ccpa_compliant?: boolean | null
+          created_at?: string
+          cross_border_transfers_allowed?: boolean | null
+          data_sovereignty_required?: boolean | null
+          gdpr_compliant?: boolean | null
+          hipaa_compliant?: boolean | null
+          id?: string
+          primary_region?: string
+          restricted_regions?: string[] | null
+          retention_policy_days?: number | null
+          sccs_in_place?: boolean | null
+          transfer_requires_consent?: boolean | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          allowed_regions?: string[] | null
+          auto_delete_enabled?: boolean | null
+          ccpa_compliant?: boolean | null
+          created_at?: string
+          cross_border_transfers_allowed?: boolean | null
+          data_sovereignty_required?: boolean | null
+          gdpr_compliant?: boolean | null
+          hipaa_compliant?: boolean | null
+          id?: string
+          primary_region?: string
+          restricted_regions?: string[] | null
+          retention_policy_days?: number | null
+          sccs_in_place?: boolean | null
+          transfer_requires_consent?: boolean | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      data_residency_events: {
+        Row: {
+          event_details: Json | null
+          event_type: string
+          from_region: string | null
+          id: string
+          occurred_at: string
+          to_region: string | null
+          user_id: string
+        }
+        Insert: {
+          event_details?: Json | null
+          event_type: string
+          from_region?: string | null
+          id?: string
+          occurred_at?: string
+          to_region?: string | null
+          user_id: string
+        }
+        Update: {
+          event_details?: Json | null
+          event_type?: string
+          from_region?: string | null
+          id?: string
+          occurred_at?: string
+          to_region?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       deployment_environments: {
         Row: {
           cloud_provider: string | null
@@ -11987,6 +12074,108 @@ export type Database = {
           id?: string
           refresh_token?: string | null
           scope?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      hipaa_audit_log: {
+        Row: {
+          event_description: string
+          event_type: string
+          id: string
+          ip_address: unknown
+          metadata: Json | null
+          occurred_at: string
+          resource_id: string | null
+          resource_type: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          event_description: string
+          event_type: string
+          id?: string
+          ip_address?: unknown
+          metadata?: Json | null
+          occurred_at?: string
+          resource_id?: string | null
+          resource_type?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          event_description?: string
+          event_type?: string
+          id?: string
+          ip_address?: unknown
+          metadata?: Json | null
+          occurred_at?: string
+          resource_id?: string | null
+          resource_type?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      hipaa_certification_status: {
+        Row: {
+          access_controls_configured: boolean | null
+          audit_findings: Json | null
+          audit_logging_enabled: boolean | null
+          audit_score: number | null
+          baa_document_url: string | null
+          baa_signed: boolean | null
+          baa_signed_at: string | null
+          breach_notification_plan: boolean | null
+          certification_level: string
+          created_at: string
+          encryption_at_rest_enabled: boolean | null
+          encryption_in_transit_enabled: boolean | null
+          id: string
+          last_audit_date: string | null
+          next_audit_due: string | null
+          phi_handling_trained: boolean | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_controls_configured?: boolean | null
+          audit_findings?: Json | null
+          audit_logging_enabled?: boolean | null
+          audit_score?: number | null
+          baa_document_url?: string | null
+          baa_signed?: boolean | null
+          baa_signed_at?: string | null
+          breach_notification_plan?: boolean | null
+          certification_level?: string
+          created_at?: string
+          encryption_at_rest_enabled?: boolean | null
+          encryption_in_transit_enabled?: boolean | null
+          id?: string
+          last_audit_date?: string | null
+          next_audit_due?: string | null
+          phi_handling_trained?: boolean | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_controls_configured?: boolean | null
+          audit_findings?: Json | null
+          audit_logging_enabled?: boolean | null
+          audit_score?: number | null
+          baa_document_url?: string | null
+          baa_signed?: boolean | null
+          baa_signed_at?: string | null
+          breach_notification_plan?: boolean | null
+          certification_level?: string
+          created_at?: string
+          encryption_at_rest_enabled?: boolean | null
+          encryption_in_transit_enabled?: boolean | null
+          id?: string
+          last_audit_date?: string | null
+          next_audit_due?: string | null
+          phi_handling_trained?: boolean | null
           updated_at?: string
           user_id?: string
         }
@@ -24569,6 +24758,10 @@ export type Database = {
             Returns: number
           }
         | { Args: { p_enrollment_id: string }; Returns: number }
+      calculate_hipaa_compliance_score: {
+        Args: { p_user_id: string }
+        Returns: number
+      }
       can_add_team_member: { Args: { p_team_id: string }; Returns: boolean }
       check_access_override: {
         Args: { p_ip_address: string; p_user_email?: string }
@@ -24913,6 +25106,17 @@ export type Database = {
         }
         Returns: string
       }
+      log_hipaa_event: {
+        Args: {
+          p_description: string
+          p_event_type: string
+          p_metadata?: Json
+          p_resource_id?: string
+          p_resource_type?: string
+          p_user_id: string
+        }
+        Returns: string
+      }
       log_onboarding_audit: {
         Args: {
           p_action_description: string
@@ -24935,6 +25139,16 @@ export type Database = {
           p_prompt_text: string
           p_violations_found?: Json
           p_was_blocked?: boolean
+        }
+        Returns: string
+      }
+      log_residency_event: {
+        Args: {
+          p_details?: Json
+          p_event_type: string
+          p_from_region?: string
+          p_to_region?: string
+          p_user_id: string
         }
         Returns: string
       }
