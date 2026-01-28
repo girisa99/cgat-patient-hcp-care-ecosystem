@@ -5,7 +5,7 @@
  * Blocks users from sanctioned regions AND those attempting bypass.
  */
 
-import { ReactNode } from 'react';
+import React, { ReactNode } from 'react';
 import { useGeoCompliance, GeoComplianceProvider } from '@/hooks/useGeoCompliance';
 import { SuspiciousActivityProvider, useSuspiciousActivity } from '@/hooks/useSuspiciousActivityDetection';
 import { SanctionsBlockScreen } from './SanctionsBlockScreen';
