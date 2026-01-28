@@ -5,16 +5,29 @@
  * 
  * All values are derived from: src/genie-studio/governance/UnifiedMetrics.ts
  * 
- * LAST AUDITED: 2026-01-15
+ * VERIFIED GENIE-SPECIFIC COUNTS (2026-01-28):
+ * - Edge Functions: 62 (Genie-specific)
+ * - Hooks: 24 (Genie-specific)
+ * - Services: 19 (Genie-specific)
+ * - Database Tables: 42 (Genie-specific)
+ * - AI Agents: 12 (Genie-specific)
+ * - AI Providers: 13 Core Providers
+ * - Pipelines: 206 (21 categories)
+ * - Cross-Functional Capabilities: 25
+ * 
+ * LAST AUDITED: 2026-01-28
  */
 
 import {
   PHASES,
   SCENARIO_METRICS,
   PLATFORM_TOTALS,
+  GENIE_COUNTS,
   INFRASTRUCTURE_METRICS,
   FINANCIAL_METRICS,
   METRICS_METADATA,
+  AI_PROVIDER_SUMMARY,
+  CONCURRENCY_CONFIG,
   getPhaseProgress,
   getPhaseDisplayString,
   getScenarioDisplayString,
@@ -51,32 +64,54 @@ export const masterScenarioCounts = {
 };
 
 // =============================================================================
-// MASTER INFRASTRUCTURE COUNTS - DERIVED FROM UNIFIED METRICS
+// MASTER INFRASTRUCTURE COUNTS - GENIE-SPECIFIC (VERIFIED 2026-01-28)
 // =============================================================================
 /**
  * Master Infrastructure Counts now include both platform totals and Genie-specific counts.
- * Use genieSpecific for Genie-focused views, platform for overall views.
+ * GENIE_COUNTS is the primary source for Genie Studio ecosystem metrics.
  */
 export const masterInfrastructureCounts = {
-  // Platform-wide totals
-  edgeFunctions: PLATFORM_TOTALS.edgeFunctions,
-  customHooks: PLATFORM_TOTALS.hooks,
-  databaseTables: PLATFORM_TOTALS.databaseTables,
+  // Platform-wide totals (includes healthcare + shared infrastructure)
+  edgeFunctions: PLATFORM_TOTALS.edgeFunctions, // 157 total
+  customHooks: PLATFORM_TOTALS.hooks, // 280 total
+  databaseTables: PLATFORM_TOTALS.databaseTables, // 400 total
   mobileComponents: PLATFORM_TOTALS.mobileComponents,
-  aiAgents: PLATFORM_TOTALS.aiAgents,
+  aiAgents: PLATFORM_TOTALS.aiAgents, // 15 total
   ttsProviders: PLATFORM_TOTALS.ttsProviders,
-  products: PLATFORM_TOTALS.products,
+  products: PLATFORM_TOTALS.products, // 7 products
   
-  // Genie-specific counts (for product-focused views)
+  // GENIE-SPECIFIC COUNTS (verified from GenieStudioRegistry.ts)
+  genie: {
+    edgeFunctions: GENIE_COUNTS.edgeFunctions, // 62
+    hooks: GENIE_COUNTS.hooks, // 24
+    services: GENIE_COUNTS.services, // 19
+    databaseTables: GENIE_COUNTS.databaseTables, // 42
+    aiAgents: GENIE_COUNTS.aiAgents, // 12
+    pages: GENIE_COUNTS.pages, // 10
+    aiProviders: GENIE_COUNTS.aiProviders, // 13
+    pipelines: GENIE_COUNTS.pipelines, // 206
+    categories: GENIE_COUNTS.categories, // 21
+    crossFunctionalCapabilities: GENIE_COUNTS.crossFunctionalCapabilities, // 25
+    supportedLanguages: GENIE_COUNTS.supportedLanguages, // 140
+  },
+  
+  // AI Provider Summary
+  aiProviders: AI_PROVIDER_SUMMARY,
+  
+  // Concurrency Configuration
+  concurrency: CONCURRENCY_CONFIG,
+  
+  // Genie-specific breakdown for UI (for backward compatibility)
   genieSpecific: INFRASTRUCTURE_METRICS,
   
   // Last verification dates
   verifiedAt: {
-    edgeFunctions: '2026-01-15',
-    customHooks: '2026-01-15',
-    databaseTables: '2026-01-15',
-    mobileComponents: '2026-01-15',
-    aiAgents: '2026-01-15',
+    edgeFunctions: '2026-01-28',
+    customHooks: '2026-01-28',
+    databaseTables: '2026-01-28',
+    mobileComponents: '2026-01-28',
+    aiAgents: '2026-01-28',
+    aiProviders: '2026-01-28',
   },
 };
 
