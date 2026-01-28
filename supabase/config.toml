@@ -347,3 +347,6 @@ verify_jwt = false
 
 [functions.landing-video-generator]
 verify_jwt = false
+
+[functions.ask-genie-support]
+verify_jwt = false
