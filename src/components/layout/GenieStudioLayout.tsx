@@ -83,7 +83,7 @@ export const GenieStudioLayout: React.FC<GenieStudioLayoutProps> = ({
   const { isAuthenticated, isLoading, genieUser } = useGenieStudioAuth();
   const { canAccessRoute, getUpgradePromptForPath } = useGenieStudioNavigation();
 
-  // Redirect to auth if not authenticated
+  // Redirect to auth if not authenticated (only for protected routes)
   useEffect(() => {
     if (!isLoading && requireAuth && !isAuthenticated) {
       navigate('/genie-studio-auth', { 
@@ -93,8 +93,9 @@ export const GenieStudioLayout: React.FC<GenieStudioLayoutProps> = ({
     }
   }, [isAuthenticated, isLoading, requireAuth, navigate, location.pathname]);
 
-  // Show loading while checking auth
-  if (isLoading) {
+  // Show loading ONLY when auth is required and we're still checking
+  // For non-auth pages, render immediately
+  if (isLoading && requireAuth) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         <LoadingFallback />
@@ -102,7 +103,7 @@ export const GenieStudioLayout: React.FC<GenieStudioLayoutProps> = ({
     );
   }
 
-  // Not authenticated
+  // Not authenticated but auth is required
   if (requireAuth && !isAuthenticated) {
     return null; // Will redirect
   }
