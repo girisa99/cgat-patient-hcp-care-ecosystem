@@ -149,9 +149,9 @@ export const GenieStudioLayout: React.FC<GenieStudioLayoutProps> = ({
       />
       <main 
         className="flex-1 transition-all duration-300"
-        style={{ marginLeft: sidebarCollapsed ? '4rem' : '16rem' }}
+        style={{ marginLeft: sidebarCollapsed ? '3.5rem' : '14rem' }}
       >
-        <div className="h-full">
+        <div className="h-full w-full">
           <Suspense fallback={<LoadingFallback />}>
             {upgradePrompt ? (
               <UpgradePrompt 
