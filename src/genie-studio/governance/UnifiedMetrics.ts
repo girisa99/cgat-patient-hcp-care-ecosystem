@@ -6,10 +6,22 @@
  * 
  * DO NOT create hardcoded metrics elsewhere!
  * 
- * Last Audit: 2026-01-15
+ * VERIFIED GENIE-SPECIFIC COUNTS (2026-01-28):
+ * - Edge Functions: 62 (Genie-specific)
+ * - Hooks: 24 (Genie-specific)
+ * - Services: 19 (Genie-specific)
+ * - Database Tables: 42 (Genie-specific)
+ * - AI Agents: 12 (Genie-specific)
+ * - Pages: 10 (Genie-specific)
+ * - AI Providers: 13 Core Providers
+ * - Products: 7 (Spark, Mind, Vibe, Deck, Arc, Cast, Hub)
+ * - Pipelines: 206 (across 21 categories)
+ * - Cross-Functional Capabilities: 25
+ * 
+ * Last Audit: 2026-01-28
  */
 
-import { GENIE_DYNAMIC_METRICS, GENIE_AI_AGENTS, GENIE_EDGE_FUNCTIONS, GENIE_DATABASE_TABLES, GENIE_HOOKS, GENIE_SERVICES, GENIE_PAGES } from './GenieStudioRegistry';
+import { GENIE_DYNAMIC_METRICS, GENIE_AI_AGENTS, GENIE_EDGE_FUNCTIONS, GENIE_DATABASE_TABLES, GENIE_HOOKS, GENIE_SERVICES, GENIE_PAGES, GENIE_AI_PROVIDERS } from './GenieStudioRegistry';
 
 // =============================================================================
 // PHASE DATA - SINGLE SOURCE OF TRUTH FOR P0-P5
@@ -405,17 +417,44 @@ export const PLATFORM_TOTALS = {
 } as const;
 
 // =============================================================================
-// GENIE STUDIO SPECIFIC COUNTS (from registry)
+// GENIE STUDIO SPECIFIC COUNTS (from registry - VERIFIED 2026-01-28)
 // =============================================================================
 export const GENIE_COUNTS = {
-  edgeFunctions: GENIE_DYNAMIC_METRICS.edgeFunctions,
-  hooks: GENIE_DYNAMIC_METRICS.hooks,
-  databaseTables: GENIE_DYNAMIC_METRICS.databaseTables,
-  aiAgents: GENIE_DYNAMIC_METRICS.aiAgents,
-  pages: GENIE_DYNAMIC_METRICS.pages,
-  services: GENIE_DYNAMIC_METRICS.services,
+  edgeFunctions: GENIE_DYNAMIC_METRICS.edgeFunctions, // 62
+  hooks: GENIE_DYNAMIC_METRICS.hooks, // 24
+  databaseTables: GENIE_DYNAMIC_METRICS.databaseTables, // 42
+  aiAgents: GENIE_DYNAMIC_METRICS.aiAgents, // 12
+  pages: GENIE_DYNAMIC_METRICS.pages, // 10
+  services: GENIE_DYNAMIC_METRICS.services, // 19
+  aiProviders: GENIE_DYNAMIC_METRICS.aiProviders, // 13
   mobileComponents: 18, // Verified from mobile/index.ts
   components: 55, // Verified from genie-studio/components barrel exports
+  products: 7, // Spark, Mind, Vibe, Deck, Arc, Cast, Hub
+  pipelines: 206, // Total pipelines across ecosystem
+  categories: 21, // Pipeline categories
+  crossFunctionalCapabilities: 25, // From crossFunctionalCapabilities.ts
+  supportedLanguages: 140, // Core + extended
+} as const;
+
+// =============================================================================
+// AI PROVIDER SUMMARY (13 Core Providers)
+// =============================================================================
+export const AI_PROVIDER_SUMMARY = {
+  total: 13,
+  primary: ['openai', 'claude', 'gemini'],
+  specialized: ['elevenlabs', 'azure', 'alibaba', 'modelslab', 'meshy'],
+  fallback: ['deepseek', 'deepl', 'replicate', 'google', 'huggingface'],
+  capabilities: {
+    llm: ['openai', 'claude', 'gemini', 'alibaba', 'deepseek'],
+    tts: ['elevenlabs', 'azure', 'alibaba', 'openai', 'google'],
+    stt: ['openai', 'azure', 'alibaba', 'google'],
+    image_gen: ['openai', 'modelslab', 'gemini', 'replicate'],
+    video_gen: ['alibaba', 'modelslab', 'replicate'],
+    translation: ['deepl', 'claude', 'gemini', 'azure', 'google', 'deepseek'],
+    '3d_gen': ['meshy', 'modelslab', 'replicate'],
+    ocr: ['azure', 'google', 'gemini'],
+    vision: ['openai', 'claude', 'gemini'],
+  },
 } as const;
 
 // =============================================================================
@@ -685,6 +724,10 @@ export {
   GENIE_HOOKS,
   GENIE_SERVICES,
   GENIE_PAGES,
+  GENIE_AI_PROVIDERS,
   GENIE_DYNAMIC_METRICS,
 };
+
+// Re-export batch processing config for Command Center
+export { CONCURRENCY_CONFIG, QUEUE_CONFIG, BATCH_CONFIG, N8N_CONFIG } from '@/config/batch-processing-config';
 

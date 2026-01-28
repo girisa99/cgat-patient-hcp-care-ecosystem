@@ -17,6 +17,7 @@ export {
   GENIE_DATABASE_TABLES,
   GENIE_AI_AGENTS,
   GENIE_PAGES,
+  GENIE_AI_PROVIDERS,
   calculateGenieMetrics,
   isGenieAsset,
   GENIE_DYNAMIC_METRICS,
@@ -47,12 +48,17 @@ export {
   FINANCIAL_METRICS,
   METRICS_METADATA,
   P3_SCENARIO_BREAKDOWN,
+  AI_PROVIDER_SUMMARY,
   getPhaseProgress,
   getPhaseDisplayString,
   getScenarioDisplayString,
   getCompletionDisplayString,
   getCompletedPhasesString,
   validateMetrics,
+  CONCURRENCY_CONFIG,
+  QUEUE_CONFIG,
+  BATCH_CONFIG,
+  N8N_CONFIG,
 } from './UnifiedMetrics';
 
 export type { PhaseData } from './UnifiedMetrics';

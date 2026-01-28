@@ -5,8 +5,45 @@
  * This file serves as the SINGLE SOURCE OF TRUTH for what belongs to Genie Studio.
  * Update this registry whenever you add/remove Genie-related code.
  * 
- * Last Audit: 2026-01-15
+ * VERIFIED COUNTS (2026-01-28):
+ * - Edge Functions: 62 Genie-specific
+ * - Hooks: 24 Genie-specific
+ * - Services: 19 Genie-specific
+ * - Database Tables: 42 Genie-specific
+ * - AI Agents: 12 Genie-specific
+ * - Pages: 10 Genie-specific
+ * - AI Providers: 13 Core providers integrated
+ * 
+ * Last Audit: 2026-01-28
  */
+
+// =============================================================================
+// AI PROVIDERS (13 Core Providers Integrated)
+// =============================================================================
+export const GENIE_AI_PROVIDERS = {
+  // Primary Providers (Tier 1)
+  primary: [
+    { id: 'openai', name: 'OpenAI', capabilities: ['llm', 'image_gen', 'stt', 'tts', 'vision'], status: 'active' },
+    { id: 'claude', name: 'Anthropic Claude', capabilities: ['llm', 'translation', 'vision'], status: 'active' },
+    { id: 'gemini', name: 'Google Gemini', capabilities: ['llm', 'image_gen', 'vision', 'translation'], status: 'active' },
+  ],
+  // Specialized Providers (Tier 2)
+  specialized: [
+    { id: 'elevenlabs', name: 'ElevenLabs', capabilities: ['tts', 'voice_clone', 'music_gen', 'sfx_gen'], status: 'active' },
+    { id: 'azure', name: 'Azure AI', capabilities: ['tts', 'stt', 'ocr', 'translation', 'visemes'], status: 'active' },
+    { id: 'alibaba', name: 'Alibaba DashScope', capabilities: ['llm', 'tts', 'stt', 'video_gen', 'avatar'], status: 'active' },
+    { id: 'modelslab', name: 'ModelsLab', capabilities: ['image_gen', 'video_gen', '3d_mesh'], status: 'active' },
+    { id: 'meshy', name: 'Meshy AI', capabilities: ['3d_gen', 'texture', 'rigging'], status: 'active' },
+  ],
+  // Fallback Providers (Tier 3)
+  fallback: [
+    { id: 'deepseek', name: 'DeepSeek', capabilities: ['llm', 'translation'], status: 'active' },
+    { id: 'deepl', name: 'DeepL', capabilities: ['translation'], status: 'active' },
+    { id: 'replicate', name: 'Replicate', capabilities: ['image_gen', 'video_gen'], status: 'active' },
+    { id: 'google', name: 'Google Cloud AI', capabilities: ['translation', 'ocr', 'tts', 'stt'], status: 'active' },
+    { id: 'huggingface', name: 'HuggingFace', capabilities: ['llm', 'image_gen'], status: 'fallback' },
+  ],
+} as const;
 
 // =============================================================================
 // EDGE FUNCTIONS (62 total - verified from supabase/functions/)
@@ -263,6 +300,7 @@ export const calculateGenieMetrics = () => {
   const dbTableCount = GENIE_DATABASE_TABLES.length;
   const agentCount = GENIE_AI_AGENTS.length;
   const pageCount = GENIE_PAGES.length;
+  const aiProviderCount = Object.values(GENIE_AI_PROVIDERS).flat().length;
   
   return {
     edgeFunctions: edgeFunctionCount,
@@ -271,6 +309,7 @@ export const calculateGenieMetrics = () => {
     databaseTables: dbTableCount,
     aiAgents: agentCount,
     pages: pageCount,
+    aiProviders: aiProviderCount,
     
     // Breakdown by category
     breakdown: {
@@ -294,9 +333,23 @@ export const calculateGenieMetrics = () => {
         publishing: GENIE_SERVICES.publishing.length,
         aiProvider: GENIE_SERVICES.aiProvider.length,
       },
+      aiProviders: {
+        primary: GENIE_AI_PROVIDERS.primary.length,
+        specialized: GENIE_AI_PROVIDERS.specialized.length,
+        fallback: GENIE_AI_PROVIDERS.fallback.length,
+      },
     },
     
-    lastUpdated: '2026-01-15',
+    // Capabilities summary
+    capabilities: {
+      totalCapabilities: 25, // From crossFunctionalCapabilities
+      products: 7, // Spark, Mind, Vibe, Deck, Arc, Cast, Hub/Ask Genie
+      pipelines: 206, // Total pipelines across ecosystem
+      categories: 21, // Pipeline categories
+      languages: 140, // Supported languages (core + extended)
+    },
+    
+    lastUpdated: '2026-01-28',
   };
 };
 
