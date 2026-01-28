@@ -393,3 +393,46 @@ export type {
   EnhancedGenerationRequest,
   GenerationQualityLog
 } from './generationPipelineIntegration';
+
+// Resilience Services (P4 Recovery & Error)
+export {
+  circuitBreakerService,
+  gracefulDegradationService,
+} from './resilience';
+export type {
+  CircuitState,
+  CircuitBreakerConfig,
+  ProviderCircuit,
+  CircuitBreakerEvent,
+  QualityTier as ResilienceQualityTier,
+  DegradationConfig,
+  ProviderFallback,
+  DegradationEvent,
+} from './resilience';
+
+// Collaboration Services (P4 Collaboration)
+export {
+  approvalWorkflowService,
+} from './collaboration';
+export type {
+  ApprovalStatus,
+  ApprovalPriority,
+  ApprovalRequest,
+  ApprovalStep,
+  ApprovalRule,
+  ApprovalNotification,
+} from './collaboration';
+
+// Advanced Analytics Services (P4 Analytics)
+export {
+  advancedAnalyticsService,
+} from './analytics';
+export type {
+  RevenueMetrics,
+  CohortData,
+  FunnelStep,
+  PipelineAnalytics,
+  ABTestResult,
+  ABVariant,
+  DashboardWidget,
+} from './analytics';
