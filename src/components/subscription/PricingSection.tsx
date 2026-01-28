@@ -3,11 +3,24 @@ import { PricingCard } from './PricingCard';
 import { SubscriptionTier, SUBSCRIPTION_TIERS } from '@/hooks/useSubscription';
 import { useSubscriptionContext } from './SubscriptionProvider';
 import { useToast } from '@/hooks/use-toast';
+import { useRegionalPricing } from '@/hooks/useRegionalPricing';
+import { Badge } from '@/components/ui/badge';
+import { Globe, MapPin, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export const PricingSection = () => {
   const { subscription, createCheckout, isLoading } = useSubscriptionContext();
   const { toast } = useToast();
   const [loadingTier, setLoadingTier] = useState<SubscriptionTier | null>(null);
+  const { 
+    region, 
+    detectedCountry, 
+    isLoading: isRegionLoading, 
+    isRegionalEnabled,
+    languageZone,
+    paymentMethods,
+    refreshRegion
+  } = useRegionalPricing();
 
   const handleSelectTier = async (tier: SubscriptionTier) => {
     setLoadingTier(tier);
@@ -36,6 +49,59 @@ export const PricingSection = () => {
           All plans include core Genie Studio features.
         </p>
       </div>
+
+      {/* Regional Pricing Info Banner */}
+      {region && (
+        <div className="mb-8 p-4 bg-muted/50 rounded-lg border">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium">
+                  {region.display_name}
+                </span>
+                {detectedCountry && (
+                  <Badge variant="secondary" className="text-xs">
+                    {detectedCountry}
+                  </Badge>
+                )}
+              </div>
+              
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Globe className="h-4 w-4" />
+                <span>{region.currency_code}</span>
+              </div>
+
+              {isRegionalEnabled && region.ppp_multiplier !== 1.00 && (
+                <Badge variant="default" className="text-xs bg-accent text-accent-foreground">
+                  Regional Pricing Active
+                </Badge>
+              )}
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="text-xs text-muted-foreground">
+                Zone: <span className="font-medium">{languageZone}</span> | 
+                Lang: <span className="font-medium">{region.default_language}</span>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={refreshRegion}
+                disabled={isRegionLoading}
+              >
+                <RefreshCw className={`h-3 w-3 ${isRegionLoading ? 'animate-spin' : ''}`} />
+              </Button>
+            </div>
+          </div>
+
+          {paymentMethods.length > 1 && (
+            <div className="mt-2 text-xs text-muted-foreground">
+              Payment methods: {paymentMethods.join(', ')}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {paidTiers.map((tier) => (
