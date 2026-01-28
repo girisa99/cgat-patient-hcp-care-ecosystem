@@ -34,6 +34,7 @@ import { ProductionAnalytics } from './ProductionAnalytics';
 import { WorkspaceManagement } from './WorkspaceManagement';
 import { TeamInviteManagement } from './TeamInviteManagement';
 import { WhitelabelConfiguration } from './WhitelabelConfiguration';
+import { TieredAnalyticsDashboard } from '@/components/analytics/TieredAnalyticsDashboard';
 import { toast } from 'sonner';
 import { useShows } from '@/hooks/useShows';
 import { useNavigate } from 'react-router-dom';
@@ -49,7 +50,7 @@ interface ProductionHubAdminProps {
   className?: string;
 }
 
-type AdminTab = 'kanban' | 'calendar' | 'appointments' | 'library' | 'composition' | 'scheduler' | 'analytics' | 'workspaces' | 'team' | 'whitelabel';
+type AdminTab = 'kanban' | 'calendar' | 'appointments' | 'library' | 'composition' | 'scheduler' | 'analytics' | 'enterprise-analytics' | 'workspaces' | 'team' | 'whitelabel';
 
 export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ className }) => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -261,6 +262,10 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
               <BarChart3 className="w-4 h-4" />
               <span className="hidden lg:inline">Analytics</span>
             </TabsTrigger>
+            <TabsTrigger value="enterprise-analytics" className="flex items-center gap-2">
+              <Globe className="w-4 h-4" />
+              <span className="hidden lg:inline">Enterprise</span>
+            </TabsTrigger>
             <TabsTrigger value="workspaces" className="flex items-center gap-2">
               <Building2 className="w-4 h-4" />
               <span className="hidden lg:inline">Workspaces</span>
@@ -358,6 +363,11 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
 
         <TabsContent value="analytics" className="mt-6">
           <ProductionAnalytics />
+        </TabsContent>
+
+        {/* Enterprise Analytics - P4 Suite (Internal Admin View) */}
+        <TabsContent value="enterprise-analytics" className="mt-6">
+          <TieredAnalyticsDashboard accessLevel="internal" />
         </TabsContent>
 
         <TabsContent value="workspaces" className="mt-6">

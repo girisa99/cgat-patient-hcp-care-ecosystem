@@ -119,8 +119,8 @@ export const genieStudioNavItems: GenieNavItem[] = [
     title: "Analytics",
     url: "/genie-analytics",
     icon: BarChart3,
-    description: "Performance insights",
-    minTier: 'pro',
+    description: "Performance insights (Business: Basic, Enterprise: Full)",
+    minTier: 'business',
     category: 'tools',
   },
   
