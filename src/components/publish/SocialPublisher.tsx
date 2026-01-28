@@ -1,14 +1,19 @@
 /**
- * Social Publisher - Hybrid Approach
+ * Social Publisher - Unified Ecosystem Publishing Component
  * 
- * OAuth Login + Direct Post for:
- * - LinkedIn, Twitter/X, YouTube (Good API support)
+ * SHARED across ALL Genie products:
+ * - Spark, Mind, Vibe, Deck, Arc, Cast, Hub
  * 
- * Download + Manual Share for:
- * - Instagram, TikTok (Restricted APIs)
+ * Features:
+ * - OAuth Login + Direct Post for: LinkedIn, YouTube, Twitter/X, Facebook, Bluesky
+ * - Download + Manual Share for: Instagram, TikTok
+ * - Company Pages support (LinkedIn Company, Facebook Pages)
+ * - Website/Blog integration via webhook
+ * - Industry & Segment filtering
+ * - n8n/Zapier webhook integration
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,6 +23,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Progress } from '@/components/ui/progress';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { 
   Youtube, 
   Linkedin, 
@@ -32,11 +39,22 @@ import {
   Copy,
   Share2,
   AlertCircle,
-  Smartphone
+  Smartphone,
+  Building2,
+  Globe,
+  Webhook,
+  ChevronDown,
+  Filter,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { 
+  INDUSTRY_SEGMENTS,
+  type GenieProduct,
+  type CompanyPage,
+  type IndustrySegment,
+} from '@/services/unifiedEcosystemPublishingService';
 
 // TikTok icon component (not in Lucide)
 const TikTokIcon = ({ className }: { className?: string }) => (
@@ -59,14 +77,29 @@ const BlueskyIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
+// Pinterest icon component
+const PinterestIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 5.079 3.158 9.417 7.618 11.162-.105-.949-.199-2.403.041-3.439.219-.937 1.406-5.957 1.406-5.957s-.359-.72-.359-1.781c0-1.663.967-2.911 2.168-2.911 1.024 0 1.518.769 1.518 1.688 0 1.029-.653 2.567-.992 3.992-.285 1.193.6 2.165 1.775 2.165 2.128 0 3.768-2.245 3.768-5.487 0-2.861-2.063-4.869-5.008-4.869-3.41 0-5.409 2.562-5.409 5.199 0 1.033.394 2.143.889 2.741.099.12.112.225.085.345-.09.375-.293 1.199-.334 1.363-.053.225-.172.271-.401.165-1.495-.69-2.433-2.878-2.433-4.646 0-3.776 2.748-7.252 7.92-7.252 4.158 0 7.392 2.967 7.392 6.923 0 4.135-2.607 7.462-6.233 7.462-1.214 0-2.354-.629-2.758-1.379l-.749 2.848c-.269 1.045-1.004 2.352-1.498 3.146 1.123.345 2.306.535 3.55.535 6.607 0 11.985-5.365 11.985-11.987C23.97 5.39 18.592.026 11.985.026L12.017 0z"/>
+  </svg>
+);
+
+// Threads icon component
+const ThreadsIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12.186 24h-.007c-3.581-.024-6.334-1.205-8.184-3.509C2.35 18.44 1.5 15.586 1.472 12.01v-.017c.03-3.579.879-6.43 2.525-8.482C5.845 1.205 8.6.024 12.18 0h.014c2.746.02 5.043.725 6.826 2.098 1.677 1.29 2.858 3.13 3.509 5.467l-2.04.569c-1.104-3.96-3.898-5.984-8.304-6.015-2.91.022-5.11.936-6.54 2.717C4.307 6.504 3.616 8.914 3.589 12c.027 3.086.718 5.496 2.057 7.164 1.43 1.783 3.631 2.698 6.54 2.717 2.623-.02 4.358-.631 5.8-2.045 1.647-1.613 1.618-3.593 1.09-4.798-.31-.71-.873-1.3-1.634-1.75-.192 1.352-.622 2.446-1.284 3.272-.886 1.102-2.14 1.704-3.73 1.79-1.202.065-2.361-.218-3.259-.801-1.063-.689-1.685-1.74-1.752-2.96-.065-1.182.408-2.256 1.33-3.022.88-.731 2.177-1.14 3.65-1.153 1.2-.01 2.163.175 2.95.57-.02-.476-.073-.945-.16-1.401-.36-1.898-1.244-2.836-2.705-2.836-1.08 0-1.882.452-2.386 1.343l-1.89-1.063c.86-1.532 2.327-2.338 4.358-2.338 1.56 0 2.858.567 3.758 1.64.817.975 1.32 2.324 1.494 4.014.49.168.94.373 1.35.617 1.18.701 2.074 1.673 2.584 2.814.71 1.585.805 4.293-1.37 6.422-1.907 1.866-4.263 2.658-7.42 2.684zm-.09-5.66c1.406.065 2.63-.394 2.746-2.064.092-1.318-.986-2.063-2.923-2.063h-.06c-1.218.01-3.2.382-3.08 2.178.074 1.115.865 1.884 2.317 1.949z"/>
+  </svg>
+);
+
 interface SocialPlatform {
   id: string;
   name: string;
   icon: React.ComponentType<{ className?: string }>;
-  type: 'oauth' | 'download';
+  type: 'oauth' | 'download' | 'webhook';
   connected: boolean;
   color: string;
   description: string;
+  supportsCompanyPages?: boolean;
 }
 
 interface SocialPublisherProps {
@@ -76,6 +109,12 @@ interface SocialPublisherProps {
   defaultDescription?: string;
   onPublishComplete?: (platforms: string[]) => void;
   className?: string;
+  sourceProduct?: GenieProduct;
+  industryContext?: IndustrySegment;
+  companyPages?: CompanyPage[];
+  showIndustryFilter?: boolean;
+  showCompanyPages?: boolean;
+  showWebhooks?: boolean;
 }
 
 export const SocialPublisher: React.FC<SocialPublisherProps> = ({
@@ -84,7 +123,13 @@ export const SocialPublisher: React.FC<SocialPublisherProps> = ({
   defaultTitle = '',
   defaultDescription = '',
   onPublishComplete,
-  className
+  className,
+  sourceProduct = 'vibe',
+  industryContext,
+  companyPages = [],
+  showIndustryFilter = true,
+  showCompanyPages = true,
+  showWebhooks = true,
 }) => {
   // Platform states
   const [platforms, setPlatforms] = useState<SocialPlatform[]>([
@@ -104,7 +149,8 @@ export const SocialPublisher: React.FC<SocialPublisherProps> = ({
       type: 'oauth',
       connected: false, 
       color: 'text-blue-600',
-      description: 'Share to your professional network'
+      description: 'Share to your professional network',
+      supportsCompanyPages: true
     },
     { 
       id: 'twitter', 
@@ -122,7 +168,8 @@ export const SocialPublisher: React.FC<SocialPublisherProps> = ({
       type: 'oauth',
       connected: false, 
       color: 'text-blue-500',
-      description: 'Share to your page or timeline'
+      description: 'Share to your page or timeline',
+      supportsCompanyPages: true
     },
     { 
       id: 'bluesky', 
@@ -132,6 +179,24 @@ export const SocialPublisher: React.FC<SocialPublisherProps> = ({
       connected: false, 
       color: 'text-sky-500',
       description: 'Post to Bluesky'
+    },
+    { 
+      id: 'threads', 
+      name: 'Threads', 
+      icon: ThreadsIcon, 
+      type: 'oauth',
+      connected: false, 
+      color: 'text-foreground',
+      description: 'Share to Threads'
+    },
+    { 
+      id: 'pinterest', 
+      name: 'Pinterest', 
+      icon: PinterestIcon, 
+      type: 'oauth',
+      connected: false, 
+      color: 'text-red-600',
+      description: 'Pin to your boards'
     },
     { 
       id: 'instagram', 
@@ -157,9 +222,31 @@ export const SocialPublisher: React.FC<SocialPublisherProps> = ({
   const [title, setTitle] = useState(defaultTitle);
   const [description, setDescription] = useState(defaultDescription);
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
+  const [selectedCompanyPages, setSelectedCompanyPages] = useState<string[]>([]);
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishProgress, setPublishProgress] = useState(0);
   const [publishedPlatforms, setPublishedPlatforms] = useState<string[]>([]);
+  
+  // Industry/Segment filter
+  const [selectedIndustry, setSelectedIndustry] = useState(industryContext?.industry || '');
+  const [selectedSegment, setSelectedSegment] = useState(industryContext?.segment || '');
+  const availableSegments = selectedIndustry ? INDUSTRY_SEGMENTS[selectedIndustry] || [] : [];
+  
+  // Webhook states
+  const [webhookUrl, setWebhookUrl] = useState('');
+  const [showWebhookInput, setShowWebhookInput] = useState(false);
+
+  // Get industry-specific hashtags
+  const getIndustryHashtags = useCallback(() => {
+    const tags: string[] = [];
+    if (selectedIndustry) {
+      tags.push(`#${selectedIndustry.replace(/\s+/g, '')}`);
+    }
+    if (selectedSegment) {
+      tags.push(`#${selectedSegment.replace(/\s+/g, '')}`);
+    }
+    return tags;
+  }, [selectedIndustry, selectedSegment]);
 
   // Connect via OAuth
   const handleConnect = useCallback(async (platformId: string) => {
