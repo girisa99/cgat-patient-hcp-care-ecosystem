@@ -1,12 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { TrendingUp, TrendingDown, Users, Bot, Activity, DollarSign, Clock, Target } from 'lucide-react';
+import { TrendingUp, TrendingDown, Users, Bot, Clock, Target } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
+import { RegionalAnalyticsPanel } from './RegionalAnalyticsPanel';
+import { FunnelVisualization } from './FunnelVisualization';
+import { CohortRetentionHeatmap } from './CohortRetentionHeatmap';
+import { RevenueMetricsPanel } from './RevenueMetricsPanel';
 
 interface AnalyticsMetrics {
   totalAgents: number;
@@ -139,12 +143,50 @@ export const EnterpriseAnalyticsDashboard: React.FC = () => {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList>
+        <TabsList className="flex-wrap">
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="regional">Regional (MENA/India/Asia)</TabsTrigger>
+          <TabsTrigger value="revenue">Revenue</TabsTrigger>
+          <TabsTrigger value="funnels">Funnels</TabsTrigger>
+          <TabsTrigger value="cohorts">Cohorts</TabsTrigger>
           <TabsTrigger value="performance">Performance</TabsTrigger>
           <TabsTrigger value="usage">Usage Patterns</TabsTrigger>
           <TabsTrigger value="roi">ROI Analysis</TabsTrigger>
         </TabsList>
+
+        {/* NEW: Regional Analytics Tab */}
+        <TabsContent value="regional" className="space-y-6">
+          <RegionalAnalyticsPanel />
+        </TabsContent>
+
+        {/* NEW: Revenue Metrics Tab */}
+        <TabsContent value="revenue" className="space-y-6">
+          <RevenueMetricsPanel showTrend={true} />
+        </TabsContent>
+
+        {/* NEW: Funnels Tab */}
+        <TabsContent value="funnels" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <FunnelVisualization 
+              funnelId="signup_to_generation" 
+              title="Signup to Generation" 
+              description="User journey from landing to first content"
+            />
+            <FunnelVisualization 
+              funnelId="free_to_paid" 
+              title="Free to Paid" 
+              description="Conversion funnel to paid subscription"
+            />
+          </div>
+        </TabsContent>
+
+        {/* NEW: Cohorts Tab */}
+        <TabsContent value="cohorts" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <CohortRetentionHeatmap weeks={8} />
+            <CohortRetentionHeatmap region="mena" weeks={8} />
+          </div>
+        </TabsContent>
 
         <TabsContent value="overview" className="space-y-6">
           {/* Key Metrics Grid */}
