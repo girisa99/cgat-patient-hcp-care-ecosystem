@@ -116,7 +116,10 @@ const AppContent = () => {
     location.startsWith('/subscription') ||
     location.startsWith('/marketing-materials');
 
-  console.log('🎯 Auth state:', { isAuthenticated, isLoading, userRoles, isGenieStudioRoute });
+  // Also check if user is on root route - SmartDefaultRoute will handle Genie Studio detection
+  const isRootRoute = location === '/' || location === '';
+
+  console.log('🎯 Auth state:', { isAuthenticated, isLoading, userRoles, isGenieStudioRoute, isRootRoute });
 
   // Show loading screen while auth is initializing
   if (isLoading) {
@@ -124,9 +127,10 @@ const AppContent = () => {
     return <PageLoading message="Initializing application..." />;
   }
 
-  // For Genie Studio routes, don't wait for legacy roles - those routes use GenieStudioProtectedRoute
-  // Only wait for roles on healthcare/legacy routes
-  if (isAuthenticated && userRoles.length === 0 && !isGenieStudioRoute) {
+  // For Genie Studio routes OR root route, don't wait for legacy roles
+  // Genie Studio routes use GenieStudioProtectedRoute
+  // Root route uses SmartDefaultRoute which checks Genie Studio user status
+  if (isAuthenticated && userRoles.length === 0 && !isGenieStudioRoute && !isRootRoute) {
     console.log('⏳ Waiting for roles to load (healthcare route)...');
     return <PageLoading message="Loading your dashboard..." />;
   }
