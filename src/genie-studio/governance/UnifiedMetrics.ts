@@ -69,14 +69,14 @@ export const PHASES: Record<string, PhaseData> = {
     // PHASE 4 DETAILED (Enterprise & Analytics) - 108 total:
     // - Recovery & Error Handling: 12 scenarios (12 done, 0 pending) ✅ COMPLETE
     // - Multi-Language & Localization: 14 scenarios (14 done, 0 pending) ✅ COMPLETE
-    // - Collaboration Features: 10 scenarios (7 done, 3 pending)
+    // - Collaboration Features: 10 scenarios (10 done, 0 pending) ✅ COMPLETE
     // - Versioning & History: 8 scenarios (8 done, 0 pending) ✅ COMPLETE
     // - External API & Integrations: 12 scenarios (1 done, 11 pending)
     // - Advanced Analytics: 31 scenarios (31 done, 0 pending) ✅ COMPLETE
     // - Segment-Specific Features: 21 scenarios (0 done, 21 pending)
-    // TOTAL: 108 | IMPLEMENTED: 73 | COMPLETION: 68%
+    // TOTAL: 108 | IMPLEMENTED: 76 | COMPLETION: 70%
     total: 108, 
-    implemented: 73, // Updated: Recovery 12✅, Multi-lang 14✅, Collab 7, Versioning 8✅, API 1, Analytics 31✅
+    implemented: 76, // Updated: Recovery 12✅, Multi-lang 14✅, Collab 10✅, Versioning 8✅, API 1, Analytics 31✅
     status: 'in-progress', 
     weeks: '19-26',
     name: 'Advanced Features & Enterprise'
@@ -221,10 +221,10 @@ export const P3_SCENARIO_BREAKDOWN = {
     liveCursorTracking: { id: 'P4-COLLAB-05', name: 'Live Cursor Tracking', status: 'complete', priority: 3, note: 'CollaboratorCursors.tsx with Supabase Realtime' },
     approvalWorkflows: { id: 'P4-COLLAB-06', name: 'Approval Workflows', status: 'complete', priority: 2, note: 'approvalWorkflowService.ts - multi-stage review' },
     conflictResolution: { id: 'P4-COLLAB-07', name: 'Edit Conflict Resolution', status: 'complete', priority: 2, note: 'ConflictResolutionDialog.tsx with property-level merge' },
-    // ⏳ PENDING
-    commentingSystem: { id: 'P4-COLLAB-08', name: 'In-Context Commenting', status: 'pending', priority: 2, description: 'Comments on slides/clips' },
-    activityFeed: { id: 'P4-COLLAB-09', name: 'Team Activity Feed', status: 'pending', priority: 3, description: 'Recent changes timeline' },
-    mentionsNotifications: { id: 'P4-COLLAB-10', name: '@Mentions & Notifications', status: 'pending', priority: 2, description: 'Tag teammates in content' },
+    // ✅ IMPLEMENTED (2026-01-28)
+    commentingSystem: { id: 'P4-COLLAB-08', name: 'In-Context Commenting', status: 'complete', priority: 2, note: 'commentingService + InContextComments.tsx - threaded comments, resolution' },
+    activityFeed: { id: 'P4-COLLAB-09', name: 'Team Activity Feed', status: 'complete', priority: 3, note: 'activityFeedService + TeamActivityFeed.tsx - timeline with stats' },
+    mentionsNotifications: { id: 'P4-COLLAB-10', name: '@Mentions & Notifications', status: 'complete', priority: 2, note: 'mentionsNotificationsService + NotificationsPanel.tsx - full notification system' },
   },
 
   // P4-D: VERSIONING & HISTORY (8 scenarios) - 5 done, 3 pending
