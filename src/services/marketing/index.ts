@@ -6,6 +6,7 @@
  * - Rewards & incentives program
  * - AI generation integration (avatars, 3D, video)
  * - Feature auto-discovery & configurable messaging
+ * - Unified ecosystem publishing (cross-product, company pages, industry filtering)
  */
 
 // Scheduler
@@ -55,3 +56,20 @@ export {
   type MessagingTemplate,
   type PositioningStatement,
 } from './featureDiscoveryService';
+
+// Unified Ecosystem Publishing (shared across all products)
+export {
+  unifiedEcosystemPublishingService,
+  INDUSTRY_SEGMENTS,
+  PLATFORM_CONTENT_LIMITS,
+  type GenieProduct,
+  type PublishingPlatform,
+  type PublishingRequest,
+  type PublishingResult,
+  type PublishingTarget,
+  type UserPublishingAccounts,
+  type CompanyPage,
+  type WebsiteConfig,
+  type IndustrySegment,
+  type ContentType,
+} from '../unifiedEcosystemPublishingService';
