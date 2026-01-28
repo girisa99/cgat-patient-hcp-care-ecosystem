@@ -20,14 +20,20 @@ import {
 } from 'lucide-react';
 import { useSupportChat } from '@/hooks/useSupportChat';
 import { useGenieStudioAuth } from '@/hooks/useGenieStudioAuth';
+import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 
 interface AskGenieChatProps {
   onEscalate?: () => void;
   className?: string;
+  compact?: boolean; // For FAB mode - hide header
 }
 
-export const AskGenieChat: React.FC<AskGenieChatProps> = ({ onEscalate, className }) => {
+export const AskGenieChat: React.FC<AskGenieChatProps> = ({ 
+  onEscalate, 
+  className,
+  compact = false,
+}) => {
   const { isAuthenticated, genieUser } = useGenieStudioAuth();
   const { 
     messages, 
@@ -67,35 +73,37 @@ export const AskGenieChat: React.FC<AskGenieChatProps> = ({ onEscalate, classNam
   };
 
   return (
-    <Card className={className}>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Sparkles className="h-5 w-5 text-primary" />
-            Ask Genie
-          </CardTitle>
-          <div className="flex items-center gap-2">
-            {escalationNeeded && (
-              <Badge variant="outline" className="text-warning border-warning/50">
-                <AlertTriangle className="h-3 w-3 mr-1" />
-                Escalation Suggested
-              </Badge>
-            )}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={clearConversation}
-              className="h-8"
-            >
-              <RefreshCw className="h-3.5 w-3.5" />
-            </Button>
+    <Card className={cn(className, compact && "border-0 shadow-none")}>
+      {!compact && (
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Sparkles className="h-5 w-5 text-primary" />
+              Ask Genie
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              {escalationNeeded && (
+                <Badge variant="outline" className="text-warning border-warning/50">
+                  <AlertTriangle className="h-3 w-3 mr-1" />
+                  Escalation Suggested
+                </Badge>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearConversation}
+                className="h-8"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+              </Button>
+            </div>
           </div>
-        </div>
-      </CardHeader>
+        </CardHeader>
+      )}
       
-      <CardContent className="p-0">
+      <CardContent className={cn("p-0", compact && "pt-0")}>
         {/* Messages Area */}
-        <ScrollArea className="h-80 px-4" ref={scrollRef}>
+        <ScrollArea className={cn(compact ? "h-72" : "h-80", "px-4")} ref={scrollRef}>
           <div className="space-y-4 py-4">
             {messages.map((message) => (
               <div
