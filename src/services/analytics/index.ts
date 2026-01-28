@@ -5,6 +5,7 @@
  * Exports:
  * - Advanced Analytics: Revenue, cohorts, funnels, pipelines
  * - UI Components: Regional, Funnel, Cohort, Revenue panels
+ * - Tiered Dashboard: Access-level based analytics
  */
 
 export {
@@ -43,3 +44,5 @@ export { RegionalAnalyticsPanel } from '@/components/analytics/RegionalAnalytics
 export { FunnelVisualization } from '@/components/analytics/FunnelVisualization';
 export { CohortRetentionHeatmap } from '@/components/analytics/CohortRetentionHeatmap';
 export { RevenueMetricsPanel } from '@/components/analytics/RevenueMetricsPanel';
+export { TieredAnalyticsDashboard, type AnalyticsAccessLevel } from '@/components/analytics/TieredAnalyticsDashboard';
+export { AnalyticsWidget } from '@/components/analytics/AnalyticsWidget';
