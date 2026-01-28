@@ -17,14 +17,11 @@
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-// NEW: 4-Quadrant Architecture - use QuadrantLayout for consistent navigation
-import { QuadrantLayout } from '@/components/navigation';
+import { QuadrantLayout, QuadrantProductHeader } from '@/components/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Separator } from '@/components/ui/separator';
-import { 
-  ArrowLeft, 
+import {
   Video,
   Smartphone,
   Monitor,
@@ -75,10 +72,8 @@ import {
   LocationStoryMode,
   TimelineClipEditor
 } from '@/components/shared';
-import { AskGenie } from '@/components/genie-studio/AskGenie';
 import type { TimelineClip } from '@/components/mobile/MultiClipTimeline';
 import type { PipelineStage } from '@/components/mobile/PipelineProgress';
-import genieVibeLogo from '@/assets/logos/genie-vibe-combined.png';
 
 // Import extracted VibeRecordTab component (Phase 1+2 consolidation)
 // Import VibeMobileLayout (Phase 5 - simplified 3-tab mobile UX)
@@ -446,89 +441,41 @@ const GenieVibe: React.FC = () => {
           onClose={() => setIsTeleprompterOpen(false)}
         />
 
-        {/* Header - Clean & Minimal */}
-        <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="container flex h-16 items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate('/genie-studio')}
-                className="gap-2"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                <span className="hidden sm:inline">Genie Studio</span>
-              </Button>
-              
-              <Separator orientation="vertical" className="h-6" />
-              
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-card border flex items-center justify-center overflow-hidden p-1.5">
-                  <img src={genieVibeLogo} alt="Genie Vibe" className="h-full w-full object-contain" />
-                </div>
-                <div>
-                  <h1 className="text-lg font-semibold">Genie Vibe Studio</h1>
-                  <p className="text-xs text-muted-foreground hidden lg:block">Record → Clips → Mix → Timeline → Publish</p>
-                </div>
-              </div>
-            </div>
-
+        {/* Unified Product Header - replaces redundant custom header */}
+        <QuadrantProductHeader 
+          productId="vibe" 
+          rightContent={
             <div className="flex items-center gap-2">
-              {/* Quick Navigation */}
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 gap-1.5"
-                onClick={() => navigate('/genie-spark')}
-              >
-                <Zap className="h-4 w-4" />
-                <span className="hidden md:inline">Spark</span>
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 gap-1.5"
-                onClick={() => navigate('/genie-deck')}
-              >
-                <Layers className="h-4 w-4" />
-                <span className="hidden md:inline">Deck</span>
-              </Button>
-              
               {/* View Mode Toggle */}
               <div className="flex items-center border rounded-lg p-1">
                 <Button
                   variant={!showMobileView ? 'secondary' : 'ghost'}
                   size="sm"
-                  className="h-8 gap-1.5"
+                  className="h-7 gap-1"
                   onClick={() => setViewMode('desktop')}
                 >
-                  <Monitor className="h-4 w-4" />
-                  <span className="hidden md:inline">Desktop</span>
+                  <Monitor className="h-3 w-3" />
                 </Button>
                 <Button
                   variant={showMobileView ? 'secondary' : 'ghost'}
                   size="sm"
-                  className="h-8 gap-1.5"
+                  className="h-7 gap-1"
                   onClick={() => setViewMode('mobile')}
                 >
-                  <Smartphone className="h-4 w-4" />
-                  <span className="hidden md:inline">Mobile</span>
+                  <Smartphone className="h-3 w-3" />
                 </Button>
               </div>
-
-              {/* Global Tier Filter - affects TTS, music, video generation quality */}
               <GlobalTierFilter
                 value={globalTier === 'standard' ? 1 : globalTier === 'advanced' ? 2 : 3}
                 onChange={(tier) => setGlobalTier(tier === 1 ? 'standard' : tier === 2 ? 'advanced' : 'premium')}
                 compact={true}
               />
-
               <Badge variant="secondary">
                 {recordings.length} Recordings
               </Badge>
             </div>
-          </div>
-        </header>
+          }
+        />
 
         {/* Pipeline Progress Indicator */}
         <PipelineProgress
@@ -933,12 +880,7 @@ const GenieVibe: React.FC = () => {
             </TabsContent>
           </Tabs>
         </main>
-
-        {/* Ask Genie - Context-aware AI for Vibe */}
-        <AskGenie 
-          product="vibe" 
-          currentTab={activeTab}
-        />
+        {/* AskGenie removed - now centralized in QuadrantLayout */}
       </div>
     </QuadrantLayout>
   );
