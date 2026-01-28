@@ -98,7 +98,10 @@ export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({
           {/* User Menu */}
           <div className="flex items-center gap-4">
             <Badge variant="outline" className={cn("text-xs", tierInfo.color)}>
-              <tierInfo.icon className="h-3 w-3 mr-1" />
+              {(() => {
+                const TierIcon = tierInfo.icon;
+                return TierIcon ? <TierIcon className="h-3 w-3 mr-1" /> : null;
+              })()}
               {tierInfo.name}
             </Badge>
             
@@ -183,7 +186,10 @@ export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({
         <div className="border-t p-4">
           <div className="mb-3 flex items-center justify-between">
             <Badge variant="outline" className={cn("text-xs", tierInfo.color)}>
-              <tierInfo.icon className="h-3 w-3 mr-1" />
+              {(() => {
+                const TierIcon = tierInfo.icon;
+                return TierIcon ? <TierIcon className="h-3 w-3 mr-1" /> : null;
+              })()}
               {tierInfo.name}
             </Badge>
             {isInternal && (
