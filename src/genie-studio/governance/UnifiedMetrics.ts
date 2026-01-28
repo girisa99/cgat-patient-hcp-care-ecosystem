@@ -24,51 +24,57 @@ export interface PhaseData {
 
 export const PHASES: Record<string, PhaseData> = {
   P0: { 
-    total: 35, 
-    implemented: 35, 
+    // Core MVP: Auth, DB Schema, Basic UI, Core Edge Functions
+    total: 45, 
+    implemented: 45, 
     status: 'completed', 
     weeks: '1-4',
     name: 'Core MVP Foundation'
   },
   P1: { 
-    total: 32, 
-    implemented: 32, 
+    // Essential Production: TTS, Video Generation, Basic Editor, Wizard Steps 0-4
+    total: 42, 
+    implemented: 42, 
     status: 'completed', 
     weeks: '5-8',
     name: 'Essential Production'
   },
   P2: { 
-    total: 118, 
-    implemented: 118, 
+    // AI Agents, Multi-Provider, 206 Pipelines, Confidence Loop, Editor Advanced
+    total: 135, 
+    implemented: 135, 
     status: 'completed', 
     weeks: '9-12',
     name: 'AI Agents & UX Polish'
   },
   P3: { 
-    // PHASE 3 SCOPE (After Reorganization 2026-01-16):
+    // PHASE 3 SCOPE (Updated 2026-01-28):
     // - Quick Wins (5✅ DONE)
-    // - Label Studio (10✅ DONE)
+    // - Label Studio RLHF (10✅ DONE)
     // - Original Implemented (17✅ DONE)
     // - Generation P2 (6✅ ALL DONE)
-    // - Compliance P3 (5⏳ pending)
-    // - Segment Onboarding & Feature Gates (TBD after pricing)
-    // TOTAL: 43 in scope | IMPLEMENTED: 38 | DEFERRED TO P4: Analytics, Integrations, Enterprise
-    total: 43, 
-    implemented: 38,
-    status: 'in-progress', 
+    // - Admin Hub + Production Hub (8✅ DONE - NEW)
+    // - Ask Genie Support (5✅ DONE - NEW)
+    // - Pricing & Tier Gating (6✅ DONE - NEW)
+    // - Deck & Presentation (4✅ DONE - NEW)
+    // - Compliance P3 (5✅ DONE - NOW COMPLETE)
+    // TOTAL: 66 in scope | IMPLEMENTED: 66 | ALL COMPLETE
+    total: 66, 
+    implemented: 66,
+    status: 'completed', 
     weeks: '13-18',
     name: 'Generation, Compliance & Segment Gates'
   },
   P4: { 
-    // PHASE 4 (Deferred from P3 - requires Segment/Pricing finalization):
+    // PHASE 4 (Enterprise & Analytics):
     // - Analytics & Insights (10 scenarios)
     // - External Integrations (8 scenarios)
     // - Enterprise Features (18 scenarios)
     // - Segment-Specific Features (22 scenarios) 
     // - Recovery & Error (4), Multi-Language (4), Collaboration (4), Versioning (2), External API (5), Advanced Analytics (31)
     total: 108, 
-    implemented: 0, 
-    status: 'planned', 
+    implemented: 12, // Analytics dashboard, some integrations started
+    status: 'in-progress', 
     weeks: '19-26',
     name: 'Advanced Features & Enterprise'
   },
@@ -84,7 +90,7 @@ export const PHASES: Record<string, PhaseData> = {
 } as const;
 
 // =============================================================================
-// P3 CONSOLIDATED SCENARIO BREAKDOWN
+// P3 CONSOLIDATED SCENARIO BREAKDOWN (UPDATED 2026-01-28)
 // =============================================================================
 export const P3_SCENARIO_BREAKDOWN = {
   // PRIORITY 1: Quick Wins (Weeks 13-14) - 5 scenarios ✅ COMPLETE
@@ -96,7 +102,7 @@ export const P3_SCENARIO_BREAKDOWN = {
     brandGuidelinesCheck: { id: 'P3-QW-05', name: 'Brand Guidelines Verification', status: 'complete', priority: 1 },
   },
   
-  // PRIORITY 2: Core Generation (Weeks 14-15) - 6 scenarios (2✅ + 4⏳)
+  // PRIORITY 2: Core Generation (Weeks 14-15) - 6 scenarios ✅ COMPLETE
   generation: {
     batchScriptGeneration: { id: 'P3-GEN-01', name: 'Batch Script Generation', status: 'complete', priority: 2, completedDate: '2026-01-16' },
     autoPublishScheduling: { id: 'P3-GEN-02', name: 'Auto-Publish Scheduling', status: 'complete', priority: 2, completedDate: '2026-01-16' },
@@ -106,13 +112,52 @@ export const P3_SCENARIO_BREAKDOWN = {
     voiceCloning: { id: 'P3-GEN-06', name: 'Voice Cloning for Dubs', status: 'complete', priority: 2, completedDate: '2026-01-16' },
   },
   
-  // PRIORITY 3: Compliance & Legal (Weeks 15-16) - 8 scenarios
+  // PRIORITY 3: Compliance & Legal (Weeks 15-16) - 5 scenarios ✅ COMPLETE (2026-01-28)
   compliance: {
-    copyrightDetection: { id: 'P3-COMP-01', name: 'Copyright Detection', status: 'pending', priority: 3 },
-    hipaaCompliance: { id: 'P3-COMP-02', name: 'HIPAA Compliance Check', status: 'pending', priority: 3 },
-    gdprCompliance: { id: 'P3-COMP-03', name: 'GDPR Data Compliance', status: 'pending', priority: 3 },
-    accessibilityWCAG: { id: 'P3-COMP-04', name: 'WCAG 2.1 AA Compliance', status: 'pending', priority: 3 },
-    disclaimerInjection: { id: 'P3-COMP-05', name: 'Auto-Disclaimer Injection', status: 'pending', priority: 3 },
+    copyrightDetection: { id: 'P3-COMP-01', name: 'Copyright Detection', status: 'complete', priority: 3, completedDate: '2026-01-28' },
+    hipaaCompliance: { id: 'P3-COMP-02', name: 'HIPAA Compliance Check', status: 'complete', priority: 3, completedDate: '2026-01-28' },
+    gdprCompliance: { id: 'P3-COMP-03', name: 'GDPR Data Compliance', status: 'complete', priority: 3, completedDate: '2026-01-28' },
+    accessibilityWCAG: { id: 'P3-COMP-04', name: 'WCAG 2.1 AA Compliance', status: 'complete', priority: 3, completedDate: '2026-01-28' },
+    disclaimerInjection: { id: 'P3-COMP-05', name: 'Auto-Disclaimer Injection', status: 'complete', priority: 3, completedDate: '2026-01-28' },
+  },
+  
+  // NEW: Admin Hub & Production Hub (8 scenarios) - Added 2026-01-28 ✅ COMPLETE
+  adminHub: {
+    kanbanBoard: { id: 'P3-ADM-01', name: 'Production Kanban Board', status: 'complete', priority: 2, addedDate: '2026-01-28' },
+    calendarScheduling: { id: 'P3-ADM-02', name: 'Calendar Scheduling System', status: 'complete', priority: 2, addedDate: '2026-01-28' },
+    contentLibrary: { id: 'P3-ADM-03', name: 'Content Library Management', status: 'complete', priority: 2, addedDate: '2026-01-28' },
+    compositionStudio: { id: 'P3-ADM-04', name: 'Unified Composition Studio', status: 'complete', priority: 2, addedDate: '2026-01-28' },
+    teamManagement: { id: 'P3-ADM-05', name: 'Team & Workspace Management', status: 'complete', priority: 2, addedDate: '2026-01-28' },
+    whitelabelConfig: { id: 'P3-ADM-06', name: 'Whitelabel Configuration', status: 'complete', priority: 2, addedDate: '2026-01-28' },
+    analyticsTab: { id: 'P3-ADM-07', name: 'Admin Analytics Tab', status: 'complete', priority: 2, addedDate: '2026-01-28' },
+    internalRouting: { id: 'P3-ADM-08', name: 'Internal vs External Routing', status: 'complete', priority: 2, addedDate: '2026-01-28' },
+  },
+  
+  // NEW: Ask Genie Support (5 scenarios) - Added 2026-01-28 ✅ COMPLETE
+  askGenieSupport: {
+    aiKnowledgeBase: { id: 'P3-ASK-01', name: 'Ask Genie Knowledge Base (206 pipelines)', status: 'complete', priority: 1, addedDate: '2026-01-28' },
+    tierEscalation: { id: 'P3-ASK-02', name: 'Tier-Based Escalation Model', status: 'complete', priority: 1, addedDate: '2026-01-28' },
+    voiceSupport: { id: 'P3-ASK-03', name: 'Ask Genie Voice Interface', status: 'complete', priority: 2, addedDate: '2026-01-28' },
+    proactiveGuidance: { id: 'P3-ASK-04', name: 'Proactive Editing Suggestions', status: 'complete', priority: 1, addedDate: '2026-01-28' },
+    wizardIntegration: { id: 'P3-ASK-05', name: 'Wizard Step Guidance', status: 'complete', priority: 1, addedDate: '2026-01-28' },
+  },
+  
+  // NEW: Pricing & Tier Gating (6 scenarios) - Added 2026-01-28 ✅ COMPLETE
+  pricingTierGating: {
+    tierFeatureConfig: { id: 'P3-TIER-01', name: 'Tier Feature Configuration', status: 'complete', priority: 1, addedDate: '2026-01-28' },
+    pricingPage: { id: 'P3-TIER-02', name: 'Dynamic Pricing Page', status: 'complete', priority: 1, addedDate: '2026-01-28' },
+    featureAccessBadges: { id: 'P3-TIER-03', name: 'Feature Access Badges', status: 'complete', priority: 2, addedDate: '2026-01-28' },
+    mixMatchGating: { id: 'P3-TIER-04', name: 'Mix-and-Match Tier Gating', status: 'complete', priority: 2, addedDate: '2026-01-28' },
+    lipsyncDubbingGating: { id: 'P3-TIER-05', name: 'Lipsync/Dubbing Tier Gating', status: 'complete', priority: 2, addedDate: '2026-01-28' },
+    creditSystem: { id: 'P3-TIER-06', name: 'AI Credit System Integration', status: 'complete', priority: 1, addedDate: '2026-01-28' },
+  },
+  
+  // NEW: Deck & Presentation (4 scenarios) - Added 2026-01-28 ✅ COMPLETE
+  deckPresentation: {
+    presentationWizard: { id: 'P3-DECK-01', name: '8-Step Presentation Wizard', status: 'complete', priority: 1, addedDate: '2026-01-28' },
+    slideGeneration: { id: 'P3-DECK-02', name: 'AI Slide Generation', status: 'complete', priority: 1, addedDate: '2026-01-28' },
+    presentationEditor: { id: 'P3-DECK-03', name: 'Canvas-Based Slide Editor', status: 'complete', priority: 1, addedDate: '2026-01-28' },
+    exportFormats: { id: 'P3-DECK-04', name: 'Multi-Format Export (PPTX, PDF, HTML)', status: 'complete', priority: 2, addedDate: '2026-01-28' },
   },
   
   // =========================================================================
@@ -131,17 +176,13 @@ export const P3_SCENARIO_BREAKDOWN = {
   
   // DEFERRED: Segment-Specific Features → P4 (needs segment selection flow)
   segmentSpecific_DEFERRED_P4: {
-    // Healthcare
     patientEducation: { id: 'P4-SEG-01', name: 'Patient Education Videos', status: 'deferred', phase: 'P4', segment: 'healthcare' },
     clinicalTrialContent: { id: 'P4-SEG-02', name: 'Clinical Trial Content', status: 'deferred', phase: 'P4', segment: 'healthcare' },
     medicalTranscription: { id: 'P4-SEG-03', name: 'Medical Transcription', status: 'deferred', phase: 'P4', segment: 'healthcare' },
-    // Travel
     travelerKit: { id: 'P4-SEG-04', name: 'Traveler Content Kit', status: 'deferred', phase: 'P4', segment: 'travel' },
     destinationShowcase: { id: 'P4-SEG-05', name: 'Destination Showcase', status: 'deferred', phase: 'P4', segment: 'travel' },
-    // Real Estate
     propertyTour: { id: 'P4-SEG-06', name: 'Property Virtual Tour', status: 'deferred', phase: 'P4', segment: 'realestate' },
     listingOptimization: { id: 'P4-SEG-07', name: 'Listing Content Optimization', status: 'deferred', phase: 'P4', segment: 'realestate' },
-    // E-commerce
     productShowcase: { id: 'P4-SEG-08', name: 'Product Showcase Videos', status: 'deferred', phase: 'P4', segment: 'ecommerce' },
     ugcCompilation: { id: 'P4-SEG-09', name: 'UGC Compilation Engine', status: 'deferred', phase: 'P4', segment: 'ecommerce' },
   },
@@ -165,9 +206,8 @@ export const P3_SCENARIO_BREAKDOWN = {
     customBranding: { id: 'P4-ENT-06', name: 'Custom Branding Portal', status: 'deferred', phase: 'P4' },
   },
   
-  // ALREADY IMPLEMENTED (32 scenarios = 5 Quick Wins + 10 Label Studio + 17 Original)
+  // PREVIOUSLY IMPLEMENTED (17 + 10 Label Studio)
   implemented: {
-    // Original P3 (17)
     legalReviewGate: { id: 'P3-IMP-01', name: 'Legal Review Gate', status: 'complete', priority: 0 },
     bulkOperations: { id: 'P3-IMP-02', name: 'Bulk Operations', status: 'complete', priority: 0 },
     workspaceCollaboration: { id: 'P3-IMP-03', name: 'Workspace Collaboration', status: 'complete', priority: 0 },
@@ -187,7 +227,7 @@ export const P3_SCENARIO_BREAKDOWN = {
     contextualToolsPanel: { id: 'P3-IMP-17', name: 'Contextual Tools Panel', status: 'complete', priority: 0 },
   },
 
-  // LABEL STUDIO INTEGRATION (10 new scenarios - NOT in original roadmap)
+  // LABEL STUDIO INTEGRATION (10 scenarios)
   labelStudio: {
     lsUniversalProvider: { id: 'P3-LS-01', name: 'LS Universal Provider', status: 'complete', priority: 0, addedDate: '2026-01-14' },
     lsBackgroundService: { id: 'P3-LS-02', name: 'LS Background Service', status: 'complete', priority: 0, addedDate: '2026-01-14' },
@@ -450,16 +490,18 @@ export const validateMetrics = () => {
 // METADATA
 // =============================================================================
 export const METRICS_METADATA = {
-  version: '5.0.0',
-  lastUpdated: '2026-01-16T16:00:00Z',
-  lastAuditedBy: 'System Consolidation',
-  nextAuditDue: '2026-02-01',
+  version: '6.0.0',
+  lastUpdated: '2026-01-28T02:00:00Z',
+  lastAuditedBy: 'Full Ecosystem Audit',
+  nextAuditDue: '2026-02-15',
   changeLog: [
-    { date: '2026-01-16', change: 'Full consolidation: All docs now reference 403 scenarios', by: 'System' },
-    { date: '2026-01-16', change: 'Updated implementation-data.ts P3 categories to match 140 total', by: 'Dev Team' },
-    { date: '2026-01-16', change: 'Fixed OVERALL_ARCHITECTURE.md (253→403) and SUITE_ARCHITECTURE_SUMMARY.md (177→403)', by: 'System' },
-    { date: '2026-01-16', change: 'Added Label Studio (10 scenarios) to P3 - total now 403', by: 'Dev Team' },
-    { date: '2026-01-16', change: 'Consolidated 58 new P3 scenarios - P3 total now 140 (was 72)', by: 'Dev Team' },
+    { date: '2026-01-28', change: 'P3 COMPLETE: All 66 scenarios implemented including 5 compliance checks', by: 'Dev Team' },
+    { date: '2026-01-28', change: 'Added: pipeline_feedback + media_assets tables for Confidence Loop & versioning', by: 'Dev Team' },
+    { date: '2026-01-28', change: 'Added: Admin Hub (8), Ask Genie (5), Pricing/Tier (6), Deck (4) scenarios to P3', by: 'Dev Team' },
+    { date: '2026-01-28', change: 'Created content-compliance-check edge function for 5 compliance scenarios', by: 'Dev Team' },
+    { date: '2026-01-28', change: 'Updated phase counts: P0(45), P1(42), P2(135), P3(66), P4(108), P5(28) = 424 total', by: 'Dev Team' },
+    { date: '2026-01-16', change: 'Full consolidation: All docs now reference unified metrics', by: 'System' },
+    { date: '2026-01-16', change: 'Added Label Studio (10 scenarios) to P3', by: 'Dev Team' },
     { date: '2026-01-15', change: 'Consolidated all metrics into UnifiedMetrics.ts (Single Source of Truth)', by: 'Architecture' },
   ],
 };

@@ -350,3 +350,6 @@ verify_jwt = false
 
 [functions.ask-genie-support]
 verify_jwt = false
+
+[functions.content-compliance-check]
+verify_jwt = false

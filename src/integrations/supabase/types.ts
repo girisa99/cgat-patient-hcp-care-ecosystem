@@ -13372,6 +13372,77 @@ export type Database = {
         }
         Relationships: []
       }
+      media_assets: {
+        Row: {
+          confidence_score: number | null
+          created_at: string
+          duration_seconds: number | null
+          file_size_bytes: number | null
+          file_type: string
+          id: string
+          metadata: Json | null
+          name: string
+          parent_asset_id: string | null
+          pipeline_id: string | null
+          project_id: string | null
+          resolution: string | null
+          storage_path: string
+          thumbnail_url: string | null
+          type: string
+          updated_at: string
+          user_id: string
+          version_number: number | null
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string
+          duration_seconds?: number | null
+          file_size_bytes?: number | null
+          file_type: string
+          id?: string
+          metadata?: Json | null
+          name: string
+          parent_asset_id?: string | null
+          pipeline_id?: string | null
+          project_id?: string | null
+          resolution?: string | null
+          storage_path: string
+          thumbnail_url?: string | null
+          type: string
+          updated_at?: string
+          user_id: string
+          version_number?: number | null
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string
+          duration_seconds?: number | null
+          file_size_bytes?: number | null
+          file_type?: string
+          id?: string
+          metadata?: Json | null
+          name?: string
+          parent_asset_id?: string | null
+          pipeline_id?: string | null
+          project_id?: string | null
+          resolution?: string | null
+          storage_path?: string
+          thumbnail_url?: string | null
+          type?: string
+          updated_at?: string
+          user_id?: string
+          version_number?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "media_assets_parent_asset_id_fkey"
+            columns: ["parent_asset_id"]
+            isOneToOne: false
+            referencedRelation: "media_assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       media_project_assets: {
         Row: {
           asset_id: string
@@ -16267,6 +16338,69 @@ export type Database = {
           status?: string | null
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      pipeline_feedback: {
+        Row: {
+          confidence_score: number
+          created_at: string
+          feedback_type: string | null
+          generation_duration_ms: number | null
+          generation_output_preview: string | null
+          id: string
+          input_hash: string
+          iterations_used: number
+          label_studio_task_id: string | null
+          pipeline_id: string
+          provider_used: string
+          quality_issues: Json | null
+          session_id: string | null
+          synced_to_label_studio: boolean | null
+          updated_at: string
+          user_feedback: string | null
+          user_id: string | null
+          user_rating: number | null
+        }
+        Insert: {
+          confidence_score: number
+          created_at?: string
+          feedback_type?: string | null
+          generation_duration_ms?: number | null
+          generation_output_preview?: string | null
+          id?: string
+          input_hash: string
+          iterations_used?: number
+          label_studio_task_id?: string | null
+          pipeline_id: string
+          provider_used: string
+          quality_issues?: Json | null
+          session_id?: string | null
+          synced_to_label_studio?: boolean | null
+          updated_at?: string
+          user_feedback?: string | null
+          user_id?: string | null
+          user_rating?: number | null
+        }
+        Update: {
+          confidence_score?: number
+          created_at?: string
+          feedback_type?: string | null
+          generation_duration_ms?: number | null
+          generation_output_preview?: string | null
+          id?: string
+          input_hash?: string
+          iterations_used?: number
+          label_studio_task_id?: string | null
+          pipeline_id?: string
+          provider_used?: string
+          quality_issues?: Json | null
+          session_id?: string | null
+          synced_to_label_studio?: boolean | null
+          updated_at?: string
+          user_feedback?: string | null
+          user_id?: string | null
+          user_rating?: number | null
         }
         Relationships: []
       }
