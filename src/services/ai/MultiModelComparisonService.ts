@@ -44,26 +44,114 @@ export interface ComparisonResult {
   timestamp: Date;
 }
 
-// Model display names
+// Full 12+ Provider Model Registry
 const MODEL_DISPLAY_NAMES: Record<string, string> = {
+  // Google Gemini
   'google/gemini-3-flash-preview': 'Gemini 3 Flash',
   'google/gemini-2.5-pro': 'Gemini 2.5 Pro',
   'google/gemini-2.5-flash': 'Gemini 2.5 Flash',
   'google/gemini-2.5-flash-lite': 'Gemini Flash Lite',
+  // OpenAI
   'openai/gpt-5': 'GPT-5',
   'openai/gpt-5-mini': 'GPT-5 Mini',
   'openai/gpt-5-nano': 'GPT-5 Nano',
+  // Anthropic Claude
+  'anthropic/claude-3-opus': 'Claude 3 Opus',
+  'anthropic/claude-3-sonnet': 'Claude 3 Sonnet',
+  'anthropic/claude-3-haiku': 'Claude 3 Haiku',
+  // DeepSeek
+  'deepseek/deepseek-v3': 'DeepSeek V3',
+  'deepseek/deepseek-coder': 'DeepSeek Coder',
+  // Alibaba Qwen
+  'alibaba/qwen-max': 'Qwen Max',
+  'alibaba/qwen-turbo': 'Qwen Turbo',
+  'alibaba/qwen-vl': 'Qwen VL (Vision)',
+  // Azure
+  'azure/gpt-4o': 'Azure GPT-4o',
+  'azure/gpt-4o-mini': 'Azure GPT-4o Mini',
+  // ModelsLab
+  'modelslab/flux-pro': 'FLUX Pro',
+  'modelslab/flux-schnell': 'FLUX Schnell',
+  'modelslab/animatediff': 'AnimateDiff',
+  // ElevenLabs
+  'elevenlabs/multilingual-v2': 'ElevenLabs Multilingual',
+  'elevenlabs/turbo-v2': 'ElevenLabs Turbo',
+  // Azure Speech
+  'azure/neural-tts': 'Azure Neural TTS',
+  // Alibaba CosyVoice
+  'alibaba/cosyvoice': 'CosyVoice',
+  // Meshy AI
+  'meshy/text-to-3d': 'Meshy Text-to-3D',
+  // Replicate
+  'replicate/llama-3-70b': 'Llama 3 70B',
+  // DeepL
+  'deepl/translator': 'DeepL Translator',
+  // Azure Doc Intelligence
+  'azure/doc-intelligence': 'Azure Doc Intelligence',
 };
 
-// Cost per token estimates
+// Provider categories for filtering
+const PROVIDER_CATEGORIES: Record<string, string[]> = {
+  text_llm: ['google/gemini-3-flash-preview', 'google/gemini-2.5-pro', 'google/gemini-2.5-flash', 'google/gemini-2.5-flash-lite', 
+             'openai/gpt-5', 'openai/gpt-5-mini', 'openai/gpt-5-nano',
+             'anthropic/claude-3-opus', 'anthropic/claude-3-sonnet', 'anthropic/claude-3-haiku',
+             'deepseek/deepseek-v3', 'deepseek/deepseek-coder',
+             'alibaba/qwen-max', 'alibaba/qwen-turbo',
+             'azure/gpt-4o', 'azure/gpt-4o-mini',
+             'replicate/llama-3-70b'],
+  vision: ['google/gemini-2.5-pro', 'openai/gpt-5', 'anthropic/claude-3-opus', 'anthropic/claude-3-sonnet', 
+           'alibaba/qwen-vl', 'azure/gpt-4o'],
+  image_gen: ['modelslab/flux-pro', 'modelslab/flux-schnell', 'meshy/text-to-3d'],
+  video_gen: ['modelslab/animatediff'],
+  audio_tts: ['elevenlabs/multilingual-v2', 'elevenlabs/turbo-v2', 'azure/neural-tts', 'alibaba/cosyvoice'],
+  translation: ['deepl/translator', 'alibaba/qwen-turbo', 'deepseek/deepseek-v3'],
+  document: ['azure/doc-intelligence', 'alibaba/qwen-vl'],
+};
+
+// Cost per token estimates - Full provider coverage
 const COST_PER_TOKEN: Record<string, { input: number; output: number }> = {
+  // Google Gemini
   'google/gemini-3-flash-preview': { input: 0.00001, output: 0.00002 },
   'google/gemini-2.5-pro': { input: 0.00003, output: 0.00006 },
   'google/gemini-2.5-flash': { input: 0.000005, output: 0.00001 },
   'google/gemini-2.5-flash-lite': { input: 0.000002, output: 0.000004 },
+  // OpenAI
   'openai/gpt-5': { input: 0.00005, output: 0.00015 },
   'openai/gpt-5-mini': { input: 0.00001, output: 0.00003 },
   'openai/gpt-5-nano': { input: 0.000003, output: 0.000006 },
+  // Anthropic Claude
+  'anthropic/claude-3-opus': { input: 0.00004, output: 0.00012 },
+  'anthropic/claude-3-sonnet': { input: 0.00001, output: 0.00003 },
+  'anthropic/claude-3-haiku': { input: 0.000003, output: 0.000006 },
+  // DeepSeek
+  'deepseek/deepseek-v3': { input: 0.000002, output: 0.000004 },
+  'deepseek/deepseek-coder': { input: 0.000002, output: 0.000004 },
+  // Alibaba
+  'alibaba/qwen-max': { input: 0.00002, output: 0.00004 },
+  'alibaba/qwen-turbo': { input: 0.000005, output: 0.00001 },
+  'alibaba/qwen-vl': { input: 0.00002, output: 0.00004 },
+  // Azure
+  'azure/gpt-4o': { input: 0.00003, output: 0.00009 },
+  'azure/gpt-4o-mini': { input: 0.000008, output: 0.000024 },
+  // ModelsLab (per-request pricing)
+  'modelslab/flux-pro': { input: 0.0001, output: 0 },
+  'modelslab/flux-schnell': { input: 0.00003, output: 0 },
+  'modelslab/animatediff': { input: 0.0002, output: 0 },
+  // ElevenLabs (per-character)
+  'elevenlabs/multilingual-v2': { input: 0.0001, output: 0 },
+  'elevenlabs/turbo-v2': { input: 0.00005, output: 0 },
+  // Azure Speech
+  'azure/neural-tts': { input: 0.00004, output: 0 },
+  // Alibaba CosyVoice
+  'alibaba/cosyvoice': { input: 0.00003, output: 0 },
+  // Meshy AI
+  'meshy/text-to-3d': { input: 0.001, output: 0 },
+  // Replicate
+  'replicate/llama-3-70b': { input: 0.00001, output: 0.00002 },
+  // DeepL
+  'deepl/translator': { input: 0.00005, output: 0 },
+  // Azure Doc Intelligence
+  'azure/doc-intelligence': { input: 0.0001, output: 0 },
 };
 
 class MultiModelComparisonService {
@@ -226,14 +314,34 @@ class MultiModelComparisonService {
   }
 
   /**
-   * Get available models for comparison
+   * Get available models for comparison, optionally filtered by category
    */
-  getAvailableModels(): Array<{ id: string; displayName: string; provider: string }> {
-    return Object.entries(MODEL_DISPLAY_NAMES).map(([id, displayName]) => ({
+  getAvailableModels(category?: keyof typeof PROVIDER_CATEGORIES): Array<{ id: string; displayName: string; provider: string }> {
+    const modelIds = category 
+      ? PROVIDER_CATEGORIES[category] || Object.keys(MODEL_DISPLAY_NAMES)
+      : Object.keys(MODEL_DISPLAY_NAMES);
+    
+    return modelIds.map((id) => ({
       id,
-      displayName,
+      displayName: MODEL_DISPLAY_NAMES[id] || id,
       provider: id.split('/')[0],
     }));
+  }
+
+  /**
+   * Get available provider categories
+   */
+  getProviderCategories(): string[] {
+    return Object.keys(PROVIDER_CATEGORIES);
+  }
+
+  /**
+   * Get models by provider
+   */
+  getModelsByProvider(provider: string): Array<{ id: string; displayName: string }> {
+    return Object.entries(MODEL_DISPLAY_NAMES)
+      .filter(([id]) => id.startsWith(`${provider}/`))
+      .map(([id, displayName]) => ({ id, displayName }));
   }
 }
 
