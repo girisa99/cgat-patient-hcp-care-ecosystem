@@ -1,3 +1,12 @@
+// Distribution & Mobile Analytics (P4-ANA-32 to P4-ANA-35)
+export { distributionAnalyticsService } from './distributionAnalyticsService';
+export type {
+  MobileDownloadMetrics,
+  PublishingPlatformMetrics,
+  CrossPlatformSyncMetrics,
+  OfflineQueueMetrics,
+} from './distributionAnalyticsService';
+
 /**
  * Analytics Services Index
  * P4 Advanced Analytics (31/31 scenarios) ✅ COMPLETE
