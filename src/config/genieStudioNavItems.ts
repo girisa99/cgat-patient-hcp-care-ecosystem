@@ -93,7 +93,7 @@ export const genieStudioNavItems: GenieNavItem[] = [
     title: "Genie Mind",
     url: "/genie-mind",
     icon: Brain,
-    description: "Script editing & voice cloning",
+    description: "Script editing, voice & music",
     minTier: 'starter',
     category: 'tools',
   },
