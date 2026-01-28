@@ -170,6 +170,21 @@ const AppContent = () => {
                   {React.createElement(React.lazy(() => import('@/pages/CookiePolicyPage')))}
                 </Suspense>
               } />
+              <Route path="/acceptable-use" element={
+                <Suspense fallback={<PageLoading message="Loading..." />}>
+                  {React.createElement(React.lazy(() => import('@/pages/AcceptableUsePolicyPage')))}
+                </Suspense>
+              } />
+              <Route path="/content-guidelines" element={
+                <Suspense fallback={<PageLoading message="Loading..." />}>
+                  {React.createElement(React.lazy(() => import('@/pages/ContentGuidelinesPage')))}
+                </Suspense>
+              } />
+              <Route path="/dmca" element={
+                <Suspense fallback={<PageLoading message="Loading..." />}>
+                  {React.createElement(React.lazy(() => import('@/pages/DMCAPolicyPage')))}
+                </Suspense>
+              } />
               
               {/* Public landing page route */}
               <Route path="/genie-landing" element={<GenieStudioLanding />} />
