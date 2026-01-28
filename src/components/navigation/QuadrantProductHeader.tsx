@@ -4,14 +4,14 @@
  * Provides consistent branding within each quadrant while preserving
  * individual product identity (logo, tagline, colors).
  * 
- * Replaces redundant hero sections and cross-product navigation buttons
- * that existed on individual product pages.
+ * Includes back navigation to the main Genie Studio dashboard.
  */
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Sparkles, ArrowLeft, LayoutGrid } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // Product branding configuration
@@ -23,6 +23,7 @@ export interface ProductBranding {
   gradientFrom: string;
   gradientTo: string;
   badgeColor: string;
+  quadrant: 'create' | 'produce' | 'manage' | 'publish';
 }
 
 // Import product logos
@@ -41,6 +42,7 @@ export const PRODUCT_BRANDING: Record<string, ProductBranding> = {
     gradientFrom: 'from-orange-500',
     gradientTo: 'to-amber-500',
     badgeColor: 'bg-orange-500/10 text-orange-600 border-orange-500/20',
+    quadrant: 'create',
   },
   mind: {
     id: 'mind',
@@ -50,6 +52,7 @@ export const PRODUCT_BRANDING: Record<string, ProductBranding> = {
     gradientFrom: 'from-purple-500',
     gradientTo: 'to-pink-500',
     badgeColor: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
+    quadrant: 'create',
   },
   deck: {
     id: 'deck',
@@ -59,6 +62,7 @@ export const PRODUCT_BRANDING: Record<string, ProductBranding> = {
     gradientFrom: 'from-blue-500',
     gradientTo: 'to-indigo-500',
     badgeColor: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
+    quadrant: 'create',
   },
   vibe: {
     id: 'vibe',
@@ -68,6 +72,7 @@ export const PRODUCT_BRANDING: Record<string, ProductBranding> = {
     gradientFrom: 'from-pink-500',
     gradientTo: 'to-purple-500',
     badgeColor: 'bg-pink-500/10 text-pink-600 border-pink-500/20',
+    quadrant: 'produce',
   },
 };
 
@@ -79,23 +84,34 @@ export const QUADRANT_PRODUCTS = {
   publish: ['cast'],
 };
 
+// Quadrant labels for breadcrumb
+const QUADRANT_LABELS = {
+  create: 'CREATE',
+  produce: 'PRODUCE',
+  manage: 'MANAGE',
+  publish: 'PUBLISH',
+};
+
 interface QuadrantProductHeaderProps {
   productId: keyof typeof PRODUCT_BRANDING;
   showAIBadge?: boolean;
+  showBackButton?: boolean;
   rightContent?: React.ReactNode;
   className?: string;
 }
 
 /**
- * Compact product header with logo, name, tagline
+ * Compact product header with logo, name, tagline, and back navigation
  * Designed to work within QuadrantLayout (which handles global nav)
  */
 export const QuadrantProductHeader: React.FC<QuadrantProductHeaderProps> = ({
   productId,
   showAIBadge = true,
+  showBackButton = true,
   rightContent,
   className,
 }) => {
+  const navigate = useNavigate();
   const product = PRODUCT_BRANDING[productId];
   
   if (!product) {
@@ -109,8 +125,31 @@ export const QuadrantProductHeader: React.FC<QuadrantProductHeaderProps> = ({
       className
     )}>
       <div className="flex h-14 items-center justify-between px-4 md:px-6">
-        {/* Left: Product branding */}
+        {/* Left: Back button + Product branding */}
         <div className="flex items-center gap-3">
+          {/* Back to Dashboard Button */}
+          {showBackButton && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/genie-studio')}
+              className="gap-2 text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span className="hidden sm:inline">Dashboard</span>
+            </Button>
+          )}
+
+          {/* Separator */}
+          {showBackButton && (
+            <div className="h-6 w-px bg-border hidden sm:block" />
+          )}
+
+          {/* Quadrant badge */}
+          <Badge variant="outline" className="hidden md:flex text-xs">
+            {QUADRANT_LABELS[product.quadrant]}
+          </Badge>
+
           {/* Logo */}
           <div className="h-10 w-10 rounded-lg bg-card border border-border/50 flex items-center justify-center overflow-hidden p-1.5 shadow-sm">
             <img 

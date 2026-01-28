@@ -39,6 +39,34 @@ import {
 } from 'lucide-react';
 import { QUADRANT_CONFIG, type Quadrant } from './QuadrantNavigation';
 
+// Extended quadrant details for the dashboard
+const QUADRANT_DETAILS: Record<Quadrant, {
+  fullDescription: string;
+  features: string[];
+  callToAction: string;
+}> = {
+  create: {
+    fullDescription: 'Transform ideas into scripts, presentations, and content frameworks using AI-powered ideation tools.',
+    features: ['AI Script Generation', 'Multi-format Output', 'Template Library'],
+    callToAction: 'Start Creating',
+  },
+  produce: {
+    fullDescription: 'Record, edit, and produce professional audio and video content with advanced production tools.',
+    features: ['Voice Recording', 'Video Editing', 'Multi-track Audio'],
+    callToAction: 'Start Producing',
+  },
+  manage: {
+    fullDescription: 'Organize projects, schedule content, and manage your production workflow efficiently.',
+    features: ['Project Scheduling', 'Team Kanban', 'Asset Library'],
+    callToAction: 'Manage Projects',
+  },
+  publish: {
+    fullDescription: 'Distribute content globally with multi-language localization and analytics tracking.',
+    features: ['14 Languages', 'Marketing Automation', 'Performance Analytics'],
+    callToAction: 'Publish Content',
+  },
+};
+
 interface QuadrantStats {
   quadrant: Quadrant;
   inProgress: number;
@@ -138,7 +166,17 @@ export const QuadrantDashboard: React.FC<QuadrantDashboardProps> = ({
                 <CardTitle className="flex items-center gap-2">
                   <span>{quadrant.label}</span>
                 </CardTitle>
-                <CardDescription>{quadrant.description}</CardDescription>
+                <CardDescription className="text-xs">
+                  {QUADRANT_DETAILS[quadrant.id].fullDescription}
+                </CardDescription>
+                {/* Feature highlights */}
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {QUADRANT_DETAILS[quadrant.id].features.map((feature) => (
+                    <Badge key={feature} variant="outline" className="text-[10px] px-1.5 py-0">
+                      {feature}
+                    </Badge>
+                  ))}
+                </div>
               </CardHeader>
 
               <CardContent className="relative space-y-4">
