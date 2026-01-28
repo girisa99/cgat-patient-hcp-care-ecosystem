@@ -18,6 +18,12 @@ import { RegionalAnalyticsPanel } from './RegionalAnalyticsPanel';
 import { FunnelVisualization } from './FunnelVisualization';
 import { CohortRetentionHeatmap } from './CohortRetentionHeatmap';
 import { RevenueMetricsPanel } from './RevenueMetricsPanel';
+import { ChurnPredictionDashboard } from './ChurnPredictionDashboard';
+import { ProviderCostAnalysisPanel } from './ProviderCostAnalysisPanel';
+import { GoalTrackingPanel } from './GoalTrackingPanel';
+import { AnomalyDetectionAlerts } from './AnomalyDetectionAlerts';
+import { RealTimeMetricsPanel } from './RealTimeMetricsPanel';
+import { FeatureUsagePanel } from './FeatureUsagePanel';
 import { 
   useAdvancedAnalytics, 
   useFunnelMetrics,
@@ -54,10 +60,11 @@ export const TieredAnalyticsDashboard: React.FC<TieredAnalyticsDashboardProps> =
   // Tab configuration based on access level
   const availableTabs = [
     { id: 'overview', label: 'Overview', icon: BarChart3, minLevel: 'business' },
-    { id: 'regional', label: 'Regional (MENA/India/Asia)', icon: Globe, minLevel: 'internal' },
-    { id: 'revenue', label: 'Revenue', icon: TrendingUp, minLevel: 'enterprise' },
+    { id: 'predictive', label: 'Predictive', icon: TrendingUp, minLevel: 'enterprise' },
+    { id: 'performance', label: 'Performance', icon: Activity, minLevel: 'enterprise' },
     { id: 'funnels', label: 'Funnels', icon: Activity, minLevel: 'enterprise' },
     { id: 'cohorts', label: 'Cohorts', icon: Users, minLevel: 'enterprise' },
+    { id: 'regional', label: 'Regional (MENA/India/Asia)', icon: Globe, minLevel: 'internal' },
     { id: 'system', label: 'System Health', icon: PieChart, minLevel: 'internal' },
   ];
 
@@ -209,21 +216,42 @@ export const TieredAnalyticsDashboard: React.FC<TieredAnalyticsDashboardProps> =
           </div>
         </TabsContent>
 
+        {/* Predictive Tab - Enterprise+ (Churn, Goals, Anomalies) */}
+        <TabsContent value="predictive" className="space-y-6">
+          {canAccessAdvanced ? (
+            <div className="space-y-6">
+              <AnomalyDetectionAlerts />
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <ChurnPredictionDashboard />
+                <GoalTrackingPanel />
+              </div>
+            </div>
+          ) : (
+            <LockedFeatureCard feature="Predictive Analytics" requiredLevel="enterprise" />
+          )}
+        </TabsContent>
+
+        {/* Performance Tab - Enterprise+ (Real-time, Costs, Usage) */}
+        <TabsContent value="performance" className="space-y-6">
+          {canAccessAdvanced ? (
+            <div className="space-y-6">
+              <RealTimeMetricsPanel />
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <ProviderCostAnalysisPanel />
+                <FeatureUsagePanel />
+              </div>
+            </div>
+          ) : (
+            <LockedFeatureCard feature="Performance Analytics" requiredLevel="enterprise" />
+          )}
+        </TabsContent>
+
         {/* Regional Tab - Internal only */}
         <TabsContent value="regional" className="space-y-6">
           {canAccessRegional ? (
             <RegionalAnalyticsPanel />
           ) : (
             <LockedFeatureCard feature="Regional Analytics" requiredLevel="internal" />
-          )}
-        </TabsContent>
-
-        {/* Revenue Tab - Enterprise+ */}
-        <TabsContent value="revenue" className="space-y-6">
-          {canAccessAdvanced ? (
-            <RevenueMetricsPanel showTrend={true} />
-          ) : (
-            <LockedFeatureCard feature="Revenue Analytics" requiredLevel="enterprise" />
           )}
         </TabsContent>
 
