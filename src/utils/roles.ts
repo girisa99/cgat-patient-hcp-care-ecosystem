@@ -52,19 +52,30 @@ export const hasAnyRole = (userRoles: string[] = [], required: string[] = []): b
 };
 
 // Centralized default route resolver based on normalized roles
-// Role-based routing: Internal/Admin → Production Hub, Others → Studio/Dashboard
+// Role-based routing: 
+//   - Internal/Admin → Production Hub (/genie-admin)
+//   - Healthcare roles → Patient Dashboard (/patients)
+//   - Genie Studio subscribers → Studio (/genie-studio)
 export const getDefaultRouteForRoles = (roles: string[] = [], isInternal?: boolean): string => {
   const r = normalizeRoles(roles);
 
   // Internal admins go directly to Production Hub
   if (isInternal) return '/genie-admin';
 
-  // Priority: superAdmin → Admin Hub, onboardingTeam → Production Hub, others → Dashboard
+  // Priority: superAdmin/admin → Admin Hub
   if (r.includes('superAdmin')) return '/genie-admin';
   if (r.includes('admin')) return '/genie-admin';
   if (r.includes('onboardingTeam')) return '/genie-admin';
-  if (r.includes('healthcareProvider')) return '/genie-studio';
+
+  // Healthcare roles → Patient Management (NOT Genie Studio)
+  if (r.includes('healthcareProvider')) return '/patients';
+  if (r.includes('nurse')) return '/patients';
+  if (r.includes('caseManager')) return '/patients';
+  if (r.includes('patientCaregiver')) return '/dashboard';
+
+  // Demo users
   if (r.includes('demoUser')) return '/demo-dashboard';
 
+  // Default for Genie Studio subscribers
   return '/genie-studio';
 };
