@@ -54,38 +54,30 @@ export function meetsTierRequirement(userTier: SubscriptionTier, minTier: Subscr
  * These are the ONLY pages visible when logged into Genie Studio
  */
 export const genieStudioNavItems: GenieNavItem[] = [
-  // === MAIN SECTION ===
+  // === WORKSPACE (Home) ===
   {
     title: "Genie Studio",
     url: "/genie-studio",
     icon: Sparkles,
-    description: "Your creative workspace",
+    description: "Your creative workspace dashboard",
     minTier: 'free',
     category: 'main',
-  },
-  {
-    title: "Production Hub",
-    url: "/genie-admin",
-    icon: Factory,
-    description: "Unified production management",
-    minTier: 'starter',
-    category: 'production',
   },
   {
     title: "Genie Deck",
     url: "/genie-deck",
     icon: Presentation,
-    description: "AI presentation generation",
+    description: "AI-powered presentation generation",
     minTier: 'starter',
     category: 'main',
   },
   
-  // === PRODUCTS (Tier-gated) ===
+  // === CREATE (Tools for ideation & scripting) ===
   {
     title: "Genie Spark",
     url: "/genie-spark",
     icon: Zap,
-    description: "Multi-modal script generation",
+    description: "Multi-modal script generation from ideas",
     minTier: 'starter',
     category: 'tools',
   },
@@ -93,35 +85,45 @@ export const genieStudioNavItems: GenieNavItem[] = [
     title: "Genie Mind",
     url: "/genie-mind",
     icon: Brain,
-    description: "Script editing, voice & music",
+    description: "Script editing, voice generation & music",
     minTier: 'starter',
-    category: 'tools',
-  },
-  {
-    title: "Genie Vibe",
-    url: "/genie-vibe",
-    icon: Video,
-    description: "Audio/Video production",
-    minTier: 'creator',
     category: 'tools',
   },
   {
     title: "Content Tools",
     url: "/content-tools",
     icon: Wrench,
-    description: "Content utilities",
+    description: "Utilities for content enhancement",
     minTier: 'free',
     category: 'tools',
   },
   
-  // === ANALYTICS & REPORTS ===
+  // === PRODUCE (Video/Audio production) ===
+  {
+    title: "Genie Vibe",
+    url: "/genie-vibe",
+    icon: Video,
+    description: "Audio/Video production & editing",
+    minTier: 'creator',
+    category: 'production',
+  },
+  {
+    title: "Production Hub",
+    url: "/genie-admin",
+    icon: Factory,
+    description: "Unified production management & scheduling",
+    minTier: 'starter',
+    category: 'production',
+  },
+  
+  // === MANAGE (Analytics & Admin) ===
   {
     title: "Analytics",
     url: "/genie-analytics",
     icon: BarChart3,
-    description: "Performance insights (Business: Basic, Enterprise: Full)",
+    description: "Performance insights & reporting",
     minTier: 'business',
-    category: 'tools',
+    category: 'admin',
   },
   
   // === ACCOUNT SECTION ===

@@ -1,6 +1,7 @@
 /**
  * GENIE STUDIO NAVIGATION COMPONENT
  * Displays only Genie Studio pages based on subscription tier
+ * Organized by 4-Quadrant flow: CREATE → PRODUCE → MANAGE → PUBLISH
  */
 
 import React from 'react';
@@ -19,6 +20,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   ChevronDown, 
@@ -33,15 +40,21 @@ interface GenieStudioNavigationProps {
   variant?: 'sidebar' | 'topbar';
 }
 
+/**
+ * Category labels organized by 4-Quadrant flow
+ */
 const CATEGORY_LABELS: Record<string, string> = {
-  main: 'Workspace',
-  production: 'Production',
-  tools: 'Creative Tools',
-  account: 'Account',
-  admin: 'Administration',
+  main: '🏠 Workspace',
+  tools: '✨ CREATE',        // Spark, Mind, Deck
+  production: '🎬 PRODUCE',   // Vibe, Production Hub
+  admin: '📊 MANAGE',         // Analytics, Team, Workspaces
+  account: '👤 Account',
 };
 
-const CATEGORY_ORDER = ['main', 'production', 'tools', 'admin', 'account'];
+/**
+ * Sequential order following user workflow
+ */
+const CATEGORY_ORDER = ['main', 'tools', 'production', 'admin', 'account'];
 
 export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({ 
   variant = 'sidebar' 
@@ -150,36 +163,44 @@ export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({
           </NavLink>
         </div>
 
-        {/* Navigation */}
+        {/* Navigation with Tooltips */}
         <ScrollArea className="flex-1 px-3 py-4">
-          {CATEGORY_ORDER
-            .filter(category => navByCategory[category]?.length > 0)
-            .map((category, idx) => (
-              <div key={category} className={cn(idx > 0 && "mt-6")}>
-                <h4 className="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  {CATEGORY_LABELS[category]}
-                </h4>
-                <div className="space-y-1">
-                  {navByCategory[category].map(item => (
-                    <NavLink
-                      key={item.url}
-                      to={item.url}
-                      className={({ isActive }) =>
-                        cn(
-                          "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all",
-                          isActive
-                            ? "bg-primary/10 text-primary font-medium"
-                            : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                        )
-                      }
-                    >
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </NavLink>
-                  ))}
+          <TooltipProvider delayDuration={300}>
+            {CATEGORY_ORDER
+              .filter(category => navByCategory[category]?.length > 0)
+              .map((category, idx) => (
+                <div key={category} className={cn(idx > 0 && "mt-6")}>
+                  <h4 className="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    {CATEGORY_LABELS[category]}
+                  </h4>
+                  <div className="space-y-1">
+                    {navByCategory[category].map(item => (
+                      <Tooltip key={item.url}>
+                        <TooltipTrigger asChild>
+                          <NavLink
+                            to={item.url}
+                            className={({ isActive }) =>
+                              cn(
+                                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all",
+                                isActive
+                                  ? "bg-primary/10 text-primary font-medium"
+                                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                              )
+                            }
+                          >
+                            <item.icon className="h-4 w-4" />
+                            <span>{item.title}</span>
+                          </NavLink>
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="max-w-[200px]">
+                          {item.description || item.title}
+                        </TooltipContent>
+                      </Tooltip>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+          </TooltipProvider>
         </ScrollArea>
 
         {/* Footer */}
