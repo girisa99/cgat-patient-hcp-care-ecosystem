@@ -7,6 +7,7 @@
 import React, { Suspense, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { GenieStudioNavigation } from '@/components/navigation/GenieStudioNavigation';
+import { AskGenieFAB } from '@/components/genie-support/AskGenieFAB';
 import { useGenieStudioAuth } from '@/hooks/useGenieStudioAuth';
 import { useGenieStudioNavigation } from '@/hooks/useGenieStudioNavigation';
 import { Loader2, Lock, Crown } from 'lucide-react';
@@ -111,6 +112,9 @@ export const GenieStudioLayout: React.FC<GenieStudioLayoutProps> = ({
   // Check tier access for current route
   const upgradePrompt = getUpgradePromptForPath(location.pathname);
   
+  // Don't show FAB on the support page (has full chat) 
+  const showFAB = !location.pathname.includes('/genie-support');
+
   // No navigation variant
   if (variant === 'none') {
     return (
@@ -125,6 +129,7 @@ export const GenieStudioLayout: React.FC<GenieStudioLayoutProps> = ({
             children
           )}
         </Suspense>
+        {showFAB && <AskGenieFAB />}
       </div>
     );
   }
@@ -146,6 +151,7 @@ export const GenieStudioLayout: React.FC<GenieStudioLayoutProps> = ({
             )}
           </Suspense>
         </main>
+        {showFAB && <AskGenieFAB />}
       </div>
     );
   }
@@ -168,6 +174,7 @@ export const GenieStudioLayout: React.FC<GenieStudioLayoutProps> = ({
           </Suspense>
         </div>
       </main>
+      {showFAB && <AskGenieFAB />}
     </div>
   );
 };
