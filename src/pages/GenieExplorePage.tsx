@@ -2,6 +2,8 @@
  * GENIE EXPLORE PAGE - INTERACTIVE JOURNEY
  * Step 1: Use case selection → Step 2: Mini demo → Step 3: Recommendation
  * Styled to match GenieStudioLanding corporate look
+ * 
+ * NOW INCLUDES: Cross-industry feature discovery for individuals/influencers
  */
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -13,9 +15,14 @@ import {
   ArrowLeft,
   Sparkles,
   Globe,
-  Check
+  Check,
+  Layers,
+  Building2,
+  TrendingUp,
 } from 'lucide-react';
 import { useRegionalDetection } from '@/hooks/useRegionalDetection';
+import { SegmentPipelineRecommendationPanel } from '@/components/segment-features';
+import type { IndustryTag } from '@/services/segmentPipelineMappingRegistry';
 import genieSuiteLogo from '@/assets/logos/genie-studio-suite-logo.png';
 
 // Product logos
@@ -25,6 +32,16 @@ import genieVibeLogo from '@/assets/logos/products/genie-vibe.png';
 import genieDeckLogo from '@/assets/logos/products/genie-deck.png';
 import genieArcLogo from '@/assets/logos/products/genie-arc.png';
 import genieCastLogo from '@/assets/logos/products/genie-cast.png';
+
+// Industry mapping for feature recommendations
+const USE_CASE_TO_INDUSTRY: Record<string, IndustryTag> = {
+  'presentations': 'enterprise',
+  'video-content': 'media',
+  'voice-audio': 'media',
+  'knowledge-base': 'enterprise',
+  'marketing': 'media',
+  'production': 'enterprise',
+};
 
 interface UseCase {
   id: string;
@@ -213,28 +230,75 @@ const GenieExplorePage: React.FC = () => {
             })}
           </div>
 
-          {/* Selected Use Case Preview */}
+          {/* Selected Use Case Preview with Feature Recommendations */}
           {selectedUseCaseData && (
-            <div className={`mb-8 bg-gradient-to-r ${selectedUseCaseData.color} p-[1px] rounded-2xl max-w-3xl mx-auto`}>
-              <div className="bg-card rounded-2xl p-6 flex items-center gap-6">
-                <img 
-                  src={selectedUseCaseData.logo} 
-                  alt={selectedUseCaseData.title}
-                  className="w-16 h-16 object-contain"
-                />
-                <div className="flex-1">
-                  <h3 className="text-xl font-bold text-foreground">{selectedUseCaseData.title}</h3>
-                  <p className="text-muted-foreground">{selectedUseCaseData.description}</p>
+            <div className="space-y-6 mb-8 max-w-4xl mx-auto">
+              {/* Selected use case card */}
+              <div className={`bg-gradient-to-r ${selectedUseCaseData.color} p-[1px] rounded-2xl`}>
+                <div className="bg-card rounded-2xl p-6 flex items-center gap-6">
+                  <img 
+                    src={selectedUseCaseData.logo} 
+                    alt={selectedUseCaseData.title}
+                    className="w-16 h-16 object-contain"
+                  />
+                  <div className="flex-1">
+                    <h3 className="text-xl font-bold text-foreground">{selectedUseCaseData.title}</h3>
+                    <p className="text-muted-foreground">{selectedUseCaseData.description}</p>
+                  </div>
+                  <Button 
+                    size="lg" 
+                    onClick={handleContinue}
+                    className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    Try Demo
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
                 </div>
-                <Button 
-                  size="lg" 
-                  onClick={handleContinue}
-                  className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg"
-                >
-                  <Sparkles className="h-4 w-4" />
-                  Try Demo
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
+              </div>
+
+              {/* Cross-Industry Feature Discovery for Individuals/Influencers */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-sm">
+                  <Layers className="h-4 w-4 text-primary" />
+                  <span className="font-medium text-foreground">Available Features for Your Use Case</span>
+                  <Badge variant="outline" className="text-xs bg-primary/5 border-primary/20 text-primary">
+                    Cross-Industry
+                  </Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  These features work across multiple industries. Even if your organization hasn't onboarded yet, 
+                  you can explore and recommend these tools to your team.
+                </p>
+                <SegmentPipelineRecommendationPanel
+                  industry={USE_CASE_TO_INDUSTRY[selectedUseCase] || 'enterprise'}
+                  compact
+                  onSelect={(feature) => {
+                    console.log('Feature selected:', feature);
+                    // Navigate to demo with feature context
+                    navigate(`/explore/demo?useCase=${selectedUseCase}&feature=${feature.id}`);
+                  }}
+                  className="animate-in fade-in-50 slide-in-from-bottom-2 duration-500"
+                />
+                
+                {/* Influencer CTA */}
+                <div className="flex items-center justify-between p-4 rounded-xl border bg-gradient-to-r from-primary/5 to-accent/5">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <TrendingUp className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground text-sm">Recommend to your organization</p>
+                      <p className="text-xs text-muted-foreground">
+                        Share these features with your team and unlock enterprise benefits
+                      </p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Building2 className="h-4 w-4" />
+                    Learn More
+                  </Button>
+                </div>
               </div>
             </div>
           )}

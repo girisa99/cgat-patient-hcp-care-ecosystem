@@ -45,6 +45,8 @@ import {
   getRecommendedProviders,
 } from './wizardConstants';
 import { CONTENT_CATEGORIES, EXTENDED_COLLATERAL_TYPES } from './ContentTypeSelector';
+import { SegmentPipelineRecommendationPanel } from '@/components/segment-features';
+import type { IndustryTag } from '@/services/segmentPipelineMappingRegistry';
 
 // ==========================================
 // PROVIDER CONFIGURATIONS - Universal AI Hub
@@ -461,6 +463,16 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
           )}
         </div>
       </div>
+
+      {/* Cross-Industry Feature Recommendations - Shows when industry is selected */}
+      {workflowConfig?.industryCategory && (
+        <SegmentPipelineRecommendationPanel
+          industry={workflowConfig.industryCategory as IndustryTag}
+          segment={workflowConfig?.segment as any}
+          compact
+          className="animate-in fade-in-50 duration-300"
+        />
+      )}
 
       {/* Note: Output Type selection is now in Step 3 (Output Type & Structure) */}
 
