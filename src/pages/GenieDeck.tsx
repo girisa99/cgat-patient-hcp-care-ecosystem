@@ -1,20 +1,16 @@
 /**
  * Genie Deck - AI-Powered Presentation Generator
  * "Ideas to Impact" - Transform ideas into stunning presentations
+ * 
+ * CONSOLIDATED: Uses QuadrantLayout + QuadrantProductHeader
+ * AskGenie is now centralized in QuadrantLayout (removed from here)
  */
 
 import { useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-// NEW: 4-Quadrant Architecture - use QuadrantLayout for consistent navigation
-import { QuadrantLayout } from '@/components/navigation';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { QuadrantLayout, QuadrantProductHeader } from '@/components/navigation';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Progress } from '@/components/ui/progress';
+import { Button } from '@/components/ui/button';
 import { 
-  Sparkles, 
-  Zap,
-  Mic,
   AlertTriangle,
   RefreshCw,
   Mail,
@@ -25,18 +21,15 @@ import {
   Presentation,
   FileText,
   PlusCircle,
+  Sparkles,
 } from 'lucide-react';
-// Force fresh import of 6-step wizard (not old 5-step PresentationGeneratorPanel)
-import { PresentationWizard } from '@/components/genie-studio/presentation-generator/PresentationWizard';
-
-// Debug log to verify correct wizard is loaded
-console.log('🎯 GenieDeck: Loading 6-step PresentationWizard (not 5-step legacy panel)');
-import { BackToSubscription } from '@/components/subscription/BackToSubscription';
-import { AskGenie } from '@/components/genie-studio/AskGenie';
-import { HIPAAComplianceFooter } from '@/components/genie-studio/HIPAAComplianceFooter';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+// Force fresh import of 6-step wizard
+import { PresentationWizard } from '@/components/genie-studio/presentation-generator/PresentationWizard';
+import { HIPAAComplianceFooter } from '@/components/genie-studio/HIPAAComplianceFooter';
 import { toast } from 'sonner';
-import genieDeckLogo from '@/assets/logos/genie-deck-combined.png';
 
 // ==================== HIPAA Badge Component ====================
 const HIPAABadge = () => (
@@ -174,11 +167,8 @@ const ErrorDisplay = ({
 );
 
 const GenieDeck = () => {
-  const navigate = useNavigate();
   const [hasGeneratedContent, setHasGeneratedContent] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [showWizard, setShowWizard] = useState(true); // Always show wizard for now
 
   const handleError = useCallback((errorMessage: string) => {
     setError(errorMessage);
@@ -198,108 +188,37 @@ const GenieDeck = () => {
 
   return (
     <QuadrantLayout showNav={true}>
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-purple-950/5">
-        {/* Compact Header - Matches reference design */}
-        <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="flex h-14 items-center justify-between px-4 md:px-6">
-            <div className="flex items-center gap-4">
-              <BackToSubscription 
-                fallbackPath="/genie-studio" 
-                fallbackLabel="Studio" 
-              />
-              
-              <TooltipProvider delayDuration={300}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="flex items-center gap-3 cursor-help">
-                      {/* Logo container - consistent with Genie ecosystem */}
-                      <div className="h-10 w-10 rounded-lg bg-card border border-border/50 flex items-center justify-center overflow-hidden p-1.5 shadow-sm">
-                        <img src={genieDeckLogo} alt="Genie Deck" className="h-full w-full object-contain" />
-                      </div>
-                      <div>
-                        <h1 className="text-lg font-semibold text-foreground">
-                          Genie Deck
-                        </h1>
-                        <p className="text-xs text-muted-foreground">Ideas to Impact</p>
-                      </div>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent 
-                    side="bottom" 
-                    className="max-w-xs p-3 bg-white dark:bg-gray-900 border shadow-lg z-50"
-                    sideOffset={8}
-                  >
-                    <p className="font-medium text-gray-900 dark:text-white">AI Presentation Generator</p>
-                    <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
-                      Transform your ideas, notes, or documents into professional presentations with AI-powered slide generation, multi-language support, and smart visuals.
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
+      {/* Unified Product Header - replaces redundant custom header */}
+      <QuadrantProductHeader 
+        productId="deck" 
+        rightContent={<HIPAABadge />}
+      />
 
-            <div className="flex items-center gap-2">
-              {/* Prominent HIPAA Badge */}
-              <HIPAABadge />
-              
-              <Badge className="bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20 hidden md:flex gap-1">
-                <Sparkles className="h-3 w-3" />
-                AI Powered
-              </Badge>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate('/genie-spark')}
-                className="h-8"
-              >
-                <Zap className="h-4 w-4 mr-1.5" />
-                <span className="hidden sm:inline">Spark</span>
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate('/genie-vibe')}
-                className="h-8"
-              >
-                <Mic className="h-4 w-4 mr-1.5" />
-                <span className="hidden sm:inline">Vibe</span>
-              </Button>
-            </div>
-          </div>
-        </header>
+      {/* Error Display */}
+      {error && (
+        <ErrorDisplay 
+          error={error} 
+          onRetry={handleRetry} 
+          onDismiss={handleDismiss} 
+        />
+      )}
 
-        {/* Error Display - Friendly and not scary */}
-        {error && (
-          <ErrorDisplay 
-            error={error} 
-            onRetry={handleRetry} 
-            onDismiss={handleDismiss} 
-          />
-        )}
-
-        {/* Full-Screen Presentation Wizard - No hero banner, maximized space */}
-        <div id="wizard-container" className="h-[calc(100vh-56px)]">
-          <PresentationWizard 
-            className="h-full"
-            onComplete={(presentation) => {
-              setHasGeneratedContent(true);
-              setError(null);
-              toast.success('Presentation generated successfully!');
-            }}
-            onError={handleError}
-          />
-        </div>
-
-        {/* HIPAA Compliance Footer */}
-        <HIPAAComplianceFooter variant="compact" className="fixed bottom-4 left-4 z-30" />
-
-        {/* Ask Genie - Context-aware AI for Deck */}
-        <AskGenie 
-          product="deck" 
-          currentTab="create"
-          sessionData={{ hasGeneratedContent }}
+      {/* Full-Screen Presentation Wizard */}
+      <div id="wizard-container" className="h-[calc(100vh-112px)]">
+        <PresentationWizard 
+          className="h-full"
+          onComplete={(presentation) => {
+            setHasGeneratedContent(true);
+            setError(null);
+            toast.success('Presentation generated successfully!');
+          }}
+          onError={handleError}
         />
       </div>
+
+      {/* HIPAA Compliance Footer */}
+      <HIPAAComplianceFooter variant="compact" className="fixed bottom-4 left-4 z-30" />
+      {/* AskGenie removed - now centralized in QuadrantLayout */}
     </QuadrantLayout>
   );
 };

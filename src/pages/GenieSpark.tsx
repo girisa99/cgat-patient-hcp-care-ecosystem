@@ -1,34 +1,23 @@
 /**
- * Genie Spark - Standalone Content Creation Suite
+ * Genie Spark - Content Creation Suite
  * "Ignite Your Ideas" - AI-powered content generation engine
  * 
- * DATA FLOW: Uses existing hooks - all data is user-scoped via RLS
- * INTEGRATED: Ask Genie AI assistant for context-aware help
+ * CONSOLIDATED: Uses QuadrantLayout + QuadrantProductHeader
+ * AskGenie is now centralized in QuadrantLayout (removed from here)
  */
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-// NEW: 4-Quadrant Architecture - use QuadrantLayout for consistent navigation
-import { QuadrantLayout } from '@/components/navigation';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { QuadrantLayout, QuadrantProductHeader } from '@/components/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Zap, PenTool, Mic, Sparkles, Image, LayoutTemplate, Wand2, Presentation } from 'lucide-react';
+import { Sparkles, LayoutTemplate, Image, Wand2 } from 'lucide-react';
 import { SmartContentPipeline } from '@/components/genie-studio/SmartContentPipeline';
 import { useGenieScripts, type GenieScript } from '@/components/genie-studio/useGenieScripts';
 import { toast } from 'sonner';
 import type { GeneratedContent } from '@/components/genie-studio/PostGenerationActions';
-import { BackToSubscription } from '@/components/subscription/BackToSubscription';
-import { 
-  ImageScriptAssembler, 
-  AudioMixer, 
-  MusicComposerPanel, 
-  VoiceDirectorPanel 
-} from '@/components/shared';
+import { ImageScriptAssembler } from '@/components/shared';
 import { QuickTemplateSelector } from '@/components/templates';
 import { SparkGuidedWizard } from '@/components/genie-spark/SparkGuidedWizard';
-import { AskGenie } from '@/components/genie-studio/AskGenie';
-import genieSparkLogo from '@/assets/logos/genie-spark-combined.png';
 
 const GenieSpark: React.FC = () => {
   const navigate = useNavigate();
@@ -102,87 +91,30 @@ const GenieSpark: React.FC = () => {
 
   return (
     <QuadrantLayout>
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-orange-950/10">
-        {/* Hero Header */}
-        <div className="relative overflow-hidden border-b border-border/50 bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-yellow-500/10">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-orange-500/20 via-transparent to-transparent" />
-          
-          <div className="relative max-w-7xl mx-auto px-6 py-8">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-6">
-                <BackToSubscription 
-                  fallbackPath="/genie-studio" 
-                  fallbackLabel="Back to Studio" 
-                />
-                
-                <div className="flex items-center gap-4">
-                  <div className="h-16 w-16 rounded-2xl bg-white/90 backdrop-blur border border-orange-200/50 flex items-center justify-center shadow-lg overflow-hidden p-2">
-                    <img src={genieSparkLogo} alt="Genie Spark" className="h-full w-full object-contain" />
-                  </div>
-                  <div>
-                    <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
-                      Genie Spark
-                    </h1>
-                    <p className="text-sm text-muted-foreground">Content Creation Suite • Ignite Your Ideas</p>
-                  </div>
-                </div>
-              </div>
+      {/* Unified Product Header - replaces redundant hero */}
+      <QuadrantProductHeader productId="spark" />
 
-              <div className="flex items-center gap-3">
-                <Badge className="bg-orange-500/10 text-orange-600 border-orange-500/20">
-                  <Zap className="h-3 w-3 mr-1" />
-                  AI Powered
-                </Badge>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate('/genie-deck')}
-                >
-                  <LayoutTemplate className="h-4 w-4 mr-2" />
-                  Presentations
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate('/genie-mind?tab=script-editor')}
-                >
-                  <PenTool className="h-4 w-4 mr-2" />
-                  Script Editor
-                </Button>
-                <Button
-                  size="sm"
-                  className="bg-gradient-to-r from-orange-500 to-amber-500 text-white"
-                  onClick={() => navigate('/genie-vibe')}
-                >
-                  <Mic className="h-4 w-4 mr-2" />
-                  Record in Vibe
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content with Tabs */}
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="bg-muted/50 border border-border/50">
-              <TabsTrigger value="guide" className="gap-2">
-                <Wand2 className="h-4 w-4" />
-                Guide
-              </TabsTrigger>
-              <TabsTrigger value="pipeline" className="gap-2">
-                <Sparkles className="h-4 w-4" />
-                Content Pipeline
-              </TabsTrigger>
-              <TabsTrigger value="templates" className="gap-2">
-                <LayoutTemplate className="h-4 w-4" />
-                Quick Templates
-              </TabsTrigger>
-              <TabsTrigger value="images" className="gap-2">
-                <Image className="h-4 w-4" />
-                Image to Script
-              </TabsTrigger>
-            </TabsList>
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-6 py-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="bg-muted/50 border border-border/50">
+            <TabsTrigger value="guide" className="gap-2">
+              <Wand2 className="h-4 w-4" />
+              Guide
+            </TabsTrigger>
+            <TabsTrigger value="pipeline" className="gap-2">
+              <Sparkles className="h-4 w-4" />
+              Content Pipeline
+            </TabsTrigger>
+            <TabsTrigger value="templates" className="gap-2">
+              <LayoutTemplate className="h-4 w-4" />
+              Quick Templates
+            </TabsTrigger>
+            <TabsTrigger value="images" className="gap-2">
+              <Image className="h-4 w-4" />
+              Image to Script
+            </TabsTrigger>
+          </TabsList>
 
             {/* Guided Wizard Tab */}
             <TabsContent value="guide" className="mt-0">
@@ -256,17 +188,10 @@ const GenieSpark: React.FC = () => {
                   saveScript(newScript);
                 }}
               />
-            </TabsContent>
-          </Tabs>
-
-          {/* Ask Genie - Context-aware AI for Spark */}
-          <AskGenie 
-            product="spark" 
-            currentTab={activeTab}
-            sessionData={{ scriptsCount: savedScripts?.length || 0, hasGeneratedContent }}
-          />
-        </div>
+          </TabsContent>
+        </Tabs>
       </div>
+      {/* AskGenie removed - now centralized in QuadrantLayout */}
     </QuadrantLayout>
   );
 };

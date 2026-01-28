@@ -1,33 +1,29 @@
 /**
- * Genie Mind - Standalone AI Dashboard & Script Management
+ * Genie Mind - AI Dashboard & Script Management
  * "Think Beyond Limits" - AI-powered script editing and management
  * 
- * DATA FLOW: Uses existing hooks - all data is user-scoped via RLS
- * INTEGRATED: Ask Genie AI assistant for context-aware help
+ * CONSOLIDATED: Uses QuadrantLayout + QuadrantProductHeader
+ * AskGenie is now centralized in QuadrantLayout (removed from here)
  */
 
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-// NEW: 4-Quadrant Architecture - use QuadrantLayout for consistent navigation
-import { QuadrantLayout } from '@/components/navigation';
+import { QuadrantLayout, QuadrantProductHeader } from '@/components/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
-  ArrowLeft, 
-  Brain,
   PenTool,
   Mic,
   Library,
-  FileText,
-  Layers,
   Video,
   Headphones,
   Music,
   Film,
   Zap,
-  Files
+  Files,
+  Layers
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -35,9 +31,7 @@ import { ScriptEditorTab } from '@/components/genie-studio/ScriptEditorTab';
 import { SavedAudioCard } from '@/components/genie-studio/SavedAudioCard';
 import { useGenieScripts, type GenieScript } from '@/components/genie-studio/useGenieScripts';
 import { useGenieMediaLibrary } from '@/components/genie-studio/useGenieMediaLibrary';
-import { AskGenie } from '@/components/genie-studio/AskGenie';
 import { CrossFunctionalMusic } from '@/components/genie-studio/CrossFunctionalMusic';
-import genieMindLogo from '@/assets/logos/genie-mind-combined.png';
 import { BatchScriptGenerationWorkflow } from '@/components/genie-studio/batch/BatchScriptGenerationWorkflow';
 
 const GenieMind: React.FC = () => {
@@ -72,102 +66,58 @@ const GenieMind: React.FC = () => {
 
   return (
     <QuadrantLayout>
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-purple-950/10">
-        {/* Hero Header */}
-        <div className="relative overflow-hidden border-b border-border/50 bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-violet-500/10">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-purple-500/20 via-transparent to-transparent" />
-          
-          <div className="relative max-w-7xl mx-auto px-6 py-8">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-6">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate('/genie-studio')}
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Studio
-                </Button>
-                
-                <div className="flex items-center gap-4">
-                  <div className="h-16 w-16 rounded-2xl bg-white/90 backdrop-blur border border-purple-200/50 flex items-center justify-center shadow-lg overflow-hidden p-2">
-                    <img src={genieMindLogo} alt="Genie Mind" className="h-full w-full object-contain" />
-                  </div>
-                  <div>
-                    <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                      Genie Mind
-                    </h1>
-                    <p className="text-sm text-muted-foreground">AI Dashboard & Scripts • Think Beyond Limits</p>
-                  </div>
-                </div>
-              </div>
+      {/* Unified Product Header - replaces redundant hero */}
+      <QuadrantProductHeader 
+        productId="mind" 
+        rightContent={
+          <Badge className="bg-purple-500/10 text-purple-600 border-purple-500/20">
+            {savedScripts.length} Scripts
+          </Badge>
+        }
+      />
 
-              <div className="flex items-center gap-3">
-                <Badge className="bg-purple-500/10 text-purple-600 border-purple-500/20">
-                  {savedScripts.length} Scripts
-                </Badge>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate('/genie-spark')}
-                >
-                  <Zap className="h-4 w-4 mr-2" />
-                  Generate in Spark
-                </Button>
-                <Button
-                  size="sm"
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 text-white"
-                  onClick={() => navigate('/genie-vibe')}
-                >
-                  <Mic className="h-4 w-4 mr-2" />
-                  Record in Vibe
-                </Button>
+      {/* Quick Stats Bar */}
+      <div className="border-b bg-muted/30">
+        <div className="max-w-7xl mx-auto px-6 py-3">
+          <div className="grid grid-cols-5 gap-4">
+            {[
+              { label: 'Video Scripts', value: String(videoScripts.length), icon: Video, color: 'text-destructive' },
+              { label: 'Audio Scripts', value: String(audioScripts.length), icon: Headphones, color: 'text-primary' },
+              { label: 'Voiceovers', value: String(allAudio.length), icon: Mic, color: 'text-accent-foreground' },
+              { label: 'Music Tracks', value: String(instrumentalMusic.length), icon: Music, color: 'text-muted-foreground' },
+              { label: 'Total Items', value: String(savedScripts.length + allAudio.length + instrumentalMusic.length), icon: Layers, color: 'text-secondary-foreground' }
+            ].map((stat, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <stat.icon className={cn("h-4 w-4", stat.color)} />
+                <span className="text-sm font-medium">{stat.value}</span>
+                <span className="text-xs text-muted-foreground hidden lg:inline">{stat.label}</span>
               </div>
-            </div>
-
-            {/* Quick Stats - Simplified without templates */}
-            <div className="grid grid-cols-5 gap-4 mt-6">
-              {[
-                { label: 'Video Scripts', value: String(videoScripts.length), icon: FileText, color: 'text-destructive' },
-                { label: 'Audio Scripts', value: String(audioScripts.length), icon: Headphones, color: 'text-primary' },
-                { label: 'Voiceovers', value: String(allAudio.length), icon: Mic, color: 'text-accent-foreground' },
-                { label: 'Music Tracks', value: String(instrumentalMusic.length), icon: Music, color: 'text-muted-foreground' },
-                { label: 'Total Items', value: String(savedScripts.length + allAudio.length + instrumentalMusic.length), icon: Layers, color: 'text-secondary-foreground' }
-              ].map((stat, i) => (
-                <div key={i} className="bg-card/50 backdrop-blur border border-border/50 rounded-xl p-4 hover:border-primary/30 transition-colors">
-                  <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                    <stat.icon className={cn("h-4 w-4", stat.color)} />
-                    <span className="text-xs">{stat.label}</span>
-                  </div>
-                  <div className="text-2xl font-bold">{stat.value}</div>
-                </div>
-              ))}
-            </div>
+            ))}
           </div>
         </div>
+      </div>
 
-        {/* Main Content */}
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="bg-muted/50 border border-border/50 p-1">
-              <TabsTrigger value="dashboard" className="gap-2">
-                <Layers className="h-4 w-4" />
-                Dashboard
-              </TabsTrigger>
-              <TabsTrigger value="script-editor" className="gap-2">
-                <PenTool className="h-4 w-4" />
-                Script Editor
-              </TabsTrigger>
-              <TabsTrigger value="batch-generation" className="gap-2">
-                <Files className="h-4 w-4" />
-                Batch Generation
-              </TabsTrigger>
-              <TabsTrigger value="library" className="gap-2">
-                <Library className="h-4 w-4" />
-                Media Library
-              </TabsTrigger>
-            </TabsList>
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-6 py-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="bg-muted/50 border border-border/50 p-1">
+            <TabsTrigger value="dashboard" className="gap-2">
+              <Layers className="h-4 w-4" />
+              Dashboard
+            </TabsTrigger>
+            <TabsTrigger value="script-editor" className="gap-2">
+              <PenTool className="h-4 w-4" />
+              Script Editor
+            </TabsTrigger>
+            <TabsTrigger value="batch-generation" className="gap-2">
+              <Files className="h-4 w-4" />
+              Batch Generation
+            </TabsTrigger>
+            <TabsTrigger value="library" className="gap-2">
+              <Library className="h-4 w-4" />
+              Media Library
+            </TabsTrigger>
+          </TabsList>
 
             {/* Dashboard Tab */}
             <TabsContent value="dashboard" className="space-y-6">
@@ -384,17 +334,10 @@ const GenieMind: React.FC = () => {
               </Tabs>
             </TabsContent>
           </Tabs>
-
-          {/* Ask Genie - Context-aware AI for Mind */}
-          <AskGenie 
-            product="mind" 
-            currentTab={activeTab}
-            sessionData={{ scriptsCount: savedScripts?.length || 0 }}
-          />
         </div>
-      </div>
-    </QuadrantLayout>
-  );
-};
+        {/* AskGenie removed - now centralized in QuadrantLayout */}
+      </QuadrantLayout>
+    );
+  };
 
 export default GenieMind;

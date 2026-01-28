@@ -10,6 +10,8 @@ export { QuadrantNavigation, QUADRANT_CONFIG } from './QuadrantNavigation';
 export type { Quadrant, QuadrantConfig } from './QuadrantNavigation';
 export { QuadrantDashboard } from './QuadrantDashboard';
 export { QuadrantLayout } from './QuadrantLayout';
+export { QuadrantProductHeader, PRODUCT_BRANDING, QUADRANT_PRODUCTS, ProductBadge } from './QuadrantProductHeader';
+export type { ProductBranding } from './QuadrantProductHeader';
 
 // Legacy Navigation (To be deprecated)
 export { GenieStudioNavigation } from './GenieStudioNavigation';
