@@ -359,3 +359,9 @@ verify_jwt = false
 
 [functions.tiktok-oauth]
 verify_jwt = false
+
+[functions.geo-detect]
+verify_jwt = false
+
+[functions.purchase-credits]
+verify_jwt = false

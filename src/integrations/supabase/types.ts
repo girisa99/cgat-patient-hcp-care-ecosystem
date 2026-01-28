@@ -9611,6 +9611,33 @@ export type Database = {
         }
         Relationships: []
       }
+      genie_pricing_settings: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          setting_key: string
+          setting_value: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          setting_key: string
+          setting_value: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          setting_key?: string
+          setting_value?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       genie_query_analysis: {
         Row: {
           analyzed_at: string | null
@@ -9722,6 +9749,63 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      genie_regional_pricing: {
+        Row: {
+          created_at: string
+          currency_code: string
+          default_language: string
+          display_name: string
+          id: string
+          is_active: boolean
+          is_default: boolean
+          language_zone: string
+          metadata: Json | null
+          payment_methods: string[] | null
+          ppp_multiplier: number | null
+          region_code: string
+          region_name: string
+          stripe_price_ids: Json | null
+          supported_languages: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency_code?: string
+          default_language?: string
+          display_name: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          language_zone?: string
+          metadata?: Json | null
+          payment_methods?: string[] | null
+          ppp_multiplier?: number | null
+          region_code: string
+          region_name: string
+          stripe_price_ids?: Json | null
+          supported_languages?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency_code?: string
+          default_language?: string
+          display_name?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          language_zone?: string
+          metadata?: Json | null
+          payment_methods?: string[] | null
+          ppp_multiplier?: number | null
+          region_code?: string
+          region_name?: string
+          stripe_price_ids?: Json | null
+          supported_languages?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       genie_response_confidence: {
         Row: {
