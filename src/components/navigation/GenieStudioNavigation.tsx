@@ -50,16 +50,17 @@ interface GenieStudioNavigationProps {
   onCollapsedChange?: (collapsed: boolean) => void;
 }
 
-const CATEGORY_CONFIG: Record<string, { label: string; expandable?: boolean }> = {
+const CATEGORY_CONFIG: Record<string, { label: string; collapsible?: boolean }> = {
   main: { label: 'Workspace' },
-  tools: { label: 'Create' },
-  production: { label: 'Produce' },
-  publish: { label: 'Publish' },
-  manage: { label: 'Manage', expandable: true },
+  tools: { label: 'Create', collapsible: true },
+  production: { label: 'Produce', collapsible: true },
+  manage: { label: 'Manage', collapsible: true },
+  publish: { label: 'Publish', collapsible: true },
   account: { label: 'Account' },
 };
 
-const CATEGORY_ORDER = ['main', 'tools', 'production', 'publish', 'manage', 'account'];
+// Correct sequence: Workspace → Create → Produce → Manage → Publish → Account
+const CATEGORY_ORDER = ['main', 'tools', 'production', 'manage', 'publish', 'account'];
 
 export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({ 
   variant = 'sidebar',
@@ -71,8 +72,16 @@ export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({
   const { navByCategory, tierInfo, userTier, isInternal } = useGenieStudioNavigation();
   const { genieUser, signOut } = useGenieStudioAuth();
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
-  const [manageOpen, setManageOpen] = useState(true);
+  const [openCategories, setOpenCategories] = useState<string[]>(['manage']); // MANAGE open by default
   const [openSubCategories, setOpenSubCategories] = useState<string[]>(['Workflow']);
+
+  const toggleCategory = (category: string) => {
+    setOpenCategories(prev => 
+      prev.includes(category) 
+        ? prev.filter(c => c !== category)
+        : [...prev, category]
+    );
+  };
 
   const handleCollapse = (collapsed: boolean) => {
     setIsCollapsed(collapsed);
@@ -224,13 +233,15 @@ export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({
                 const isActive = isPathInCategory(category);
 
                 // Special handling for MANAGE category with sub-categories
-                if (category === 'manage' && config.expandable) {
+                if (category === 'manage') {
+                  const isManageOpen = openCategories.includes('manage');
+                  
                   if (isCollapsed) {
                     return (
-                      <div key={category} className={cn(idx > 0 && "mt-3")}>
+                      <div key={category} className={cn(idx > 0 && "mt-2")}>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <div className="flex justify-center py-2">
+                            <div className="flex justify-center py-1.5 cursor-pointer hover:bg-muted/50 rounded">
                               <Building2 className="h-4 w-4 text-muted-foreground" />
                             </div>
                           </TooltipTrigger>
@@ -241,24 +252,21 @@ export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({
                   }
 
                   return (
-                    <div key={category} className={cn(idx > 0 && "mt-3")}>
-                      <Collapsible open={manageOpen} onOpenChange={setManageOpen}>
+                    <div key={category} className={cn(idx > 0 && "mt-2")}>
+                      <Collapsible open={isManageOpen} onOpenChange={() => toggleCategory('manage')}>
                         <CollapsibleTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            className="w-full justify-between px-2 py-1.5 h-8"
-                          >
-                            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                          <button className="w-full flex items-center justify-between px-2 py-1 rounded hover:bg-muted/50 transition-colors">
+                            <span className="text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-wider">
                               {config.label}
                             </span>
-                            {manageOpen ? (
-                              <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                            {isManageOpen ? (
+                              <ChevronDown className="h-3 w-3 text-muted-foreground/50" />
                             ) : (
-                              <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                              <ChevronRight className="h-3 w-3 text-muted-foreground/50" />
                             )}
-                          </Button>
+                          </button>
                         </CollapsibleTrigger>
-                        <CollapsibleContent className="space-y-0.5 mt-1">
+                        <CollapsibleContent className="space-y-0.5 mt-0.5">
                           {Object.entries(manageSubCategories).map(([subCat, subItems]) => (
                             <Collapsible
                               key={subCat}
@@ -266,20 +274,16 @@ export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({
                               onOpenChange={() => toggleSubCategory(subCat)}
                             >
                               <CollapsibleTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="w-full justify-between px-2 py-1 h-7 text-xs"
-                                >
+                                <button className="w-full flex items-center justify-between px-2 py-1 rounded text-xs hover:bg-muted/30 transition-colors">
                                   <span className="text-muted-foreground font-medium">{subCat}</span>
                                   {openSubCategories.includes(subCat) ? (
-                                    <ChevronDown className="h-3 w-3" />
+                                    <ChevronDown className="h-2.5 w-2.5 text-muted-foreground/50" />
                                   ) : (
-                                    <ChevronRight className="h-3 w-3" />
+                                    <ChevronRight className="h-2.5 w-2.5 text-muted-foreground/50" />
                                   )}
-                                </Button>
+                                </button>
                               </CollapsibleTrigger>
-                              <CollapsibleContent className="pl-3 space-y-0.5">
+                              <CollapsibleContent className="pl-2 space-y-0.5">
                                 {subItems.map(item => (
                                   <NavLink
                                     key={item.url}
@@ -304,10 +308,54 @@ export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({
                         </CollapsibleContent>
                       </Collapsible>
                     </div>
+                    );
+                }
+
+                // Collapsible workflow categories (Create, Produce, Publish)
+                if (config.collapsible && !isCollapsed) {
+                  const isCategoryOpen = openCategories.includes(category);
+                  
+                  return (
+                    <div key={category} className={cn(idx > 0 && "mt-2")}>
+                      <Collapsible open={isCategoryOpen} onOpenChange={() => toggleCategory(category)}>
+                        <CollapsibleTrigger asChild>
+                          <button className="w-full flex items-center justify-between px-2 py-1 rounded hover:bg-muted/50 transition-colors">
+                            <span className="text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-wider">
+                              {config.label}
+                            </span>
+                            {isCategoryOpen ? (
+                              <ChevronDown className="h-3 w-3 text-muted-foreground/50" />
+                            ) : (
+                              <ChevronRight className="h-3 w-3 text-muted-foreground/50" />
+                            )}
+                          </button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="space-y-0.5 mt-0.5">
+                          {items.map(item => (
+                            <NavLink
+                              key={item.url}
+                              to={item.url}
+                              title={item.description}
+                              className={({ isActive }) =>
+                                cn(
+                                  "flex items-center gap-2.5 rounded px-2.5 py-1.5 text-sm transition-all",
+                                  isActive
+                                    ? "bg-primary/10 text-primary font-medium"
+                                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                                )
+                              }
+                            >
+                              <item.icon className="h-4 w-4 flex-shrink-0" />
+                              <span className="truncate">{item.title}</span>
+                            </NavLink>
+                          ))}
+                        </CollapsibleContent>
+                      </Collapsible>
+                    </div>
                   );
                 }
 
-                // Regular categories - cleaner layout
+                // Non-collapsible categories (Workspace, Account) or collapsed sidebar view
                 return (
                   <div key={category} className={cn(idx > 0 && "mt-2")}>
                     {!isCollapsed && (
