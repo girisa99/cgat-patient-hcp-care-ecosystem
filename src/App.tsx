@@ -530,11 +530,11 @@ const AppContent = () => {
                     </ProtectedRoute>
                   } />
                   <Route path="/subscription" element={
-                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'demoUser', 'onboardingTeam', 'healthcareProvider']}>
+                    <GenieStudioProtectedRoute>
                       <Suspense fallback={<PageLoading message="Loading subscription..." />}>
                         <SubscriptionPage />
                       </Suspense>
-                    </ProtectedRoute>
+                    </GenieStudioProtectedRoute>
                   } />
                 </>
               ) : (
