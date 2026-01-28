@@ -6,12 +6,10 @@
  */
 
 import React, { useState, useEffect, lazy, Suspense } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { 
-  Video, Users, CalendarDays, Sparkles, Layers, Loader2,
-} from 'lucide-react';
+import { Video, Users, CalendarDays, Sparkles, Loader2 } from 'lucide-react';
 import { UnifiedCompositionStudio, ContentLibrary } from './composition-studio';
 import { ContentSchedulerDashboard } from './ContentSchedulerDashboard';
 import { ProductionAnalytics } from './ProductionAnalytics';
@@ -24,7 +22,7 @@ import { TeamActivityFeed } from '@/components/collaboration/TeamActivityFeed';
 import { NotificationsPanel } from '@/components/collaboration/NotificationsPanel';
 import { toast } from 'sonner';
 import { useShows } from '@/hooks/useShows';
-import { useNavigate } from 'react-router-dom';
+
 import type { EventCategory } from '@/types/shows';
 import { cn } from '@/lib/utils';
 
@@ -108,9 +106,9 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
   );
 
   return (
-    <div className={cn("h-full", className)}>
+    <div className={cn("h-full min-h-[calc(100vh-4rem)]", className)}>
       <ScrollArea className="h-full">
-        <div className="p-2">
+        <div className="p-4">
           {/* Kanban Tab */}
           {activeTab === 'kanban' && (
             <div className="space-y-4">

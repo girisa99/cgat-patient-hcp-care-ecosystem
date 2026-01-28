@@ -1,7 +1,7 @@
 /**
  * GENIE STUDIO NAVIGATION COMPONENT
- * Collapsible sidebar with 4-Quadrant + PUBLISH flow
- * MANAGE category expands to show sub-categories (Workflow, Assets, Insights, Settings, AI Tools)
+ * Clean, collapsible sidebar with 4-Quadrant workflow
+ * MANAGE category expands to show sub-categories
  */
 
 import React, { useState } from 'react';
@@ -39,6 +39,7 @@ import {
   Crown,
   PanelLeftClose,
   PanelLeft,
+  Building2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import genieSuiteLogo from '@/assets/logos/genie-studio-suite-logo.png';
@@ -49,16 +50,13 @@ interface GenieStudioNavigationProps {
   onCollapsedChange?: (collapsed: boolean) => void;
 }
 
-/**
- * Category configuration
- */
-const CATEGORY_CONFIG: Record<string, { label: string; icon: string; expandable?: boolean }> = {
-  main: { label: 'WORKSPACE', icon: '🏠' },
-  tools: { label: 'CREATE', icon: '✨' },
-  production: { label: 'PRODUCE', icon: '🎬' },
-  publish: { label: 'PUBLISH', icon: '📢' },
-  manage: { label: 'MANAGE', icon: '📊', expandable: true },
-  account: { label: 'ACCOUNT', icon: '👤' },
+const CATEGORY_CONFIG: Record<string, { label: string; expandable?: boolean }> = {
+  main: { label: 'Workspace' },
+  tools: { label: 'Create' },
+  production: { label: 'Produce' },
+  publish: { label: 'Publish' },
+  manage: { label: 'Manage', expandable: true },
+  account: { label: 'Account' },
 };
 
 const CATEGORY_ORDER = ['main', 'tools', 'production', 'publish', 'manage', 'account'];
@@ -92,7 +90,6 @@ export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({
     .join('')
     .toUpperCase() || 'GU';
 
-  // Get MANAGE items grouped by subCategory
   const manageSubCategories = getManageItemsBySubCategory(userTier, isInternal);
 
   const toggleSubCategory = (subCat: string) => {
@@ -169,18 +166,18 @@ export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({
     <TooltipProvider delayDuration={0}>
       <aside 
         className={cn(
-          "fixed left-0 top-0 z-40 h-screen border-r bg-background transition-all duration-300",
+          "fixed left-0 top-0 z-40 h-screen border-r bg-card transition-all duration-300",
           isCollapsed ? "w-16" : "w-64"
         )}
       >
         <div className="flex h-full flex-col">
-          {/* Header with Collapse Toggle */}
-          <div className="flex h-16 items-center justify-between border-b px-3">
-            <NavLink to="/genie-studio" className="flex items-center gap-2">
+          {/* Header with Logo and Collapse Toggle */}
+          <div className="flex h-14 items-center justify-between border-b px-3">
+            <NavLink to="/genie-studio" className="flex items-center gap-2 min-w-0">
               <img 
                 src={genieSuiteLogo} 
                 alt="Genie Studio" 
-                className={cn("transition-all", isCollapsed ? "h-8 w-8" : "h-8")} 
+                className={cn("transition-all flex-shrink-0", isCollapsed ? "h-7 w-7" : "h-7")} 
               />
             </NavLink>
             
@@ -189,7 +186,7 @@ export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8"
+                  className="h-7 w-7 flex-shrink-0"
                   onClick={() => handleCollapse(!isCollapsed)}
                 >
                   {isCollapsed ? (
@@ -200,13 +197,25 @@ export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="right">
-                {isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                {isCollapsed ? 'Expand' : 'Collapse'}
               </TooltipContent>
             </Tooltip>
           </div>
 
+          {/* Workspace Indicator */}
+          {!isCollapsed && (
+            <div className="px-3 py-2 border-b bg-muted/30">
+              <div className="flex items-center gap-2">
+                <Building2 className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                <span className="text-xs text-muted-foreground truncate">
+                  {genieUser?.display_name ? `${genieUser.display_name}'s Workspace` : 'My Workspace'}
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* Navigation */}
-          <ScrollArea className="flex-1 px-2 py-4">
+          <ScrollArea className="flex-1 px-2 py-3">
             {CATEGORY_ORDER
               .filter(category => {
                 // For MANAGE, check if there are any sub-items
@@ -223,13 +232,12 @@ export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({
                 // Special handling for MANAGE category with sub-categories
                 if (category === 'manage' && config.expandable) {
                   if (isCollapsed) {
-                    // Collapsed: show dropdown
                     return (
-                      <div key={category} className={cn(idx > 0 && "mt-4")}>
+                      <div key={category} className={cn(idx > 0 && "mt-3")}>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <div className="flex justify-center mb-2">
-                              <span className="text-xs">{config.icon}</span>
+                            <div className="flex justify-center py-2">
+                              <Building2 className="h-4 w-4 text-muted-foreground" />
                             </div>
                           </TooltipTrigger>
                           <TooltipContent side="right">{config.label}</TooltipContent>
@@ -238,18 +246,16 @@ export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({
                     );
                   }
 
-                  // Expanded: show collapsible sub-categories
                   return (
-                    <div key={category} className={cn(idx > 0 && "mt-4")}>
+                    <div key={category} className={cn(idx > 0 && "mt-3")}>
                       <Collapsible open={manageOpen} onOpenChange={setManageOpen}>
                         <CollapsibleTrigger asChild>
                           <Button
                             variant="ghost"
-                            className="w-full justify-between px-2 py-1.5 h-auto mb-1"
+                            className="w-full justify-between px-2 py-1.5 h-8"
                           >
-                            <span className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                              <span>{config.icon}</span>
-                              <span>{config.label}</span>
+                            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                              {config.label}
                             </span>
                             {manageOpen ? (
                               <ChevronDown className="h-3 w-3 text-muted-foreground" />
@@ -258,7 +264,7 @@ export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({
                             )}
                           </Button>
                         </CollapsibleTrigger>
-                        <CollapsibleContent className="space-y-1">
+                        <CollapsibleContent className="space-y-0.5 mt-1">
                           {Object.entries(manageSubCategories).map(([subCat, subItems]) => (
                             <Collapsible
                               key={subCat}
@@ -269,9 +275,9 @@ export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="w-full justify-between px-3 py-1 h-7 text-xs"
+                                  className="w-full justify-between px-2 py-1 h-7 text-xs"
                                 >
-                                  <span className="text-muted-foreground">{subCat}</span>
+                                  <span className="text-muted-foreground font-medium">{subCat}</span>
                                   {openSubCategories.includes(subCat) ? (
                                     <ChevronDown className="h-3 w-3" />
                                   ) : (
@@ -279,7 +285,7 @@ export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({
                                   )}
                                 </Button>
                               </CollapsibleTrigger>
-                              <CollapsibleContent className="pl-3 space-y-0.5">
+                              <CollapsibleContent className="pl-2 space-y-0.5">
                                 {subItems.map(item => (
                                   <Tooltip key={item.url}>
                                     <TooltipTrigger asChild>
@@ -287,15 +293,15 @@ export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({
                                         to={item.url}
                                         className={({ isActive }) =>
                                           cn(
-                                            "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
+                                            "flex items-center gap-2 rounded-md px-2 py-1 text-sm transition-colors",
                                             isActive
                                               ? "bg-primary/10 text-primary font-medium"
-                                              : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                                              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                                           )
                                         }
                                       >
-                                        <item.icon className="h-4 w-4 flex-shrink-0" />
-                                        <span className="truncate">{item.title}</span>
+                                        <item.icon className="h-3.5 w-3.5 flex-shrink-0" />
+                                        <span className="truncate text-xs">{item.title}</span>
                                       </NavLink>
                                     </TooltipTrigger>
                                     <TooltipContent side="right">
@@ -315,25 +321,13 @@ export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({
                   );
                 }
 
-                // Regular categories
+                // Regular categories - cleaner layout
                 return (
-                  <div key={category} className={cn(idx > 0 && "mt-4")}>
+                  <div key={category} className={cn(idx > 0 && "mt-3")}>
                     {!isCollapsed && (
-                      <h4 className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                        <span>{config.icon}</span>
-                        <span>{config.label}</span>
+                      <h4 className="mb-1 px-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        {config.label}
                       </h4>
-                    )}
-                    
-                    {isCollapsed && (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="mb-2 flex justify-center">
-                            <span className="text-xs">{config.icon}</span>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent side="right">{config.label}</TooltipContent>
-                      </Tooltip>
                     )}
 
                     <div className="space-y-1">
