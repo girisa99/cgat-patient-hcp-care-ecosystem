@@ -26,7 +26,8 @@ import {
   Globe, Wand2, Sparkles,
   Building2, Users, Paintbrush,
   FolderOpen, Layers, KanbanSquare,
-  CalendarDays, Loader2, CalendarCheck
+  CalendarDays, Loader2, CalendarCheck,
+  AlertTriangle
 } from 'lucide-react';
 import { UnifiedCompositionStudio, ContentLibrary } from './composition-studio';
 import { ContentSchedulerDashboard } from './ContentSchedulerDashboard';
@@ -35,6 +36,7 @@ import { WorkspaceManagement } from './WorkspaceManagement';
 import { TeamInviteManagement } from './TeamInviteManagement';
 import { WhitelabelConfiguration } from './WhitelabelConfiguration';
 import { TieredAnalyticsDashboard } from '@/components/analytics/TieredAnalyticsDashboard';
+import { ErrorAnalyticsDashboard } from '@/components/resilience/ErrorAnalyticsDashboard';
 import { toast } from 'sonner';
 import { useShows } from '@/hooks/useShows';
 import { useNavigate } from 'react-router-dom';
@@ -50,7 +52,7 @@ interface ProductionHubAdminProps {
   className?: string;
 }
 
-type AdminTab = 'kanban' | 'calendar' | 'appointments' | 'library' | 'composition' | 'scheduler' | 'analytics' | 'enterprise-analytics' | 'workspaces' | 'team' | 'whitelabel';
+type AdminTab = 'kanban' | 'calendar' | 'appointments' | 'library' | 'composition' | 'scheduler' | 'analytics' | 'enterprise-analytics' | 'error-analytics' | 'workspaces' | 'team' | 'whitelabel';
 
 export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ className }) => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -266,6 +268,10 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
               <Globe className="w-4 h-4" />
               <span className="hidden lg:inline">Enterprise</span>
             </TabsTrigger>
+            <TabsTrigger value="error-analytics" className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4" />
+              <span className="hidden lg:inline">Errors</span>
+            </TabsTrigger>
             <TabsTrigger value="workspaces" className="flex items-center gap-2">
               <Building2 className="w-4 h-4" />
               <span className="hidden lg:inline">Workspaces</span>
@@ -368,6 +374,11 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
         {/* Enterprise Analytics - P4 Suite (Internal Admin View) */}
         <TabsContent value="enterprise-analytics" className="mt-6">
           <TieredAnalyticsDashboard accessLevel="internal" />
+        </TabsContent>
+
+        {/* Error Analytics - P4 Recovery & Error Dashboard */}
+        <TabsContent value="error-analytics" className="mt-6">
+          <ErrorAnalyticsDashboard />
         </TabsContent>
 
         <TabsContent value="workspaces" className="mt-6">

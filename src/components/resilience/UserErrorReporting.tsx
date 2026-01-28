@@ -50,10 +50,14 @@ interface BugReport {
   includeConsole: boolean;
 }
 
+type Position = 'bottom-left' | 'bottom-right' | 'top-left' | 'top-right';
+
 export const UserErrorReporting: React.FC<{ 
   trigger?: React.ReactNode;
   onSubmit?: (report: BugReport) => void;
-}> = ({ trigger, onSubmit }) => {
+  position?: Position;
+  variant?: 'inline' | 'fab';
+}> = ({ trigger, onSubmit, position = 'bottom-left', variant = 'fab' }) => {
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -158,10 +162,26 @@ export const UserErrorReporting: React.FC<{
     { value: 'other', label: 'Other', icon: FileText }
   ];
 
+  // Position classes for FAB variant
+  const positionClasses: Record<Position, string> = {
+    'bottom-left': 'fixed bottom-4 left-4 z-50',
+    'bottom-right': 'fixed bottom-4 right-4 z-50',
+    'top-left': 'fixed top-20 left-4 z-50',
+    'top-right': 'fixed top-20 right-4 z-50',
+  };
+
+  const fabTrigger = variant === 'fab' ? (
+    <div className={positionClasses[position]}>
+      <Button variant="outline" size="icon" className="h-10 w-10 rounded-full shadow-lg bg-background border-muted hover:bg-muted">
+        <Bug className="h-4 w-4 text-muted-foreground" />
+      </Button>
+    </div>
+  ) : null;
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        {trigger || (
+        {trigger || fabTrigger || (
           <Button variant="outline" size="sm" className="gap-2">
             <Bug className="h-4 w-4" />
             Report Issue

@@ -2,6 +2,11 @@
  * GENIE STUDIO LAYOUT
  * Dedicated layout for Genie Studio users
  * Shows only Genie-related navigation based on subscription
+ * 
+ * P4 INTEGRATIONS:
+ * - LanguageSwitcher: Multi-language support in header
+ * - DebugModeToggle: Debug console for internal/enterprise users
+ * - UserErrorReporting: Quick bug reporting FAB
  */
 
 import React, { Suspense, useEffect } from 'react';
@@ -14,6 +19,10 @@ import { Loader2, Lock, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { TIER_INFO } from '@/config/genieStudioNavItems';
+// P4 Resilience & Localization
+import { LanguageSwitcher } from '@/components/localization/LanguageSwitcher';
+import { DebugModeToggle, DebugPanel, useDebugMode } from '@/components/resilience/DebugModeToggle';
+import { UserErrorReporting } from '@/components/resilience/UserErrorReporting';
 
 interface GenieStudioLayoutProps {
   children: React.ReactNode;
@@ -134,11 +143,25 @@ export const GenieStudioLayout: React.FC<GenieStudioLayoutProps> = ({
     );
   }
 
+  // Check if user is internal or enterprise (for debug mode visibility)
+  const showDebugTools = genieUser?.is_internal || 
+    genieUser?.current_subscription_tier === 'enterprise' ||
+    genieUser?.current_subscription_tier === 'business';
+
   // Topbar variant
   if (variant === 'topbar') {
     return (
       <div className="min-h-screen bg-background">
         <GenieStudioNavigation variant="topbar" />
+        {/* P4: Language & Debug Tools Bar */}
+        <div className="border-b bg-muted/30">
+          <div className="container flex items-center justify-between py-2">
+            <LanguageSwitcher variant="compact" />
+            <div className="flex items-center gap-2">
+              {showDebugTools && <DebugModeToggle />}
+            </div>
+          </div>
+        </div>
         <main className="container py-6">
           <Suspense fallback={<LoadingFallback />}>
             {upgradePrompt ? (
@@ -152,6 +175,8 @@ export const GenieStudioLayout: React.FC<GenieStudioLayoutProps> = ({
           </Suspense>
         </main>
         {showFAB && <AskGenieFAB />}
+        <UserErrorReporting position="bottom-left" />
+        <DebugPanel />
       </div>
     );
   }
@@ -175,6 +200,8 @@ export const GenieStudioLayout: React.FC<GenieStudioLayoutProps> = ({
         </div>
       </main>
       {showFAB && <AskGenieFAB />}
+      <UserErrorReporting position="bottom-left" />
+      <DebugPanel />
     </div>
   );
 };
