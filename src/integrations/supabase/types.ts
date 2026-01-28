@@ -3792,6 +3792,72 @@ export type Database = {
           },
         ]
       }
+      community_ideas: {
+        Row: {
+          category: string
+          content_data: Json | null
+          content_type: string
+          created_at: string | null
+          credit_reward: number | null
+          description: string | null
+          id: string
+          industry: string | null
+          is_featured: boolean | null
+          is_public: boolean | null
+          like_count: number | null
+          region: string | null
+          remix_count: number | null
+          tags: string[] | null
+          thumbnail_url: string | null
+          title: string
+          updated_at: string | null
+          user_id: string
+          view_count: number | null
+        }
+        Insert: {
+          category?: string
+          content_data?: Json | null
+          content_type?: string
+          created_at?: string | null
+          credit_reward?: number | null
+          description?: string | null
+          id?: string
+          industry?: string | null
+          is_featured?: boolean | null
+          is_public?: boolean | null
+          like_count?: number | null
+          region?: string | null
+          remix_count?: number | null
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string | null
+          user_id: string
+          view_count?: number | null
+        }
+        Update: {
+          category?: string
+          content_data?: Json | null
+          content_type?: string
+          created_at?: string | null
+          credit_reward?: number | null
+          description?: string | null
+          id?: string
+          industry?: string | null
+          is_featured?: boolean | null
+          is_public?: boolean | null
+          like_count?: number | null
+          region?: string | null
+          remix_count?: number | null
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+          view_count?: number | null
+        }
+        Relationships: []
+      }
       compliance_reports: {
         Row: {
           compliance_score: number
@@ -11842,6 +11908,41 @@ export type Database = {
         }
         Relationships: []
       }
+      idea_remixes: {
+        Row: {
+          created_at: string | null
+          credits_awarded: number | null
+          id: string
+          original_idea_id: string | null
+          remix_content: Json | null
+          remixer_user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          credits_awarded?: number | null
+          id?: string
+          original_idea_id?: string | null
+          remix_content?: Json | null
+          remixer_user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          credits_awarded?: number | null
+          id?: string
+          original_idea_id?: string | null
+          remix_content?: Json | null
+          remixer_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "idea_remixes_original_idea_id_fkey"
+            columns: ["original_idea_id"]
+            isOneToOne: false
+            referencedRelation: "community_ideas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       imported_data: {
         Row: {
           created_at: string
@@ -14737,6 +14838,45 @@ export type Database = {
           project_id?: string | null
           space_key?: string | null
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      offline_publish_queue: {
+        Row: {
+          content_data: Json
+          created_at: string | null
+          error_message: string | null
+          id: string
+          queued_at: string | null
+          retry_count: number | null
+          status: string | null
+          synced_at: string | null
+          target_platforms: string[]
+          user_id: string
+        }
+        Insert: {
+          content_data: Json
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          queued_at?: string | null
+          retry_count?: number | null
+          status?: string | null
+          synced_at?: string | null
+          target_platforms: string[]
+          user_id: string
+        }
+        Update: {
+          content_data?: Json
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          queued_at?: string | null
+          retry_count?: number | null
+          status?: string | null
+          synced_at?: string | null
+          target_platforms?: string[]
           user_id?: string
         }
         Relationships: []
@@ -18048,6 +18188,63 @@ export type Database = {
           rewarded_at?: string | null
           status?: string | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      regional_success_stories: {
+        Row: {
+          applicable_regions: string[] | null
+          content_type: string | null
+          created_at: string | null
+          id: string
+          industry: string | null
+          is_featured: boolean | null
+          is_verified: boolean | null
+          learnings: string[] | null
+          metrics: Json | null
+          platform: string | null
+          region: string
+          story_content: string
+          title: string
+          updated_at: string | null
+          upvotes: number | null
+          user_id: string
+        }
+        Insert: {
+          applicable_regions?: string[] | null
+          content_type?: string | null
+          created_at?: string | null
+          id?: string
+          industry?: string | null
+          is_featured?: boolean | null
+          is_verified?: boolean | null
+          learnings?: string[] | null
+          metrics?: Json | null
+          platform?: string | null
+          region: string
+          story_content: string
+          title: string
+          updated_at?: string | null
+          upvotes?: number | null
+          user_id: string
+        }
+        Update: {
+          applicable_regions?: string[] | null
+          content_type?: string | null
+          created_at?: string | null
+          id?: string
+          industry?: string | null
+          is_featured?: boolean | null
+          is_verified?: boolean | null
+          learnings?: string[] | null
+          metrics?: Json | null
+          platform?: string | null
+          region?: string
+          story_content?: string
+          title?: string
+          updated_at?: string | null
+          upvotes?: number | null
+          user_id?: string
         }
         Relationships: []
       }
