@@ -62,4 +62,8 @@ export {
   type SessionState 
 } from '@/hooks/useSessionRecovery';
 
-export { SessionRecoveryPrompt } from '@/components/resilience/SessionRecoveryPrompt';
+export { 
+  SessionRecoveryPrompt,
+  SessionRecoveryPromptControlled,
+  type SessionRecoveryPromptProps 
+} from '@/components/resilience/SessionRecoveryPrompt';
