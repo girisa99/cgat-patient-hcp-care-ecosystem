@@ -1,7 +1,7 @@
 /**
  * Compliance Services Index
  * 
- * Exports all compliance-related services for HIPAA, Data Residency, and Legal.
+ * Exports all compliance-related services for HIPAA, Data Residency, Legal, and Content.
  */
 
 export * from './hipaaComplianceService';
