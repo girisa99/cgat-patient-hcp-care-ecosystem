@@ -27,7 +27,7 @@ import {
   Building2, Users, Paintbrush,
   FolderOpen, Layers, KanbanSquare,
   CalendarDays, Loader2, CalendarCheck,
-  AlertTriangle, MessageSquare
+  AlertTriangle, MessageSquare, Command
 } from 'lucide-react';
 import { UnifiedCompositionStudio, ContentLibrary } from './composition-studio';
 import { ContentSchedulerDashboard } from './ContentSchedulerDashboard';
@@ -45,6 +45,9 @@ import { useShows } from '@/hooks/useShows';
 import { useNavigate } from 'react-router-dom';
 import type { EventCategory } from '@/types/shows';
 
+// Genie Command Center - Internal Admin Only
+const GenieCommandCenter = lazy(() => import('@/components/diagrams/genie-command-center/GenieCommandCenter'));
+
 // Lazy load heavy components to fix loading issues
 const VerticalKanban = lazy(() => import('@/components/production/VerticalKanban').then(m => ({ default: m.VerticalKanban })));
 const ProductionCalendar = lazy(() => import('@/components/production/ProductionCalendar').then(m => ({ default: m.ProductionCalendar })));
@@ -55,7 +58,7 @@ interface ProductionHubAdminProps {
   className?: string;
 }
 
-type AdminTab = 'kanban' | 'calendar' | 'appointments' | 'library' | 'composition' | 'scheduler' | 'analytics' | 'enterprise-analytics' | 'error-analytics' | 'collaboration' | 'workspaces' | 'team' | 'whitelabel';
+type AdminTab = 'kanban' | 'calendar' | 'appointments' | 'library' | 'composition' | 'scheduler' | 'analytics' | 'enterprise-analytics' | 'error-analytics' | 'collaboration' | 'workspaces' | 'team' | 'whitelabel' | 'command-center';
 
 export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ className }) => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -291,6 +294,10 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
               <Paintbrush className="w-4 h-4" />
               <span className="hidden lg:inline">Whitelabel</span>
             </TabsTrigger>
+            <TabsTrigger value="command-center" className="flex items-center gap-2 bg-primary/10">
+              <Command className="w-4 h-4" />
+              <span className="hidden lg:inline">Command Center</span>
+            </TabsTrigger>
           </TabsList>
           <ScrollBar orientation="horizontal" />
         </ScrollArea>
@@ -406,6 +413,13 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
 
         <TabsContent value="whitelabel" className="mt-6">
           <WhitelabelConfiguration />
+        </TabsContent>
+
+        {/* Genie Command Center - Internal Admin Only */}
+        <TabsContent value="command-center" className="mt-6">
+          <Suspense fallback={<TabLoading />}>
+            <GenieCommandCenter />
+          </Suspense>
         </TabsContent>
       </Tabs>
     </div>
