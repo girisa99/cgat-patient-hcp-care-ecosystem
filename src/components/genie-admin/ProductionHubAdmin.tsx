@@ -27,7 +27,8 @@ import {
   Building2, Users, Paintbrush,
   FolderOpen, Layers, KanbanSquare,
   CalendarDays, Loader2, CalendarCheck,
-  AlertTriangle, MessageSquare, Command
+  AlertTriangle, MessageSquare, Command,
+  Brain
 } from 'lucide-react';
 import { UnifiedCompositionStudio, ContentLibrary } from './composition-studio';
 import { ContentSchedulerDashboard } from './ContentSchedulerDashboard';
@@ -48,6 +49,9 @@ import type { EventCategory } from '@/types/shows';
 // Genie Command Center - Internal Admin Only
 const GenieCommandCenter = lazy(() => import('@/components/diagrams/genie-command-center/GenieCommandCenter'));
 
+// AI Intelligence Hub - Phase 1 & 2
+const AIIntelligenceHub = lazy(() => import('@/components/ai/AIIntelligenceHub'));
+
 // Lazy load heavy components to fix loading issues
 const VerticalKanban = lazy(() => import('@/components/production/VerticalKanban').then(m => ({ default: m.VerticalKanban })));
 const ProductionCalendar = lazy(() => import('@/components/production/ProductionCalendar').then(m => ({ default: m.ProductionCalendar })));
@@ -58,7 +62,7 @@ interface ProductionHubAdminProps {
   className?: string;
 }
 
-type AdminTab = 'kanban' | 'calendar' | 'appointments' | 'library' | 'composition' | 'scheduler' | 'analytics' | 'enterprise-analytics' | 'error-analytics' | 'collaboration' | 'workspaces' | 'team' | 'whitelabel' | 'command-center';
+type AdminTab = 'kanban' | 'calendar' | 'appointments' | 'library' | 'composition' | 'scheduler' | 'analytics' | 'enterprise-analytics' | 'error-analytics' | 'collaboration' | 'workspaces' | 'team' | 'whitelabel' | 'ai-intelligence' | 'command-center';
 
 export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ className }) => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -294,6 +298,10 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
               <Paintbrush className="w-4 h-4" />
               <span className="hidden lg:inline">Whitelabel</span>
             </TabsTrigger>
+            <TabsTrigger value="ai-intelligence" className="flex items-center gap-2 bg-gradient-to-r from-primary/10 to-purple-500/10">
+              <Brain className="w-4 h-4" />
+              <span className="hidden lg:inline">AI Intelligence</span>
+            </TabsTrigger>
             <TabsTrigger value="command-center" className="flex items-center gap-2 bg-primary/10">
               <Command className="w-4 h-4" />
               <span className="hidden lg:inline">Command Center</span>
@@ -413,6 +421,29 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
 
         <TabsContent value="whitelabel" className="mt-6">
           <WhitelabelConfiguration />
+        </TabsContent>
+
+        {/* AI Intelligence Hub - Phase 1 & 2: Routing + Comparison */}
+        <TabsContent value="ai-intelligence" className="mt-6">
+          <Suspense fallback={<TabLoading />}>
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold flex items-center gap-2">
+                    <Brain className="w-5 h-5 text-primary" />
+                    AI Intelligence Hub
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    Phase 1: AI Routing Intelligence | Phase 2: Multi-Model Comparison
+                  </p>
+                </div>
+                <Badge className="bg-gradient-to-r from-primary to-purple-500">
+                  50+ Models | 12+ Providers
+                </Badge>
+              </div>
+              <AIIntelligenceHub />
+            </div>
+          </Suspense>
         </TabsContent>
 
         {/* Genie Command Center - Internal Admin Only */}
