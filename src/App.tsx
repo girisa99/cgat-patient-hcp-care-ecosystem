@@ -100,8 +100,20 @@ const PublicDocumentPresentation = React.lazy(() => import('@/pages/PublicDocume
 const AppContent = () => {
   console.log('🎯 AppContent rendering...');
   const { isAuthenticated, isLoading, userRoles } = useMasterAuth();
+  const location = window.location.pathname;
+  
+  // Check if this is a Genie Studio route (uses separate auth system)
+  const isGenieStudioRoute = location.startsWith('/genie-studio') || 
+    location.startsWith('/genie-spark') || 
+    location.startsWith('/genie-mind') || 
+    location.startsWith('/genie-vibe') ||
+    location.startsWith('/genie-deck') ||
+    location.startsWith('/genie-arc') ||
+    location.startsWith('/genie-admin') ||
+    location.startsWith('/subscription') ||
+    location.startsWith('/marketing-materials');
 
-  console.log('🎯 Auth state:', { isAuthenticated, isLoading, userRoles });
+  console.log('🎯 Auth state:', { isAuthenticated, isLoading, userRoles, isGenieStudioRoute });
 
   // Show loading screen while auth is initializing
   if (isLoading) {
@@ -109,9 +121,10 @@ const AppContent = () => {
     return <PageLoading message="Initializing application..." />;
   }
 
-  // Wait for roles to load to avoid dashboard flicker
-  if (isAuthenticated && userRoles.length === 0) {
-    console.log('⏳ Waiting for roles to load...');
+  // For Genie Studio routes, don't wait for legacy roles - those routes use GenieStudioProtectedRoute
+  // Only wait for roles on healthcare/legacy routes
+  if (isAuthenticated && userRoles.length === 0 && !isGenieStudioRoute) {
+    console.log('⏳ Waiting for roles to load (healthcare route)...');
     return <PageLoading message="Loading your dashboard..." />;
   }
 
