@@ -127,7 +127,7 @@ export const GENIE_PRODUCTS: Record<GenieProduct, GenieProductInfo> = {
       'AI script editing',
       'Text-to-Speech (TTS)',
       'Voice cloning',
-      'Background music',
+      'AI Music (cross-functional)',
       'Tone adjustment',
       'Language translation',
       'Content enhancement',

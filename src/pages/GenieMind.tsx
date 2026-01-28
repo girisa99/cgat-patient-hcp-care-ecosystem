@@ -35,6 +35,7 @@ import { SavedAudioCard } from '@/components/genie-studio/SavedAudioCard';
 import { useGenieScripts, type GenieScript } from '@/components/genie-studio/useGenieScripts';
 import { useGenieMediaLibrary } from '@/components/genie-studio/useGenieMediaLibrary';
 import { AskGenie } from '@/components/genie-studio/AskGenie';
+import { CrossFunctionalMusic } from '@/components/genie-studio/CrossFunctionalMusic';
 import genieMindLogo from '@/assets/logos/genie-mind-combined.png';
 import { BatchScriptGenerationWorkflow } from '@/components/genie-studio/batch/BatchScriptGenerationWorkflow';
 
@@ -124,15 +125,14 @@ const GenieMind: React.FC = () => {
               </div>
             </div>
 
-            {/* Quick Stats */}
-            <div className="grid grid-cols-6 gap-4 mt-6">
+            {/* Quick Stats - Simplified without templates */}
+            <div className="grid grid-cols-5 gap-4 mt-6">
               {[
-                { label: 'Video Scripts', value: String(videoScripts.length), icon: FileText, color: 'text-red-500' },
-                { label: 'Audio Scripts', value: String(audioScripts.length), icon: Headphones, color: 'text-purple-500' },
-                { label: 'Voiceovers', value: String(allAudio.length), icon: Mic, color: 'text-pink-500' },
-                { label: 'Music Tracks', value: String(instrumentalMusic.length), icon: Music, color: 'text-amber-500' },
-                { label: 'TTS Files', value: String(ttsFiles.length), icon: Film, color: 'text-blue-500' },
-                { label: 'Total Items', value: String(savedScripts.length + allAudio.length + instrumentalMusic.length), icon: Layers, color: 'text-green-500' }
+                { label: 'Video Scripts', value: String(videoScripts.length), icon: FileText, color: 'text-destructive' },
+                { label: 'Audio Scripts', value: String(audioScripts.length), icon: Headphones, color: 'text-primary' },
+                { label: 'Voiceovers', value: String(allAudio.length), icon: Mic, color: 'text-accent-foreground' },
+                { label: 'Music Tracks', value: String(instrumentalMusic.length), icon: Music, color: 'text-muted-foreground' },
+                { label: 'Total Items', value: String(savedScripts.length + allAudio.length + instrumentalMusic.length), icon: Layers, color: 'text-secondary-foreground' }
               ].map((stat, i) => (
                 <div key={i} className="bg-card/50 backdrop-blur border border-border/50 rounded-xl p-4 hover:border-primary/30 transition-colors">
                   <div className="flex items-center gap-2 text-muted-foreground mb-1">
@@ -306,8 +306,16 @@ const GenieMind: React.FC = () => {
               <BatchScriptGenerationWorkflow />
             </TabsContent>
 
-            {/* Media Library Tab */}
+            {/* Media Library Tab - Now includes cross-functional music */}
             <TabsContent value="library" className="space-y-6">
+              {/* Cross-functional Music Generation */}
+              <CrossFunctionalMusic 
+                product="mind"
+                onTrackGenerated={(track) => {
+                  toast.success(`Music track "${track.name}" added to library`);
+                }}
+              />
+
               <Tabs defaultValue="voiceovers">
                 <TabsList>
                   <TabsTrigger value="voiceovers">
@@ -351,7 +359,7 @@ const GenieMind: React.FC = () => {
                     <Card className="border-dashed">
                       <CardContent className="py-12 text-center">
                         <Music className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                        <p className="text-muted-foreground">No music tracks yet</p>
+                        <p className="text-muted-foreground">No music tracks yet - generate above!</p>
                       </CardContent>
                     </Card>
                   ) : (
@@ -360,7 +368,7 @@ const GenieMind: React.FC = () => {
                         <Card key={track.id}>
                           <CardContent className="p-4">
                             <div className="flex items-center gap-3">
-                              <Music className="h-8 w-8 text-amber-500" />
+                              <Music className="h-8 w-8 text-muted-foreground" />
                               <div className="flex-1">
                                 <p className="font-medium truncate">{track.name}</p>
                                 {track.url && <audio src={track.url} controls className="w-full mt-2" />}
