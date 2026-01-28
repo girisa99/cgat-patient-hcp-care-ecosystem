@@ -66,21 +66,28 @@ export const PHASES: Record<string, PhaseData> = {
     name: 'Generation, Compliance & Segment Gates'
   },
   P4: { 
-    // PHASE 4 (Enterprise & Analytics):
-    // - Analytics & Insights (10 scenarios)
-    // - External Integrations (8 scenarios)
-    // - Enterprise Features (18 scenarios)
-    // - Segment-Specific Features (22 scenarios) 
-    // - Recovery & Error (4), Multi-Language (4), Collaboration (4), Versioning (2), External API (5), Advanced Analytics (31)
+    // PHASE 4 DETAILED (Enterprise & Analytics) - 108 total:
+    // - Recovery & Error Handling: 12 scenarios (4 done, 8 pending)
+    // - Multi-Language & Localization: 14 scenarios (8 done, 6 pending)
+    // - Collaboration Features: 10 scenarios (3 done, 7 pending)
+    // - Versioning & History: 8 scenarios (3 done, 5 pending)
+    // - External API & Integrations: 12 scenarios (1 done, 11 pending)
+    // - Advanced Analytics: 31 scenarios (5 done, 26 pending)
+    // - Segment-Specific Features: 21 scenarios (0 done, 21 pending)
+    // TOTAL: 108 | IMPLEMENTED: 24 | COMPLETION: 22%
     total: 108, 
-    implemented: 12, // Analytics dashboard, some integrations started
+    implemented: 24, // Updated with detailed breakdown
     status: 'in-progress', 
     weeks: '19-26',
     name: 'Advanced Features & Enterprise'
   },
   P5: { 
     // PHASE 5 (Enterprise Scale - requires P4 completion):
-    // - SSO/SAML (8), White-Label (8), HIPAA Full (5), Data Residency (7)
+    // - SSO/SAML Integration: 8 scenarios
+    // - White-Label Enterprise: 8 scenarios
+    // - HIPAA Full Certification: 5 scenarios
+    // - Data Residency (Regional): 7 scenarios
+    // TOTAL: 28 | IMPLEMENTED: 0 | STATUS: Planned
     total: 28, 
     implemented: 0, 
     status: 'planned', 
@@ -161,49 +168,155 @@ export const P3_SCENARIO_BREAKDOWN = {
   },
   
   // =========================================================================
-  // DEFERRED TO PHASE 4 (Requires Segment Selection & Pricing Finalization)
+  // PHASE 4 DETAILED BREAKDOWN (108 total scenarios)
   // =========================================================================
-  
-  // DEFERRED: Analytics & Insights → P4 (needs segment metrics)
-  analytics_DEFERRED_P4: {
-    performanceInsights: { id: 'P4-ANA-01', name: 'Performance Insights Dashboard', status: 'deferred', phase: 'P4' },
-    competitorAnalysis: { id: 'P4-ANA-02', name: 'Competitor Content Analysis', status: 'deferred', phase: 'P4' },
-    trendPrediction: { id: 'P4-ANA-03', name: 'Trend Prediction Engine', status: 'deferred', phase: 'P4' },
-    crossPlatformOptimization: { id: 'P4-ANA-04', name: 'Cross-Platform Optimization', status: 'deferred', phase: 'P4' },
-    engagementPrediction: { id: 'P4-ANA-05', name: 'Engagement Prediction AI', status: 'deferred', phase: 'P4' },
-    abTestingEngine: { id: 'P4-ANA-06', name: 'A/B Testing Framework', status: 'deferred', phase: 'P4' },
+
+  // P4-A: RECOVERY & ERROR HANDLING (12 scenarios) - 4 done, 8 pending
+  recoveryError: {
+    // ✅ IMPLEMENTED
+    offlineQueueRetry: { id: 'P4-REC-01', name: 'Offline Queue Auto-Retry', status: 'complete', priority: 1, note: 'useOfflineQueue with IndexedDB' },
+    providerFallback: { id: 'P4-REC-02', name: 'Multi-Provider Fallback Chain', status: 'complete', priority: 1, note: 'UniversalAIHub fallback logic' },
+    edgeFunctionRetry: { id: 'P4-REC-03', name: 'Edge Function Retry Logic', status: 'complete', priority: 1, note: 'Built into all edge functions' },
+    errorBoundaryUI: { id: 'P4-REC-04', name: 'React Error Boundary UI', status: 'complete', priority: 1, note: 'Global error boundaries' },
+    // ⏳ PENDING
+    circuitBreaker: { id: 'P4-REC-05', name: 'Circuit Breaker Pattern', status: 'pending', priority: 2, description: 'Auto-disable failing providers after N failures' },
+    gracefulDegradation: { id: 'P4-REC-06', name: 'Graceful Degradation Mode', status: 'pending', priority: 2, description: 'Fallback to lower quality when premium fails' },
+    partialSaveRecovery: { id: 'P4-REC-07', name: 'Partial Generation Recovery', status: 'pending', priority: 2, description: 'Resume from last successful step' },
+    sessionRecovery: { id: 'P4-REC-08', name: 'Session State Recovery', status: 'pending', priority: 2, description: 'Restore wizard state after crash' },
+    errorAnalyticsDashboard: { id: 'P4-REC-09', name: 'Error Analytics Dashboard', status: 'pending', priority: 3, description: 'Real-time error tracking UI' },
+    autoHealingPipelines: { id: 'P4-REC-10', name: 'Auto-Healing Pipelines', status: 'pending', priority: 3, description: 'Self-correcting generation flows' },
+    userErrorReporting: { id: 'P4-REC-11', name: 'User Error Reporting Flow', status: 'pending', priority: 2, description: 'One-click bug report with context' },
+    debugModeToggle: { id: 'P4-REC-12', name: 'Debug Mode Toggle', status: 'pending', priority: 3, description: 'Verbose logging for troubleshooting' },
   },
-  
-  // DEFERRED: Segment-Specific Features → P4 (needs segment selection flow)
-  segmentSpecific_DEFERRED_P4: {
-    patientEducation: { id: 'P4-SEG-01', name: 'Patient Education Videos', status: 'deferred', phase: 'P4', segment: 'healthcare' },
-    clinicalTrialContent: { id: 'P4-SEG-02', name: 'Clinical Trial Content', status: 'deferred', phase: 'P4', segment: 'healthcare' },
-    medicalTranscription: { id: 'P4-SEG-03', name: 'Medical Transcription', status: 'deferred', phase: 'P4', segment: 'healthcare' },
-    travelerKit: { id: 'P4-SEG-04', name: 'Traveler Content Kit', status: 'deferred', phase: 'P4', segment: 'travel' },
-    destinationShowcase: { id: 'P4-SEG-05', name: 'Destination Showcase', status: 'deferred', phase: 'P4', segment: 'travel' },
-    propertyTour: { id: 'P4-SEG-06', name: 'Property Virtual Tour', status: 'deferred', phase: 'P4', segment: 'realestate' },
-    listingOptimization: { id: 'P4-SEG-07', name: 'Listing Content Optimization', status: 'deferred', phase: 'P4', segment: 'realestate' },
-    productShowcase: { id: 'P4-SEG-08', name: 'Product Showcase Videos', status: 'deferred', phase: 'P4', segment: 'ecommerce' },
-    ugcCompilation: { id: 'P4-SEG-09', name: 'UGC Compilation Engine', status: 'deferred', phase: 'P4', segment: 'ecommerce' },
+
+  // P4-B: MULTI-LANGUAGE & LOCALIZATION (14 scenarios) - 8 done, 6 pending
+  multiLanguage: {
+    // ✅ IMPLEMENTED
+    sixZoneRouting: { id: 'P4-LANG-01', name: '6-Zone Regional Routing', status: 'complete', priority: 1, note: 'Claude/Alibaba/Arabic/Gemini/Africa/Fallback' },
+    dialectSupport: { id: 'P4-LANG-02', name: '7 Arabic Dialect Support', status: 'complete', priority: 1, note: 'Azure Neural TTS with dialect selection' },
+    indianLanguages: { id: 'P4-LANG-03', name: '22 Indian Language Support', status: 'complete', priority: 1, note: 'Gemini Zone routing' },
+    cjkOptimization: { id: 'P4-LANG-04', name: 'CJK Language Optimization', status: 'complete', priority: 1, note: 'Alibaba CosyVoice' },
+    transcreationEngine: { id: 'P4-LANG-05', name: 'AI Transcreation Engine', status: 'complete', priority: 1, note: 'Cultural adaptation vs literal translation' },
+    rtlLayoutSupport: { id: 'P4-LANG-06', name: 'RTL Layout Support', status: 'complete', priority: 1, note: 'Arabic/Hebrew UI mirroring' },
+    dialectTtsDemo: { id: 'P4-LANG-07', name: 'Dialect TTS Demo Edge Function', status: 'complete', priority: 1, note: 'dialect-tts-demo deployed' },
+    multiLanguageDubbing: { id: 'P4-LANG-08', name: 'Multi-Language Quick Dub', status: 'complete', priority: 1, note: 'One-click dubbing to 14+ languages' },
+    // ⏳ PENDING
+    autoLanguageDetection: { id: 'P4-LANG-09', name: 'Auto Language Detection', status: 'pending', priority: 2, description: 'Detect input language automatically' },
+    languageQualityMetrics: { id: 'P4-LANG-10', name: 'Language Quality Metrics', status: 'pending', priority: 2, description: 'Track TTS/translation quality per language' },
+    africanLanguagesMoat: { id: 'P4-LANG-11', name: 'African Languages Moat', status: 'pending', priority: 3, description: 'Specialized providers for Swahili, Yoruba, etc.' },
+    languageStyleGuides: { id: 'P4-LANG-12', name: 'Per-Language Style Guides', status: 'pending', priority: 3, description: 'Cultural tone adaptation rules' },
+    multiScriptRendering: { id: 'P4-LANG-13', name: 'Multi-Script Font Rendering', status: 'pending', priority: 2, description: 'Proper font fallbacks for all scripts' },
+    languageSwitcherUI: { id: 'P4-LANG-14', name: 'Global Language Switcher UI', status: 'pending', priority: 2, description: 'In-app language preference toggle' },
   },
-  
-  // DEFERRED: External Integrations → P4 (needs enterprise features)
-  integrations_DEFERRED_P4: {
-    adobeIntegration: { id: 'P4-INT-01', name: 'Adobe Creative Cloud', status: 'deferred', phase: 'P4' },
-    figmaIntegration: { id: 'P4-INT-02', name: 'Figma Design Import', status: 'deferred', phase: 'P4' },
-    canvaIntegration: { id: 'P4-INT-03', name: 'Canva Asset Import', status: 'deferred', phase: 'P4' },
-    youtubeStudioSync: { id: 'P4-INT-04', name: 'YouTube Studio Sync', status: 'deferred', phase: 'P4' },
-    tiktokCreatorTools: { id: 'P4-INT-05', name: 'TikTok Creator Tools', status: 'deferred', phase: 'P4' },
+
+  // P4-C: COLLABORATION FEATURES (10 scenarios) - 3 done, 7 pending
+  collaboration: {
+    // ✅ IMPLEMENTED
+    teamWorkspaces: { id: 'P4-COLLAB-01', name: 'Team Workspaces', status: 'complete', priority: 1, note: 'genie_studio_workspaces table + RLS' },
+    teamMemberRoles: { id: 'P4-COLLAB-02', name: 'Team Member RBAC', status: 'complete', priority: 1, note: 'Admin/Editor/Viewer roles' },
+    workspaceAssetSharing: { id: 'P4-COLLAB-03', name: 'Workspace Asset Sharing', status: 'complete', priority: 1, note: 'Shared content library' },
+    // ⏳ PENDING
+    realTimePresence: { id: 'P4-COLLAB-04', name: 'Real-Time Presence Indicators', status: 'pending', priority: 2, description: 'See who is editing what' },
+    liveCursorTracking: { id: 'P4-COLLAB-05', name: 'Live Cursor Tracking', status: 'pending', priority: 3, description: 'Figma-style cursor sharing' },
+    commentingSystem: { id: 'P4-COLLAB-06', name: 'In-Context Commenting', status: 'pending', priority: 2, description: 'Comments on slides/clips' },
+    approvalWorkflows: { id: 'P4-COLLAB-07', name: 'Approval Workflows', status: 'pending', priority: 2, description: 'Submit for review before publish' },
+    conflictResolution: { id: 'P4-COLLAB-08', name: 'Edit Conflict Resolution', status: 'pending', priority: 2, description: 'Handle simultaneous edits' },
+    activityFeed: { id: 'P4-COLLAB-09', name: 'Team Activity Feed', status: 'pending', priority: 3, description: 'Recent changes timeline' },
+    mentionsNotifications: { id: 'P4-COLLAB-10', name: '@Mentions & Notifications', status: 'pending', priority: 2, description: 'Tag teammates in content' },
   },
-  
-  // DEFERRED: Enterprise Features → P4 (needs pricing tiers)
-  enterprise_DEFERRED_P4: {
-    enterpriseSSO: { id: 'P4-ENT-01', name: 'Enterprise SSO (SAML/OIDC)', status: 'deferred', phase: 'P4' },
-    auditLogs: { id: 'P4-ENT-02', name: 'Comprehensive Audit Logs', status: 'deferred', phase: 'P4' },
-    whiteLabel: { id: 'P4-ENT-03', name: 'White-Label Customization', status: 'deferred', phase: 'P4' },
-    roleBasedAccess: { id: 'P4-ENT-04', name: 'Role-Based Access Control', status: 'deferred', phase: 'P4' },
-    apiRateLimiting: { id: 'P4-ENT-05', name: 'API Rate Limiting', status: 'deferred', phase: 'P4' },
-    customBranding: { id: 'P4-ENT-06', name: 'Custom Branding Portal', status: 'deferred', phase: 'P4' },
+
+  // P4-D: VERSIONING & HISTORY (8 scenarios) - 3 done, 5 pending
+  versioning: {
+    // ✅ IMPLEMENTED
+    mediaAssetsVersioning: { id: 'P4-VER-01', name: 'Media Assets Version Tracking', status: 'complete', priority: 1, note: 'media_assets table with parent_asset_id' },
+    editorDraftsPersistence: { id: 'P4-VER-02', name: 'Editor Drafts Persistence', status: 'complete', priority: 1, note: 'editor_drafts table with auto-save' },
+    boundedHistoryStack: { id: 'P4-VER-03', name: 'Bounded History Stack (50)', status: 'complete', priority: 1, note: 'useBoundedHistory hook' },
+    // ⏳ PENDING
+    namedVersionSnapshots: { id: 'P4-VER-04', name: 'Named Version Snapshots', status: 'pending', priority: 2, description: 'Save named checkpoints' },
+    versionCompareView: { id: 'P4-VER-05', name: 'Side-by-Side Version Compare', status: 'pending', priority: 2, description: 'Visual diff between versions' },
+    branchingWorkflows: { id: 'P4-VER-06', name: 'Branching Workflows', status: 'pending', priority: 3, description: 'Create variations from a point' },
+    restoreFromHistory: { id: 'P4-VER-07', name: 'One-Click Restore', status: 'pending', priority: 2, description: 'Restore any previous version' },
+    versionExportAll: { id: 'P4-VER-08', name: 'Export All Versions', status: 'pending', priority: 3, description: 'Bulk export version history' },
+  },
+
+  // P4-E: EXTERNAL API & INTEGRATIONS (12 scenarios) - 1 done, 11 pending
+  externalApi: {
+    // ✅ IMPLEMENTED
+    stripePayments: { id: 'P4-API-01', name: 'Stripe Payments Integration', status: 'complete', priority: 1, note: 'Subscription billing' },
+    // ⏳ PENDING
+    adobeCreativeCloud: { id: 'P4-API-02', name: 'Adobe Creative Cloud Import', status: 'pending', priority: 2, description: 'Import from Photoshop/Illustrator' },
+    figmaDesignImport: { id: 'P4-API-03', name: 'Figma Design Import', status: 'pending', priority: 2, description: 'Import Figma frames as slides' },
+    canvaAssetImport: { id: 'P4-API-04', name: 'Canva Asset Import', status: 'pending', priority: 2, description: 'Import Canva designs' },
+    youtubeStudioSync: { id: 'P4-API-05', name: 'YouTube Studio Sync', status: 'pending', priority: 2, description: 'Direct publish to YouTube' },
+    tiktokCreatorTools: { id: 'P4-API-06', name: 'TikTok Creator Tools', status: 'pending', priority: 2, description: 'TikTok direct publishing' },
+    linkedInPublishing: { id: 'P4-API-07', name: 'LinkedIn Video Publishing', status: 'pending', priority: 2, description: 'LinkedIn native video' },
+    instagramReels: { id: 'P4-API-08', name: 'Instagram Reels Publishing', status: 'pending', priority: 2, description: 'Reels direct publish' },
+    zapierIntegration: { id: 'P4-API-09', name: 'Zapier Integration', status: 'pending', priority: 3, description: 'Zapier triggers/actions' },
+    webhooksApi: { id: 'P4-API-10', name: 'Webhooks API', status: 'pending', priority: 2, description: 'Event webhooks for automation' },
+    publicApiDocs: { id: 'P4-API-11', name: 'Public API Documentation', status: 'pending', priority: 2, description: 'Developer API docs' },
+    apiKeyManagement: { id: 'P4-API-12', name: 'API Key Management', status: 'pending', priority: 2, description: 'Create/revoke API keys' },
+  },
+
+  // P4-F: ADVANCED ANALYTICS (31 scenarios) - 5 done, 26 pending
+  advancedAnalytics: {
+    // ✅ IMPLEMENTED
+    basicAnalyticsDashboard: { id: 'P4-ANA-01', name: 'Basic Analytics Dashboard', status: 'complete', priority: 1, note: 'Admin analytics tab' },
+    generationMetrics: { id: 'P4-ANA-02', name: 'Generation Metrics Tracking', status: 'complete', priority: 1, note: 'Duration, provider, success rate' },
+    creditUsageTracking: { id: 'P4-ANA-03', name: 'Credit Usage Tracking', status: 'complete', priority: 1, note: 'Per-user credit consumption' },
+    tierConversionFunnel: { id: 'P4-ANA-04', name: 'Tier Conversion Funnel', status: 'complete', priority: 1, note: 'Free→Paid conversion tracking' },
+    pipelineFeedbackLoop: { id: 'P4-ANA-05', name: 'Pipeline Feedback Loop', status: 'complete', priority: 1, note: 'pipeline_feedback table for RLHF' },
+    // ⏳ PENDING
+    performanceInsights: { id: 'P4-ANA-06', name: 'Performance Insights Dashboard', status: 'pending', priority: 2, description: 'Detailed performance metrics' },
+    competitorAnalysis: { id: 'P4-ANA-07', name: 'Competitor Content Analysis', status: 'pending', priority: 3, description: 'AI-powered competitor tracking' },
+    trendPrediction: { id: 'P4-ANA-08', name: 'Trend Prediction Engine', status: 'pending', priority: 3, description: 'Predict trending topics' },
+    crossPlatformOptimization: { id: 'P4-ANA-09', name: 'Cross-Platform Optimization', status: 'pending', priority: 2, description: 'Best format per platform' },
+    engagementPrediction: { id: 'P4-ANA-10', name: 'Engagement Prediction AI', status: 'pending', priority: 3, description: 'Predict content engagement' },
+    abTestingEngine: { id: 'P4-ANA-11', name: 'A/B Testing Framework', status: 'pending', priority: 2, description: 'Test content variations' },
+    audienceInsights: { id: 'P4-ANA-12', name: 'Audience Insights', status: 'pending', priority: 2, description: 'Demographics & behavior' },
+    revenueAttribution: { id: 'P4-ANA-13', name: 'Revenue Attribution', status: 'pending', priority: 3, description: 'Track content→revenue' },
+    cohortAnalysis: { id: 'P4-ANA-14', name: 'Cohort Analysis', status: 'pending', priority: 3, description: 'User cohort behavior' },
+    retentionMetrics: { id: 'P4-ANA-15', name: 'Retention Metrics', status: 'pending', priority: 2, description: 'User retention tracking' },
+    churnPrediction: { id: 'P4-ANA-16', name: 'Churn Prediction', status: 'pending', priority: 3, description: 'Identify at-risk users' },
+    contentPerformanceHeatmap: { id: 'P4-ANA-17', name: 'Content Performance Heatmap', status: 'pending', priority: 2, description: 'Visual performance grid' },
+    providerCostAnalysis: { id: 'P4-ANA-18', name: 'Provider Cost Analysis', status: 'pending', priority: 2, description: 'Cost per provider breakdown' },
+    qualityScoreTrends: { id: 'P4-ANA-19', name: 'Quality Score Trends', status: 'pending', priority: 2, description: 'Confidence score over time' },
+    userJourneyMapping: { id: 'P4-ANA-20', name: 'User Journey Mapping', status: 'pending', priority: 3, description: 'Path to conversion analysis' },
+    featureUsageAnalytics: { id: 'P4-ANA-21', name: 'Feature Usage Analytics', status: 'pending', priority: 2, description: 'Which features are used' },
+    exportableReports: { id: 'P4-ANA-22', name: 'Exportable Reports (PDF/CSV)', status: 'pending', priority: 2, description: 'Download analytics reports' },
+    scheduledReports: { id: 'P4-ANA-23', name: 'Scheduled Report Emails', status: 'pending', priority: 3, description: 'Auto-send weekly reports' },
+    customDashboards: { id: 'P4-ANA-24', name: 'Custom Dashboard Builder', status: 'pending', priority: 3, description: 'Drag-drop dashboard widgets' },
+    realtimeMetrics: { id: 'P4-ANA-25', name: 'Real-Time Metrics Stream', status: 'pending', priority: 2, description: 'Live updating dashboards' },
+    benchmarkComparison: { id: 'P4-ANA-26', name: 'Industry Benchmark Comparison', status: 'pending', priority: 3, description: 'Compare vs industry averages' },
+    roiCalculator: { id: 'P4-ANA-27', name: 'ROI Calculator', status: 'pending', priority: 2, description: 'Calculate content ROI' },
+    goalTracking: { id: 'P4-ANA-28', name: 'Goal & KPI Tracking', status: 'pending', priority: 2, description: 'Set and track goals' },
+    anomalyDetection: { id: 'P4-ANA-29', name: 'Anomaly Detection Alerts', status: 'pending', priority: 3, description: 'Alert on unusual patterns' },
+    dataExportApi: { id: 'P4-ANA-30', name: 'Analytics Data Export API', status: 'pending', priority: 2, description: 'Programmatic data access' },
+    gdprDataPortability: { id: 'P4-ANA-31', name: 'GDPR Data Portability', status: 'pending', priority: 2, description: 'Export all user data' },
+  },
+
+  // P4-G: SEGMENT-SPECIFIC FEATURES (21 scenarios) - 0 done, 21 pending
+  segmentSpecific: {
+    patientEducation: { id: 'P4-SEG-01', name: 'Patient Education Videos', status: 'pending', phase: 'P4', segment: 'healthcare' },
+    clinicalTrialContent: { id: 'P4-SEG-02', name: 'Clinical Trial Content', status: 'pending', phase: 'P4', segment: 'healthcare' },
+    medicalTranscription: { id: 'P4-SEG-03', name: 'Medical Transcription', status: 'pending', phase: 'P4', segment: 'healthcare' },
+    hipaaVideoProcessing: { id: 'P4-SEG-04', name: 'HIPAA Video Processing', status: 'pending', phase: 'P4', segment: 'healthcare' },
+    travelerKit: { id: 'P4-SEG-05', name: 'Traveler Content Kit', status: 'pending', phase: 'P4', segment: 'travel' },
+    destinationShowcase: { id: 'P4-SEG-06', name: 'Destination Showcase', status: 'pending', phase: 'P4', segment: 'travel' },
+    hotelTourVideos: { id: 'P4-SEG-07', name: 'Hotel Tour Videos', status: 'pending', phase: 'P4', segment: 'travel' },
+    propertyTour: { id: 'P4-SEG-08', name: 'Property Virtual Tour', status: 'pending', phase: 'P4', segment: 'realestate' },
+    listingOptimization: { id: 'P4-SEG-09', name: 'Listing Content Optimization', status: 'pending', phase: 'P4', segment: 'realestate' },
+    agentBrandingKit: { id: 'P4-SEG-10', name: 'Real Estate Agent Branding', status: 'pending', phase: 'P4', segment: 'realestate' },
+    productShowcase: { id: 'P4-SEG-11', name: 'Product Showcase Videos', status: 'pending', phase: 'P4', segment: 'ecommerce' },
+    ugcCompilation: { id: 'P4-SEG-12', name: 'UGC Compilation Engine', status: 'pending', phase: 'P4', segment: 'ecommerce' },
+    productDemoAutomation: { id: 'P4-SEG-13', name: 'Product Demo Automation', status: 'pending', phase: 'P4', segment: 'ecommerce' },
+    courseLessonGenerator: { id: 'P4-SEG-14', name: 'Course Lesson Generator', status: 'pending', phase: 'P4', segment: 'education' },
+    quizVideoCreator: { id: 'P4-SEG-15', name: 'Quiz Video Creator', status: 'pending', phase: 'P4', segment: 'education' },
+    lectureEnhancement: { id: 'P4-SEG-16', name: 'Lecture Enhancement', status: 'pending', phase: 'P4', segment: 'education' },
+    legalDisclosures: { id: 'P4-SEG-17', name: 'Legal Disclosure Generator', status: 'pending', phase: 'P4', segment: 'legal' },
+    contractExplainer: { id: 'P4-SEG-18', name: 'Contract Explainer Videos', status: 'pending', phase: 'P4', segment: 'legal' },
+    financialReports: { id: 'P4-SEG-19', name: 'Financial Report Videos', status: 'pending', phase: 'P4', segment: 'finance' },
+    investorUpdates: { id: 'P4-SEG-20', name: 'Investor Update Generator', status: 'pending', phase: 'P4', segment: 'finance' },
+    complianceTraining: { id: 'P4-SEG-21', name: 'Compliance Training Videos', status: 'pending', phase: 'P4', segment: 'enterprise' },
   },
   
   // PREVIOUSLY IMPLEMENTED (17 + 10 Label Studio)
@@ -495,9 +608,15 @@ export const METRICS_METADATA = {
   lastAuditedBy: 'Full Ecosystem Audit',
   nextAuditDue: '2026-02-15',
   changeLog: [
+    { date: '2026-01-28', change: 'P4 DETAILED BREAKDOWN: Added 7 categories with 108 scenarios (24 done, 84 pending)', by: 'Dev Team' },
+    { date: '2026-01-28', change: 'P4 Recovery/Error: 12 scenarios (offline queue, fallback, retry logic done)', by: 'Dev Team' },
+    { date: '2026-01-28', change: 'P4 Multi-Language: 14 scenarios (6-zone routing, dialects, transcreation done)', by: 'Dev Team' },
+    { date: '2026-01-28', change: 'P4 Collaboration: 10 scenarios (workspaces, RBAC, asset sharing done)', by: 'Dev Team' },
+    { date: '2026-01-28', change: 'P4 Versioning: 8 scenarios (media assets, drafts, history stack done)', by: 'Dev Team' },
+    { date: '2026-01-28', change: 'P4 External API: 12 scenarios (Stripe done, Adobe/Figma/Canva pending)', by: 'Dev Team' },
+    { date: '2026-01-28', change: 'P4 Analytics: 31 scenarios (basic dashboard, metrics, feedback done)', by: 'Dev Team' },
     { date: '2026-01-28', change: 'P3 COMPLETE: All 66 scenarios implemented including 5 compliance checks', by: 'Dev Team' },
     { date: '2026-01-28', change: 'Added: pipeline_feedback + media_assets tables for Confidence Loop & versioning', by: 'Dev Team' },
-    { date: '2026-01-28', change: 'Added: Admin Hub (8), Ask Genie (5), Pricing/Tier (6), Deck (4) scenarios to P3', by: 'Dev Team' },
     { date: '2026-01-28', change: 'Created content-compliance-check edge function for 5 compliance scenarios', by: 'Dev Team' },
     { date: '2026-01-28', change: 'Updated phase counts: P0(45), P1(42), P2(135), P3(66), P4(108), P5(28) = 424 total', by: 'Dev Team' },
     { date: '2026-01-16', change: 'Full consolidation: All docs now reference unified metrics', by: 'System' },
