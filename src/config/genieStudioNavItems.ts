@@ -2,11 +2,18 @@
  * GENIE STUDIO NAVIGATION ITEMS
  * Isolated navigation for Genie Studio users
  * Filtered by subscription tier
+ * 
+ * ARCHITECTURE:
+ * - WORKSPACE: Dashboard products (Studio, Deck)
+ * - CREATE: Ideation tools (Spark, Mind, Content Tools)
+ * - PRODUCE: Production tools (Vibe)
+ * - PUBLISH: Distribution (Scheduler, Library)
+ * - MANAGE: All admin/analytics/settings (merged from Production Hub)
+ * - ACCOUNT: User settings
  */
 
 import {
   Sparkles,
-  Factory,
   Presentation,
   Wrench,
   BarChart3,
@@ -19,10 +26,18 @@ import {
   Zap,
   Globe,
   Brain,
-  Mic,
   Video,
-  FileText,
   Crown,
+  Send,
+  Megaphone,
+  KanbanSquare,
+  CalendarDays,
+  CalendarCheck,
+  FolderOpen,
+  Layers,
+  AlertTriangle,
+  MessageSquare,
+  Command,
 } from "lucide-react";
 
 export type SubscriptionTier = 'free' | 'starter' | 'creator' | 'pro' | 'business' | 'enterprise';
@@ -33,28 +48,23 @@ export interface GenieNavItem {
   icon: React.ComponentType<{ className?: string }>;
   description?: string;
   minTier: SubscriptionTier;
-  category: 'main' | 'production' | 'tools' | 'account' | 'admin';
-  isInternal?: boolean; // Only visible to internal users
+  category: 'main' | 'tools' | 'production' | 'publish' | 'manage' | 'account';
+  isInternal?: boolean;
+  subCategory?: string; // For grouping within MANAGE
 }
 
-/**
- * Tier hierarchy for comparison
- */
 export const TIER_HIERARCHY: SubscriptionTier[] = ['free', 'starter', 'creator', 'pro', 'business', 'enterprise'];
 
-/**
- * Check if user tier meets minimum requirement
- */
 export function meetsTierRequirement(userTier: SubscriptionTier, minTier: SubscriptionTier): boolean {
   return TIER_HIERARCHY.indexOf(userTier) >= TIER_HIERARCHY.indexOf(minTier);
 }
 
 /**
- * Genie Studio specific navigation items
- * These are the ONLY pages visible when logged into Genie Studio
+ * Genie Studio navigation items
+ * MANAGE category now contains all Production Hub tabs directly
  */
 export const genieStudioNavItems: GenieNavItem[] = [
-  // === WORKSPACE (Home) ===
+  // === WORKSPACE ===
   {
     title: "Genie Studio",
     url: "/genie-studio",
@@ -72,7 +82,7 @@ export const genieStudioNavItems: GenieNavItem[] = [
     category: 'main',
   },
   
-  // === CREATE (Tools for ideation & scripting) ===
+  // === CREATE ===
   {
     title: "Genie Spark",
     url: "/genie-spark",
@@ -98,7 +108,7 @@ export const genieStudioNavItems: GenieNavItem[] = [
     category: 'tools',
   },
   
-  // === PRODUCE (Video/Audio production) ===
+  // === PRODUCE ===
   {
     title: "Genie Vibe",
     url: "/genie-vibe",
@@ -107,26 +117,161 @@ export const genieStudioNavItems: GenieNavItem[] = [
     minTier: 'creator',
     category: 'production',
   },
+
+  // === PUBLISH ===
   {
-    title: "Production Hub",
-    url: "/genie-admin",
-    icon: Factory,
-    description: "Unified production management & scheduling",
+    title: "Scheduler",
+    url: "/genie-admin?tab=scheduler",
+    icon: Send,
+    description: "Schedule content across platforms",
     minTier: 'starter',
-    category: 'production',
+    category: 'publish',
   },
-  
-  // === MANAGE (Analytics & Admin) ===
   {
-    title: "Analytics",
-    url: "/genie-analytics",
-    icon: BarChart3,
-    description: "Performance insights & reporting",
-    minTier: 'business',
-    category: 'admin',
+    title: "Distribution",
+    url: "/genie-admin?tab=library",
+    icon: Megaphone,
+    description: "Manage content distribution",
+    minTier: 'starter',
+    category: 'publish',
   },
   
-  // === ACCOUNT SECTION ===
+  // === MANAGE (Merged Production Hub) ===
+  // Workflow
+  {
+    title: "Task Board",
+    url: "/genie-admin?tab=kanban",
+    icon: KanbanSquare,
+    description: "Drag-and-drop task management",
+    minTier: 'starter',
+    category: 'manage',
+    subCategory: 'Workflow',
+  },
+  {
+    title: "Schedule",
+    url: "/genie-admin?tab=calendar",
+    icon: CalendarDays,
+    description: "Calendar timeline view",
+    minTier: 'starter',
+    category: 'manage',
+    subCategory: 'Workflow',
+  },
+  {
+    title: "Meetings",
+    url: "/genie-admin?tab=appointments",
+    icon: CalendarCheck,
+    description: "Book & manage meetings",
+    minTier: 'starter',
+    category: 'manage',
+    subCategory: 'Workflow',
+  },
+  // Assets
+  {
+    title: "Library",
+    url: "/genie-admin?tab=library",
+    icon: FolderOpen,
+    description: "Browse all your content",
+    minTier: 'starter',
+    category: 'manage',
+    subCategory: 'Assets',
+  },
+  {
+    title: "Create",
+    url: "/genie-admin?tab=composition",
+    icon: Layers,
+    description: "New composition studio",
+    minTier: 'starter',
+    category: 'manage',
+    subCategory: 'Assets',
+  },
+  // Insights
+  {
+    title: "Performance",
+    url: "/genie-admin?tab=analytics",
+    icon: BarChart3,
+    description: "Production metrics",
+    minTier: 'business',
+    category: 'manage',
+    subCategory: 'Insights',
+  },
+  {
+    title: "Enterprise",
+    url: "/genie-admin?tab=enterprise-analytics",
+    icon: Globe,
+    description: "Business analytics",
+    minTier: 'enterprise',
+    category: 'manage',
+    subCategory: 'Insights',
+  },
+  {
+    title: "Diagnostics",
+    url: "/genie-admin?tab=error-analytics",
+    icon: AlertTriangle,
+    description: "Error tracking & health",
+    minTier: 'business',
+    category: 'manage',
+    subCategory: 'Insights',
+  },
+  // Settings
+  {
+    title: "Workspaces",
+    url: "/genie-admin?tab=workspaces",
+    icon: Layout,
+    description: "Manage workspaces",
+    minTier: 'business',
+    category: 'manage',
+    subCategory: 'Settings',
+  },
+  {
+    title: "Team",
+    url: "/genie-admin?tab=team",
+    icon: Users,
+    description: "Team members & roles",
+    minTier: 'business',
+    category: 'manage',
+    subCategory: 'Settings',
+  },
+  {
+    title: "Branding",
+    url: "/genie-admin?tab=whitelabel",
+    icon: Palette,
+    description: "Custom branding",
+    minTier: 'enterprise',
+    category: 'manage',
+    subCategory: 'Settings',
+  },
+  {
+    title: "Activity",
+    url: "/genie-admin?tab=collaboration",
+    icon: MessageSquare,
+    description: "Team activity feed",
+    minTier: 'business',
+    category: 'manage',
+    subCategory: 'Settings',
+  },
+  // AI Tools
+  {
+    title: "AI Hub",
+    url: "/genie-admin?tab=ai-intelligence",
+    icon: Brain,
+    description: "AI routing & models",
+    minTier: 'pro',
+    category: 'manage',
+    subCategory: 'AI Tools',
+    isInternal: true,
+  },
+  {
+    title: "Control Center",
+    url: "/genie-admin?tab=command-center",
+    icon: Command,
+    description: "System overview",
+    minTier: 'enterprise',
+    category: 'manage',
+    subCategory: 'AI Tools',
+    isInternal: true,
+  },
+  
+  // === ACCOUNT ===
   {
     title: "Subscription",
     url: "/subscription",
@@ -144,40 +289,6 @@ export const genieStudioNavItems: GenieNavItem[] = [
     category: 'account',
   },
   
-  // === ADMIN (Internal only) ===
-  {
-    title: "Team Management",
-    url: "/genie-admin?tab=team",
-    icon: Users,
-    description: "Manage team members",
-    minTier: 'business',
-    category: 'admin',
-  },
-  {
-    title: "Workspaces",
-    url: "/genie-admin?tab=workspaces",
-    icon: Layout,
-    description: "Manage workspaces",
-    minTier: 'business',
-    category: 'admin',
-  },
-  {
-    title: "Whitelabel",
-    url: "/genie-admin?tab=whitelabel",
-    icon: Palette,
-    description: "Custom branding",
-    minTier: 'enterprise',
-    category: 'admin',
-  },
-  {
-    title: "Localization",
-    url: "/genie-admin?tab=scheduler",
-    icon: Globe,
-    description: "Multi-region publishing",
-    minTier: 'pro',
-    category: 'admin',
-  },
-  
   // === INTERNAL ONLY ===
   {
     title: "Architecture",
@@ -185,36 +296,27 @@ export const genieStudioNavItems: GenieNavItem[] = [
     icon: Settings,
     description: "System architecture diagrams",
     minTier: 'free',
-    category: 'admin',
+    category: 'manage',
+    subCategory: 'AI Tools',
     isInternal: true,
   },
 ];
 
-/**
- * Get navigation items filtered by user tier and internal status
- */
 export function getGenieStudioNavItems(
   userTier: SubscriptionTier = 'free',
   isInternal: boolean = false
 ): GenieNavItem[] {
   return genieStudioNavItems.filter(item => {
-    // Check tier requirement
     if (!meetsTierRequirement(userTier, item.minTier)) {
       return false;
     }
-    
-    // Check internal-only items
     if (item.isInternal && !isInternal) {
       return false;
     }
-    
     return true;
   });
 }
 
-/**
- * Get items grouped by category
- */
 export function getGenieNavByCategory(
   userTier: SubscriptionTier = 'free',
   isInternal: boolean = false
@@ -231,14 +333,31 @@ export function getGenieNavByCategory(
 }
 
 /**
- * Check if a path is accessible for Genie Studio users
+ * Get MANAGE items grouped by subCategory
  */
+export function getManageItemsBySubCategory(
+  userTier: SubscriptionTier = 'free',
+  isInternal: boolean = false
+): Record<string, GenieNavItem[]> {
+  const items = getGenieStudioNavItems(userTier, isInternal)
+    .filter(item => item.category === 'manage' && item.subCategory);
+  
+  return items.reduce((acc, item) => {
+    const subCat = item.subCategory || 'Other';
+    if (!acc[subCat]) {
+      acc[subCat] = [];
+    }
+    acc[subCat].push(item);
+    return acc;
+  }, {} as Record<string, GenieNavItem[]>);
+}
+
 export function isGenieStudioAccessiblePath(
   path: string,
   userTier: SubscriptionTier = 'free',
   isInternal: boolean = false
 ): boolean {
-  const cleanPath = path.split('?')[0]; // Remove query params
+  const cleanPath = path.split('?')[0];
   const accessibleItems = getGenieStudioNavItems(userTier, isInternal);
   
   return accessibleItems.some(item => {
@@ -247,13 +366,10 @@ export function isGenieStudioAccessiblePath(
   });
 }
 
-/**
- * Get tier display info
- */
 export const TIER_INFO: Record<SubscriptionTier, { name: string; icon: React.ComponentType<{ className?: string }>; color: string }> = {
   free: { name: 'Free', icon: Sparkles, color: 'text-muted-foreground' },
   starter: { name: 'Starter', icon: Zap, color: 'text-blue-500' },
-  creator: { name: 'Creator', icon: Mic, color: 'text-green-500' },
+  creator: { name: 'Creator', icon: Video, color: 'text-green-500' },
   pro: { name: 'Professional', icon: BarChart3, color: 'text-purple-500' },
   business: { name: 'Business', icon: Users, color: 'text-orange-500' },
   enterprise: { name: 'Enterprise', icon: Crown, color: 'text-yellow-500' },
