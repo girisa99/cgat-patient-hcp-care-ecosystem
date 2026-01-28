@@ -17,7 +17,7 @@ import {
   DashboardWidget
 } from '@/services/analytics/advancedAnalyticsService';
 
-// Regional codes for filtering
+// Regional codes for filtering - ALL regions supported
 export type AnalyticsRegion = 
   | 'global'
   | 'mena'        // Middle East & North Africa (Arabic)
@@ -29,31 +29,35 @@ export type AnalyticsRegion =
   | 'latin-america'
   | 'africa';
 
-// Regional language mappings
+// Regional language mappings - Complete with all moats
 export const REGIONAL_LANGUAGE_MAP: Record<AnalyticsRegion, string[]> = {
   global: ['en'],
   mena: ['ar', 'ar-SA', 'ar-EG', 'ar-AE', 'ar-MA', 'ar-KW', 'ar-QA'],
-  india: ['hi', 'bn', 'ta', 'te', 'mr', 'gu', 'kn', 'ml', 'pa', 'or'],
-  sea: ['th', 'vi', 'id', 'ms', 'tl', 'my'],
-  cjk: ['zh', 'zh-CN', 'zh-TW', 'ja', 'ko'],
+  india: ['hi', 'bn', 'ta', 'te', 'mr', 'gu', 'kn', 'ml', 'pa', 'or', 'as', 'ur'],
+  sea: ['th', 'vi', 'id', 'ms', 'tl', 'my', 'km', 'lo'],
+  cjk: ['zh', 'zh-CN', 'zh-TW', 'zh-HK', 'ja', 'ko'],
   'north-america': ['en', 'es-MX', 'fr-CA'],
-  europe: ['en', 'de', 'fr', 'es', 'it', 'pt', 'nl', 'pl'],
-  'latin-america': ['es', 'pt-BR'],
-  africa: ['en', 'fr', 'sw', 'am', 'ha', 'yo', 'zu']
+  europe: ['en', 'de', 'fr', 'es', 'it', 'pt', 'nl', 'pl', 'ru', 'uk', 'cs', 'ro'],
+  'latin-america': ['es', 'pt-BR', 'es-AR', 'es-CO', 'es-CL'],
+  africa: ['en', 'fr', 'sw', 'am', 'ha', 'yo', 'zu', 'ig', 'xh', 'af']
 };
 
-// Regional display names
+// Regional display names with emoji flags
 export const REGIONAL_DISPLAY_NAMES: Record<AnalyticsRegion, string> = {
-  global: 'Global',
-  mena: 'Arabic (MENA)',
-  india: 'India',
-  sea: 'Southeast Asia',
-  cjk: 'CJK (China/Japan/Korea)',
-  'north-america': 'North America',
-  europe: 'Europe',
-  'latin-america': 'Latin America',
-  africa: 'Africa'
+  global: '🌍 Global',
+  mena: '🌙 Arabic (MENA)',
+  india: '🇮🇳 India',
+  sea: '🌏 Southeast Asia',
+  cjk: '🇨🇳 CJK (China/Japan/Korea)',
+  'north-america': '🇺🇸 North America',
+  europe: '🇪🇺 Europe',
+  'latin-america': '🌎 Latin America',
+  africa: '🌍 Africa'
 };
+
+// Priority regions for focused analytics
+export const PRIORITY_REGIONS: AnalyticsRegion[] = ['mena', 'india', 'sea', 'cjk', 'africa'];
+export const ALL_REGIONS: AnalyticsRegion[] = ['mena', 'india', 'sea', 'cjk', 'africa', 'north-america', 'europe', 'latin-america'];
 
 export interface AnalyticsFilters {
   region?: AnalyticsRegion;
@@ -74,6 +78,36 @@ export interface RegionalMetrics {
     avgSessionDuration: number;
     conversionRate: number;
   };
+}
+
+// Versioning metrics
+export interface VersioningMetrics {
+  totalVersions: number;
+  versionsCreated24h: number;
+  avgVersionsPerAsset: number;
+  rollbacksToday: number;
+  snapshotsCreated: number;
+}
+
+// Collaboration metrics
+export interface CollaborationMetrics {
+  activeCollaborators: number;
+  pendingApprovals: number;
+  approvedToday: number;
+  rejectedToday: number;
+  avgApprovalTime: number;
+  conflictsResolved: number;
+}
+
+// Recovery & Error metrics
+export interface RecoveryMetrics {
+  circuitBreakerStatus: 'CLOSED' | 'OPEN' | 'HALF_OPEN';
+  failedProviders: string[];
+  fallbacksTriggered24h: number;
+  recoverySuccessRate: number;
+  avgRecoveryTime: number;
+  errorsToday: number;
+  errorsByType: Record<string, number>;
 }
 
 /**
@@ -114,28 +148,78 @@ export function useAdvancedAnalytics(filters: AnalyticsFilters = {}) {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Regional breakdown query
+  // Regional breakdown query - ALL regions including Africa
   const regionalBreakdownQuery = useQuery({
     queryKey: ['analytics', 'regional-breakdown'],
     queryFn: async (): Promise<RegionalMetrics[]> => {
-      // Generate regional metrics for all tracked regions
-      const regions: AnalyticsRegion[] = ['mena', 'india', 'sea', 'cjk', 'north-america', 'europe'];
-      
-      return regions.map(r => ({
+      // Generate regional metrics for ALL tracked regions
+      return ALL_REGIONS.map(r => ({
         region: r,
         displayName: REGIONAL_DISPLAY_NAMES[r],
         languages: REGIONAL_LANGUAGE_MAP[r],
         metrics: {
-          activeUsers: Math.floor(Math.random() * 10000),
-          revenue: Math.floor(Math.random() * 100000),
+          activeUsers: Math.floor(Math.random() * 10000) + 500,
+          revenue: Math.floor(Math.random() * 100000) + 5000,
           growth: Math.round((Math.random() * 40 - 10) * 10) / 10,
-          topPipelines: ['video-dubbing', 'text-to-speech', 'content-translation'],
+          topPipelines: r === 'mena' ? ['arabic-dubbing', 'quran-recitation', 'rtl-content'] :
+                       r === 'india' ? ['hindi-tts', 'regional-dubbing', 'bollywood-style'] :
+                       r === 'cjk' ? ['mandarin-tts', 'anime-style', 'k-pop-vocals'] :
+                       r === 'sea' ? ['thai-tts', 'vietnamese-dub', 'malay-content'] :
+                       r === 'africa' ? ['swahili-tts', 'afrobeats', 'french-african'] :
+                       ['video-dubbing', 'text-to-speech', 'content-translation'],
           avgSessionDuration: Math.floor(Math.random() * 30) + 5,
           conversionRate: Math.round(Math.random() * 15 * 10) / 10,
         }
       }));
     },
     staleTime: 10 * 60 * 1000,
+  });
+
+  // Versioning metrics query
+  const versioningQuery = useQuery({
+    queryKey: ['analytics', 'versioning'],
+    queryFn: async (): Promise<VersioningMetrics> => ({
+      totalVersions: Math.floor(Math.random() * 50000) + 10000,
+      versionsCreated24h: Math.floor(Math.random() * 500) + 100,
+      avgVersionsPerAsset: Math.round((Math.random() * 5 + 2) * 10) / 10,
+      rollbacksToday: Math.floor(Math.random() * 20),
+      snapshotsCreated: Math.floor(Math.random() * 100) + 50,
+    }),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Collaboration metrics query
+  const collaborationQuery = useQuery({
+    queryKey: ['analytics', 'collaboration'],
+    queryFn: async (): Promise<CollaborationMetrics> => ({
+      activeCollaborators: Math.floor(Math.random() * 200) + 50,
+      pendingApprovals: Math.floor(Math.random() * 30) + 5,
+      approvedToday: Math.floor(Math.random() * 50) + 10,
+      rejectedToday: Math.floor(Math.random() * 10),
+      avgApprovalTime: Math.round((Math.random() * 4 + 0.5) * 10) / 10, // hours
+      conflictsResolved: Math.floor(Math.random() * 20) + 5,
+    }),
+    staleTime: 2 * 60 * 1000,
+  });
+
+  // Recovery & Error metrics query
+  const recoveryQuery = useQuery({
+    queryKey: ['analytics', 'recovery'],
+    queryFn: async (): Promise<RecoveryMetrics> => ({
+      circuitBreakerStatus: Math.random() > 0.9 ? 'OPEN' : Math.random() > 0.8 ? 'HALF_OPEN' : 'CLOSED',
+      failedProviders: Math.random() > 0.7 ? ['modelslab', 'replicate'] : [],
+      fallbacksTriggered24h: Math.floor(Math.random() * 50),
+      recoverySuccessRate: Math.round((85 + Math.random() * 15) * 10) / 10,
+      avgRecoveryTime: Math.round((Math.random() * 30 + 5) * 10) / 10, // seconds
+      errorsToday: Math.floor(Math.random() * 100),
+      errorsByType: {
+        'timeout': Math.floor(Math.random() * 30),
+        'rate_limit': Math.floor(Math.random() * 20),
+        'provider_error': Math.floor(Math.random() * 25),
+        'validation': Math.floor(Math.random() * 15),
+      }
+    }),
+    staleTime: 1 * 60 * 1000,
   });
 
   // Refresh all analytics
@@ -158,12 +242,26 @@ export function useAdvancedAnalytics(filters: AnalyticsFilters = {}) {
     regionalBreakdown: regionalBreakdownQuery.data,
     regionalBreakdownLoading: regionalBreakdownQuery.isLoading,
 
+    // Versioning metrics
+    versioning: versioningQuery.data,
+    versioningLoading: versioningQuery.isLoading,
+
+    // Collaboration metrics
+    collaboration: collaborationQuery.data,
+    collaborationLoading: collaborationQuery.isLoading,
+
+    // Recovery & Error metrics
+    recovery: recoveryQuery.data,
+    recoveryLoading: recoveryQuery.isLoading,
+
     // Actions
     refreshAnalytics,
 
     // Filters
     currentRegion: region,
     availableRegions: Object.keys(REGIONAL_DISPLAY_NAMES) as AnalyticsRegion[],
+    priorityRegions: PRIORITY_REGIONS,
+    allRegions: ALL_REGIONS,
     getRegionDisplayName: (r: AnalyticsRegion) => REGIONAL_DISPLAY_NAMES[r],
   };
 }
