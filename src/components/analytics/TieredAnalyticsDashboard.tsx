@@ -13,7 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Lock, Crown, TrendingUp, Globe, Users, BarChart3, Activity, PieChart, Smartphone, Share2 } from 'lucide-react';
+import { Lock, Crown, TrendingUp, Globe, Users, BarChart3, Activity, PieChart, Smartphone, Share2, MessageSquare } from 'lucide-react';
 import { RegionalAnalyticsPanel } from './RegionalAnalyticsPanel';
 import { FunnelVisualization } from './FunnelVisualization';
 import { CohortRetentionHeatmap } from './CohortRetentionHeatmap';
@@ -27,6 +27,9 @@ import { FeatureUsagePanel } from './FeatureUsagePanel';
 import { MobileDownloadsPanel } from './MobileDownloadsPanel';
 import { PublishingAnalyticsPanel } from './PublishingAnalyticsPanel';
 import { CrossPlatformSyncPanel } from './CrossPlatformSyncPanel';
+// P4-COLLAB Collaboration Components
+import { TeamActivityFeed } from '@/components/collaboration/TeamActivityFeed';
+import { NotificationsPanel } from '@/components/collaboration/NotificationsPanel';
 import { 
   useAdvancedAnalytics, 
   useFunnelMetrics,
@@ -63,6 +66,7 @@ export const TieredAnalyticsDashboard: React.FC<TieredAnalyticsDashboardProps> =
   // Tab configuration based on access level
   const availableTabs = [
     { id: 'overview', label: 'Overview', icon: BarChart3, minLevel: 'business' },
+    { id: 'collaboration', label: 'Collaboration', icon: MessageSquare, minLevel: 'business' },
     { id: 'predictive', label: 'Predictive', icon: TrendingUp, minLevel: 'enterprise' },
     { id: 'performance', label: 'Performance', icon: Activity, minLevel: 'enterprise' },
     { id: 'distribution', label: 'Distribution', icon: Share2, minLevel: 'enterprise' },
@@ -221,7 +225,17 @@ export const TieredAnalyticsDashboard: React.FC<TieredAnalyticsDashboardProps> =
           </div>
         </TabsContent>
 
-        {/* Predictive Tab - Enterprise+ (Churn, Goals, Anomalies) */}
+        {/* Collaboration Tab - Available to all (P4-COLLAB-08/09/10) */}
+        <TabsContent value="collaboration" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <TeamActivityFeed 
+              workspaceId={workspaceId} 
+              limit={25}
+              showStats={canAccessAdvanced}
+            />
+            <NotificationsPanel />
+          </div>
+        </TabsContent>
         <TabsContent value="predictive" className="space-y-6">
           {canAccessAdvanced ? (
             <div className="space-y-6">
