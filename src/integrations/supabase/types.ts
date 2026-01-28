@@ -13390,6 +13390,42 @@ export type Database = {
         }
         Relationships: []
       }
+      legal_documents: {
+        Row: {
+          content_hash: string | null
+          created_at: string | null
+          document_type: string
+          effective_date: string | null
+          id: string
+          is_current: boolean | null
+          updated_at: string | null
+          user_id: string
+          version: string
+        }
+        Insert: {
+          content_hash?: string | null
+          created_at?: string | null
+          document_type: string
+          effective_date?: string | null
+          id?: string
+          is_current?: boolean | null
+          updated_at?: string | null
+          user_id: string
+          version?: string
+        }
+        Update: {
+          content_hash?: string | null
+          created_at?: string | null
+          document_type?: string
+          effective_date?: string | null
+          id?: string
+          is_current?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+          version?: string
+        }
+        Relationships: []
+      }
       legal_reviews: {
         Row: {
           approval_type: string | null
@@ -21752,6 +21788,48 @@ export type Database = {
           },
         ]
       }
+      user_legal_acceptances: {
+        Row: {
+          acceptance_method: string | null
+          accepted_at: string
+          created_at: string | null
+          document_type: string
+          document_version: string
+          id: string
+          ip_address: unknown
+          is_valid: boolean | null
+          revoked_at: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          acceptance_method?: string | null
+          accepted_at?: string
+          created_at?: string | null
+          document_type: string
+          document_version?: string
+          id?: string
+          ip_address?: unknown
+          is_valid?: boolean | null
+          revoked_at?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          acceptance_method?: string | null
+          accepted_at?: string
+          created_at?: string | null
+          document_type?: string
+          document_version?: string
+          id?: string
+          ip_address?: unknown
+          is_valid?: boolean | null
+          revoked_at?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_module_assignments: {
         Row: {
           assigned_at: string | null
@@ -24784,6 +24862,10 @@ export type Database = {
             Returns: boolean
           }
         | { Args: { p_role_name: string; p_user_id: string }; Returns: boolean }
+      check_user_legal_compliance: {
+        Args: { p_user_id: string }
+        Returns: Json
+      }
       classify_issue_type: { Args: { p_ticket_id: string }; Returns: string }
       cleanup_agent_sessions: { Args: never; Returns: Json }
       cleanup_duplicate_test_cases: { Args: never; Returns: Json }
@@ -25225,6 +25307,17 @@ export type Database = {
           p_next_stage_id?: string
           p_reason?: string
           p_transition_data?: Json
+        }
+        Returns: Json
+      }
+      record_legal_acceptance: {
+        Args: {
+          p_document_type: string
+          p_ip_address?: unknown
+          p_method?: string
+          p_user_agent?: string
+          p_user_id: string
+          p_version?: string
         }
         Returns: Json
       }
