@@ -29,8 +29,13 @@ export {
   type AnalyticsRegion,
   type AnalyticsFilters,
   type RegionalMetrics,
+  type VersioningMetrics,
+  type CollaborationMetrics,
+  type RecoveryMetrics,
   REGIONAL_LANGUAGE_MAP,
   REGIONAL_DISPLAY_NAMES,
+  PRIORITY_REGIONS,
+  ALL_REGIONS,
 } from '@/hooks/useAdvancedAnalytics';
 
 // UI Components

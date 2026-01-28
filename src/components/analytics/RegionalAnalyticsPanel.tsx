@@ -1,6 +1,6 @@
 /**
  * Regional Analytics Panel
- * P4 Analytics Suite - Regional Support for Arabic, India, and Asian markets
+ * P4 Analytics Suite - Full regional support including Africa, CJK, SEA, MENA, India
  */
 
 import React, { useState } from 'react';
@@ -14,8 +14,8 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
 } from 'recharts';
 import { 
-  Globe, TrendingUp, TrendingDown, Users, DollarSign, 
-  Languages, MapPin, Activity 
+  Globe, Users, Languages, Shield, GitBranch, AlertTriangle,
+  CheckCircle, XCircle, Clock, RefreshCw
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { 
@@ -23,6 +23,8 @@ import {
   AnalyticsRegion, 
   REGIONAL_DISPLAY_NAMES,
   REGIONAL_LANGUAGE_MAP,
+  PRIORITY_REGIONS,
+  ALL_REGIONS,
   RegionalMetrics
 } from '@/hooks/useAdvancedAnalytics';
 
@@ -39,14 +41,15 @@ const REGION_COLORS: Record<AnalyticsRegion, string> = {
   africa: '#14b8a6'
 };
 
-// Priority regions for this integration
-const PRIORITY_REGIONS: AnalyticsRegion[] = ['mena', 'india', 'sea', 'cjk'];
-
 interface RegionalAnalyticsPanelProps {
   className?: string;
+  showAllRegions?: boolean;
 }
 
-export const RegionalAnalyticsPanel: React.FC<RegionalAnalyticsPanelProps> = ({ className }) => {
+export const RegionalAnalyticsPanel: React.FC<RegionalAnalyticsPanelProps> = ({ 
+  className,
+  showAllRegions = true 
+}) => {
   const [selectedRegion, setSelectedRegion] = useState<AnalyticsRegion>('global');
   const [timeRange, setTimeRange] = useState<'24h' | '7d' | '30d' | '90d'>('30d');
 
@@ -56,13 +59,21 @@ export const RegionalAnalyticsPanel: React.FC<RegionalAnalyticsPanelProps> = ({ 
     regionalBreakdown,
     regionalBreakdownLoading,
     mrrTrend,
-    currentRegion,
+    versioning,
+    versioningLoading,
+    collaboration,
+    collaborationLoading,
+    recovery,
+    recoveryLoading,
+    priorityRegions,
+    allRegions,
     getRegionDisplayName
   } = useAdvancedAnalytics({ region: selectedRegion });
 
-  // Filter to priority regions (Arabic, India, Asian)
-  const priorityRegionalData = regionalBreakdown?.filter(r => 
-    PRIORITY_REGIONS.includes(r.region)
+  // Show all regions or just priority ones
+  const displayRegions = showAllRegions ? ALL_REGIONS : PRIORITY_REGIONS;
+  const regionalData = regionalBreakdown?.filter(r => 
+    displayRegions.includes(r.region)
   ) || [];
 
   // Format currency for different regions
@@ -147,14 +158,14 @@ export const RegionalAnalyticsPanel: React.FC<RegionalAnalyticsPanelProps> = ({ 
   );
 
   // Prepare pie chart data
-  const pieData = priorityRegionalData.map(r => ({
+  const pieData = regionalData.map(r => ({
     name: r.displayName,
     value: r.metrics.revenue,
     color: REGION_COLORS[r.region]
   }));
 
   // Prepare bar chart data for user comparison
-  const barData = priorityRegionalData.map(r => ({
+  const barData = regionalData.map(r => ({
     region: r.displayName,
     users: r.metrics.activeUsers,
     conversion: r.metrics.conversionRate,
@@ -171,18 +182,18 @@ export const RegionalAnalyticsPanel: React.FC<RegionalAnalyticsPanelProps> = ({ 
             Regional Analytics
           </h2>
           <p className="text-muted-foreground">
-            Performance across Arabic, India, and Asian markets
+            Performance across MENA, India, CJK, SEA, and Africa markets
           </p>
         </div>
         
         <div className="flex gap-2">
           <Select value={selectedRegion} onValueChange={(v) => setSelectedRegion(v as AnalyticsRegion)}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[200px]">
               <SelectValue placeholder="Select region" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="global">Global (All)</SelectItem>
-              {PRIORITY_REGIONS.map(region => (
+              <SelectItem value="global">🌍 Global (All)</SelectItem>
+              {ALL_REGIONS.map(region => (
                 <SelectItem key={region} value={region}>
                   {REGIONAL_DISPLAY_NAMES[region]}
                 </SelectItem>
@@ -205,17 +216,17 @@ export const RegionalAnalyticsPanel: React.FC<RegionalAnalyticsPanelProps> = ({ 
         </div>
       </div>
 
-      {/* Priority Regions Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* All Regions Cards - Grid layout adjusts based on count */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {regionalBreakdownLoading ? (
-          Array(4).fill(0).map((_, i) => (
+          Array(5).fill(0).map((_, i) => (
             <Card key={i} className="animate-pulse">
               <CardHeader className="h-20 bg-muted/50" />
               <CardContent className="h-32 bg-muted/30" />
             </Card>
           ))
         ) : (
-          priorityRegionalData.map((data) => (
+          regionalData.map((data) => (
             <RegionalCard key={data.region} data={data} />
           ))
         )}
@@ -223,18 +234,21 @@ export const RegionalAnalyticsPanel: React.FC<RegionalAnalyticsPanelProps> = ({ 
 
       {/* Charts Section */}
       <Tabs defaultValue="revenue" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="revenue">Revenue Distribution</TabsTrigger>
-          <TabsTrigger value="users">User Comparison</TabsTrigger>
+        <TabsList className="flex-wrap">
+          <TabsTrigger value="revenue">Revenue</TabsTrigger>
+          <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="languages">Language Moats</TabsTrigger>
+          <TabsTrigger value="versioning">Versioning</TabsTrigger>
+          <TabsTrigger value="collaboration">Collaboration</TabsTrigger>
+          <TabsTrigger value="recovery">Recovery & Error</TabsTrigger>
         </TabsList>
 
         <TabsContent value="revenue">
           <Card>
             <CardHeader>
-              <CardTitle>Revenue by Priority Region</CardTitle>
+              <CardTitle>Revenue by Region</CardTitle>
               <CardDescription>
-                Distribution across Arabic, India, and Asian markets
+                Distribution across all global markets
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -310,13 +324,13 @@ export const RegionalAnalyticsPanel: React.FC<RegionalAnalyticsPanelProps> = ({ 
             <CardHeader>
               <CardTitle>Language Moat Analytics</CardTitle>
               <CardDescription>
-                Specialized language support by region
+                Specialized language support by region - Full coverage
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {PRIORITY_REGIONS.map(region => (
-                  <div key={region} className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {ALL_REGIONS.map(region => (
+                  <div key={region} className="space-y-3 p-4 border rounded-lg">
                     <div className="flex items-center gap-2">
                       <div 
                         className="w-3 h-3 rounded-full" 
@@ -324,25 +338,287 @@ export const RegionalAnalyticsPanel: React.FC<RegionalAnalyticsPanelProps> = ({ 
                       />
                       <h4 className="font-semibold">{REGIONAL_DISPLAY_NAMES[region]}</h4>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      {REGIONAL_LANGUAGE_MAP[region].map((lang, idx) => (
-                        <Badge key={idx} variant="secondary">
+                    <div className="flex flex-wrap gap-1">
+                      {REGIONAL_LANGUAGE_MAP[region].slice(0, 6).map((lang, idx) => (
+                        <Badge key={idx} variant="secondary" className="text-xs">
                           {lang}
                         </Badge>
                       ))}
+                      {REGIONAL_LANGUAGE_MAP[region].length > 6 && (
+                        <Badge variant="outline" className="text-xs">
+                          +{REGIONAL_LANGUAGE_MAP[region].length - 6} more
+                        </Badge>
+                      )}
                     </div>
                     <div className="text-sm text-muted-foreground">
                       {REGIONAL_LANGUAGE_MAP[region].length} languages • 
-                      {region === 'mena' && ' 7 Arabic dialects supported'}
-                      {region === 'india' && ' 10 Indian languages supported'}
-                      {region === 'sea' && ' 6 SEA languages supported'}
-                      {region === 'cjk' && ' CJK + variants supported'}
+                      {region === 'mena' && ' 7 Arabic dialects'}
+                      {region === 'india' && ' 12 Indian languages'}
+                      {region === 'sea' && ' 8 SEA languages'}
+                      {region === 'cjk' && ' CJK + variants'}
+                      {region === 'africa' && ' 10 African languages'}
+                      {region === 'europe' && ' 12 European languages'}
+                      {region === 'latin-america' && ' 5 LatAm variants'}
+                      {region === 'north-america' && ' EN/ES/FR'}
                     </div>
                   </div>
                 ))}
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Versioning Tab */}
+        <TabsContent value="versioning">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <GitBranch className="w-5 h-5 text-primary" />
+                  Version Stats
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {versioningLoading ? (
+                  <div className="h-24 bg-muted/50 animate-pulse rounded" />
+                ) : versioning && (
+                  <>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Total Versions</span>
+                      <span className="font-bold">{versioning.totalVersions.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Created (24h)</span>
+                      <span className="font-bold text-primary">{versioning.versionsCreated24h}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Avg per Asset</span>
+                      <span className="font-bold">{versioning.avgVersionsPerAsset}</span>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <RefreshCw className="w-5 h-5 text-amber-500" />
+                  Rollbacks
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {versioning && (
+                  <>
+                    <div className="text-3xl font-bold">{versioning.rollbacksToday}</div>
+                    <p className="text-sm text-muted-foreground">Rollbacks today</p>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Snapshots</span>
+                      <span className="font-bold">{versioning.snapshotsCreated}</span>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg">Version Health</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span>Version Chain Integrity</span>
+                      <span>98.5%</span>
+                    </div>
+                    <Progress value={98.5} className="h-2" />
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span>Sync Success Rate</span>
+                      <span>99.2%</span>
+                    </div>
+                    <Progress value={99.2} className="h-2" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Collaboration Tab */}
+        <TabsContent value="collaboration">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Users className="w-5 h-5 text-primary" />
+                  Collaborators
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {collaborationLoading ? (
+                  <div className="h-16 bg-muted/50 animate-pulse rounded" />
+                ) : collaboration && (
+                  <div className="text-3xl font-bold">{collaboration.activeCollaborators}</div>
+                )}
+                <p className="text-sm text-muted-foreground">Active now</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-amber-500" />
+                  Pending
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {collaboration && (
+                  <>
+                    <div className="text-3xl font-bold text-amber-500">{collaboration.pendingApprovals}</div>
+                    <p className="text-sm text-muted-foreground">Awaiting approval</p>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-green-500" />
+                  Approved
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {collaboration && (
+                  <>
+                    <div className="text-3xl font-bold text-green-500">{collaboration.approvedToday}</div>
+                    <p className="text-sm text-muted-foreground">Today</p>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <XCircle className="w-5 h-5 text-destructive" />
+                  Rejected
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {collaboration && (
+                  <>
+                    <div className="text-3xl font-bold text-destructive">{collaboration.rejectedToday}</div>
+                    <p className="text-sm text-muted-foreground">Today</p>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+          {collaboration && (
+            <Card className="mt-4">
+              <CardContent className="pt-6">
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Avg Approval Time</p>
+                    <p className="text-2xl font-bold">{collaboration.avgApprovalTime}h</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Conflicts Resolved</p>
+                    <p className="text-2xl font-bold">{collaboration.conflictsResolved}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        {/* Recovery & Error Tab */}
+        <TabsContent value="recovery">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Shield className="w-5 h-5" />
+                  Circuit Breaker
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {recoveryLoading ? (
+                  <div className="h-16 bg-muted/50 animate-pulse rounded" />
+                ) : recovery && (
+                  <>
+                    <Badge 
+                      variant={
+                        recovery.circuitBreakerStatus === 'CLOSED' ? 'default' :
+                        recovery.circuitBreakerStatus === 'HALF_OPEN' ? 'secondary' : 'destructive'
+                      }
+                      className="text-lg px-4 py-2"
+                    >
+                      {recovery.circuitBreakerStatus}
+                    </Badge>
+                    {recovery.failedProviders.length > 0 && (
+                      <div className="mt-3">
+                        <p className="text-sm text-muted-foreground mb-1">Failed Providers:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {recovery.failedProviders.map(p => (
+                            <Badge key={p} variant="destructive" className="text-xs">{p}</Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <RefreshCw className="w-5 h-5 text-primary" />
+                  Recovery Stats
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {recovery && (
+                  <>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Fallbacks (24h)</span>
+                      <span className="font-bold">{recovery.fallbacksTriggered24h}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Success Rate</span>
+                      <span className="font-bold text-green-500">{recovery.recoverySuccessRate}%</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Avg Recovery Time</span>
+                      <span className="font-bold">{recovery.avgRecoveryTime}s</span>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5 text-amber-500" />
+                  Errors Today
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {recovery && (
+                  <>
+                    <div className="text-3xl font-bold">{recovery.errorsToday}</div>
+                    <div className="mt-3 space-y-2">
+                      {Object.entries(recovery.errorsByType).map(([type, count]) => (
+                        <div key={type} className="flex justify-between text-sm">
+                          <span className="text-muted-foreground capitalize">{type.replace('_', ' ')}</span>
+                          <span>{count}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>
