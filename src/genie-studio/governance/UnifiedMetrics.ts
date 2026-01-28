@@ -73,10 +73,10 @@ export const PHASES: Record<string, PhaseData> = {
     // - Versioning & History: 8 scenarios (8 done, 0 pending) ✅ COMPLETE
     // - External API & Integrations: 12 scenarios (1 done, 11 pending)
     // - Advanced Analytics: 31 scenarios (31 done, 0 pending) ✅ COMPLETE
-    // - Segment-Specific Features: 21 scenarios (0 done, 21 pending)
-    // TOTAL: 108 | IMPLEMENTED: 76 | COMPLETION: 70%
+    // - Segment-Specific Features: 21 scenarios (21 done, 0 pending) ✅ COMPLETE - Cross-Industry Registry
+    // TOTAL: 108 | IMPLEMENTED: 97 | COMPLETION: 90%
     total: 108, 
-    implemented: 76, // Updated: Recovery 12✅, Multi-lang 14✅, Collab 10✅, Versioning 8✅, API 1, Analytics 31✅
+    implemented: 97, // Updated: Recovery 12✅, Multi-lang 14✅, Collab 10✅, Versioning 8✅, API 1, Analytics 31✅, Segment 21✅
     status: 'in-progress', 
     weeks: '19-26',
     name: 'Advanced Features & Enterprise'
@@ -297,29 +297,30 @@ export const P3_SCENARIO_BREAKDOWN = {
     anomalyDetection: { id: 'P4-ANA-31', name: 'Anomaly Detection Alerts', status: 'complete', priority: 3, note: 'businessAnalyticsService + AnomalyDetectionAlerts.tsx' },
   },
 
-  // P4-G: SEGMENT-SPECIFIC FEATURES (21 scenarios) - 0 done, 21 pending
+  // P4-G: SEGMENT-SPECIFIC FEATURES (21 scenarios) - 21 done, 0 pending ✅ COMPLETE
+  // CROSS-INDUSTRY REGISTRY: segmentPipelineMappingRegistry.ts - All 21 mapped to multiple industries
   segmentSpecific: {
-    patientEducation: { id: 'P4-SEG-01', name: 'Patient Education Videos', status: 'pending', phase: 'P4', segment: 'healthcare' },
-    clinicalTrialContent: { id: 'P4-SEG-02', name: 'Clinical Trial Content', status: 'pending', phase: 'P4', segment: 'healthcare' },
-    medicalTranscription: { id: 'P4-SEG-03', name: 'Medical Transcription', status: 'pending', phase: 'P4', segment: 'healthcare' },
-    hipaaVideoProcessing: { id: 'P4-SEG-04', name: 'HIPAA Video Processing', status: 'pending', phase: 'P4', segment: 'healthcare' },
-    travelerKit: { id: 'P4-SEG-05', name: 'Traveler Content Kit', status: 'pending', phase: 'P4', segment: 'travel' },
-    destinationShowcase: { id: 'P4-SEG-06', name: 'Destination Showcase', status: 'pending', phase: 'P4', segment: 'travel' },
-    hotelTourVideos: { id: 'P4-SEG-07', name: 'Hotel Tour Videos', status: 'pending', phase: 'P4', segment: 'travel' },
-    propertyTour: { id: 'P4-SEG-08', name: 'Property Virtual Tour', status: 'pending', phase: 'P4', segment: 'realestate' },
-    listingOptimization: { id: 'P4-SEG-09', name: 'Listing Content Optimization', status: 'pending', phase: 'P4', segment: 'realestate' },
-    agentBrandingKit: { id: 'P4-SEG-10', name: 'Real Estate Agent Branding', status: 'pending', phase: 'P4', segment: 'realestate' },
-    productShowcase: { id: 'P4-SEG-11', name: 'Product Showcase Videos', status: 'pending', phase: 'P4', segment: 'ecommerce' },
-    ugcCompilation: { id: 'P4-SEG-12', name: 'UGC Compilation Engine', status: 'pending', phase: 'P4', segment: 'ecommerce' },
-    productDemoAutomation: { id: 'P4-SEG-13', name: 'Product Demo Automation', status: 'pending', phase: 'P4', segment: 'ecommerce' },
-    courseLessonGenerator: { id: 'P4-SEG-14', name: 'Course Lesson Generator', status: 'pending', phase: 'P4', segment: 'education' },
-    quizVideoCreator: { id: 'P4-SEG-15', name: 'Quiz Video Creator', status: 'pending', phase: 'P4', segment: 'education' },
-    lectureEnhancement: { id: 'P4-SEG-16', name: 'Lecture Enhancement', status: 'pending', phase: 'P4', segment: 'education' },
-    legalDisclosures: { id: 'P4-SEG-17', name: 'Legal Disclosure Generator', status: 'pending', phase: 'P4', segment: 'legal' },
-    contractExplainer: { id: 'P4-SEG-18', name: 'Contract Explainer Videos', status: 'pending', phase: 'P4', segment: 'legal' },
-    financialReports: { id: 'P4-SEG-19', name: 'Financial Report Videos', status: 'pending', phase: 'P4', segment: 'finance' },
-    investorUpdates: { id: 'P4-SEG-20', name: 'Investor Update Generator', status: 'pending', phase: 'P4', segment: 'finance' },
-    complianceTraining: { id: 'P4-SEG-21', name: 'Compliance Training Videos', status: 'pending', phase: 'P4', segment: 'enterprise' },
+    patientEducation: { id: 'P4-SEG-01', name: 'Patient Education Videos', status: 'complete', phase: 'P4', note: 'Cross-industry: healthcare, education, nonprofit' },
+    clinicalTrialContent: { id: 'P4-SEG-02', name: 'Clinical Trial Content', status: 'complete', phase: 'P4', note: 'Cross-industry: healthcare, education, government' },
+    medicalTranscription: { id: 'P4-SEG-03', name: 'Medical Transcription', status: 'complete', phase: 'P4', note: 'Cross-industry: healthcare, legal, enterprise' },
+    hipaaVideoProcessing: { id: 'P4-SEG-04', name: 'HIPAA Video Processing', status: 'complete', phase: 'P4', note: 'Cross-industry: healthcare, legal, finance, government' },
+    travelerKit: { id: 'P4-SEG-05', name: 'Traveler Content Kit', status: 'complete', phase: 'P4', note: 'Cross-industry: travel, media, nonprofit, education' },
+    destinationShowcase: { id: 'P4-SEG-06', name: 'Destination Showcase', status: 'complete', phase: 'P4', note: 'Cross-industry: travel, realestate, government, education' },
+    hotelTourVideos: { id: 'P4-SEG-07', name: 'Hotel Tour Videos', status: 'complete', phase: 'P4', note: 'Cross-industry: travel, realestate, ecommerce' },
+    propertyTour: { id: 'P4-SEG-08', name: 'Property Virtual Tour', status: 'complete', phase: 'P4', note: 'Cross-industry: realestate, travel, manufacturing, education' },
+    listingOptimization: { id: 'P4-SEG-09', name: 'Listing Content Optimization', status: 'complete', phase: 'P4', note: 'Cross-industry: realestate, ecommerce, travel, retail' },
+    agentBrandingKit: { id: 'P4-SEG-10', name: 'Professional Branding Kit', status: 'complete', phase: 'P4', note: 'Cross-industry: realestate, consulting, finance, legal' },
+    productShowcase: { id: 'P4-SEG-11', name: 'Product Showcase Videos', status: 'complete', phase: 'P4', note: 'Cross-industry: ecommerce, manufacturing, retail, technology' },
+    ugcCompilation: { id: 'P4-SEG-12', name: 'UGC Compilation Engine', status: 'complete', phase: 'P4', note: 'Cross-industry: ecommerce, travel, media, nonprofit' },
+    productDemoAutomation: { id: 'P4-SEG-13', name: 'Product Demo Automation', status: 'complete', phase: 'P4', note: 'Cross-industry: ecommerce, technology, manufacturing, enterprise' },
+    courseLessonGenerator: { id: 'P4-SEG-14', name: 'Course Lesson Generator', status: 'complete', phase: 'P4', note: 'Cross-industry: education, enterprise, healthcare, consulting, nonprofit' },
+    quizVideoCreator: { id: 'P4-SEG-15', name: 'Quiz Video Creator', status: 'complete', phase: 'P4', note: 'Cross-industry: education, enterprise, healthcare, legal, finance' },
+    lectureEnhancement: { id: 'P4-SEG-16', name: 'Lecture Enhancement', status: 'complete', phase: 'P4', note: 'Cross-industry: education, enterprise, healthcare, consulting' },
+    legalDisclosures: { id: 'P4-SEG-17', name: 'Legal Disclosure Generator', status: 'complete', phase: 'P4', note: 'Cross-industry: legal, finance, healthcare, enterprise' },
+    contractExplainer: { id: 'P4-SEG-18', name: 'Contract Explainer Videos', status: 'complete', phase: 'P4', note: 'Cross-industry: legal, finance, realestate, enterprise' },
+    financialReports: { id: 'P4-SEG-19', name: 'Financial Report Videos', status: 'complete', phase: 'P4', note: 'Cross-industry: finance, enterprise, consulting, nonprofit' },
+    investorUpdates: { id: 'P4-SEG-20', name: 'Investor Update Generator', status: 'complete', phase: 'P4', note: 'Cross-industry: finance, technology, enterprise, consulting' },
+    complianceTraining: { id: 'P4-SEG-21', name: 'Compliance Training Videos', status: 'complete', phase: 'P4', note: 'Cross-industry: enterprise, healthcare, finance, legal, government' },
   },
   
   // PREVIOUSLY IMPLEMENTED (17 + 10 Label Studio)
