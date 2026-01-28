@@ -13,7 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Lock, Crown, TrendingUp, Globe, Users, BarChart3, Activity, PieChart } from 'lucide-react';
+import { Lock, Crown, TrendingUp, Globe, Users, BarChart3, Activity, PieChart, Smartphone, Share2 } from 'lucide-react';
 import { RegionalAnalyticsPanel } from './RegionalAnalyticsPanel';
 import { FunnelVisualization } from './FunnelVisualization';
 import { CohortRetentionHeatmap } from './CohortRetentionHeatmap';
@@ -24,6 +24,9 @@ import { GoalTrackingPanel } from './GoalTrackingPanel';
 import { AnomalyDetectionAlerts } from './AnomalyDetectionAlerts';
 import { RealTimeMetricsPanel } from './RealTimeMetricsPanel';
 import { FeatureUsagePanel } from './FeatureUsagePanel';
+import { MobileDownloadsPanel } from './MobileDownloadsPanel';
+import { PublishingAnalyticsPanel } from './PublishingAnalyticsPanel';
+import { CrossPlatformSyncPanel } from './CrossPlatformSyncPanel';
 import { 
   useAdvancedAnalytics, 
   useFunnelMetrics,
@@ -62,6 +65,8 @@ export const TieredAnalyticsDashboard: React.FC<TieredAnalyticsDashboardProps> =
     { id: 'overview', label: 'Overview', icon: BarChart3, minLevel: 'business' },
     { id: 'predictive', label: 'Predictive', icon: TrendingUp, minLevel: 'enterprise' },
     { id: 'performance', label: 'Performance', icon: Activity, minLevel: 'enterprise' },
+    { id: 'distribution', label: 'Distribution', icon: Share2, minLevel: 'enterprise' },
+    { id: 'mobile', label: 'Mobile & Sync', icon: Smartphone, minLevel: 'enterprise' },
     { id: 'funnels', label: 'Funnels', icon: Activity, minLevel: 'enterprise' },
     { id: 'cohorts', label: 'Cohorts', icon: Users, minLevel: 'enterprise' },
     { id: 'regional', label: 'Regional (MENA/India/Asia)', icon: Globe, minLevel: 'internal' },
@@ -243,6 +248,27 @@ export const TieredAnalyticsDashboard: React.FC<TieredAnalyticsDashboardProps> =
             </div>
           ) : (
             <LockedFeatureCard feature="Performance Analytics" requiredLevel="enterprise" />
+          )}
+        </TabsContent>
+
+        {/* Distribution Tab - Enterprise+ (Publishing analytics) */}
+        <TabsContent value="distribution" className="space-y-6">
+          {canAccessAdvanced ? (
+            <PublishingAnalyticsPanel />
+          ) : (
+            <LockedFeatureCard feature="Distribution Analytics" requiredLevel="enterprise" />
+          )}
+        </TabsContent>
+
+        {/* Mobile & Sync Tab - Enterprise+ */}
+        <TabsContent value="mobile" className="space-y-6">
+          {canAccessAdvanced ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <MobileDownloadsPanel />
+              <CrossPlatformSyncPanel />
+            </div>
+          ) : (
+            <LockedFeatureCard feature="Mobile & Sync Analytics" requiredLevel="enterprise" />
           )}
         </TabsContent>
 
