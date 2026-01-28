@@ -1,17 +1,18 @@
 # Genie Mind & Genie Vibe - Phase Implementation Roadmap
 
-> **Last Updated:** 2026-01-12
-> **Status:** Active Implementation - P0 94%, P1 16%, P2 24%
-> **Version:** 2.7
-> **Total User Scenarios:** 177 across P0-P5 phases
-> **Phase Distribution:** P0 (35), P1 (32), P2 (50), P3 (26), P4 (24), P5 (10)
-> **Implementation:** ✅ 43 Complete (24%) | 🔶 7 Partial (4%) | ⏳ 127 Planned (72%)
-> **P3 Readiness:** CONDITIONAL YES - Complete P1 access control in parallel
-> **Mobile Components:** 29 implemented in `src/components/mobile/`
+> **Last Updated:** 2026-01-28
+> **Status:** Active Implementation - P0-P2 100%, P3 90%, P4 58%
+> **Version:** 3.0
+> **Total User Scenarios:** 210+ across P0-P5 phases
+> **Phase Distribution:** P0 (35), P1 (32), P2 (50), P3 (26), P4 (88), P5 (20)
+> **Implementation:** ✅ 152 Complete (72%) | 🔶 12 Partial (6%) | ⏳ 46 Planned (22%)
+> **P4 Status:** Recovery 100%, Multi-Language 100%, Versioning 100%, Collaboration 70%, Analytics 32%
+> **Mobile Components:** 32 implemented in `src/components/mobile/` + `src/components/publish/`
 > **P2 AI Agents:** Voice Director, Scene Analyzer, Distribution Agent, Script-to-Video Matcher, Music Composer, Auto-Editor (100% Complete)
-> **Offline Features:** Record, Edit, Trim, Timeline, Local Export, Text Overlays, Local Music, FFmpeg Processing
+> **NEW Community Features:** Idea Marketplace, Regional Stories, Unified Multi-Publisher, Offline Queue (100% Complete)
+> **Offline Features:** Record, Edit, Trim, Timeline, Local Export, Text Overlays, Local Music, FFmpeg Processing, Publish Queue
 > **Online Only:** AI Scripts, AI TTS, Cloud Sync, Social Upload, Stream Music Library, Multi-Model Comparison
-> **Reference:** See COMPREHENSIVE_177_SCENARIO_PHASE_REVIEW.md for complete phase-to-scenario mapping
+> **Reference:** See IMPLEMENTATION_STATUS_AND_TESTING_ROADMAP.md for complete status
 
 ---
 
@@ -483,19 +484,18 @@ Participant Clicks Join URL → Check Session Status
 | Phase 1.5 (Vibe ↔ Mind Integration) | 5 | 5 | 0 | 0 | Differentiation ✅ |
 | Phase 1.6 (Session Management) | 8 | 8 | 0 | 0 | Live Production ✅ |
 | **Phase 2 (AI Agents & Automation)** | **9** | **9** | **0** | **0** | **AI Workflows ✅** |
-| **Phase 4 (Mobile-First & Segments)** | **17** | **14** | **0** | **3** | **68% mobile demand ✅** |
-| Phase 3 (P1 Essentials - External APIs) | 8 | 0 | 0 | 8 | Production quality |
-| Phase 5 (Commercialization) | 6 | 0 | 0 | 6 | Revenue |
-| Phase 6 (Auth & Security) | 4 | 2 | 1 | 1 | User onboarding |
-| **Total** | **62** | **43** | **1** | **18** | |
+| **Phase 3 (Features + Access)** | **26** | **23** | **0** | **3** | **90% Complete ✅** |
+| **Phase 4 (Advanced Features)** | **88** | **51** | **12** | **25** | **58% Complete 🔶** |
+| Phase 5 (Commercialization) | 20 | 2 | 0 | 18 | Revenue |
+| Phase 6 (Auth & Security) | 4 | 3 | 1 | 0 | User onboarding |
+| **Total** | **165** | **106** | **13** | **46** | **72% Overall** |
 
-**Phase 1 Completion:** 100% ✅ (Backend + Frontend)
-**Phase 1.5 Completion:** 100% ✅ (Vibe ↔ Mind Bidirectional Flow)
-**Phase 1.6 Completion:** 100% ✅ (Session Management & Live Production)
-**Phase 2 Completion:** 100% ✅ (AI Agents & Automation - 6 Agents + Guided Experience)
-**Phase 4 Completion:** 82% ✅ (Mobile-First - 14/17 features complete)
-**Phase 6 Auth:** 50% ✅ (Google OAuth pending Supabase config)
-**Overall Progress:** 69%
+**Phase 1-1.6 Completion:** 100% ✅ (Foundation Complete)
+**Phase 2 Completion:** 100% ✅ (6 AI Agents + Automation)
+**Phase 3 Completion:** 90% ✅ (Features + Access Control)
+**Phase 4 Completion:** 58% 🔶 (Recovery 100%, Multi-Language 100%, Versioning 100%, Collab 70%, Analytics 32%)
+**Phase 5 Completion:** 10% ⏳ (Commercialization pending)
+**Overall Progress:** 72%
 
 ### P2 Agents Implemented (6 Total)
 
@@ -507,6 +507,16 @@ Participant Clicks Join URL → Check Session Status
 | Script-to-Video Matcher | AI clip matching | `useScriptVideoMatcher.ts` | `ScriptVideoMatcherPanel.tsx` | `script-video-matcher` |
 | Music Composer | AI music/SFX generation | `useMusicComposerAgent.ts` | `MusicComposerPanel.tsx` | `music-composer-agent` |
 | Auto-Editor | Automatic video editing | `useAutoEditorAgent.ts` | `AutoEditorPanel.tsx` | - (client FFmpeg) |
+
+### NEW Community Features (2026-01-28)
+
+| Feature | Purpose | Component | Database Table |
+|---------|---------|-----------|----------------|
+| Idea Marketplace | Share & remix creative concepts | `IdeaMarketplace.tsx` | `community_ideas`, `idea_remixes` |
+| Regional Stories | Cross-regional success learnings | `RegionalStories.tsx` | `regional_success_stories` |
+| Unified Publisher | Cross-platform multi-publish | `UnifiedMultiPublisher.tsx` | `offline_publish_queue` |
+| Offline Queue | Mobile-first offline sync | `useOfflinePublishQueue.ts` | IndexedDB + Supabase |
+| Company Page Rewards | Incentivize company sharing | `CompanyPageRewardPrompt.tsx` | Credit system |
 
 ---
 
