@@ -163,43 +163,37 @@ export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({
 
   // Collapsible Sidebar variant
   return (
-    <TooltipProvider delayDuration={0}>
+    <TooltipProvider delayDuration={100}>
       <aside 
         className={cn(
           "fixed left-0 top-0 z-40 h-screen border-r bg-card transition-all duration-300",
-          isCollapsed ? "w-16" : "w-64"
+          isCollapsed ? "w-14" : "w-56"
         )}
       >
         <div className="flex h-full flex-col">
           {/* Header with Logo and Collapse Toggle */}
-          <div className="flex h-14 items-center justify-between border-b px-3">
+          <div className="flex h-12 items-center justify-between border-b px-2">
             <NavLink to="/genie-studio" className="flex items-center gap-2 min-w-0">
               <img 
                 src={genieSuiteLogo} 
                 alt="Genie Studio" 
-                className={cn("transition-all flex-shrink-0", isCollapsed ? "h-7 w-7" : "h-7")} 
+                className={cn("transition-all flex-shrink-0", isCollapsed ? "h-6 w-6" : "h-6")} 
               />
             </NavLink>
             
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 flex-shrink-0"
-                  onClick={() => handleCollapse(!isCollapsed)}
-                >
-                  {isCollapsed ? (
-                    <PanelLeft className="h-4 w-4" />
-                  ) : (
-                    <PanelLeftClose className="h-4 w-4" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="right">
-                {isCollapsed ? 'Expand' : 'Collapse'}
-              </TooltipContent>
-            </Tooltip>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 flex-shrink-0"
+              onClick={() => handleCollapse(!isCollapsed)}
+              title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            >
+              {isCollapsed ? (
+                <PanelLeft className="h-3.5 w-3.5" />
+              ) : (
+                <PanelLeftClose className="h-3.5 w-3.5" />
+              )}
+            </Button>
           </div>
 
           {/* Workspace Indicator */}
@@ -285,32 +279,24 @@ export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({
                                   )}
                                 </Button>
                               </CollapsibleTrigger>
-                              <CollapsibleContent className="pl-2 space-y-0.5">
+                              <CollapsibleContent className="pl-3 space-y-0.5">
                                 {subItems.map(item => (
-                                  <Tooltip key={item.url}>
-                                    <TooltipTrigger asChild>
-                                      <NavLink
-                                        to={item.url}
-                                        className={({ isActive }) =>
-                                          cn(
-                                            "flex items-center gap-2 rounded-md px-2 py-1 text-sm transition-colors",
-                                            isActive
-                                              ? "bg-primary/10 text-primary font-medium"
-                                              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                                          )
-                                        }
-                                      >
-                                        <item.icon className="h-3.5 w-3.5 flex-shrink-0" />
-                                        <span className="truncate text-xs">{item.title}</span>
-                                      </NavLink>
-                                    </TooltipTrigger>
-                                    <TooltipContent side="right">
-                                      <p className="font-medium">{item.title}</p>
-                                      {item.description && (
-                                        <p className="text-xs text-muted-foreground">{item.description}</p>
-                                      )}
-                                    </TooltipContent>
-                                  </Tooltip>
+                                  <NavLink
+                                    key={item.url}
+                                    to={item.url}
+                                    title={item.description}
+                                    className={({ isActive }) =>
+                                      cn(
+                                        "flex items-center gap-2 rounded px-2 py-1 text-xs transition-colors",
+                                        isActive
+                                          ? "bg-primary/10 text-primary font-medium"
+                                          : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                                      )
+                                    }
+                                  >
+                                    <item.icon className="h-3 w-3 flex-shrink-0" />
+                                    <span className="truncate">{item.title}</span>
+                                  </NavLink>
                                 ))}
                               </CollapsibleContent>
                             </Collapsible>
@@ -323,45 +309,55 @@ export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({
 
                 // Regular categories - cleaner layout
                 return (
-                  <div key={category} className={cn(idx > 0 && "mt-3")}>
+                  <div key={category} className={cn(idx > 0 && "mt-2")}>
                     {!isCollapsed && (
-                      <h4 className="mb-1 px-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                      <h4 className="mb-0.5 px-2 text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-wider">
                         {config.label}
                       </h4>
                     )}
 
-                    <div className="space-y-1">
-                      {items.map(item => (
-                        <Tooltip key={item.url}>
-                          <TooltipTrigger asChild>
-                            <NavLink
-                              to={item.url}
-                              className={({ isActive }) =>
-                                cn(
-                                  "flex items-center rounded-lg transition-all",
-                                  isCollapsed 
-                                    ? "justify-center p-2" 
-                                    : "gap-3 px-3 py-2",
-                                  isActive
-                                    ? "bg-primary/10 text-primary font-medium"
-                                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                                )
-                              }
-                            >
-                              <item.icon className="h-4 w-4 flex-shrink-0" />
-                              {!isCollapsed && (
-                                <span className="text-sm truncate">{item.title}</span>
-                              )}
-                            </NavLink>
-                          </TooltipTrigger>
-                          <TooltipContent side="right" className="max-w-[200px]">
-                            <p className="font-medium">{item.title}</p>
-                            {item.description && (
-                              <p className="text-xs text-muted-foreground">{item.description}</p>
-                            )}
-                          </TooltipContent>
-                        </Tooltip>
-                      ))}
+                    <div className="space-y-0.5">
+                      {items.map(item => 
+                        isCollapsed ? (
+                          <Tooltip key={item.url}>
+                            <TooltipTrigger asChild>
+                              <NavLink
+                                to={item.url}
+                                className={({ isActive }) =>
+                                  cn(
+                                    "flex items-center justify-center rounded p-2 transition-all",
+                                    isActive
+                                      ? "bg-primary/10 text-primary"
+                                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                                  )
+                                }
+                              >
+                                <item.icon className="h-4 w-4" />
+                              </NavLink>
+                            </TooltipTrigger>
+                            <TooltipContent side="right">
+                              {item.title}
+                            </TooltipContent>
+                          </Tooltip>
+                        ) : (
+                          <NavLink
+                            key={item.url}
+                            to={item.url}
+                            title={item.description}
+                            className={({ isActive }) =>
+                              cn(
+                                "flex items-center gap-2.5 rounded px-2.5 py-1.5 text-sm transition-all",
+                                isActive
+                                  ? "bg-primary/10 text-primary font-medium"
+                                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                              )
+                            }
+                          >
+                            <item.icon className="h-4 w-4 flex-shrink-0" />
+                            <span className="truncate">{item.title}</span>
+                          </NavLink>
+                        )
+                      )}
                     </div>
                   </div>
                 );
