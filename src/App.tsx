@@ -12,6 +12,7 @@ import { AppLayoutWithEnrollment } from '@/components/layout/AppLayoutWithEnroll
 import { StabilityProvider } from '@/components/stability/StabilityProvider';
 import { AccessibilityProvider } from '@/components/genie-studio/AccessibilityEnhancements';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import GenieStudioProtectedRoute from '@/components/auth/GenieStudioProtectedRoute';
 import { TenantProvider } from '@/contexts/TenantContext';
 import { HelmetProvider } from 'react-helmet-async';
 import { GlobalAgentGeneratorProvider } from '@/hooks/useGlobalAgentGenerator';
@@ -290,44 +291,45 @@ const AppContent = () => {
                       <DocumentProcessing />
                     </ProtectedRoute>
                   } />
+                  {/* Genie Studio routes - use GenieStudioProtectedRoute with Genie-specific auth */}
                   <Route path="/genie-studio" element={
-                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider', 'onboardingTeam', 'demoUser']}>
+                    <GenieStudioProtectedRoute>
                       <Suspense fallback={<PageLoading message="Loading Genie Studio..." />}>
                         <LazyPages.GenieStudio />
                       </Suspense>
-                    </ProtectedRoute>
+                    </GenieStudioProtectedRoute>
                   } />
                   <Route path="/genie-spark" element={
-                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider', 'onboardingTeam', 'demoUser']}>
+                    <GenieStudioProtectedRoute>
                       <Suspense fallback={<PageLoading message="Loading Genie Spark..." />}>
                         <LazyPages.GenieSpark />
                       </Suspense>
-                    </ProtectedRoute>
+                    </GenieStudioProtectedRoute>
                   } />
                   {/* Genie Arc - Redirect to Production Hub with calendar tab (schedule flow merged) */}
                   <Route path="/genie-arc" element={
                     <Navigate to="/genie-admin?tab=calendar" replace />
                   } />
                   <Route path="/genie-mind" element={
-                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider', 'onboardingTeam', 'demoUser']}>
+                    <GenieStudioProtectedRoute>
                       <Suspense fallback={<PageLoading message="Loading Genie Mind..." />}>
                         <LazyPages.GenieMind />
                       </Suspense>
-                    </ProtectedRoute>
+                    </GenieStudioProtectedRoute>
                   } />
                   <Route path="/genie-vibe" element={
-                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider', 'onboardingTeam', 'demoUser']}>
+                    <GenieStudioProtectedRoute>
                       <Suspense fallback={<PageLoading message="Loading Genie Vibe..." />}>
                         <LazyPages.GenieVibe />
                       </Suspense>
-                    </ProtectedRoute>
+                    </GenieStudioProtectedRoute>
                   } />
                   <Route path="/genie-deck" element={
-                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider', 'onboardingTeam', 'demoUser']}>
+                    <GenieStudioProtectedRoute>
                       <Suspense fallback={<PageLoading message="Loading Genie Deck..." />}>
                         {React.createElement(React.lazy(() => import('@/pages/GenieDeck')))}
                       </Suspense>
-                    </ProtectedRoute>
+                    </GenieStudioProtectedRoute>
                   } />
                   {/* Redirect all production routes to consolidated /genie-admin */}
                   <Route path="/genie-studio/productions" element={
@@ -340,27 +342,27 @@ const AppContent = () => {
                     <Navigate to="/genie-admin?tab=calendar" replace />
                   } />
                   <Route path="/marketing-materials" element={
-                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'onboardingTeam', 'healthcareProvider', 'demoUser']}>
+                    <GenieStudioProtectedRoute>
                       <Suspense fallback={<PageLoading message="Loading Marketing Materials..." />}>
                         {React.createElement(React.lazy(() => import('@/pages/marketing/MarketingMaterialsPage')))}
                       </Suspense>
-                    </ProtectedRoute>
+                    </GenieStudioProtectedRoute>
                   } />
                   <Route path="/genie-studio/feedback-analytics" element={
-                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'onboardingTeam', 'healthcareProvider', 'caseManager']}>
+                    <GenieStudioProtectedRoute>
                       <Suspense fallback={<PageLoading message="Loading Feedback Analytics..." />}>
                         <AppLayout>
                           {React.createElement(React.lazy(() => import('@/components/genie-studio/FeedbackAnalyticsDashboard').then(m => ({ default: m.FeedbackAnalyticsDashboard }))))}
                         </AppLayout>
                       </Suspense>
-                    </ProtectedRoute>
+                    </GenieStudioProtectedRoute>
                   } />
                   <Route path="/genie-vibe/mobile" element={
-                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider', 'onboardingTeam', 'demoUser']}>
+                    <GenieStudioProtectedRoute>
                       <Suspense fallback={<PageLoading message="Loading Mobile Studio..." />}>
                         {React.createElement(React.lazy(() => import('@/pages/MobileRecordingPage')))}
                       </Suspense>
-                    </ProtectedRoute>
+                    </GenieStudioProtectedRoute>
                   } />
                   <Route path="/data-import" element={
                     <ProtectedRoute requiredRoles={['superAdmin', 'onboardingTeam', 'demoUser']}>
