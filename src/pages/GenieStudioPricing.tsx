@@ -2,16 +2,37 @@
  * GENIE STUDIO PRICING PAGE
  * PUBLIC pricing page - matches landing page corporate styling
  * Shows all subscription options aligned with landing page tiers
+ * UPDATED: Includes tier feature gating for Lipsync, Dubbing, Mix-and-Match
  */
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sparkles, Check, Crown, Zap, Building2, Globe } from 'lucide-react';
+import { Sparkles, Check, Crown, Zap, Building2, Globe, Video, Mic, User, Box, Lock } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useGenieStudioAuth } from '@/hooks/useGenieStudioAuth';
 import { GenieNavbar } from '@/components/genie-studio/GenieNavbar';
 import genieSuiteLogo from '@/assets/logos/genie-studio-suite-logo.png';
+import { cn } from '@/lib/utils';
+
+// Premium feature access by tier - aligned with tierFeatureGating.ts
+interface PremiumFeatures {
+  lipsync: string;
+  dubbing: string;
+  avatar: string;
+  threeD: string;
+  vrAr: string;
+  voiceClone: string;
+}
+
+const TIER_PREMIUM_FEATURES: Record<string, PremiumFeatures> = {
+  free: { lipsync: '1 min preview', dubbing: '1 min preview', avatar: '1 preview', threeD: '1 preview', vrAr: '—', voiceClone: '—' },
+  starter: { lipsync: '5 min', dubbing: '5 min', avatar: '5/mo', threeD: '3/mo', vrAr: '—', voiceClone: '2 voices' },
+  creator: { lipsync: '30 min', dubbing: '30 min', avatar: '30/mo', threeD: '20/mo', vrAr: '—', voiceClone: '5 voices' },
+  professional: { lipsync: '120 min', dubbing: '120 min', avatar: '100/mo', threeD: '75/mo', vrAr: '10/mo', voiceClone: '15 voices' },
+  studio: { lipsync: 'Unlimited', dubbing: 'Unlimited', avatar: 'Unlimited', threeD: 'Unlimited', vrAr: '50/mo', voiceClone: '50 voices' },
+  enterprise: { lipsync: 'Unlimited', dubbing: 'Unlimited', avatar: 'Unlimited', threeD: 'Unlimited', vrAr: 'Unlimited', voiceClone: 'Unlimited' },
+};
 
 // Aligned with landing page PRICING_TIERS
 const PRICING_TIERS = [
@@ -36,24 +57,45 @@ const PRICING_TIERS = [
     icon: Sparkles,
   },
   {
+    id: 'starter',
+    name: 'Starter',
+    price: '$12',
+    period: '/month',
+    pipelines: 80,
+    languages: 5,
+    credits: 200,
+    description: 'For hobbyists getting started',
+    features: [
+      '720p HD exports',
+      '15 exports per month',
+      'No watermarks',
+      'Basic lip-sync preview',
+      'Email support',
+    ],
+    cta: 'Start Now',
+    popular: false,
+    icon: Zap,
+  },
+  {
     id: 'creator',
     name: 'Creator',
     price: '$29',
     period: '/month',
     pipelines: 120,
-    languages: 20,
+    languages: 15,
     credits: 500,
-    description: 'For content creators and freelancers',
+    description: 'For content creators - Lipsync & Dubbing unlocked',
     features: [
       '1080p HD exports',
       '30 exports per month',
-      'Basic avatar generation',
+      '✨ 30 min Lip-Sync/Dubbing',
       'Premium templates',
-      'Email support',
+      'Priority support',
     ],
     cta: 'Start Creating',
     popular: false,
     icon: Zap,
+    unlocks: ['lipsync', 'dubbing'],
   },
   {
     id: 'professional',
@@ -62,38 +104,19 @@ const PRICING_TIERS = [
     period: '/month',
     pipelines: 165,
     languages: 40,
-    credits: 1200,
-    description: 'For professionals and teams',
+    credits: 1500,
+    description: 'For professionals - Full Mix & Match',
     features: [
       '4K quality exports',
       '100 exports per month',
-      'Voice cloning (10 voices)',
-      'API access',
-      'Priority support',
+      '✨ 120 min Lip-Sync/Dubbing',
+      'VR/AR access (10/mo)',
+      'Voice cloning (15 voices)',
     ],
     cta: 'Go Pro',
     popular: true,
     icon: Crown,
-  },
-  {
-    id: 'studio',
-    name: 'Studio',
-    price: '$99',
-    period: '/month',
-    pipelines: 194,
-    languages: '70+',
-    credits: 2500,
-    description: 'For studios and agencies',
-    features: [
-      '4K exports unlimited',
-      '7 Arabic dialects',
-      '22 Indian languages',
-      'Team collaboration (5 seats)',
-      'Dedicated support',
-    ],
-    cta: 'Start Studio',
-    popular: false,
-    icon: Building2,
+    unlocks: ['lipsync', 'dubbing', 'vrAr'],
   },
   {
     id: 'enterprise',
@@ -108,12 +131,13 @@ const PRICING_TIERS = [
       '8K exports',
       'White-label branding',
       'SSO/SAML integration',
-      'VR/AR Labs access',
+      '✨ Unlimited everything',
       'Custom training & SLA',
     ],
     cta: 'Contact Sales',
     popular: false,
     icon: Building2,
+    unlocks: ['lipsync', 'dubbing', 'vrAr', 'voiceClone'],
   },
 ];
 
@@ -224,11 +248,47 @@ const GenieStudioPricing: React.FC = () => {
                       </Badge>
                     </div>
                     
+                    {/* Premium Feature Indicators */}
+                    {TIER_PREMIUM_FEATURES[tier.id] && (
+                      <div className="grid grid-cols-3 gap-1 mb-4 text-[9px]">
+                        <div className={cn(
+                          "p-1 rounded text-center border",
+                          TIER_PREMIUM_FEATURES[tier.id].lipsync !== '—' && TIER_PREMIUM_FEATURES[tier.id].lipsync !== '1 min preview'
+                            ? "bg-primary/10 text-primary border-primary/20" 
+                            : "bg-muted/30 text-muted-foreground border-muted"
+                        )}>
+                          <Video className="h-2.5 w-2.5 mx-auto mb-0.5" />
+                          Lip-Sync
+                        </div>
+                        <div className={cn(
+                          "p-1 rounded text-center border",
+                          TIER_PREMIUM_FEATURES[tier.id].dubbing !== '—' && TIER_PREMIUM_FEATURES[tier.id].dubbing !== '1 min preview'
+                            ? "bg-primary/10 text-primary border-primary/20" 
+                            : "bg-muted/30 text-muted-foreground border-muted"
+                        )}>
+                          <Mic className="h-2.5 w-2.5 mx-auto mb-0.5" />
+                          Dubbing
+                        </div>
+                        <div className={cn(
+                          "p-1 rounded text-center border",
+                          TIER_PREMIUM_FEATURES[tier.id].vrAr !== '—'
+                            ? "bg-primary/10 text-primary border-primary/20" 
+                            : "bg-muted/30 text-muted-foreground border-muted"
+                        )}>
+                          <Box className="h-2.5 w-2.5 mx-auto mb-0.5" />
+                          VR/AR
+                        </div>
+                      </div>
+                    )}
+                    
                     <ul className="space-y-2">
                       {tier.features.map((feature, idx) => (
                         <li key={idx} className="flex items-start gap-2">
                           <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
-                          <span className="text-xs text-muted-foreground">{feature}</span>
+                          <span className={cn(
+                            "text-xs text-muted-foreground",
+                            feature.startsWith('✨') && "text-primary font-medium"
+                          )}>{feature}</span>
                         </li>
                       ))}
                     </ul>

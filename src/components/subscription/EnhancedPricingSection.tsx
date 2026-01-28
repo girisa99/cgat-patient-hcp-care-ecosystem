@@ -207,7 +207,7 @@ export const EnhancedPricingSection = () => {
   );
 };
 
-// Comparison Table Component - Enhanced with segment-specific and compliance info
+// Comparison Table Component - Enhanced with tier feature gating integration
 const ComparisonTable = () => {
   const tiers = ['free', 'starter', 'business', 'pro'] as const;
   
@@ -230,6 +230,35 @@ const ComparisonTable = () => {
         { name: 'Genie Mind (RAG)', free: '—', starter: '1K docs', business: '10K docs', pro: 'Unlimited' },
         { name: 'Production Hub', free: '—', starter: '—', business: '5 shows', pro: 'Unlimited' },
         { name: 'Genie Arc (Collaboration)', free: '—', starter: '—', business: '—', pro: '✓' },
+      ]
+    },
+    {
+      name: '🎬 Mix & Match Features',
+      isPremium: true,
+      features: [
+        { name: 'AI Avatar', free: '1 preview', starter: '5/mo', business: '30/mo', pro: '100/mo', highlight: true },
+        { name: '3D Content', free: '1 preview', starter: '3/mo', business: '20/mo', pro: '75/mo', highlight: true },
+        { name: 'Animation', free: '2 clips', starter: '10 clips', business: '50 clips', pro: '200 clips' },
+        { name: 'Mix Combinations', free: '1', starter: '3', business: '10', pro: '25' },
+      ]
+    },
+    {
+      name: '🎙️ Lipsync & Dubbing',
+      isPremium: true,
+      features: [
+        { name: 'Lip-Sync', free: '1 min preview', starter: '5 min', business: '30 min', pro: '120 min', highlight: true },
+        { name: 'Dubbing', free: '1 min preview', starter: '5 min', business: '30 min', pro: '120 min', highlight: true },
+        { name: 'Voice Cloning', free: '—', starter: '2 voices', business: '5 voices', pro: '15 voices' },
+        { name: 'Languages', free: '2', starter: '5', business: '15', pro: '40' },
+      ]
+    },
+    {
+      name: '🔬 Innovation Lab',
+      isPremium: true,
+      features: [
+        { name: 'VR/AR Experiences', free: '—', starter: '—', business: '—', pro: '10/mo', highlight: true },
+        { name: 'Immersive Content', free: '—', starter: '—', business: '—', pro: '10/mo' },
+        { name: 'Music Generation', free: '3 tracks', starter: '10 tracks', business: '50 tracks', pro: '200 tracks' },
       ]
     },
     {
@@ -300,16 +329,27 @@ const ComparisonTable = () => {
           </tr>
         </thead>
         <tbody>
-          {featureGroups.map((group) => (
+          {featureGroups.map((group: any) => (
             <React.Fragment key={group.name}>
-              <tr className="bg-muted/30">
-                <td colSpan={5} className="py-2 px-3 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+              <tr className={cn("bg-muted/30", group.isPremium && "bg-gradient-to-r from-primary/10 to-purple-500/10")}>
+                <td colSpan={5} className={cn(
+                  "py-2 px-3 text-[10px] font-semibold uppercase tracking-wider",
+                  group.isPremium ? "text-primary" : "text-muted-foreground"
+                )}>
                   {group.name}
                 </td>
               </tr>
-              {group.features.map((feature, idx) => (
-                <tr key={idx} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
-                  <td className="py-2 px-3 text-xs text-foreground">{feature.name}</td>
+              {group.features.map((feature: any, idx: number) => (
+                <tr key={idx} className={cn(
+                  "border-b border-border/50 hover:bg-muted/20 transition-colors",
+                  feature.highlight && "bg-primary/5"
+                )}>
+                  <td className={cn(
+                    "py-2 px-3 text-xs text-foreground",
+                    feature.highlight && "font-medium"
+                  )}>
+                    {feature.name}
+                  </td>
                   <td className="text-center py-2 px-2 text-foreground">{renderCell(feature.free)}</td>
                   <td className="text-center py-2 px-2 text-foreground">{renderCell(feature.starter)}</td>
                   <td className={cn("text-center py-2 px-2 text-foreground", "bg-primary/5")}>{renderCell(feature.business)}</td>
