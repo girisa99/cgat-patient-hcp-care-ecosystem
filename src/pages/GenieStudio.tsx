@@ -14,10 +14,8 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
-// NEW: 4-Quadrant Architecture
-import { QuadrantLayout, QuadrantDashboard } from '@/components/navigation';
-// Legacy layout kept for backward compatibility with existing tabs
-import { GenieStudioLayout } from '@/components/layout/GenieStudioLayout';
+// NEW: 4-Quadrant Architecture - Single source of truth for navigation
+import { QuadrantLayout, QuadrantDashboard, QuadrantNavigation } from '@/components/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -1580,7 +1578,7 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
   // DESKTOP VIEW - Full studio with all features
   // ============================================================
   return (
-    <GenieStudioLayout variant="topbar">
+    <QuadrantLayout showNav={true}>
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
         {/* Hero Carousel Section */}
         <div className="relative border-b border-border/50">
@@ -3854,6 +3852,6 @@ INTRODUCTION: [A brief introduction paragraph, 2-3 sentences that hooks the audi
         
         {/* Ralph Wiggum is now rendered globally from App.tsx */}
       </div>
-    </GenieStudioLayout>
+    </QuadrantLayout>
   );
 }

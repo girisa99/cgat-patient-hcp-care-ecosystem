@@ -248,11 +248,11 @@ export const QuadrantNavigation: React.FC<QuadrantNavigationProps> = ({
     setIsMobileMenuOpen(false);
   };
 
-  // Horizontal variant (top nav)
+  // Horizontal variant (top nav) - used in QuadrantLayout header
   if (variant === 'horizontal') {
     return (
       <TooltipProvider>
-        <nav className={cn('w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60', className)}>
+        <nav className={cn('w-full', className)}>
           {/* Mobile toggle */}
           <div className="flex md:hidden items-center justify-between px-4 py-3">
             <span className="text-sm font-semibold">Navigation</span>
