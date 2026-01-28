@@ -5,17 +5,25 @@
  * CREATE → PRODUCE → MANAGE → PUBLISH
  * 
  * Each card shows:
- * - Quick access to primary product
+ * - Quick access to primary product OR product selector
  * - Recent activity
  * - Progress indicator
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import {
   Sparkles,
@@ -27,6 +35,7 @@ import {
   Clock,
   CheckCircle2,
   ChevronRight,
+  ChevronDown,
 } from 'lucide-react';
 import { QUADRANT_CONFIG, type Quadrant } from './QuadrantNavigation';
 
@@ -66,6 +75,15 @@ export const QuadrantDashboard: React.FC<QuadrantDashboardProps> = ({
     };
   };
 
+  // Handle quadrant card click - show product selector for multi-product quadrants
+  const handleQuadrantClick = (quadrant: typeof QUADRANT_CONFIG[number]) => {
+    // If quadrant has multiple products, the dropdown handles navigation
+    // For single-product quadrants, navigate directly
+    if (quadrant.products.length === 1) {
+      navigate(quadrant.primaryRoute);
+    }
+  };
+
   return (
     <div className={cn('space-y-6', className)}>
       {/* Flow indicator */}
@@ -83,20 +101,22 @@ export const QuadrantDashboard: React.FC<QuadrantDashboardProps> = ({
       </div>
 
       {/* Quadrant Cards Grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {QUADRANT_CONFIG.map((quadrant, index) => {
           const stats = getStatsForQuadrant(quadrant.id);
           const total = stats.inProgress + stats.completed;
           const progress = total > 0 ? Math.round((stats.completed / total) * 100) : 0;
+          const hasMultipleProducts = quadrant.products.length > 1;
 
           return (
             <Card
               key={quadrant.id}
               className={cn(
-                'group relative overflow-hidden transition-all hover:shadow-lg cursor-pointer',
-                'border-2 hover:border-primary/30'
+                'group relative overflow-hidden transition-all hover:shadow-lg',
+                'border-2 hover:border-primary/30',
+                !hasMultipleProducts && 'cursor-pointer'
               )}
-              onClick={() => navigate(quadrant.primaryRoute)}
+              onClick={() => !hasMultipleProducts && handleQuadrantClick(quadrant)}
             >
               {/* Step number */}
               <div className="absolute top-3 right-3">
@@ -107,7 +127,7 @@ export const QuadrantDashboard: React.FC<QuadrantDashboardProps> = ({
 
               {/* Gradient background */}
               <div className={cn(
-                'absolute inset-0 opacity-50 bg-gradient-to-br',
+                'absolute inset-0 opacity-30 bg-gradient-to-br',
                 quadrant.bgGradient
               )} />
 
@@ -122,14 +142,54 @@ export const QuadrantDashboard: React.FC<QuadrantDashboardProps> = ({
               </CardHeader>
 
               <CardContent className="relative space-y-4">
-                {/* Products */}
-                <div className="flex flex-wrap gap-1">
-                  {quadrant.products.slice(0, 3).map((product) => (
-                    <Badge key={product.id} variant="secondary" className="text-xs">
-                      {product.name.replace('Genie ', '')}
-                    </Badge>
-                  ))}
-                </div>
+                {/* Products - with dropdown for multi-product quadrants */}
+                {hasMultipleProducts ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="w-full justify-between">
+                        <span className="flex flex-wrap gap-1">
+                          {quadrant.products.slice(0, 3).map((product) => (
+                            <Badge key={product.id} variant="secondary" className="text-xs">
+                              {product.name.replace('Genie ', '')}
+                            </Badge>
+                          ))}
+                        </span>
+                        <ChevronDown className="h-4 w-4 ml-2" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-56">
+                      <DropdownMenuLabel>Choose a tool</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      {quadrant.products.map((product) => (
+                        <DropdownMenuItem 
+                          key={product.id}
+                          onClick={() => navigate(product.route)}
+                          className="flex items-center gap-3 cursor-pointer"
+                        >
+                          <div className="h-8 w-8 rounded-lg overflow-hidden bg-muted flex items-center justify-center">
+                            <img 
+                              src={product.logo} 
+                              alt={product.name} 
+                              className="h-6 w-6 object-contain"
+                            />
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-medium text-sm">{product.name}</span>
+                            <span className="text-xs text-muted-foreground">{product.description}</span>
+                          </div>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <div className="flex flex-wrap gap-1">
+                    {quadrant.products.slice(0, 3).map((product) => (
+                      <Badge key={product.id} variant="secondary" className="text-xs">
+                        {product.name.replace('Genie ', '')}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
 
                 {/* Stats */}
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -155,26 +215,84 @@ export const QuadrantDashboard: React.FC<QuadrantDashboardProps> = ({
 
                 {/* CTA */}
                 <div className="flex items-center justify-between pt-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 px-2 text-xs"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate(quadrant.primaryRoute);
-                    }}
-                  >
-                    <Plus className="h-3 w-3 mr-1" />
-                    New
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 px-2 text-xs group-hover:translate-x-1 transition-transform"
-                  >
-                    Open
-                    <ChevronRight className="h-3 w-3 ml-1" />
-                  </Button>
+                  {hasMultipleProducts ? (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-7 px-2 text-xs">
+                          <Plus className="h-3 w-3 mr-1" />
+                          New
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-48">
+                        <DropdownMenuLabel>Create new in</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        {quadrant.products.map((product) => (
+                          <DropdownMenuItem 
+                            key={product.id}
+                            onClick={() => navigate(product.route)}
+                            className="cursor-pointer"
+                          >
+                            <span className="mr-2">{product.icon}</span>
+                            {product.name.replace('Genie ', '')}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-xs"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(quadrant.primaryRoute);
+                      }}
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      New
+                    </Button>
+                  )}
+                  {hasMultipleProducts ? (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-xs group-hover:translate-x-1 transition-transform"
+                        >
+                          Open
+                          <ChevronRight className="h-3 w-3 ml-1" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuLabel>Open tool</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        {quadrant.products.map((product) => (
+                          <DropdownMenuItem 
+                            key={product.id}
+                            onClick={() => navigate(product.route)}
+                            className="cursor-pointer"
+                          >
+                            <span className="mr-2">{product.icon}</span>
+                            {product.name.replace('Genie ', '')}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-xs group-hover:translate-x-1 transition-transform"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(quadrant.primaryRoute);
+                      }}
+                    >
+                      Open
+                      <ChevronRight className="h-3 w-3 ml-1" />
+                    </Button>
+                  )}
                 </div>
               </CardContent>
 
