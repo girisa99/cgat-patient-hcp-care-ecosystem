@@ -43,6 +43,7 @@ import {
   Music,
   Video,
   FileEdit,
+  MessageSquare,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { EditorProvider, useEditor } from '@/components/universal-editor';
@@ -52,6 +53,8 @@ import { ProactiveEditingSuggestions } from '@/components/editor/ProactiveEditin
 import { InlinePipelineSelector } from './DynamicPipelineSelector';
 import { proactivePipelineEditorService } from '@/services/proactivePipelineEditorService';
 import { GenieProduct, GENIE_PRODUCTS } from '@/constants/genie-products';
+// P4-COLLAB-08: In-Context Commenting
+import { InContextComments } from '@/components/collaboration/InContextComments';
 import type { PresentationSlide } from '../types';
 import type { ActiveProject, UniversalElement } from '@/components/universal-editor/types';
 import type { GeneratedSlide } from '@/services/universalPresentationService';
@@ -408,9 +411,9 @@ function EditorContent({
         </div>
       </div>
 
-      {/* Editor Tabs */}
+      {/* Editor Tabs - Now with Comments (P4-COLLAB-08) */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="preview">
             <Eye className="h-4 w-4 mr-1" />
             Preview
@@ -422,6 +425,10 @@ function EditorContent({
           <TabsTrigger value="enhance">
             <Wand2 className="h-4 w-4 mr-1" />
             Enhance
+          </TabsTrigger>
+          <TabsTrigger value="comments">
+            <MessageSquare className="h-4 w-4 mr-1" />
+            Comments
           </TabsTrigger>
         </TabsList>
 
@@ -472,6 +479,17 @@ function EditorContent({
           <EnhanceTabContent 
             pipelineId={pipelineId || undefined} 
             productContext={productContext}
+          />
+        </TabsContent>
+
+        {/* P4-COLLAB-08: In-Context Comments Tab */}
+        <TabsContent value="comments" className="mt-4">
+          <InContextComments
+            contentId={project.id}
+            contentType="slide"
+            onCommentCountChange={(count) => {
+              console.log('Comment count:', count);
+            }}
           />
         </TabsContent>
       </Tabs>

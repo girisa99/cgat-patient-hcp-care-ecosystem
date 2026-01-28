@@ -27,7 +27,7 @@ import {
   Building2, Users, Paintbrush,
   FolderOpen, Layers, KanbanSquare,
   CalendarDays, Loader2, CalendarCheck,
-  AlertTriangle
+  AlertTriangle, MessageSquare
 } from 'lucide-react';
 import { UnifiedCompositionStudio, ContentLibrary } from './composition-studio';
 import { ContentSchedulerDashboard } from './ContentSchedulerDashboard';
@@ -37,6 +37,9 @@ import { TeamInviteManagement } from './TeamInviteManagement';
 import { WhitelabelConfiguration } from './WhitelabelConfiguration';
 import { TieredAnalyticsDashboard } from '@/components/analytics/TieredAnalyticsDashboard';
 import { ErrorAnalyticsDashboard } from '@/components/resilience/ErrorAnalyticsDashboard';
+// P4-COLLAB: Team Collaboration Components
+import { TeamActivityFeed } from '@/components/collaboration/TeamActivityFeed';
+import { NotificationsPanel } from '@/components/collaboration/NotificationsPanel';
 import { toast } from 'sonner';
 import { useShows } from '@/hooks/useShows';
 import { useNavigate } from 'react-router-dom';
@@ -52,7 +55,7 @@ interface ProductionHubAdminProps {
   className?: string;
 }
 
-type AdminTab = 'kanban' | 'calendar' | 'appointments' | 'library' | 'composition' | 'scheduler' | 'analytics' | 'enterprise-analytics' | 'error-analytics' | 'workspaces' | 'team' | 'whitelabel';
+type AdminTab = 'kanban' | 'calendar' | 'appointments' | 'library' | 'composition' | 'scheduler' | 'analytics' | 'enterprise-analytics' | 'error-analytics' | 'collaboration' | 'workspaces' | 'team' | 'whitelabel';
 
 export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ className }) => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -272,6 +275,10 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
               <AlertTriangle className="w-4 h-4" />
               <span className="hidden lg:inline">Errors</span>
             </TabsTrigger>
+            <TabsTrigger value="collaboration" className="flex items-center gap-2">
+              <MessageSquare className="w-4 h-4" />
+              <span className="hidden lg:inline">Activity</span>
+            </TabsTrigger>
             <TabsTrigger value="workspaces" className="flex items-center gap-2">
               <Building2 className="w-4 h-4" />
               <span className="hidden lg:inline">Workspaces</span>
@@ -379,6 +386,14 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
         {/* Error Analytics - P4 Recovery & Error Dashboard */}
         <TabsContent value="error-analytics" className="mt-6">
           <ErrorAnalyticsDashboard />
+        </TabsContent>
+
+        {/* P4-COLLAB: Team Activity & Notifications */}
+        <TabsContent value="collaboration" className="mt-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <TeamActivityFeed showStats={true} />
+            <NotificationsPanel />
+          </div>
         </TabsContent>
 
         <TabsContent value="workspaces" className="mt-6">
