@@ -1,20 +1,22 @@
 /**
  * PRODUCTION HUB ADMIN PANEL - UNIFIED
  * 
- * Consolidated admin panel with CATEGORIZED navigation:
- * - PIPELINE: Kanban, Calendar, Appointments
- * - CONTENT: Library, Create, Scheduler
- * - ANALYTICS: Performance, Enterprise, Errors
- * - ADMIN: Workspaces, Team, Whitelabel, Activity
- * - AI/SYSTEM: AI Intelligence, Command Center
+ * Redesigned with SIDE PANEL navigation:
+ * - Left panel: Categories & tabs
+ * - Right panel: Content view only
+ * - Categories renamed for clarity:
+ *   - WORKFLOW: Kanban, Calendar, Appointments
+ *   - ASSETS: Library, Create, Publisher
+ *   - INSIGHTS: Performance, Enterprise, Diagnostics
+ *   - SETTINGS: Workspaces, Team, Branding, Activity
+ *   - AI TOOLS: Intelligence, Command Center
  */
 
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Tooltip,
   TooltipContent,
@@ -22,13 +24,10 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-  DropdownMenuLabel,
-} from '@/components/ui/dropdown-menu';
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { 
   Video, Calendar, BarChart3, 
   Globe, Wand2, Sparkles,
@@ -36,8 +35,9 @@ import {
   FolderOpen, Layers, KanbanSquare,
   CalendarDays, Loader2, CalendarCheck,
   AlertTriangle, MessageSquare, Command,
-  Brain, ChevronDown, Workflow, 
-  FileVideo, Settings2, Send
+  Brain, ChevronDown, ChevronRight,
+  FileVideo, Settings2, Send,
+  PanelLeftClose, PanelLeft, LayoutGrid,
 } from 'lucide-react';
 import { UnifiedCompositionStudio, ContentLibrary } from './composition-studio';
 import { ContentSchedulerDashboard } from './ContentSchedulerDashboard';
@@ -68,54 +68,68 @@ interface ProductionHubAdminProps {
 
 type AdminTab = 'kanban' | 'calendar' | 'appointments' | 'library' | 'composition' | 'scheduler' | 'analytics' | 'enterprise-analytics' | 'error-analytics' | 'collaboration' | 'workspaces' | 'team' | 'whitelabel' | 'ai-intelligence' | 'command-center';
 
-// Tab categories for organized navigation
+/**
+ * CLEARER Category Names:
+ * - WORKFLOW: Managing your production pipeline (tasks, schedules, meetings)
+ * - ASSETS: All your content & creation tools
+ * - INSIGHTS: Analytics, reports, diagnostics
+ * - SETTINGS: Workspace/team/branding configuration
+ * - AI TOOLS: AI intelligence & system control
+ */
 const TAB_CATEGORIES = {
-  pipeline: {
-    label: '📊 Pipeline',
-    icon: Workflow,
+  workflow: {
+    label: 'Workflow',
+    description: 'Manage tasks & schedules',
+    icon: LayoutGrid,
     tabs: [
-      { id: 'kanban', label: 'Kanban Board', icon: KanbanSquare, description: 'Visual production pipeline' },
-      { id: 'calendar', label: 'Calendar View', icon: CalendarDays, description: 'Schedule timeline' },
-      { id: 'appointments', label: 'Appointments', icon: CalendarCheck, description: 'Meetings & events' },
+      { id: 'kanban', label: 'Task Board', icon: KanbanSquare, description: 'Drag-and-drop task management' },
+      { id: 'calendar', label: 'Schedule', icon: CalendarDays, description: 'Calendar timeline view' },
+      { id: 'appointments', label: 'Meetings', icon: CalendarCheck, description: 'Book & manage meetings' },
     ]
   },
-  content: {
-    label: '🎬 Content',
+  assets: {
+    label: 'Assets',
+    description: 'Content & creation',
     icon: FileVideo,
     tabs: [
-      { id: 'library', label: 'Content Library', icon: FolderOpen, description: 'Browse all content' },
-      { id: 'composition', label: 'Create New', icon: Layers, description: 'Composition studio' },
-      { id: 'scheduler', label: 'Scheduler', icon: Calendar, description: 'Multi-platform publishing' },
+      { id: 'library', label: 'Library', icon: FolderOpen, description: 'Browse all your content' },
+      { id: 'composition', label: 'Create', icon: Layers, description: 'New composition studio' },
+      { id: 'scheduler', label: 'Publisher', icon: Send, description: 'Schedule & distribute' },
     ]
   },
-  analytics: {
-    label: '📈 Analytics',
+  insights: {
+    label: 'Insights',
+    description: 'Analytics & reports',
     icon: BarChart3,
     tabs: [
       { id: 'analytics', label: 'Performance', icon: BarChart3, description: 'Production metrics' },
-      { id: 'enterprise-analytics', label: 'Enterprise', icon: Globe, description: 'Enterprise analytics' },
-      { id: 'error-analytics', label: 'Error Tracking', icon: AlertTriangle, description: 'Diagnostics' },
+      { id: 'enterprise-analytics', label: 'Enterprise', icon: Globe, description: 'Business analytics' },
+      { id: 'error-analytics', label: 'Diagnostics', icon: AlertTriangle, description: 'Error tracking & health' },
     ]
   },
-  admin: {
-    label: '⚙️ Admin',
+  settings: {
+    label: 'Settings',
+    description: 'Configuration',
     icon: Settings2,
     tabs: [
       { id: 'workspaces', label: 'Workspaces', icon: Building2, description: 'Manage workspaces' },
-      { id: 'team', label: 'Team', icon: Users, description: 'Team management' },
-      { id: 'whitelabel', label: 'Whitelabel', icon: Paintbrush, description: 'Custom branding' },
+      { id: 'team', label: 'Team', icon: Users, description: 'Team members & roles' },
+      { id: 'whitelabel', label: 'Branding', icon: Paintbrush, description: 'Custom branding' },
       { id: 'collaboration', label: 'Activity', icon: MessageSquare, description: 'Team activity feed' },
     ]
   },
-  system: {
-    label: '🧠 AI & System',
+  ai: {
+    label: 'AI Tools',
+    description: 'Intelligence & system',
     icon: Brain,
     tabs: [
-      { id: 'ai-intelligence', label: 'AI Intelligence', icon: Brain, description: 'AI routing & models' },
-      { id: 'command-center', label: 'Command Center', icon: Command, description: 'System overview' },
+      { id: 'ai-intelligence', label: 'AI Hub', icon: Brain, description: 'AI routing & models' },
+      { id: 'command-center', label: 'Control Center', icon: Command, description: 'System overview' },
     ]
   },
 };
+
+const CATEGORY_ORDER = ['workflow', 'assets', 'insights', 'settings', 'ai'];
 
 export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ className }) => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -134,10 +148,20 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
   const [activeTab, setActiveTab] = useState<AdminTab>(initialTab);
   const [activeCategory, setActiveCategory] = useState<EventCategory>('media_production');
   const [selectedShow, setSelectedShow] = useState<any>(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [openCategories, setOpenCategories] = useState<string[]>(['workflow']);
   
   const showId = searchParams.get('show');
   const linkScriptId = searchParams.get('linkScript');
   const showsByStage = getShowsByStage(activeCategory);
+
+  // Set initial open category based on active tab
+  useEffect(() => {
+    const category = getCurrentCategoryKey();
+    if (!openCategories.includes(category)) {
+      setOpenCategories(prev => [...prev, category]);
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     if (showId || linkScriptId) {
@@ -186,23 +210,29 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
     }
   };
 
-  // Find which category contains the current tab
-  const getCurrentCategory = () => {
+  const getCurrentCategoryKey = (): string => {
     for (const [key, category] of Object.entries(TAB_CATEGORIES)) {
       if (category.tabs.some(t => t.id === activeTab)) {
         return key;
       }
     }
-    return 'pipeline';
+    return 'workflow';
   };
 
-  // Get current tab info
   const getCurrentTabInfo = () => {
     for (const category of Object.values(TAB_CATEGORIES)) {
       const tab = category.tabs.find(t => t.id === activeTab);
       if (tab) return tab;
     }
-    return TAB_CATEGORIES.pipeline.tabs[0];
+    return TAB_CATEGORIES.workflow.tabs[0];
+  };
+
+  const toggleCategory = (category: string) => {
+    setOpenCategories(prev => 
+      prev.includes(category) 
+        ? prev.filter(c => c !== category)
+        : [...prev, category]
+    );
   };
 
   const TabLoading = () => (
@@ -213,313 +243,316 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
   );
 
   const currentTabInfo = getCurrentTabInfo();
+  const currentCategoryKey = getCurrentCategoryKey();
 
   return (
-    <div className={`space-y-6 ${className || ''}`}>
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Wand2 className="w-6 h-6 text-primary" />
-            Production Hub Admin
-          </h1>
-          <p className="text-muted-foreground">
-            Create, manage, and publish multi-modal content across all platforms
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Badge variant="outline" className="bg-primary/10 text-primary">
-            Arc Integration
-          </Badge>
-          <Badge variant="outline" className="bg-secondary text-secondary-foreground">
-            13 AI Providers
-          </Badge>
-        </div>
-      </div>
-
-      {/* Quick Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <Video className="w-5 h-5 text-primary" />
+    <div className={cn("flex h-[calc(100vh-8rem)]", className)}>
+      {/* LEFT SIDE PANEL - Navigation */}
+      <aside 
+        className={cn(
+          "flex-shrink-0 border-r bg-muted/30 transition-all duration-300 overflow-hidden",
+          sidebarCollapsed ? "w-14" : "w-64"
+        )}
+      >
+        <div className="flex flex-col h-full">
+          {/* Side Panel Header */}
+          <div className="flex items-center justify-between p-3 border-b bg-background">
+            {!sidebarCollapsed && (
+              <div className="flex items-center gap-2">
+                <Wand2 className="w-5 h-5 text-primary" />
+                <span className="font-semibold text-sm">Production Hub</span>
               </div>
-              <div>
-                <p className="text-2xl font-bold">12</p>
-                <p className="text-xs text-muted-foreground">Videos Generated</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-violet-500/10 rounded-lg">
-                <Sparkles className="w-5 h-5" style={{ color: '#8B5CF6' }} />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">24</p>
-                <p className="text-xs text-muted-foreground">Compositions</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-cyan-500/10 rounded-lg">
-                <Globe className="w-5 h-5" style={{ color: '#06B6D4' }} />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">14</p>
-                <p className="text-xs text-muted-foreground">Languages</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-amber-500/10 rounded-lg">
-                <Calendar className="w-5 h-5" style={{ color: '#F59E0B' }} />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">8</p>
-                <p className="text-xs text-muted-foreground">Scheduled</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-500/10 rounded-lg">
-                <BarChart3 className="w-5 h-5" style={{ color: '#3B82F6' }} />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">8.5K</p>
-                <p className="text-xs text-muted-foreground">Total Views</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Categorized Navigation Bar */}
-      <TooltipProvider delayDuration={200}>
-        <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg border">
-          {Object.entries(TAB_CATEGORIES).map(([key, category]) => (
-            <DropdownMenu key={key}>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant={getCurrentCategory() === key ? "default" : "ghost"}
-                  size="sm"
-                  className={cn(
-                    "gap-2",
-                    getCurrentCategory() === key && "bg-primary text-primary-foreground"
-                  )}
-                >
-                  <category.icon className="w-4 h-4" />
-                  <span className="hidden sm:inline">{category.label}</span>
-                  <ChevronDown className="w-3 h-3 opacity-50" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-56">
-                <DropdownMenuLabel className="text-xs text-muted-foreground">
-                  {category.label}
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {category.tabs.map(tab => (
-                  <Tooltip key={tab.id}>
-                    <TooltipTrigger asChild>
-                      <DropdownMenuItem
-                        onClick={() => handleTabChange(tab.id)}
-                        className={cn(
-                          "gap-2 cursor-pointer",
-                          activeTab === tab.id && "bg-primary/10 text-primary"
-                        )}
-                      >
-                        <tab.icon className="w-4 h-4" />
-                        <div className="flex-1">
-                          <p className="font-medium">{tab.label}</p>
-                          <p className="text-xs text-muted-foreground">{tab.description}</p>
-                        </div>
-                        {activeTab === tab.id && (
-                          <div className="w-2 h-2 rounded-full bg-primary" />
-                        )}
-                      </DropdownMenuItem>
-                    </TooltipTrigger>
-                    <TooltipContent side="right">
-                      {tab.description}
-                    </TooltipContent>
-                  </Tooltip>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ))}
-
-          {/* Current Tab Indicator */}
-          <div className="ml-auto flex items-center gap-2 text-sm text-muted-foreground">
-            <currentTabInfo.icon className="w-4 h-4" />
-            <span className="hidden md:inline">{currentTabInfo.label}</span>
-          </div>
-        </div>
-      </TooltipProvider>
-
-      {/* Content Area - Hidden Tabs */}
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <div className="hidden">
-          <TabsList>
-            {Object.values(TAB_CATEGORIES).flatMap(cat => 
-              cat.tabs.map(tab => (
-                <TabsTrigger key={tab.id} value={tab.id}>{tab.label}</TabsTrigger>
-              ))
             )}
-          </TabsList>
-        </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                >
+                  {sidebarCollapsed ? (
+                    <PanelLeft className="h-4 w-4" />
+                  ) : (
+                    <PanelLeftClose className="h-4 w-4" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                {sidebarCollapsed ? 'Expand panel' : 'Collapse panel'}
+              </TooltipContent>
+            </Tooltip>
+          </div>
 
-        {/* Kanban Tab */}
-        <TabsContent value="kanban" className="mt-4 space-y-4">
-          {/* Category Selector */}
-          <div className="flex flex-wrap items-center gap-3 pb-4 border-b">
-            <span className="text-sm font-medium text-muted-foreground">Category:</span>
-            <div className="flex flex-wrap items-center gap-2">
-              <Button
-                variant={activeCategory === 'media_production' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setActiveCategory('media_production')}
-                className="gap-2"
-              >
-                <Video className="w-4 h-4" />
-                Media Productions
-              </Button>
-              <Button
-                variant={activeCategory === 'business_meeting' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setActiveCategory('business_meeting')}
-                className="gap-2"
-              >
-                <Users className="w-4 h-4" />
-                Business Meetings
-              </Button>
-              <Button
-                variant={activeCategory === 'event' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setActiveCategory('event')}
-                className="gap-2"
-              >
-                <CalendarDays className="w-4 h-4" />
-                Events
-              </Button>
-              <Button
-                variant={activeCategory === 'genie_demo' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setActiveCategory('genie_demo')}
-                className="gap-2"
-              >
-                <Sparkles className="w-4 h-4" />
-                Genie Demos
-              </Button>
+          {/* Navigation Categories */}
+          <ScrollArea className="flex-1 py-2">
+            <TooltipProvider delayDuration={0}>
+              <div className="space-y-1 px-2">
+                {CATEGORY_ORDER.map(categoryKey => {
+                  const category = TAB_CATEGORIES[categoryKey as keyof typeof TAB_CATEGORIES];
+                  const isOpen = openCategories.includes(categoryKey);
+                  const isActiveCategory = currentCategoryKey === categoryKey;
+                  const CategoryIcon = category.icon;
+
+                  if (sidebarCollapsed) {
+                    // Collapsed: Show only icons with dropdown on hover
+                    return (
+                      <div key={categoryKey} className="py-1">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant={isActiveCategory ? "secondary" : "ghost"}
+                              size="icon"
+                              className="w-10 h-10"
+                              onClick={() => handleTabChange(category.tabs[0].id)}
+                            >
+                              <CategoryIcon className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="right" className="space-y-1">
+                            <p className="font-medium">{category.label}</p>
+                            <p className="text-xs text-muted-foreground">{category.description}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                    );
+                  }
+
+                  // Expanded: Show collapsible categories
+                  return (
+                    <Collapsible
+                      key={categoryKey}
+                      open={isOpen}
+                      onOpenChange={() => toggleCategory(categoryKey)}
+                    >
+                      <CollapsibleTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          className={cn(
+                            "w-full justify-between px-3 py-2 h-auto",
+                            isActiveCategory && "bg-primary/10 text-primary"
+                          )}
+                        >
+                          <div className="flex items-center gap-2">
+                            <CategoryIcon className="h-4 w-4" />
+                            <div className="text-left">
+                              <p className="text-sm font-medium">{category.label}</p>
+                              <p className="text-xs text-muted-foreground">{category.description}</p>
+                            </div>
+                          </div>
+                          {isOpen ? (
+                            <ChevronDown className="h-4 w-4" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="pl-4 pt-1 space-y-1">
+                        {category.tabs.map(tab => {
+                          const TabIcon = tab.icon;
+                          const isActive = activeTab === tab.id;
+                          
+                          return (
+                            <Tooltip key={tab.id}>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant={isActive ? "secondary" : "ghost"}
+                                  size="sm"
+                                  className={cn(
+                                    "w-full justify-start gap-2 h-9",
+                                    isActive && "bg-primary/15 text-primary font-medium"
+                                  )}
+                                  onClick={() => handleTabChange(tab.id)}
+                                >
+                                  <TabIcon className="h-4 w-4" />
+                                  <span>{tab.label}</span>
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent side="right">
+                                {tab.description}
+                              </TooltipContent>
+                            </Tooltip>
+                          );
+                        })}
+                      </CollapsibleContent>
+                    </Collapsible>
+                  );
+                })}
+              </div>
+            </TooltipProvider>
+          </ScrollArea>
+        </div>
+      </aside>
+
+      {/* RIGHT PANEL - Content View */}
+      <main className="flex-1 overflow-hidden">
+        {/* Content Header */}
+        <div className="flex items-center justify-between p-4 border-b bg-background">
+          <div className="flex items-center gap-3">
+            <currentTabInfo.icon className="w-5 h-5 text-primary" />
+            <div>
+              <h2 className="font-semibold">{currentTabInfo.label}</h2>
+              <p className="text-xs text-muted-foreground">{currentTabInfo.description}</p>
             </div>
           </div>
+          
+          {/* Quick Actions based on current tab */}
+          {activeTab === 'composition' && (
+            <Button size="sm" onClick={handleCreateNew}>
+              <Layers className="w-4 h-4 mr-2" />
+              New Composition
+            </Button>
+          )}
+        </div>
 
-          <Suspense fallback={<TabLoading />}>
-            <VerticalKanban 
-              showsByStage={showsByStage}
-              onSelectShow={handleShowClick}
-              onUpdateStage={handleStageChange}
-              onOpenRecordingStudio={handleOpenRecordingStudio}
-              eventCategory={activeCategory}
-              isLoading={showsLoading}
-            />
-          </Suspense>
-        </TabsContent>
+        {/* Content Area */}
+        <ScrollArea className="h-[calc(100%-65px)]">
+          <div className="p-4">
+            {/* Kanban Tab */}
+            {activeTab === 'kanban' && (
+              <div className="space-y-4">
+                {/* Category Selector */}
+                <div className="flex flex-wrap items-center gap-3 pb-4 border-b">
+                  <span className="text-sm font-medium text-muted-foreground">Type:</span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      variant={activeCategory === 'media_production' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setActiveCategory('media_production')}
+                      className="gap-2"
+                    >
+                      <Video className="w-4 h-4" />
+                      Media
+                    </Button>
+                    <Button
+                      variant={activeCategory === 'business_meeting' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setActiveCategory('business_meeting')}
+                      className="gap-2"
+                    >
+                      <Users className="w-4 h-4" />
+                      Meetings
+                    </Button>
+                    <Button
+                      variant={activeCategory === 'event' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setActiveCategory('event')}
+                      className="gap-2"
+                    >
+                      <CalendarDays className="w-4 h-4" />
+                      Events
+                    </Button>
+                    <Button
+                      variant={activeCategory === 'genie_demo' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setActiveCategory('genie_demo')}
+                      className="gap-2"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      Demos
+                    </Button>
+                  </div>
+                </div>
 
-        {/* Calendar Tab */}
-        <TabsContent value="calendar" className="mt-4">
-          <Suspense fallback={<TabLoading />}>
-            <ProductionCalendar 
-              shows={shows}
-              onShowClick={handleShowClick}
-            />
-          </Suspense>
-        </TabsContent>
+                <Suspense fallback={<TabLoading />}>
+                  <VerticalKanban 
+                    showsByStage={showsByStage}
+                    onSelectShow={handleShowClick}
+                    onUpdateStage={handleStageChange}
+                    onOpenRecordingStudio={handleOpenRecordingStudio}
+                    eventCategory={activeCategory}
+                    isLoading={showsLoading}
+                  />
+                </Suspense>
+              </div>
+            )}
 
-        {/* Appointments Tab */}
-        <TabsContent value="appointments" className="mt-4">
-          <Suspense fallback={<TabLoading />}>
-            <AppointmentScheduler />
-          </Suspense>
-        </TabsContent>
+            {/* Calendar Tab */}
+            {activeTab === 'calendar' && (
+              <Suspense fallback={<TabLoading />}>
+                <ProductionCalendar 
+                  shows={shows}
+                  onShowClick={handleShowClick}
+                />
+              </Suspense>
+            )}
 
-        {/* Library Tab */}
-        <TabsContent value="library" className="mt-4">
-          <ContentLibrary onEdit={handleEditComposition} />
-        </TabsContent>
+            {/* Appointments Tab */}
+            {activeTab === 'appointments' && (
+              <Suspense fallback={<TabLoading />}>
+                <AppointmentScheduler />
+              </Suspense>
+            )}
 
-        {/* Composition Tab */}
-        <TabsContent value="composition" className="mt-4">
-          <UnifiedCompositionStudio />
-        </TabsContent>
+            {/* Library Tab */}
+            {activeTab === 'library' && (
+              <ContentLibrary />
+            )}
 
-        {/* Scheduler Tab */}
-        <TabsContent value="scheduler" className="mt-4">
-          <ContentSchedulerDashboard />
-        </TabsContent>
+            {/* Composition Tab */}
+            {activeTab === 'composition' && (
+              <UnifiedCompositionStudio />
+            )}
 
-        {/* Analytics Tab */}
-        <TabsContent value="analytics" className="mt-4">
-          <ProductionAnalytics />
-        </TabsContent>
+            {/* Scheduler Tab */}
+            {activeTab === 'scheduler' && (
+              <ContentSchedulerDashboard />
+            )}
 
-        {/* Enterprise Analytics Tab */}
-        <TabsContent value="enterprise-analytics" className="mt-4">
-          <TieredAnalyticsDashboard accessLevel="enterprise" />
-        </TabsContent>
+            {/* Analytics Tab */}
+            {activeTab === 'analytics' && (
+              <ProductionAnalytics />
+            )}
 
-        {/* Error Analytics Tab */}
-        <TabsContent value="error-analytics" className="mt-4">
-          <ErrorAnalyticsDashboard />
-        </TabsContent>
+            {/* Enterprise Analytics */}
+            {activeTab === 'enterprise-analytics' && (
+              <TieredAnalyticsDashboard accessLevel="internal" />
+            )}
 
-        {/* Collaboration Tab */}
-        <TabsContent value="collaboration" className="mt-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <TeamActivityFeed />
-            <NotificationsPanel />
+            {/* Error Analytics */}
+            {activeTab === 'error-analytics' && (
+              <ErrorAnalyticsDashboard />
+            )}
+
+            {/* Collaboration */}
+            {activeTab === 'collaboration' && (
+              <div className="grid lg:grid-cols-2 gap-6">
+                <TeamActivityFeed />
+                <NotificationsPanel />
+              </div>
+            )}
+
+            {/* Workspaces */}
+            {activeTab === 'workspaces' && (
+              <WorkspaceManagement />
+            )}
+
+            {/* Team */}
+            {activeTab === 'team' && (
+              <TeamInviteManagement />
+            )}
+
+            {/* Whitelabel */}
+            {activeTab === 'whitelabel' && (
+              <WhitelabelConfiguration />
+            )}
+
+            {/* AI Intelligence */}
+            {activeTab === 'ai-intelligence' && (
+              <Suspense fallback={<TabLoading />}>
+                <AIIntelligenceHub />
+              </Suspense>
+            )}
+
+            {/* Command Center */}
+            {activeTab === 'command-center' && (
+              <Suspense fallback={<TabLoading />}>
+                <GenieCommandCenter />
+              </Suspense>
+            )}
           </div>
-        </TabsContent>
-
-        {/* Workspaces Tab */}
-        <TabsContent value="workspaces" className="mt-4">
-          <WorkspaceManagement />
-        </TabsContent>
-
-        {/* Team Tab */}
-        <TabsContent value="team" className="mt-4">
-          <TeamInviteManagement />
-        </TabsContent>
-
-        {/* Whitelabel Tab */}
-        <TabsContent value="whitelabel" className="mt-4">
-          <WhitelabelConfiguration />
-        </TabsContent>
-
-        {/* AI Intelligence Tab */}
-        <TabsContent value="ai-intelligence" className="mt-4">
-          <Suspense fallback={<TabLoading />}>
-            <AIIntelligenceHub />
-          </Suspense>
-        </TabsContent>
-
-        {/* Command Center Tab */}
-        <TabsContent value="command-center" className="mt-4">
-          <Suspense fallback={<TabLoading />}>
-            <GenieCommandCenter />
-          </Suspense>
-        </TabsContent>
-      </Tabs>
+        </ScrollArea>
+      </main>
     </div>
   );
 };
