@@ -153,7 +153,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
       </Button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-popover border rounded-md shadow-lg z-[9999] max-h-80 overflow-hidden backdrop-blur-sm">
+        <div className="absolute top-full left-0 right-0 mt-1 bg-background border border-border rounded-md shadow-xl z-[9999] max-h-80 overflow-hidden">
           {searchable && (
             <div className="p-2 border-b">
               <input
