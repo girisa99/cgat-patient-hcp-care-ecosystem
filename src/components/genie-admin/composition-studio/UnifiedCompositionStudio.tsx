@@ -453,9 +453,49 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
     }
   }, [chapters, project.name, updateChapter]);
 
-  // Quick templates
-  const loadTemplate = (type: 'hero' | 'product' | 'tutorial' | 'testimonial') => {
-    const templates: Record<string, Partial<CompositionChapter>[]> = {
+  // Quick templates - now supports ALL TEMPLATE_DEFINITIONS
+  const loadTemplate = (templateId: string) => {
+    // Find template from TEMPLATE_DEFINITIONS
+    const templateDef = TEMPLATE_DEFINITIONS.find(t => t.id === templateId);
+    
+    if (templateDef) {
+      // Load from TEMPLATE_DEFINITIONS (has full chapter info)
+      setChapters([]);
+      templateDef.chapters.forEach((ch, i) => {
+        const chapter: CompositionChapter = {
+          id: generateId(),
+          order: i + 1,
+          title: ch.title,
+          duration: ch.duration,
+          visual: { 
+            type: ch.type,
+            prompt: ch.description,
+          },
+          voiceover: { 
+            type: ch.type === 'avatar' ? 'lipsync' : 'tts', 
+            text: ch.description || '', 
+            language: 'en' 
+          },
+          status: 'draft',
+          previewUrls: {},
+        };
+        setChapters(prev => [...prev, chapter]);
+      });
+      
+      // Update project name and set to chapters view
+      setProject(p => ({ 
+        ...p, 
+        name: p.name || templateDef.label,
+        description: templateDef.desc 
+      }));
+      setChaptersViewMode('chapters');
+      setCurrentStep('chapters');
+      toast.success(`Loaded "${templateDef.label}" with ${templateDef.chapters.length} chapters`);
+      return;
+    }
+    
+    // Fallback for legacy template types
+    const legacyTemplates: Record<string, Partial<CompositionChapter>[]> = {
       hero: [
         { title: 'Opening Hook', duration: 15, visual: { type: 'animation' }, voiceover: { type: 'tts', text: 'Discover the future of content creation...', language: 'en' } },
         { title: 'Product Reveal', duration: 30, visual: { type: '3d' }, voiceover: { type: 'tts', text: 'Introducing Genie Studio...', language: 'en' } },
@@ -480,21 +520,28 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
       ],
     };
 
-    setChapters([]);
-    templates[type].forEach((t, i) => {
-      const chapter: CompositionChapter = {
-        id: generateId(),
-        order: i + 1,
-        title: t.title || `Chapter ${i + 1}`,
-        duration: t.duration || 30,
-        visual: t.visual as any || { type: 'video' },
-        voiceover: t.voiceover as any || { type: 'tts', text: '', language: 'en' },
-        status: 'draft',
-        previewUrls: {},
-      };
-      setChapters(prev => [...prev, chapter]);
-    });
-    toast.success(`Loaded ${type} template with ${templates[type].length} chapters`);
+    if (legacyTemplates[templateId]) {
+      setChapters([]);
+      legacyTemplates[templateId].forEach((t, i) => {
+        const chapter: CompositionChapter = {
+          id: generateId(),
+          order: i + 1,
+          title: t.title || `Chapter ${i + 1}`,
+          duration: t.duration || 30,
+          visual: t.visual as any || { type: 'video' },
+          voiceover: t.voiceover as any || { type: 'tts', text: '', language: 'en' },
+          status: 'draft',
+          previewUrls: {},
+        };
+        setChapters(prev => [...prev, chapter]);
+      });
+      setChaptersViewMode('chapters');
+      setCurrentStep('chapters');
+      toast.success(`Loaded ${templateId} template with ${legacyTemplates[templateId].length} chapters`);
+      return;
+    }
+    
+    toast.error(`Template "${templateId}" not found`);
   };
 
   // Real Generation using contentGenerationService
@@ -1044,7 +1091,7 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
                     Categories
                   </Button>
                 </div>
-                {chapters.length > 0 && chaptersViewMode === 'chapters' && (
+                {chaptersViewMode === 'chapters' && (
                   <Button onClick={() => setShowAddChapterDialog(true)}>
                     <Plus className="w-4 h-4 mr-2" />
                     Add Chapter
