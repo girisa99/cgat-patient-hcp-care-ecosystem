@@ -345,8 +345,8 @@ export const AppointmentScheduler: React.FC = () => {
       </div>
 
       {/* New Appointment Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-lg">
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen} modal={true}>
+        <DialogContent className="sm:max-w-lg z-[200]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CalendarDays className="h-5 w-5 text-primary" />
@@ -405,13 +405,13 @@ export const AppointmentScheduler: React.FC = () => {
                     {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent className="w-auto p-0 z-[300]" align="start">
                   <Calendar
                     mode="single"
                     selected={selectedDate}
                     onSelect={setSelectedDate}
                     initialFocus
-                    className={cn("p-3 pointer-events-auto")}
+                    className="p-3 pointer-events-auto"
                   />
                 </PopoverContent>
               </Popover>
@@ -425,7 +425,7 @@ export const AppointmentScheduler: React.FC = () => {
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="max-h-[200px]">
+                  <SelectContent className="max-h-[200px] z-[300]">
                     {TIME_SLOTS.map((time) => (
                       <SelectItem key={time} value={time}>
                         {time}
@@ -440,7 +440,7 @@ export const AppointmentScheduler: React.FC = () => {
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-[300]">
                     {DURATION_OPTIONS.map((opt) => (
                       <SelectItem key={opt.value} value={opt.value}>
                         {opt.label}
