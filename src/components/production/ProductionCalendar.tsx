@@ -1,6 +1,7 @@
 /**
  * Production Calendar - Enhanced visual calendar with scheduling capabilities
  * Features: Day click to schedule, week/month views, full legend, time slots
+ * Uses UnifiedScheduleShowDialog for comprehensive scheduling
  */
 
 import React, { useState, useMemo } from 'react';
@@ -18,22 +19,14 @@ import {
   isToday,
   addWeeks,
   subWeeks,
-  eachHourOfInterval,
-  startOfDay,
-  endOfDay,
   isWeekend,
-  getDay
 } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -53,12 +46,15 @@ import {
   CalendarDays,
   CalendarRange,
   Layers,
+  Sparkles,
   Sun,
-  Moon,
-  Sparkles
+  Moon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { ShowWithParticipants, ShowType, EventCategory, SHOW_TYPES } from '@/types/shows';
+import { ShowWithParticipants, ShowType, EventCategory } from '@/types/shows';
+import { UnifiedScheduleShowDialog, type ScheduleShowData } from './UnifiedScheduleShowDialog';
+import { useShows } from '@/hooks/useShows';
+import { toast } from 'sonner';
 
 // Color legend configuration for different show types - grouped by category
 const CATEGORY_COLORS: Record<EventCategory, { bg: string; text: string; label: string; icon: React.ReactNode }> = {
@@ -97,25 +93,7 @@ const SHOW_TYPE_COLORS: Record<ShowType, { bg: string; text: string; border: str
   genie_suite_overview: { bg: 'bg-gradient-to-r from-purple-500/20 to-fuchsia-500/20', text: 'text-fuchsia-400', border: 'border-fuchsia-500', label: '🌟 Suite Overview', category: 'genie_demo' },
 };
 
-// Business hours for time slots
-const BUSINESS_HOURS = { start: 8, end: 20 };
-
-// Time slot options for scheduling
-const TIME_SLOTS = [
-  '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', 
-  '11:00', '11:30', '12:00', '12:30', '13:00', '13:30',
-  '14:00', '14:30', '15:00', '15:30', '16:00', '16:30',
-  '17:00', '17:30', '18:00', '18:30', '19:00', '19:30'
-];
-
-const DURATION_OPTIONS = [
-  { value: '15', label: '15 min' },
-  { value: '30', label: '30 min' },
-  { value: '45', label: '45 min' },
-  { value: '60', label: '1 hour' },
-  { value: '90', label: '1.5 hours' },
-  { value: '120', label: '2 hours' },
-];
+// Note: Time slot and duration options now handled by UnifiedScheduleShowDialog
 
 const getShowTypeIcon = (type: ShowType) => {
   switch (type) {
@@ -160,14 +138,49 @@ export function ProductionCalendar({
   onAddToGoogle,
   onAddToOutlook 
 }: ProductionCalendarProps) {
+  const { createShow } = useShows();
+  
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
   const [selectedShow, setSelectedShow] = useState<ShowWithParticipants | null>(null);
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
-  const [scheduleTime, setScheduleTime] = useState('09:00');
-  const [scheduleDuration, setScheduleDuration] = useState('60');
   const [showLegend, setShowLegend] = useState(true);
+
+  // Handler for UnifiedScheduleShowDialog
+  const handleScheduleShow = async (data: ScheduleShowData) => {
+    try {
+      // Build guest_info array from guests
+      const guestInfo = data.guests
+        .filter(guest => guest.name)
+        .map(guest => ({
+          name: guest.name,
+          email: guest.email,
+          role: guest.role || 'guest'
+        }));
+
+      await createShow({
+        title: data.title,
+        description: data.description,
+        show_type: data.show_type,
+        event_category: data.event_category,
+        scheduled_date: data.scheduled_date,
+        starting_stage: data.starting_stage as any,
+        host_name: data.host.name,
+        host_email: data.host.email,
+        guest_info: guestInfo,
+        linked_script_id: data.linked_script_id,
+        linked_music_id: data.linked_music_id,
+      });
+
+      toast.success('Meeting scheduled successfully!');
+      setIsScheduleDialogOpen(false);
+      onScheduleNew?.(new Date(data.scheduled_date), format(new Date(data.scheduled_date), 'HH:mm'));
+    } catch (error) {
+      console.error('Error scheduling show:', error);
+      toast.error('Failed to schedule meeting');
+    }
+  };
 
   // Get calendar days based on view mode
   const calendarDays = useMemo(() => {
@@ -210,14 +223,7 @@ export function ProductionCalendar({
     return showsByDate[dateKey] || [];
   }, [selectedDay, showsByDate]);
 
-  // Get busy time slots for selected day
-  const busySlots = useMemo(() => {
-    return selectedDayShows.map(show => {
-      const start = new Date(show.scheduled_date!);
-      const end = new Date(start.getTime() + (show.duration_minutes || 60) * 60 * 1000);
-      return { start, end, show };
-    });
-  }, [selectedDayShows]);
+  // Note: Busy slots now handled by UnifiedScheduleShowDialog
 
   // Group show types by category for legend
   const legendByCategory = useMemo(() => {
@@ -271,12 +277,7 @@ export function ProductionCalendar({
     onShowClick?.(show);
   };
 
-  const handleScheduleSubmit = () => {
-    if (selectedDay && onScheduleNew) {
-      onScheduleNew(selectedDay, scheduleTime);
-    }
-    setIsScheduleDialogOpen(false);
-  };
+  // Old handleScheduleSubmit removed - now using UnifiedScheduleShowDialog
 
   // Generate rich calendar event details with meeting URL, topics, host, etc.
   const buildRichCalendarDescription = (show: ShowWithParticipants): string => {
@@ -469,19 +470,7 @@ export function ProductionCalendar({
     URL.revokeObjectURL(url);
   };
 
-  // Check if time slot is available
-  const isSlotAvailable = (time: string) => {
-    if (!selectedDay) return true;
-    const [hours, minutes] = time.split(':').map(Number);
-    const slotStart = new Date(selectedDay);
-    slotStart.setHours(hours, minutes, 0, 0);
-    const slotEnd = new Date(slotStart.getTime() + parseInt(scheduleDuration) * 60 * 1000);
-    
-    return !busySlots.some(({ start, end }) => 
-      (slotStart >= start && slotStart < end) || (slotEnd > start && slotEnd <= end) ||
-      (slotStart <= start && slotEnd >= end)
-    );
-  };
+  // Note: isSlotAvailable moved to UnifiedScheduleShowDialog
 
   return (
     <>
@@ -778,126 +767,17 @@ export function ProductionCalendar({
       </div>
     </TooltipProvider>
 
-    {/* Day Schedule Dialog - OUTSIDE TooltipProvider for proper portal rendering */}
-    <Dialog open={isScheduleDialogOpen} onOpenChange={setIsScheduleDialogOpen} modal={true}>
-      <DialogContent className="sm:max-w-lg" style={{ zIndex: 99999 }}>
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <CalendarDays className="h-5 w-5 text-primary" />
-            {selectedDay ? format(selectedDay, 'EEEE, MMMM d, yyyy') : 'Schedule'}
-          </DialogTitle>
-          <DialogDescription>
-            {selectedDayShows.length > 0 
-              ? `${selectedDayShows.length} event(s) scheduled. Select a time slot to add a new meeting.`
-              : 'No events scheduled. Select a time slot to add a new meeting.'}
-          </DialogDescription>
-        </DialogHeader>
-        
-        <div className="space-y-4 py-4">
-          {/* Existing events for the day */}
-          {selectedDayShows.length > 0 && (
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Scheduled Events</Label>
-              <div className="space-y-1 max-h-[150px] overflow-y-auto">
-                {selectedDayShows.map(show => {
-                  const colors = SHOW_TYPE_COLORS[show.show_type];
-                  const startTime = format(new Date(show.scheduled_date!), 'h:mm a');
-                  const endTime = format(
-                    new Date(new Date(show.scheduled_date!).getTime() + (show.duration_minutes || 60) * 60 * 1000),
-                    'h:mm a'
-                  );
-                  return (
-                    <div 
-                      key={show.id}
-                      onClick={() => handleShowClick(show)}
-                      className={cn(
-                        'flex items-center gap-2 p-2 rounded border-l-3 cursor-pointer hover:bg-accent/50',
-                        colors.bg, colors.border, 'border-l-4'
-                      )}
-                    >
-                      <Clock className="h-3 w-3" />
-                      <span className="text-xs font-medium">{startTime} - {endTime}</span>
-                      <span className="text-xs truncate flex-1">{show.title}</span>
-                      {getShowTypeIcon(show.show_type)}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Time slot selection */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Start Time</Label>
-              <Select value={scheduleTime} onValueChange={setScheduleTime}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="max-h-[200px]" style={{ zIndex: 100000 }}>
-                  {TIME_SLOTS.map(time => {
-                    const available = isSlotAvailable(time);
-                    return (
-                      <SelectItem 
-                        key={time} 
-                        value={time}
-                        disabled={!available}
-                        className={cn(!available && 'text-muted-foreground line-through')}
-                      >
-                        {time} {!available && '(busy)'}
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Duration</Label>
-              <Select value={scheduleDuration} onValueChange={setScheduleDuration}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent style={{ zIndex: 100000 }}>
-                  {DURATION_OPTIONS.map(opt => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Holiday/Weekend notice */}
-          {selectedDay && (
-            <>
-              {isHoliday(selectedDay) && (
-                <div className="flex items-center gap-2 p-2 bg-amber-500/10 border border-amber-500/30 rounded-lg text-sm">
-                  <Sun className="h-4 w-4 text-amber-500" />
-                  <span>Holiday: {isHoliday(selectedDay)}</span>
-                </div>
-              )}
-              {isWeekend(selectedDay) && !isHoliday(selectedDay) && (
-                <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg text-sm text-muted-foreground">
-                  <Moon className="h-4 w-4" />
-                  <span>This is a weekend day</span>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setIsScheduleDialogOpen(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleScheduleSubmit}>
-            <Plus className="h-4 w-4 mr-1" />
-            Schedule New Meeting
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    {/* Unified Schedule Dialog - Uses comprehensive scheduling form */}
+    <UnifiedScheduleShowDialog
+      open={isScheduleDialogOpen}
+      onOpenChange={setIsScheduleDialogOpen}
+      onSchedule={handleScheduleShow}
+      initialData={selectedDay ? {
+        scheduled_date: selectedDay.toISOString(),
+      } : undefined}
+      mode="create"
+      variant="production-hub"
+    />
 
     {/* Show Details Dialog - OUTSIDE TooltipProvider for proper portal rendering */}
     <Dialog open={!!selectedShow} onOpenChange={() => setSelectedShow(null)} modal={true}>

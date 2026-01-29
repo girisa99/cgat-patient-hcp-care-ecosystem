@@ -1,30 +1,25 @@
 /**
  * APPOINTMENT SCHEDULER
  * Merged from Genie Arc into Production Hub
- * Manages appointments, meetings, and scheduling flow
+ * Uses UnifiedScheduleShowDialog for comprehensive scheduling
  */
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { 
   CalendarCheck, Clock, Users, Video, 
-  Plus, Search, Filter, ChevronRight,
-  Phone, MapPin, Mail, CalendarDays
+  Plus, Search, ChevronRight,
+  Phone
 } from 'lucide-react';
 import { useShows } from '@/hooks/useShows';
-import { format, addDays, startOfWeek, endOfWeek, isToday, isTomorrow } from 'date-fns';
+import { format, isToday, isTomorrow, startOfWeek, endOfWeek } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { UnifiedScheduleShowDialog, type ScheduleShowData } from '@/components/production/UnifiedScheduleShowDialog';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface Appointment {
   id: string;
@@ -148,6 +143,37 @@ export const AppointmentScheduler: React.FC = () => {
       notes: '',
     });
     setIsDialogOpen(true);
+  };
+
+  // Handler for UnifiedScheduleShowDialog
+  const handleScheduleAppointment = async (data: ScheduleShowData) => {
+    try {
+      const guestInfo = data.guests
+        .filter(guest => guest.name)
+        .map(guest => ({
+          name: guest.name,
+          email: guest.email,
+          role: guest.role || 'guest'
+        }));
+
+      await createShow({
+        title: data.title,
+        description: data.description,
+        show_type: data.show_type,
+        event_category: data.event_category,
+        scheduled_date: data.scheduled_date,
+        starting_stage: data.starting_stage as any,
+        host_name: data.host.name,
+        host_email: data.host.email,
+        guest_info: guestInfo,
+      });
+
+      toast.success('Appointment scheduled successfully!');
+      setIsDialogOpen(false);
+    } catch (error) {
+      console.error('Error scheduling appointment:', error);
+      toast.error('Failed to schedule appointment');
+    }
   };
 
   const handleCreateAppointment = async () => {
@@ -346,148 +372,14 @@ export const AppointmentScheduler: React.FC = () => {
       </div>
     </div>
 
-    {/* New Appointment Dialog - OUTSIDE main div for proper portal rendering */}
-    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen} modal={true}>
-      <DialogContent className="sm:max-w-lg" style={{ zIndex: 99999 }}>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CalendarDays className="h-5 w-5 text-primary" />
-              Schedule New Appointment
-            </DialogTitle>
-            <DialogDescription>
-              Create a new meeting, call, or demo session.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            {/* Title */}
-            <div className="space-y-2">
-              <Label htmlFor="title">Title *</Label>
-              <Input
-                id="title"
-                placeholder="e.g., Weekly Team Sync"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              />
-            </div>
-
-            {/* Type */}
-            <div className="space-y-2">
-              <Label>Type</Label>
-              <Select value={formData.type} onValueChange={(v) => setFormData({ ...formData, type: v })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {MEETING_TYPES.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      <div className="flex items-center gap-2">
-                        <type.icon className="w-4 h-4" />
-                        {type.label}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Date */}
-            <div className="space-y-2">
-              <Label>Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !selectedDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarDays className="mr-2 h-4 w-4" />
-                    {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 z-[10000]" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={setSelectedDate}
-                    initialFocus
-                    className="p-3 pointer-events-auto"
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            {/* Time & Duration */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Time</Label>
-                <Select value={formData.time} onValueChange={(v) => setFormData({ ...formData, time: v })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[200px] z-[10000]">
-                    {TIME_SLOTS.map((time) => (
-                      <SelectItem key={time} value={time}>
-                        {time}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Duration</Label>
-                <Select value={formData.duration} onValueChange={(v) => setFormData({ ...formData, duration: v })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="z-[10000]">
-                    {DURATION_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Location */}
-            <div className="space-y-2">
-              <Label htmlFor="location">Location / Meeting Link</Label>
-              <Input
-                id="location"
-                placeholder="e.g., Zoom link or room name"
-                value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-              />
-            </div>
-
-            {/* Notes */}
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes</Label>
-              <Textarea
-                id="notes"
-                placeholder="Add any additional details..."
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                rows={3}
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleCreateAppointment}>
-              <Plus className="h-4 w-4 mr-1" />
-              Schedule Appointment
-            </Button>
-          </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    {/* Unified Schedule Dialog - Uses comprehensive scheduling form */}
+    <UnifiedScheduleShowDialog
+      open={isDialogOpen}
+      onOpenChange={setIsDialogOpen}
+      onSchedule={handleScheduleAppointment}
+      mode="create"
+      variant="arc"
+    />
     </>
   );
 };
