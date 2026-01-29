@@ -54,6 +54,20 @@ interface TemplateDefinition {
   previewVideoUrl?: string;
   totalDuration: number;
   regionalSupport: string[];
+  dialectConfig?: DialectConfig;
+}
+
+// Dialect configuration for unified regional template
+interface DialectConfig {
+  allowMultipleRegions: boolean;
+  allowMultipleDialectsPerRegion: boolean;
+  regions: {
+    id: string;
+    label: string;
+    dialects: string[];
+    defaultDialect: string;
+    voiceProvider: 'elevenlabs' | 'azure' | 'alibaba' | 'google';
+  }[];
 }
 
 const TEMPLATE_ICON_MAP: Record<string, React.ReactNode> = {
@@ -210,114 +224,72 @@ export const TEMPLATE_DEFINITIONS: TemplateDefinition[] = [
     regionalSupport: ['Regional avatars - 10+ regions'],
   },
   
-  // === NEW TEMPLATES FOR EXPANDED SECTIONS ===
-  
-  // ARABIC DIALECT DEMO
+  // === UNIFIED REGIONAL DIALECT TEMPLATE ===
+  // Single template with dialect selection options (not 5 separate templates)
   {
-    id: 'dialect_demo_arabic',
-    label: 'Arabic Dialect Demo',
+    id: 'dialect_demo_unified',
+    label: 'True Localization Demo',
     icon: <Globe className="w-5 h-5" />,
-    desc: '7 chapters, 90s',
+    desc: 'Multi-regional, configurable dialects',
     chapters: [
-      { title: 'MSA Formal', type: 'avatar', duration: 12, description: 'Modern Standard Arabic - formal context' },
-      { title: 'Saudi Dialect', type: 'avatar', duration: 12, description: 'Saudi Arabian regional voice' },
-      { title: 'Gulf Dialect', type: 'avatar', duration: 12, description: 'UAE/Kuwait/Qatar regional voice' },
-      { title: 'Egyptian Dialect', type: 'avatar', duration: 12, description: 'Egyptian Arabic natural speech' },
-      { title: 'Levantine Dialect', type: 'avatar', duration: 12, description: 'Lebanon/Syria regional voice' },
-      { title: 'Maghrebi Dialect', type: 'avatar', duration: 12, description: 'Morocco/Algeria regional voice' },
-      { title: 'Iraqi Dialect', type: 'avatar', duration: 18, description: 'Iraqi Arabic with closing CTA' },
+      { title: 'Introduction', type: 'avatar', duration: 15, description: 'Introduction to true localization - transcreation, not just translation' },
+      { title: 'Regional Demo', type: 'avatar', duration: 60, description: 'Dynamic: plays selected dialect(s) from chosen region(s)' },
+      { title: 'Comparison', type: 'video', duration: 30, description: 'Side-by-side comparison of dialects within a region' },
+      { title: 'Call to Action', type: 'avatar', duration: 15, description: 'Invite to try with own content' },
     ],
     landingPageSection: 'True Localization Demo',
-    landingPageDescription: 'Arabic dialect showcase. Users can select from 7 regional Arabic dialects and hear native TTS in real-time.',
+    landingPageDescription: 'Unified dialect showcase with selectable regions: Arabic (7 dialects), Indian (22+ languages), African (10 languages), Indo-Asian (8 languages), CJK (7 dialects). Users select one or multiple regions/dialects to generate.',
     socialPlatforms: ['youtube', 'linkedin', 'twitter'],
-    totalDuration: 90,
-    regionalSupport: ['7 Arabic dialects: MSA, Saudi, Gulf, Egyptian, Levantine, Maghrebi, Iraqi'],
-  },
-  
-  // INDIAN LANGUAGES DEMO
-  {
-    id: 'dialect_demo_indian',
-    label: 'Indian Languages Demo',
-    icon: <Globe className="w-5 h-5" />,
-    desc: '8 chapters, 100s',
-    chapters: [
-      { title: 'Hindi', type: 'avatar', duration: 12, description: 'Hindi - most widely spoken' },
-      { title: 'Tamil', type: 'avatar', duration: 12, description: 'Tamil - South Indian classical language' },
-      { title: 'Telugu', type: 'avatar', duration: 12, description: 'Telugu - Andhra Pradesh & Telangana' },
-      { title: 'Bengali', type: 'avatar', duration: 12, description: 'Bengali - West Bengal & Bangladesh' },
-      { title: 'Marathi', type: 'avatar', duration: 12, description: 'Marathi - Maharashtra state' },
-      { title: 'Gujarati', type: 'avatar', duration: 12, description: 'Gujarati - Gujarat state' },
-      { title: 'Kannada', type: 'avatar', duration: 12, description: 'Kannada - Karnataka state' },
-      { title: 'Malayalam', type: 'avatar', duration: 16, description: 'Malayalam - Kerala state with CTA' },
+    totalDuration: 120,
+    regionalSupport: [
+      'Arabic: MSA, Saudi, Gulf, Egyptian, Levantine, Maghrebi, Iraqi',
+      'Indian: Hindi, Tamil, Telugu, Bengali, Marathi, Gujarati, Kannada, Malayalam, Punjabi, and 13 more',
+      'African: Swahili, Yoruba, Hausa, Amharic, Zulu, Igbo, Xhosa, Afrikaans, Somali, Tigrinya',
+      'Indo-Asian: Indonesian, Thai, Vietnamese, Malay, Tagalog, Khmer, Burmese, Lao',
+      'CJK: Mandarin, Cantonese, Japanese, Korean, Taiwanese, Shanghainese, Min Nan',
     ],
-    landingPageSection: 'True Localization Demo',
-    landingPageDescription: 'Indian languages showcase. Demonstrates 22+ Indian language support with native TTS voices.',
-    socialPlatforms: ['youtube', 'linkedin', 'twitter'],
-    totalDuration: 100,
-    regionalSupport: ['22 Indian languages: Hindi, Tamil, Telugu, Bengali, Marathi, Gujarati, Kannada, Malayalam, Punjabi, Odia, Assamese, Urdu, and more'],
-  },
-  
-  // AFRICAN LANGUAGES DEMO
-  {
-    id: 'dialect_demo_african',
-    label: 'African Languages Demo',
-    icon: <Globe className="w-5 h-5" />,
-    desc: '6 chapters, 75s',
-    chapters: [
-      { title: 'Swahili', type: 'avatar', duration: 12, description: 'Swahili - East Africa lingua franca' },
-      { title: 'Yoruba', type: 'avatar', duration: 12, description: 'Yoruba - Nigeria & West Africa' },
-      { title: 'Hausa', type: 'avatar', duration: 12, description: 'Hausa - Northern Nigeria & Niger' },
-      { title: 'Amharic', type: 'avatar', duration: 12, description: 'Amharic - Ethiopia official language' },
-      { title: 'Zulu', type: 'avatar', duration: 12, description: 'Zulu - South Africa' },
-      { title: 'Igbo', type: 'avatar', duration: 15, description: 'Igbo - Nigeria with closing CTA' },
-    ],
-    landingPageSection: 'True Localization Demo',
-    landingPageDescription: 'African languages showcase. Demonstrates support for major African languages with native TTS.',
-    socialPlatforms: ['youtube', 'linkedin', 'twitter'],
-    totalDuration: 75,
-    regionalSupport: ['10 African languages: Swahili, Yoruba, Hausa, Amharic, Zulu, Igbo, Xhosa, Afrikaans, Somali, Tigrinya'],
-  },
-  
-  // INDO-ASIAN / SEA LANGUAGES DEMO
-  {
-    id: 'dialect_demo_indoasia',
-    label: 'Indo-Asian Languages Demo',
-    icon: <Globe className="w-5 h-5" />,
-    desc: '6 chapters, 75s',
-    chapters: [
-      { title: 'Indonesian', type: 'avatar', duration: 12, description: 'Bahasa Indonesia - 270M speakers' },
-      { title: 'Thai', type: 'avatar', duration: 12, description: 'Thai - Thailand official language' },
-      { title: 'Vietnamese', type: 'avatar', duration: 12, description: 'Vietnamese - 85M speakers' },
-      { title: 'Malay', type: 'avatar', duration: 12, description: 'Malay - Malaysia, Singapore, Brunei' },
-      { title: 'Tagalog', type: 'avatar', duration: 12, description: 'Tagalog/Filipino - Philippines' },
-      { title: 'Khmer', type: 'avatar', duration: 15, description: 'Khmer - Cambodia with closing CTA' },
-    ],
-    landingPageSection: 'True Localization Demo',
-    landingPageDescription: 'Southeast Asian languages showcase. Native TTS for Indonesian, Thai, Vietnamese, Malay, Tagalog, and more.',
-    socialPlatforms: ['youtube', 'linkedin', 'twitter'],
-    totalDuration: 75,
-    regionalSupport: ['8 SEA languages: Indonesian, Thai, Vietnamese, Malay, Tagalog, Khmer, Burmese, Lao'],
-  },
-  
-  // CJK LANGUAGES DEMO
-  {
-    id: 'dialect_demo_cjk',
-    label: 'CJK Languages Demo',
-    icon: <Globe className="w-5 h-5" />,
-    desc: '6 chapters, 80s',
-    chapters: [
-      { title: 'Mandarin Chinese', type: 'avatar', duration: 12, description: 'Mandarin - Standard Chinese (Putonghua)' },
-      { title: 'Cantonese', type: 'avatar', duration: 12, description: 'Cantonese - Hong Kong & Guangdong' },
-      { title: 'Japanese', type: 'avatar', duration: 14, description: 'Japanese - 125M speakers' },
-      { title: 'Korean', type: 'avatar', duration: 14, description: 'Korean - North & South Korea' },
-      { title: 'Taiwanese Hokkien', type: 'avatar', duration: 12, description: 'Taiwanese - Taiwan regional' },
-      { title: 'Shanghainese', type: 'avatar', duration: 16, description: 'Wu Chinese - Shanghai dialect with CTA' },
-    ],
-    landingPageSection: 'True Localization Demo',
-    landingPageDescription: 'CJK languages showcase. High-fidelity TTS for Chinese dialects, Japanese, and Korean with CosyVoice integration.',
-    socialPlatforms: ['youtube', 'linkedin', 'twitter'],
-    totalDuration: 80,
-    regionalSupport: ['CJK: Mandarin, Cantonese, Japanese, Korean, Taiwanese, Wu Chinese, Min Nan'],
+    // NEW: Dialect selection config
+    dialectConfig: {
+      allowMultipleRegions: true,
+      allowMultipleDialectsPerRegion: true,
+      regions: [
+        {
+          id: 'arabic',
+          label: 'Arabic',
+          dialects: ['MSA', 'Saudi', 'Gulf', 'Egyptian', 'Levantine', 'Maghrebi', 'Iraqi'],
+          defaultDialect: 'MSA',
+          voiceProvider: 'azure',
+        },
+        {
+          id: 'indian',
+          label: 'Indian Languages',
+          dialects: ['Hindi', 'Tamil', 'Telugu', 'Bengali', 'Marathi', 'Gujarati', 'Kannada', 'Malayalam', 'Punjabi', 'Odia', 'Assamese', 'Urdu'],
+          defaultDialect: 'Hindi',
+          voiceProvider: 'azure',
+        },
+        {
+          id: 'african',
+          label: 'African Languages',
+          dialects: ['Swahili', 'Yoruba', 'Hausa', 'Amharic', 'Zulu', 'Igbo', 'Xhosa', 'Afrikaans'],
+          defaultDialect: 'Swahili',
+          voiceProvider: 'azure',
+        },
+        {
+          id: 'indoasia',
+          label: 'Indo-Asian / SEA',
+          dialects: ['Indonesian', 'Thai', 'Vietnamese', 'Malay', 'Tagalog', 'Khmer', 'Burmese', 'Lao'],
+          defaultDialect: 'Indonesian',
+          voiceProvider: 'azure',
+        },
+        {
+          id: 'cjk',
+          label: 'CJK',
+          dialects: ['Mandarin', 'Cantonese', 'Japanese', 'Korean', 'Taiwanese', 'Shanghainese'],
+          defaultDialect: 'Mandarin',
+          voiceProvider: 'alibaba',
+        },
+      ],
+    },
   },
   {
     id: 'industry_showcase',

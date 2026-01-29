@@ -48,7 +48,8 @@ import {
   REGIONAL_DETECTION_CONFIGS,
 } from '@/config/content-generation-pipeline';
 
-const INDUSTRY_ICONS: Record<IndustryCategory, React.ElementType> = {
+// Use Partial to allow for extensibility - not all industries need icons defined
+const INDUSTRY_ICONS: Partial<Record<IndustryCategory, React.ElementType>> = {
   technology: Sparkles,
   healthcare: Heart,
   finance: Wallet,
@@ -61,9 +62,15 @@ const INDUSTRY_ICONS: Record<IndustryCategory, React.ElementType> = {
   energy: Factory,
   media: Play,
   transportation: Plane,
+  aerospace: Factory,
+  telecommunications: Sparkles,
+  agriculture: Factory,
+  legal: Landmark,
+  hospitality: Building2,
 };
 
-const INDUSTRY_COLORS: Record<IndustryCategory, string> = {
+// Use Partial to allow for extensibility
+const INDUSTRY_COLORS: Partial<Record<IndustryCategory, string>> = {
   technology: 'from-blue-500 to-cyan-500',
   healthcare: 'from-red-500 to-pink-500',
   finance: 'from-green-500 to-emerald-500',
@@ -76,6 +83,11 @@ const INDUSTRY_COLORS: Record<IndustryCategory, string> = {
   energy: 'from-yellow-500 to-orange-500',
   media: 'from-violet-500 to-purple-500',
   transportation: 'from-sky-500 to-blue-500',
+  aerospace: 'from-indigo-500 to-blue-500',
+  telecommunications: 'from-cyan-500 to-teal-500',
+  agriculture: 'from-green-500 to-lime-500',
+  legal: 'from-gray-500 to-slate-500',
+  hospitality: 'from-amber-500 to-yellow-500',
 };
 
 const REGION_LABELS: Record<RegionalZone, string> = {
