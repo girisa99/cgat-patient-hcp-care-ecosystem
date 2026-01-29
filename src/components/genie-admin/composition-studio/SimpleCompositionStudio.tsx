@@ -1,68 +1,187 @@
 /**
- * SIMPLE COMPOSITION STUDIO
+ * SIMPLE COMPOSITION STUDIO V2
  * 
- * Streamlined 2-step content creation:
- * 1. Setup: Name, languages, quick template selection
- * 2. Create: Inline chapter editing with auto/manual scripts, visual types, audio
+ * Streamlined 2-step content creation with proper dropdowns and chapter management:
+ * 1. Setup: Name, template dropdown, language dropdown, industry selection
+ * 2. Create: Inline chapter editing with full CRUD operations
  * 
- * Key features:
- * - Inline chapter editing (no complex wizard)
- * - Auto-generate scripts OR manual entry per chapter or globally
- * - Multiple visual types per chapter
- * - Upload/generate voice for entire project OR per chapter
- * - One-click generation with real progress
+ * Key improvements:
+ * - Dropdown selectors for templates, languages, visual types (not buttons)
+ * - Industry-specific templates (Saudi Vision 2030, India UPI, Africa Tourism, etc.)
+ * - Full chapter management: Add, Edit, Delete, Duplicate, Reorder
+ * - Fixed generation pipeline with proper edge function connectivity
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
 import { Slider } from '@/components/ui/slider';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { SearchableSelect, SearchableSelectOption } from '@/components/ui/searchable-select';
 import {
   Wand2, Plus, Globe, Play, Upload, Save, Trash2,
   Sparkles, Video, User, Box, ChevronDown, ChevronUp,
   Loader2, Volume2, Music, FileAudio, GripVertical,
-  Copy, Eye, Settings2, Zap, RotateCcw, Check, X
+  Copy, Eye, Settings2, Zap, RotateCcw, Check, X,
+  Building2, MapPin, Pencil, Image, Presentation, 
+  Monitor, Camera, Layers
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 
-// Extended Visual Types - 15+ options
-const VISUAL_TYPES = [
-  // Core Video Types
-  { id: 'video', label: 'Video', icon: Video, color: 'bg-pink-500', category: 'video' },
-  { id: 'animation', label: 'Animation', icon: Sparkles, color: 'bg-amber-500', category: 'video' },
-  { id: 'screen_record', label: 'Screen Record', icon: Video, color: 'bg-cyan-500', category: 'video' },
-  // Avatar Types
-  { id: 'avatar', label: 'Avatar', icon: User, color: 'bg-purple-500', category: 'avatar' },
-  { id: 'avatar_full_body', label: 'Avatar Full Body', icon: User, color: 'bg-indigo-500', category: 'avatar' },
-  { id: 'avatar_presenter', label: 'Avatar Presenter', icon: User, color: 'bg-violet-500', category: 'avatar' },
-  // 3D & Immersive
-  { id: '3d', label: '3D Model', icon: Box, color: 'bg-violet-500', category: '3d' },
-  { id: 'immersive', label: 'Immersive/VR', icon: Box, color: 'bg-rose-500', category: '3d' },
-  { id: '3d_product', label: '3D Product', icon: Box, color: 'bg-fuchsia-500', category: '3d' },
-  // Static & Graphics
-  { id: 'ppt', label: 'PPT/Slides', icon: Box, color: 'bg-blue-500', category: 'static' },
-  { id: 'images', label: 'Images', icon: Box, color: 'bg-green-500', category: 'static' },
-  { id: 'infographics', label: 'Infographics', icon: Box, color: 'bg-teal-500', category: 'static' },
-  { id: 'customer_journey', label: 'Customer Journey', icon: Box, color: 'bg-orange-500', category: 'static' },
-  // Capture & Combinations
-  { id: 'capture', label: 'Capture/Record', icon: Video, color: 'bg-red-500', category: 'capture' },
-  { id: 'combo_avatar_ppt', label: 'Avatar + PPT', icon: User, color: 'bg-gradient-to-r from-purple-500 to-blue-500', category: 'combo' },
-  { id: 'combo_3d_voice', label: '3D + Voice', icon: Box, color: 'bg-gradient-to-r from-violet-500 to-pink-500', category: 'combo' },
-  { id: 'combo_full_production', label: 'Full Production', icon: Sparkles, color: 'bg-gradient-to-r from-amber-500 to-rose-500', category: 'combo' },
+// ============================================
+// INDUSTRY-SPECIFIC TEMPLATES
+// ============================================
+const INDUSTRY_TEMPLATES = [
+  // Government & National Initiatives
+  { id: 'saudi_vision_2030', name: 'Saudi Vision 2030', industry: 'government', region: 'mena', chapters: 5, 
+    description: 'Digital transformation showcase for Saudi national initiatives',
+    defaultChapters: ['Vision Overview', 'Economic Diversification', 'Digital Infrastructure', 'Smart Cities', 'Future Outlook'] },
+  { id: 'uae_digital', name: 'UAE Digital Government', industry: 'government', region: 'mena', chapters: 4,
+    description: 'UAE digital services and smart government initiatives',
+    defaultChapters: ['Digital Transformation', 'Smart Services', 'Innovation Hub', 'Future Plans'] },
+  { id: 'india_digital', name: 'Digital India Initiative', industry: 'government', region: 'south_asia', chapters: 5,
+    description: 'India\'s digital transformation journey',
+    defaultChapters: ['Digital India Vision', 'UPI Revolution', 'Aadhaar Ecosystem', 'Digital Infrastructure', 'Future Roadmap'] },
+  { id: 'india_upi', name: 'India UPI Payment Revolution', industry: 'fintech', region: 'south_asia', chapters: 4,
+    description: 'UPI payment system transformation story',
+    defaultChapters: ['UPI Introduction', 'Technology Behind UPI', 'Merchant Adoption', 'Global Expansion'] },
+  
+  // Tourism & Travel
+  { id: 'africa_tourism', name: 'Africa Tourism Showcase', industry: 'tourism', region: 'africa', chapters: 5,
+    description: 'Discover Africa\'s diverse tourism offerings',
+    defaultChapters: ['Wildlife Safari', 'Cultural Heritage', 'Adventure Tourism', 'Beach Destinations', 'Eco Tourism'] },
+  { id: 'mena_tourism', name: 'MENA Tourism Experience', industry: 'tourism', region: 'mena', chapters: 4,
+    description: 'Middle East tourism and cultural experiences',
+    defaultChapters: ['Historical Sites', 'Modern Attractions', 'Cultural Experiences', 'Luxury Tourism'] },
+  { id: 'asia_tourism', name: 'Southeast Asia Discovery', industry: 'tourism', region: 'sea', chapters: 5,
+    description: 'Explore Southeast Asian destinations',
+    defaultChapters: ['Thailand Temples', 'Vietnam Heritage', 'Indonesia Islands', 'Singapore Modern', 'Local Experiences'] },
+  
+  // Healthcare
+  { id: 'healthcare_digital', name: 'Digital Healthcare Transformation', industry: 'healthcare', region: 'global', chapters: 4,
+    description: 'Healthcare technology and patient care innovation',
+    defaultChapters: ['Patient Journey', 'Telemedicine', 'AI Diagnostics', 'Future of Care'] },
+  { id: 'pharma_product', name: 'Pharmaceutical Product Launch', industry: 'healthcare', region: 'global', chapters: 3,
+    description: 'New drug or treatment introduction',
+    defaultChapters: ['Product Overview', 'Clinical Benefits', 'Patient Stories'] },
+  
+  // Finance & Banking
+  { id: 'banking_digital', name: 'Digital Banking Transformation', industry: 'finance', region: 'global', chapters: 4,
+    description: 'Modern banking and fintech solutions',
+    defaultChapters: ['Digital Banking Vision', 'Mobile First', 'Security & Trust', 'Future Banking'] },
+  { id: 'investment_pitch', name: 'Investment Pitch Deck', industry: 'finance', region: 'global', chapters: 5,
+    description: 'Investor presentation for startups',
+    defaultChapters: ['Problem Statement', 'Our Solution', 'Market Opportunity', 'Business Model', 'Investment Ask'] },
+  
+  // Technology
+  { id: 'saas_demo', name: 'SaaS Product Demo', industry: 'technology', region: 'global', chapters: 4,
+    description: 'Software product demonstration',
+    defaultChapters: ['Product Overview', 'Key Features', 'Use Cases', 'Getting Started'] },
+  { id: 'ai_showcase', name: 'AI/ML Capabilities Showcase', industry: 'technology', region: 'global', chapters: 4,
+    description: 'Artificial intelligence and machine learning demo',
+    defaultChapters: ['AI Vision', 'Technology Stack', 'Real-world Applications', 'Future Roadmap'] },
+  
+  // Education & Training
+  { id: 'education_course', name: 'Online Course Introduction', industry: 'education', region: 'global', chapters: 5,
+    description: 'Educational content and course materials',
+    defaultChapters: ['Course Overview', 'Module 1 Preview', 'Learning Outcomes', 'Instructor Bio', 'Enrollment'] },
+  { id: 'corporate_training', name: 'Corporate Training Module', industry: 'education', region: 'global', chapters: 4,
+    description: 'Employee training and development',
+    defaultChapters: ['Training Objectives', 'Core Concepts', 'Practical Exercises', 'Assessment'] },
+  
+  // Landing Page Templates
+  { id: 'landing_hero', name: 'Hero Showcase', industry: 'marketing', region: 'global', chapters: 1,
+    description: 'Full-screen hero video for website header',
+    defaultChapters: ['Hero Section'] },
+  { id: 'landing_product', name: 'Product Demo Landing', industry: 'marketing', region: 'global', chapters: 3,
+    description: '3-chapter product walkthrough',
+    defaultChapters: ['Introduction', 'Features', 'Call to Action'] },
+  { id: 'landing_testimonial', name: 'Customer Testimonials', industry: 'marketing', region: 'global', chapters: 5,
+    description: 'Customer success stories',
+    defaultChapters: ['Client 1', 'Client 2', 'Client 3', 'Client 4', 'Client 5'] },
+  
+  // Social Media Templates
+  { id: 'social_short', name: 'Short Form (TikTok/Reels)', industry: 'social', region: 'global', chapters: 1,
+    description: 'TikTok/Reels/Shorts ready content',
+    defaultChapters: ['Short Video'] },
+  { id: 'social_carousel', name: 'Carousel Post', industry: 'social', region: 'global', chapters: 5,
+    description: 'LinkedIn/Instagram carousel slides',
+    defaultChapters: ['Slide 1', 'Slide 2', 'Slide 3', 'Slide 4', 'CTA Slide'] },
+  { id: 'social_youtube', name: 'YouTube Long Form', industry: 'social', region: 'global', chapters: 8,
+    description: 'Full YouTube video with chapters',
+    defaultChapters: ['Intro', 'Hook', 'Main Point 1', 'Main Point 2', 'Main Point 3', 'Case Study', 'Summary', 'CTA'] },
+  
+  // Quick Start
+  { id: 'blank', name: 'Start Blank', industry: 'quick', region: 'global', chapters: 0,
+    description: 'Empty canvas - build from scratch',
+    defaultChapters: [] },
+  { id: 'single', name: 'Single Chapter', industry: 'quick', region: 'global', chapters: 1,
+    description: 'Quick one-off content',
+    defaultChapters: ['Chapter 1'] },
+  { id: '3_chapter', name: '3 Chapters', industry: 'quick', region: 'global', chapters: 3,
+    description: 'Short series',
+    defaultChapters: ['Introduction', 'Main Content', 'Conclusion'] },
+  { id: '5_chapter', name: '5 Chapters', industry: 'quick', region: 'global', chapters: 5,
+    description: 'Standard series',
+    defaultChapters: ['Chapter 1', 'Chapter 2', 'Chapter 3', 'Chapter 4', 'Chapter 5'] },
 ] as const;
 
-// Visual type categories for grouping
+// Industry categories for grouping templates
+const INDUSTRY_CATEGORIES = [
+  { id: 'government', label: 'Government & Initiatives', icon: Building2 },
+  { id: 'tourism', label: 'Tourism & Travel', icon: MapPin },
+  { id: 'healthcare', label: 'Healthcare & Pharma', icon: Building2 },
+  { id: 'finance', label: 'Finance & Banking', icon: Building2 },
+  { id: 'technology', label: 'Technology & SaaS', icon: Monitor },
+  { id: 'education', label: 'Education & Training', icon: Building2 },
+  { id: 'marketing', label: 'Landing Pages', icon: Globe },
+  { id: 'social', label: 'Social Media', icon: Video },
+  { id: 'quick', label: 'Quick Start', icon: Zap },
+];
+
+// ============================================
+// VISUAL TYPES - COMPREHENSIVE LIST
+// ============================================
+const VISUAL_TYPES = [
+  // Core Video Types
+  { id: 'video', label: 'Video', icon: Video, category: 'video', description: 'Standard video content' },
+  { id: 'animation', label: 'Animation', icon: Sparkles, category: 'video', description: 'Motion graphics' },
+  { id: 'screen_record', label: 'Screen Record', icon: Monitor, category: 'video', description: 'Screen capture demo' },
+  { id: 'kinetic_typography', label: 'Kinetic Typography', icon: Sparkles, category: 'video', description: 'Animated text' },
+  // Avatar Types
+  { id: 'avatar', label: 'Avatar (Headshot)', icon: User, category: 'avatar', description: 'AI avatar presenter' },
+  { id: 'avatar_full_body', label: 'Avatar Full Body', icon: User, category: 'avatar', description: 'Full body avatar' },
+  { id: 'avatar_presenter', label: 'Avatar + Screen', icon: User, category: 'avatar', description: 'Avatar with screen share' },
+  { id: 'talking_head', label: 'Talking Head', icon: User, category: 'avatar', description: 'Realistic talking head' },
+  // 3D & Immersive
+  { id: '3d', label: '3D Model', icon: Box, category: '3d', description: '3D object showcase' },
+  { id: 'immersive', label: 'Immersive/VR', icon: Box, category: '3d', description: '360° immersive content' },
+  { id: '3d_product', label: '3D Product', icon: Box, category: '3d', description: 'Product 3D visualization' },
+  { id: '3d_environment', label: '3D Environment', icon: Box, category: '3d', description: 'Virtual environments' },
+  // Static & Graphics
+  { id: 'ppt', label: 'PPT/Slides', icon: Presentation, category: 'static', description: 'Presentation slides' },
+  { id: 'images', label: 'Images', icon: Image, category: 'static', description: 'Image slideshow' },
+  { id: 'infographics', label: 'Infographics', icon: Layers, category: 'static', description: 'Data visualization' },
+  { id: 'customer_journey', label: 'Customer Journey', icon: MapPin, category: 'static', description: 'Journey mapping' },
+  { id: 'timeline', label: 'Timeline', icon: Layers, category: 'static', description: 'Timeline visualization' },
+  // Capture
+  { id: 'capture', label: 'Live Capture', icon: Camera, category: 'capture', description: 'Live recording' },
+  { id: 'interview', label: 'Interview Style', icon: User, category: 'capture', description: 'Interview format' },
+  // Combinations
+  { id: 'combo_avatar_ppt', label: 'Avatar + PPT', icon: User, category: 'combo', description: 'Avatar presenting slides' },
+  { id: 'combo_3d_voice', label: '3D + Voiceover', icon: Box, category: 'combo', description: '3D with narration' },
+  { id: 'combo_full_production', label: 'Full Production', icon: Sparkles, category: 'combo', description: 'Multi-element production' },
+] as const;
+
 const VISUAL_CATEGORIES = [
   { id: 'video', label: 'Video' },
   { id: 'avatar', label: 'Avatar' },
@@ -72,113 +191,85 @@ const VISUAL_CATEGORIES = [
   { id: 'combo', label: 'Combinations' },
 ];
 
-// Themed Templates - Landing Page & Social
-const THEMED_TEMPLATES = [
-  // Landing Page Templates
-  { id: 'landing_hero', name: 'Hero Showcase', type: 'landing', chapters: 1, theme: 'hero', description: 'Full-screen hero video for website header' },
-  { id: 'landing_product', name: 'Product Demo', type: 'landing', chapters: 3, theme: 'product', description: '3-chapter product walkthrough' },
-  { id: 'landing_testimonial', name: 'Testimonials', type: 'landing', chapters: 5, theme: 'testimonial', description: 'Customer success stories' },
-  { id: 'landing_tutorial', name: 'Tutorial Series', type: 'landing', chapters: 5, theme: 'tutorial', description: 'Step-by-step guide' },
-  { id: 'landing_industry', name: 'Industry Showcase', type: 'landing', chapters: 4, theme: 'industry', description: 'Sector-specific use cases' },
-  // Social Media Templates
-  { id: 'social_short', name: 'Short Form', type: 'social', chapters: 1, theme: 'short', description: 'TikTok/Reels/Shorts ready' },
-  { id: 'social_carousel', name: 'Carousel Post', type: 'social', chapters: 5, theme: 'carousel', description: 'LinkedIn/Instagram carousel' },
-  { id: 'social_story', name: 'Stories Series', type: 'social', chapters: 3, theme: 'story', description: 'Instagram/Facebook stories' },
-  { id: 'social_youtube', name: 'YouTube Long', type: 'social', chapters: 8, theme: 'longform', description: 'Full YouTube video' },
-  // Quick Start
-  { id: 'blank', name: 'Start Blank', type: 'quick', chapters: 0, theme: 'blank', description: 'Empty canvas' },
-  { id: 'single', name: 'Single Chapter', type: 'quick', chapters: 1, theme: 'single', description: 'Quick one-off' },
-  { id: '3_chapter', name: '3 Chapters', type: 'quick', chapters: 3, theme: 'multi', description: 'Short series' },
-  { id: '5_chapter', name: '5 Chapters', type: 'quick', chapters: 5, theme: 'multi', description: 'Standard series' },
-] as const;
-
-// Extended Languages - 70+ with regional grouping
-const LANGUAGE_REGIONS = [
-  { id: 'west_eu', name: 'Western/EU', icon: '🌍' },
-  { id: 'mena', name: 'MENA/Arabic', icon: '🇸🇦' },
-  { id: 'south_asia', name: 'South Asia', icon: '🇮🇳' },
-  { id: 'cjk', name: 'CJK', icon: '🇨🇳' },
-  { id: 'sea', name: 'Southeast Asia', icon: '🇹🇭' },
-  { id: 'africa', name: 'Africa', icon: '🌍' },
-  { id: 'latam', name: 'Latin America', icon: '🇧🇷' },
-];
-
-const LANGUAGES = [
+// ============================================
+// LANGUAGES - 70+ WITH REGIONS
+// ============================================
+const LANGUAGES: SearchableSelectOption[] = [
   // Western/EU
-  { code: 'en', name: 'English', region: 'west_eu' },
-  { code: 'en-gb', name: 'English (UK)', region: 'west_eu' },
-  { code: 'es', name: 'Spanish', region: 'west_eu' },
-  { code: 'fr', name: 'French', region: 'west_eu' },
-  { code: 'de', name: 'German', region: 'west_eu' },
-  { code: 'it', name: 'Italian', region: 'west_eu' },
-  { code: 'pt', name: 'Portuguese', region: 'west_eu' },
-  { code: 'nl', name: 'Dutch', region: 'west_eu' },
-  { code: 'pl', name: 'Polish', region: 'west_eu' },
-  { code: 'ru', name: 'Russian', region: 'west_eu' },
-  { code: 'uk', name: 'Ukrainian', region: 'west_eu' },
-  { code: 'tr', name: 'Turkish', region: 'west_eu' },
-  { code: 'el', name: 'Greek', region: 'west_eu' },
-  { code: 'sv', name: 'Swedish', region: 'west_eu' },
-  { code: 'da', name: 'Danish', region: 'west_eu' },
-  { code: 'fi', name: 'Finnish', region: 'west_eu' },
-  { code: 'no', name: 'Norwegian', region: 'west_eu' },
-  { code: 'cs', name: 'Czech', region: 'west_eu' },
-  { code: 'ro', name: 'Romanian', region: 'west_eu' },
-  { code: 'hu', name: 'Hungarian', region: 'west_eu' },
-  // MENA/Arabic Dialects
-  { code: 'ar', name: 'Arabic (MSA)', region: 'mena', rtl: true },
-  { code: 'ar-sa', name: 'Arabic (Saudi)', region: 'mena', rtl: true },
-  { code: 'ar-eg', name: 'Arabic (Egyptian)', region: 'mena', rtl: true },
-  { code: 'ar-ae', name: 'Arabic (Gulf)', region: 'mena', rtl: true },
-  { code: 'ar-ma', name: 'Arabic (Moroccan)', region: 'mena', rtl: true },
-  { code: 'ar-lb', name: 'Arabic (Levantine)', region: 'mena', rtl: true },
-  { code: 'ar-iq', name: 'Arabic (Iraqi)', region: 'mena', rtl: true },
-  { code: 'he', name: 'Hebrew', region: 'mena', rtl: true },
-  { code: 'fa', name: 'Persian/Farsi', region: 'mena', rtl: true },
-  { code: 'ur', name: 'Urdu', region: 'mena', rtl: true },
-  // South Asia (22 Indian Languages)
-  { code: 'hi', name: 'Hindi', region: 'south_asia' },
-  { code: 'bn', name: 'Bengali', region: 'south_asia' },
-  { code: 'ta', name: 'Tamil', region: 'south_asia' },
-  { code: 'te', name: 'Telugu', region: 'south_asia' },
-  { code: 'mr', name: 'Marathi', region: 'south_asia' },
-  { code: 'gu', name: 'Gujarati', region: 'south_asia' },
-  { code: 'kn', name: 'Kannada', region: 'south_asia' },
-  { code: 'ml', name: 'Malayalam', region: 'south_asia' },
-  { code: 'pa', name: 'Punjabi', region: 'south_asia' },
-  { code: 'or', name: 'Odia', region: 'south_asia' },
-  { code: 'as', name: 'Assamese', region: 'south_asia' },
-  { code: 'ne', name: 'Nepali', region: 'south_asia' },
-  { code: 'si', name: 'Sinhala', region: 'south_asia' },
+  { value: 'en', label: 'English (US)', category: 'Western/EU' },
+  { value: 'en-gb', label: 'English (UK)', category: 'Western/EU' },
+  { value: 'es', label: 'Spanish', category: 'Western/EU' },
+  { value: 'fr', label: 'French', category: 'Western/EU' },
+  { value: 'de', label: 'German', category: 'Western/EU' },
+  { value: 'it', label: 'Italian', category: 'Western/EU' },
+  { value: 'pt', label: 'Portuguese', category: 'Western/EU' },
+  { value: 'nl', label: 'Dutch', category: 'Western/EU' },
+  { value: 'pl', label: 'Polish', category: 'Western/EU' },
+  { value: 'ru', label: 'Russian', category: 'Western/EU' },
+  { value: 'uk', label: 'Ukrainian', category: 'Western/EU' },
+  { value: 'tr', label: 'Turkish', category: 'Western/EU' },
+  { value: 'el', label: 'Greek', category: 'Western/EU' },
+  { value: 'sv', label: 'Swedish', category: 'Western/EU' },
+  { value: 'da', label: 'Danish', category: 'Western/EU' },
+  { value: 'fi', label: 'Finnish', category: 'Western/EU' },
+  { value: 'no', label: 'Norwegian', category: 'Western/EU' },
+  { value: 'cs', label: 'Czech', category: 'Western/EU' },
+  { value: 'ro', label: 'Romanian', category: 'Western/EU' },
+  { value: 'hu', label: 'Hungarian', category: 'Western/EU' },
+  // MENA/Arabic
+  { value: 'ar', label: 'Arabic (MSA)', category: 'MENA/Arabic' },
+  { value: 'ar-sa', label: 'Arabic (Saudi)', category: 'MENA/Arabic' },
+  { value: 'ar-eg', label: 'Arabic (Egyptian)', category: 'MENA/Arabic' },
+  { value: 'ar-ae', label: 'Arabic (Gulf/UAE)', category: 'MENA/Arabic' },
+  { value: 'ar-ma', label: 'Arabic (Moroccan)', category: 'MENA/Arabic' },
+  { value: 'ar-lb', label: 'Arabic (Levantine)', category: 'MENA/Arabic' },
+  { value: 'ar-iq', label: 'Arabic (Iraqi)', category: 'MENA/Arabic' },
+  { value: 'he', label: 'Hebrew', category: 'MENA/Arabic' },
+  { value: 'fa', label: 'Persian/Farsi', category: 'MENA/Arabic' },
+  { value: 'ur', label: 'Urdu', category: 'MENA/Arabic' },
+  // South Asia
+  { value: 'hi', label: 'Hindi', category: 'South Asia' },
+  { value: 'bn', label: 'Bengali', category: 'South Asia' },
+  { value: 'ta', label: 'Tamil', category: 'South Asia' },
+  { value: 'te', label: 'Telugu', category: 'South Asia' },
+  { value: 'mr', label: 'Marathi', category: 'South Asia' },
+  { value: 'gu', label: 'Gujarati', category: 'South Asia' },
+  { value: 'kn', label: 'Kannada', category: 'South Asia' },
+  { value: 'ml', label: 'Malayalam', category: 'South Asia' },
+  { value: 'pa', label: 'Punjabi', category: 'South Asia' },
+  { value: 'or', label: 'Odia', category: 'South Asia' },
+  { value: 'as', label: 'Assamese', category: 'South Asia' },
+  { value: 'ne', label: 'Nepali', category: 'South Asia' },
+  { value: 'si', label: 'Sinhala', category: 'South Asia' },
   // CJK
-  { code: 'zh', name: 'Chinese (Simplified)', region: 'cjk' },
-  { code: 'zh-tw', name: 'Chinese (Traditional)', region: 'cjk' },
-  { code: 'zh-hk', name: 'Chinese (Cantonese)', region: 'cjk' },
-  { code: 'ja', name: 'Japanese', region: 'cjk' },
-  { code: 'ko', name: 'Korean', region: 'cjk' },
+  { value: 'zh', label: 'Chinese (Simplified)', category: 'CJK' },
+  { value: 'zh-tw', label: 'Chinese (Traditional)', category: 'CJK' },
+  { value: 'zh-hk', label: 'Chinese (Cantonese)', category: 'CJK' },
+  { value: 'ja', label: 'Japanese', category: 'CJK' },
+  { value: 'ko', label: 'Korean', category: 'CJK' },
   // Southeast Asia
-  { code: 'th', name: 'Thai', region: 'sea' },
-  { code: 'vi', name: 'Vietnamese', region: 'sea' },
-  { code: 'id', name: 'Indonesian', region: 'sea' },
-  { code: 'ms', name: 'Malay', region: 'sea' },
-  { code: 'tl', name: 'Filipino/Tagalog', region: 'sea' },
-  { code: 'my', name: 'Burmese', region: 'sea' },
-  { code: 'km', name: 'Khmer', region: 'sea' },
+  { value: 'th', label: 'Thai', category: 'Southeast Asia' },
+  { value: 'vi', label: 'Vietnamese', category: 'Southeast Asia' },
+  { value: 'id', label: 'Indonesian', category: 'Southeast Asia' },
+  { value: 'ms', label: 'Malay', category: 'Southeast Asia' },
+  { value: 'tl', label: 'Filipino/Tagalog', category: 'Southeast Asia' },
+  { value: 'my', label: 'Burmese', category: 'Southeast Asia' },
+  { value: 'km', label: 'Khmer', category: 'Southeast Asia' },
   // Africa
-  { code: 'sw', name: 'Swahili', region: 'africa' },
-  { code: 'am', name: 'Amharic', region: 'africa' },
-  { code: 'ha', name: 'Hausa', region: 'africa' },
-  { code: 'ig', name: 'Igbo', region: 'africa' },
-  { code: 'yo', name: 'Yoruba', region: 'africa' },
-  { code: 'zu', name: 'Zulu', region: 'africa' },
-  { code: 'xh', name: 'Xhosa', region: 'africa' },
-  { code: 'af', name: 'Afrikaans', region: 'africa' },
+  { value: 'sw', label: 'Swahili', category: 'Africa' },
+  { value: 'am', label: 'Amharic', category: 'Africa' },
+  { value: 'ha', label: 'Hausa', category: 'Africa' },
+  { value: 'ig', label: 'Igbo', category: 'Africa' },
+  { value: 'yo', label: 'Yoruba', category: 'Africa' },
+  { value: 'zu', label: 'Zulu', category: 'Africa' },
+  { value: 'xh', label: 'Xhosa', category: 'Africa' },
+  { value: 'af', label: 'Afrikaans', category: 'Africa' },
   // Latin America
-  { code: 'es-mx', name: 'Spanish (Mexico)', region: 'latam' },
-  { code: 'es-ar', name: 'Spanish (Argentina)', region: 'latam' },
-  { code: 'es-co', name: 'Spanish (Colombia)', region: 'latam' },
-  { code: 'pt-br', name: 'Portuguese (Brazil)', region: 'latam' },
-] as const;
+  { value: 'es-mx', label: 'Spanish (Mexico)', category: 'Latin America' },
+  { value: 'es-ar', label: 'Spanish (Argentina)', category: 'Latin America' },
+  { value: 'es-co', label: 'Spanish (Colombia)', category: 'Latin America' },
+  { value: 'pt-br', label: 'Portuguese (Brazil)', category: 'Latin America' },
+];
 
 // Chapter interface
 interface SimpleChapter {
@@ -198,6 +289,7 @@ interface SimpleChapter {
     previewUrl: string;
     script: string;
     audioUrl?: string;
+    sceneDescription?: string;
   };
 }
 
@@ -214,35 +306,64 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
 }) => {
   // Project state
   const [projectName, setProjectName] = useState('');
-  const [selectedLanguages, setSelectedLanguages] = useState<string[]>(['en']);
+  const [selectedTemplate, setSelectedTemplate] = useState<string>('');
+  const [primaryLanguage, setPrimaryLanguage] = useState('en');
+  const [additionalLanguages, setAdditionalLanguages] = useState<string[]>([]);
   const [chapters, setChapters] = useState<SimpleChapter[]>([]);
   const [expandedChapter, setExpandedChapter] = useState<string | null>(null);
   
   // Global audio settings
   const [globalVoiceSource, setGlobalVoiceSource] = useState<'tts' | 'upload'>('tts');
-  const [globalVoiceFile, setGlobalVoiceFile] = useState<File | null>(null);
   const [globalMusicSource, setGlobalMusicSource] = useState<'ai' | 'upload' | 'none'>('ai');
-  const [globalMusicFile, setGlobalMusicFile] = useState<File | null>(null);
   const [globalScriptMode, setGlobalScriptMode] = useState<'auto' | 'manual'>('auto');
   
   // Output options
   const [outputMode, setOutputMode] = useState<'combined' | 'individual'>('combined');
-  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   
   // Generation state
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
   const [currentGeneratingChapter, setCurrentGeneratingChapter] = useState<string | null>(null);
 
+  // Apply template
+  const applyTemplate = (templateId: string) => {
+    const template = INDUSTRY_TEMPLATES.find(t => t.id === templateId);
+    if (!template) return;
+
+    setSelectedTemplate(templateId);
+    setChapters([]);
+    
+    if (template.defaultChapters.length > 0) {
+      const newChapters: SimpleChapter[] = template.defaultChapters.map((title) => ({
+        id: generateId(),
+        title,
+        script: '',
+        scriptSource: globalScriptMode,
+        visualTypes: ['video'],
+        duration: 30,
+        voiceSource: globalVoiceSource,
+        musicSource: globalMusicSource,
+        status: 'draft' as const,
+        progress: 0,
+      }));
+      setChapters(newChapters);
+      if (newChapters.length > 0) {
+        setExpandedChapter(newChapters[0].id);
+      }
+    }
+    
+    toast.success(`Template "${template.name}" applied with ${template.chapters} chapters`);
+  };
+
   // Create new chapter
-  const addChapter = useCallback((template?: Partial<SimpleChapter>) => {
+  const addChapter = useCallback(() => {
     const newChapter: SimpleChapter = {
       id: generateId(),
-      title: template?.title || `Chapter ${chapters.length + 1}`,
-      script: template?.script || '',
+      title: `Chapter ${chapters.length + 1}`,
+      script: '',
       scriptSource: globalScriptMode,
-      visualTypes: template?.visualTypes || ['video'],
-      duration: template?.duration || 30,
+      visualTypes: ['video'],
+      duration: 30,
       voiceSource: globalVoiceSource,
       musicSource: globalMusicSource,
       status: 'draft',
@@ -250,39 +371,8 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
     };
     setChapters(prev => [...prev, newChapter]);
     setExpandedChapter(newChapter.id);
+    toast.success('Chapter added');
   }, [chapters.length, globalScriptMode, globalVoiceSource, globalMusicSource]);
-
-  // Quick template selection
-  const applyQuickTemplate = (templateId: string) => {
-    const template = THEMED_TEMPLATES.find(t => t.id === templateId);
-    if (!template) return;
-
-    setChapters([]);
-    
-    if (template.chapters > 0) {
-      const newChapters: SimpleChapter[] = [];
-      for (let i = 0; i < template.chapters; i++) {
-        newChapters.push({
-          id: generateId(),
-          title: `Chapter ${i + 1}`,
-          script: '',
-          scriptSource: globalScriptMode,
-          visualTypes: ['video'],
-          duration: 30,
-          voiceSource: globalVoiceSource,
-          musicSource: globalMusicSource,
-          status: 'draft',
-          progress: 0,
-        });
-      }
-      setChapters(newChapters);
-      if (newChapters.length > 0) {
-        setExpandedChapter(newChapters[0].id);
-      }
-    }
-    
-    toast.success(`Created ${template.chapters} chapter${template.chapters !== 1 ? 's' : ''}`);
-  };
 
   // Update chapter
   const updateChapter = useCallback((id: string, updates: Partial<SimpleChapter>) => {
@@ -299,18 +389,20 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
   const duplicateChapter = useCallback((id: string) => {
     const chapter = chapters.find(c => c.id === id);
     if (chapter) {
-      addChapter({
+      const newChapter: SimpleChapter = {
         ...chapter,
-        id: undefined as any,
+        id: generateId(),
         title: `${chapter.title} (Copy)`,
         status: 'draft',
         progress: 0,
         generatedContent: undefined,
-      });
+      };
+      setChapters(prev => [...prev, newChapter]);
+      toast.success('Chapter duplicated');
     }
-  }, [chapters, addChapter]);
+  }, [chapters]);
 
-  // Move chapter up/down
+  // Move chapter
   const moveChapter = useCallback((id: string, direction: 'up' | 'down') => {
     setChapters(prev => {
       const index = prev.findIndex(c => c.id === id);
@@ -334,7 +426,7 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
     toast.success('Applied settings to all chapters');
   };
 
-  // Generate single chapter
+  // Generate single chapter - FIXED PIPELINE
   const generateChapter = async (chapter: SimpleChapter) => {
     updateChapter(chapter.id, { status: 'generating', progress: 0 });
     setCurrentGeneratingChapter(chapter.id);
@@ -342,56 +434,126 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
     try {
       // Step 1: Generate script if auto mode
       let script = chapter.script;
+      updateChapter(chapter.id, { progress: 10 });
+      
       if (chapter.scriptSource === 'auto' || !script.trim()) {
-        updateChapter(chapter.id, { progress: 20 });
+        console.log('[SimpleStudio] Generating script for chapter:', chapter.title);
+        
+        const template = INDUSTRY_TEMPLATES.find(t => t.id === selectedTemplate);
+        const industry = template?.industry || 'general';
+        const region = template?.region || 'global';
         
         const { data: scriptData, error: scriptError } = await supabase.functions.invoke('ai-universal-processor', {
           body: {
             provider: 'gemini',
             model: 'gemini-2.0-flash',
             prompt: `Generate a professional ${chapter.duration}-second voiceover script for a chapter titled "${chapter.title}". 
+                     Industry: ${industry}
+                     Region: ${region}
                      Visual style: ${chapter.visualTypes.join(', ')}.
-                     Keep it concise, engaging, and suitable for ${selectedLanguages[0]} audience.`,
-            systemPrompt: 'You are a professional scriptwriter. Generate only the script text, no formatting.',
+                     Language: ${primaryLanguage}
+                     Keep it concise, engaging, and culturally appropriate.`,
+            systemPrompt: 'You are a professional scriptwriter specializing in video content. Generate only the script text suitable for voiceover, no formatting or stage directions.',
             maxTokens: 500,
             action: 'generate_script'
           }
         });
 
-        if (scriptError) throw new Error(scriptError.message);
-        script = scriptData?.content || scriptData?.response || chapter.title;
-        updateChapter(chapter.id, { script, progress: 40 });
+        if (scriptError) {
+          console.error('[SimpleStudio] Script generation error:', scriptError);
+          throw new Error(scriptError.message);
+        }
+        
+        script = scriptData?.content || scriptData?.response || `Script for ${chapter.title}`;
+        console.log('[SimpleStudio] Script generated:', script.substring(0, 100) + '...');
+        updateChapter(chapter.id, { script, progress: 30 });
+      } else {
+        updateChapter(chapter.id, { progress: 30 });
       }
 
-      // Step 2: Generate visual content
-      updateChapter(chapter.id, { progress: 60 });
+      // Step 2: Generate scene description for visuals
+      updateChapter(chapter.id, { progress: 40 });
+      console.log('[SimpleStudio] Generating scene description...');
       
-      const visualType = chapter.visualTypes[0] || 'video';
-      const colorMap: Record<string, string> = {
-        video: 'ec4899',
-        avatar: '6366f1',
-        '3d': '8b5cf6',
-        animation: 'f59e0b',
-      };
-      
-      // For now, create placeholder - real generation would call appropriate edge function
-      const previewUrl = `https://placehold.co/1920x1080/${colorMap[visualType] || 'ec4899'}/ffffff?text=${encodeURIComponent(chapter.title)}`;
+      const { data: sceneData, error: sceneError } = await supabase.functions.invoke('ai-universal-processor', {
+        body: {
+          provider: 'gemini',
+          model: 'gemini-2.0-flash',
+          prompt: `Based on this script, describe the visual scenes for a ${chapter.visualTypes.join(' + ')} video:
+          
+          Script: "${script}"
+          
+          Describe 2-3 key visual moments with:
+          - Camera angles
+          - Visual elements
+          - Transitions
+          - Color mood`,
+          systemPrompt: 'You are a video director. Provide brief, actionable scene descriptions.',
+          maxTokens: 300,
+          action: 'generate_content',
+          context: {
+            contentType: chapter.visualTypes[0] || 'video',
+            language: primaryLanguage
+          }
+        }
+      });
 
-      // Step 3: Generate TTS if needed
-      let audioUrl: string | undefined;
-      if (chapter.voiceSource === 'tts') {
-        updateChapter(chapter.id, { progress: 80 });
-        
-        const { data: ttsData, error: ttsError } = await supabase.functions.invoke('text-to-speech', {
+      const sceneDescription = sceneData?.content || sceneData?.response || '';
+      updateChapter(chapter.id, { progress: 60 });
+
+      // Step 3: Generate preview image
+      console.log('[SimpleStudio] Generating preview...');
+      const visualType = chapter.visualTypes[0] || 'video';
+      let previewUrl = '';
+      
+      try {
+        const { data: imageData, error: imageError } = await supabase.functions.invoke('ai-universal-processor', {
           body: {
-            text: script,
-            voice: 'alloy',
-            model: 'tts-1'
+            provider: 'gemini',
+            imageGeneration: true,
+            action: 'image_generation',
+            prompt: `Professional ${visualType} thumbnail for: ${chapter.title}. ${sceneDescription.substring(0, 100)}`,
+            aspectRatio: '16:9',
+            style: 'cinematic'
           }
         });
 
-        if (!ttsError && ttsData?.audioContent) {
-          audioUrl = `data:audio/mp3;base64,${ttsData.audioContent}`;
+        if (!imageError && imageData?.imageUrl) {
+          previewUrl = imageData.imageUrl;
+        } else {
+          // Fallback to placeholder
+          const colorMap: Record<string, string> = {
+            video: 'ec4899', avatar: '6366f1', '3d': '8b5cf6', animation: 'f59e0b',
+            ppt: '3b82f6', images: '10b981', static: '14b8a6'
+          };
+          previewUrl = `https://placehold.co/1920x1080/${colorMap[visualType] || 'ec4899'}/ffffff?text=${encodeURIComponent(chapter.title)}`;
+        }
+      } catch (imgErr) {
+        console.warn('[SimpleStudio] Image generation fallback:', imgErr);
+        previewUrl = `https://placehold.co/1920x1080/ec4899/ffffff?text=${encodeURIComponent(chapter.title)}`;
+      }
+      
+      updateChapter(chapter.id, { progress: 80 });
+
+      // Step 4: Generate TTS if needed
+      let audioUrl: string | undefined;
+      if (chapter.voiceSource === 'tts' && script) {
+        console.log('[SimpleStudio] Generating TTS...');
+        
+        try {
+          const { data: ttsData, error: ttsError } = await supabase.functions.invoke('text-to-speech', {
+            body: {
+              text: script.substring(0, 1000), // Limit text length
+              voice: 'alloy',
+              model: 'tts-1'
+            }
+          });
+
+          if (!ttsError && ttsData?.audioContent) {
+            audioUrl = `data:audio/mp3;base64,${ttsData.audioContent}`;
+          }
+        } catch (ttsErr) {
+          console.warn('[SimpleStudio] TTS generation skipped:', ttsErr);
         }
       }
 
@@ -403,17 +565,17 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
         generatedContent: {
           previewUrl,
           script,
-          audioUrl
+          audioUrl,
+          sceneDescription
         }
       });
 
+      console.log('[SimpleStudio] Chapter generation complete:', chapter.title);
       return { success: true };
     } catch (error) {
       console.error('[SimpleStudio] Generation error:', error);
-      updateChapter(chapter.id, { 
-        status: 'error', 
-        progress: 0 
-      });
+      updateChapter(chapter.id, { status: 'error', progress: 0 });
+      toast.error(`Failed to generate: ${error instanceof Error ? error.message : 'Unknown error'}`);
       return { success: false, error: error instanceof Error ? error.message : 'Generation failed' };
     } finally {
       setCurrentGeneratingChapter(null);
@@ -454,6 +616,7 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
   const totalDuration = chapters.reduce((sum, c) => sum + c.duration, 0);
   const completedChapters = chapters.filter(c => c.status === 'complete').length;
   const canGenerate = projectName.trim() && chapters.length > 0;
+  const currentTemplate = INDUSTRY_TEMPLATES.find(t => t.id === selectedTemplate);
 
   return (
     <div className={cn("space-y-4", className)}>
@@ -465,114 +628,122 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
             Content Studio
           </h2>
           <p className="text-sm text-muted-foreground">
-            Create multi-chapter content with AI-powered scripts and generation
+            Create multi-chapter content with AI-powered generation
           </p>
         </div>
         <div className="flex gap-2">
           <Badge variant="outline">{chapters.length} Chapters</Badge>
-          <Badge variant="outline">{selectedLanguages.length} Lang</Badge>
+          <Badge variant="outline">{completedChapters} Complete</Badge>
           <Badge variant="outline">{Math.floor(totalDuration / 60)}:{(totalDuration % 60).toString().padStart(2, '0')}</Badge>
         </div>
       </div>
 
-      {/* Setup Section */}
+      {/* Setup Section - DROPDOWNS */}
       <Card>
-        <CardContent className="p-4 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Setup</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Project Name */}
             <div className="space-y-2">
-              <Label htmlFor="projectName">Project Name</Label>
+              <Label htmlFor="projectName">Project Name *</Label>
               <Input
                 id="projectName"
                 value={projectName}
                 onChange={(e) => setProjectName(e.target.value)}
-                placeholder="Enter project name..."
+                placeholder="My Video Project"
               />
             </div>
 
-            {/* Languages - Grouped by Region */}
-            <div className="md:col-span-2 space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Languages ({selectedLanguages.length} selected)</Label>
-                <Select onValueChange={(region) => {
-                  const regionLangs = LANGUAGES.filter(l => l.region === region).map(l => l.code);
-                  setSelectedLanguages(prev => [...new Set([...prev, ...regionLangs])]);
-                }}>
-                  <SelectTrigger className="h-7 w-[160px] text-xs">
-                    <SelectValue placeholder="+ Add Region" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {LANGUAGE_REGIONS.map(r => (
-                      <SelectItem key={r.id} value={r.id}>
-                        {r.icon} {r.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex flex-wrap gap-1 max-h-[80px] overflow-y-auto">
-                {/* Show selected languages first */}
-                {LANGUAGES.filter(l => selectedLanguages.includes(l.code)).map(lang => (
-                  <Button
-                    key={lang.code}
-                    size="sm"
-                    variant="default"
-                    onClick={() => setSelectedLanguages(prev => prev.filter(l => l !== lang.code))}
-                    className="h-6 text-xs"
-                  >
-                    {lang.name} ✓
-                  </Button>
-                ))}
-                {/* Popular unselected languages */}
-                {LANGUAGES.filter(l => !selectedLanguages.includes(l.code)).slice(0, 8).map(lang => (
-                  <Button
-                    key={lang.code}
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setSelectedLanguages(prev => [...prev, lang.code])}
-                    className="h-6 text-xs opacity-70"
-                  >
-                    + {lang.name}
-                  </Button>
-                ))}
-                {LANGUAGES.filter(l => !selectedLanguages.includes(l.code)).length > 8 && (
-                  <Badge variant="secondary" className="h-6 text-xs">
-                    +{LANGUAGES.filter(l => !selectedLanguages.includes(l.code)).length - 8} more
-                  </Badge>
-                )}
-              </div>
+            {/* Template Dropdown - GROUPED BY INDUSTRY */}
+            <div className="space-y-2">
+              <Label>Template</Label>
+              <Select value={selectedTemplate} onValueChange={applyTemplate}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a template..." />
+                </SelectTrigger>
+                <SelectContent className="max-h-[400px]">
+                  {INDUSTRY_CATEGORIES.map(category => {
+                    const templates = INDUSTRY_TEMPLATES.filter(t => t.industry === category.id);
+                    if (templates.length === 0) return null;
+                    return (
+                      <SelectGroup key={category.id}>
+                        <SelectLabel className="flex items-center gap-2">
+                          <category.icon className="w-3 h-3" />
+                          {category.label}
+                        </SelectLabel>
+                        {templates.map(template => (
+                          <SelectItem key={template.id} value={template.id}>
+                            <div className="flex items-center justify-between w-full">
+                              <span>{template.name}</span>
+                              <Badge variant="outline" className="ml-2 text-[10px]">
+                                {template.chapters} ch
+                              </Badge>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+              {currentTemplate && (
+                <p className="text-xs text-muted-foreground">{currentTemplate.description}</p>
+              )}
             </div>
 
-            {/* Templates - Tabbed by Type */}
-            <div className="md:col-span-2 space-y-2">
-              <Label>Templates</Label>
-              <div className="space-y-2">
-                <div className="flex gap-2 mb-2">
-                  <Badge variant="outline" className="text-xs">🌐 Landing</Badge>
-                  <Badge variant="outline" className="text-xs">📱 Social</Badge>
-                  <Badge variant="outline" className="text-xs">⚡ Quick</Badge>
-                </div>
-                <div className="flex flex-wrap gap-1">
-                  {THEMED_TEMPLATES.map(t => (
-                    <Button
-                      key={t.id}
-                      size="sm"
-                      variant="outline"
-                      onClick={() => applyQuickTemplate(t.id)}
-                      className={cn(
-                        "h-7 text-xs",
-                        t.type === 'landing' && "border-blue-500/30",
-                        t.type === 'social' && "border-pink-500/30",
-                        t.type === 'quick' && "border-muted"
-                      )}
-                      title={t.description}
-                    >
-                      {t.type === 'landing' ? '🌐 ' : t.type === 'social' ? '📱 ' : '⚡ '}
-                      {t.name}
-                    </Button>
+            {/* Primary Language Dropdown */}
+            <div className="space-y-2">
+              <Label>Primary Language</Label>
+              <SearchableSelect
+                options={LANGUAGES}
+                value={primaryLanguage}
+                onValueChange={setPrimaryLanguage}
+                placeholder="Select language..."
+                groupByCategory
+              />
+            </div>
+
+            {/* Additional Languages */}
+            <div className="space-y-2">
+              <Label>Additional Languages</Label>
+              <Select 
+                value="" 
+                onValueChange={(lang) => {
+                  if (lang && !additionalLanguages.includes(lang) && lang !== primaryLanguage) {
+                    setAdditionalLanguages(prev => [...prev, lang]);
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={additionalLanguages.length > 0 ? `${additionalLanguages.length} selected` : "Add more..."} />
+                </SelectTrigger>
+                <SelectContent>
+                  {LANGUAGES.filter(l => l.value !== primaryLanguage && !additionalLanguages.includes(l.value)).map(lang => (
+                    <SelectItem key={lang.value} value={lang.value}>
+                      {lang.label}
+                    </SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+              {additionalLanguages.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {additionalLanguages.map(lang => {
+                    const langObj = LANGUAGES.find(l => l.value === lang);
+                    return (
+                      <Badge 
+                        key={lang} 
+                        variant="secondary" 
+                        className="text-xs cursor-pointer"
+                        onClick={() => setAdditionalLanguages(prev => prev.filter(l => l !== lang))}
+                      >
+                        {langObj?.label} ×
+                      </Badge>
+                    );
+                  })}
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </CardContent>
@@ -595,7 +766,7 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
             <div className="space-y-2">
               <Label className="text-xs">Script Generation</Label>
               <Select value={globalScriptMode} onValueChange={(v: 'auto' | 'manual') => setGlobalScriptMode(v)}>
-                <SelectTrigger className="h-8">
+                <SelectTrigger className="h-9">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -606,7 +777,7 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
                   </SelectItem>
                   <SelectItem value="manual">
                     <span className="flex items-center gap-2">
-                      <FileAudio className="w-3 h-3" /> Manual Entry
+                      <Pencil className="w-3 h-3" /> Manual Entry
                     </span>
                   </SelectItem>
                 </SelectContent>
@@ -616,72 +787,54 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
             {/* Voice Source */}
             <div className="space-y-2">
               <Label className="text-xs">Voice Source</Label>
-              <div className="flex gap-2">
-                <Select value={globalVoiceSource} onValueChange={(v: 'tts' | 'upload') => setGlobalVoiceSource(v)}>
-                  <SelectTrigger className="h-8 flex-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="tts">AI TTS</SelectItem>
-                    <SelectItem value="upload">Upload</SelectItem>
-                  </SelectContent>
-                </Select>
-                {globalVoiceSource === 'upload' && (
-                  <Input
-                    type="file"
-                    accept="audio/*"
-                    className="h-8 text-xs"
-                    onChange={(e) => setGlobalVoiceFile(e.target.files?.[0] || null)}
-                  />
-                )}
-              </div>
+              <Select value={globalVoiceSource} onValueChange={(v: 'tts' | 'upload') => setGlobalVoiceSource(v)}>
+                <SelectTrigger className="h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="tts">AI Text-to-Speech</SelectItem>
+                  <SelectItem value="upload">Upload Recording</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Music Source */}
             <div className="space-y-2">
               <Label className="text-xs">Background Music</Label>
-              <div className="flex gap-2">
-                <Select value={globalMusicSource} onValueChange={(v: 'ai' | 'upload' | 'none') => setGlobalMusicSource(v)}>
-                  <SelectTrigger className="h-8 flex-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ai">AI Generate</SelectItem>
-                    <SelectItem value="upload">Upload</SelectItem>
-                    <SelectItem value="none">None</SelectItem>
-                  </SelectContent>
-                </Select>
-                {globalMusicSource === 'upload' && (
-                  <Input
-                    type="file"
-                    accept="audio/*"
-                    className="h-8 text-xs"
-                    onChange={(e) => setGlobalMusicFile(e.target.files?.[0] || null)}
-                  />
-                )}
-              </div>
+              <Select value={globalMusicSource} onValueChange={(v: 'ai' | 'upload' | 'none') => setGlobalMusicSource(v)}>
+                <SelectTrigger className="h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ai">AI Generate</SelectItem>
+                  <SelectItem value="upload">Upload Track</SelectItem>
+                  <SelectItem value="none">No Music</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Chapters List */}
+      {/* Chapters Section */}
       <Card>
         <CardHeader className="p-4 pb-2">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base">Chapters</CardTitle>
-            <Button size="sm" onClick={() => addChapter()}>
+            <CardTitle className="text-base">Chapters ({chapters.length})</CardTitle>
+            <Button size="sm" onClick={addChapter}>
               <Plus className="w-4 h-4 mr-1" /> Add Chapter
             </Button>
           </div>
         </CardHeader>
         <CardContent className="p-4 pt-0">
           {chapters.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <p>No chapters yet. Use Quick Start above or add chapters manually.</p>
+            <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
+              <Sparkles className="w-8 h-8 mx-auto mb-2 opacity-50" />
+              <p>No chapters yet.</p>
+              <p className="text-sm">Select a template above or add chapters manually.</p>
             </div>
           ) : (
-            <ScrollArea className="max-h-[400px]">
+            <ScrollArea className="max-h-[500px]">
               <div className="space-y-2">
                 {chapters.map((chapter, index) => (
                   <ChapterCard
@@ -691,9 +844,7 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
                     totalChapters={chapters.length}
                     isExpanded={expandedChapter === chapter.id}
                     isGenerating={currentGeneratingChapter === chapter.id}
-                    onToggle={() => setExpandedChapter(
-                      expandedChapter === chapter.id ? null : chapter.id
-                    )}
+                    onToggle={() => setExpandedChapter(expandedChapter === chapter.id ? null : chapter.id)}
                     onUpdate={(updates) => updateChapter(chapter.id, updates)}
                     onDelete={() => deleteChapter(chapter.id)}
                     onDuplicate={() => duplicateChapter(chapter.id)}
@@ -756,13 +907,6 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
               </Button>
             </div>
           </div>
-          {outputMode === 'individual' && (
-            <div className="mt-3 p-3 bg-muted/50 rounded-lg text-sm">
-              <p className="text-muted-foreground">
-                Each chapter will be rendered as a separate file - perfect for social media posting or modular content.
-              </p>
-            </div>
-          )}
         </CardContent>
       </Card>
 
@@ -776,49 +920,32 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
             <Save className="w-4 h-4 mr-2" /> Save Draft
           </Button>
         </div>
-        <div className="flex gap-2">
-          {outputMode === 'individual' && chapters.length > 0 && (
-            <Button
-              variant="secondary"
-              disabled={!canGenerate || isGenerating}
-              onClick={() => {
-                const selected = chapters.filter(c => c.status !== 'complete');
-                if (selected.length > 0) {
-                  generateChapter(selected[0]);
-                }
-              }}
-            >
-              Generate Next Chapter
-            </Button>
+        <Button
+          size="lg"
+          disabled={!canGenerate || isGenerating}
+          onClick={generateAll}
+          className="gap-2"
+        >
+          {isGenerating ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Generating...
+            </>
+          ) : (
+            <>
+              <Zap className="w-4 h-4" />
+              Generate All ({chapters.length} chapters)
+            </>
           )}
-          <Button
-            size="lg"
-            disabled={!canGenerate || isGenerating}
-            onClick={generateAll}
-            className="gap-2"
-          >
-            {isGenerating ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Generating...
-              </>
-            ) : (
-              <>
-                <Zap className="w-4 h-4" />
-                {outputMode === 'combined' 
-                  ? `Generate Combined (${chapters.length} chapters)`
-                  : `Generate All Individually (${chapters.length})`
-                }
-              </>
-            )}
-          </Button>
-        </div>
+        </Button>
       </div>
     </div>
   );
 };
 
-// Chapter Card Component
+// ============================================
+// CHAPTER CARD COMPONENT
+// ============================================
 interface ChapterCardProps {
   chapter: SimpleChapter;
   index: number;
@@ -860,35 +987,42 @@ const ChapterCard: React.FC<ChapterCardProps> = ({
       <div className={cn(
         "border rounded-lg overflow-hidden transition-all",
         isExpanded ? "ring-2 ring-primary/20" : "",
-        chapter.status === 'complete' ? "border-emerald-500/30 bg-emerald-500/5" : ""
+        chapter.status === 'complete' ? "border-emerald-500/30 bg-emerald-500/5" : "",
+        chapter.status === 'error' ? "border-destructive/30 bg-destructive/5" : ""
       )}>
         {/* Header */}
         <CollapsibleTrigger asChild>
           <div className="flex items-center gap-3 p-3 cursor-pointer hover:bg-muted/50">
-            {/* Move buttons */}
+            {/* Reorder buttons */}
             <div className="flex flex-col gap-0.5" onClick={(e) => e.stopPropagation()}>
               <Button
                 size="icon"
                 variant="ghost"
-                className="h-4 w-6"
+                className="h-5 w-5"
                 disabled={index === 0}
                 onClick={(e) => { e.stopPropagation(); onMoveUp(); }}
+                title="Move up"
               >
                 <ChevronUp className="w-3 h-3" />
               </Button>
               <Button
                 size="icon"
                 variant="ghost"
-                className="h-4 w-6"
+                className="h-5 w-5"
                 disabled={index === totalChapters - 1}
                 onClick={(e) => { e.stopPropagation(); onMoveDown(); }}
+                title="Move down"
               >
                 <ChevronDown className="w-3 h-3" />
               </Button>
             </div>
+            
+            {/* Chapter number */}
             <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-xs flex items-center justify-center font-medium">
               {index + 1}
             </span>
+            
+            {/* Title - Editable */}
             <Input
               value={chapter.title}
               onChange={(e) => {
@@ -896,9 +1030,11 @@ const ChapterCard: React.FC<ChapterCardProps> = ({
                 onUpdate({ title: e.target.value });
               }}
               onClick={(e) => e.stopPropagation()}
-              className="h-7 flex-1 max-w-[200px]"
+              className="h-8 flex-1 max-w-[200px]"
             />
-            <div className="flex items-center gap-1 flex-wrap max-w-[180px]">
+            
+            {/* Visual type badges */}
+            <div className="flex items-center gap-1">
               {chapter.visualTypes.slice(0, 2).map(type => {
                 const visual = VISUAL_TYPES.find(v => v.id === type);
                 return visual ? (
@@ -908,21 +1044,32 @@ const ChapterCard: React.FC<ChapterCardProps> = ({
                 ) : null;
               })}
               {chapter.visualTypes.length > 2 && (
-                <Badge variant="outline" className="text-xs">
-                  +{chapter.visualTypes.length - 2}
-                </Badge>
+                <Badge variant="outline" className="text-xs">+{chapter.visualTypes.length - 2}</Badge>
               )}
             </div>
+            
+            {/* Duration & Status */}
             <Badge variant="secondary" className="text-xs">{chapter.duration}s</Badge>
             <Badge className={cn("text-xs", statusColors[chapter.status])}>
               {chapter.status === 'generating' && <Loader2 className="w-3 h-3 mr-1 animate-spin" />}
               {chapter.status}
             </Badge>
+            
+            {/* Quick Actions */}
+            <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onDuplicate} title="Duplicate">
+                <Copy className="w-3 h-3" />
+              </Button>
+              <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={onDelete} title="Delete">
+                <Trash2 className="w-3 h-3" />
+              </Button>
+            </div>
+            
             {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </div>
         </CollapsibleTrigger>
 
-        {/* Progress bar for generating */}
+        {/* Progress bar */}
         {chapter.status === 'generating' && (
           <Progress value={chapter.progress} className="h-1" />
         )}
@@ -938,17 +1085,24 @@ const ChapterCard: React.FC<ChapterCardProps> = ({
                   alt={chapter.title}
                   className="w-full h-full object-cover"
                 />
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className="absolute bottom-2 right-2"
-                >
-                  <Play className="w-3 h-3 mr-1" /> Preview
-                </Button>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                <div className="absolute bottom-2 left-2 right-2 flex justify-between items-end">
+                  <div>
+                    <Badge variant="secondary" className="mb-1">Generated</Badge>
+                    {chapter.generatedContent.sceneDescription && (
+                      <p className="text-xs text-white/80 line-clamp-2">
+                        {chapter.generatedContent.sceneDescription.substring(0, 100)}...
+                      </p>
+                    )}
+                  </div>
+                  <Button size="sm" variant="secondary">
+                    <Play className="w-3 h-3 mr-1" /> Preview
+                  </Button>
+                </div>
               </div>
             )}
 
-            {/* Script */}
+            {/* Script Section */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label>Script</Label>
@@ -957,7 +1111,7 @@ const ChapterCard: React.FC<ChapterCardProps> = ({
                     size="sm"
                     variant={chapter.scriptSource === 'auto' ? 'default' : 'outline'}
                     onClick={() => onUpdate({ scriptSource: 'auto' })}
-                    className="h-6 text-xs"
+                    className="h-7 text-xs"
                   >
                     <Wand2 className="w-3 h-3 mr-1" /> Auto
                   </Button>
@@ -965,9 +1119,9 @@ const ChapterCard: React.FC<ChapterCardProps> = ({
                     size="sm"
                     variant={chapter.scriptSource === 'manual' ? 'default' : 'outline'}
                     onClick={() => onUpdate({ scriptSource: 'manual' })}
-                    className="h-6 text-xs"
+                    className="h-7 text-xs"
                   >
-                    Manual
+                    <Pencil className="w-3 h-3 mr-1" /> Manual
                   </Button>
                 </div>
               </div>
@@ -975,54 +1129,96 @@ const ChapterCard: React.FC<ChapterCardProps> = ({
                 value={chapter.script}
                 onChange={(e) => onUpdate({ script: e.target.value })}
                 placeholder={chapter.scriptSource === 'auto' 
-                  ? "Script will be auto-generated based on title and visual type..."
+                  ? "Script will be auto-generated when you click Generate..."
                   : "Enter your script here..."
                 }
                 rows={3}
-                disabled={chapter.scriptSource === 'auto' && !chapter.script}
               />
             </div>
 
-            {/* Visual Types - Categorized */}
+            {/* Visual Types - DROPDOWN */}
             <div className="space-y-2">
-              <Label>Visual Types (select multiple)</Label>
-              <div className="space-y-2">
-                {VISUAL_CATEGORIES.map(category => {
-                  const categoryVisuals = VISUAL_TYPES.filter(v => v.category === category.id);
-                  if (categoryVisuals.length === 0) return null;
-                  return (
-                    <div key={category.id} className="flex flex-wrap items-center gap-1">
-                      <Badge variant="outline" className="h-6 text-xs min-w-[80px]">
-                        {category.label}
+              <Label>Visual Type(s)</Label>
+              <Select 
+                value={chapter.visualTypes[0] || 'video'} 
+                onValueChange={(v) => onUpdate({ visualTypes: [v] })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select visual type..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {VISUAL_CATEGORIES.map(category => {
+                    const categoryVisuals = VISUAL_TYPES.filter(v => v.category === category.id);
+                    if (categoryVisuals.length === 0) return null;
+                    return (
+                      <SelectGroup key={category.id}>
+                        <SelectLabel>{category.label}</SelectLabel>
+                        {categoryVisuals.map(visual => (
+                          <SelectItem key={visual.id} value={visual.id}>
+                            <div className="flex items-center gap-2">
+                              <visual.icon className="w-3 h-3" />
+                              <span>{visual.label}</span>
+                              <span className="text-xs text-muted-foreground">- {visual.description}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+              
+              {/* Multi-select for additional visuals */}
+              {chapter.visualTypes.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {chapter.visualTypes.map(type => {
+                    const visual = VISUAL_TYPES.find(v => v.id === type);
+                    return visual ? (
+                      <Badge 
+                        key={type} 
+                        variant="default" 
+                        className="cursor-pointer"
+                        onClick={() => {
+                          if (chapter.visualTypes.length > 1) {
+                            onUpdate({ visualTypes: chapter.visualTypes.filter(t => t !== type) });
+                          }
+                        }}
+                      >
+                        <visual.icon className="w-3 h-3 mr-1" />
+                        {visual.label}
+                        {chapter.visualTypes.length > 1 && <X className="w-3 h-3 ml-1" />}
                       </Badge>
-                      {categoryVisuals.map(visual => (
-                        <Button
-                          key={visual.id}
-                          size="sm"
-                          variant={chapter.visualTypes.includes(visual.id) ? 'default' : 'outline'}
-                          onClick={() => {
-                            const newTypes = chapter.visualTypes.includes(visual.id)
-                              ? chapter.visualTypes.filter(t => t !== visual.id)
-                              : [...chapter.visualTypes, visual.id];
-                            onUpdate({ visualTypes: newTypes.length > 0 ? newTypes : [visual.id] });
-                          }}
-                          className="h-7 text-xs"
-                        >
-                          <visual.icon className="w-3 h-3 mr-1" />
+                    ) : null;
+                  })}
+                  <Select 
+                    value=""
+                    onValueChange={(v) => {
+                      if (v && !chapter.visualTypes.includes(v)) {
+                        onUpdate({ visualTypes: [...chapter.visualTypes, v] });
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="h-6 w-24 text-xs">
+                      <Plus className="w-3 h-3 mr-1" />
+                      Add
+                    </SelectTrigger>
+                    <SelectContent>
+                      {VISUAL_TYPES.filter(v => !chapter.visualTypes.includes(v.id)).map(visual => (
+                        <SelectItem key={visual.id} value={visual.id}>
                           {visual.label}
-                        </Button>
+                        </SelectItem>
                       ))}
-                    </div>
-                  );
-                })}
-              </div>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
 
             {/* Duration */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label>Duration</Label>
-                <span className="text-sm text-muted-foreground">{chapter.duration}s</span>
+                <span className="text-sm text-muted-foreground">{chapter.duration} seconds</span>
               </div>
               <Slider
                 value={[chapter.duration]}
@@ -1041,41 +1237,41 @@ const ChapterCard: React.FC<ChapterCardProps> = ({
                   value={chapter.voiceSource} 
                   onValueChange={(v: 'tts' | 'upload' | 'clone') => onUpdate({ voiceSource: v })}
                 >
-                  <SelectTrigger className="h-8">
+                  <SelectTrigger className="h-9">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="tts">AI TTS</SelectItem>
-                    <SelectItem value="upload">Upload</SelectItem>
+                    <SelectItem value="tts">AI Text-to-Speech</SelectItem>
+                    <SelectItem value="upload">Upload Recording</SelectItem>
                     <SelectItem value="clone">Voice Clone</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label className="text-xs">Music</Label>
+                <Label className="text-xs">Background Music</Label>
                 <Select 
                   value={chapter.musicSource} 
                   onValueChange={(v: 'ai' | 'upload' | 'none') => onUpdate({ musicSource: v })}
                 >
-                  <SelectTrigger className="h-8">
+                  <SelectTrigger className="h-9">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="ai">AI Generate</SelectItem>
-                    <SelectItem value="upload">Upload</SelectItem>
-                    <SelectItem value="none">None</SelectItem>
+                    <SelectItem value="upload">Upload Track</SelectItem>
+                    <SelectItem value="none">No Music</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
-            {/* Actions */}
-            <div className="flex justify-between pt-2 border-t">
+            {/* Chapter Actions */}
+            <div className="flex justify-between pt-3 border-t">
               <div className="flex gap-2">
                 <Button size="sm" variant="ghost" onClick={onDuplicate}>
                   <Copy className="w-4 h-4 mr-1" /> Duplicate
                 </Button>
-                <Button size="sm" variant="ghost" className="text-destructive" onClick={onDelete}>
+                <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={onDelete}>
                   <Trash2 className="w-4 h-4 mr-1" /> Delete
                 </Button>
               </div>

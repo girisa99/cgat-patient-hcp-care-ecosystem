@@ -2,8 +2,9 @@
  * COMPOSITION STUDIO BARREL EXPORT
  */
 
-// Primary Studio - Simplified
+// Primary Studio - Simplified V2
 export { SimpleCompositionStudio } from './SimpleCompositionStudio';
+export { default as SimpleCompositionStudioDefault } from './SimpleCompositionStudio';
 
 // Legacy Studio (keep for backwards compatibility)
 export { UnifiedCompositionStudio } from './UnifiedCompositionStudio';

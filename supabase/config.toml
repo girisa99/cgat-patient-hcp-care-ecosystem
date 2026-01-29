@@ -64,7 +64,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.ai-universal-processor]
-verify_jwt = true
+verify_jwt = false
 
 [functions.check-ai-provider]
 verify_jwt = true
