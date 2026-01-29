@@ -114,7 +114,7 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
             <div className="space-y-4">
               {/* Category Selector */}
               <div className="flex flex-wrap items-center gap-3 pb-4 border-b">
-                <span className="text-sm font-medium text-muted-foreground">Type:</span>
+                <span className="text-sm font-medium text-muted-foreground">Category:</span>
                 <div className="flex flex-wrap items-center gap-2">
                   <Button
                     variant={activeCategory === 'media_production' ? 'default' : 'outline'}
