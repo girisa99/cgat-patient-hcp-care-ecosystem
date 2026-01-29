@@ -246,12 +246,15 @@ interface SimpleChapter {
   title: string;
   script: string;
   scriptSource: 'auto' | 'manual';
+  customPrompt: string; // User prompt for AI generation
+  aiSuggestedPrompt: string; // AI suggested prompt based on context
   visualTypes: string[];
   duration: number;
   voiceSource: 'tts' | 'upload' | 'clone';
   musicSource: 'ai' | 'upload' | 'none';
   status: 'draft' | 'generating' | 'complete' | 'error';
   progress: number;
+  industry?: string; // Industry for this chapter (from template)
   generatedContent?: {
     previewUrl: string;
     script: string;
@@ -309,6 +312,60 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
   }, [defaultLanguage, isDetectingLocation, geoData]);
 
   // Apply templates - combines chapters from all selected templates
+  // Get default visual types based on template
+  const getDefaultVisualsForTemplate = (templateId: string): string[] => {
+    const visualMap: Record<string, string[]> = {
+      saudi_vision_2030: ['video', 'infographics', '3d_environment'],
+      uae_digital: ['video', 'animation', 'ppt'],
+      india_digital: ['video', 'infographics', 'customer_journey'],
+      india_upi: ['animation', 'infographics', 'ppt'],
+      africa_tourism: ['video', '3d_environment', 'images'],
+      mena_tourism: ['video', 'images', '3d'],
+      healthcare_digital: ['avatar_presenter', 'ppt', 'infographics'],
+      saas_demo: ['screen_record', 'avatar', 'ppt'],
+      ai_showcase: ['animation', 'video', '3d'],
+      landing_hero: ['video', 'kinetic_typography'],
+      landing_product: ['screen_record', 'avatar_presenter'],
+      social_short: ['video', 'kinetic_typography'],
+      social_carousel: ['images', 'infographics'],
+      social_youtube: ['avatar', 'video', 'ppt'],
+    };
+    return visualMap[templateId] || ['video'];
+  };
+
+  // Generate AI suggested prompt for a chapter
+  const generateAISuggestedPrompt = (title: string, industry: string): string => {
+    const prompts: Record<string, Record<string, string>> = {
+      saudi_vision_2030: {
+        'Vision Overview': 'Create an inspiring overview of Saudi Vision 2030, highlighting economic diversification and digital transformation.',
+        'Economic Diversification': 'Explain Saudi Arabia\'s strategy to reduce oil dependence through tourism and tech investments.',
+        'Digital Infrastructure': 'Showcase the smart city initiatives and 5G/cloud infrastructure developments.',
+        'Smart Cities': 'Present NEOM and other futuristic urban development projects.',
+        'Future Outlook': 'Summarize the 2030 goals and call-to-action for global partnerships.',
+      },
+      india_upi: {
+        'UPI Introduction': 'Introduce UPI as a revolutionary real-time payment system transforming digital payments.',
+        'Technology Behind UPI': 'Explain the NPCI architecture and instant bank-to-bank transfer technology.',
+        'Merchant Adoption': 'Show how small businesses and street vendors adopted QR-based payments.',
+        'Global Expansion': 'Highlight UPI expansion to UAE, Singapore, and future markets.',
+      },
+      africa_tourism: {
+        'Wildlife Safari': 'Showcase breathtaking wildlife experiences across Africa\'s national parks.',
+        'Cultural Heritage': 'Highlight rich cultural traditions and historical sites.',
+        'Adventure Tourism': 'Present adventure activities from mountain climbing to water sports.',
+        'Beach Destinations': 'Feature stunning coastal destinations and island getaways.',
+        'Eco Tourism': 'Emphasize sustainable tourism and conservation efforts.',
+      },
+      saas_demo: {
+        'Product Overview': 'Present the key value proposition and solve the main customer pain point.',
+        'Key Features': 'Demonstrate the most impactful features with real-world examples.',
+        'Use Cases': 'Show how different industries use the product successfully.',
+        'Getting Started': 'Walk through the onboarding process and first-time user experience.',
+      },
+    };
+    return prompts[industry]?.[title] || `Create engaging content about "${title}" for ${industry.replace(/_/g, ' ')} audience.`;
+  };
+
   const applyTemplates = useCallback((templateIds: string[]) => {
     setSelectedTemplates(templateIds);
     
@@ -316,51 +373,60 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
       return;
     }
 
-    const allChapterTitles: string[] = [];
+    const newChapters: SimpleChapter[] = [];
     templateIds.forEach(templateId => {
-      const chapters = TEMPLATE_CHAPTERS[templateId] || [];
-      allChapterTitles.push(...chapters);
+      const chapterTitles = TEMPLATE_CHAPTERS[templateId] || [];
+      const defaultVisuals = getDefaultVisualsForTemplate(templateId);
+      
+      chapterTitles.forEach((title) => {
+        newChapters.push({
+          id: generateId(),
+          title,
+          script: '',
+          scriptSource: 'auto',
+          customPrompt: '',
+          aiSuggestedPrompt: generateAISuggestedPrompt(title, templateId),
+          visualTypes: defaultVisuals,
+          duration: 30,
+          voiceSource: globalVoiceSource,
+          musicSource: globalMusicSource,
+          status: 'draft' as const,
+          progress: 0,
+          industry: templateId,
+        });
+      });
     });
 
-    if (allChapterTitles.length > 0) {
-      const newChapters: SimpleChapter[] = allChapterTitles.map((title) => ({
-        id: generateId(),
-        title,
-        script: '',
-        scriptSource: 'auto',
-        visualTypes: ['video'],
-        duration: 30,
-        voiceSource: globalVoiceSource,
-        musicSource: globalMusicSource,
-        status: 'draft' as const,
-        progress: 0,
-      }));
+    if (newChapters.length > 0) {
       setChapters(newChapters);
-      if (newChapters.length > 0) {
-        setExpandedChapter(newChapters[0].id);
-      }
+      setExpandedChapter(newChapters[0].id);
       toast.success(`Applied ${templateIds.length} template(s) with ${newChapters.length} chapters`);
     }
   }, [globalVoiceSource, globalMusicSource]);
 
   // Chapter CRUD
   const addChapter = useCallback(() => {
+    const industry = selectedTemplates[0] || 'blank';
+    const title = `Chapter ${chapters.length + 1}`;
     const newChapter: SimpleChapter = {
       id: generateId(),
-      title: `Chapter ${chapters.length + 1}`,
+      title,
       script: '',
       scriptSource: 'auto',
-      visualTypes: ['video'],
+      customPrompt: '',
+      aiSuggestedPrompt: generateAISuggestedPrompt(title, industry),
+      visualTypes: getDefaultVisualsForTemplate(industry),
       duration: 30,
       voiceSource: globalVoiceSource,
       musicSource: globalMusicSource,
       status: 'draft',
       progress: 0,
+      industry,
     };
     setChapters(prev => [...prev, newChapter]);
     setExpandedChapter(newChapter.id);
     toast.success('Chapter added');
-  }, [chapters.length, globalVoiceSource, globalMusicSource]);
+  }, [chapters.length, globalVoiceSource, globalMusicSource, selectedTemplates]);
 
   const updateChapter = useCallback((id: string, updates: Partial<SimpleChapter>) => {
     setChapters(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
@@ -422,15 +488,26 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
       if (chapter.scriptSource === 'auto' || !script.trim()) {
         console.log('[Studio] Generating script for:', chapter.title);
         
+        // Use custom prompt if provided, otherwise use AI suggested prompt or default
+        const effectivePrompt = chapter.customPrompt?.trim() 
+          || chapter.aiSuggestedPrompt 
+          || `Create engaging content about "${chapter.title}"`;
+        
+        const industryContext = chapter.industry 
+          ? ` for ${chapter.industry.replace(/_/g, ' ')} industry` 
+          : '';
+        
         const { data: scriptData, error: scriptError } = await supabase.functions.invoke('ai-universal-processor', {
           body: {
             provider: 'gemini',
             model: 'gemini-2.0-flash',
-            prompt: `Generate a professional ${chapter.duration}-second voiceover script for "${chapter.title}". 
-                     Visual style: ${chapter.visualTypes.join(', ')}.
-                     Language: ${primaryLanguage}. Keep it engaging and concise.`,
-            systemPrompt: 'You are a professional scriptwriter. Generate only the script text, no formatting.',
-            maxTokens: 500,
+            prompt: `${effectivePrompt}
+
+Generate a professional ${chapter.duration}-second voiceover script${industryContext}.
+Visual style: ${chapter.visualTypes.join(', ')}.
+Language: ${primaryLanguage}. Keep it engaging, concise, and professional.`,
+            systemPrompt: 'You are a professional scriptwriter specializing in video content. Generate only the script text suitable for voiceover, no formatting or stage directions.',
+            maxTokens: 600,
             action: 'generate_script'
           }
         });
@@ -961,6 +1038,38 @@ const ChapterRow: React.FC<ChapterRowProps> = ({
               </div>
             )}
 
+            {/* AI Prompt Section */}
+            {chapter.scriptSource === 'auto' && (
+              <div className="space-y-2 p-3 rounded-lg bg-muted/30 border border-muted">
+                <div className="flex items-center justify-between">
+                  <Label className="flex items-center gap-2 text-xs font-medium">
+                    <Wand2 className="w-3 h-3 text-primary" />
+                    AI Generation Prompt
+                  </Label>
+                  {chapter.aiSuggestedPrompt && !chapter.customPrompt && (
+                    <Badge variant="secondary" className="text-[10px]">AI Suggested</Badge>
+                  )}
+                </div>
+                <Textarea
+                  value={chapter.customPrompt || chapter.aiSuggestedPrompt || ''}
+                  onChange={(e) => onUpdate({ customPrompt: e.target.value })}
+                  placeholder="Enter custom prompt or use AI suggestion..."
+                  rows={2}
+                  className="text-sm bg-background"
+                />
+                {chapter.aiSuggestedPrompt && chapter.customPrompt && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 text-xs text-muted-foreground"
+                    onClick={() => onUpdate({ customPrompt: '' })}
+                  >
+                    <RotateCcw className="w-3 h-3 mr-1" /> Reset to AI Suggestion
+                  </Button>
+                )}
+              </div>
+            )}
+
             {/* Script */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -977,7 +1086,7 @@ const ChapterRow: React.FC<ChapterRowProps> = ({
               <Textarea
                 value={chapter.script}
                 onChange={(e) => onUpdate({ script: e.target.value })}
-                placeholder={chapter.scriptSource === 'auto' ? "Auto-generated on Generate..." : "Enter script..."}
+                placeholder={chapter.scriptSource === 'auto' ? "Script will be auto-generated based on the prompt above..." : "Enter your script manually..."}
                 rows={3}
               />
             </div>
