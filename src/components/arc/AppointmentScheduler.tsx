@@ -14,6 +14,7 @@ import {
   Plus, Search, ChevronRight,
   Phone, User
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { useShows } from '@/hooks/useShows';
 import { format, isToday, isTomorrow, startOfWeek, endOfWeek } from 'date-fns';
 import { toast } from 'sonner';
@@ -174,96 +175,96 @@ export const AppointmentScheduler: React.FC = () => {
 
   return (
     <>
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="space-y-4 sm:space-y-6">
+      {/* Header - Mobile optimized */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center sm:gap-4">
         <div>
-          <h2 className="text-xl font-semibold flex items-center gap-2">
-            <CalendarCheck className="w-5 h-5 text-primary" />
-            Appointments & Schedule
+          <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2">
+            <CalendarCheck className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+            Appointments
           </h2>
-          <p className="text-sm text-muted-foreground">
-            Manage meetings, demos, and production schedules
+          <p className="text-xs sm:text-sm text-muted-foreground">
+            Meetings, demos & schedules
           </p>
         </div>
-        <Button className="gap-2" onClick={handleOpenDialog}>
+        <Button className="gap-2 w-full sm:w-auto" onClick={handleOpenDialog}>
           <Plus className="w-4 h-4" />
           New Appointment
         </Button>
       </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* Quick Stats - Mobile optimized grid */}
+      <div className="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-4">
         <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <CalendarCheck className="w-5 h-5 text-primary" />
+          <CardContent className="p-3 sm:pt-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 bg-primary/10 rounded-lg">
+                <CalendarCheck className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{appointments.filter(a => isToday(a.date)).length}</p>
-                <p className="text-xs text-muted-foreground">Today</p>
+                <p className="text-xl sm:text-2xl font-bold">{appointments.filter(a => isToday(a.date)).length}</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">Today</p>
               </div>
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-secondary/50 rounded-lg">
-                <Clock className="w-5 h-5 text-secondary-foreground" />
+          <CardContent className="p-3 sm:pt-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 bg-secondary/50 rounded-lg">
+                <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-secondary-foreground" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{appointments.filter(a => isTomorrow(a.date)).length}</p>
-                <p className="text-xs text-muted-foreground">Tomorrow</p>
+                <p className="text-xl sm:text-2xl font-bold">{appointments.filter(a => isTomorrow(a.date)).length}</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">Tomorrow</p>
               </div>
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-accent/50 rounded-lg">
-                <Users className="w-5 h-5 text-accent-foreground" />
+          <CardContent className="p-3 sm:pt-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 bg-accent/50 rounded-lg">
+                <Users className="w-4 h-4 sm:w-5 sm:h-5 text-accent-foreground" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{appointments.filter(a => a.type === 'meeting').length}</p>
-                <p className="text-xs text-muted-foreground">Meetings</p>
+                <p className="text-xl sm:text-2xl font-bold">{appointments.filter(a => a.type === 'meeting').length}</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">Meetings</p>
               </div>
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-muted rounded-lg">
-                <Video className="w-5 h-5 text-muted-foreground" />
+          <CardContent className="p-3 sm:pt-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 bg-muted rounded-lg">
+                <Video className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{appointments.filter(a => a.type === 'demo').length}</p>
-                <p className="text-xs text-muted-foreground">Demos</p>
+                <p className="text-xl sm:text-2xl font-bold">{appointments.filter(a => a.type === 'demo').length}</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">Demos</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Search and Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      {/* Search and Filters - Mobile optimized */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input 
-            placeholder="Search appointments..." 
+            placeholder="Search..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+            className="pl-10 h-9 sm:h-10"
           />
         </div>
-        <Tabs value={activeView} onValueChange={(v) => setActiveView(v as typeof activeView)}>
-          <TabsList>
-            <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-            <TabsTrigger value="today">Today</TabsTrigger>
-            <TabsTrigger value="week">This Week</TabsTrigger>
+        <Tabs value={activeView} onValueChange={(v) => setActiveView(v as typeof activeView)} className="w-full sm:w-auto">
+          <TabsList className="w-full sm:w-auto grid grid-cols-3 sm:flex">
+            <TabsTrigger value="upcoming" className="text-xs sm:text-sm">Upcoming</TabsTrigger>
+            <TabsTrigger value="today" className="text-xs sm:text-sm">Today</TabsTrigger>
+            <TabsTrigger value="week" className="text-xs sm:text-sm">Week</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
@@ -295,27 +296,27 @@ export const AppointmentScheduler: React.FC = () => {
             const typeInfo = SHOW_TYPE_LABELS[appointment.showType] || { label: appointment.showType, emoji: '📅' };
             return (
               <Card key={appointment.id} className="hover:shadow-md transition-shadow cursor-pointer">
-                <CardContent className="py-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="p-2 bg-primary/10 rounded-lg">
+                <CardContent className="p-3 sm:py-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
+                    <div className="flex items-start sm:items-center gap-3 sm:gap-4">
+                      <div className="p-1.5 sm:p-2 bg-primary/10 rounded-lg shrink-0">
                         {getTypeIcon(appointment.type)}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="font-medium truncate">{appointment.title}</h3>
-                          <Badge variant="secondary" className="text-xs shrink-0">
+                          <h3 className="font-medium text-sm sm:text-base truncate max-w-[150px] sm:max-w-none">{appointment.title}</h3>
+                          <Badge variant="secondary" className="text-[10px] sm:text-xs shrink-0">
                             {typeInfo.emoji} {typeInfo.label}
                           </Badge>
                         </div>
-                        <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1 flex-wrap">
+                        <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground mt-1 flex-wrap">
                           <span className="flex items-center gap-1">
                             <Clock className="w-3 h-3" />
                             {format(appointment.date, 'MMM d, h:mm a')}
                           </span>
-                          <span>{appointment.duration} min</span>
+                          <span className="hidden sm:inline">{appointment.duration} min</span>
                           {appointment.hostName && (
-                            <span className="flex items-center gap-1">
+                            <span className="hidden sm:flex items-center gap-1">
                               <User className="w-3 h-3" />
                               {appointment.hostName}
                             </span>
@@ -323,20 +324,19 @@ export const AppointmentScheduler: React.FC = () => {
                           {appointment.attendees.length > 0 && (
                             <span className="flex items-center gap-1">
                               <Users className="w-3 h-3" />
-                              {appointment.attendees.length} guest{appointment.attendees.length !== 1 ? 's' : ''}
+                              {appointment.attendees.length}
                             </span>
                           )}
                           {appointment.meetingLink && (
                             <span className="flex items-center gap-1 text-primary">
                               <Video className="w-3 h-3" />
-                              Link
                             </span>
                           )}
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Badge className={getStatusColor(appointment.status)}>
+                    <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-3 mt-2 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-0">
+                      <Badge className={cn(getStatusColor(appointment.status), "text-[10px] sm:text-xs")}>
                         {appointment.status}
                       </Badge>
                       <ChevronRight className="w-4 h-4 text-muted-foreground" />
