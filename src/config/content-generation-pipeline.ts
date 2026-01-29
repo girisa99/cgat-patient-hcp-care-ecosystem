@@ -1,27 +1,46 @@
 /**
  * CONTENT GENERATION PIPELINE CONFIG
  * 
- * Defines output formats for:
- * - Avatar + PPT with voice
- * - 3D product showcase + voice
- * - Full production video (Avatar + 3D + PPT combined)
- * - Interactive step-by-step demos
+ * EXTENDS the existing ecosystemRegistry.ts (206 pipelines, 21 categories, 7 products)
+ * DO NOT duplicate pipeline definitions - use CATEGORY_REGISTRY and PIPELINE_CATEGORY_MAPPING
  * 
- * Integrates with:
- * - Regional IP-based detection
- * - Industry-specific templates
- * - 6-zone TTS routing
+ * This file defines:
+ * - Output format combinations (Avatar + PPT, 3D + Voice, Full Production, etc.)
+ * - Industry-specific templates that USE the 206 pipelines
+ * - Regional detection configs for IP-based content delivery
+ * - 6-zone TTS routing integration
+ * 
+ * CONNECTS TO:
+ * - Composition Studio (create, view, publish workflow)
+ * - Landing page sections via TemplateLandingMapper
+ * - IP-based regional content delivery
  */
 
-export type OutputFormat = 
-  | 'avatar_ppt'           // Avatar presenter over PPT slides
-  | '3d_showcase_voice'    // 3D models with voiceover
-  | 'full_production'      // Combined Avatar + 3D + PPT
-  | 'interactive_demo'     // Step-by-step clickable
-  | 'screen_recording'     // Screen capture with voice
-  | 'pure_video'           // AI-generated video only
-  | 'avatar_only';         // Avatar talking head only
+import { CATEGORY_REGISTRY, type CategoryId } from '@/constants/ecosystemRegistry';
+import { GenieProduct } from '@/constants/genie-products';
 
+// Output format types - combinations of our 206 pipelines
+export type OutputFormat = 
+  | 'avatar_ppt'           // Avatar presenter over PPT slides (uses: avatar-lipsync + presentation)
+  | '3d_showcase_voice'    // 3D models with voiceover (uses: 3d-immersive + tts-generation)
+  | 'full_production'      // Combined Avatar + 3D + PPT (uses: multiple pipeline categories)
+  | 'interactive_demo'     // Step-by-step clickable (uses: video-editing + screen capture)
+  | 'screen_recording'     // Screen capture with voice (uses: video-editing + tts-generation)
+  | 'pure_video'           // AI-generated video only (uses: video-generation)
+  | 'avatar_only';         // Avatar talking head only (uses: avatar-lipsync)
+
+// Maps output formats to the pipeline categories they use from ecosystemRegistry
+export const OUTPUT_FORMAT_PIPELINE_MAPPING: Record<OutputFormat, CategoryId[]> = {
+  avatar_ppt: ['avatar-lipsync', 'presentation', 'tts-generation'],
+  '3d_showcase_voice': ['3d-immersive', 'tts-generation', 'video-generation'],
+  full_production: ['avatar-lipsync', '3d-immersive', 'presentation', 'video-generation', 'audio-production'],
+  interactive_demo: ['video-editing', 'tts-generation'],
+  screen_recording: ['video-editing', 'tts-generation'],
+  pure_video: ['video-generation', 'audio-production'],
+  avatar_only: ['avatar-lipsync', 'tts-generation'],
+};
+
+// Industry categories - aligned with the 25 industries in registry
 export type IndustryCategory = 
   | 'technology'
   | 'healthcare'
@@ -34,7 +53,12 @@ export type IndustryCategory =
   | 'real_estate'
   | 'energy'
   | 'media'
-  | 'transportation';
+  | 'transportation'
+  | 'aerospace'
+  | 'telecommunications'
+  | 'agriculture'
+  | 'legal'
+  | 'hospitality';
 
 export type RegionalZone = 
   | 'mena'           // Middle East & North Africa
