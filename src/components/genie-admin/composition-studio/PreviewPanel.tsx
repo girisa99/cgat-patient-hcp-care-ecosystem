@@ -2,9 +2,10 @@
  * PREVIEW PANEL
  * 
  * Multi-language preview system:
- * - Preview individual chapters
+ * - Preview individual chapters with actual generated content
  * - Compare side-by-side languages
  * - Full composition preview
+ * - Display script content and scene descriptions
  */
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -15,10 +16,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 import {
   Play, Pause, SkipBack, SkipForward, Volume2, VolumeX,
   Maximize2, Columns, Globe, CheckCircle2, AlertCircle,
-  Loader2, RefreshCw
+  Loader2, RefreshCw, FileText, Image as ImageIcon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { CompositionChapter, CompositionProject } from './types';
@@ -31,6 +33,7 @@ interface PreviewPanelProps {
   onGenerateAll: () => Promise<void>;
   isGenerating: boolean;
   generationProgress: number;
+  generatedContent?: Map<string, { previewUrl: string; script?: string; sceneDescription?: string }>;
 }
 
 type PreviewMode = 'single' | 'side-by-side' | 'all-languages';
@@ -42,6 +45,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
   onGenerateAll,
   isGenerating,
   generationProgress,
+  generatedContent = new Map(),
 }) => {
   const [previewMode, setPreviewMode] = useState<PreviewMode>('single');
   const [selectedChapter, setSelectedChapter] = useState<string>(chapters[0]?.id || '');
@@ -52,17 +56,36 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
+  const [showDetails, setShowDetails] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const currentChapter = chapters.find(c => c.id === selectedChapter);
   
   const getTotalDuration = () => chapters.reduce((sum, c) => sum + c.duration, 0);
 
+  // Get content key for looking up generated content
+  const getContentKey = (chapterId: string, language: string) => `${chapterId}_${language}`;
+
   const getChapterStatus = (chapter: CompositionChapter, language: string) => {
-    if (chapter.previewUrls[language]) return 'ready';
+    const contentKey = getContentKey(chapter.id, language);
+    if (generatedContent.has(contentKey) || chapter.previewUrls[language]) return 'ready';
     if (chapter.status === 'generating') return 'generating';
     if (chapter.status === 'error') return 'error';
     return 'pending';
+  };
+
+  // Get the preview URL for a chapter/language combination
+  const getPreviewUrl = (chapter: CompositionChapter, language: string): string | undefined => {
+    const contentKey = getContentKey(chapter.id, language);
+    const generated = generatedContent.get(contentKey);
+    return generated?.previewUrl || chapter.previewUrls[language];
+  };
+
+  // Get script content for a chapter/language
+  const getScriptContent = (chapter: CompositionChapter, language: string): string | undefined => {
+    const contentKey = getContentKey(chapter.id, language);
+    const generated = generatedContent.get(contentKey);
+    return generated?.script;
   };
 
   const renderPreviewPlaceholder = (status: string, chapter: CompositionChapter) => (
@@ -271,10 +294,37 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
 
         {/* Preview Area */}
         <div className="flex-1">
-          {previewMode === 'single' && currentChapter && (
+        {previewMode === 'single' && currentChapter && (
             <div>
-              {currentChapter.previewUrls[selectedLanguage] ? (
-                renderVideoPlayer(currentChapter.previewUrls[selectedLanguage])
+              {getPreviewUrl(currentChapter, selectedLanguage) ? (
+                <div className="space-y-3">
+                  {renderVideoPlayer(getPreviewUrl(currentChapter, selectedLanguage)!)}
+                  
+                  {/* Script/Scene Content Toggle */}
+                  {getScriptContent(currentChapter, selectedLanguage) && (
+                    <div className="p-3 bg-muted/50 rounded-lg">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowDetails(!showDetails)}
+                        className="w-full justify-between"
+                      >
+                        <span className="flex items-center gap-2">
+                          <FileText className="w-4 h-4" />
+                          Generated Script
+                        </span>
+                        <Badge variant="outline">
+                          {showDetails ? 'Hide' : 'Show'}
+                        </Badge>
+                      </Button>
+                      {showDetails && (
+                        <div className="mt-2 p-3 bg-background rounded border text-sm max-h-32 overflow-y-auto">
+                          {getScriptContent(currentChapter, selectedLanguage)}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               ) : (
                 renderPreviewPlaceholder(
                   getChapterStatus(currentChapter, selectedLanguage), 
@@ -285,6 +335,12 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
                 <div className="flex items-center gap-2">
                   <Badge variant="outline">{currentChapter.visual.type}</Badge>
                   <Badge variant="outline">{currentChapter.voiceover.type}</Badge>
+                  {getPreviewUrl(currentChapter, selectedLanguage) && (
+                    <Badge variant="default" className="bg-emerald-500">
+                      <CheckCircle2 className="w-3 h-3 mr-1" />
+                      Generated
+                    </Badge>
+                  )}
                 </div>
                 <span className="text-xs text-muted-foreground">
                   Chapter {currentChapter.order} of {chapters.length}
@@ -299,8 +355,8 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
                 <Badge className="mb-2">
                   {SUPPORTED_LANGUAGES.find(l => l.code === selectedLanguage)?.name}
                 </Badge>
-                {currentChapter.previewUrls[selectedLanguage] ? (
-                  renderVideoPlayer(currentChapter.previewUrls[selectedLanguage])
+                {getPreviewUrl(currentChapter, selectedLanguage) ? (
+                  renderVideoPlayer(getPreviewUrl(currentChapter, selectedLanguage)!)
                 ) : (
                   renderPreviewPlaceholder(
                     getChapterStatus(currentChapter, selectedLanguage), 
@@ -312,8 +368,8 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
                 <Badge className="mb-2">
                   {SUPPORTED_LANGUAGES.find(l => l.code === compareLanguage)?.name}
                 </Badge>
-                {currentChapter.previewUrls[compareLanguage] ? (
-                  renderVideoPlayer(currentChapter.previewUrls[compareLanguage])
+                {getPreviewUrl(currentChapter, compareLanguage) ? (
+                  renderVideoPlayer(getPreviewUrl(currentChapter, compareLanguage)!)
                 ) : (
                   renderPreviewPlaceholder(
                     getChapterStatus(currentChapter, compareLanguage), 
