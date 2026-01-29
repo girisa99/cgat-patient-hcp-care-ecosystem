@@ -39,68 +39,281 @@ import { useIPBasedContent } from '@/hooks/useIPBasedContent';
 import { useStudioEcosystem } from './useStudioEcosystem';
 
 // ============================================
-// INDUSTRY-SPECIFIC TEMPLATES (Multi-select ready)
+// INDUSTRY-SPECIFIC TEMPLATES (Multi-select ready) - 80+ templates
 // ============================================
 const INDUSTRY_TEMPLATES: MultiSelectOption[] = [
-  // Government & National Initiatives
+  // === GOVERNMENT & NATIONAL INITIATIVES ===
   { id: 'saudi_vision_2030', value: 'saudi_vision_2030', label: 'Saudi Vision 2030', category: 'Government', description: 'Digital transformation for Saudi initiatives' },
   { id: 'uae_digital', value: 'uae_digital', label: 'UAE Digital Government', category: 'Government', description: 'UAE smart services' },
-  { id: 'india_digital', value: 'india_digital', label: 'Digital India Initiative', category: 'Government', description: 'India digital transformation' },
-  { id: 'india_upi', value: 'india_upi', label: 'India UPI Payment', category: 'Finance', description: 'UPI payment revolution' },
-  // Tourism
-  { id: 'africa_tourism', value: 'africa_tourism', label: 'Africa Tourism', category: 'Tourism', description: 'African destinations showcase' },
+  { id: 'qatar_2030', value: 'qatar_2030', label: 'Qatar National Vision 2030', category: 'Government', description: 'Qatar diversification strategy' },
+  { id: 'oman_2040', value: 'oman_2040', label: 'Oman Vision 2040', category: 'Government', description: 'Oman economic diversification' },
+  { id: 'bahrain_2030', value: 'bahrain_2030', label: 'Bahrain Economic Vision', category: 'Government', description: 'Bahrain economic reform' },
+  { id: 'kuwait_2035', value: 'kuwait_2035', label: 'Kuwait Vision 2035', category: 'Government', description: 'New Kuwait development' },
+  
+  // === INDIA FULL ECOSYSTEM ===
+  { id: 'india_digital', value: 'india_digital', label: 'Digital India Initiative', category: 'India', description: 'India digital transformation' },
+  { id: 'india_upi', value: 'india_upi', label: 'UPI Payment Revolution', category: 'India', description: 'UPI and digital payments' },
+  { id: 'india_aadhaar', value: 'india_aadhaar', label: 'Aadhaar Digital Identity', category: 'India', description: 'World\'s largest biometric system' },
+  { id: 'india_startup', value: 'india_startup', label: 'Startup India', category: 'India', description: 'India startup ecosystem' },
+  { id: 'india_make', value: 'india_make', label: 'Make in India', category: 'India', description: 'Manufacturing initiative' },
+  { id: 'india_smart_city', value: 'india_smart_city', label: 'Smart Cities Mission', category: 'India', description: '100 smart cities development' },
+  { id: 'india_healthcare', value: 'india_healthcare', label: 'Ayushman Bharat', category: 'India', description: 'Healthcare for all initiative' },
+  { id: 'india_education', value: 'india_education', label: 'NEP 2020 Education', category: 'India', description: 'National Education Policy' },
+  { id: 'india_agritech', value: 'india_agritech', label: 'India AgriTech', category: 'India', description: 'Agricultural innovation' },
+  { id: 'india_fintech', value: 'india_fintech', label: 'India Fintech Hub', category: 'India', description: 'Financial technology ecosystem' },
+  { id: 'india_ev', value: 'india_ev', label: 'India EV Mission', category: 'India', description: 'Electric vehicle adoption' },
+  { id: 'india_renewable', value: 'india_renewable', label: 'India Green Energy', category: 'India', description: 'Renewable energy transition' },
+  { id: 'india_tourism', value: 'india_tourism', label: 'Incredible India', category: 'India', description: 'Tourism promotion' },
+  { id: 'india_cultural', value: 'india_cultural', label: 'India Cultural Heritage', category: 'India', description: 'Cultural preservation' },
+  
+  // === PAKISTAN ECOSYSTEM ===
+  { id: 'pakistan_digital', value: 'pakistan_digital', label: 'Digital Pakistan', category: 'Pakistan', description: 'Digital transformation vision' },
+  { id: 'pakistan_kamyab', value: 'pakistan_kamyab', label: 'Kamyab Jawan', category: 'Pakistan', description: 'Youth entrepreneurship' },
+  { id: 'pakistan_cpec', value: 'pakistan_cpec', label: 'CPEC Development', category: 'Pakistan', description: 'China-Pakistan corridor' },
+  { id: 'pakistan_it_exports', value: 'pakistan_it_exports', label: 'Pakistan IT Exports', category: 'Pakistan', description: 'IT services industry' },
+  { id: 'pakistan_tourism', value: 'pakistan_tourism', label: 'Pakistan Tourism', category: 'Pakistan', description: 'Tourism destinations' },
+  
+  // === BANGLADESH ECOSYSTEM ===
+  { id: 'bangladesh_digital', value: 'bangladesh_digital', label: 'Digital Bangladesh', category: 'Bangladesh', description: 'Digital transformation' },
+  { id: 'bangladesh_garments', value: 'bangladesh_garments', label: 'Bangladesh RMG Industry', category: 'Bangladesh', description: 'Garments manufacturing' },
+  { id: 'bangladesh_fintech', value: 'bangladesh_fintech', label: 'Bangladesh Mobile Finance', category: 'Bangladesh', description: 'bKash and mobile banking' },
+  { id: 'bangladesh_it', value: 'bangladesh_it', label: 'Bangladesh IT Hub', category: 'Bangladesh', description: 'Emerging IT sector' },
+  { id: 'bangladesh_climate', value: 'bangladesh_climate', label: 'Bangladesh Climate Action', category: 'Bangladesh', description: 'Climate resilience' },
+  
+  // === CJK (China, Japan, Korea) ===
+  { id: 'china_belt_road', value: 'china_belt_road', label: 'Belt & Road Initiative', category: 'CJK', description: 'Global infrastructure' },
+  { id: 'china_ai', value: 'china_ai', label: 'China AI Leadership', category: 'CJK', description: 'AI development strategy' },
+  { id: 'china_green', value: 'china_green', label: 'China Green Transition', category: 'CJK', description: 'Carbon neutrality goals' },
+  { id: 'japan_society5', value: 'japan_society5', label: 'Japan Society 5.0', category: 'CJK', description: 'Super smart society' },
+  { id: 'japan_manufacturing', value: 'japan_manufacturing', label: 'Japan Industry 4.0', category: 'CJK', description: 'Monozukuri + AI' },
+  { id: 'japan_tourism', value: 'japan_tourism', label: 'Japan Tourism', category: 'CJK', description: 'Cultural tourism' },
+  { id: 'korea_digital', value: 'korea_digital', label: 'Digital New Deal', category: 'CJK', description: 'Korea digital economy' },
+  { id: 'korea_kpop', value: 'korea_kpop', label: 'K-Wave Cultural Export', category: 'CJK', description: 'K-pop and K-drama' },
+  { id: 'korea_semiconductor', value: 'korea_semiconductor', label: 'Korea Semiconductor', category: 'CJK', description: 'Chip manufacturing' },
+  { id: 'taiwan_tech', value: 'taiwan_tech', label: 'Taiwan Tech Hub', category: 'CJK', description: 'Technology manufacturing' },
+  
+  // === INDO-ASIA / SOUTHEAST ASIA ===
+  { id: 'indonesia_digital', value: 'indonesia_digital', label: 'Indonesia Digital Economy', category: 'Indo-Asia', description: 'Digital archipelago' },
+  { id: 'indonesia_tourism', value: 'indonesia_tourism', label: 'Wonderful Indonesia', category: 'Indo-Asia', description: 'Tourism destinations' },
+  { id: 'malaysia_digital', value: 'malaysia_digital', label: 'Malaysia Digital', category: 'Indo-Asia', description: 'Digital transformation' },
+  { id: 'thailand_4', value: 'thailand_4', label: 'Thailand 4.0', category: 'Indo-Asia', description: 'Value-based economy' },
+  { id: 'vietnam_digital', value: 'vietnam_digital', label: 'Vietnam Digital', category: 'Indo-Asia', description: 'Manufacturing hub' },
+  { id: 'singapore_smart', value: 'singapore_smart', label: 'Smart Nation Singapore', category: 'Indo-Asia', description: 'Smart city leader' },
+  { id: 'philippines_digital', value: 'philippines_digital', label: 'Philippines Digital', category: 'Indo-Asia', description: 'BPO and digital' },
+  { id: 'asean_integration', value: 'asean_integration', label: 'ASEAN Integration', category: 'Indo-Asia', description: 'Regional cooperation' },
+  
+  // === CARIBBEAN ===
+  { id: 'caribbean_tourism', value: 'caribbean_tourism', label: 'Caribbean Tourism', category: 'Caribbean', description: 'Island destinations' },
+  { id: 'caribbean_digital', value: 'caribbean_digital', label: 'Caribbean Digital Hub', category: 'Caribbean', description: 'Tech innovation islands' },
+  { id: 'caribbean_fintech', value: 'caribbean_fintech', label: 'Caribbean Fintech', category: 'Caribbean', description: 'Financial services' },
+  { id: 'caribbean_renewable', value: 'caribbean_renewable', label: 'Caribbean Green Energy', category: 'Caribbean', description: 'Renewable transition' },
+  { id: 'jamaica_digital', value: 'jamaica_digital', label: 'Digital Jamaica', category: 'Caribbean', description: 'Jamaica tech ecosystem' },
+  { id: 'trinidad_energy', value: 'trinidad_energy', label: 'Trinidad Energy Sector', category: 'Caribbean', description: 'Energy diversification' },
+  { id: 'barbados_fintech', value: 'barbados_fintech', label: 'Barbados Global Hub', category: 'Caribbean', description: 'International business' },
+  
+  // === AFRICA ===
+  { id: 'africa_tourism', value: 'africa_tourism', label: 'Africa Tourism', category: 'Africa', description: 'African destinations showcase' },
+  { id: 'africa_fintech', value: 'africa_fintech', label: 'Africa Fintech Rise', category: 'Africa', description: 'Mobile money revolution' },
+  { id: 'africa_agritech', value: 'africa_agritech', label: 'Africa AgriTech', category: 'Africa', description: 'Agricultural innovation' },
+  { id: 'nigeria_tech', value: 'nigeria_tech', label: 'Nigeria Tech Ecosystem', category: 'Africa', description: 'Lagos tech hub' },
+  { id: 'kenya_silicon', value: 'kenya_silicon', label: 'Silicon Savannah', category: 'Africa', description: 'Kenya tech innovation' },
+  { id: 'south_africa_digital', value: 'south_africa_digital', label: 'South Africa Digital', category: 'Africa', description: 'Digital transformation' },
+  { id: 'rwanda_smart', value: 'rwanda_smart', label: 'Rwanda Smart Nation', category: 'Africa', description: 'Digital governance' },
+  { id: 'ethiopia_rise', value: 'ethiopia_rise', label: 'Ethiopia Rising', category: 'Africa', description: 'Economic development' },
+  
+  // === MENA/TOURISM ===
   { id: 'mena_tourism', value: 'mena_tourism', label: 'MENA Tourism', category: 'Tourism', description: 'Middle East experiences' },
   { id: 'asia_tourism', value: 'asia_tourism', label: 'Southeast Asia', category: 'Tourism', description: 'SEA destinations' },
-  // Healthcare
+  { id: 'europe_tourism', value: 'europe_tourism', label: 'Europe Heritage', category: 'Tourism', description: 'European destinations' },
+  
+  // === HEALTHCARE ===
   { id: 'healthcare_digital', value: 'healthcare_digital', label: 'Digital Healthcare', category: 'Healthcare', description: 'Healthcare tech innovation' },
   { id: 'pharma_product', value: 'pharma_product', label: 'Pharma Product Launch', category: 'Healthcare', description: 'Drug/treatment intro' },
-  // Finance
+  { id: 'healthcare_ai', value: 'healthcare_ai', label: 'AI Diagnostics', category: 'Healthcare', description: 'AI-powered healthcare' },
+  { id: 'telemedicine', value: 'telemedicine', label: 'Telemedicine Platform', category: 'Healthcare', description: 'Remote healthcare' },
+  
+  // === FINANCE ===
   { id: 'banking_digital', value: 'banking_digital', label: 'Digital Banking', category: 'Finance', description: 'Modern fintech solutions' },
   { id: 'investment_pitch', value: 'investment_pitch', label: 'Investment Pitch', category: 'Finance', description: 'Startup pitch deck' },
-  // Technology
+  { id: 'islamic_finance', value: 'islamic_finance', label: 'Islamic Finance', category: 'Finance', description: 'Shariah-compliant products' },
+  { id: 'crypto_defi', value: 'crypto_defi', label: 'Crypto/DeFi Explainer', category: 'Finance', description: 'Blockchain finance' },
+  
+  // === TECHNOLOGY ===
   { id: 'saas_demo', value: 'saas_demo', label: 'SaaS Product Demo', category: 'Technology', description: 'Software demonstration' },
   { id: 'ai_showcase', value: 'ai_showcase', label: 'AI/ML Showcase', category: 'Technology', description: 'AI capabilities demo' },
-  // Education
+  { id: 'cybersecurity', value: 'cybersecurity', label: 'Cybersecurity Solutions', category: 'Technology', description: 'Security products' },
+  { id: 'cloud_services', value: 'cloud_services', label: 'Cloud Services', category: 'Technology', description: 'Cloud offerings' },
+  
+  // === EDUCATION ===
   { id: 'education_course', value: 'education_course', label: 'Online Course', category: 'Education', description: 'Course materials' },
   { id: 'corporate_training', value: 'corporate_training', label: 'Corporate Training', category: 'Education', description: 'Employee training' },
-  // Landing Pages
+  { id: 'university_promo', value: 'university_promo', label: 'University Promotion', category: 'Education', description: 'Academic institution' },
+  
+  // === LANDING PAGES ===
   { id: 'landing_hero', value: 'landing_hero', label: 'Hero Showcase', category: 'Landing Page', description: 'Website hero video' },
   { id: 'landing_product', value: 'landing_product', label: 'Product Demo', category: 'Landing Page', description: 'Product walkthrough' },
   { id: 'landing_testimonial', value: 'landing_testimonial', label: 'Testimonials', category: 'Landing Page', description: 'Customer stories' },
-  // Social Media
+  { id: 'landing_explainer', value: 'landing_explainer', label: 'Explainer Video', category: 'Landing Page', description: 'Concept explanation' },
+  
+  // === SOCIAL MEDIA ===
   { id: 'social_short', value: 'social_short', label: 'Short Form (Reels)', category: 'Social Media', description: 'TikTok/Reels ready' },
   { id: 'social_carousel', value: 'social_carousel', label: 'Carousel Post', category: 'Social Media', description: 'LinkedIn/Instagram slides' },
   { id: 'social_youtube', value: 'social_youtube', label: 'YouTube Long Form', category: 'Social Media', description: 'Full YouTube video' },
-  // Quick Start
+  { id: 'social_stories', value: 'social_stories', label: 'Stories Format', category: 'Social Media', description: 'Instagram/WhatsApp stories' },
+  
+  // === USE CASES & SCENARIOS ===
+  { id: 'usecase_onboarding', value: 'usecase_onboarding', label: 'Employee Onboarding', category: 'Use Cases', description: 'New hire training' },
+  { id: 'usecase_sales_enablement', value: 'usecase_sales_enablement', label: 'Sales Enablement', category: 'Use Cases', description: 'Sales team training' },
+  { id: 'usecase_customer_success', value: 'usecase_customer_success', label: 'Customer Success', category: 'Use Cases', description: 'Customer education' },
+  { id: 'usecase_compliance', value: 'usecase_compliance', label: 'Compliance Training', category: 'Use Cases', description: 'Regulatory training' },
+  { id: 'usecase_product_launch', value: 'usecase_product_launch', label: 'Product Launch', category: 'Use Cases', description: 'Launch campaign' },
+  { id: 'usecase_investor_update', value: 'usecase_investor_update', label: 'Investor Update', category: 'Use Cases', description: 'Quarterly reports' },
+  { id: 'usecase_internal_comms', value: 'usecase_internal_comms', label: 'Internal Communications', category: 'Use Cases', description: 'Team updates' },
+  { id: 'usecase_event_promo', value: 'usecase_event_promo', label: 'Event Promotion', category: 'Use Cases', description: 'Conference/webinar promo' },
+  { id: 'usecase_case_study', value: 'usecase_case_study', label: 'Case Study Video', category: 'Use Cases', description: 'Success story' },
+  { id: 'usecase_how_to', value: 'usecase_how_to', label: 'How-To Tutorial', category: 'Use Cases', description: 'Step-by-step guide' },
+  
+  // === QUICK START ===
   { id: 'blank', value: 'blank', label: 'Start Blank', category: 'Quick Start', description: 'Empty canvas' },
   { id: 'single', value: 'single', label: 'Single Chapter', category: 'Quick Start', description: 'Quick one-off' },
   { id: '3_chapter', value: '3_chapter', label: '3 Chapters', category: 'Quick Start', description: 'Short series' },
   { id: '5_chapter', value: '5_chapter', label: '5 Chapters', category: 'Quick Start', description: 'Standard series' },
 ];
 
-// Template chapters mapping
+// Template chapters mapping - expanded for all templates
 const TEMPLATE_CHAPTERS: Record<string, string[]> = {
+  // Government/Vision
   saudi_vision_2030: ['Vision Overview', 'Economic Diversification', 'Digital Infrastructure', 'Smart Cities', 'Future Outlook'],
   uae_digital: ['Digital Transformation', 'Smart Services', 'Innovation Hub', 'Future Plans'],
+  qatar_2030: ['National Vision', 'Economic Pillars', 'Human Development', 'Environmental Strategy', 'Future Goals'],
+  oman_2040: ['Vision Overview', 'Economic Diversification', 'Tourism & Heritage', 'Digital Infrastructure'],
+  bahrain_2030: ['Economic Reform', 'Digital Banking Hub', 'Tourism Growth', 'Future Vision'],
+  kuwait_2035: ['New Kuwait Vision', 'Economic Development', 'Infrastructure', 'Digital Services'],
+  
+  // India
   india_digital: ['Digital India Vision', 'UPI Revolution', 'Aadhaar Ecosystem', 'Digital Infrastructure', 'Future Roadmap'],
-  india_upi: ['UPI Introduction', 'Technology Behind UPI', 'Merchant Adoption', 'Global Expansion'],
+  india_upi: ['UPI Introduction', 'Technology Behind UPI', 'Merchant Adoption', 'Global Expansion', 'Future of Payments'],
+  india_aadhaar: ['Aadhaar Vision', 'Technology Architecture', 'Use Cases', 'Privacy & Security', 'Global Impact'],
+  india_startup: ['Startup India Launch', 'Ecosystem Growth', 'Unicorn Stories', 'Government Support', 'Future Outlook'],
+  india_make: ['Make in India Vision', 'Manufacturing Sectors', 'FDI Growth', 'Success Stories', 'Roadmap'],
+  india_smart_city: ['Smart Cities Mission', 'Technology Stack', 'City Transformations', 'Citizen Services', 'Future Plans'],
+  india_healthcare: ['Ayushman Bharat Vision', 'Coverage & Impact', 'Digital Health Stack', 'Success Stories'],
+  india_education: ['NEP 2020 Vision', 'Key Reforms', 'Digital Learning', 'Implementation Progress'],
+  india_agritech: ['AgriTech Revolution', 'Technology Solutions', 'Farmer Stories', 'Market Access', 'Future Vision'],
+  india_fintech: ['Fintech Ecosystem', 'Key Players', 'Innovation Stories', 'Regulatory Framework', 'Growth Outlook'],
+  india_ev: ['EV Mission India', 'Infrastructure Development', 'Manufacturing', 'Adoption Trends', 'Future Roadmap'],
+  india_renewable: ['Green Energy Vision', 'Solar Revolution', 'Wind Energy', 'Grid Modernization', 'Carbon Goals'],
+  india_tourism: ['Incredible India', 'Heritage Sites', 'Natural Wonders', 'Cultural Experiences', 'Travel Guide'],
+  india_cultural: ['Cultural Heritage', 'Ancient Traditions', 'Art Forms', 'Preservation Efforts', 'Experience India'],
+  
+  // Pakistan
+  pakistan_digital: ['Digital Pakistan Vision', 'IT Infrastructure', 'E-Government', 'Digital Economy', 'Future Goals'],
+  pakistan_kamyab: ['Youth Vision', 'Entrepreneurship Programs', 'Success Stories', 'Support Ecosystem'],
+  pakistan_cpec: ['CPEC Overview', 'Infrastructure Projects', 'Economic Corridors', 'Future Development'],
+  pakistan_it_exports: ['IT Industry Growth', 'Key Sectors', 'Talent Pool', 'Export Markets', 'Growth Strategy'],
+  pakistan_tourism: ['Beautiful Pakistan', 'Northern Areas', 'Historical Sites', 'Adventure Tourism', 'Travel Info'],
+  
+  // Bangladesh
+  bangladesh_digital: ['Digital Bangladesh', 'Digital Services', 'IT Growth', 'Innovation Hub', 'Future Vision'],
+  bangladesh_garments: ['RMG Industry', 'Global Leadership', 'Sustainability', 'Worker Welfare', 'Future Outlook'],
+  bangladesh_fintech: ['Mobile Finance Revolution', 'bKash Story', 'Financial Inclusion', 'Digital Payments', 'Growth Trajectory'],
+  bangladesh_it: ['Emerging IT Hub', 'Talent Development', 'Software Exports', 'Tech Parks', 'Future Vision'],
+  bangladesh_climate: ['Climate Challenges', 'Adaptation Strategies', 'Green Growth', 'International Leadership'],
+  
+  // CJK
+  china_belt_road: ['BRI Vision', 'Infrastructure Projects', 'Trade Corridors', 'Partnership Stories', 'Future Expansion'],
+  china_ai: ['AI Strategy', 'Research Leadership', 'Applications', 'Industry Integration', 'Future Goals'],
+  china_green: ['Carbon Neutrality Goals', 'Renewable Energy', 'EV Revolution', 'Green Industry', 'Climate Action'],
+  japan_society5: ['Society 5.0 Vision', 'Technology Integration', 'Human-Centered AI', 'Implementation', 'Future Japan'],
+  japan_manufacturing: ['Monozukuri Legacy', 'Smart Factory', 'Robotics Integration', 'Quality Excellence', 'Future Manufacturing'],
+  japan_tourism: ['Japan Experience', 'Cultural Heritage', 'Modern Japan', 'Travel Guide', 'Seasonal Beauty'],
+  korea_digital: ['Digital New Deal', 'AI & Data', '5G Infrastructure', 'Green New Deal', 'Future Korea'],
+  korea_kpop: ['K-Wave Phenomenon', 'K-Pop Industry', 'K-Drama Global', 'Cultural Export', 'Future Trends'],
+  korea_semiconductor: ['Chip Leadership', 'Technology Innovation', 'Manufacturing Excellence', 'Global Supply', 'Future Development'],
+  taiwan_tech: ['Tech Manufacturing Hub', 'Semiconductor Leadership', 'Innovation Ecosystem', 'Global Supply Chain'],
+  
+  // Indo-Asia
+  indonesia_digital: ['Digital Archipelago', 'Unicorn Ecosystem', 'E-Commerce Growth', 'Digital Inclusion', 'Future Vision'],
+  indonesia_tourism: ['Wonderful Indonesia', 'Bali Experience', 'Cultural Heritage', 'Natural Wonders', 'Travel Guide'],
+  malaysia_digital: ['Malaysia Digital', 'Tech Ecosystem', 'Digital Economy', 'Innovation Hub', 'Future Goals'],
+  thailand_4: ['Thailand 4.0', 'Value-Based Economy', 'S-Curve Industries', 'EEC Development', 'Future Thailand'],
+  vietnam_digital: ['Vietnam Digital', 'Manufacturing Hub', 'Tech Ecosystem', 'Innovation Growth', 'Future Vision'],
+  singapore_smart: ['Smart Nation', 'Digital Government', 'AI Singapore', 'Innovation Hub', 'Future City'],
+  philippines_digital: ['Philippines Digital', 'BPO Excellence', 'Startup Ecosystem', 'Digital Services', 'Growth Vision'],
+  asean_integration: ['ASEAN Vision', 'Economic Integration', 'Digital ASEAN', 'Trade Corridors', 'Future Cooperation'],
+  
+  // Caribbean
+  caribbean_tourism: ['Island Paradise', 'Beach Destinations', 'Cultural Experiences', 'Adventure Tourism', 'Travel Guide'],
+  caribbean_digital: ['Digital Caribbean', 'Tech Innovation', 'Remote Work Hub', 'Digital Services', 'Future Vision'],
+  caribbean_fintech: ['Caribbean Fintech', 'Digital Banking', 'Payment Solutions', 'Financial Inclusion', 'Growth Outlook'],
+  caribbean_renewable: ['Green Caribbean', 'Solar Energy', 'Wind Power', 'Climate Resilience', 'Sustainable Future'],
+  jamaica_digital: ['Digital Jamaica', 'Tech Ecosystem', 'Startup Scene', 'Digital Services', 'Growth Vision'],
+  trinidad_energy: ['Energy Sector', 'LNG Leadership', 'Diversification', 'Renewable Transition', 'Future Energy'],
+  barbados_fintech: ['Global Business Hub', 'Fintech Center', 'International Services', 'Innovation Ecosystem'],
+  
+  // Africa
   africa_tourism: ['Wildlife Safari', 'Cultural Heritage', 'Adventure Tourism', 'Beach Destinations', 'Eco Tourism'],
+  africa_fintech: ['Fintech Revolution', 'Mobile Money', 'M-Pesa Story', 'Financial Inclusion', 'Future Finance'],
+  africa_agritech: ['AgriTech Africa', 'Technology Solutions', 'Farmer Impact', 'Market Access', 'Food Security'],
+  nigeria_tech: ['Nigeria Tech', 'Lagos Startup Scene', 'Unicorn Stories', 'Talent Pool', 'Future Outlook'],
+  kenya_silicon: ['Silicon Savannah', 'M-Pesa Revolution', 'Innovation Hub', 'Startup Ecosystem', 'Future Vision'],
+  south_africa_digital: ['Digital SA', 'Tech Ecosystem', 'Innovation Hub', 'Digital Economy', 'Future Goals'],
+  rwanda_smart: ['Smart Rwanda', 'Digital Governance', 'Innovation Hub', 'Drone Delivery', 'Future Vision'],
+  ethiopia_rise: ['Ethiopia Rising', 'Economic Growth', 'Infrastructure', 'Digital Economy', 'Future Vision'],
+  
+  // Tourism/Regional
   mena_tourism: ['Historical Sites', 'Modern Attractions', 'Cultural Experiences', 'Luxury Tourism'],
   asia_tourism: ['Thailand Temples', 'Vietnam Heritage', 'Indonesia Islands', 'Singapore Modern', 'Local Experiences'],
+  europe_tourism: ['Historical Heritage', 'Cultural Capitals', 'Natural Beauty', 'Culinary Experiences'],
+  
+  // Healthcare
   healthcare_digital: ['Patient Journey', 'Telemedicine', 'AI Diagnostics', 'Future of Care'],
   pharma_product: ['Product Overview', 'Clinical Benefits', 'Patient Stories'],
+  healthcare_ai: ['AI in Healthcare', 'Diagnostic AI', 'Treatment Planning', 'Patient Outcomes'],
+  telemedicine: ['Telemedicine Platform', 'Virtual Consultations', 'Remote Monitoring', 'Patient Experience'],
+  
+  // Finance
   banking_digital: ['Digital Banking Vision', 'Mobile First', 'Security & Trust', 'Future Banking'],
   investment_pitch: ['Problem Statement', 'Our Solution', 'Market Opportunity', 'Business Model', 'Investment Ask'],
+  islamic_finance: ['Islamic Finance Principles', 'Shariah Compliance', 'Products Overview', 'Growth Outlook'],
+  crypto_defi: ['Blockchain Basics', 'DeFi Explained', 'Use Cases', 'Future of Finance'],
+  
+  // Technology
   saas_demo: ['Product Overview', 'Key Features', 'Use Cases', 'Getting Started'],
   ai_showcase: ['AI Vision', 'Technology Stack', 'Applications', 'Future Roadmap'],
+  cybersecurity: ['Security Landscape', 'Solutions Overview', 'Protection Features', 'Implementation'],
+  cloud_services: ['Cloud Overview', 'Services Portfolio', 'Migration Path', 'Support & Pricing'],
+  
+  // Education
   education_course: ['Course Overview', 'Module Preview', 'Learning Outcomes', 'Instructor Bio', 'Enrollment'],
   corporate_training: ['Training Objectives', 'Core Concepts', 'Practical Exercises', 'Assessment'],
+  university_promo: ['University Overview', 'Programs', 'Campus Life', 'Admissions', 'Alumni Stories'],
+  
+  // Landing Pages
   landing_hero: ['Hero Section'],
   landing_product: ['Introduction', 'Features', 'Call to Action'],
   landing_testimonial: ['Client 1', 'Client 2', 'Client 3', 'Client 4', 'Client 5'],
+  landing_explainer: ['Problem', 'Solution', 'How It Works', 'Benefits', 'CTA'],
+  
+  // Social Media
   social_short: ['Short Video'],
   social_carousel: ['Slide 1', 'Slide 2', 'Slide 3', 'Slide 4', 'CTA Slide'],
   social_youtube: ['Intro', 'Hook', 'Point 1', 'Point 2', 'Point 3', 'Case Study', 'Summary', 'CTA'],
+  social_stories: ['Story 1', 'Story 2', 'Story 3', 'Story 4', 'CTA Story'],
+  
+  // Use Cases
+  usecase_onboarding: ['Welcome', 'Company Overview', 'Role Introduction', 'Tools & Systems', 'Next Steps'],
+  usecase_sales_enablement: ['Product Knowledge', 'Value Proposition', 'Objection Handling', 'Demo Skills', 'Closing Techniques'],
+  usecase_customer_success: ['Product Overview', 'Key Features', 'Best Practices', 'Tips & Tricks', 'Support Resources'],
+  usecase_compliance: ['Compliance Overview', 'Key Requirements', 'Procedures', 'Assessment', 'Certification'],
+  usecase_product_launch: ['Product Reveal', 'Key Features', 'Use Cases', 'Availability', 'Call to Action'],
+  usecase_investor_update: ['Quarter Highlights', 'Financial Performance', 'Key Metrics', 'Strategic Updates', 'Outlook'],
+  usecase_internal_comms: ['Announcement', 'Key Points', 'Impact', 'Next Steps', 'Q&A'],
+  usecase_event_promo: ['Event Overview', 'Speakers', 'Agenda Highlights', 'Registration', 'Early Bird Offer'],
+  usecase_case_study: ['Client Background', 'Challenge', 'Solution', 'Results', 'Testimonial'],
+  usecase_how_to: ['Introduction', 'Step 1', 'Step 2', 'Step 3', 'Tips & Summary'],
+  
+  // Quick Start
   blank: [],
   single: ['Chapter 1'],
   '3_chapter': ['Introduction', 'Main Content', 'Conclusion'],
@@ -108,7 +321,7 @@ const TEMPLATE_CHAPTERS: Record<string, string[]> = {
 };
 
 // ============================================
-// VISUAL TYPES (Multi-select ready) - 45+ formats with language-aware variants
+// VISUAL TYPES (Multi-select ready) - 80+ formats with regional/language variants
 // ============================================
 const VISUAL_TYPES: MultiSelectOption[] = [
   // ---- VIDEO (Core) ----
@@ -118,6 +331,7 @@ const VISUAL_TYPES: MultiSelectOption[] = [
   { id: 'video_promo', value: 'video_promo', label: 'Promo Video', category: 'Video', icon: <Video className="w-3 h-3" /> },
   { id: 'video_testimonial', value: 'video_testimonial', label: 'Testimonial Video', category: 'Video', icon: <Video className="w-3 h-3" /> },
   { id: 'video_tutorial', value: 'video_tutorial', label: 'Tutorial Video', category: 'Video', icon: <Video className="w-3 h-3" /> },
+  { id: 'video_documentary', value: 'video_documentary', label: 'Documentary Style', category: 'Video', icon: <Video className="w-3 h-3" /> },
   { id: 'video_social_short', value: 'video_social_short', label: 'Short Form (Reels/TikTok)', category: 'Video', icon: <Video className="w-3 h-3" /> },
   { id: 'video_youtube_long', value: 'video_youtube_long', label: 'YouTube Long Form', category: 'Video', icon: <Video className="w-3 h-3" /> },
   
@@ -129,17 +343,26 @@ const VISUAL_TYPES: MultiSelectOption[] = [
   { id: 'animated_infographic', value: 'animated_infographic', label: 'Animated Infographic', category: 'Animation', icon: <Sparkles className="w-3 h-3" /> },
   { id: 'whiteboard_animation', value: 'whiteboard_animation', label: 'Whiteboard Animation', category: 'Animation', icon: <Sparkles className="w-3 h-3" /> },
   { id: 'particle_effects', value: 'particle_effects', label: 'Particle Effects', category: 'Animation', icon: <Sparkles className="w-3 h-3" /> },
+  { id: 'character_animation', value: 'character_animation', label: 'Character Animation', category: 'Animation', icon: <Sparkles className="w-3 h-3" /> },
+  { id: 'isometric_animation', value: 'isometric_animation', label: 'Isometric Animation', category: 'Animation', icon: <Sparkles className="w-3 h-3" /> },
   
-  // ---- AVATAR ----
+  // ---- AVATAR (Regional Variants) ----
   { id: 'avatar', value: 'avatar', label: 'AI Avatar (Headshot)', category: 'Avatar', icon: <User className="w-3 h-3" /> },
   { id: 'avatar_full_body', value: 'avatar_full_body', label: 'Avatar Full Body', category: 'Avatar', icon: <User className="w-3 h-3" /> },
   { id: 'avatar_presenter', value: 'avatar_presenter', label: 'Avatar + Screen', category: 'Avatar', icon: <User className="w-3 h-3" /> },
   { id: 'avatar_professional_western', value: 'avatar_professional_western', label: 'Professional (Western)', category: 'Avatar', icon: <User className="w-3 h-3" /> },
   { id: 'avatar_professional_mena', value: 'avatar_professional_mena', label: 'Professional (MENA)', category: 'Avatar', icon: <User className="w-3 h-3" /> },
+  { id: 'avatar_professional_gulf', value: 'avatar_professional_gulf', label: 'Professional (Gulf/GCC)', category: 'Avatar', icon: <User className="w-3 h-3" /> },
   { id: 'avatar_professional_cjk', value: 'avatar_professional_cjk', label: 'Professional (CJK)', category: 'Avatar', icon: <User className="w-3 h-3" /> },
-  { id: 'avatar_professional_south_asian', value: 'avatar_professional_south_asian', label: 'Professional (South Asian)', category: 'Avatar', icon: <User className="w-3 h-3" /> },
+  { id: 'avatar_professional_indian', value: 'avatar_professional_indian', label: 'Professional (Indian)', category: 'Avatar', icon: <User className="w-3 h-3" /> },
+  { id: 'avatar_professional_pakistani', value: 'avatar_professional_pakistani', label: 'Professional (Pakistani)', category: 'Avatar', icon: <User className="w-3 h-3" /> },
+  { id: 'avatar_professional_bangladeshi', value: 'avatar_professional_bangladeshi', label: 'Professional (Bangladeshi)', category: 'Avatar', icon: <User className="w-3 h-3" /> },
   { id: 'avatar_professional_african', value: 'avatar_professional_african', label: 'Professional (African)', category: 'Avatar', icon: <User className="w-3 h-3" /> },
+  { id: 'avatar_professional_caribbean', value: 'avatar_professional_caribbean', label: 'Professional (Caribbean)', category: 'Avatar', icon: <User className="w-3 h-3" /> },
+  { id: 'avatar_professional_latam', value: 'avatar_professional_latam', label: 'Professional (LatAm)', category: 'Avatar', icon: <User className="w-3 h-3" /> },
+  { id: 'avatar_professional_sea', value: 'avatar_professional_sea', label: 'Professional (Southeast Asian)', category: 'Avatar', icon: <User className="w-3 h-3" /> },
   { id: 'avatar_casual', value: 'avatar_casual', label: 'Avatar Casual', category: 'Avatar', icon: <User className="w-3 h-3" /> },
+  { id: 'avatar_corporate', value: 'avatar_corporate', label: 'Avatar Corporate', category: 'Avatar', icon: <User className="w-3 h-3" /> },
   { id: 'talking_head', value: 'talking_head', label: 'Talking Head', category: 'Avatar', icon: <User className="w-3 h-3" /> },
   { id: 'avatar_lipsync', value: 'avatar_lipsync', label: 'Avatar with Lip-Sync', category: 'Avatar', icon: <User className="w-3 h-3" /> },
   
@@ -149,6 +372,8 @@ const VISUAL_TYPES: MultiSelectOption[] = [
   { id: '3d_environment', value: '3d_environment', label: '3D Environment', category: '3D/Immersive', icon: <Box className="w-3 h-3" /> },
   { id: '3d_turntable', value: '3d_turntable', label: '3D 360° Turntable', category: '3D/Immersive', icon: <Box className="w-3 h-3" /> },
   { id: '3d_exploded', value: '3d_exploded', label: '3D Exploded View', category: '3D/Immersive', icon: <Box className="w-3 h-3" /> },
+  { id: '3d_architectural', value: '3d_architectural', label: '3D Architectural', category: '3D/Immersive', icon: <Box className="w-3 h-3" /> },
+  { id: '3d_medical', value: '3d_medical', label: '3D Medical/Anatomy', category: '3D/Immersive', icon: <Box className="w-3 h-3" /> },
   { id: 'immersive', value: 'immersive', label: 'Immersive/VR', category: '3D/Immersive', icon: <Box className="w-3 h-3" /> },
   { id: 'ar_experience', value: 'ar_experience', label: 'AR Experience', category: '3D/Immersive', icon: <Box className="w-3 h-3" /> },
   { id: 'holographic', value: 'holographic', label: 'Holographic Display', category: '3D/Immersive', icon: <Box className="w-3 h-3" /> },
@@ -180,14 +405,29 @@ const VISUAL_TYPES: MultiSelectOption[] = [
   { id: 'combo_multi_dialect', value: 'combo_multi_dialect', label: 'Multi-Dialect Demo', category: 'Combinations', icon: <Globe className="w-3 h-3" /> },
   { id: 'combo_interactive_demo', value: 'combo_interactive_demo', label: 'Interactive Product Demo', category: 'Combinations', icon: <Layers className="w-3 h-3" /> },
   { id: 'combo_full_production', value: 'combo_full_production', label: 'Full Production', category: 'Combinations', icon: <Film className="w-3 h-3" /> },
+  { id: 'combo_avatar_3d_ppt', value: 'combo_avatar_3d_ppt', label: 'Avatar + 3D + PPT', category: 'Combinations', icon: <Layers className="w-3 h-3" /> },
+  { id: 'combo_cinematic_package', value: 'combo_cinematic_package', label: 'Cinematic Package', category: 'Combinations', icon: <Film className="w-3 h-3" /> },
   
   // ---- REGIONAL/CULTURAL (Language-aware) ----
   { id: 'regional_mena', value: 'regional_mena', label: 'MENA Styled (RTL)', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
   { id: 'regional_arabic_calligraphy', value: 'regional_arabic_calligraphy', label: 'Arabic Calligraphy', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_islamic_geometric', value: 'regional_islamic_geometric', label: 'Islamic Geometric', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
   { id: 'regional_indian', value: 'regional_indian', label: 'Indian Cultural', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_indian_rangoli', value: 'regional_indian_rangoli', label: 'Rangoli/Mandala Style', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_indian_classical', value: 'regional_indian_classical', label: 'Indian Classical Art', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_pakistani', value: 'regional_pakistani', label: 'Pakistani Cultural', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_bangladeshi', value: 'regional_bangladeshi', label: 'Bangladeshi Cultural', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
   { id: 'regional_cjk', value: 'regional_cjk', label: 'CJK Minimalist', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_japanese', value: 'regional_japanese', label: 'Japanese Zen/Wabi-Sabi', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_korean', value: 'regional_korean', label: 'Korean Contemporary', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_chinese', value: 'regional_chinese', label: 'Chinese Traditional', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_sea', value: 'regional_sea', label: 'Southeast Asian', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
   { id: 'regional_african', value: 'regional_african', label: 'African Heritage', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_african_adinkra', value: 'regional_african_adinkra', label: 'Adinkra Patterns', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_african_kente', value: 'regional_african_kente', label: 'Kente Styled', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_caribbean', value: 'regional_caribbean', label: 'Caribbean Vibrant', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
   { id: 'regional_latam', value: 'regional_latam', label: 'Latin American', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_latam_mayan', value: 'regional_latam_mayan', label: 'Mayan/Aztec Styled', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
 ];
 
 // ============================================
