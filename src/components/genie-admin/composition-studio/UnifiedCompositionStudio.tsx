@@ -33,6 +33,14 @@ import {
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
+import { 
+  contentGenerationService, 
+  generateChapter as generateChapterService,
+  checkGenerationHealth,
+  type GenerationRequest,
+  type GenerationProgress 
+} from '@/services/contentGenerationService';
+import type { OutputFormat } from '@/config/content-generation-pipeline';
 
 import { ChapterEditor } from './ChapterEditor';
 import { LanguageSelectorPanel } from './LanguageSelectorPanel';
@@ -369,42 +377,67 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
     toast.success(`Loaded ${type} template with ${templates[type].length} chapters`);
   };
 
-  // Generation
+  // Real Generation using contentGenerationService
   const generatePreview = async (chapterId: string, language: string) => {
+    const chapter = chapters.find(c => c.id === chapterId);
+    if (!chapter) {
+      toast.error('Chapter not found');
+      return;
+    }
+
     setChapters(prev => prev.map(c => 
       c.id === chapterId ? { ...c, status: 'generating', progress: 0 } : c
     ));
 
     try {
-      // TODO: Call actual generation edge function
-      // Simulate progress for now
-      for (let i = 0; i <= 100; i += 10) {
-        await new Promise(r => setTimeout(r, 300));
-        setChapters(prev => prev.map(c => 
-          c.id === chapterId ? { ...c, progress: i } : c
-        ));
-      }
+      console.log(`[Studio] Generating preview for chapter: ${chapter.title}, language: ${language}`);
+      
+      // Map chapter visual type to generation request
+      const request: GenerationRequest = {
+        templateId: project.name || 'custom',
+        chapterIndex: chapters.findIndex(c => c.id === chapterId),
+        language,
+        outputFormat: 'avatar_ppt', // Default format
+        visualType: (chapter.visual?.type === 'custom' ? 'video' : chapter.visual?.type) || 'video',
+        duration: chapter.duration || 30,
+        scriptContent: chapter.visual?.prompt || chapter.voiceover?.text || '',
+        userTier: 'creator' // TODO: Get from user context
+      };
 
-      setChapters(prev => prev.map(c => 
-        c.id === chapterId 
-          ? { 
-              ...c, 
-              status: 'complete',
-              previewUrls: { 
-                ...c.previewUrls, 
-                [language]: `https://placeholder-video.com/${chapterId}-${language}.mp4` 
+      const result = await generateChapterService(request, (progress) => {
+        setChapters(prev => prev.map(c => 
+          c.id === chapterId ? { ...c, progress: progress.progress } : c
+        ));
+      });
+
+      if (result.success) {
+        setChapters(prev => prev.map(c => 
+          c.id === chapterId 
+            ? { 
+                ...c, 
+                status: 'complete',
+                progress: 100,
+                previewUrls: { 
+                  ...c.previewUrls, 
+                  [language]: result.previewUrl || `https://placehold.co/1920x1080/6366f1/ffffff?text=${encodeURIComponent(chapter.title)}`
+                } 
               } 
-            } 
-          : c
-      ));
-      toast.success(`Preview generated for chapter in ${language}`);
+            : c
+        ));
+        toast.success(`Preview generated for "${chapter.title}" in ${language}`);
+      } else {
+        throw new Error(result.error || 'Generation failed');
+      }
     } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Generation failed';
+      console.error('[Studio] Generation error:', error);
+      
       setChapters(prev => prev.map(c => 
         c.id === chapterId 
-          ? { ...c, status: 'error', error: 'Generation failed' } 
+          ? { ...c, status: 'error', error: errorMsg, progress: 0 } 
           : c
       ));
-      toast.error('Failed to generate preview');
+      toast.error(`Failed to generate preview: ${errorMsg}`);
     }
   };
 
@@ -414,17 +447,29 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
 
     const totalTasks = chapters.length * project.targetLanguages.length;
     let completed = 0;
+    let errors: string[] = [];
+
+    console.log(`[Studio] Starting generation of ${totalTasks} previews...`);
 
     for (const chapter of chapters) {
       for (const language of project.targetLanguages) {
-        await generatePreview(chapter.id, language);
+        try {
+          await generatePreview(chapter.id, language);
+        } catch (error) {
+          errors.push(`${chapter.title} (${language})`);
+        }
         completed++;
         setGenerationProgress(Math.round((completed / totalTasks) * 100));
       }
     }
 
     setIsGenerating(false);
-    toast.success('All previews generated!');
+    
+    if (errors.length > 0) {
+      toast.warning(`Generated with ${errors.length} errors. Failed: ${errors.join(', ')}`);
+    } else {
+      toast.success('All previews generated successfully!');
+    }
   };
 
   const handlePublish = async () => {
