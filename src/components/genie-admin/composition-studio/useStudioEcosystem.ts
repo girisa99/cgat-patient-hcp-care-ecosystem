@@ -1,11 +1,16 @@
 /**
- * useStudioEcosystem Hook
+ * useStudioEcosystem Hook - FULL ECOSYSTEM INTEGRATION
  * 
  * Connects Composition Studio to ALL existing ecosystem services:
  * - multiLanguageAudioOrchestrator (Voice, Music, SFX with 6-zone routing)
  * - translationService (Transcreation for additional languages)
  * - unifiedVideoService (Video generation with provider fallback)
- * - audioGenerationConfigService (Regional TTS provider selection)
+ * - proactivePipelineEditorService (AI-powered edit suggestions)
+ * - Image Generation (ai-image-generator, modelslab-media)
+ * - 3D Generation (modelslab-media for mesh/3D)
+ * - Captions (ai-caption-generator)
+ * - Thumbnails (auto-thumbnail-generator)
+ * - Audio Mixing (audio-mixer)
  * - Editor handoff (Route to Genie Mind/Vibe for editing)
  */
 
@@ -18,6 +23,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { multiLanguageAudioOrchestrator, LANGUAGE_VOICE_MAPPINGS } from '@/services/multiLanguageAudioOrchestrator';
 import { unifiedVideoService } from '@/components/universal-editor/services/unifiedVideoService';
 import { translationService } from '@/services/translationService';
+import { proactivePipelineEditorService, type ProactiveEditSuggestion } from '@/services/proactivePipelineEditorService';
 import type { GlobalTier } from '@/services/shared/globalTierService';
 
 // Types
@@ -34,10 +40,15 @@ export interface StudioChapter {
     previewUrl?: string;
     videoUrl?: string;
     audioUrl?: string;
+    imageUrl?: string;
+    model3dUrl?: string;
+    captionsUrl?: string;
+    thumbnailUrl?: string;
     script?: string;
     transcreatedScripts?: Record<string, string>;
     transcreatedAudio?: Record<string, string>;
   };
+  editSuggestions?: ProactiveEditSuggestion[];
 }
 
 export interface StudioProject {
@@ -50,15 +61,18 @@ export interface StudioProject {
 
 export interface GenerationProgress {
   chapterId: string;
-  step: 'script' | 'transcreation' | 'voice' | 'music' | 'video' | 'complete';
+  step: 'script' | 'transcreation' | 'voice' | 'music' | 'video' | 'image' | '3d' | 'captions' | 'thumbnail' | 'mixing' | 'complete';
   progress: number;
   message: string;
 }
+
+export type InlineEditAction = 'trim' | 'voice_replace' | 'add_captions' | 'regenerate_visual' | 'adjust_audio' | 'add_music';
 
 export function useStudioEcosystem() {
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState<GenerationProgress | null>(null);
+  const [editSuggestions, setEditSuggestions] = useState<ProactiveEditSuggestion[]>([]);
 
   // ========================================
   // 1. AUDIO ORCHESTRATION (Voice, Music, SFX)
@@ -281,7 +295,236 @@ export function useStudioEcosystem() {
   }, []);
 
   // ========================================
-  // 5. EDITOR HANDOFF
+  // 5. IMAGE GENERATION (ai-image-generator)
+  // ========================================
+
+  const generateImage = useCallback(async (
+    prompt: string,
+    style: string = 'realistic',
+    aspectRatio: '16:9' | '1:1' | '9:16' = '16:9'
+  ) => {
+    console.log('[StudioEcosystem] Generating image:', { prompt, style });
+    
+    const { data, error } = await supabase.functions.invoke('ai-image-generator', {
+      body: {
+        prompt,
+        style,
+        aspectRatio,
+        quality: 'high',
+        provider: 'openai', // DALL-E 3
+      }
+    });
+
+    if (error) throw error;
+    return {
+      imageUrl: data?.imageUrl || data?.url,
+      thumbnailUrl: data?.thumbnailUrl,
+    };
+  }, []);
+
+  // ========================================
+  // 6. 3D GENERATION (modelslab-media)
+  // ========================================
+
+  const generate3DModel = useCallback(async (
+    prompt: string,
+    type: 'mesh' | 'avatar' | 'product' = 'mesh'
+  ) => {
+    console.log('[StudioEcosystem] Generating 3D model:', { prompt, type });
+    
+    const { data, error } = await supabase.functions.invoke('modelslab-media', {
+      body: {
+        action: 'text-to-3d',
+        prompt,
+        type,
+        format: 'glb',
+        quality: 'high',
+      }
+    });
+
+    if (error) throw error;
+    return {
+      modelUrl: data?.modelUrl || data?.url,
+      previewUrl: data?.previewUrl,
+    };
+  }, []);
+
+  // ========================================
+  // 7. CAPTIONS GENERATION (ai-caption-generator)
+  // ========================================
+
+  const generateCaptions = useCallback(async (
+    audioUrl: string,
+    languageCode: string = 'en',
+    style: 'srt' | 'vtt' | 'json' = 'vtt'
+  ) => {
+    console.log('[StudioEcosystem] Generating captions for:', languageCode);
+    
+    const { data, error } = await supabase.functions.invoke('ai-caption-generator', {
+      body: {
+        audioUrl,
+        languageCode,
+        format: style,
+        includeTimestamps: true,
+        wordLevel: true,
+      }
+    });
+
+    if (error) throw error;
+    return {
+      captionsUrl: data?.captionsUrl || data?.url,
+      text: data?.text,
+      segments: data?.segments,
+    };
+  }, []);
+
+  // ========================================
+  // 8. THUMBNAIL GENERATION (auto-thumbnail-generator)
+  // ========================================
+
+  const generateThumbnail = useCallback(async (
+    title: string,
+    description: string,
+    platform: 'youtube' | 'linkedin' | 'tiktok' | 'instagram' = 'youtube'
+  ) => {
+    console.log('[StudioEcosystem] Generating thumbnail for:', platform);
+    
+    const { data, error } = await supabase.functions.invoke('auto-thumbnail-generator', {
+      body: {
+        title,
+        description,
+        platform,
+        style: 'professional',
+        includeText: true,
+      }
+    });
+
+    if (error) throw error;
+    return {
+      thumbnailUrl: data?.thumbnailUrl || data?.url,
+      variants: data?.variants,
+    };
+  }, []);
+
+  // ========================================
+  // 9. AUDIO MIXING (audio-mixer)
+  // ========================================
+
+  const mixAudio = useCallback(async (
+    voiceUrl: string,
+    musicUrl?: string,
+    options: { voiceVolume?: number; musicVolume?: number; ducking?: boolean } = {}
+  ) => {
+    console.log('[StudioEcosystem] Mixing audio');
+    
+    const { data, error } = await supabase.functions.invoke('audio-mixer', {
+      body: {
+        tracks: [
+          { url: voiceUrl, type: 'voice', volume: options.voiceVolume || 1.0 },
+          ...(musicUrl ? [{ url: musicUrl, type: 'music', volume: options.musicVolume || 0.3 }] : []),
+        ],
+        ducking: options.ducking ?? true,
+        outputFormat: 'mp3',
+        normalize: true,
+      }
+    });
+
+    if (error) throw error;
+    return {
+      mixedAudioUrl: data?.audioUrl || data?.url,
+      duration: data?.duration,
+    };
+  }, []);
+
+  // ========================================
+  // 10. PROACTIVE EDITOR SUGGESTIONS
+  // ========================================
+
+  const getEditSuggestions = useCallback((
+    chapter: StudioChapter,
+    product: 'vibe' | 'deck' | 'spark' | 'mind' = 'vibe'
+  ): ProactiveEditSuggestion[] => {
+    console.log('[StudioEcosystem] Getting edit suggestions for:', chapter.title);
+    
+    // Use proactivePipelineEditorService to analyze content
+    const pipelineId = chapter.visualTypes[0] || 'video';
+    const suggestions = proactivePipelineEditorService.getProactiveSuggestions(
+      pipelineId,
+      chapter.generatedContent,
+      'desktop',
+      product
+    );
+    
+    setEditSuggestions(suggestions);
+    return suggestions;
+  }, []);
+
+  // Inline edit action handler
+  const executeInlineEdit = useCallback(async (
+    chapter: StudioChapter,
+    action: InlineEditAction,
+    params?: Record<string, unknown>
+  ): Promise<Partial<StudioChapter['generatedContent']>> => {
+    console.log('[StudioEcosystem] Executing inline edit:', action);
+    
+    switch (action) {
+      case 'voice_replace': {
+        const newVoice = await generateVoiceover(
+          chapter.script,
+          params?.languageCode as string || 'en',
+        );
+        return { audioUrl: newVoice.audioUrl };
+      }
+      case 'add_captions': {
+        if (chapter.generatedContent?.audioUrl) {
+          const captions = await generateCaptions(
+            chapter.generatedContent.audioUrl,
+            params?.languageCode as string || 'en'
+          );
+          return { captionsUrl: captions.captionsUrl };
+        }
+        break;
+      }
+      case 'regenerate_visual': {
+        const isVideo = chapter.visualTypes.some(v => 
+          ['video', 'animation', 'avatar'].includes(v)
+        );
+        if (isVideo) {
+          const video = await generateVideo(chapter.script, chapter.visualTypes[0], chapter.duration);
+          return { videoUrl: video.videoUrl, previewUrl: video.thumbnailUrl };
+        } else {
+          const image = await generateImage(chapter.script);
+          return { imageUrl: image.imageUrl, previewUrl: image.imageUrl };
+        }
+      }
+      case 'add_music': {
+        const music = await generateMusic(`Background music for ${chapter.title}`, chapter.duration);
+        if (chapter.generatedContent?.audioUrl && music.audioUrl) {
+          const mixed = await mixAudio(chapter.generatedContent.audioUrl, music.audioUrl);
+          return { audioUrl: mixed.mixedAudioUrl };
+        }
+        break;
+      }
+      case 'adjust_audio': {
+        if (chapter.generatedContent?.audioUrl) {
+          const music = params?.musicUrl as string;
+          const mixed = await mixAudio(
+            chapter.generatedContent.audioUrl,
+            music,
+            { voiceVolume: params?.voiceVolume as number, musicVolume: params?.musicVolume as number }
+          );
+          return { audioUrl: mixed.mixedAudioUrl };
+        }
+        break;
+      }
+      default:
+        console.warn('[StudioEcosystem] Unknown edit action:', action);
+    }
+    return {};
+  }, [generateVoiceover, generateCaptions, generateVideo, generateImage, generateMusic, mixAudio]);
+
+  // ========================================
+  // 11. EDITOR HANDOFF
   // ========================================
 
   /**
@@ -487,18 +730,36 @@ export function useStudioEcosystem() {
     // Status
     isProcessing,
     progress,
+    editSuggestions,
     
-    // Audio
+    // Audio (multiLanguageAudioOrchestrator)
     generateVoiceover,
     generateMusic,
+    mixAudio,
     
-    // Multi-language
+    // Multi-language (translationService)
     transcreateContent,
     generateMultiLanguageAudio,
     
-    // Video
+    // Video (unifiedVideoService)
     generateVideo,
     combineChapterVideos,
+    
+    // Image (ai-image-generator)
+    generateImage,
+    
+    // 3D (modelslab-media)
+    generate3DModel,
+    
+    // Captions (ai-caption-generator)
+    generateCaptions,
+    
+    // Thumbnails (auto-thumbnail-generator)
+    generateThumbnail,
+    
+    // Proactive Editor (proactivePipelineEditorService)
+    getEditSuggestions,
+    executeInlineEdit,
     
     // Editor handoff
     sendToScriptEditor,
