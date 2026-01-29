@@ -802,6 +802,9 @@ Language: ${primaryLanguage}. Keep it engaging, concise, and professional.`,
             <Settings2 className="w-4 h-4" />
             Global Settings
           </h3>
+          <div className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+            These settings apply to {scriptScope === 'entire' && audioScope === 'entire' ? 'all chapters' : 'individual chapters'}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -811,13 +814,20 @@ Language: ${primaryLanguage}. Keep it engaging, concise, and professional.`,
               <Wand2 className="w-3 h-3" />
               Script Generation
             </Label>
-            <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-md">
-              <span className={cn("text-xs", scriptScope === 'chapter' && "font-medium")}>Per Chapter</span>
-              <Switch
-                checked={scriptScope === 'entire'}
-                onCheckedChange={(v) => setScriptScope(v ? 'entire' : 'chapter')}
-              />
-              <span className={cn("text-xs", scriptScope === 'entire' && "font-medium")}>Entire Video</span>
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-md">
+                <span className={cn("text-xs", scriptScope === 'chapter' && "font-medium text-primary")}>Per Chapter</span>
+                <Switch
+                  checked={scriptScope === 'entire'}
+                  onCheckedChange={(v) => setScriptScope(v ? 'entire' : 'chapter')}
+                />
+                <span className={cn("text-xs", scriptScope === 'entire' && "font-medium text-primary")}>Entire Video</span>
+              </div>
+              <p className="text-[10px] text-muted-foreground px-1">
+                {scriptScope === 'chapter' 
+                  ? '✏️ Each chapter has its own script prompt' 
+                  : '📄 One script generated for full video'}
+              </p>
             </div>
           </div>
 
@@ -827,19 +837,26 @@ Language: ${primaryLanguage}. Keep it engaging, concise, and professional.`,
               <Volume2 className="w-3 h-3" />
               Voice & Music
             </Label>
-            <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-md">
-              <span className={cn("text-xs", audioScope === 'chapter' && "font-medium")}>Per Chapter</span>
-              <Switch
-                checked={audioScope === 'entire'}
-                onCheckedChange={(v) => setAudioScope(v ? 'entire' : 'chapter')}
-              />
-              <span className={cn("text-xs", audioScope === 'entire' && "font-medium")}>Entire Video</span>
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-md">
+                <span className={cn("text-xs", audioScope === 'chapter' && "font-medium text-primary")}>Per Chapter</span>
+                <Switch
+                  checked={audioScope === 'entire'}
+                  onCheckedChange={(v) => setAudioScope(v ? 'entire' : 'chapter')}
+                />
+                <span className={cn("text-xs", audioScope === 'entire' && "font-medium text-primary")}>Entire Video</span>
+              </div>
+              <p className="text-[10px] text-muted-foreground px-1">
+                {audioScope === 'chapter' 
+                  ? '🎤 Different voice/music per chapter' 
+                  : '🎵 Same voice & music throughout'}
+              </p>
             </div>
           </div>
 
           {/* Global Voice */}
           <div className="space-y-2">
-            <Label className="text-xs">Voice Source</Label>
+            <Label className="text-xs">Voice Source {audioScope === 'entire' && <Badge variant="outline" className="text-[8px] ml-1">Global</Badge>}</Label>
             <div className="flex gap-1">
               <Button
                 size="sm"
@@ -862,7 +879,7 @@ Language: ${primaryLanguage}. Keep it engaging, concise, and professional.`,
 
           {/* Global Music */}
           <div className="space-y-2">
-            <Label className="text-xs">Background Music</Label>
+            <Label className="text-xs">Background Music {audioScope === 'entire' && <Badge variant="outline" className="text-[8px] ml-1">Global</Badge>}</Label>
             <div className="flex gap-1">
               <Button
                 size="sm"
@@ -1176,7 +1193,7 @@ const ChapterRow: React.FC<ChapterRowProps> = ({
               </div>
             )}
 
-            {/* AI Prompt Section */}
+            {/* AI Prompt Section with Enhance Button */}
             {chapter.scriptSource === 'auto' && (
               <div className="space-y-2 p-3 rounded-lg bg-muted/30 border border-muted">
                 <div className="flex items-center justify-between">
@@ -1184,9 +1201,51 @@ const ChapterRow: React.FC<ChapterRowProps> = ({
                     <Wand2 className="w-3 h-3 text-primary" />
                     AI Generation Prompt
                   </Label>
-                  {chapter.aiSuggestedPrompt && !chapter.customPrompt && (
-                    <Badge variant="secondary" className="text-[10px]">AI Suggested</Badge>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {chapter.aiSuggestedPrompt && !chapter.customPrompt && (
+                      <Badge variant="secondary" className="text-[10px]">AI Suggested</Badge>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 text-xs gap-1 text-primary hover:text-primary"
+                      onClick={async () => {
+                        const currentPrompt = chapter.customPrompt || chapter.aiSuggestedPrompt || chapter.title;
+                        try {
+                          const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
+                            body: {
+                              action: 'enhance_chapter_prompt',
+                              content: currentPrompt,
+                              context: {
+                                chapterTitle: chapter.title,
+                                visualTypes: chapter.visualTypes,
+                              }
+                            }
+                          });
+                          if (data?.enhancement?.enhancedPrompt) {
+                            onUpdate({ 
+                              customPrompt: data.enhancement.enhancedPrompt,
+                              script: data.enhancement.suggestedScript || chapter.script
+                            });
+                            toast.success('✨ Prompt enhanced with AI');
+                          } else {
+                            // Fallback: simple enhancement
+                            const enhanced = `Create a professional ${chapter.visualTypes[0] || 'video'} segment for "${chapter.title}": ${currentPrompt}. Focus on clarity, engagement, and brand consistency.`;
+                            onUpdate({ customPrompt: enhanced });
+                            toast.success('✨ Prompt enhanced');
+                          }
+                        } catch (err) {
+                          // Fallback enhancement
+                          const enhanced = `Create a compelling ${chapter.visualTypes[0] || 'video'} segment about: ${currentPrompt}. Ensure visual impact and clear messaging.`;
+                          onUpdate({ customPrompt: enhanced });
+                          toast.info('Enhanced with local suggestions');
+                        }
+                      }}
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      Enhance
+                    </Button>
+                  </div>
                 </div>
                 <Textarea
                   value={chapter.customPrompt || chapter.aiSuggestedPrompt || ''}
