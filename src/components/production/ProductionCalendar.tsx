@@ -487,7 +487,7 @@ export function ProductionCalendar({
               }
             </h2>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
             {/* New Meeting Button */}
             <Button 
               onClick={() => {
@@ -495,13 +495,15 @@ export function ProductionCalendar({
                 setIsScheduleDialogOpen(true);
               }}
               size="sm"
+              className="h-8 text-xs sm:text-sm"
             >
-              <Plus className="h-4 w-4 mr-1" />
-              New Meeting
+              <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
+              <span className="hidden xs:inline">New Meeting</span>
+              <span className="xs:hidden">New</span>
             </Button>
             
-            {/* View Toggle */}
-            <div className="flex border rounded-lg p-0.5 bg-muted/50">
+            {/* View Toggle - Hidden on very small screens */}
+            <div className="hidden sm:flex border rounded-lg p-0.5 bg-muted/50">
               <Button 
                 variant={viewMode === 'month' ? 'default' : 'ghost'} 
                 size="sm"
@@ -522,23 +524,44 @@ export function ProductionCalendar({
               </Button>
             </div>
             
-            <Button variant="outline" size="sm" onClick={handleToday}>
+            {/* Mobile View Toggle - Only icon buttons */}
+            <div className="flex sm:hidden border rounded-lg p-0.5 bg-muted/50">
+              <Button 
+                variant={viewMode === 'month' ? 'default' : 'ghost'} 
+                size="sm"
+                onClick={() => setViewMode('month')}
+                className="h-7 w-7 p-0"
+              >
+                <CalendarRange className="h-3.5 w-3.5" />
+              </Button>
+              <Button 
+                variant={viewMode === 'week' ? 'default' : 'ghost'} 
+                size="sm"
+                onClick={() => setViewMode('week')}
+                className="h-7 w-7 p-0"
+              >
+                <CalendarDays className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+            
+            <Button variant="outline" size="sm" onClick={handleToday} className="h-8 text-xs sm:text-sm px-2 sm:px-3">
               Today
             </Button>
-            <Button variant="outline" size="icon" className="h-8 w-8" onClick={handlePrevPeriod}>
-              <ChevronLeft className="h-4 w-4" />
+            <Button variant="outline" size="icon" className="h-7 w-7 sm:h-8 sm:w-8" onClick={handlePrevPeriod}>
+              <ChevronLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </Button>
-            <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleNextPeriod}>
-              <ChevronRight className="h-4 w-4" />
+            <Button variant="outline" size="icon" className="h-7 w-7 sm:h-8 sm:w-8" onClick={handleNextPeriod}>
+              <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </Button>
             <Button 
               variant="ghost" 
               size="sm" 
               onClick={() => setShowLegend(!showLegend)}
-              className="text-xs"
+              className="text-[10px] sm:text-xs h-7 sm:h-8 px-1.5 sm:px-2"
             >
-              <Layers className="h-3 w-3 mr-1" />
-              {showLegend ? 'Hide' : 'Show'} Legend
+              <Layers className="h-3 w-3 mr-0.5 sm:mr-1" />
+              <span className="hidden sm:inline">{showLegend ? 'Hide' : 'Show'} Legend</span>
+              <span className="sm:hidden">{showLegend ? '−' : '+'}</span>
             </Button>
           </div>
         </div>
@@ -546,34 +569,37 @@ export function ProductionCalendar({
         {/* Color Legend - Grouped by Category */}
         {showLegend && (
           <Card className="bg-card/50 border-dashed">
-            <CardContent className="py-3">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <CardContent className="py-2 sm:py-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4">
                 {(['media_production', 'business_meeting', 'event'] as EventCategory[]).map(category => {
                   const catColors = CATEGORY_COLORS[category];
                   const types = legendByCategory[category];
                   
                   return (
-                    <div key={category} className="space-y-2">
+                    <div key={category} className="space-y-1 sm:space-y-2">
                       <div className="flex items-center gap-2">
-                        <Badge className={cn('text-xs', catColors.bg, catColors.text)}>
+                        <Badge className={cn('text-[10px] sm:text-xs', catColors.bg, catColors.text)}>
                           {catColors.icon}
                           <span className="ml-1">{catColors.label}</span>
                         </Badge>
                       </div>
                       <div className="flex flex-wrap gap-1 pl-2">
-                        {types.length > 0 ? types.map(type => {
+                        {types.length > 0 ? types.slice(0, 4).map(type => {
                           const colors = SHOW_TYPE_COLORS[type];
                           return (
                             <Badge 
                               key={type} 
                               variant="outline" 
-                              className={cn('text-[10px] py-0', colors.bg, colors.text, colors.border)}
+                              className={cn('text-[9px] sm:text-[10px] py-0', colors.bg, colors.text, colors.border)}
                             >
                               {colors.label}
                             </Badge>
                           );
                         }) : (
-                          <span className="text-xs text-muted-foreground">No scheduled items</span>
+                          <span className="text-[10px] sm:text-xs text-muted-foreground">No items</span>
+                        )}
+                        {types.length > 4 && (
+                          <span className="text-[9px] text-muted-foreground">+{types.length - 4}</span>
                         )}
                       </div>
                     </div>
@@ -584,26 +610,27 @@ export function ProductionCalendar({
           </Card>
         )}
 
-        {/* Calendar Grid */}
+        {/* Calendar Grid - Mobile optimized */}
         <Card>
-          <CardContent className="p-4">
-            {/* Weekday Headers */}
-            <div className="grid grid-cols-7 gap-1 mb-2">
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, idx) => (
+          <CardContent className="p-2 sm:p-4">
+            {/* Weekday Headers - Shorter on mobile */}
+            <div className="grid grid-cols-7 gap-0.5 sm:gap-1 mb-1 sm:mb-2">
+              {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, idx) => (
                 <div 
-                  key={day} 
+                  key={idx} 
                   className={cn(
-                    "text-center text-xs font-medium py-2",
+                    "text-center text-[10px] sm:text-xs font-medium py-1 sm:py-2",
                     (idx === 0 || idx === 6) ? 'text-muted-foreground/50' : 'text-muted-foreground'
                   )}
                 >
-                  {day}
+                  <span className="sm:hidden">{day}</span>
+                  <span className="hidden sm:inline">{['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][idx]}</span>
                 </div>
               ))}
             </div>
 
-            {/* Days Grid */}
-            <div className="grid grid-cols-7 gap-1">
+            {/* Days Grid - Mobile optimized */}
+            <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
               {calendarDays.map((day, idx) => {
                 const dateKey = format(day, 'yyyy-MM-dd');
                 const dayShows = showsByDate[dateKey] || [];
@@ -611,7 +638,9 @@ export function ProductionCalendar({
                 const isCurrentDay = isToday(day);
                 const weekend = isWeekend(day);
                 const holiday = isHoliday(day);
-                const minHeight = viewMode === 'week' ? 'min-h-[180px]' : 'min-h-[100px]';
+                const minHeight = viewMode === 'week' 
+                  ? 'min-h-[120px] sm:min-h-[180px]' 
+                  : 'min-h-[60px] sm:min-h-[100px]';
 
                 return (
                   <div
@@ -619,18 +648,18 @@ export function ProductionCalendar({
                     onClick={() => handleDayClick(day)}
                     className={cn(
                       minHeight,
-                      'border rounded-lg p-1 transition-colors cursor-pointer hover:bg-accent/30',
+                      'border rounded-md sm:rounded-lg p-0.5 sm:p-1 transition-colors cursor-pointer hover:bg-accent/30 active:bg-accent/50',
                       isCurrentMonth ? 'bg-card' : 'bg-muted/30',
-                      isCurrentDay && 'ring-2 ring-primary ring-offset-1',
+                      isCurrentDay && 'ring-1 sm:ring-2 ring-primary ring-offset-1',
                       weekend && 'bg-muted/20',
                       holiday && 'bg-red-500/5'
                     )}
                   >
-                    <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center justify-between mb-0.5 sm:mb-1">
                       <span className={cn(
-                        'text-xs font-medium',
+                        'text-[10px] sm:text-xs font-medium',
                         isCurrentMonth ? 'text-foreground' : 'text-muted-foreground',
-                        isCurrentDay && 'bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full',
+                        isCurrentDay && 'bg-primary text-primary-foreground px-1 sm:px-1.5 py-0.5 rounded-full text-[9px] sm:text-xs',
                         weekend && !isCurrentDay && 'text-muted-foreground/70'
                       )}>
                         {format(day, 'd')}
@@ -638,16 +667,16 @@ export function ProductionCalendar({
                       {holiday && (
                         <Tooltip>
                           <TooltipTrigger>
-                            <Sun className="h-3 w-3 text-amber-500" />
+                            <Sun className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-amber-500" />
                           </TooltipTrigger>
                           <TooltipContent>{holiday}</TooltipContent>
                         </Tooltip>
                       )}
                     </div>
                     
-                    <ScrollArea className={viewMode === 'week' ? 'h-[150px]' : 'h-[70px]'}>
-                      <div className="space-y-1">
-                        {dayShows.slice(0, viewMode === 'week' ? 10 : 3).map(show => {
+                    <ScrollArea className={viewMode === 'week' ? 'h-[90px] sm:h-[150px]' : 'h-[35px] sm:h-[70px]'}>
+                      <div className="space-y-0.5 sm:space-y-1">
+                        {dayShows.slice(0, viewMode === 'week' ? 10 : 2).map(show => {
                           const colors = SHOW_TYPE_COLORS[show.show_type];
                           const showTime = format(new Date(show.scheduled_date!), 'h:mm a');
                           return (
@@ -656,14 +685,14 @@ export function ProductionCalendar({
                                 <button
                                   onClick={(e) => handleShowClick(show, e)}
                                   className={cn(
-                                    'w-full text-left text-[10px] px-1 py-0.5 rounded truncate flex items-center gap-1 border-l-2',
+                                    'w-full text-left text-[8px] sm:text-[10px] px-0.5 sm:px-1 py-0.5 rounded truncate flex items-center gap-0.5 sm:gap-1 border-l-2',
                                     colors.bg,
                                     colors.text,
                                     colors.border,
                                     'hover:opacity-80'
                                   )}
                                 >
-                                  <span className="font-medium">{showTime.replace(':00', '')}</span>
+                                  <span className="font-medium hidden sm:inline">{showTime.replace(':00', '')}</span>
                                   <span className="truncate">{show.title}</span>
                                 </button>
                               </TooltipTrigger>
@@ -692,9 +721,9 @@ export function ProductionCalendar({
                             </Tooltip>
                           );
                         })}
-                        {dayShows.length > (viewMode === 'week' ? 10 : 3) && (
-                          <div className="text-[10px] text-muted-foreground text-center">
-                            +{dayShows.length - (viewMode === 'week' ? 10 : 3)} more
+                        {dayShows.length > (viewMode === 'week' ? 10 : 2) && (
+                          <div className="text-[8px] sm:text-[10px] text-muted-foreground text-center">
+                            +{dayShows.length - (viewMode === 'week' ? 10 : 2)}
                           </div>
                         )}
                       </div>

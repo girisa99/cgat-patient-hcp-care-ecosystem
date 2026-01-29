@@ -1694,53 +1694,55 @@ Respond in JSON format: {"title": "...", "intro": "..."}`;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+      <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] flex flex-col overflow-hidden p-4 sm:p-6">
         <DialogHeader className="flex-shrink-0">
-          <DialogTitle>
-            {mode === 'edit' ? 'Edit' : 'Create New'} {EVENT_CATEGORIES.find(c => c.id === formData.event_category)?.label || 'Production'}
+          <DialogTitle className="text-base sm:text-lg">
+            {mode === 'edit' ? 'Edit' : 'New'} {EVENT_CATEGORIES.find(c => c.id === formData.event_category)?.label || 'Production'}
           </DialogTitle>
-          <DialogDescription>
-            Set up your {currentShowTypes.find(t => t.id === formData.show_type)?.label || 'production'}. Fields adapt based on starting stage.
+          <DialogDescription className="text-xs sm:text-sm">
+            Set up your {currentShowTypes.find(t => t.id === formData.show_type)?.label || 'production'}.
           </DialogDescription>
         </DialogHeader>
 
         {renderStepIndicator()}
 
-        <div className="flex-1 overflow-y-auto -mx-6 px-6">
-          <div className="space-y-4 py-4">
+        <div className="flex-1 overflow-y-auto -mx-4 sm:-mx-6 px-4 sm:px-6">
+          <div className="space-y-3 sm:space-y-4 py-3 sm:py-4">
             {renderCategorySelection()}
             {renderTypeSelection()}
             {renderStageSelection()}
 
             {/* Basic Info */}
-            <div className="space-y-2">
-              <Label htmlFor="title">Title *</Label>
+            <div className="space-y-1.5 sm:space-y-2">
+              <Label htmlFor="title" className="text-xs sm:text-sm">Title *</Label>
               <Input
                 id="title"
-                placeholder="Enter production title..."
+                placeholder="Enter title..."
                 value={formData.title}
                 onChange={(e) => updateFormData('title', e.target.value)}
+                className="h-9 sm:h-10 text-sm"
               />
             </div>
 
-            {/* Date/Time with Timezone */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="date">Scheduled Date & Time</Label>
+            {/* Date/Time with Timezone - Stack on mobile */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+              <div className="space-y-1.5 sm:space-y-2">
+                <Label htmlFor="date" className="text-xs sm:text-sm">Date & Time</Label>
                 <Input
                   id="date"
                   type="datetime-local"
                   value={formData.scheduled_date}
                   onChange={(e) => updateFormData('scheduled_date', e.target.value)}
+                  className="h-9 sm:h-10 text-sm"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="timezone" className="flex items-center gap-1">
+              <div className="space-y-1.5 sm:space-y-2">
+                <Label htmlFor="timezone" className="flex items-center gap-1 text-xs sm:text-sm">
                   <Globe className="h-3 w-3" />
                   Timezone
                 </Label>
                 <Select value={formData.timezone} onValueChange={(v) => updateFormData('timezone', v)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-9 sm:h-10 text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1805,18 +1807,18 @@ Respond in JSON format: {"title": "...", "intro": "..."}`;
           </div>
         </div>
 
-        <DialogFooter className="flex-shrink-0 border-t pt-4 -mx-6 px-6 -mb-6 pb-6 bg-background">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+        <DialogFooter className="flex-shrink-0 border-t pt-3 sm:pt-4 -mx-4 sm:-mx-6 px-4 sm:px-6 -mb-4 sm:-mb-6 pb-4 sm:pb-6 bg-background gap-2 flex-col-reverse sm:flex-row">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto h-9 sm:h-10 text-sm">
             Cancel
           </Button>
           <Button 
             type="button"
             onClick={handleSubmit}
             disabled={!formData.title.trim() || isSubmitting}
-            className="bg-gradient-to-r from-purple-500 to-pink-500 text-white"
+            className="w-full sm:w-auto h-9 sm:h-10 text-sm bg-gradient-to-r from-purple-500 to-pink-500 text-white"
           >
             {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            {mode === 'edit' ? 'Update' : 'Create'} Production
+            {mode === 'edit' ? 'Update' : 'Create'}
           </Button>
         </DialogFooter>
       </DialogContent>

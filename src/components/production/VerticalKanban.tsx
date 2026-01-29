@@ -122,27 +122,27 @@ function DraggableCard({
       ref={setNodeRef}
       style={style}
       className={cn(
-        'w-64 flex-shrink-0 cursor-grab hover:shadow-md transition-all',
+        'w-48 sm:w-64 flex-shrink-0 cursor-grab hover:shadow-md transition-all touch-manipulation',
         isDragging && 'opacity-50 shadow-lg scale-105'
       )}
     >
-      <CardContent className="p-3">
-        <div className="flex items-start justify-between mb-2">
+      <CardContent className="p-2 sm:p-3">
+        <div className="flex items-start justify-between mb-1.5 sm:mb-2">
           <div
             className="flex items-center gap-1 cursor-grab active:cursor-grabbing"
             {...listeners}
             {...attributes}
           >
-            <GripVertical className="h-4 w-4 text-muted-foreground/50" />
-            <ShowTypeIcon className="h-4 w-4 text-muted-foreground" />
-            <Badge variant="outline" className="text-xs capitalize">
-              {show.show_type}
+            <GripVertical className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground/50" />
+            <ShowTypeIcon className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+            <Badge variant="outline" className="text-[10px] sm:text-xs capitalize truncate max-w-[80px] sm:max-w-none">
+              {show.show_type?.replace('_', ' ')}
             </Badge>
           </div>
           <Button
             variant="ghost"
             size="icon"
-            className="h-6 w-6"
+            className="h-5 w-5 sm:h-6 sm:w-6"
             onClick={(e) => {
               e.stopPropagation();
               onSelect(show);
@@ -153,28 +153,28 @@ function DraggableCard({
         </div>
 
         <h4
-          className="font-medium text-sm mb-1 line-clamp-2 cursor-pointer hover:text-primary"
+          className="font-medium text-xs sm:text-sm mb-1 line-clamp-2 cursor-pointer hover:text-primary"
           onClick={() => onSelect(show)}
         >
           {show.title}
         </h4>
 
         {show.description && (
-          <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
+          <p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-1 sm:line-clamp-2 mb-1.5 sm:mb-2">
             {show.description}
           </p>
         )}
 
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <div className="flex items-center justify-between text-[10px] sm:text-xs text-muted-foreground">
           <div className="flex items-center gap-1">
-            <Users className="h-3 w-3" />
+            <Users className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
             <span>
               {confirmedCount}/{totalCount}
             </span>
           </div>
           {show.scheduled_date && (
             <div className="flex items-center gap-1">
-              <Calendar className="h-3 w-3" />
+              <Calendar className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
               <span>{format(new Date(show.scheduled_date), 'MMM d')}</span>
             </div>
           )}
@@ -184,7 +184,7 @@ function DraggableCard({
         {(stageId === 'recording' || stageId === 'in_progress' || stageId === 'live') && (
           <Button
             size="sm"
-            className="w-full mt-2"
+            className="w-full mt-1.5 sm:mt-2 h-7 sm:h-8 text-xs"
             onClick={(e) => {
               e.stopPropagation();
               onOpenRecordingStudio(show);
@@ -232,39 +232,39 @@ function DroppableStageRow({
           isOver && 'ring-2 ring-primary/50 bg-primary/5'
         )}
       >
-        {/* Stage Header */}
+        {/* Stage Header - Mobile optimized */}
         <CollapsibleTrigger asChild>
-          <div className="flex items-center gap-3 p-3 cursor-pointer hover:bg-muted/50 rounded-t-lg">
-            <div className={cn('p-2 rounded-lg', stage.color)}>
-              <StageIcon className="h-5 w-5 text-white" />
+          <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 cursor-pointer hover:bg-muted/50 rounded-t-lg">
+            <div className={cn('p-1.5 sm:p-2 rounded-lg shrink-0', stage.color)}>
+              <StageIcon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
             </div>
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <h3 className="font-semibold">{stage.label}</h3>
-                <Badge variant="secondary" className="text-xs">
+                <h3 className="font-semibold text-sm sm:text-base truncate">{stage.label}</h3>
+                <Badge variant="secondary" className="text-[10px] sm:text-xs shrink-0">
                   {shows.length}
                 </Badge>
               </div>
-              <p className="text-xs text-muted-foreground">{stage.description}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground truncate hidden sm:block">{stage.description}</p>
             </div>
             {isExpanded ? (
-              <ChevronDown className="h-5 w-5 text-muted-foreground" />
+              <ChevronDown className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground shrink-0" />
             ) : (
-              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground shrink-0" />
             )}
           </div>
         </CollapsibleTrigger>
 
-        {/* Productions Row */}
+        {/* Productions Row - Mobile optimized */}
         <CollapsibleContent>
           <div className="border-t">
             {shows.length === 0 ? (
-              <div className="p-6 text-center text-muted-foreground text-sm border-2 border-dashed rounded-b-lg m-2">
+              <div className="p-4 sm:p-6 text-center text-muted-foreground text-xs sm:text-sm border-2 border-dashed rounded-b-lg m-1.5 sm:m-2">
                 Drag productions here
               </div>
             ) : (
               <ScrollArea className="w-full">
-                <div className="flex gap-3 p-3">
+                <div className="flex gap-2 sm:gap-3 p-2 sm:p-3">
                   {shows.map((show) => (
                     <DraggableCard
                       key={show.id}
