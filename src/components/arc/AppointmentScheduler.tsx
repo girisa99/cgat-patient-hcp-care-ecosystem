@@ -345,8 +345,8 @@ export const AppointmentScheduler: React.FC = () => {
       </div>
 
       {/* New Appointment Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen} modal={true}>
-        <DialogContent className="sm:max-w-lg z-[200]">
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-lg z-[9999]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CalendarDays className="h-5 w-5 text-primary" />
@@ -405,7 +405,7 @@ export const AppointmentScheduler: React.FC = () => {
                     {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 z-[300]" align="start">
+                <PopoverContent className="w-auto p-0 z-[10000]" align="start">
                   <Calendar
                     mode="single"
                     selected={selectedDate}
@@ -425,7 +425,7 @@ export const AppointmentScheduler: React.FC = () => {
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="max-h-[200px] z-[300]">
+                  <SelectContent className="max-h-[200px] z-[10000]">
                     {TIME_SLOTS.map((time) => (
                       <SelectItem key={time} value={time}>
                         {time}
@@ -440,7 +440,7 @@ export const AppointmentScheduler: React.FC = () => {
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="z-[300]">
+                  <SelectContent className="z-[10000]">
                     {DURATION_OPTIONS.map((opt) => (
                       <SelectItem key={opt.value} value={opt.value}>
                         {opt.label}
