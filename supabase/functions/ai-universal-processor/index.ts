@@ -217,6 +217,73 @@ serve(async (req) => {
       });
     }
 
+    // ============================================
+    // CONTENT GENERATION ACTION (Template-based)
+    // ============================================
+    if (action === 'generate_content') {
+      console.log(`[UniversalAI] Content generation - Provider: ${provider}, Context: ${JSON.stringify(context)}`);
+      
+      const contentType = context?.contentType || 'video';
+      const pipelines = context?.pipelines || [];
+      const language = context?.language || 'en';
+      
+      // For now, generate content description and placeholder preview
+      // In production, this would call actual video/avatar generation APIs
+      const targetProvider = provider || 'gemini';
+      const targetModel = model || 'gemini-2.0-flash';
+      
+      try {
+        // Generate content script/description using LLM
+        const contentPrompt = `${prompt}\n\nGenerate a detailed ${contentType} script or content description in ${language}. Include scene directions, narration, and timing.`;
+        
+        let contentResult;
+        if (targetProvider === 'openai') {
+          contentResult = await callOpenAI(targetModel, contentPrompt, systemPrompt, temperature, maxTokens);
+        } else if (targetProvider === 'claude') {
+          contentResult = await callClaude(targetModel, contentPrompt, systemPrompt, temperature, maxTokens);
+        } else {
+          contentResult = await callGemini(targetModel, contentPrompt, systemPrompt, temperature, maxTokens);
+        }
+        
+        // Generate a preview placeholder based on content type
+        const previewBase = 'https://placehold.co';
+        const previewUrls: Record<string, string> = {
+          avatar: `${previewBase}/1920x1080/6366f1/ffffff?text=Avatar+Generated`,
+          '3d': `${previewBase}/1920x1080/8b5cf6/ffffff?text=3D+Content+Generated`,
+          video: `${previewBase}/1920x1080/ec4899/ffffff?text=Video+Generated`,
+          animation: `${previewBase}/1920x1080/f59e0b/ffffff?text=Animation+Generated`,
+          static: `${previewBase}/1920x1080/10b981/ffffff?text=Static+Content+Generated`,
+        };
+        
+        return new Response(JSON.stringify({
+          success: true,
+          content: contentResult.content,
+          videoUrl: previewUrls[contentType] || previewUrls.video,
+          imageUrl: previewUrls[contentType] || previewUrls.video,
+          thumbnailUrl: previewUrls[contentType] || previewUrls.video,
+          provider: targetProvider,
+          model: targetModel,
+          contentType,
+          pipelines,
+          language,
+          usage: contentResult.usage,
+          timestamp: new Date().toISOString(),
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      } catch (genError) {
+        console.error(`[UniversalAI] Content generation error:`, genError);
+        return new Response(JSON.stringify({
+          success: false,
+          error: genError instanceof Error ? genError.message : 'Content generation failed',
+          timestamp: new Date().toISOString(),
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
     // Validate required parameters for generation requests
     if (!provider || !prompt) {
       throw new Error('Missing required parameters: provider or prompt');

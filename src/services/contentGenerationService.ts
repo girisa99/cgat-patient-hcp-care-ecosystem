@@ -56,6 +56,28 @@ type ProgressCallback = (progress: GenerationProgress) => void;
 /**
  * Main content generation service class
  */
+// ID mapping from TemplatePreviewDialog to INDUSTRY_TEMPLATES
+const TEMPLATE_ID_MAP: Record<string, string> = {
+  // Original 4 templates map to closest industry templates
+  'hero': 'saudi_transformation',
+  'product': 'healthcare_ai_diagnostics',
+  'tutorial': 'edtech_personalized_learning',
+  'testimonial': 'fintech_inclusive_banking',
+  // Regional/dialect template
+  'dialect_demo_unified': 'india_digital_india',
+  // Industry templates - dialog ID → config ID
+  'industry_showcase': 'japan_manufacturing_4',
+  'success_story': 'uae_smart_city',
+  'explore_preview': 'saudi_transformation',
+  // Industry-specific - these already match naming pattern
+  'industry_saudi_vision': 'saudi_transformation',
+  'industry_india_digital': 'india_digital_india',
+  'industry_healthcare_ai': 'healthcare_ai_diagnostics',
+  'industry_fintech_africa': 'fintech_inclusive_banking',
+  'industry_japan_manufacturing': 'japan_manufacturing_4',
+  'industry_edtech': 'edtech_personalized_learning',
+};
+
 class ContentGenerationService {
   private baseUrl: string;
   
@@ -66,9 +88,26 @@ class ContentGenerationService {
 
   /**
    * Get the template configuration by ID
+   * Supports both TEMPLATE_DEFINITIONS IDs and INDUSTRY_TEMPLATES IDs
    */
   getTemplateConfig(templateId: string): IndustryTemplateConfig | undefined {
-    return INDUSTRY_TEMPLATES.find(t => t.id === templateId);
+    // First try direct match
+    let template = INDUSTRY_TEMPLATES.find(t => t.id === templateId);
+    if (template) return template;
+    
+    // Try mapped ID
+    const mappedId = TEMPLATE_ID_MAP[templateId];
+    if (mappedId) {
+      template = INDUSTRY_TEMPLATES.find(t => t.id === mappedId);
+      if (template) {
+        console.log(`[ContentGeneration] Mapped template ID: ${templateId} → ${mappedId}`);
+        return template;
+      }
+    }
+    
+    // Fallback: use first template as default for unknown IDs
+    console.warn(`[ContentGeneration] Template not found: ${templateId}, using default`);
+    return INDUSTRY_TEMPLATES[0];
   }
 
   /**
