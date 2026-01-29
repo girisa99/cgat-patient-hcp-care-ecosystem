@@ -90,10 +90,11 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
 
   // Navigation
   const currentStepIndex = WIZARD_STEPS.findIndex(s => s.id === currentStep);
+  // Chapters are optional - compositions can be single elements without chapters
   const canGoNext = useMemo(() => {
     switch (currentStep) {
       case 'setup': return project.name.trim().length > 0;
-      case 'chapters': return chapters.length > 0;
+      case 'chapters': return true; // Chapters are optional - allow proceeding without them
       case 'languages': return project.targetLanguages.length > 0;
       case 'preview': return true; // Can always proceed from preview
       default: return false;
