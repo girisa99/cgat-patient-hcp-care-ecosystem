@@ -92,6 +92,17 @@ export interface ChapterVoiceover {
   audioUrl?: string;
   audioBase64?: string;
   duration?: number;
+  
+  // Speed control
+  speed?: 'slow' | 'normal' | 'fast';
+  
+  // For uploaded recordings
+  uploadedAudioUrl?: string;
+  uploadedFileName?: string;
+  
+  // For voice cloning
+  voiceCloneSampleUrl?: string;
+  voiceCloneSampleName?: string;
 }
 
 export interface ChapterVisual {
@@ -119,6 +130,22 @@ export interface ChapterVisual {
   transitionOut?: 'fade' | 'slide' | 'zoom' | 'none';
 }
 
+export interface ChapterBackgroundMusic {
+  enabled: boolean;
+  source?: 'generate' | 'upload';
+  genre?: string;
+  volume?: number;
+  prompt?: string;
+  uploadedUrl?: string;
+  uploadedFileName?: string;
+}
+
+export interface ChapterSFX {
+  enabled: boolean;
+  prompt?: string;
+  audioUrl?: string;
+}
+
 export interface CompositionChapter {
   id: string;
   order: number;
@@ -130,11 +157,8 @@ export interface CompositionChapter {
   
   // Audio layer (what you hear)
   voiceover: ChapterVoiceover;
-  backgroundMusic?: {
-    enabled: boolean;
-    genre?: string;
-    volume?: number;
-  };
+  backgroundMusic?: ChapterBackgroundMusic;
+  sfx?: ChapterSFX;
   
   // Generation state
   status: 'draft' | 'generating' | 'complete' | 'error';

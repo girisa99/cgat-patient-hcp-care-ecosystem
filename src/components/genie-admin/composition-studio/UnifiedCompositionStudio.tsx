@@ -27,7 +27,7 @@ import { Separator } from '@/components/ui/separator';
 import {
   Wand2, Plus, Layers, Globe, Play, Upload, Save,
   Settings, Sparkles, Video, User, Box, FileVideo,
-  ChevronRight, Check, AlertCircle, Loader2, 
+  ChevronRight, Check, AlertCircle, Loader2, Volume2,
   Eye, Send, ArrowLeft, ArrowRight, Clock, Calendar
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -1251,36 +1251,192 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
                 </div>
               </div>
             ) : chaptersViewMode === 'chapters' && chapters.length > 0 ? (
-              <ScrollArea className="h-[500px] pr-4">
-                <div className="space-y-3">
-                  {chapters.map((chapter) => (
-                    <div key={chapter.id} className="relative group">
-                      <ChapterEditor
-                        chapter={chapter}
-                        languages={project.targetLanguages}
-                        onUpdate={updateChapter}
-                        onDelete={() => deleteChapter(chapter.id)}
-                        onDuplicate={() => duplicateChapter(chapter.id)}
-                        onPreview={(lang) => generatePreview(chapter.id, lang)}
-                        isExpanded={expandedChapter === chapter.id}
-                        onToggleExpand={() => setExpandedChapter(
-                          expandedChapter === chapter.id ? null : chapter.id
-                        )}
-                      />
-                      {/* Regeneration Quick Action */}
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        className="absolute top-2 right-16 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => setSelectedChapterForRegen(chapter.id)}
-                      >
-                        <Wand2 className="w-3 h-3 mr-1" />
-                        Selective Regen
-                      </Button>
-                    </div>
-                  ))}
+              <div className="space-y-4">
+                {/* Generate All Button */}
+                <div className="flex items-center justify-between p-3 bg-primary/5 border border-primary/20 rounded-lg">
+                  <div>
+                    <p className="font-medium text-primary">Ready to Generate</p>
+                    <p className="text-sm text-muted-foreground">{chapters.length} chapters loaded • Click Generate to create content</p>
+                  </div>
+                  <Button 
+                    onClick={generateAllPreviews} 
+                    disabled={isGenerating}
+                    className="gap-2"
+                  >
+                    {isGenerating ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Generating {generationProgress}%
+                      </>
+                    ) : (
+                      <>
+                        <Wand2 className="w-4 h-4" />
+                        Generate All Chapters
+                      </>
+                    )}
+                  </Button>
                 </div>
-              </ScrollArea>
+                
+                {/* Global Audio Settings Card */}
+                <Card className="p-4 bg-accent/5 border-accent/20">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Volume2 className="w-5 h-5 text-accent-foreground" />
+                      <span className="font-medium">Global Audio Settings</span>
+                    </div>
+                    <Badge variant="outline">Apply to all chapters</Badge>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    {/* Global Voice Upload */}
+                    <div className="space-y-2">
+                      <Label className="text-sm">Upload Voice (All Chapters)</Label>
+                      <Input
+                        type="file"
+                        accept="audio/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const audioUrl = URL.createObjectURL(file);
+                            // Apply to all chapters
+                            setChapters(prev => prev.map(ch => ({
+                              ...ch,
+                              voiceover: {
+                                ...ch.voiceover,
+                                type: 'recorded' as const,
+                                uploadedAudioUrl: audioUrl,
+                                uploadedFileName: file.name
+                              }
+                            })));
+                            toast.success(`Voice recording applied to all ${chapters.length} chapters`);
+                          }
+                        }}
+                        className="text-xs"
+                      />
+                    </div>
+                    
+                    {/* Global Music Upload */}
+                    <div className="space-y-2">
+                      <Label className="text-sm">Upload Music (All Chapters)</Label>
+                      <Input
+                        type="file"
+                        accept="audio/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const audioUrl = URL.createObjectURL(file);
+                            setChapters(prev => prev.map(ch => ({
+                              ...ch,
+                              backgroundMusic: {
+                                enabled: true,
+                                source: 'upload' as const,
+                                uploadedUrl: audioUrl,
+                                uploadedFileName: file.name,
+                                volume: ch.backgroundMusic?.volume || 0.3
+                              }
+                            })));
+                            toast.success(`Background music applied to all ${chapters.length} chapters`);
+                          }
+                        }}
+                        className="text-xs"
+                      />
+                    </div>
+                    
+                    {/* Global Voice Provider */}
+                    <div className="space-y-2">
+                      <Label className="text-sm">TTS Provider (All)</Label>
+                      <Select
+                        onValueChange={(v) => {
+                          setChapters(prev => prev.map(ch => ({
+                            ...ch,
+                            voiceover: {
+                              ...ch.voiceover,
+                              voiceProvider: v as any
+                            }
+                          })));
+                          toast.success(`Voice provider set to ${v} for all chapters`);
+                        }}
+                      >
+                        <SelectTrigger className="text-xs">
+                          <SelectValue placeholder="Select provider..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="elevenlabs">ElevenLabs</SelectItem>
+                          <SelectItem value="azure">Azure TTS</SelectItem>
+                          <SelectItem value="alibaba">Alibaba CosyVoice</SelectItem>
+                          <SelectItem value="google">Google TTS</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </Card>
+                
+                <ScrollArea className="h-[400px] pr-4">
+                  <div className="space-y-3">
+                    {chapters.map((chapter) => {
+                      const contentKey = `${chapter.id}_${project.primaryLanguage}`;
+                      const generated = generatedContent.get(contentKey);
+                      
+                      return (
+                        <div key={chapter.id} className="relative group">
+                          <ChapterEditor
+                            chapter={chapter}
+                            languages={project.targetLanguages}
+                            onUpdate={updateChapter}
+                            onDelete={() => deleteChapter(chapter.id)}
+                            onDuplicate={() => duplicateChapter(chapter.id)}
+                            onPreview={(lang) => generatePreview(chapter.id, lang)}
+                            isExpanded={expandedChapter === chapter.id}
+                            onToggleExpand={() => setExpandedChapter(
+                              expandedChapter === chapter.id ? null : chapter.id
+                            )}
+                          />
+                          
+                          {/* Generated Content Preview */}
+                          {generated && (
+                            <div className="mt-2 p-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-lg">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Check className="w-4 h-4 text-emerald-600" />
+                                <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">Generated Content</span>
+                              </div>
+                              {generated.script && (
+                                <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+                                  <span className="font-medium">Script: </span>{generated.script}
+                                </p>
+                              )}
+                              {generated.sceneDescription && (
+                                <p className="text-xs text-muted-foreground line-clamp-1">
+                                  <span className="font-medium">Scene: </span>{generated.sceneDescription}
+                                </p>
+                              )}
+                            </div>
+                          )}
+                          
+                          {/* Quick Actions */}
+                          <div className="absolute top-2 right-16 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => generatePreview(chapter.id, project.primaryLanguage)}
+                              disabled={isGenerating}
+                            >
+                              <Play className="w-3 h-3 mr-1" />
+                              Generate
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setSelectedChapterForRegen(chapter.id)}
+                            >
+                              <Wand2 className="w-3 h-3 mr-1" />
+                              Selective Regen
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </ScrollArea>
+              </div>
             ) : null}
           </div>
         )}
@@ -1537,13 +1693,19 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
         open={templatePreviewOpen}
         onOpenChange={setTemplatePreviewOpen}
         template={selectedTemplateForPreview}
-        onSelectTemplate={(templateId) => {
+        onSelectTemplate={async (templateId) => {
+          // Load template chapters first
           loadTemplate(templateId as any);
           const template = TEMPLATE_DEFINITIONS.find(t => t.id === templateId);
           if (template) {
             setProject(p => ({ ...p, name: p.name || template.label }));
           }
-          toast.success(`Loaded ${templateId} template`);
+          
+          // Auto-navigate to chapters step to show loaded content
+          setCurrentStep('chapters');
+          setChaptersViewMode('chapters');
+          
+          toast.success(`Template "${template?.label || templateId}" loaded with ${template?.chapters.length || 0} chapters. Ready to customize or generate!`);
         }}
       />
       
