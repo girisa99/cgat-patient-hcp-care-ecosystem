@@ -461,39 +461,161 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
           </Card>
         )}
 
-        {/* Step 2: Build Chapters */}
+        {/* Step 2: Build Content */}
         {currentStep === 'chapters' && (
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-semibold">Build Your Chapters</h2>
+                <h2 className="text-lg font-semibold">Build Your Content</h2>
                 <p className="text-sm text-muted-foreground">
-                  Mix and match visual types for each chapter
+                  Choose single elements or create multi-chapter compositions
                 </p>
               </div>
-              <Button onClick={() => addChapter()}>
-                <Plus className="w-4 h-4 mr-2" />
-                Add Chapter
-              </Button>
+              {chapters.length > 0 && (
+                <Button onClick={() => addChapter()}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Chapter
+                </Button>
+              )}
             </div>
 
             {chapters.length === 0 ? (
-              <Card className="p-12 flex flex-col items-center justify-center text-center">
-                <Layers className="w-12 h-12 text-muted-foreground/40 mb-4" />
-                <h3 className="text-lg font-medium mb-2">No chapters yet</h3>
-                <p className="text-muted-foreground mb-4">
-                  Add chapters to build your composition, or use a template from the previous step.
-                </p>
-                <div className="flex gap-2">
-                  <Button onClick={() => addChapter()}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add First Chapter
-                  </Button>
-                  <Button variant="outline" onClick={() => setCurrentStep('setup')}>
-                    Choose Template
-                  </Button>
+              <div className="space-y-6">
+                {/* Quick Single Element Cards */}
+                <div className="space-y-3">
+                  <Label className="text-base font-medium">Quick Create - Single Element</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Create a single visual element without chapters
+                  </p>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {[
+                      { type: 'video' as const, icon: Video, label: 'AI Video', desc: 'Generate video from prompt' },
+                      { type: 'avatar' as const, icon: User, label: 'AI Avatar', desc: 'Speaking avatar with lip-sync' },
+                      { type: '3d' as const, icon: Box, label: '3D Model', desc: 'Generate 3D assets' },
+                      { type: 'animation' as const, icon: Sparkles, label: 'Animation', desc: 'Motion graphics & effects' },
+                    ].map((item) => (
+                      <Card 
+                        key={item.type}
+                        className="cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all group"
+                        onClick={() => addChapter({
+                          title: item.label,
+                          duration: 30,
+                          visual: { type: item.type },
+                          voiceover: { type: 'none', text: '', language: project.primaryLanguage },
+                        })}
+                      >
+                        <CardContent className="pt-6 text-center">
+                          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3 group-hover:bg-primary/20 transition-colors">
+                            <item.icon className="w-6 h-6 text-primary" />
+                          </div>
+                          <h4 className="font-medium mb-1">{item.label}</h4>
+                          <p className="text-xs text-muted-foreground">{item.desc}</p>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
                 </div>
-              </Card>
+
+                <Separator />
+
+                {/* Combination Elements */}
+                <div className="space-y-3">
+                  <Label className="text-base font-medium">Combination Workflows</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Mix multiple visual types for richer content
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {[
+                      { 
+                        label: 'Avatar + 3D Product', 
+                        desc: 'Avatar presents a 3D product model',
+                        icons: [User, Box],
+                        chapters: [
+                          { title: 'Avatar Introduction', visual: { type: 'avatar' as const, avatarStyle: 'professional_western', enableLipSync: true }, voiceover: { type: 'lipsync' as const, text: 'Let me show you our product...', language: 'en' }, duration: 15 },
+                          { title: '3D Product Showcase', visual: { type: '3d' as const }, voiceover: { type: 'tts' as const, text: 'Here is the product in 3D...', language: 'en' }, duration: 30 },
+                        ]
+                      },
+                      { 
+                        label: 'Video + Avatar Closing', 
+                        desc: 'AI-generated video with avatar wrap-up',
+                        icons: [Video, User],
+                        chapters: [
+                          { title: 'Main Video Content', visual: { type: 'video' as const }, voiceover: { type: 'tts' as const, text: '', language: 'en' }, duration: 45 },
+                          { title: 'Avatar Summary', visual: { type: 'avatar' as const, enableLipSync: true }, voiceover: { type: 'lipsync' as const, text: 'Thank you for watching...', language: 'en' }, duration: 15 },
+                        ]
+                      },
+                      { 
+                        label: 'Animation + 3D Scene', 
+                        desc: 'Motion graphics with 3D environments',
+                        icons: [Sparkles, Box],
+                        chapters: [
+                          { title: 'Animated Intro', visual: { type: 'animation' as const }, voiceover: { type: 'tts' as const, text: '', language: 'en' }, duration: 10 },
+                          { title: '3D Environment', visual: { type: '3d' as const }, voiceover: { type: 'tts' as const, text: '', language: 'en' }, duration: 30 },
+                        ]
+                      },
+                    ].map((combo, idx) => (
+                      <Card 
+                        key={idx}
+                        className="cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all group"
+                        onClick={() => {
+                          setChapters([]);
+                          combo.chapters.forEach((c, i) => {
+                            const chapter: CompositionChapter = {
+                              id: generateId(),
+                              order: i + 1,
+                              title: c.title,
+                              duration: c.duration,
+                              visual: c.visual as any,
+                              voiceover: c.voiceover as any,
+                              status: 'draft',
+                              previewUrls: {},
+                            };
+                            setChapters(prev => [...prev, chapter]);
+                          });
+                          toast.success(`Loaded ${combo.label} combination`);
+                        }}
+                      >
+                        <CardContent className="pt-6">
+                          <div className="flex items-center justify-center gap-2 mb-3">
+                            {combo.icons.map((Icon, i) => (
+                              <React.Fragment key={i}>
+                                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                                  <Icon className="w-5 h-5 text-primary" />
+                                </div>
+                                {i < combo.icons.length - 1 && (
+                                  <Plus className="w-4 h-4 text-muted-foreground" />
+                                )}
+                              </React.Fragment>
+                            ))}
+                          </div>
+                          <h4 className="font-medium text-center mb-1">{combo.label}</h4>
+                          <p className="text-xs text-muted-foreground text-center">{combo.desc}</p>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Multi-Chapter Builder */}
+                <div className="space-y-3">
+                  <Label className="text-base font-medium">Multi-Chapter Composition</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Build custom chapter-based content from scratch
+                  </p>
+                  <div className="flex gap-3">
+                    <Button onClick={() => addChapter()} variant="outline" className="flex-1">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Start with Empty Chapter
+                    </Button>
+                    <Button variant="outline" onClick={() => setCurrentStep('setup')} className="flex-1">
+                      <Layers className="w-4 h-4 mr-2" />
+                      Use Template from Setup
+                    </Button>
+                  </div>
+                </div>
+              </div>
             ) : (
               <ScrollArea className="h-[500px] pr-4">
                 <div className="space-y-3">
