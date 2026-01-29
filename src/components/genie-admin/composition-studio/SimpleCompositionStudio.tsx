@@ -108,37 +108,86 @@ const TEMPLATE_CHAPTERS: Record<string, string[]> = {
 };
 
 // ============================================
-// VISUAL TYPES (Multi-select ready)
+// VISUAL TYPES (Multi-select ready) - 45+ formats with language-aware variants
 // ============================================
 const VISUAL_TYPES: MultiSelectOption[] = [
-  // Video
-  { id: 'video', value: 'video', label: 'Video', category: 'Video', icon: <Video className="w-3 h-3" /> },
-  { id: 'animation', value: 'animation', label: 'Animation', category: 'Video', icon: <Sparkles className="w-3 h-3" /> },
-  { id: 'screen_record', value: 'screen_record', label: 'Screen Record', category: 'Video', icon: <Monitor className="w-3 h-3" /> },
-  { id: 'kinetic_typography', value: 'kinetic_typography', label: 'Kinetic Typography', category: 'Video', icon: <Sparkles className="w-3 h-3" /> },
-  // Avatar
-  { id: 'avatar', value: 'avatar', label: 'Avatar (Headshot)', category: 'Avatar', icon: <User className="w-3 h-3" /> },
+  // ---- VIDEO (Core) ----
+  { id: 'video', value: 'video', label: 'AI Video', category: 'Video', icon: <Video className="w-3 h-3" /> },
+  { id: 'video_cinematic', value: 'video_cinematic', label: 'Cinematic Video', category: 'Video', icon: <Video className="w-3 h-3" /> },
+  { id: 'video_explainer', value: 'video_explainer', label: 'Explainer Video', category: 'Video', icon: <Video className="w-3 h-3" /> },
+  { id: 'video_promo', value: 'video_promo', label: 'Promo Video', category: 'Video', icon: <Video className="w-3 h-3" /> },
+  { id: 'video_testimonial', value: 'video_testimonial', label: 'Testimonial Video', category: 'Video', icon: <Video className="w-3 h-3" /> },
+  { id: 'video_tutorial', value: 'video_tutorial', label: 'Tutorial Video', category: 'Video', icon: <Video className="w-3 h-3" /> },
+  { id: 'video_social_short', value: 'video_social_short', label: 'Short Form (Reels/TikTok)', category: 'Video', icon: <Video className="w-3 h-3" /> },
+  { id: 'video_youtube_long', value: 'video_youtube_long', label: 'YouTube Long Form', category: 'Video', icon: <Video className="w-3 h-3" /> },
+  
+  // ---- ANIMATION ----
+  { id: 'animation', value: 'animation', label: 'Animation', category: 'Animation', icon: <Sparkles className="w-3 h-3" /> },
+  { id: 'kinetic_typography', value: 'kinetic_typography', label: 'Kinetic Typography', category: 'Animation', icon: <Sparkles className="w-3 h-3" /> },
+  { id: 'motion_graphics', value: 'motion_graphics', label: 'Motion Graphics', category: 'Animation', icon: <Sparkles className="w-3 h-3" /> },
+  { id: 'logo_animation', value: 'logo_animation', label: 'Logo Animation', category: 'Animation', icon: <Sparkles className="w-3 h-3" /> },
+  { id: 'animated_infographic', value: 'animated_infographic', label: 'Animated Infographic', category: 'Animation', icon: <Sparkles className="w-3 h-3" /> },
+  { id: 'whiteboard_animation', value: 'whiteboard_animation', label: 'Whiteboard Animation', category: 'Animation', icon: <Sparkles className="w-3 h-3" /> },
+  { id: 'particle_effects', value: 'particle_effects', label: 'Particle Effects', category: 'Animation', icon: <Sparkles className="w-3 h-3" /> },
+  
+  // ---- AVATAR ----
+  { id: 'avatar', value: 'avatar', label: 'AI Avatar (Headshot)', category: 'Avatar', icon: <User className="w-3 h-3" /> },
   { id: 'avatar_full_body', value: 'avatar_full_body', label: 'Avatar Full Body', category: 'Avatar', icon: <User className="w-3 h-3" /> },
   { id: 'avatar_presenter', value: 'avatar_presenter', label: 'Avatar + Screen', category: 'Avatar', icon: <User className="w-3 h-3" /> },
+  { id: 'avatar_professional_western', value: 'avatar_professional_western', label: 'Professional (Western)', category: 'Avatar', icon: <User className="w-3 h-3" /> },
+  { id: 'avatar_professional_mena', value: 'avatar_professional_mena', label: 'Professional (MENA)', category: 'Avatar', icon: <User className="w-3 h-3" /> },
+  { id: 'avatar_professional_cjk', value: 'avatar_professional_cjk', label: 'Professional (CJK)', category: 'Avatar', icon: <User className="w-3 h-3" /> },
+  { id: 'avatar_professional_south_asian', value: 'avatar_professional_south_asian', label: 'Professional (South Asian)', category: 'Avatar', icon: <User className="w-3 h-3" /> },
+  { id: 'avatar_professional_african', value: 'avatar_professional_african', label: 'Professional (African)', category: 'Avatar', icon: <User className="w-3 h-3" /> },
+  { id: 'avatar_casual', value: 'avatar_casual', label: 'Avatar Casual', category: 'Avatar', icon: <User className="w-3 h-3" /> },
   { id: 'talking_head', value: 'talking_head', label: 'Talking Head', category: 'Avatar', icon: <User className="w-3 h-3" /> },
-  // 3D/Immersive
+  { id: 'avatar_lipsync', value: 'avatar_lipsync', label: 'Avatar with Lip-Sync', category: 'Avatar', icon: <User className="w-3 h-3" /> },
+  
+  // ---- 3D/IMMERSIVE ----
   { id: '3d', value: '3d', label: '3D Model', category: '3D/Immersive', icon: <Box className="w-3 h-3" /> },
-  { id: 'immersive', value: 'immersive', label: 'Immersive/VR', category: '3D/Immersive', icon: <Box className="w-3 h-3" /> },
-  { id: '3d_product', value: '3d_product', label: '3D Product', category: '3D/Immersive', icon: <Box className="w-3 h-3" /> },
+  { id: '3d_product', value: '3d_product', label: '3D Product Showcase', category: '3D/Immersive', icon: <Box className="w-3 h-3" /> },
   { id: '3d_environment', value: '3d_environment', label: '3D Environment', category: '3D/Immersive', icon: <Box className="w-3 h-3" /> },
-  // Static/Graphics
+  { id: '3d_turntable', value: '3d_turntable', label: '3D 360° Turntable', category: '3D/Immersive', icon: <Box className="w-3 h-3" /> },
+  { id: '3d_exploded', value: '3d_exploded', label: '3D Exploded View', category: '3D/Immersive', icon: <Box className="w-3 h-3" /> },
+  { id: 'immersive', value: 'immersive', label: 'Immersive/VR', category: '3D/Immersive', icon: <Box className="w-3 h-3" /> },
+  { id: 'ar_experience', value: 'ar_experience', label: 'AR Experience', category: '3D/Immersive', icon: <Box className="w-3 h-3" /> },
+  { id: 'holographic', value: 'holographic', label: 'Holographic Display', category: '3D/Immersive', icon: <Box className="w-3 h-3" /> },
+  
+  // ---- STATIC/GRAPHICS ----
   { id: 'ppt', value: 'ppt', label: 'PPT/Slides', category: 'Static/Graphics', icon: <Presentation className="w-3 h-3" /> },
-  { id: 'images', value: 'images', label: 'Images', category: 'Static/Graphics', icon: <Image className="w-3 h-3" /> },
+  { id: 'images', value: 'images', label: 'AI Images', category: 'Static/Graphics', icon: <Image className="w-3 h-3" /> },
   { id: 'infographics', value: 'infographics', label: 'Infographics', category: 'Static/Graphics', icon: <Layers className="w-3 h-3" /> },
-  { id: 'customer_journey', value: 'customer_journey', label: 'Customer Journey', category: 'Static/Graphics', icon: <MapPin className="w-3 h-3" /> },
+  { id: 'customer_journey', value: 'customer_journey', label: 'Customer Journey Map', category: 'Static/Graphics', icon: <MapPin className="w-3 h-3" /> },
   { id: 'timeline', value: 'timeline', label: 'Timeline', category: 'Static/Graphics', icon: <Layers className="w-3 h-3" /> },
-  // Capture
+  { id: 'flowchart', value: 'flowchart', label: 'Flowchart', category: 'Static/Graphics', icon: <Layers className="w-3 h-3" /> },
+  { id: 'comparison_chart', value: 'comparison_chart', label: 'Comparison Chart', category: 'Static/Graphics', icon: <Layers className="w-3 h-3" /> },
+  { id: 'data_visualization', value: 'data_visualization', label: 'Data Visualization', category: 'Static/Graphics', icon: <Layers className="w-3 h-3" /> },
+  
+  // ---- CAPTURE ----
+  { id: 'screen_record', value: 'screen_record', label: 'Screen Recording', category: 'Capture', icon: <Monitor className="w-3 h-3" /> },
+  { id: 'screen_demo', value: 'screen_demo', label: 'Screen Demo + Cursor', category: 'Capture', icon: <Monitor className="w-3 h-3" /> },
   { id: 'capture', value: 'capture', label: 'Live Capture', category: 'Capture', icon: <Camera className="w-3 h-3" /> },
   { id: 'interview', value: 'interview', label: 'Interview Style', category: 'Capture', icon: <Mic className="w-3 h-3" /> },
-  // Combinations
+  { id: 'webcam_overlay', value: 'webcam_overlay', label: 'Webcam Overlay', category: 'Capture', icon: <Camera className="w-3 h-3" /> },
+  
+  // ---- COMBINATIONS (Tier-gated recipes) ----
   { id: 'combo_avatar_ppt', value: 'combo_avatar_ppt', label: 'Avatar + PPT', category: 'Combinations', icon: <Layers className="w-3 h-3" /> },
+  { id: 'combo_avatar_screen', value: 'combo_avatar_screen', label: 'Avatar + Screen Demo', category: 'Combinations', icon: <Layers className="w-3 h-3" /> },
   { id: 'combo_3d_voice', value: 'combo_3d_voice', label: '3D + Voiceover', category: 'Combinations', icon: <Box className="w-3 h-3" /> },
+  { id: 'combo_3d_avatar', value: 'combo_3d_avatar', label: '3D + Avatar Presenter', category: 'Combinations', icon: <Box className="w-3 h-3" /> },
+  { id: 'combo_video_avatar', value: 'combo_video_avatar', label: 'Video + Avatar Overlay', category: 'Combinations', icon: <Film className="w-3 h-3" /> },
+  { id: 'combo_animation_voice', value: 'combo_animation_voice', label: 'Animation + Voiceover', category: 'Combinations', icon: <Sparkles className="w-3 h-3" /> },
+  { id: 'combo_multi_dialect', value: 'combo_multi_dialect', label: 'Multi-Dialect Demo', category: 'Combinations', icon: <Globe className="w-3 h-3" /> },
+  { id: 'combo_interactive_demo', value: 'combo_interactive_demo', label: 'Interactive Product Demo', category: 'Combinations', icon: <Layers className="w-3 h-3" /> },
   { id: 'combo_full_production', value: 'combo_full_production', label: 'Full Production', category: 'Combinations', icon: <Film className="w-3 h-3" /> },
+  
+  // ---- REGIONAL/CULTURAL (Language-aware) ----
+  { id: 'regional_mena', value: 'regional_mena', label: 'MENA Styled (RTL)', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_arabic_calligraphy', value: 'regional_arabic_calligraphy', label: 'Arabic Calligraphy', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_indian', value: 'regional_indian', label: 'Indian Cultural', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_cjk', value: 'regional_cjk', label: 'CJK Minimalist', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_african', value: 'regional_african', label: 'African Heritage', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_latam', value: 'regional_latam', label: 'Latin American', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
 ];
 
 // ============================================
