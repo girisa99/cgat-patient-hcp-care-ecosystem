@@ -5,7 +5,7 @@
  */
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -16,7 +16,6 @@ import {
 } from 'lucide-react';
 import { useShows } from '@/hooks/useShows';
 import { format, isToday, isTomorrow, startOfWeek, endOfWeek } from 'date-fns';
-import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { UnifiedScheduleShowDialog, type ScheduleShowData } from '@/components/production/UnifiedScheduleShowDialog';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -26,53 +25,20 @@ interface Appointment {
   title: string;
   type: 'meeting' | 'call' | 'demo' | 'recording';
   date: Date;
-  duration: number; // minutes
+  duration: number;
   attendees: string[];
   status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled';
   location?: string;
   notes?: string;
 }
 
-const TIME_SLOTS = [
-  '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', 
-  '11:00', '11:30', '12:00', '12:30', '13:00', '13:30',
-  '14:00', '14:30', '15:00', '15:30', '16:00', '16:30',
-  '17:00', '17:30', '18:00', '18:30', '19:00', '19:30'
-];
-
-const DURATION_OPTIONS = [
-  { value: '15', label: '15 min' },
-  { value: '30', label: '30 min' },
-  { value: '45', label: '45 min' },
-  { value: '60', label: '1 hour' },
-  { value: '90', label: '1.5 hours' },
-  { value: '120', label: '2 hours' },
-];
-
-const MEETING_TYPES = [
-  { value: 'meeting', label: 'Team Meeting', icon: Users },
-  { value: 'call', label: 'Phone Call', icon: Phone },
-  { value: 'demo', label: 'Demo/Presentation', icon: Video },
-  { value: 'recording', label: 'Recording Session', icon: Video },
-];
-
 export const AppointmentScheduler: React.FC = () => {
   const [activeView, setActiveView] = useState<'upcoming' | 'today' | 'week'>('upcoming');
   const [searchQuery, setSearchQuery] = useState('');
   const { shows, isLoading, createShow } = useShows();
   
-  // Dialog state
+  // Dialog state for UnifiedScheduleShowDialog
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const [formData, setFormData] = useState({
-    title: '',
-    type: 'meeting',
-    time: '09:00',
-    duration: '60',
-    attendees: '',
-    location: '',
-    notes: '',
-  });
 
   // Transform shows to appointments format
   const appointments: Appointment[] = shows
@@ -132,16 +98,6 @@ export const AppointmentScheduler: React.FC = () => {
   };
 
   const handleOpenDialog = () => {
-    setSelectedDate(new Date());
-    setFormData({
-      title: '',
-      type: 'meeting',
-      time: '09:00',
-      duration: '60',
-      attendees: '',
-      location: '',
-      notes: '',
-    });
     setIsDialogOpen(true);
   };
 
@@ -173,44 +129,6 @@ export const AppointmentScheduler: React.FC = () => {
     } catch (error) {
       console.error('Error scheduling appointment:', error);
       toast.error('Failed to schedule appointment');
-    }
-  };
-
-  const handleCreateAppointment = async () => {
-    if (!formData.title.trim()) {
-      toast.error('Please enter a title for the appointment');
-      return;
-    }
-    if (!selectedDate) {
-      toast.error('Please select a date');
-      return;
-    }
-
-    // Create scheduled date with time
-    const [hours, minutes] = formData.time.split(':').map(Number);
-    const scheduledDate = new Date(selectedDate);
-    scheduledDate.setHours(hours, minutes, 0, 0);
-
-    try {
-      // Build description with location and duration info
-      const descriptionParts: string[] = [];
-      if (formData.notes) descriptionParts.push(formData.notes);
-      if (formData.location) descriptionParts.push(`📍 Location: ${formData.location}`);
-      descriptionParts.push(`⏱️ Duration: ${formData.duration} minutes`);
-
-      await createShow({
-        title: formData.title,
-        description: descriptionParts.join('\n\n') || undefined,
-        show_type: formData.type === 'call' ? 'discovery_call' : formData.type === 'demo' ? 'genie_studio_full' : 'sales_meeting',
-        event_category: 'business_meeting',
-        scheduled_date: scheduledDate.toISOString(),
-      });
-      
-      toast.success('Appointment scheduled successfully!');
-      setIsDialogOpen(false);
-    } catch (error) {
-      toast.error('Failed to create appointment');
-      console.error('Error creating appointment:', error);
     }
   };
 
