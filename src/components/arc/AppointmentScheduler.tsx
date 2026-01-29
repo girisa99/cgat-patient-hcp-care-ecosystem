@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { 
   CalendarCheck, Clock, Users, Video, 
   Plus, Search, ChevronRight,
-  Phone
+  Phone, User
 } from 'lucide-react';
 import { useShows } from '@/hooks/useShows';
 import { format, isToday, isTomorrow, startOfWeek, endOfWeek } from 'date-fns';
@@ -24,12 +24,15 @@ interface Appointment {
   id: string;
   title: string;
   type: 'meeting' | 'call' | 'demo' | 'recording';
+  showType: string; // Actual show_type from database
   date: Date;
   duration: number;
   attendees: string[];
   status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled';
   location?: string;
   notes?: string;
+  meetingLink?: string;
+  hostName?: string;
 }
 
 export const AppointmentScheduler: React.FC = () => {
@@ -40,26 +43,63 @@ export const AppointmentScheduler: React.FC = () => {
   // Dialog state for UnifiedScheduleShowDialog
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
+  // Show type display labels
+  const SHOW_TYPE_LABELS: Record<string, { label: string; emoji: string }> = {
+    podcast: { label: 'Podcast', emoji: '🎙️' },
+    webcast: { label: 'Webcast', emoji: '📺' },
+    interview: { label: 'Interview', emoji: '🎤' },
+    panel: { label: 'Panel', emoji: '👥' },
+    tutorial: { label: 'Tutorial', emoji: '📚' },
+    broadcast: { label: 'Broadcast', emoji: '📡' },
+    discovery_call: { label: 'Discovery Call', emoji: '📞' },
+    sales_meeting: { label: 'Sales Meeting', emoji: '💼' },
+    project_kickoff: { label: 'Kickoff', emoji: '🚀' },
+    status_update: { label: 'Status Update', emoji: '📊' },
+    consultation: { label: 'Consultation', emoji: '💬' },
+    workshop: { label: 'Workshop', emoji: '🔧' },
+    webinar: { label: 'Webinar', emoji: '🖥️' },
+    conference: { label: 'Conference', emoji: '🏛️' },
+    training_session: { label: 'Training', emoji: '📖' },
+    genie_studio_full: { label: 'Studio Demo', emoji: '✨' },
+    genie_spark_demo: { label: 'Spark Demo', emoji: '⚡' },
+    genie_arc_demo: { label: 'Arc Demo', emoji: '🎬' },
+    genie_mind_demo: { label: 'Mind Demo', emoji: '🧠' },
+    genie_vibe_demo: { label: 'Vibe Demo', emoji: '🎵' },
+    genie_suite_overview: { label: 'Suite Overview', emoji: '🌟' },
+    other: { label: 'Other', emoji: '🎬' },
+  };
+
   // Transform shows to appointments format
   const appointments: Appointment[] = shows
-    ?.filter(show => show.event_category === 'business_meeting' || show.event_category === 'event')
-    .map(show => ({
-      id: show.id,
-      title: show.title,
-      type: show.event_category === 'business_meeting' ? 'meeting' : 'demo',
-      date: new Date(show.scheduled_date || show.created_at),
-      duration: show.duration_minutes || 60,
-      attendees: show.participants?.map(p => p.name) || [],
-      status: show.meeting_stage === 'completed' || show.event_stage === 'archived' 
-        ? 'completed' 
-        : show.meeting_stage === 'cancelled' || show.event_stage === 'cancelled'
-          ? 'cancelled'
-          : show.meeting_stage === 'confirmed' 
-            ? 'confirmed' 
-            : 'scheduled',
-      location: show.location || undefined,
-      notes: show.description || undefined,
-    })) || [];
+    ?.filter(show => show.scheduled_date) // Include all scheduled shows
+    .map(show => {
+      // Get host from participants
+      const host = show.participants?.find(p => p.role === 'host');
+      const guests = show.participants?.filter(p => p.role !== 'host') || [];
+      
+      return {
+        id: show.id,
+        title: show.title,
+        type: show.event_category === 'business_meeting' ? 'meeting' as const : 
+              show.event_category === 'genie_demo' ? 'demo' as const :
+              show.event_category === 'media_production' ? 'recording' as const : 'demo' as const,
+        showType: show.show_type,
+        date: new Date(show.scheduled_date || show.created_at),
+        duration: show.duration_minutes || 60,
+        attendees: guests.map(p => p.name),
+        status: show.meeting_stage === 'completed' || show.event_stage === 'archived' 
+          ? 'completed' as const
+          : show.meeting_stage === 'cancelled' || show.event_stage === 'cancelled'
+            ? 'cancelled' as const
+            : show.meeting_stage === 'confirmed' 
+              ? 'confirmed' as const
+              : 'scheduled' as const,
+        location: show.location || undefined,
+        notes: show.description || undefined,
+        meetingLink: show.meeting_link || undefined,
+        hostName: host?.name || undefined,
+      };
+    }) || [];
 
   // Filter appointments based on view
   const filteredAppointments = appointments.filter(apt => {
@@ -251,41 +291,61 @@ export const AppointmentScheduler: React.FC = () => {
             </CardContent>
           </Card>
         ) : (
-          filteredAppointments.map((appointment) => (
-            <Card key={appointment.id} className="hover:shadow-md transition-shadow cursor-pointer">
-              <CardContent className="py-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                      {getTypeIcon(appointment.type)}
-                    </div>
-                    <div>
-                      <h3 className="font-medium">{appointment.title}</h3>
-                      <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {format(appointment.date, 'MMM d, h:mm a')}
-                        </span>
-                        <span>{appointment.duration} min</span>
-                        {appointment.attendees.length > 0 && (
+          filteredAppointments.map((appointment) => {
+            const typeInfo = SHOW_TYPE_LABELS[appointment.showType] || { label: appointment.showType, emoji: '📅' };
+            return (
+              <Card key={appointment.id} className="hover:shadow-md transition-shadow cursor-pointer">
+                <CardContent className="py-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="p-2 bg-primary/10 rounded-lg">
+                        {getTypeIcon(appointment.type)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-medium truncate">{appointment.title}</h3>
+                          <Badge variant="secondary" className="text-xs shrink-0">
+                            {typeInfo.emoji} {typeInfo.label}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1 flex-wrap">
                           <span className="flex items-center gap-1">
-                            <Users className="w-3 h-3" />
-                            {appointment.attendees.length}
+                            <Clock className="w-3 h-3" />
+                            {format(appointment.date, 'MMM d, h:mm a')}
                           </span>
-                        )}
+                          <span>{appointment.duration} min</span>
+                          {appointment.hostName && (
+                            <span className="flex items-center gap-1">
+                              <User className="w-3 h-3" />
+                              {appointment.hostName}
+                            </span>
+                          )}
+                          {appointment.attendees.length > 0 && (
+                            <span className="flex items-center gap-1">
+                              <Users className="w-3 h-3" />
+                              {appointment.attendees.length} guest{appointment.attendees.length !== 1 ? 's' : ''}
+                            </span>
+                          )}
+                          {appointment.meetingLink && (
+                            <span className="flex items-center gap-1 text-primary">
+                              <Video className="w-3 h-3" />
+                              Link
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
+                    <div className="flex items-center gap-3">
+                      <Badge className={getStatusColor(appointment.status)}>
+                        {appointment.status}
+                      </Badge>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Badge className={getStatusColor(appointment.status)}>
-                      {appointment.status}
-                    </Badge>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
+                </CardContent>
+              </Card>
+            );
+          })
         )}
       </div>
     </div>
