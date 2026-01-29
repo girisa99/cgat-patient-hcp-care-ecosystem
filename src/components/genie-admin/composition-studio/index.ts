@@ -7,7 +7,9 @@ export { ChapterEditor } from './ChapterEditor';
 export { LanguageSelectorPanel } from './LanguageSelectorPanel';
 export { PreviewPanel } from './PreviewPanel';
 export { ContentLibrary } from './ContentLibrary';
-export { TemplatePreviewDialog, TEMPLATE_DEFINITIONS } from './TemplatePreviewDialog';
+export { TemplatePreviewDialog, TEMPLATE_DEFINITIONS, LANDING_PAGE_SECTIONS } from './TemplatePreviewDialog';
 export { ScheduledContentManager } from './ScheduledContentManager';
+export { TemplateLandingMapper } from './TemplateLandingMapper';
 
 export * from './types';
+export type { LandingPageSection } from './TemplatePreviewDialog';

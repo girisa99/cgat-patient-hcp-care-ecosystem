@@ -66,7 +66,76 @@ const SOCIAL_ICON_MAP: Record<string, React.ReactNode> = {
   twitter: <Twitter className="w-4 h-4" />,
 };
 
+// Landing page section types for mapping
+export type LandingPageSection = 
+  | 'hero_showcase'
+  | 'product_demo'
+  | 'tutorial_howto'
+  | 'testimonials'
+  | 'dialect_demo'
+  | 'industry_showcases'
+  | 'global_success_stories'
+  | 'explore_use_cases';
+
+// Section metadata for the mapping UI
+export const LANDING_PAGE_SECTIONS: Record<LandingPageSection, {
+  label: string;
+  description: string;
+  component: string;
+  userInteractive: boolean;
+}> = {
+  hero_showcase: {
+    label: 'Hero Showcase',
+    description: 'Main hero section - first thing visitors see',
+    component: 'HeroDynamicVideo',
+    userInteractive: true, // Users can enter prompts to play
+  },
+  product_demo: {
+    label: 'Product Demo / Use Cases',
+    description: 'Feature demonstrations and product walkthroughs',
+    component: 'GenieVideoShowcaseSection',
+    userInteractive: false,
+  },
+  tutorial_howto: {
+    label: 'Tutorial / How-to',
+    description: 'Educational step-by-step guides',
+    component: 'GenieVideoShowcase',
+    userInteractive: false,
+  },
+  testimonials: {
+    label: 'Testimonials / Social Proof',
+    description: 'Customer success stories with regional avatars',
+    component: 'GlobalInspirationSection',
+    userInteractive: false,
+  },
+  dialect_demo: {
+    label: 'True Localization Demo',
+    description: 'Arabic dialects, Indian languages, African languages showcase',
+    component: 'LanguageDialectDemo',
+    userInteractive: true, // Users can select dialects and hear TTS
+  },
+  industry_showcases: {
+    label: 'Industry Showcases',
+    description: 'IP/industry-based default videos for specific visitor segments',
+    component: 'IndustryShowcases',
+    userInteractive: true, // Auto-detects IP/industry, plays defaults
+  },
+  global_success_stories: {
+    label: 'Global Success Stories',
+    description: 'Regional customer success videos by geography',
+    component: 'GlobalInspirationSection',
+    userInteractive: false,
+  },
+  explore_use_cases: {
+    label: 'Explore Use Cases',
+    description: 'Showcase possibilities - users view but cannot generate live',
+    component: 'CrossFunctionalSection',
+    userInteractive: false, // View-only, no live generation
+  },
+};
+
 export const TEMPLATE_DEFINITIONS: TemplateDefinition[] = [
+  // === ORIGINAL 4 TEMPLATES ===
   {
     id: 'hero',
     label: 'Hero Video',
@@ -78,7 +147,7 @@ export const TEMPLATE_DEFINITIONS: TemplateDefinition[] = [
       { title: 'Call to Action', type: 'video', duration: 15, description: 'Compelling CTA with brand elements' },
     ],
     landingPageSection: 'Hero Showcase',
-    landingPageDescription: 'Main hero section at the top of landing page. First thing visitors see. High impact.',
+    landingPageDescription: 'Main hero section at the top of landing page. First thing visitors see. High impact. Users can enter prompts to preview content.',
     socialPlatforms: ['youtube', 'linkedin', 'facebook', 'twitter'],
     totalDuration: 60,
     regionalSupport: ['All regions - 14+ languages'],
@@ -132,6 +201,78 @@ export const TEMPLATE_DEFINITIONS: TemplateDefinition[] = [
     socialPlatforms: ['linkedin', 'facebook', 'instagram', 'twitter'],
     totalDuration: 120,
     regionalSupport: ['Regional avatars - 10+ regions'],
+  },
+  
+  // === NEW TEMPLATES FOR EXPANDED SECTIONS ===
+  {
+    id: 'dialect_demo',
+    label: 'Dialect Demo',
+    icon: <Globe className="w-5 h-5" />,
+    desc: '7 chapters, 90s',
+    chapters: [
+      { title: 'MSA Formal', type: 'avatar', duration: 12, description: 'Modern Standard Arabic - formal context' },
+      { title: 'Saudi Dialect', type: 'avatar', duration: 12, description: 'Saudi Arabian regional voice' },
+      { title: 'Gulf Dialect', type: 'avatar', duration: 12, description: 'UAE/Kuwait/Qatar regional voice' },
+      { title: 'Egyptian Dialect', type: 'avatar', duration: 12, description: 'Egyptian Arabic natural speech' },
+      { title: 'Levantine Dialect', type: 'avatar', duration: 12, description: 'Lebanon/Syria regional voice' },
+      { title: 'Maghrebi Dialect', type: 'avatar', duration: 12, description: 'Morocco/Algeria regional voice' },
+      { title: 'Iraqi Dialect', type: 'avatar', duration: 18, description: 'Iraqi Arabic with closing CTA' },
+    ],
+    landingPageSection: 'True Localization Demo',
+    landingPageDescription: 'Interactive dialect showcase. Users can select dialects and hear TTS in real-time. Demonstrates transcreation vs translation.',
+    socialPlatforms: ['youtube', 'linkedin', 'twitter'],
+    totalDuration: 90,
+    regionalSupport: ['7 Arabic dialects', '22 Indian languages', '10 African languages'],
+  },
+  {
+    id: 'industry_showcase',
+    label: 'Industry Showcase',
+    icon: <Box className="w-5 h-5" />,
+    desc: '4 chapters, 120s',
+    chapters: [
+      { title: 'Industry Intro', type: 'animation', duration: 20, description: 'Industry-specific animated intro' },
+      { title: 'Use Case 1', type: 'video', duration: 40, description: 'Primary use case demonstration' },
+      { title: 'Use Case 2', type: '3d', duration: 40, description: '3D product/feature visualization' },
+      { title: 'Industry CTA', type: 'avatar', duration: 20, description: 'Industry-specific call to action' },
+    ],
+    landingPageSection: 'Industry Showcases',
+    landingPageDescription: 'IP/industry-based videos that auto-play for visitors. Detects location and industry to show relevant content.',
+    socialPlatforms: ['youtube', 'linkedin', 'facebook'],
+    totalDuration: 120,
+    regionalSupport: ['50+ industries', '14+ regions'],
+  },
+  {
+    id: 'success_story',
+    label: 'Success Story',
+    icon: <Sparkles className="w-5 h-5" />,
+    desc: '4 chapters, 150s',
+    chapters: [
+      { title: 'Customer Profile', type: 'avatar', duration: 30, description: 'Regional avatar introduces the customer' },
+      { title: 'Challenge', type: 'video', duration: 40, description: 'Problem statement and context' },
+      { title: 'Solution', type: '3d', duration: 40, description: 'How Genie solved the challenge' },
+      { title: 'Results & Impact', type: 'animation', duration: 40, description: 'Metrics, ROI, and testimonial' },
+    ],
+    landingPageSection: 'Global Success Stories',
+    landingPageDescription: 'Regional customer success videos. Shows real-world results organized by geography and industry.',
+    socialPlatforms: ['youtube', 'linkedin', 'facebook', 'twitter'],
+    totalDuration: 150,
+    regionalSupport: ['All regions - localized avatars'],
+  },
+  {
+    id: 'explore_preview',
+    label: 'Explore Preview',
+    icon: <Play className="w-5 h-5" />,
+    desc: '3 chapters, 90s',
+    chapters: [
+      { title: 'Capability Overview', type: 'animation', duration: 30, description: 'What is possible with Genie' },
+      { title: 'Pipeline Demo', type: 'screen_recording', duration: 40, description: 'Show the 206 pipelines in action' },
+      { title: 'Get Started', type: 'avatar', duration: 20, description: 'Invite to sign up and try' },
+    ],
+    landingPageSection: 'Explore Use Cases',
+    landingPageDescription: 'View-only showcase of possibilities. Users can see what Genie can do but cannot generate live content here.',
+    socialPlatforms: ['youtube', 'linkedin'],
+    totalDuration: 90,
+    regionalSupport: ['All regions - 14+ languages'],
   },
 ];
 
