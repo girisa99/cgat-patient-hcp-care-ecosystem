@@ -19,5 +19,14 @@ export type { CategoryElement, ElementCategory, ElementConfig, DialectConfig, Co
 export { ContentReviewQueue, getTargetRegionsFromLanguages } from './ContentReviewQueue';
 export type { ReviewItem, ReviewStatus } from './ContentReviewQueue';
 
+// New: Chapter management & selective regeneration
+export { ChapterRegenerationPanel } from './ChapterRegenerationPanel';
+export type { RegenerationTarget, RegenerationOptions } from './ChapterRegenerationPanel';
+export { AddChapterDialog } from './AddChapterDialog';
+
+// New: Thumbnail & metadata management
+export { ThumbnailManager } from './ThumbnailManager';
+export type { ThumbnailData, ContentMetadata } from './ThumbnailManager';
+
 export * from './types';
 export type { LandingPageSection } from './TemplatePreviewDialog';
