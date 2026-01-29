@@ -40,6 +40,8 @@ import { PreviewPanel } from './PreviewPanel';
 import { TemplatePreviewDialog, TEMPLATE_DEFINITIONS, LANDING_PAGE_SECTIONS } from './TemplatePreviewDialog';
 import { ScheduledContentManager } from './ScheduledContentManager';
 import { TemplateLandingMapper } from './TemplateLandingMapper';
+import { ElementCategoryTabs, type CategoryElement } from './ElementCategoryTabs';
+import { ContentReviewQueue, type ReviewItem, getTargetRegionsFromLanguages } from './ContentReviewQueue';
 import type { 
   CompositionProject, 
   CompositionChapter, 
@@ -80,6 +82,14 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
   const [showScheduler, setShowScheduler] = useState(false);
   // Show template-landing mapper
   const [showMapper, setShowMapper] = useState(false);
+  // Show review queue
+  const [showReviewQueue, setShowReviewQueue] = useState(false);
+  // Category-based elements
+  const [categoryElements, setCategoryElements] = useState<CategoryElement[]>([]);
+  // Review items
+  const [reviewItems, setReviewItems] = useState<ReviewItem[]>([]);
+  // View mode for chapters step
+  const [chaptersViewMode, setChaptersViewMode] = useState<'chapters' | 'categories'>('chapters');
   // Project state
   const [project, setProject] = useState<CompositionProject>({
     id: generateId(),
@@ -558,6 +568,28 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
                   View Mapping
                 </Button>
               </div>
+              
+              {/* Review Queue Link */}
+              <div className="flex items-center justify-between p-4 rounded-lg border bg-primary/5">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Check className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <span className="font-medium">Content Review Queue</span>
+                    <p className="text-sm text-muted-foreground">
+                      Multi-stage review and approval workflow
+                    </p>
+                  </div>
+                </div>
+                <Button 
+                  variant="outline"
+                  onClick={() => setShowReviewQueue(true)}
+                >
+                  <Eye className="w-4 h-4 mr-2" />
+                  View Queue
+                </Button>
+              </div>
             </CardContent>
           </Card>
         )}
@@ -572,15 +604,48 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
                   Choose single elements or create multi-chapter compositions
                 </p>
               </div>
-              {chapters.length > 0 && (
-                <Button onClick={() => addChapter()}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Chapter
-                </Button>
-              )}
+              <div className="flex items-center gap-2">
+                {/* View Mode Toggle */}
+                <div className="flex rounded-lg border overflow-hidden">
+                  <Button 
+                    variant={chaptersViewMode === 'chapters' ? 'default' : 'ghost'}
+                    size="sm"
+                    className="rounded-none"
+                    onClick={() => setChaptersViewMode('chapters')}
+                  >
+                    <Layers className="w-4 h-4 mr-1" />
+                    Chapters
+                  </Button>
+                  <Button 
+                    variant={chaptersViewMode === 'categories' ? 'default' : 'ghost'}
+                    size="sm"
+                    className="rounded-none"
+                    onClick={() => setChaptersViewMode('categories')}
+                  >
+                    <Video className="w-4 h-4 mr-1" />
+                    Categories
+                  </Button>
+                </div>
+                {chapters.length > 0 && chaptersViewMode === 'chapters' && (
+                  <Button onClick={() => addChapter()}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Chapter
+                  </Button>
+                )}
+              </div>
             </div>
 
-            {chapters.length === 0 ? (
+            {/* Category View Mode */}
+            {chaptersViewMode === 'categories' && (
+              <ElementCategoryTabs
+                elements={categoryElements}
+                onElementsChange={setCategoryElements}
+                currentTier="pro"
+              />
+            )}
+
+            {/* Chapters View Mode */}
+            {chaptersViewMode === 'chapters' && chapters.length === 0 ? (
               <div className="space-y-6">
                 {/* Quick Single Element Cards */}
                 <div className="space-y-3">
@@ -717,7 +782,7 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
                   </div>
                 </div>
               </div>
-            ) : (
+            ) : chaptersViewMode === 'chapters' && chapters.length > 0 ? (
               <ScrollArea className="h-[500px] pr-4">
                 <div className="space-y-3">
                   {chapters.map((chapter) => (
@@ -737,7 +802,7 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
                   ))}
                 </div>
               </ScrollArea>
-            )}
+            ) : null}
           </div>
         )}
 
@@ -1025,6 +1090,31 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
                   setShowMapper(false);
                   toast.info(`Loaded ${templateId} template for editing`);
                 }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Review Queue Dialog */}
+      {showReviewQueue && (
+        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm">
+          <div className="fixed inset-4 md:inset-10 bg-background border rounded-xl shadow-2xl flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <Check className="w-5 h-5" />
+                Content Review Queue
+              </h2>
+              <Button variant="ghost" size="sm" onClick={() => setShowReviewQueue(false)}>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Studio
+              </Button>
+            </div>
+            <div className="flex-1 overflow-auto p-4">
+              <ContentReviewQueue 
+                items={reviewItems}
+                onItemsChange={setReviewItems}
+                canApprove={true}
               />
             </div>
           </div>
