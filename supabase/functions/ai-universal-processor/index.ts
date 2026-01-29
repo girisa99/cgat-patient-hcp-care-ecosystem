@@ -218,6 +218,87 @@ serve(async (req) => {
     }
 
     // ============================================
+    // ENHANCE CHAPTER PROMPT ACTION
+    // ============================================
+    if (action === 'enhance_chapter_prompt') {
+      // Parse body for content and context
+      const body = await req.json().catch(() => ({})) as any;
+      const content = body.content || prompt || '';
+      const chapterTitle = body.context?.chapterTitle || 'Chapter';
+      const visualTypes = body.context?.visualTypes || ['video'];
+      
+      console.log(`[UniversalAI] Enhance chapter prompt - Title: ${chapterTitle}, Visual: ${visualTypes[0]}`);
+      
+      const enhanceSystemPrompt = `You are an expert content creator and prompt engineer. Your task is to enhance user prompts into high-quality, detailed prompts for AI content generation. Focus on:
+- Visual clarity and specificity
+- Emotional engagement
+- Professional tone and brand consistency
+- Appropriate pacing and timing cues
+- Technical details for the visual type (${visualTypes[0] || 'video'})
+
+Return a JSON object with:
+- enhancedPrompt: The improved, detailed prompt
+- suggestedScript: A brief narrator script (2-3 sentences)
+- visualGuidance: Key visual elements to include`;
+
+      const enhancePrompt = `Enhance this content prompt for a ${visualTypes[0] || 'video'} segment titled "${chapterTitle}":
+
+"${content}"
+
+Make it more detailed, engaging, and optimized for AI generation.`;
+
+      try {
+        const result = await callGemini('gemini-2.0-flash', enhancePrompt, enhanceSystemPrompt, 0.7, 2000);
+        
+        // Try to parse JSON from response
+        let enhancement;
+        try {
+          const jsonMatch = result.content.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            enhancement = JSON.parse(jsonMatch[0]);
+          } else {
+            enhancement = {
+              enhancedPrompt: result.content,
+              suggestedScript: '',
+              visualGuidance: ''
+            };
+          }
+        } catch {
+          enhancement = {
+            enhancedPrompt: result.content,
+            suggestedScript: '',
+            visualGuidance: ''
+          };
+        }
+        
+        return new Response(JSON.stringify({
+          success: true,
+          enhancement,
+          provider: 'gemini',
+          model: 'gemini-2.0-flash',
+          timestamp: new Date().toISOString(),
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      } catch (enhanceError) {
+        console.error(`[UniversalAI] Enhance prompt error:`, enhanceError);
+        // Return a fallback enhancement
+        return new Response(JSON.stringify({
+          success: true,
+          enhancement: {
+            enhancedPrompt: `Create a professional ${visualTypes[0] || 'video'} segment for "${chapterTitle}": ${content}. Focus on visual clarity, audience engagement, and brand consistency.`,
+            suggestedScript: `Welcome to ${chapterTitle}. Let's explore the key concepts together.`,
+            visualGuidance: 'Use clear visuals, smooth transitions, and professional styling.'
+          },
+          provider: 'fallback',
+          timestamp: new Date().toISOString(),
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
+    // ============================================
     // CONTENT GENERATION ACTION (Template-based)
     // ============================================
     if (action === 'generate_content') {
