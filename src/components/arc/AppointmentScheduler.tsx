@@ -11,13 +11,20 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { 
   CalendarCheck, Clock, Users, Video, 
   Plus, Search, Filter, ChevronRight,
-  Phone, MapPin, Mail
+  Phone, MapPin, Mail, CalendarDays
 } from 'lucide-react';
 import { useShows } from '@/hooks/useShows';
 import { format, addDays, startOfWeek, endOfWeek, isToday, isTomorrow } from 'date-fns';
+import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface Appointment {
   id: string;
@@ -31,10 +38,46 @@ interface Appointment {
   notes?: string;
 }
 
+const TIME_SLOTS = [
+  '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', 
+  '11:00', '11:30', '12:00', '12:30', '13:00', '13:30',
+  '14:00', '14:30', '15:00', '15:30', '16:00', '16:30',
+  '17:00', '17:30', '18:00', '18:30', '19:00', '19:30'
+];
+
+const DURATION_OPTIONS = [
+  { value: '15', label: '15 min' },
+  { value: '30', label: '30 min' },
+  { value: '45', label: '45 min' },
+  { value: '60', label: '1 hour' },
+  { value: '90', label: '1.5 hours' },
+  { value: '120', label: '2 hours' },
+];
+
+const MEETING_TYPES = [
+  { value: 'meeting', label: 'Team Meeting', icon: Users },
+  { value: 'call', label: 'Phone Call', icon: Phone },
+  { value: 'demo', label: 'Demo/Presentation', icon: Video },
+  { value: 'recording', label: 'Recording Session', icon: Video },
+];
+
 export const AppointmentScheduler: React.FC = () => {
   const [activeView, setActiveView] = useState<'upcoming' | 'today' | 'week'>('upcoming');
   const [searchQuery, setSearchQuery] = useState('');
-  const { shows, isLoading } = useShows();
+  const { shows, isLoading, createShow } = useShows();
+  
+  // Dialog state
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [formData, setFormData] = useState({
+    title: '',
+    type: 'meeting',
+    time: '09:00',
+    duration: '60',
+    attendees: '',
+    location: '',
+    notes: '',
+  });
 
   // Transform shows to appointments format
   const appointments: Appointment[] = shows
@@ -93,6 +136,58 @@ export const AppointmentScheduler: React.FC = () => {
     }
   };
 
+  const handleOpenDialog = () => {
+    setSelectedDate(new Date());
+    setFormData({
+      title: '',
+      type: 'meeting',
+      time: '09:00',
+      duration: '60',
+      attendees: '',
+      location: '',
+      notes: '',
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleCreateAppointment = async () => {
+    if (!formData.title.trim()) {
+      toast.error('Please enter a title for the appointment');
+      return;
+    }
+    if (!selectedDate) {
+      toast.error('Please select a date');
+      return;
+    }
+
+    // Create scheduled date with time
+    const [hours, minutes] = formData.time.split(':').map(Number);
+    const scheduledDate = new Date(selectedDate);
+    scheduledDate.setHours(hours, minutes, 0, 0);
+
+    try {
+      // Build description with location and duration info
+      const descriptionParts: string[] = [];
+      if (formData.notes) descriptionParts.push(formData.notes);
+      if (formData.location) descriptionParts.push(`📍 Location: ${formData.location}`);
+      descriptionParts.push(`⏱️ Duration: ${formData.duration} minutes`);
+
+      await createShow({
+        title: formData.title,
+        description: descriptionParts.join('\n\n') || undefined,
+        show_type: formData.type === 'call' ? 'discovery_call' : formData.type === 'demo' ? 'genie_studio_full' : 'sales_meeting',
+        event_category: 'business_meeting',
+        scheduled_date: scheduledDate.toISOString(),
+      });
+      
+      toast.success('Appointment scheduled successfully!');
+      setIsDialogOpen(false);
+    } catch (error) {
+      toast.error('Failed to create appointment');
+      console.error('Error creating appointment:', error);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -106,7 +201,7 @@ export const AppointmentScheduler: React.FC = () => {
             Manage meetings, demos, and production schedules
           </p>
         </div>
-        <Button className="gap-2">
+        <Button className="gap-2" onClick={handleOpenDialog}>
           <Plus className="w-4 h-4" />
           New Appointment
         </Button>
@@ -204,7 +299,7 @@ export const AppointmentScheduler: React.FC = () => {
               <p className="text-muted-foreground mb-4">
                 {searchQuery ? 'Try adjusting your search' : 'Schedule your first appointment'}
               </p>
-              <Button variant="outline" className="gap-2">
+              <Button variant="outline" className="gap-2" onClick={handleOpenDialog}>
                 <Plus className="w-4 h-4" />
                 Add Appointment
               </Button>
@@ -248,6 +343,149 @@ export const AppointmentScheduler: React.FC = () => {
           ))
         )}
       </div>
+
+      {/* New Appointment Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CalendarDays className="h-5 w-5 text-primary" />
+              Schedule New Appointment
+            </DialogTitle>
+            <DialogDescription>
+              Create a new meeting, call, or demo session.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {/* Title */}
+            <div className="space-y-2">
+              <Label htmlFor="title">Title *</Label>
+              <Input
+                id="title"
+                placeholder="e.g., Weekly Team Sync"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              />
+            </div>
+
+            {/* Type */}
+            <div className="space-y-2">
+              <Label>Type</Label>
+              <Select value={formData.type} onValueChange={(v) => setFormData({ ...formData, type: v })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {MEETING_TYPES.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      <div className="flex items-center gap-2">
+                        <type.icon className="w-4 h-4" />
+                        {type.label}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Date */}
+            <div className="space-y-2">
+              <Label>Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !selectedDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarDays className="mr-2 h-4 w-4" />
+                    {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={setSelectedDate}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Time & Duration */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Time</Label>
+                <Select value={formData.time} onValueChange={(v) => setFormData({ ...formData, time: v })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[200px]">
+                    {TIME_SLOTS.map((time) => (
+                      <SelectItem key={time} value={time}>
+                        {time}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Duration</Label>
+                <Select value={formData.duration} onValueChange={(v) => setFormData({ ...formData, duration: v })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DURATION_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Location */}
+            <div className="space-y-2">
+              <Label htmlFor="location">Location / Meeting Link</Label>
+              <Input
+                id="location"
+                placeholder="e.g., Zoom link or room name"
+                value={formData.location}
+                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+              />
+            </div>
+
+            {/* Notes */}
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes</Label>
+              <Textarea
+                id="notes"
+                placeholder="Add any additional details..."
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                rows={3}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateAppointment}>
+              <Plus className="h-4 w-4 mr-1" />
+              Schedule Appointment
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
