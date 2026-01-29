@@ -187,7 +187,16 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
 
           {/* Library Tab */}
           {activeTab === 'library' && (
-            <ContentLibrary />
+            <ContentLibrary 
+              onCreateNew={() => {
+                setActiveTab('composition');
+                setSearchParams({ tab: 'composition' });
+              }}
+              onEdit={(compositionId) => {
+                setActiveTab('composition');
+                setSearchParams({ tab: 'composition', show: compositionId });
+              }}
+            />
           )}
 
           {/* Composition Tab */}
