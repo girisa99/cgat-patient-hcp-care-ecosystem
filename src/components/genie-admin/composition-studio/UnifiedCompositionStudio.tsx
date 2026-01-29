@@ -222,6 +222,9 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
   const [isRegeneratingChapter, setIsRegeneratingChapter] = useState(false);
   const [regenerationProgress, setRegenerationProgress] = useState(0);
   
+  // Thumbnail manager dialog
+  const [showThumbnailManager, setShowThumbnailManager] = useState(false);
+  
   // Content metadata (thumbnails, titles)
   const [contentMetadata, setContentMetadata] = useState<ContentMetadata>({
     title: '',
@@ -1251,19 +1254,30 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
               <ScrollArea className="h-[500px] pr-4">
                 <div className="space-y-3">
                   {chapters.map((chapter) => (
-                    <ChapterEditor
-                      key={chapter.id}
-                      chapter={chapter}
-                      languages={project.targetLanguages}
-                      onUpdate={updateChapter}
-                      onDelete={() => deleteChapter(chapter.id)}
-                      onDuplicate={() => duplicateChapter(chapter.id)}
-                      onPreview={(lang) => generatePreview(chapter.id, lang)}
-                      isExpanded={expandedChapter === chapter.id}
-                      onToggleExpand={() => setExpandedChapter(
-                        expandedChapter === chapter.id ? null : chapter.id
-                      )}
-                    />
+                    <div key={chapter.id} className="relative group">
+                      <ChapterEditor
+                        chapter={chapter}
+                        languages={project.targetLanguages}
+                        onUpdate={updateChapter}
+                        onDelete={() => deleteChapter(chapter.id)}
+                        onDuplicate={() => duplicateChapter(chapter.id)}
+                        onPreview={(lang) => generatePreview(chapter.id, lang)}
+                        isExpanded={expandedChapter === chapter.id}
+                        onToggleExpand={() => setExpandedChapter(
+                          expandedChapter === chapter.id ? null : chapter.id
+                        )}
+                      />
+                      {/* Regeneration Quick Action */}
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="absolute top-2 right-16 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => setSelectedChapterForRegen(chapter.id)}
+                      >
+                        <Wand2 className="w-3 h-3 mr-1" />
+                        Selective Regen
+                      </Button>
+                    </div>
                   ))}
                 </div>
               </ScrollArea>
@@ -1283,15 +1297,48 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
 
         {/* Step 4: Preview */}
         {currentStep === 'preview' && (
-          <PreviewPanel
-            project={project}
-            chapters={chapters}
-            onGeneratePreview={generatePreview}
-            onGenerateAll={generateAllPreviews}
-            isGenerating={isGenerating}
-            generationProgress={generationProgress}
-            generatedContent={generatedContent}
-          />
+          <div className="space-y-6">
+            <PreviewPanel
+              project={project}
+              chapters={chapters}
+              onGeneratePreview={generatePreview}
+              onGenerateAll={generateAllPreviews}
+              isGenerating={isGenerating}
+              generationProgress={generationProgress}
+              generatedContent={generatedContent}
+            />
+            
+            {/* Thumbnail & Metadata Action */}
+            <Card className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <FileVideo className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <span className="font-medium">Thumbnail & Metadata</span>
+                    <p className="text-sm text-muted-foreground">
+                      Generate thumbnails, edit titles, and manage SEO metadata
+                    </p>
+                  </div>
+                </div>
+                <Button onClick={() => setShowThumbnailManager(true)}>
+                  <Wand2 className="w-4 h-4 mr-2" />
+                  Manage Thumbnails
+                </Button>
+              </div>
+              {contentMetadata.title && (
+                <div className="mt-3 pt-3 border-t flex items-center gap-4">
+                  <Badge variant="outline">Title: {contentMetadata.title}</Badge>
+                  {Object.keys(contentMetadata.thumbnails).length > 0 && (
+                    <Badge variant="secondary">
+                      {Object.keys(contentMetadata.thumbnails).length} Thumbnails Generated
+                    </Badge>
+                  )}
+                </div>
+              )}
+            </Card>
+          </div>
         )}
 
         {/* Step 5: Publish */}
@@ -1595,6 +1642,68 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
         existingChapters={chapters}
         primaryLanguage={project.primaryLanguage}
       />
+      
+      {/* Chapter Regeneration Panel Dialog */}
+      {selectedChapterForRegen && (
+        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm">
+          <div className="fixed inset-x-4 inset-y-10 md:inset-x-20 md:inset-y-16 bg-background border rounded-xl shadow-2xl flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <Wand2 className="w-5 h-5" />
+                Selective Regeneration - {chapters.find(c => c.id === selectedChapterForRegen)?.title}
+              </h2>
+              <Button variant="ghost" size="sm" onClick={() => setSelectedChapterForRegen(null)}>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back
+              </Button>
+            </div>
+            <div className="flex-1 overflow-auto p-4">
+              <ChapterRegenerationPanel
+                chapter={chapters.find(c => c.id === selectedChapterForRegen)!}
+                language={project.primaryLanguage}
+                onRegenerate={(target, options) => 
+                  handleChapterRegeneration(selectedChapterForRegen, project.primaryLanguage, target, options)
+                }
+                isRegenerating={isRegeneratingChapter}
+                progress={regenerationProgress}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Thumbnail Manager Dialog - accessible from Preview/Publish steps */}
+      {showThumbnailManager && (
+        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm">
+          <div className="fixed inset-4 md:inset-10 bg-background border rounded-xl shadow-2xl flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <FileVideo className="w-5 h-5" />
+                Thumbnail & Metadata Manager
+              </h2>
+              <Button variant="ghost" size="sm" onClick={() => setShowThumbnailManager(false)}>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back
+              </Button>
+            </div>
+            <div className="flex-1 overflow-auto p-4">
+              <ThumbnailManager
+                projectId={project.id}
+                projectName={project.name}
+                projectDescription={project.description}
+                chapters={chapters.map(ch => ({ 
+                  title: ch.title, 
+                  type: ch.visual?.type || 'video', 
+                  duration: ch.duration 
+                }))}
+                languages={project.targetLanguages}
+                onMetadataUpdate={setContentMetadata}
+                initialMetadata={contentMetadata}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
