@@ -402,9 +402,21 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
+                        {/* Website Destinations */}
                         <SelectItem value="landing_page">Landing Page</SelectItem>
+                        <SelectItem value="website">Website / Blog</SelectItem>
+                        {/* Social Media Destinations */}
+                        <SelectItem value="youtube">YouTube</SelectItem>
+                        <SelectItem value="linkedin">LinkedIn (Personal)</SelectItem>
+                        <SelectItem value="linkedin_company">LinkedIn (Company)</SelectItem>
+                        <SelectItem value="facebook">Facebook</SelectItem>
+                        <SelectItem value="instagram">Instagram</SelectItem>
+                        <SelectItem value="tiktok">TikTok</SelectItem>
+                        <SelectItem value="twitter">X (Twitter)</SelectItem>
+                        {/* Other */}
                         <SelectItem value="download">Download</SelectItem>
                         <SelectItem value="storage">Cloud Storage</SelectItem>
+                        <SelectItem value="multi_platform">Multi-Platform (Schedule All)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -423,8 +435,28 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
                           <SelectItem value="product_demo">Product Demo</SelectItem>
                           <SelectItem value="testimonials">Testimonials</SelectItem>
                           <SelectItem value="tutorial">Tutorial</SelectItem>
+                          <SelectItem value="feature_highlight">Feature Highlight</SelectItem>
+                          <SelectItem value="use_case_demo">Use Case Demo</SelectItem>
                         </SelectContent>
                       </Select>
+                    </div>
+                  )}
+                  {['youtube', 'linkedin', 'linkedin_company', 'facebook', 'instagram', 'tiktok', 'twitter'].includes(project.destination) && (
+                    <div className="p-3 rounded-lg bg-primary/10 border border-primary/20 text-sm">
+                      <p className="font-medium text-primary">Social Media Destination</p>
+                      <p className="text-muted-foreground mt-1">
+                        Content will be optimized for {project.destination === 'twitter' ? 'X (Twitter)' : project.destination} 
+                        and queued in the scheduler for distribution.
+                      </p>
+                    </div>
+                  )}
+                  {project.destination === 'multi_platform' && (
+                    <div className="p-3 rounded-lg bg-accent/10 border border-accent/20 text-sm">
+                      <p className="font-medium text-accent-foreground">Multi-Platform Distribution</p>
+                      <p className="text-muted-foreground mt-1">
+                        Content will be scheduled for distribution across all connected platforms 
+                        (YouTube, LinkedIn, Facebook, TikTok, X, Instagram, and website).
+                      </p>
                     </div>
                   )}
                 </div>

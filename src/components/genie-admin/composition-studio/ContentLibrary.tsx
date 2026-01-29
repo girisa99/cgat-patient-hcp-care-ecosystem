@@ -25,7 +25,8 @@ import {
   MoreVertical, Play, Download, Share2, Globe,
   Video, User, Box, Layers, Pause,
   Clock, CheckCircle, Loader2, Calendar,
-  MapPin, Languages, ExternalLink, Volume2, VolumeX
+  MapPin, Languages, ExternalLink, Volume2, VolumeX,
+  AlertCircle, AlertTriangle
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -86,7 +87,38 @@ const getElementIcon = (type: CompositionElementType) => {
   }
 };
 
+// Detect seed/sample data vs real AI-generated content
+const isSeedData = (item: ContentItem): boolean => {
+  // Sample video URLs from Google or stock images from Unsplash indicate seed data
+  const sampleVideoPatterns = [
+    'gtv-videos-bucket',
+    'sample/',
+    'BigBuckBunny',
+    'ElephantsDream',
+    'Sintel',
+    'ForBigger',
+  ];
+  const sampleImagePatterns = [
+    'unsplash.com',
+    'placeholder',
+    'picsum.photos',
+  ];
+  
+  const hasSampleVideo = sampleVideoPatterns.some(p => item.video_url?.includes(p));
+  const hasSampleImage = sampleImagePatterns.some(p => item.thumbnail_url?.includes(p));
+  
+  return hasSampleVideo || hasSampleImage;
+};
+
 const getStatusBadge = (item: ContentItem) => {
+  // Show seed data indicator first
+  if (isSeedData(item)) {
+    return (
+      <Badge className="bg-amber-500/20 border-amber-500/30 text-amber-600">
+        <AlertCircle className="w-3 h-3 mr-1" /> Sample Data
+      </Badge>
+    );
+  }
   if (item.published_at) {
     return (
       <Badge className="bg-emerald-500/20 border-emerald-500/30 text-emerald-600">
@@ -240,15 +272,63 @@ export const ContentLibrary: React.FC<ContentLibraryProps> = ({
   // Stats
   const publishedCount = content.filter(c => c.published_at).length;
   const activeCount = content.filter(c => c.is_active).length;
+  const sampleDataCount = content.filter(c => isSeedData(c)).length;
+
+  // Delete all sample data
+  const handleDeleteSampleData = async () => {
+    const sampleItems = content.filter(c => isSeedData(c));
+    if (sampleItems.length === 0) {
+      toast.info('No sample data to delete');
+      return;
+    }
+    
+    try {
+      const ids = sampleItems.map(c => c.id);
+      const { error } = await supabase
+        .from('landing_page_videos')
+        .delete()
+        .in('id', ids);
+
+      if (error) throw error;
+
+      setContent(prev => prev.filter(c => !isSeedData(c)));
+      toast.success(`Deleted ${sampleItems.length} sample items`);
+    } catch (err) {
+      console.error('Error deleting sample data:', err);
+      toast.error('Failed to delete sample data');
+    }
+  };
 
   return (
     <div className="space-y-4">
+      {/* Sample Data Warning */}
+      {sampleDataCount > 0 && (
+        <div className="flex items-center justify-between p-4 rounded-lg bg-amber-500/10 border border-amber-500/30">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="w-5 h-5 text-amber-600" />
+            <div>
+              <p className="font-medium text-amber-800 dark:text-amber-300">
+                {sampleDataCount} sample item{sampleDataCount > 1 ? 's' : ''} detected
+              </p>
+              <p className="text-sm text-amber-700/80 dark:text-amber-400/80">
+                These are placeholder videos with stock images (not AI-generated content)
+              </p>
+            </div>
+          </div>
+          <Button variant="outline" size="sm" onClick={handleDeleteSampleData}>
+            <Trash2 className="w-4 h-4 mr-2" />
+            Remove Sample Data
+          </Button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold">Content Library</h3>
           <p className="text-sm text-muted-foreground">
             {content.length} items · {publishedCount} published · {activeCount} active
+            {sampleDataCount > 0 && ` · ${sampleDataCount} sample`}
           </p>
         </div>
         <Button onClick={onCreateNew}>

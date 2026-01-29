@@ -48,7 +48,8 @@ export type PublishingDestination =
   | 'tiktok'           // TikTok
   | 'twitter'          // Twitter/X
   | 'download'         // Direct download
-  | 'storage';         // Cloud storage only
+  | 'storage'          // Cloud storage only
+  | 'multi_platform';  // Multi-platform distribution (all connected)
 
 export interface PublishingPlatformConfig {
   id: PublishingDestination;
@@ -79,6 +80,7 @@ export const PUBLISHING_PLATFORMS: PublishingPlatformConfig[] = [
   // Local/storage
   { id: 'download', label: 'Download', icon: 'Download', supportsVideo: true, supportedAspectRatios: ['16:9', '9:16', '1:1', '4:3'], requiresAuth: false, category: 'local' },
   { id: 'storage', label: 'Cloud Storage', icon: 'Cloud', supportsVideo: true, supportedAspectRatios: ['16:9', '9:16', '1:1', '4:3'], requiresAuth: false, category: 'local' },
+  { id: 'multi_platform', label: 'Multi-Platform', icon: 'Grid', supportsVideo: true, supportedAspectRatios: ['16:9', '9:16', '1:1'], requiresAuth: true, category: 'social' },
 ];
 
 export interface ChapterVoiceover {
