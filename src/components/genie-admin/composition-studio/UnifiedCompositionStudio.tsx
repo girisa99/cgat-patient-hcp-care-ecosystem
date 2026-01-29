@@ -462,30 +462,91 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
                 </div>
               </div>
 
-              {/* Quick Start Templates */}
+              {/* Quick Start Templates with Preview */}
               <Separator />
               <div className="space-y-3">
-                <Label>Quick Start with Template</Label>
+                <div className="flex items-center justify-between">
+                  <Label>Quick Start with Template</Label>
+                  <span className="text-xs text-muted-foreground">Hover to preview chapter breakdown</span>
+                </div>
                 <div className="grid grid-cols-4 gap-3">
                   {[
-                    { id: 'hero', label: 'Hero Video', icon: <Sparkles className="w-5 h-5" />, desc: '3 chapters, 60s' },
-                    { id: 'product', label: 'Product Demo', icon: <FileVideo className="w-5 h-5" />, desc: '4 chapters, 130s' },
-                    { id: 'tutorial', label: 'Tutorial', icon: <Video className="w-5 h-5" />, desc: '4 chapters, 180s' },
-                    { id: 'testimonial', label: 'Testimonials', icon: <User className="w-5 h-5" />, desc: '3 chapters, 120s' },
+                    { 
+                      id: 'hero', 
+                      label: 'Hero Video', 
+                      icon: <Sparkles className="w-5 h-5" />, 
+                      desc: '3 chapters, 60s',
+                      chapters: [
+                        { title: 'Opening Hook', type: 'animation', duration: 15 },
+                        { title: 'Product Reveal', type: '3d', duration: 30 },
+                        { title: 'Call to Action', type: 'video', duration: 15 },
+                      ]
+                    },
+                    { 
+                      id: 'product', 
+                      label: 'Product Demo', 
+                      icon: <FileVideo className="w-5 h-5" />, 
+                      desc: '4 chapters, 130s',
+                      chapters: [
+                        { title: 'Introduction', type: 'avatar', duration: 20 },
+                        { title: 'Feature 1', type: 'video', duration: 45 },
+                        { title: 'Feature 2', type: '3d', duration: 45 },
+                        { title: 'Closing', type: 'avatar', duration: 20 },
+                      ]
+                    },
+                    { 
+                      id: 'tutorial', 
+                      label: 'Tutorial', 
+                      icon: <Video className="w-5 h-5" />, 
+                      desc: '4 chapters, 180s',
+                      chapters: [
+                        { title: 'Overview', type: 'avatar', duration: 30 },
+                        { title: 'Step 1', type: 'screen_recording', duration: 60 },
+                        { title: 'Step 2', type: 'screen_recording', duration: 60 },
+                        { title: 'Summary', type: 'avatar', duration: 30 },
+                      ]
+                    },
+                    { 
+                      id: 'testimonial', 
+                      label: 'Testimonials', 
+                      icon: <User className="w-5 h-5" />, 
+                      desc: '3 chapters, 120s',
+                      chapters: [
+                        { title: 'Testimonial 1', type: 'avatar', duration: 45 },
+                        { title: 'Testimonial 2', type: 'avatar', duration: 45 },
+                        { title: 'Results', type: 'animation', duration: 30 },
+                      ]
+                    },
                   ].map((t) => (
-                    <Button
-                      key={t.id}
-                      variant="outline"
-                      className="h-auto py-4 flex flex-col gap-2"
-                      onClick={() => {
-                        loadTemplate(t.id as any);
-                        setProject(p => ({ ...p, name: p.name || t.label }));
-                      }}
-                    >
-                      {t.icon}
-                      <span className="font-medium">{t.label}</span>
-                      <span className="text-xs text-muted-foreground">{t.desc}</span>
-                    </Button>
+                    <div key={t.id} className="relative group">
+                      <Button
+                        variant="outline"
+                        className="h-auto py-4 flex flex-col gap-2 w-full"
+                        onClick={() => {
+                          loadTemplate(t.id as any);
+                          setProject(p => ({ ...p, name: p.name || t.label }));
+                        }}
+                      >
+                        {t.icon}
+                        <span className="font-medium">{t.label}</span>
+                        <span className="text-xs text-muted-foreground">{t.desc}</span>
+                      </Button>
+                      {/* Hover Preview */}
+                      <div className="absolute left-0 right-0 top-full mt-2 p-3 rounded-lg border bg-card shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">
+                        <div className="text-xs font-medium mb-2">Chapter Breakdown:</div>
+                        <div className="space-y-1.5">
+                          {t.chapters.map((ch, i) => (
+                            <div key={i} className="flex items-center gap-2 text-xs">
+                              <Badge variant="secondary" className="text-[10px] px-1">
+                                {ch.type === 'avatar' ? '👤' : ch.type === '3d' ? '📦' : ch.type === 'video' ? '🎬' : ch.type === 'animation' ? '✨' : '📹'}
+                              </Badge>
+                              <span className="flex-1 truncate">{ch.title}</span>
+                              <span className="text-muted-foreground">{ch.duration}s</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -698,14 +759,14 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
         {currentStep === 'publish' && (
           <Card>
             <CardHeader>
-              <CardTitle>Ready to Publish</CardTitle>
+              <CardTitle>Review & Publish</CardTitle>
               <CardDescription>
-                Review your composition and publish to {project.destination.replace('_', ' ')}
+                Review your composition before publishing to {project.destination.replace('_', ' ')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Summary */}
-              <div className="grid grid-cols-3 gap-4">
+              {/* Summary Stats */}
+              <div className="grid grid-cols-4 gap-4">
                 <Card>
                   <CardContent className="pt-4">
                     <div className="text-2xl font-bold">{chapters.length}</div>
@@ -724,9 +785,45 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
                     <div className="text-sm text-muted-foreground">Total Duration</div>
                   </CardContent>
                 </Card>
+                <Card>
+                  <CardContent className="pt-4">
+                    <div className="text-2xl font-bold">{project.destination === 'multi_platform' ? '7+' : '1'}</div>
+                    <div className="text-sm text-muted-foreground">Destinations</div>
+                  </CardContent>
+                </Card>
               </div>
 
-              {/* Checklist */}
+              {/* Chapter Summary */}
+              <div className="space-y-2">
+                <Label>Chapter Summary</Label>
+                <div className="rounded-lg border divide-y">
+                  {chapters.map((ch, i) => (
+                    <div key={ch.id} className="flex items-center gap-3 p-3">
+                      <Badge variant="outline" className="w-8 h-8 flex items-center justify-center rounded-full">
+                        {i + 1}
+                      </Badge>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium truncate">{ch.title}</div>
+                        <div className="text-xs text-muted-foreground flex items-center gap-2">
+                          <span className="capitalize">{ch.visual.type}</span>
+                          <span>•</span>
+                          <span>{ch.duration}s</span>
+                          <span>•</span>
+                          <span className="capitalize">{ch.voiceover.type === 'none' ? 'No audio' : ch.voiceover.type}</span>
+                        </div>
+                      </div>
+                      <Badge 
+                        variant={ch.status === 'complete' ? 'default' : ch.status === 'generating' ? 'secondary' : 'outline'}
+                        className={ch.status === 'complete' ? 'bg-emerald-500' : ''}
+                      >
+                        {ch.status === 'complete' ? '✓ Ready' : ch.status === 'generating' ? 'Generating...' : 'Draft'}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Pre-publish Checklist */}
               <div className="space-y-2">
                 <Label>Pre-publish Checklist</Label>
                 <div className="space-y-2">
@@ -755,29 +852,72 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
 
               <Separator />
 
-              <div className="flex justify-end">
-                <Button 
-                  size="lg"
-                  onClick={handlePublish}
-                  disabled={isGenerating || project.status === 'published'}
-                >
-                  {isGenerating ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Publishing...
-                    </>
-                  ) : project.status === 'published' ? (
-                    <>
-                      <Check className="w-4 h-4 mr-2" />
-                      Published
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4 mr-2" />
-                      Publish to {project.destination.replace('_', ' ')}
-                    </>
-                  )}
-                </Button>
+              {/* Publish Actions */}
+              <div className="space-y-3">
+                <Label>Publish Action</Label>
+                <div className="grid grid-cols-3 gap-3">
+                  <Button 
+                    variant="outline"
+                    className="h-auto py-4 flex flex-col gap-2"
+                    onClick={() => {
+                      setProject(p => ({ ...p, status: 'draft' }));
+                      toast.success('Saved as draft');
+                    }}
+                    disabled={isGenerating}
+                  >
+                    <Save className="w-5 h-5" />
+                    <span className="font-medium">Save Draft</span>
+                    <span className="text-xs text-muted-foreground">Continue later</span>
+                  </Button>
+                  
+                  <Button 
+                    variant="outline"
+                    className="h-auto py-4 flex flex-col gap-2 border-primary/50"
+                    onClick={() => {
+                      setProject(p => ({ ...p, status: 'ready' }));
+                      toast.success('Sent for review - will appear in scheduler for approval');
+                    }}
+                    disabled={isGenerating}
+                  >
+                    <Eye className="w-5 h-5 text-primary" />
+                    <span className="font-medium">Send for Review</span>
+                    <span className="text-xs text-muted-foreground">Queue in scheduler</span>
+                  </Button>
+                  
+                  <Button 
+                    className="h-auto py-4 flex flex-col gap-2"
+                    onClick={handlePublish}
+                    disabled={isGenerating || project.status === 'published'}
+                  >
+                    {isGenerating ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span className="font-medium">Publishing...</span>
+                      </>
+                    ) : project.status === 'published' ? (
+                      <>
+                        <Check className="w-5 h-5" />
+                        <span className="font-medium">Published</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-5 h-5" />
+                        <span className="font-medium">Approve & Publish</span>
+                        <span className="text-xs opacity-80">Go live immediately</span>
+                      </>
+                    )}
+                  </Button>
+                </div>
+                
+                {project.destination === 'multi_platform' && (
+                  <div className="p-3 rounded-lg bg-accent/10 border border-accent/20 text-sm">
+                    <p className="font-medium">Multi-Platform Publishing</p>
+                    <p className="text-muted-foreground mt-1">
+                      Content will be distributed to: YouTube, LinkedIn, Facebook, Instagram, TikTok, X, and your website. 
+                      Each platform version will be auto-optimized for that platform's requirements.
+                    </p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
