@@ -11,5 +11,13 @@ export { TemplatePreviewDialog, TEMPLATE_DEFINITIONS, LANDING_PAGE_SECTIONS } fr
 export { ScheduledContentManager } from './ScheduledContentManager';
 export { TemplateLandingMapper } from './TemplateLandingMapper';
 
+// New: Category-based element management
+export { ElementCategoryTabs, COMBINATION_PRESETS, DIALECT_REGIONS } from './ElementCategoryTabs';
+export type { CategoryElement, ElementCategory, ElementConfig, DialectConfig, CombinationType } from './ElementCategoryTabs';
+
+// New: Multi-stage review queue
+export { ContentReviewQueue, getTargetRegionsFromLanguages } from './ContentReviewQueue';
+export type { ReviewItem, ReviewStatus } from './ContentReviewQueue';
+
 export * from './types';
 export type { LandingPageSection } from './TemplatePreviewDialog';
