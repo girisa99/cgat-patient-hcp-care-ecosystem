@@ -779,8 +779,8 @@ export function ProductionCalendar({
     </TooltipProvider>
 
     {/* Day Schedule Dialog - OUTSIDE TooltipProvider for proper portal rendering */}
-    <Dialog open={isScheduleDialogOpen} onOpenChange={setIsScheduleDialogOpen}>
-      <DialogContent className="sm:max-w-lg z-[9999]">
+    <Dialog open={isScheduleDialogOpen} onOpenChange={setIsScheduleDialogOpen} modal={true}>
+      <DialogContent className="sm:max-w-lg" style={{ zIndex: 99999 }}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CalendarDays className="h-5 w-5 text-primary" />
@@ -834,7 +834,7 @@ export function ProductionCalendar({
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="max-h-[200px] z-[10000]">
+                <SelectContent className="max-h-[200px]" style={{ zIndex: 100000 }}>
                   {TIME_SLOTS.map(time => {
                     const available = isSlotAvailable(time);
                     return (
@@ -857,7 +857,7 @@ export function ProductionCalendar({
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="z-[10000]">
+                <SelectContent style={{ zIndex: 100000 }}>
                   {DURATION_OPTIONS.map(opt => (
                     <SelectItem key={opt.value} value={opt.value}>
                       {opt.label}
@@ -900,8 +900,8 @@ export function ProductionCalendar({
     </Dialog>
 
     {/* Show Details Dialog - OUTSIDE TooltipProvider for proper portal rendering */}
-    <Dialog open={!!selectedShow} onOpenChange={() => setSelectedShow(null)}>
-      <DialogContent className="max-w-lg z-[9999]">
+    <Dialog open={!!selectedShow} onOpenChange={() => setSelectedShow(null)} modal={true}>
+      <DialogContent className="max-w-lg" style={{ zIndex: 99999 }}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {selectedShow && getShowTypeIcon(selectedShow.show_type)}

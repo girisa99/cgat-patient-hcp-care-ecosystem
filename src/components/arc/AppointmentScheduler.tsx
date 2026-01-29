@@ -347,8 +347,8 @@ export const AppointmentScheduler: React.FC = () => {
     </div>
 
     {/* New Appointment Dialog - OUTSIDE main div for proper portal rendering */}
-    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-      <DialogContent className="sm:max-w-lg z-[9999]">
+    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen} modal={true}>
+      <DialogContent className="sm:max-w-lg" style={{ zIndex: 99999 }}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CalendarDays className="h-5 w-5 text-primary" />
