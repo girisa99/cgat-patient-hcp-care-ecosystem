@@ -19,15 +19,39 @@ import {
   type IndustryTemplateConfig 
 } from '@/config/content-generation-pipeline';
 
+// Full visual types covering all 21 pipeline categories
+export type VisualType = 
+  // Core Video (Vibe)
+  | 'avatar' | 'video' | 'animation' | 'static' | 'screen_recording'
+  // Extended Video
+  | 'talking_head' | 'podcast' | 'reel' | 'shorts' | 'story'
+  // 3D & Immersive (Deck)
+  | '3d' | 'product_showcase' | 'vr' | '360_video' | 'immersive'
+  // Presentation (Deck)
+  | 'ppt' | 'slides' | 'deck' | 'infographic'
+  // Audio (Mind)
+  | 'tts' | 'music' | 'sfx' | 'dubbed'
+  // Distribution (Cast)
+  | 'thumbnail' | 'social' | 'kinetic_text'
+  // Custom
+  | 'custom';
+
 export interface GenerationRequest {
   templateId: string;
   chapterIndex: number;
   language: string;
   outputFormat: OutputFormat;
   scriptContent?: string;
-  visualType: 'avatar' | '3d' | 'video' | 'animation' | 'static' | 'screen_recording';
+  visualType: VisualType;
   duration: number;
   userTier?: string;
+  // Extended options for specific pipelines
+  pipelineCategory?: string;
+  regenerationTarget?: string;
+  preserveAudio?: boolean;
+  preserveVisual?: boolean;
+  voiceProvider?: string;
+  targetLanguages?: string[];
 }
 
 export interface GenerationResult {
@@ -372,71 +396,178 @@ Requirements:
 
   /**
    * Generate a content placeholder with actual generated data
+   * Extended to cover all 21 pipeline categories
    */
   private generateContentPlaceholder(chapterType: string, language: string, script?: string): string {
-    // Create a data URL for an SVG placeholder that shows content type and language
-    const colors: Record<string, { bg: string; fg: string }> = {
-      avatar: { bg: '6366f1', fg: 'ffffff' },
-      '3d': { bg: '8b5cf6', fg: 'ffffff' },
-      video: { bg: 'ec4899', fg: 'ffffff' },
-      animation: { bg: 'f59e0b', fg: '1f2937' },
-      static: { bg: '10b981', fg: 'ffffff' },
-      screen_recording: { bg: '3b82f6', fg: 'ffffff' }
+    // Full color mapping for all visual types
+    const colors: Record<string, { bg: string; fg: string; label: string }> = {
+      // Core Video (Vibe)
+      avatar: { bg: '6366f1', fg: 'ffffff', label: 'Avatar' },
+      video: { bg: 'ec4899', fg: 'ffffff', label: 'Video' },
+      animation: { bg: 'f59e0b', fg: '1f2937', label: 'Animation' },
+      static: { bg: '10b981', fg: 'ffffff', label: 'Static' },
+      screen_recording: { bg: '3b82f6', fg: 'ffffff', label: 'Screen Recording' },
+      talking_head: { bg: '8b5cf6', fg: 'ffffff', label: 'Talking Head' },
+      podcast: { bg: '14b8a6', fg: 'ffffff', label: 'Podcast' },
+      reel: { bg: 'f43f5e', fg: 'ffffff', label: 'Reel' },
+      shorts: { bg: 'ef4444', fg: 'ffffff', label: 'Shorts' },
+      story: { bg: 'a855f7', fg: 'ffffff', label: 'Story' },
+      // 3D & Immersive (Deck)
+      '3d': { bg: '8b5cf6', fg: 'ffffff', label: '3D Model' },
+      product_showcase: { bg: '7c3aed', fg: 'ffffff', label: '3D Showcase' },
+      vr: { bg: '6d28d9', fg: 'ffffff', label: 'VR Scene' },
+      '360_video': { bg: '5b21b6', fg: 'ffffff', label: '360° Video' },
+      immersive: { bg: '4c1d95', fg: 'ffffff', label: 'Immersive' },
+      // Presentation (Deck)
+      ppt: { bg: 'ea580c', fg: 'ffffff', label: 'PowerPoint' },
+      slides: { bg: 'f97316', fg: 'ffffff', label: 'Slides' },
+      deck: { bg: 'fb923c', fg: '1f2937', label: 'Deck' },
+      infographic: { bg: '0ea5e9', fg: 'ffffff', label: 'Infographic' },
+      // Audio (Mind)
+      tts: { bg: '22c55e', fg: 'ffffff', label: 'TTS Audio' },
+      music: { bg: '16a34a', fg: 'ffffff', label: 'Music' },
+      sfx: { bg: '15803d', fg: 'ffffff', label: 'Sound FX' },
+      dubbed: { bg: '166534', fg: 'ffffff', label: 'Dubbed' },
+      // Distribution (Cast)
+      thumbnail: { bg: '0891b2', fg: 'ffffff', label: 'Thumbnail' },
+      social: { bg: '0e7490', fg: 'ffffff', label: 'Social Post' },
+      kinetic_text: { bg: 'fbbf24', fg: '1f2937', label: 'Kinetic Text' },
+      custom: { bg: '64748b', fg: 'ffffff', label: 'Custom' },
     };
     
-    const color = colors[chapterType] || colors.video;
-    const label = `${chapterType.toUpperCase()} - ${language.toUpperCase()}`;
-    const preview = script ? script.substring(0, 50) + '...' : 'Content Generated';
+    const colorConfig = colors[chapterType] || colors.video;
+    const label = `${colorConfig.label} - ${language.toUpperCase()}`;
+    const preview = script ? script.substring(0, 40) + '...' : 'Content Generated';
     
-    return `https://placehold.co/1920x1080/${color.bg}/${color.fg}?text=${encodeURIComponent(label)}%0A${encodeURIComponent(preview)}`;
+    return `https://placehold.co/1920x1080/${colorConfig.bg}/${colorConfig.fg}?text=${encodeURIComponent(label)}%0A${encodeURIComponent(preview)}`;
   }
 
   /**
    * Select the best AI provider for the content type
+   * Extended routing for all 21 pipeline categories
    */
-  private selectProvider(chapterType: string): 'openai' | 'claude' | 'gemini' {
-    switch (chapterType) {
-      case 'avatar':
-        return 'gemini'; // Best for avatar generation prompts
-      case '3d':
-        return 'gemini'; // Good for 3D scene descriptions
-      case 'video':
-      case 'animation':
-        return 'gemini'; // Gemini for video/animation prompts
-      case 'static':
-        return 'openai'; // OpenAI for static image prompts
-      default:
-        return 'gemini';
-    }
+  private selectProvider(chapterType: string): 'openai' | 'claude' | 'gemini' | 'modelslab' | 'elevenlabs' {
+    // Map content types to optimal providers
+    const providerMap: Record<string, 'openai' | 'claude' | 'gemini' | 'modelslab' | 'elevenlabs'> = {
+      // Avatar & Video - Gemini for prompts, execution via dedicated services
+      avatar: 'gemini',
+      talking_head: 'gemini',
+      video: 'gemini',
+      animation: 'gemini',
+      reel: 'gemini',
+      shorts: 'gemini',
+      story: 'gemini',
+      screen_recording: 'gemini',
+      // 3D & Immersive - ModelsLab
+      '3d': 'modelslab',
+      product_showcase: 'modelslab',
+      vr: 'modelslab',
+      '360_video': 'modelslab',
+      immersive: 'modelslab',
+      // Static Images - OpenAI DALL-E
+      static: 'openai',
+      thumbnail: 'openai',
+      infographic: 'openai',
+      // Audio - ElevenLabs
+      tts: 'elevenlabs',
+      music: 'gemini', // Prompt generation, execution via Suno
+      sfx: 'gemini',
+      dubbed: 'elevenlabs',
+      podcast: 'elevenlabs',
+      // Presentation - Gemini for content, Claude for structured
+      ppt: 'gemini',
+      slides: 'gemini',
+      deck: 'gemini',
+      // Social & Text
+      social: 'gemini',
+      kinetic_text: 'gemini',
+      // Default
+      custom: 'gemini',
+    };
+    
+    return providerMap[chapterType] || 'gemini';
   }
 
   /**
    * Select the best model for the content type and provider
+   * Extended for all pipeline categories
    */
   private selectModel(chapterType: string, provider: string): string {
     const modelMap: Record<string, Record<string, string>> = {
       gemini: {
         avatar: 'gemini-2.0-flash',
-        '3d': 'gemini-2.0-flash',
         video: 'gemini-2.0-flash',
         animation: 'gemini-2.0-flash',
-        static: 'gemini-2.0-flash',
+        '3d': 'gemini-2.0-flash',
+        ppt: 'gemini-2.0-flash',
+        music: 'gemini-2.0-flash',
         default: 'gemini-2.0-flash'
       },
       openai: {
-        avatar: 'gpt-4o',
-        '3d': 'gpt-4o',
-        video: 'gpt-4o',
-        animation: 'gpt-4o',
         static: 'dall-e-3',
+        thumbnail: 'dall-e-3',
+        infographic: 'dall-e-3',
+        avatar: 'gpt-4o',
+        video: 'gpt-4o',
         default: 'gpt-4o'
       },
       claude: {
+        ppt: 'claude-3-5-sonnet-20241022',
+        slides: 'claude-3-5-sonnet-20241022',
         default: 'claude-3-5-sonnet-20241022'
+      },
+      modelslab: {
+        '3d': 'text-to-3d',
+        product_showcase: 'text-to-3d',
+        vr: 'text-to-3d',
+        video: 'text-to-video',
+        default: 'text-to-3d'
+      },
+      elevenlabs: {
+        tts: 'eleven_multilingual_v2',
+        dubbed: 'eleven_multilingual_v2',
+        podcast: 'eleven_multilingual_v2',
+        default: 'eleven_multilingual_v2'
       }
     };
 
     return modelMap[provider]?.[chapterType] || modelMap[provider]?.default || 'gemini-2.0-flash';
+  }
+
+  /**
+   * Get edge function for specific pipeline category
+   */
+  private getEdgeFunctionForPipeline(pipelineCategory: string): string {
+    const edgeFunctionMap: Record<string, string> = {
+      // SPARK Categories
+      'input-processing': 'document-processor',
+      'script-generation': 'ai-universal-processor',
+      'content-extraction': 'azure-form-recognizer',
+      // MIND Categories
+      'script-enhancement': 'enhance-script',
+      'tts-generation': 'elevenlabs-voice',
+      'music-generation': 'multi-provider-music',
+      'translation': 'translation-service',
+      // VIBE Categories
+      'video-generation': 'ai-video-generator',
+      'video-editing': 'pipeline-editor-processor',
+      'audio-production': 'audio-mixer',
+      'podcast-webcast': 'extract-video-audio',
+      'avatar-lipsync': 'ai-video-generator',
+      'dubbing': 'multi-language-audio-orchestrator',
+      // DECK Categories
+      'presentation': 'share-presentation',
+      'visual-design': 'ai-image-generator',
+      '3d-immersive': 'modelslab-media',
+      // ARC Categories
+      'scheduling': 'calendar-sync',
+      'collaboration': 'workspace-collaboration',
+      // CAST Categories
+      'distribution': 'social-publish',
+      'marketing': 'marketing-auto-scheduler',
+      'analytics': 'analytics-dashboard',
+    };
+    return edgeFunctionMap[pipelineCategory] || 'ai-universal-processor';
   }
 
   /**
@@ -450,7 +581,14 @@ Requirements:
       video: '1920x1080/ec4899/ffffff?text=Video+Preview',
       animation: '1920x1080/f59e0b/ffffff?text=Animation',
       static: '1920x1080/10b981/ffffff?text=Static+Content',
-      screen_recording: '1920x1080/3b82f6/ffffff?text=Screen+Recording'
+      screen_recording: '1920x1080/3b82f6/ffffff?text=Screen+Recording',
+      ppt: '1920x1080/ea580c/ffffff?text=PowerPoint',
+      podcast: '1920x1080/14b8a6/ffffff?text=Podcast',
+      reel: '1920x1080/f43f5e/ffffff?text=Reel',
+      vr: '1920x1080/6d28d9/ffffff?text=VR+Scene',
+      tts: '1920x1080/22c55e/ffffff?text=TTS+Audio',
+      music: '1920x1080/16a34a/ffffff?text=Music',
+      thumbnail: '1920x1080/0891b2/ffffff?text=Thumbnail',
     };
     return `${baseUrl}/${sizes[chapterType] || sizes.video}`;
   }
