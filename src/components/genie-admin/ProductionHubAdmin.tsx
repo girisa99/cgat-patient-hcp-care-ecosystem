@@ -10,7 +10,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Video, Users, CalendarDays, Sparkles, Loader2 } from 'lucide-react';
-import { UnifiedCompositionStudio, ContentLibrary } from './composition-studio';
+import { SimpleCompositionStudio, ContentLibrary } from './composition-studio';
 import { ContentSchedulerDashboard } from './ContentSchedulerDashboard';
 import { ProductionAnalytics } from './ProductionAnalytics';
 import { WorkspaceManagement } from './WorkspaceManagement';
@@ -201,9 +201,8 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
 
           {/* Composition Tab */}
           {activeTab === 'composition' && (
-            <UnifiedCompositionStudio 
-              compositionId={searchParams.get('show') || undefined}
-              onOpenLibrary={() => {
+            <SimpleCompositionStudio 
+              onClose={() => {
                 setActiveTab('library');
                 setSearchParams({ tab: 'library' });
               }}

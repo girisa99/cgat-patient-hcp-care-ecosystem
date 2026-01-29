@@ -2,6 +2,10 @@
  * COMPOSITION STUDIO BARREL EXPORT
  */
 
+// Primary Studio - Simplified
+export { SimpleCompositionStudio } from './SimpleCompositionStudio';
+
+// Legacy Studio (keep for backwards compatibility)
 export { UnifiedCompositionStudio } from './UnifiedCompositionStudio';
 export { ChapterEditor } from './ChapterEditor';
 export { LanguageSelectorPanel } from './LanguageSelectorPanel';
