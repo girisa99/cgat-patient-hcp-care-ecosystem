@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Check, ChevronDown, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -41,36 +41,45 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Calculate dropdown position based on button
-  const updateDropdownPosition = useCallback(() => {
-    if (buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect();
-      setDropdownPosition({
-        top: rect.bottom + window.scrollY + 4,
-        left: rect.left + window.scrollX,
-        width: rect.width,
-      });
-    }
+  // Setup portal container on mount
+  useEffect(() => {
+    setPortalContainer(document.body);
   }, []);
 
-  useEffect(() => {
-    if (isOpen) {
-      updateDropdownPosition();
-      window.addEventListener('scroll', updateDropdownPosition, true);
-      window.addEventListener('resize', updateDropdownPosition);
-    }
-    return () => {
-      window.removeEventListener('scroll', updateDropdownPosition, true);
-      window.removeEventListener('resize', updateDropdownPosition);
+  // Calculate dropdown position
+  const getDropdownStyle = useCallback((): React.CSSProperties => {
+    if (!buttonRef.current) return { display: 'none' };
+    
+    const rect = buttonRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const dropdownHeight = 320;
+    
+    // Decide if dropdown should open above or below
+    const openAbove = spaceBelow < dropdownHeight && spaceAbove > spaceBelow;
+    
+    return {
+      position: 'fixed',
+      left: rect.left,
+      width: rect.width,
+      maxHeight: Math.min(dropdownHeight, openAbove ? spaceAbove - 8 : spaceBelow - 8),
+      ...(openAbove 
+        ? { bottom: window.innerHeight - rect.top + 4 }
+        : { top: rect.bottom + 4 }
+      ),
+      zIndex: 99999,
     };
-  }, [isOpen, updateDropdownPosition]);
+  }, []);
 
+  // Close on click outside
   useEffect(() => {
+    if (!isOpen) return;
+
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
       const clickedOutsideContainer = containerRef.current && !containerRef.current.contains(target);
@@ -78,25 +87,53 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
       
       if (clickedOutsideContainer && clickedOutsideDropdown) {
         setIsOpen(false);
+        setSearchTerm('');
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    // Use setTimeout to avoid immediate trigger on open click
+    const timer = setTimeout(() => {
+      document.addEventListener('mousedown', handleClickOutside);
+    }, 0);
 
-  const filteredOptions = options.filter(option =>
-    !searchTerm || option.label.toLowerCase().includes(searchTerm.toLowerCase())
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
+
+  // Close on escape
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsOpen(false);
+        setSearchTerm('');
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isOpen]);
+
+  const filteredOptions = useMemo(() => 
+    options.filter(option =>
+      !searchTerm || option.label.toLowerCase().includes(searchTerm.toLowerCase())
+    ),
+    [options, searchTerm]
   );
 
-  const groupedOptions = groupByCategory
-    ? filteredOptions.reduce((acc, option) => {
-        const category = option.category || 'Other';
-        if (!acc[category]) acc[category] = [];
-        acc[category].push(option);
-        return acc;
-      }, {} as Record<string, MultiSelectOption[]>)
-    : { 'All': filteredOptions };
+  const groupedOptions = useMemo(() => {
+    if (!groupByCategory) return { 'All': filteredOptions };
+    
+    return filteredOptions.reduce((acc, option) => {
+      const category = option.category || 'Other';
+      if (!acc[category]) acc[category] = [];
+      acc[category].push(option);
+      return acc;
+    }, {} as Record<string, MultiSelectOption[]>);
+  }, [filteredOptions, groupByCategory]);
 
   const handleToggleOption = (optionValue: string) => {
     if (disabled) return;
@@ -122,68 +159,68 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
     onSelectionChange(newSelection);
   };
 
-  const getSelectedLabels = () => {
+  const selectedLabels = useMemo(() => {
     return selectedValues.map(value => {
       const option = options.find(opt => opt.value === value);
       return option?.label || value;
     });
+  }, [selectedValues, options]);
+
+  const handleToggleOpen = () => {
+    if (disabled) return;
+    setIsOpen(!isOpen);
+    if (!isOpen) {
+      setSearchTerm('');
+    }
   };
 
-  const selectedLabels = getSelectedLabels();
-
-  // Dropdown content rendered via portal
-  const dropdownContent = isOpen ? (
+  // Dropdown content
+  const dropdownContent = isOpen && portalContainer ? createPortal(
     <div
       ref={dropdownRef}
-      className="fixed bg-background border border-border rounded-md shadow-xl overflow-hidden"
-      style={{
-        top: dropdownPosition.top,
-        left: dropdownPosition.left,
-        width: dropdownPosition.width,
-        zIndex: 99999,
-        maxHeight: '320px',
-      }}
+      className="bg-popover border border-border rounded-lg shadow-2xl overflow-hidden animate-in fade-in-0 zoom-in-95 duration-100"
+      style={getDropdownStyle()}
     >
       {searchable && (
-        <div className="p-2 border-b bg-background">
+        <div className="p-2 border-b border-border bg-popover">
           <input
             type="text"
             placeholder="Search options..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full px-2 py-1.5 text-sm border rounded bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+            className="w-full px-3 py-2 text-sm border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
             autoFocus
             onClick={(e) => e.stopPropagation()}
           />
         </div>
       )}
       
-      <div className="max-h-64 overflow-auto p-1 bg-background">
+      <div className="overflow-auto bg-popover" style={{ maxHeight: searchable ? 'calc(100% - 52px)' : '100%' }}>
         {Object.entries(groupedOptions).map(([category, categoryOptions]) => (
           <div key={category}>
             {groupByCategory && Object.keys(groupedOptions).length > 1 && (
-              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide bg-muted/30 sticky top-0">
+              <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide bg-muted/50 sticky top-0 border-b border-border">
                 {category}
               </div>
             )}
             
             {categoryOptions.map((option) => {
               const isSelected = selectedValues.includes(option.value);
-              const isDisabled = option.disabled || (maxSelections && !isSelected && selectedValues.length >= maxSelections);
+              const isDisabledOption = option.disabled || (maxSelections && !isSelected && selectedValues.length >= maxSelections);
               
               return (
                 <div
                   key={option.id}
                   className={cn(
-                    "flex items-center gap-2 p-2 cursor-pointer hover:bg-accent rounded-sm transition-colors",
+                    "flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-accent transition-colors",
                     isSelected && "bg-accent/50",
-                    isDisabled && "opacity-50 cursor-not-allowed"
+                    isDisabledOption && "opacity-50 cursor-not-allowed"
                   )}
-                  onClick={() => !isDisabled && handleToggleOption(option.value)}
+                  onClick={() => !isDisabledOption && handleToggleOption(option.value)}
                 >
                   <Checkbox
                     checked={isSelected}
-                    disabled={!!isDisabled}
+                    disabled={!!isDisabledOption}
                     className="pointer-events-none"
                   />
                   
@@ -217,11 +254,12 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
       </div>
       
       {maxSelections && (
-        <div className="p-2 border-t text-xs text-muted-foreground text-center bg-muted/30">
+        <div className="p-2 border-t border-border text-xs text-muted-foreground text-center bg-muted/30">
           {selectedValues.length} of {maxSelections} selected
         </div>
       )}
-    </div>
+    </div>,
+    portalContainer
   ) : null;
 
   return (
@@ -229,8 +267,9 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
       <Button
         ref={buttonRef}
         variant="outline"
-        onClick={() => !disabled && setIsOpen(!isOpen)}
+        onClick={handleToggleOpen}
         disabled={disabled}
+        type="button"
         className={cn(
           "w-full justify-between min-h-10 h-auto py-2 px-3",
           isOpen && "ring-2 ring-primary ring-offset-2"
@@ -273,11 +312,10 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
             </div>
           )}
         </div>
-        <ChevronDown className={cn("h-4 w-4 transition-transform", isOpen && "rotate-180")} />
+        <ChevronDown className={cn("h-4 w-4 transition-transform shrink-0", isOpen && "rotate-180")} />
       </Button>
 
-      {/* Render dropdown via portal to escape container overflow */}
-      {createPortal(dropdownContent, document.body)}
+      {dropdownContent}
     </div>
   );
 };
