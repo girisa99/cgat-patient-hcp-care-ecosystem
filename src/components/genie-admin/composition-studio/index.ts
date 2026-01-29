@@ -8,7 +8,10 @@ export { default as SimpleCompositionStudioDefault } from './SimpleCompositionSt
 
 // Ecosystem Services Hook - Connects to all existing services
 export { useStudioEcosystem } from './useStudioEcosystem';
-export type { StudioChapter, StudioProject, GenerationProgress } from './useStudioEcosystem';
+export type { StudioChapter, StudioProject, GenerationProgress, InlineEditAction } from './useStudioEcosystem';
+
+// Inline Chapter Editor - Quick edit controls per chapter
+export { ChapterInlineEditor } from './ChapterInlineEditor';
 
 // Legacy Studio (keep for backwards compatibility)
 export { UnifiedCompositionStudio } from './UnifiedCompositionStudio';
