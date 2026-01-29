@@ -37,8 +37,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { ChapterEditor } from './ChapterEditor';
 import { LanguageSelectorPanel } from './LanguageSelectorPanel';
 import { PreviewPanel } from './PreviewPanel';
-import { TemplatePreviewDialog, TEMPLATE_DEFINITIONS } from './TemplatePreviewDialog';
+import { TemplatePreviewDialog, TEMPLATE_DEFINITIONS, LANDING_PAGE_SECTIONS } from './TemplatePreviewDialog';
 import { ScheduledContentManager } from './ScheduledContentManager';
+import { TemplateLandingMapper } from './TemplateLandingMapper';
 import type { 
   CompositionProject, 
   CompositionChapter, 
@@ -77,6 +78,8 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
   
   // Show scheduler view
   const [showScheduler, setShowScheduler] = useState(false);
+  // Show template-landing mapper
+  const [showMapper, setShowMapper] = useState(false);
   // Project state
   const [project, setProject] = useState<CompositionProject>({
     id: generateId(),
@@ -298,7 +301,7 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
           <Badge variant="outline" className="bg-primary/10">
             {chapters.length} Chapters
           </Badge>
-          <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600">
+          <Badge variant="outline" className="bg-accent/10 text-accent-foreground">
             {project.targetLanguages.length} Languages
           </Badge>
           <Badge variant="outline">
@@ -432,7 +435,7 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
                   </div>
                   {project.destination === 'landing_page' && (
                     <div className="space-y-2">
-                      <Label>Placement</Label>
+                      <Label>Placement (Landing Page Section)</Label>
                       <Select
                         value={project.placement}
                         onValueChange={(v) => setProject(p => ({ ...p, placement: v }))}
@@ -441,14 +444,19 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="hero_showcase">Hero Showcase</SelectItem>
-                          <SelectItem value="product_demo">Product Demo</SelectItem>
-                          <SelectItem value="testimonials">Testimonials</SelectItem>
-                          <SelectItem value="tutorial">Tutorial</SelectItem>
-                          <SelectItem value="feature_highlight">Feature Highlight</SelectItem>
-                          <SelectItem value="use_case_demo">Use Case Demo</SelectItem>
+                          <SelectItem value="hero_showcase">Hero Showcase (Main Hero)</SelectItem>
+                          <SelectItem value="product_demo">Product Demo / Use Cases</SelectItem>
+                          <SelectItem value="tutorial_howto">Tutorial / How-to</SelectItem>
+                          <SelectItem value="testimonials">Testimonials / Social Proof</SelectItem>
+                          <SelectItem value="dialect_demo">True Localization Demo (Dialects)</SelectItem>
+                          <SelectItem value="industry_showcases">Industry Showcases (IP-based)</SelectItem>
+                          <SelectItem value="global_success_stories">Global Success Stories</SelectItem>
+                          <SelectItem value="explore_use_cases">Explore Use Cases (View-only)</SelectItem>
                         </SelectContent>
                       </Select>
+                      <p className="text-xs text-muted-foreground">
+                        Content will appear in this section on the landing page. Some sections support user interaction.
+                      </p>
                     </div>
                   )}
                   {['youtube', 'linkedin', 'linkedin_company', 'facebook', 'instagram', 'tiktok', 'twitter'].includes(project.destination) && (
@@ -526,6 +534,28 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
                 >
                   <Clock className="w-4 h-4 mr-2" />
                   View Scheduler
+                </Button>
+              </div>
+              
+              {/* Template-Landing Mapper Link */}
+              <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/50">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
+                    <Layers className="w-5 h-5 text-accent-foreground" />
+                  </div>
+                  <div>
+                    <span className="font-medium">Template → Landing Page Mapping</span>
+                    <p className="text-sm text-muted-foreground">
+                      View which templates publish to which landing page sections
+                    </p>
+                  </div>
+                </div>
+                <Button 
+                  variant="outline"
+                  onClick={() => setShowMapper(true)}
+                >
+                  <Eye className="w-4 h-4 mr-2" />
+                  View Mapping
                 </Button>
               </div>
             </CardContent>
@@ -813,9 +843,9 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
                   ].map((item, i) => (
                     <div key={i} className="flex items-center gap-2">
                       {item.done ? (
-                        <Check className="w-4 h-4 text-emerald-500" />
+                        <Check className="w-4 h-4 text-accent" />
                       ) : (
-                        <AlertCircle className="w-4 h-4 text-amber-500" />
+                        <AlertCircle className="w-4 h-4 text-muted-foreground" />
                       )}
                       <span className={cn(
                         "text-sm",
@@ -959,6 +989,41 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
                   // TODO: Load project for editing
                   setShowScheduler(false);
                   toast.info(`Opening project ${projectId} for editing`);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Template-Landing Mapper Dialog */}
+      {showMapper && (
+        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm">
+          <div className="fixed inset-4 md:inset-10 bg-background border rounded-xl shadow-2xl flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <Layers className="w-5 h-5" />
+                Template → Landing Page Mapping
+              </h2>
+              <Button variant="ghost" size="sm" onClick={() => setShowMapper(false)}>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Studio
+              </Button>
+            </div>
+            <div className="flex-1 overflow-auto p-4">
+              <TemplateLandingMapper 
+                onSelectTemplate={(templateId) => {
+                  const template = TEMPLATE_DEFINITIONS.find(t => t.id === templateId);
+                  if (template) {
+                    setSelectedTemplateForPreview(template);
+                    setTemplatePreviewOpen(true);
+                    setShowMapper(false);
+                  }
+                }}
+                onEditTemplate={(templateId) => {
+                  loadTemplate(templateId as any);
+                  setShowMapper(false);
+                  toast.info(`Loaded ${templateId} template for editing`);
                 }}
               />
             </div>
