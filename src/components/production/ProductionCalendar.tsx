@@ -484,6 +484,7 @@ export function ProductionCalendar({
   };
 
   return (
+    <>
     <TooltipProvider>
       <div className="space-y-4">
         {/* Calendar Header */}
@@ -774,218 +775,224 @@ export function ProductionCalendar({
             </ScrollArea>
           </CardContent>
         </Card>
+      </div>
+    </TooltipProvider>
 
-        {/* Day Schedule Dialog */}
-        <Dialog open={isScheduleDialogOpen} onOpenChange={setIsScheduleDialogOpen}>
-          <DialogContent className="sm:max-w-lg z-[9999]">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <CalendarDays className="h-5 w-5 text-primary" />
-                {selectedDay ? format(selectedDay, 'EEEE, MMMM d, yyyy') : 'Schedule'}
-              </DialogTitle>
-              <DialogDescription>
-                {selectedDayShows.length > 0 
-                  ? `${selectedDayShows.length} event(s) scheduled. Select a time slot to add a new meeting.`
-                  : 'No events scheduled. Select a time slot to add a new meeting.'}
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="space-y-4 py-4">
-              {/* Existing events for the day */}
-              {selectedDayShows.length > 0 && (
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Scheduled Events</Label>
-                  <div className="space-y-1 max-h-[150px] overflow-y-auto">
-                    {selectedDayShows.map(show => {
-                      const colors = SHOW_TYPE_COLORS[show.show_type];
-                      const startTime = format(new Date(show.scheduled_date!), 'h:mm a');
-                      const endTime = format(
-                        new Date(new Date(show.scheduled_date!).getTime() + (show.duration_minutes || 60) * 60 * 1000),
-                        'h:mm a'
-                      );
-                      return (
-                        <div 
-                          key={show.id}
-                          onClick={() => handleShowClick(show)}
-                          className={cn(
-                            'flex items-center gap-2 p-2 rounded border-l-3 cursor-pointer hover:bg-accent/50',
-                            colors.bg, colors.border, 'border-l-4'
-                          )}
-                        >
-                          <Clock className="h-3 w-3" />
-                          <span className="text-xs font-medium">{startTime} - {endTime}</span>
-                          <span className="text-xs truncate flex-1">{show.title}</span>
-                          {getShowTypeIcon(show.show_type)}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Time slot selection */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Start Time</Label>
-                  <Select value={scheduleTime} onValueChange={setScheduleTime}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[200px] z-[10000]">
-                      {TIME_SLOTS.map(time => {
-                        const available = isSlotAvailable(time);
-                        return (
-                          <SelectItem 
-                            key={time} 
-                            value={time}
-                            disabled={!available}
-                            className={cn(!available && 'text-muted-foreground line-through')}
-                          >
-                            {time} {!available && '(busy)'}
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Duration</Label>
-                  <Select value={scheduleDuration} onValueChange={setScheduleDuration}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="z-[10000]">
-                      {DURATION_OPTIONS.map(opt => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+    {/* Day Schedule Dialog - OUTSIDE TooltipProvider for proper portal rendering */}
+    <Dialog open={isScheduleDialogOpen} onOpenChange={setIsScheduleDialogOpen}>
+      <DialogContent className="sm:max-w-lg z-[9999]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <CalendarDays className="h-5 w-5 text-primary" />
+            {selectedDay ? format(selectedDay, 'EEEE, MMMM d, yyyy') : 'Schedule'}
+          </DialogTitle>
+          <DialogDescription>
+            {selectedDayShows.length > 0 
+              ? `${selectedDayShows.length} event(s) scheduled. Select a time slot to add a new meeting.`
+              : 'No events scheduled. Select a time slot to add a new meeting.'}
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="space-y-4 py-4">
+          {/* Existing events for the day */}
+          {selectedDayShows.length > 0 && (
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Scheduled Events</Label>
+              <div className="space-y-1 max-h-[150px] overflow-y-auto">
+                {selectedDayShows.map(show => {
+                  const colors = SHOW_TYPE_COLORS[show.show_type];
+                  const startTime = format(new Date(show.scheduled_date!), 'h:mm a');
+                  const endTime = format(
+                    new Date(new Date(show.scheduled_date!).getTime() + (show.duration_minutes || 60) * 60 * 1000),
+                    'h:mm a'
+                  );
+                  return (
+                    <div 
+                      key={show.id}
+                      onClick={() => handleShowClick(show)}
+                      className={cn(
+                        'flex items-center gap-2 p-2 rounded border-l-3 cursor-pointer hover:bg-accent/50',
+                        colors.bg, colors.border, 'border-l-4'
+                      )}
+                    >
+                      <Clock className="h-3 w-3" />
+                      <span className="text-xs font-medium">{startTime} - {endTime}</span>
+                      <span className="text-xs truncate flex-1">{show.title}</span>
+                      {getShowTypeIcon(show.show_type)}
+                    </div>
+                  );
+                })}
               </div>
-
-              {/* Holiday/Weekend notice */}
-              {selectedDay && (
-                <>
-                  {isHoliday(selectedDay) && (
-                    <div className="flex items-center gap-2 p-2 bg-amber-500/10 border border-amber-500/30 rounded-lg text-sm">
-                      <Sun className="h-4 w-4 text-amber-500" />
-                      <span>Holiday: {isHoliday(selectedDay)}</span>
-                    </div>
-                  )}
-                  {isWeekend(selectedDay) && !isHoliday(selectedDay) && (
-                    <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg text-sm text-muted-foreground">
-                      <Moon className="h-4 w-4" />
-                      <span>This is a weekend day</span>
-                    </div>
-                  )}
-                </>
-              )}
             </div>
+          )}
 
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsScheduleDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleScheduleSubmit}>
-                <Plus className="h-4 w-4 mr-1" />
-                Schedule New Meeting
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          {/* Time slot selection */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Start Time</Label>
+              <Select value={scheduleTime} onValueChange={setScheduleTime}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="max-h-[200px] z-[10000]">
+                  {TIME_SLOTS.map(time => {
+                    const available = isSlotAvailable(time);
+                    return (
+                      <SelectItem 
+                        key={time} 
+                        value={time}
+                        disabled={!available}
+                        className={cn(!available && 'text-muted-foreground line-through')}
+                      >
+                        {time} {!available && '(busy)'}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Duration</Label>
+              <Select value={scheduleDuration} onValueChange={setScheduleDuration}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="z-[10000]">
+                  {DURATION_OPTIONS.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
 
-        {/* Show Details Dialog */}
-        <Dialog open={!!selectedShow} onOpenChange={() => setSelectedShow(null)}>
-          <DialogContent className="max-w-lg z-[9999]">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                {selectedShow && getShowTypeIcon(selectedShow.show_type)}
-                {selectedShow?.title}
-              </DialogTitle>
-            </DialogHeader>
-            {selectedShow && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground">Type</p>
-                    <Badge className={cn(
-                      SHOW_TYPE_COLORS[selectedShow.show_type].bg,
-                      SHOW_TYPE_COLORS[selectedShow.show_type].text
-                    )}>
-                      {SHOW_TYPE_COLORS[selectedShow.show_type].label}
-                    </Badge>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground">Duration</p>
-                    <p className="text-sm">{selectedShow.duration_minutes || 60} minutes</p>
-                  </div>
+          {/* Holiday/Weekend notice */}
+          {selectedDay && (
+            <>
+              {isHoliday(selectedDay) && (
+                <div className="flex items-center gap-2 p-2 bg-amber-500/10 border border-amber-500/30 rounded-lg text-sm">
+                  <Sun className="h-4 w-4 text-amber-500" />
+                  <span>Holiday: {isHoliday(selectedDay)}</span>
                 </div>
+              )}
+              {isWeekend(selectedDay) && !isHoliday(selectedDay) && (
+                <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg text-sm text-muted-foreground">
+                  <Moon className="h-4 w-4" />
+                  <span>This is a weekend day</span>
+                </div>
+              )}
+            </>
+          )}
+        </div>
 
-                {selectedShow.scheduled_date && (
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Clock className="h-3 w-3" /> Schedule
-                    </p>
-                    <p className="text-sm">
-                      {format(new Date(selectedShow.scheduled_date), 'EEEE, MMMM d, yyyy')} at{' '}
-                      {format(new Date(selectedShow.scheduled_date), 'h:mm a')}
-                    </p>
-                  </div>
-                )}
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setIsScheduleDialogOpen(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleScheduleSubmit}>
+            <Plus className="h-4 w-4 mr-1" />
+            Schedule New Meeting
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
-                {selectedShow.description && (
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground">Description</p>
-                    <p className="text-sm">{selectedShow.description}</p>
-                  </div>
-                )}
-
-                {selectedShow.participants && selectedShow.participants.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Users className="h-3 w-3" /> Participants
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedShow.participants.map(p => (
-                        <Badge key={p.id} variant="secondary" className="flex items-center gap-1">
-                          <User className="h-3 w-3" />
-                          {p.name}
-                          <span className="text-xs text-muted-foreground">({p.role})</span>
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Calendar Sync Buttons */}
-                <div className="flex gap-2 pt-2 border-t">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => window.open(generateGoogleCalendarUrl(selectedShow), '_blank')}
-                    className="flex-1"
-                  >
-                    <ExternalLink className="h-3 w-3 mr-1" />
-                    Add to Google
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => window.open(generateOutlookUrl(selectedShow), '_blank')}
-                    className="flex-1"
-                  >
-                    <ExternalLink className="h-3 w-3 mr-1" />
-                    Add to Outlook
-                  </Button>
+    {/* Show Details Dialog - OUTSIDE TooltipProvider for proper portal rendering */}
+    <Dialog open={!!selectedShow} onOpenChange={() => setSelectedShow(null)}>
+      <DialogContent className="max-w-lg z-[9999]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            {selectedShow && getShowTypeIcon(selectedShow.show_type)}
+            {selectedShow?.title}
+          </DialogTitle>
+          <DialogDescription>
+            {selectedShow?.description || 'No description available'}
+          </DialogDescription>
+        </DialogHeader>
+        
+        {selectedShow && (
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="text-muted-foreground">Date:</span>
+                <p className="font-medium">
+                  {format(new Date(selectedShow.scheduled_date!), 'EEEE, MMM d, yyyy')}
+                </p>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Time:</span>
+                <p className="font-medium">
+                  {format(new Date(selectedShow.scheduled_date!), 'h:mm a')}
+                </p>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Duration:</span>
+                <p className="font-medium">{selectedShow.duration_minutes || 60} minutes</p>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Type:</span>
+                <p className="font-medium">
+                  {SHOW_TYPE_COLORS[selectedShow.show_type]?.label || selectedShow.show_type}
+                </p>
+              </div>
+            </div>
+            
+            {selectedShow.participants && selectedShow.participants.length > 0 && (
+              <div>
+                <span className="text-sm text-muted-foreground">Participants:</span>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {selectedShow.participants.map((p, idx) => (
+                    <Badge key={idx} variant="secondary" className="text-xs">
+                      <User className="h-3 w-3 mr-1" />
+                      {p.name}
+                    </Badge>
+                  ))}
                 </div>
               </div>
             )}
-          </DialogContent>
-        </Dialog>
-      </div>
-    </TooltipProvider>
+
+            {selectedShow.meeting_link && (
+              <div>
+                <span className="text-sm text-muted-foreground">Meeting Link:</span>
+                <a 
+                  href={selectedShow.meeting_link} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="block text-primary hover:underline text-sm mt-1"
+                >
+                  {selectedShow.meeting_link}
+                </a>
+              </div>
+            )}
+
+            {/* Calendar Sync Buttons */}
+            <div className="flex gap-2 pt-2 border-t">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.open(generateGoogleCalendarUrl(selectedShow), '_blank')}
+                className="flex-1"
+              >
+                <ExternalLink className="h-3 w-3 mr-1" />
+                Add to Google
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.open(generateOutlookUrl(selectedShow), '_blank')}
+                className="flex-1"
+              >
+                <ExternalLink className="h-3 w-3 mr-1" />
+                Add to Outlook
+              </Button>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
 
