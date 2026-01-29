@@ -10,6 +10,7 @@ export { HeroProductShowcase } from './HeroProductShowcase';
 export { HeroProductShowcaseAnimated } from './HeroProductShowcaseAnimated';
 export { HeroVideoPlayer } from './HeroVideoPlayer';
 export { IndustryShowcases } from './IndustryShowcases';
+export { IPBasedIndustryShowcase } from './IPBasedIndustryShowcase';
 export { InteractiveLanguageDemo } from './InteractiveLanguageDemo';
 export { LanguageDialectDemo } from './LanguageDialectDemo';
 export { GenieVideoShowcase } from './GenieVideoShowcase';
