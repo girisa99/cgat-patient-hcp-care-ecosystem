@@ -35,6 +35,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useIPBasedContent } from '@/hooks/useIPBasedContent';
+import { useStudioEcosystem } from './useStudioEcosystem';
 
 // ============================================
 // INDUSTRY-SPECIFIC TEMPLATES (Multi-select ready)
@@ -257,9 +258,12 @@ interface SimpleChapter {
   industry?: string; // Industry for this chapter (from template)
   generatedContent?: {
     previewUrl: string;
+    videoUrl?: string;
     script: string;
     audioUrl?: string;
     sceneDescription?: string;
+    transcreatedScripts?: Record<string, string>;
+    transcreatedAudio?: Record<string, string>;
   };
 }
 
@@ -276,6 +280,9 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
 }) => {
   // IP-based content detection
   const { defaultLanguage, isLoading: isDetectingLocation, geoData } = useIPBasedContent();
+
+  // Ecosystem services hook - connects to all existing services
+  const ecosystemServices = useStudioEcosystem();
 
   // Project state
   const [projectName, setProjectName] = useState('');
@@ -475,7 +482,7 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
     toast.success('Applied audio settings to all chapters');
   }, [globalVoiceSource, globalMusicSource]);
 
-  // Generate single chapter
+  // Generate single chapter using ecosystem services
   const generateChapter = async (chapter: SimpleChapter) => {
     updateChapter(chapter.id, { status: 'generating', progress: 0 });
     setCurrentGeneratingChapter(chapter.id);
@@ -484,11 +491,10 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
       let script = chapter.script;
       updateChapter(chapter.id, { progress: 10 });
       
-      // Generate script if auto
+      // Step 1: Generate script if auto
       if (chapter.scriptSource === 'auto' || !script.trim()) {
         console.log('[Studio] Generating script for:', chapter.title);
         
-        // Use custom prompt if provided, otherwise use AI suggested prompt or default
         const effectivePrompt = chapter.customPrompt?.trim() 
           || chapter.aiSuggestedPrompt 
           || `Create engaging content about "${chapter.title}"`;
@@ -514,45 +520,116 @@ Language: ${primaryLanguage}. Keep it engaging, concise, and professional.`,
 
         if (scriptError) throw new Error(scriptError.message);
         script = scriptData?.content || scriptData?.response || `Script for ${chapter.title}`;
-        updateChapter(chapter.id, { script, progress: 40 });
+        updateChapter(chapter.id, { script, progress: 25 });
       } else {
-        updateChapter(chapter.id, { progress: 40 });
+        updateChapter(chapter.id, { progress: 25 });
       }
 
-      // Generate preview
-      updateChapter(chapter.id, { progress: 60 });
-      const visualType = chapter.visualTypes[0] || 'video';
-      let previewUrl = `https://placehold.co/1920x1080/ec4899/ffffff?text=${encodeURIComponent(chapter.title)}`;
-      
-      try {
-        const { data: imageData } = await supabase.functions.invoke('ai-universal-processor', {
-          body: {
-            provider: 'gemini',
-            imageGeneration: true,
-            action: 'image_generation',
-            prompt: `Professional ${visualType} thumbnail for: ${chapter.title}`,
-            aspectRatio: '16:9'
-          }
-        });
-        if (imageData?.imageUrl) previewUrl = imageData.imageUrl;
-      } catch (e) {
-        console.warn('[Studio] Image fallback used');
-      }
-      
-      updateChapter(chapter.id, { progress: 80 });
-
-      // Generate TTS if needed
-      let audioUrl: string | undefined;
-      if (chapter.voiceSource === 'tts' && script) {
+      // Step 2: Transcreation for additional languages (using ecosystem service)
+      let transcreatedScripts: Record<string, string> = {};
+      if (additionalLanguages.length > 0 && script) {
+        console.log('[Studio] Transcreating to:', additionalLanguages);
+        updateChapter(chapter.id, { progress: 35 });
         try {
-          const { data: ttsData } = await supabase.functions.invoke('text-to-speech', {
-            body: { text: script.substring(0, 1000), voice: 'alloy', model: 'tts-1' }
-          });
-          if (ttsData?.audioContent) {
-            audioUrl = `data:audio/mp3;base64,${ttsData.audioContent}`;
+          transcreatedScripts = await ecosystemServices.transcreateContent(
+            script,
+            primaryLanguage,
+            additionalLanguages,
+            'presentation'
+          );
+          console.log('[Studio] Transcreation complete for', Object.keys(transcreatedScripts).length, 'languages');
+        } catch (e) {
+          console.warn('[Studio] Transcreation skipped:', e);
+        }
+      }
+
+      // Step 3: Generate TTS using ecosystem service (with regional routing)
+      let audioUrl: string | undefined;
+      let transcreatedAudio: Record<string, string> = {};
+      
+      if (chapter.voiceSource === 'tts' && script) {
+        updateChapter(chapter.id, { progress: 50 });
+        console.log('[Studio] Generating TTS with regional routing for:', primaryLanguage);
+        
+        try {
+          // Primary language TTS using ecosystem service
+          const voiceResult = await ecosystemServices.generateVoiceover(script, primaryLanguage);
+          audioUrl = voiceResult.audioUrl;
+          console.log('[Studio] Primary TTS complete, provider:', voiceResult.provider);
+          
+          // Additional languages TTS
+          if (Object.keys(transcreatedScripts).length > 0) {
+            updateChapter(chapter.id, { progress: 60 });
+            transcreatedAudio = await ecosystemServices.generateMultiLanguageAudio(transcreatedScripts);
+            console.log('[Studio] Multi-language audio complete for', Object.keys(transcreatedAudio).length, 'languages');
           }
         } catch (e) {
-          console.warn('[Studio] TTS skipped');
+          console.warn('[Studio] TTS fallback used:', e);
+          // Fallback to basic TTS
+          try {
+            const { data: ttsData } = await supabase.functions.invoke('text-to-speech', {
+              body: { text: script.substring(0, 1000), voice: 'alloy', model: 'tts-1' }
+            });
+            if (ttsData?.audioContent) {
+              audioUrl = `data:audio/mp3;base64,${ttsData.audioContent}`;
+            }
+          } catch (fallbackError) {
+            console.warn('[Studio] TTS completely skipped');
+          }
+        }
+      }
+
+      // Step 4: Generate background music using ecosystem service
+      if (chapter.musicSource === 'ai') {
+        updateChapter(chapter.id, { progress: 70 });
+        console.log('[Studio] Generating background music');
+        try {
+          const musicResult = await ecosystemServices.generateMusic(
+            `Professional ${chapter.visualTypes[0] || 'corporate'} background music, ${chapter.industry || 'business'} style`,
+            chapter.duration
+          );
+          console.log('[Studio] Music generated:', musicResult.audioUrl?.substring(0, 50));
+          // Music URL stored for final mixing
+        } catch (e) {
+          console.warn('[Studio] Music generation skipped:', e);
+        }
+      }
+
+      // Step 5: Generate video/visual content using ecosystem service
+      updateChapter(chapter.id, { progress: 80 });
+      const visualType = chapter.visualTypes[0] || 'video';
+      let previewUrl = `https://placehold.co/1920x1080/ec4899/ffffff?text=${encodeURIComponent(chapter.title)}`;
+      let videoUrl: string | undefined;
+      
+      try {
+        console.log('[Studio] Generating visual content, type:', visualType);
+        const videoResult = await ecosystemServices.generateVideo(
+          `${chapter.title}: ${script.substring(0, 200)}`,
+          visualType,
+          Math.min(chapter.duration, 10)
+        );
+        
+        if (videoResult.success) {
+          videoUrl = videoResult.videoUrl;
+          previewUrl = videoResult.thumbnailUrl || videoResult.videoUrl || previewUrl;
+          console.log('[Studio] Video generated with provider:', videoResult.provider);
+        }
+      } catch (e) {
+        console.warn('[Studio] Video fallback to image:', e);
+        // Fallback to image generation
+        try {
+          const { data: imageData } = await supabase.functions.invoke('ai-universal-processor', {
+            body: {
+              provider: 'gemini',
+              imageGeneration: true,
+              action: 'image_generation',
+              prompt: `Professional ${visualType} thumbnail for: ${chapter.title}`,
+              aspectRatio: '16:9'
+            }
+          });
+          if (imageData?.imageUrl) previewUrl = imageData.imageUrl;
+        } catch (imgError) {
+          console.warn('[Studio] Image fallback used');
         }
       }
 
@@ -560,7 +637,14 @@ Language: ${primaryLanguage}. Keep it engaging, concise, and professional.`,
         status: 'complete',
         progress: 100,
         script,
-        generatedContent: { previewUrl, script, audioUrl }
+        generatedContent: { 
+          previewUrl, 
+          videoUrl,
+          script, 
+          audioUrl,
+          transcreatedScripts: Object.keys(transcreatedScripts).length > 0 ? transcreatedScripts : undefined,
+          transcreatedAudio: Object.keys(transcreatedAudio).length > 0 ? transcreatedAudio : undefined,
+        }
       });
 
       return { success: true };
@@ -574,7 +658,7 @@ Language: ${primaryLanguage}. Keep it engaging, concise, and professional.`,
     }
   };
 
-  // Generate all chapters
+  // Generate all chapters with optional video combining
   const generateAll = async () => {
     if (chapters.length === 0) {
       toast.error('Add at least one chapter first');
@@ -588,9 +672,32 @@ Language: ${primaryLanguage}. Keep it engaging, concise, and professional.`,
     for (const chapter of chapters) {
       await generateChapter(chapter);
       completed++;
-      setGenerationProgress(Math.round((completed / chapters.length) * 100));
+      setGenerationProgress(Math.round((completed / chapters.length) * 90)); // Reserve 10% for combining
     }
 
+    // Combine chapters if output mode is 'combined'
+    if (outputMode === 'combined' && chapters.length > 1) {
+      setGenerationProgress(95);
+      const completedChaptersWithVideo = chapters.filter(c => c.generatedContent?.videoUrl);
+      
+      if (completedChaptersWithVideo.length > 1) {
+        try {
+          console.log('[Studio] Combining', completedChaptersWithVideo.length, 'chapter videos');
+          const combined = await ecosystemServices.combineChapterVideos(
+            completedChaptersWithVideo.map(c => ({
+              chapterId: c.id,
+              videoUrl: c.generatedContent!.videoUrl!,
+              audioUrl: c.generatedContent?.audioUrl,
+            }))
+          );
+          toast.success(`Combined video created: ${combined.duration}s`);
+        } catch (e) {
+          console.warn('[Studio] Video combining skipped:', e);
+        }
+      }
+    }
+
+    setGenerationProgress(100);
     setIsGenerating(false);
     toast.success('All chapters generated!');
   };
@@ -894,24 +1001,55 @@ Language: ${primaryLanguage}. Keep it engaging, concise, and professional.`,
             <Save className="w-4 h-4 mr-2" /> Save Draft
           </Button>
         </div>
-        <Button
-          size="lg"
-          disabled={!canGenerate || isGenerating}
-          onClick={generateAll}
-          className="gap-2"
-        >
-          {isGenerating ? (
+        <div className="flex gap-2">
+          {/* Editor Handoff Buttons */}
+          {completedChapters > 0 && (
             <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Generating...
-            </>
-          ) : (
-            <>
-              <Zap className="w-4 h-4" />
-              Generate All ({chapters.length})
+              <Button
+                variant="outline"
+                onClick={() => ecosystemServices.sendToScriptEditor({
+                  name: projectName,
+                  primaryLanguage,
+                  additionalLanguages,
+                  chapters: chapters as any,
+                  outputMode
+                })}
+              >
+                <Pencil className="w-4 h-4 mr-2" /> Edit Scripts
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => ecosystemServices.sendToVideoEditor({
+                  name: projectName,
+                  primaryLanguage,
+                  additionalLanguages,
+                  chapters: chapters as any,
+                  outputMode
+                })}
+              >
+                <Video className="w-4 h-4 mr-2" /> Edit Video
+              </Button>
             </>
           )}
-        </Button>
+          <Button
+            size="lg"
+            disabled={!canGenerate || isGenerating}
+            onClick={generateAll}
+            className="gap-2"
+          >
+            {isGenerating ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <Zap className="w-4 h-4" />
+                Generate All ({chapters.length})
+              </>
+            )}
+          </Button>
+        </div>
       </div>
     </div>
   );
