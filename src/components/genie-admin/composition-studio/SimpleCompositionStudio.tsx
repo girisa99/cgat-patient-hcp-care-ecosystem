@@ -29,7 +29,8 @@ import {
   Loader2, Volume2, Music, GripVertical,
   Copy, Settings2, Zap, RotateCcw, X,
   Building2, MapPin, Pencil, Image, Presentation, 
-  Monitor, Camera, Layers, Film, Mic
+  Monitor, Camera, Layers, Film, Mic,
+  Send, FileCheck, BookTemplate, Share2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -1018,7 +1019,7 @@ Language: ${primaryLanguage}. Keep it engaging, concise, and professional.`,
             <Save className="w-4 h-4 mr-2" /> Save Draft
           </Button>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {/* Editor Handoff Buttons */}
           {completedChapters > 0 && (
             <>
@@ -1068,6 +1069,129 @@ Language: ${primaryLanguage}. Keep it engaging, concise, and professional.`,
           </Button>
         </div>
       </div>
+
+      {/* ========== POST-GENERATION ACTIONS ========== */}
+      {completedChapters > 0 && (
+        <div className="p-4 rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h4 className="font-semibold flex items-center gap-2">
+                <FileCheck className="w-4 h-4 text-primary" />
+                Ready for Next Steps
+              </h4>
+              <p className="text-sm text-muted-foreground">
+                {completedChapters} of {chapters.length} chapters complete
+              </p>
+            </div>
+            <Badge variant="secondary" className="bg-primary/20 text-primary">
+              {Math.round((completedChapters / chapters.length) * 100)}% Complete
+            </Badge>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {/* Send to Review */}
+            <Button
+              variant="outline"
+              onClick={() => {
+                ecosystemServices.sendToProductionHub({
+                  name: projectName,
+                  primaryLanguage,
+                  additionalLanguages,
+                  chapters: chapters as any,
+                  outputMode
+                });
+              }}
+              className="gap-2"
+            >
+              <Send className="w-4 h-4" />
+              Send to Review
+            </Button>
+
+            {/* Save as Template */}
+            <Button
+              variant="outline"
+              onClick={async () => {
+                try {
+                  const { data: { session } } = await supabase.auth.getSession();
+                  if (!session) {
+                    toast.error('Please sign in to save templates');
+                    return;
+                  }
+
+                  const templateData = {
+                    name: `${projectName} Template`,
+                    description: `Template from ${projectName} with ${chapters.length} chapters`,
+                    template_type: 'user_created',
+                    is_default: false,
+                    created_by: session.user.id,
+                    journey_stages: chapters.map((ch, idx) => ({
+                      title: ch.title,
+                      order: idx,
+                      visualTypes: ch.visualTypes,
+                      duration: ch.duration,
+                      aiSuggestedPrompt: ch.aiSuggestedPrompt || ch.customPrompt,
+                      scriptSource: ch.scriptSource,
+                      voiceSource: ch.voiceSource,
+                      musicSource: ch.musicSource,
+                    })),
+                    configuration: {
+                      primaryLanguage,
+                      additionalLanguages,
+                      scriptScope,
+                      audioScope,
+                      outputMode,
+                      globalVoiceSource,
+                      globalMusicSource,
+                    }
+                  };
+
+                  const { error } = await supabase
+                    .from('agent_templates')
+                    .insert(templateData);
+
+                  if (error) throw error;
+                  toast.success('Template saved! Find it in your templates list.');
+                } catch (err) {
+                  console.error('Save template error:', err);
+                  toast.error('Failed to save template');
+                }
+              }}
+              className="gap-2"
+            >
+              <BookTemplate className="w-4 h-4" />
+              Save as Template
+            </Button>
+
+            {/* Publish */}
+            <Button
+              onClick={() => {
+                // Store project in session for publisher
+                sessionStorage.setItem('studio_publish_project', JSON.stringify({
+                  name: projectName,
+                  primaryLanguage,
+                  additionalLanguages,
+                  chapters: chapters.filter(c => c.status === 'complete'),
+                  outputMode,
+                  totalDuration,
+                }));
+                toast.success('Project ready for publishing!');
+                // Navigate to publisher or open modal
+                window.location.href = '/genie-admin?tab=scheduler&action=publish';
+              }}
+              className="gap-2 bg-primary hover:bg-primary/90"
+            >
+              <Share2 className="w-4 h-4" />
+              Publish Content
+            </Button>
+          </div>
+
+          <p className="text-xs text-muted-foreground">
+            💡 <strong>Review:</strong> Multi-stage approval workflow • 
+            <strong> Template:</strong> Reuse this structure for future projects • 
+            <strong> Publish:</strong> Schedule for landing page or social media
+          </p>
+        </div>
+      )}
     </div>
   );
 };
