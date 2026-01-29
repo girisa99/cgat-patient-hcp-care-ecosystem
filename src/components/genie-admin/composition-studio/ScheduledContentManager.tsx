@@ -76,11 +76,24 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.
 interface ScheduledContentManagerProps {
   className?: string;
   onEditProject?: (projectId: string) => void;
+  generatedProjects?: Array<{
+    id: string;
+    name: string;
+    description?: string;
+    status: string;
+    languages: string[];
+    destinations: string[];
+    totalChapters: number;
+    totalDuration: number;
+    createdAt: Date;
+    updatedAt: Date;
+  }>;
 }
 
 export const ScheduledContentManager: React.FC<ScheduledContentManagerProps> = ({
   className,
   onEditProject,
+  generatedProjects = [],
 }) => {
   const [activeTab, setActiveTab] = useState<'pending' | 'scheduled' | 'published'>('pending');
   const [items, setItems] = useState<ScheduledItem[]>([]);
@@ -90,65 +103,87 @@ export const ScheduledContentManager: React.FC<ScheduledContentManagerProps> = (
   const [rescheduleOpen, setRescheduleOpen] = useState(false);
   const [newScheduleDate, setNewScheduleDate] = useState<Date | undefined>();
 
-  // Load scheduled items
+  // Load scheduled items from localStorage and generated projects
   useEffect(() => {
     loadItems();
-  }, []);
+  }, [generatedProjects]);
 
   const loadItems = async () => {
     setLoading(true);
     try {
-      // TODO: Replace with actual Supabase query when table exists
-      // Simulated data for now
-      const mockItems: ScheduledItem[] = [
-        {
-          id: '1',
-          projectId: 'proj_1',
-          name: 'Q1 Product Launch - Hero Video',
-          description: 'Main hero video for product launch campaign',
-          status: 'ready',
-          destinations: ['landing_page', 'youtube', 'linkedin'],
-          languages: ['en', 'es', 'fr', 'de'],
-          chapters: 3,
-          duration: 60,
-          createdAt: new Date(Date.now() - 86400000),
-          updatedAt: new Date(),
-        },
-        {
-          id: '2',
-          projectId: 'proj_2',
-          name: 'Feature Tutorial Series - Part 1',
-          description: 'How to use the AI generation features',
-          status: 'scheduled',
-          scheduledAt: new Date(Date.now() + 172800000),
-          destinations: ['youtube', 'linkedin'],
-          languages: ['en', 'hi', 'zh'],
-          chapters: 4,
-          duration: 180,
-          createdAt: new Date(Date.now() - 172800000),
-          updatedAt: new Date(),
-        },
-        {
-          id: '3',
-          projectId: 'proj_3',
-          name: 'Customer Testimonials - MENA Region',
-          description: 'Regional testimonials with Arabic voice',
-          status: 'published',
-          scheduledAt: new Date(Date.now() - 86400000),
-          destinations: ['landing_page', 'linkedin', 'twitter'],
-          languages: ['ar', 'en'],
-          chapters: 3,
-          duration: 120,
-          createdAt: new Date(Date.now() - 259200000),
-          updatedAt: new Date(Date.now() - 86400000),
-        },
-      ];
-      setItems(mockItems);
+      // Load from localStorage
+      const STORAGE_KEY = 'genie_generated_content';
+      const stored = localStorage.getItem(STORAGE_KEY);
+      let storedItems: ScheduledItem[] = [];
+      
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          storedItems = parsed.map((p: any) => ({
+            id: p.id,
+            projectId: p.id,
+            name: p.name,
+            description: p.description,
+            status: mapStatus(p.status),
+            scheduledAt: p.scheduledAt ? new Date(p.scheduledAt) : undefined,
+            destinations: p.destinations || ['landing_page'],
+            languages: p.languages || ['en'],
+            chapters: p.totalChapters || p.items?.length || 0,
+            duration: p.totalDuration || 0,
+            thumbnailUrl: p.items?.[0]?.previewUrl,
+            createdAt: new Date(p.createdAt),
+            updatedAt: new Date(p.updatedAt),
+          }));
+        } catch (e) {
+          console.error('[ScheduledContent] Failed to parse stored items:', e);
+        }
+      }
+      
+      // Merge with passed generatedProjects
+      const projectItems: ScheduledItem[] = generatedProjects.map(p => ({
+        id: p.id,
+        projectId: p.id,
+        name: p.name,
+        description: p.description,
+        status: mapStatus(p.status) as ScheduledItem['status'],
+        destinations: p.destinations || ['landing_page'],
+        languages: p.languages || ['en'],
+        chapters: p.totalChapters,
+        duration: p.totalDuration,
+        createdAt: p.createdAt,
+        updatedAt: p.updatedAt,
+      }));
+      
+      // Combine and deduplicate
+      const allItems = [...storedItems, ...projectItems];
+      const uniqueItems = allItems.reduce((acc, item) => {
+        if (!acc.find(i => i.id === item.id)) {
+          acc.push(item);
+        }
+        return acc;
+      }, [] as ScheduledItem[]);
+      
+      // If no items, show helpful empty state (no mock data)
+      setItems(uniqueItems);
+      
+      console.log(`[ScheduledContent] Loaded ${uniqueItems.length} items`);
     } catch (error) {
       console.error('Failed to load scheduled items:', error);
       toast.error('Failed to load scheduled content');
     } finally {
       setLoading(false);
+    }
+  };
+  
+  const mapStatus = (status: string): ScheduledItem['status'] => {
+    switch (status) {
+      case 'generating': return 'draft';
+      case 'ready': return 'ready';
+      case 'scheduled': return 'scheduled';
+      case 'publishing': return 'publishing';
+      case 'published': return 'published';
+      case 'failed': return 'failed';
+      default: return 'draft';
     }
   };
 

@@ -36,6 +36,8 @@ export interface GenerationResult {
   thumbnailUrl?: string;
   duration?: number;
   error?: string;
+  scriptContent?: string;
+  sceneDescription?: string;
   metadata?: {
     provider: string;
     model: string;
@@ -332,15 +334,26 @@ Requirements:
         return { success: false, error: error.message };
       }
 
-      // For now, return a generated preview URL
-      // In production, this would be the actual generated content URL
-      const previewUrl = data?.imageUrl || data?.videoUrl || this.generatePlaceholderUrl(params.chapterType);
+      // Extract script and scene data from response
+      const scriptContent = data?.content?.script || data?.script || '';
+      const sceneDescription = data?.content?.sceneDescription || data?.sceneDescription || '';
+      
+      // Generate preview URL - use returned URL or create a rich placeholder with actual content
+      const previewUrl = data?.imageUrl || data?.videoUrl || this.generateContentPlaceholder(params.chapterType, params.language, scriptContent);
+
+      console.log(`[ContentGeneration] Generated content for ${params.chapterType}:`, {
+        hasScript: !!scriptContent,
+        hasScene: !!sceneDescription,
+        previewUrl: previewUrl?.substring(0, 50) + '...'
+      });
 
       return {
         success: true,
         previewUrl,
         thumbnailUrl: previewUrl,
         duration: params.duration,
+        scriptContent,
+        sceneDescription,
         metadata: {
           provider: data?.provider || provider,
           model: data?.model || model,
@@ -355,6 +368,27 @@ Requirements:
         error: error instanceof Error ? error.message : 'Failed to process content' 
       };
     }
+  }
+
+  /**
+   * Generate a content placeholder with actual generated data
+   */
+  private generateContentPlaceholder(chapterType: string, language: string, script?: string): string {
+    // Create a data URL for an SVG placeholder that shows content type and language
+    const colors: Record<string, { bg: string; fg: string }> = {
+      avatar: { bg: '6366f1', fg: 'ffffff' },
+      '3d': { bg: '8b5cf6', fg: 'ffffff' },
+      video: { bg: 'ec4899', fg: 'ffffff' },
+      animation: { bg: 'f59e0b', fg: '1f2937' },
+      static: { bg: '10b981', fg: 'ffffff' },
+      screen_recording: { bg: '3b82f6', fg: 'ffffff' }
+    };
+    
+    const color = colors[chapterType] || colors.video;
+    const label = `${chapterType.toUpperCase()} - ${language.toUpperCase()}`;
+    const preview = script ? script.substring(0, 50) + '...' : 'Content Generated';
+    
+    return `https://placehold.co/1920x1080/${color.bg}/${color.fg}?text=${encodeURIComponent(label)}%0A${encodeURIComponent(preview)}`;
   }
 
   /**

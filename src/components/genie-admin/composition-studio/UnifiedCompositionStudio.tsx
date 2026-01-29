@@ -210,6 +210,14 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
   const [reviewItems, setReviewItems] = useState<ReviewItem[]>([]);
   // View mode for chapters step
   const [chaptersViewMode, setChaptersViewMode] = useState<'chapters' | 'categories'>('chapters');
+  
+  // Generated content storage - maps "chapterId_language" to content data
+  const [generatedContent, setGeneratedContent] = useState<Map<string, { 
+    previewUrl: string; 
+    script?: string; 
+    sceneDescription?: string 
+  }>>(new Map());
+  
   // Project state
   const [project, setProject] = useState<CompositionProject>({
     id: generateId(),
@@ -411,6 +419,21 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
       });
 
       if (result.success) {
+        const previewUrl = result.previewUrl || `https://placehold.co/1920x1080/6366f1/ffffff?text=${encodeURIComponent(chapter.title)}`;
+        
+        // Store in generated content map
+        const contentKey = `${chapterId}_${language}`;
+        setGeneratedContent(prev => {
+          const updated = new Map(prev);
+          updated.set(contentKey, {
+            previewUrl,
+            script: result.scriptContent,
+            sceneDescription: result.sceneDescription
+          });
+          return updated;
+        });
+        
+        // Update chapter state
         setChapters(prev => prev.map(c => 
           c.id === chapterId 
             ? { 
@@ -419,11 +442,18 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
                 progress: 100,
                 previewUrls: { 
                   ...c.previewUrls, 
-                  [language]: result.previewUrl || `https://placehold.co/1920x1080/6366f1/ffffff?text=${encodeURIComponent(chapter.title)}`
+                  [language]: previewUrl
                 } 
               } 
             : c
         ));
+        
+        console.log(`[Studio] Generated content stored for ${chapter.title} (${language}):`, {
+          hasPreview: !!previewUrl,
+          hasScript: !!result.scriptContent,
+          contentKey
+        });
+        
         toast.success(`Preview generated for "${chapter.title}" in ${language}`);
       } else {
         throw new Error(result.error || 'Generation failed');
@@ -1101,6 +1131,7 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
             onGenerateAll={generateAllPreviews}
             isGenerating={isGenerating}
             generationProgress={generationProgress}
+            generatedContent={generatedContent}
           />
         )}
 
