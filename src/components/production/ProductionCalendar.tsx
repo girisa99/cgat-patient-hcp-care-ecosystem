@@ -670,12 +670,21 @@ export function ProductionCalendar({
                               <TooltipContent side="right" className="max-w-xs">
                                 <div className="space-y-1">
                                   <p className="font-semibold">{show.title}</p>
+                                  <Badge variant="outline" className={cn('text-[10px] mb-1', colors.bg, colors.text)}>
+                                    {colors.label}
+                                  </Badge>
                                   <p className="text-xs text-muted-foreground">
                                     {format(new Date(show.scheduled_date!), 'h:mm a')} • {show.duration_minutes || 60}min
                                   </p>
                                   {show.participants && show.participants.length > 0 && (
                                     <p className="text-xs">
+                                      <span className="text-muted-foreground">Participants: </span>
                                       {show.participants.map(p => p.name).join(', ')}
+                                    </p>
+                                  )}
+                                  {show.meeting_link && (
+                                    <p className="text-xs text-primary truncate">
+                                      📎 Meeting link attached
                                     </p>
                                   )}
                                 </div>
