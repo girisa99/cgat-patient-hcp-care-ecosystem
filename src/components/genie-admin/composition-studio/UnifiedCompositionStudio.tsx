@@ -50,6 +50,9 @@ import { ScheduledContentManager } from './ScheduledContentManager';
 import { TemplateLandingMapper } from './TemplateLandingMapper';
 import { ElementCategoryTabs, type CategoryElement } from './ElementCategoryTabs';
 import { ContentReviewQueue, type ReviewItem, getTargetRegionsFromLanguages } from './ContentReviewQueue';
+import { AddChapterDialog } from './AddChapterDialog';
+import { ChapterRegenerationPanel, type RegenerationTarget, type RegenerationOptions } from './ChapterRegenerationPanel';
+import { ThumbnailManager, type ContentMetadata } from './ThumbnailManager';
 import type { 
   CompositionProject, 
   CompositionChapter, 
@@ -211,10 +214,26 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
   // View mode for chapters step
   const [chaptersViewMode, setChaptersViewMode] = useState<'chapters' | 'categories'>('chapters');
   
+  // Add Chapter Dialog
+  const [showAddChapterDialog, setShowAddChapterDialog] = useState(false);
+  
+  // Selected chapter for regeneration
+  const [selectedChapterForRegen, setSelectedChapterForRegen] = useState<string | null>(null);
+  const [isRegeneratingChapter, setIsRegeneratingChapter] = useState(false);
+  const [regenerationProgress, setRegenerationProgress] = useState(0);
+  
+  // Content metadata (thumbnails, titles)
+  const [contentMetadata, setContentMetadata] = useState<ContentMetadata>({
+    title: '',
+    description: '',
+    thumbnails: {},
+    suggestedTitles: [],
+  });
+  
   // Generated content storage - maps "chapterId_language" to content data
   const [generatedContent, setGeneratedContent] = useState<Map<string, { 
     previewUrl: string; 
-    script?: string; 
+    script?: string;
     sceneDescription?: string 
   }>>(new Map());
   
@@ -304,8 +323,8 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
     }
   };
 
-  // Chapter management
-  const addChapter = useCallback((template?: Partial<CompositionChapter>) => {
+  // Chapter management - enhanced with position support
+  const addChapter = useCallback((template?: Partial<CompositionChapter>, position?: 'start' | 'end' | number) => {
     const newChapter: CompositionChapter = {
       id: generateId(),
       order: chapters.length + 1,
@@ -316,7 +335,22 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
       status: 'draft',
       previewUrls: {},
     };
-    setChapters(prev => [...prev, newChapter]);
+    
+    setChapters(prev => {
+      let newChapters: CompositionChapter[];
+      
+      if (position === 'start') {
+        newChapters = [newChapter, ...prev];
+      } else if (typeof position === 'number') {
+        newChapters = [...prev.slice(0, position), newChapter, ...prev.slice(position)];
+      } else {
+        newChapters = [...prev, newChapter];
+      }
+      
+      // Reorder
+      return newChapters.map((c, i) => ({ ...c, order: i + 1 }));
+    });
+    
     setExpandedChapter(newChapter.id);
   }, [chapters.length, project.primaryLanguage]);
 
@@ -340,6 +374,84 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
       });
     }
   }, [chapters, addChapter]);
+
+  // Selective regeneration handler
+  const handleChapterRegeneration = useCallback(async (
+    chapterId: string,
+    language: string,
+    target: RegenerationTarget,
+    options: RegenerationOptions
+  ) => {
+    const chapter = chapters.find(c => c.id === chapterId);
+    if (!chapter) return;
+
+    setIsRegeneratingChapter(true);
+    setRegenerationProgress(0);
+
+    try {
+      console.log(`[Studio] Regenerating ${target} for chapter: ${chapter.title}`);
+      
+      // Update chapter with new script if provided
+      if (options.newScript && options.newScript !== chapter.voiceover?.text) {
+        updateChapter({
+          ...chapter,
+          voiceover: { ...chapter.voiceover, text: options.newScript } as any,
+        });
+      }
+
+      setRegenerationProgress(20);
+
+      // Call appropriate regeneration based on target
+      const request: GenerationRequest = {
+        templateId: project.name || 'custom',
+        chapterIndex: chapters.findIndex(c => c.id === chapterId),
+        language,
+        outputFormat: 'avatar_ppt',
+        visualType: target === 'avatar_only' ? 'avatar' : 
+                    target === 'animation_only' ? 'animation' : 
+                    (chapter.visual?.type === 'custom' ? 'video' : chapter.visual?.type) || 'video',
+        duration: chapter.duration || 30,
+        scriptContent: options.newScript || chapter.voiceover?.text || '',
+        userTier: 'creator'
+      };
+
+      setRegenerationProgress(50);
+
+      const result = await generateChapterService(request, (progress) => {
+        setRegenerationProgress(50 + (progress.progress / 2));
+      });
+
+      if (result.success) {
+        const contentKey = `${chapterId}_${language}`;
+        setGeneratedContent(prev => {
+          const updated = new Map(prev);
+          updated.set(contentKey, {
+            previewUrl: result.previewUrl || '',
+            script: result.scriptContent,
+            sceneDescription: result.sceneDescription
+          });
+          return updated;
+        });
+
+        setChapters(prev => prev.map(c => 
+          c.id === chapterId 
+            ? { ...c, status: 'complete', previewUrls: { ...c.previewUrls, [language]: result.previewUrl || '' } } 
+            : c
+        ));
+
+        toast.success(`${target.replace(/_/g, ' ')} regenerated for "${chapter.title}"`);
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (error) {
+      console.error('[Studio] Regeneration error:', error);
+      toast.error(`Regeneration failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsRegeneratingChapter(false);
+      setRegenerationProgress(0);
+      setSelectedChapterForRegen(null);
+    }
+  }, [chapters, project.name, updateChapter]);
 
   // Quick templates
   const loadTemplate = (type: 'hero' | 'product' | 'tutorial' | 'testimonial') => {
@@ -933,7 +1045,7 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
                   </Button>
                 </div>
                 {chapters.length > 0 && chaptersViewMode === 'chapters' && (
-                  <Button onClick={() => addChapter()}>
+                  <Button onClick={() => setShowAddChapterDialog(true)}>
                     <Plus className="w-4 h-4 mr-2" />
                     Add Chapter
                   </Button>
@@ -1427,6 +1539,15 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
           </div>
         </div>
       )}
+      
+      {/* Add Chapter Dialog */}
+      <AddChapterDialog
+        open={showAddChapterDialog}
+        onOpenChange={setShowAddChapterDialog}
+        onAddChapter={addChapter}
+        existingChapters={chapters}
+        primaryLanguage={project.primaryLanguage}
+      />
     </div>
   );
 };
