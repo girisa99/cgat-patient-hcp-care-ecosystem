@@ -2,13 +2,14 @@
  * TEMPLATE PREVIEW DIALOG
  * 
  * Shows detailed template information with:
- * - Chapter breakdown
- * - Landing page alignment info
+ * - Chapter breakdown with live preview
+ * - Landing page alignment & flow visualization
  * - Video preview capability
  * - Regional publishing options
+ * - Live generation preview during creation
  */
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -21,12 +22,18 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Progress } from '@/components/ui/progress';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Play, Pause, Volume2, VolumeX, Check, Globe, Layers,
   Video, User, Box, Sparkles, FileVideo, MapPin, Clock,
-  Youtube, Linkedin, Facebook, Instagram, Music2, Twitter
+  Youtube, Linkedin, Facebook, Instagram, Music2, Twitter,
+  ArrowRight, ArrowDown, Eye, Wand2, RefreshCw, Monitor,
+  MessageSquare, Send, Loader2, CheckCircle2, AlertCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface TemplateChapter {
   title: string;
@@ -276,6 +283,279 @@ export const TEMPLATE_DEFINITIONS: TemplateDefinition[] = [
   },
 ];
 
+// ========== LIVE PREVIEW COMPONENT ==========
+interface LivePreviewPanelProps {
+  template: TemplateDefinition;
+  isGenerating: boolean;
+  generationProgress: number;
+  currentChapter: number;
+  onGenerate: () => void;
+  previewUrl?: string;
+}
+
+const LivePreviewPanel: React.FC<LivePreviewPanelProps> = ({
+  template,
+  isGenerating,
+  generationProgress,
+  currentChapter,
+  onGenerate,
+  previewUrl,
+}) => {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+
+  return (
+    <div className="rounded-lg border overflow-hidden bg-card">
+      {/* Preview Area */}
+      <div className="aspect-video bg-gradient-to-br from-primary/10 via-background to-accent/10 relative flex items-center justify-center">
+        <AnimatePresence mode="wait">
+          {isGenerating ? (
+            <motion.div
+              key="generating"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="text-center space-y-4 p-6"
+            >
+              <div className="relative">
+                <Loader2 className="w-16 h-16 text-primary mx-auto animate-spin" />
+                <Wand2 className="w-6 h-6 text-accent absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+              </div>
+              <div className="space-y-2">
+                <p className="font-medium text-foreground">
+                  Generating Chapter {currentChapter + 1}: {template.chapters[currentChapter]?.title}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {template.chapters[currentChapter]?.description}
+                </p>
+                <Progress value={generationProgress} className="w-64 mx-auto mt-3" />
+                <p className="text-xs text-muted-foreground">{Math.round(generationProgress)}% complete</p>
+              </div>
+            </motion.div>
+          ) : previewUrl ? (
+            <motion.div
+              key="preview"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="w-full h-full relative"
+            >
+              <video
+                src={previewUrl}
+                className="w-full h-full object-cover"
+                muted={isMuted}
+                loop
+                autoPlay={isPlaying}
+              />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Button
+                  size="lg"
+                  variant="secondary"
+                  className="gap-2 bg-background/80 backdrop-blur-sm"
+                  onClick={() => setIsPlaying(!isPlaying)}
+                >
+                  {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+                  {isPlaying ? 'Pause' : 'Play Preview'}
+                </Button>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="placeholder"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center space-y-4"
+            >
+              <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                <Video className="w-10 h-10 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="font-medium text-foreground">No Preview Available</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Generate a preview to see how this template looks
+                </p>
+              </div>
+              <Button onClick={onGenerate} className="gap-2">
+                <Wand2 className="w-4 h-4" />
+                Generate Preview
+              </Button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Controls overlay */}
+        {(previewUrl || isGenerating) && (
+          <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="secondary"
+                className="gap-2 bg-background/80 backdrop-blur-sm"
+                onClick={() => setIsPlaying(!isPlaying)}
+                disabled={isGenerating}
+              >
+                {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+              </Button>
+              {!isGenerating && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-2 bg-background/80 backdrop-blur-sm"
+                  onClick={onGenerate}
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Regenerate
+                </Button>
+              )}
+            </div>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="bg-background/80 backdrop-blur-sm"
+              onClick={() => setIsMuted(!isMuted)}
+            >
+              {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {/* Chapter Progress */}
+      <div className="p-3 border-t bg-muted/30">
+        <div className="flex gap-1">
+          {template.chapters.map((ch, i) => (
+            <div
+              key={i}
+              className={cn(
+                "flex-1 h-1.5 rounded-full transition-colors",
+                i < currentChapter ? "bg-primary" :
+                i === currentChapter && isGenerating ? "bg-primary/50 animate-pulse" :
+                "bg-muted"
+              )}
+            />
+          ))}
+        </div>
+        <div className="flex justify-between mt-2 text-xs text-muted-foreground">
+          <span>{template.chapters.length} chapters</span>
+          <span>{Math.floor(template.totalDuration / 60)}:{(template.totalDuration % 60).toString().padStart(2, '0')} total</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ========== FLOW VISUALIZATION ==========
+const WorkflowFlowDiagram: React.FC<{ template: TemplateDefinition }> = ({ template }) => {
+  const sectionKey = Object.keys(LANDING_PAGE_SECTIONS).find(
+    key => LANDING_PAGE_SECTIONS[key as LandingPageSection].label === template.landingPageSection ||
+           template.landingPageSection.includes(LANDING_PAGE_SECTIONS[key as LandingPageSection].label.split(' ')[0])
+  ) as LandingPageSection | undefined;
+
+  const sectionInfo = sectionKey ? LANDING_PAGE_SECTIONS[sectionKey] : null;
+
+  return (
+    <div className="space-y-4">
+      {/* Flow Diagram */}
+      <Card className="bg-gradient-to-r from-primary/5 to-accent/5">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <ArrowRight className="w-4 h-4 text-primary" />
+            Content Flow: Production Hub → Landing Page
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center gap-3 py-4">
+            {/* Step 1: Create */}
+            <div className="flex flex-col items-center gap-2 p-3 rounded-lg bg-primary/10 border border-primary/20">
+              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                <Wand2 className="w-5 h-5 text-primary" />
+              </div>
+              <span className="text-xs font-medium text-center">1. Create<br/>in Studio</span>
+            </div>
+
+            <ArrowRight className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+
+            {/* Step 2: Generate */}
+            <div className="flex flex-col items-center gap-2 p-3 rounded-lg bg-accent/10 border border-accent/20">
+              <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center">
+                <Video className="w-5 h-5 text-accent" />
+              </div>
+              <span className="text-xs font-medium text-center">2. Generate<br/>Regionally</span>
+            </div>
+
+            <ArrowRight className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+
+            {/* Step 3: Publish */}
+            <div className="flex flex-col items-center gap-2 p-3 rounded-lg bg-secondary/50 border">
+              <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
+                <Send className="w-5 h-5 text-foreground" />
+              </div>
+              <span className="text-xs font-medium text-center">3. Publish<br/>to Section</span>
+            </div>
+
+            <ArrowRight className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+
+            {/* Step 4: Landing Page */}
+            <div className="flex flex-col items-center gap-2 p-3 rounded-lg bg-muted border">
+              <div className="w-10 h-10 rounded-full bg-background border flex items-center justify-center">
+                <Monitor className="w-5 h-5 text-muted-foreground" />
+              </div>
+              <span className="text-xs font-medium text-center">4. View on<br/>Landing Page</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Landing Page Section Details */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-primary" />
+            Target Section: {template.landingPageSection}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground">{template.landingPageDescription}</p>
+          
+          {sectionInfo && (
+            <div className="flex flex-wrap gap-2">
+              <Badge variant={sectionInfo.userInteractive ? "default" : "secondary"}>
+                {sectionInfo.userInteractive ? (
+                  <><MessageSquare className="w-3 h-3 mr-1" /> Users Can Enter Prompts</>
+                ) : (
+                  <><Eye className="w-3 h-3 mr-1" /> View Only</>
+                )}
+              </Badge>
+              <Badge variant="outline">
+                Component: {sectionInfo.component}
+              </Badge>
+            </div>
+          )}
+
+          <Separator />
+
+          <div className="text-xs text-muted-foreground space-y-1">
+            <p className="font-medium text-foreground">How it works:</p>
+            {sectionInfo?.userInteractive ? (
+              <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                <li>Admin generates content in Production Hub using this template</li>
+                <li>Content is published to the landing page section</li>
+                <li>Users on landing page can enter prompts to explore (preview only)</li>
+                <li>User-entered prompts do NOT save - admin controls published content</li>
+              </ul>
+            ) : (
+              <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                <li>Admin generates content in Production Hub using this template</li>
+                <li>Content is published to the landing page section</li>
+                <li>Users view the published content (no interaction)</li>
+              </ul>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
 interface TemplatePreviewDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -289,19 +569,56 @@ export const TemplatePreviewDialog: React.FC<TemplatePreviewDialogProps> = ({
   template,
   onSelectTemplate,
 }) => {
-  const [activeTab, setActiveTab] = useState('chapters');
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
+  const [activeTab, setActiveTab] = useState('preview');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState(0);
+  const [currentChapter, setCurrentChapter] = useState(0);
+  const [previewUrl, setPreviewUrl] = useState<string | undefined>();
+
+  // Simulate generation for preview
+  const handleGeneratePreview = useCallback(() => {
+    if (!template) return;
+    
+    setIsGenerating(true);
+    setGenerationProgress(0);
+    setCurrentChapter(0);
+
+    const totalChapters = template.chapters.length;
+    let progress = 0;
+    let chapter = 0;
+
+    const interval = setInterval(() => {
+      progress += Math.random() * 8 + 2;
+      if (progress >= 100) {
+        progress = 100;
+        setGenerationProgress(100);
+        setIsGenerating(false);
+        setPreviewUrl('/placeholder-video.mp4'); // Placeholder
+        clearInterval(interval);
+        return;
+      }
+
+      const newChapter = Math.floor((progress / 100) * totalChapters);
+      if (newChapter !== chapter) {
+        chapter = Math.min(newChapter, totalChapters - 1);
+        setCurrentChapter(chapter);
+      }
+
+      setGenerationProgress(progress);
+    }, 200);
+
+    return () => clearInterval(interval);
+  }, [template]);
 
   if (!template) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {template.icon}
-            {template.label}
+            {template.label} - Preview & Flow
           </DialogTitle>
           <DialogDescription>
             {template.desc} • {Math.floor(template.totalDuration / 60)}:{(template.totalDuration % 60).toString().padStart(2, '0')} total
@@ -310,31 +627,83 @@ export const TemplatePreviewDialog: React.FC<TemplatePreviewDialogProps> = ({
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 min-h-0">
           <TabsList className="w-full justify-start">
+            <TabsTrigger value="preview" className="gap-2">
+              <Play className="w-4 h-4" />
+              Live Preview
+            </TabsTrigger>
             <TabsTrigger value="chapters" className="gap-2">
               <Layers className="w-4 h-4" />
               Chapters
             </TabsTrigger>
-            <TabsTrigger value="landing" className="gap-2">
-              <Globe className="w-4 h-4" />
-              Landing Page
+            <TabsTrigger value="flow" className="gap-2">
+              <ArrowRight className="w-4 h-4" />
+              Workflow
             </TabsTrigger>
             <TabsTrigger value="social" className="gap-2">
-              <Youtube className="w-4 h-4" />
-              Social
+              <Globe className="w-4 h-4" />
+              Distribution
             </TabsTrigger>
           </TabsList>
 
-          <ScrollArea className="flex-1 mt-4">
+          <ScrollArea className="flex-1 mt-4 pr-4">
+            {/* Live Preview Tab */}
+            <TabsContent value="preview" className="space-y-4 m-0">
+              <LivePreviewPanel
+                template={template}
+                isGenerating={isGenerating}
+                generationProgress={generationProgress}
+                currentChapter={currentChapter}
+                onGenerate={handleGeneratePreview}
+                previewUrl={previewUrl}
+              />
+
+              <div className="grid grid-cols-2 gap-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Target Section</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Badge className="text-xs">{template.landingPageSection}</Badge>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {template.landingPageDescription.slice(0, 80)}...
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Regional Support</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-1">
+                      {template.regionalSupport.slice(0, 2).map((region, i) => (
+                        <Badge key={i} variant="outline" className="text-xs">
+                          {region}
+                        </Badge>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
             {/* Chapters Tab */}
             <TabsContent value="chapters" className="space-y-4 m-0">
               <div className="space-y-3">
                 {template.chapters.map((ch, i) => (
-                  <div 
-                    key={i} 
-                    className="flex items-start gap-3 p-3 rounded-lg border bg-card hover:bg-accent/5 transition-colors"
+                  <div
+                    key={i}
+                    className={cn(
+                      "flex items-start gap-3 p-3 rounded-lg border bg-card transition-colors",
+                      isGenerating && i === currentChapter && "border-primary bg-primary/5"
+                    )}
                   >
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-sm">
-                      {i + 1}
+                    <div className={cn(
+                      "w-8 h-8 rounded-full flex items-center justify-center font-medium text-sm",
+                      i < currentChapter ? "bg-primary text-primary-foreground" :
+                      i === currentChapter && isGenerating ? "bg-primary/50 text-primary-foreground animate-pulse" :
+                      "bg-primary/10 text-primary"
+                    )}>
+                      {i < currentChapter ? <Check className="w-4 h-4" /> : i + 1}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
@@ -355,133 +724,77 @@ export const TemplatePreviewDialog: React.FC<TemplatePreviewDialogProps> = ({
                   </div>
                 ))}
               </div>
-
-              {/* Video Preview Placeholder */}
-              <div className="rounded-lg border overflow-hidden bg-muted/30">
-                <div className="aspect-video bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center relative">
-                  <div className="text-center">
-                    <Video className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">
-                      Preview will be available after generation
-                    </p>
-                  </div>
-                  {/* Play Controls */}
-                  <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
-                    <Button 
-                      size="sm" 
-                      variant="secondary" 
-                      className="gap-2"
-                      onClick={() => setIsPlaying(!isPlaying)}
-                    >
-                      {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                      {isPlaying ? 'Pause' : 'Preview'}
-                    </Button>
-                    <Button 
-                      size="icon" 
-                      variant="ghost"
-                      onClick={() => setIsMuted(!isMuted)}
-                    >
-                      {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-                    </Button>
-                  </div>
-                </div>
-              </div>
             </TabsContent>
 
-            {/* Landing Page Alignment Tab */}
-            <TabsContent value="landing" className="space-y-4 m-0">
-              <div className="rounded-lg border p-4 bg-card">
-                <div className="flex items-center gap-2 mb-3">
-                  <MapPin className="w-5 h-5 text-primary" />
-                  <span className="font-medium">Landing Page Section</span>
-                </div>
-                <div className="bg-primary/10 rounded-lg p-3 mb-3">
-                  <span className="font-medium text-primary">{template.landingPageSection}</span>
-                </div>
-                <p className="text-sm text-muted-foreground">{template.landingPageDescription}</p>
-              </div>
-
-              <Separator />
-
-              <div className="space-y-2">
-                <span className="font-medium text-sm">Regional Publishing</span>
-                <div className="flex flex-wrap gap-2">
-                  {template.regionalSupport.map((region, i) => (
-                    <Badge key={i} variant="outline" className="gap-1">
-                      <Globe className="w-3 h-3" />
-                      {region}
-                    </Badge>
-                  ))}
-                </div>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Videos are automatically generated in each selected language using regional voice providers 
-                  (ElevenLabs for West/EU, CosyVoice for CJK, Azure for India/SEA, etc.)
-                </p>
-              </div>
-
-              <div className="p-3 rounded-lg bg-accent/10 border border-accent/20">
-                <p className="text-sm font-medium mb-1">How Landing Page Alignment Works:</p>
-                <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
-                  <li>Select template based on where content will appear</li>
-                  <li>Content is optimized for that section's requirements</li>
-                  <li>Regional variants are created for each target language</li>
-                  <li>After publishing, content appears in the corresponding landing page section</li>
-                </ol>
-              </div>
+            {/* Workflow Tab */}
+            <TabsContent value="flow" className="space-y-4 m-0">
+              <WorkflowFlowDiagram template={template} />
             </TabsContent>
 
-            {/* Social Platforms Tab */}
+            {/* Distribution Tab */}
             <TabsContent value="social" className="space-y-4 m-0">
-              <div className="space-y-2">
-                <span className="font-medium text-sm">Recommended Platforms</span>
-                <div className="grid grid-cols-2 gap-3">
-                  {template.socialPlatforms.map((platform) => (
-                    <div 
-                      key={platform}
-                      className="flex items-center gap-3 p-3 rounded-lg border bg-card"
-                    >
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Social Platform Distribution</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {template.socialPlatforms.map((platform, i) => (
+                      <Badge key={i} variant="outline" className="gap-2 py-2 px-3">
                         {SOCIAL_ICON_MAP[platform]}
-                      </div>
-                      <div>
-                        <span className="font-medium capitalize">{platform}</span>
-                        <div className="text-xs text-muted-foreground">
-                          <Check className="w-3 h-3 inline mr-1" />
-                          Optimized
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+                        {platform.charAt(0).toUpperCase() + platform.slice(1)}
+                      </Badge>
+                    ))}
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Content will be automatically formatted and published to selected platforms
+                    with optimal dimensions and duration for each.
+                  </p>
+                </CardContent>
+              </Card>
 
-              <div className="p-3 rounded-lg bg-accent/10 border border-accent/20">
-                <p className="text-sm font-medium mb-1">Multi-Platform Distribution</p>
-                <p className="text-xs text-muted-foreground">
-                  When published, content is automatically reformatted for each platform's requirements 
-                  (aspect ratio, duration, captions) and queued in the scheduler for distribution.
-                </p>
-              </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Regional Auto-Generation</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex flex-wrap gap-2">
+                    {template.regionalSupport.map((region, i) => (
+                      <Badge key={i} variant="secondary" className="gap-1">
+                        <Globe className="w-3 h-3" />
+                        {region}
+                      </Badge>
+                    ))}
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Videos are automatically transcreated (not just translated) for each region
+                    using native-dialect TTS providers. This ensures cultural resonance and
+                    authenticity across all target markets.
+                  </p>
+                </CardContent>
+              </Card>
             </TabsContent>
           </ScrollArea>
         </Tabs>
 
         <Separator className="my-4" />
 
-        <div className="flex justify-end gap-3">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button 
-            onClick={() => {
+        <div className="flex justify-between items-center">
+          <p className="text-sm text-muted-foreground">
+            Select this template to start creating your project
+          </p>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => {
               onSelectTemplate(template.id);
               onOpenChange(false);
-            }}
-            className="gap-2"
-          >
-            <Check className="w-4 h-4" />
-            Use This Template
-          </Button>
+            }} className="gap-2">
+              <Check className="w-4 h-4" />
+              Use Template
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
