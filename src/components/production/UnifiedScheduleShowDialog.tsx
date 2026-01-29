@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ScrollArea } from '@/components/ui/scroll-area';
+// ScrollArea removed - using native overflow-y-auto for single scroll context
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -1694,8 +1694,8 @@ Respond in JSON format: {"title": "...", "intro": "..."}`;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>
             {mode === 'edit' ? 'Edit' : 'Create New'} {EVENT_CATEGORIES.find(c => c.id === formData.event_category)?.label || 'Production'}
           </DialogTitle>
@@ -1706,7 +1706,7 @@ Respond in JSON format: {"title": "...", "intro": "..."}`;
 
         {renderStepIndicator()}
 
-        <ScrollArea className="max-h-[65vh] pr-4">
+        <div className="flex-1 overflow-y-auto -mx-6 px-6">
           <div className="space-y-4 py-4">
             {renderCategorySelection()}
             {renderTypeSelection()}
@@ -1803,9 +1803,9 @@ Respond in JSON format: {"title": "...", "intro": "..."}`;
               {renderReminderSettings()}
             </div>
           </div>
-        </ScrollArea>
+        </div>
 
-        <DialogFooter className="border-t pt-4">
+        <DialogFooter className="flex-shrink-0 border-t pt-4 -mx-6 px-6 -mb-6 pb-6 bg-background">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
