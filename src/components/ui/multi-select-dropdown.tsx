@@ -203,11 +203,11 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
   const dropdownContent = isOpen ? createPortal(
     <div
       ref={dropdownRef}
-      className="bg-popover border border-border rounded-lg shadow-2xl overflow-hidden animate-in fade-in-0 zoom-in-95 duration-100"
+      className="bg-popover border border-border rounded-lg shadow-2xl flex flex-col animate-in fade-in-0 zoom-in-95 duration-100"
       style={getDropdownStyle()}
     >
       {searchable && (
-        <div className="p-2 border-b border-border bg-popover sticky top-0">
+        <div className="p-2 border-b border-border bg-popover flex-shrink-0">
           <div className="relative">
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <input
@@ -223,7 +223,14 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
         </div>
       )}
       
-      <div className="overflow-auto bg-popover" style={{ maxHeight: searchable ? 'calc(100% - 52px)' : '100%' }}>
+      <div 
+        className="flex-1 overflow-y-auto bg-popover"
+        style={{ 
+          overflowY: 'auto',
+          WebkitOverflowScrolling: 'touch',
+          scrollbarWidth: 'thin'
+        }}
+      >
         {Object.entries(groupedOptions).map(([category, categoryOptions]) => (
           <div key={category}>
             {groupByCategory && Object.keys(groupedOptions).length > 1 && (
@@ -282,7 +289,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
       </div>
       
       {maxSelections && (
-        <div className="p-2 border-t border-border text-xs text-muted-foreground text-center bg-muted/30">
+        <div className="p-2 border-t border-border text-xs text-muted-foreground text-center bg-muted/30 flex-shrink-0">
           {selectedValues.length} of {maxSelections} selected
         </div>
       )}
