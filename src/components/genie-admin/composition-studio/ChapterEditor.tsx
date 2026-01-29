@@ -308,6 +308,7 @@ export const ChapterEditor: React.FC<ChapterEditorProps> = ({
 
               {/* Audio Tab */}
               <TabsContent value="audio" className="space-y-4">
+                {/* Voiceover Type */}
                 <div className="space-y-2">
                   <Label>Voiceover Type</Label>
                   <Select
@@ -327,7 +328,43 @@ export const ChapterEditor: React.FC<ChapterEditorProps> = ({
                   </Select>
                 </div>
 
-                {chapter.voiceover.type !== 'none' && (
+                {/* Upload Voice Recording - Show when "recorded" is selected */}
+                {chapter.voiceover.type === 'recorded' && (
+                  <div className="p-4 border-2 border-dashed border-primary/30 rounded-lg bg-primary/5 space-y-3">
+                    <div className="flex items-center gap-2 text-primary">
+                      <Upload className="w-5 h-5" />
+                      <Label className="font-medium">Upload Voice Recording</Label>
+                    </div>
+                    <Input
+                      type="file"
+                      accept="audio/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          // Store file reference (URL.createObjectURL for preview)
+                          const audioUrl = URL.createObjectURL(file);
+                          updateVoiceover({ 
+                            uploadedAudioUrl: audioUrl,
+                            uploadedFileName: file.name 
+                          });
+                        }
+                      }}
+                      className="cursor-pointer"
+                    />
+                    {chapter.voiceover.uploadedFileName && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Volume2 className="w-4 h-4" />
+                        <span>Uploaded: {chapter.voiceover.uploadedFileName}</span>
+                      </div>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      Upload your own voice recording (MP3, WAV, M4A). This will be used instead of TTS.
+                    </p>
+                  </div>
+                )}
+
+                {/* TTS/Voice Clone Options */}
+                {(chapter.voiceover.type === 'tts' || chapter.voiceover.type === 'voice_clone' || chapter.voiceover.type === 'lipsync') && (
                   <>
                     <div className="space-y-2">
                       <Label>Voiceover Script</Label>
@@ -339,30 +376,83 @@ export const ChapterEditor: React.FC<ChapterEditorProps> = ({
                       />
                     </div>
 
-                    <div className="space-y-2">
-                      <Label>Voice Provider</Label>
-                      <Select
-                        value={chapter.voiceover.voiceProvider || 'elevenlabs'}
-                        onValueChange={(v) => updateVoiceover({ voiceProvider: v as any })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="elevenlabs">ElevenLabs (Premium)</SelectItem>
-                          <SelectItem value="azure">Azure Neural TTS</SelectItem>
-                          <SelectItem value="alibaba">Alibaba CosyVoice (CJK)</SelectItem>
-                          <SelectItem value="google">Google Cloud TTS</SelectItem>
-                        </SelectContent>
-                      </Select>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label>Voice Provider</Label>
+                        <Select
+                          value={chapter.voiceover.voiceProvider || 'elevenlabs'}
+                          onValueChange={(v) => updateVoiceover({ voiceProvider: v as any })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="elevenlabs">ElevenLabs (Premium)</SelectItem>
+                            <SelectItem value="azure">Azure Neural TTS</SelectItem>
+                            <SelectItem value="alibaba">Alibaba CosyVoice (CJK)</SelectItem>
+                            <SelectItem value="google">Google Cloud TTS</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Voice Speed</Label>
+                        <Select
+                          value={chapter.voiceover.speed || 'normal'}
+                          onValueChange={(v) => updateVoiceover({ speed: v as any })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="slow">Slow (0.8x)</SelectItem>
+                            <SelectItem value="normal">Normal (1.0x)</SelectItem>
+                            <SelectItem value="fast">Fast (1.2x)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
+
+                    {/* Voice Clone Upload */}
+                    {chapter.voiceover.type === 'voice_clone' && (
+                      <div className="p-3 border rounded-lg bg-muted/30 space-y-2">
+                        <Label className="flex items-center gap-2">
+                          <Mic2 className="w-4 h-4" />
+                          Upload Voice Sample for Cloning
+                        </Label>
+                        <Input
+                          type="file"
+                          accept="audio/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const audioUrl = URL.createObjectURL(file);
+                              updateVoiceover({ 
+                                voiceCloneSampleUrl: audioUrl,
+                                voiceCloneSampleName: file.name 
+                              });
+                            }
+                          }}
+                        />
+                        {chapter.voiceover.voiceCloneSampleName && (
+                          <p className="text-xs text-muted-foreground">
+                            Sample: {chapter.voiceover.voiceCloneSampleName}
+                          </p>
+                        )}
+                        <p className="text-xs text-muted-foreground">
+                          Provide a 30-60 second voice sample for best results. Clear audio without background noise works best.
+                        </p>
+                      </div>
+                    )}
                   </>
                 )}
 
-                {/* Background Music */}
+                {/* Background Music Section */}
                 <div className="p-3 bg-muted/30 rounded-lg space-y-3">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor={`music-${chapter.id}`}>Background Music</Label>
+                    <Label htmlFor={`music-${chapter.id}`} className="flex items-center gap-2">
+                      <Volume2 className="w-4 h-4" />
+                      Background Music
+                    </Label>
                     <Switch
                       id={`music-${chapter.id}`}
                       checked={chapter.backgroundMusic?.enabled ?? false}
@@ -374,21 +464,137 @@ export const ChapterEditor: React.FC<ChapterEditorProps> = ({
                       }
                     />
                   </div>
+                  
                   {chapter.backgroundMusic?.enabled && (
+                    <div className="space-y-3">
+                      {/* Music Source Toggle */}
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant={chapter.backgroundMusic?.source !== 'upload' ? 'default' : 'outline'}
+                          onClick={() => onUpdate({
+                            ...chapter,
+                            backgroundMusic: { ...chapter.backgroundMusic, enabled: true, source: 'generate' }
+                          })}
+                        >
+                          <Wand2 className="w-3 h-3 mr-1" />
+                          AI Generate
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant={chapter.backgroundMusic?.source === 'upload' ? 'default' : 'outline'}
+                          onClick={() => onUpdate({
+                            ...chapter,
+                            backgroundMusic: { ...chapter.backgroundMusic, enabled: true, source: 'upload' }
+                          })}
+                        >
+                          <Upload className="w-3 h-3 mr-1" />
+                          Upload
+                        </Button>
+                      </div>
+
+                      {/* Upload Music */}
+                      {chapter.backgroundMusic?.source === 'upload' && (
+                        <div className="space-y-2">
+                          <Input
+                            type="file"
+                            accept="audio/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const audioUrl = URL.createObjectURL(file);
+                                onUpdate({
+                                  ...chapter,
+                                  backgroundMusic: { 
+                                    ...chapter.backgroundMusic, 
+                                    enabled: true,
+                                    source: 'upload',
+                                    uploadedUrl: audioUrl,
+                                    uploadedFileName: file.name
+                                  }
+                                });
+                              }
+                            }}
+                          />
+                          {chapter.backgroundMusic?.uploadedFileName && (
+                            <p className="text-xs text-muted-foreground">
+                              🎵 {chapter.backgroundMusic.uploadedFileName}
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* AI Generate Music Prompt */}
+                      {chapter.backgroundMusic?.source !== 'upload' && (
+                        <div className="space-y-2">
+                          <Label className="text-xs">Music Style Prompt</Label>
+                          <Input
+                            value={chapter.backgroundMusic?.prompt || ''}
+                            onChange={(e) => onUpdate({
+                              ...chapter,
+                              backgroundMusic: { 
+                                ...chapter.backgroundMusic, 
+                                enabled: true,
+                                prompt: e.target.value
+                              }
+                            })}
+                            placeholder="e.g., Upbeat corporate, Calm ambient, Epic cinematic..."
+                          />
+                        </div>
+                      )}
+
+                      {/* Volume Control */}
+                      <div className="space-y-2">
+                        <Label className="text-xs">Volume: {Math.round((chapter.backgroundMusic?.volume || 0.3) * 100)}%</Label>
+                        <Slider
+                          value={[(chapter.backgroundMusic?.volume || 0.3) * 100]}
+                          onValueChange={([v]) => 
+                            onUpdate({ 
+                              ...chapter, 
+                              backgroundMusic: { ...chapter.backgroundMusic, enabled: true, volume: v / 100 } 
+                            })
+                          }
+                          min={0}
+                          max={100}
+                          step={5}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Sound Effects */}
+                <div className="p-3 border rounded-lg space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="flex items-center gap-2">
+                      <Volume2 className="w-4 h-4" />
+                      Sound Effects (SFX)
+                    </Label>
+                    <Switch
+                      checked={chapter.sfx?.enabled ?? false}
+                      onCheckedChange={(c) => 
+                        onUpdate({ 
+                          ...chapter, 
+                          sfx: { ...chapter.sfx, enabled: c } 
+                        })
+                      }
+                    />
+                  </div>
+                  {chapter.sfx?.enabled && (
                     <div className="space-y-2">
-                      <Label>Volume: {(chapter.backgroundMusic?.volume || 0.3) * 100}%</Label>
-                      <Slider
-                        value={[(chapter.backgroundMusic?.volume || 0.3) * 100]}
-                        onValueChange={([v]) => 
-                          onUpdate({ 
-                            ...chapter, 
-                            backgroundMusic: { ...chapter.backgroundMusic, enabled: true, volume: v / 100 } 
-                          })
-                        }
-                        min={0}
-                        max={100}
-                        step={5}
+                      <Input
+                        value={chapter.sfx?.prompt || ''}
+                        onChange={(e) => onUpdate({
+                          ...chapter,
+                          sfx: { ...chapter.sfx, enabled: true, prompt: e.target.value }
+                        })}
+                        placeholder="e.g., Whoosh transition, Click sound, Notification chime..."
                       />
+                      <p className="text-xs text-muted-foreground">
+                        Describe the sound effects you want. AI will generate matching audio.
+                      </p>
                     </div>
                   )}
                 </div>
