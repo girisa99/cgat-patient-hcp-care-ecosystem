@@ -6,6 +6,8 @@
  * - Mix-and-match visual types (video, avatar, 3D, animation)
  * - Multi-language TTS with regional routing
  * - Full preview before publishing
+ * - Template preview with landing page alignment
+ * - Scheduled content management
  * 
  * Replaces fragmented Video Studio + Avatar/3D tabs
  */
@@ -26,7 +28,7 @@ import {
   Wand2, Plus, Layers, Globe, Play, Upload, Save,
   Settings, Sparkles, Video, User, Box, FileVideo,
   ChevronRight, Check, AlertCircle, Loader2, 
-  Eye, Send, ArrowLeft, ArrowRight
+  Eye, Send, ArrowLeft, ArrowRight, Clock, Calendar
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -35,6 +37,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { ChapterEditor } from './ChapterEditor';
 import { LanguageSelectorPanel } from './LanguageSelectorPanel';
 import { PreviewPanel } from './PreviewPanel';
+import { TemplatePreviewDialog, TEMPLATE_DEFINITIONS } from './TemplatePreviewDialog';
+import { ScheduledContentManager } from './ScheduledContentManager';
 import type { 
   CompositionProject, 
   CompositionChapter, 
@@ -66,7 +70,13 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
   const [expandedChapter, setExpandedChapter] = useState<string | null>(null);
-
+  
+  // Template preview dialog state
+  const [templatePreviewOpen, setTemplatePreviewOpen] = useState(false);
+  const [selectedTemplateForPreview, setSelectedTemplateForPreview] = useState<typeof TEMPLATE_DEFINITIONS[0] | null>(null);
+  
+  // Show scheduler view
+  const [showScheduler, setShowScheduler] = useState(false);
   // Project state
   const [project, setProject] = useState<CompositionProject>({
     id: generateId(),
@@ -462,93 +472,61 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
                 </div>
               </div>
 
-              {/* Quick Start Templates with Preview */}
+              {/* Quick Start Templates with Preview Dialog */}
               <Separator />
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <Label>Quick Start with Template</Label>
-                  <span className="text-xs text-muted-foreground">Hover to preview chapter breakdown</span>
+                  <span className="text-xs text-muted-foreground">Click to preview and select template</span>
                 </div>
                 <div className="grid grid-cols-4 gap-3">
-                  {[
-                    { 
-                      id: 'hero', 
-                      label: 'Hero Video', 
-                      icon: <Sparkles className="w-5 h-5" />, 
-                      desc: '3 chapters, 60s',
-                      chapters: [
-                        { title: 'Opening Hook', type: 'animation', duration: 15 },
-                        { title: 'Product Reveal', type: '3d', duration: 30 },
-                        { title: 'Call to Action', type: 'video', duration: 15 },
-                      ]
-                    },
-                    { 
-                      id: 'product', 
-                      label: 'Product Demo', 
-                      icon: <FileVideo className="w-5 h-5" />, 
-                      desc: '4 chapters, 130s',
-                      chapters: [
-                        { title: 'Introduction', type: 'avatar', duration: 20 },
-                        { title: 'Feature 1', type: 'video', duration: 45 },
-                        { title: 'Feature 2', type: '3d', duration: 45 },
-                        { title: 'Closing', type: 'avatar', duration: 20 },
-                      ]
-                    },
-                    { 
-                      id: 'tutorial', 
-                      label: 'Tutorial', 
-                      icon: <Video className="w-5 h-5" />, 
-                      desc: '4 chapters, 180s',
-                      chapters: [
-                        { title: 'Overview', type: 'avatar', duration: 30 },
-                        { title: 'Step 1', type: 'screen_recording', duration: 60 },
-                        { title: 'Step 2', type: 'screen_recording', duration: 60 },
-                        { title: 'Summary', type: 'avatar', duration: 30 },
-                      ]
-                    },
-                    { 
-                      id: 'testimonial', 
-                      label: 'Testimonials', 
-                      icon: <User className="w-5 h-5" />, 
-                      desc: '3 chapters, 120s',
-                      chapters: [
-                        { title: 'Testimonial 1', type: 'avatar', duration: 45 },
-                        { title: 'Testimonial 2', type: 'avatar', duration: 45 },
-                        { title: 'Results', type: 'animation', duration: 30 },
-                      ]
-                    },
-                  ].map((t) => (
-                    <div key={t.id} className="relative group">
+                  {TEMPLATE_DEFINITIONS.map((t) => (
+                    <div key={t.id} className="relative">
                       <Button
                         variant="outline"
-                        className="h-auto py-4 flex flex-col gap-2 w-full"
+                        className="h-auto py-4 flex flex-col gap-2 w-full hover:ring-2 hover:ring-primary/50 transition-all"
                         onClick={() => {
-                          loadTemplate(t.id as any);
-                          setProject(p => ({ ...p, name: p.name || t.label }));
+                          setSelectedTemplateForPreview(t);
+                          setTemplatePreviewOpen(true);
                         }}
                       >
                         {t.icon}
                         <span className="font-medium">{t.label}</span>
                         <span className="text-xs text-muted-foreground">{t.desc}</span>
+                        <Badge variant="secondary" className="text-[10px] mt-1">
+                          {t.landingPageSection.split(' / ')[0]}
+                        </Badge>
                       </Button>
-                      {/* Hover Preview */}
-                      <div className="absolute left-0 right-0 top-full mt-2 p-3 rounded-lg border bg-card shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">
-                        <div className="text-xs font-medium mb-2">Chapter Breakdown:</div>
-                        <div className="space-y-1.5">
-                          {t.chapters.map((ch, i) => (
-                            <div key={i} className="flex items-center gap-2 text-xs">
-                              <Badge variant="secondary" className="text-[10px] px-1">
-                                {ch.type === 'avatar' ? '👤' : ch.type === '3d' ? '📦' : ch.type === 'video' ? '🎬' : ch.type === 'animation' ? '✨' : '📹'}
-                              </Badge>
-                              <span className="flex-1 truncate">{ch.title}</span>
-                              <span className="text-muted-foreground">{ch.duration}s</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
                     </div>
                   ))}
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  Templates are aligned with landing page sections. Click to see chapter breakdown, 
+                  landing page placement, and social media distribution options.
+                </p>
+              </div>
+              
+              {/* Scheduled Content Link */}
+              <Separator />
+              <div className="flex items-center justify-between p-4 rounded-lg border bg-accent/5">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Calendar className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <span className="font-medium">Scheduled Content</span>
+                    <p className="text-sm text-muted-foreground">
+                      View, edit, and manage your scheduled and generated content
+                    </p>
+                  </div>
+                </div>
+                <Button 
+                  variant="outline"
+                  onClick={() => setShowScheduler(true)}
+                >
+                  <Clock className="w-4 h-4 mr-2" />
+                  View Scheduler
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -945,6 +923,48 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
           </Button>
         )}
       </div>
+      
+      {/* Template Preview Dialog */}
+      <TemplatePreviewDialog
+        open={templatePreviewOpen}
+        onOpenChange={setTemplatePreviewOpen}
+        template={selectedTemplateForPreview}
+        onSelectTemplate={(templateId) => {
+          loadTemplate(templateId as any);
+          const template = TEMPLATE_DEFINITIONS.find(t => t.id === templateId);
+          if (template) {
+            setProject(p => ({ ...p, name: p.name || template.label }));
+          }
+          toast.success(`Loaded ${templateId} template`);
+        }}
+      />
+      
+      {/* Scheduler Dialog */}
+      {showScheduler && (
+        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm">
+          <div className="fixed inset-4 md:inset-10 bg-background border rounded-xl shadow-2xl flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <Calendar className="w-5 h-5" />
+                Scheduled Content Manager
+              </h2>
+              <Button variant="ghost" size="sm" onClick={() => setShowScheduler(false)}>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Studio
+              </Button>
+            </div>
+            <div className="flex-1 overflow-auto p-4">
+              <ScheduledContentManager 
+                onEditProject={(projectId) => {
+                  // TODO: Load project for editing
+                  setShowScheduler(false);
+                  toast.info(`Opening project ${projectId} for editing`);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
