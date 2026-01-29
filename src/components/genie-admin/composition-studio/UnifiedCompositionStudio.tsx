@@ -12,7 +12,7 @@
  * Replaces fragmented Video Studio + Avatar/3D tabs
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -51,28 +51,140 @@ import type {
 
 interface UnifiedCompositionStudioProps {
   className?: string;
+  compositionId?: string; // When provided, loads existing project from Library
+  onOpenLibrary?: () => void; // Callback to navigate to Library
 }
 
 // Wizard steps for the composition flow
 type WizardStep = 'setup' | 'chapters' | 'languages' | 'preview' | 'publish';
 
-const WIZARD_STEPS: { id: WizardStep; label: string; icon: React.ReactNode }[] = [
-  { id: 'setup', label: 'Project Setup', icon: <Settings className="w-4 h-4" /> },
-  { id: 'chapters', label: 'Build Chapters', icon: <Layers className="w-4 h-4" /> },
-  { id: 'languages', label: 'Languages', icon: <Globe className="w-4 h-4" /> },
-  { id: 'preview', label: 'Preview', icon: <Eye className="w-4 h-4" /> },
-  { id: 'publish', label: 'Publish', icon: <Send className="w-4 h-4" /> },
+// Dynamic step configuration based on project context
+interface DynamicStepConfig {
+  id: WizardStep;
+  label: string;
+  dynamicLabel?: (project: CompositionProject, elementsCount: number, chaptersCount: number) => string;
+  description: string;
+  dynamicDescription?: (project: CompositionProject, elementsCount: number, chaptersCount: number) => string;
+  icon: React.ReactNode;
+  getStatus: (project: CompositionProject, elementsCount: number, chaptersCount: number) => 'pending' | 'configured' | 'complete';
+  getStatusLabel: (project: CompositionProject, elementsCount: number, chaptersCount: number) => string;
+}
+
+const WIZARD_STEPS: DynamicStepConfig[] = [
+  { 
+    id: 'setup', 
+    label: 'Project Setup',
+    dynamicLabel: (p) => p.destination === 'multi_platform' 
+      ? 'Multi-Platform Setup' 
+      : p.destination === 'landing_page' 
+        ? `Setup → ${p.placement?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || 'Landing Page'}`
+        : 'Project Setup',
+    description: 'Configure name, destination, and output settings',
+    dynamicDescription: (p) => {
+      if (p.destination === 'landing_page') {
+        return `Publishing to "${p.placement?.replace(/_/g, ' ')}" section on landing page`;
+      } else if (p.destination === 'multi_platform') {
+        return 'Content will be distributed across all connected platforms';
+      } else if (['youtube', 'linkedin', 'tiktok'].includes(p.destination)) {
+        return `Optimizing for ${p.destination.charAt(0).toUpperCase() + p.destination.slice(1)} distribution`;
+      }
+      return 'Configure name, destination, and output settings';
+    },
+    icon: <Settings className="w-4 h-4" />,
+    getStatus: (p) => p.name.trim() ? 'complete' : 'pending',
+    getStatusLabel: (p) => p.name.trim() ? `"${p.name}"` : 'Name required',
+  },
+  { 
+    id: 'chapters', 
+    label: 'Build Content',
+    dynamicLabel: (p, elements, chapters) => {
+      if (chapters > 0 && elements > 0) return `${chapters} Chapters + ${elements} Elements`;
+      if (chapters > 0) return `${chapters} Chapter${chapters > 1 ? 's' : ''}`;
+      if (elements > 0) return `${elements} Element${elements > 1 ? 's' : ''}`;
+      return 'Build Content';
+    },
+    description: 'Add chapters or individual elements (video, avatar, 3D, etc.)',
+    dynamicDescription: (p, elements, chapters) => {
+      if (chapters === 0 && elements === 0) {
+        return 'Start with a template, add chapters, or mix elements by category';
+      }
+      const parts: string[] = [];
+      if (chapters > 0) parts.push(`${chapters} chapter${chapters > 1 ? 's' : ''}`);
+      if (elements > 0) parts.push(`${elements} element${elements > 1 ? 's' : ''}`);
+      return `Content includes ${parts.join(' and ')}`;
+    },
+    icon: <Layers className="w-4 h-4" />,
+    getStatus: (p, elements, chapters) => 
+      chapters > 0 || elements > 0 ? 'complete' : 'pending',
+    getStatusLabel: (p, elements, chapters) => {
+      if (chapters === 0 && elements === 0) return 'Optional';
+      return `${chapters + elements} items`;
+    },
+  },
+  { 
+    id: 'languages', 
+    label: 'Languages',
+    dynamicLabel: (p) => p.targetLanguages.length > 1 
+      ? `${p.targetLanguages.length} Languages` 
+      : 'Single Language',
+    description: 'Select target languages and regional dialects',
+    dynamicDescription: (p) => {
+      if (p.targetLanguages.length === 1) {
+        return `Primary language: ${p.primaryLanguage.toUpperCase()}. Add more for localization.`;
+      }
+      return `Localizing to ${p.targetLanguages.length} languages with regional TTS routing`;
+    },
+    icon: <Globe className="w-4 h-4" />,
+    getStatus: (p) => p.targetLanguages.length > 0 ? 'complete' : 'pending',
+    getStatusLabel: (p) => {
+      if (p.targetLanguages.length === 0) return 'Required';
+      return p.targetLanguages.map(l => l.toUpperCase()).join(', ');
+    },
+  },
+  { 
+    id: 'preview', 
+    label: 'Preview',
+    description: 'Generate and review content before publishing',
+    icon: <Eye className="w-4 h-4" />,
+    getStatus: () => 'pending',
+    getStatusLabel: () => 'Generate previews',
+  },
+  { 
+    id: 'publish', 
+    label: 'Publish',
+    dynamicLabel: (p) => {
+      if (p.destination === 'landing_page') return 'Publish to Landing Page';
+      if (p.destination === 'multi_platform') return 'Distribute All';
+      if (['youtube', 'linkedin', 'tiktok', 'instagram', 'twitter', 'facebook'].includes(p.destination)) {
+        return `Post to ${p.destination.charAt(0).toUpperCase() + p.destination.slice(1)}`;
+      }
+      return 'Publish';
+    },
+    description: 'Submit for review and schedule publication',
+    dynamicDescription: (p) => {
+      if (p.destination === 'landing_page') {
+        return `Content will appear in "${p.placement?.replace(/_/g, ' ')}" after approval`;
+      }
+      return 'Submit for review and schedule publication';
+    },
+    icon: <Send className="w-4 h-4" />,
+    getStatus: (p) => p.status === 'published' ? 'complete' : 'pending',
+    getStatusLabel: (p) => p.status === 'published' ? 'Published' : 'Ready to submit',
+  },
 ];
 
 const generateId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
 export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> = ({
   className,
+  compositionId,
+  onOpenLibrary,
 }) => {
   const [currentStep, setCurrentStep] = useState<WizardStep>('setup');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
   const [expandedChapter, setExpandedChapter] = useState<string | null>(null);
+  const [isLoadingProject, setIsLoadingProject] = useState(false);
   
   // Template preview dialog state
   const [templatePreviewOpen, setTemplatePreviewOpen] = useState(false);
@@ -110,6 +222,46 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
   });
 
   const [chapters, setChapters] = useState<CompositionChapter[]>([]);
+
+  // Load existing project from Library when compositionId is provided
+  useEffect(() => {
+    if (compositionId) {
+      setIsLoadingProject(true);
+      const loadProject = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('landing_page_videos')
+            .select('*')
+            .eq('id', compositionId)
+            .single();
+          
+          if (error) throw error;
+          
+          if (data) {
+            // Map library item to project structure
+            setProject(prev => ({
+              ...prev,
+              id: data.id,
+              name: data.title || '',
+              description: data.description || '',
+              targetLanguages: [data.language_code || 'en'],
+              primaryLanguage: data.language_code || 'en',
+              destination: 'landing_page',
+              placement: data.placement || 'hero_showcase',
+              status: data.published_at ? 'published' : data.is_active ? 'in_progress' : 'draft',
+            }));
+            toast.info(`Loaded project: ${data.title}`);
+          }
+        } catch (err) {
+          console.error('Error loading project:', err);
+          toast.error('Failed to load project');
+        } finally {
+          setIsLoadingProject(false);
+        }
+      };
+      loadProject();
+    }
+  }, [compositionId]);
 
   // Navigation
   const currentStepIndex = WIZARD_STEPS.findIndex(s => s.id === currentStep);
@@ -294,20 +446,45 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
   const totalDuration = chapters.reduce((sum, c) => sum + c.duration, 0);
   const completedChapters = chapters.filter(c => c.status === 'complete').length;
 
+  // Loading state for project load
+  if (isLoadingProject) {
+    return (
+      <div className={cn("flex flex-col items-center justify-center min-h-[400px] gap-4", className)}>
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+        <p className="text-muted-foreground">Loading project...</p>
+      </div>
+    );
+  }
+
   return (
     <div className={cn("space-y-6", className)}>
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Sparkles className="w-6 h-6 text-primary" />
-            Composition Studio
-          </h1>
-          <p className="text-muted-foreground">
-            Create multi-modal, multi-language content with flexible chapter-based composition
-          </p>
+        <div className="flex items-center gap-4">
+          {onOpenLibrary && (
+            <Button variant="ghost" size="sm" onClick={onOpenLibrary}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Library
+            </Button>
+          )}
+          <div>
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <Sparkles className="w-6 h-6 text-primary" />
+              {compositionId ? 'Edit Composition' : 'Composition Studio'}
+            </h1>
+            <p className="text-muted-foreground">
+              {compositionId 
+                ? `Editing: ${project.name || 'Untitled Project'}` 
+                : 'Create multi-modal, multi-language content with flexible chapter-based composition'}
+            </p>
+          </div>
         </div>
         <div className="flex gap-2">
+          {categoryElements.length > 0 && (
+            <Badge variant="outline" className="bg-accent/10">
+              {categoryElements.length} Elements
+            </Badge>
+          )}
           <Badge variant="outline" className="bg-primary/10">
             {chapters.length} Chapters
           </Badge>
@@ -320,34 +497,88 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
         </div>
       </div>
 
-      {/* Wizard Progress */}
-      <div className="flex items-center justify-between px-4">
-        {WIZARD_STEPS.map((step, index) => (
-          <React.Fragment key={step.id}>
-            <button
-              onClick={() => setCurrentStep(step.id)}
-              className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-lg transition-all",
-                currentStep === step.id 
-                  ? "bg-primary text-primary-foreground" 
-                  : index < currentStepIndex
-                    ? "bg-primary/10 text-primary"
-                    : "bg-muted text-muted-foreground"
-              )}
-            >
-              {index < currentStepIndex ? (
-                <Check className="w-4 h-4" />
-              ) : (
-                step.icon
-              )}
-              <span className="text-sm font-medium">{step.label}</span>
-            </button>
-            {index < WIZARD_STEPS.length - 1 && (
-              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+      {/* Wizard Progress - Dynamic Labels & Status */}
+      <Card className="p-4">
+        <div className="flex items-center justify-between">
+          {WIZARD_STEPS.map((step, index) => {
+            const status = step.getStatus(project, categoryElements.length, chapters.length);
+            const dynamicLabel = step.dynamicLabel?.(project, categoryElements.length, chapters.length) || step.label;
+            const dynamicDescription = step.dynamicDescription?.(project, categoryElements.length, chapters.length) || step.description;
+            const statusLabel = step.getStatusLabel(project, categoryElements.length, chapters.length);
+            
+            return (
+              <React.Fragment key={step.id}>
+                <button
+                  onClick={() => setCurrentStep(step.id)}
+                  className={cn(
+                    "flex flex-col items-center gap-1 px-4 py-3 rounded-lg transition-all min-w-[140px] group",
+                    currentStep === step.id 
+                      ? "bg-primary text-primary-foreground shadow-md" 
+                      : status === 'complete'
+                        ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20"
+                        : index < currentStepIndex
+                          ? "bg-primary/10 text-primary hover:bg-primary/20"
+                          : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  )}
+                >
+                  <div className="flex items-center gap-2">
+                    {status === 'complete' && currentStep !== step.id ? (
+                      <Check className="w-4 h-4" />
+                    ) : (
+                      step.icon
+                    )}
+                    <span className="text-sm font-medium">{dynamicLabel}</span>
+                  </div>
+                  <span className={cn(
+                    "text-[10px] max-w-[120px] truncate",
+                    currentStep === step.id 
+                      ? "text-primary-foreground/80" 
+                      : "text-muted-foreground"
+                  )}>
+                    {statusLabel}
+                  </span>
+                  {/* Hover tooltip with full description */}
+                  <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-3 py-2 bg-popover text-popover-foreground rounded-lg shadow-lg text-xs max-w-[200px] text-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 border">
+                    {dynamicDescription}
+                  </div>
+                </button>
+                {index < WIZARD_STEPS.length - 1 && (
+                  <div className="flex-1 flex items-center justify-center">
+                    <div className={cn(
+                      "h-[2px] w-full max-w-[60px] rounded-full transition-colors",
+                      index < currentStepIndex ? "bg-primary" : "bg-border"
+                    )} />
+                  </div>
+                )}
+              </React.Fragment>
+            );
+          })}
+        </div>
+        
+        {/* Current step description */}
+        <div className="mt-3 pt-3 border-t flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium">
+              {WIZARD_STEPS.find(s => s.id === currentStep)?.dynamicDescription?.(project, categoryElements.length, chapters.length) 
+                || WIZARD_STEPS.find(s => s.id === currentStep)?.description}
+            </p>
+          </div>
+          <div className="flex gap-2">
+            {currentStepIndex > 0 && (
+              <Button variant="ghost" size="sm" onClick={goBack}>
+                <ArrowLeft className="w-4 h-4 mr-1" />
+                Back
+              </Button>
             )}
-          </React.Fragment>
-        ))}
-      </div>
+            {currentStepIndex < WIZARD_STEPS.length - 1 && (
+              <Button size="sm" onClick={goNext} disabled={!canGoNext}>
+                Next
+                <ArrowRight className="w-4 h-4 ml-1" />
+              </Button>
+            )}
+          </div>
+        </div>
+      </Card>
 
       {/* Step Content */}
       <div className="min-h-[500px]">

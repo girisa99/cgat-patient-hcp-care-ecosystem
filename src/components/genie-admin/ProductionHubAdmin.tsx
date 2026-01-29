@@ -201,7 +201,13 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
 
           {/* Composition Tab */}
           {activeTab === 'composition' && (
-            <UnifiedCompositionStudio />
+            <UnifiedCompositionStudio 
+              compositionId={searchParams.get('show') || undefined}
+              onOpenLibrary={() => {
+                setActiveTab('library');
+                setSearchParams({ tab: 'library' });
+              }}
+            />
           )}
 
           {/* Scheduler Tab */}
