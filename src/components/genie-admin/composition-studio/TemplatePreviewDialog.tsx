@@ -211,9 +211,11 @@ export const TEMPLATE_DEFINITIONS: TemplateDefinition[] = [
   },
   
   // === NEW TEMPLATES FOR EXPANDED SECTIONS ===
+  
+  // ARABIC DIALECT DEMO
   {
-    id: 'dialect_demo',
-    label: 'Dialect Demo',
+    id: 'dialect_demo_arabic',
+    label: 'Arabic Dialect Demo',
     icon: <Globe className="w-5 h-5" />,
     desc: '7 chapters, 90s',
     chapters: [
@@ -226,10 +228,96 @@ export const TEMPLATE_DEFINITIONS: TemplateDefinition[] = [
       { title: 'Iraqi Dialect', type: 'avatar', duration: 18, description: 'Iraqi Arabic with closing CTA' },
     ],
     landingPageSection: 'True Localization Demo',
-    landingPageDescription: 'Interactive dialect showcase. Users can select dialects and hear TTS in real-time. Demonstrates transcreation vs translation.',
+    landingPageDescription: 'Arabic dialect showcase. Users can select from 7 regional Arabic dialects and hear native TTS in real-time.',
     socialPlatforms: ['youtube', 'linkedin', 'twitter'],
     totalDuration: 90,
-    regionalSupport: ['7 Arabic dialects', '22 Indian languages', '10 African languages'],
+    regionalSupport: ['7 Arabic dialects: MSA, Saudi, Gulf, Egyptian, Levantine, Maghrebi, Iraqi'],
+  },
+  
+  // INDIAN LANGUAGES DEMO
+  {
+    id: 'dialect_demo_indian',
+    label: 'Indian Languages Demo',
+    icon: <Globe className="w-5 h-5" />,
+    desc: '8 chapters, 100s',
+    chapters: [
+      { title: 'Hindi', type: 'avatar', duration: 12, description: 'Hindi - most widely spoken' },
+      { title: 'Tamil', type: 'avatar', duration: 12, description: 'Tamil - South Indian classical language' },
+      { title: 'Telugu', type: 'avatar', duration: 12, description: 'Telugu - Andhra Pradesh & Telangana' },
+      { title: 'Bengali', type: 'avatar', duration: 12, description: 'Bengali - West Bengal & Bangladesh' },
+      { title: 'Marathi', type: 'avatar', duration: 12, description: 'Marathi - Maharashtra state' },
+      { title: 'Gujarati', type: 'avatar', duration: 12, description: 'Gujarati - Gujarat state' },
+      { title: 'Kannada', type: 'avatar', duration: 12, description: 'Kannada - Karnataka state' },
+      { title: 'Malayalam', type: 'avatar', duration: 16, description: 'Malayalam - Kerala state with CTA' },
+    ],
+    landingPageSection: 'True Localization Demo',
+    landingPageDescription: 'Indian languages showcase. Demonstrates 22+ Indian language support with native TTS voices.',
+    socialPlatforms: ['youtube', 'linkedin', 'twitter'],
+    totalDuration: 100,
+    regionalSupport: ['22 Indian languages: Hindi, Tamil, Telugu, Bengali, Marathi, Gujarati, Kannada, Malayalam, Punjabi, Odia, Assamese, Urdu, and more'],
+  },
+  
+  // AFRICAN LANGUAGES DEMO
+  {
+    id: 'dialect_demo_african',
+    label: 'African Languages Demo',
+    icon: <Globe className="w-5 h-5" />,
+    desc: '6 chapters, 75s',
+    chapters: [
+      { title: 'Swahili', type: 'avatar', duration: 12, description: 'Swahili - East Africa lingua franca' },
+      { title: 'Yoruba', type: 'avatar', duration: 12, description: 'Yoruba - Nigeria & West Africa' },
+      { title: 'Hausa', type: 'avatar', duration: 12, description: 'Hausa - Northern Nigeria & Niger' },
+      { title: 'Amharic', type: 'avatar', duration: 12, description: 'Amharic - Ethiopia official language' },
+      { title: 'Zulu', type: 'avatar', duration: 12, description: 'Zulu - South Africa' },
+      { title: 'Igbo', type: 'avatar', duration: 15, description: 'Igbo - Nigeria with closing CTA' },
+    ],
+    landingPageSection: 'True Localization Demo',
+    landingPageDescription: 'African languages showcase. Demonstrates support for major African languages with native TTS.',
+    socialPlatforms: ['youtube', 'linkedin', 'twitter'],
+    totalDuration: 75,
+    regionalSupport: ['10 African languages: Swahili, Yoruba, Hausa, Amharic, Zulu, Igbo, Xhosa, Afrikaans, Somali, Tigrinya'],
+  },
+  
+  // INDO-ASIAN / SEA LANGUAGES DEMO
+  {
+    id: 'dialect_demo_indoasia',
+    label: 'Indo-Asian Languages Demo',
+    icon: <Globe className="w-5 h-5" />,
+    desc: '6 chapters, 75s',
+    chapters: [
+      { title: 'Indonesian', type: 'avatar', duration: 12, description: 'Bahasa Indonesia - 270M speakers' },
+      { title: 'Thai', type: 'avatar', duration: 12, description: 'Thai - Thailand official language' },
+      { title: 'Vietnamese', type: 'avatar', duration: 12, description: 'Vietnamese - 85M speakers' },
+      { title: 'Malay', type: 'avatar', duration: 12, description: 'Malay - Malaysia, Singapore, Brunei' },
+      { title: 'Tagalog', type: 'avatar', duration: 12, description: 'Tagalog/Filipino - Philippines' },
+      { title: 'Khmer', type: 'avatar', duration: 15, description: 'Khmer - Cambodia with closing CTA' },
+    ],
+    landingPageSection: 'True Localization Demo',
+    landingPageDescription: 'Southeast Asian languages showcase. Native TTS for Indonesian, Thai, Vietnamese, Malay, Tagalog, and more.',
+    socialPlatforms: ['youtube', 'linkedin', 'twitter'],
+    totalDuration: 75,
+    regionalSupport: ['8 SEA languages: Indonesian, Thai, Vietnamese, Malay, Tagalog, Khmer, Burmese, Lao'],
+  },
+  
+  // CJK LANGUAGES DEMO
+  {
+    id: 'dialect_demo_cjk',
+    label: 'CJK Languages Demo',
+    icon: <Globe className="w-5 h-5" />,
+    desc: '6 chapters, 80s',
+    chapters: [
+      { title: 'Mandarin Chinese', type: 'avatar', duration: 12, description: 'Mandarin - Standard Chinese (Putonghua)' },
+      { title: 'Cantonese', type: 'avatar', duration: 12, description: 'Cantonese - Hong Kong & Guangdong' },
+      { title: 'Japanese', type: 'avatar', duration: 14, description: 'Japanese - 125M speakers' },
+      { title: 'Korean', type: 'avatar', duration: 14, description: 'Korean - North & South Korea' },
+      { title: 'Taiwanese Hokkien', type: 'avatar', duration: 12, description: 'Taiwanese - Taiwan regional' },
+      { title: 'Shanghainese', type: 'avatar', duration: 16, description: 'Wu Chinese - Shanghai dialect with CTA' },
+    ],
+    landingPageSection: 'True Localization Demo',
+    landingPageDescription: 'CJK languages showcase. High-fidelity TTS for Chinese dialects, Japanese, and Korean with CosyVoice integration.',
+    socialPlatforms: ['youtube', 'linkedin', 'twitter'],
+    totalDuration: 80,
+    regionalSupport: ['CJK: Mandarin, Cantonese, Japanese, Korean, Taiwanese, Wu Chinese, Min Nan'],
   },
   {
     id: 'industry_showcase',
@@ -614,7 +702,7 @@ export const TemplatePreviewDialog: React.FC<TemplatePreviewDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-4xl h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {template.icon}
@@ -645,7 +733,7 @@ export const TemplatePreviewDialog: React.FC<TemplatePreviewDialogProps> = ({
             </TabsTrigger>
           </TabsList>
 
-          <ScrollArea className="flex-1 mt-4 pr-4">
+          <ScrollArea className="flex-1 mt-4 pr-4 h-[calc(85vh-220px)]">
             {/* Live Preview Tab */}
             <TabsContent value="preview" className="space-y-4 m-0">
               <LivePreviewPanel
