@@ -1,277 +1,246 @@
 /**
- * SIMPLE COMPOSITION STUDIO V2
+ * SIMPLE COMPOSITION STUDIO V3
  * 
- * Streamlined 2-step content creation with proper dropdowns and chapter management:
- * 1. Setup: Name, template dropdown, language dropdown, industry selection
- * 2. Create: Inline chapter editing with full CRUD operations
- * 
- * Key improvements:
- * - Dropdown selectors for templates, languages, visual types (not buttons)
- * - Industry-specific templates (Saudi Vision 2030, India UPI, Africa Tourism, etc.)
- * - Full chapter management: Add, Edit, Delete, Duplicate, Reorder
- * - Fixed generation pipeline with proper edge function connectivity
+ * Streamlined 2-step content creation with:
+ * - IP-based primary language detection
+ * - Multi-select dropdowns for templates, languages, visual types
+ * - No nested cards/iframes
+ * - Voice/music per chapter OR entire video
+ * - Script generation per chapter OR all at once
  */
 
-import React, { useState, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
 import { Slider } from '@/components/ui/slider';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { MultiSelectDropdown, MultiSelectOption } from '@/components/ui/multi-select-dropdown';
 import { SearchableSelect, SearchableSelectOption } from '@/components/ui/searchable-select';
+import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
 import {
   Wand2, Plus, Globe, Play, Upload, Save, Trash2,
   Sparkles, Video, User, Box, ChevronDown, ChevronUp,
-  Loader2, Volume2, Music, FileAudio, GripVertical,
-  Copy, Eye, Settings2, Zap, RotateCcw, Check, X,
+  Loader2, Volume2, Music, GripVertical,
+  Copy, Settings2, Zap, RotateCcw, X,
   Building2, MapPin, Pencil, Image, Presentation, 
-  Monitor, Camera, Layers
+  Monitor, Camera, Layers, Film, Mic
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
+import { useIPBasedContent } from '@/hooks/useIPBasedContent';
 
 // ============================================
-// INDUSTRY-SPECIFIC TEMPLATES
+// INDUSTRY-SPECIFIC TEMPLATES (Multi-select ready)
 // ============================================
-const INDUSTRY_TEMPLATES = [
+const INDUSTRY_TEMPLATES: MultiSelectOption[] = [
   // Government & National Initiatives
-  { id: 'saudi_vision_2030', name: 'Saudi Vision 2030', industry: 'government', region: 'mena', chapters: 5, 
-    description: 'Digital transformation showcase for Saudi national initiatives',
-    defaultChapters: ['Vision Overview', 'Economic Diversification', 'Digital Infrastructure', 'Smart Cities', 'Future Outlook'] },
-  { id: 'uae_digital', name: 'UAE Digital Government', industry: 'government', region: 'mena', chapters: 4,
-    description: 'UAE digital services and smart government initiatives',
-    defaultChapters: ['Digital Transformation', 'Smart Services', 'Innovation Hub', 'Future Plans'] },
-  { id: 'india_digital', name: 'Digital India Initiative', industry: 'government', region: 'south_asia', chapters: 5,
-    description: 'India\'s digital transformation journey',
-    defaultChapters: ['Digital India Vision', 'UPI Revolution', 'Aadhaar Ecosystem', 'Digital Infrastructure', 'Future Roadmap'] },
-  { id: 'india_upi', name: 'India UPI Payment Revolution', industry: 'fintech', region: 'south_asia', chapters: 4,
-    description: 'UPI payment system transformation story',
-    defaultChapters: ['UPI Introduction', 'Technology Behind UPI', 'Merchant Adoption', 'Global Expansion'] },
-  
-  // Tourism & Travel
-  { id: 'africa_tourism', name: 'Africa Tourism Showcase', industry: 'tourism', region: 'africa', chapters: 5,
-    description: 'Discover Africa\'s diverse tourism offerings',
-    defaultChapters: ['Wildlife Safari', 'Cultural Heritage', 'Adventure Tourism', 'Beach Destinations', 'Eco Tourism'] },
-  { id: 'mena_tourism', name: 'MENA Tourism Experience', industry: 'tourism', region: 'mena', chapters: 4,
-    description: 'Middle East tourism and cultural experiences',
-    defaultChapters: ['Historical Sites', 'Modern Attractions', 'Cultural Experiences', 'Luxury Tourism'] },
-  { id: 'asia_tourism', name: 'Southeast Asia Discovery', industry: 'tourism', region: 'sea', chapters: 5,
-    description: 'Explore Southeast Asian destinations',
-    defaultChapters: ['Thailand Temples', 'Vietnam Heritage', 'Indonesia Islands', 'Singapore Modern', 'Local Experiences'] },
-  
+  { id: 'saudi_vision_2030', value: 'saudi_vision_2030', label: 'Saudi Vision 2030', category: 'Government', description: 'Digital transformation for Saudi initiatives' },
+  { id: 'uae_digital', value: 'uae_digital', label: 'UAE Digital Government', category: 'Government', description: 'UAE smart services' },
+  { id: 'india_digital', value: 'india_digital', label: 'Digital India Initiative', category: 'Government', description: 'India digital transformation' },
+  { id: 'india_upi', value: 'india_upi', label: 'India UPI Payment', category: 'Finance', description: 'UPI payment revolution' },
+  // Tourism
+  { id: 'africa_tourism', value: 'africa_tourism', label: 'Africa Tourism', category: 'Tourism', description: 'African destinations showcase' },
+  { id: 'mena_tourism', value: 'mena_tourism', label: 'MENA Tourism', category: 'Tourism', description: 'Middle East experiences' },
+  { id: 'asia_tourism', value: 'asia_tourism', label: 'Southeast Asia', category: 'Tourism', description: 'SEA destinations' },
   // Healthcare
-  { id: 'healthcare_digital', name: 'Digital Healthcare Transformation', industry: 'healthcare', region: 'global', chapters: 4,
-    description: 'Healthcare technology and patient care innovation',
-    defaultChapters: ['Patient Journey', 'Telemedicine', 'AI Diagnostics', 'Future of Care'] },
-  { id: 'pharma_product', name: 'Pharmaceutical Product Launch', industry: 'healthcare', region: 'global', chapters: 3,
-    description: 'New drug or treatment introduction',
-    defaultChapters: ['Product Overview', 'Clinical Benefits', 'Patient Stories'] },
-  
-  // Finance & Banking
-  { id: 'banking_digital', name: 'Digital Banking Transformation', industry: 'finance', region: 'global', chapters: 4,
-    description: 'Modern banking and fintech solutions',
-    defaultChapters: ['Digital Banking Vision', 'Mobile First', 'Security & Trust', 'Future Banking'] },
-  { id: 'investment_pitch', name: 'Investment Pitch Deck', industry: 'finance', region: 'global', chapters: 5,
-    description: 'Investor presentation for startups',
-    defaultChapters: ['Problem Statement', 'Our Solution', 'Market Opportunity', 'Business Model', 'Investment Ask'] },
-  
+  { id: 'healthcare_digital', value: 'healthcare_digital', label: 'Digital Healthcare', category: 'Healthcare', description: 'Healthcare tech innovation' },
+  { id: 'pharma_product', value: 'pharma_product', label: 'Pharma Product Launch', category: 'Healthcare', description: 'Drug/treatment intro' },
+  // Finance
+  { id: 'banking_digital', value: 'banking_digital', label: 'Digital Banking', category: 'Finance', description: 'Modern fintech solutions' },
+  { id: 'investment_pitch', value: 'investment_pitch', label: 'Investment Pitch', category: 'Finance', description: 'Startup pitch deck' },
   // Technology
-  { id: 'saas_demo', name: 'SaaS Product Demo', industry: 'technology', region: 'global', chapters: 4,
-    description: 'Software product demonstration',
-    defaultChapters: ['Product Overview', 'Key Features', 'Use Cases', 'Getting Started'] },
-  { id: 'ai_showcase', name: 'AI/ML Capabilities Showcase', industry: 'technology', region: 'global', chapters: 4,
-    description: 'Artificial intelligence and machine learning demo',
-    defaultChapters: ['AI Vision', 'Technology Stack', 'Real-world Applications', 'Future Roadmap'] },
-  
-  // Education & Training
-  { id: 'education_course', name: 'Online Course Introduction', industry: 'education', region: 'global', chapters: 5,
-    description: 'Educational content and course materials',
-    defaultChapters: ['Course Overview', 'Module 1 Preview', 'Learning Outcomes', 'Instructor Bio', 'Enrollment'] },
-  { id: 'corporate_training', name: 'Corporate Training Module', industry: 'education', region: 'global', chapters: 4,
-    description: 'Employee training and development',
-    defaultChapters: ['Training Objectives', 'Core Concepts', 'Practical Exercises', 'Assessment'] },
-  
-  // Landing Page Templates
-  { id: 'landing_hero', name: 'Hero Showcase', industry: 'marketing', region: 'global', chapters: 1,
-    description: 'Full-screen hero video for website header',
-    defaultChapters: ['Hero Section'] },
-  { id: 'landing_product', name: 'Product Demo Landing', industry: 'marketing', region: 'global', chapters: 3,
-    description: '3-chapter product walkthrough',
-    defaultChapters: ['Introduction', 'Features', 'Call to Action'] },
-  { id: 'landing_testimonial', name: 'Customer Testimonials', industry: 'marketing', region: 'global', chapters: 5,
-    description: 'Customer success stories',
-    defaultChapters: ['Client 1', 'Client 2', 'Client 3', 'Client 4', 'Client 5'] },
-  
-  // Social Media Templates
-  { id: 'social_short', name: 'Short Form (TikTok/Reels)', industry: 'social', region: 'global', chapters: 1,
-    description: 'TikTok/Reels/Shorts ready content',
-    defaultChapters: ['Short Video'] },
-  { id: 'social_carousel', name: 'Carousel Post', industry: 'social', region: 'global', chapters: 5,
-    description: 'LinkedIn/Instagram carousel slides',
-    defaultChapters: ['Slide 1', 'Slide 2', 'Slide 3', 'Slide 4', 'CTA Slide'] },
-  { id: 'social_youtube', name: 'YouTube Long Form', industry: 'social', region: 'global', chapters: 8,
-    description: 'Full YouTube video with chapters',
-    defaultChapters: ['Intro', 'Hook', 'Main Point 1', 'Main Point 2', 'Main Point 3', 'Case Study', 'Summary', 'CTA'] },
-  
+  { id: 'saas_demo', value: 'saas_demo', label: 'SaaS Product Demo', category: 'Technology', description: 'Software demonstration' },
+  { id: 'ai_showcase', value: 'ai_showcase', label: 'AI/ML Showcase', category: 'Technology', description: 'AI capabilities demo' },
+  // Education
+  { id: 'education_course', value: 'education_course', label: 'Online Course', category: 'Education', description: 'Course materials' },
+  { id: 'corporate_training', value: 'corporate_training', label: 'Corporate Training', category: 'Education', description: 'Employee training' },
+  // Landing Pages
+  { id: 'landing_hero', value: 'landing_hero', label: 'Hero Showcase', category: 'Landing Page', description: 'Website hero video' },
+  { id: 'landing_product', value: 'landing_product', label: 'Product Demo', category: 'Landing Page', description: 'Product walkthrough' },
+  { id: 'landing_testimonial', value: 'landing_testimonial', label: 'Testimonials', category: 'Landing Page', description: 'Customer stories' },
+  // Social Media
+  { id: 'social_short', value: 'social_short', label: 'Short Form (Reels)', category: 'Social Media', description: 'TikTok/Reels ready' },
+  { id: 'social_carousel', value: 'social_carousel', label: 'Carousel Post', category: 'Social Media', description: 'LinkedIn/Instagram slides' },
+  { id: 'social_youtube', value: 'social_youtube', label: 'YouTube Long Form', category: 'Social Media', description: 'Full YouTube video' },
   // Quick Start
-  { id: 'blank', name: 'Start Blank', industry: 'quick', region: 'global', chapters: 0,
-    description: 'Empty canvas - build from scratch',
-    defaultChapters: [] },
-  { id: 'single', name: 'Single Chapter', industry: 'quick', region: 'global', chapters: 1,
-    description: 'Quick one-off content',
-    defaultChapters: ['Chapter 1'] },
-  { id: '3_chapter', name: '3 Chapters', industry: 'quick', region: 'global', chapters: 3,
-    description: 'Short series',
-    defaultChapters: ['Introduction', 'Main Content', 'Conclusion'] },
-  { id: '5_chapter', name: '5 Chapters', industry: 'quick', region: 'global', chapters: 5,
-    description: 'Standard series',
-    defaultChapters: ['Chapter 1', 'Chapter 2', 'Chapter 3', 'Chapter 4', 'Chapter 5'] },
-] as const;
-
-// Industry categories for grouping templates
-const INDUSTRY_CATEGORIES = [
-  { id: 'government', label: 'Government & Initiatives', icon: Building2 },
-  { id: 'tourism', label: 'Tourism & Travel', icon: MapPin },
-  { id: 'healthcare', label: 'Healthcare & Pharma', icon: Building2 },
-  { id: 'finance', label: 'Finance & Banking', icon: Building2 },
-  { id: 'technology', label: 'Technology & SaaS', icon: Monitor },
-  { id: 'education', label: 'Education & Training', icon: Building2 },
-  { id: 'marketing', label: 'Landing Pages', icon: Globe },
-  { id: 'social', label: 'Social Media', icon: Video },
-  { id: 'quick', label: 'Quick Start', icon: Zap },
+  { id: 'blank', value: 'blank', label: 'Start Blank', category: 'Quick Start', description: 'Empty canvas' },
+  { id: 'single', value: 'single', label: 'Single Chapter', category: 'Quick Start', description: 'Quick one-off' },
+  { id: '3_chapter', value: '3_chapter', label: '3 Chapters', category: 'Quick Start', description: 'Short series' },
+  { id: '5_chapter', value: '5_chapter', label: '5 Chapters', category: 'Quick Start', description: 'Standard series' },
 ];
 
+// Template chapters mapping
+const TEMPLATE_CHAPTERS: Record<string, string[]> = {
+  saudi_vision_2030: ['Vision Overview', 'Economic Diversification', 'Digital Infrastructure', 'Smart Cities', 'Future Outlook'],
+  uae_digital: ['Digital Transformation', 'Smart Services', 'Innovation Hub', 'Future Plans'],
+  india_digital: ['Digital India Vision', 'UPI Revolution', 'Aadhaar Ecosystem', 'Digital Infrastructure', 'Future Roadmap'],
+  india_upi: ['UPI Introduction', 'Technology Behind UPI', 'Merchant Adoption', 'Global Expansion'],
+  africa_tourism: ['Wildlife Safari', 'Cultural Heritage', 'Adventure Tourism', 'Beach Destinations', 'Eco Tourism'],
+  mena_tourism: ['Historical Sites', 'Modern Attractions', 'Cultural Experiences', 'Luxury Tourism'],
+  asia_tourism: ['Thailand Temples', 'Vietnam Heritage', 'Indonesia Islands', 'Singapore Modern', 'Local Experiences'],
+  healthcare_digital: ['Patient Journey', 'Telemedicine', 'AI Diagnostics', 'Future of Care'],
+  pharma_product: ['Product Overview', 'Clinical Benefits', 'Patient Stories'],
+  banking_digital: ['Digital Banking Vision', 'Mobile First', 'Security & Trust', 'Future Banking'],
+  investment_pitch: ['Problem Statement', 'Our Solution', 'Market Opportunity', 'Business Model', 'Investment Ask'],
+  saas_demo: ['Product Overview', 'Key Features', 'Use Cases', 'Getting Started'],
+  ai_showcase: ['AI Vision', 'Technology Stack', 'Applications', 'Future Roadmap'],
+  education_course: ['Course Overview', 'Module Preview', 'Learning Outcomes', 'Instructor Bio', 'Enrollment'],
+  corporate_training: ['Training Objectives', 'Core Concepts', 'Practical Exercises', 'Assessment'],
+  landing_hero: ['Hero Section'],
+  landing_product: ['Introduction', 'Features', 'Call to Action'],
+  landing_testimonial: ['Client 1', 'Client 2', 'Client 3', 'Client 4', 'Client 5'],
+  social_short: ['Short Video'],
+  social_carousel: ['Slide 1', 'Slide 2', 'Slide 3', 'Slide 4', 'CTA Slide'],
+  social_youtube: ['Intro', 'Hook', 'Point 1', 'Point 2', 'Point 3', 'Case Study', 'Summary', 'CTA'],
+  blank: [],
+  single: ['Chapter 1'],
+  '3_chapter': ['Introduction', 'Main Content', 'Conclusion'],
+  '5_chapter': ['Chapter 1', 'Chapter 2', 'Chapter 3', 'Chapter 4', 'Chapter 5'],
+};
+
 // ============================================
-// VISUAL TYPES - COMPREHENSIVE LIST
+// VISUAL TYPES (Multi-select ready)
 // ============================================
-const VISUAL_TYPES = [
-  // Core Video Types
-  { id: 'video', label: 'Video', icon: Video, category: 'video', description: 'Standard video content' },
-  { id: 'animation', label: 'Animation', icon: Sparkles, category: 'video', description: 'Motion graphics' },
-  { id: 'screen_record', label: 'Screen Record', icon: Monitor, category: 'video', description: 'Screen capture demo' },
-  { id: 'kinetic_typography', label: 'Kinetic Typography', icon: Sparkles, category: 'video', description: 'Animated text' },
-  // Avatar Types
-  { id: 'avatar', label: 'Avatar (Headshot)', icon: User, category: 'avatar', description: 'AI avatar presenter' },
-  { id: 'avatar_full_body', label: 'Avatar Full Body', icon: User, category: 'avatar', description: 'Full body avatar' },
-  { id: 'avatar_presenter', label: 'Avatar + Screen', icon: User, category: 'avatar', description: 'Avatar with screen share' },
-  { id: 'talking_head', label: 'Talking Head', icon: User, category: 'avatar', description: 'Realistic talking head' },
-  // 3D & Immersive
-  { id: '3d', label: '3D Model', icon: Box, category: '3d', description: '3D object showcase' },
-  { id: 'immersive', label: 'Immersive/VR', icon: Box, category: '3d', description: '360° immersive content' },
-  { id: '3d_product', label: '3D Product', icon: Box, category: '3d', description: 'Product 3D visualization' },
-  { id: '3d_environment', label: '3D Environment', icon: Box, category: '3d', description: 'Virtual environments' },
-  // Static & Graphics
-  { id: 'ppt', label: 'PPT/Slides', icon: Presentation, category: 'static', description: 'Presentation slides' },
-  { id: 'images', label: 'Images', icon: Image, category: 'static', description: 'Image slideshow' },
-  { id: 'infographics', label: 'Infographics', icon: Layers, category: 'static', description: 'Data visualization' },
-  { id: 'customer_journey', label: 'Customer Journey', icon: MapPin, category: 'static', description: 'Journey mapping' },
-  { id: 'timeline', label: 'Timeline', icon: Layers, category: 'static', description: 'Timeline visualization' },
+const VISUAL_TYPES: MultiSelectOption[] = [
+  // Video
+  { id: 'video', value: 'video', label: 'Video', category: 'Video', icon: <Video className="w-3 h-3" /> },
+  { id: 'animation', value: 'animation', label: 'Animation', category: 'Video', icon: <Sparkles className="w-3 h-3" /> },
+  { id: 'screen_record', value: 'screen_record', label: 'Screen Record', category: 'Video', icon: <Monitor className="w-3 h-3" /> },
+  { id: 'kinetic_typography', value: 'kinetic_typography', label: 'Kinetic Typography', category: 'Video', icon: <Sparkles className="w-3 h-3" /> },
+  // Avatar
+  { id: 'avatar', value: 'avatar', label: 'Avatar (Headshot)', category: 'Avatar', icon: <User className="w-3 h-3" /> },
+  { id: 'avatar_full_body', value: 'avatar_full_body', label: 'Avatar Full Body', category: 'Avatar', icon: <User className="w-3 h-3" /> },
+  { id: 'avatar_presenter', value: 'avatar_presenter', label: 'Avatar + Screen', category: 'Avatar', icon: <User className="w-3 h-3" /> },
+  { id: 'talking_head', value: 'talking_head', label: 'Talking Head', category: 'Avatar', icon: <User className="w-3 h-3" /> },
+  // 3D/Immersive
+  { id: '3d', value: '3d', label: '3D Model', category: '3D/Immersive', icon: <Box className="w-3 h-3" /> },
+  { id: 'immersive', value: 'immersive', label: 'Immersive/VR', category: '3D/Immersive', icon: <Box className="w-3 h-3" /> },
+  { id: '3d_product', value: '3d_product', label: '3D Product', category: '3D/Immersive', icon: <Box className="w-3 h-3" /> },
+  { id: '3d_environment', value: '3d_environment', label: '3D Environment', category: '3D/Immersive', icon: <Box className="w-3 h-3" /> },
+  // Static/Graphics
+  { id: 'ppt', value: 'ppt', label: 'PPT/Slides', category: 'Static/Graphics', icon: <Presentation className="w-3 h-3" /> },
+  { id: 'images', value: 'images', label: 'Images', category: 'Static/Graphics', icon: <Image className="w-3 h-3" /> },
+  { id: 'infographics', value: 'infographics', label: 'Infographics', category: 'Static/Graphics', icon: <Layers className="w-3 h-3" /> },
+  { id: 'customer_journey', value: 'customer_journey', label: 'Customer Journey', category: 'Static/Graphics', icon: <MapPin className="w-3 h-3" /> },
+  { id: 'timeline', value: 'timeline', label: 'Timeline', category: 'Static/Graphics', icon: <Layers className="w-3 h-3" /> },
   // Capture
-  { id: 'capture', label: 'Live Capture', icon: Camera, category: 'capture', description: 'Live recording' },
-  { id: 'interview', label: 'Interview Style', icon: User, category: 'capture', description: 'Interview format' },
+  { id: 'capture', value: 'capture', label: 'Live Capture', category: 'Capture', icon: <Camera className="w-3 h-3" /> },
+  { id: 'interview', value: 'interview', label: 'Interview Style', category: 'Capture', icon: <Mic className="w-3 h-3" /> },
   // Combinations
-  { id: 'combo_avatar_ppt', label: 'Avatar + PPT', icon: User, category: 'combo', description: 'Avatar presenting slides' },
-  { id: 'combo_3d_voice', label: '3D + Voiceover', icon: Box, category: 'combo', description: '3D with narration' },
-  { id: 'combo_full_production', label: 'Full Production', icon: Sparkles, category: 'combo', description: 'Multi-element production' },
-] as const;
-
-const VISUAL_CATEGORIES = [
-  { id: 'video', label: 'Video' },
-  { id: 'avatar', label: 'Avatar' },
-  { id: '3d', label: '3D/Immersive' },
-  { id: 'static', label: 'Static/Graphics' },
-  { id: 'capture', label: 'Capture' },
-  { id: 'combo', label: 'Combinations' },
+  { id: 'combo_avatar_ppt', value: 'combo_avatar_ppt', label: 'Avatar + PPT', category: 'Combinations', icon: <Layers className="w-3 h-3" /> },
+  { id: 'combo_3d_voice', value: 'combo_3d_voice', label: '3D + Voiceover', category: 'Combinations', icon: <Box className="w-3 h-3" /> },
+  { id: 'combo_full_production', value: 'combo_full_production', label: 'Full Production', category: 'Combinations', icon: <Film className="w-3 h-3" /> },
 ];
 
 // ============================================
-// LANGUAGES - 70+ WITH REGIONS
+// LANGUAGES - 70+ WITH REGIONS (Multi-select ready)
 // ============================================
-const LANGUAGES: SearchableSelectOption[] = [
+const LANGUAGES: MultiSelectOption[] = [
   // Western/EU
-  { value: 'en', label: 'English (US)', category: 'Western/EU' },
-  { value: 'en-gb', label: 'English (UK)', category: 'Western/EU' },
-  { value: 'es', label: 'Spanish', category: 'Western/EU' },
-  { value: 'fr', label: 'French', category: 'Western/EU' },
-  { value: 'de', label: 'German', category: 'Western/EU' },
-  { value: 'it', label: 'Italian', category: 'Western/EU' },
-  { value: 'pt', label: 'Portuguese', category: 'Western/EU' },
-  { value: 'nl', label: 'Dutch', category: 'Western/EU' },
-  { value: 'pl', label: 'Polish', category: 'Western/EU' },
-  { value: 'ru', label: 'Russian', category: 'Western/EU' },
-  { value: 'uk', label: 'Ukrainian', category: 'Western/EU' },
-  { value: 'tr', label: 'Turkish', category: 'Western/EU' },
-  { value: 'el', label: 'Greek', category: 'Western/EU' },
-  { value: 'sv', label: 'Swedish', category: 'Western/EU' },
-  { value: 'da', label: 'Danish', category: 'Western/EU' },
-  { value: 'fi', label: 'Finnish', category: 'Western/EU' },
-  { value: 'no', label: 'Norwegian', category: 'Western/EU' },
-  { value: 'cs', label: 'Czech', category: 'Western/EU' },
-  { value: 'ro', label: 'Romanian', category: 'Western/EU' },
-  { value: 'hu', label: 'Hungarian', category: 'Western/EU' },
+  { id: 'en', value: 'en', label: 'English (US)', category: 'Western/EU' },
+  { id: 'en-gb', value: 'en-gb', label: 'English (UK)', category: 'Western/EU' },
+  { id: 'es', value: 'es', label: 'Spanish', category: 'Western/EU' },
+  { id: 'fr', value: 'fr', label: 'French', category: 'Western/EU' },
+  { id: 'de', value: 'de', label: 'German', category: 'Western/EU' },
+  { id: 'it', value: 'it', label: 'Italian', category: 'Western/EU' },
+  { id: 'pt', value: 'pt', label: 'Portuguese', category: 'Western/EU' },
+  { id: 'nl', value: 'nl', label: 'Dutch', category: 'Western/EU' },
+  { id: 'pl', value: 'pl', label: 'Polish', category: 'Western/EU' },
+  { id: 'ru', value: 'ru', label: 'Russian', category: 'Western/EU' },
+  { id: 'uk', value: 'uk', label: 'Ukrainian', category: 'Western/EU' },
+  { id: 'tr', value: 'tr', label: 'Turkish', category: 'Western/EU' },
+  { id: 'el', value: 'el', label: 'Greek', category: 'Western/EU' },
+  { id: 'sv', value: 'sv', label: 'Swedish', category: 'Western/EU' },
+  { id: 'da', value: 'da', label: 'Danish', category: 'Western/EU' },
+  { id: 'fi', value: 'fi', label: 'Finnish', category: 'Western/EU' },
+  { id: 'no', value: 'no', label: 'Norwegian', category: 'Western/EU' },
+  { id: 'cs', value: 'cs', label: 'Czech', category: 'Western/EU' },
+  { id: 'ro', value: 'ro', label: 'Romanian', category: 'Western/EU' },
+  { id: 'hu', value: 'hu', label: 'Hungarian', category: 'Western/EU' },
   // MENA/Arabic
-  { value: 'ar', label: 'Arabic (MSA)', category: 'MENA/Arabic' },
-  { value: 'ar-sa', label: 'Arabic (Saudi)', category: 'MENA/Arabic' },
-  { value: 'ar-eg', label: 'Arabic (Egyptian)', category: 'MENA/Arabic' },
-  { value: 'ar-ae', label: 'Arabic (Gulf/UAE)', category: 'MENA/Arabic' },
-  { value: 'ar-ma', label: 'Arabic (Moroccan)', category: 'MENA/Arabic' },
-  { value: 'ar-lb', label: 'Arabic (Levantine)', category: 'MENA/Arabic' },
-  { value: 'ar-iq', label: 'Arabic (Iraqi)', category: 'MENA/Arabic' },
-  { value: 'he', label: 'Hebrew', category: 'MENA/Arabic' },
-  { value: 'fa', label: 'Persian/Farsi', category: 'MENA/Arabic' },
-  { value: 'ur', label: 'Urdu', category: 'MENA/Arabic' },
+  { id: 'ar', value: 'ar', label: 'Arabic (MSA)', category: 'MENA/Arabic' },
+  { id: 'ar-sa', value: 'ar-sa', label: 'Arabic (Saudi)', category: 'MENA/Arabic' },
+  { id: 'ar-eg', value: 'ar-eg', label: 'Arabic (Egyptian)', category: 'MENA/Arabic' },
+  { id: 'ar-ae', value: 'ar-ae', label: 'Arabic (Gulf/UAE)', category: 'MENA/Arabic' },
+  { id: 'ar-ma', value: 'ar-ma', label: 'Arabic (Moroccan)', category: 'MENA/Arabic' },
+  { id: 'ar-lb', value: 'ar-lb', label: 'Arabic (Levantine)', category: 'MENA/Arabic' },
+  { id: 'ar-iq', value: 'ar-iq', label: 'Arabic (Iraqi)', category: 'MENA/Arabic' },
+  { id: 'he', value: 'he', label: 'Hebrew', category: 'MENA/Arabic' },
+  { id: 'fa', value: 'fa', label: 'Persian/Farsi', category: 'MENA/Arabic' },
+  { id: 'ur', value: 'ur', label: 'Urdu', category: 'MENA/Arabic' },
   // South Asia
-  { value: 'hi', label: 'Hindi', category: 'South Asia' },
-  { value: 'bn', label: 'Bengali', category: 'South Asia' },
-  { value: 'ta', label: 'Tamil', category: 'South Asia' },
-  { value: 'te', label: 'Telugu', category: 'South Asia' },
-  { value: 'mr', label: 'Marathi', category: 'South Asia' },
-  { value: 'gu', label: 'Gujarati', category: 'South Asia' },
-  { value: 'kn', label: 'Kannada', category: 'South Asia' },
-  { value: 'ml', label: 'Malayalam', category: 'South Asia' },
-  { value: 'pa', label: 'Punjabi', category: 'South Asia' },
-  { value: 'or', label: 'Odia', category: 'South Asia' },
-  { value: 'as', label: 'Assamese', category: 'South Asia' },
-  { value: 'ne', label: 'Nepali', category: 'South Asia' },
-  { value: 'si', label: 'Sinhala', category: 'South Asia' },
+  { id: 'hi', value: 'hi', label: 'Hindi', category: 'South Asia' },
+  { id: 'bn', value: 'bn', label: 'Bengali', category: 'South Asia' },
+  { id: 'ta', value: 'ta', label: 'Tamil', category: 'South Asia' },
+  { id: 'te', value: 'te', label: 'Telugu', category: 'South Asia' },
+  { id: 'mr', value: 'mr', label: 'Marathi', category: 'South Asia' },
+  { id: 'gu', value: 'gu', label: 'Gujarati', category: 'South Asia' },
+  { id: 'kn', value: 'kn', label: 'Kannada', category: 'South Asia' },
+  { id: 'ml', value: 'ml', label: 'Malayalam', category: 'South Asia' },
+  { id: 'pa', value: 'pa', label: 'Punjabi', category: 'South Asia' },
+  { id: 'or', value: 'or', label: 'Odia', category: 'South Asia' },
+  { id: 'as', value: 'as', label: 'Assamese', category: 'South Asia' },
+  { id: 'ne', value: 'ne', label: 'Nepali', category: 'South Asia' },
+  { id: 'si', value: 'si', label: 'Sinhala', category: 'South Asia' },
+  { id: 'ks', value: 'ks', label: 'Kashmiri', category: 'South Asia' },
+  { id: 'sd', value: 'sd', label: 'Sindhi', category: 'South Asia' },
+  { id: 'kok', value: 'kok', label: 'Konkani', category: 'South Asia' },
+  { id: 'mni', value: 'mni', label: 'Manipuri', category: 'South Asia' },
+  { id: 'brx', value: 'brx', label: 'Bodo', category: 'South Asia' },
+  { id: 'sat', value: 'sat', label: 'Santali', category: 'South Asia' },
+  { id: 'mai', value: 'mai', label: 'Maithili', category: 'South Asia' },
+  { id: 'doi', value: 'doi', label: 'Dogri', category: 'South Asia' },
+  { id: 'dv', value: 'dv', label: 'Dhivehi (Maldives)', category: 'South Asia' },
   // CJK
-  { value: 'zh', label: 'Chinese (Simplified)', category: 'CJK' },
-  { value: 'zh-tw', label: 'Chinese (Traditional)', category: 'CJK' },
-  { value: 'zh-hk', label: 'Chinese (Cantonese)', category: 'CJK' },
-  { value: 'ja', label: 'Japanese', category: 'CJK' },
-  { value: 'ko', label: 'Korean', category: 'CJK' },
+  { id: 'zh', value: 'zh', label: 'Chinese (Simplified)', category: 'CJK' },
+  { id: 'zh-tw', value: 'zh-tw', label: 'Chinese (Traditional)', category: 'CJK' },
+  { id: 'zh-hk', value: 'zh-hk', label: 'Chinese (Cantonese)', category: 'CJK' },
+  { id: 'ja', value: 'ja', label: 'Japanese', category: 'CJK' },
+  { id: 'ko', value: 'ko', label: 'Korean', category: 'CJK' },
   // Southeast Asia
-  { value: 'th', label: 'Thai', category: 'Southeast Asia' },
-  { value: 'vi', label: 'Vietnamese', category: 'Southeast Asia' },
-  { value: 'id', label: 'Indonesian', category: 'Southeast Asia' },
-  { value: 'ms', label: 'Malay', category: 'Southeast Asia' },
-  { value: 'tl', label: 'Filipino/Tagalog', category: 'Southeast Asia' },
-  { value: 'my', label: 'Burmese', category: 'Southeast Asia' },
-  { value: 'km', label: 'Khmer', category: 'Southeast Asia' },
+  { id: 'th', value: 'th', label: 'Thai', category: 'Southeast Asia' },
+  { id: 'vi', value: 'vi', label: 'Vietnamese', category: 'Southeast Asia' },
+  { id: 'id', value: 'id', label: 'Indonesian', category: 'Southeast Asia' },
+  { id: 'ms', value: 'ms', label: 'Malay', category: 'Southeast Asia' },
+  { id: 'tl', value: 'tl', label: 'Filipino/Tagalog', category: 'Southeast Asia' },
+  { id: 'my', value: 'my', label: 'Burmese', category: 'Southeast Asia' },
+  { id: 'km', value: 'km', label: 'Khmer', category: 'Southeast Asia' },
+  { id: 'lo', value: 'lo', label: 'Lao', category: 'Southeast Asia' },
   // Africa
-  { value: 'sw', label: 'Swahili', category: 'Africa' },
-  { value: 'am', label: 'Amharic', category: 'Africa' },
-  { value: 'ha', label: 'Hausa', category: 'Africa' },
-  { value: 'ig', label: 'Igbo', category: 'Africa' },
-  { value: 'yo', label: 'Yoruba', category: 'Africa' },
-  { value: 'zu', label: 'Zulu', category: 'Africa' },
-  { value: 'xh', label: 'Xhosa', category: 'Africa' },
-  { value: 'af', label: 'Afrikaans', category: 'Africa' },
+  { id: 'sw', value: 'sw', label: 'Swahili', category: 'Africa' },
+  { id: 'am', value: 'am', label: 'Amharic', category: 'Africa' },
+  { id: 'ha', value: 'ha', label: 'Hausa', category: 'Africa' },
+  { id: 'ig', value: 'ig', label: 'Igbo', category: 'Africa' },
+  { id: 'yo', value: 'yo', label: 'Yoruba', category: 'Africa' },
+  { id: 'zu', value: 'zu', label: 'Zulu', category: 'Africa' },
+  { id: 'xh', value: 'xh', label: 'Xhosa', category: 'Africa' },
+  { id: 'af', value: 'af', label: 'Afrikaans', category: 'Africa' },
+  { id: 'rw', value: 'rw', label: 'Kinyarwanda', category: 'Africa' },
+  { id: 'om', value: 'om', label: 'Oromo', category: 'Africa' },
   // Latin America
-  { value: 'es-mx', label: 'Spanish (Mexico)', category: 'Latin America' },
-  { value: 'es-ar', label: 'Spanish (Argentina)', category: 'Latin America' },
-  { value: 'es-co', label: 'Spanish (Colombia)', category: 'Latin America' },
-  { value: 'pt-br', label: 'Portuguese (Brazil)', category: 'Latin America' },
+  { id: 'es-mx', value: 'es-mx', label: 'Spanish (Mexico)', category: 'Latin America' },
+  { id: 'es-ar', value: 'es-ar', label: 'Spanish (Argentina)', category: 'Latin America' },
+  { id: 'es-co', value: 'es-co', label: 'Spanish (Colombia)', category: 'Latin America' },
+  { id: 'pt-br', value: 'pt-br', label: 'Portuguese (Brazil)', category: 'Latin America' },
 ];
 
-// Chapter interface
+// Language options for SearchableSelect (primary language)
+const LANGUAGE_OPTIONS: SearchableSelectOption[] = LANGUAGES.map(l => ({
+  value: l.value,
+  label: l.label,
+  category: l.category,
+}));
+
+// ============================================
+// TYPES
+// ============================================
 interface SimpleChapter {
   id: string;
   title: string;
@@ -280,9 +249,7 @@ interface SimpleChapter {
   visualTypes: string[];
   duration: number;
   voiceSource: 'tts' | 'upload' | 'clone';
-  voiceFile?: File;
   musicSource: 'ai' | 'upload' | 'none';
-  musicFile?: File;
   status: 'draft' | 'generating' | 'complete' | 'error';
   progress: number;
   generatedContent?: {
@@ -304,18 +271,24 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
   className,
   onClose,
 }) => {
+  // IP-based content detection
+  const { defaultLanguage, isLoading: isDetectingLocation, geoData } = useIPBasedContent();
+
   // Project state
   const [projectName, setProjectName] = useState('');
-  const [selectedTemplate, setSelectedTemplate] = useState<string>('');
+  const [selectedTemplates, setSelectedTemplates] = useState<string[]>([]);
   const [primaryLanguage, setPrimaryLanguage] = useState('en');
   const [additionalLanguages, setAdditionalLanguages] = useState<string[]>([]);
   const [chapters, setChapters] = useState<SimpleChapter[]>([]);
   const [expandedChapter, setExpandedChapter] = useState<string | null>(null);
   
-  // Global audio settings
+  // Audio settings scope
+  const [audioScope, setAudioScope] = useState<'chapter' | 'entire'>('entire');
   const [globalVoiceSource, setGlobalVoiceSource] = useState<'tts' | 'upload'>('tts');
   const [globalMusicSource, setGlobalMusicSource] = useState<'ai' | 'upload' | 'none'>('ai');
-  const [globalScriptMode, setGlobalScriptMode] = useState<'auto' | 'manual'>('auto');
+  
+  // Script generation scope
+  const [scriptScope, setScriptScope] = useState<'chapter' | 'entire'>('entire');
   
   // Output options
   const [outputMode, setOutputMode] = useState<'combined' | 'individual'>('combined');
@@ -325,20 +298,36 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
   const [generationProgress, setGenerationProgress] = useState(0);
   const [currentGeneratingChapter, setCurrentGeneratingChapter] = useState<string | null>(null);
 
-  // Apply template
-  const applyTemplate = (templateId: string) => {
-    const template = INDUSTRY_TEMPLATES.find(t => t.id === templateId);
-    if (!template) return;
+  // Set primary language from IP detection
+  useEffect(() => {
+    if (defaultLanguage && !isDetectingLocation) {
+      setPrimaryLanguage(defaultLanguage);
+      if (geoData?.countryName) {
+        toast.info(`Detected region: ${geoData.countryName}`, { duration: 3000 });
+      }
+    }
+  }, [defaultLanguage, isDetectingLocation, geoData]);
 
-    setSelectedTemplate(templateId);
-    setChapters([]);
+  // Apply templates - combines chapters from all selected templates
+  const applyTemplates = useCallback((templateIds: string[]) => {
+    setSelectedTemplates(templateIds);
     
-    if (template.defaultChapters.length > 0) {
-      const newChapters: SimpleChapter[] = template.defaultChapters.map((title) => ({
+    if (templateIds.length === 0) {
+      return;
+    }
+
+    const allChapterTitles: string[] = [];
+    templateIds.forEach(templateId => {
+      const chapters = TEMPLATE_CHAPTERS[templateId] || [];
+      allChapterTitles.push(...chapters);
+    });
+
+    if (allChapterTitles.length > 0) {
+      const newChapters: SimpleChapter[] = allChapterTitles.map((title) => ({
         id: generateId(),
         title,
         script: '',
-        scriptSource: globalScriptMode,
+        scriptSource: 'auto',
         visualTypes: ['video'],
         duration: 30,
         voiceSource: globalVoiceSource,
@@ -350,18 +339,17 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
       if (newChapters.length > 0) {
         setExpandedChapter(newChapters[0].id);
       }
+      toast.success(`Applied ${templateIds.length} template(s) with ${newChapters.length} chapters`);
     }
-    
-    toast.success(`Template "${template.name}" applied with ${template.chapters} chapters`);
-  };
+  }, [globalVoiceSource, globalMusicSource]);
 
-  // Create new chapter
+  // Chapter CRUD
   const addChapter = useCallback(() => {
     const newChapter: SimpleChapter = {
       id: generateId(),
       title: `Chapter ${chapters.length + 1}`,
       script: '',
-      scriptSource: globalScriptMode,
+      scriptSource: 'auto',
       visualTypes: ['video'],
       duration: 30,
       voiceSource: globalVoiceSource,
@@ -372,20 +360,17 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
     setChapters(prev => [...prev, newChapter]);
     setExpandedChapter(newChapter.id);
     toast.success('Chapter added');
-  }, [chapters.length, globalScriptMode, globalVoiceSource, globalMusicSource]);
+  }, [chapters.length, globalVoiceSource, globalMusicSource]);
 
-  // Update chapter
   const updateChapter = useCallback((id: string, updates: Partial<SimpleChapter>) => {
     setChapters(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
   }, []);
 
-  // Delete chapter
   const deleteChapter = useCallback((id: string) => {
     setChapters(prev => prev.filter(c => c.id !== id));
     toast.success('Chapter deleted');
   }, []);
 
-  // Duplicate chapter
   const duplicateChapter = useCallback((id: string) => {
     const chapter = chapters.find(c => c.id === id);
     if (chapter) {
@@ -402,7 +387,6 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
     }
   }, [chapters]);
 
-  // Move chapter
   const moveChapter = useCallback((id: string, direction: 'up' | 'down') => {
     setChapters(prev => {
       const index = prev.findIndex(c => c.id === id);
@@ -415,168 +399,99 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
     });
   }, []);
 
-  // Apply global settings to all chapters
-  const applyGlobalSettings = () => {
+  // Apply global audio settings
+  const applyGlobalAudioSettings = useCallback(() => {
     setChapters(prev => prev.map(c => ({
       ...c,
       voiceSource: globalVoiceSource,
       musicSource: globalMusicSource,
-      scriptSource: globalScriptMode,
     })));
-    toast.success('Applied settings to all chapters');
-  };
+    toast.success('Applied audio settings to all chapters');
+  }, [globalVoiceSource, globalMusicSource]);
 
-  // Generate single chapter - FIXED PIPELINE
+  // Generate single chapter
   const generateChapter = async (chapter: SimpleChapter) => {
     updateChapter(chapter.id, { status: 'generating', progress: 0 });
     setCurrentGeneratingChapter(chapter.id);
 
     try {
-      // Step 1: Generate script if auto mode
       let script = chapter.script;
       updateChapter(chapter.id, { progress: 10 });
       
+      // Generate script if auto
       if (chapter.scriptSource === 'auto' || !script.trim()) {
-        console.log('[SimpleStudio] Generating script for chapter:', chapter.title);
-        
-        const template = INDUSTRY_TEMPLATES.find(t => t.id === selectedTemplate);
-        const industry = template?.industry || 'general';
-        const region = template?.region || 'global';
+        console.log('[Studio] Generating script for:', chapter.title);
         
         const { data: scriptData, error: scriptError } = await supabase.functions.invoke('ai-universal-processor', {
           body: {
             provider: 'gemini',
             model: 'gemini-2.0-flash',
-            prompt: `Generate a professional ${chapter.duration}-second voiceover script for a chapter titled "${chapter.title}". 
-                     Industry: ${industry}
-                     Region: ${region}
+            prompt: `Generate a professional ${chapter.duration}-second voiceover script for "${chapter.title}". 
                      Visual style: ${chapter.visualTypes.join(', ')}.
-                     Language: ${primaryLanguage}
-                     Keep it concise, engaging, and culturally appropriate.`,
-            systemPrompt: 'You are a professional scriptwriter specializing in video content. Generate only the script text suitable for voiceover, no formatting or stage directions.',
+                     Language: ${primaryLanguage}. Keep it engaging and concise.`,
+            systemPrompt: 'You are a professional scriptwriter. Generate only the script text, no formatting.',
             maxTokens: 500,
             action: 'generate_script'
           }
         });
 
-        if (scriptError) {
-          console.error('[SimpleStudio] Script generation error:', scriptError);
-          throw new Error(scriptError.message);
-        }
-        
+        if (scriptError) throw new Error(scriptError.message);
         script = scriptData?.content || scriptData?.response || `Script for ${chapter.title}`;
-        console.log('[SimpleStudio] Script generated:', script.substring(0, 100) + '...');
-        updateChapter(chapter.id, { script, progress: 30 });
+        updateChapter(chapter.id, { script, progress: 40 });
       } else {
-        updateChapter(chapter.id, { progress: 30 });
+        updateChapter(chapter.id, { progress: 40 });
       }
 
-      // Step 2: Generate scene description for visuals
-      updateChapter(chapter.id, { progress: 40 });
-      console.log('[SimpleStudio] Generating scene description...');
-      
-      const { data: sceneData, error: sceneError } = await supabase.functions.invoke('ai-universal-processor', {
-        body: {
-          provider: 'gemini',
-          model: 'gemini-2.0-flash',
-          prompt: `Based on this script, describe the visual scenes for a ${chapter.visualTypes.join(' + ')} video:
-          
-          Script: "${script}"
-          
-          Describe 2-3 key visual moments with:
-          - Camera angles
-          - Visual elements
-          - Transitions
-          - Color mood`,
-          systemPrompt: 'You are a video director. Provide brief, actionable scene descriptions.',
-          maxTokens: 300,
-          action: 'generate_content',
-          context: {
-            contentType: chapter.visualTypes[0] || 'video',
-            language: primaryLanguage
-          }
-        }
-      });
-
-      const sceneDescription = sceneData?.content || sceneData?.response || '';
+      // Generate preview
       updateChapter(chapter.id, { progress: 60 });
-
-      // Step 3: Generate preview image
-      console.log('[SimpleStudio] Generating preview...');
       const visualType = chapter.visualTypes[0] || 'video';
-      let previewUrl = '';
+      let previewUrl = `https://placehold.co/1920x1080/ec4899/ffffff?text=${encodeURIComponent(chapter.title)}`;
       
       try {
-        const { data: imageData, error: imageError } = await supabase.functions.invoke('ai-universal-processor', {
+        const { data: imageData } = await supabase.functions.invoke('ai-universal-processor', {
           body: {
             provider: 'gemini',
             imageGeneration: true,
             action: 'image_generation',
-            prompt: `Professional ${visualType} thumbnail for: ${chapter.title}. ${sceneDescription.substring(0, 100)}`,
-            aspectRatio: '16:9',
-            style: 'cinematic'
+            prompt: `Professional ${visualType} thumbnail for: ${chapter.title}`,
+            aspectRatio: '16:9'
           }
         });
-
-        if (!imageError && imageData?.imageUrl) {
-          previewUrl = imageData.imageUrl;
-        } else {
-          // Fallback to placeholder
-          const colorMap: Record<string, string> = {
-            video: 'ec4899', avatar: '6366f1', '3d': '8b5cf6', animation: 'f59e0b',
-            ppt: '3b82f6', images: '10b981', static: '14b8a6'
-          };
-          previewUrl = `https://placehold.co/1920x1080/${colorMap[visualType] || 'ec4899'}/ffffff?text=${encodeURIComponent(chapter.title)}`;
-        }
-      } catch (imgErr) {
-        console.warn('[SimpleStudio] Image generation fallback:', imgErr);
-        previewUrl = `https://placehold.co/1920x1080/ec4899/ffffff?text=${encodeURIComponent(chapter.title)}`;
+        if (imageData?.imageUrl) previewUrl = imageData.imageUrl;
+      } catch (e) {
+        console.warn('[Studio] Image fallback used');
       }
       
       updateChapter(chapter.id, { progress: 80 });
 
-      // Step 4: Generate TTS if needed
+      // Generate TTS if needed
       let audioUrl: string | undefined;
       if (chapter.voiceSource === 'tts' && script) {
-        console.log('[SimpleStudio] Generating TTS...');
-        
         try {
-          const { data: ttsData, error: ttsError } = await supabase.functions.invoke('text-to-speech', {
-            body: {
-              text: script.substring(0, 1000), // Limit text length
-              voice: 'alloy',
-              model: 'tts-1'
-            }
+          const { data: ttsData } = await supabase.functions.invoke('text-to-speech', {
+            body: { text: script.substring(0, 1000), voice: 'alloy', model: 'tts-1' }
           });
-
-          if (!ttsError && ttsData?.audioContent) {
+          if (ttsData?.audioContent) {
             audioUrl = `data:audio/mp3;base64,${ttsData.audioContent}`;
           }
-        } catch (ttsErr) {
-          console.warn('[SimpleStudio] TTS generation skipped:', ttsErr);
+        } catch (e) {
+          console.warn('[Studio] TTS skipped');
         }
       }
 
-      // Complete
       updateChapter(chapter.id, {
         status: 'complete',
         progress: 100,
         script,
-        generatedContent: {
-          previewUrl,
-          script,
-          audioUrl,
-          sceneDescription
-        }
+        generatedContent: { previewUrl, script, audioUrl }
       });
 
-      console.log('[SimpleStudio] Chapter generation complete:', chapter.title);
       return { success: true };
     } catch (error) {
-      console.error('[SimpleStudio] Generation error:', error);
+      console.error('[Studio] Error:', error);
       updateChapter(chapter.id, { status: 'error', progress: 0 });
-      toast.error(`Failed to generate: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      return { success: false, error: error instanceof Error ? error.message : 'Generation failed' };
+      toast.error(`Failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return { success: false };
     } finally {
       setCurrentGeneratingChapter(null);
     }
@@ -592,34 +507,24 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
     setIsGenerating(true);
     setGenerationProgress(0);
     let completed = 0;
-    let errors: string[] = [];
 
     for (const chapter of chapters) {
-      const result = await generateChapter(chapter);
-      if (!result.success) {
-        errors.push(chapter.title);
-      }
+      await generateChapter(chapter);
       completed++;
       setGenerationProgress(Math.round((completed / chapters.length) * 100));
     }
 
     setIsGenerating(false);
-    
-    if (errors.length > 0) {
-      toast.warning(`Generated with ${errors.length} error(s)`);
-    } else {
-      toast.success('All chapters generated successfully!');
-    }
+    toast.success('All chapters generated!');
   };
 
   // Stats
   const totalDuration = chapters.reduce((sum, c) => sum + c.duration, 0);
   const completedChapters = chapters.filter(c => c.status === 'complete').length;
   const canGenerate = projectName.trim() && chapters.length > 0;
-  const currentTemplate = INDUSTRY_TEMPLATES.find(t => t.id === selectedTemplate);
 
   return (
-    <div className={cn("space-y-4", className)}>
+    <div className={cn("space-y-6 p-4", className)}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -628,7 +533,10 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
             Content Studio
           </h2>
           <p className="text-sm text-muted-foreground">
-            Create multi-chapter content with AI-powered generation
+            {geoData?.countryName && !isDetectingLocation && (
+              <span className="mr-2">📍 {geoData.countryName}</span>
+            )}
+            Create multi-chapter content with AI
           </p>
         </div>
         <div className="flex gap-2">
@@ -638,280 +546,269 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
         </div>
       </div>
 
-      {/* Setup Section - DROPDOWNS */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">Setup</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Project Name */}
-            <div className="space-y-2">
-              <Label htmlFor="projectName">Project Name *</Label>
-              <Input
-                id="projectName"
-                value={projectName}
-                onChange={(e) => setProjectName(e.target.value)}
-                placeholder="My Video Project"
+      <Separator />
+
+      {/* ========== SETUP SECTION ========== */}
+      <div className="space-y-4">
+        <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Setup</h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Project Name */}
+          <div className="space-y-2">
+            <Label>Project Name *</Label>
+            <Input
+              value={projectName}
+              onChange={(e) => setProjectName(e.target.value)}
+              placeholder="My Video Project"
+            />
+          </div>
+
+          {/* Primary Language (IP-based default) */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <Globe className="w-3 h-3" />
+              Primary Language
+              {isDetectingLocation && <Loader2 className="w-3 h-3 animate-spin" />}
+            </Label>
+            <SearchableSelect
+              options={LANGUAGE_OPTIONS}
+              value={primaryLanguage}
+              onValueChange={setPrimaryLanguage}
+              placeholder="Select primary language..."
+              groupByCategory
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Templates Multi-Select */}
+          <div className="space-y-2">
+            <Label>Templates (Multi-select)</Label>
+            <MultiSelectDropdown
+              options={INDUSTRY_TEMPLATES}
+              selectedValues={selectedTemplates}
+              onSelectionChange={applyTemplates}
+              placeholder="Select template(s)..."
+              groupByCategory
+              searchable
+            />
+          </div>
+
+          {/* Additional Languages Multi-Select */}
+          <div className="space-y-2">
+            <Label>Additional Languages</Label>
+            <MultiSelectDropdown
+              options={LANGUAGES.filter(l => l.value !== primaryLanguage)}
+              selectedValues={additionalLanguages}
+              onSelectionChange={setAdditionalLanguages}
+              placeholder="Add more languages..."
+              groupByCategory
+              searchable
+            />
+          </div>
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* ========== GLOBAL SETTINGS ========== */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+            <Settings2 className="w-4 h-4" />
+            Global Settings
+          </h3>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Script Scope */}
+          <div className="space-y-2">
+            <Label className="text-xs flex items-center gap-2">
+              <Wand2 className="w-3 h-3" />
+              Script Generation
+            </Label>
+            <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-md">
+              <span className={cn("text-xs", scriptScope === 'chapter' && "font-medium")}>Per Chapter</span>
+              <Switch
+                checked={scriptScope === 'entire'}
+                onCheckedChange={(v) => setScriptScope(v ? 'entire' : 'chapter')}
               />
+              <span className={cn("text-xs", scriptScope === 'entire' && "font-medium")}>Entire Video</span>
             </div>
+          </div>
 
-            {/* Template Dropdown - GROUPED BY INDUSTRY */}
-            <div className="space-y-2">
-              <Label>Template</Label>
-              <Select value={selectedTemplate} onValueChange={applyTemplate}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a template..." />
-                </SelectTrigger>
-                <SelectContent className="max-h-[400px]">
-                  {INDUSTRY_CATEGORIES.map(category => {
-                    const templates = INDUSTRY_TEMPLATES.filter(t => t.industry === category.id);
-                    if (templates.length === 0) return null;
-                    return (
-                      <SelectGroup key={category.id}>
-                        <SelectLabel className="flex items-center gap-2">
-                          <category.icon className="w-3 h-3" />
-                          {category.label}
-                        </SelectLabel>
-                        {templates.map(template => (
-                          <SelectItem key={template.id} value={template.id}>
-                            <div className="flex items-center justify-between w-full">
-                              <span>{template.name}</span>
-                              <Badge variant="outline" className="ml-2 text-[10px]">
-                                {template.chapters} ch
-                              </Badge>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-              {currentTemplate && (
-                <p className="text-xs text-muted-foreground">{currentTemplate.description}</p>
-              )}
-            </div>
-
-            {/* Primary Language Dropdown */}
-            <div className="space-y-2">
-              <Label>Primary Language</Label>
-              <SearchableSelect
-                options={LANGUAGES}
-                value={primaryLanguage}
-                onValueChange={setPrimaryLanguage}
-                placeholder="Select language..."
-                groupByCategory
+          {/* Audio Scope */}
+          <div className="space-y-2">
+            <Label className="text-xs flex items-center gap-2">
+              <Volume2 className="w-3 h-3" />
+              Voice & Music
+            </Label>
+            <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-md">
+              <span className={cn("text-xs", audioScope === 'chapter' && "font-medium")}>Per Chapter</span>
+              <Switch
+                checked={audioScope === 'entire'}
+                onCheckedChange={(v) => setAudioScope(v ? 'entire' : 'chapter')}
               />
+              <span className={cn("text-xs", audioScope === 'entire' && "font-medium")}>Entire Video</span>
             </div>
+          </div>
 
-            {/* Additional Languages */}
-            <div className="space-y-2">
-              <Label>Additional Languages</Label>
-              <Select 
-                value="" 
-                onValueChange={(lang) => {
-                  if (lang && !additionalLanguages.includes(lang) && lang !== primaryLanguage) {
-                    setAdditionalLanguages(prev => [...prev, lang]);
-                  }
-                }}
+          {/* Global Voice */}
+          <div className="space-y-2">
+            <Label className="text-xs">Voice Source</Label>
+            <div className="flex gap-1">
+              <Button
+                size="sm"
+                variant={globalVoiceSource === 'tts' ? 'default' : 'outline'}
+                onClick={() => setGlobalVoiceSource('tts')}
+                className="flex-1 h-8 text-xs"
               >
-                <SelectTrigger>
-                  <SelectValue placeholder={additionalLanguages.length > 0 ? `${additionalLanguages.length} selected` : "Add more..."} />
-                </SelectTrigger>
-                <SelectContent>
-                  {LANGUAGES.filter(l => l.value !== primaryLanguage && !additionalLanguages.includes(l.value)).map(lang => (
-                    <SelectItem key={lang.value} value={lang.value}>
-                      {lang.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {additionalLanguages.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {additionalLanguages.map(lang => {
-                    const langObj = LANGUAGES.find(l => l.value === lang);
-                    return (
-                      <Badge 
-                        key={lang} 
-                        variant="secondary" 
-                        className="text-xs cursor-pointer"
-                        onClick={() => setAdditionalLanguages(prev => prev.filter(l => l !== lang))}
-                      >
-                        {langObj?.label} ×
-                      </Badge>
-                    );
-                  })}
-                </div>
-              )}
+                <Mic className="w-3 h-3 mr-1" /> TTS
+              </Button>
+              <Button
+                size="sm"
+                variant={globalVoiceSource === 'upload' ? 'default' : 'outline'}
+                onClick={() => setGlobalVoiceSource('upload')}
+                className="flex-1 h-8 text-xs"
+              >
+                <Upload className="w-3 h-3 mr-1" /> Upload
+              </Button>
             </div>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Global Settings */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-medium flex items-center gap-2">
-              <Settings2 className="w-4 h-4" />
-              Global Settings
-            </h3>
-            <Button size="sm" variant="secondary" onClick={applyGlobalSettings}>
-              Apply to All Chapters
-            </Button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Script Mode */}
-            <div className="space-y-2">
-              <Label className="text-xs">Script Generation</Label>
-              <Select value={globalScriptMode} onValueChange={(v: 'auto' | 'manual') => setGlobalScriptMode(v)}>
-                <SelectTrigger className="h-9">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="auto">
-                    <span className="flex items-center gap-2">
-                      <Wand2 className="w-3 h-3" /> AI Auto-Generate
-                    </span>
-                  </SelectItem>
-                  <SelectItem value="manual">
-                    <span className="flex items-center gap-2">
-                      <Pencil className="w-3 h-3" /> Manual Entry
-                    </span>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Voice Source */}
-            <div className="space-y-2">
-              <Label className="text-xs">Voice Source</Label>
-              <Select value={globalVoiceSource} onValueChange={(v: 'tts' | 'upload') => setGlobalVoiceSource(v)}>
-                <SelectTrigger className="h-9">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="tts">AI Text-to-Speech</SelectItem>
-                  <SelectItem value="upload">Upload Recording</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Music Source */}
-            <div className="space-y-2">
-              <Label className="text-xs">Background Music</Label>
-              <Select value={globalMusicSource} onValueChange={(v: 'ai' | 'upload' | 'none') => setGlobalMusicSource(v)}>
-                <SelectTrigger className="h-9">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ai">AI Generate</SelectItem>
-                  <SelectItem value="upload">Upload Track</SelectItem>
-                  <SelectItem value="none">No Music</SelectItem>
-                </SelectContent>
-              </Select>
+          {/* Global Music */}
+          <div className="space-y-2">
+            <Label className="text-xs">Background Music</Label>
+            <div className="flex gap-1">
+              <Button
+                size="sm"
+                variant={globalMusicSource === 'ai' ? 'default' : 'outline'}
+                onClick={() => setGlobalMusicSource('ai')}
+                className="flex-1 h-8 text-xs"
+              >
+                AI
+              </Button>
+              <Button
+                size="sm"
+                variant={globalMusicSource === 'upload' ? 'default' : 'outline'}
+                onClick={() => setGlobalMusicSource('upload')}
+                className="flex-1 h-8 text-xs"
+              >
+                Upload
+              </Button>
+              <Button
+                size="sm"
+                variant={globalMusicSource === 'none' ? 'default' : 'outline'}
+                onClick={() => setGlobalMusicSource('none')}
+                className="flex-1 h-8 text-xs"
+              >
+                None
+              </Button>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Chapters Section */}
-      <Card>
-        <CardHeader className="p-4 pb-2">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base">Chapters ({chapters.length})</CardTitle>
-            <Button size="sm" onClick={addChapter}>
-              <Plus className="w-4 h-4 mr-1" /> Add Chapter
-            </Button>
+        {audioScope === 'entire' && (
+          <Button size="sm" variant="secondary" onClick={applyGlobalAudioSettings}>
+            Apply Audio Settings to All Chapters
+          </Button>
+        )}
+      </div>
+
+      <Separator />
+
+      {/* ========== CHAPTERS SECTION ========== */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
+            Chapters ({chapters.length})
+          </h3>
+          <Button size="sm" onClick={addChapter}>
+            <Plus className="w-4 h-4 mr-1" /> Add Chapter
+          </Button>
+        </div>
+
+        {chapters.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg bg-muted/20">
+            <Sparkles className="w-8 h-8 mx-auto mb-2 opacity-50" />
+            <p>No chapters yet.</p>
+            <p className="text-sm">Select a template above or add chapters manually.</p>
           </div>
-        </CardHeader>
-        <CardContent className="p-4 pt-0">
-          {chapters.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
-              <Sparkles className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <p>No chapters yet.</p>
-              <p className="text-sm">Select a template above or add chapters manually.</p>
+        ) : (
+          <ScrollArea className="max-h-[500px]">
+            <div className="space-y-2 pr-2">
+              {chapters.map((chapter, index) => (
+                <ChapterRow
+                  key={chapter.id}
+                  chapter={chapter}
+                  index={index}
+                  totalChapters={chapters.length}
+                  isExpanded={expandedChapter === chapter.id}
+                  isGenerating={currentGeneratingChapter === chapter.id}
+                  audioScope={audioScope}
+                  onToggle={() => setExpandedChapter(expandedChapter === chapter.id ? null : chapter.id)}
+                  onUpdate={(updates) => updateChapter(chapter.id, updates)}
+                  onDelete={() => deleteChapter(chapter.id)}
+                  onDuplicate={() => duplicateChapter(chapter.id)}
+                  onGenerate={() => generateChapter(chapter)}
+                  onMoveUp={() => moveChapter(chapter.id, 'up')}
+                  onMoveDown={() => moveChapter(chapter.id, 'down')}
+                />
+              ))}
             </div>
-          ) : (
-            <ScrollArea className="max-h-[500px]">
-              <div className="space-y-2">
-                {chapters.map((chapter, index) => (
-                  <ChapterCard
-                    key={chapter.id}
-                    chapter={chapter}
-                    index={index}
-                    totalChapters={chapters.length}
-                    isExpanded={expandedChapter === chapter.id}
-                    isGenerating={currentGeneratingChapter === chapter.id}
-                    onToggle={() => setExpandedChapter(expandedChapter === chapter.id ? null : chapter.id)}
-                    onUpdate={(updates) => updateChapter(chapter.id, updates)}
-                    onDelete={() => deleteChapter(chapter.id)}
-                    onDuplicate={() => duplicateChapter(chapter.id)}
-                    onGenerate={() => generateChapter(chapter)}
-                    onMoveUp={() => moveChapter(chapter.id, 'up')}
-                    onMoveDown={() => moveChapter(chapter.id, 'down')}
-                  />
-                ))}
-              </div>
-            </ScrollArea>
-          )}
-        </CardContent>
-      </Card>
+          </ScrollArea>
+        )}
+      </div>
 
       {/* Generation Progress */}
       {isGenerating && (
-        <Card className="border-primary">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-4">
-              <Loader2 className="w-5 h-5 animate-spin text-primary" />
-              <div className="flex-1">
-                <div className="flex justify-between mb-1">
-                  <span className="text-sm font-medium">Generating content...</span>
-                  <span className="text-sm text-muted-foreground">{generationProgress}%</span>
-                </div>
-                <Progress value={generationProgress} className="h-2" />
+        <div className="p-4 border rounded-lg border-primary/30 bg-primary/5">
+          <div className="flex items-center gap-4">
+            <Loader2 className="w-5 h-5 animate-spin text-primary" />
+            <div className="flex-1">
+              <div className="flex justify-between mb-1">
+                <span className="text-sm font-medium">Generating content...</span>
+                <span className="text-sm text-muted-foreground">{generationProgress}%</span>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Output Options */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-medium flex items-center gap-2">
-                <Zap className="w-4 h-4" />
-                Output Options
-              </h3>
-              <p className="text-xs text-muted-foreground mt-1">
-                Choose how to export your content
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant={outputMode === 'combined' ? 'default' : 'outline'}
-                onClick={() => setOutputMode('combined')}
-              >
-                Combined Video
-              </Button>
-              <Button
-                size="sm"
-                variant={outputMode === 'individual' ? 'default' : 'outline'}
-                onClick={() => setOutputMode('individual')}
-              >
-                Individual Chapters
-              </Button>
+              <Progress value={generationProgress} className="h-2" />
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      )}
 
-      {/* Actions */}
-      <div className="flex justify-between items-center">
+      <Separator />
+
+      {/* ========== OUTPUT OPTIONS ========== */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="font-medium text-sm flex items-center gap-2">
+            <Zap className="w-4 h-4" />
+            Output
+          </h3>
+          <p className="text-xs text-muted-foreground">
+            {outputMode === 'combined' ? 'Single combined video' : 'Separate files per chapter'}
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant={outputMode === 'combined' ? 'default' : 'outline'}
+            onClick={() => setOutputMode('combined')}
+          >
+            Combined
+          </Button>
+          <Button
+            size="sm"
+            variant={outputMode === 'individual' ? 'default' : 'outline'}
+            onClick={() => setOutputMode('individual')}
+          >
+            Individual
+          </Button>
+        </div>
+      </div>
+
+      {/* ========== ACTIONS ========== */}
+      <div className="flex justify-between items-center pt-4 border-t">
         <div className="flex gap-2">
           <Button variant="outline" onClick={onClose}>
             Cancel
@@ -934,7 +831,7 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
           ) : (
             <>
               <Zap className="w-4 h-4" />
-              Generate All ({chapters.length} chapters)
+              Generate All ({chapters.length})
             </>
           )}
         </Button>
@@ -944,14 +841,15 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
 };
 
 // ============================================
-// CHAPTER CARD COMPONENT
+// CHAPTER ROW COMPONENT (No nested cards)
 // ============================================
-interface ChapterCardProps {
+interface ChapterRowProps {
   chapter: SimpleChapter;
   index: number;
   totalChapters: number;
   isExpanded: boolean;
   isGenerating: boolean;
+  audioScope: 'chapter' | 'entire';
   onToggle: () => void;
   onUpdate: (updates: Partial<SimpleChapter>) => void;
   onDelete: () => void;
@@ -961,12 +859,13 @@ interface ChapterCardProps {
   onMoveDown: () => void;
 }
 
-const ChapterCard: React.FC<ChapterCardProps> = ({
+const ChapterRow: React.FC<ChapterRowProps> = ({
   chapter,
   index,
   totalChapters,
   isExpanded,
   isGenerating,
+  audioScope,
   onToggle,
   onUpdate,
   onDelete,
@@ -985,142 +884,92 @@ const ChapterCard: React.FC<ChapterCardProps> = ({
   return (
     <Collapsible open={isExpanded} onOpenChange={onToggle}>
       <div className={cn(
-        "border rounded-lg overflow-hidden transition-all",
+        "border rounded-lg overflow-hidden transition-all bg-background",
         isExpanded ? "ring-2 ring-primary/20" : "",
-        chapter.status === 'complete' ? "border-emerald-500/30 bg-emerald-500/5" : "",
-        chapter.status === 'error' ? "border-destructive/30 bg-destructive/5" : ""
+        chapter.status === 'complete' ? "border-emerald-500/30" : "",
+        chapter.status === 'error' ? "border-destructive/30" : ""
       )}>
-        {/* Header */}
+        {/* Header Row */}
         <CollapsibleTrigger asChild>
-          <div className="flex items-center gap-3 p-3 cursor-pointer hover:bg-muted/50">
-            {/* Reorder buttons */}
+          <div className="flex items-center gap-2 p-3 cursor-pointer hover:bg-muted/50">
+            {/* Reorder */}
             <div className="flex flex-col gap-0.5" onClick={(e) => e.stopPropagation()}>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-5 w-5"
-                disabled={index === 0}
-                onClick={(e) => { e.stopPropagation(); onMoveUp(); }}
-                title="Move up"
-              >
+              <Button size="icon" variant="ghost" className="h-5 w-5" disabled={index === 0} onClick={onMoveUp}>
                 <ChevronUp className="w-3 h-3" />
               </Button>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-5 w-5"
-                disabled={index === totalChapters - 1}
-                onClick={(e) => { e.stopPropagation(); onMoveDown(); }}
-                title="Move down"
-              >
+              <Button size="icon" variant="ghost" className="h-5 w-5" disabled={index === totalChapters - 1} onClick={onMoveDown}>
                 <ChevronDown className="w-3 h-3" />
               </Button>
             </div>
             
-            {/* Chapter number */}
-            <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-xs flex items-center justify-center font-medium">
+            {/* Number */}
+            <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-xs flex items-center justify-center font-medium shrink-0">
               {index + 1}
             </span>
             
-            {/* Title - Editable */}
+            {/* Title */}
             <Input
               value={chapter.title}
-              onChange={(e) => {
-                e.stopPropagation();
-                onUpdate({ title: e.target.value });
-              }}
+              onChange={(e) => { e.stopPropagation(); onUpdate({ title: e.target.value }); }}
               onClick={(e) => e.stopPropagation()}
-              className="h-8 flex-1 max-w-[200px]"
+              className="h-8 flex-1 max-w-[180px]"
             />
             
-            {/* Visual type badges */}
-            <div className="flex items-center gap-1">
+            {/* Visual badges */}
+            <div className="hidden md:flex items-center gap-1">
               {chapter.visualTypes.slice(0, 2).map(type => {
-                const visual = VISUAL_TYPES.find(v => v.id === type);
-                return visual ? (
-                  <Badge key={type} variant="secondary" className="text-xs">
-                    {visual.label}
-                  </Badge>
+                const v = VISUAL_TYPES.find(vt => vt.value === type);
+                return v ? (
+                  <Badge key={type} variant="secondary" className="text-[10px]">{v.label}</Badge>
                 ) : null;
               })}
               {chapter.visualTypes.length > 2 && (
-                <Badge variant="outline" className="text-xs">+{chapter.visualTypes.length - 2}</Badge>
+                <Badge variant="outline" className="text-[10px]">+{chapter.visualTypes.length - 2}</Badge>
               )}
             </div>
             
             {/* Duration & Status */}
-            <Badge variant="secondary" className="text-xs">{chapter.duration}s</Badge>
-            <Badge className={cn("text-xs", statusColors[chapter.status])}>
+            <Badge variant="secondary" className="text-[10px]">{chapter.duration}s</Badge>
+            <Badge className={cn("text-[10px]", statusColors[chapter.status])}>
               {chapter.status === 'generating' && <Loader2 className="w-3 h-3 mr-1 animate-spin" />}
               {chapter.status}
             </Badge>
             
-            {/* Quick Actions */}
+            {/* Actions */}
             <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onDuplicate} title="Duplicate">
-                <Copy className="w-3 h-3" />
-              </Button>
-              <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={onDelete} title="Delete">
-                <Trash2 className="w-3 h-3" />
-              </Button>
+              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onDuplicate}><Copy className="w-3 h-3" /></Button>
+              <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={onDelete}><Trash2 className="w-3 h-3" /></Button>
             </div>
             
             {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </div>
         </CollapsibleTrigger>
 
-        {/* Progress bar */}
-        {chapter.status === 'generating' && (
-          <Progress value={chapter.progress} className="h-1" />
-        )}
+        {/* Progress */}
+        {chapter.status === 'generating' && <Progress value={chapter.progress} className="h-1" />}
 
         {/* Expanded Content */}
         <CollapsibleContent>
-          <div className="p-4 pt-2 space-y-4 border-t">
-            {/* Generated Preview */}
+          <div className="p-4 pt-2 space-y-4 border-t bg-muted/10">
+            {/* Preview */}
             {chapter.generatedContent?.previewUrl && (
-              <div className="relative aspect-video rounded-lg overflow-hidden bg-black">
-                <img 
-                  src={chapter.generatedContent.previewUrl} 
-                  alt={chapter.title}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                <div className="absolute bottom-2 left-2 right-2 flex justify-between items-end">
-                  <div>
-                    <Badge variant="secondary" className="mb-1">Generated</Badge>
-                    {chapter.generatedContent.sceneDescription && (
-                      <p className="text-xs text-white/80 line-clamp-2">
-                        {chapter.generatedContent.sceneDescription.substring(0, 100)}...
-                      </p>
-                    )}
-                  </div>
-                  <Button size="sm" variant="secondary">
-                    <Play className="w-3 h-3 mr-1" /> Preview
-                  </Button>
+              <div className="relative aspect-video rounded-lg overflow-hidden bg-black max-w-md">
+                <img src={chapter.generatedContent.previewUrl} alt={chapter.title} className="w-full h-full object-cover" />
+                <div className="absolute bottom-2 right-2">
+                  <Button size="sm" variant="secondary"><Play className="w-3 h-3 mr-1" /> Preview</Button>
                 </div>
               </div>
             )}
 
-            {/* Script Section */}
+            {/* Script */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label>Script</Label>
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant={chapter.scriptSource === 'auto' ? 'default' : 'outline'}
-                    onClick={() => onUpdate({ scriptSource: 'auto' })}
-                    className="h-7 text-xs"
-                  >
+                <div className="flex gap-1">
+                  <Button size="sm" variant={chapter.scriptSource === 'auto' ? 'default' : 'outline'} onClick={() => onUpdate({ scriptSource: 'auto' })} className="h-7 text-xs">
                     <Wand2 className="w-3 h-3 mr-1" /> Auto
                   </Button>
-                  <Button
-                    size="sm"
-                    variant={chapter.scriptSource === 'manual' ? 'default' : 'outline'}
-                    onClick={() => onUpdate({ scriptSource: 'manual' })}
-                    className="h-7 text-xs"
-                  >
+                  <Button size="sm" variant={chapter.scriptSource === 'manual' ? 'default' : 'outline'} onClick={() => onUpdate({ scriptSource: 'manual' })} className="h-7 text-xs">
                     <Pencil className="w-3 h-3 mr-1" /> Manual
                   </Button>
                 </div>
@@ -1128,171 +977,65 @@ const ChapterCard: React.FC<ChapterCardProps> = ({
               <Textarea
                 value={chapter.script}
                 onChange={(e) => onUpdate({ script: e.target.value })}
-                placeholder={chapter.scriptSource === 'auto' 
-                  ? "Script will be auto-generated when you click Generate..."
-                  : "Enter your script here..."
-                }
+                placeholder={chapter.scriptSource === 'auto' ? "Auto-generated on Generate..." : "Enter script..."}
                 rows={3}
               />
             </div>
 
-            {/* Visual Types - DROPDOWN */}
+            {/* Visual Types Multi-Select */}
             <div className="space-y-2">
-              <Label>Visual Type(s)</Label>
-              <Select 
-                value={chapter.visualTypes[0] || 'video'} 
-                onValueChange={(v) => onUpdate({ visualTypes: [v] })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select visual type..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {VISUAL_CATEGORIES.map(category => {
-                    const categoryVisuals = VISUAL_TYPES.filter(v => v.category === category.id);
-                    if (categoryVisuals.length === 0) return null;
-                    return (
-                      <SelectGroup key={category.id}>
-                        <SelectLabel>{category.label}</SelectLabel>
-                        {categoryVisuals.map(visual => (
-                          <SelectItem key={visual.id} value={visual.id}>
-                            <div className="flex items-center gap-2">
-                              <visual.icon className="w-3 h-3" />
-                              <span>{visual.label}</span>
-                              <span className="text-xs text-muted-foreground">- {visual.description}</span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-              
-              {/* Multi-select for additional visuals */}
-              {chapter.visualTypes.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {chapter.visualTypes.map(type => {
-                    const visual = VISUAL_TYPES.find(v => v.id === type);
-                    return visual ? (
-                      <Badge 
-                        key={type} 
-                        variant="default" 
-                        className="cursor-pointer"
-                        onClick={() => {
-                          if (chapter.visualTypes.length > 1) {
-                            onUpdate({ visualTypes: chapter.visualTypes.filter(t => t !== type) });
-                          }
-                        }}
-                      >
-                        <visual.icon className="w-3 h-3 mr-1" />
-                        {visual.label}
-                        {chapter.visualTypes.length > 1 && <X className="w-3 h-3 ml-1" />}
-                      </Badge>
-                    ) : null;
-                  })}
-                  <Select 
-                    value=""
-                    onValueChange={(v) => {
-                      if (v && !chapter.visualTypes.includes(v)) {
-                        onUpdate({ visualTypes: [...chapter.visualTypes, v] });
-                      }
-                    }}
-                  >
-                    <SelectTrigger className="h-6 w-24 text-xs">
-                      <Plus className="w-3 h-3 mr-1" />
-                      Add
-                    </SelectTrigger>
-                    <SelectContent>
-                      {VISUAL_TYPES.filter(v => !chapter.visualTypes.includes(v.id)).map(visual => (
-                        <SelectItem key={visual.id} value={visual.id}>
-                          {visual.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+              <Label>Visual Types (Multi-select)</Label>
+              <MultiSelectDropdown
+                options={VISUAL_TYPES}
+                selectedValues={chapter.visualTypes}
+                onSelectionChange={(values) => onUpdate({ visualTypes: values.length > 0 ? values : ['video'] })}
+                placeholder="Select visual types..."
+                groupByCategory
+                searchable
+              />
             </div>
 
             {/* Duration */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label>Duration</Label>
-                <span className="text-sm text-muted-foreground">{chapter.duration} seconds</span>
+                <span className="text-sm text-muted-foreground">{chapter.duration}s</span>
               </div>
-              <Slider
-                value={[chapter.duration]}
-                onValueChange={([v]) => onUpdate({ duration: v })}
-                min={5}
-                max={120}
-                step={5}
-              />
+              <Slider value={[chapter.duration]} onValueChange={([v]) => onUpdate({ duration: v })} min={5} max={120} step={5} />
             </div>
 
-            {/* Audio Settings */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-xs">Voice</Label>
-                <Select 
-                  value={chapter.voiceSource} 
-                  onValueChange={(v: 'tts' | 'upload' | 'clone') => onUpdate({ voiceSource: v })}
-                >
-                  <SelectTrigger className="h-9">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="tts">AI Text-to-Speech</SelectItem>
-                    <SelectItem value="upload">Upload Recording</SelectItem>
-                    <SelectItem value="clone">Voice Clone</SelectItem>
-                  </SelectContent>
-                </Select>
+            {/* Per-Chapter Audio (only if audioScope is 'chapter') */}
+            {audioScope === 'chapter' && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-xs">Voice</Label>
+                  <div className="flex gap-1">
+                    <Button size="sm" variant={chapter.voiceSource === 'tts' ? 'default' : 'outline'} onClick={() => onUpdate({ voiceSource: 'tts' })} className="flex-1 h-8 text-xs">TTS</Button>
+                    <Button size="sm" variant={chapter.voiceSource === 'upload' ? 'default' : 'outline'} onClick={() => onUpdate({ voiceSource: 'upload' })} className="flex-1 h-8 text-xs">Upload</Button>
+                    <Button size="sm" variant={chapter.voiceSource === 'clone' ? 'default' : 'outline'} onClick={() => onUpdate({ voiceSource: 'clone' })} className="flex-1 h-8 text-xs">Clone</Button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Music</Label>
+                  <div className="flex gap-1">
+                    <Button size="sm" variant={chapter.musicSource === 'ai' ? 'default' : 'outline'} onClick={() => onUpdate({ musicSource: 'ai' })} className="flex-1 h-8 text-xs">AI</Button>
+                    <Button size="sm" variant={chapter.musicSource === 'upload' ? 'default' : 'outline'} onClick={() => onUpdate({ musicSource: 'upload' })} className="flex-1 h-8 text-xs">Upload</Button>
+                    <Button size="sm" variant={chapter.musicSource === 'none' ? 'default' : 'outline'} onClick={() => onUpdate({ musicSource: 'none' })} className="flex-1 h-8 text-xs">None</Button>
+                  </div>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label className="text-xs">Background Music</Label>
-                <Select 
-                  value={chapter.musicSource} 
-                  onValueChange={(v: 'ai' | 'upload' | 'none') => onUpdate({ musicSource: v })}
-                >
-                  <SelectTrigger className="h-9">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ai">AI Generate</SelectItem>
-                    <SelectItem value="upload">Upload Track</SelectItem>
-                    <SelectItem value="none">No Music</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+            )}
 
-            {/* Chapter Actions */}
+            {/* Actions */}
             <div className="flex justify-between pt-3 border-t">
               <div className="flex gap-2">
-                <Button size="sm" variant="ghost" onClick={onDuplicate}>
-                  <Copy className="w-4 h-4 mr-1" /> Duplicate
-                </Button>
-                <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={onDelete}>
-                  <Trash2 className="w-4 h-4 mr-1" /> Delete
-                </Button>
+                <Button size="sm" variant="ghost" onClick={onDuplicate}><Copy className="w-4 h-4 mr-1" /> Duplicate</Button>
+                <Button size="sm" variant="ghost" className="text-destructive" onClick={onDelete}><Trash2 className="w-4 h-4 mr-1" /> Delete</Button>
               </div>
-              <Button
-                size="sm"
-                onClick={onGenerate}
-                disabled={isGenerating}
-              >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-1 animate-spin" /> Generating...
-                  </>
-                ) : chapter.status === 'complete' ? (
-                  <>
-                    <RotateCcw className="w-4 h-4 mr-1" /> Regenerate
-                  </>
-                ) : (
-                  <>
-                    <Zap className="w-4 h-4 mr-1" /> Generate
-                  </>
-                )}
+              <Button size="sm" onClick={onGenerate} disabled={isGenerating}>
+                {isGenerating ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Generating...</> :
+                 chapter.status === 'complete' ? <><RotateCcw className="w-4 h-4 mr-1" /> Regenerate</> :
+                 <><Zap className="w-4 h-4 mr-1" /> Generate</>}
               </Button>
             </div>
           </div>
