@@ -2,9 +2,13 @@
  * COMPOSITION STUDIO BARREL EXPORT
  */
 
-// Primary Studio - Simplified V2
+// Primary Studio - Simplified V3 with Ecosystem Integration
 export { SimpleCompositionStudio } from './SimpleCompositionStudio';
 export { default as SimpleCompositionStudioDefault } from './SimpleCompositionStudio';
+
+// Ecosystem Services Hook - Connects to all existing services
+export { useStudioEcosystem } from './useStudioEcosystem';
+export type { StudioChapter, StudioProject, GenerationProgress } from './useStudioEcosystem';
 
 // Legacy Studio (keep for backwards compatibility)
 export { UnifiedCompositionStudio } from './UnifiedCompositionStudio';
