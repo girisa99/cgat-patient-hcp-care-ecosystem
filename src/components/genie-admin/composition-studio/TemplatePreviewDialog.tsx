@@ -9,7 +9,15 @@
  * - Live generation preview during creation
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
+import { toast } from 'sonner';
+import { 
+  contentGenerationService, 
+  generateTemplate,
+  checkGenerationHealth,
+  type GenerationProgress 
+} from '@/services/contentGenerationService';
+import type { OutputFormat } from '@/config/content-generation-pipeline';
 import {
   Dialog,
   DialogContent,
@@ -722,40 +730,80 @@ export const TemplatePreviewDialog: React.FC<TemplatePreviewDialogProps> = ({
   const [generationProgress, setGenerationProgress] = useState(0);
   const [currentChapter, setCurrentChapter] = useState(0);
   const [previewUrl, setPreviewUrl] = useState<string | undefined>();
+  const [generationError, setGenerationError] = useState<string | null>(null);
+  const [isServiceAvailable, setIsServiceAvailable] = useState<boolean | null>(null);
 
-  // Simulate generation for preview
-  const handleGeneratePreview = useCallback(() => {
+  // Check service health on mount
+  useEffect(() => {
+    const checkHealth = async () => {
+      const health = await checkGenerationHealth();
+      setIsServiceAvailable(health.available);
+      if (!health.available) {
+        console.warn('[TemplatePreview] Generation service unavailable:', health.error);
+      }
+    };
+    checkHealth();
+  }, []);
+
+  // Real generation using contentGenerationService
+  const handleGeneratePreview = useCallback(async () => {
     if (!template) return;
     
     setIsGenerating(true);
     setGenerationProgress(0);
     setCurrentChapter(0);
+    setGenerationError(null);
+    setPreviewUrl(undefined);
 
-    const totalChapters = template.chapters.length;
-    let progress = 0;
-    let chapter = 0;
+    try {
+      // Map template to industry template ID
+      const templateId = template.id;
+      const languages = template.regionalSupport?.slice(0, 3) || ['en']; // Use regionalSupport or default
+      const outputFormat: OutputFormat = 'avatar_ppt'; // Default format
 
-    const interval = setInterval(() => {
-      progress += Math.random() * 8 + 2;
-      if (progress >= 100) {
-        progress = 100;
+      console.log(`[TemplatePreview] Starting generation for template: ${templateId}`);
+      toast.info(`Starting generation for ${template.label}...`);
+
+      const result = await generateTemplate(
+        templateId,
+        languages,
+        outputFormat,
+        (overallProgress, currentProgress) => {
+          setGenerationProgress(overallProgress);
+          
+          // Update current chapter based on progress
+          const chapterIndex = Math.floor(
+            (overallProgress / 100) * template.chapters.length
+          );
+          setCurrentChapter(Math.min(chapterIndex, template.chapters.length - 1));
+          
+          // Log progress
+          if (currentProgress.message) {
+            console.log(`[TemplatePreview] ${currentProgress.message}`);
+          }
+        }
+      );
+
+      if (result.success) {
+        // Get the first successful result's preview URL
+        const firstResult = result.results.find(r => r.success && r.previewUrl);
+        setPreviewUrl(firstResult?.previewUrl || '/placeholder-video.mp4');
         setGenerationProgress(100);
-        setIsGenerating(false);
-        setPreviewUrl('/placeholder-video.mp4'); // Placeholder
-        clearInterval(interval);
-        return;
+        toast.success(`${template.label} generated successfully!`);
+      } else {
+        const errorMsg = result.errors.join('; ') || 'Generation failed';
+        setGenerationError(errorMsg);
+        toast.error(`Generation failed: ${errorMsg}`);
       }
 
-      const newChapter = Math.floor((progress / 100) * totalChapters);
-      if (newChapter !== chapter) {
-        chapter = Math.min(newChapter, totalChapters - 1);
-        setCurrentChapter(chapter);
-      }
-
-      setGenerationProgress(progress);
-    }, 200);
-
-    return () => clearInterval(interval);
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      setGenerationError(errorMsg);
+      console.error('[TemplatePreview] Generation error:', error);
+      toast.error(`Generation error: ${errorMsg}`);
+    } finally {
+      setIsGenerating(false);
+    }
   }, [template]);
 
   if (!template) return null;
