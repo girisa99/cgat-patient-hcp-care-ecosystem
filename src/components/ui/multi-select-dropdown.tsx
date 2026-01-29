@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { Check, ChevronDown, X } from 'lucide-react';
+import { Check, ChevronDown, X, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -41,32 +41,27 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Setup portal container on mount
-  useEffect(() => {
-    setPortalContainer(document.body);
-  }, []);
-
-  // Calculate dropdown position
+  // Calculate dropdown position using fixed positioning for portal
   const getDropdownStyle = useCallback((): React.CSSProperties => {
     if (!buttonRef.current) return { display: 'none' };
     
     const rect = buttonRef.current.getBoundingClientRect();
     const spaceBelow = window.innerHeight - rect.bottom;
     const spaceAbove = rect.top;
-    const dropdownHeight = 320;
+    const dropdownHeight = 360;
     
     // Decide if dropdown should open above or below
     const openAbove = spaceBelow < dropdownHeight && spaceAbove > spaceBelow;
     
     return {
-      position: 'fixed',
+      position: 'fixed' as const,
       left: rect.left,
-      width: rect.width,
+      width: Math.max(rect.width, 280),
       maxHeight: Math.min(dropdownHeight, openAbove ? spaceAbove - 8 : spaceBelow - 8),
       ...(openAbove 
         ? { bottom: window.innerHeight - rect.top + 4 }
@@ -75,6 +70,22 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
       zIndex: 99999,
     };
   }, []);
+
+  // Update position on scroll/resize
+  const updatePosition = useCallback(() => {
+    if (dropdownRef.current && isOpen) {
+      const style = getDropdownStyle();
+      Object.assign(dropdownRef.current.style, {
+        position: style.position,
+        left: `${style.left}px`,
+        width: `${style.width}px`,
+        maxHeight: `${style.maxHeight}px`,
+        zIndex: style.zIndex,
+        ...(style.top !== undefined ? { top: `${style.top}px`, bottom: 'auto' } : {}),
+        ...(style.bottom !== undefined ? { bottom: `${style.bottom}px`, top: 'auto' } : {}),
+      });
+    }
+  }, [getDropdownStyle, isOpen]);
 
   // Close on click outside
   useEffect(() => {
@@ -102,7 +113,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
     };
   }, [isOpen]);
 
-  // Close on escape
+  // Close on escape and handle scroll/resize
   useEffect(() => {
     if (!isOpen) return;
 
@@ -114,8 +125,22 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
     };
 
     document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, [isOpen]);
+    window.addEventListener('scroll', updatePosition, true);
+    window.addEventListener('resize', updatePosition);
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      window.removeEventListener('scroll', updatePosition, true);
+      window.removeEventListener('resize', updatePosition);
+    };
+  }, [isOpen, updatePosition]);
+
+  // Focus search input when opened
+  useEffect(() => {
+    if (isOpen && searchable && searchInputRef.current) {
+      setTimeout(() => searchInputRef.current?.focus(), 50);
+    }
+  }, [isOpen, searchable]);
 
   const filteredOptions = useMemo(() => 
     options.filter(option =>
@@ -174,24 +199,27 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
     }
   };
 
-  // Dropdown content
-  const dropdownContent = isOpen && portalContainer ? createPortal(
+  // Portal dropdown content
+  const dropdownContent = isOpen ? createPortal(
     <div
       ref={dropdownRef}
       className="bg-popover border border-border rounded-lg shadow-2xl overflow-hidden animate-in fade-in-0 zoom-in-95 duration-100"
       style={getDropdownStyle()}
     >
       {searchable && (
-        <div className="p-2 border-b border-border bg-popover">
-          <input
-            type="text"
-            placeholder="Search options..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-            autoFocus
-            onClick={(e) => e.stopPropagation()}
-          />
+        <div className="p-2 border-b border-border bg-popover sticky top-0">
+          <div className="relative">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              placeholder="Search options..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full pl-7 pr-2 py-2 text-sm border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
         </div>
       )}
       
@@ -259,7 +287,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
         </div>
       )}
     </div>,
-    portalContainer
+    document.body
   ) : null;
 
   return (
