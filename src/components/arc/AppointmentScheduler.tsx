@@ -189,6 +189,7 @@ export const AppointmentScheduler: React.FC = () => {
   };
 
   return (
+    <>
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -343,10 +344,11 @@ export const AppointmentScheduler: React.FC = () => {
           ))
         )}
       </div>
+    </div>
 
-      {/* New Appointment Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-lg z-[9999]">
+    {/* New Appointment Dialog - OUTSIDE main div for proper portal rendering */}
+    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <DialogContent className="sm:max-w-lg z-[9999]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CalendarDays className="h-5 w-5 text-primary" />
@@ -484,9 +486,9 @@ export const AppointmentScheduler: React.FC = () => {
               Schedule Appointment
             </Button>
           </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 };
 
