@@ -3,11 +3,12 @@
  * 
  * Dialog for adding new chapters to existing templates:
  * - Quick add from presets
- * - Custom chapter creation
+ * - Custom chapter creation with AI prompt enhancement
  * - Position selection (before/after existing)
+ * - AI-suggested visual types based on content
  */
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -25,11 +26,15 @@ import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Plus, Video, User, Box, Sparkles, Image, Monitor,
-  Mic2, FileText, ArrowDown, ArrowUp, Wand2
+  Mic2, FileText, ArrowDown, ArrowUp, Wand2, Loader2,
+  Lightbulb, CheckCircle2, RefreshCw
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import type { CompositionChapter, CompositionElementType, VoiceoverType } from './types';
 
 interface AddChapterDialogProps {
@@ -38,6 +43,11 @@ interface AddChapterDialogProps {
   onAddChapter: (chapter: Partial<CompositionChapter>, position?: 'start' | 'end' | number) => void;
   existingChapters: CompositionChapter[];
   primaryLanguage: string;
+  projectContext?: {
+    industry?: string;
+    template?: string;
+    targetAudience?: string;
+  };
 }
 
 interface ChapterPreset {
@@ -48,6 +58,14 @@ interface ChapterPreset {
   visual: { type: CompositionElementType; prompt?: string };
   voiceover: { type: VoiceoverType; text: string };
   duration: number;
+}
+
+interface EnhancementResult {
+  enhancedPrompt: string;
+  suggestedScript: string;
+  suggestedVisualTypes: CompositionElementType[];
+  suggestedDuration: number;
+  confidence: number;
 }
 
 const CHAPTER_PRESETS: ChapterPreset[] = [
@@ -117,12 +135,24 @@ const VISUAL_TYPE_ICONS: Record<CompositionElementType, React.ReactNode> = {
   custom: <FileText className="w-4 h-4" />,
 };
 
+// Visual type recommendations based on content keywords
+const VISUAL_TYPE_KEYWORDS: Record<CompositionElementType, string[]> = {
+  avatar: ['introduce', 'welcome', 'explain', 'guide', 'personal', 'host', 'presenter', 'cta', 'call to action'],
+  '3d': ['product', 'device', 'hardware', 'physical', 'rotate', '360', 'showcase', 'model'],
+  video: ['demo', 'tutorial', 'walkthrough', 'action', 'motion', 'footage', 'dynamic'],
+  animation: ['stats', 'data', 'graph', 'chart', 'infographic', 'numbers', 'percentage', 'growth'],
+  static: ['image', 'photo', 'screenshot', 'diagram', 'illustration', 'logo'],
+  screen_recording: ['software', 'app', 'interface', 'ui', 'click', 'navigation', 'screen'],
+  custom: ['custom', 'unique', 'special'],
+};
+
 export const AddChapterDialog: React.FC<AddChapterDialogProps> = ({
   open,
   onOpenChange,
   onAddChapter,
   existingChapters,
   primaryLanguage,
+  projectContext,
 }) => {
   const [activeTab, setActiveTab] = useState<'preset' | 'custom'>('preset');
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
@@ -135,6 +165,140 @@ export const AddChapterDialog: React.FC<AddChapterDialogProps> = ({
   const [customDuration, setCustomDuration] = useState(30);
   const [customPrompt, setCustomPrompt] = useState('');
   const [customScript, setCustomScript] = useState('');
+  
+  // AI Enhancement state
+  const [isEnhancing, setIsEnhancing] = useState(false);
+  const [enhancementResult, setEnhancementResult] = useState<EnhancementResult | null>(null);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  // AI-powered prompt enhancement
+  const enhancePrompt = useCallback(async () => {
+    if (!customPrompt.trim() && !customTitle.trim()) {
+      toast.error('Please enter a title or description first');
+      return;
+    }
+
+    setIsEnhancing(true);
+    try {
+      const input = customPrompt.trim() || customTitle.trim();
+      
+      // Call ai-universal-processor for intelligent enhancement
+      const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
+        body: {
+          action: 'enhance_chapter_prompt',
+          content: input,
+          context: {
+            industry: projectContext?.industry || 'general',
+            template: projectContext?.template || 'standard',
+            targetAudience: projectContext?.targetAudience || 'general',
+            existingChapters: existingChapters.map(c => c.title),
+            language: primaryLanguage,
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      // Parse AI response or use fallback logic
+      const result = data?.enhancement || generateLocalEnhancement(input);
+      
+      setEnhancementResult(result);
+      setShowSuggestions(true);
+      
+      toast.success('✨ Prompt enhanced with AI suggestions');
+    } catch (error) {
+      console.error('Enhancement failed, using local fallback:', error);
+      // Use local enhancement as fallback
+      const localResult = generateLocalEnhancement(customPrompt.trim() || customTitle.trim());
+      setEnhancementResult(localResult);
+      setShowSuggestions(true);
+      toast.info('Generated suggestions based on your input');
+    } finally {
+      setIsEnhancing(false);
+    }
+  }, [customPrompt, customTitle, projectContext, existingChapters, primaryLanguage]);
+
+  // Local enhancement fallback (keyword-based)
+  const generateLocalEnhancement = useCallback((input: string): EnhancementResult => {
+    const lowerInput = input.toLowerCase();
+    
+    // Determine best visual types based on keywords
+    const suggestedVisualTypes: CompositionElementType[] = [];
+    let maxScore = 0;
+    let bestType = 'video' as CompositionElementType;
+    
+    const visualTypes = Object.entries(VISUAL_TYPE_KEYWORDS) as [CompositionElementType, string[]][];
+    for (const [type, keywords] of visualTypes) {
+      const score = keywords.filter(kw => lowerInput.includes(kw)).length;
+      if (score > maxScore) {
+        maxScore = score;
+        bestType = type;
+      }
+      if (score > 0) {
+        suggestedVisualTypes.push(type);
+      }
+    }
+
+    // If no matches, default to video with avatar
+    if (suggestedVisualTypes.length === 0) {
+      suggestedVisualTypes.push('video', 'avatar');
+    } else if (!suggestedVisualTypes.includes(bestType)) {
+      suggestedVisualTypes.unshift(bestType);
+    }
+
+    // Generate enhanced prompt
+    const industryContext = projectContext?.industry 
+      ? `For ${projectContext.industry} audience, ` 
+      : '';
+    
+    const visualTypeLabel = bestType === 'avatar' ? 'presenter-led' : bestType;
+    const enhancedPrompt = `${industryContext}create a professional ${visualTypeLabel} segment that ${input}. Focus on visual clarity, engagement, and brand consistency.`;
+
+    // Generate suggested script
+    const suggestedScript = generateScriptFromPrompt(input, bestType);
+
+    // Calculate duration based on script length
+    const wordCount = suggestedScript.split(' ').length;
+    const suggestedDuration = Math.max(15, Math.min(120, Math.ceil(wordCount / 2.5)));
+
+    return {
+      enhancedPrompt,
+      suggestedScript,
+      suggestedVisualTypes: suggestedVisualTypes.slice(0, 3),
+      suggestedDuration,
+      confidence: maxScore > 0 ? Math.min(0.95, 0.6 + maxScore * 0.1) : 0.6,
+    };
+  }, [projectContext]);
+
+  // Generate script based on prompt and visual type
+  const generateScriptFromPrompt = (prompt: string, visualType: CompositionElementType): string => {
+    const templates: Record<CompositionElementType, string> = {
+      avatar: `Welcome! Let me walk you through ${prompt}. This is designed to help you understand the key points and take action today.`,
+      video: `Watch as we demonstrate ${prompt}. Notice how each element works together to deliver exceptional results.`,
+      '3d': `Take a closer look at ${prompt}. Rotate the view to see every angle and detail of what makes this special.`,
+      animation: `The data tells a compelling story about ${prompt}. Let these visualizations highlight the key insights.`,
+      static: `Here's a clear view of ${prompt}. Study the details that make all the difference.`,
+      screen_recording: `Follow along as we navigate through ${prompt}. Each step is designed for simplicity and efficiency.`,
+      custom: `Discover ${prompt}. This unique presentation showcases exactly what you need to know.`,
+    };
+    return templates[visualType] || templates.video;
+  };
+
+  // Apply AI suggestions
+  const applySuggestions = useCallback(() => {
+    if (!enhancementResult) return;
+
+    setCustomPrompt(enhancementResult.enhancedPrompt);
+    setCustomScript(enhancementResult.suggestedScript);
+    setCustomDuration(enhancementResult.suggestedDuration);
+    
+    if (enhancementResult.suggestedVisualTypes.length > 0) {
+      setCustomVisualType(enhancementResult.suggestedVisualTypes[0]);
+    }
+    
+    setShowSuggestions(false);
+    toast.success('Applied AI suggestions');
+  }, [enhancementResult]);
 
   const handleAddPreset = () => {
     const preset = CHAPTER_PRESETS.find(p => p.id === selectedPreset);
@@ -177,6 +341,8 @@ export const AddChapterDialog: React.FC<AddChapterDialogProps> = ({
     setCustomTitle('');
     setCustomPrompt('');
     setCustomScript('');
+    setEnhancementResult(null);
+    setShowSuggestions(false);
     setActiveTab('preset');
     onOpenChange(false);
   };
@@ -267,6 +433,122 @@ export const AddChapterDialog: React.FC<AddChapterDialogProps> = ({
               </div>
             </div>
 
+            {/* Visual Prompt with AI Enhancement */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>Describe your chapter</Label>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="gap-1.5 text-xs h-7"
+                        onClick={enhancePrompt}
+                        disabled={isEnhancing || (!customPrompt.trim() && !customTitle.trim())}
+                      >
+                        {isEnhancing ? (
+                          <>
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                            Enhancing...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-3 h-3" />
+                            ✨ Enhance with AI
+                          </>
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>AI will suggest better prompts, visual types, and scripts</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <Textarea
+                value={customPrompt}
+                onChange={(e) => setCustomPrompt(e.target.value)}
+                placeholder="Describe what you want to generate... e.g., 'introduce our product with a professional host' or 'show key statistics with animated charts'"
+                rows={2}
+              />
+            </div>
+
+            {/* AI Suggestions Panel */}
+            {showSuggestions && enhancementResult && (
+              <Card className="border-primary/30 bg-primary/5">
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Lightbulb className="w-4 h-4 text-primary" />
+                      <span className="font-medium text-sm">AI Suggestions</span>
+                      <Badge variant="outline" className="text-[10px]">
+                        {Math.round(enhancementResult.confidence * 100)}% confidence
+                      </Badge>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 text-xs"
+                        onClick={() => setShowSuggestions(false)}
+                      >
+                        Dismiss
+                      </Button>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        className="h-7 text-xs gap-1"
+                        onClick={applySuggestions}
+                      >
+                        <CheckCircle2 className="w-3 h-3" />
+                        Apply All
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Enhanced Prompt:</span>
+                      <p className="text-xs mt-1 p-2 bg-background rounded border">
+                        {enhancementResult.enhancedPrompt}
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <span className="text-muted-foreground">Suggested Visual Types:</span>
+                      <div className="flex gap-1 mt-1">
+                        {enhancementResult.suggestedVisualTypes.map((type, idx) => (
+                          <Badge
+                            key={type}
+                            variant={idx === 0 ? 'default' : 'secondary'}
+                            className="gap-1 text-[10px] cursor-pointer"
+                            onClick={() => setCustomVisualType(type)}
+                          >
+                            {VISUAL_TYPE_ICONS[type]}
+                            {type.replace('_', ' ')}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="text-muted-foreground">Suggested Script:</span>
+                      <p className="text-xs mt-1 p-2 bg-background rounded border italic">
+                        "{enhancementResult.suggestedScript}"
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <span>Suggested Duration:</span>
+                      <Badge variant="outline">{enhancementResult.suggestedDuration}s</Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Visual Type Selection */}
             <div className="space-y-2">
               <Label>Visual Type</Label>
               <div className="flex flex-wrap gap-2">
@@ -283,16 +565,6 @@ export const AddChapterDialog: React.FC<AddChapterDialogProps> = ({
                   </Button>
                 ))}
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Visual Prompt</Label>
-              <Textarea
-                value={customPrompt}
-                onChange={(e) => setCustomPrompt(e.target.value)}
-                placeholder="Describe what you want to generate..."
-                rows={2}
-              />
             </div>
 
             <div className="space-y-2">
@@ -315,7 +587,20 @@ export const AddChapterDialog: React.FC<AddChapterDialogProps> = ({
 
             {customVoiceoverType !== 'none' && (
               <div className="space-y-2">
-                <Label>Voiceover Script</Label>
+                <div className="flex items-center justify-between">
+                  <Label>Voiceover Script</Label>
+                  {enhancementResult?.suggestedScript && customScript !== enhancementResult.suggestedScript && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 text-xs gap-1"
+                      onClick={() => setCustomScript(enhancementResult.suggestedScript)}
+                    >
+                      <RefreshCw className="w-3 h-3" />
+                      Use AI Script
+                    </Button>
+                  )}
+                </div>
                 <Textarea
                   value={customScript}
                   onChange={(e) => setCustomScript(e.target.value)}
