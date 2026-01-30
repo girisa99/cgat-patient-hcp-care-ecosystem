@@ -30,6 +30,7 @@ export type TTSProvider =
   | 'amazon_polly';      // AWS Polly (future)
 
 export type STTProvider = 
+  | 'deepgram'           // Deepgram Nova 2 (PRIMARY - <100ms real-time)
   | 'azure'              // Azure Speech-to-Text
   | 'openai_whisper'     // OpenAI Whisper
   | 'google'             // Google Cloud STT
@@ -88,8 +89,7 @@ export type SFXGenProvider =
   | 'modelslab_audio';   // ModelsLab Audio (Fallback)
 
 export type MusicGenProvider =
-  | 'elevenlabs_music'   // ElevenLabs Music (Western/EU/LatAm)
-  | 'suno'               // Suno AI (Premium full songs)
+  | 'elevenlabs_music'   // ElevenLabs Music (PRIMARY - Western/EU/LatAm)
   | 'alibaba_music'      // Alibaba Music (CJK)
   | 'modelslab_music';   // ModelsLab MusicGen (Budget/Fallback)
 
