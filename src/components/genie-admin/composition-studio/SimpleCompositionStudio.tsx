@@ -30,13 +30,15 @@ import {
   Copy, Settings2, Zap, RotateCcw, X,
   Building2, MapPin, Pencil, Image, Presentation, 
   Monitor, Camera, Layers, Film, Mic,
-  Send, FileCheck, BookTemplate, Share2
+  Send, FileCheck, BookTemplate, Share2, ThumbsUp, ThumbsDown
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useIPBasedContent } from '@/hooks/useIPBasedContent';
 import { useStudioEcosystem } from './useStudioEcosystem';
+import { AIRecommendationsPanel } from './AIRecommendationsPanel';
+import { useLabelStudioBackground } from '@/services/labelStudioBackgroundService';
 
 // ============================================
 // INDUSTRY-SPECIFIC TEMPLATES (Multi-select ready) - 80+ templates
@@ -765,10 +767,14 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
 
   // Ecosystem services hook - connects to all existing services
   const ecosystemServices = useStudioEcosystem();
+  
+  // Label Studio feedback for RLHF learning
+  const { recordEvent } = useLabelStudioBackground();
 
   // Project state
   const [projectName, setProjectName] = useState('');
   const [selectedTemplates, setSelectedTemplates] = useState<string[]>([]);
+  const [selectedVisualTypes, setSelectedVisualTypes] = useState<string[]>([]);
   const [primaryLanguage, setPrimaryLanguage] = useState('en');
   const [additionalLanguages, setAdditionalLanguages] = useState<string[]>([]);
   const [chapters, setChapters] = useState<SimpleChapter[]>([]);
@@ -789,6 +795,23 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
   const [currentGeneratingChapter, setCurrentGeneratingChapter] = useState<string | null>(null);
+  
+  // Track user actions for Label Studio learning
+  const recordUserAction = useCallback((action: string, data: Record<string, unknown>) => {
+    recordEvent({
+      eventType: 'thumbnail_chosen',
+      context: {
+        product: 'hub',
+        contentType: action,
+        originalValue: JSON.stringify(data).slice(0, 200),
+        userAction: 'accept',
+      },
+      metadata: {
+        ...data,
+        timestamp: new Date().toISOString(),
+      },
+    });
+  }, [recordEvent]);
 
   // Set primary language from IP detection
   useEffect(() => {
@@ -1182,6 +1205,17 @@ Language: ${primaryLanguage}. Keep it engaging, concise, and professional.`,
     setGenerationProgress(100);
     setIsGenerating(false);
     toast.success('All chapters generated!');
+    
+    // Record generation completion for Label Studio learning
+    recordUserAction('generation_complete', {
+      projectName,
+      chaptersCount: chapters.length,
+      templates: selectedTemplates,
+      primaryLanguage,
+      additionalLanguages,
+      outputMode,
+      totalDuration: chapters.reduce((sum, c) => sum + c.duration, 0),
+    });
   };
 
   // Stats
@@ -1274,6 +1308,25 @@ Language: ${primaryLanguage}. Keep it engaging, concise, and professional.`,
           </div>
         </div>
       </div>
+
+      {/* ========== AI RECOMMENDATIONS ========== */}
+      <AIRecommendationsPanel
+        prompt={projectName}
+        availableTemplates={INDUSTRY_TEMPLATES.map(t => ({ id: t.id, label: t.label, category: t.category || 'General' }))}
+        availableVisuals={VISUAL_TYPES.map(v => ({ id: v.id, label: v.label, category: v.category || 'General' }))}
+        selectedTemplates={selectedTemplates}
+        selectedVisuals={selectedVisualTypes}
+        onSelectTemplates={(ids) => {
+          applyTemplates(ids);
+          recordUserAction('ai_template_accepted', { templateIds: ids });
+        }}
+        onSelectVisuals={(ids) => {
+          setSelectedVisualTypes(ids);
+          // Apply to all chapters
+          setChapters(prev => prev.map(ch => ({ ...ch, visualTypes: ids.length > 0 ? ids : ch.visualTypes })));
+          recordUserAction('ai_visual_accepted', { visualIds: ids });
+        }}
+      />
 
       <Separator />
 

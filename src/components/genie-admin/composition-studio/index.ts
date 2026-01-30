@@ -6,6 +6,9 @@
 export { SimpleCompositionStudio } from './SimpleCompositionStudio';
 export { default as SimpleCompositionStudioDefault } from './SimpleCompositionStudio';
 
+// AI Recommendations - Proactive template/visual suggestions with Label Studio learning
+export { AIRecommendationsPanel } from './AIRecommendationsPanel';
+
 // Ecosystem Services Hook - Connects to all existing services
 export { useStudioEcosystem } from './useStudioEcosystem';
 export type { StudioChapter, StudioProject, GenerationProgress, InlineEditAction } from './useStudioEcosystem';
