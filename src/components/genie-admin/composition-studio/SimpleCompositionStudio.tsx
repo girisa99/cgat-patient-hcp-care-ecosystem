@@ -800,8 +800,40 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
   const [currentGeneratingChapter, setCurrentGeneratingChapter] = useState<string | null>(null);
   
   // NEW: Studio step & assets sidebar state
-  const [studioStep, setStudioStep] = useState<'create' | 'review'>('create');
-  const [assetsSidebarOpen, setAssetsSidebarOpen] = useState(false);
+  // Check URL params for initial state
+  const urlParams = new URLSearchParams(window.location.search);
+  const initialStep = urlParams.get('step') === 'review' ? 'review' : 'create';
+  const initialAssetsOpen = urlParams.get('view') === 'assets';
+  
+  const [studioStep, setStudioStep] = useState<'create' | 'review'>(initialStep);
+  const [assetsSidebarOpen, setAssetsSidebarOpen] = useState(initialAssetsOpen);
+  
+  // Load saved draft from sessionStorage on mount
+  useEffect(() => {
+    const savedDraft = sessionStorage.getItem('studio_current_draft');
+    if (savedDraft) {
+      try {
+        const draft = JSON.parse(savedDraft);
+        if (draft.projectName) setProjectName(draft.projectName);
+        if (draft.chapters?.length) {
+          setChapters(draft.chapters.map((ch: any) => ({
+            ...ch,
+            generatedContent: ch.generatedContent || undefined,
+          })));
+        }
+        if (draft.primaryLanguage) setPrimaryLanguage(draft.primaryLanguage);
+        if (draft.additionalLanguages) setAdditionalLanguages(draft.additionalLanguages);
+        if (draft.selectedTemplates) setSelectedTemplates(draft.selectedTemplates);
+        if (draft.selectedVisualTypes) setSelectedVisualTypes(draft.selectedVisualTypes);
+        if (draft.audioScope) setAudioScope(draft.audioScope);
+        if (draft.scriptScope) setScriptScope(draft.scriptScope);
+        if (draft.outputMode) setOutputMode(draft.outputMode);
+        toast.info('Draft restored from session');
+      } catch (e) {
+        console.warn('Failed to restore draft:', e);
+      }
+    }
+  }, []);
   
   // Track user actions for Label Studio learning
   const recordUserAction = useCallback((action: string, data: Record<string, unknown>) => {
