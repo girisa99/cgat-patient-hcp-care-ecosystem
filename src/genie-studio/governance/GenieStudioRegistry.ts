@@ -5,43 +5,47 @@
  * This file serves as the SINGLE SOURCE OF TRUTH for what belongs to Genie Studio.
  * Update this registry whenever you add/remove Genie-related code.
  * 
- * VERIFIED COUNTS (2026-01-28):
+ * VERIFIED COUNTS (2026-01-30):
  * - Edge Functions: 62 Genie-specific
  * - Hooks: 24 Genie-specific
  * - Services: 19 Genie-specific
  * - Database Tables: 42 Genie-specific
  * - AI Agents: 12 Genie-specific
  * - Pages: 10 Genie-specific
- * - AI Providers: 13 Core providers integrated
+ * - AI Providers: 18 Core providers integrated (Updated with Deepgram, Suno)
  * 
- * Last Audit: 2026-01-28
+ * Last Audit: 2026-01-30
  */
 
 // =============================================================================
-// AI PROVIDERS (13 Core Providers Integrated)
+// AI PROVIDERS (18 Core Providers Integrated - Updated 2026-01-30)
 // =============================================================================
 export const GENIE_AI_PROVIDERS = {
-  // Primary Providers (Tier 1)
+  // Primary Providers (Tier 1) - Core LLM + Multi-Modal
   primary: [
-    { id: 'openai', name: 'OpenAI', capabilities: ['llm', 'image_gen', 'stt', 'tts', 'vision'], status: 'active' },
+    { id: 'openai', name: 'OpenAI', capabilities: ['llm', 'image_gen', 'stt', 'tts', 'vision', 'video_gen'], status: 'active' },
     { id: 'claude', name: 'Anthropic Claude', capabilities: ['llm', 'translation', 'vision'], status: 'active' },
-    { id: 'gemini', name: 'Google Gemini', capabilities: ['llm', 'image_gen', 'vision', 'translation'], status: 'active' },
+    { id: 'gemini', name: 'Google Gemini', capabilities: ['llm', 'image_gen', 'vision', 'translation', 'video_gen'], status: 'active' },
+    { id: 'deepgram', name: 'Deepgram', capabilities: ['stt', 'realtime_stt'], status: 'active' }, // NEW: Primary STT
   ],
-  // Specialized Providers (Tier 2)
+  // Specialized Providers (Tier 2) - Domain Excellence
   specialized: [
-    { id: 'elevenlabs', name: 'ElevenLabs', capabilities: ['tts', 'voice_clone', 'music_gen', 'sfx_gen'], status: 'active' },
+    { id: 'elevenlabs', name: 'ElevenLabs', capabilities: ['tts', 'voice_clone', 'sfx_gen'], status: 'active' },
     { id: 'azure', name: 'Azure AI', capabilities: ['tts', 'stt', 'ocr', 'translation', 'visemes'], status: 'active' },
     { id: 'alibaba', name: 'Alibaba DashScope', capabilities: ['llm', 'tts', 'stt', 'video_gen', 'avatar'], status: 'active' },
     { id: 'modelslab', name: 'ModelsLab', capabilities: ['image_gen', 'video_gen', '3d_mesh'], status: 'active' },
     { id: 'meshy', name: 'Meshy AI', capabilities: ['3d_gen', 'texture', 'rigging'], status: 'active' },
+    { id: 'suno', name: 'Suno AI', capabilities: ['music_gen'], status: 'active' }, // NEW: Premium music
+    { id: 'deepl', name: 'DeepL', capabilities: ['translation'], status: 'active' },
   ],
   // Fallback Providers (Tier 3)
   fallback: [
     { id: 'deepseek', name: 'DeepSeek', capabilities: ['llm', 'translation'], status: 'active' },
-    { id: 'deepl', name: 'DeepL', capabilities: ['translation'], status: 'active' },
-    { id: 'replicate', name: 'Replicate', capabilities: ['image_gen', 'video_gen'], status: 'active' },
+    { id: 'replicate', name: 'Replicate', capabilities: ['image_gen', 'video_gen', '3d_gen'], status: 'active' },
     { id: 'google', name: 'Google Cloud AI', capabilities: ['translation', 'ocr', 'tts', 'stt'], status: 'active' },
     { id: 'huggingface', name: 'HuggingFace', capabilities: ['llm', 'image_gen'], status: 'fallback' },
+    { id: 'runpod', name: 'RunPod', capabilities: ['gpu_rendering', 'priority_render'], status: 'active' },
+    { id: 'heygen', name: 'HeyGen', capabilities: ['avatar', 'video_avatar'], status: 'active' },
   ],
 } as const;
 
@@ -349,7 +353,14 @@ export const calculateGenieMetrics = () => {
       languages: 140, // Supported languages (core + extended)
     },
     
-    lastUpdated: '2026-01-28',
+    lastUpdated: '2026-01-30',
+    
+    // Provider summary
+    providerSummary: {
+      configured: 15, // OpenAI, Claude, Gemini, Deepgram, Alibaba, Azure, DeepL, ElevenLabs, Google, Replicate, ModelsLab, Meshy, DeepSeek, HuggingFace, Lovable AI
+      pending: 3, // Suno, RunPod, HeyGen
+      deprecated: 2, // AWS, Stability
+    },
   };
 };
 

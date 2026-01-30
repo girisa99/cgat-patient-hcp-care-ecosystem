@@ -199,11 +199,14 @@ const CAPABILITY_DESCRIPTIONS: Record<AICapability, string> = {
   translation: 'Multi-language translation',
   tts: 'Text-to-speech synthesis',
   stt: 'Speech-to-text transcription',
+  realtime_stt: 'Real-time speech-to-text (<100ms latency)',
   image_gen: 'AI image generation',
   video_gen: 'AI video generation',
   music_gen: 'AI music composition',
   sfx_gen: 'Sound effects generation',
   nlp: 'Natural language processing',
+  '3d_gen': '3D model generation',
+  avatar: 'AI avatar generation',
 };
 
 // ============================================

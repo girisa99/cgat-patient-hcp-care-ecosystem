@@ -20,35 +20,40 @@ export interface ProviderSecretMapping {
   configurationStatus: 'configured' | 'partial' | 'not_configured';
 }
 
-// Map of providers to their secret requirements - Core 13 Ecosystem
+// Map of providers to their secret requirements - Core 18 Ecosystem (Updated 2026-01-30)
 export const PROVIDER_SECRET_REQUIREMENTS: Record<AIProviderKey, string[]> = {
-  // Core 13 Ecosystem - Primary Production Providers
+  // Core 18 Ecosystem - Primary Production Providers
   openai: ['OPENAI_API_KEY'],
   claude: ['ANTHROPIC_API_KEY', 'CLAUDE_API_KEY'], // Either works
   gemini: ['GEMINI_API_KEY', 'GOOGLE_API_KEY', 'LOVABLE_API_KEY'], // Any works
+  deepgram: ['DEEPGRAM_API_KEY'], // NEW: Primary STT
   deepseek: ['DEEPSEEK_API_KEY'],
   alibaba: ['ALIBABA_API_KEY'],
-  // Azure: Speech + Form Recognizer (NOT Azure OpenAI - we use OpenAI directly)
-  azure: ['AZURE_SPEECH_KEY', 'AZURE_FORM_RECOGNIZER_KEY'],
+  // Azure: Speech + Form Recognizer + Translate (NOT Azure OpenAI - we use OpenAI directly)
+  azure: ['AZURE_SPEECH_KEY', 'AZURE_FORM_RECOGNIZER_KEY', 'MICROSOFT_TRANSLATE_API_KEY'],
   deepl: ['DEEPL_API_KEY'],
   elevenlabs: ['ELEVENLABS_API_KEY'],
+  suno: ['SUNO_API_KEY'], // NEW: Premium music
   google: ['GOOGLE_API_KEY', 'GEMINI_API_KEY'],
   replicate: ['REPLICATE_API_TOKEN'],
   modelslab: ['MODELSLAB_API_KEY'], // FLUX Pro, AnimateDiff, 3D Mesh
   meshy: ['MESHY_API_KEY'], // High-fidelity 3D, PBR textures, Rigging
-  // Deprecated/Legacy (route to Core 13)
+  runpod: ['RUNPOD_API_KEY'], // GPU rendering
+  heygen: ['HEYGEN_API_KEY'], // AI Avatars
+  // Deprecated/Legacy (route to Core 18)
   aws: ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY'], // Not required
   stability: ['STABILITY_API_KEY'], // Use ModelsLab instead
   huggingface: ['HUGGING_FACE_ACCESS_TOKEN'],
 };
 
 // Known configured secrets from the project
-// This is the source of truth based on secrets--fetch_secrets (39 secrets)
+// This is the source of truth based on secrets--fetch_secrets (42 secrets - Updated 2026-01-30)
 export const KNOWN_CONFIGURED_SECRETS = new Set([
-  // Core 13 Ecosystem
+  // Core 18 Ecosystem
   'ALIBABA_API_KEY',
   'ANTHROPIC_API_KEY',
   'CLAUDE_API_KEY',
+  'DEEPGRAM_API_KEY', // NEW: Primary STT
   'DEEPL_API_KEY',
   'DEEPSEEK_API_KEY',
   'ELEVENLABS_API_KEY',
@@ -67,6 +72,10 @@ export const KNOWN_CONFIGURED_SECRETS = new Set([
   'AZURE_FORM_RECOGNIZER_ENDPOINT',
   'MICROSOFT_TRANSLATE_API_KEY',
   'MICROSOFT_TRANSLATE_REGION',
+  // NEW: Additional providers
+  'SUNO_API_KEY', // Premium music (pending configuration)
+  'RUNPOD_API_KEY', // GPU rendering (pending configuration)
+  'HEYGEN_API_KEY', // AI Avatars (pending configuration)
 ]);
 
 // ============================================
@@ -191,14 +200,48 @@ export function getProvidersConfigurationStatus(): ProviderConfig[] {
       notes: 'Enterprise-grade: Speech (400+ voices, Visemes), Form Recognizer (documents), Translate',
     },
 
-    // Meshy AI - NEW Core 13 Provider
+    // Meshy AI - 3D Generation
     {
       providerId: 'meshy',
       name: 'Meshy AI',
       status: 'configured',
       missingSecrets: [],
-      availableCapabilities: ['image_gen', 'video_gen'],
+      availableCapabilities: ['image_gen', 'video_gen', '3d_gen'],
       notes: 'High-fidelity 3D: PBR textures, Auto-rigging, USDZ/GLTF export, Image-to-3D',
+    },
+
+    // NEW PROVIDERS - Added 2026-01-30
+    {
+      providerId: 'deepgram',
+      name: 'Deepgram',
+      status: 'configured',
+      missingSecrets: [],
+      availableCapabilities: ['stt', 'realtime_stt'],
+      notes: 'Primary STT: <100ms latency, 36+ languages, real-time streaming',
+    },
+    {
+      providerId: 'suno',
+      name: 'Suno AI',
+      status: 'not_configured',
+      missingSecrets: ['SUNO_API_KEY'],
+      availableCapabilities: [],
+      notes: 'Premium music generation with vocals - API key pending',
+    },
+    {
+      providerId: 'runpod',
+      name: 'RunPod',
+      status: 'not_configured',
+      missingSecrets: ['RUNPOD_API_KEY'],
+      availableCapabilities: [],
+      notes: 'GPU rendering for priority processing - API key pending',
+    },
+    {
+      providerId: 'heygen',
+      name: 'HeyGen',
+      status: 'not_configured',
+      missingSecrets: ['HEYGEN_API_KEY'],
+      availableCapabilities: [],
+      notes: 'AI Avatar generation - API key pending',
     },
 
     // Not Configured (Legacy/Not Required)
@@ -208,7 +251,7 @@ export function getProvidersConfigurationStatus(): ProviderConfig[] {
       status: 'not_configured',
       missingSecrets: ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY'],
       availableCapabilities: [],
-      notes: 'Not required - Using Azure and Core 13 ecosystem instead',
+      notes: 'Not required - Using Azure and Core 18 ecosystem instead',
     },
     {
       providerId: 'stability',
@@ -243,18 +286,21 @@ export function getConfiguredProvidersForCapability(capability: AICapability): P
 export function getConfiguredFallbackChain(capability: AICapability): AIProviderKey[] {
   const fallbackOrders: Record<AICapability, AIProviderKey[]> = {
     llm: ['gemini', 'openai', 'claude', 'deepseek', 'alibaba', 'huggingface'],
-    translation: ['deepl', 'alibaba', 'claude', 'google', 'openai', 'deepseek'],
-    ocr: ['gemini', 'google', 'alibaba', 'claude', 'deepseek'],
-    tts: ['elevenlabs', 'openai', 'google', 'alibaba', 'modelslab'],
-    stt: ['openai', 'google', 'alibaba'],
+    translation: ['deepl', 'alibaba', 'azure', 'claude', 'google', 'openai', 'deepseek'],
+    ocr: ['azure', 'gemini', 'google', 'alibaba', 'claude', 'deepseek'],
+    tts: ['elevenlabs', 'azure', 'openai', 'google', 'alibaba', 'modelslab'],
+    stt: ['deepgram', 'openai', 'azure', 'google', 'alibaba'], // UPDATED: Deepgram as PRIMARY
+    realtime_stt: ['deepgram', 'azure', 'google'], // NEW: Real-time STT capability
     // UPDATED: ModelsLab as PRIMARY for image generation
-    image_gen: ['modelslab', 'gemini', 'openai', 'replicate', 'alibaba', 'huggingface'],
+    image_gen: ['modelslab', 'gemini', 'openai', 'replicate', 'alibaba', 'huggingface', 'meshy'],
     // UPDATED: ModelsLab as PRIMARY for video generation
-    video_gen: ['modelslab', 'gemini', 'replicate', 'alibaba'],
-    music_gen: ['elevenlabs', 'modelslab'],
+    video_gen: ['modelslab', 'gemini', 'replicate', 'alibaba', 'heygen'],
+    music_gen: ['suno', 'elevenlabs', 'modelslab'], // UPDATED: Suno as PRIMARY
     sfx_gen: ['elevenlabs', 'modelslab'],
     vision: ['gemini', 'openai', 'claude', 'google', 'alibaba', 'deepseek'],
     nlp: ['gemini', 'openai', 'claude', 'deepseek', 'alibaba'],
+    '3d_gen': ['meshy', 'modelslab', 'replicate'], // NEW: 3D generation
+    avatar: ['heygen', 'alibaba'], // NEW: Avatar generation
   };
 
   return fallbackOrders[capability] || [];
