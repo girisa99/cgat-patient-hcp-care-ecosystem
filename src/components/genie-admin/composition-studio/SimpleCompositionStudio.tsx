@@ -1160,8 +1160,22 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
       voiceSource: globalVoiceSource,
       musicSource: globalMusicSource,
     })));
-    toast.success('Applied audio settings to all chapters');
-  }, [globalVoiceSource, globalMusicSource]);
+    toast.success(chapters.length === 1 
+      ? 'Applied audio settings to your chapter' 
+      : 'Applied audio settings to all chapters');
+  }, [globalVoiceSource, globalMusicSource, chapters.length]);
+
+  // Auto-apply global settings when in "entire" mode and settings change
+  // This ensures single-chapter projects don't need manual "Apply" clicks
+  useEffect(() => {
+    if (audioScope === 'entire' && chapters.length > 0) {
+      setChapters(prev => prev.map(c => ({
+        ...c,
+        voiceSource: globalVoiceSource,
+        musicSource: globalMusicSource,
+      })));
+    }
+  }, [audioScope, globalVoiceSource, globalMusicSource, chapters.length]);
 
   // Refresh all chapter prompts based on current template/context
   // This updates the AI-suggested prompts when context changes
@@ -1907,7 +1921,9 @@ IMPORTANT:
               <p className="text-[10px] text-muted-foreground px-1">
                 {scriptScope === 'chapter' 
                   ? '✏️ Each chapter has its own script prompt' 
-                  : '📄 One script generated for full video'}
+                  : chapters.length === 1
+                    ? '📄 Script generated for your video'
+                    : '📄 One script generated for full video'}
               </p>
             </div>
           </div>
@@ -1930,7 +1946,9 @@ IMPORTANT:
               <p className="text-[10px] text-muted-foreground px-1">
                 {audioScope === 'chapter' 
                   ? '🎤 Different voice/music per chapter' 
-                  : '🎵 Same voice & music throughout'}
+                  : chapters.length === 1
+                    ? '🎵 Voice & music applied to your video'
+                    : '🎵 Same voice & music throughout'}
               </p>
             </div>
           </div>
@@ -1991,9 +2009,16 @@ IMPORTANT:
         </div>
 
         {audioScope === 'entire' && (
-          <Button size="sm" variant="secondary" onClick={applyGlobalAudioSettings}>
-            Apply Audio Settings to All Chapters
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button size="sm" variant="secondary" onClick={applyGlobalAudioSettings}>
+              {chapters.length === 1 ? 'Apply Settings' : 'Apply Audio Settings to All Chapters'}
+            </Button>
+            {chapters.length === 1 && (
+              <span className="text-[10px] text-muted-foreground">
+                ✓ "Entire Video" mode works with single chapter projects
+              </span>
+            )}
+          </div>
         )}
       </div>
 
