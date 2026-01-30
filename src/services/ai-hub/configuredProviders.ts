@@ -263,26 +263,92 @@ export function getConfiguredProvidersForCapability(capability: AICapability): P
 /**
  * Get fallback chain for a capability (only configured providers)
  */
+/**
+ * Get fallback chain for a capability (only configured providers)
+ * Complete P1→P2→P3→P4+ chains for all capabilities
+ */
 export function getConfiguredFallbackChain(capability: AICapability): AIProviderKey[] {
   const fallbackOrders: Record<AICapability, AIProviderKey[]> = {
+    // LLM: Gemini → OpenAI → Claude → DeepSeek → Alibaba → HuggingFace
     llm: ['gemini', 'openai', 'claude', 'deepseek', 'alibaba', 'huggingface'],
-    translation: ['deepl', 'alibaba', 'azure', 'claude', 'google', 'openai', 'deepseek'],
-    ocr: ['azure', 'gemini', 'google', 'alibaba', 'claude', 'deepseek'],
+    
+    // Translation: DeepL → Azure → Claude → Google → OpenAI → Alibaba → DeepSeek
+    translation: ['deepl', 'azure', 'claude', 'google', 'openai', 'alibaba', 'deepseek'],
+    
+    // OCR: Azure Form Recognizer → Gemini → Google Vision → Alibaba Qwen-VL → DeepSeek-VL
+    ocr: ['azure', 'gemini', 'google', 'alibaba', 'deepseek'],
+    
+    // TTS: ElevenLabs → Azure Neural → OpenAI → Google WaveNet → Alibaba CosyVoice → ModelsLab
     tts: ['elevenlabs', 'azure', 'openai', 'google', 'alibaba', 'modelslab'],
-    stt: ['deepgram', 'openai', 'azure', 'google', 'alibaba'], // Deepgram as PRIMARY
-    realtime_stt: ['deepgram', 'azure', 'google'], // Real-time STT capability
+    
+    // STT: Deepgram (<100ms) → OpenAI Whisper → Azure Speech → Google STT → Alibaba Paraformer
+    stt: ['deepgram', 'openai', 'azure', 'google', 'alibaba'],
+    
+    // Real-time STT: Deepgram → Azure → Google → Alibaba
+    realtime_stt: ['deepgram', 'azure', 'google', 'alibaba'],
+    
+    // Image: ModelsLab FLUX → Gemini → OpenAI DALL-E → Replicate → Alibaba Wanx → HuggingFace → Meshy
     image_gen: ['modelslab', 'gemini', 'openai', 'replicate', 'alibaba', 'huggingface', 'meshy'],
-    // UPDATED: Sora2API as PRIMARY for video generation
+    
+    // Video: Sora2API → ModelsLab → Gemini Veo → Replicate → Alibaba WAN
     video_gen: ['sora2api', 'modelslab', 'gemini', 'replicate', 'alibaba'],
-    music_gen: ['elevenlabs', 'modelslab'], // ElevenLabs as PRIMARY (Suno NOT configured)
-    sfx_gen: ['elevenlabs', 'modelslab'],
+    
+    // Music: ElevenLabs → ModelsLab → Alibaba (Suno NOT configured)
+    music_gen: ['elevenlabs', 'modelslab', 'alibaba'],
+    
+    // SFX: ElevenLabs → ModelsLab → Azure
+    sfx_gen: ['elevenlabs', 'modelslab', 'azure'],
+    
+    // Vision: Gemini → OpenAI GPT-4V → Claude → Google Vision → Alibaba Qwen-VL → DeepSeek-VL
     vision: ['gemini', 'openai', 'claude', 'google', 'alibaba', 'deepseek'],
-    nlp: ['gemini', 'openai', 'claude', 'deepseek', 'alibaba'],
-    '3d_gen': ['meshy', 'modelslab', 'replicate'], // Meshy as PRIMARY for 3D
-    avatar: ['alibaba', 'modelslab'], // Alibaba WAN 2.2 for avatars (HeyGen NOT configured)
+    
+    // NLP: Gemini → OpenAI → Claude → Azure Language → DeepSeek → Alibaba
+    nlp: ['gemini', 'openai', 'claude', 'azure', 'deepseek', 'alibaba'],
+    
+    // 3D: Meshy → ModelsLab → Replicate (TripoSR) → Alibaba
+    '3d_gen': ['meshy', 'modelslab', 'replicate', 'alibaba'],
+    
+    // Avatar/Lip-Sync: Alibaba WAN 2.2 → Azure Visemes → ModelsLab (HeyGen NOT configured)
+    avatar: ['alibaba', 'azure', 'modelslab'],
   };
 
   return fallbackOrders[capability] || [];
+}
+
+/**
+ * Get regional fallback chain for a capability
+ * Adjusts P1→P2 based on region for optimal latency/quality
+ */
+export function getRegionalFallbackChain(capability: AICapability, region: string): AIProviderKey[] {
+  const baseChain = getConfiguredFallbackChain(capability);
+  
+  // CJK regions prioritize Alibaba/DeepSeek
+  const cjkRegions = ['zh', 'ja', 'ko', 'cn', 'jp', 'kr', 'tw', 'hk'];
+  if (cjkRegions.some(r => region.toLowerCase().includes(r))) {
+    if (capability === 'tts') return ['alibaba', 'azure', 'elevenlabs', 'google', 'openai'];
+    if (capability === 'stt') return ['alibaba', 'deepgram', 'azure', 'google'];
+    if (capability === 'translation') return ['alibaba', 'deepseek', 'deepl', 'azure', 'google'];
+    if (capability === 'image_gen') return ['alibaba', 'modelslab', 'gemini', 'replicate'];
+    if (capability === 'video_gen') return ['alibaba', 'sora2api', 'modelslab', 'replicate'];
+    if (capability === 'llm') return ['alibaba', 'deepseek', 'gemini', 'openai', 'claude'];
+  }
+  
+  // MENA/Arabic regions prioritize Azure for TTS
+  const menaRegions = ['ar', 'sa', 'ae', 'eg', 'ma', 'dz'];
+  if (menaRegions.some(r => region.toLowerCase().includes(r))) {
+    if (capability === 'tts') return ['azure', 'elevenlabs', 'google', 'openai'];
+    if (capability === 'translation') return ['azure', 'google', 'deepl', 'claude'];
+  }
+  
+  // India/SEA prioritize Google/Gemini
+  const seaRegions = ['in', 'id', 'th', 'vn', 'my', 'ph', 'sg'];
+  if (seaRegions.some(r => region.toLowerCase().includes(r))) {
+    if (capability === 'tts') return ['google', 'azure', 'elevenlabs', 'alibaba'];
+    if (capability === 'translation') return ['google', 'azure', 'deepl', 'gemini'];
+    if (capability === 'llm') return ['gemini', 'openai', 'claude', 'alibaba'];
+  }
+  
+  return baseChain;
 }
 
 /**
