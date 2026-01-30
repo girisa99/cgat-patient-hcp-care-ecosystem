@@ -808,17 +808,22 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
   const [studioStep, setStudioStep] = useState<'create' | 'review'>(initialStep);
   const [assetsSidebarOpen, setAssetsSidebarOpen] = useState(initialAssetsOpen);
   
-  // Load saved draft from sessionStorage on mount
+  // Load saved draft from sessionStorage or localStorage on mount
   useEffect(() => {
-    const savedDraft = sessionStorage.getItem('studio_current_draft');
+    // Try sessionStorage first, then fallback to localStorage
+    const savedDraft = sessionStorage.getItem('studio_current_draft') || localStorage.getItem('studio_last_draft');
     if (savedDraft) {
       try {
         const draft = JSON.parse(savedDraft);
+        console.log('[Studio] Restoring draft:', draft.projectName, 'with', draft.chapters?.length, 'chapters');
+        
         if (draft.projectName) setProjectName(draft.projectName);
         if (draft.chapters?.length) {
+          // Ensure all chapter data including generatedContent is restored
           setChapters(draft.chapters.map((ch: any) => ({
             ...ch,
             generatedContent: ch.generatedContent || undefined,
+            status: ch.status || 'draft',
           })));
         }
         if (draft.primaryLanguage) setPrimaryLanguage(draft.primaryLanguage);
@@ -828,7 +833,16 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
         if (draft.audioScope) setAudioScope(draft.audioScope);
         if (draft.scriptScope) setScriptScope(draft.scriptScope);
         if (draft.outputMode) setOutputMode(draft.outputMode);
-        toast.info('Draft restored from session');
+        
+        // Only show toast if we actually restored content
+        if (draft.chapters?.length > 0) {
+          const hasContent = draft.chapters.some((ch: any) => ch.script || ch.generatedContent);
+          if (hasContent) {
+            toast.info('Draft restored with generated content');
+          } else {
+            toast.info('Draft structure restored');
+          }
+        }
       } catch (e) {
         console.warn('Failed to restore draft:', e);
       }
@@ -1325,6 +1339,23 @@ IMPORTANT: Focus specifically on the user's direction provided above. Keep the c
     setGenerationProgress(100);
     setIsGenerating(false);
     toast.success('All chapters generated!');
+    
+    // AUTO-SAVE to sessionStorage after generation completes
+    const draftData = {
+      projectName,
+      chapters,
+      primaryLanguage,
+      additionalLanguages,
+      selectedTemplates,
+      selectedVisualTypes,
+      audioScope,
+      scriptScope,
+      outputMode,
+      savedAt: new Date().toISOString(),
+    };
+    sessionStorage.setItem('studio_current_draft', JSON.stringify(draftData));
+    localStorage.setItem('studio_last_draft', JSON.stringify(draftData));
+    console.log('[Studio] Auto-saved draft after generation');
     
     // Record generation completion for Label Studio learning
     recordUserAction('generation_complete', {
