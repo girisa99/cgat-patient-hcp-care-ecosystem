@@ -57,15 +57,27 @@ export const AIRecommendationsPanel: React.FC<AIRecommendationsPanelProps> = ({
   const { recordEvent } = useLabelStudioBackground();
   const debouncedPrompt = useDebounce(prompt, 800);
 
-  // Auto-analyze when prompt changes
+  // Track last analyzed prompt to prevent duplicate analysis
+  const lastAnalyzedPromptRef = React.useRef<string>('');
+
+  // Auto-analyze when prompt changes - only depends on debouncedPrompt and disabled
+  // availableTemplates/availableVisuals are stable references, no need in deps
   useEffect(() => {
     if (debouncedPrompt.length < 10 || disabled) {
       setRecommendations(null);
+      lastAnalyzedPromptRef.current = '';
+      return;
+    }
+
+    // Skip if we already analyzed this exact prompt
+    if (lastAnalyzedPromptRef.current === debouncedPrompt) {
       return;
     }
 
     const analyze = async () => {
       setIsAnalyzing(true);
+      lastAnalyzedPromptRef.current = debouncedPrompt;
+      
       try {
         const result = await analyzePrompt(debouncedPrompt, availableTemplates, availableVisuals);
         setRecommendations(result);
@@ -93,7 +105,8 @@ export const AIRecommendationsPanel: React.FC<AIRecommendationsPanelProps> = ({
     };
 
     analyze();
-  }, [debouncedPrompt, disabled, analyzePrompt, availableTemplates, availableVisuals, recordEvent]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedPrompt, disabled]);
 
   // Handle accepting a recommendation
   const handleAcceptRecommendation = useCallback((

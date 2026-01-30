@@ -9,7 +9,7 @@
  * - Script generation per chapter OR all at once
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -813,7 +813,34 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
     });
   }, [recordEvent]);
 
-  // Set primary language from IP detection
+  // Memoize static data to prevent re-renders
+  const memoizedTemplates = useMemo(() => 
+    INDUSTRY_TEMPLATES.map(t => ({ id: t.id, label: t.label, category: t.category || 'General' })),
+    []
+  );
+  
+  const memoizedVisuals = useMemo(() => 
+    VISUAL_TYPES.map(v => ({ id: v.id, label: v.label, category: v.category || 'General' })),
+    []
+  );
+
+  // Memoize the AI recommendation prompt to prevent re-analysis on every render
+  const aiRecommendationPrompt = useMemo(() => {
+    if (!projectName && chapters.length === 0) return '';
+    const topicPart = chapters.length > 0 
+      ? ` - Topics: ${chapters.slice(0, 3).map(c => c.customPrompt || c.title).join(', ')}` 
+      : '';
+    return `${projectName}${topicPart}`;
+  }, [projectName, chapters]);
+
+  // Memoized callback for AI visual select to prevent re-renders
+  const handleAIVisualSelect = useCallback((ids: string[]) => {
+    setSelectedVisualTypes(ids);
+    // Apply to all chapters
+    setChapters(prev => prev.map(ch => ({ ...ch, visualTypes: ids.length > 0 ? ids : ch.visualTypes })));
+    recordUserAction('ai_visual_accepted', { visualIds: ids });
+  }, [recordUserAction]);
+
   useEffect(() => {
     if (defaultLanguage && !isDetectingLocation) {
       setPrimaryLanguage(defaultLanguage);
@@ -927,6 +954,12 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
       toast.success(`Applied ${templateIds.length} template(s) with ${newChapters.length} chapters`);
     }
   }, [globalVoiceSource, globalMusicSource, selectedTemplates]);
+
+  // Memoized callback for AI template select (must be after applyTemplates)
+  const handleAITemplateSelect = useCallback((ids: string[]) => {
+    applyTemplates(ids);
+    recordUserAction('ai_template_accepted', { templateIds: ids });
+  }, [applyTemplates, recordUserAction]);
 
   // Chapter CRUD
   const addChapter = useCallback(() => {
@@ -1359,21 +1392,13 @@ IMPORTANT: Focus specifically on the user's direction provided above. Keep the c
 
       {/* ========== AI RECOMMENDATIONS ========== */}
       <AIRecommendationsPanel
-        prompt={`${projectName}${chapters.length > 0 ? ` - Topics: ${chapters.map(c => c.customPrompt || c.title).join(', ')}` : ''}`}
-        availableTemplates={INDUSTRY_TEMPLATES.map(t => ({ id: t.id, label: t.label, category: t.category || 'General' }))}
-        availableVisuals={VISUAL_TYPES.map(v => ({ id: v.id, label: v.label, category: v.category || 'General' }))}
+        prompt={aiRecommendationPrompt}
+        availableTemplates={memoizedTemplates}
+        availableVisuals={memoizedVisuals}
         selectedTemplates={selectedTemplates}
         selectedVisuals={selectedVisualTypes}
-        onSelectTemplates={(ids) => {
-          applyTemplates(ids);
-          recordUserAction('ai_template_accepted', { templateIds: ids });
-        }}
-        onSelectVisuals={(ids) => {
-          setSelectedVisualTypes(ids);
-          // Apply to all chapters
-          setChapters(prev => prev.map(ch => ({ ...ch, visualTypes: ids.length > 0 ? ids : ch.visualTypes })));
-          recordUserAction('ai_visual_accepted', { visualIds: ids });
-        }}
+        onSelectTemplates={handleAITemplateSelect}
+        onSelectVisuals={handleAIVisualSelect}
       />
 
       <Separator />
