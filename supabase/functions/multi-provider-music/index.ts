@@ -56,12 +56,31 @@ interface MusicRouting {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// REGIONAL ROUTING
+// SMART REGIONAL ROUTING (12+ Providers with availability check)
 // ═══════════════════════════════════════════════════════════════════════════════
 
+function getAvailableMusicProviders(): { id: MusicProvider; available: boolean; priority: number }[] {
+  return [
+    { id: 'modelslab', available: !!Deno.env.get('MODELSLAB_API_KEY'), priority: 1 },
+    { id: 'suno', available: !!Deno.env.get('SUNO_API_KEY'), priority: 2 },
+    { id: 'alibaba', available: !!Deno.env.get('ALIBABA_API_KEY'), priority: 3 },
+    { id: 'elevenlabs', available: !!Deno.env.get('ELEVENLABS_API_KEY'), priority: 4 }, // Deprioritized due to permission issues
+  ];
+}
+
 function selectMusicProvider(region: string, tier: string = 'standard'): MusicRouting {
-  // Premium tier: Suno for highest quality full songs
-  if (tier === 'premium') {
+  const providers = getAvailableMusicProviders().filter(p => p.available);
+  
+  if (providers.length === 0) {
+    throw new Error('No music generation API keys configured. Please add MODELSLAB_API_KEY, SUNO_API_KEY, ALIBABA_API_KEY, or ELEVENLABS_API_KEY.');
+  }
+  
+  // Helper to check if provider is available
+  const hasProvider = (id: MusicProvider) => providers.some(p => p.id === id);
+  
+  // Premium tier: Suno for highest quality full songs (if available)
+  if (tier === 'premium' && hasProvider('suno')) {
+    console.log('🎵 Premium tier: Routing to Suno');
     return {
       provider: 'suno',
       cost: 0.10,
@@ -71,30 +90,9 @@ function selectMusicProvider(region: string, tier: string = 'standard'): MusicRo
     };
   }
 
-  // Advanced tier: ElevenLabs globally
-  if (tier === 'advanced') {
-    return {
-      provider: 'elevenlabs',
-      cost: 0.05,
-      zone: 'advanced',
-      quality: 'premium',
-      maxDuration: 120
-    };
-  }
-
-  // ElevenLabs Zone: Western/EU/LatAm
-  if (ELEVENLABS_REGIONS.includes(region)) {
-    return {
-      provider: 'elevenlabs',
-      cost: 0.03,
-      zone: 'elevenlabs',
-      quality: 'premium',
-      maxDuration: 60
-    };
-  }
-
-  // CJK Zone: Alibaba for Asian music styles
-  if (CJK_REGIONS.includes(region)) {
+  // CJK Zone: Prefer Alibaba for Asian music styles
+  if (CJK_REGIONS.includes(region) && hasProvider('alibaba')) {
+    console.log('🌏 CJK Zone: Routing to Alibaba Music');
     return {
       provider: 'alibaba',
       cost: 0.015,
@@ -104,25 +102,53 @@ function selectMusicProvider(region: string, tier: string = 'standard'): MusicRo
     };
   }
 
-  // India/SEA/Africa: ModelsLab (cost-effective)
-  if (GEMINI_REGIONS.includes(region)) {
+  // Default: Use ModelsLab as most reliable option
+  if (hasProvider('modelslab')) {
+    console.log('🎯 Default routing: ModelsLab (most reliable)');
     return {
       provider: 'modelslab',
-      cost: 0.01,
-      zone: 'gemini',
+      cost: 0.015,
+      zone: 'modelslab',
       quality: 'standard',
-      maxDuration: 30
+      maxDuration: 60
+    };
+  }
+  
+  // Fallback to Suno if available
+  if (hasProvider('suno')) {
+    return {
+      provider: 'suno',
+      cost: 0.08,
+      zone: 'suno-fallback',
+      quality: 'premium',
+      maxDuration: 120
+    };
+  }
+  
+  // Last resort: Alibaba
+  if (hasProvider('alibaba')) {
+    return {
+      provider: 'alibaba',
+      cost: 0.015,
+      zone: 'alibaba-fallback',
+      quality: 'standard',
+      maxDuration: 60
+    };
+  }
+  
+  // ElevenLabs as final fallback (known permission issues)
+  if (hasProvider('elevenlabs')) {
+    console.log('⚠️ Using ElevenLabs (may have permission issues)');
+    return {
+      provider: 'elevenlabs',
+      cost: 0.03,
+      zone: 'elevenlabs-fallback',
+      quality: 'premium',
+      maxDuration: 60
     };
   }
 
-  // Fallback: ModelsLab
-  return {
-    provider: 'modelslab',
-    cost: 0.015,
-    zone: 'fallback',
-    quality: 'standard',
-    maxDuration: 30
-  };
+  throw new Error('No music generation providers available');
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

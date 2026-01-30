@@ -133,11 +133,14 @@ serve(async (req) => {
       );
     }
 
-    // Auto-select provider based on availability
-    const selectedProvider = selectProvider(provider);
+    // Extract region from request for smart routing
+    const region = body.region || 'US';
+    
+    // Auto-select provider based on availability AND regional routing
+    const selectedProvider = selectProvider(provider, region);
     const selectedModel = selectModel(selectedProvider, model);
     
-    console.log('🎬 Generating video with provider:', selectedProvider, 'model:', selectedModel);
+    console.log(`🎬 Smart routing: provider=${selectedProvider}, model=${selectedModel}, region=${region}`);
 
     let result: VideoResult;
     const startTime = Date.now();
@@ -222,24 +225,100 @@ interface AvatarRequest {
   voiceId?: string;
 }
 
-function selectProvider(requestedProvider: string): string {
-  if (requestedProvider !== 'auto') return requestedProvider;
+// ═══════════════════════════════════════════════════════════════════════════════
+// SMART MULTI-PROVIDER ROUTING (12+ Providers)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Regional zone definitions for intelligent routing
+const CJK_REGIONS = ['CN', 'HK', 'TW', 'JP', 'KR', 'SG', 'MO'];
+const INDIA_SEA_REGIONS = ['IN', 'PK', 'BD', 'LK', 'NP', 'ID', 'VN', 'TH', 'PH', 'MY', 'MM'];
+const EU_REGIONS = ['DE', 'FR', 'ES', 'IT', 'NL', 'PT', 'PL', 'BE', 'AT', 'CH', 'UK', 'IE'];
+const MENA_REGIONS = ['SA', 'AE', 'EG', 'QA', 'KW', 'BH', 'OM', 'JO', 'LB', 'MA', 'TN'];
+const AFRICA_REGIONS = ['NG', 'KE', 'GH', 'ZA', 'ET', 'TZ', 'UG', 'ZW', 'ZM', 'RW', 'SN'];
+
+interface ProviderConfig {
+  id: string;
+  available: boolean;
+  priority: number;
+  bestFor: string[];
+}
+
+function getAvailableProviders(): ProviderConfig[] {
+  return [
+    { 
+      id: 'modelslab', 
+      available: !!Deno.env.get('MODELSLAB_API_KEY'),
+      priority: 1,
+      bestFor: ['animatediff', 'svd', 'general', 'budget']
+    },
+    { 
+      id: 'alibaba', 
+      available: !!Deno.env.get('ALIBABA_API_KEY'),
+      priority: 2,
+      bestFor: ['wan', 'cjk', 'avatar', 'full-body']
+    },
+    { 
+      id: 'gemini', 
+      available: !!Deno.env.get('GOOGLE_API_KEY'),
+      priority: 3,
+      bestFor: ['veo', 'india', 'sea', 'africa']
+    },
+    { 
+      id: 'replicate', 
+      available: !!Deno.env.get('REPLICATE_API_TOKEN'),
+      priority: 4,
+      bestFor: ['minimax', 'stable-video', 'experimental']
+    },
+    { 
+      id: 'openai', 
+      available: false, // Sora not publicly available
+      priority: 99,
+      bestFor: ['sora'] // Reserved for future
+    },
+  ];
+}
+
+function selectProvider(requestedProvider: string, region?: string): string {
+  // Honor explicit provider request
+  if (requestedProvider !== 'auto') {
+    const providers = getAvailableProviders();
+    const requested = providers.find(p => p.id === requestedProvider);
+    if (requested?.available) return requestedProvider;
+    console.log(`⚠️ Requested provider ${requestedProvider} not available, using smart routing`);
+  }
   
-  // Check available API keys and select best provider
-  const openaiKey = Deno.env.get('OPENAI_API_KEY');
-  const modelsLabKey = Deno.env.get('MODELSLAB_API_KEY');
-  const alibabaKey = Deno.env.get('ALIBABA_API_KEY');
-  const googleKey = Deno.env.get('GOOGLE_API_KEY');
-  const replicateKey = Deno.env.get('REPLICATE_API_TOKEN');
+  const providers = getAvailableProviders().filter(p => p.available);
   
-  // Priority: OpenAI (Sora) > ModelsLab (AnimateDiff) > Alibaba (WAN) > Gemini (Veo) > Replicate
-  if (openaiKey) return 'openai';
-  if (modelsLabKey) return 'modelslab';
-  if (alibabaKey) return 'alibaba';
-  if (googleKey) return 'gemini';
-  if (replicateKey) return 'replicate';
+  if (providers.length === 0) {
+    throw new Error('No video generation API keys configured. Please add MODELSLAB_API_KEY, ALIBABA_API_KEY, GOOGLE_API_KEY, or REPLICATE_API_TOKEN.');
+  }
   
-  throw new Error('No video generation API keys configured. Please add OPENAI_API_KEY, MODELSLAB_API_KEY, ALIBABA_API_KEY, or GOOGLE_API_KEY.');
+  // Regional routing logic
+  if (region) {
+    // CJK Zone: Prefer Alibaba WAN for Asian content
+    if (CJK_REGIONS.includes(region)) {
+      const alibaba = providers.find(p => p.id === 'alibaba');
+      if (alibaba) {
+        console.log('🌏 CJK Zone: Routing to Alibaba WAN');
+        return 'alibaba';
+      }
+    }
+    
+    // India/SEA/Africa Zone: Prefer Gemini Veo
+    if ([...INDIA_SEA_REGIONS, ...AFRICA_REGIONS].includes(region)) {
+      const gemini = providers.find(p => p.id === 'gemini');
+      if (gemini) {
+        console.log('🌍 India/SEA/Africa Zone: Routing to Gemini Veo');
+        return 'gemini';
+      }
+    }
+  }
+  
+  // Default: Use highest priority available provider
+  const sorted = providers.sort((a, b) => a.priority - b.priority);
+  const selected = sorted[0];
+  console.log(`🎯 Smart routing selected: ${selected.id} (priority ${selected.priority})`);
+  return selected.id;
 }
 
 /**
