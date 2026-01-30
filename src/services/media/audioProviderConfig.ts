@@ -197,17 +197,31 @@ export const TTS_PROVIDERS: Record<TTSProvider, MediaProviderConfig> = {
 };
 
 // ============================================
-// STT PROVIDERS
+// STT PROVIDERS (Updated 2026-01-30 - Deepgram PRIMARY)
 // ============================================
 
 export const STT_PROVIDERS: Record<STTProvider, MediaProviderConfig> = {
+  deepgram: {
+    id: 'deepgram',
+    name: 'Deepgram Nova 2',
+    capabilities: ['stt', 'realtime_stt'],
+    secretKey: 'DEEPGRAM_API_KEY',
+    isConfigured: true,
+    priority: 1, // PRIMARY - <100ms real-time latency
+    costPerUnit: 0.0043,
+    supportedLanguages: ['en', 'es', 'fr', 'de', 'it', 'pt', 'zh', 'ja', 'ko', 'ar', 'hi', 'ru', 'nl', 'pl', 'sv', 'da', 'no', 'fi'],
+    strengths: ['<100ms real-time latency', '36+ languages', 'Speaker diarization', 'Best accuracy', 'WebSocket streaming'],
+    weaknesses: ['Slightly higher cost than batch alternatives'],
+    qualityScore: 95,
+    speedScore: 100,
+  },
   openai_whisper: {
     id: 'openai_whisper',
     name: 'OpenAI Whisper',
     capabilities: ['stt'],
     secretKey: 'OPENAI_API_KEY',
     isConfigured: true,
-    priority: 1, // PRIMARY
+    priority: 2, // FALLBACK for batch processing
     costPerUnit: 0.0001,
     supportedLanguages: ['en', 'es', 'fr', 'de', 'it', 'pt', 'zh', 'ja', 'ko', 'ar', 'hi', 'ru'],
     strengths: ['Excellent accuracy', 'Many languages', 'Handles accents well', 'Timestamps'],
@@ -345,10 +359,11 @@ export const SFX_GEN_PROVIDERS: Record<SFXGenProvider, MediaProviderConfig> = {
 };
 
 // ============================================
-// MUSIC GENERATION PROVIDERS (5-Zone Regional)
+// MUSIC GENERATION PROVIDERS (Updated 2026-01-30 - ElevenLabs PRIMARY)
 // ============================================
 
-export type MusicGenProvider = 'elevenlabs_music' | 'suno' | 'alibaba_music' | 'modelslab_music';
+// NOTE: Suno removed from type since NOT CONFIGURED
+export type MusicGenProvider = 'elevenlabs_music' | 'alibaba_music' | 'modelslab_music';
 
 export const MUSIC_GEN_PROVIDERS: Record<MusicGenProvider, MediaProviderConfig> = {
   elevenlabs_music: {
@@ -357,22 +372,11 @@ export const MUSIC_GEN_PROVIDERS: Record<MusicGenProvider, MediaProviderConfig> 
     capabilities: ['music_gen'],
     secretKey: 'ELEVENLABS_API_KEY',
     isConfigured: true,
-    priority: 1,
+    priority: 1, // PRIMARY - configured and available
     costPerUnit: 0.03,
     strengths: ['High quality', 'Western styles', 'Fast generation'],
     weaknesses: ['Duration limits'],
     regions: ['US', 'UK', 'AU', 'CA', 'NZ', 'DE', 'FR', 'ES', 'IT', 'NL', 'PT', 'PL', 'BR', 'MX', 'AR'],
-  },
-  suno: {
-    id: 'suno',
-    name: 'Suno AI',
-    capabilities: ['music_gen'],
-    secretKey: 'SUNO_API_KEY',
-    isConfigured: false,
-    priority: 0, // Premium tier
-    costPerUnit: 0.10,
-    strengths: ['Full songs', 'Vocals', 'Lyrics', 'Premium quality'],
-    weaknesses: ['Higher cost', 'Longer generation time'],
   },
   alibaba_music: {
     id: 'alibaba_music',

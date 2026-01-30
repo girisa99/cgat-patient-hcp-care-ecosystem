@@ -12,30 +12,30 @@
  * - Database Tables: 42 Genie-specific
  * - AI Agents: 12 Genie-specific
  * - Pages: 10 Genie-specific
- * - AI Providers: 18 Core providers integrated (Updated with Deepgram, Suno)
+ * - AI Providers: 15 CONFIGURED providers (Updated - removed HeyGen/Suno/RunPod)
  * 
  * Last Audit: 2026-01-30
  */
 
 // =============================================================================
-// AI PROVIDERS (18 Core Providers Integrated - Updated 2026-01-30)
+// AI PROVIDERS (15 CONFIGURED Providers - Updated 2026-01-30)
 // =============================================================================
 export const GENIE_AI_PROVIDERS = {
-  // Primary Providers (Tier 1) - Core LLM + Multi-Modal
+  // Primary Providers (Tier 1) - Core LLM + Multi-Modal + Video
   primary: [
-    { id: 'openai', name: 'OpenAI', capabilities: ['llm', 'image_gen', 'stt', 'tts', 'vision', 'video_gen'], status: 'active' },
+    { id: 'openai', name: 'OpenAI', capabilities: ['llm', 'image_gen', 'stt', 'tts', 'vision'], status: 'active' },
     { id: 'claude', name: 'Anthropic Claude', capabilities: ['llm', 'translation', 'vision'], status: 'active' },
     { id: 'gemini', name: 'Google Gemini', capabilities: ['llm', 'image_gen', 'vision', 'translation', 'video_gen'], status: 'active' },
-    { id: 'deepgram', name: 'Deepgram', capabilities: ['stt', 'realtime_stt'], status: 'active' }, // NEW: Primary STT
+    { id: 'deepgram', name: 'Deepgram', capabilities: ['stt', 'realtime_stt'], status: 'active' }, // Primary STT (<100ms)
+    { id: 'sora2api', name: 'Sora2API', capabilities: ['video_gen'], status: 'active' }, // Primary Video (CONFIGURED)
   ],
   // Specialized Providers (Tier 2) - Domain Excellence
   specialized: [
-    { id: 'elevenlabs', name: 'ElevenLabs', capabilities: ['tts', 'voice_clone', 'sfx_gen'], status: 'active' },
+    { id: 'elevenlabs', name: 'ElevenLabs', capabilities: ['tts', 'voice_clone', 'sfx_gen', 'music_gen'], status: 'active' },
     { id: 'azure', name: 'Azure AI', capabilities: ['tts', 'stt', 'ocr', 'translation', 'visemes'], status: 'active' },
     { id: 'alibaba', name: 'Alibaba DashScope', capabilities: ['llm', 'tts', 'stt', 'video_gen', 'avatar'], status: 'active' },
     { id: 'modelslab', name: 'ModelsLab', capabilities: ['image_gen', 'video_gen', '3d_mesh'], status: 'active' },
-    { id: 'meshy', name: 'Meshy AI', capabilities: ['3d_gen', 'texture', 'rigging'], status: 'active' },
-    { id: 'suno', name: 'Suno AI', capabilities: ['music_gen'], status: 'active' }, // NEW: Premium music
+    { id: 'meshy', name: 'Meshy AI', capabilities: ['3d_gen', 'texture', 'rigging'], status: 'active' }, // Primary 3D (CONFIGURED)
     { id: 'deepl', name: 'DeepL', capabilities: ['translation'], status: 'active' },
   ],
   // Fallback Providers (Tier 3)
@@ -44,8 +44,6 @@ export const GENIE_AI_PROVIDERS = {
     { id: 'replicate', name: 'Replicate', capabilities: ['image_gen', 'video_gen', '3d_gen'], status: 'active' },
     { id: 'google', name: 'Google Cloud AI', capabilities: ['translation', 'ocr', 'tts', 'stt'], status: 'active' },
     { id: 'huggingface', name: 'HuggingFace', capabilities: ['llm', 'image_gen'], status: 'fallback' },
-    { id: 'runpod', name: 'RunPod', capabilities: ['gpu_rendering', 'priority_render'], status: 'active' },
-    { id: 'heygen', name: 'HeyGen', capabilities: ['avatar', 'video_avatar'], status: 'active' },
   ],
 } as const;
 
@@ -355,11 +353,11 @@ export const calculateGenieMetrics = () => {
     
     lastUpdated: '2026-01-30',
     
-    // Provider summary
+    // Provider summary - CORRECTED to match actual configured secrets
     providerSummary: {
-      configured: 15, // OpenAI, Claude, Gemini, Deepgram, Alibaba, Azure, DeepL, ElevenLabs, Google, Replicate, ModelsLab, Meshy, DeepSeek, HuggingFace, Lovable AI
-      pending: 3, // Suno, RunPod, HeyGen
-      deprecated: 2, // AWS, Stability
+      configured: 15, // OpenAI, Claude, Gemini, Deepgram, Sora2API, Alibaba, Azure, DeepL, ElevenLabs, Google, Replicate, ModelsLab, Meshy, DeepSeek, HuggingFace
+      pending: 0, // All required providers now configured
+      deprecated: 2, // AWS, Stability (not needed)
     },
   };
 };
