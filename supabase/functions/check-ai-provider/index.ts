@@ -16,6 +16,9 @@ const PROVIDER_SECRETS: Record<string, string[]> = {
   deepseek: ['DEEPSEEK_API_KEY'],       // CJK optimized LLM & Vision
   alibaba: ['ALIBABA_API_KEY'],         // Qwen, CosyVoice, WAN 2.2 Avatar
   
+  // Video Generation
+  sora2api: ['SORA2API_KEY'],           // Sora-like video via sora2api.ai
+  
   // GCP - Google Cloud Platform (OAuth, Calendar, Vision, STT/TTS)
   gcp: ['GOOGLE_API_KEY', 'GCP_SERVICE_ACCOUNT_KEY'],
   
@@ -46,6 +49,7 @@ const PROVIDER_CAPABILITIES: Record<string, string[]> = {
   gemini: ['llm', 'translation', 'ocr', 'tts', 'image_gen', 'vision', 'nlp'],
   deepseek: ['llm', 'translation', 'ocr', 'vision', 'nlp', 'stt'],
   alibaba: ['llm', 'translation', 'ocr', 'tts', 'stt', 'image_gen', 'video_gen', 'vision', 'nlp', 'avatar'],
+  sora2api: ['video_gen', 'cinematic', 'premium_video'],
   gcp: ['oauth', 'calendar', 'vision', 'ocr', 'tts', 'stt', 'translation', 'nlp'],
   azure: ['llm', 'vision', 'image_gen'],
   azure_speech: ['tts', 'stt', 'visemes'],

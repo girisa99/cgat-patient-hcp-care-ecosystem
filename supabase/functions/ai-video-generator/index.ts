@@ -146,6 +146,9 @@ serve(async (req) => {
     const startTime = Date.now();
 
     switch (selectedProvider) {
+      case 'sora2api':
+        result = await generateWithSora2API(prompt, selectedModel, duration, aspectRatio);
+        break;
       case 'openai':
         result = await generateWithOpenAI(prompt, selectedModel, duration, aspectRatio);
         break;
@@ -246,34 +249,40 @@ interface ProviderConfig {
 function getAvailableProviders(): ProviderConfig[] {
   return [
     { 
+      id: 'sora2api', 
+      available: !!Deno.env.get('SORA2API_KEY'),
+      priority: 1,
+      bestFor: ['sora', 'premium', 'high-quality', 'cinematic']
+    },
+    { 
       id: 'modelslab', 
       available: !!Deno.env.get('MODELSLAB_API_KEY'),
-      priority: 1,
+      priority: 2,
       bestFor: ['animatediff', 'svd', 'general', 'budget']
     },
     { 
       id: 'alibaba', 
       available: !!Deno.env.get('ALIBABA_API_KEY'),
-      priority: 2,
+      priority: 3,
       bestFor: ['wan', 'cjk', 'avatar', 'full-body']
     },
     { 
       id: 'gemini', 
       available: !!Deno.env.get('GOOGLE_API_KEY'),
-      priority: 3,
+      priority: 4,
       bestFor: ['veo', 'india', 'sea', 'africa']
     },
     { 
       id: 'replicate', 
       available: !!Deno.env.get('REPLICATE_API_TOKEN'),
-      priority: 4,
+      priority: 5,
       bestFor: ['minimax', 'stable-video', 'experimental']
     },
     { 
       id: 'openai', 
-      available: false, // Sora not publicly available
+      available: false, // Official Sora not publicly available
       priority: 99,
-      bestFor: ['sora'] // Reserved for future
+      bestFor: ['sora-official'] // Reserved for future
     },
   ];
 }
@@ -355,6 +364,7 @@ function selectModel(provider: string, requestedModel: string): string {
   if (requestedModel !== 'auto') return requestedModel;
   
   const defaultModels: Record<string, string> = {
+    'sora2api': 'sora-1.0-turbo',
     'openai': 'sora-1.0-turbo',
     'modelslab': 'animatediff',
     'alibaba': 'wan-2.2-animate',
@@ -365,11 +375,106 @@ function selectModel(provider: string, requestedModel: string): string {
   return defaultModels[provider] || 'auto';
 }
 
-// OpenAI Video Generation - Sora API not publicly available, skip directly to ModelsLab
+// ═══════════════════════════════════════════════════════════════════════════════
+// SORA2API - Third-party Sora access via sora2api.ai
+// ═══════════════════════════════════════════════════════════════════════════════
+async function generateWithSora2API(prompt: string, model: string, duration: number, aspectRatio: string): Promise<VideoResult> {
+  const apiKey = Deno.env.get('SORA2API_KEY');
+  
+  if (!apiKey) {
+    console.log('⚠️ SORA2API_KEY not configured, falling back to ModelsLab');
+    return generateWithModelsLab(prompt, 'animatediff', duration);
+  }
+
+  console.log('🎬 Generating video with Sora2API (sora2api.ai)');
+
+  try {
+    // Sora2API uses OpenAI-compatible format
+    const response = await fetch('https://api.sora2api.ai/v1/video/generations', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: model || 'sora-1.0-turbo',
+        prompt: `${prompt}. High quality, cinematic, safe for all audiences.`,
+        duration: Math.min(duration, 20), // Sora2API max duration
+        aspect_ratio: aspectRatio,
+        quality: 'high',
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Sora2API error:', errorText);
+      // Fallback to ModelsLab on error
+      console.log('⚠️ Sora2API failed, falling back to ModelsLab');
+      return generateWithModelsLab(prompt, 'animatediff', duration);
+    }
+
+    const data = await response.json();
+    
+    // Handle async task - poll for result
+    if (data.task_id || data.id) {
+      return await pollSora2APIResult(data.task_id || data.id, apiKey);
+    }
+
+    return {
+      videoUrl: data.data?.url || data.url || data.video_url,
+      thumbnailUrl: data.data?.thumbnail || data.thumbnail,
+      provider: 'sora2api',
+      model: model || 'sora-1.0-turbo',
+    };
+  } catch (error) {
+    console.error('Sora2API generation error:', error);
+    console.log('⚠️ Sora2API failed, falling back to ModelsLab');
+    return generateWithModelsLab(prompt, 'animatediff', duration);
+  }
+}
+
+async function pollSora2APIResult(taskId: string, apiKey: string): Promise<VideoResult> {
+  const maxAttempts = 120; // 10 minutes max
+  let attempts = 0;
+
+  while (attempts < maxAttempts) {
+    await new Promise(resolve => setTimeout(resolve, 5000)); // 5 second intervals
+    attempts++;
+
+    try {
+      const response = await fetch(`https://api.sora2api.ai/v1/video/generations/${taskId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+        },
+      });
+
+      const data = await response.json();
+      console.log(`⏳ Sora2API status (attempt ${attempts}):`, data.status);
+
+      if (data.status === 'completed' || data.status === 'success') {
+        return {
+          videoUrl: data.data?.url || data.url || data.video_url,
+          thumbnailUrl: data.data?.thumbnail || data.thumbnail,
+          provider: 'sora2api',
+          model: 'sora-1.0-turbo',
+        };
+      } else if (data.status === 'failed' || data.status === 'error') {
+        throw new Error(data.message || data.error || 'Sora2API video generation failed');
+      }
+    } catch (error) {
+      if (attempts >= maxAttempts) throw error;
+    }
+  }
+
+  throw new Error('Sora2API video generation timed out');
+}
+
+// OpenAI Video Generation - Official Sora API not publicly available, skip directly to ModelsLab
 async function generateWithOpenAI(prompt: string, model: string, duration: number, aspectRatio: string): Promise<VideoResult> {
-  // Note: OpenAI Sora API is not publicly available yet (as of 2025)
+  // Note: OpenAI's official Sora API is not publicly available yet (as of 2025)
   // Immediately fallback to ModelsLab AnimateDiff which is production-ready
-  console.log('⚠️ OpenAI Sora API not publicly available, using ModelsLab AnimateDiff');
+  console.log('⚠️ Official OpenAI Sora API not publicly available, using ModelsLab AnimateDiff');
   return generateWithModelsLab(prompt, 'animatediff', duration);
 }
 
