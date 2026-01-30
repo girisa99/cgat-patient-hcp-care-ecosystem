@@ -15,27 +15,34 @@ export type AICapability =
   | 'ocr'           // Optical Character Recognition
   | 'tts'           // Text-to-Speech
   | 'stt'           // Speech-to-Text
+  | 'realtime_stt'  // Real-time Speech-to-Text (<100ms latency)
   | 'image_gen'     // Image generation
   | 'video_gen'     // Video generation
   | 'music_gen'     // Music generation
   | 'sfx_gen'       // Sound effects generation
   | 'vision'        // Image understanding/analysis
-  | 'nlp';          // NLP (entity extraction, sentiment, etc.)
+  | 'nlp'           // NLP (entity extraction, sentiment, etc.)
+  | 'avatar'        // AI Avatar generation
+  | '3d_gen';       // 3D model generation
 
 export type AIProviderKey = 
-  // Core 13 Ecosystem - Primary Production Providers
-  | 'openai'      // GPT-4o, DALL-E 3, Whisper, TTS
-  | 'claude'      // Claude 3.5 Sonnet - Claude Zone (West)
-  | 'gemini'      // Gemini 2.5 Pro - Gemini Zone (India/SEA/Africa)
+  // Core 18 Ecosystem - Primary Production Providers (Updated 2026-01-30)
+  | 'openai'      // GPT-5, DALL-E 3, Whisper, TTS, Sora
+  | 'claude'      // Claude 4 Sonnet - Claude Zone (West)
+  | 'gemini'      // Gemini 3 Pro - Gemini Zone (India/SEA/Africa)
+  | 'deepgram'    // NEW: Real-time STT (<100ms) - Primary STT across all zones
   | 'deepseek'    // DeepSeek V3 - Cost-efficient fallback
   | 'alibaba'     // Qwen-Max, CosyVoice, WAN 2.2 - Alibaba Zone (CJK)
-  | 'azure'       // Azure Neural TTS, Visemes, Form Recognizer
+  | 'azure'       // Azure Neural TTS, Visemes, Form Recognizer, Translator
   | 'modelslab'   // FLUX Pro, AnimateDiff, 3D Mesh
   | 'meshy'       // High-fidelity 3D, PBR textures, Rigging
   | 'replicate'   // Open-source models, TripoSR (Image-to-3D)
   | 'elevenlabs'  // Premium TTS, Voice Cloning, SFX
-  | 'deepl'       // European languages, Context-aware
-  // Legacy/Deprecated (route to Core 13)
+  | 'suno'        // NEW: Premium AI Music Generation
+  | 'deepl'       // European languages, Context-aware translation
+  | 'runpod'      // GPU rendering, priority render
+  | 'heygen'      // AI Avatars, video avatar
+  // Legacy/Deprecated (route to Core 18)
   | 'aws'         // Not required - Route to Azure
   | 'google'      // Route to Gemini
   | 'stability'   // Route to ModelsLab
@@ -841,6 +848,114 @@ export const AI_PROVIDER_REGISTRY: Record<AIProviderKey, AIProviderDefinition> =
         priority: 3,
         costPerUnit: 0.10,
         notes: 'For animated 3D assets - use ModelsLab AnimateDiff for 2D video',
+      },
+    },
+  },
+
+  // ============================================
+  // NEW PROVIDERS - Added 2026-01-30
+  // ============================================
+
+  deepgram: {
+    id: 'deepgram',
+    name: 'Deepgram',
+    description: 'Deepgram - Real-time STT with <100ms latency, best accuracy',
+    secretKeys: ['DEEPGRAM_API_KEY'],
+    capabilities: ['stt', 'realtime_stt'],
+    priority: 1,
+    costTier: 'medium',
+    status: 'active',
+    capabilityDetails: {
+      stt: {
+        models: ['nova-2', 'nova-2-general', 'nova-2-meeting', 'nova-2-phonecall'],
+        strengths: ['<100ms latency', '36+ languages', 'Real-time streaming', 'Best accuracy', 'Speaker diarization'],
+        weaknesses: ['No batch processing for large files'],
+        priority: 1, // Primary STT provider
+        costPerUnit: 0.0043,
+        notes: 'Primary STT for all real-time use cases across all zones',
+      },
+      realtime_stt: {
+        models: ['nova-2-streaming'],
+        strengths: ['<100ms latency', 'WebSocket streaming', 'Interim results'],
+        weaknesses: ['Requires streaming connection'],
+        priority: 1,
+        costPerUnit: 0.0043,
+      },
+    },
+  },
+
+  suno: {
+    id: 'suno',
+    name: 'Suno AI',
+    description: 'Suno - Premium AI music generation with vocals',
+    secretKeys: ['SUNO_API_KEY'],
+    capabilities: ['music_gen'],
+    priority: 1,
+    costTier: 'high',
+    status: 'active',
+    capabilityDetails: {
+      music_gen: {
+        models: ['suno-v3.5', 'suno-v4'],
+        strengths: ['Full songs with vocals', 'Lyrics generation', 'Multiple genres', 'Studio quality'],
+        weaknesses: ['Higher cost', 'Generation time'],
+        priority: 1, // Primary music provider
+        costPerUnit: 0.10,
+        notes: 'Premium music generation with full vocals and lyrics',
+      },
+    },
+  },
+
+  runpod: {
+    id: 'runpod',
+    name: 'RunPod',
+    description: 'RunPod - GPU rendering and priority processing',
+    secretKeys: ['RUNPOD_API_KEY'],
+    capabilities: ['image_gen', 'video_gen'],
+    priority: 5,
+    costTier: 'medium',
+    status: 'active',
+    capabilityDetails: {
+      image_gen: {
+        models: ['gpu-render'],
+        strengths: ['Fast GPU rendering', 'Custom models', 'Priority processing'],
+        weaknesses: ['Requires setup'],
+        priority: 5,
+        costPerUnit: 0.01,
+      },
+      video_gen: {
+        models: ['gpu-video-render'],
+        strengths: ['Fast rendering', 'Priority queue'],
+        weaknesses: ['Setup complexity'],
+        priority: 5,
+        costPerUnit: 0.05,
+      },
+    },
+  },
+
+  heygen: {
+    id: 'heygen',
+    name: 'HeyGen',
+    description: 'HeyGen - AI Avatar and video avatar generation',
+    secretKeys: ['HEYGEN_API_KEY'],
+    capabilities: ['video_gen', 'avatar'],
+    priority: 2,
+    costTier: 'high',
+    status: 'active',
+    capabilityDetails: {
+      video_gen: {
+        models: ['heygen-avatar-v2', 'heygen-instant'],
+        strengths: ['Realistic avatars', 'Lip-sync', 'Multiple languages', 'Custom avatars'],
+        weaknesses: ['Higher cost', 'Processing time'],
+        priority: 1, // Primary for avatar videos
+        costPerUnit: 0.20,
+        notes: 'Best for AI presenter videos and avatar content',
+      },
+      avatar: {
+        models: ['heygen-avatar-v2', 'heygen-photo-avatar'],
+        strengths: ['Photorealistic', 'Custom voice sync', 'Multiple poses'],
+        weaknesses: ['Cost per minute'],
+        priority: 1,
+        costPerUnit: 0.15,
       },
     },
   },

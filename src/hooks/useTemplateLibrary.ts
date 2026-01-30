@@ -99,14 +99,20 @@ export const AI_PROVIDERS: AIProvider[] = [
   { id: 'elevenlabs-multilingual', name: 'ElevenLabs Multilingual', shortName: 'ElevenLabs', category: 'voice', confidenceScore: 96, ranking: 1, costTier: 'high', speedTier: 'medium', qualityTier: 'premium', bestFor: ['natural-speech', 'voice-cloning', 'premium-quality'] },
   { id: 'openai-tts-hd', name: 'OpenAI TTS HD', shortName: 'OpenAI', category: 'voice', confidenceScore: 88, ranking: 2, costTier: 'medium', speedTier: 'fast', qualityTier: 'standard', bestFor: ['english', 'consistent', 'reliable'] },
   { id: 'google-wavenet', name: 'Google WaveNet', shortName: 'WaveNet', category: 'voice', confidenceScore: 90, ranking: 2, costTier: 'medium', speedTier: 'fast', qualityTier: 'premium', bestFor: ['asian-languages', 'multilingual', 'google-ecosystem'] },
-  { id: 'azure-neural', name: 'Azure Neural', shortName: 'Azure', category: 'voice', confidenceScore: 87, ranking: 3, costTier: 'medium', speedTier: 'fast', qualityTier: 'standard', bestFor: ['enterprise', 'ssml-control', 'custom-voices'] },
+  { id: 'azure-neural', name: 'Azure Neural', shortName: 'Azure', category: 'voice', confidenceScore: 87, ranking: 3, costTier: 'medium', speedTier: 'fast', qualityTier: 'standard', bestFor: ['enterprise', 'ssml-control', 'custom-voices', 'visemes'] },
   { id: 'aws-polly', name: 'AWS Polly', shortName: 'Polly', category: 'voice', confidenceScore: 80, ranking: 4, costTier: 'low', speedTier: 'fast', qualityTier: 'basic', bestFor: ['cost-effective', 'aws-ecosystem', 'high-volume'] },
+  
+  // STT Models (NEW)
+  { id: 'deepgram-nova-2', name: 'Deepgram Nova 2', shortName: 'Deepgram', category: 'voice', confidenceScore: 98, ranking: 1, costTier: 'medium', speedTier: 'fast', qualityTier: 'premium', bestFor: ['real-time-stt', 'streaming', 'low-latency', 'accuracy'] },
+  
+  // Music Models (NEW)
+  { id: 'suno-v4', name: 'Suno V4', shortName: 'Suno', category: 'voice', confidenceScore: 94, ranking: 1, costTier: 'high', speedTier: 'slow', qualityTier: 'premium', bestFor: ['music-generation', 'vocals', 'full-songs'] },
   
   // Translation Models
   { id: 'deepl', name: 'DeepL', shortName: 'DeepL', category: 'translation', confidenceScore: 95, ranking: 1, costTier: 'medium', speedTier: 'fast', qualityTier: 'premium', bestFor: ['european-languages', 'nuanced', 'professional'] },
   { id: 'google-translate', name: 'Google Translate', shortName: 'Google', category: 'translation', confidenceScore: 88, ranking: 2, costTier: 'low', speedTier: 'fast', qualityTier: 'standard', bestFor: ['broad-coverage', 'cost-effective', 'quick'] },
   { id: 'qwen-mt', name: 'Qwen-MT', shortName: 'Qwen', category: 'translation', confidenceScore: 90, ranking: 1, costTier: 'low', speedTier: 'fast', qualityTier: 'premium', bestFor: ['asian-languages', 'chinese', 'japanese', 'korean'] },
-  { id: 'azure', name: 'Azure Translator', shortName: 'Azure', category: 'translation', confidenceScore: 85, ranking: 3, costTier: 'medium', speedTier: 'fast', qualityTier: 'standard', bestFor: ['enterprise', 'custom-models', 'integration'] },
+  { id: 'azure-translator', name: 'Azure Translator', shortName: 'Azure', category: 'translation', confidenceScore: 85, ranking: 3, costTier: 'medium', speedTier: 'fast', qualityTier: 'standard', bestFor: ['enterprise', 'custom-models', 'integration'] },
   { id: 'nllb', name: 'NLLB', shortName: 'NLLB', category: 'translation', confidenceScore: 78, ranking: 4, costTier: 'low', speedTier: 'medium', qualityTier: 'basic', bestFor: ['rare-languages', 'open-source', 'research'] },
 ];
 
