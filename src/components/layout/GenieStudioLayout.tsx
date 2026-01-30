@@ -2,12 +2,14 @@
  * GENIE STUDIO LAYOUT
  * Dedicated layout for Genie Studio users
  * Shows only Genie-related navigation based on subscription
+ * 
+ * Uses the full AskGenie component (not the simplified FAB) for rich support features
  */
 
 import React, { Suspense, useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { GenieStudioNavigation } from '@/components/navigation/GenieStudioNavigation';
-import { AskGenieFAB } from '@/components/genie-support/AskGenieFAB';
+import { AskGenie } from '@/components/genie-studio/AskGenie';
 import { useGenieStudioAuth } from '@/hooks/useGenieStudioAuth';
 import { useGenieStudioNavigation } from '@/hooks/useGenieStudioNavigation';
 import { Loader2, Lock, Crown } from 'lucide-react';
@@ -113,7 +115,7 @@ export const GenieStudioLayout: React.FC<GenieStudioLayoutProps> = ({
             children
           )}
         </Suspense>
-        {showFAB && <AskGenieFAB />}
+        {showFAB && <AskGenie position="floating" />}
       </div>
     );
   }
@@ -134,7 +136,7 @@ export const GenieStudioLayout: React.FC<GenieStudioLayoutProps> = ({
             )}
           </Suspense>
         </main>
-        {showFAB && <AskGenieFAB />}
+        {showFAB && <AskGenie position="floating" />}
       </div>
     );
   }
@@ -164,7 +166,7 @@ export const GenieStudioLayout: React.FC<GenieStudioLayoutProps> = ({
           </Suspense>
         </div>
       </main>
-      {showFAB && <AskGenieFAB />}
+      {showFAB && <AskGenie position="floating" />}
     </div>
   );
 };
