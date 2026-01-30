@@ -181,12 +181,12 @@ export const MODEL_TIERS: Record<string, ModelTierInfo> = {
   'aws-polly': { tier: 3, tierName: 'Tier 3 - Budget', description: 'Neural voices, AWS', costMultiplier: 0.5, qualityScore: 82, speedScore: 92 },
 
   // ==================== STT (Speech-to-Text) ====================
-  // Tier 1 - Premium
+  // Tier 1 - Premium (Deepgram primary for real-time <100ms)
+  'deepgram': { tier: 1, tierName: 'Tier 1 - Core', description: 'Deepgram Nova, <100ms real-time', costMultiplier: 0.7, qualityScore: 98, speedScore: 100 },
   'azure-stt': { tier: 1, tierName: 'Tier 1 - Core', description: 'Azure Speech, real-time', costMultiplier: 1.0, qualityScore: 95, speedScore: 92 },
   'openai-whisper': { tier: 1, tierName: 'Tier 1 - Core', description: 'Whisper, 99 languages', costMultiplier: 0.8, qualityScore: 95, speedScore: 85 },
   // Tier 2 - Standard
   'google-stt': { tier: 2, tierName: 'Tier 2 - Standard', description: 'Google STT, 125 languages', costMultiplier: 0.6, qualityScore: 90, speedScore: 90 },
-  'deepgram': { tier: 2, tierName: 'Tier 2 - Standard', description: 'Deepgram Nova, real-time', costMultiplier: 0.5, qualityScore: 88, speedScore: 95 },
   // Tier 3 - Regional
   'alibaba-paraformer': { tier: 3, tierName: 'Tier 3 - Regional', description: 'Best for CJK languages', costMultiplier: 0.3, qualityScore: 90, speedScore: 88 },
 };

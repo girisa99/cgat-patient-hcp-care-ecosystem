@@ -528,12 +528,12 @@ export function PresentationWizard({
 
   // NEW: STT (Speech-to-Text) Providers
   const ALL_STT_PROVIDERS = [
-    // Tier 1 - Premium
+    // Tier 1 - Premium (Deepgram primary for real-time)
+    { id: 'deepgram', name: 'Deepgram Nova', quality: 'premium', languages: 36, realtime: true, tier: 1 },
     { id: 'azure-speech', name: 'Azure Speech Services', quality: 'premium', languages: 100, realtime: true, tier: 1 },
     { id: 'openai-whisper', name: 'OpenAI Whisper', quality: 'premium', languages: 99, realtime: false, tier: 1 },
     // Tier 2 - Standard
     { id: 'google-stt', name: 'Google Speech-to-Text', quality: 'high', languages: 125, realtime: true, tier: 2 },
-    { id: 'deepgram', name: 'Deepgram Nova', quality: 'high', languages: 36, realtime: true, tier: 2 },
     // Tier 3 - Regional
     { id: 'alibaba-paraformer', name: 'Alibaba Paraformer', quality: 'high', languages: 20, realtime: true, tier: 3 },
   ];

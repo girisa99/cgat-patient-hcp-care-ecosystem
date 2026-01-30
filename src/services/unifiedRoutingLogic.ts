@@ -233,7 +233,7 @@ function getAzureVoicesForRegion(region: string, language: string): string[] {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// STT ROUTING
+// STT ROUTING - Updated 2026-01-30: Deepgram as primary for real-time
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export function selectSTT(
@@ -241,7 +241,18 @@ export function selectSTT(
   language: string, 
   requiresRealtime: boolean = false
 ): STTRoutingResult {
-  // ALIBABA PARAFORMER: CJK Premium - Best for Mandarin/Cantonese
+  // DEEPGRAM: Primary for ALL real-time STT - <100ms latency
+  if (requiresRealtime) {
+    return {
+      provider: 'deepgram',
+      cost: 0.0043,
+      quality: 'premium',
+      supportsRealtime: true,
+      supportedDialects: ['universal'] // Deepgram supports 36+ languages real-time
+    };
+  }
+
+  // ALIBABA PARAFORMER: CJK Premium batch - Best for Mandarin/Cantonese
   if (CJK_REGIONS.includes(region) && ['zh', 'yue', 'wuu'].includes(language)) {
     return {
       provider: 'alibaba-paraformer',
@@ -252,8 +263,8 @@ export function selectSTT(
     };
   }
 
-  // AZURE SPEECH: When real-time streaming is required
-  if (requiresRealtime) {
+  // AZURE SPEECH: Fallback for specialized dialects
+  if (GPT4_ARABIC_REGIONS.includes(region) || GEMINI_REGIONS.includes(region)) {
     return {
       provider: 'azure-speech',
       cost: 0.01,
@@ -263,7 +274,7 @@ export function selectSTT(
     };
   }
 
-  // OPENAI WHISPER: Universal - Best general accuracy (99 languages)
+  // OPENAI WHISPER: Universal batch - Best general accuracy (99 languages)
   return {
     provider: 'openai-whisper',
     cost: 0.006,

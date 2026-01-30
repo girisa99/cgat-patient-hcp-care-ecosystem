@@ -667,12 +667,12 @@ export const STT_MODELS: ModelConfig[] = [
     id: 'deepgram',
     name: 'Deepgram Nova',
     provider: 'Deepgram',
-    tier: 2,
-    description: 'Fast and accurate transcription',
-    capabilities: ['Fast', 'Diarization', 'Streaming'],
-    costMultiplier: 1.5,
-    quality: 9,
-    speed: 9
+    tier: 1, // Upgraded: Primary real-time STT provider
+    description: 'Ultra-fast real-time transcription (<100ms latency)',
+    capabilities: ['Real-time', 'Streaming', 'Diarization', '36+ languages'],
+    costMultiplier: 1.2,
+    quality: 10,
+    speed: 10
   },
   
   // Tier 3 - Premium
