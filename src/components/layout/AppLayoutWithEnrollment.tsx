@@ -22,6 +22,8 @@ const UniversalConversationGenieLazy = lazyWithRetry(() =>
 // Routes where the floating Genie popup should be hidden (Ask Genie is used instead)
 const GENIE_STUDIO_ROUTES = [
   '/genie-studio',
+  '/genie-studio-auth',
+  '/genie-studio-pricing',
   '/genie-spark',
   '/genie-arc',
   '/genie-mind',
@@ -29,10 +31,13 @@ const GENIE_STUDIO_ROUTES = [
   '/genie-deck',
   '/genie-cast',
   '/genie-admin',
-  '/genie-studio/productions',
+  '/genie-support',
   '/genie-landing',
-  '/genie-explore',
-  '/genie-products'
+  '/explore',
+  '/products',
+  '/pricing',
+  '/subscription',
+  '/marketing-materials'
 ];
 
 interface AppLayoutWithEnrollmentProps {
