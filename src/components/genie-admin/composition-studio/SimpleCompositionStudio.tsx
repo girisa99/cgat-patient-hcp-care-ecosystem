@@ -2015,7 +2015,109 @@ IMPORTANT: Focus specifically on the user's direction provided above. Keep the c
             <strong> Template:</strong> Reuse this structure for future projects • 
             <strong> Publish:</strong> Schedule for landing page or social media
           </p>
+
+          {/* Review & Enhance Step Button */}
+          <Button
+            size="lg"
+            variant="secondary"
+            onClick={() => setStudioStep('review')}
+            className="gap-2 mt-4"
+          >
+            <FileCheck className="w-4 h-4" />
+            Review & Enhance Content
+          </Button>
         </div>
+      )}
+
+      {/* Generated Assets Sidebar */}
+      <GeneratedAssetsSidebar
+        projectName={projectName}
+        assets={chapters.flatMap((ch, idx) => {
+          const assets: any[] = [];
+          // Script asset
+          if (ch.script || ch.generatedContent?.script) {
+            assets.push({
+              id: `${ch.id}-script`,
+              type: 'script',
+              chapterId: ch.id,
+              chapterTitle: ch.title,
+              chapterIndex: idx,
+              language: primaryLanguage,
+              status: ch.status === 'complete' ? 'complete' : ch.status === 'generating' ? 'generating' : 'pending',
+              content: ch.generatedContent?.script || ch.script,
+            });
+          }
+          // Audio asset
+          if (ch.generatedContent?.audioUrl) {
+            assets.push({
+              id: `${ch.id}-audio`,
+              type: 'audio',
+              chapterId: ch.id,
+              chapterTitle: ch.title,
+              chapterIndex: idx,
+              language: primaryLanguage,
+              status: 'complete',
+              url: ch.generatedContent.audioUrl,
+            });
+          }
+          // Video asset
+          if (ch.generatedContent?.videoUrl) {
+            assets.push({
+              id: `${ch.id}-video`,
+              type: 'video',
+              chapterId: ch.id,
+              chapterTitle: ch.title,
+              chapterIndex: idx,
+              language: primaryLanguage,
+              status: 'complete',
+              url: ch.generatedContent.videoUrl,
+            });
+          }
+          return assets;
+        })}
+        languages={[primaryLanguage, ...additionalLanguages]}
+        isOpen={assetsSidebarOpen}
+        onOpenChange={setAssetsSidebarOpen}
+        onPreview={(asset) => {
+          if (asset.url) {
+            window.open(asset.url, '_blank');
+          } else if (asset.content) {
+            toast.info(asset.content.slice(0, 200) + '...');
+          }
+        }}
+        onDownload={(asset) => {
+          if (asset.url) {
+            const link = document.createElement('a');
+            link.href = asset.url;
+            link.download = `${asset.chapterTitle}-${asset.type}.${asset.type === 'script' ? 'txt' : 'mp3'}`;
+            link.click();
+          } else if (asset.content) {
+            const blob = new Blob([asset.content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${asset.chapterTitle}-script.txt`;
+            link.click();
+            URL.revokeObjectURL(url);
+          }
+          toast.success('Download started');
+        }}
+        onRegenerate={async (asset) => {
+          const chapter = chapters.find(c => c.id === asset.chapterId);
+          if (chapter) {
+            await generateChapter(chapter);
+            toast.success('Regeneration started');
+          }
+        }}
+      />
+
+      {/* Floating Assets Trigger Button */}
+      {chapters.some(c => c.status === 'complete' || c.generatedContent) && (
+        <GeneratedAssetsTrigger
+          assetCount={chapters.length * 3} // Potential: script, audio, video per chapter
+          completeCount={chapters.filter(c => c.status === 'complete').length}
+          onClick={() => setAssetsSidebarOpen(true)}
+        />
       )}
     </div>
   );
