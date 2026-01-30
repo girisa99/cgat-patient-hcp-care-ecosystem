@@ -215,26 +215,7 @@ export const RalphWiggumGlobalPanel: React.FC = () => {
   
   const currentRoute = location.pathname;
   
-  // Check if should hide on Genie Studio routes - Ask Genie FAB is used there instead
-  const GENIE_STUDIO_ROUTES = [
-    '/genie-studio',
-    '/genie-studio-auth',
-    '/genie-spark',
-    '/genie-arc',
-    '/genie-mind',
-    '/genie-vibe',
-    '/genie-deck',
-    '/genie-cast',
-    '/genie-admin',
-    '/genie-support',
-    '/genie-landing',
-    '/explore',
-    '/products'
-  ];
-  const isGenieStudioPage = GENIE_STUDIO_ROUTES.some(route => currentRoute.startsWith(route));
-  
-  // Determine if we should render - moved down after all hooks
-  const shouldHide = !isDev || isGenieStudioPage;
+  // Parse overlay - now includes product context (e.g., "ask-genie:studio")
   
   // Parse overlay - now includes product context (e.g., "ask-genie:studio")
   const isAskGenieActive = activeOverlay?.startsWith('ask-genie');
@@ -631,8 +612,8 @@ Be specific and helpful. Include 2-5 items total. Only include actual potential 
     </motion.div>
   );
   
-  // Don't render in production or on Genie Studio pages
-  if (shouldHide) return null;
+  // Don't render in production
+  if (!isDev) return null;
   
   if (!isPanelOpen) {
     return ToggleButton;
