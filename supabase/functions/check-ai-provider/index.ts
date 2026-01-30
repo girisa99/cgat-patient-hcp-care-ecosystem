@@ -7,61 +7,81 @@ import { corsHeaders } from '../_shared/cors.ts';
  * Used by UniversalAIHub to determine fallback chains.
  */
 
-// Provider secret mappings - Core 12+ Providers
+// Provider secret mappings - Core 15 Providers (Updated 2026-01-30)
 const PROVIDER_SECRETS: Record<string, string[]> = {
-  // LLM & Multimodal Providers
-  openai: ['OPENAI_API_KEY'],           // GPT-4o, Whisper STT, DALL-E 3
-  claude: ['ANTHROPIC_API_KEY', 'CLAUDE_API_KEY'], // Long context, narrative
-  gemini: ['GEMINI_API_KEY', 'GOOGLE_API_KEY'],    // Vision, 1M context
-  deepseek: ['DEEPSEEK_API_KEY'],       // CJK optimized LLM & Vision
-  alibaba: ['ALIBABA_API_KEY'],         // Qwen, CosyVoice, WAN 2.2 Avatar
+  // ═══════════════════════════════════════════════════════════════
+  // TIER 1: PRIMARY PROVIDERS (Verified Configured)
+  // ═══════════════════════════════════════════════════════════════
+  
+  // LLM & Multimodal
+  openai: ['OPENAI_API_KEY'],           // GPT-5, DALL-E 3, Whisper, TTS
+  claude: ['ANTHROPIC_API_KEY', 'CLAUDE_API_KEY'], // Claude 4 - Literary, West Zone
+  gemini: ['GEMINI_API_KEY', 'GOOGLE_API_KEY', 'LOVABLE_API_KEY'], // Gemini 3 - India/SEA Zone
+  deepseek: ['DEEPSEEK_API_KEY'],       // CJK optimized LLM & Vision (low cost)
+  alibaba: ['ALIBABA_API_KEY'],         // Qwen, CosyVoice, Paraformer, WAN 2.2 Avatar
+  
+  // STT - Speech-to-Text
+  deepgram: ['DEEPGRAM_API_KEY'],       // PRIMARY STT - <100ms real-time latency
   
   // Video Generation
-  sora2api: ['SORA2API_KEY'],           // Sora-like video via sora2api.ai
+  sora2api: ['SORA2API_KEY'],           // PRIMARY Video - Cinematic via sora2api.org
   
-  // GCP - Google Cloud Platform (OAuth, Calendar, Vision, STT/TTS)
-  gcp: ['GOOGLE_API_KEY', 'GCP_SERVICE_ACCOUNT_KEY'],
-  
-  // Azure Services
-  azure: ['AZURE_OPENAI_KEY'],          // Azure OpenAI
-  azure_speech: ['AZURE_SPEECH_KEY'],   // Neural TTS, STT, Visemes
-  azure_doc_intel: ['AZURE_FORM_RECOGNIZER_KEY'], // OCR, Document Intelligence
-  
-  // Media & Creative Providers
-  modelslab: ['MODELSLAB_API_KEY'],     // FLUX, AnimateDiff, Video, 3D, Voice Clone
-  meshy: ['MESHY_API_KEY'],             // Text-to-3D, Image-to-3D
-  replicate: ['REPLICATE_API_TOKEN'],   // Open-source models fallback
-  elevenlabs: ['ELEVENLABS_API_KEY'],   // Premium TTS, Voice Clone, SFX, Music
+  // Audio & Voice
+  elevenlabs: ['ELEVENLABS_API_KEY'],   // PRIMARY TTS + Music + SFX + Voice Clone
   
   // Translation
-  deepl: ['DEEPL_API_KEY'],             // European languages
-  microsoft: ['MICROSOFT_TRANSLATE_API_KEY'], // Azure Translator
+  deepl: ['DEEPL_API_KEY'],             // PRIMARY Translation - European languages
   
-  // Infrastructure
-  supabase: ['SUPABASE_URL'],           // Auth, Database, Storage, Edge Functions
-  stripe: ['STRIPE_SECRET_KEY'],        // Payments, Subscriptions
+  // ═══════════════════════════════════════════════════════════════
+  // TIER 2: SPECIALIZED PROVIDERS
+  // ═══════════════════════════════════════════════════════════════
+  
+  // Azure Services (TTS, STT, OCR, Translation)
+  azure: ['AZURE_SPEECH_KEY', 'AZURE_FORM_RECOGNIZER_KEY', 'MICROSOFT_TRANSLATE_API_KEY'],
+  
+  // Google Cloud (TTS, STT, Translation, Vision)
+  google: ['GOOGLE_API_KEY', 'GEMINI_API_KEY'],
+  
+  // Image & Video Generation
+  modelslab: ['MODELSLAB_API_KEY'],     // PRIMARY Image (FLUX), AnimateDiff, SVD
+  replicate: ['REPLICATE_API_TOKEN'],   // Open-source models fallback
+  
+  // 3D Generation
+  meshy: ['MESHY_API_KEY'],             // PRIMARY 3D - PBR textures, rigging, USDZ
+  
+  // Open-source fallback
+  huggingface: ['HUGGING_FACE_ACCESS_TOKEN'],
+  
+  // ═══════════════════════════════════════════════════════════════
+  // NOT CONFIGURED (Excluded from routing)
+  // ═══════════════════════════════════════════════════════════════
+  // HeyGen: No HEYGEN_API_KEY → Use Alibaba WAN 2.2 for avatars
+  // Suno: No SUNO_API_KEY → Use ElevenLabs for music
+  // RunPod: No RUNPOD_API_KEY → Use ModelsLab/Meshy for GPU tasks
+  // AWS: Not required → Use Azure
+  // Stability: Not required → Use ModelsLab (same models, lower cost)
 };
 
-// Provider capabilities mapping
+// Provider capabilities mapping - Core 15 (Updated 2026-01-30)
 const PROVIDER_CAPABILITIES: Record<string, string[]> = {
-  openai: ['llm', 'translation', 'tts', 'stt', 'image_gen', 'vision', 'nlp', 'moderation'],
+  // TIER 1: PRIMARY PROVIDERS
+  openai: ['llm', 'translation', 'tts', 'stt', 'image_gen', 'vision', 'nlp'],
   claude: ['llm', 'translation', 'vision', 'nlp', 'long_context'],
-  gemini: ['llm', 'translation', 'ocr', 'tts', 'image_gen', 'vision', 'nlp'],
-  deepseek: ['llm', 'translation', 'ocr', 'vision', 'nlp', 'stt'],
-  alibaba: ['llm', 'translation', 'ocr', 'tts', 'stt', 'image_gen', 'video_gen', 'vision', 'nlp', 'avatar'],
-  sora2api: ['video_gen', 'cinematic', 'premium_video'],
-  gcp: ['oauth', 'calendar', 'vision', 'ocr', 'tts', 'stt', 'translation', 'nlp'],
-  azure: ['llm', 'vision', 'image_gen'],
-  azure_speech: ['tts', 'stt', 'visemes'],
-  azure_doc_intel: ['ocr', 'document_analysis'],
-  modelslab: ['image_gen', 'video_gen', '3d_gen', 'voice_clone', 'animation'],
-  meshy: ['3d_gen', 'texturing'],
+  gemini: ['llm', 'translation', 'ocr', 'tts', 'stt', 'image_gen', 'vision', 'nlp'],
+  deepgram: ['stt', 'realtime_stt'],  // PRIMARY STT - <100ms latency
+  deepseek: ['llm', 'translation', 'ocr', 'vision', 'nlp'],
+  alibaba: ['llm', 'translation', 'ocr', 'tts', 'stt', 'image_gen', 'video_gen', 'vision', 'nlp', 'avatar', 'lipsync'],
+  sora2api: ['video_gen', 'cinematic', 'realistic', 'commercial'],  // PRIMARY Video
+  elevenlabs: ['tts', 'voice_clone', 'sfx_gen', 'music_gen'],  // PRIMARY TTS + Music
+  deepl: ['translation'],  // PRIMARY Translation
+  
+  // TIER 2: SPECIALIZED PROVIDERS
+  azure: ['tts', 'stt', 'ocr', 'vision', 'translation', 'visemes'],
+  google: ['tts', 'stt', 'ocr', 'vision', 'translation', 'nlp'],
+  modelslab: ['image_gen', 'video_gen', 'animation', 'animatediff', 'svd'],  // PRIMARY Image
+  meshy: ['3d_gen', 'texturing', 'rigging'],  // PRIMARY 3D
   replicate: ['image_gen', 'video_gen', '3d_gen'],
-  elevenlabs: ['tts', 'voice_clone', 'sfx_gen', 'music_gen'],
-  deepl: ['translation'],
-  microsoft: ['translation'],
-  supabase: ['auth', 'database', 'storage', 'edge_functions'],
-  stripe: ['payments', 'subscriptions', 'invoicing'],
+  huggingface: ['llm', 'image_gen', 'nlp'],
 };
 
 function checkProviderAvailable(provider: string): boolean {
