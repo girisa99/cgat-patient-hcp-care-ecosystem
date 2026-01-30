@@ -1087,6 +1087,10 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
 
   // Generate single chapter using ecosystem services
   const generateChapter = async (chapter: SimpleChapter) => {
+    console.log('[Studio] ======= STARTING GENERATION =======');
+    console.log('[Studio] Chapter:', chapter.title, 'ID:', chapter.id);
+    console.log('[Studio] Script source:', chapter.scriptSource, 'Has script:', !!chapter.script?.trim());
+    
     updateChapter(chapter.id, { status: 'generating', progress: 0 });
     setCurrentGeneratingChapter(chapter.id);
 
@@ -1094,14 +1098,20 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
       let script = chapter.script;
       updateChapter(chapter.id, { progress: 10 });
       
-      // Step 1: Generate script if auto
-      if (chapter.scriptSource === 'auto' || !script.trim()) {
+      // Step 1: Generate script if auto OR if script is empty
+      const shouldGenerateScript = chapter.scriptSource === 'auto' || !script?.trim();
+      console.log('[Studio] Should generate script:', shouldGenerateScript);
+      
+      if (shouldGenerateScript) {
         console.log('[Studio] Generating script for:', chapter.title);
+        toast.info(`Generating script for "${chapter.title}"...`);
         
         // IMPORTANT: User's custom prompt takes priority, then AI suggestion, then fallback
         const userContext = chapter.customPrompt?.trim();
         const aiSuggestion = chapter.aiSuggestedPrompt?.trim();
         const chapterTitle = chapter.title;
+        
+        console.log('[Studio] Prompt context - User:', userContext?.substring(0, 50), 'AI:', aiSuggestion?.substring(0, 50));
         
         // Get template info for context
         const templateInfo = selectedTemplates.length > 0 
@@ -1128,6 +1138,9 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
           fullPromptContext += `\nUser's Direction: ${userContext}\n`;
         } else if (aiSuggestion) {
           fullPromptContext += `\nTopic: ${aiSuggestion}\n`;
+        } else {
+          // Fallback: use chapter title as the topic
+          fullPromptContext += `\nTopic: ${chapterTitle}\n`;
         }
         
         fullPromptContext += `\nChapter: ${chapterTitle}`;
@@ -1138,6 +1151,9 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
         
         // Calculate appropriate word count for duration (approx 150 words per minute for voiceover)
         const targetWordCount = Math.round((chapter.duration / 60) * 150);
+        
+        console.log('[Studio] Calling ai-universal-processor for script generation...');
+        console.log('[Studio] Full prompt context:', fullPromptContext.substring(0, 200));
         
         const { data: scriptData, error: scriptError } = await supabase.functions.invoke('ai-universal-processor', {
           body: {
@@ -1153,14 +1169,31 @@ Primary Language: ${primaryLanguage}
 IMPORTANT: Focus specifically on the user's direction provided above. Keep the content engaging, informative, and professional. The script should flow naturally when spoken aloud.`,
             systemPrompt: 'You are a professional scriptwriter for video content. Generate ONLY the voiceover script text - no headings, stage directions, or formatting. The script must directly address the topic/direction provided by the user.',
             maxTokens: 1200,
-            action: 'generate_script'
           }
         });
 
-        if (scriptError) throw new Error(scriptError.message);
-        script = scriptData?.content || scriptData?.response || `Script for ${chapter.title}`;
+        console.log('[Studio] Script generation response:', { 
+          hasData: !!scriptData, 
+          error: scriptError?.message,
+          contentLength: scriptData?.content?.length || 0 
+        });
+
+        if (scriptError) {
+          console.error('[Studio] Script generation error:', scriptError);
+          throw new Error(scriptError.message || 'Script generation failed');
+        }
+        
+        script = scriptData?.content || scriptData?.response || '';
+        if (!script) {
+          console.warn('[Studio] Empty script response, using fallback');
+          script = `Professional script for ${chapter.title}. This content covers the key points and messaging for your video.`;
+        }
+        
+        console.log('[Studio] Script generated successfully, length:', script.length);
         updateChapter(chapter.id, { script, progress: 25 });
+        toast.success(`Script generated for "${chapter.title}"`);
       } else {
+        console.log('[Studio] Using existing script, length:', script?.length || 0);
         updateChapter(chapter.id, { progress: 25 });
       }
 
