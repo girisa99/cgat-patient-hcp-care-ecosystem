@@ -505,45 +505,44 @@ async function generateWithSora2API(prompt: string, model: string, duration: num
     return generateWithModelsLab(prompt, 'animatediff', duration);
   }
 
-  console.log('🎬 Generating video with Sora2API (sora2api.ai)');
+  console.log('🎬 Generating video with Sora2API (sora2api.org)');
 
   try {
-    // Sora2API uses OpenAI-compatible format
-    const response = await fetch('https://api.sora2api.ai/v1/video/generations', {
+    // Sora2API correct endpoint: sora2api.org/api/generate-video
+    const response = await fetch('https://sora2api.org/api/generate-video', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: model || 'sora-1.0-turbo',
         prompt: `${prompt}. High quality, cinematic, safe for all audiences.`,
-        duration: Math.min(duration, 20), // Sora2API max duration
-        aspect_ratio: aspectRatio,
-        quality: 'high',
+        aspectRatio: aspectRatio || '16:9',
+        duration: Math.min(duration, 20),
+        type: 'text2video',
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Sora2API error:', errorText);
-      // Fallback to ModelsLab on error
       console.log('⚠️ Sora2API failed, falling back to ModelsLab');
       return generateWithModelsLab(prompt, 'animatediff', duration);
     }
 
     const data = await response.json();
     
-    // Handle async task - poll for result
-    if (data.task_id || data.id) {
-      return await pollSora2APIResult(data.task_id || data.id, apiKey);
+    // Handle async task - poll for result using taskId
+    if (data.data?.taskId) {
+      return await pollSora2APIResult(data.data.taskId, apiKey);
     }
 
+    // Immediate result (unlikely but handle it)
     return {
-      videoUrl: data.data?.url || data.url || data.video_url,
+      videoUrl: data.data?.videoUrl || data.videoUrl || data.url,
       thumbnailUrl: data.data?.thumbnail || data.thumbnail,
       provider: 'sora2api',
-      model: model || 'sora-1.0-turbo',
+      model: model || 'sora-2',
     };
   } catch (error) {
     console.error('Sora2API generation error:', error);
@@ -561,25 +560,30 @@ async function pollSora2APIResult(taskId: string, apiKey: string): Promise<Video
     attempts++;
 
     try {
-      const response = await fetch(`https://api.sora2api.ai/v1/video/generations/${taskId}`, {
-        method: 'GET',
+      // Correct polling endpoint: sora2api.org/api/check-video-status
+      const response = await fetch('https://sora2api.org/api/check-video-status', {
+        method: 'POST',
         headers: {
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${apiKey}`,
         },
+        body: JSON.stringify({ taskId }),
       });
 
       const data = await response.json();
-      console.log(`⏳ Sora2API status (attempt ${attempts}):`, data.status);
+      const status = data.data?.status || data.status;
+      const progress = data.data?.progress || data.progress || 0;
+      console.log(`⏳ Sora2API status (attempt ${attempts}): ${status}, progress: ${progress}%`);
 
-      if (data.status === 'completed' || data.status === 'success') {
+      if (status === 'succeeded' || status === 'completed' || status === 'success') {
         return {
-          videoUrl: data.data?.url || data.url || data.video_url,
+          videoUrl: data.data?.videoUrl || data.videoUrl || data.url,
           thumbnailUrl: data.data?.thumbnail || data.thumbnail,
           provider: 'sora2api',
-          model: 'sora-1.0-turbo',
+          model: 'sora-2',
         };
-      } else if (data.status === 'failed' || data.status === 'error') {
-        throw new Error(data.message || data.error || 'Sora2API video generation failed');
+      } else if (status === 'failed' || status === 'error') {
+        throw new Error(data.data?.message || data.message || 'Sora2API video generation failed');
       }
     } catch (error) {
       if (attempts >= maxAttempts) throw error;
