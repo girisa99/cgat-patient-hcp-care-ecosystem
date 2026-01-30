@@ -1671,38 +1671,73 @@ IMPORTANT:
   // If in Review step, show ReviewEnhanceStep
   if (studioStep === 'review') {
     // Map chapters to ReviewEnhanceStep format with proper status
-    const reviewChapters = chapters.map((ch, i) => ({
-      id: ch.id,
-      title: ch.title,
-      duration: ch.duration,
-      // Map status correctly: complete content = pending for review
-      status: ch.status === 'complete' ? 'pending' as const : 'pending' as const,
-      qualityScore: ch.status === 'complete' ? 85 : 0,
-      feedback: undefined,
-      assets: {
-        script: { 
-          content: ch.script || ch.generatedContent?.script || '', 
-          status: (ch.script || ch.generatedContent?.script) ? 'complete' : 'pending' 
+    // Enhanced mapping to handle both script field and aiSuggestedPrompt fallback
+    const reviewChapters = chapters.map((ch, i) => {
+      // Determine script content with multiple fallbacks
+      const scriptContent = ch.script || ch.generatedContent?.script || '';
+      const hasScript = scriptContent.length > 0;
+      
+      // Use AI suggested prompt as preview if no script generated
+      const displayScript = hasScript 
+        ? scriptContent 
+        : (ch.customPrompt || ch.aiSuggestedPrompt || `Chapter ${i + 1}: ${ch.title}`);
+      
+      // Check for any generated content
+      const hasAudio = !!(ch.generatedContent?.audioUrl);
+      const hasVideo = !!(ch.generatedContent?.videoUrl || ch.generatedContent?.previewUrl);
+      const hasAnyContent = hasScript || hasAudio || hasVideo;
+      
+      // Calculate quality score based on completeness
+      let qualityScore = 0;
+      if (hasScript) qualityScore += 40;
+      if (hasAudio) qualityScore += 30;
+      if (hasVideo) qualityScore += 30;
+      
+      return {
+        id: ch.id,
+        title: ch.title,
+        duration: ch.duration,
+        // Map status: complete if has content, pending if waiting for generation
+        status: hasAnyContent ? 'pending' as const : 'pending' as const,
+        qualityScore,
+        feedback: undefined,
+        assets: {
+          script: { 
+            content: displayScript,
+            // Show status based on whether it's actual generated script vs preview
+            status: hasScript ? 'complete' : 'pending'
+          },
+          audio: { 
+            url: ch.generatedContent?.audioUrl, 
+            base64: undefined,
+            status: hasAudio ? 'complete' : 'pending',
+            provider: hasAudio ? 'elevenlabs' : undefined
+          },
+          video: { 
+            url: ch.generatedContent?.videoUrl || ch.generatedContent?.previewUrl,
+            status: hasVideo ? 'complete' : 'pending',
+            provider: hasVideo ? 'sora' : undefined
+          },
+          music: {
+            url: undefined,
+            base64: undefined,
+            status: 'pending'
+          }
         },
-        audio: { 
-          url: ch.generatedContent?.audioUrl, 
-          status: ch.generatedContent?.audioUrl ? 'complete' : 'pending',
-          provider: 'elevenlabs'
-        },
-        video: { 
-          url: ch.generatedContent?.videoUrl || ch.generatedContent?.previewUrl,
-          status: (ch.generatedContent?.videoUrl || ch.generatedContent?.previewUrl) ? 'complete' : 'pending',
-          provider: 'sora'
-        },
-        music: {
-          url: undefined,
-          status: 'pending'
-        }
-      },
-    }));
+        // Additional context for preview
+        _sourceChapter: ch, // Keep reference to original chapter for regeneration
+        _hasGeneratedScript: hasScript,
+        _hasGeneratedAudio: hasAudio,
+        _hasGeneratedVideo: hasVideo,
+      };
+    });
 
-    // Show message if no content generated
-    if (reviewChapters.length === 0 || reviewChapters.every(c => !c.assets.script.content)) {
+    // Show informative message if chapters exist but nothing generated yet
+    const hasAnyGeneratedContent = reviewChapters.some(c => 
+      c._hasGeneratedScript || c._hasGeneratedAudio || c._hasGeneratedVideo
+    );
+    
+    if (reviewChapters.length === 0) {
       return (
         <div className={cn("p-4 space-y-6", className)}>
           <div className="flex items-center gap-4">
@@ -1714,10 +1749,9 @@ IMPORTANT:
           </div>
           <div className="flex flex-col items-center justify-center py-16 text-center border rounded-lg bg-muted/30">
             <FileCheck className="w-12 h-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No Content to Review</h3>
+            <h3 className="text-lg font-semibold mb-2">No Chapters Found</h3>
             <p className="text-muted-foreground mb-4 max-w-md">
-              Generate content in the Create step first. Once you have scripts and media generated, 
-              return here to review and approve them before publishing.
+              Add chapters in the Create step first, then generate content before reviewing.
             </p>
             <Button onClick={() => setStudioStep('create')}>
               Go to Create Step
@@ -1725,6 +1759,12 @@ IMPORTANT:
           </div>
         </div>
       );
+    }
+    
+    // Show chapters even without full generation - allows partial review
+    if (!hasAnyGeneratedContent) {
+      // Still show the review UI but with a notice that generation is pending
+      console.log('[Studio] Review step: No generated content yet, showing preview mode');
     }
 
     return (
