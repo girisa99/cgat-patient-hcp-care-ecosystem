@@ -38,6 +38,8 @@ import {
   AlertTriangle,
   MessageSquare,
   Command,
+  FileCheck,
+  Package,
 } from "lucide-react";
 
 export type SubscriptionTier = 'free' | 'starter' | 'creator' | 'pro' | 'business' | 'enterprise';
@@ -119,6 +121,24 @@ export const genieStudioNavItems: GenieNavItem[] = [
   },
 
   // === PUBLISH ===
+  // Review & Enhance - review generated content before publishing
+  {
+    title: "Review & Enhance",
+    url: "/genie-admin?tab=composition&step=review",
+    icon: FileCheck,
+    description: "Review and enhance generated content before publishing",
+    minTier: 'starter',
+    category: 'publish',
+  },
+  // Assets - view all generated assets
+  {
+    title: "Assets",
+    url: "/genie-admin?tab=composition&view=assets",
+    icon: Package,
+    description: "View and manage all generated assets",
+    minTier: 'starter',
+    category: 'publish',
+  },
   {
     title: "Scheduler",
     url: "/genie-admin?tab=scheduler",
