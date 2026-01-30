@@ -905,8 +905,8 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
   }, [defaultLanguage, isDetectingLocation, geoData]);
 
   // Apply templates - combines chapters from all selected templates
-  // Get default visual types based on template
-  const getDefaultVisualsForTemplate = (templateId: string): string[] => {
+  // Get default visual types based on template - wrapped in useCallback for stable reference
+  const getDefaultVisualsForTemplate = useCallback((templateId: string): string[] => {
     const visualMap: Record<string, string[]> = {
       saudi_vision_2030: ['video', 'infographics', '3d_environment'],
       uae_digital: ['video', 'animation', 'ppt'],
@@ -924,10 +924,11 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
       social_youtube: ['avatar', 'video', 'ppt'],
     };
     return visualMap[templateId] || ['video'];
-  };
+  }, []);
 
   // Generate AI suggested prompt for a chapter - comprehensive coverage for all templates
-  const generateAISuggestedPrompt = (title: string, industry: string): string => {
+  // Wrapped in useCallback for stable reference
+  const generateAISuggestedPrompt = useCallback((title: string, industry: string): string => {
     // Get template info for context-aware prompts
     const templateInfo = INDUSTRY_TEMPLATES.find(t => t.id === industry);
     const templateLabel = templateInfo?.label || industry.replace(/_/g, ' ');
@@ -941,6 +942,9 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
         'Digital Infrastructure': 'Showcase the smart city initiatives, 5G rollout, cloud infrastructure, and digital government services transforming Saudi Arabia.',
         'Smart Cities': 'Present NEOM, The Line, and other futuristic urban development projects that represent the future of sustainable living.',
         'Future Outlook': 'Summarize the 2030 goals, progress made, and call-to-action for global partnerships and investment opportunities.',
+        'Investment Opportunities': 'Highlight key investment sectors and opportunities for global partners in the Saudi Vision 2030 framework.',
+        'Tourism & Entertainment': 'Present the development of tourism destinations like Red Sea Project and entertainment initiatives.',
+        'Youth Empowerment': 'Showcase initiatives focused on Saudi youth development, education, and employment opportunities.',
       },
       uae_digital: {
         'Digital Government': 'Showcase UAE\'s world-leading digital government services and smart city initiatives in Dubai and Abu Dhabi.',
@@ -951,12 +955,17 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
         'Digital India Overview': 'Present the comprehensive Digital India initiative transforming governance and citizen services.',
         'Technology Infrastructure': 'Showcase India Stack, Aadhaar, and the digital infrastructure empowering 1.4 billion citizens.',
         'Startup Ecosystem': 'Highlight India\'s vibrant startup ecosystem and unicorn success stories.',
+        'Digital Payments': 'Explain how UPI and digital payments have revolutionized India\'s economy.',
+        'E-Governance': 'Present digital government services and citizen-centric platforms.',
+        'Rural Connectivity': 'Showcase BharatNet and initiatives bringing digital access to rural India.',
       },
       india_upi: {
         'UPI Introduction': 'Introduce UPI as a revolutionary real-time payment system transforming digital payments for over 500 million users.',
         'Technology Behind UPI': 'Explain the NPCI architecture, instant bank-to-bank transfers, and the technology stack powering UPI.',
         'Merchant Adoption': 'Show how small businesses, street vendors, and enterprises adopted QR-based payments nationwide.',
         'Global Expansion': 'Highlight UPI\'s expansion to UAE, Singapore, France, and future international markets.',
+        'Security & Trust': 'Present the security features and trust mechanisms that make UPI safe for transactions.',
+        'Future Roadmap': 'Outline the future developments and innovations planned for UPI ecosystem.',
       },
       africa_tourism: {
         'Wildlife Safari': 'Showcase breathtaking wildlife experiences across Africa\'s renowned national parks and conservation areas.',
@@ -970,11 +979,16 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
         'Key Features': 'Demonstrate the most impactful features with real-world examples and use cases.',
         'Use Cases': 'Show how different industries and company sizes use the product successfully.',
         'Getting Started': 'Walk through the seamless onboarding process and first-time user experience.',
+        'Pricing & Plans': 'Present pricing options and help viewers choose the right plan for their needs.',
+        'Customer Success': 'Share customer testimonials and success stories that demonstrate ROI.',
       },
       healthcare_digital: {
-        'Digital Health Overview': 'Present the digital transformation of healthcare and patient-centric care delivery.',
-        'Technology Solutions': 'Showcase AI diagnostics, telemedicine, and connected health devices.',
+        'Healthcare Overview': 'Present the digital transformation of healthcare and patient-centric care delivery.',
+        'Digital Solutions': 'Showcase AI diagnostics, telemedicine, and connected health devices.',
         'Patient Experience': 'Highlight improved patient outcomes and personalized care pathways.',
+        'AI Diagnostics': 'Demonstrate how AI is revolutionizing medical diagnosis and treatment planning.',
+        'Telemedicine': 'Present remote healthcare delivery and virtual consultation capabilities.',
+        'Data Security': 'Explain healthcare data protection and compliance with regulations.',
       },
       banking_digital: {
         'Digital Banking Overview': 'Present the future of banking with seamless digital experiences.',
@@ -995,7 +1009,7 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
     
     // Fallback with template context
     return `Create engaging professional content about "${title}" for ${templateLabel} audience. Ensure the content is informative, visually compelling, and aligned with industry best practices.`;
-  };
+  }, []);
 
   const applyTemplates = useCallback((templateIds: string[]) => {
     // Prevent unnecessary state updates - check if templates actually changed
@@ -1056,7 +1070,32 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
   // Chapter CRUD
   const addChapter = useCallback(() => {
     const industry = selectedTemplates[0] || 'blank';
-    const title = `Chapter ${chapters.length + 1}`;
+    const chapterNumber = chapters.length + 1;
+    
+    // Get template info for context-aware title suggestion
+    const templateInfo = INDUSTRY_TEMPLATES.find(t => t.id === industry);
+    const templateLabel = templateInfo?.label || '';
+    
+    // Generate a context-aware default title based on template
+    let title = `Chapter ${chapterNumber}`;
+    if (templateLabel && industry !== 'blank') {
+      // Suggest contextual titles based on template category
+      const contextualTitles: Record<string, string[]> = {
+        saudi_vision_2030: ['Vision Overview', 'Economic Diversification', 'Digital Infrastructure', 'Smart Cities', 'Future Outlook', 'Investment Opportunities', 'Tourism & Entertainment', 'Youth Empowerment'],
+        india_digital: ['Digital India Overview', 'Technology Infrastructure', 'Startup Ecosystem', 'Digital Payments', 'E-Governance', 'Rural Connectivity'],
+        india_upi: ['UPI Introduction', 'Technology Behind UPI', 'Merchant Adoption', 'Global Expansion', 'Security & Trust', 'Future Roadmap'],
+        healthcare_digital: ['Healthcare Overview', 'Digital Solutions', 'Patient Experience', 'AI Diagnostics', 'Telemedicine', 'Data Security'],
+        saas_demo: ['Product Overview', 'Key Features', 'Use Cases', 'Getting Started', 'Pricing & Plans', 'Customer Success'],
+      };
+      
+      const templateTitles = contextualTitles[industry];
+      if (templateTitles && templateTitles[chapterNumber - 1]) {
+        title = templateTitles[chapterNumber - 1];
+      } else {
+        title = `${templateLabel} - Part ${chapterNumber}`;
+      }
+    }
+    
     const newChapter: SimpleChapter = {
       id: generateId(),
       title,
@@ -1074,8 +1113,8 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
     };
     setChapters(prev => [...prev, newChapter]);
     setExpandedChapter(newChapter.id);
-    toast.success('Chapter added');
-  }, [chapters.length, globalVoiceSource, globalMusicSource, selectedTemplates]);
+    toast.success(`Added "${title}" with ${templateLabel || 'default'} context`);
+  }, [chapters.length, globalVoiceSource, globalMusicSource, selectedTemplates, generateAISuggestedPrompt, getDefaultVisualsForTemplate]);
 
   const updateChapter = useCallback((id: string, updates: Partial<SimpleChapter>) => {
     setChapters(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
