@@ -173,6 +173,53 @@ const INDUSTRY_TEMPLATES: MultiSelectOption[] = [
   { id: 'usecase_case_study', value: 'usecase_case_study', label: 'Case Study Video', category: 'Use Cases', description: 'Success story' },
   { id: 'usecase_how_to', value: 'usecase_how_to', label: 'How-To Tutorial', category: 'Use Cases', description: 'Step-by-step guide' },
   
+  // === NORTH AMERICA ===
+  { id: 'usa_tech_hub', value: 'usa_tech_hub', label: 'USA Tech Innovation', category: 'North America', description: 'Silicon Valley ecosystem' },
+  { id: 'usa_healthcare', value: 'usa_healthcare', label: 'USA Healthcare Tech', category: 'North America', description: 'HealthTech innovation' },
+  { id: 'usa_fintech', value: 'usa_fintech', label: 'USA Fintech', category: 'North America', description: 'Financial innovation' },
+  { id: 'canada_tech', value: 'canada_tech', label: 'Canada Tech Corridor', category: 'North America', description: 'Toronto-Waterloo hub' },
+  { id: 'canada_ai', value: 'canada_ai', label: 'Canada AI Leadership', category: 'North America', description: 'AI research excellence' },
+  { id: 'canada_cleantech', value: 'canada_cleantech', label: 'Canada CleanTech', category: 'North America', description: 'Green technology' },
+  { id: 'mexico_nearshore', value: 'mexico_nearshore', label: 'Mexico Nearshore Hub', category: 'North America', description: 'Tech outsourcing' },
+  
+  // === EUROPE ===
+  { id: 'eu_digital', value: 'eu_digital', label: 'EU Digital Strategy', category: 'Europe', description: 'European digital transformation' },
+  { id: 'uk_fintech', value: 'uk_fintech', label: 'UK Fintech Capital', category: 'Europe', description: 'London fintech ecosystem' },
+  { id: 'germany_industry4', value: 'germany_industry4', label: 'Germany Industry 4.0', category: 'Europe', description: 'Smart manufacturing' },
+  { id: 'france_tech', value: 'france_tech', label: 'La French Tech', category: 'Europe', description: 'French startup scene' },
+  { id: 'nordic_innovation', value: 'nordic_innovation', label: 'Nordic Innovation', category: 'Europe', description: 'Scandinavian tech' },
+  { id: 'estonia_digital', value: 'estonia_digital', label: 'Estonia e-Residency', category: 'Europe', description: 'Digital nation' },
+  { id: 'ireland_tech', value: 'ireland_tech', label: 'Ireland Tech Hub', category: 'Europe', description: 'European HQ for tech' },
+  { id: 'spain_startup', value: 'spain_startup', label: 'Spain Startup Nation', category: 'Europe', description: 'Spanish ecosystem' },
+  
+  // === AUSTRALIA & OCEANIA ===
+  { id: 'australia_fintech', value: 'australia_fintech', label: 'Australia Fintech', category: 'Australia/Oceania', description: 'APAC fintech hub' },
+  { id: 'australia_mining_tech', value: 'australia_mining_tech', label: 'Australia Mining Tech', category: 'Australia/Oceania', description: 'Resources innovation' },
+  { id: 'australia_agritech', value: 'australia_agritech', label: 'Australia AgriTech', category: 'Australia/Oceania', description: 'Agricultural tech' },
+  { id: 'nz_innovation', value: 'nz_innovation', label: 'New Zealand Innovation', category: 'Australia/Oceania', description: 'Kiwi tech scene' },
+  { id: 'pacific_digital', value: 'pacific_digital', label: 'Pacific Islands Digital', category: 'Australia/Oceania', description: 'Pacific connectivity' },
+  
+  // === EXPANDED AFRICA ===
+  { id: 'egypt_tech', value: 'egypt_tech', label: 'Egypt Tech Hub', category: 'Africa', description: 'MENA-Africa bridge' },
+  { id: 'morocco_offshoring', value: 'morocco_offshoring', label: 'Morocco Offshoring', category: 'Africa', description: 'Nearshore Africa' },
+  { id: 'ghana_tech', value: 'ghana_tech', label: 'Ghana Tech Ecosystem', category: 'Africa', description: 'Accra tech hub' },
+  { id: 'tanzania_digital', value: 'tanzania_digital', label: 'Tanzania Digital', category: 'Africa', description: 'East Africa growth' },
+  { id: 'senegal_tech', value: 'senegal_tech', label: 'Senegal Tech', category: 'Africa', description: 'Francophone Africa hub' },
+  
+  // === EXPANDED CARIBBEAN ===
+  { id: 'bahamas_fintech', value: 'bahamas_fintech', label: 'Bahamas Digital Assets', category: 'Caribbean', description: 'Crypto-friendly nation' },
+  { id: 'puerto_rico_tech', value: 'puerto_rico_tech', label: 'Puerto Rico Tech', category: 'Caribbean', description: 'Tech tax haven' },
+  { id: 'dominican_bpo', value: 'dominican_bpo', label: 'Dominican Republic BPO', category: 'Caribbean', description: 'Business services' },
+  { id: 'cayman_fintech', value: 'cayman_fintech', label: 'Cayman Fintech', category: 'Caribbean', description: 'Financial services' },
+  
+  // === EXPANDED LATAM ===
+  { id: 'brazil_fintech', value: 'brazil_fintech', label: 'Brazil Fintech Boom', category: 'Latin America', description: 'PIX and beyond' },
+  { id: 'argentina_startup', value: 'argentina_startup', label: 'Argentina Unicorns', category: 'Latin America', description: 'Tech entrepreneurship' },
+  { id: 'chile_startup', value: 'chile_startup', label: 'Chile StartUp', category: 'Latin America', description: 'Start-Up Chile program' },
+  { id: 'colombia_tech', value: 'colombia_tech', label: 'Colombia Tech Rise', category: 'Latin America', description: 'Medellin transformation' },
+  { id: 'peru_digital', value: 'peru_digital', label: 'Peru Digital', category: 'Latin America', description: 'Digital inclusion' },
+  { id: 'uruguay_tech', value: 'uruguay_tech', label: 'Uruguay Tech Hub', category: 'Latin America', description: 'Small but mighty' },
+  
   // === QUICK START ===
   { id: 'blank', value: 'blank', label: 'Start Blank', category: 'Quick Start', description: 'Empty canvas' },
   { id: 'single', value: 'single', label: 'Single Chapter', category: 'Quick Start', description: 'Quick one-off' },
@@ -468,37 +515,111 @@ const VISUAL_TYPES: MultiSelectOption[] = [
   { id: 'combo_myth_modern', value: 'combo_myth_modern', label: 'Mythology + Modern Context', category: 'Combinations', icon: <Film className="w-3 h-3" /> },
   { id: 'combo_transform_narrate', value: 'combo_transform_narrate', label: 'Transformation + Narrator', category: 'Combinations', icon: <Building2 className="w-3 h-3" /> },
   
-  // ---- REGIONAL/CULTURAL (Language-aware) ----
-  { id: 'regional_mena', value: 'regional_mena', label: 'MENA Styled (RTL)', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
-  { id: 'regional_arabic_calligraphy', value: 'regional_arabic_calligraphy', label: 'Arabic Calligraphy', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
-  { id: 'regional_islamic_geometric', value: 'regional_islamic_geometric', label: 'Islamic Geometric', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
-  { id: 'regional_indian', value: 'regional_indian', label: 'Indian Cultural', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
-  { id: 'regional_indian_rangoli', value: 'regional_indian_rangoli', label: 'Rangoli/Mandala Style', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
-  { id: 'regional_indian_classical', value: 'regional_indian_classical', label: 'Indian Classical Art', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
-  { id: 'regional_indian_madhubani', value: 'regional_indian_madhubani', label: 'Madhubani Art Style', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
-  { id: 'regional_indian_warli', value: 'regional_indian_warli', label: 'Warli Tribal Art', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
-  { id: 'regional_indian_pattachitra', value: 'regional_indian_pattachitra', label: 'Pattachitra Scroll Art', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
-  { id: 'regional_indian_miniature', value: 'regional_indian_miniature', label: 'Mughal Miniature Style', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
-  { id: 'regional_pakistani', value: 'regional_pakistani', label: 'Pakistani Cultural', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
-  { id: 'regional_pakistani_truck', value: 'regional_pakistani_truck', label: 'Truck Art Style', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
-  { id: 'regional_bangladeshi', value: 'regional_bangladeshi', label: 'Bangladeshi Cultural', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
-  { id: 'regional_bangladeshi_nakshi', value: 'regional_bangladeshi_nakshi', label: 'Nakshi Kantha Style', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
-  { id: 'regional_cjk', value: 'regional_cjk', label: 'CJK Minimalist', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
-  { id: 'regional_japanese', value: 'regional_japanese', label: 'Japanese Zen/Wabi-Sabi', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
-  { id: 'regional_korean', value: 'regional_korean', label: 'Korean Contemporary', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
-  { id: 'regional_chinese', value: 'regional_chinese', label: 'Chinese Traditional', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
-  { id: 'regional_chinese_ink', value: 'regional_chinese_ink', label: 'Chinese Ink Wash', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
-  { id: 'regional_sea', value: 'regional_sea', label: 'Southeast Asian', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
-  { id: 'regional_thai', value: 'regional_thai', label: 'Thai Temple Art', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
-  { id: 'regional_indonesian_batik', value: 'regional_indonesian_batik', label: 'Indonesian Batik', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
-  { id: 'regional_african', value: 'regional_african', label: 'African Heritage', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
-  { id: 'regional_african_adinkra', value: 'regional_african_adinkra', label: 'Adinkra Patterns', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
-  { id: 'regional_african_kente', value: 'regional_african_kente', label: 'Kente Styled', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
-  { id: 'regional_african_ndebele', value: 'regional_african_ndebele', label: 'Ndebele Geometric', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
-  { id: 'regional_caribbean', value: 'regional_caribbean', label: 'Caribbean Vibrant', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
-  { id: 'regional_latam', value: 'regional_latam', label: 'Latin American', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
-  { id: 'regional_latam_mayan', value: 'regional_latam_mayan', label: 'Mayan/Aztec Styled', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
-  { id: 'regional_peruvian_inca', value: 'regional_peruvian_inca', label: 'Inca Textile Patterns', category: 'Regional', icon: <Globe className="w-3 h-3" /> },
+  // ---- REGIONAL/CULTURAL (Expanded for ALL major regions) ----
+  // MENA/Arabic
+  { id: 'regional_mena', value: 'regional_mena', label: 'MENA Styled (RTL)', category: 'Regional - MENA', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_arabic_calligraphy', value: 'regional_arabic_calligraphy', label: 'Arabic Calligraphy', category: 'Regional - MENA', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_islamic_geometric', value: 'regional_islamic_geometric', label: 'Islamic Geometric', category: 'Regional - MENA', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_persian_miniature', value: 'regional_persian_miniature', label: 'Persian Miniature Art', category: 'Regional - MENA', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_arabian_nights', value: 'regional_arabian_nights', label: 'Arabian Nights Style', category: 'Regional - MENA', icon: <Globe className="w-3 h-3" /> },
+  
+  // India (Expanded)
+  { id: 'regional_indian', value: 'regional_indian', label: 'Indian Cultural', category: 'Regional - India', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_indian_rangoli', value: 'regional_indian_rangoli', label: 'Rangoli/Mandala Style', category: 'Regional - India', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_indian_classical', value: 'regional_indian_classical', label: 'Indian Classical Art', category: 'Regional - India', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_indian_madhubani', value: 'regional_indian_madhubani', label: 'Madhubani Art Style', category: 'Regional - India', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_indian_warli', value: 'regional_indian_warli', label: 'Warli Tribal Art', category: 'Regional - India', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_indian_pattachitra', value: 'regional_indian_pattachitra', label: 'Pattachitra Scroll Art', category: 'Regional - India', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_indian_miniature', value: 'regional_indian_miniature', label: 'Mughal Miniature Style', category: 'Regional - India', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_indian_kalamkari', value: 'regional_indian_kalamkari', label: 'Kalamkari Textile Art', category: 'Regional - India', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_indian_tanjore', value: 'regional_indian_tanjore', label: 'Tanjore Painting Style', category: 'Regional - India', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_indian_temple', value: 'regional_indian_temple', label: 'Temple Architecture Style', category: 'Regional - India', icon: <Globe className="w-3 h-3" /> },
+  
+  // Pakistan & Bangladesh
+  { id: 'regional_pakistani', value: 'regional_pakistani', label: 'Pakistani Cultural', category: 'Regional - Pakistan', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_pakistani_truck', value: 'regional_pakistani_truck', label: 'Truck Art Style', category: 'Regional - Pakistan', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_pakistani_ajrak', value: 'regional_pakistani_ajrak', label: 'Ajrak Pattern Style', category: 'Regional - Pakistan', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_pakistani_phulkari', value: 'regional_pakistani_phulkari', label: 'Phulkari Embroidery', category: 'Regional - Pakistan', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_bangladeshi', value: 'regional_bangladeshi', label: 'Bangladeshi Cultural', category: 'Regional - Bangladesh', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_bangladeshi_nakshi', value: 'regional_bangladeshi_nakshi', label: 'Nakshi Kantha Style', category: 'Regional - Bangladesh', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_bangladeshi_jamdani', value: 'regional_bangladeshi_jamdani', label: 'Jamdani Weave Pattern', category: 'Regional - Bangladesh', icon: <Globe className="w-3 h-3" /> },
+  
+  // CJK (China, Japan, Korea)
+  { id: 'regional_cjk', value: 'regional_cjk', label: 'CJK Minimalist', category: 'Regional - CJK', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_japanese', value: 'regional_japanese', label: 'Japanese Zen/Wabi-Sabi', category: 'Regional - CJK', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_japanese_ukiyoe', value: 'regional_japanese_ukiyoe', label: 'Ukiyo-e Woodblock', category: 'Regional - CJK', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_japanese_anime', value: 'regional_japanese_anime', label: 'Anime/Manga Style', category: 'Regional - CJK', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_korean', value: 'regional_korean', label: 'Korean Contemporary', category: 'Regional - CJK', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_korean_dancheong', value: 'regional_korean_dancheong', label: 'Dancheong Traditional', category: 'Regional - CJK', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_chinese', value: 'regional_chinese', label: 'Chinese Traditional', category: 'Regional - CJK', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_chinese_ink', value: 'regional_chinese_ink', label: 'Chinese Ink Wash', category: 'Regional - CJK', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_chinese_paper_cut', value: 'regional_chinese_paper_cut', label: 'Chinese Paper Cut', category: 'Regional - CJK', icon: <Globe className="w-3 h-3" /> },
+  
+  // Southeast Asia & Indonesia
+  { id: 'regional_sea', value: 'regional_sea', label: 'Southeast Asian', category: 'Regional - Southeast Asia', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_thai', value: 'regional_thai', label: 'Thai Temple Art', category: 'Regional - Southeast Asia', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_thai_ramayana', value: 'regional_thai_ramayana', label: 'Thai Ramakien Style', category: 'Regional - Southeast Asia', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_indonesian_batik', value: 'regional_indonesian_batik', label: 'Indonesian Batik', category: 'Regional - Southeast Asia', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_indonesian_wayang', value: 'regional_indonesian_wayang', label: 'Wayang Shadow Puppet', category: 'Regional - Southeast Asia', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_indonesian_borobudur', value: 'regional_indonesian_borobudur', label: 'Borobudur Relief Style', category: 'Regional - Southeast Asia', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_vietnamese_lacquer', value: 'regional_vietnamese_lacquer', label: 'Vietnamese Lacquer Art', category: 'Regional - Southeast Asia', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_philippine_tribal', value: 'regional_philippine_tribal', label: 'Philippine Tribal Patterns', category: 'Regional - Southeast Asia', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_malaysian_songket', value: 'regional_malaysian_songket', label: 'Malaysian Songket', category: 'Regional - Southeast Asia', icon: <Globe className="w-3 h-3" /> },
+  
+  // Africa (Expanded)
+  { id: 'regional_african', value: 'regional_african', label: 'African Heritage', category: 'Regional - Africa', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_african_adinkra', value: 'regional_african_adinkra', label: 'Adinkra Symbols (Ghana)', category: 'Regional - Africa', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_african_kente', value: 'regional_african_kente', label: 'Kente Weave (Ghana)', category: 'Regional - Africa', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_african_ndebele', value: 'regional_african_ndebele', label: 'Ndebele Geometric (South Africa)', category: 'Regional - Africa', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_african_maasai', value: 'regional_african_maasai', label: 'Maasai Beadwork (Kenya)', category: 'Regional - Africa', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_african_ankara', value: 'regional_african_ankara', label: 'Ankara/African Wax Print', category: 'Regional - Africa', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_african_yoruba', value: 'regional_african_yoruba', label: 'Yoruba Art (Nigeria)', category: 'Regional - Africa', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_african_ethiopian', value: 'regional_african_ethiopian', label: 'Ethiopian Orthodox Art', category: 'Regional - Africa', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_african_zulu', value: 'regional_african_zulu', label: 'Zulu Beadwork Patterns', category: 'Regional - Africa', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_african_tingatinga', value: 'regional_african_tingatinga', label: 'Tingatinga Art (Tanzania)', category: 'Regional - Africa', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_african_mali_bogolan', value: 'regional_african_mali_bogolan', label: 'Bogolan Mudcloth (Mali)', category: 'Regional - Africa', icon: <Globe className="w-3 h-3" /> },
+  
+  // Caribbean
+  { id: 'regional_caribbean', value: 'regional_caribbean', label: 'Caribbean Vibrant', category: 'Regional - Caribbean', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_caribbean_rastafari', value: 'regional_caribbean_rastafari', label: 'Rastafari Style (Jamaica)', category: 'Regional - Caribbean', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_caribbean_carnival', value: 'regional_caribbean_carnival', label: 'Carnival/Junkanoo Style', category: 'Regional - Caribbean', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_caribbean_taino', value: 'regional_caribbean_taino', label: 'Taíno Indigenous Art', category: 'Regional - Caribbean', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_caribbean_haitian', value: 'regional_caribbean_haitian', label: 'Haitian Vodou Art', category: 'Regional - Caribbean', icon: <Globe className="w-3 h-3" /> },
+  
+  // Latin America
+  { id: 'regional_latam', value: 'regional_latam', label: 'Latin American', category: 'Regional - Latin America', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_latam_mayan', value: 'regional_latam_mayan', label: 'Mayan Hieroglyphic', category: 'Regional - Latin America', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_latam_aztec', value: 'regional_latam_aztec', label: 'Aztec Sun Stone Style', category: 'Regional - Latin America', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_peruvian_inca', value: 'regional_peruvian_inca', label: 'Inca Textile Patterns', category: 'Regional - Latin America', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_mexican_alebrije', value: 'regional_mexican_alebrije', label: 'Mexican Alebrije', category: 'Regional - Latin America', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_mexican_dia_muertos', value: 'regional_mexican_dia_muertos', label: 'Día de los Muertos', category: 'Regional - Latin America', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_brazilian_street', value: 'regional_brazilian_street', label: 'Brazilian Street Art', category: 'Regional - Latin America', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_andean_textile', value: 'regional_andean_textile', label: 'Andean Textile Patterns', category: 'Regional - Latin America', icon: <Globe className="w-3 h-3" /> },
+  
+  // Europe (Heritage)
+  { id: 'regional_european_baroque', value: 'regional_european_baroque', label: 'European Baroque', category: 'Regional - Europe', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_european_art_nouveau', value: 'regional_european_art_nouveau', label: 'Art Nouveau', category: 'Regional - Europe', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_european_art_deco', value: 'regional_european_art_deco', label: 'Art Deco', category: 'Regional - Europe', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_celtic', value: 'regional_celtic', label: 'Celtic Knotwork', category: 'Regional - Europe', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_nordic_viking', value: 'regional_nordic_viking', label: 'Nordic Viking', category: 'Regional - Europe', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_russian_folk', value: 'regional_russian_folk', label: 'Russian Folk Art', category: 'Regional - Europe', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_greek_classical', value: 'regional_greek_classical', label: 'Greek Classical', category: 'Regional - Europe', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_spanish_flamenco', value: 'regional_spanish_flamenco', label: 'Spanish Flamenco Style', category: 'Regional - Europe', icon: <Globe className="w-3 h-3" /> },
+  
+  // North America
+  { id: 'regional_native_american', value: 'regional_native_american', label: 'Native American Art', category: 'Regional - North America', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_native_northwest', value: 'regional_native_northwest', label: 'Pacific Northwest Totem', category: 'Regional - North America', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_native_navajo', value: 'regional_native_navajo', label: 'Navajo Textile Pattern', category: 'Regional - North America', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_american_retro', value: 'regional_american_retro', label: 'American Retro 50s', category: 'Regional - North America', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_american_pop', value: 'regional_american_pop', label: 'American Pop Art', category: 'Regional - North America', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_canadian_inuit', value: 'regional_canadian_inuit', label: 'Canadian Inuit Art', category: 'Regional - North America', icon: <Globe className="w-3 h-3" /> },
+  
+  // Australia & Oceania
+  { id: 'regional_aboriginal', value: 'regional_aboriginal', label: 'Aboriginal Dot Painting', category: 'Regional - Oceania', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_aboriginal_xray', value: 'regional_aboriginal_xray', label: 'Aboriginal X-Ray Art', category: 'Regional - Oceania', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_maori', value: 'regional_maori', label: 'Māori Ta Moko/Kowhaiwhai', category: 'Regional - Oceania', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_polynesian_tapa', value: 'regional_polynesian_tapa', label: 'Polynesian Tapa Cloth', category: 'Regional - Oceania', icon: <Globe className="w-3 h-3" /> },
+  { id: 'regional_pacific_island', value: 'regional_pacific_island', label: 'Pacific Island Patterns', category: 'Regional - Oceania', icon: <Globe className="w-3 h-3" /> },
 ];
 
 // ============================================

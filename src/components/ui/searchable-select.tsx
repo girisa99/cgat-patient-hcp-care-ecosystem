@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Check, ChevronDown, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -33,10 +33,20 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Extract unique categories for filter chips
+  const categories = useMemo(() => {
+    const cats = new Set<string>();
+    options.forEach(opt => {
+      if (opt.category) cats.add(opt.category);
+    });
+    return Array.from(cats);
+  }, [options]);
 
   // Calculate dropdown position using fixed positioning for portal
   const getDropdownStyle = useCallback((): React.CSSProperties => {
@@ -45,7 +55,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
     const rect = buttonRef.current.getBoundingClientRect();
     const spaceBelow = window.innerHeight - rect.bottom;
     const spaceAbove = rect.top;
-    const dropdownHeight = 320;
+    const dropdownHeight = 400; // Increased for filter chips
     
     // Decide if dropdown should open above or below
     const openAbove = spaceBelow < dropdownHeight && spaceAbove > spaceBelow;
@@ -53,7 +63,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
     return {
       position: 'fixed' as const,
       left: rect.left,
-      width: rect.width,
+      width: Math.max(rect.width, 300),
       maxHeight: Math.min(dropdownHeight, openAbove ? spaceAbove - 8 : spaceBelow - 8),
       ...(openAbove 
         ? { bottom: window.innerHeight - rect.top + 4 }
@@ -75,6 +85,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
       if (clickedOutsideContainer && clickedOutsideDropdown) {
         setIsOpen(false);
         setSearchTerm('');
+        setActiveCategory(null);
       }
     };
 
@@ -97,6 +108,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
       if (e.key === 'Escape') {
         setIsOpen(false);
         setSearchTerm('');
+        setActiveCategory(null);
       }
     };
 
@@ -126,20 +138,25 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
     }
   }, [isOpen]);
 
-  const filteredOptions = options.filter(option =>
-    !searchTerm || 
-    option.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    option.description?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter by search term AND active category
+  const filteredOptions = useMemo(() => options.filter(option => {
+    const matchesSearch = !searchTerm || 
+      option.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      option.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = !activeCategory || option.category === activeCategory;
+    return matchesSearch && matchesCategory;
+  }), [options, searchTerm, activeCategory]);
 
-  const groupedOptions = groupByCategory
-    ? filteredOptions.reduce((acc, option) => {
-        const category = option.category || 'Other';
-        if (!acc[category]) acc[category] = [];
-        acc[category].push(option);
-        return acc;
-      }, {} as Record<string, SearchableSelectOption[]>)
-    : { 'All': filteredOptions };
+  const groupedOptions = useMemo(() => {
+    if (!groupByCategory || activeCategory) return { [activeCategory || 'All']: filteredOptions };
+    
+    return filteredOptions.reduce((acc, option) => {
+      const category = option.category || 'Other';
+      if (!acc[category]) acc[category] = [];
+      acc[category].push(option);
+      return acc;
+    }, {} as Record<string, SearchableSelectOption[]>);
+  }, [filteredOptions, groupByCategory, activeCategory]);
 
   const handleSelect = (optionValue: string) => {
     onValueChange(optionValue);
@@ -180,6 +197,42 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
         </div>
       </div>
       
+      {/* Category Filter Chips - Show when >3 categories */}
+      {groupByCategory && categories.length > 3 && (
+        <div className="p-2 border-b border-border bg-muted/30 flex-shrink-0">
+          <div className="flex flex-wrap gap-1.5 max-h-16 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+            <button
+              onClick={() => setActiveCategory(null)}
+              className={cn(
+                "px-2 py-0.5 text-[10px] font-medium rounded-full transition-colors whitespace-nowrap",
+                !activeCategory 
+                  ? "bg-primary text-primary-foreground" 
+                  : "bg-muted hover:bg-muted/80 text-muted-foreground"
+              )}
+            >
+              All ({options.length})
+            </button>
+            {categories.map(cat => {
+              const count = options.filter(o => o.category === cat).length;
+              return (
+                <button
+                  key={cat}
+                  onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
+                  className={cn(
+                    "px-2 py-0.5 text-[10px] font-medium rounded-full transition-colors whitespace-nowrap",
+                    activeCategory === cat 
+                      ? "bg-primary text-primary-foreground" 
+                      : "bg-muted hover:bg-muted/80 text-muted-foreground"
+                  )}
+                >
+                  {cat} ({count})
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+      
       <div 
         className="flex-1 bg-popover"
         style={{ 
@@ -196,7 +249,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
               </div>
             )}
             
-            {categoryOptions.map((option) => {
+            {(categoryOptions as SearchableSelectOption[]).map((option) => {
               const isSelected = value === option.value;
               
               return (
