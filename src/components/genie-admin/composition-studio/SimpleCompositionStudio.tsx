@@ -1157,20 +1157,32 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
         console.log('[Studio] Full prompt context:', fullPromptContext.substring(0, 200));
         
         try {
-          const { data: scriptData, error: scriptError } = await supabase.functions.invoke('ai-universal-processor', {
-            body: {
-              provider: 'gemini',
-              model: 'gemini-2.0-flash',
-              prompt: `${fullPromptContext}
+          // Build a complete script generation prompt
+          const scriptPrompt = `${fullPromptContext}
 
-Generate a professional voiceover script${industryContext}.
+Generate a professional voiceover script for TTS (Text-to-Speech)${industryContext}.
 Target Duration: ${chapter.duration} seconds (approximately ${targetWordCount} words)
 Visual Style: ${chapter.visualTypes.join(', ')}
 Primary Language: ${primaryLanguage}
 
-IMPORTANT: Focus specifically on the user's direction provided above. Keep the content engaging, informative, and professional. The script should flow naturally when spoken aloud.`,
-              systemPrompt: 'You are a professional scriptwriter for video content. Generate ONLY the voiceover script text - no headings, stage directions, or formatting. The script must directly address the topic/direction provided by the user.',
-              maxTokens: 1200,
+IMPORTANT: 
+- Focus specifically on the user's direction provided above
+- Keep the content engaging, informative, and professional
+- The script should flow naturally when spoken aloud
+- Write in a conversational, clear style suitable for audio narration
+- Include natural pauses and emphasis points
+- Target exactly ${targetWordCount} words for the ${chapter.duration}s duration`;
+
+          console.log('[Studio] Script prompt preview:', scriptPrompt.substring(0, 300));
+          
+          const { data: scriptData, error: scriptError } = await supabase.functions.invoke('ai-universal-processor', {
+            body: {
+              provider: 'gemini',
+              model: 'gemini-2.0-flash',
+              prompt: scriptPrompt,
+              systemPrompt: 'You are a professional TTS scriptwriter for video content. Generate ONLY the voiceover script text - no headings, stage directions, timestamps, or formatting marks. The script must be ready for direct text-to-speech conversion. Write naturally as if speaking to the audience.',
+              temperature: 0.7,
+              maxTokens: 1500,
             }
           });
 
@@ -1179,30 +1191,53 @@ IMPORTANT: Focus specifically on the user's direction provided above. Keep the c
             hasError: !!scriptError,
             errorMsg: scriptError?.message,
             contentLength: scriptData?.content?.length || 0,
-            responseKeys: scriptData ? Object.keys(scriptData) : []
+            responseKeys: scriptData ? Object.keys(scriptData) : [],
+            rawPreview: typeof scriptData === 'string' ? scriptData.substring(0, 100) : 
+                        scriptData?.content?.substring?.(0, 100) || 'N/A'
           });
 
           if (scriptError) {
             console.error('[Studio] Script generation error:', scriptError);
             toast.error(`Script error: ${scriptError.message}`);
-            // Don't throw - use fallback
-            script = `[Script for ${chapter.title}] This chapter covers ${chapter.customPrompt || chapter.aiSuggestedPrompt || chapter.title}. The content will be engaging and informative for your target audience.`;
+            // Generate a meaningful fallback based on the prompt
+            script = generateFallbackScript(chapter, projectName, templateLabel);
           } else {
-            // Parse the response - edge function returns content or response
-            script = scriptData?.content || scriptData?.response || scriptData?.text || '';
+            // Parse the response - edge function returns content, response, or text
+            script = '';
             
-            // If we got a full object, try to extract the script text
-            if (!script && typeof scriptData === 'object') {
-              console.log('[Studio] Attempting deep parse of response');
-              script = JSON.stringify(scriptData);
-              // Try to extract meaningful text
-              if (scriptData.result) script = scriptData.result;
-              if (scriptData.output) script = scriptData.output;
+            // Try multiple extraction paths
+            if (typeof scriptData === 'string') {
+              script = scriptData;
+            } else if (scriptData?.content && typeof scriptData.content === 'string') {
+              script = scriptData.content;
+            } else if (scriptData?.response && typeof scriptData.response === 'string') {
+              script = scriptData.response;
+            } else if (scriptData?.text && typeof scriptData.text === 'string') {
+              script = scriptData.text;
+            } else if (scriptData?.result && typeof scriptData.result === 'string') {
+              script = scriptData.result;
+            } else if (scriptData?.output && typeof scriptData.output === 'string') {
+              script = scriptData.output;
             }
             
-            if (!script || script.length < 20) {
+            // Clean up the script - remove any JSON artifacts or formatting
+            script = script.trim();
+            if (script.startsWith('{') || script.startsWith('[')) {
+              // It's JSON, try to extract text
+              try {
+                const parsed = JSON.parse(script);
+                script = parsed.script || parsed.content || parsed.text || parsed.response || '';
+              } catch {
+                // Not valid JSON, keep as is but remove brackets
+                script = script.replace(/^[\{\[]|[\}\]]$/g, '').trim();
+              }
+            }
+            
+            console.log('[Studio] Extracted script preview:', script.substring(0, 150));
+            
+            if (!script || script.length < 30) {
               console.warn('[Studio] Script too short or empty, generating fallback');
-              script = `Welcome to ${chapter.title}. ${chapter.customPrompt || chapter.aiSuggestedPrompt || 'This chapter explores key concepts that will engage and inform your audience. Let\'s dive into the details together.'}`;
+              script = generateFallbackScript(chapter, projectName, templateLabel);
             }
           }
           
@@ -1211,9 +1246,22 @@ IMPORTANT: Focus specifically on the user's direction provided above. Keep the c
           toast.success(`Script generated for "${chapter.title}" (${script.length} chars)`);
         } catch (scriptGenErr) {
           console.error('[Studio] Script generation exception:', scriptGenErr);
-          script = `[Generated Script for ${chapter.title}]\n\n${chapter.customPrompt || chapter.aiSuggestedPrompt || 'This chapter presents engaging content designed to inform and captivate your audience. Each section builds upon the last to create a cohesive narrative.'}`;
+          script = generateFallbackScript(chapter, projectName, templateLabel);
           updateChapter(chapter.id, { script, progress: 25 });
           toast.warning('Used fallback script due to API issue');
+        }
+        
+        // Helper function for fallback scripts
+        function generateFallbackScript(ch: SimpleChapter, projName: string, template: string): string {
+          const topic = ch.customPrompt || ch.aiSuggestedPrompt || ch.title;
+          const duration = ch.duration;
+          const wordCount = Math.round((duration / 60) * 150);
+          
+          if (template && template.includes('Vision')) {
+            return `Welcome to ${ch.title}. Today we explore ${topic}, a key pillar of our ${template} initiative. This transformation represents a bold step toward a more prosperous and innovative future. Through strategic investments and forward-thinking policies, we're building the foundation for sustainable growth and opportunity for all. Join us as we discover how these initiatives are reshaping our landscape and creating new possibilities for generations to come.`;
+          }
+          
+          return `Welcome to ${ch.title}. ${topic ? `In this segment, we'll explore ${topic}.` : 'Let\'s dive into the key concepts.'} Our goal is to provide you with valuable insights and actionable knowledge that you can apply right away. Throughout this presentation, we'll break down complex ideas into clear, understandable points. Whether you're new to this topic or looking to deepen your understanding, this content is designed to engage and inform. Let's begin our journey together.`;
         }
       } else {
         console.log('[Studio] Using existing script, length:', script?.length || 0);
@@ -1860,28 +1908,27 @@ IMPORTANT: Focus specifically on the user's direction provided above. Keep the c
             <p className="text-sm">Select a template above or add chapters manually.</p>
           </div>
         ) : (
-          <ScrollArea className="max-h-[500px]">
-            <div className="space-y-2 pr-2">
-              {chapters.map((chapter, index) => (
-                <ChapterRow
-                  key={chapter.id}
-                  chapter={chapter}
-                  index={index}
-                  totalChapters={chapters.length}
-                  isExpanded={expandedChapter === chapter.id}
-                  isGenerating={currentGeneratingChapter === chapter.id}
-                  audioScope={audioScope}
-                  onToggle={() => setExpandedChapter(expandedChapter === chapter.id ? null : chapter.id)}
-                  onUpdate={(updates) => updateChapter(chapter.id, updates)}
-                  onDelete={() => deleteChapter(chapter.id)}
-                  onDuplicate={() => duplicateChapter(chapter.id)}
-                  onGenerate={() => generateChapter(chapter)}
-                  onMoveUp={() => moveChapter(chapter.id, 'up')}
-                  onMoveDown={() => moveChapter(chapter.id, 'down')}
-                />
-              ))}
-            </div>
-          </ScrollArea>
+          // Remove ScrollArea to prevent dropdown clipping - use simple overflow container
+          <div className="space-y-2 max-h-[600px] overflow-y-auto pr-2">
+            {chapters.map((chapter, index) => (
+              <ChapterRow
+                key={chapter.id}
+                chapter={chapter}
+                index={index}
+                totalChapters={chapters.length}
+                isExpanded={expandedChapter === chapter.id}
+                isGenerating={currentGeneratingChapter === chapter.id}
+                audioScope={audioScope}
+                onToggle={() => setExpandedChapter(expandedChapter === chapter.id ? null : chapter.id)}
+                onUpdate={(updates) => updateChapter(chapter.id, updates)}
+                onDelete={() => deleteChapter(chapter.id)}
+                onDuplicate={() => duplicateChapter(chapter.id)}
+                onGenerate={() => generateChapter(chapter)}
+                onMoveUp={() => moveChapter(chapter.id, 'up')}
+                onMoveDown={() => moveChapter(chapter.id, 'down')}
+              />
+            ))}
+          </div>
         )}
       </div>
 
@@ -2336,9 +2383,9 @@ const ChapterRow: React.FC<ChapterRowProps> = ({
   return (
     <Collapsible open={isExpanded} onOpenChange={onToggle}>
       <div className={cn(
-        "border rounded-lg overflow-hidden transition-all bg-background",
-        isExpanded ? "ring-2 ring-primary/20" : "",
-        chapter.status === 'complete' ? "border-emerald-500/30" : "",
+        "border rounded-lg transition-all bg-background",
+        isExpanded ? "ring-2 ring-primary/20 overflow-visible" : "overflow-hidden",
+        chapter.status === 'complete' ? "border-primary/30" : "",
         chapter.status === 'error' ? "border-destructive/30" : ""
       )}>
         {/* Header Row */}
@@ -2402,7 +2449,7 @@ const ChapterRow: React.FC<ChapterRowProps> = ({
 
         {/* Expanded Content - Flat layout, no nested ScrollArea */}
         <CollapsibleContent>
-          <div className="p-4 pt-2 space-y-4 border-t bg-muted/10">
+          <div className="p-4 pt-2 space-y-4 border-t bg-muted/10" style={{ overflow: 'visible' }}>
             {/* Preview - Simple inline display */}
             {chapter.generatedContent?.previewUrl && (
               <div className="relative aspect-video rounded-lg overflow-hidden bg-black max-w-md">
@@ -2508,8 +2555,8 @@ const ChapterRow: React.FC<ChapterRowProps> = ({
               />
             </div>
 
-            {/* Visual Types Multi-Select */}
-            <div className="space-y-2">
+            {/* Visual Types Multi-Select - ensure dropdown visibility */}
+            <div className="space-y-2" style={{ position: 'relative', zIndex: 10 }}>
               <Label>Visual Types (Multi-select)</Label>
               <MultiSelectDropdown
                 options={VISUAL_TYPES}
@@ -2519,6 +2566,9 @@ const ChapterRow: React.FC<ChapterRowProps> = ({
                 groupByCategory
                 searchable
               />
+              <p className="text-xs text-muted-foreground">
+                Select one or more visual styles for this chapter
+              </p>
             </div>
 
             {/* Duration */}
