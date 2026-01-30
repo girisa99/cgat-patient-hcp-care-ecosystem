@@ -27,7 +27,12 @@ const GENIE_STUDIO_ROUTES = [
   '/genie-mind',
   '/genie-vibe',
   '/genie-deck',
-  '/genie-studio/productions'
+  '/genie-cast',
+  '/genie-admin',
+  '/genie-studio/productions',
+  '/genie-landing',
+  '/genie-explore',
+  '/genie-products'
 ];
 
 interface AppLayoutWithEnrollmentProps {
