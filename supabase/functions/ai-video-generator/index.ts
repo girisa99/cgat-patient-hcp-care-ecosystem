@@ -59,6 +59,8 @@ serve(async (req) => {
       script,
       language = 'en-US',
       voiceId,
+      // NEW: Visual type for smart routing (130+ types supported)
+      visualType = 'default',
       // NEW: Premium feature routing from frontend
       priorityRendering = false, // Use RunPod for dedicated GPU
       fullBody = false, // Use OmniAvatar for full-body
@@ -136,11 +138,11 @@ serve(async (req) => {
     // Extract region from request for smart routing
     const region = body.region || 'US';
     
-    // Auto-select provider based on availability AND regional routing
-    const selectedProvider = selectProvider(provider, region);
+    // Auto-select provider based on visual type, region, and availability
+    const selectedProvider = selectProvider(provider, region, visualType);
     const selectedModel = selectModel(selectedProvider, model);
     
-    console.log(`🎬 Smart routing: provider=${selectedProvider}, model=${selectedModel}, region=${region}`);
+    console.log(`🎬 Smart routing: provider=${selectedProvider}, model=${selectedModel}, region=${region}, visualType=${visualType}`);
 
     let result: VideoResult;
     const startTime = Date.now();
@@ -239,6 +241,93 @@ const EU_REGIONS = ['DE', 'FR', 'ES', 'IT', 'NL', 'PT', 'PL', 'BE', 'AT', 'CH', 
 const MENA_REGIONS = ['SA', 'AE', 'EG', 'QA', 'KW', 'BH', 'OM', 'JO', 'LB', 'MA', 'TN'];
 const AFRICA_REGIONS = ['NG', 'KE', 'GH', 'ZA', 'ET', 'TZ', 'UG', 'ZW', 'ZM', 'RW', 'SN'];
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// VISUAL TYPE → PROVIDER ROUTING MATRIX (130+ Visual Types)
+// ═══════════════════════════════════════════════════════════════════════════════
+interface VisualTypeRouting {
+  primaryProvider: string;
+  fallbackProviders: string[];
+  specialCapabilities?: string[];
+}
+
+// Master routing matrix for all visual types
+const VISUAL_TYPE_ROUTING_MATRIX: Record<string, VisualTypeRouting> = {
+  // ═══ CINEMATIC & REALISTIC (Sora2API Primary) ═══
+  'cinematic': { primaryProvider: 'sora2api', fallbackProviders: ['modelslab', 'gemini'] },
+  'realistic': { primaryProvider: 'sora2api', fallbackProviders: ['modelslab', 'gemini'] },
+  'documentary': { primaryProvider: 'sora2api', fallbackProviders: ['gemini', 'modelslab'] },
+  'commercial': { primaryProvider: 'sora2api', fallbackProviders: ['modelslab', 'alibaba'] },
+  'film_quality': { primaryProvider: 'sora2api', fallbackProviders: ['modelslab'] },
+  'premium_video': { primaryProvider: 'sora2api', fallbackProviders: ['modelslab'] },
+  'stock_footage': { primaryProvider: 'sora2api', fallbackProviders: ['modelslab', 'gemini'] },
+  
+  // ═══ AVATAR & LIP-SYNC (Alibaba Primary) ═══
+  'avatar': { primaryProvider: 'alibaba', fallbackProviders: ['modelslab'], specialCapabilities: ['face_tracking'] },
+  'avatar_lipsync': { primaryProvider: 'alibaba', fallbackProviders: ['modelslab'], specialCapabilities: ['audio_sync'] },
+  'avatar_fullbody': { primaryProvider: 'alibaba', fallbackProviders: [], specialCapabilities: ['omniavatar'] },
+  'talking_head': { primaryProvider: 'alibaba', fallbackProviders: ['modelslab'] },
+  'presenter': { primaryProvider: 'alibaba', fallbackProviders: ['modelslab'] },
+  'spokesperson': { primaryProvider: 'alibaba', fallbackProviders: ['modelslab'] },
+  'ai_anchor': { primaryProvider: 'alibaba', fallbackProviders: ['modelslab'] },
+  'digital_human': { primaryProvider: 'alibaba', fallbackProviders: [] },
+  
+  // ═══ 3D & PRODUCT (Meshy/ModelsLab Primary) ═══
+  '3d_product': { primaryProvider: 'meshy', fallbackProviders: ['modelslab', 'replicate'] },
+  '3d_showcase': { primaryProvider: 'meshy', fallbackProviders: ['modelslab'] },
+  '3d_model': { primaryProvider: 'meshy', fallbackProviders: ['modelslab', 'replicate'] },
+  '3d_environment': { primaryProvider: 'meshy', fallbackProviders: ['modelslab'] },
+  '3d_character': { primaryProvider: 'meshy', fallbackProviders: ['modelslab'] },
+  'product_spin': { primaryProvider: 'meshy', fallbackProviders: ['modelslab'] },
+  'product_demo': { primaryProvider: 'meshy', fallbackProviders: ['modelslab', 'sora2api'] },
+  
+  // ═══ ANIMATION & ARTISTIC (ModelsLab Primary) ═══
+  'animation': { primaryProvider: 'modelslab', fallbackProviders: ['replicate', 'gemini'] },
+  'anime': { primaryProvider: 'modelslab', fallbackProviders: ['replicate'] },
+  'cartoon': { primaryProvider: 'modelslab', fallbackProviders: ['replicate'] },
+  'motion_graphics': { primaryProvider: 'modelslab', fallbackProviders: ['gemini'] },
+  'animatediff': { primaryProvider: 'modelslab', fallbackProviders: ['replicate'] },
+  'stable_video': { primaryProvider: 'modelslab', fallbackProviders: ['replicate'] },
+  'artistic': { primaryProvider: 'modelslab', fallbackProviders: ['replicate', 'sora2api'] },
+  'abstract': { primaryProvider: 'modelslab', fallbackProviders: ['replicate'] },
+  'stylized': { primaryProvider: 'modelslab', fallbackProviders: ['replicate'] },
+  
+  // ═══ CULTURAL & TRADITIONAL (ModelsLab + Alibaba) ═══
+  'cultural': { primaryProvider: 'modelslab', fallbackProviders: ['alibaba', 'gemini'] },
+  'traditional': { primaryProvider: 'modelslab', fallbackProviders: ['alibaba'] },
+  'wayang': { primaryProvider: 'modelslab', fallbackProviders: ['alibaba'], specialCapabilities: ['shadow_puppet'] },
+  'panchatantra': { primaryProvider: 'modelslab', fallbackProviders: ['gemini'], specialCapabilities: ['animal_fable'] },
+  'sufi_tales': { primaryProvider: 'modelslab', fallbackProviders: ['alibaba'] },
+  'arabesque': { primaryProvider: 'modelslab', fallbackProviders: ['alibaba'] },
+  'calligraphy': { primaryProvider: 'alibaba', fallbackProviders: ['modelslab'] },
+  'origami': { primaryProvider: 'alibaba', fallbackProviders: ['modelslab'] },
+  'ukiyo_e': { primaryProvider: 'alibaba', fallbackProviders: ['modelslab'] },
+  'mandala': { primaryProvider: 'modelslab', fallbackProviders: ['gemini'] },
+  
+  // ═══ KINETIC TYPOGRAPHY & TEXT (Gemini Primary) ═══
+  'kinetic_typography': { primaryProvider: 'gemini', fallbackProviders: ['modelslab'] },
+  'text_animation': { primaryProvider: 'gemini', fallbackProviders: ['modelslab'] },
+  'infographic': { primaryProvider: 'gemini', fallbackProviders: ['modelslab'] },
+  'data_visualization': { primaryProvider: 'gemini', fallbackProviders: ['modelslab'] },
+  'chart_animation': { primaryProvider: 'gemini', fallbackProviders: ['modelslab'] },
+  'logo_animation': { primaryProvider: 'modelslab', fallbackProviders: ['gemini'] },
+  
+  // ═══ TUTORIAL & EXPLAINER (Gemini/Alibaba) ═══
+  'screen_recording': { primaryProvider: 'gemini', fallbackProviders: ['modelslab'] },
+  'tutorial': { primaryProvider: 'gemini', fallbackProviders: ['alibaba', 'modelslab'] },
+  'explainer': { primaryProvider: 'gemini', fallbackProviders: ['alibaba', 'sora2api'] },
+  'how_to': { primaryProvider: 'gemini', fallbackProviders: ['alibaba'] },
+  'walkthrough': { primaryProvider: 'gemini', fallbackProviders: ['alibaba'] },
+  
+  // ═══ VR & IMMERSIVE (ModelsLab/Replicate) ═══
+  'vr_360': { primaryProvider: 'modelslab', fallbackProviders: ['replicate'], specialCapabilities: ['360_video'] },
+  'immersive': { primaryProvider: 'modelslab', fallbackProviders: ['replicate'] },
+  'interactive': { primaryProvider: 'modelslab', fallbackProviders: ['replicate'] },
+  'ar_overlay': { primaryProvider: 'modelslab', fallbackProviders: ['replicate'] },
+  
+  // ═══ DEFAULT FALLBACK ═══
+  'default': { primaryProvider: 'sora2api', fallbackProviders: ['modelslab', 'gemini', 'alibaba'] },
+};
+
 interface ProviderConfig {
   id: string;
   available: boolean;
@@ -252,42 +341,52 @@ function getAvailableProviders(): ProviderConfig[] {
       id: 'sora2api', 
       available: !!Deno.env.get('SORA2API_KEY'),
       priority: 1,
-      bestFor: ['sora', 'premium', 'high-quality', 'cinematic']
+      bestFor: ['sora', 'premium', 'high-quality', 'cinematic', 'realistic']
     },
     { 
       id: 'modelslab', 
       available: !!Deno.env.get('MODELSLAB_API_KEY'),
       priority: 2,
-      bestFor: ['animatediff', 'svd', 'general', 'budget']
+      bestFor: ['animatediff', 'svd', 'animation', 'anime', 'cultural']
     },
     { 
       id: 'alibaba', 
       available: !!Deno.env.get('ALIBABA_API_KEY'),
       priority: 3,
-      bestFor: ['wan', 'cjk', 'avatar', 'full-body']
+      bestFor: ['wan', 'cjk', 'avatar', 'full-body', 'lipsync']
     },
     { 
       id: 'gemini', 
       available: !!Deno.env.get('GOOGLE_API_KEY'),
       priority: 4,
-      bestFor: ['veo', 'india', 'sea', 'africa']
+      bestFor: ['veo', 'india', 'sea', 'africa', 'typography', 'explainer']
+    },
+    { 
+      id: 'meshy', 
+      available: !!Deno.env.get('MESHY_API_KEY'),
+      priority: 5,
+      bestFor: ['3d', 'product', 'model', 'environment']
     },
     { 
       id: 'replicate', 
       available: !!Deno.env.get('REPLICATE_API_TOKEN'),
-      priority: 5,
-      bestFor: ['minimax', 'stable-video', 'experimental']
+      priority: 6,
+      bestFor: ['minimax', 'stable-video', 'experimental', 'vr']
     },
     { 
       id: 'openai', 
       available: false, // Official Sora not publicly available
       priority: 99,
-      bestFor: ['sora-official'] // Reserved for future
+      bestFor: ['sora-official']
     },
   ];
 }
 
-function selectProvider(requestedProvider: string, region?: string): string {
+/**
+ * Enhanced provider selection with visual type awareness
+ * Priority: Visual Type Routing → Regional Routing → Default Priority
+ */
+function selectProvider(requestedProvider: string, region?: string, visualType?: string): string {
   // Honor explicit provider request
   if (requestedProvider !== 'auto') {
     const providers = getAvailableProviders();
@@ -299,12 +398,33 @@ function selectProvider(requestedProvider: string, region?: string): string {
   const providers = getAvailableProviders().filter(p => p.available);
   
   if (providers.length === 0) {
-    throw new Error('No video generation API keys configured. Please add MODELSLAB_API_KEY, ALIBABA_API_KEY, GOOGLE_API_KEY, or REPLICATE_API_TOKEN.');
+    throw new Error('No video generation API keys configured. Please add SORA2API_KEY, MODELSLAB_API_KEY, ALIBABA_API_KEY, GOOGLE_API_KEY, or REPLICATE_API_TOKEN.');
   }
   
-  // Regional routing logic
+  // 1. VISUAL TYPE ROUTING (Highest Priority)
+  if (visualType) {
+    const normalizedType = visualType.toLowerCase().replace(/[\s-]/g, '_');
+    const routing = VISUAL_TYPE_ROUTING_MATRIX[normalizedType] || VISUAL_TYPE_ROUTING_MATRIX['default'];
+    
+    // Try primary provider first
+    const primary = providers.find(p => p.id === routing.primaryProvider);
+    if (primary) {
+      console.log(`🎨 Visual Type "${visualType}" → Primary: ${routing.primaryProvider}`);
+      return routing.primaryProvider;
+    }
+    
+    // Try fallback providers in order
+    for (const fallback of routing.fallbackProviders) {
+      const fallbackProvider = providers.find(p => p.id === fallback);
+      if (fallbackProvider) {
+        console.log(`🎨 Visual Type "${visualType}" → Fallback: ${fallback}`);
+        return fallback;
+      }
+    }
+  }
+  
+  // 2. REGIONAL ROUTING (Second Priority)
   if (region) {
-    // CJK Zone: Prefer Alibaba WAN for Asian content
     if (CJK_REGIONS.includes(region)) {
       const alibaba = providers.find(p => p.id === 'alibaba');
       if (alibaba) {
@@ -313,7 +433,6 @@ function selectProvider(requestedProvider: string, region?: string): string {
       }
     }
     
-    // India/SEA/Africa Zone: Prefer Gemini Veo
     if ([...INDIA_SEA_REGIONS, ...AFRICA_REGIONS].includes(region)) {
       const gemini = providers.find(p => p.id === 'gemini');
       if (gemini) {
@@ -323,7 +442,7 @@ function selectProvider(requestedProvider: string, region?: string): string {
     }
   }
   
-  // Default: Use highest priority available provider
+  // 3. DEFAULT: Use highest priority available provider
   const sorted = providers.sort((a, b) => a.priority - b.priority);
   const selected = sorted[0];
   console.log(`🎯 Smart routing selected: ${selected.id} (priority ${selected.priority})`);
