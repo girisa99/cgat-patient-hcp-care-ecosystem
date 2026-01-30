@@ -6,6 +6,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Video model priority: Veo 2.0 -> Veo 1.0 (fallback)
+const VIDEO_MODELS = {
+  PRIMARY: 'veo-002',
+  FALLBACK: 'veo-001',
+};
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -19,7 +25,7 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { prompt, duration = 5, aspectRatio = '16:9', fps = 24 } = body;
+    const { prompt, duration = 5, aspectRatio = '16:9', fps = 24, model = 'auto' } = body;
 
     if (!prompt) {
       return new Response(
@@ -31,15 +37,17 @@ serve(async (req) => {
       );
     }
 
-    console.log('🎬 Generating video with Gemini API:', { prompt, duration, aspectRatio, fps });
+    // Select model based on request or auto-select
+    const selectedModel = model === 'auto' ? VIDEO_MODELS.PRIMARY : model;
+    console.log('🎬 Generating video with Gemini API:', { prompt, duration, aspectRatio, fps, model: selectedModel });
 
     // Enhanced prompt for better video generation
     const enhancedPrompt = `Create a ${duration}-second video: ${prompt}. ${aspectRatio} aspect ratio, ${fps} fps. High quality, smooth motion, professional cinematography.`;
 
     const startTime = Date.now();
 
-    // Use Google's Gemini API for video generation
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/veo-001:generateVideo?key=${GOOGLE_API_KEY}`, {
+    // Try primary model first (Veo 2.0), fallback to Veo 1.0 if needed
+    let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateVideo?key=${GOOGLE_API_KEY}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -55,15 +63,32 @@ serve(async (req) => {
       }),
     });
 
-    const data = await response.json();
-    console.log('🔍 Gemini video API response:', { status: response.status, hasVideo: !!data.generatedVideos });
+    let data = await response.json();
+    console.log('🔍 Gemini video API response:', { status: response.status, model: selectedModel, hasVideo: !!data.generatedVideos });
+
+    // If primary model fails, try fallback model
+    if (!response.ok && selectedModel === VIDEO_MODELS.PRIMARY) {
+      console.log('⚠️ Primary model failed, trying fallback model:', VIDEO_MODELS.FALLBACK);
+      
+      response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${VIDEO_MODELS.FALLBACK}:generateVideo?key=${GOOGLE_API_KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: enhancedPrompt,
+          config: { aspectRatio, duration: `${duration}s`, frameRate: fps, safetyFilterLevel: 'MODERATE' }
+        }),
+      });
+      
+      data = await response.json();
+      console.log('🔍 Fallback model response:', { status: response.status, model: VIDEO_MODELS.FALLBACK, hasVideo: !!data.generatedVideos });
+    }
 
     if (!response.ok) {
       console.error('❌ Gemini video API error:', data);
       
       // If video generation is not available, fallback to creating multiple images as frames
       if (data.error?.message?.includes('video') || data.error?.message?.includes('not available')) {
-        console.log('📸 Falling back to image sequence generation...');
+        console.log('📸 Falling back to image sequence generation with Imagen 3.0...');
         
         // Generate a sequence of images to simulate video
         const imagePrompts = [
@@ -97,7 +122,7 @@ serve(async (req) => {
           const processingTime = Date.now() - startTime;
           return new Response(JSON.stringify({ 
             success: true,
-            videoUrl: images[0], // Return first image as primary
+            videoUrl: images[0],
             mediaUrl: images[0],
             imageSequence: images,
             isImageSequence: true,
@@ -128,8 +153,9 @@ serve(async (req) => {
     const videoUrl = `data:video/mp4;base64,${videoBytes}`;
     
     const processingTime = Date.now() - startTime;
+    const usedModel = response.ok && selectedModel === VIDEO_MODELS.PRIMARY ? VIDEO_MODELS.PRIMARY : VIDEO_MODELS.FALLBACK;
 
-    console.log('✅ Video generated successfully in', processingTime, 'ms');
+    console.log('✅ Video generated successfully in', processingTime, 'ms using model:', usedModel);
 
     return new Response(JSON.stringify({ 
       success: true,
@@ -141,7 +167,8 @@ serve(async (req) => {
         duration,
         aspectRatio,
         fps,
-        model: 'veo-001',
+        model: usedModel,
+        modelTier: usedModel === VIDEO_MODELS.PRIMARY ? 'primary' : 'fallback',
         timestamp: new Date().toISOString()
       }
     }), {
