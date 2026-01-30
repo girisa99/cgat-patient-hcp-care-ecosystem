@@ -107,7 +107,23 @@ export interface AIProviderConfig {
   model: string;
   apiKey: string | undefined;
   available: boolean;
+  tier: 'primary' | 'backup' | 'fallback';
 }
+
+// Gemini model configurations
+export const GEMINI_MODELS = {
+  // Primary - Quality-critical tasks
+  GEMINI_3_FLASH: 'gemini-3.0-flash-preview',
+  GEMINI_2_5_PRO: 'gemini-2.5-pro-preview-05-06',
+  // Backup - Speed/cost-optimized  
+  GEMINI_2_FLASH: 'gemini-2.0-flash',
+  GEMINI_2_FLASH_LITE: 'gemini-2.0-flash-lite',
+  // Vision/Image
+  IMAGEN_3: 'imagen-3.0-generate-001',
+  // Video
+  VEO_2: 'veo-002',
+  VEO_1: 'veo-001',
+} as const;
 
 /**
  * Get all available AI providers with their configurations
@@ -119,36 +135,48 @@ export function getAIProviders(): Record<string, AIProviderConfig> {
   const claudeKey = getClaudeKey();
   
   return {
-    gemini: {
-      name: 'Google Gemini',
-      model: 'gemini-2.0-flash',
+    // Primary: Gemini 3.0 Flash (quality-critical)
+    gemini_primary: {
+      name: 'Google Gemini 3.0 Flash',
+      model: GEMINI_MODELS.GEMINI_3_FLASH,
       apiKey: geminiKey,
       available: !!geminiKey,
+      tier: 'primary',
+    },
+    // Backup: Gemini 2.0 Flash (speed-optimized)
+    gemini_backup: {
+      name: 'Google Gemini 2.0 Flash',
+      model: GEMINI_MODELS.GEMINI_2_FLASH,
+      apiKey: geminiKey,
+      available: !!geminiKey,
+      tier: 'backup',
     },
     openai: {
       name: 'OpenAI GPT',
       model: 'gpt-4o-mini',
       apiKey: openaiKey,
       available: !!openaiKey,
+      tier: 'fallback',
     },
     claude: {
       name: 'Anthropic Claude',
       model: 'claude-3-5-haiku-20241022',
       apiKey: claudeKey,
       available: !!claudeKey,
+      tier: 'fallback',
     },
   };
 }
 
 /**
- * Get the first available AI provider
- * Returns the provider config with API key, or null if none available
+ * Get the first available AI provider by tier priority
+ * Priority: primary (Gemini 3.0) -> backup (Gemini 2.0) -> fallback (OpenAI/Claude)
  */
 export function getFirstAvailableProvider(): AIProviderConfig | null {
   const providers = getAIProviders();
   
-  // Priority order: Gemini (fastest) -> OpenAI -> Claude
-  const priorityOrder = ['gemini', 'openai', 'claude'];
+  // Priority order: Gemini 3.0 (primary) -> Gemini 2.0 (backup) -> OpenAI -> Claude
+  const priorityOrder = ['gemini_primary', 'gemini_backup', 'openai', 'claude'];
   
   for (const providerId of priorityOrder) {
     const provider = providers[providerId];
@@ -158,6 +186,30 @@ export function getFirstAvailableProvider(): AIProviderConfig | null {
   }
   
   return null;
+}
+
+/**
+ * Get Gemini model by use case
+ * @param useCase - 'quality' for complex tasks, 'speed' for simple/fast tasks
+ */
+export function getGeminiModel(useCase: 'quality' | 'speed' = 'quality'): string {
+  return useCase === 'quality' 
+    ? GEMINI_MODELS.GEMINI_3_FLASH 
+    : GEMINI_MODELS.GEMINI_2_FLASH;
+}
+
+/**
+ * Get video generation model
+ */
+export function getVideoModel(): string {
+  return GEMINI_MODELS.VEO_2;
+}
+
+/**
+ * Get image generation model  
+ */
+export function getImageModel(): string {
+  return GEMINI_MODELS.IMAGEN_3;
 }
 
 // =============================================================================
