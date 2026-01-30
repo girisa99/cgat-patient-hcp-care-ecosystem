@@ -879,9 +879,21 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
   };
 
   const applyTemplates = useCallback((templateIds: string[]) => {
+    // Prevent unnecessary state updates - check if templates actually changed
+    const sortedNew = [...templateIds].sort().join(',');
+    const sortedOld = [...selectedTemplates].sort().join(',');
+    
+    if (sortedNew === sortedOld) {
+      return; // No change, don't update
+    }
+    
     setSelectedTemplates(templateIds);
     
     if (templateIds.length === 0) {
+      // Clear chapters only if we had templates before
+      if (selectedTemplates.length > 0) {
+        setChapters([]);
+      }
       return;
     }
 
@@ -914,7 +926,7 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
       setExpandedChapter(newChapters[0].id);
       toast.success(`Applied ${templateIds.length} template(s) with ${newChapters.length} chapters`);
     }
-  }, [globalVoiceSource, globalMusicSource]);
+  }, [globalVoiceSource, globalMusicSource, selectedTemplates]);
 
   // Chapter CRUD
   const addChapter = useCallback(() => {

@@ -56,19 +56,22 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
     return Array.from(cats);
   }, [options]);
 
-  // Calculate dropdown position using fixed positioning for portal
-  const getDropdownStyle = useCallback((): React.CSSProperties => {
-    if (!buttonRef.current) return { display: 'none' };
+  // Calculate dropdown position using fixed positioning for portal - memoized with dependencies
+  const [dropdownPosition, setDropdownPosition] = useState<React.CSSProperties>({ display: 'none' });
+  
+  const updateDropdownPosition = useCallback(() => {
+    if (!buttonRef.current || !isOpen) {
+      return;
+    }
     
     const rect = buttonRef.current.getBoundingClientRect();
     const spaceBelow = window.innerHeight - rect.bottom;
     const spaceAbove = rect.top;
-    const dropdownHeight = 420; // Increased for filter chips
+    const dropdownHeight = 420;
     
-    // Decide if dropdown should open above or below
     const openAbove = spaceBelow < dropdownHeight && spaceAbove > spaceBelow;
     
-    return {
+    setDropdownPosition({
       position: 'fixed' as const,
       left: rect.left,
       width: Math.max(rect.width, 320),
@@ -78,24 +81,31 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
         : { top: rect.bottom + 4 }
       ),
       zIndex: 99999,
-    };
-  }, []);
+    });
+  }, [isOpen]);
 
-  // Update position on scroll/resize
-  const updatePosition = useCallback(() => {
-    if (dropdownRef.current && isOpen) {
-      const style = getDropdownStyle();
-      Object.assign(dropdownRef.current.style, {
-        position: style.position,
-        left: `${style.left}px`,
-        width: `${style.width}px`,
-        maxHeight: `${style.maxHeight}px`,
-        zIndex: style.zIndex,
-        ...(style.top !== undefined ? { top: `${style.top}px`, bottom: 'auto' } : {}),
-        ...(style.bottom !== undefined ? { bottom: `${style.bottom}px`, top: 'auto' } : {}),
-      });
+  // Update position when opening
+  useEffect(() => {
+    if (isOpen) {
+      updateDropdownPosition();
     }
-  }, [getDropdownStyle, isOpen]);
+  }, [isOpen, updateDropdownPosition]);
+
+  // Update position on scroll/resize - just call updateDropdownPosition
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    const handleScroll = () => updateDropdownPosition();
+    const handleResize = () => updateDropdownPosition();
+    
+    window.addEventListener('scroll', handleScroll, true);
+    window.addEventListener('resize', handleResize);
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll, true);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [isOpen, updateDropdownPosition]);
 
   // Close on click outside
   useEffect(() => {
@@ -124,7 +134,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
     };
   }, [isOpen]);
 
-  // Close on escape and handle scroll/resize
+  // Close on escape
   useEffect(() => {
     if (!isOpen) return;
 
@@ -137,15 +147,11 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
     };
 
     document.addEventListener('keydown', handleEscape);
-    window.addEventListener('scroll', updatePosition, true);
-    window.addEventListener('resize', updatePosition);
 
     return () => {
       document.removeEventListener('keydown', handleEscape);
-      window.removeEventListener('scroll', updatePosition, true);
-      window.removeEventListener('resize', updatePosition);
     };
-  }, [isOpen, updatePosition]);
+  }, [isOpen]);
 
   // Focus search input when opened
   useEffect(() => {
@@ -221,7 +227,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
     <div
       ref={dropdownRef}
       className="bg-popover border border-border rounded-lg shadow-2xl flex flex-col animate-in fade-in-0 zoom-in-95 duration-100"
-      style={getDropdownStyle()}
+      style={dropdownPosition}
     >
       {/* Search Input */}
       {searchable && (

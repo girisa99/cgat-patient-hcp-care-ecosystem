@@ -48,19 +48,20 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
     return Array.from(cats);
   }, [options]);
 
-  // Calculate dropdown position using fixed positioning for portal
-  const getDropdownStyle = useCallback((): React.CSSProperties => {
-    if (!buttonRef.current) return { display: 'none' };
+  // Calculate dropdown position using fixed positioning for portal - using state to prevent re-renders
+  const [dropdownPosition, setDropdownPosition] = useState<React.CSSProperties>({ display: 'none' });
+  
+  const updateDropdownPosition = useCallback(() => {
+    if (!buttonRef.current || !isOpen) return;
     
     const rect = buttonRef.current.getBoundingClientRect();
     const spaceBelow = window.innerHeight - rect.bottom;
     const spaceAbove = rect.top;
-    const dropdownHeight = 400; // Increased for filter chips
+    const dropdownHeight = 400;
     
-    // Decide if dropdown should open above or below
     const openAbove = spaceBelow < dropdownHeight && spaceAbove > spaceBelow;
     
-    return {
+    setDropdownPosition({
       position: 'fixed' as const,
       left: rect.left,
       width: Math.max(rect.width, 300),
@@ -70,8 +71,15 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
         : { top: rect.bottom + 4 }
       ),
       zIndex: 99999,
-    };
-  }, []);
+    });
+  }, [isOpen]);
+
+  // Update position when opening
+  useEffect(() => {
+    if (isOpen) {
+      updateDropdownPosition();
+    }
+  }, [isOpen, updateDropdownPosition]);
 
   // Close on click outside
   useEffect(() => {
@@ -100,7 +108,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
     };
   }, [isOpen]);
 
-  // Close on escape and scroll/resize repositioning
+  // Close on escape
   useEffect(() => {
     if (!isOpen) return;
 
@@ -112,24 +120,27 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
       }
     };
 
-    const handleScrollOrResize = () => {
-      // Force re-render to recalculate position
-      if (dropdownRef.current) {
-        const style = getDropdownStyle();
-        Object.assign(dropdownRef.current.style, style);
-      }
-    };
-
     document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isOpen]);
+
+  // Handle scroll/resize repositioning
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleScrollOrResize = () => updateDropdownPosition();
+
     window.addEventListener('scroll', handleScrollOrResize, true);
     window.addEventListener('resize', handleScrollOrResize);
 
     return () => {
-      document.removeEventListener('keydown', handleEscape);
       window.removeEventListener('scroll', handleScrollOrResize, true);
       window.removeEventListener('resize', handleScrollOrResize);
     };
-  }, [isOpen, getDropdownStyle]);
+  }, [isOpen, updateDropdownPosition]);
 
   // Focus input when opened
   useEffect(() => {
@@ -179,7 +190,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
     <div
       ref={dropdownRef}
       className="bg-popover border border-border rounded-lg shadow-2xl flex flex-col animate-in fade-in-0 zoom-in-95 duration-100"
-      style={getDropdownStyle()}
+      style={dropdownPosition}
     >
       {/* Search Input */}
       <div className="p-2 border-b border-border bg-popover flex-shrink-0">
