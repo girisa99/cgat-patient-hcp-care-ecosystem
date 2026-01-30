@@ -1782,9 +1782,109 @@ IMPORTANT:
           }}
           onChapterRegenerate={async (chapterId, assetType) => {
             const chapter = chapters.find(c => c.id === chapterId);
-            if (chapter) {
-              toast.info(`Regenerating ${assetType}...`);
-              await generateChapter(chapter);
+            if (!chapter) return;
+            
+            toast.info(`Regenerating ${assetType}...`);
+            
+            try {
+              switch (assetType) {
+                case 'script': {
+                  // Regenerate just the script using the same AI generation flow
+                  const templateInfo = selectedTemplates.length > 0 
+                    ? INDUSTRY_TEMPLATES.find(t => selectedTemplates.includes(t.id))
+                    : null;
+                  const templateLabel = templateInfo?.label || '';
+                  
+                  const scriptPrompt = `${projectName ? `Project: ${projectName}\n` : ''}${templateLabel ? `Template: ${templateLabel}\n` : ''}
+Topic: ${chapter.customPrompt || chapter.aiSuggestedPrompt || chapter.title}
+Chapter: ${chapter.title}
+
+Generate a professional voiceover script for TTS (Text-to-Speech).
+Target Duration: ${chapter.duration} seconds
+Visual Style: ${chapter.visualTypes.join(', ')}
+Primary Language: ${primaryLanguage}`;
+
+                  const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
+                    body: {
+                      provider: 'gemini',
+                      model: 'gemini-2.0-flash',
+                      prompt: scriptPrompt,
+                      systemPrompt: 'You are a professional TTS scriptwriter. Generate ONLY the voiceover script text - no headings or formatting.',
+                      temperature: 0.7,
+                    }
+                  });
+                  
+                  if (!error && (data?.content || data?.response)) {
+                    const newScript = data.content || data.response || '';
+                    updateChapter(chapter.id, { 
+                      script: newScript,
+                      generatedContent: { ...chapter.generatedContent, script: newScript }
+                    });
+                    toast.success('Script regenerated!');
+                  } else {
+                    throw new Error('Failed to generate script');
+                  }
+                  break;
+                }
+                
+                case 'audio': {
+                  // Regenerate just the audio using TTS
+                  const scriptText = chapter.script || chapter.generatedContent?.script || chapter.title;
+                  const voiceResult = await ecosystemServices.generateVoiceover(scriptText, primaryLanguage);
+                  
+                  if (voiceResult.audioUrl) {
+                    updateChapter(chapter.id, {
+                      generatedContent: { ...chapter.generatedContent, audioUrl: voiceResult.audioUrl }
+                    });
+                    toast.success('Audio regenerated!');
+                  } else {
+                    throw new Error('Failed to generate audio');
+                  }
+                  break;
+                }
+                
+                case 'video': {
+                  // Regenerate just the video/visual
+                  const scriptText = chapter.script || chapter.generatedContent?.script || chapter.title;
+                  const videoResult = await ecosystemServices.generateVideo(
+                    `${chapter.title}: ${scriptText.substring(0, 200)}`,
+                    chapter.visualTypes[0] || 'video',
+                    Math.min(chapter.duration, 10)
+                  );
+                  
+                  if (videoResult.videoUrl || videoResult.thumbnailUrl) {
+                    updateChapter(chapter.id, {
+                      generatedContent: { 
+                        ...chapter.generatedContent, 
+                        videoUrl: videoResult.videoUrl,
+                        previewUrl: videoResult.thumbnailUrl || videoResult.videoUrl
+                      }
+                    });
+                    toast.success('Visual regenerated!');
+                  } else {
+                    throw new Error('Failed to generate visual');
+                  }
+                  break;
+                }
+                
+                case 'music': {
+                  // Regenerate background music
+                  const musicResult = await ecosystemServices.generateMusic(
+                    `Professional ${chapter.visualTypes[0] || 'corporate'} background music`,
+                    chapter.duration
+                  );
+                  
+                  if (musicResult.audioUrl) {
+                    toast.success('Music regenerated!');
+                  } else {
+                    throw new Error('Failed to generate music');
+                  }
+                  break;
+                }
+              }
+            } catch (err) {
+              console.error(`Failed to regenerate ${assetType}:`, err);
+              toast.error(`Failed to regenerate ${assetType}`);
             }
           }}
           onUpdateScript={(chapterId, newScript) => {

@@ -204,7 +204,8 @@ async function generateModelsLabMusicDirect(prompt: string, duration: number): P
   }
 
   try {
-    const response = await fetch('https://modelslab.com/api/v6/audio/text2music', {
+    // Use the correct ModelsLab audio generation endpoint
+    const response = await fetch('https://modelslab.com/api/v1/enterprise/voice/music_generate', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -212,9 +213,11 @@ async function generateModelsLabMusicDirect(prompt: string, duration: number): P
       body: JSON.stringify({
         key: MODELSLAB_API_KEY,
         prompt: prompt,
-        duration: duration,
+        seconds: Math.min(duration, 30), // Max 30 seconds
         seed: null,
-        guidance_scale: 3.0,
+        base64: false,
+        webhook: null,
+        track_id: null,
       }),
     });
 
@@ -234,6 +237,12 @@ async function generateModelsLabMusicDirect(prompt: string, duration: number): P
       return audioResponse.arrayBuffer();
     }
     
+    // Handle direct link response
+    if (result.link) {
+      const audioResponse = await fetch(result.link);
+      return audioResponse.arrayBuffer();
+    }
+    
     // Handle async processing with fetch_result URL
     if (result.fetch_result) {
       console.log('📍 ModelsLab async processing, polling:', result.fetch_result);
@@ -242,7 +251,7 @@ async function generateModelsLabMusicDirect(prompt: string, duration: number): P
     
     // Handle processing status with id
     if (result.status === 'processing' && result.id) {
-      const fetchUrl = `https://modelslab.com/api/v6/audio/fetch/${result.id}`;
+      const fetchUrl = `https://modelslab.com/api/v1/enterprise/fetch/${result.id}`;
       console.log('📍 ModelsLab processing, constructed fetch URL:', fetchUrl);
       return await pollModelsLabMusicResult(fetchUrl, MODELSLAB_API_KEY);
     }
