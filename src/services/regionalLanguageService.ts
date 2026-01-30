@@ -220,8 +220,8 @@ export const REGIONAL_PROVIDER_CONFIG: Record<RegionalCluster, RegionalProviderC
     translationFallback: 'azure-translator',
     voiceProvider: 'azure-neural', // Best coverage for 22 Indian languages
     voiceFallback: 'google-tts',
-    sttProvider: 'azure-stt',
-    sttFallback: 'google-stt',
+    sttProvider: 'deepgram', // Updated: Primary real-time STT
+    sttFallback: 'azure-stt',
     rtlSupport: false, // Urdu uses RTL but is handled specially
     qualityScore: 5.0, // Upgraded - major competitive advantage
     reason: 'MOAT: 22 official Indian languages (Hindi, Bengali, Telugu, Tamil, Marathi, Kannada, Gujarati, Malayalam, Punjabi) - competitors have 1-2 max',
@@ -250,8 +250,8 @@ export const REGIONAL_PROVIDER_CONFIG: Record<RegionalCluster, RegionalProviderC
     translationFallback: 'google-translate',
     voiceProvider: 'elevenlabs', // Natural prosody for Spanish/Portuguese
     voiceFallback: 'azure-neural',
-    sttProvider: 'elevenlabs-scribe',
-    sttFallback: 'google-stt',
+    sttProvider: 'deepgram', // Updated: Primary real-time STT
+    sttFallback: 'elevenlabs-scribe',
     rtlSupport: false,
     qualityScore: 5.0,
     reason: 'You WIN: ElevenLabs + DeepL for Spanish (550M) and Portuguese-BR (215M) with regional accent support',
@@ -280,7 +280,7 @@ export const REGIONAL_PROVIDER_CONFIG: Record<RegionalCluster, RegionalProviderC
     translationFallback: 'azure-translator',
     voiceProvider: 'azure-neural', // Best for Thai, Vietnamese, Indonesian
     voiceFallback: 'google-tts',
-    sttProvider: 'google-stt',
+    sttProvider: 'deepgram', // Updated: Primary real-time STT
     sttFallback: 'azure-stt',
     rtlSupport: false,
     qualityScore: 4.0,
@@ -295,8 +295,8 @@ export const REGIONAL_PROVIDER_CONFIG: Record<RegionalCluster, RegionalProviderC
     translationFallback: 'google-translate',
     voiceProvider: 'elevenlabs', // Most natural English across US, UK, AU accents
     voiceFallback: 'openai-tts',
-    sttProvider: 'elevenlabs-scribe',
-    sttFallback: 'whisper',
+    sttProvider: 'deepgram', // Updated: Primary real-time STT
+    sttFallback: 'elevenlabs-scribe',
     rtlSupport: false,
     qualityScore: 5.0,
     reason: 'Premium: ElevenLabs for most natural English voices (US, UK, AU accents)',
@@ -314,8 +314,8 @@ export const AFRICAN_LANGUAGE_CONFIG: RegionalProviderConfig = {
   translationFallback: 'nllb',
   voiceProvider: 'azure-neural', // Best coverage for African languages
   voiceFallback: 'google-tts',
-  sttProvider: 'azure-stt',
-  sttFallback: 'google-stt',
+  sttProvider: 'deepgram', // Updated: Primary real-time STT
+  sttFallback: 'azure-stt',
   rtlSupport: false,
   qualityScore: 4.5,
   reason: 'FIRST MOVER: Swahili (100M), Yoruba (45M), Hausa (80M), Igbo (45M), Zulu (12M), Amharic (57M) - ZERO competitors',

@@ -57,38 +57,38 @@ export interface OrchestrationSession {
 // ==================== LANGUAGE MAPPINGS ====================
 
 export const LANGUAGE_VOICE_MAPPINGS: LanguageVoiceMapping[] = [
-  // Western Languages (Claude Zone)
-  { languageCode: 'en-US', languageName: 'English (US)', region: 'claude_zone', primaryTTSProvider: 'elevenlabs', fallbackTTSProvider: 'openai', primarySTTProvider: 'openai', rtl: false,
+  // Western Languages (Claude Zone) - Deepgram primary for real-time STT
+  { languageCode: 'en-US', languageName: 'English (US)', region: 'claude_zone', primaryTTSProvider: 'elevenlabs', fallbackTTSProvider: 'openai', primarySTTProvider: 'deepgram', rtl: false,
     recommendedVoices: [
       { id: 'alloy', name: 'Alloy', gender: 'neutral', style: 'professional', provider: 'openai' },
       { id: 'JBFqnCBsd6RMkjVDRZzb', name: 'George', gender: 'male', style: 'professional', provider: 'elevenlabs' },
       { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah', gender: 'female', style: 'professional', provider: 'elevenlabs' },
     ]},
-  { languageCode: 'en-GB', languageName: 'English (UK)', region: 'claude_zone', primaryTTSProvider: 'elevenlabs', fallbackTTSProvider: 'azure', primarySTTProvider: 'azure', rtl: false,
+  { languageCode: 'en-GB', languageName: 'English (UK)', region: 'claude_zone', primaryTTSProvider: 'elevenlabs', fallbackTTSProvider: 'azure', primarySTTProvider: 'deepgram', rtl: false,
     recommendedVoices: [
       { id: 'N2lVS1w4EtoT3dr4eOWO', name: 'Callum', gender: 'male', style: 'professional', provider: 'elevenlabs' },
     ]},
-  { languageCode: 'fr-FR', languageName: 'French', region: 'claude_zone', primaryTTSProvider: 'elevenlabs', fallbackTTSProvider: 'azure', primarySTTProvider: 'azure', rtl: false,
+  { languageCode: 'fr-FR', languageName: 'French', region: 'claude_zone', primaryTTSProvider: 'elevenlabs', fallbackTTSProvider: 'azure', primarySTTProvider: 'deepgram', rtl: false,
     recommendedVoices: [
       { id: 'XrExE9yKIg1WjnnlVkGX', name: 'Matilda', gender: 'female', style: 'professional', provider: 'elevenlabs' },
     ]},
-  { languageCode: 'de-DE', languageName: 'German', region: 'claude_zone', primaryTTSProvider: 'elevenlabs', fallbackTTSProvider: 'azure', primarySTTProvider: 'azure', rtl: false,
+  { languageCode: 'de-DE', languageName: 'German', region: 'claude_zone', primaryTTSProvider: 'elevenlabs', fallbackTTSProvider: 'azure', primarySTTProvider: 'deepgram', rtl: false,
     recommendedVoices: [
       { id: 'onwK4e9ZLuTAKqWW03F9', name: 'Daniel', gender: 'male', style: 'professional', provider: 'elevenlabs' },
     ]},
-  { languageCode: 'es-ES', languageName: 'Spanish (Spain)', region: 'claude_zone', primaryTTSProvider: 'elevenlabs', fallbackTTSProvider: 'azure', primarySTTProvider: 'azure', rtl: false,
+  { languageCode: 'es-ES', languageName: 'Spanish (Spain)', region: 'claude_zone', primaryTTSProvider: 'elevenlabs', fallbackTTSProvider: 'azure', primarySTTProvider: 'deepgram', rtl: false,
     recommendedVoices: [] },
-  { languageCode: 'es-MX', languageName: 'Spanish (Mexico)', region: 'claude_zone', primaryTTSProvider: 'azure', fallbackTTSProvider: 'google', primarySTTProvider: 'google', rtl: false,
+  { languageCode: 'es-MX', languageName: 'Spanish (Mexico)', region: 'claude_zone', primaryTTSProvider: 'azure', fallbackTTSProvider: 'google', primarySTTProvider: 'deepgram', rtl: false,
     recommendedVoices: [] },
-  { languageCode: 'pt-BR', languageName: 'Portuguese (Brazil)', region: 'claude_zone', primaryTTSProvider: 'azure', fallbackTTSProvider: 'google', primarySTTProvider: 'google', rtl: false,
+  { languageCode: 'pt-BR', languageName: 'Portuguese (Brazil)', region: 'claude_zone', primaryTTSProvider: 'azure', fallbackTTSProvider: 'google', primarySTTProvider: 'deepgram', rtl: false,
     recommendedVoices: [] },
-  { languageCode: 'it-IT', languageName: 'Italian', region: 'claude_zone', primaryTTSProvider: 'elevenlabs', fallbackTTSProvider: 'azure', primarySTTProvider: 'azure', rtl: false,
+  { languageCode: 'it-IT', languageName: 'Italian', region: 'claude_zone', primaryTTSProvider: 'elevenlabs', fallbackTTSProvider: 'azure', primarySTTProvider: 'deepgram', rtl: false,
     recommendedVoices: [] },
-  { languageCode: 'nl-NL', languageName: 'Dutch', region: 'claude_zone', primaryTTSProvider: 'azure', fallbackTTSProvider: 'google', primarySTTProvider: 'azure', rtl: false,
+  { languageCode: 'nl-NL', languageName: 'Dutch', region: 'claude_zone', primaryTTSProvider: 'azure', fallbackTTSProvider: 'google', primarySTTProvider: 'deepgram', rtl: false,
     recommendedVoices: [] },
-  { languageCode: 'pl-PL', languageName: 'Polish', region: 'claude_zone', primaryTTSProvider: 'azure', fallbackTTSProvider: 'google', primarySTTProvider: 'azure', rtl: false,
+  { languageCode: 'pl-PL', languageName: 'Polish', region: 'claude_zone', primaryTTSProvider: 'azure', fallbackTTSProvider: 'google', primarySTTProvider: 'deepgram', rtl: false,
     recommendedVoices: [] },
-  { languageCode: 'ru-RU', languageName: 'Russian', region: 'claude_zone', primaryTTSProvider: 'azure', fallbackTTSProvider: 'google', primarySTTProvider: 'azure', rtl: false,
+  { languageCode: 'ru-RU', languageName: 'Russian', region: 'claude_zone', primaryTTSProvider: 'azure', fallbackTTSProvider: 'google', primarySTTProvider: 'deepgram', rtl: false,
     recommendedVoices: [] },
 
   // CJK Languages (Alibaba Zone)

@@ -37,6 +37,9 @@ export const AI_PROVIDER_KEYS = {
   // DeepSeek - Technical/Chinese specialist
   DEEPSEEK: 'DEEPSEEK_API_KEY',       // DeepSeek Coder, DeepSeek Math, Translation
   
+  // Deepgram - Real-time STT (Primary for <100ms latency)
+  DEEPGRAM: 'DEEPGRAM_API_KEY',       // Nova 2, real-time streaming STT
+  
   // Voice & Media Keys
   ELEVENLABS: 'ELEVENLABS_API_KEY',
   REPLICATE: 'REPLICATE_API_TOKEN',
