@@ -19,7 +19,7 @@ import {
   Play, Pause, RotateCcw, Edit2, Check, X,
   Volume2, Video, FileText, Sparkles, Download,
   Image, Music, Loader2, Eye, ThumbsUp, ThumbsDown,
-  RefreshCw, Wand2
+  RefreshCw, Wand2, AlertCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -223,9 +223,39 @@ export const ChapterPreviewPanel: React.FC<ChapterPreviewPanelProps> = ({
             </div>
           ) : (
             <ScrollArea className="h-[100px] border rounded p-2 bg-muted/30">
-              <p className="text-sm text-muted-foreground">
-                {assets.script?.content || 'No script generated yet. Click regenerate to create.'}
-              </p>
+              {assets.script?.status === 'pending' && assets.script?.content ? (
+                <div className="space-y-1">
+                  <p className="text-[10px] text-yellow-600 font-medium flex items-center gap-1">
+                    ⏳ Preview (not yet generated)
+                  </p>
+                  <p className="text-sm text-muted-foreground italic">
+                    "{assets.script.content}"
+                  </p>
+                </div>
+              ) : assets.script?.content ? (
+                <p className="text-sm text-muted-foreground">
+                  {assets.script.content}
+                </p>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-center">
+                  <p className="text-xs text-muted-foreground mb-2">
+                    No script generated yet.
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-6 text-xs"
+                    onClick={() => handleRegenerate('script')}
+                    disabled={regenerating === 'script'}
+                  >
+                    {regenerating === 'script' ? (
+                      <><Loader2 className="w-3 h-3 mr-1 animate-spin" /> Generating...</>
+                    ) : (
+                      <><Wand2 className="w-3 h-3 mr-1" /> Generate Script</>
+                    )}
+                  </Button>
+                </div>
+              )}
             </ScrollArea>
           )}
         </div>
@@ -270,6 +300,7 @@ export const ChapterPreviewPanel: React.FC<ChapterPreviewPanelProps> = ({
               <div className="text-center space-y-2">
                 <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
                 <p className="text-xs text-muted-foreground">Generating audio...</p>
+                <p className="text-[10px] text-muted-foreground">This takes ~10-30 seconds</p>
               </div>
             ) : assets.audio?.url || assets.audio?.base64 ? (
               <div className="text-center space-y-2">
@@ -280,9 +311,22 @@ export const ChapterPreviewPanel: React.FC<ChapterPreviewPanelProps> = ({
                 </p>
               </div>
             ) : (
-              <div className="text-center space-y-2">
-                <Volume2 className="w-8 h-8 mx-auto text-muted-foreground/50" />
-                <p className="text-xs text-muted-foreground">No audio yet</p>
+              <div className="text-center space-y-2 px-4">
+                <Volume2 className="w-6 h-6 mx-auto text-muted-foreground/50" />
+                <p className="text-xs text-muted-foreground">Voice not generated</p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-6 text-xs"
+                  onClick={() => handleRegenerate('audio')}
+                  disabled={regenerating === 'audio'}
+                >
+                  {regenerating === 'audio' ? (
+                    <><Loader2 className="w-3 h-3 mr-1 animate-spin" /> Generating...</>
+                  ) : (
+                    <><Wand2 className="w-3 h-3 mr-1" /> Generate Voice</>
+                  )}
+                </Button>
               </div>
             )}
           </div>
@@ -325,9 +369,10 @@ export const ChapterPreviewPanel: React.FC<ChapterPreviewPanelProps> = ({
           
           <div className="h-[100px] border rounded bg-muted/30 flex items-center justify-center overflow-hidden">
             {assets.video?.status === 'generating' ? (
-              <div className="text-center space-y-2">
+              <div className="text-center space-y-2 px-4">
                 <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
                 <p className="text-xs text-muted-foreground">Generating visual...</p>
+                <p className="text-[10px] text-muted-foreground">Videos may take 2-5 minutes</p>
               </div>
             ) : assets.video?.url ? (
               <img 
@@ -339,9 +384,22 @@ export const ChapterPreviewPanel: React.FC<ChapterPreviewPanelProps> = ({
                 }}
               />
             ) : (
-              <div className="text-center space-y-2">
-                <Video className="w-8 h-8 mx-auto text-muted-foreground/50" />
-                <p className="text-xs text-muted-foreground">No visual yet</p>
+              <div className="text-center space-y-2 px-4">
+                <Video className="w-6 h-6 mx-auto text-muted-foreground/50" />
+                <p className="text-xs text-muted-foreground">Visual not generated</p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-6 text-xs"
+                  onClick={() => handleRegenerate('video')}
+                  disabled={regenerating === 'video'}
+                >
+                  {regenerating === 'video' ? (
+                    <><Loader2 className="w-3 h-3 mr-1 animate-spin" /> Generating...</>
+                  ) : (
+                    <><Wand2 className="w-3 h-3 mr-1" /> Generate Visual</>
+                  )}
+                </Button>
               </div>
             )}
           </div>

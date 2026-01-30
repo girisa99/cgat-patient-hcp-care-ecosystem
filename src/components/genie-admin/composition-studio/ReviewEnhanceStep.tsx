@@ -203,46 +203,79 @@ export const ReviewEnhanceStep: React.FC<ReviewEnhanceStepProps> = ({
 
         {/* Overview Tab - All chapters at a glance */}
         <TabsContent value="overview" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {chapters.map((chapter, index) => (
-              <div
-                key={chapter.id}
-                className={cn(
-                  "p-4 border rounded-lg cursor-pointer transition-all hover:shadow-md",
-                  selectedChapter === chapter.id && "ring-2 ring-primary",
-                  chapter.status === 'approved' && "border-green-200 bg-green-50/50",
-                  (chapter.status === 'rejected' || chapter.status === 'needs_revision') && "border-red-200 bg-red-50/50"
-                )}
-                onClick={() => {
-                  setSelectedChapter(chapter.id);
-                  setActiveTab('detail');
-                }}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <Badge variant="secondary" className="text-xs">
-                    Ch. {index + 1}
-                  </Badge>
-                  {getStatusIcon(chapter.status)}
-                </div>
-                <h4 className="font-medium text-sm truncate">{chapter.title}</h4>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {chapter.duration}s • {getStatusLabel(chapter.status)}
-                </p>
-                {chapter.qualityScore && (
-                  <div className="mt-2">
-                    <Progress value={chapter.qualityScore} className="h-1" />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Quality: {chapter.qualityScore}%
-                    </p>
-                  </div>
-                )}
-                {chapter.feedback && (
-                  <p className="text-xs text-red-600 mt-2 truncate">
-                    💬 {chapter.feedback}
+          {/* Generation Status Notice */}
+          {stats.pending === stats.total && (
+            <div className="p-4 border rounded-lg bg-amber-50 border-amber-200">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5" />
+                <div>
+                  <h4 className="font-medium text-amber-900">Content Generation Pending</h4>
+                  <p className="text-sm text-amber-700 mt-1">
+                    Your chapters have prompts ready, but content hasn't been generated yet. 
+                    Click on any chapter below to review the prompt and generate its content.
                   </p>
-                )}
+                  <p className="text-xs text-amber-600 mt-2">
+                    Tip: Scripts generate in ~5 seconds, audio in ~10-30 seconds, video may take 2-5 minutes.
+                  </p>
+                </div>
               </div>
-            ))}
+            </div>
+          )}
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {chapters.map((chapter, index) => {
+              // Determine what assets are available
+              const hasScript = chapter.assets?.script?.status === 'complete';
+              const hasAudio = chapter.assets?.audio?.status === 'complete';
+              const hasVideo = chapter.assets?.video?.status === 'complete';
+              const assetCount = [hasScript, hasAudio, hasVideo].filter(Boolean).length;
+              
+              return (
+                <div
+                  key={chapter.id}
+                  className={cn(
+                    "p-4 border rounded-lg cursor-pointer transition-all hover:shadow-md",
+                    selectedChapter === chapter.id && "ring-2 ring-primary",
+                    chapter.status === 'approved' && "border-green-200 bg-green-50/50",
+                    (chapter.status === 'rejected' || chapter.status === 'needs_revision') && "border-red-200 bg-red-50/50",
+                    assetCount === 0 && "border-dashed"
+                  )}
+                  onClick={() => {
+                    setSelectedChapter(chapter.id);
+                    setActiveTab('detail');
+                  }}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <Badge variant="secondary" className="text-xs">
+                      Ch. {index + 1}
+                    </Badge>
+                    <div className="flex items-center gap-1">
+                      {/* Asset indicators */}
+                      <span title={hasScript ? 'Script ready' : 'Script pending'} className={cn("w-2 h-2 rounded-full", hasScript ? "bg-green-500" : "bg-gray-300")} />
+                      <span title={hasAudio ? 'Audio ready' : 'Audio pending'} className={cn("w-2 h-2 rounded-full", hasAudio ? "bg-green-500" : "bg-gray-300")} />
+                      <span title={hasVideo ? 'Video ready' : 'Video pending'} className={cn("w-2 h-2 rounded-full", hasVideo ? "bg-green-500" : "bg-gray-300")} />
+                    </div>
+                  </div>
+                  <h4 className="font-medium text-sm truncate">{chapter.title}</h4>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {chapter.duration}s • {assetCount}/3 assets ready
+                  </p>
+                  {chapter.qualityScore > 0 && (
+                    <div className="mt-2">
+                      <Progress value={chapter.qualityScore} className="h-1" />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Quality: {chapter.qualityScore}%
+                      </p>
+                    </div>
+                  )}
+                  {chapter.feedback && (
+                    <p className="text-xs text-red-600 mt-2 truncate">
+                      💬 {chapter.feedback}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           {/* Quick Actions */}
@@ -254,10 +287,10 @@ export const ReviewEnhanceStep: React.FC<ReviewEnhanceStepProps> = ({
                   if (c.status === 'pending') onChapterApprove(c.id);
                 });
               }}
-              disabled={stats.pending === 0}
+              disabled={stats.pending === 0 || chapters.every(c => c.qualityScore === 0)}
             >
               <CheckCircle2 className="w-4 h-4 mr-2" />
-              Approve All Pending ({stats.pending})
+              Approve All Ready ({chapters.filter(c => c.qualityScore > 0).length})
             </Button>
           </div>
         </TabsContent>
