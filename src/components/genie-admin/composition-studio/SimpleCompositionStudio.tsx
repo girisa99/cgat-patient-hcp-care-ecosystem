@@ -926,37 +926,75 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
     return visualMap[templateId] || ['video'];
   };
 
-  // Generate AI suggested prompt for a chapter
+  // Generate AI suggested prompt for a chapter - comprehensive coverage for all templates
   const generateAISuggestedPrompt = (title: string, industry: string): string => {
-    const prompts: Record<string, Record<string, string>> = {
+    // Get template info for context-aware prompts
+    const templateInfo = INDUSTRY_TEMPLATES.find(t => t.id === industry);
+    const templateLabel = templateInfo?.label || industry.replace(/_/g, ' ');
+    const templateDesc = templateInfo?.description || '';
+    
+    // Chapter-specific prompts for key templates
+    const chapterPrompts: Record<string, Record<string, string>> = {
       saudi_vision_2030: {
-        'Vision Overview': 'Create an inspiring overview of Saudi Vision 2030, highlighting economic diversification and digital transformation.',
-        'Economic Diversification': 'Explain Saudi Arabia\'s strategy to reduce oil dependence through tourism and tech investments.',
-        'Digital Infrastructure': 'Showcase the smart city initiatives and 5G/cloud infrastructure developments.',
-        'Smart Cities': 'Present NEOM and other futuristic urban development projects.',
-        'Future Outlook': 'Summarize the 2030 goals and call-to-action for global partnerships.',
+        'Vision Overview': 'Create an inspiring overview of Saudi Vision 2030, highlighting economic diversification, digital transformation, and the Kingdom\'s ambitious goals for a post-oil economy.',
+        'Economic Diversification': 'Explain Saudi Arabia\'s strategy to reduce oil dependence through investments in tourism, entertainment, technology, and renewable energy sectors.',
+        'Digital Infrastructure': 'Showcase the smart city initiatives, 5G rollout, cloud infrastructure, and digital government services transforming Saudi Arabia.',
+        'Smart Cities': 'Present NEOM, The Line, and other futuristic urban development projects that represent the future of sustainable living.',
+        'Future Outlook': 'Summarize the 2030 goals, progress made, and call-to-action for global partnerships and investment opportunities.',
+      },
+      uae_digital: {
+        'Digital Government': 'Showcase UAE\'s world-leading digital government services and smart city initiatives in Dubai and Abu Dhabi.',
+        'Innovation Hub': 'Present the UAE as a global innovation hub for AI, blockchain, and emerging technologies.',
+        'Future Vision': 'Highlight UAE Centennial 2071 and the long-term vision for sustainable development.',
+      },
+      india_digital: {
+        'Digital India Overview': 'Present the comprehensive Digital India initiative transforming governance and citizen services.',
+        'Technology Infrastructure': 'Showcase India Stack, Aadhaar, and the digital infrastructure empowering 1.4 billion citizens.',
+        'Startup Ecosystem': 'Highlight India\'s vibrant startup ecosystem and unicorn success stories.',
       },
       india_upi: {
-        'UPI Introduction': 'Introduce UPI as a revolutionary real-time payment system transforming digital payments.',
-        'Technology Behind UPI': 'Explain the NPCI architecture and instant bank-to-bank transfer technology.',
-        'Merchant Adoption': 'Show how small businesses and street vendors adopted QR-based payments.',
-        'Global Expansion': 'Highlight UPI expansion to UAE, Singapore, and future markets.',
+        'UPI Introduction': 'Introduce UPI as a revolutionary real-time payment system transforming digital payments for over 500 million users.',
+        'Technology Behind UPI': 'Explain the NPCI architecture, instant bank-to-bank transfers, and the technology stack powering UPI.',
+        'Merchant Adoption': 'Show how small businesses, street vendors, and enterprises adopted QR-based payments nationwide.',
+        'Global Expansion': 'Highlight UPI\'s expansion to UAE, Singapore, France, and future international markets.',
       },
       africa_tourism: {
-        'Wildlife Safari': 'Showcase breathtaking wildlife experiences across Africa\'s national parks.',
-        'Cultural Heritage': 'Highlight rich cultural traditions and historical sites.',
-        'Adventure Tourism': 'Present adventure activities from mountain climbing to water sports.',
-        'Beach Destinations': 'Feature stunning coastal destinations and island getaways.',
-        'Eco Tourism': 'Emphasize sustainable tourism and conservation efforts.',
+        'Wildlife Safari': 'Showcase breathtaking wildlife experiences across Africa\'s renowned national parks and conservation areas.',
+        'Cultural Heritage': 'Highlight rich cultural traditions, historical sites, and the diverse heritage of African nations.',
+        'Adventure Tourism': 'Present adventure activities from mountain climbing to water sports and desert expeditions.',
+        'Beach Destinations': 'Feature stunning coastal destinations, island getaways, and marine experiences.',
+        'Eco Tourism': 'Emphasize sustainable tourism, conservation efforts, and community-based tourism initiatives.',
       },
       saas_demo: {
-        'Product Overview': 'Present the key value proposition and solve the main customer pain point.',
-        'Key Features': 'Demonstrate the most impactful features with real-world examples.',
-        'Use Cases': 'Show how different industries use the product successfully.',
-        'Getting Started': 'Walk through the onboarding process and first-time user experience.',
+        'Product Overview': 'Present the key value proposition, solve the main customer pain point, and demonstrate immediate value.',
+        'Key Features': 'Demonstrate the most impactful features with real-world examples and use cases.',
+        'Use Cases': 'Show how different industries and company sizes use the product successfully.',
+        'Getting Started': 'Walk through the seamless onboarding process and first-time user experience.',
+      },
+      healthcare_digital: {
+        'Digital Health Overview': 'Present the digital transformation of healthcare and patient-centric care delivery.',
+        'Technology Solutions': 'Showcase AI diagnostics, telemedicine, and connected health devices.',
+        'Patient Experience': 'Highlight improved patient outcomes and personalized care pathways.',
+      },
+      banking_digital: {
+        'Digital Banking Overview': 'Present the future of banking with seamless digital experiences.',
+        'Key Features': 'Showcase mobile banking, instant payments, and AI-powered financial insights.',
+        'Security & Trust': 'Highlight advanced security measures and regulatory compliance.',
       },
     };
-    return prompts[industry]?.[title] || `Create engaging content about "${title}" for ${industry.replace(/_/g, ' ')} audience.`;
+    
+    // Check for specific chapter prompt first
+    if (chapterPrompts[industry]?.[title]) {
+      return chapterPrompts[industry][title];
+    }
+    
+    // Generate context-aware prompt based on template category and description
+    if (templateDesc) {
+      return `Create compelling content for "${title}" in the context of ${templateLabel}: ${templateDesc}. Focus on engaging storytelling, clear messaging, and visual impact appropriate for the target audience.`;
+    }
+    
+    // Fallback with template context
+    return `Create engaging professional content about "${title}" for ${templateLabel} audience. Ensure the content is informative, visually compelling, and aligned with industry best practices.`;
   };
 
   const applyTemplates = useCallback((templateIds: string[]) => {
@@ -1085,6 +1123,38 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
     })));
     toast.success('Applied audio settings to all chapters');
   }, [globalVoiceSource, globalMusicSource]);
+
+  // Refresh all chapter prompts based on current template/context
+  // This updates the AI-suggested prompts when context changes
+  const refreshAllChapterPrompts = useCallback(() => {
+    if (chapters.length === 0) {
+      toast.info('No chapters to refresh');
+      return;
+    }
+    
+    setChapters(prev => prev.map(c => {
+      // Only update if the chapter doesn't have a custom prompt (user override)
+      if (c.customPrompt && c.customPrompt.trim()) {
+        return c; // Keep user's custom prompt
+      }
+      
+      // Regenerate AI suggested prompt based on current template context
+      const industry = c.industry || selectedTemplates[0] || 'blank';
+      const newAiPrompt = generateAISuggestedPrompt(c.title, industry);
+      
+      return {
+        ...c,
+        aiSuggestedPrompt: newAiPrompt,
+        // Clear the script so it will be regenerated with new context
+        script: '',
+        status: 'draft' as const,
+        progress: 0,
+        generatedContent: undefined,
+      };
+    }));
+    
+    toast.success(`Refreshed prompts for ${chapters.length} chapters. Click "Generate All" to create scripts with updated context.`);
+  }, [chapters, selectedTemplates, generateAISuggestedPrompt]);
 
   // Generate single chapter using ecosystem services
   const generateChapter = async (chapter: SimpleChapter) => {
@@ -1896,9 +1966,22 @@ IMPORTANT:
           <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
             Chapters ({chapters.length})
           </h3>
-          <Button size="sm" onClick={addChapter}>
-            <Plus className="w-4 h-4 mr-1" /> Add Chapter
-          </Button>
+          <div className="flex items-center gap-2">
+            {chapters.length > 0 && (
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={refreshAllChapterPrompts}
+                className="gap-1 text-xs"
+              >
+                <RotateCcw className="w-3 h-3" /> 
+                Refresh Context
+              </Button>
+            )}
+            <Button size="sm" onClick={addChapter}>
+              <Plus className="w-4 h-4 mr-1" /> Add Chapter
+            </Button>
+          </div>
         </div>
 
         {chapters.length === 0 ? (
@@ -2547,12 +2630,36 @@ const ChapterRow: React.FC<ChapterRowProps> = ({
                   </Button>
                 </div>
               </div>
-              <Textarea
-                value={chapter.script}
-                onChange={(e) => onUpdate({ script: e.target.value })}
-                placeholder={chapter.scriptSource === 'auto' ? "Script will be auto-generated based on the prompt above..." : "Enter your script manually..."}
-                rows={3}
-              />
+              
+              {/* Show script preview based on context when empty */}
+              {!chapter.script && chapter.scriptSource === 'auto' && (chapter.customPrompt || chapter.aiSuggestedPrompt) ? (
+                <div className="space-y-2">
+                  <div className="p-3 rounded-lg border-2 border-dashed border-primary/20 bg-primary/5">
+                    <div className="flex items-start gap-2">
+                      <Sparkles className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                      <div className="flex-1">
+                        <p className="text-xs font-medium text-primary mb-1">Script Preview (AI will generate based on context)</p>
+                        <p className="text-sm text-muted-foreground italic">
+                          "{chapter.customPrompt || chapter.aiSuggestedPrompt}"
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Template: {chapter.industry?.replace(/_/g, ' ')} • Duration: {chapter.duration}s • ~{Math.round((chapter.duration / 60) * 150)} words
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Click "Generate" to create the full script based on this context, or switch to Manual to write your own.
+                  </p>
+                </div>
+              ) : (
+                <Textarea
+                  value={chapter.script}
+                  onChange={(e) => onUpdate({ script: e.target.value })}
+                  placeholder={chapter.scriptSource === 'auto' ? "Script will be auto-generated based on the prompt above..." : "Enter your script manually..."}
+                  rows={3}
+                />
+              )}
             </div>
 
             {/* Visual Types Multi-Select - ensure dropdown visibility */}
