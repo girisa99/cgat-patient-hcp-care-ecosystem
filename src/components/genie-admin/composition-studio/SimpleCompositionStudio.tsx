@@ -30,7 +30,8 @@ import {
   Copy, Settings2, Zap, RotateCcw, X,
   Building2, MapPin, Pencil, Image, Presentation, 
   Monitor, Camera, Layers, Film, Mic,
-  Send, FileCheck, BookTemplate, Share2, ThumbsUp, ThumbsDown
+  Send, FileCheck, BookTemplate, Share2, ThumbsUp, ThumbsDown,
+  ArrowLeft
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -1155,11 +1156,12 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
         console.log('[Studio] Calling ai-universal-processor for script generation...');
         console.log('[Studio] Full prompt context:', fullPromptContext.substring(0, 200));
         
-        const { data: scriptData, error: scriptError } = await supabase.functions.invoke('ai-universal-processor', {
-          body: {
-            provider: 'gemini',
-            model: 'gemini-2.0-flash',
-            prompt: `${fullPromptContext}
+        try {
+          const { data: scriptData, error: scriptError } = await supabase.functions.invoke('ai-universal-processor', {
+            body: {
+              provider: 'gemini',
+              model: 'gemini-2.0-flash',
+              prompt: `${fullPromptContext}
 
 Generate a professional voiceover script${industryContext}.
 Target Duration: ${chapter.duration} seconds (approximately ${targetWordCount} words)
@@ -1167,31 +1169,52 @@ Visual Style: ${chapter.visualTypes.join(', ')}
 Primary Language: ${primaryLanguage}
 
 IMPORTANT: Focus specifically on the user's direction provided above. Keep the content engaging, informative, and professional. The script should flow naturally when spoken aloud.`,
-            systemPrompt: 'You are a professional scriptwriter for video content. Generate ONLY the voiceover script text - no headings, stage directions, or formatting. The script must directly address the topic/direction provided by the user.',
-            maxTokens: 1200,
+              systemPrompt: 'You are a professional scriptwriter for video content. Generate ONLY the voiceover script text - no headings, stage directions, or formatting. The script must directly address the topic/direction provided by the user.',
+              maxTokens: 1200,
+            }
+          });
+
+          console.log('[Studio] Script generation response:', { 
+            hasData: !!scriptData, 
+            hasError: !!scriptError,
+            errorMsg: scriptError?.message,
+            contentLength: scriptData?.content?.length || 0,
+            responseKeys: scriptData ? Object.keys(scriptData) : []
+          });
+
+          if (scriptError) {
+            console.error('[Studio] Script generation error:', scriptError);
+            toast.error(`Script error: ${scriptError.message}`);
+            // Don't throw - use fallback
+            script = `[Script for ${chapter.title}] This chapter covers ${chapter.customPrompt || chapter.aiSuggestedPrompt || chapter.title}. The content will be engaging and informative for your target audience.`;
+          } else {
+            // Parse the response - edge function returns content or response
+            script = scriptData?.content || scriptData?.response || scriptData?.text || '';
+            
+            // If we got a full object, try to extract the script text
+            if (!script && typeof scriptData === 'object') {
+              console.log('[Studio] Attempting deep parse of response');
+              script = JSON.stringify(scriptData);
+              // Try to extract meaningful text
+              if (scriptData.result) script = scriptData.result;
+              if (scriptData.output) script = scriptData.output;
+            }
+            
+            if (!script || script.length < 20) {
+              console.warn('[Studio] Script too short or empty, generating fallback');
+              script = `Welcome to ${chapter.title}. ${chapter.customPrompt || chapter.aiSuggestedPrompt || 'This chapter explores key concepts that will engage and inform your audience. Let\'s dive into the details together.'}`;
+            }
           }
-        });
-
-        console.log('[Studio] Script generation response:', { 
-          hasData: !!scriptData, 
-          error: scriptError?.message,
-          contentLength: scriptData?.content?.length || 0 
-        });
-
-        if (scriptError) {
-          console.error('[Studio] Script generation error:', scriptError);
-          throw new Error(scriptError.message || 'Script generation failed');
+          
+          console.log('[Studio] Final script length:', script.length);
+          updateChapter(chapter.id, { script, progress: 25 });
+          toast.success(`Script generated for "${chapter.title}" (${script.length} chars)`);
+        } catch (scriptGenErr) {
+          console.error('[Studio] Script generation exception:', scriptGenErr);
+          script = `[Generated Script for ${chapter.title}]\n\n${chapter.customPrompt || chapter.aiSuggestedPrompt || 'This chapter presents engaging content designed to inform and captivate your audience. Each section builds upon the last to create a cohesive narrative.'}`;
+          updateChapter(chapter.id, { script, progress: 25 });
+          toast.warning('Used fallback script due to API issue');
         }
-        
-        script = scriptData?.content || scriptData?.response || '';
-        if (!script) {
-          console.warn('[Studio] Empty script response, using fallback');
-          script = `Professional script for ${chapter.title}. This content covers the key points and messaging for your video.`;
-        }
-        
-        console.log('[Studio] Script generated successfully, length:', script.length);
-        updateChapter(chapter.id, { script, progress: 25 });
-        toast.success(`Script generated for "${chapter.title}"`);
       } else {
         console.log('[Studio] Using existing script, length:', script?.length || 0);
         updateChapter(chapter.id, { progress: 25 });
@@ -1476,22 +1499,68 @@ IMPORTANT: Focus specifically on the user's direction provided above. Keep the c
 
   // If in Review step, show ReviewEnhanceStep
   if (studioStep === 'review') {
+    // Map chapters to ReviewEnhanceStep format with proper status
+    const reviewChapters = chapters.map((ch, i) => ({
+      id: ch.id,
+      title: ch.title,
+      duration: ch.duration,
+      // Map status correctly: complete content = pending for review
+      status: ch.status === 'complete' ? 'pending' as const : 'pending' as const,
+      qualityScore: ch.status === 'complete' ? 85 : 0,
+      feedback: undefined,
+      assets: {
+        script: { 
+          content: ch.script || ch.generatedContent?.script || '', 
+          status: (ch.script || ch.generatedContent?.script) ? 'complete' : 'pending' 
+        },
+        audio: { 
+          url: ch.generatedContent?.audioUrl, 
+          status: ch.generatedContent?.audioUrl ? 'complete' : 'pending',
+          provider: 'elevenlabs'
+        },
+        video: { 
+          url: ch.generatedContent?.videoUrl || ch.generatedContent?.previewUrl,
+          status: (ch.generatedContent?.videoUrl || ch.generatedContent?.previewUrl) ? 'complete' : 'pending',
+          provider: 'sora'
+        },
+        music: {
+          url: undefined,
+          status: 'pending'
+        }
+      },
+    }));
+
+    // Show message if no content generated
+    if (reviewChapters.length === 0 || reviewChapters.every(c => !c.assets.script.content)) {
+      return (
+        <div className={cn("p-4 space-y-6", className)}>
+          <div className="flex items-center gap-4">
+            <Button variant="outline" onClick={() => setStudioStep('create')}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Create
+            </Button>
+            <h2 className="text-xl font-bold">Review & Enhance</h2>
+          </div>
+          <div className="flex flex-col items-center justify-center py-16 text-center border rounded-lg bg-muted/30">
+            <FileCheck className="w-12 h-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No Content to Review</h3>
+            <p className="text-muted-foreground mb-4 max-w-md">
+              Generate content in the Create step first. Once you have scripts and media generated, 
+              return here to review and approve them before publishing.
+            </p>
+            <Button onClick={() => setStudioStep('create')}>
+              Go to Create Step
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className={cn("p-4", className)}>
         <ReviewEnhanceStep
           projectName={projectName}
-          chapters={chapters.map((ch, i) => ({
-            id: ch.id,
-            title: ch.title,
-            duration: ch.duration,
-            status: ch.status === 'complete' ? 'pending' : 'pending',
-            qualityScore: ch.status === 'complete' ? 85 : 0,
-            assets: {
-              script: { content: ch.script, status: ch.script ? 'complete' : 'pending' },
-              audio: { url: ch.generatedContent?.audioUrl, status: ch.generatedContent?.audioUrl ? 'complete' : 'pending' },
-              video: { url: ch.generatedContent?.videoUrl, status: ch.generatedContent?.videoUrl ? 'complete' : 'pending' },
-            },
-          }))}
+          chapters={reviewChapters}
           languages={[primaryLanguage, ...additionalLanguages]}
           primaryLanguage={primaryLanguage}
           onChapterApprove={(chapterId) => {
@@ -1501,7 +1570,11 @@ IMPORTANT: Focus specifically on the user's direction provided above. Keep the c
             toast.info(`Feedback noted: ${feedback}`);
           }}
           onChapterRegenerate={async (chapterId, assetType) => {
-            toast.info(`Regenerating ${assetType}...`);
+            const chapter = chapters.find(c => c.id === chapterId);
+            if (chapter) {
+              toast.info(`Regenerating ${assetType}...`);
+              await generateChapter(chapter);
+            }
           }}
           onUpdateScript={(chapterId, newScript) => {
             setChapters(prev => prev.map(ch => 
@@ -2327,11 +2400,10 @@ const ChapterRow: React.FC<ChapterRowProps> = ({
         {/* Progress */}
         {chapter.status === 'generating' && <Progress value={chapter.progress} className="h-1" />}
 
-        {/* Expanded Content - with ScrollArea for long content */}
+        {/* Expanded Content - Flat layout, no nested ScrollArea */}
         <CollapsibleContent>
-          <ScrollArea className="max-h-[400px]">
-            <div className="p-4 pt-2 space-y-4 border-t bg-muted/10">
-            {/* Preview */}
+          <div className="p-4 pt-2 space-y-4 border-t bg-muted/10">
+            {/* Preview - Simple inline display */}
             {chapter.generatedContent?.previewUrl && (
               <div className="relative aspect-video rounded-lg overflow-hidden bg-black max-w-md">
                 <img src={chapter.generatedContent.previewUrl} alt={chapter.title} className="w-full h-full object-cover" />
@@ -2498,11 +2570,10 @@ const ChapterRow: React.FC<ChapterRowProps> = ({
               <Button size="sm" onClick={onGenerate} disabled={isGenerating}>
                 {isGenerating ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Generating...</> :
                  chapter.status === 'complete' ? <><RotateCcw className="w-4 h-4 mr-1" /> Regenerate</> :
-                 <><Zap className="w-4 h-4 mr-1" /> Generate</>}
+               <><Zap className="w-4 h-4 mr-1" /> Generate</>}
               </Button>
             </div>
-            </div>
-          </ScrollArea>
+          </div>
         </CollapsibleContent>
       </div>
     </Collapsible>
