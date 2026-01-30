@@ -9,7 +9,8 @@ import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { Video, Users, CalendarDays, Sparkles, Loader2 } from 'lucide-react';
+import { Video, Users, CalendarDays, Sparkles, Loader2, Download } from 'lucide-react';
+import { DocumentDownloadButton } from './DocumentDownloadButton';
 import { SimpleCompositionStudio, ContentLibrary } from './composition-studio';
 import { ContentSchedulerDashboard } from './ContentSchedulerDashboard';
 import { ProductionAnalytics } from './ProductionAnalytics';
@@ -261,9 +262,15 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
 
           {/* Command Center */}
           {activeTab === 'command-center' && (
-            <Suspense fallback={<TabLoading />}>
-              <GenieCommandCenter />
-            </Suspense>
+            <div className="space-y-4">
+              {/* Download Button */}
+              <div className="flex justify-end">
+                <DocumentDownloadButton />
+              </div>
+              <Suspense fallback={<TabLoading />}>
+                <GenieCommandCenter />
+              </Suspense>
+            </div>
           )}
         </div>
       </ScrollArea>
