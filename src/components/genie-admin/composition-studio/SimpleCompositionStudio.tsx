@@ -39,6 +39,9 @@ import { useIPBasedContent } from '@/hooks/useIPBasedContent';
 import { useStudioEcosystem } from './useStudioEcosystem';
 import { AIRecommendationsPanel } from './AIRecommendationsPanel';
 import { useLabelStudioBackground } from '@/services/labelStudioBackgroundService';
+import { ChapterPreviewPanel } from './ChapterPreviewPanel';
+import { ReviewEnhanceStep } from './ReviewEnhanceStep';
+import { GeneratedAssetsSidebar, GeneratedAssetsTrigger } from './GeneratedAssetsSidebar';
 
 // ============================================
 // INDUSTRY-SPECIFIC TEMPLATES (Multi-select ready) - 80+ templates
@@ -796,6 +799,10 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
   const [generationProgress, setGenerationProgress] = useState(0);
   const [currentGeneratingChapter, setCurrentGeneratingChapter] = useState<string | null>(null);
   
+  // NEW: Studio step & assets sidebar state
+  const [studioStep, setStudioStep] = useState<'create' | 'review'>('create');
+  const [assetsSidebarOpen, setAssetsSidebarOpen] = useState(false);
+  
   // Track user actions for Label Studio learning
   const recordUserAction = useCallback((action: string, data: Record<string, unknown>) => {
     recordEvent({
@@ -1304,6 +1311,139 @@ IMPORTANT: Focus specifically on the user's direction provided above. Keep the c
   const completedChapters = chapters.filter(c => c.status === 'complete').length;
   const canGenerate = projectName.trim() && chapters.length > 0;
 
+  // Build assets list for sidebar
+  const allAssets = useMemo(() => {
+    return chapters.flatMap((chapter, index) => {
+      const assets = [];
+      // Script
+      assets.push({
+        id: `${chapter.id}-script`,
+        type: 'script' as const,
+        chapterId: chapter.id,
+        chapterTitle: chapter.title,
+        chapterIndex: index,
+        language: primaryLanguage,
+        status: chapter.script ? 'complete' as const : 'pending' as const,
+        content: chapter.script,
+      });
+      // Audio
+      if (chapter.generatedContent?.audioUrl) {
+        assets.push({
+          id: `${chapter.id}-audio`,
+          type: 'audio' as const,
+          chapterId: chapter.id,
+          chapterTitle: chapter.title,
+          chapterIndex: index,
+          language: primaryLanguage,
+          status: 'complete' as const,
+          url: chapter.generatedContent?.audioUrl,
+        });
+      } else {
+        assets.push({
+          id: `${chapter.id}-audio`,
+          type: 'audio' as const,
+          chapterId: chapter.id,
+          chapterTitle: chapter.title,
+          chapterIndex: index,
+          language: primaryLanguage,
+          status: 'pending' as const,
+        });
+      }
+      // Video
+      if (chapter.generatedContent?.videoUrl) {
+        assets.push({
+          id: `${chapter.id}-video`,
+          type: 'video' as const,
+          chapterId: chapter.id,
+          chapterTitle: chapter.title,
+          chapterIndex: index,
+          language: primaryLanguage,
+          status: 'complete' as const,
+          url: chapter.generatedContent?.videoUrl,
+        });
+      } else {
+        assets.push({
+          id: `${chapter.id}-video`,
+          type: 'video' as const,
+          chapterId: chapter.id,
+          chapterTitle: chapter.title,
+          chapterIndex: index,
+          language: primaryLanguage,
+          status: 'pending' as const,
+        });
+      }
+      return assets;
+    });
+  }, [chapters, primaryLanguage]);
+
+  const completeAssetCount = allAssets.filter(a => a.status === 'complete').length;
+
+  // If in Review step, show ReviewEnhanceStep
+  if (studioStep === 'review') {
+    return (
+      <div className={cn("p-4", className)}>
+        <ReviewEnhanceStep
+          projectName={projectName}
+          chapters={chapters.map((ch, i) => ({
+            id: ch.id,
+            title: ch.title,
+            duration: ch.duration,
+            status: ch.status === 'complete' ? 'pending' : 'pending',
+            qualityScore: ch.status === 'complete' ? 85 : 0,
+            assets: {
+              script: { content: ch.script, status: ch.script ? 'complete' : 'pending' },
+              audio: { url: ch.generatedContent?.audioUrl, status: ch.generatedContent?.audioUrl ? 'complete' : 'pending' },
+              video: { url: ch.generatedContent?.videoUrl, status: ch.generatedContent?.videoUrl ? 'complete' : 'pending' },
+            },
+          }))}
+          languages={[primaryLanguage, ...additionalLanguages]}
+          primaryLanguage={primaryLanguage}
+          onChapterApprove={(chapterId) => {
+            toast.success('Chapter approved');
+          }}
+          onChapterReject={(chapterId, feedback) => {
+            toast.info(`Feedback noted: ${feedback}`);
+          }}
+          onChapterRegenerate={async (chapterId, assetType) => {
+            toast.info(`Regenerating ${assetType}...`);
+          }}
+          onUpdateScript={(chapterId, newScript) => {
+            setChapters(prev => prev.map(ch => 
+              ch.id === chapterId ? { ...ch, script: newScript } : ch
+            ));
+          }}
+          onBack={() => setStudioStep('create')}
+          onPublish={() => {
+            ecosystemServices.sendToProductionHub({
+              name: projectName,
+              primaryLanguage,
+              additionalLanguages,
+              chapters: chapters as any,
+              outputMode
+            });
+          }}
+        />
+        
+        {/* Assets Sidebar */}
+        <GeneratedAssetsSidebar
+          projectName={projectName}
+          assets={allAssets}
+          languages={[primaryLanguage, ...additionalLanguages]}
+          isOpen={assetsSidebarOpen}
+          onOpenChange={setAssetsSidebarOpen}
+          onPreview={(asset) => toast.info(`Preview: ${asset.type}`)}
+          onDownload={(asset) => toast.info(`Downloading ${asset.type}...`)}
+          onRegenerate={(asset) => toast.info(`Regenerating ${asset.type}...`)}
+        />
+        <GeneratedAssetsTrigger
+          assetCount={allAssets.length}
+          completeCount={completeAssetCount}
+          onClick={() => setAssetsSidebarOpen(true)}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className={cn("space-y-6 p-4", className)}>
       {/* Header */}
@@ -1324,6 +1464,13 @@ IMPORTANT: Focus specifically on the user's direction provided above. Keep the c
           <Badge variant="outline">{chapters.length} Chapters</Badge>
           <Badge variant="outline">{completedChapters} Complete</Badge>
           <Badge variant="outline">{Math.floor(totalDuration / 60)}:{(totalDuration % 60).toString().padStart(2, '0')}</Badge>
+          {/* NEW: Open Assets Sidebar */}
+          {completeAssetCount > 0 && (
+            <Button size="sm" variant="outline" onClick={() => setAssetsSidebarOpen(true)} className="gap-1">
+              <Layers className="w-3 h-3" />
+              Assets ({completeAssetCount})
+            </Button>
+          )}
         </div>
       </div>
 

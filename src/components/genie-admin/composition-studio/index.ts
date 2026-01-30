@@ -43,5 +43,14 @@ export { AddChapterDialog } from './AddChapterDialog';
 export { ThumbnailManager } from './ThumbnailManager';
 export type { ThumbnailData, ContentMetadata } from './ThumbnailManager';
 
+// New: Chapter Preview Panel - Inline preview with regenerate buttons
+export { ChapterPreviewPanel } from './ChapterPreviewPanel';
+
+// New: Review & Enhance Step - Dedicated review workflow
+export { ReviewEnhanceStep } from './ReviewEnhanceStep';
+
+// New: Generated Assets Sidebar - Floating assets overview
+export { GeneratedAssetsSidebar, GeneratedAssetsTrigger } from './GeneratedAssetsSidebar';
+
 export * from './types';
 export type { LandingPageSection } from './TemplatePreviewDialog';
