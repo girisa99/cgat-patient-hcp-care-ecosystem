@@ -189,6 +189,57 @@ class MultiLanguageAudioOrchestrator {
   }
 
   /**
+   * Derive ISO country code from language code for regional routing
+   * Maps language codes to regions for 4-zone TTS provider selection
+   */
+  private deriveRegionFromLanguage(languageCode: string): string {
+    // Language code to country mapping for regional routing
+    const LANGUAGE_TO_REGION: Record<string, string> = {
+      // Claude Zone (Western/EU) - ElevenLabs primary
+      'en-US': 'US', 'en-GB': 'UK', 'en-AU': 'AU', 'en-CA': 'CA',
+      'fr-FR': 'FR', 'fr-CA': 'CA', 'de-DE': 'DE', 'de-AT': 'AT',
+      'es-ES': 'ES', 'es-MX': 'MX', 'es-AR': 'AR',
+      'it-IT': 'IT', 'pt-PT': 'PT', 'pt-BR': 'BR',
+      'nl-NL': 'NL', 'pl-PL': 'PL', 'ru-RU': 'RU',
+      'he-IL': 'IL', 'en-ZA': 'ZA',
+      
+      // CJK Zone (Alibaba CosyVoice primary)
+      'zh-CN': 'CN', 'zh-TW': 'TW', 'zh-HK': 'HK',
+      'ja-JP': 'JP', 'ko-KR': 'KR', 'zh-SG': 'SG',
+      
+      // MENA Zone (Azure Neural primary)
+      'ar-SA': 'SA', 'ar-AE': 'AE', 'ar-EG': 'EG',
+      'ar-QA': 'QA', 'ar-KW': 'KW', 'ar-BH': 'BH',
+      'ar-JO': 'JO', 'ar-LB': 'LB', 'ar-MA': 'MA',
+      'tr-TR': 'TR', 'fa-IR': 'IR',
+      
+      // Gemini Zone (India/SEA/Africa - Google primary)
+      'hi-IN': 'IN', 'bn-IN': 'IN', 'ta-IN': 'IN', 'te-IN': 'IN',
+      'mr-IN': 'IN', 'gu-IN': 'IN', 'kn-IN': 'IN', 'ml-IN': 'IN',
+      'ur-PK': 'PK', 'bn-BD': 'BD', 'si-LK': 'LK', 'ne-NP': 'NP',
+      'id-ID': 'ID', 'vi-VN': 'VN', 'th-TH': 'TH',
+      'ms-MY': 'MY', 'fil-PH': 'PH', 'my-MM': 'MM',
+      'sw-KE': 'KE', 'sw-TZ': 'TZ', 'yo-NG': 'NG', 'ha-NG': 'NG',
+      'am-ET': 'ET', 'zu-ZA': 'ZA',
+    };
+    
+    // Try exact match first
+    if (LANGUAGE_TO_REGION[languageCode]) {
+      return LANGUAGE_TO_REGION[languageCode];
+    }
+    
+    // Try base language code (e.g., 'en' from 'en-US')
+    const baseLang = languageCode.split('-')[0];
+    const baseMatch = Object.entries(LANGUAGE_TO_REGION).find(([key]) => key.startsWith(baseLang + '-'));
+    if (baseMatch) {
+      return baseMatch[1];
+    }
+    
+    // Default to US for English fallback
+    return 'US';
+  }
+
+  /**
    * Create a new orchestration session
    */
   createSession(): OrchestrationSession {
@@ -337,6 +388,9 @@ class MultiLanguageAudioOrchestrator {
     let endpoint: string;
     let payload: Record<string, unknown>;
 
+    // Derive region from language code for zone-based routing
+    const region = this.deriveRegionFromLanguage(job.languageCode);
+
     switch (job.type) {
       case 'voice':
         endpoint = 'multi-provider-tts';
@@ -344,6 +398,7 @@ class MultiLanguageAudioOrchestrator {
           text: job.text,
           provider: job.provider,
           languageCode: job.languageCode,
+          region, // Pass region for 4-zone routing
           tier: 'advanced',
         };
         break;
@@ -353,6 +408,7 @@ class MultiLanguageAudioOrchestrator {
           prompt: job.prompt,
           duration: job.duration,
           provider: job.provider,
+          region,
           tier: 'advanced',
         };
         break;
@@ -362,6 +418,7 @@ class MultiLanguageAudioOrchestrator {
           prompt: job.prompt,
           duration: job.duration,
           provider: job.provider,
+          region,
           tier: 'advanced',
         };
         break;
