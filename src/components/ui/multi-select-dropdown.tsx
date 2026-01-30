@@ -41,10 +41,20 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Extract unique categories for filter chips
+  const categories = useMemo(() => {
+    const cats = new Set<string>();
+    options.forEach(opt => {
+      if (opt.category) cats.add(opt.category);
+    });
+    return Array.from(cats);
+  }, [options]);
 
   // Calculate dropdown position using fixed positioning for portal
   const getDropdownStyle = useCallback((): React.CSSProperties => {
@@ -53,7 +63,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
     const rect = buttonRef.current.getBoundingClientRect();
     const spaceBelow = window.innerHeight - rect.bottom;
     const spaceAbove = rect.top;
-    const dropdownHeight = 360;
+    const dropdownHeight = 420; // Increased for filter chips
     
     // Decide if dropdown should open above or below
     const openAbove = spaceBelow < dropdownHeight && spaceAbove > spaceBelow;
@@ -61,7 +71,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
     return {
       position: 'fixed' as const,
       left: rect.left,
-      width: Math.max(rect.width, 280),
+      width: Math.max(rect.width, 320),
       maxHeight: Math.min(dropdownHeight, openAbove ? spaceAbove - 8 : spaceBelow - 8),
       ...(openAbove 
         ? { bottom: window.innerHeight - rect.top + 4 }
@@ -99,6 +109,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
       if (clickedOutsideContainer && clickedOutsideDropdown) {
         setIsOpen(false);
         setSearchTerm('');
+        setActiveCategory(null);
       }
     };
 
@@ -121,6 +132,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
       if (e.key === 'Escape') {
         setIsOpen(false);
         setSearchTerm('');
+        setActiveCategory(null);
       }
     };
 
@@ -142,15 +154,20 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
     }
   }, [isOpen, searchable]);
 
+  // Filter by search term AND active category
   const filteredOptions = useMemo(() => 
-    options.filter(option =>
-      !searchTerm || option.label.toLowerCase().includes(searchTerm.toLowerCase())
-    ),
-    [options, searchTerm]
+    options.filter(option => {
+      const matchesSearch = !searchTerm || 
+        option.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        option.description?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory = !activeCategory || option.category === activeCategory;
+      return matchesSearch && matchesCategory;
+    }),
+    [options, searchTerm, activeCategory]
   );
 
   const groupedOptions = useMemo(() => {
-    if (!groupByCategory) return { 'All': filteredOptions };
+    if (!groupByCategory || activeCategory) return { [activeCategory || 'All']: filteredOptions };
     
     return filteredOptions.reduce((acc, option) => {
       const category = option.category || 'Other';
@@ -158,7 +175,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
       acc[category].push(option);
       return acc;
     }, {} as Record<string, MultiSelectOption[]>);
-  }, [filteredOptions, groupByCategory]);
+  }, [filteredOptions, groupByCategory, activeCategory]);
 
   const handleToggleOption = (optionValue: string) => {
     if (disabled) return;
@@ -206,6 +223,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
       className="bg-popover border border-border rounded-lg shadow-2xl flex flex-col animate-in fade-in-0 zoom-in-95 duration-100"
       style={getDropdownStyle()}
     >
+      {/* Search Input */}
       {searchable && (
         <div className="p-2 border-b border-border bg-popover flex-shrink-0">
           <div className="relative">
@@ -219,6 +237,42 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
               onClick={(e) => e.stopPropagation()}
               className="w-full pl-7 pr-2 py-2 text-sm border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
             />
+          </div>
+        </div>
+      )}
+      
+      {/* Category Filter Chips - Show when >3 categories */}
+      {groupByCategory && categories.length > 3 && (
+        <div className="p-2 border-b border-border bg-muted/30 flex-shrink-0">
+          <div className="flex flex-wrap gap-1.5 max-h-20 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+            <button
+              onClick={() => setActiveCategory(null)}
+              className={cn(
+                "px-2 py-1 text-[10px] font-medium rounded-full transition-colors whitespace-nowrap",
+                !activeCategory 
+                  ? "bg-primary text-primary-foreground" 
+                  : "bg-muted hover:bg-muted/80 text-muted-foreground"
+              )}
+            >
+              All ({options.length})
+            </button>
+            {categories.map(cat => {
+              const count = options.filter(o => o.category === cat).length;
+              return (
+                <button
+                  key={cat}
+                  onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
+                  className={cn(
+                    "px-2 py-1 text-[10px] font-medium rounded-full transition-colors whitespace-nowrap",
+                    activeCategory === cat 
+                      ? "bg-primary text-primary-foreground" 
+                      : "bg-muted hover:bg-muted/80 text-muted-foreground"
+                  )}
+                >
+                  {cat} ({count})
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
