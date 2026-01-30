@@ -1000,25 +1000,61 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
       if (chapter.scriptSource === 'auto' || !script.trim()) {
         console.log('[Studio] Generating script for:', chapter.title);
         
-        const effectivePrompt = chapter.customPrompt?.trim() 
-          || chapter.aiSuggestedPrompt 
-          || `Create engaging content about "${chapter.title}"`;
+        // IMPORTANT: User's custom prompt takes priority, then AI suggestion, then fallback
+        const userContext = chapter.customPrompt?.trim();
+        const aiSuggestion = chapter.aiSuggestedPrompt?.trim();
+        const chapterTitle = chapter.title;
+        
+        // Get template info for context
+        const templateInfo = selectedTemplates.length > 0 
+          ? INDUSTRY_TEMPLATES.find(t => selectedTemplates.includes(t.id))
+          : null;
+        const templateLabel = templateInfo?.label || '';
+        const templateDesc = templateInfo?.description || '';
+        
+        // Build comprehensive prompt that preserves ALL user context
+        let fullPromptContext = '';
+        
+        // Include project name context if provided
+        if (projectName.trim()) {
+          fullPromptContext += `Project: ${projectName}\n`;
+        }
+        
+        // Include template context
+        if (templateLabel) {
+          fullPromptContext += `Template: ${templateLabel}${templateDesc ? ` - ${templateDesc}` : ''}\n`;
+        }
+        
+        // User's custom prompt is the PRIMARY direction
+        if (userContext) {
+          fullPromptContext += `\nUser's Direction: ${userContext}\n`;
+        } else if (aiSuggestion) {
+          fullPromptContext += `\nTopic: ${aiSuggestion}\n`;
+        }
+        
+        fullPromptContext += `\nChapter: ${chapterTitle}`;
         
         const industryContext = chapter.industry 
-          ? ` for ${chapter.industry.replace(/_/g, ' ')} industry` 
+          ? ` for ${chapter.industry.replace(/_/g, ' ')} context` 
           : '';
+        
+        // Calculate appropriate word count for duration (approx 150 words per minute for voiceover)
+        const targetWordCount = Math.round((chapter.duration / 60) * 150);
         
         const { data: scriptData, error: scriptError } = await supabase.functions.invoke('ai-universal-processor', {
           body: {
             provider: 'gemini',
             model: 'gemini-2.0-flash',
-            prompt: `${effectivePrompt}
+            prompt: `${fullPromptContext}
 
-Generate a professional ${chapter.duration}-second voiceover script${industryContext}.
-Visual style: ${chapter.visualTypes.join(', ')}.
-Language: ${primaryLanguage}. Keep it engaging, concise, and professional.`,
-            systemPrompt: 'You are a professional scriptwriter specializing in video content. Generate only the script text suitable for voiceover, no formatting or stage directions.',
-            maxTokens: 600,
+Generate a professional voiceover script${industryContext}.
+Target Duration: ${chapter.duration} seconds (approximately ${targetWordCount} words)
+Visual Style: ${chapter.visualTypes.join(', ')}
+Primary Language: ${primaryLanguage}
+
+IMPORTANT: Focus specifically on the user's direction provided above. Keep the content engaging, informative, and professional. The script should flow naturally when spoken aloud.`,
+            systemPrompt: 'You are a professional scriptwriter for video content. Generate ONLY the voiceover script text - no headings, stage directions, or formatting. The script must directly address the topic/direction provided by the user.',
+            maxTokens: 1200,
             action: 'generate_script'
           }
         });
@@ -1311,7 +1347,7 @@ Language: ${primaryLanguage}. Keep it engaging, concise, and professional.`,
 
       {/* ========== AI RECOMMENDATIONS ========== */}
       <AIRecommendationsPanel
-        prompt={projectName}
+        prompt={`${projectName}${chapters.length > 0 ? ` - Topics: ${chapters.map(c => c.customPrompt || c.title).join(', ')}` : ''}`}
         availableTemplates={INDUSTRY_TEMPLATES.map(t => ({ id: t.id, label: t.label, category: t.category || 'General' }))}
         availableVisuals={VISUAL_TYPES.map(v => ({ id: v.id, label: v.label, category: v.category || 'General' }))}
         selectedTemplates={selectedTemplates}
@@ -1546,10 +1582,81 @@ Language: ${primaryLanguage}. Keep it engaging, concise, and professional.`,
       {/* ========== ACTIONS ========== */}
       <div className="flex justify-between items-center pt-4 border-t">
         <div className="flex gap-2">
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={() => {
+            if (onClose) {
+              onClose();
+            } else {
+              // Reset form if no close handler
+              if (chapters.length > 0 || projectName.trim()) {
+                const confirmed = window.confirm('Discard all changes?');
+                if (confirmed) {
+                  setProjectName('');
+                  setChapters([]);
+                  setSelectedTemplates([]);
+                  setSelectedVisualTypes([]);
+                  setAdditionalLanguages([]);
+                  toast.info('Draft discarded');
+                }
+              }
+            }
+          }}>
             Cancel
           </Button>
-          <Button variant="outline">
+          <Button variant="outline" onClick={async () => {
+            try {
+              const { data: { session } } = await supabase.auth.getSession();
+              if (!session) {
+                toast.error('Please sign in to save drafts');
+                return;
+              }
+              
+              if (!projectName.trim()) {
+                toast.error('Please enter a project name first');
+                return;
+              }
+              
+              // Save draft to localStorage and optionally to database
+              const draftData = {
+                projectName,
+                primaryLanguage,
+                additionalLanguages,
+                selectedTemplates,
+                selectedVisualTypes,
+                chapters: chapters.map(ch => ({
+                  id: ch.id,
+                  title: ch.title,
+                  script: ch.script,
+                  scriptSource: ch.scriptSource,
+                  customPrompt: ch.customPrompt,
+                  aiSuggestedPrompt: ch.aiSuggestedPrompt,
+                  visualTypes: ch.visualTypes,
+                  duration: ch.duration,
+                  voiceSource: ch.voiceSource,
+                  musicSource: ch.musicSource,
+                  status: ch.status,
+                  industry: ch.industry,
+                })),
+                audioScope,
+                scriptScope,
+                outputMode,
+                globalVoiceSource,
+                globalMusicSource,
+                savedAt: new Date().toISOString(),
+                userId: session.user.id,
+              };
+              
+              // Save to localStorage for quick recovery
+              localStorage.setItem(`studio_draft_${projectName.replace(/\s+/g, '_')}`, JSON.stringify(draftData));
+              
+              // Also save to session storage for cross-tab access
+              sessionStorage.setItem('studio_current_draft', JSON.stringify(draftData));
+              
+              toast.success('Draft saved successfully!');
+            } catch (err) {
+              console.error('Save draft error:', err);
+              toast.error('Failed to save draft');
+            }
+          }}>
             <Save className="w-4 h-4 mr-2" /> Save Draft
           </Button>
         </div>
@@ -1838,9 +1945,10 @@ const ChapterRow: React.FC<ChapterRowProps> = ({
         {/* Progress */}
         {chapter.status === 'generating' && <Progress value={chapter.progress} className="h-1" />}
 
-        {/* Expanded Content */}
+        {/* Expanded Content - with ScrollArea for long content */}
         <CollapsibleContent>
-          <div className="p-4 pt-2 space-y-4 border-t bg-muted/10">
+          <ScrollArea className="max-h-[400px]">
+            <div className="p-4 pt-2 space-y-4 border-t bg-muted/10">
             {/* Preview */}
             {chapter.generatedContent?.previewUrl && (
               <div className="relative aspect-video rounded-lg overflow-hidden bg-black max-w-md">
@@ -1965,7 +2073,16 @@ const ChapterRow: React.FC<ChapterRowProps> = ({
                 <Label>Duration</Label>
                 <span className="text-sm text-muted-foreground">{chapter.duration}s</span>
               </div>
-              <Slider value={[chapter.duration]} onValueChange={([v]) => onUpdate({ duration: v })} min={5} max={120} step={5} />
+              <Slider 
+                value={[chapter.duration]} 
+                onValueChange={([v]) => onUpdate({ duration: v })} 
+                min={5} 
+                max={900} // Support up to 15 minutes per chapter (combine for longer content)
+                step={5} 
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                For 45+ min content, split across multiple chapters
+              </p>
             </div>
 
             {/* Per-Chapter Audio (only if audioScope is 'chapter') */}
@@ -2002,7 +2119,8 @@ const ChapterRow: React.FC<ChapterRowProps> = ({
                  <><Zap className="w-4 h-4 mr-1" /> Generate</>}
               </Button>
             </div>
-          </div>
+            </div>
+          </ScrollArea>
         </CollapsibleContent>
       </div>
     </Collapsible>
