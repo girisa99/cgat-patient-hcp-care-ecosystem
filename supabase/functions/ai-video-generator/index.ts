@@ -286,54 +286,12 @@ function selectModel(provider: string, requestedModel: string): string {
   return defaultModels[provider] || 'auto';
 }
 
-// OpenAI Sora / AnimateDiff Video Generation
+// OpenAI Video Generation - Sora API not publicly available, skip directly to ModelsLab
 async function generateWithOpenAI(prompt: string, model: string, duration: number, aspectRatio: string): Promise<VideoResult> {
-  const apiKey = Deno.env.get('OPENAI_API_KEY');
-  
-  if (!apiKey) {
-    throw new Error('OPENAI_API_KEY is not configured');
-  }
-
-  console.log('🎥 Generating video with OpenAI Sora:', model);
-
-  // OpenAI Video API (Sora)
-  const response = await fetch('https://api.openai.com/v1/videos/generations', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: model || 'sora-1.0-turbo',
-      prompt: `${prompt}. Safe for all audiences, high quality cinematic video.`,
-      n: 1,
-      duration: Math.min(duration, 20), // Sora max 20 seconds
-      aspect_ratio: aspectRatio,
-      style: 'natural',
-    }),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('OpenAI Video API error:', errorText);
-    
-    // Fall back to image-to-video if Sora not available
-    if (response.status === 404 || response.status === 400) {
-      console.log('⚠️ Sora not available, falling back to AnimateDiff via ModelsLab');
-      return generateWithModelsLab(prompt, 'animatediff', duration);
-    }
-    
-    throw new Error(`OpenAI Video API error: ${response.status}`);
-  }
-
-  const data = await response.json();
-  
-  return {
-    videoUrl: data.data[0]?.url || data.data[0]?.video_url,
-    thumbnailUrl: data.data[0]?.thumbnail_url,
-    provider: 'openai',
-    model: model,
-  };
+  // Note: OpenAI Sora API is not publicly available yet (as of 2025)
+  // Immediately fallback to ModelsLab AnimateDiff which is production-ready
+  console.log('⚠️ OpenAI Sora API not publicly available, using ModelsLab AnimateDiff');
+  return generateWithModelsLab(prompt, 'animatediff', duration);
 }
 
 // ModelsLab AnimateDiff / SVD Video Generation

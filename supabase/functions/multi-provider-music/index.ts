@@ -131,26 +131,110 @@ function selectMusicProvider(region: string, tier: string = 'standard'): MusicRo
 
 async function generateElevenLabsMusic(prompt: string, duration: number): Promise<ArrayBuffer> {
   const ELEVENLABS_API_KEY = Deno.env.get('ELEVENLABS_API_KEY');
-  if (!ELEVENLABS_API_KEY) throw new Error('ELEVENLABS_API_KEY not configured');
+  
+  // ElevenLabs Music API requires special permissions - try ModelsLab first as more reliable
+  if (!ELEVENLABS_API_KEY) {
+    console.log('⚠️ ElevenLabs not configured, using ModelsLab for music');
+    return generateModelsLabMusicDirect(prompt, duration);
+  }
 
-  const response = await fetch('https://api.elevenlabs.io/v1/music', {
+  try {
+    const response = await fetch('https://api.elevenlabs.io/v1/music', {
+      method: 'POST',
+      headers: {
+        'xi-api-key': ELEVENLABS_API_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        prompt,
+        duration_seconds: duration,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      // Check for permission errors and fallback gracefully
+      if (error.includes('missing_permissions') || error.includes('music_generation')) {
+        console.log('⚠️ ElevenLabs Music permission not available, falling back to ModelsLab');
+        return generateModelsLabMusicDirect(prompt, duration);
+      }
+      throw new Error(`ElevenLabs Music error: ${error}`);
+    }
+
+    return response.arrayBuffer();
+  } catch (error) {
+    console.log('⚠️ ElevenLabs Music failed, falling back to ModelsLab:', error);
+    return generateModelsLabMusicDirect(prompt, duration);
+  }
+}
+
+// Direct ModelsLab call without circular fallback
+async function generateModelsLabMusicDirect(prompt: string, duration: number): Promise<ArrayBuffer> {
+  const MODELSLAB_API_KEY = Deno.env.get('MODELSLAB_API_KEY');
+  
+  if (!MODELSLAB_API_KEY) {
+    throw new Error('No music generation API available. Please configure MODELSLAB_API_KEY.');
+  }
+
+  const response = await fetch('https://modelslab.com/api/v6/audio/text2music', {
     method: 'POST',
     headers: {
-      'xi-api-key': ELEVENLABS_API_KEY,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      prompt,
-      duration_seconds: duration,
+      key: MODELSLAB_API_KEY,
+      prompt: prompt,
+      duration: duration,
+      seed: null,
+      guidance_scale: 3.0,
     }),
   });
 
   if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`ElevenLabs Music error: ${error}`);
+    const errorText = await response.text();
+    throw new Error(`ModelsLab Music error: ${errorText}`);
   }
 
-  return response.arrayBuffer();
+  const result = await response.json();
+  if (result.status === 'success' && result.output && result.output[0]) {
+    const audioResponse = await fetch(result.output[0]);
+    return audioResponse.arrayBuffer();
+  }
+  
+  // Handle async processing
+  if (result.fetch_result) {
+    return await pollModelsLabMusicResult(result.fetch_result, MODELSLAB_API_KEY);
+  }
+
+  throw new Error('ModelsLab Music generation failed - no output');
+}
+
+async function pollModelsLabMusicResult(fetchUrl: string, apiKey: string): Promise<ArrayBuffer> {
+  const maxAttempts = 30;
+  let attempts = 0;
+
+  while (attempts < maxAttempts) {
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    attempts++;
+
+    const response = await fetch(fetchUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: apiKey }),
+    });
+
+    const data = await response.json();
+    console.log(`⏳ ModelsLab Music status (attempt ${attempts}):`, data.status);
+
+    if (data.status === 'success' && data.output && data.output[0]) {
+      const audioResponse = await fetch(data.output[0]);
+      return audioResponse.arrayBuffer();
+    } else if (data.status === 'failed' || data.status === 'error') {
+      throw new Error(data.message || 'Music generation failed');
+    }
+  }
+
+  throw new Error('ModelsLab music generation timed out');
 }
 
 async function generateSunoMusic(prompt: string, duration: number, style?: string, instrumental?: boolean): Promise<ArrayBuffer> {
