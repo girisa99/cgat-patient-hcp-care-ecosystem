@@ -3,6 +3,40 @@
  * Isolated navigation for Genie Studio users
  * Filtered by subscription tier
  * 
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * ACCESS CONTROL CONFIGURATION - EASY TO MODIFY DURING TESTING
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * 
+ * Each nav item has:
+ * - minTier: Minimum subscription tier required ('free' | 'starter' | 'creator' | 'pro' | 'business' | 'enterprise')
+ * - isInternal: If true, only visible to users with is_internal=true in genie_studio_users table
+ * 
+ * TIER HIERARCHY (lowest to highest):
+ *   free < starter < creator < pro < business < enterprise
+ * 
+ * TO CHANGE ACCESS:
+ * 1. Find the nav item by title below
+ * 2. Change minTier to adjust subscription requirement
+ * 3. Add/remove isInternal: true to show/hide from external users
+ * 
+ * CURRENT ACCESS MATRIX:
+ * ┌─────────────────────┬────────────┬─────────────┐
+ * │ Tab/Feature         │ Min Tier   │ Internal?   │
+ * ├─────────────────────┼────────────┼─────────────┤
+ * │ Studio/Deck/Tools   │ free       │ No          │
+ * │ Spark/Mind          │ starter    │ No          │
+ * │ Vibe                │ creator    │ No          │
+ * │ Plan (Kanban/Cal)   │ starter    │ No          │
+ * │ Library/Studio      │ starter    │ No          │
+ * │ Metrics/Health      │ pro        │ No          │
+ * │ Workspaces/Team     │ business   │ No          │
+ * │ Branding            │ enterprise │ No          │
+ * │ Business Analytics  │ enterprise │ No          │
+ * │ AI Routing          │ pro        │ YES         │
+ * │ Command Center      │ enterprise │ YES         │
+ * │ Architecture        │ free       │ YES         │
+ * └─────────────────────┴────────────┴─────────────┘
+ * 
  * ARCHITECTURE:
  * - WORKSPACE: Dashboard products (Studio, Deck)
  * - CREATE: Ideation tools (Spark, Mind, Content Tools)
@@ -10,6 +44,8 @@
  * - PUBLISH: Distribution (Scheduler, Library)
  * - MANAGE: All admin/analytics/settings (merged from Production Hub)
  * - ACCOUNT: User settings
+ * 
+ * ═══════════════════════════════════════════════════════════════════════════════
  */
 
 import {

@@ -1538,9 +1538,33 @@ IMPORTANT:
 
       return { success: true };
     } catch (error) {
-      console.error('[Studio] Error:', error);
-      updateChapter(chapter.id, { status: 'error', progress: 0 });
-      toast.error(`Failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('[Studio] Generation failed for chapter:', chapter.title, error);
+      
+      // AUTO-REMOVE failed chapter with clear error message
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      
+      setChapters(prev => prev.filter(c => c.id !== chapter.id));
+      
+      toast.error(
+        `Generation failed for "${chapter.title}": ${errorMsg}. Chapter removed - recreate it to try again.`,
+        {
+          duration: 8000,
+          action: {
+            label: 'Recreate',
+            onClick: () => {
+              // Re-add the chapter for retry
+              setChapters(prev => [...prev, {
+                ...chapter,
+                status: 'draft' as const,
+                progress: 0,
+                generatedContent: undefined,
+              }]);
+              toast.info(`Chapter "${chapter.title}" re-added. Click Generate to try again.`);
+            }
+          }
+        }
+      );
+      
       return { success: false };
     } finally {
       setCurrentGeneratingChapter(null);
