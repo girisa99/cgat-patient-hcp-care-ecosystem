@@ -3,12 +3,13 @@
  * 
  * Inline preview panel for each chapter showing:
  * - Generated script with edit capability
- * - Audio waveform/player
+ * - Multi-language audio player with language dropdown
  * - Video/image thumbnail preview
+ * - Confidence scores for each asset
  * - Regenerate buttons for each asset type
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
@@ -16,13 +17,21 @@ import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   Play, Pause, RotateCcw, Edit2, Check, X,
-  Volume2, Video, FileText, Sparkles, Download,
+  Volume2, VolumeX, Video, FileText, Sparkles, Download,
   Image, Music, Loader2, Eye, ThumbsUp, ThumbsDown,
-  RefreshCw, Wand2, AlertCircle
+  RefreshCw, Wand2, AlertCircle, Globe, CheckCircle2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { ConfidenceScoreCard } from './ConfidenceScoreCard';
 
 interface GeneratedAsset {
   type: 'script' | 'audio' | 'video' | 'image' | 'music';
@@ -178,8 +187,82 @@ export const ChapterPreviewPanel: React.FC<ChapterPreviewPanelProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editedScript, setEditedScript] = useState(assets.script?.content || '');
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const [regenerating, setRegenerating] = useState<string | null>(null);
-  const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
+  const [selectedAudioLanguage, setSelectedAudioLanguage] = useState(primaryLanguage);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [audioDuration, setAudioDuration] = useState(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const musicRef = useRef<HTMLAudioElement | null>(null);
+
+  // Language display names
+  const LANGUAGE_NAMES: Record<string, string> = {
+    'en': 'English', 'en-gb': 'English (UK)', 'es': 'Spanish', 'fr': 'French',
+    'de': 'German', 'it': 'Italian', 'pt': 'Portuguese', 'ar': 'Arabic',
+    'ar-sa': 'Arabic (Saudi)', 'ar-ae': 'Arabic (UAE)', 'hi': 'Hindi',
+    'ta': 'Tamil', 'te': 'Telugu', 'bn': 'Bengali', 'zh': 'Chinese',
+    'ja': 'Japanese', 'ko': 'Korean', 'ru': 'Russian', 'tr': 'Turkish',
+  };
+
+  // Get current audio source based on selected language
+  const getCurrentAudioSrc = () => {
+    // Check audioByLanguage first
+    if (audioByLanguage && audioByLanguage[selectedAudioLanguage]) {
+      const langAudio = audioByLanguage[selectedAudioLanguage];
+      if (langAudio.audioUrl) return langAudio.audioUrl;
+      if (langAudio.base64) return `data:audio/mpeg;base64,${langAudio.base64}`;
+    }
+    // Fall back to primary audio asset
+    if (selectedAudioLanguage === primaryLanguage) {
+      if (assets.audio?.url) return assets.audio.url;
+      if (assets.audio?.base64) return `data:audio/mpeg;base64,${assets.audio.base64}`;
+    }
+    return null;
+  };
+
+  const audioSrc = getCurrentAudioSrc();
+  const hasAudioContent = !!audioSrc;
+
+  // Setup audio element when source changes
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    }
+    if (audioSrc) {
+      const audio = new Audio(audioSrc);
+      audioRef.current = audio;
+      
+      audio.addEventListener('loadedmetadata', () => setAudioDuration(audio.duration));
+      audio.addEventListener('timeupdate', () => setCurrentTime(audio.currentTime));
+      audio.addEventListener('ended', () => {
+        setIsPlaying(false);
+        setCurrentTime(0);
+      });
+      audio.addEventListener('error', (e) => {
+        console.error('[ChapterPreview] Audio error:', e);
+        setIsPlaying(false);
+      });
+
+      return () => {
+        audio.pause();
+      };
+    }
+  }, [audioSrc]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+      if (musicRef.current) {
+        musicRef.current.pause();
+        musicRef.current = null;
+      }
+    };
+  }, []);
 
   const handleRegenerate = async (assetType: 'script' | 'audio' | 'video' | 'music') => {
     setRegenerating(assetType);
@@ -199,23 +282,65 @@ export const ChapterPreviewPanel: React.FC<ChapterPreviewPanelProps> = ({
     toast.success('Script updated');
   };
 
-  const playAudio = () => {
-    if (assets.audio?.url || assets.audio?.base64) {
-      const src = assets.audio.url || `data:audio/mpeg;base64,${assets.audio.base64}`;
-      const audio = new Audio(src);
-      audio.play();
-      setAudioElement(audio);
+  const toggleAudioPlay = () => {
+    if (!audioRef.current && audioSrc) {
+      const audio = new Audio(audioSrc);
+      audioRef.current = audio;
+      audio.play().catch(e => {
+        console.error('[ChapterPreview] Play failed:', e);
+        toast.error('Could not play audio');
+      });
       setIsPlaying(true);
       audio.onended = () => setIsPlaying(false);
+      return;
+    }
+    
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+        setIsPlaying(false);
+      } else {
+        audioRef.current.play().catch(e => {
+          console.error('[ChapterPreview] Play failed:', e);
+          toast.error('Could not play audio');
+        });
+        setIsPlaying(true);
+      }
     }
   };
 
-  const stopAudio = () => {
-    if (audioElement) {
-      audioElement.pause();
-      audioElement.currentTime = 0;
-      setIsPlaying(false);
+  const toggleMusicPlay = () => {
+    const musicSrc = assets.music?.url || 
+      (assets.music?.base64 ? `data:audio/mpeg;base64,${assets.music.base64}` : null);
+    
+    if (!musicSrc) {
+      toast.error('No music available');
+      return;
     }
+
+    if (!musicRef.current) {
+      const audio = new Audio(musicSrc);
+      musicRef.current = audio;
+      audio.volume = 0.5;
+      audio.play().catch(e => {
+        console.error('[ChapterPreview] Music play failed:', e);
+        toast.error('Could not play music');
+      });
+      setIsMusicPlaying(true);
+      audio.onended = () => setIsMusicPlaying(false);
+    } else if (isMusicPlaying) {
+      musicRef.current.pause();
+      setIsMusicPlaying(false);
+    } else {
+      musicRef.current.play().catch(e => console.error(e));
+      setIsMusicPlaying(true);
+    }
+  };
+
+  const formatTime = (time: number) => {
+    const mins = Math.floor(time / 60);
+    const secs = Math.floor(time % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   const getStatusBadge = (asset?: GeneratedAsset) => {
@@ -370,21 +495,51 @@ export const ChapterPreviewPanel: React.FC<ChapterPreviewPanelProps> = ({
           )}
         </div>
 
-        {/* Audio Section */}
+        {/* Audio Section with Multi-Language Support */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Volume2 className="w-4 h-4 text-muted-foreground" />
               <span className="text-sm font-medium">Voice</span>
               {getStatusBadge(assets.audio)}
+              {confidenceScores?.audio && (
+                <Badge variant="outline" className={cn(
+                  "text-[10px]",
+                  confidenceScores.audio >= 95 ? "border-primary/50 text-primary" :
+                  confidenceScores.audio >= 80 ? "border-amber-500/50 text-amber-600" :
+                  "border-destructive/50 text-destructive"
+                )}>
+                  {confidenceScores.audio}%
+                </Badge>
+              )}
             </div>
-            <div className="flex gap-1">
-              {(assets.audio?.url || assets.audio?.base64) && (
+            <div className="flex items-center gap-1">
+              {/* Language Selector */}
+              {audioByLanguage && Object.keys(audioByLanguage).length > 1 && (
+                <Select value={selectedAudioLanguage} onValueChange={setSelectedAudioLanguage}>
+                  <SelectTrigger className="h-6 w-[100px] text-[10px]">
+                    <Globe className="w-3 h-3 mr-1" />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(audioByLanguage).map(([lang, data]) => (
+                      <SelectItem key={lang} value={lang} className="text-xs">
+                        <div className="flex items-center gap-1">
+                          <span>{LANGUAGE_NAMES[lang] || lang}</span>
+                          {data.status === 'complete' && <CheckCircle2 className="w-2 h-2 text-primary" />}
+                          {lang === primaryLanguage && <Badge variant="secondary" className="text-[8px] px-1">Pri</Badge>}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              {hasAudioContent && (
                 <Button
                   size="sm"
                   variant="ghost"
                   className="h-6 w-6 p-0"
-                  onClick={isPlaying ? stopAudio : playAudio}
+                  onClick={toggleAudioPlay}
                 >
                   {isPlaying ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
                 </Button>
@@ -405,23 +560,61 @@ export const ChapterPreviewPanel: React.FC<ChapterPreviewPanelProps> = ({
             </div>
           </div>
           
-          <div className="h-[100px] border rounded bg-muted/30 flex items-center justify-center">
+          <div className="border rounded bg-muted/30 p-3">
             {assets.audio?.status === 'generating' ? (
-              <div className="text-center space-y-2">
+              <div className="text-center space-y-2 py-4">
                 <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
                 <p className="text-xs text-muted-foreground">Generating audio...</p>
                 <p className="text-[10px] text-muted-foreground">This takes ~10-30 seconds</p>
               </div>
-            ) : assets.audio?.url || assets.audio?.base64 ? (
-              <div className="text-center space-y-2">
-                <Volume2 className="w-8 h-8 mx-auto text-green-500" />
-                <p className="text-xs text-muted-foreground">
-                  {assets.audio.duration ? `${assets.audio.duration}s` : 'Audio ready'}
-                  {assets.audio.provider && ` • ${assets.audio.provider}`}
-                </p>
+            ) : hasAudioContent ? (
+              <div className="space-y-2">
+                {/* Progress bar */}
+                <div 
+                  className="h-2 bg-muted rounded-full cursor-pointer overflow-hidden"
+                  onClick={(e) => {
+                    if (audioRef.current && audioDuration) {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const percent = (e.clientX - rect.left) / rect.width;
+                      audioRef.current.currentTime = percent * audioDuration;
+                    }
+                  }}
+                >
+                  <div 
+                    className="h-full bg-primary transition-all"
+                    style={{ width: `${audioDuration ? (currentTime / audioDuration) * 100 : 0}%` }}
+                  />
+                </div>
+                <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                  <span>{formatTime(currentTime)} / {formatTime(audioDuration || assets.audio?.duration || 0)}</span>
+                  <div className="flex items-center gap-2">
+                    {audioByLanguage?.[selectedAudioLanguage]?.provider && (
+                      <span>{audioByLanguage[selectedAudioLanguage].provider}</span>
+                    )}
+                    {assets.audio?.provider && !audioByLanguage?.[selectedAudioLanguage]?.provider && (
+                      <span>{assets.audio.provider}</span>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-5 text-[10px] px-1"
+                      onClick={() => {
+                        if (audioSrc) {
+                          const link = document.createElement('a');
+                          link.href = audioSrc;
+                          link.download = `${chapterTitle}-${selectedAudioLanguage}.mp3`;
+                          link.click();
+                          toast.success('Download started');
+                        }
+                      }}
+                    >
+                      <Download className="w-2 h-2 mr-1" /> Download
+                    </Button>
+                  </div>
+                </div>
               </div>
             ) : (
-              <div className="text-center space-y-2 px-4">
+              <div className="text-center space-y-2 py-4">
                 <Volume2 className="w-6 h-6 mx-auto text-muted-foreground/50" />
                 <p className="text-xs text-muted-foreground">Voice not generated</p>
                 <Button
@@ -512,51 +705,123 @@ export const ChapterPreviewPanel: React.FC<ChapterPreviewPanelProps> = ({
           </div>
         </div>
 
-        {/* Music Section */}
+        {/* Music Section with Playback */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Music className="w-4 h-4 text-muted-foreground" />
               <span className="text-sm font-medium">Background</span>
               {getStatusBadge(assets.music)}
-            </div>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-6 w-6 p-0"
-              onClick={() => handleRegenerate('music')}
-              disabled={regenerating === 'music'}
-            >
-              {regenerating === 'music' ? (
-                <Loader2 className="w-3 h-3 animate-spin" />
-              ) : (
-                <RefreshCw className="w-3 h-3" />
+              {confidenceScores?.music && (
+                <Badge variant="outline" className={cn(
+                  "text-[10px]",
+                  confidenceScores.music >= 95 ? "border-primary/50 text-primary" :
+                  confidenceScores.music >= 80 ? "border-amber-500/50 text-amber-600" :
+                  "border-destructive/50 text-destructive"
+                )}>
+                  {confidenceScores.music}%
+                </Badge>
               )}
-            </Button>
+            </div>
+            <div className="flex items-center gap-1">
+              {(assets.music?.url || assets.music?.base64) && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 w-6 p-0"
+                  onClick={toggleMusicPlay}
+                >
+                  {isMusicPlaying ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+                </Button>
+              )}
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-6 w-6 p-0"
+                onClick={() => handleRegenerate('music')}
+                disabled={regenerating === 'music'}
+              >
+                {regenerating === 'music' ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-3 h-3" />
+                )}
+              </Button>
+            </div>
           </div>
           
-          <div className="h-[100px] border rounded bg-muted/30 flex items-center justify-center">
+          <div className="h-[80px] border rounded bg-muted/30 flex items-center justify-center">
             {assets.music?.status === 'generating' ? (
               <div className="text-center space-y-2">
                 <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
                 <p className="text-xs text-muted-foreground">Generating music...</p>
               </div>
             ) : assets.music?.url || assets.music?.base64 ? (
-              <div className="text-center space-y-2">
-                <Music className="w-8 h-8 mx-auto text-purple-500" />
+              <div className="text-center space-y-1">
+                <Music className={cn("w-6 h-6 mx-auto", isMusicPlaying ? "text-primary animate-pulse" : "text-muted-foreground")} />
                 <p className="text-xs text-muted-foreground">
-                  {assets.music.provider || 'Music ready'}
+                  {isMusicPlaying ? 'Playing...' : 'Music ready'}
                 </p>
+                {assets.music.provider && (
+                  <p className="text-[10px] text-muted-foreground">{assets.music.provider}</p>
+                )}
               </div>
             ) : (
               <div className="text-center space-y-2">
-                <Music className="w-8 h-8 mx-auto text-muted-foreground/50" />
+                <Music className="w-6 h-6 mx-auto text-muted-foreground/50" />
                 <p className="text-xs text-muted-foreground">No music yet</p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-5 text-[10px]"
+                  onClick={() => handleRegenerate('music')}
+                  disabled={regenerating === 'music'}
+                >
+                  <Wand2 className="w-2 h-2 mr-1" /> Generate
+                </Button>
               </div>
             )}
           </div>
         </div>
       </div>
+
+      {/* Confidence Score Section */}
+      {(confidenceScores?.script || confidenceScores?.audio || confidenceScores?.video || confidenceScores?.music) && (
+        <div className="pt-3 border-t">
+          <ConfidenceScoreCard
+            chapterId={chapterId}
+            chapterTitle={chapterTitle}
+            assets={[
+              { 
+                type: 'script' as const, 
+                status: assets.script?.status || 'pending',
+                overallScore: confidenceScores?.script,
+                provider: 'gemini'
+              },
+              { 
+                type: 'audio' as const, 
+                status: assets.audio?.status || 'pending',
+                overallScore: confidenceScores?.audio,
+                provider: assets.audio?.provider || 'elevenlabs'
+              },
+              { 
+                type: 'video' as const, 
+                status: assets.video?.status || 'pending',
+                overallScore: confidenceScores?.video,
+                provider: assets.video?.provider || 'sora'
+              },
+              { 
+                type: 'music' as const, 
+                status: assets.music?.status || 'pending',
+                overallScore: confidenceScores?.music,
+                provider: assets.music?.provider || 'elevenlabs'
+              },
+            ]}
+            onRegenerate={(cId, assetType) => handleRegenerate(assetType)}
+            isRegenerating={regenerating}
+          />
+        </div>
+      )}
 
       {/* Languages */}
       {languages.length > 1 && (
@@ -564,8 +829,16 @@ export const ChapterPreviewPanel: React.FC<ChapterPreviewPanelProps> = ({
           <p className="text-xs text-muted-foreground mb-2">Available in:</p>
           <div className="flex flex-wrap gap-1">
             {languages.map(lang => (
-              <Badge key={lang} variant="outline" className="text-xs">
-                {lang.toUpperCase()}
+              <Badge 
+                key={lang} 
+                variant={lang === selectedAudioLanguage ? 'default' : 'outline'} 
+                className="text-xs cursor-pointer"
+                onClick={() => setSelectedAudioLanguage(lang)}
+              >
+                {LANGUAGE_NAMES[lang] || lang.toUpperCase()}
+                {audioByLanguage?.[lang]?.status === 'complete' && (
+                  <CheckCircle2 className="w-2 h-2 ml-1" />
+                )}
               </Badge>
             ))}
           </div>
