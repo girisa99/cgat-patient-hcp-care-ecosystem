@@ -56,12 +56,12 @@ export const AskGenieFAB: React.FC<AskGenieFABProps> = ({ className }) => {
 
   return (
     <>
-      {/* Floating Action Button - z-30 to stay below action tabs (z-40+) */}
+      {/* Floating Action Button - z-20 to stay below action tabs (z-40+) and sidebars (z-30) */}
       <Button
         id="ask-genie-fab"
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "fixed bottom-6 right-6 z-30 h-14 w-14 rounded-full shadow-lg",
+          "fixed bottom-6 right-6 z-20 h-14 w-14 rounded-full shadow-lg",
           "bg-primary hover:bg-primary/90 text-primary-foreground",
           "transition-transform hover:scale-105 active:scale-95",
           isOpen && "bg-muted text-foreground hover:bg-muted/90",
@@ -110,7 +110,7 @@ export const AskGenieFAB: React.FC<AskGenieFABProps> = ({ className }) => {
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             className={cn(
-              "fixed bottom-24 right-6 z-30",
+              "fixed bottom-24 right-6 z-20",
               "w-[380px] max-h-[500px]",
               "bg-background border rounded-xl shadow-2xl overflow-hidden",
               "flex flex-col"
