@@ -7,7 +7,11 @@
  * - Azure: Enterprise/multilingual support
  * - Google: Wide language coverage
  * - Alibaba: CJK zone (Qwen Zone)
- * - Deepgram: Real-time STT (not TTS, but included for completeness)
+ * 
+ * Features:
+ * - Smart text chunking for long content (handles 4096 char limits)
+ * - Request stitching for smooth transitions between chunks
+ * - Multi-provider fallback chain
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -60,6 +64,92 @@ interface TTSRouting {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// TEXT CHUNKING FOR LONG CONTENT
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const OPENAI_MAX_CHARS = 3800; // Leave buffer below 4096 limit
+const ELEVENLABS_MAX_CHARS = 4800; // ElevenLabs limit ~5000
+const GOOGLE_MAX_CHARS = 4800; // Google limit ~5000
+
+/**
+ * Smart text chunking that preserves sentence boundaries
+ * Handles multiple scripts: Latin, Devanagari (Hindi), Telugu, Arabic, CJK
+ */
+function chunkTextBySentences(text: string, maxChars: number): string[] {
+  if (text.length <= maxChars) return [text];
+  
+  const chunks: string[] = [];
+  // Split on sentence endings for multiple scripts:
+  // - Latin: . ! ?
+  // - Hindi/Devanagari: । (Devanagari Danda)
+  // - Telugu: ।
+  // - Chinese/Japanese: 。！？
+  // - Arabic: ؟
+  const sentences = text.split(/(?<=[.!?।॥。！？؟])\s*/);
+  let currentChunk = '';
+  
+  for (const sentence of sentences) {
+    const testLength = currentChunk ? currentChunk.length + 1 + sentence.length : sentence.length;
+    
+    if (testLength > maxChars) {
+      if (currentChunk) {
+        chunks.push(currentChunk.trim());
+      }
+      
+      // Handle very long sentences by word splitting
+      if (sentence.length > maxChars) {
+        const words = sentence.split(/\s+/);
+        let wordChunk = '';
+        for (const word of words) {
+          const wordTestLength = wordChunk ? wordChunk.length + 1 + word.length : word.length;
+          if (wordTestLength > maxChars) {
+            if (wordChunk) chunks.push(wordChunk.trim());
+            // If single word exceeds limit, force split by characters
+            if (word.length > maxChars) {
+              for (let i = 0; i < word.length; i += maxChars) {
+                chunks.push(word.slice(i, i + maxChars));
+              }
+              wordChunk = '';
+            } else {
+              wordChunk = word;
+            }
+          } else {
+            wordChunk = wordChunk ? wordChunk + ' ' + word : word;
+          }
+        }
+        currentChunk = wordChunk;
+      } else {
+        currentChunk = sentence;
+      }
+    } else {
+      currentChunk = currentChunk ? currentChunk + ' ' + sentence : sentence;
+    }
+  }
+  
+  if (currentChunk.trim()) chunks.push(currentChunk.trim());
+  
+  console.log(`📝 Chunked ${text.length} chars into ${chunks.length} chunks`);
+  return chunks;
+}
+
+/**
+ * Concatenate multiple audio buffers (MP3 frames are independent)
+ */
+async function concatenateAudioBuffers(buffers: ArrayBuffer[]): Promise<ArrayBuffer> {
+  const totalLength = buffers.reduce((sum, buf) => sum + buf.byteLength, 0);
+  const result = new Uint8Array(totalLength);
+  let offset = 0;
+  
+  for (const buffer of buffers) {
+    result.set(new Uint8Array(buffer), offset);
+    offset += buffer.byteLength;
+  }
+  
+  console.log(`🔗 Concatenated ${buffers.length} audio buffers: ${totalLength} bytes`);
+  return result.buffer;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // SMART REGIONAL ROUTING
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -85,67 +175,37 @@ function selectTTSProvider(region: string, languageCode: string, tier: string = 
   // CJK Zone: Prefer Alibaba
   if (CJK_REGIONS.includes(region) && hasProvider('alibaba')) {
     console.log('🌏 CJK Zone: Routing to Alibaba TTS');
-    return {
-      provider: 'alibaba',
-      cost: 0.004,
-      zone: 'alibaba',
-      quality: 'standard',
-    };
+    return { provider: 'alibaba', cost: 0.004, zone: 'alibaba', quality: 'standard' };
   }
 
   // MENA Zone: Prefer Azure for Arabic support
   if (MENA_REGIONS.includes(region) && hasProvider('azure')) {
     console.log('🌍 MENA Zone: Routing to Azure TTS');
-    return {
-      provider: 'azure',
-      cost: 0.016,
-      zone: 'azure',
-      quality: 'premium',
-    };
+    return { provider: 'azure', cost: 0.016, zone: 'azure', quality: 'premium' };
   }
 
   // Premium tier: ElevenLabs for highest quality
   if (tier === 'premium' && hasProvider('elevenlabs')) {
     console.log('🎤 Premium tier: Routing to ElevenLabs');
-    return {
-      provider: 'elevenlabs',
-      cost: 0.03,
-      zone: 'claude',
-      quality: 'premium',
-    };
+    return { provider: 'elevenlabs', cost: 0.03, zone: 'claude', quality: 'premium' };
   }
 
   // Western languages: Prefer ElevenLabs, then OpenAI
   if (ELEVENLABS_REGIONS.includes(region)) {
     if (hasProvider('elevenlabs')) {
       console.log('🎤 Claude Zone: Routing to ElevenLabs');
-      return {
-        provider: 'elevenlabs',
-        cost: 0.018,
-        zone: 'claude',
-        quality: 'premium',
-      };
+      return { provider: 'elevenlabs', cost: 0.018, zone: 'claude', quality: 'premium' };
     }
     if (hasProvider('openai')) {
       console.log('🎤 Claude Zone fallback: Routing to OpenAI');
-      return {
-        provider: 'openai',
-        cost: 0.015,
-        zone: 'openai',
-        quality: 'standard',
-      };
+      return { provider: 'openai', cost: 0.015, zone: 'openai', quality: 'standard' };
     }
   }
 
   // South Asian/SEA: Prefer Google
   if (GEMINI_REGIONS.includes(region) && hasProvider('google')) {
     console.log('🌏 Gemini Zone: Routing to Google TTS');
-    return {
-      provider: 'google',
-      cost: 0.016,
-      zone: 'gemini',
-      quality: 'standard',
-    };
+    return { provider: 'google', cost: 0.016, zone: 'gemini', quality: 'standard' };
   }
 
   // Default fallback chain: OpenAI -> ElevenLabs -> Google -> Azure -> Alibaba
@@ -172,33 +232,48 @@ async function generateElevenLabsTTS(text: string, voice?: string, speed?: numbe
   const ELEVENLABS_API_KEY = Deno.env.get('ELEVENLABS_API_KEY');
   if (!ELEVENLABS_API_KEY) throw new Error('ElevenLabs API key not configured');
 
-  // Default voice options
   const voiceId = voice || 'JBFqnCBsd6RMkjVDRZzb'; // George
   
-  const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
-    method: 'POST',
-    headers: {
-      'xi-api-key': ELEVENLABS_API_KEY,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      text,
-      model_id: 'eleven_turbo_v2_5',
-      voice_settings: {
-        stability: 0.5,
-        similarity_boost: 0.75,
-        style: 0.3,
-        speed: speed || 1.0,
+  // Chunk if needed
+  const chunks = chunkTextBySentences(text, ELEVENLABS_MAX_CHARS);
+  console.log(`🎤 ElevenLabs: Processing ${chunks.length} chunk(s), total ${text.length} chars`);
+  
+  const audioBuffers: ArrayBuffer[] = [];
+  
+  for (let i = 0; i < chunks.length; i++) {
+    const chunk = chunks[i];
+    console.log(`🎤 ElevenLabs chunk ${i + 1}/${chunks.length}: ${chunk.length} chars`);
+    
+    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+      method: 'POST',
+      headers: {
+        'xi-api-key': ELEVENLABS_API_KEY,
+        'Content-Type': 'application/json',
       },
-    }),
-  });
+      body: JSON.stringify({
+        text: chunk,
+        model_id: 'eleven_turbo_v2_5',
+        voice_settings: {
+          stability: 0.5,
+          similarity_boost: 0.75,
+          style: 0.3,
+          speed: speed || 1.0,
+        },
+        // Request stitching for smooth transitions
+        ...(i > 0 && { previous_text: chunks[i - 1].slice(-200) }),
+        ...(i < chunks.length - 1 && { next_text: chunks[i + 1].slice(0, 200) }),
+      }),
+    });
 
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`ElevenLabs TTS error: ${error}`);
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`ElevenLabs TTS error: ${error}`);
+    }
+
+    audioBuffers.push(await response.arrayBuffer());
   }
-
-  return response.arrayBuffer();
+  
+  return chunks.length === 1 ? audioBuffers[0] : await concatenateAudioBuffers(audioBuffers);
 }
 
 async function generateOpenAITTS(text: string, voice?: string, speed?: number): Promise<ArrayBuffer> {
@@ -208,27 +283,40 @@ async function generateOpenAITTS(text: string, voice?: string, speed?: number): 
   const validVoices = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'];
   const selectedVoice = validVoices.includes(voice || '') ? voice : 'alloy';
 
-  const response = await fetch('https://api.openai.com/v1/audio/speech', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${OPENAI_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'tts-1',
-      input: text,
-      voice: selectedVoice,
-      speed: speed || 1.0,
-      response_format: 'mp3',
-    }),
-  });
+  // Chunk long text to avoid 4096 char limit
+  const chunks = chunkTextBySentences(text, OPENAI_MAX_CHARS);
+  console.log(`🔊 OpenAI: Processing ${chunks.length} chunk(s), total ${text.length} chars`);
+  
+  const audioBuffers: ArrayBuffer[] = [];
+  
+  for (let i = 0; i < chunks.length; i++) {
+    const chunk = chunks[i];
+    console.log(`🔊 OpenAI chunk ${i + 1}/${chunks.length}: ${chunk.length} chars`);
+    
+    const response = await fetch('https://api.openai.com/v1/audio/speech', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'tts-1',
+        input: chunk,
+        voice: selectedVoice,
+        speed: speed || 1.0,
+        response_format: 'mp3',
+      }),
+    });
 
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`OpenAI TTS error: ${error}`);
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`OpenAI TTS error (chunk ${i + 1}): ${error}`);
+    }
+
+    audioBuffers.push(await response.arrayBuffer());
   }
-
-  return response.arrayBuffer();
+  
+  return chunks.length === 1 ? audioBuffers[0] : await concatenateAudioBuffers(audioBuffers);
 }
 
 async function generateAzureTTS(text: string, languageCode?: string, voice?: string): Promise<ArrayBuffer> {
@@ -247,6 +335,8 @@ async function generateAzureTTS(text: string, languageCode?: string, voice?: str
     'es-ES': 'es-ES-ElviraNeural',
     'zh-CN': 'zh-CN-XiaoxiaoNeural',
     'ja-JP': 'ja-JP-NanamiNeural',
+    'hi-IN': 'hi-IN-SwaraNeural',
+    'te-IN': 'te-IN-ShrutiNeural',
   };
   
   const lang = languageCode || 'en-US';
@@ -288,38 +378,51 @@ async function generateGoogleTTS(text: string, languageCode?: string, voice?: st
   const lang = languageCode || 'en-US';
   const selectedVoice = voice || `${lang}-Neural2-D`;
 
-  const response = await fetch(
-    `https://texttospeech.googleapis.com/v1/text:synthesize?key=${GOOGLE_API_KEY}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        input: { text },
-        voice: { languageCode: lang, name: selectedVoice },
-        audioConfig: { audioEncoding: 'MP3', speakingRate: 1.0 },
-      }),
+  // Chunk if needed
+  const chunks = chunkTextBySentences(text, GOOGLE_MAX_CHARS);
+  console.log(`🌐 Google: Processing ${chunks.length} chunk(s), total ${text.length} chars`);
+  
+  const audioBuffers: ArrayBuffer[] = [];
+  
+  for (let i = 0; i < chunks.length; i++) {
+    const chunk = chunks[i];
+    console.log(`🌐 Google chunk ${i + 1}/${chunks.length}: ${chunk.length} chars`);
+    
+    const response = await fetch(
+      `https://texttospeech.googleapis.com/v1/text:synthesize?key=${GOOGLE_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          input: { text: chunk },
+          voice: { languageCode: lang, name: selectedVoice },
+          audioConfig: { audioEncoding: 'MP3', speakingRate: 1.0 },
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Google TTS error: ${error}`);
     }
-  );
 
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Google TTS error: ${error}`);
-  }
+    const data = await response.json();
+    
+    if (!data.audioContent) {
+      throw new Error('No audio content returned from Google TTS');
+    }
 
-  const data = await response.json();
-  
-  if (!data.audioContent) {
-    throw new Error('No audio content returned from Google TTS');
-  }
-
-  // Google returns base64, decode it
-  const binaryString = atob(data.audioContent);
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
+    // Google returns base64, decode it
+    const binaryString = atob(data.audioContent);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let j = 0; j < binaryString.length; j++) {
+      bytes[j] = binaryString.charCodeAt(j);
+    }
+    
+    audioBuffers.push(bytes.buffer);
   }
   
-  return bytes.buffer;
+  return chunks.length === 1 ? audioBuffers[0] : await concatenateAudioBuffers(audioBuffers);
 }
 
 async function generateAlibabaTTS(text: string, languageCode?: string, voice?: string): Promise<ArrayBuffer> {
@@ -384,12 +487,11 @@ serve(async (req) => {
     const languageCode = request.languageCode || 'en-US';
     const tier = request.tier || 'standard';
 
-    console.log(`📢 TTS Request: text="${request.text.substring(0, 50)}...", region=${region}, lang=${languageCode}, tier=${tier}`);
+    console.log(`📢 TTS Request: text="${request.text.substring(0, 50)}...", region=${region}, lang=${languageCode}, tier=${tier}, chars=${request.text.length}`);
 
     // Determine optimal provider
     let routing: TTSRouting;
     if (request.provider) {
-      // User requested specific provider
       const providers = getAvailableProviders();
       const available = providers.find(p => p.id === request.provider && p.available);
       if (!available) {
@@ -435,6 +537,10 @@ serve(async (req) => {
         console.log('🔄 Falling back to OpenAI TTS');
         audioBuffer = await generateOpenAITTS(request.text, request.voice, request.speed);
         routing.provider = 'openai';
+      } else if (routing.provider !== 'elevenlabs' && Deno.env.get('ELEVENLABS_API_KEY')) {
+        console.log('🔄 Falling back to ElevenLabs TTS');
+        audioBuffer = await generateElevenLabsTTS(request.text, request.voice, request.speed);
+        routing.provider = 'elevenlabs';
       } else {
         throw primaryError;
       }
