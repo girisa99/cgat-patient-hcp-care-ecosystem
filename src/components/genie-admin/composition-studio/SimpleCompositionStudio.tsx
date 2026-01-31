@@ -972,6 +972,26 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
   
   // Load a specific project by ID (for project picker)
   const loadProject = useCallback((projectId: string) => {
+    // FIXED: Save current project before switching to prevent data loss
+    if (currentProjectId && (projectName.trim() || chapters.length > 0)) {
+      const currentProject: StoredProject = {
+        id: currentProjectId,
+        projectName,
+        chapters,
+        primaryLanguage,
+        additionalLanguages,
+        selectedTemplates,
+        selectedVisualTypes,
+        audioScope,
+        scriptScope,
+        outputMode,
+        savedAt: new Date().toISOString(),
+        createdAt: loadProjectById(currentProjectId)?.createdAt || new Date().toISOString(),
+      };
+      saveProject(currentProject);
+      console.log('[Studio] Saved current project before switching:', projectName);
+    }
+    
     const project = loadProjectById(projectId);
     if (project) {
       setCurrentProjectId(project.id);
@@ -992,10 +1012,13 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
       localStorage.setItem(CURRENT_PROJECT_KEY, project.id);
       sessionStorage.setItem(CURRENT_PROJECT_KEY, project.id);
       
+      // Refresh history to show updated save times
+      setProjectHistory(loadAllProjects());
+      
       toast.success(`Loaded: ${project.projectName}`);
       setShowProjectPicker(false);
     }
-  }, []);
+  }, [currentProjectId, projectName, chapters, primaryLanguage, additionalLanguages, selectedTemplates, selectedVisualTypes, audioScope, scriptScope, outputMode]);
   
   // Create a new project
   const startNewProject = useCallback(() => {
@@ -1817,51 +1840,89 @@ IMPORTANT:
       try {
         console.log('[Studio] Generating visual content, type:', visualType);
         
-        // Try video generation first
-        const videoResult = await ecosystemServices.generateVideo(
-          `${chapter.title}: ${script.substring(0, 200)}`,
-          visualType,
-          Math.min(chapter.duration, 10)
-        );
+        // Try direct edge function for video generation first (more reliable)
+        const videoPrompt = `${chapter.title}: ${script.substring(0, 200)}. ${visualType === 'video_cinematic' ? 'Cinematic 4K' : 'Professional'} style.`;
         
-        if (videoResult.success) {
-          // Check if videoUrl is a real URL (not a placeholder)
-          const hasRealVideo = videoResult.videoUrl && 
-            !videoResult.videoUrl.includes('placehold.co') &&
-            !videoResult.videoUrl.includes('placeholder');
+        console.log('[Studio] Calling ai-video-generator edge function...');
+        const { data: videoData, error: videoError } = await supabase.functions.invoke('ai-video-generator', {
+          body: {
+            prompt: videoPrompt,
+            type: 'video', // Correct parameter name
+            visualType: visualType, // Pass for smart routing
+            duration: Math.min(chapter.duration, 10),
+            aspectRatio: '16:9',
+            quality: 'standard',
+          }
+        });
+        
+        if (!videoError && videoData) {
+          const generatedVideoUrl = videoData.videoUrl || videoData.url || videoData.mediaUrl;
+          const hasRealVideo = generatedVideoUrl && 
+            !generatedVideoUrl.includes('placehold.co') &&
+            !generatedVideoUrl.includes('placeholder') &&
+            generatedVideoUrl.startsWith('http');
           
           if (hasRealVideo) {
+            videoUrl = generatedVideoUrl;
+            previewUrl = videoData.thumbnailUrl || generatedVideoUrl;
+            console.log('[Studio] Video generated successfully:', generatedVideoUrl.substring(0, 80));
+            toast.success(`Video generated for "${chapter.title}"`);
+          } else if (videoData.asyncGeneration || videoData.status === 'processing') {
+            // Video is processing async - show message and use thumbnail
+            console.log('[Studio] Video is processing async, generating preview image...');
+            toast.info(`Video for "${chapter.title}" is processing (may take 2-5 minutes)`);
+          }
+        } else {
+          console.warn('[Studio] Video edge function error:', videoError);
+        }
+        
+        // If no real video yet, try ecosystem service as fallback
+        if (!videoUrl) {
+          const videoResult = await ecosystemServices.generateVideo(
+            videoPrompt,
+            visualType,
+            Math.min(chapter.duration, 10)
+          );
+          
+          if (videoResult.success && videoResult.videoUrl && 
+              !videoResult.videoUrl.includes('placehold.co') &&
+              !videoResult.videoUrl.includes('placeholder')) {
             videoUrl = videoResult.videoUrl;
             previewUrl = videoResult.thumbnailUrl || videoResult.videoUrl;
-            console.log('[Studio] Video generated with provider:', videoResult.provider);
-          } else {
-            console.log('[Studio] Video returned placeholder, generating image thumbnail instead');
-            // Generate a real image as preview since video is still processing
-            const imageResult = await ecosystemServices.generateImage(
-              `Professional ${visualType} thumbnail for: ${chapter.title}. ${script.substring(0, 100)}`,
-              'realistic',
-              '16:9'
-            );
-            if (imageResult.imageUrl) {
-              previewUrl = imageResult.imageUrl;
+            console.log('[Studio] Video from ecosystem service:', videoResult.provider);
+          }
+        }
+        
+        // If still no video, generate a high-quality image as preview
+        if (!videoUrl) {
+          console.log('[Studio] Generating image thumbnail as fallback...');
+          const { data: imageData } = await supabase.functions.invoke('ai-image-generator', {
+            body: {
+              prompt: `Professional ${visualType} scene for: ${chapter.title}. ${script.substring(0, 150)}. Cinematic, high quality.`,
+              provider: 'openai',
+              size: '1792x1024',
+              quality: 'hd'
             }
-            toast.info(`Video for "${chapter.title}" is still processing - preview image generated`);
+          });
+          if (imageData?.imageUrl || imageData?.url) {
+            previewUrl = imageData.imageUrl || imageData.url;
+            console.log('[Studio] Preview image generated successfully');
           }
         }
       } catch (e) {
         console.warn('[Studio] Video/image generation error:', e);
-        // Fallback to direct image generation edge function
+        // Final fallback to image generation
         try {
           const { data: imageData } = await supabase.functions.invoke('ai-image-generator', {
             body: {
               prompt: `Professional ${visualType} thumbnail for: ${chapter.title}. ${script.substring(0, 100)}`,
               provider: 'openai',
-              size: '1536x1024', // Valid OpenAI size for 16:9 aspect
-              quality: 'high'
+              size: '1792x1024',
+              quality: 'hd'
             }
           });
-          if (imageData?.imageUrl || imageData?.mediaUrl) {
-            previewUrl = imageData.imageUrl || imageData.mediaUrl;
+          if (imageData?.imageUrl || imageData?.mediaUrl || imageData?.url) {
+            previewUrl = imageData.imageUrl || imageData.mediaUrl || imageData.url;
             console.log('[Studio] Fallback image generated successfully');
           }
         } catch (imgError) {
@@ -2350,17 +2411,18 @@ Primary Language: ${primaryLanguage}`;
                 case 'music': {
                   // Regenerate background music
                   const musicResult = await ecosystemServices.generateMusic(
-                    `Professional ${chapter.visualTypes[0] || 'corporate'} background music`,
+                    `Professional ${chapter.visualTypes[0] || 'corporate'} background music, ${chapter.industry || 'corporate'} style`,
                     chapter.duration
                   );
                   
                   if (musicResult.audioUrl) {
-                    // FIXED: Only update music confidence, preserve other scores
+                    // FIXED: Store musicUrl AND update music confidence, preserve other scores
                     const existingConfidence = chapter.generatedContent?.confidenceScores || {};
                     const newMusicConfidence = 85 + Math.floor(Math.random() * 10);
                     updateChapter(chapter.id, {
                       generatedContent: { 
                         ...chapter.generatedContent,
+                        musicUrl: musicResult.audioUrl, // FIXED: Actually store the music URL!
                         confidenceScores: {
                           ...existingConfidence,
                           music: newMusicConfidence
