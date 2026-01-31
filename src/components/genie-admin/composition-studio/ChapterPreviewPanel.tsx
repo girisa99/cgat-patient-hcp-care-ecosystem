@@ -17,6 +17,12 @@ import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -27,7 +33,7 @@ import {
   Play, Pause, RotateCcw, Edit2, Check, X,
   Volume2, VolumeX, Video, FileText, Sparkles, Download,
   Image, Music, Loader2, Eye, ThumbsUp, ThumbsDown,
-  RefreshCw, Wand2, AlertCircle, Globe, CheckCircle2
+  RefreshCw, Wand2, AlertCircle, Globe, CheckCircle2, Maximize2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -188,12 +194,15 @@ export const ChapterPreviewPanel: React.FC<ChapterPreviewPanelProps> = ({
   const [editedScript, setEditedScript] = useState(assets.script?.content || '');
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const [showVideoDialog, setShowVideoDialog] = useState(false);
   const [regenerating, setRegenerating] = useState<string | null>(null);
   const [selectedAudioLanguage, setSelectedAudioLanguage] = useState(primaryLanguage);
   const [currentTime, setCurrentTime] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const musicRef = useRef<HTMLAudioElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
   // Language display names
   const LANGUAGE_NAMES: Record<string, string> = {
@@ -225,28 +234,62 @@ export const ChapterPreviewPanel: React.FC<ChapterPreviewPanelProps> = ({
 
   // Setup audio element when source changes
   useEffect(() => {
+    // Clean up existing audio first
     if (audioRef.current) {
       audioRef.current.pause();
+      audioRef.current.src = '';
+      audioRef.current = null;
       setIsPlaying(false);
+      setCurrentTime(0);
+      setAudioDuration(0);
     }
+    
     if (audioSrc) {
-      const audio = new Audio(audioSrc);
-      audioRef.current = audio;
-      
-      audio.addEventListener('loadedmetadata', () => setAudioDuration(audio.duration));
-      audio.addEventListener('timeupdate', () => setCurrentTime(audio.currentTime));
-      audio.addEventListener('ended', () => {
-        setIsPlaying(false);
-        setCurrentTime(0);
-      });
-      audio.addEventListener('error', (e) => {
-        console.error('[ChapterPreview] Audio error:', e);
-        setIsPlaying(false);
-      });
+      try {
+        const audio = new Audio();
+        
+        // Handle load events BEFORE setting src
+        const handleLoadedMetadata = () => {
+          console.log('[ChapterPreview] Audio loaded, duration:', audio.duration);
+          setAudioDuration(audio.duration || 0);
+        };
+        const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
+        const handleEnded = () => {
+          setIsPlaying(false);
+          setCurrentTime(0);
+        };
+        const handleError = (e: ErrorEvent) => {
+          console.error('[ChapterPreview] Audio error:', e, 'src:', audioSrc?.slice(0, 100));
+          setIsPlaying(false);
+          toast.error('Audio failed to load - try regenerating');
+        };
+        const handleCanPlay = () => {
+          console.log('[ChapterPreview] Audio can play');
+        };
 
-      return () => {
-        audio.pause();
-      };
+        audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+        audio.addEventListener('timeupdate', handleTimeUpdate);
+        audio.addEventListener('ended', handleEnded);
+        audio.addEventListener('error', handleError as any);
+        audio.addEventListener('canplay', handleCanPlay);
+        
+        // Now set the source
+        audio.src = audioSrc;
+        audio.load(); // Force load
+        audioRef.current = audio;
+
+        return () => {
+          audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+          audio.removeEventListener('timeupdate', handleTimeUpdate);
+          audio.removeEventListener('ended', handleEnded);
+          audio.removeEventListener('error', handleError as any);
+          audio.removeEventListener('canplay', handleCanPlay);
+          audio.pause();
+          audio.src = '';
+        };
+      } catch (err) {
+        console.error('[ChapterPreview] Failed to create audio:', err);
+      }
     }
   }, [audioSrc]);
 
@@ -282,58 +325,87 @@ export const ChapterPreviewPanel: React.FC<ChapterPreviewPanelProps> = ({
     toast.success('Script updated');
   };
 
-  const toggleAudioPlay = () => {
-    if (!audioRef.current && audioSrc) {
-      const audio = new Audio(audioSrc);
-      audioRef.current = audio;
-      audio.play().catch(e => {
-        console.error('[ChapterPreview] Play failed:', e);
-        toast.error('Could not play audio');
-      });
-      setIsPlaying(true);
-      audio.onended = () => setIsPlaying(false);
+  const toggleAudioPlay = async () => {
+    console.log('[ChapterPreview] toggleAudioPlay called, hasAudio:', hasAudioContent, 'isPlaying:', isPlaying);
+    
+    if (!audioSrc) {
+      toast.error('No audio available');
       return;
     }
     
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-        setIsPlaying(false);
-      } else {
-        audioRef.current.play().catch(e => {
-          console.error('[ChapterPreview] Play failed:', e);
+    // Create audio if not exists
+    if (!audioRef.current) {
+      try {
+        const audio = new Audio(audioSrc);
+        audioRef.current = audio;
+        audio.addEventListener('ended', () => setIsPlaying(false));
+        audio.addEventListener('error', () => {
+          console.error('[ChapterPreview] Audio play error');
           toast.error('Could not play audio');
+          setIsPlaying(false);
         });
+      } catch (err) {
+        console.error('[ChapterPreview] Failed to create audio:', err);
+        toast.error('Could not load audio');
+        return;
+      }
+    }
+    
+    const audio = audioRef.current;
+    
+    if (isPlaying) {
+      audio.pause();
+      setIsPlaying(false);
+    } else {
+      try {
+        await audio.play();
         setIsPlaying(true);
+      } catch (e) {
+        console.error('[ChapterPreview] Play failed:', e);
+        toast.error('Could not play audio - try clicking again');
       }
     }
   };
 
-  const toggleMusicPlay = () => {
+  const toggleMusicPlay = async () => {
     const musicSrc = assets.music?.url || 
       (assets.music?.base64 ? `data:audio/mpeg;base64,${assets.music.base64}` : null);
     
     if (!musicSrc) {
-      toast.error('No music available');
+      toast.error('No music generated yet. Click Generate to create background music.');
       return;
     }
 
     if (!musicRef.current) {
-      const audio = new Audio(musicSrc);
-      musicRef.current = audio;
-      audio.volume = 0.5;
-      audio.play().catch(e => {
-        console.error('[ChapterPreview] Music play failed:', e);
-        toast.error('Could not play music');
-      });
-      setIsMusicPlaying(true);
-      audio.onended = () => setIsMusicPlaying(false);
-    } else if (isMusicPlaying) {
-      musicRef.current.pause();
+      try {
+        const audio = new Audio(musicSrc);
+        musicRef.current = audio;
+        audio.volume = 0.5;
+        audio.addEventListener('ended', () => setIsMusicPlaying(false));
+        audio.addEventListener('error', () => {
+          toast.error('Could not play music');
+          setIsMusicPlaying(false);
+        });
+      } catch (err) {
+        console.error('[ChapterPreview] Failed to create music audio:', err);
+        toast.error('Could not load music');
+        return;
+      }
+    }
+    
+    const audio = musicRef.current;
+    
+    if (isMusicPlaying) {
+      audio.pause();
       setIsMusicPlaying(false);
     } else {
-      musicRef.current.play().catch(e => console.error(e));
-      setIsMusicPlaying(true);
+      try {
+        await audio.play();
+        setIsMusicPlaying(true);
+      } catch (e) {
+        console.error('[ChapterPreview] Music play failed:', e);
+        toast.error('Could not play music');
+      }
     }
   };
 
@@ -635,24 +707,58 @@ export const ChapterPreviewPanel: React.FC<ChapterPreviewPanelProps> = ({
           </div>
         </div>
 
-        {/* Video Section */}
+        {/* Video Section with Inline Playback */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Video className="w-4 h-4 text-muted-foreground" />
               <span className="text-sm font-medium">Visual</span>
               {getStatusBadge(assets.video)}
+              {confidenceScores?.video && (
+                <Badge variant="outline" className={cn(
+                  "text-[10px]",
+                  confidenceScores.video >= 95 ? "border-primary/50 text-primary" :
+                  confidenceScores.video >= 80 ? "border-amber-500/50 text-amber-600" :
+                  "border-destructive/50 text-destructive"
+                )}>
+                  {confidenceScores.video}%
+                </Badge>
+              )}
             </div>
             <div className="flex gap-1">
               {assets.video?.url && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-6 w-6 p-0"
-                  onClick={() => window.open(assets.video?.url, '_blank')}
-                >
-                  <Eye className="w-3 h-3" />
-                </Button>
+                <>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 w-6 p-0"
+                    onClick={() => setShowVideoDialog(true)}
+                    title="Fullscreen preview"
+                  >
+                    <Maximize2 className="w-3 h-3" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 w-6 p-0"
+                    onClick={() => {
+                      // Toggle inline video play
+                      const video = videoRef.current;
+                      if (video) {
+                        if (isVideoPlaying) {
+                          video.pause();
+                          setIsVideoPlaying(false);
+                        } else {
+                          video.play().catch(console.error);
+                          setIsVideoPlaying(true);
+                        }
+                      }
+                    }}
+                    title={isVideoPlaying ? "Pause" : "Play"}
+                  >
+                    {isVideoPlaying ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+                  </Button>
+                </>
               )}
               <Button
                 size="sm"
@@ -670,7 +776,14 @@ export const ChapterPreviewPanel: React.FC<ChapterPreviewPanelProps> = ({
             </div>
           </div>
           
-          <div className="h-[100px] border rounded bg-muted/30 flex items-center justify-center overflow-hidden">
+          <div 
+            className="h-[120px] border rounded bg-muted/30 flex items-center justify-center overflow-hidden cursor-pointer relative group"
+            onClick={() => {
+              if (assets.video?.url) {
+                setShowVideoDialog(true);
+              }
+            }}
+          >
             {assets.video?.status === 'generating' ? (
               <div className="text-center space-y-2 px-4">
                 <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
@@ -678,11 +791,36 @@ export const ChapterPreviewPanel: React.FC<ChapterPreviewPanelProps> = ({
                 <p className="text-[10px] text-muted-foreground">Videos may take 2-5 minutes</p>
               </div>
             ) : assets.video?.url ? (
-              <VideoPreviewWithFallback 
-                url={assets.video.url}
-                onRegenerate={() => handleRegenerate('video')}
-                isRegenerating={regenerating === 'video'}
-              />
+              <div className="relative w-full h-full">
+                <video
+                  ref={videoRef}
+                  src={assets.video.url}
+                  className="h-full w-full object-cover"
+                  muted={!isVideoPlaying}
+                  loop
+                  playsInline
+                  onEnded={() => setIsVideoPlaying(false)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const video = e.currentTarget;
+                    if (isVideoPlaying) {
+                      video.pause();
+                      setIsVideoPlaying(false);
+                    } else {
+                      video.play().catch(console.error);
+                      setIsVideoPlaying(true);
+                    }
+                  }}
+                />
+                {/* Play overlay when not playing */}
+                {!isVideoPlaying && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors">
+                    <div className="w-10 h-10 rounded-full bg-primary/90 flex items-center justify-center">
+                      <Play className="w-5 h-5 text-primary-foreground ml-0.5" />
+                    </div>
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="text-center space-y-2 px-4">
                 <Video className="w-6 h-6 mx-auto text-muted-foreground/50" />
@@ -691,7 +829,10 @@ export const ChapterPreviewPanel: React.FC<ChapterPreviewPanelProps> = ({
                   size="sm"
                   variant="outline"
                   className="h-6 text-xs"
-                  onClick={() => handleRegenerate('video')}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRegenerate('video');
+                  }}
                   disabled={regenerating === 'video'}
                 >
                   {regenerating === 'video' ? (
@@ -844,6 +985,46 @@ export const ChapterPreviewPanel: React.FC<ChapterPreviewPanelProps> = ({
           </div>
         </div>
       )}
+
+      {/* Video Fullscreen Dialog */}
+      <Dialog open={showVideoDialog} onOpenChange={setShowVideoDialog}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>{chapterTitle} - Visual Preview</DialogTitle>
+          </DialogHeader>
+          {assets.video?.url && (
+            <div className="aspect-video bg-black rounded-lg overflow-hidden">
+              <video
+                src={assets.video.url}
+                className="w-full h-full"
+                controls
+                autoPlay
+                onEnded={() => setShowVideoDialog(false)}
+              />
+            </div>
+          )}
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setShowVideoDialog(false)}>
+              Close
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (assets.video?.url) {
+                  const link = document.createElement('a');
+                  link.href = assets.video.url;
+                  link.download = `${chapterTitle}-video.mp4`;
+                  link.click();
+                  toast.success('Download started');
+                }
+              }}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Download
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
