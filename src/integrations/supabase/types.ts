@@ -3900,6 +3900,158 @@ export type Database = {
         }
         Relationships: []
       }
+      composition_chapters: {
+        Row: {
+          ai_suggested_prompt: string | null
+          approved_at: string | null
+          approved_by: string | null
+          audio_by_language: Json | null
+          audio_confidence_factors: Json | null
+          audio_confidence_score: number | null
+          chapter_order: number
+          created_at: string
+          custom_prompt: string | null
+          duration: number | null
+          feedback: string | null
+          id: string
+          music_provider: string | null
+          music_source: string | null
+          music_url: string | null
+          preview_url: string | null
+          project_id: string
+          script_confidence_factors: Json | null
+          script_confidence_score: number | null
+          script_content: string | null
+          script_source: string | null
+          status: string
+          title: string
+          updated_at: string
+          video_confidence_factors: Json | null
+          video_confidence_score: number | null
+          video_provider: string | null
+          video_url: string | null
+          visual_types: string[] | null
+          voice_source: string | null
+        }
+        Insert: {
+          ai_suggested_prompt?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_by_language?: Json | null
+          audio_confidence_factors?: Json | null
+          audio_confidence_score?: number | null
+          chapter_order?: number
+          created_at?: string
+          custom_prompt?: string | null
+          duration?: number | null
+          feedback?: string | null
+          id?: string
+          music_provider?: string | null
+          music_source?: string | null
+          music_url?: string | null
+          preview_url?: string | null
+          project_id: string
+          script_confidence_factors?: Json | null
+          script_confidence_score?: number | null
+          script_content?: string | null
+          script_source?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          video_confidence_factors?: Json | null
+          video_confidence_score?: number | null
+          video_provider?: string | null
+          video_url?: string | null
+          visual_types?: string[] | null
+          voice_source?: string | null
+        }
+        Update: {
+          ai_suggested_prompt?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_by_language?: Json | null
+          audio_confidence_factors?: Json | null
+          audio_confidence_score?: number | null
+          chapter_order?: number
+          created_at?: string
+          custom_prompt?: string | null
+          duration?: number | null
+          feedback?: string | null
+          id?: string
+          music_provider?: string | null
+          music_source?: string | null
+          music_url?: string | null
+          preview_url?: string | null
+          project_id?: string
+          script_confidence_factors?: Json | null
+          script_confidence_score?: number | null
+          script_content?: string | null
+          script_source?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          video_confidence_factors?: Json | null
+          video_confidence_score?: number | null
+          video_provider?: string | null
+          video_url?: string | null
+          visual_types?: string[] | null
+          voice_source?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "composition_chapters_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "composition_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      composition_projects: {
+        Row: {
+          additional_languages: string[] | null
+          created_at: string
+          id: string
+          name: string
+          output_mode: string | null
+          overall_confidence_score: number | null
+          primary_language: string
+          status: string
+          template_ids: string[] | null
+          total_duration: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          additional_languages?: string[] | null
+          created_at?: string
+          id?: string
+          name: string
+          output_mode?: string | null
+          overall_confidence_score?: number | null
+          primary_language?: string
+          status?: string
+          template_ids?: string[] | null
+          total_duration?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          additional_languages?: string[] | null
+          created_at?: string
+          id?: string
+          name?: string
+          output_mode?: string | null
+          overall_confidence_score?: number | null
+          primary_language?: string
+          status?: string
+          template_ids?: string[] | null
+          total_duration?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       comprehensive_test_cases: {
         Row: {
           actual_results: string | null

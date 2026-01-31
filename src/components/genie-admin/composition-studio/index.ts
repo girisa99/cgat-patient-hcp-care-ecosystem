@@ -52,5 +52,14 @@ export { ReviewEnhanceStep } from './ReviewEnhanceStep';
 // New: Generated Assets Sidebar - Floating assets overview
 export { GeneratedAssetsSidebar, GeneratedAssetsTrigger } from './GeneratedAssetsSidebar';
 
+// New: Multi-Language Audio Player - Primary + dropdown for other languages
+export { MultiLanguageAudioPlayer } from './MultiLanguageAudioPlayer';
+
+// New: Confidence Score Card - Quality analysis with 95% target
+export { ConfidenceScoreCard } from './ConfidenceScoreCard';
+
+// New: Script Enhance Editor - Inline editing with AI enhancement
+export { ScriptEnhanceEditor } from './ScriptEnhanceEditor';
+
 export * from './types';
 export type { LandingPageSection } from './TemplatePreviewDialog';
