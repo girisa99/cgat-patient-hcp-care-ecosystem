@@ -954,6 +954,7 @@ export const AskGenie: React.FC<AskGenieProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(externalIsOpen ?? false);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [isAutoMinimized, setIsAutoMinimized] = useState(false); // Smart auto-minimize when blocking buttons
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -963,6 +964,51 @@ export const AskGenie: React.FC<AskGenieProps> = ({
   const [showDiagram, setShowDiagram] = useState<{ id: string; title: string; diagram: string } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const lastScrollY = useRef(0);
+  
+  // Smart scroll detection: auto-minimize when user scrolls to bottom action areas
+  useEffect(() => {
+    if (!isOpen || position !== 'floating') return;
+    
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      const scrolledToBottom = (scrollY + windowHeight) >= (documentHeight - 200);
+      
+      // Detect action buttons near bottom of viewport
+      const actionButtons = document.querySelectorAll('button[type="submit"], button:contains("Generate"), button:contains("Save"), button:contains("Cancel"), [data-action-button]');
+      let hasVisibleActionButton = false;
+      
+      actionButtons.forEach((btn) => {
+        const rect = btn.getBoundingClientRect();
+        // Check if button is in the bottom 200px of viewport (where Ask Genie floats)
+        if (rect.bottom > windowHeight - 200 && rect.top < windowHeight) {
+          hasVisibleActionButton = true;
+        }
+      });
+      
+      // Auto-minimize when scrolling down to action buttons, restore when scrolling up
+      if (hasVisibleActionButton || scrolledToBottom) {
+        if (!isAutoMinimized && !isMinimized) {
+          setIsAutoMinimized(true);
+        }
+      } else {
+        if (isAutoMinimized) {
+          setIsAutoMinimized(false);
+        }
+      }
+      
+      lastScrollY.current = scrollY;
+    };
+    
+    // Use passive listener for better scroll performance
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    // Initial check
+    handleScroll();
+    
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [isOpen, position, isMinimized, isAutoMinimized]);
   
   const { generateResponse } = useUniversalAI();
   const labelStudioService = useLabelStudioBackground();
@@ -1283,12 +1329,40 @@ USER MESSAGE: ${text}
       ? GENIE_PRODUCTS[product as keyof typeof GENIE_PRODUCTS] 
       : null;
     
+    // Compact mode when auto-minimized (show just a small icon)
+    if (isAutoMinimized) {
+      return (
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 0.85 }}
+          whileHover={{ scale: 1.05, opacity: 1 }}
+          className="fixed bottom-6 right-6 z-30"
+        >
+          <Button
+            onClick={() => {
+              setIsAutoMinimized(false);
+              setIsOpen(true);
+            }}
+            className="h-12 w-12 rounded-full shadow-lg bg-gradient-to-br from-purple-100 to-violet-100 hover:from-purple-200 hover:to-violet-200 border-2 border-purple-200 p-0"
+            variant="ghost"
+            title="Ask Genie - Click to expand"
+          >
+            <img 
+              src={ASK_GENIE.logo}
+              alt={ASK_GENIE.name}
+              className="h-8 w-8 object-contain"
+            />
+          </Button>
+        </motion.div>
+      );
+    }
+    
     return (
       <motion.div
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         whileHover={{ scale: 1.02 }}
-        className="fixed bottom-6 right-6 z-50"
+        className="fixed bottom-6 right-6 z-30"
       >
         <Button
           onClick={() => setIsOpen(true)}
@@ -1325,89 +1399,116 @@ USER MESSAGE: ${text}
   };
 
   // Main chat interface - with smart positioning to avoid blocking buttons
-  const ChatInterface = () => (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95, y: 20 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.95, y: 20 }}
-      className={cn(
-        "flex flex-col bg-background border rounded-xl shadow-2xl overflow-hidden",
-        // Mobile-first responsive sizing for floating mode - pointer-events-none on container, auto on content
-        position === 'floating' && "fixed bottom-4 right-4 sm:bottom-6 sm:right-6 sm:w-[420px] w-[360px] max-h-[min(600px,70vh)] z-40 pointer-events-auto",
-        position === 'sidebar' && "h-full w-full",
-        position === 'inline' && "w-full h-[500px]",
-        className
-      )}
-      role="dialog"
-      aria-labelledby="ask-genie-title"
-      aria-describedby="ask-genie-description"
-      style={{ 
-        // Don't cover the entire bottom - leave space for action buttons
-        maxHeight: position === 'floating' ? 'min(600px, calc(100vh - 180px))' : undefined 
-      }}
-    >
-      {/* Header - Always show "Ask Genie" branding */}
+  const ChatInterface = () => {
+    // Show compact collapsed version when auto-minimized
+    const effectiveMinimized = isMinimized || isAutoMinimized;
+    
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ 
+          opacity: 1, 
+          scale: 1, 
+          y: 0,
+          // Shift up when auto-minimized to avoid blocking bottom buttons
+          ...(isAutoMinimized && position === 'floating' && { y: -80 })
+        }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        className={cn(
+          "flex flex-col bg-background border rounded-xl shadow-2xl overflow-hidden transition-all duration-300",
+          // Floating mode - smaller footprint, positioned to avoid blocking
+          position === 'floating' && cn(
+            "fixed right-4 sm:right-6 sm:w-[380px] w-[320px] z-40 pointer-events-auto",
+            isAutoMinimized ? "bottom-24 max-h-[60px]" : "bottom-4 sm:bottom-6 max-h-[min(550px,65vh)]"
+          ),
+          position === 'sidebar' && "h-full w-full",
+          position === 'inline' && "w-full h-[500px]",
+          className
+        )}
+        role="dialog"
+        aria-labelledby="ask-genie-title"
+        aria-describedby="ask-genie-description"
+      >
+      {/* Header - Compact when auto-minimized, full when normal */}
       <div className={cn(
-        "flex flex-col border-b overflow-hidden",
+        "flex flex-col border-b overflow-hidden cursor-pointer",
         `bg-gradient-to-br ${ASK_GENIE.color}`
-      )}>
-        {/* Hero Banner - Always show Ask Genie branding, mobile optimized */}
-        <div className="px-3 sm:px-5 py-3 sm:py-4 flex items-center gap-3 sm:gap-4">
-          {/* Always show Ask Genie Logo - smaller on mobile */}
-          <div className="h-12 w-12 sm:h-16 sm:w-16 rounded-xl sm:rounded-2xl bg-white flex items-center justify-center overflow-hidden shadow-xl border-2 border-white/50 flex-shrink-0">
-            <img 
-              src={ASK_GENIE.logo} 
-              alt={ASK_GENIE.name} 
-              className="h-10 w-10 sm:h-14 sm:w-14 object-contain"
-            />
+      )} onClick={() => isAutoMinimized && setIsAutoMinimized(false)}>
+        {/* Compact header when auto-minimized */}
+        {isAutoMinimized ? (
+          <div className="px-3 py-2 flex items-center gap-2">
+            <div className="h-8 w-8 rounded-lg bg-white flex items-center justify-center overflow-hidden shadow flex-shrink-0">
+              <img src={ASK_GENIE.logo} alt={ASK_GENIE.name} className="h-6 w-6 object-contain" />
+            </div>
+            <span className="text-sm font-semibold text-white flex-1">{ASK_GENIE.name}</span>
+            <span className="text-xs text-white/70">Click to expand</span>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 text-white hover:bg-white/20"
+              onClick={(e) => { e.stopPropagation(); handleClose(); }}
+            >
+              <X className="h-3 w-3" />
+            </Button>
           </div>
-          {/* Always show "Ask Genie" name and tagline */}
-          <div className="flex-1 min-w-0">
-            <h2 id="ask-genie-title" className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
-              {ASK_GENIE.name} {ASK_GENIE.emoji}
-            </h2>
-            <p id="ask-genie-description" className="text-xs sm:text-sm text-white/90 italic font-medium mt-0.5 truncate">
-              "{ASK_GENIE.tagline}"
-            </p>
-            <div className="flex items-center gap-2 mt-1 sm:mt-1.5 flex-wrap">
-              <Badge variant="outline" className="text-[9px] sm:text-[10px] bg-white/20 text-white border-white/30 px-1.5 sm:px-2 py-0">
-                🧞 AI Assistant
-              </Badge>
-              {/* Show context indicator for which product we're helping with */}
-              {product !== 'studio' && (
-                <Badge variant="outline" className="text-[9px] sm:text-[10px] bg-white/10 text-white/90 border-white/20 px-1.5 sm:px-2 py-0">
-                  Helping: {productContext.name}
+        ) : (
+          /* Full header when not auto-minimized */
+          <div className="px-3 sm:px-5 py-3 sm:py-4 flex items-center gap-3 sm:gap-4">
+            {/* Always show Ask Genie Logo - smaller on mobile */}
+            <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-xl sm:rounded-2xl bg-white flex items-center justify-center overflow-hidden shadow-xl border-2 border-white/50 flex-shrink-0">
+              <img 
+                src={ASK_GENIE.logo} 
+                alt={ASK_GENIE.name} 
+                className="h-10 w-10 sm:h-12 sm:w-12 object-contain"
+              />
+            </div>
+            {/* Always show "Ask Genie" name and tagline */}
+            <div className="flex-1 min-w-0">
+              <h2 id="ask-genie-title" className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                {ASK_GENIE.name} {ASK_GENIE.emoji}
+              </h2>
+              <p id="ask-genie-description" className="text-[10px] sm:text-xs text-white/90 italic font-medium mt-0.5 truncate">
+                "{ASK_GENIE.tagline}"
+              </p>
+              <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                <Badge variant="outline" className="text-[8px] sm:text-[9px] bg-white/20 text-white border-white/30 px-1.5 py-0 h-4">
+                  🧞 AI
                 </Badge>
-              )}
+                {product !== 'studio' && (
+                  <Badge variant="outline" className="text-[8px] sm:text-[9px] bg-white/10 text-white/90 border-white/20 px-1.5 py-0 h-4">
+                    {productContext.name}
+                  </Badge>
+                )}
+              </div>
+            </div>
+            {/* Controls - touch-friendly sizing */}
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-white hover:bg-white/20 touch-manipulation"
+                onClick={() => setIsMinimized(!isMinimized)}
+                aria-label={isMinimized ? "Expand chat" : "Minimize chat"}
+                tabIndex={0}
+              >
+                {isMinimized ? <Maximize2 className="h-3.5 w-3.5" /> : <Minimize2 className="h-3.5 w-3.5" />}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-white hover:bg-white/20 touch-manipulation"
+                onClick={handleClose}
+                aria-label="Close Ask Genie"
+                tabIndex={0}
+              >
+                <X className="h-3.5 w-3.5" />
+              </Button>
             </div>
           </div>
-          {/* Controls - touch-friendly sizing */}
-          <div className="flex items-center gap-1 flex-shrink-0">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 sm:h-7 sm:w-7 text-white hover:bg-white/20 touch-manipulation"
-              onClick={() => setIsMinimized(!isMinimized)}
-              aria-label={isMinimized ? "Expand chat" : "Minimize chat"}
-              tabIndex={0}
-            >
-              {isMinimized ? <Maximize2 className="h-4 w-4 sm:h-3.5 sm:w-3.5" /> : <Minimize2 className="h-4 w-4 sm:h-3.5 sm:w-3.5" />}
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 sm:h-7 sm:w-7 text-white hover:bg-white/20 touch-manipulation"
-              onClick={handleClose}
-              aria-label="Close Ask Genie"
-              tabIndex={0}
-            >
-              <X className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
-            </Button>
-          </div>
-        </div>
+        )}
       </div>
 
-      {!isMinimized && (
+      {!isMinimized && !isAutoMinimized && (
         <>
           {/* Messages */}
           <ScrollArea className="flex-1 p-3 sm:p-4" ref={scrollRef}>
@@ -1808,7 +1909,8 @@ USER MESSAGE: ${text}
         </>
       )}
     </motion.div>
-  );
+    );
+  };
 
   // Render based on position
   if (position === 'inline' || position === 'sidebar') {
