@@ -1324,7 +1324,7 @@ USER MESSAGE: ${text}
     );
   };
 
-  // Main chat interface
+  // Main chat interface - with smart positioning to avoid blocking buttons
   const ChatInterface = () => (
     <motion.div
       initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -1332,8 +1332,8 @@ USER MESSAGE: ${text}
       exit={{ opacity: 0, scale: 0.95, y: 20 }}
       className={cn(
         "flex flex-col bg-background border rounded-xl shadow-2xl overflow-hidden",
-        // Mobile-first responsive sizing for floating mode
-        position === 'floating' && "fixed bottom-4 right-4 left-4 sm:left-auto sm:bottom-6 sm:right-6 sm:w-[420px] h-[85vh] sm:h-[600px] max-h-[700px] z-50",
+        // Mobile-first responsive sizing for floating mode - pointer-events-none on container, auto on content
+        position === 'floating' && "fixed bottom-4 right-4 sm:bottom-6 sm:right-6 sm:w-[420px] w-[360px] max-h-[min(600px,70vh)] z-40 pointer-events-auto",
         position === 'sidebar' && "h-full w-full",
         position === 'inline' && "w-full h-[500px]",
         className
@@ -1341,6 +1341,10 @@ USER MESSAGE: ${text}
       role="dialog"
       aria-labelledby="ask-genie-title"
       aria-describedby="ask-genie-description"
+      style={{ 
+        // Don't cover the entire bottom - leave space for action buttons
+        maxHeight: position === 'floating' ? 'min(600px, calc(100vh - 180px))' : undefined 
+      }}
     >
       {/* Header - Always show "Ask Genie" branding */}
       <div className={cn(
