@@ -146,7 +146,7 @@ async function generateWithOpenAI(
 }
 
 async function generateWithHuggingFace(prompt: string, model: string): Promise<string> {
-  const response = await fetch(`https://api-inference.huggingface.co/models/${model}`, {
+  const response = await fetch(`https://router.huggingface.co/hf-inference/models/${model}`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${HUGGING_FACE_TOKEN}`,

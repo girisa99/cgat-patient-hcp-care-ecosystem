@@ -1464,11 +1464,13 @@ IMPORTANT:
       // Step 5: Generate video/visual content using ecosystem service
       updateChapter(chapter.id, { progress: 80 });
       const visualType = chapter.visualTypes[0] || 'video';
-      let previewUrl = `https://placehold.co/1920x1080/ec4899/ffffff?text=${encodeURIComponent(chapter.title)}`;
+      let previewUrl = `https://placehold.co/1920x1080/1e293b/ffffff?text=${encodeURIComponent(chapter.title.substring(0, 40))}`;
       let videoUrl: string | undefined;
       
       try {
         console.log('[Studio] Generating visual content, type:', visualType);
+        
+        // Try video generation first
         const videoResult = await ecosystemServices.generateVideo(
           `${chapter.title}: ${script.substring(0, 200)}`,
           visualType,
@@ -1476,26 +1478,47 @@ IMPORTANT:
         );
         
         if (videoResult.success) {
-          videoUrl = videoResult.videoUrl;
-          previewUrl = videoResult.thumbnailUrl || videoResult.videoUrl || previewUrl;
-          console.log('[Studio] Video generated with provider:', videoResult.provider);
+          // Check if videoUrl is a real URL (not a placeholder)
+          const hasRealVideo = videoResult.videoUrl && 
+            !videoResult.videoUrl.includes('placehold.co') &&
+            !videoResult.videoUrl.includes('placeholder');
+          
+          if (hasRealVideo) {
+            videoUrl = videoResult.videoUrl;
+            previewUrl = videoResult.thumbnailUrl || videoResult.videoUrl;
+            console.log('[Studio] Video generated with provider:', videoResult.provider);
+          } else {
+            console.log('[Studio] Video returned placeholder, generating image thumbnail instead');
+            // Generate a real image as preview since video is still processing
+            const imageResult = await ecosystemServices.generateImage(
+              `Professional ${visualType} thumbnail for: ${chapter.title}. ${script.substring(0, 100)}`,
+              'realistic',
+              '16:9'
+            );
+            if (imageResult.imageUrl) {
+              previewUrl = imageResult.imageUrl;
+            }
+            toast.info(`Video for "${chapter.title}" is still processing - preview image generated`);
+          }
         }
       } catch (e) {
-        console.warn('[Studio] Video fallback to image:', e);
-        // Fallback to image generation
+        console.warn('[Studio] Video/image generation error:', e);
+        // Fallback to direct image generation edge function
         try {
-          const { data: imageData } = await supabase.functions.invoke('ai-universal-processor', {
+          const { data: imageData } = await supabase.functions.invoke('ai-image-generator', {
             body: {
-              provider: 'gemini',
-              imageGeneration: true,
-              action: 'image_generation',
-              prompt: `Professional ${visualType} thumbnail for: ${chapter.title}`,
-              aspectRatio: '16:9'
+              prompt: `Professional ${visualType} thumbnail for: ${chapter.title}. ${script.substring(0, 100)}`,
+              provider: 'openai',
+              size: '1536x1024', // Valid OpenAI size for 16:9 aspect
+              quality: 'high'
             }
           });
-          if (imageData?.imageUrl) previewUrl = imageData.imageUrl;
+          if (imageData?.imageUrl || imageData?.mediaUrl) {
+            previewUrl = imageData.imageUrl || imageData.mediaUrl;
+            console.log('[Studio] Fallback image generated successfully');
+          }
         } catch (imgError) {
-          console.warn('[Studio] Image fallback used');
+          console.warn('[Studio] Image fallback error, using placeholder:', imgError);
         }
       }
 
