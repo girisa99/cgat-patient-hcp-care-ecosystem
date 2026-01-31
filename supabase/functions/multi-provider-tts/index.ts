@@ -134,10 +134,61 @@ function chunkTextBySentences(text: string, maxChars: number): string[] {
 }
 
 /**
- * Concatenate multiple audio buffers (MP3 frames are independent)
+ * Stream-friendly base64 encoding for large buffers
+ * Encodes chunk by chunk to avoid memory spikes
  */
+function encodeBase64Chunked(buffer: ArrayBuffer, chunkSize = 1024 * 1024): string {
+  const bytes = new Uint8Array(buffer);
+  const totalSize = bytes.length;
+  
+  if (totalSize < chunkSize) {
+    return base64Encode(bytes);
+  }
+  
+  // For large buffers, encode in chunks to avoid memory issues
+  const chunks: string[] = [];
+  for (let i = 0; i < totalSize; i += chunkSize) {
+    const slice = bytes.slice(i, Math.min(i + chunkSize, totalSize));
+    chunks.push(base64Encode(slice));
+  }
+  
+  console.log(`📦 Encoded ${totalSize} bytes in ${chunks.length} chunks`);
+  return chunks.join('');
+}
+
+/**
+ * Concatenate multiple audio buffers with memory limits
+ * Uses streaming approach to avoid hitting memory limits
+ * Max total size: 8MB to stay within Edge Function memory limits
+ */
+const MAX_AUDIO_SIZE = 8 * 1024 * 1024; // 8MB limit
+
 async function concatenateAudioBuffers(buffers: ArrayBuffer[]): Promise<ArrayBuffer> {
   const totalLength = buffers.reduce((sum, buf) => sum + buf.byteLength, 0);
+  
+  // Check if we're within memory limits
+  if (totalLength > MAX_AUDIO_SIZE) {
+    console.warn(`⚠️ Audio too large (${(totalLength / 1024 / 1024).toFixed(2)}MB), truncating to first ${MAX_AUDIO_SIZE / 1024 / 1024}MB`);
+    
+    // Take only as many buffers as fit within limit
+    let currentSize = 0;
+    const limitedBuffers: ArrayBuffer[] = [];
+    for (const buffer of buffers) {
+      if (currentSize + buffer.byteLength > MAX_AUDIO_SIZE) break;
+      limitedBuffers.push(buffer);
+      currentSize += buffer.byteLength;
+    }
+    
+    const result = new Uint8Array(currentSize);
+    let offset = 0;
+    for (const buffer of limitedBuffers) {
+      result.set(new Uint8Array(buffer), offset);
+      offset += buffer.byteLength;
+    }
+    console.log(`🔗 Concatenated ${limitedBuffers.length}/${buffers.length} audio buffers: ${currentSize} bytes`);
+    return result.buffer;
+  }
+  
   const result = new Uint8Array(totalLength);
   let offset = 0;
   
@@ -241,15 +292,24 @@ async function generateElevenLabsTTS(text: string, voice?: string, speed?: numbe
 
   const voiceId = voice || 'JBFqnCBsd6RMkjVDRZzb'; // George
   
-  // Chunk if needed
-  const chunks = chunkTextBySentences(text, ELEVENLABS_MAX_CHARS);
+  // Use smaller chunk size to reduce per-chunk memory
+  const effectiveChunkSize = Math.min(ELEVENLABS_MAX_CHARS, 3000);
+  const chunks = chunkTextBySentences(text, effectiveChunkSize);
   console.log(`🎤 ElevenLabs: Processing ${chunks.length} chunk(s), total ${text.length} chars`);
+  
+  // For very long content (>5 chunks), process sequentially and limit total
+  const maxChunks = 10; // Limit to ~30k chars to stay within memory
+  const processChunks = chunks.slice(0, maxChunks);
+  
+  if (chunks.length > maxChunks) {
+    console.warn(`⚠️ Text too long, processing first ${maxChunks} of ${chunks.length} chunks`);
+  }
   
   const audioBuffers: ArrayBuffer[] = [];
   
-  for (let i = 0; i < chunks.length; i++) {
-    const chunk = chunks[i];
-    console.log(`🎤 ElevenLabs chunk ${i + 1}/${chunks.length}: ${chunk.length} chars`);
+  for (let i = 0; i < processChunks.length; i++) {
+    const chunk = processChunks[i];
+    console.log(`🎤 ElevenLabs chunk ${i + 1}/${processChunks.length}: ${chunk.length} chars`);
     
     const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
       method: 'POST',
@@ -266,9 +326,9 @@ async function generateElevenLabsTTS(text: string, voice?: string, speed?: numbe
           style: 0.3,
           speed: speed || 1.0,
         },
-        // Request stitching for smooth transitions
-        ...(i > 0 && { previous_text: chunks[i - 1].slice(-200) }),
-        ...(i < chunks.length - 1 && { next_text: chunks[i + 1].slice(0, 200) }),
+        // Request stitching for smooth transitions (using shorter context to save memory)
+        ...(i > 0 && { previous_text: processChunks[i - 1].slice(-100) }),
+        ...(i < processChunks.length - 1 && { next_text: processChunks[i + 1].slice(0, 100) }),
       }),
     });
 
@@ -277,10 +337,18 @@ async function generateElevenLabsTTS(text: string, voice?: string, speed?: numbe
       throw new Error(`ElevenLabs TTS error: ${error}`);
     }
 
-    audioBuffers.push(await response.arrayBuffer());
+    const buffer = await response.arrayBuffer();
+    audioBuffers.push(buffer);
+    
+    // Check accumulated size to prevent memory overflow
+    const currentTotal = audioBuffers.reduce((sum, b) => sum + b.byteLength, 0);
+    if (currentTotal > MAX_AUDIO_SIZE * 0.9) {
+      console.warn(`⚠️ Approaching memory limit at chunk ${i + 1}, stopping early`);
+      break;
+    }
   }
   
-  return chunks.length === 1 ? audioBuffers[0] : await concatenateAudioBuffers(audioBuffers);
+  return processChunks.length === 1 ? audioBuffers[0] : await concatenateAudioBuffers(audioBuffers);
 }
 
 async function generateOpenAITTS(text: string, voice?: string, speed?: number): Promise<ArrayBuffer> {
@@ -630,8 +698,8 @@ serve(async (req) => {
       }
     }
 
-    // Encode to base64
-    const base64Audio = base64Encode(audioBuffer);
+    // Encode to base64 using chunked encoder to avoid memory spikes
+    const base64Audio = encodeBase64Chunked(audioBuffer);
 
     console.log(`✅ TTS generated: ${base64Audio.length} chars base64, provider: ${routing.provider}`);
 
