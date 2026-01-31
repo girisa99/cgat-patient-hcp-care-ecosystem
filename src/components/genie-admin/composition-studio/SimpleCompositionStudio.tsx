@@ -2544,10 +2544,15 @@ Primary Language: ${primaryLanguage}`;
         <div>
           <h3 className="font-medium text-sm flex items-center gap-2">
             <Zap className="w-4 h-4" />
-            Output
+            Output Mode
           </h3>
           <p className="text-xs text-muted-foreground">
-            {outputMode === 'combined' ? 'Single combined video' : 'Separate files per chapter'}
+            {outputMode === 'combined' 
+              ? 'Chapters will be merged into a single seamless video' 
+              : 'Each chapter outputs as a separate video file'}
+          </p>
+          <p className="text-[10px] text-muted-foreground/80 mt-0.5">
+            💡 Chapters are scenes/segments. Use "Combined" to get one final video.
           </p>
         </div>
         <div className="flex gap-2">
@@ -2555,14 +2560,18 @@ Primary Language: ${primaryLanguage}`;
             size="sm"
             variant={outputMode === 'combined' ? 'default' : 'outline'}
             onClick={() => setOutputMode('combined')}
+            title="Merge all chapters into one video"
           >
+            <Film className="w-3 h-3 mr-1" />
             Combined
           </Button>
           <Button
             size="sm"
             variant={outputMode === 'individual' ? 'default' : 'outline'}
             onClick={() => setOutputMode('individual')}
+            title="Keep chapters as separate videos"
           >
+            <Layers className="w-3 h-3 mr-1" />
             Individual
           </Button>
         </div>
