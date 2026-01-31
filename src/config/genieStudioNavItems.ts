@@ -52,7 +52,10 @@
  * │   Review & Enhance  │ business   │ YES         │
  * │   Assets            │ business   │ YES         │
  * │   Scheduler         │ pro        │ YES         │
- * │   Distribution      │ free       │ YES         │
+ * │   Distribution      │ free       │ No (tiered) │
+ * │     └─ Free         │ download only            │
+ * │     └─ Pro+         │ YT/TikTok/FB/IG          │
+ * │     └─ Business+    │ all channels             │
  * └─────────────────────┴────────────┴─────────────┘
  * 
  * ARCHITECTURE:
@@ -205,15 +208,18 @@ export const genieStudioNavItems: GenieNavItem[] = [
     category: 'publish',
     isInternal: true,
   },
-  // Distribution - Free tier (all users), visible to internal users
+  // Distribution - Available to ALL tiers with tiered capabilities:
+  // - Free: Download only (manual distribution)
+  // - Pro+: YouTube, TikTok, Facebook, Instagram
+  // - Business/Enterprise/Internal: All channels including LinkedIn Company Pages
   {
     title: "Distribution",
     url: "/genie-admin?tab=library",
     icon: Megaphone,
-    description: "Manage content distribution",
+    description: "Download & distribute content (Pro+: social platforms, Business+: all channels)",
     minTier: 'free',
     category: 'publish',
-    isInternal: true,
+    // NOTE: Available to all users, but capabilities are tiered within the component
   },
   
   // === MANAGE (Merged Production Hub) ===
