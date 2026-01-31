@@ -80,23 +80,30 @@ export const ReviewEnhanceStep: React.FC<ReviewEnhanceStepProps> = ({
   onPublish,
   className,
 }) => {
-  const [selectedChapter, setSelectedChapter] = useState<string | null>(chapters[0]?.id || null);
+  const [selectedChapter, setSelectedChapter] = useState<string | null>(
+    chapters && chapters.length > 0 ? chapters[0]?.id || null : null
+  );
   const [feedbackDialog, setFeedbackDialog] = useState<{ chapterId: string; open: boolean }>({ chapterId: '', open: false });
   const [feedbackText, setFeedbackText] = useState('');
   const [activeTab, setActiveTab] = useState<'overview' | 'detail'>('overview');
 
-  // Stats
+  // Stats - handle empty chapters array safely
   const stats = useMemo(() => {
+    if (!chapters || chapters.length === 0) {
+      return { approved: 0, rejected: 0, pending: 0, avgQuality: 0, total: 0 };
+    }
     const approved = chapters.filter(c => c.status === 'approved').length;
     const rejected = chapters.filter(c => c.status === 'rejected' || c.status === 'needs_revision').length;
     const pending = chapters.filter(c => c.status === 'pending').length;
-    const avgQuality = chapters.reduce((acc, c) => acc + (c.qualityScore || 0), 0) / chapters.length || 0;
+    const avgQuality = chapters.length > 0 
+      ? chapters.reduce((acc, c) => acc + (c.qualityScore || 0), 0) / chapters.length 
+      : 0;
     
     return { approved, rejected, pending, avgQuality, total: chapters.length };
   }, [chapters]);
 
-  const canPublish = stats.approved === stats.total;
-  const selectedChapterData = chapters.find(c => c.id === selectedChapter);
+  const canPublish = stats.total > 0 && stats.approved === stats.total;
+  const selectedChapterData = chapters?.find(c => c.id === selectedChapter) || null;
 
   const handleReject = () => {
     if (feedbackDialog.chapterId && feedbackText.trim()) {
@@ -187,9 +194,9 @@ export const ReviewEnhanceStep: React.FC<ReviewEnhanceStepProps> = ({
       <div className="space-y-2">
         <div className="flex justify-between text-sm">
           <span>Review Progress</span>
-          <span>{Math.round((stats.approved / stats.total) * 100)}% Complete</span>
+          <span>{stats.total > 0 ? Math.round((stats.approved / stats.total) * 100) : 0}% Complete</span>
         </div>
-        <Progress value={(stats.approved / stats.total) * 100} className="h-2" />
+        <Progress value={stats.total > 0 ? (stats.approved / stats.total) * 100 : 0} className="h-2" />
       </div>
 
       <Separator />
@@ -223,7 +230,7 @@ export const ReviewEnhanceStep: React.FC<ReviewEnhanceStepProps> = ({
           )}
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {chapters.map((chapter, index) => {
+            {(chapters || []).map((chapter, index) => {
               // Determine what assets are available
               const hasScript = chapter.assets?.script?.status === 'complete';
               const hasAudio = chapter.assets?.audio?.status === 'complete';
@@ -260,7 +267,7 @@ export const ReviewEnhanceStep: React.FC<ReviewEnhanceStepProps> = ({
                   <p className="text-xs text-muted-foreground mt-1">
                     {chapter.duration}s • {assetCount}/3 assets ready
                   </p>
-                  {chapter.qualityScore > 0 && (
+                  {(chapter.qualityScore || 0) > 0 && (
                     <div className="mt-2">
                       <Progress value={chapter.qualityScore} className="h-1" />
                       <p className="text-xs text-muted-foreground mt-1">
@@ -283,14 +290,14 @@ export const ReviewEnhanceStep: React.FC<ReviewEnhanceStepProps> = ({
             <Button
               variant="outline"
               onClick={() => {
-                chapters.forEach(c => {
+                (chapters || []).forEach(c => {
                   if (c.status === 'pending') onChapterApprove(c.id);
                 });
               }}
-              disabled={stats.pending === 0 || chapters.every(c => c.qualityScore === 0)}
+              disabled={stats.pending === 0 || (chapters || []).every(c => (c.qualityScore || 0) === 0)}
             >
               <CheckCircle2 className="w-4 h-4 mr-2" />
-              Approve All Ready ({chapters.filter(c => c.qualityScore > 0).length})
+              Approve All Ready ({(chapters || []).filter(c => (c.qualityScore || 0) > 0).length})
             </Button>
           </div>
         </TabsContent>
@@ -299,7 +306,7 @@ export const ReviewEnhanceStep: React.FC<ReviewEnhanceStepProps> = ({
         <TabsContent value="detail" className="space-y-4">
           {/* Chapter Navigation */}
           <div className="flex items-center gap-2 overflow-x-auto pb-2">
-            {chapters.map((chapter, index) => (
+            {(chapters || []).map((chapter, index) => (
               <Button
                 key={chapter.id}
                 size="sm"
@@ -318,7 +325,7 @@ export const ReviewEnhanceStep: React.FC<ReviewEnhanceStepProps> = ({
             <ChapterPreviewPanel
               chapterId={selectedChapterData.id}
               chapterTitle={selectedChapterData.title}
-              chapterIndex={chapters.findIndex(c => c.id === selectedChapterData.id)}
+              chapterIndex={(chapters || []).findIndex(c => c.id === selectedChapterData.id)}
               assets={selectedChapterData.assets as any}
               languages={languages}
               onRegenerate={onChapterRegenerate}
@@ -332,11 +339,12 @@ export const ReviewEnhanceStep: React.FC<ReviewEnhanceStepProps> = ({
           <div className="flex justify-between">
             <Button
               variant="outline"
-              disabled={!selectedChapter || chapters.findIndex(c => c.id === selectedChapter) === 0}
+              disabled={!selectedChapter || !chapters || chapters.length === 0 || (chapters || []).findIndex(c => c.id === selectedChapter) === 0}
               onClick={() => {
-                const currentIndex = chapters.findIndex(c => c.id === selectedChapter);
+                const chaptersList = chapters || [];
+                const currentIndex = chaptersList.findIndex(c => c.id === selectedChapter);
                 if (currentIndex > 0) {
-                  setSelectedChapter(chapters[currentIndex - 1].id);
+                  setSelectedChapter(chaptersList[currentIndex - 1].id);
                 }
               }}
             >
@@ -344,11 +352,12 @@ export const ReviewEnhanceStep: React.FC<ReviewEnhanceStepProps> = ({
             </Button>
             <Button
               variant="outline"
-              disabled={!selectedChapter || chapters.findIndex(c => c.id === selectedChapter) === chapters.length - 1}
+              disabled={!selectedChapter || !chapters || chapters.length === 0 || (chapters || []).findIndex(c => c.id === selectedChapter) === (chapters || []).length - 1}
               onClick={() => {
-                const currentIndex = chapters.findIndex(c => c.id === selectedChapter);
-                if (currentIndex < chapters.length - 1) {
-                  setSelectedChapter(chapters[currentIndex + 1].id);
+                const chaptersList = chapters || [];
+                const currentIndex = chaptersList.findIndex(c => c.id === selectedChapter);
+                if (currentIndex < chaptersList.length - 1) {
+                  setSelectedChapter(chaptersList[currentIndex + 1].id);
                 }
               }}
             >
