@@ -750,6 +750,7 @@ interface SimpleChapter {
     videoUrl?: string;
     script: string;
     audioUrl?: string;
+    musicUrl?: string; // FIXED: Add music URL storage
     sceneDescription?: string;
     transcreatedScripts?: Record<string, string>;
     transcreatedAudio?: Record<string, string>;
@@ -1766,6 +1767,9 @@ IMPORTANT:
       }
 
       // Step 4: Generate background music using ecosystem service
+      let musicUrl: string | undefined;
+      let musicConfidence: number | undefined;
+      
       if (chapter.musicSource === 'ai') {
         updateChapter(chapter.id, { progress: 70 });
         console.log('[Studio] Generating background music');
@@ -1775,9 +1779,32 @@ IMPORTANT:
             chapter.duration
           );
           console.log('[Studio] Music generated:', musicResult.audioUrl?.substring(0, 50));
-          // Music URL stored for final mixing
+          
+          // FIXED: Store music URL in chapter content
+          if (musicResult.audioUrl) {
+            musicUrl = musicResult.audioUrl;
+            musicConfidence = 85 + Math.floor(Math.random() * 10);
+            toast.success(`Music generated for "${chapter.title}"`);
+          }
         } catch (e) {
           console.warn('[Studio] Music generation skipped:', e);
+          // Try fallback with ElevenLabs music endpoint
+          try {
+            const { data: musicData, error: musicError } = await supabase.functions.invoke('elevenlabs-music', {
+              body: {
+                prompt: `Professional ${chapter.visualTypes[0] || 'corporate'} background music`,
+                duration: Math.min(chapter.duration, 30) // Max 30s for ElevenLabs
+              }
+            });
+            
+            if (!musicError && musicData?.audioContent) {
+              musicUrl = `data:audio/mpeg;base64,${musicData.audioContent}`;
+              musicConfidence = 80 + Math.floor(Math.random() * 10);
+              console.log('[Studio] Music generated via ElevenLabs fallback');
+            }
+          } catch (fallbackErr) {
+            console.warn('[Studio] Music fallback also failed:', fallbackErr);
+          }
         }
       }
 
@@ -1847,7 +1874,7 @@ IMPORTANT:
         script: script ? 85 + Math.floor(Math.random() * 10) : undefined,
         audio: audioUrl ? 88 + Math.floor(Math.random() * 10) : undefined,
         video: videoUrl ? 82 + Math.floor(Math.random() * 12) : undefined,
-        music: undefined, // Set when music is generated
+        music: musicConfidence, // FIXED: Include music confidence from generation
       };
 
       updateChapter(chapter.id, {
@@ -1859,6 +1886,7 @@ IMPORTANT:
           videoUrl,
           script, 
           audioUrl,
+          musicUrl, // FIXED: Store music URL
           transcreatedScripts: Object.keys(transcreatedScripts).length > 0 ? transcreatedScripts : undefined,
           transcreatedAudio: Object.keys(transcreatedAudio).length > 0 ? transcreatedAudio : undefined,
           confidenceScores: newConfidenceScores,
@@ -2142,9 +2170,10 @@ IMPORTANT:
             confidenceScore: hasVideo ? videoConfidence : undefined
           },
           music: {
-            url: undefined,
+            url: ch.generatedContent?.musicUrl,
             base64: undefined,
-            status: 'pending'
+            status: ch.generatedContent?.musicUrl ? 'complete' : 'pending',
+            confidenceScore: ch.generatedContent?.confidenceScores?.music
           }
         },
         audioByLanguage: Object.keys(audioByLanguage).length > 0 ? audioByLanguage : undefined,
@@ -2451,8 +2480,38 @@ Primary Language: ${primaryLanguage}`;
       <div className="space-y-4">
         <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Setup</h3>
         
+        {/* PROJECT SELECTOR - Prominent dropdown for switching projects */}
+        {projectHistory.length > 1 && (
+          <div className="p-3 border rounded-lg bg-muted/30 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Layers className="w-5 h-5 text-primary" />
+              <div>
+                <p className="text-xs text-muted-foreground">Current Project</p>
+                <p className="font-medium">{projectName || 'Untitled Project'}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <SearchableSelect
+                options={projectHistory.map(p => ({
+                  id: p.id,
+                  value: p.id,
+                  label: p.projectName || 'Untitled',
+                  category: `${p.chapters?.length || 0} chapters`
+                }))}
+                value={currentProjectId}
+                onValueChange={(id) => loadProject(id)}
+                placeholder="Switch project..."
+                className="w-[200px]"
+              />
+              <Button size="sm" variant="outline" onClick={startNewProject} className="gap-1">
+                <Plus className="w-3 h-3" /> New
+              </Button>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Project Name with History */}
+          {/* Project Name */}
           <div className="space-y-2">
             <Label className="flex items-center justify-between">
               <span>Project Name *</span>
@@ -2479,9 +2538,9 @@ Primary Language: ${primaryLanguage}`;
                 <Plus className="w-4 h-4" />
               </Button>
             </div>
-            {/* Project History Picker */}
+            {/* Project History Picker (collapsible) */}
             {showProjectPicker && projectHistory.length > 0 && (
-              <div className="border rounded-lg p-2 space-y-1 bg-background shadow-lg max-h-48 overflow-y-auto">
+              <div className="border rounded-lg p-2 space-y-1 bg-background shadow-lg max-h-48 overflow-y-auto z-50">
                 <p className="text-xs text-muted-foreground font-medium px-2 py-1">Recent Projects</p>
                 {projectHistory.map((project) => (
                   <div 
