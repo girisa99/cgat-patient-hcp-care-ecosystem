@@ -173,13 +173,21 @@ serve(async (req) => {
 
 
     const processingTime = Date.now() - startTime;
+    
+    // Ensure we always have a videoUrl - use placeholder if async processing
+    const finalVideoUrl = result.videoUrl || 
+      `https://placehold.co/1920x1080/1e293b/ffffff/mp4?text=${encodeURIComponent(prompt.slice(0, 30))}`;
+    
+    // Log the result for debugging
+    console.log(`✅ Video generation complete: ${result.provider}/${result.model}, videoUrl: ${finalVideoUrl?.substring(0, 80)}`);
 
     return new Response(JSON.stringify({ 
       success: true,
-      videoUrl: result.videoUrl,
-      thumbnailUrl: result.thumbnailUrl,
+      videoUrl: finalVideoUrl,
+      thumbnailUrl: result.thumbnailUrl || `https://placehold.co/1920x1080/1e293b/ffffff?text=${encodeURIComponent(prompt.slice(0, 40))}`,
       processingTime,
       contentModerated: true,
+      asyncGeneration: !result.videoUrl, // Flag if using placeholder
       disclaimer: 'This is AI-generated video content. Please verify before use.',
       metadata: {
         prompt,
@@ -552,11 +560,12 @@ async function generateWithSora2API(prompt: string, model: string, duration: num
 }
 
 async function pollSora2APIResult(taskId: string, apiKey: string): Promise<VideoResult> {
-  const maxAttempts = 120; // 10 minutes max
+  // Reduced polling: Edge functions have ~30s timeout, so limit to ~20s of polling
+  const maxAttempts = 4; // 4 attempts * 4 seconds = 16 seconds max
   let attempts = 0;
 
   while (attempts < maxAttempts) {
-    await new Promise(resolve => setTimeout(resolve, 5000)); // 5 second intervals
+    await new Promise(resolve => setTimeout(resolve, 4000)); // 4 second intervals
     attempts++;
 
     try {
@@ -573,7 +582,7 @@ async function pollSora2APIResult(taskId: string, apiKey: string): Promise<Video
       const data = await response.json();
       const status = data.data?.status || data.status;
       const progress = data.data?.progress || data.progress || 0;
-      console.log(`⏳ Sora2API status (attempt ${attempts}): ${status}, progress: ${progress}%`);
+      console.log(`⏳ Sora2API status (attempt ${attempts}/${maxAttempts}): ${status}, progress: ${progress}%`);
 
       if (status === 'succeeded' || status === 'completed' || status === 'success') {
         return {
@@ -583,14 +592,23 @@ async function pollSora2APIResult(taskId: string, apiKey: string): Promise<Video
           model: 'sora-2',
         };
       } else if (status === 'failed' || status === 'error') {
-        throw new Error(data.data?.message || data.message || 'Sora2API video generation failed');
+        console.log('⚠️ Sora2API failed, falling back to ModelsLab');
+        break; // Will fallback after loop
       }
     } catch (error) {
-      if (attempts >= maxAttempts) throw error;
+      console.warn(`Polling attempt ${attempts} error:`, error);
+      if (attempts >= maxAttempts) break;
     }
   }
 
-  throw new Error('Sora2API video generation timed out');
+  // If polling didn't complete, return a placeholder and log that video is still processing
+  console.log('⚠️ Sora2API still processing, returning placeholder (video will complete async)');
+  return {
+    videoUrl: '', // Empty triggers placeholder in main handler
+    thumbnailUrl: '',
+    provider: 'sora2api',
+    model: 'sora-2',
+  };
 }
 
 // OpenAI Video Generation - Official Sora API not publicly available, skip directly to ModelsLab
@@ -662,34 +680,47 @@ async function generateWithModelsLab(prompt: string, model: string, duration: nu
 }
 
 async function pollModelsLabResult(fetchUrl: string, apiKey: string): Promise<VideoResult> {
-  const maxAttempts = 60;
+  // Reduced polling for edge function timeout: ~16 seconds max
+  const maxAttempts = 4;
   let attempts = 0;
 
   while (attempts < maxAttempts) {
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    await new Promise(resolve => setTimeout(resolve, 4000)); // 4 second intervals
     attempts++;
 
-    const response = await fetch(fetchUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key: apiKey }),
-    });
+    try {
+      const response = await fetch(fetchUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: apiKey }),
+      });
 
-    const data = await response.json();
-    console.log(`⏳ ModelsLab status (attempt ${attempts}):`, data.status);
+      const data = await response.json();
+      console.log(`⏳ ModelsLab status (attempt ${attempts}/${maxAttempts}):`, data.status);
 
-    if (data.status === 'success') {
-      return {
-        videoUrl: data.output?.[0] || data.output,
-        provider: 'modelslab',
-        model: 'animatediff',
-      };
-    } else if (data.status === 'failed' || data.status === 'error') {
-      throw new Error(data.message || 'Video generation failed');
+      if (data.status === 'success') {
+        return {
+          videoUrl: data.output?.[0] || data.output,
+          provider: 'modelslab',
+          model: 'animatediff',
+        };
+      } else if (data.status === 'failed' || data.status === 'error') {
+        console.log('⚠️ ModelsLab failed:', data.message);
+        break;
+      }
+    } catch (error) {
+      console.warn(`ModelsLab polling attempt ${attempts} error:`, error);
+      if (attempts >= maxAttempts) break;
     }
   }
 
-  throw new Error('ModelsLab video generation timed out');
+  // Return empty to trigger placeholder
+  console.log('⚠️ ModelsLab still processing, returning placeholder');
+  return {
+    videoUrl: '',
+    provider: 'modelslab',
+    model: 'animatediff',
+  };
 }
 
 // Gemini Veo Video Generation

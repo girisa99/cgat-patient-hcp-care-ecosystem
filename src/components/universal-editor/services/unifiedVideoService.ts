@@ -242,10 +242,12 @@ class UnifiedVideoService {
     return {
       success: true,
       provider,
-      videoUrl: data.videoUrl || data.video_url,
-      thumbnailUrl: data.thumbnailUrl || data.thumbnail_url,
+      videoUrl: data.videoUrl || data.video_url || '',
+      thumbnailUrl: data.thumbnailUrl || data.thumbnail_url || '',
       duration: data.duration,
       creditsUsed: data.creditsUsed || data.credits_used,
+      // Flag if video is still processing asynchronously
+      ...(data.asyncGeneration && { asyncGeneration: true }),
     };
   }
 
