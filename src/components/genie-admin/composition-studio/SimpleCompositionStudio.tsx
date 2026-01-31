@@ -893,6 +893,41 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
     });
   }, [recordEvent]);
 
+  // AUTO-SAVE: Debounced save whenever chapters or key state changes
+  // This ensures data persists when navigating between Create/Review tabs
+  useEffect(() => {
+    // Skip if no project name or no chapters (initial state)
+    if (!projectName && chapters.length === 0) return;
+    
+    // Only save if there's meaningful data
+    const hasContent = chapters.length > 0 || projectName.trim();
+    if (!hasContent) return;
+    
+    // Debounce to avoid excessive saves
+    const saveTimeout = setTimeout(() => {
+      const draftData = {
+        projectName,
+        chapters,
+        primaryLanguage,
+        additionalLanguages,
+        selectedTemplates,
+        selectedVisualTypes,
+        audioScope,
+        scriptScope,
+        outputMode,
+        savedAt: new Date().toISOString(),
+      };
+      
+      // Save to both sessionStorage (for tab persistence) and localStorage (for session persistence)
+      sessionStorage.setItem('studio_current_draft', JSON.stringify(draftData));
+      localStorage.setItem('studio_last_draft', JSON.stringify(draftData));
+      console.log('[Studio] Auto-saved draft:', projectName, 'with', chapters.length, 'chapters', 
+        chapters.filter(c => c.generatedContent).length, 'with content');
+    }, 1000); // 1 second debounce
+    
+    return () => clearTimeout(saveTimeout);
+  }, [chapters, projectName, primaryLanguage, additionalLanguages, selectedTemplates, selectedVisualTypes, audioScope, scriptScope, outputMode]);
+
   // Memoize static data to prevent re-renders
   const memoizedTemplates = useMemo(() => 
     INDUSTRY_TEMPLATES.map(t => ({ id: t.id, label: t.label, category: t.category || 'General' })),
