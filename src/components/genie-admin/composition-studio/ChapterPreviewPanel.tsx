@@ -35,6 +35,74 @@ interface GeneratedAsset {
   error?: string;
 }
 
+// Helper component to handle video preview with error fallback
+const VideoPreviewWithFallback: React.FC<{
+  url: string;
+  onRegenerate: () => void;
+  isRegenerating: boolean;
+}> = ({ url, onRegenerate, isRegenerating }) => {
+  const [hasError, setHasError] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  // Detect if URL is a video or image based on extension or content
+  const isVideoUrl = url.includes('.mp4') || url.includes('.webm') || url.includes('.mov');
+
+  if (hasError) {
+    return (
+      <div className="text-center space-y-2 px-4 py-2">
+        <AlertCircle className="w-5 h-5 mx-auto text-amber-500" />
+        <p className="text-[10px] text-muted-foreground">Preview unavailable</p>
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-5 text-[10px] px-2"
+          onClick={onRegenerate}
+          disabled={isRegenerating}
+        >
+          {isRegenerating ? (
+            <><Loader2 className="w-2 h-2 mr-1 animate-spin" /> Regenerating...</>
+          ) : (
+            <><RefreshCw className="w-2 h-2 mr-1" /> Regenerate</>
+          )}
+        </Button>
+      </div>
+    );
+  }
+
+  if (isVideoUrl) {
+    return (
+      <video
+        src={url}
+        className="h-full w-full object-cover"
+        muted
+        loop
+        autoPlay
+        playsInline
+        onLoadedData={() => setIsLoading(false)}
+        onError={() => setHasError(true)}
+      />
+    );
+  }
+
+  return (
+    <>
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-muted/50">
+          <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+        </div>
+      )}
+      <img
+        src={url}
+        alt="Video thumbnail"
+        className="h-full w-full object-cover"
+        onLoad={() => setIsLoading(false)}
+        onError={() => setHasError(true)}
+      />
+    </>
+  );
+};
+
+
 interface ChapterPreviewPanelProps {
   chapterId: string;
   chapterTitle: string;
@@ -375,13 +443,10 @@ export const ChapterPreviewPanel: React.FC<ChapterPreviewPanelProps> = ({
                 <p className="text-[10px] text-muted-foreground">Videos may take 2-5 minutes</p>
               </div>
             ) : assets.video?.url ? (
-              <img 
-                src={assets.video.url} 
-                alt="Video thumbnail" 
-                className="h-full w-full object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
-                }}
+              <VideoPreviewWithFallback 
+                url={assets.video.url}
+                onRegenerate={() => handleRegenerate('video')}
+                isRegenerating={regenerating === 'video'}
               />
             ) : (
               <div className="text-center space-y-2 px-4">
