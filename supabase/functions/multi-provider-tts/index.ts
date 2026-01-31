@@ -583,16 +583,19 @@ serve(async (req) => {
       let fallbackChain: TTSProvider[];
       
       if (routing.zone === 'gemini') {
-        // Gemini Zone: Azure → Google → ElevenLabs → OpenAI
-        fallbackChain = ['azure', 'google', 'elevenlabs', 'openai'];
+        // Gemini Zone (India/SEA/Africa): Azure → Alibaba CosyVoice → Google → ElevenLabs → OpenAI
+        // Added Alibaba for excellent Asian language quality
+        fallbackChain = ['azure', 'alibaba', 'google', 'elevenlabs', 'openai'];
       } else if (routing.zone === 'alibaba') {
-        // Alibaba Zone: Azure → ElevenLabs → OpenAI → Google
-        fallbackChain = ['azure', 'elevenlabs', 'openai', 'google'];
+        // CJK Zone: Alibaba → Azure → ElevenLabs → OpenAI → Google
+        fallbackChain = ['alibaba', 'azure', 'elevenlabs', 'openai', 'google'];
       } else if (routing.zone === 'azure') {
-        // MENA Zone: Google → ElevenLabs → OpenAI
-        fallbackChain = ['google', 'elevenlabs', 'openai'];
+        // MENA Zone: Azure → Google → ElevenLabs → OpenAI
+        // Added Alibaba as last resort for Arabic since it has decent coverage
+        fallbackChain = ['azure', 'google', 'alibaba', 'elevenlabs', 'openai'];
       } else {
-        // Claude Zone (Western): ElevenLabs → OpenAI → Azure → Google
+        // Claude Zone (Western/EU/LatAm): ElevenLabs → OpenAI → Azure → Google
+        // ElevenLabs is primary for premium voice quality in Western languages
         fallbackChain = ['elevenlabs', 'openai', 'azure', 'google'];
       }
       
