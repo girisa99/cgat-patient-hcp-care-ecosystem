@@ -1209,6 +1209,123 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
     toast.success(`Refreshed prompts for ${chapters.length} chapters. Click "Generate All" to create scripts with updated context.`);
   }, [chapters, selectedTemplates, generateAISuggestedPrompt]);
 
+  // Regenerate script only for a specific chapter (called when clicking "Auto" button)
+  const regenerateScriptOnly = useCallback(async (chapter: SimpleChapter) => {
+    console.log('[Studio] Regenerating script only for:', chapter.title);
+    
+    toast.info(`Regenerating script for "${chapter.title}"...`);
+    updateChapter(chapter.id, { scriptSource: 'auto' });
+    
+    try {
+      // Get template info for context
+      const templateInfo = selectedTemplates.length > 0 
+        ? INDUSTRY_TEMPLATES.find(t => selectedTemplates.includes(t.id))
+        : null;
+      const templateLabel = templateInfo?.label || '';
+      const templateDesc = templateInfo?.description || '';
+      
+      // Build comprehensive prompt that preserves ALL user context
+      let fullPromptContext = '';
+      
+      if (projectName.trim()) {
+        fullPromptContext += `Project: ${projectName}\n`;
+      }
+      
+      if (templateLabel) {
+        fullPromptContext += `Template: ${templateLabel}${templateDesc ? ` - ${templateDesc}` : ''}\n`;
+      }
+      
+      const userContext = chapter.customPrompt?.trim();
+      const aiSuggestion = chapter.aiSuggestedPrompt?.trim();
+      
+      if (userContext) {
+        fullPromptContext += `\nUser's Direction: ${userContext}\n`;
+      } else if (aiSuggestion) {
+        fullPromptContext += `\nTopic: ${aiSuggestion}\n`;
+      } else {
+        fullPromptContext += `\nTopic: ${chapter.title}\n`;
+      }
+      
+      fullPromptContext += `\nChapter: ${chapter.title}`;
+      
+      const industryContext = chapter.industry 
+        ? ` for ${chapter.industry.replace(/_/g, ' ')} context` 
+        : '';
+      
+      const targetWordCount = Math.round((chapter.duration / 60) * 150);
+      
+      const scriptPrompt = `${fullPromptContext}
+
+Generate a professional voiceover script for TTS (Text-to-Speech)${industryContext}.
+Target Duration: ${chapter.duration} seconds (approximately ${targetWordCount} words)
+Visual Style: ${chapter.visualTypes.join(', ')}
+Primary Language: ${primaryLanguage}
+
+IMPORTANT: 
+- Focus specifically on the user's direction provided above
+- Keep the content engaging, informative, and professional
+- The script should flow naturally when spoken aloud
+- Write in a conversational, clear style suitable for audio narration
+- Include natural pauses and emphasis points
+- Target exactly ${targetWordCount} words for the ${chapter.duration}s duration`;
+
+      const { data: scriptData, error: scriptError } = await supabase.functions.invoke('ai-universal-processor', {
+        body: {
+          provider: 'gemini',
+          model: 'gemini-2.0-flash',
+          prompt: scriptPrompt,
+          systemPrompt: 'You are a professional TTS scriptwriter for video content. Generate ONLY the voiceover script text - no headings, stage directions, timestamps, or formatting marks. The script must be ready for direct text-to-speech conversion. Write naturally as if speaking to the audience.',
+          temperature: 0.7,
+          maxTokens: 1500,
+        }
+      });
+
+      if (scriptError) {
+        console.error('[Studio] Script regeneration error:', scriptError);
+        toast.error(`Script error: ${scriptError.message}`);
+        return;
+      }
+
+      // Parse the response
+      let script = '';
+      if (typeof scriptData === 'string') {
+        script = scriptData;
+      } else if (scriptData?.content && typeof scriptData.content === 'string') {
+        script = scriptData.content;
+      } else if (scriptData?.response && typeof scriptData.response === 'string') {
+        script = scriptData.response;
+      } else if (scriptData?.text && typeof scriptData.text === 'string') {
+        script = scriptData.text;
+      } else if (scriptData?.result && typeof scriptData.result === 'string') {
+        script = scriptData.result;
+      } else if (scriptData?.output && typeof scriptData.output === 'string') {
+        script = scriptData.output;
+      }
+
+      script = script.trim();
+      if (script.startsWith('{') || script.startsWith('[')) {
+        try {
+          const parsed = JSON.parse(script);
+          script = parsed.script || parsed.content || parsed.text || parsed.response || '';
+        } catch {
+          script = script.replace(/^[\{\[]|[\}\]]$/g, '').trim();
+        }
+      }
+
+      if (!script || script.length < 30) {
+        toast.error('Script generation returned empty result');
+        return;
+      }
+
+      updateChapter(chapter.id, { script, scriptSource: 'auto' });
+      toast.success(`Script regenerated for "${chapter.title}" (${script.length} chars)`);
+      
+    } catch (err) {
+      console.error('[Studio] Script regeneration exception:', err);
+      toast.error('Failed to regenerate script');
+    }
+  }, [selectedTemplates, projectName, primaryLanguage, updateChapter]);
+
   // Generate single chapter using ecosystem services
   const generateChapter = async (chapter: SimpleChapter) => {
     console.log('[Studio] ======= STARTING GENERATION =======');
@@ -2258,6 +2375,7 @@ Primary Language: ${primaryLanguage}`;
                 onDelete={() => deleteChapter(chapter.id)}
                 onDuplicate={() => duplicateChapter(chapter.id)}
                 onGenerate={() => generateChapter(chapter)}
+                onRegenerateScript={() => regenerateScriptOnly(chapter)}
                 onMoveUp={() => moveChapter(chapter.id, 'up')}
                 onMoveDown={() => moveChapter(chapter.id, 'down')}
               />
@@ -2688,6 +2806,7 @@ interface ChapterRowProps {
   onDelete: () => void;
   onDuplicate: () => void;
   onGenerate: () => void;
+  onRegenerateScript: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
 }
@@ -2704,6 +2823,7 @@ const ChapterRow: React.FC<ChapterRowProps> = ({
   onDelete,
   onDuplicate,
   onGenerate,
+  onRegenerateScript,
   onMoveUp,
   onMoveDown,
 }) => {
@@ -2873,8 +2993,22 @@ const ChapterRow: React.FC<ChapterRowProps> = ({
               <div className="flex items-center justify-between">
                 <Label>Script</Label>
                 <div className="flex gap-1">
-                  <Button size="sm" variant={chapter.scriptSource === 'auto' ? 'default' : 'outline'} onClick={() => onUpdate({ scriptSource: 'auto' })} className="h-7 text-xs">
-                    <Wand2 className="w-3 h-3 mr-1" /> Auto
+                  <Button 
+                    size="sm" 
+                    variant={chapter.scriptSource === 'auto' ? 'default' : 'outline'} 
+                    onClick={() => {
+                      // If already in auto mode and has a script, regenerate it
+                      if (chapter.scriptSource === 'auto' && chapter.script?.trim()) {
+                        onRegenerateScript();
+                      } else {
+                        // Switch to auto mode, which will trigger regeneration on next generate
+                        onUpdate({ scriptSource: 'auto' });
+                      }
+                    }} 
+                    className="h-7 text-xs"
+                  >
+                    <Wand2 className="w-3 h-3 mr-1" /> 
+                    {chapter.scriptSource === 'auto' && chapter.script?.trim() ? 'Regenerate' : 'Auto'}
                   </Button>
                   <Button size="sm" variant={chapter.scriptSource === 'manual' ? 'default' : 'outline'} onClick={() => onUpdate({ scriptSource: 'manual' })} className="h-7 text-xs">
                     <Pencil className="w-3 h-3 mr-1" /> Manual
