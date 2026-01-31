@@ -43,9 +43,22 @@ const VideoPreviewWithFallback: React.FC<{
 }> = ({ url, onRegenerate, isRegenerating }) => {
   const [hasError, setHasError] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(true);
+  
+  // Track previous URL to reset error state when URL changes
+  const prevUrlRef = React.useRef(url);
+
+  // Reset error and loading states when URL changes (e.g., after regeneration)
+  React.useEffect(() => {
+    if (prevUrlRef.current !== url) {
+      setHasError(false);
+      setIsLoading(true);
+      prevUrlRef.current = url;
+    }
+  }, [url]);
 
   // Detect if URL is a video or image based on extension or content
-  const isVideoUrl = url.includes('.mp4') || url.includes('.webm') || url.includes('.mov');
+  const isVideoUrl = url.includes('.mp4') || url.includes('.webm') || url.includes('.mov') || 
+                     url.includes('video/mp4') || url.includes('data:video');
 
   if (hasError) {
     return (
@@ -71,23 +84,30 @@ const VideoPreviewWithFallback: React.FC<{
 
   if (isVideoUrl) {
     return (
-      <video
-        src={url}
-        className="h-full w-full object-cover"
-        muted
-        loop
-        autoPlay
-        playsInline
-        onLoadedData={() => setIsLoading(false)}
-        onError={() => setHasError(true)}
-      />
+      <div className="relative h-full w-full">
+        {isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-muted/50 z-10">
+            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+          </div>
+        )}
+        <video
+          src={url}
+          className="h-full w-full object-cover"
+          muted
+          loop
+          autoPlay
+          playsInline
+          onLoadedData={() => setIsLoading(false)}
+          onError={() => setHasError(true)}
+        />
+      </div>
     );
   }
 
   return (
-    <>
+    <div className="relative h-full w-full">
       {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-muted/50">
+        <div className="absolute inset-0 flex items-center justify-center bg-muted/50 z-10">
           <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
         </div>
       )}
@@ -98,7 +118,7 @@ const VideoPreviewWithFallback: React.FC<{
         onLoad={() => setIsLoading(false)}
         onError={() => setHasError(true)}
       />
-    </>
+    </div>
   );
 };
 
