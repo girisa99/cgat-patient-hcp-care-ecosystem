@@ -70,6 +70,7 @@ interface TTSRouting {
 const OPENAI_MAX_CHARS = 3800; // Leave buffer below 4096 limit
 const ELEVENLABS_MAX_CHARS = 4800; // ElevenLabs limit ~5000
 const GOOGLE_MAX_CHARS = 4800; // Google limit ~5000
+const AZURE_MAX_CHARS = 4000; // Azure SSML limit
 
 /**
  * Smart text chunking that preserves sentence boundaries
@@ -202,10 +203,16 @@ function selectTTSProvider(region: string, languageCode: string, tier: string = 
     }
   }
 
-  // South Asian/SEA: Prefer Google
-  if (GEMINI_REGIONS.includes(region) && hasProvider('google')) {
-    console.log('🌏 Gemini Zone: Routing to Google TTS');
-    return { provider: 'google', cost: 0.016, zone: 'gemini', quality: 'standard' };
+  // South Asian/SEA: Prefer Azure Neural (excellent Indian language support)
+  if (GEMINI_REGIONS.includes(region)) {
+    if (hasProvider('azure')) {
+      console.log('🌏 Gemini Zone: Routing to Azure Neural TTS (primary)');
+      return { provider: 'azure', cost: 0.016, zone: 'gemini', quality: 'premium' };
+    }
+    if (hasProvider('google')) {
+      console.log('🌏 Gemini Zone: Routing to Google TTS (fallback)');
+      return { provider: 'google', cost: 0.016, zone: 'gemini', quality: 'standard' };
+    }
   }
 
   // Default fallback chain: OpenAI -> ElevenLabs -> Google -> Azure -> Alibaba
@@ -324,7 +331,7 @@ async function generateAzureTTS(text: string, languageCode?: string, voice?: str
   const AZURE_SPEECH_REGION = Deno.env.get('AZURE_SPEECH_REGION') || 'eastus';
   if (!AZURE_SPEECH_KEY) throw new Error('Azure Speech key not configured');
 
-  // Map language to Azure voice
+  // Comprehensive voice mapping for Indic and global languages
   const voiceMap: Record<string, string> = {
     'en-US': 'en-US-JennyNeural',
     'en-GB': 'en-GB-SoniaNeural',
@@ -335,40 +342,69 @@ async function generateAzureTTS(text: string, languageCode?: string, voice?: str
     'es-ES': 'es-ES-ElviraNeural',
     'zh-CN': 'zh-CN-XiaoxiaoNeural',
     'ja-JP': 'ja-JP-NanamiNeural',
+    // Enhanced Indic language support (Gemini Zone)
     'hi-IN': 'hi-IN-SwaraNeural',
     'te-IN': 'te-IN-ShrutiNeural',
+    'ta-IN': 'ta-IN-PallaviNeural',
+    'bn-IN': 'bn-IN-TanishaaNeural',
+    'mr-IN': 'mr-IN-AarohiNeural',
+    'gu-IN': 'gu-IN-DhwaniNeural',
+    'kn-IN': 'kn-IN-SapnaNeural',
+    'ml-IN': 'ml-IN-SobhanaNeural',
+    'pa-IN': 'pa-IN-VaaniNeural',
+    // SEA languages
+    'id-ID': 'id-ID-GadisNeural',
+    'vi-VN': 'vi-VN-HoaiMyNeural',
+    'th-TH': 'th-TH-PremwadeeNeural',
+    'ms-MY': 'ms-MY-YasminNeural',
+    'fil-PH': 'fil-PH-BlessicaNeural',
   };
   
   const lang = languageCode || 'en-US';
   const selectedVoice = voice || voiceMap[lang] || 'en-US-JennyNeural';
 
-  const ssml = `
-    <speak version='1.0' xml:lang='${lang}'>
-      <voice name='${selectedVoice}'>
-        ${text}
-      </voice>
-    </speak>
-  `;
+  // Chunk long text for Azure SSML limit
+  const chunks = chunkTextBySentences(text, AZURE_MAX_CHARS);
+  console.log(`☁️ Azure: Processing ${chunks.length} chunk(s), total ${text.length} chars`);
 
-  const response = await fetch(
-    `https://${AZURE_SPEECH_REGION}.tts.speech.microsoft.com/cognitiveservices/v1`,
-    {
-      method: 'POST',
-      headers: {
-        'Ocp-Apim-Subscription-Key': AZURE_SPEECH_KEY,
-        'Content-Type': 'application/ssml+xml',
-        'X-Microsoft-OutputFormat': 'audio-16khz-128kbitrate-mono-mp3',
-      },
-      body: ssml,
+  const audioBuffers: ArrayBuffer[] = [];
+
+  for (let i = 0; i < chunks.length; i++) {
+    const chunk = chunks[i];
+    console.log(`☁️ Azure chunk ${i + 1}/${chunks.length}: ${chunk.length} chars`);
+
+    // Escape XML special characters in the text
+    const escapedText = chunk
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
+
+    const ssml = `<speak version='1.0' xml:lang='${lang}'><voice name='${selectedVoice}'>${escapedText}</voice></speak>`;
+
+    const response = await fetch(
+      `https://${AZURE_SPEECH_REGION}.tts.speech.microsoft.com/cognitiveservices/v1`,
+      {
+        method: 'POST',
+        headers: {
+          'Ocp-Apim-Subscription-Key': AZURE_SPEECH_KEY,
+          'Content-Type': 'application/ssml+xml',
+          'X-Microsoft-OutputFormat': 'audio-16khz-128kbitrate-mono-mp3',
+        },
+        body: ssml,
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Azure TTS error: ${error}`);
     }
-  );
 
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Azure TTS error: ${error}`);
+    audioBuffers.push(await response.arrayBuffer());
   }
 
-  return response.arrayBuffer();
+  return chunks.length === 1 ? audioBuffers[0] : await concatenateAudioBuffers(audioBuffers);
 }
 
 async function generateGoogleTTS(text: string, languageCode?: string, voice?: string): Promise<ArrayBuffer> {
@@ -486,16 +522,28 @@ serve(async (req) => {
     const region = request.region || 'US';
     const languageCode = request.languageCode || 'en-US';
     const tier = request.tier || 'standard';
+    const providers = getAvailableProviders();
 
-    console.log(`📢 TTS Request: text="${request.text.substring(0, 50)}...", region=${region}, lang=${languageCode}, tier=${tier}, chars=${request.text.length}`);
+    // Enhanced logging for debugging
+    console.log(`📢 TTS Request Details:
+  - Text Length: ${request.text.length} chars
+  - Text Preview: "${request.text.substring(0, 80)}..."
+  - Region: ${region}
+  - Language: ${languageCode}
+  - Tier: ${tier}
+  - Zone Detection:
+    - Is CJK Region: ${CJK_REGIONS.includes(region)}
+    - Is MENA Region: ${MENA_REGIONS.includes(region)}
+    - Is Gemini Region: ${GEMINI_REGIONS.includes(region)}
+    - Is ElevenLabs Region: ${ELEVENLABS_REGIONS.includes(region)}
+  - Available Providers: ${providers.filter(p => p.available).map(p => p.id).join(', ')}`);
 
     // Determine optimal provider
     let routing: TTSRouting;
     if (request.provider) {
-      const providers = getAvailableProviders();
       const available = providers.find(p => p.id === request.provider && p.available);
       if (!available) {
-        console.warn(`Requested provider ${request.provider} not available, using fallback`);
+        console.warn(`⚠️ Requested provider ${request.provider} not available, using fallback`);
         routing = selectTTSProvider(region, languageCode, tier);
       } else {
         routing = { provider: request.provider, cost: 0.015, zone: 'manual', quality: 'standard' };
@@ -506,43 +554,76 @@ serve(async (req) => {
 
     console.log(`🎯 Selected provider: ${routing.provider} (zone: ${routing.zone})`);
 
-    // Generate audio based on provider
+    // Generate audio based on provider with resilient fallback chain
     let audioBuffer: ArrayBuffer;
     
-    try {
-      switch (routing.provider) {
+    const generateWithProvider = async (provider: TTSProvider): Promise<ArrayBuffer> => {
+      switch (provider) {
         case 'elevenlabs':
-          audioBuffer = await generateElevenLabsTTS(request.text, request.voice, request.speed);
-          break;
+          return await generateElevenLabsTTS(request.text, request.voice, request.speed);
         case 'openai':
-          audioBuffer = await generateOpenAITTS(request.text, request.voice, request.speed);
-          break;
+          return await generateOpenAITTS(request.text, request.voice, request.speed);
         case 'azure':
-          audioBuffer = await generateAzureTTS(request.text, languageCode, request.voice);
-          break;
+          return await generateAzureTTS(request.text, languageCode, request.voice);
         case 'google':
-          audioBuffer = await generateGoogleTTS(request.text, languageCode, request.voice);
-          break;
+          return await generateGoogleTTS(request.text, languageCode, request.voice);
         case 'alibaba':
-          audioBuffer = await generateAlibabaTTS(request.text, languageCode, request.voice);
-          break;
+          return await generateAlibabaTTS(request.text, languageCode, request.voice);
         default:
-          audioBuffer = await generateOpenAITTS(request.text, request.voice, request.speed);
+          throw new Error(`Unknown provider: ${provider}`);
       }
+    };
+    
+    try {
+      audioBuffer = await generateWithProvider(routing.provider);
     } catch (primaryError) {
-      console.warn(`Primary provider ${routing.provider} failed:`, primaryError);
+      console.warn(`⚠️ Primary provider ${routing.provider} failed:`, primaryError.message);
       
-      // Try OpenAI as universal fallback
-      if (routing.provider !== 'openai' && Deno.env.get('OPENAI_API_KEY')) {
-        console.log('🔄 Falling back to OpenAI TTS');
-        audioBuffer = await generateOpenAITTS(request.text, request.voice, request.speed);
-        routing.provider = 'openai';
-      } else if (routing.provider !== 'elevenlabs' && Deno.env.get('ELEVENLABS_API_KEY')) {
-        console.log('🔄 Falling back to ElevenLabs TTS');
-        audioBuffer = await generateElevenLabsTTS(request.text, request.voice, request.speed);
-        routing.provider = 'elevenlabs';
+      // Build fallback chain based on zone
+      let fallbackChain: TTSProvider[];
+      
+      if (routing.zone === 'gemini') {
+        // Gemini Zone: Azure → Google → ElevenLabs → OpenAI
+        fallbackChain = ['azure', 'google', 'elevenlabs', 'openai'];
+      } else if (routing.zone === 'alibaba') {
+        // Alibaba Zone: Azure → ElevenLabs → OpenAI → Google
+        fallbackChain = ['azure', 'elevenlabs', 'openai', 'google'];
+      } else if (routing.zone === 'azure') {
+        // MENA Zone: Google → ElevenLabs → OpenAI
+        fallbackChain = ['google', 'elevenlabs', 'openai'];
       } else {
-        throw primaryError;
+        // Claude Zone (Western): ElevenLabs → OpenAI → Azure → Google
+        fallbackChain = ['elevenlabs', 'openai', 'azure', 'google'];
+      }
+      
+      // Remove already-tried provider and unavailable providers
+      const availableProviderIds = providers.filter(p => p.available).map(p => p.id);
+      const remainingProviders = fallbackChain.filter(
+        p => p !== routing.provider && availableProviderIds.includes(p)
+      );
+      
+      console.log(`🔄 Fallback chain: ${remainingProviders.join(' → ')}`);
+      
+      let lastError: Error = primaryError as Error;
+      let fallbackSucceeded = false;
+      
+      for (const fallbackProvider of remainingProviders) {
+        try {
+          console.log(`🔄 Trying fallback: ${fallbackProvider}`);
+          audioBuffer = await generateWithProvider(fallbackProvider);
+          routing.provider = fallbackProvider;
+          routing.zone = 'fallback';
+          console.log(`✅ Fallback to ${fallbackProvider} succeeded`);
+          fallbackSucceeded = true;
+          break;
+        } catch (fallbackError) {
+          console.warn(`⚠️ Fallback ${fallbackProvider} failed:`, (fallbackError as Error).message);
+          lastError = fallbackError as Error;
+        }
+      }
+      
+      if (!fallbackSucceeded) {
+        throw lastError;
       }
     }
 
