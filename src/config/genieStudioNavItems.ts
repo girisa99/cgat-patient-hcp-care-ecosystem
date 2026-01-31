@@ -19,22 +19,40 @@
  * 2. Change minTier to adjust subscription requirement
  * 3. Add/remove isInternal: true to show/hide from external users
  * 
- * CURRENT ACCESS MATRIX:
+ * CURRENT ACCESS MATRIX (per your specification):
  * ┌─────────────────────┬────────────┬─────────────┐
  * │ Tab/Feature         │ Min Tier   │ Internal?   │
  * ├─────────────────────┼────────────┼─────────────┤
- * │ Studio/Deck/Tools   │ free       │ No          │
- * │ Spark/Mind          │ starter    │ No          │
- * │ Vibe                │ creator    │ No          │
- * │ Plan (Kanban/Cal)   │ starter    │ No          │
- * │ Library/Studio      │ starter    │ No          │
- * │ Metrics/Health      │ pro        │ No          │
- * │ Workspaces/Team     │ business   │ No          │
- * │ Branding            │ enterprise │ No          │
- * │ Business Analytics  │ enterprise │ No          │
- * │ AI Routing          │ pro        │ YES         │
- * │ Command Center      │ enterprise │ YES         │
- * │ Architecture        │ free       │ YES         │
+ * │ PLAN                │            │             │
+ * │   Taskboard         │ starter    │ No          │
+ * │   Schedule          │ starter    │ No          │
+ * │   Meetings          │ starter    │ No          │
+ * ├─────────────────────┼────────────┼─────────────┤
+ * │ CREATE              │            │             │
+ * │   Library           │ free       │ YES         │
+ * │   Studio            │ free       │ YES         │
+ * ├─────────────────────┼────────────┼─────────────┤
+ * │ ANALYZE             │            │             │
+ * │   Metrics           │ free       │ YES         │
+ * │   Business          │ free       │ YES         │
+ * │   Health            │ free       │ YES         │
+ * ├─────────────────────┼────────────┼─────────────┤
+ * │ ADMIN               │            │             │
+ * │   Workspaces        │ pro        │ YES         │
+ * │   Teams             │ pro        │ YES         │
+ * │   Branding          │ business   │ YES         │
+ * │   Activity          │ enterprise │ YES         │
+ * ├─────────────────────┼────────────┼─────────────┤
+ * │ AI                  │            │             │
+ * │   Routing           │ pro        │ YES         │
+ * │   Command           │ enterprise │ YES         │
+ * │   Architecture      │ free       │ YES         │
+ * ├─────────────────────┼────────────┼─────────────┤
+ * │ PUBLISH             │            │             │
+ * │   Review & Enhance  │ business   │ YES         │
+ * │   Assets            │ business   │ YES         │
+ * │   Scheduler         │ pro        │ YES         │
+ * │   Distribution      │ free       │ YES         │
  * └─────────────────────┴────────────┴─────────────┘
  * 
  * ARCHITECTURE:
@@ -157,39 +175,45 @@ export const genieStudioNavItems: GenieNavItem[] = [
   },
 
   // === PUBLISH ===
-  // Review & Enhance - review generated content before publishing
+  // Review & Enhance - Business+ tier, visible to internal users
   {
     title: "Review & Enhance",
     url: "/genie-admin?tab=composition&step=review",
     icon: FileCheck,
     description: "Review and enhance generated content before publishing",
-    minTier: 'starter',
+    minTier: 'business',
     category: 'publish',
+    isInternal: true,
   },
-  // Assets - view all generated assets
+  // Assets - Business+ tier, visible to internal users
   {
     title: "Assets",
     url: "/genie-admin?tab=composition&view=assets",
     icon: Package,
     description: "View and manage all generated assets",
-    minTier: 'starter',
+    minTier: 'business',
     category: 'publish',
+    isInternal: true,
   },
+  // Scheduler - Pro+ tier, visible to internal users
   {
     title: "Scheduler",
     url: "/genie-admin?tab=scheduler",
     icon: Send,
     description: "Schedule content across platforms",
-    minTier: 'starter',
+    minTier: 'pro',
     category: 'publish',
+    isInternal: true,
   },
+  // Distribution - Free tier (all users), visible to internal users
   {
     title: "Distribution",
     url: "/genie-admin?tab=library",
     icon: Megaphone,
     description: "Manage content distribution",
-    minTier: 'starter',
+    minTier: 'free',
     category: 'publish',
+    isInternal: true,
   },
   
   // === MANAGE (Merged Production Hub) ===
@@ -221,89 +245,98 @@ export const genieStudioNavItems: GenieNavItem[] = [
     category: 'manage',
     subCategory: 'Plan',
   },
-  // CREATE - Content library and composition tools
+  // CREATE - Content library and composition tools (Internal Only)
   {
     title: "Library",
     url: "/genie-admin?tab=library",
     icon: FolderOpen,
     description: "Browse, search, and organize all your media assets",
-    minTier: 'starter',
+    minTier: 'free',
     category: 'manage',
     subCategory: 'Create',
+    isInternal: true,
   },
   {
     title: "Studio",
     url: "/genie-admin?tab=composition",
     icon: Layers,
     description: "Create new compositions and combine media elements",
-    minTier: 'starter',
+    minTier: 'free',
     category: 'manage',
     subCategory: 'Create',
+    isInternal: true,
   },
-  // ANALYZE - Performance metrics and business intelligence
+  // ANALYZE - Performance metrics and business intelligence (Internal Only)
   {
     title: "Metrics",
     url: "/genie-admin?tab=analytics",
     icon: BarChart3,
     description: "Track production KPIs, engagement, and content performance",
-    minTier: 'pro',
+    minTier: 'free',
     category: 'manage',
     subCategory: 'Analyze',
+    isInternal: true,
   },
   {
     title: "Business",
     url: "/genie-admin?tab=enterprise-analytics",
     icon: Globe,
     description: "Enterprise-level ROI, revenue, and growth analytics",
-    minTier: 'enterprise',
+    minTier: 'free',
     category: 'manage',
     subCategory: 'Analyze',
+    isInternal: true,
   },
   {
     title: "Health",
     url: "/genie-admin?tab=error-analytics",
     icon: AlertTriangle,
     description: "Monitor system health, errors, and service diagnostics",
-    minTier: 'pro',
+    minTier: 'free',
     category: 'manage',
     subCategory: 'Analyze',
+    isInternal: true,
   },
-  // ADMIN - Team, workspace, and branding configuration
+  // ADMIN - Team, workspace, and branding configuration (Internal + Tiered)
   {
     title: "Workspaces",
     url: "/genie-admin?tab=workspaces",
     icon: Layout,
     description: "Create and manage isolated project workspaces",
-    minTier: 'business',
+    minTier: 'pro',
     category: 'manage',
     subCategory: 'Admin',
+    isInternal: true,
   },
   {
     title: "Team",
     url: "/genie-admin?tab=team",
     icon: Users,
     description: "Invite members, assign roles, and manage permissions",
-    minTier: 'business',
+    minTier: 'pro',
     category: 'manage',
     subCategory: 'Admin',
+    isInternal: true,
   },
   {
     title: "Branding",
     url: "/genie-admin?tab=whitelabel",
     icon: Palette,
     description: "Customize logos, colors, and white-label settings",
-    minTier: 'enterprise',
+    minTier: 'business',
     category: 'manage',
     subCategory: 'Admin',
+    isInternal: true,
   },
   {
     title: "Activity",
     url: "/genie-admin?tab=collaboration",
     icon: MessageSquare,
     description: "View team activity feed and collaboration history",
-    minTier: 'business',
+    minTier: 'enterprise',
     category: 'manage',
     subCategory: 'Admin',
+    isInternal: true,
   },
   // AI - AI routing and system governance (Internal Only)
   {
