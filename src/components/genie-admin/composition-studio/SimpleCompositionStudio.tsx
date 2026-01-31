@@ -10,6 +10,7 @@
  */
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -800,14 +801,39 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
   const [generationProgress, setGenerationProgress] = useState(0);
   const [currentGeneratingChapter, setCurrentGeneratingChapter] = useState<string | null>(null);
   
-  // NEW: Studio step & assets sidebar state
-  // Check URL params for initial state
-  const urlParams = new URLSearchParams(window.location.search);
-  const initialStep = urlParams.get('step') === 'review' ? 'review' : 'create';
-  const initialAssetsOpen = urlParams.get('view') === 'assets';
+  // NEW: Studio step & assets sidebar state using URL params for persistence
+  // Use useSearchParams for proper React Router integration
+  const [searchParams, setSearchParams] = useSearchParams();
   
-  const [studioStep, setStudioStep] = useState<'create' | 'review'>(initialStep);
-  const [assetsSidebarOpen, setAssetsSidebarOpen] = useState(initialAssetsOpen);
+  // Read step from URL - default to 'create'
+  const urlStep = searchParams.get('step');
+  const urlView = searchParams.get('view');
+  
+  // Derive studioStep from URL param - single source of truth
+  const studioStep = urlStep === 'review' ? 'review' : 'create';
+  const assetsSidebarOpen = urlView === 'assets';
+  
+  // Helper to update studio step (updates URL)
+  const setStudioStep = useCallback((newStep: 'create' | 'review') => {
+    const newParams = new URLSearchParams(searchParams);
+    if (newStep === 'review') {
+      newParams.set('step', 'review');
+    } else {
+      newParams.delete('step'); // 'create' is default, no need to store
+    }
+    setSearchParams(newParams, { replace: true });
+  }, [searchParams, setSearchParams]);
+  
+  // Helper to update assets sidebar (updates URL)
+  const setAssetsSidebarOpen = useCallback((open: boolean) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (open) {
+      newParams.set('view', 'assets');
+    } else {
+      newParams.delete('view');
+    }
+    setSearchParams(newParams, { replace: true });
+  }, [searchParams, setSearchParams]);
   
   // Load saved draft from sessionStorage or localStorage on mount
   useEffect(() => {
