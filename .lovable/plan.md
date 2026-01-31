@@ -1,164 +1,247 @@
 
 
-# Landing Page Enhancement Plan
-## Corporate Look, Tab Visibility & Auth Integration
+# Plan: Fix TTS Regional Routing & Multi-Provider Fallback Chain
 
----
+## Problem Summary
 
-## Overview
+The TTS generation for **Telugu** and **Hindi** (Gemini Zone languages) is failing because:
+1. **Google TTS is selected as primary** (correct per routing logic)
+2. **Google TTS fails** (likely due to API key incompatibility - GEMINI_API_KEY ≠ Google Cloud TTS API key)
+3. **Fallback attempts OpenAI** which fails on the 4096 character limit
+4. **ElevenLabs is never tried** because the fallback chain breaks on OpenAI failure
 
-This plan transforms `GenieStudioLanding.tsx` from a dark gaming aesthetic to a professional enterprise appearance with three key improvements:
+## Solution Architecture
 
-1. **Corporate Color Scheme** - Professional light theme with brand accents
-2. **Tab Visibility** - Fix transparent backgrounds and text contrast
-3. **Authentication Integration** - Polish CTAs and add returning user link
-
----
-
-## Current Issues Summary
-
-| Element | Current Problem |
-|---------|-----------------|
-| Main background | Dark `bg-slate-950` gaming aesthetic |
-| Cards/Sections | Transparent `bg-white/5`, `bg-white/10` |
-| Text | Low contrast `text-gray-400`, `text-gray-500` |
-| Tabs | Invisible text on transparent backgrounds |
-| Navbar | Blends into dark page |
-
----
-
-## Implementation Details
-
-### Phase 1: Corporate Color Scheme
-
-**1.1 Main Container (line 201)**
-- FROM: `bg-slate-950 text-white`
-- TO: `bg-background text-foreground`
-
-**1.2 Navbar (lines 204-232)**
-- FROM: `bg-slate-950/80 backdrop-blur-xl border-white/10`
-- TO: `bg-background/95 backdrop-blur-xl border-border shadow-md`
-- Update link colors to `text-muted-foreground` with `hover:text-foreground`
-
-**1.3 Hero Section (lines 240-373)**
-- FROM: `bg-gradient-to-br from-purple-900/50 via-slate-900 to-pink-900/30`
-- TO: `bg-gradient-to-br from-primary/5 via-background to-accent/5`
-- Replace neon blobs with subtle brand tints
-- Update text to `text-muted-foreground`
-
-**1.4 Section Backgrounds**
-
-| Section | Current | New |
-|---------|---------|-----|
-| Products (376) | Dark purple gradient | `from-background via-primary/5 to-background` |
-| AI Orchestration (458) | Dark gradient | `from-background to-primary/5` |
-| Languages (495) | Dark gradient | `from-primary/5 via-background to-background` |
-| Pricing (650) | Dark gradient | `from-background via-primary/5 to-background` |
-| Dogfooding (724) | Dark card | `bg-card border border-border` |
-| CTA Footer (795) | Dark gradient | `from-primary/10 to-background` |
-
----
-
-### Phase 2: Tab Visibility Fixes
-
-**2.1 Product Selector Buttons (lines 397-419)**
-- ACTIVE: `bg-primary text-primary-foreground shadow-lg`
-- INACTIVE: `bg-card border border-border text-foreground hover:bg-muted`
-
-**2.2 Language Tabs (lines 526-546)**
-- ACTIVE: `bg-primary text-primary-foreground`
-- INACTIVE: `bg-card border border-border text-foreground hover:bg-muted`
-- BADGE: `bg-accent text-accent-foreground`
-
-**2.3 Transcreation Toggle (lines 589-600)**
-- Container: `bg-muted rounded-full`
-- ACTIVE (Genie): `bg-primary text-primary-foreground`
-- ACTIVE (Literal): `bg-destructive text-destructive-foreground`
-- INACTIVE: `bg-transparent text-muted-foreground`
-
-**2.4 Provider Cards (lines 471-479)**
-- FROM: `bg-white/5 hover:bg-white/10`
-- TO: `bg-card border border-border hover:bg-muted shadow-sm`
-
-**2.5 Pricing Cards (lines 663-708)**
-- NORMAL: `bg-card border border-border text-foreground shadow-md`
-- POPULAR: `bg-gradient-to-b from-primary to-accent text-white shadow-xl`
-
-**2.6 Region Switcher (lines 865-884)**
-- FROM: `bg-slate-800 border-white/10`
-- TO: `bg-card border border-border shadow-lg`
-
----
-
-### Phase 3: Authentication Integration
-
-**3.1 Existing Links (Already Correct)**
-- Navbar "Start Free" → `/genie-studio-auth`
-- Hero CTA → `/genie-studio-auth?tab=signup`
-- Pricing buttons → `/genie-studio-auth?tier=${tier}`
-- Footer CTA → `/genie-studio-auth?tab=signup`
-
-**3.2 Add Returning User Link**
-Add below hero CTA buttons:
+```text
+┌─────────────────────────────────────────────────────────────────────┐
+│                    TTS PROVIDER FALLBACK CHAIN                      │
+├─────────────────────────────────────────────────────────────────────┤
+│  GEMINI ZONE (hi, te, ta, bn, etc.)                                │
+│  ┌─────────┐    ┌─────────┐    ┌────────────┐    ┌─────────┐       │
+│  │ Azure   │ ─► │ Google  │ ─► │ ElevenLabs │ ─► │ OpenAI  │       │
+│  │ Neural  │    │ TTS     │    │            │    │ (last)  │       │
+│  └─────────┘    └─────────┘    └────────────┘    └─────────┘       │
+│      P1            P2               P3              P4              │
+├─────────────────────────────────────────────────────────────────────┤
+│  CLAUDE ZONE (en, de, fr, es, etc.)                                │
+│  ┌────────────┐    ┌─────────┐    ┌─────────┐                      │
+│  │ ElevenLabs │ ─► │ OpenAI  │ ─► │ Azure   │                      │
+│  └────────────┘    └─────────┘    └─────────┘                      │
+└─────────────────────────────────────────────────────────────────────┘
 ```
-Already have an account? Sign in →
-```
-Links to `/genie-studio-auth`
 
-**3.3 CTA Button Polish**
-- Primary: Solid `bg-primary shadow-lg`
-- Secondary: `border-primary text-primary hover:bg-primary/10`
+---
+
+## Implementation Steps
+
+### Step 1: Update TTS Provider Priority for Gemini Zone
+
+**File:** `supabase/functions/multi-provider-tts/index.ts`
+
+Change Gemini Zone routing to prefer Azure Neural (which works well with Indian languages) over Google TTS:
+
+**Current (line 206-208):**
+```typescript
+if (GEMINI_REGIONS.includes(region) && hasProvider('google')) {
+  console.log('🌏 Gemini Zone: Routing to Google TTS');
+  return { provider: 'google', cost: 0.016, zone: 'gemini', quality: 'standard' };
+}
+```
+
+**Updated:**
+```typescript
+// South Asian/SEA: Prefer Azure Neural (excellent Indian language support)
+if (GEMINI_REGIONS.includes(region)) {
+  if (hasProvider('azure')) {
+    console.log('🌏 Gemini Zone: Routing to Azure Neural TTS');
+    return { provider: 'azure', cost: 0.016, zone: 'gemini', quality: 'premium' };
+  }
+  if (hasProvider('google')) {
+    console.log('🌏 Gemini Zone fallback: Routing to Google TTS');
+    return { provider: 'google', cost: 0.016, zone: 'gemini', quality: 'standard' };
+  }
+}
+```
+
+---
+
+### Step 2: Implement Resilient Multi-Provider Fallback Chain
+
+**File:** `supabase/functions/multi-provider-tts/index.ts`
+
+Replace the current simple fallback (lines 532-546) with a complete fallback chain:
+
+```typescript
+} catch (primaryError) {
+  console.warn(`⚠️ Primary provider ${routing.provider} failed:`, primaryError.message);
+  
+  // Build fallback chain based on zone
+  const fallbackChain: TTSProvider[] = [];
+  
+  if (routing.zone === 'gemini') {
+    // Gemini Zone: Azure → Google → ElevenLabs → OpenAI
+    fallbackChain.push('azure', 'google', 'elevenlabs', 'openai');
+  } else if (routing.zone === 'alibaba') {
+    // Alibaba Zone: Azure → ElevenLabs → OpenAI → Google
+    fallbackChain.push('azure', 'elevenlabs', 'openai', 'google');
+  } else {
+    // Claude Zone: ElevenLabs → OpenAI → Azure → Google
+    fallbackChain.push('elevenlabs', 'openai', 'azure', 'google');
+  }
+  
+  // Remove already-tried provider and unavailable providers
+  const availableProviders = getAvailableProviders().filter(p => p.available).map(p => p.id);
+  const remainingProviders = fallbackChain.filter(
+    p => p !== routing.provider && availableProviders.includes(p)
+  );
+  
+  console.log(`🔄 Fallback chain: ${remainingProviders.join(' → ')}`);
+  
+  let lastError = primaryError;
+  for (const fallbackProvider of remainingProviders) {
+    try {
+      console.log(`🔄 Trying fallback: ${fallbackProvider}`);
+      
+      switch (fallbackProvider) {
+        case 'elevenlabs':
+          audioBuffer = await generateElevenLabsTTS(request.text, request.voice, request.speed);
+          break;
+        case 'openai':
+          audioBuffer = await generateOpenAITTS(request.text, request.voice, request.speed);
+          break;
+        case 'azure':
+          audioBuffer = await generateAzureTTS(request.text, languageCode, request.voice);
+          break;
+        case 'google':
+          audioBuffer = await generateGoogleTTS(request.text, languageCode, request.voice);
+          break;
+        default:
+          continue;
+      }
+      
+      routing.provider = fallbackProvider;
+      routing.zone = 'fallback';
+      console.log(`✅ Fallback to ${fallbackProvider} succeeded`);
+      break; // Success - exit loop
+      
+    } catch (fallbackError) {
+      console.warn(`⚠️ Fallback ${fallbackProvider} failed:`, fallbackError.message);
+      lastError = fallbackError;
+    }
+  }
+  
+  if (!audioBuffer) {
+    throw lastError; // All providers failed
+  }
+}
+```
+
+---
+
+### Step 3: Add Text Chunking to Azure TTS
+
+**File:** `supabase/functions/multi-provider-tts/index.ts`
+
+Azure TTS needs chunking support for long content (currently only OpenAI, ElevenLabs, and Google have it):
+
+```typescript
+async function generateAzureTTS(text: string, languageCode?: string, voice?: string): Promise<ArrayBuffer> {
+  const AZURE_SPEECH_KEY = Deno.env.get('AZURE_SPEECH_KEY');
+  const AZURE_SPEECH_REGION = Deno.env.get('AZURE_SPEECH_REGION') || 'eastus';
+  if (!AZURE_SPEECH_KEY) throw new Error('Azure Speech key not configured');
+
+  // Voice mapping for Indic languages
+  const voiceMap: Record<string, string> = {
+    'en-US': 'en-US-JennyNeural',
+    'hi-IN': 'hi-IN-SwaraNeural',
+    'te-IN': 'te-IN-ShrutiNeural',
+    'ta-IN': 'ta-IN-PallaviNeural',
+    'bn-IN': 'bn-IN-TanishaaNeural',
+    'mr-IN': 'mr-IN-AarohiNeural',
+    'gu-IN': 'gu-IN-DhwaniNeural',
+    'kn-IN': 'kn-IN-SapnaNeural',
+    'ml-IN': 'ml-IN-SobhanaNeural',
+    // ... other languages
+  };
+
+  const AZURE_MAX_CHARS = 4000; // Azure SSML limit
+  const chunks = chunkTextBySentences(text, AZURE_MAX_CHARS);
+  console.log(`☁️ Azure: Processing ${chunks.length} chunk(s), total ${text.length} chars`);
+
+  const audioBuffers: ArrayBuffer[] = [];
+
+  for (let i = 0; i < chunks.length; i++) {
+    const chunk = chunks[i];
+    const lang = languageCode || 'en-US';
+    const selectedVoice = voice || voiceMap[lang] || 'en-US-JennyNeural';
+
+    const ssml = `<speak version='1.0' xml:lang='${lang}'><voice name='${selectedVoice}'>${chunk}</voice></speak>`;
+
+    const response = await fetch(
+      `https://${AZURE_SPEECH_REGION}.tts.speech.microsoft.com/cognitiveservices/v1`,
+      {
+        method: 'POST',
+        headers: {
+          'Ocp-Apim-Subscription-Key': AZURE_SPEECH_KEY,
+          'Content-Type': 'application/ssml+xml',
+          'X-Microsoft-OutputFormat': 'audio-16khz-128kbitrate-mono-mp3',
+        },
+        body: ssml,
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Azure TTS error: ${error}`);
+    }
+
+    audioBuffers.push(await response.arrayBuffer());
+  }
+
+  return chunks.length === 1 ? audioBuffers[0] : await concatenateAudioBuffers(audioBuffers);
+}
+```
+
+---
+
+### Step 4: Add Better Logging for Debugging
+
+Add detailed logging to track the full routing decision:
+
+```typescript
+console.log(`📢 TTS Request Details:
+  - Text Length: ${request.text.length} chars
+  - Region: ${region}
+  - Language: ${languageCode}
+  - Tier: ${tier}
+  - Zone Detection:
+    - Is CJK Region: ${CJK_REGIONS.includes(region)}
+    - Is MENA Region: ${MENA_REGIONS.includes(region)}
+    - Is Gemini Region: ${GEMINI_REGIONS.includes(region)}
+    - Is ElevenLabs Region: ${ELEVENLABS_REGIONS.includes(region)}
+  - Available Providers: ${providers.filter(p => p.available).map(p => p.id).join(', ')}
+`);
+```
+
+---
+
+## Testing Validation
+
+After implementation, test with:
+
+1. **Telugu text (te-IN)** - Should route: Azure → Google → ElevenLabs → OpenAI
+2. **Hindi text (hi-IN)** - Should route: Azure → Google → ElevenLabs → OpenAI
+3. **English text (en-US)** - Should route: ElevenLabs → OpenAI → Azure
+4. **Arabic text (ar-SA)** - Should route: Azure → ElevenLabs → OpenAI
 
 ---
 
 ## Technical Summary
 
-### File to Modify
-`src/pages/GenieStudioLanding.tsx`
-
-### CSS Variables Used (from existing design system)
-- `bg-background` → Light neutral
-- `bg-card` → White cards
-- `text-foreground` → Dark text
-- `text-muted-foreground` → Subtle gray
-- `bg-primary` → Genie Purple
-- `bg-accent` → Genie Pink
-- `border` → Subtle gray border
-
-### Changes Count
-| Category | Count |
-|----------|-------|
-| Background colors | 8 sections |
-| Text colors | ~15 elements |
-| Tab/Button states | 5 component types |
-| Card styling | 4 card types |
-| Auth links | Verify 4, add 1 |
-
----
-
-## Expected Results
-
-After implementation:
-- Professional enterprise appearance suitable for B2B sales
-- All tabs and buttons clearly visible with high contrast
-- WCAG AA compliant color contrast
-- Consistent design system using CSS variables
-- Smooth auth flow: landing → auth → dashboard
-- Preserved functionality: Geo-detection, RTL, region switcher
-
----
-
-## Visual Transformation
-
-### Before (Current)
-- Dark slate (#0f172a) background
-- Transparent tabs (bg-white/5)
-- Neon pink/purple accents
-- Low contrast text
-
-### After (Proposed)
-- Light professional (#fafafa) background
-- Solid card backgrounds with borders
-- Refined purple/pink accents
-- High contrast readable text
+| Change | Purpose |
+|--------|---------|
+| Azure as Gemini Zone primary | Azure Neural has excellent Indic language support |
+| Complete fallback chain | All 4 providers tried before failure |
+| Azure text chunking | Handles long-form content |
+| Enhanced logging | Debug routing decisions |
 
