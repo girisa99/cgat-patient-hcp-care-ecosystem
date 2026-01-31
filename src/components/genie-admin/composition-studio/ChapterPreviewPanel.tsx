@@ -134,7 +134,25 @@ interface ChapterPreviewPanelProps {
     music?: GeneratedAsset;
   };
   languages: string[];
+  primaryLanguage?: string;
+  audioByLanguage?: Record<string, {
+    languageCode: string;
+    languageName: string;
+    audioUrl?: string;
+    base64?: string;
+    duration?: number;
+    provider?: string;
+    confidenceScore?: number;
+    status: 'pending' | 'generating' | 'complete' | 'error';
+  }>;
+  confidenceScores?: {
+    script?: number;
+    audio?: number;
+    video?: number;
+    music?: number;
+  };
   onRegenerate: (chapterId: string, assetType: 'script' | 'audio' | 'video' | 'music') => Promise<void>;
+  onRegenerateLanguage?: (chapterId: string, languageCode: string) => Promise<void>;
   onUpdateScript: (chapterId: string, newScript: string) => void;
   onApprove?: (chapterId: string) => void;
   onReject?: (chapterId: string, feedback: string) => void;
@@ -147,7 +165,11 @@ export const ChapterPreviewPanel: React.FC<ChapterPreviewPanelProps> = ({
   chapterIndex,
   assets,
   languages,
+  primaryLanguage = 'en',
+  audioByLanguage,
+  confidenceScores,
   onRegenerate,
+  onRegenerateLanguage,
   onUpdateScript,
   onApprove,
   onReject,

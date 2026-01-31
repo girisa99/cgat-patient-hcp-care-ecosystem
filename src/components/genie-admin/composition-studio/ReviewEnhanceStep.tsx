@@ -37,10 +37,23 @@ import { toast } from 'sonner';
 import { ChapterPreviewPanel } from './ChapterPreviewPanel';
 
 interface ChapterAssets {
-  script?: { content?: string; status: string };
-  audio?: { url?: string; base64?: string; status: string; provider?: string };
-  video?: { url?: string; status: string; provider?: string };
-  music?: { url?: string; base64?: string; status: string };
+  script?: { content?: string; status: string; confidenceScore?: number };
+  audio?: { url?: string; base64?: string; status: string; provider?: string; confidenceScore?: number };
+  video?: { url?: string; status: string; provider?: string; confidenceScore?: number };
+  music?: { url?: string; base64?: string; status: string; confidenceScore?: number };
+}
+
+interface AudioByLanguage {
+  [languageCode: string]: {
+    languageCode: string;
+    languageName: string;
+    audioUrl?: string;
+    base64?: string;
+    duration?: number;
+    provider?: string;
+    confidenceScore?: number;
+    status: 'pending' | 'generating' | 'complete' | 'error';
+  };
 }
 
 interface ReviewChapter {
@@ -51,6 +64,7 @@ interface ReviewChapter {
   feedback?: string;
   qualityScore?: number;
   assets: ChapterAssets;
+  audioByLanguage?: AudioByLanguage;
 }
 
 interface ReviewEnhanceStepProps {
@@ -61,6 +75,7 @@ interface ReviewEnhanceStepProps {
   onChapterApprove: (chapterId: string) => void;
   onChapterReject: (chapterId: string, feedback: string) => void;
   onChapterRegenerate: (chapterId: string, assetType: 'script' | 'audio' | 'video' | 'music') => Promise<void>;
+  onRegenerateLanguage?: (chapterId: string, languageCode: string) => Promise<void>;
   onUpdateScript: (chapterId: string, newScript: string) => void;
   onBack: () => void;
   onPublish: () => void;
@@ -75,6 +90,7 @@ export const ReviewEnhanceStep: React.FC<ReviewEnhanceStepProps> = ({
   onChapterApprove,
   onChapterReject,
   onChapterRegenerate,
+  onRegenerateLanguage,
   onUpdateScript,
   onBack,
   onPublish,
@@ -237,14 +253,25 @@ export const ReviewEnhanceStep: React.FC<ReviewEnhanceStepProps> = ({
               const hasVideo = chapter.assets?.video?.status === 'complete';
               const assetCount = [hasScript, hasAudio, hasVideo].filter(Boolean).length;
               
+              // Calculate average confidence score from available assets
+              const scriptConfidence = chapter.assets?.script?.confidenceScore || 0;
+              const audioConfidence = chapter.assets?.audio?.confidenceScore || 0;
+              const videoConfidence = chapter.assets?.video?.confidenceScore || 0;
+              const confidenceValues = [scriptConfidence, audioConfidence, videoConfidence].filter(v => v > 0);
+              const avgConfidence = confidenceValues.length > 0 
+                ? Math.round(confidenceValues.reduce((a, b) => a + b, 0) / confidenceValues.length)
+                : 0;
+              const needsImprovement = avgConfidence > 0 && avgConfidence < 95;
+              
               return (
                 <div
                   key={chapter.id}
                   className={cn(
                     "p-4 border rounded-lg cursor-pointer transition-all hover:shadow-md",
                     selectedChapter === chapter.id && "ring-2 ring-primary",
-                    chapter.status === 'approved' && "border-green-200 bg-green-50/50",
-                    (chapter.status === 'rejected' || chapter.status === 'needs_revision') && "border-red-200 bg-red-50/50",
+                    chapter.status === 'approved' && "border-primary/30 bg-primary/5",
+                    (chapter.status === 'rejected' || chapter.status === 'needs_revision') && "border-destructive/30 bg-destructive/5",
+                    needsImprovement && chapter.status === 'pending' && "border-amber-500/30 bg-amber-50/30",
                     assetCount === 0 && "border-dashed"
                   )}
                   onClick={() => {
@@ -257,17 +284,67 @@ export const ReviewEnhanceStep: React.FC<ReviewEnhanceStepProps> = ({
                       Ch. {index + 1}
                     </Badge>
                     <div className="flex items-center gap-1">
-                      {/* Asset indicators */}
-                      <span title={hasScript ? 'Script ready' : 'Script pending'} className={cn("w-2 h-2 rounded-full", hasScript ? "bg-green-500" : "bg-gray-300")} />
-                      <span title={hasAudio ? 'Audio ready' : 'Audio pending'} className={cn("w-2 h-2 rounded-full", hasAudio ? "bg-green-500" : "bg-gray-300")} />
-                      <span title={hasVideo ? 'Video ready' : 'Video pending'} className={cn("w-2 h-2 rounded-full", hasVideo ? "bg-green-500" : "bg-gray-300")} />
+                      {/* Asset indicators with confidence colors */}
+                      <span 
+                        title={hasScript ? `Script: ${scriptConfidence || '?'}%` : 'Script pending'} 
+                        className={cn(
+                          "w-2 h-2 rounded-full",
+                          hasScript 
+                            ? (scriptConfidence >= 95 ? "bg-primary" : scriptConfidence >= 80 ? "bg-amber-500" : "bg-destructive") 
+                            : "bg-muted-foreground/30"
+                        )} 
+                      />
+                      <span 
+                        title={hasAudio ? `Audio: ${audioConfidence || '?'}%` : 'Audio pending'} 
+                        className={cn(
+                          "w-2 h-2 rounded-full",
+                          hasAudio 
+                            ? (audioConfidence >= 95 ? "bg-primary" : audioConfidence >= 80 ? "bg-amber-500" : "bg-destructive") 
+                            : "bg-muted-foreground/30"
+                        )} 
+                      />
+                      <span 
+                        title={hasVideo ? `Video: ${videoConfidence || '?'}%` : 'Video pending'} 
+                        className={cn(
+                          "w-2 h-2 rounded-full",
+                          hasVideo 
+                            ? (videoConfidence >= 95 ? "bg-primary" : videoConfidence >= 80 ? "bg-amber-500" : "bg-destructive") 
+                            : "bg-muted-foreground/30"
+                        )} 
+                      />
                     </div>
                   </div>
                   <h4 className="font-medium text-sm truncate">{chapter.title}</h4>
                   <p className="text-xs text-muted-foreground mt-1">
                     {chapter.duration}s • {assetCount}/3 assets ready
                   </p>
-                  {(chapter.qualityScore || 0) > 0 && (
+                  {/* Confidence Score Display */}
+                  {avgConfidence > 0 && (
+                    <div className="mt-2">
+                      <div className="flex items-center justify-between text-[10px] mb-1">
+                        <span className="text-muted-foreground">Quality Score</span>
+                        <span className={cn(
+                          "font-medium",
+                          avgConfidence >= 95 ? "text-primary" : avgConfidence >= 80 ? "text-amber-600" : "text-destructive"
+                        )}>
+                          {avgConfidence}%
+                        </span>
+                      </div>
+                      <Progress 
+                        value={avgConfidence} 
+                        className={cn(
+                          "h-1",
+                          avgConfidence >= 95 ? "[&>div]:bg-primary" : avgConfidence >= 80 ? "[&>div]:bg-amber-500" : "[&>div]:bg-destructive"
+                        )} 
+                      />
+                      {needsImprovement && (
+                        <p className="text-[10px] text-amber-600 mt-1">
+                          Below 95% target
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  {(chapter.qualityScore || 0) > 0 && avgConfidence === 0 && (
                     <div className="mt-2">
                       <Progress value={chapter.qualityScore} className="h-1" />
                       <p className="text-xs text-muted-foreground mt-1">
@@ -276,7 +353,7 @@ export const ReviewEnhanceStep: React.FC<ReviewEnhanceStepProps> = ({
                     </div>
                   )}
                   {chapter.feedback && (
-                    <p className="text-xs text-red-600 mt-2 truncate">
+                    <p className="text-xs text-destructive mt-2 truncate">
                       💬 {chapter.feedback}
                     </p>
                   )}
@@ -328,7 +405,16 @@ export const ReviewEnhanceStep: React.FC<ReviewEnhanceStepProps> = ({
               chapterIndex={(chapters || []).findIndex(c => c.id === selectedChapterData.id)}
               assets={selectedChapterData.assets as any}
               languages={languages}
+              primaryLanguage={primaryLanguage}
+              audioByLanguage={selectedChapterData.audioByLanguage}
+              confidenceScores={{
+                script: selectedChapterData.assets?.script?.confidenceScore,
+                audio: selectedChapterData.assets?.audio?.confidenceScore,
+                video: selectedChapterData.assets?.video?.confidenceScore,
+                music: selectedChapterData.assets?.music?.confidenceScore,
+              }}
               onRegenerate={onChapterRegenerate}
+              onRegenerateLanguage={onRegenerateLanguage ? (_, lang) => onRegenerateLanguage(selectedChapterData.id, lang) : undefined}
               onUpdateScript={onUpdateScript}
               onApprove={() => onChapterApprove(selectedChapterData.id)}
               onReject={() => setFeedbackDialog({ chapterId: selectedChapterData.id, open: true })}
