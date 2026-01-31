@@ -763,6 +763,58 @@ interface SimpleCompositionStudioProps {
 
 const generateId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
+// Multi-project storage helpers
+const PROJECTS_STORAGE_KEY = 'studio_projects_history';
+const CURRENT_PROJECT_KEY = 'studio_current_project_id';
+
+interface StoredProject {
+  id: string;
+  projectName: string;
+  chapters: SimpleChapter[];
+  primaryLanguage: string;
+  additionalLanguages: string[];
+  selectedTemplates: string[];
+  selectedVisualTypes: string[];
+  audioScope: 'chapter' | 'entire';
+  scriptScope: 'chapter' | 'entire';
+  outputMode: 'combined' | 'individual';
+  savedAt: string;
+  createdAt: string;
+}
+
+const loadAllProjects = (): StoredProject[] => {
+  try {
+    const stored = localStorage.getItem(PROJECTS_STORAGE_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+};
+
+const saveAllProjects = (projects: StoredProject[]) => {
+  localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(projects));
+};
+
+const saveProject = (project: StoredProject) => {
+  const projects = loadAllProjects();
+  const existingIndex = projects.findIndex(p => p.id === project.id);
+  if (existingIndex >= 0) {
+    projects[existingIndex] = project;
+  } else {
+    projects.unshift(project); // Add new project at start
+  }
+  // Keep max 20 projects
+  const trimmed = projects.slice(0, 20);
+  saveAllProjects(trimmed);
+  localStorage.setItem(CURRENT_PROJECT_KEY, project.id);
+  sessionStorage.setItem('studio_current_draft', JSON.stringify(project));
+};
+
+const loadProjectById = (id: string): StoredProject | null => {
+  const projects = loadAllProjects();
+  return projects.find(p => p.id === id) || null;
+};
+
 export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = ({
   className,
   onClose,
@@ -776,6 +828,11 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
   // Label Studio feedback for RLHF learning
   const { recordEvent } = useLabelStudioBackground();
 
+  // Project ID for multi-project tracking
+  const [currentProjectId, setCurrentProjectId] = useState<string>(() => {
+    return sessionStorage.getItem(CURRENT_PROJECT_KEY) || localStorage.getItem(CURRENT_PROJECT_KEY) || generateId();
+  });
+  
   // Project state
   const [projectName, setProjectName] = useState('');
   const [selectedTemplates, setSelectedTemplates] = useState<string[]>([]);
@@ -784,6 +841,10 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
   const [additionalLanguages, setAdditionalLanguages] = useState<string[]>([]);
   const [chapters, setChapters] = useState<SimpleChapter[]>([]);
   const [expandedChapter, setExpandedChapter] = useState<string | null>(null);
+  
+  // Project history for switching
+  const [projectHistory, setProjectHistory] = useState<StoredProject[]>([]);
+  const [showProjectPicker, setShowProjectPicker] = useState(false);
   
   // Audio settings scope
   const [audioScope, setAudioScope] = useState<'chapter' | 'entire'>('entire');
@@ -835,45 +896,118 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
     setSearchParams(newParams, { replace: true });
   }, [searchParams, setSearchParams]);
   
-  // Load saved draft from sessionStorage or localStorage on mount
+  // Load project history and current project on mount
   useEffect(() => {
-    // Try sessionStorage first, then fallback to localStorage
-    const savedDraft = sessionStorage.getItem('studio_current_draft') || localStorage.getItem('studio_last_draft');
-    if (savedDraft) {
-      try {
-        const draft = JSON.parse(savedDraft);
-        console.log('[Studio] Restoring draft:', draft.projectName, 'with', draft.chapters?.length, 'chapters');
-        
-        if (draft.projectName) setProjectName(draft.projectName);
-        if (draft.chapters?.length) {
-          // Ensure all chapter data including generatedContent is restored
-          setChapters(draft.chapters.map((ch: any) => ({
-            ...ch,
-            generatedContent: ch.generatedContent || undefined,
-            status: ch.status || 'draft',
-          })));
+    // Load all projects for history picker
+    const allProjects = loadAllProjects();
+    setProjectHistory(allProjects);
+    
+    // Get current project ID from storage
+    const storedProjectId = sessionStorage.getItem(CURRENT_PROJECT_KEY) || localStorage.getItem(CURRENT_PROJECT_KEY);
+    
+    // Try to load current project, or most recent from history
+    let projectToLoad: StoredProject | null = null;
+    
+    if (storedProjectId) {
+      projectToLoad = loadProjectById(storedProjectId);
+    }
+    
+    // Fallback to session draft if exists
+    if (!projectToLoad) {
+      const savedDraft = sessionStorage.getItem('studio_current_draft');
+      if (savedDraft) {
+        try {
+          const draft = JSON.parse(savedDraft);
+          projectToLoad = {
+            id: draft.id || currentProjectId,
+            createdAt: draft.createdAt || new Date().toISOString(),
+            ...draft
+          };
+        } catch (e) {
+          console.warn('[Studio] Failed to parse session draft:', e);
         }
-        if (draft.primaryLanguage) setPrimaryLanguage(draft.primaryLanguage);
-        if (draft.additionalLanguages) setAdditionalLanguages(draft.additionalLanguages);
-        if (draft.selectedTemplates) setSelectedTemplates(draft.selectedTemplates);
-        if (draft.selectedVisualTypes) setSelectedVisualTypes(draft.selectedVisualTypes);
-        if (draft.audioScope) setAudioScope(draft.audioScope);
-        if (draft.scriptScope) setScriptScope(draft.scriptScope);
-        if (draft.outputMode) setOutputMode(draft.outputMode);
-        
-        // Only show toast if we actually restored content
-        if (draft.chapters?.length > 0) {
-          const hasContent = draft.chapters.some((ch: any) => ch.script || ch.generatedContent);
-          if (hasContent) {
-            toast.info('Draft restored with generated content');
-          } else {
-            toast.info('Draft structure restored');
-          }
-        }
-      } catch (e) {
-        console.warn('Failed to restore draft:', e);
       }
     }
+    
+    // Fallback to most recent project in history
+    if (!projectToLoad && allProjects.length > 0) {
+      projectToLoad = allProjects[0];
+    }
+    
+    if (projectToLoad) {
+      console.log('[Studio] Restoring project:', projectToLoad.projectName, 'ID:', projectToLoad.id, 'with', projectToLoad.chapters?.length, 'chapters');
+      
+      setCurrentProjectId(projectToLoad.id);
+      if (projectToLoad.projectName) setProjectName(projectToLoad.projectName);
+      if (projectToLoad.chapters?.length) {
+        setChapters(projectToLoad.chapters.map((ch: any) => ({
+          ...ch,
+          generatedContent: ch.generatedContent || undefined,
+          status: ch.status || 'draft',
+        })));
+      }
+      if (projectToLoad.primaryLanguage) setPrimaryLanguage(projectToLoad.primaryLanguage);
+      if (projectToLoad.additionalLanguages) setAdditionalLanguages(projectToLoad.additionalLanguages);
+      if (projectToLoad.selectedTemplates) setSelectedTemplates(projectToLoad.selectedTemplates);
+      if (projectToLoad.selectedVisualTypes) setSelectedVisualTypes(projectToLoad.selectedVisualTypes);
+      if (projectToLoad.audioScope) setAudioScope(projectToLoad.audioScope);
+      if (projectToLoad.scriptScope) setScriptScope(projectToLoad.scriptScope);
+      if (projectToLoad.outputMode) setOutputMode(projectToLoad.outputMode);
+      
+      // Show toast for restored content
+      if (projectToLoad.chapters?.length > 0) {
+        const hasContent = projectToLoad.chapters.some((ch: any) => ch.script || ch.generatedContent);
+        toast.info(hasContent ? `Restored: ${projectToLoad.projectName}` : 'Draft structure restored');
+      }
+    }
+  }, []);
+  
+  // Load a specific project by ID (for project picker)
+  const loadProject = useCallback((projectId: string) => {
+    const project = loadProjectById(projectId);
+    if (project) {
+      setCurrentProjectId(project.id);
+      setProjectName(project.projectName);
+      setChapters(project.chapters.map(ch => ({
+        ...ch,
+        generatedContent: ch.generatedContent || undefined,
+        status: ch.status || 'draft',
+      })));
+      setPrimaryLanguage(project.primaryLanguage);
+      setAdditionalLanguages(project.additionalLanguages);
+      setSelectedTemplates(project.selectedTemplates);
+      setSelectedVisualTypes(project.selectedVisualTypes);
+      setAudioScope(project.audioScope);
+      setScriptScope(project.scriptScope);
+      setOutputMode(project.outputMode);
+      
+      localStorage.setItem(CURRENT_PROJECT_KEY, project.id);
+      sessionStorage.setItem(CURRENT_PROJECT_KEY, project.id);
+      
+      toast.success(`Loaded: ${project.projectName}`);
+      setShowProjectPicker(false);
+    }
+  }, []);
+  
+  // Create a new project
+  const startNewProject = useCallback(() => {
+    const newId = generateId();
+    setCurrentProjectId(newId);
+    setProjectName('');
+    setChapters([]);
+    setSelectedTemplates([]);
+    setSelectedVisualTypes([]);
+    setAdditionalLanguages([]);
+    setAudioScope('entire');
+    setScriptScope('entire');
+    setOutputMode('combined');
+    
+    localStorage.setItem(CURRENT_PROJECT_KEY, newId);
+    sessionStorage.setItem(CURRENT_PROJECT_KEY, newId);
+    sessionStorage.removeItem('studio_current_draft');
+    
+    toast.info('Started new project');
+    setShowProjectPicker(false);
   }, []);
   
   // Track user actions for Label Studio learning
@@ -893,19 +1027,16 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
     });
   }, [recordEvent]);
 
-  // AUTO-SAVE: Debounced save whenever chapters or key state changes
-  // This ensures data persists when navigating between Create/Review tabs
+  // AUTO-SAVE: Debounced save with multi-project support
   useEffect(() => {
-    // Skip if no project name or no chapters (initial state)
     if (!projectName && chapters.length === 0) return;
     
-    // Only save if there's meaningful data
     const hasContent = chapters.length > 0 || projectName.trim();
     if (!hasContent) return;
     
-    // Debounce to avoid excessive saves
     const saveTimeout = setTimeout(() => {
-      const draftData = {
+      const projectData: StoredProject = {
+        id: currentProjectId,
         projectName,
         chapters,
         primaryLanguage,
@@ -916,17 +1047,21 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
         scriptScope,
         outputMode,
         savedAt: new Date().toISOString(),
+        createdAt: loadProjectById(currentProjectId)?.createdAt || new Date().toISOString(),
       };
       
-      // Save to both sessionStorage (for tab persistence) and localStorage (for session persistence)
-      sessionStorage.setItem('studio_current_draft', JSON.stringify(draftData));
-      localStorage.setItem('studio_last_draft', JSON.stringify(draftData));
-      console.log('[Studio] Auto-saved draft:', projectName, 'with', chapters.length, 'chapters', 
+      // Save to multi-project storage
+      saveProject(projectData);
+      
+      // Update history state
+      setProjectHistory(loadAllProjects());
+      
+      console.log('[Studio] Auto-saved project:', projectName, 'ID:', currentProjectId, 'with', chapters.length, 'chapters', 
         chapters.filter(c => c.generatedContent).length, 'with content');
-    }, 1000); // 1 second debounce
+    }, 1000);
     
     return () => clearTimeout(saveTimeout);
-  }, [chapters, projectName, primaryLanguage, additionalLanguages, selectedTemplates, selectedVisualTypes, audioScope, scriptScope, outputMode]);
+  }, [chapters, projectName, primaryLanguage, additionalLanguages, selectedTemplates, selectedVisualTypes, audioScope, scriptScope, outputMode, currentProjectId]);
 
   // Memoize static data to prevent re-renders
   const memoizedTemplates = useMemo(() => 
@@ -2262,14 +2397,59 @@ Primary Language: ${primaryLanguage}`;
         <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Setup</h3>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Project Name */}
+          {/* Project Name with History */}
           <div className="space-y-2">
-            <Label>Project Name *</Label>
-            <Input
-              value={projectName}
-              onChange={(e) => setProjectName(e.target.value)}
-              placeholder="My Video Project"
-            />
+            <Label className="flex items-center justify-between">
+              <span>Project Name *</span>
+              {projectHistory.length > 0 && (
+                <Collapsible open={showProjectPicker} onOpenChange={setShowProjectPicker}>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-6 text-xs gap-1">
+                      <Layers className="w-3 h-3" />
+                      {projectHistory.length} saved
+                      <ChevronDown className={cn("w-3 h-3 transition-transform", showProjectPicker && "rotate-180")} />
+                    </Button>
+                  </CollapsibleTrigger>
+                </Collapsible>
+              )}
+            </Label>
+            <div className="flex gap-2">
+              <Input
+                value={projectName}
+                onChange={(e) => setProjectName(e.target.value)}
+                placeholder="My Video Project"
+                className="flex-1"
+              />
+              <Button variant="outline" size="icon" onClick={startNewProject} title="Start new project">
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
+            {/* Project History Picker */}
+            {showProjectPicker && projectHistory.length > 0 && (
+              <div className="border rounded-lg p-2 space-y-1 bg-background shadow-lg max-h-48 overflow-y-auto">
+                <p className="text-xs text-muted-foreground font-medium px-2 py-1">Recent Projects</p>
+                {projectHistory.map((project) => (
+                  <div 
+                    key={project.id}
+                    onClick={() => loadProject(project.id)}
+                    className={cn(
+                      "flex items-center justify-between p-2 rounded hover:bg-muted cursor-pointer",
+                      project.id === currentProjectId && "bg-primary/10 border border-primary/30"
+                    )}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">{project.projectName || 'Untitled'}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {project.chapters?.length || 0} chapters • {new Date(project.savedAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    {project.id === currentProjectId && (
+                      <Badge variant="secondary" className="text-[10px] ml-2">Current</Badge>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Primary Language (IP-based default) */}
