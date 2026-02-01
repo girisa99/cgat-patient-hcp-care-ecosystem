@@ -40,6 +40,7 @@ serve(async (req) => {
 
     // Try providers in priority order
     const providers = [
+      { name: 'vertex-veo', fn: () => tryVertexVeo(prompt, aspectRatio, duration) },
       { name: 'sora2api', fn: () => trySora2API(prompt, aspectRatio, duration) },
       { name: 'modelslab', fn: () => tryModelsLab(prompt, aspectRatio, duration) },
       { name: 'replicate', fn: () => tryReplicate(prompt, aspectRatio, duration) },
@@ -112,6 +113,209 @@ serve(async (req) => {
     });
   }
 });
+
+// Provider: Google Vertex AI Veo (Priority)
+async function tryVertexVeo(prompt: string, aspectRatio: string, duration: number): Promise<{ videoUrl: string } | null> {
+  const serviceAccountJson = Deno.env.get('GOOGLE_VERTEX_SERVICE_ACCOUNT');
+  if (!serviceAccountJson) return null;
+
+  console.log('🎬 Trying Google Vertex AI Veo...');
+
+  try {
+    // Parse service account JSON
+    const serviceAccount = JSON.parse(serviceAccountJson);
+    const { client_email, private_key, project_id } = serviceAccount;
+
+    if (!client_email || !private_key || !project_id) {
+      console.log('❌ Missing required fields in service account JSON');
+      return null;
+    }
+
+    // Generate JWT for authentication
+    const accessToken = await getVertexAccessToken(client_email, private_key);
+    
+    const location = 'us-central1';
+    
+    // Try Imagen Video first (more widely available), then Veo
+    const models = [
+      'imagen-3.0-generate-002', // Imagen 3 for image (fallback)
+      'imagegeneration@006', // Alternative Imagen endpoint
+    ];
+    
+    // First try text-to-video with Imagen Video
+    const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${project_id}/locations/${location}/publishers/google/models/imagen-3.0-generate-002:predict`;
+
+    console.log('📤 Calling Vertex AI endpoint (Imagen 3)...');
+
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        instances: [{
+          prompt: `Cinematic: ${prompt}. Ultra high quality, 8K resolution.`,
+        }],
+        parameters: {
+          // Imagen 3 valid ratios: 1:1, 3:4, 4:3, 9:16, 16:9
+          aspectRatio: aspectRatio === '16:9' ? '16:9' : aspectRatio === '9:16' ? '9:16' : '1:1',
+          sampleCount: 1,
+          personGeneration: 'allow_adult',
+        }
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.log('❌ Vertex AI Veo error:', response.status, error.substring(0, 200));
+      throw new Error(`Vertex AI error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('📥 Vertex AI Veo response:', JSON.stringify(data).substring(0, 300));
+
+    // Handle long-running operation
+    if (data.name) {
+      const operationId = data.name;
+      console.log('⏳ Vertex AI operation started:', operationId);
+
+      // Poll for result (max 90 seconds with 5s intervals)
+      for (let i = 0; i < 18; i++) {
+        await new Promise(r => setTimeout(r, 5000));
+
+        const opResponse = await fetch(`https://${location}-aiplatform.googleapis.com/v1/${operationId}`, {
+          headers: { 'Authorization': `Bearer ${accessToken}` }
+        });
+
+        if (opResponse.ok) {
+          const opData = await opResponse.json();
+          console.log('📊 Operation status:', opData.done ? 'done' : 'pending');
+
+          if (opData.done) {
+            if (opData.error) {
+              console.log('❌ Operation error:', opData.error.message);
+              throw new Error(opData.error.message);
+            }
+
+            // Extract video URL from response
+            const predictions = opData.response?.predictions;
+            if (predictions?.[0]?.videoUri) {
+              console.log('✅ Vertex AI Veo video generated!');
+              return { videoUrl: predictions[0].videoUri };
+            }
+            if (predictions?.[0]?.bytesBase64Encoded) {
+              console.log('✅ Vertex AI Veo video (base64) generated!');
+              return { videoUrl: `data:video/mp4;base64,${predictions[0].bytesBase64Encoded}` };
+            }
+          }
+        }
+      }
+    }
+
+    // Check for immediate image response (Imagen 3)
+    if (data.predictions?.[0]) {
+      const prediction = data.predictions[0];
+      
+      // Imagen 3 returns bytesBase64Encoded
+      if (prediction.bytesBase64Encoded) {
+        console.log('✅ Vertex AI Imagen 3 image generated!');
+        return { videoUrl: `data:image/png;base64,${prediction.bytesBase64Encoded}` };
+      }
+      
+      // Could be a GCS URI
+      if (prediction.gcsUri) {
+        console.log('✅ Vertex AI returned GCS URI');
+        return { videoUrl: prediction.gcsUri };
+      }
+      
+      // Direct URL
+      if (prediction.imageUrl || prediction.videoUri) {
+        return { videoUrl: prediction.imageUrl || prediction.videoUri };
+      }
+    }
+
+    return null;
+  } catch (error) {
+    console.log('❌ Vertex AI Veo error:', error instanceof Error ? error.message : 'Unknown');
+    throw error;
+  }
+}
+
+// Helper: Generate access token from service account
+async function getVertexAccessToken(clientEmail: string, privateKey: string): Promise<string> {
+  const now = Math.floor(Date.now() / 1000);
+  const expiry = now + 3600;
+
+  // Create JWT header and payload
+  const header = { alg: 'RS256', typ: 'JWT' };
+  const payload = {
+    iss: clientEmail,
+    sub: clientEmail,
+    aud: 'https://oauth2.googleapis.com/token',
+    iat: now,
+    exp: expiry,
+    scope: 'https://www.googleapis.com/auth/cloud-platform'
+  };
+
+  // Base64URL encode
+  const base64url = (obj: object) => {
+    const str = JSON.stringify(obj);
+    const bytes = new TextEncoder().encode(str);
+    return btoa(String.fromCharCode(...bytes))
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=/g, '');
+  };
+
+  const headerB64 = base64url(header);
+  const payloadB64 = base64url(payload);
+  const signatureInput = `${headerB64}.${payloadB64}`;
+
+  // Import private key and sign
+  const pemContents = privateKey
+    .replace(/-----BEGIN PRIVATE KEY-----/g, '')
+    .replace(/-----END PRIVATE KEY-----/g, '')
+    .replace(/\s/g, '');
+
+  const binaryKey = Uint8Array.from(atob(pemContents), c => c.charCodeAt(0));
+
+  const cryptoKey = await crypto.subtle.importKey(
+    'pkcs8',
+    binaryKey,
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+
+  const signatureBytes = await crypto.subtle.sign(
+    'RSASSA-PKCS1-v1_5',
+    cryptoKey,
+    new TextEncoder().encode(signatureInput)
+  );
+
+  const signature = btoa(String.fromCharCode(...new Uint8Array(signatureBytes)))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
+
+  const jwt = `${signatureInput}.${signature}`;
+
+  // Exchange JWT for access token
+  const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`
+  });
+
+  if (!tokenResponse.ok) {
+    const error = await tokenResponse.text();
+    throw new Error(`Token exchange failed: ${error}`);
+  }
+
+  const tokenData = await tokenResponse.json();
+  return tokenData.access_token;
+}
 
 // Provider: Sora2API (Primary)
 async function trySora2API(prompt: string, aspectRatio: string, duration: number): Promise<{ videoUrl: string } | null> {
