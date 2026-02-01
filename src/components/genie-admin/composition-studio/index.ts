@@ -61,5 +61,9 @@ export { ConfidenceScoreCard } from './ConfidenceScoreCard';
 // New: Script Enhance Editor - Inline editing with AI enhancement
 export { ScriptEnhanceEditor } from './ScriptEnhanceEditor';
 
+// New: Project Picker Dropdown - Consolidated project management
+export { ProjectPickerDropdown } from './ProjectPickerDropdown';
+export type { StoredProjectInfo } from './ProjectPickerDropdown';
+
 export * from './types';
 export type { LandingPageSection } from './TemplatePreviewDialog';
