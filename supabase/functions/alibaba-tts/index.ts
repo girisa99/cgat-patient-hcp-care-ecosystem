@@ -111,8 +111,13 @@ serve(async (req) => {
       }
     };
 
+    // Use international endpoint for non-China regions (US Virginia = dashscope-intl)
+    const apiEndpoint = 'https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/text2audio/generation';
+    
+    console.log(`🌐 Using international DashScope endpoint for US Virginia region`);
+    
     const response = await fetch(
-      'https://dashscope.aliyuncs.com/api/v1/services/aigc/text2audio/generation',
+      apiEndpoint,
       {
         method: 'POST',
         headers: {
