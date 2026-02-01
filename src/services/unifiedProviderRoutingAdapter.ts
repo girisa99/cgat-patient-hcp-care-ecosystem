@@ -192,7 +192,7 @@ const TTS_PROVIDER_MAP: Record<string, { primary: string; fallback: string; qual
   'ar-JO': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
   'ar-IQ': { primary: 'azure-neural', fallback: 'google-tts', quality: 3 },
   
-  // GEMINI ZONE - Azure Neural for India/SEA/Africa
+  // GEMINI ZONE - Azure Neural for India/SEA/Africa (Visemes support)
   'hi': { primary: 'azure-neural', fallback: 'google-tts', quality: 5 },
   'bn': { primary: 'azure-neural', fallback: 'google-tts', quality: 5 },
   'te': { primary: 'azure-neural', fallback: 'google-tts', quality: 5 },
@@ -203,17 +203,19 @@ const TTS_PROVIDER_MAP: Record<string, { primary: string; fallback: string; qual
   'ml': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
   'pa': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
   'ur': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
+  // SEA Languages - Azure Neural PRIMARY (moved from Alibaba Zone for Visemes)
   'id': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
   'vi': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
   'th': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
   'fil': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
   'ms': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
+  // African Languages - Azure Neural PRIMARY
   'sw': { primary: 'azure-neural', fallback: 'google-tts', quality: 5 },
   'yo': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
   'ha': { primary: 'azure-neural', fallback: 'google-tts', quality: 3 },
   'ig': { primary: 'azure-neural', fallback: 'google-tts', quality: 3 },
   'zu': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
-  'am': { primary: 'google-tts', fallback: 'azure-neural', quality: 4 },
+  'am': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
   'xh': { primary: 'azure-neural', fallback: 'google-tts', quality: 3 },
   'af': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
   

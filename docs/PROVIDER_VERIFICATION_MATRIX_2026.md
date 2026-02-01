@@ -109,15 +109,20 @@
 | Chinese (HK) | azure-neural | google-tts | ⭐⭐⭐⭐ | Cantonese support |
 | Arabic (all 7 dialects) | azure-neural | google-tts | ⭐⭐⭐⭐⭐ | **MOAT: 7 dialects** |
 
-### Gemini Zone TTS
+### Gemini Zone TTS (India/SEA/Africa) - **Azure Neural PRIMARY** (Visemes Support)
 
-| Language | Primary TTS | Fallback | Quality | Provider Notes |
-|----------|-------------|----------|---------|----------------|
-| Hindi/Bengali/Telugu/Tamil | azure-neural | google-tts | ⭐⭐⭐⭐⭐ | Indian languages |
-| All other Indic (22 total) | azure-neural | google-tts | ⭐⭐⭐⭐ | Complete coverage |
-| SEA Languages (ID/VI/TH/FIL/MS) | azure-neural | google-tts | ⭐⭐⭐⭐ | SEA coverage |
-| Swahili | azure-neural | google-tts | ⭐⭐⭐⭐⭐ | African FIRST MOVER |
-| Other African | azure-neural | google-tts | ⭐⭐⭐⭐ | YO/HA/IG/ZU/AM |
+| Language | Primary TTS | Fallback | Quality | Reason |
+|----------|-------------|----------|---------|--------|
+| **Hindi/Bengali/Telugu/Tamil** | azure-neural | google-tts | ⭐⭐⭐⭐⭐ | Azure Visemes for lip-sync |
+| **Marathi/Gujarati/Kannada/Malayalam** | azure-neural | google-tts | ⭐⭐⭐⭐ | Azure Neural Indic voices |
+| **Punjabi/Odia/Assamese** | azure-neural | google-tts | ⭐⭐⭐⭐ | Azure coverage |
+| **Vietnamese/Thai** | azure-neural | google-tts | ⭐⭐⭐⭐ | SEA - Azure Visemes |
+| **Indonesian/Malay/Filipino** | azure-neural | google-tts | ⭐⭐⭐⭐ | SEA - Azure Visemes |
+| **Swahili** | azure-neural | google-tts | ⭐⭐⭐⭐⭐ | African FIRST MOVER |
+| **Yoruba/Hausa/Igbo/Amharic** | azure-neural | google-tts | ⭐⭐⭐⭐ | African coverage |
+| **Zulu/Xhosa/Afrikaans** | azure-neural | google-tts | ⭐⭐⭐⭐ | South Africa |
+
+> **Why Azure Neural for Gemini Zone?** Google AI Studio keys (GEMINI_API_KEY) are incompatible with Google Cloud TTS. Azure Neural provides Visemes for avatar lip-sync and superior dialect support.
 
 ---
 
@@ -189,20 +194,50 @@
 
 ---
 
-## 🥽 VR/AR GENERATION - Global Routing
+## 🥽 VR/AR GENERATION - Multi-Provider Matrix
 
-> **VR/AR uses Meshy + complementary providers globally**
+> **VR/AR uses Meshy + Alibaba + ModelsLab depending on capability**
 
-| Pipeline | Primary | Secondary | Output | Quality |
-|----------|---------|-----------|--------|---------|
-| **text-to-vr** | Meshy AI | Alibaba 3D | VR Scene (GLTF) | ⭐⭐⭐⭐ |
-| **text-to-ar** | Meshy AI | Replicate | AR Model (USDZ/GLTF) | ⭐⭐⭐⭐ |
-| **3d-to-vr** | Meshy AI | ModelsLab | VR Environment | ⭐⭐⭐⭐ |
-| **3d-to-ar** | Meshy AI | Replicate | AR Object | ⭐⭐⭐⭐ |
-| **scene-to-vr** | Meshy + Sora2API | ModelsLab | 360° VR Scene | ⭐⭐⭐⭐ |
-| **scene-to-ar** | Meshy AI | Replicate | AR Scene | ⭐⭐⭐⭐ |
-| **immersive-training** | Meshy + Sora2API | ModelsLab | 360° + 3D | ⭐⭐⭐⭐ |
-| **spatial-presentation** | Meshy + ModelsLab | - | VR Deck | ⭐⭐⭐⭐ |
+### 3D/VR/AR Provider Hierarchy
+
+| Capability | Primary | Secondary | Tertiary | Output Formats |
+|------------|---------|-----------|----------|----------------|
+| **Text-to-3D** | Meshy AI | Alibaba MACH | Replicate | GLTF, USDZ, FBX |
+| **Image-to-3D** | Meshy AI | Alibaba Richdreamer | Replicate TripoSR | GLTF, USDZ |
+| **3D Texturing** | Meshy AI | - | - | PBR Maps |
+| **3D Rigging** | Meshy AI | Alibaba Animate3D | - | Animated GLTF/FBX |
+| **AR Object** | Meshy AI | Alibaba TaoAvatar | Replicate | USDZ (iOS), GLTF |
+| **VR Scene** | Meshy + ModelsLab | Alibaba Animate3D | - | GLTF Scene |
+| **3D Avatar** | Alibaba TaoAvatar | Alibaba MACH | Meshy | GLB, 3DGS |
+| **Photo-to-3D Character** | Alibaba 3D Animate Hub | Meshy | - | MP4, GIF |
+
+### Alibaba 3D/VR Models (Global)
+
+| Model | Type | Capabilities | Tier |
+|-------|------|--------------|------|
+| **TaoAvatar** | 3D (3DGS) | 90 FPS, AR, Apple Vision Pro, Full-body | Enterprise |
+| **MACH** | Text-to-3D | Text-to-3D avatar, Virtual humans | Standard |
+| **Richdreamer** | Image-to-3D | 2D-to-3D, Normal-depth diffusion | Premium |
+| **Animate3D** | Animation | Static 3D → animated, VR scenes, Gaming | Premium |
+| **3D Animate Hub** | Photo-to-3D | Social media, Character animation | Standard |
+| **OmniAvatar** | Real-time Avatar | Audio-driven, Live streaming | Enterprise |
+| **Wan2.2-Animate** | Video | Character replacement, Motion transfer | Premium |
+
+### VR/AR Pipeline Routing
+
+| Pipeline | Primary Provider | Fallback | Use Case |
+|----------|-----------------|----------|----------|
+| `text-to-vr` | Meshy AI | Alibaba MACH | VR Environment from text |
+| `text-to-ar` | Meshy AI | Alibaba TaoAvatar | AR Object from text |
+| `3d-to-vr` | Meshy + ModelsLab | Alibaba Animate3D | 3D Model to VR Scene |
+| `3d-to-ar` | Meshy AI | Replicate | 3D Model to AR |
+| `scene-to-vr` | Meshy + Sora2API | ModelsLab | 360° VR Scene |
+| `scene-to-ar` | Meshy AI | Alibaba | AR Scene |
+| `immersive-training` | Meshy + Sora2API | ModelsLab | 360° + 3D Training |
+| `spatial-presentation` | Meshy + ModelsLab | - | VR Presentation |
+| `photo-to-3d-avatar` | Alibaba 3D Animate Hub | Meshy | Photo → 3D Character |
+| `text-to-3d-avatar` | Alibaba MACH | Meshy | Text → 3D Avatar |
+| `3d-avatar-ar` | Alibaba TaoAvatar | Meshy | 3D Avatar for AR |
 
 ---
 
