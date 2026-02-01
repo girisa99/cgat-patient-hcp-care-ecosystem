@@ -25,6 +25,7 @@ const PROVIDER_SECRETS: Record<string, string[]> = {
   
   // Video Generation
   sora2api: ['SORA2API_KEY'],           // PRIMARY Video - Cinematic via sora2api.org
+  vertex: ['GOOGLE_VERTEX_SERVICE_ACCOUNT'], // Google Vertex AI - Veo 2/3, Imagen 3
   
   // Audio & Voice
   elevenlabs: ['ELEVENLABS_API_KEY'],   // PRIMARY TTS + Music + SFX + Voice Clone
@@ -72,6 +73,7 @@ const PROVIDER_CAPABILITIES: Record<string, string[]> = {
   deepseek: ['llm', 'translation', 'ocr', 'vision', 'nlp'],
   alibaba: ['llm', 'translation', 'ocr', 'tts', 'stt', 'image_gen', 'video_gen', 'vision', 'nlp', 'avatar', 'lipsync'],
   sora2api: ['video_gen', 'cinematic', 'realistic', 'commercial'],  // PRIMARY Video
+  vertex: ['video_gen', 'image_gen', 'veo', 'imagen'],  // Vertex AI - Veo 2/3, Imagen 3
   elevenlabs: ['tts', 'voice_clone', 'sfx_gen', 'music_gen'],  // PRIMARY TTS + Music
   deepl: ['translation'],  // PRIMARY Translation
   

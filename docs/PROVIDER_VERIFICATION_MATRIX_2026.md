@@ -13,13 +13,14 @@ All 15 primary AI providers are fully configured with API keys and available for
 
 ## Provider Status Matrix
 
-### TIER 1: Primary Providers (Core 9)
+### TIER 1: Primary Providers (Core 10)
 
 | Provider | Status | Capabilities | Zone Priority |
 |----------|--------|--------------|---------------|
 | **OpenAI** | ✅ Available | LLM, Translation, TTS, STT, Image Gen, Vision, NLP | Fallback Global |
 | **Claude** | ✅ Available | LLM, Translation, Vision, NLP, Long Context | Claude Zone (US/EU/West) |
 | **Gemini** | ✅ Available | LLM, Translation, OCR, TTS, STT, Image Gen, Vision, NLP | Gemini Zone (India/SEA/Africa) |
+| **Vertex AI (Veo)** | ✅ Available | Video Gen (Veo 2/3), Image Gen (Imagen 3) | Global Premium Video |
 | **DeepSeek** | ✅ Available | LLM, Translation, OCR, Vision, NLP | CJK Low-Cost Fallback |
 | **Alibaba** | ✅ Available | LLM, Translation, OCR, TTS, STT, Image Gen, Video Gen, Vision, NLP, Avatar, Lipsync | Alibaba Zone (CJK/Arabic) |
 | **Deepgram** | ✅ Available | STT, Realtime STT (<100ms) | Global Primary STT |
@@ -48,8 +49,8 @@ All 15 primary AI providers are fully configured with API keys and available for
 | **Translation** | DeepL (EU) / Qwen-MT (CJK) | Azure Translator | Google Translate | OpenAI |
 | **TTS** | ElevenLabs (West) / CosyVoice (CJK) / Azure (MENA) | Google TTS | OpenAI TTS | - |
 | **STT** | Deepgram (<100ms) | OpenAI Whisper | Azure Speech | Alibaba Paraformer |
-| **Image Gen** | ModelsLab FLUX | OpenAI DALL-E | Gemini Imagen | Replicate |
-| **Video Gen** | Sora2API | ModelsLab | Alibaba WAN 2.6 | Replicate |
+| **Image Gen** | ModelsLab FLUX | Vertex AI Imagen 3 | OpenAI DALL-E | Replicate |
+| **Video Gen** | Sora2API | Vertex AI Veo 2/3 | ModelsLab | Alibaba WAN 2.6 |
 | **3D Gen** | Meshy | Replicate | Alibaba Text-to-3D | - |
 | **Avatar** | Alibaba WAN 2.2 (Global) | Replicate | - | - |
 | **Lip-Sync** | Alibaba WAN 2.2 | Azure Visemes | - | - |
@@ -98,7 +99,31 @@ Video: Sora2API → ModelsLab → Alibaba WAN 2.6 fallback
 
 ---
 
-## API Key Configuration Status
+## API Key Configuration Status (16 Providers)
+
+| Secret Name | Status | Provider |
+|-------------|--------|----------|
+| `OPENAI_API_KEY` | ✅ Configured | OpenAI |
+| `ANTHROPIC_API_KEY` | ✅ Configured | Claude |
+| `CLAUDE_API_KEY` | ✅ Configured | Claude (backup) |
+| `GEMINI_API_KEY` | ✅ Configured | Gemini |
+| `GOOGLE_API_KEY` | ✅ Configured | Google Cloud |
+| `GOOGLE_VERTEX_SERVICE_ACCOUNT` | ✅ Configured | Vertex AI (Veo 2/3, Imagen 3) |
+| `DEEPSEEK_API_KEY` | ✅ Configured | DeepSeek |
+| `ALIBABA_API_KEY` | ✅ Configured | Alibaba (International) |
+| `ALIBABA_CHINA_API_KEY` | ✅ Configured | Alibaba (China/Beijing) |
+| `DEEPGRAM_API_KEY` | ✅ Configured | Deepgram |
+| `SORA2API_KEY` | ✅ Configured | Sora2API |
+| `ELEVENLABS_API_KEY` | ✅ Configured | ElevenLabs |
+| `DEEPL_API_KEY` | ✅ Configured | DeepL |
+| `AZURE_SPEECH_KEY` | ✅ Configured | Azure Speech |
+| `AZURE_FORM_RECOGNIZER_KEY` | ✅ Configured | Azure Document Intelligence |
+| `MICROSOFT_TRANSLATE_API_KEY` | ✅ Configured | Azure Translator |
+| `MODELSLAB_API_KEY` | ✅ Configured | ModelsLab |
+| `MESHY_API_KEY` | ✅ Configured | Meshy |
+| `REPLICATE_API_TOKEN` | ✅ Configured | Replicate |
+| `HUGGING_FACE_ACCESS_TOKEN` | ✅ Configured | HuggingFace |
+| `LOVABLE_API_KEY` | ✅ Configured | Lovable AI Gateway |
 
 | Secret Name | Status | Provider |
 |-------------|--------|----------|
