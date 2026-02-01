@@ -966,29 +966,70 @@ export const AskGenie: React.FC<AskGenieProps> = ({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const lastScrollY = useRef(0);
   
-  // Smart scroll detection: auto-minimize when user scrolls to bottom action areas
+  // Draggable position state - persists corner preference
+  type Corner = 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
+  const [corner, setCorner] = useState<Corner>('bottom-right');
+  const [isDragging, setIsDragging] = useState(false);
+  const dragRef = useRef<HTMLDivElement>(null);
+  
+  // Get position classes based on corner
+  const getCornerClasses = (isPanel = false) => {
+    const offset = isPanel ? '20' : '6';
+    switch (corner) {
+      case 'bottom-right': return `bottom-${offset} right-6`;
+      case 'bottom-left': return `bottom-${offset} left-6`;
+      case 'top-right': return `top-20 right-6`;
+      case 'top-left': return `top-20 left-6`;
+      default: return `bottom-${offset} right-6`;
+    }
+  };
+  
+  // Smart scroll detection: auto-minimize when user scrolls to bottom action areas (only for bottom corners)
   useEffect(() => {
-    if (!isOpen || position !== 'floating') return;
+    if (!isOpen || position !== 'floating' || !corner.startsWith('bottom')) return;
     
     const handleScroll = () => {
-      const scrollY = window.scrollY;
       const windowHeight = window.innerHeight;
       const documentHeight = document.documentElement.scrollHeight;
-      const scrolledToBottom = (scrollY + windowHeight) >= (documentHeight - 200);
+      const scrolledToBottom = (window.scrollY + windowHeight) >= (documentHeight - 150);
       
-      // Detect action buttons near bottom of viewport
-      const actionButtons = document.querySelectorAll('button[type="submit"], button:contains("Generate"), button:contains("Save"), button:contains("Cancel"), [data-action-button]');
+      // Detect action buttons near bottom of viewport using valid selectors
+      const actionButtons = document.querySelectorAll(
+        'button[type="submit"], ' +
+        'button[data-action-button], ' +
+        '[data-action-button], ' +
+        'button.action-button, ' +
+        '.action-buttons button, ' +
+        'footer button, ' +
+        '.sticky button, ' +
+        '.fixed button'
+      );
+      
       let hasVisibleActionButton = false;
+      
+      // Also check buttons by text content manually
+      document.querySelectorAll('button').forEach((btn) => {
+        const text = btn.textContent?.toLowerCase() || '';
+        const isActionButton = ['save', 'cancel', 'generate', 'publish', 'submit', 'create', 'send'].some(
+          keyword => text.includes(keyword)
+        );
+        if (isActionButton) {
+          const rect = btn.getBoundingClientRect();
+          // Check if button is in the bottom 200px of viewport
+          if (rect.bottom > windowHeight - 200 && rect.top < windowHeight && rect.width > 0) {
+            hasVisibleActionButton = true;
+          }
+        }
+      });
       
       actionButtons.forEach((btn) => {
         const rect = btn.getBoundingClientRect();
-        // Check if button is in the bottom 200px of viewport (where Ask Genie floats)
-        if (rect.bottom > windowHeight - 200 && rect.top < windowHeight) {
+        if (rect.bottom > windowHeight - 200 && rect.top < windowHeight && rect.width > 0) {
           hasVisibleActionButton = true;
         }
       });
       
-      // Auto-minimize when scrolling down to action buttons, restore when scrolling up
+      // Auto-minimize when action buttons visible, restore when they're not
       if (hasVisibleActionButton || scrolledToBottom) {
         if (!isAutoMinimized && !isMinimized) {
           setIsAutoMinimized(true);
@@ -999,16 +1040,25 @@ export const AskGenie: React.FC<AskGenieProps> = ({
         }
       }
       
-      lastScrollY.current = scrollY;
+      lastScrollY.current = window.scrollY;
     };
     
     // Use passive listener for better scroll performance
     window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('resize', handleScroll, { passive: true });
+    
+    // Check periodically for dynamic button visibility
+    const intervalCheck = setInterval(handleScroll, 1000);
+    
     // Initial check
     handleScroll();
     
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [isOpen, position, isMinimized, isAutoMinimized]);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+      clearInterval(intervalCheck);
+    };
+  }, [isOpen, position, isMinimized, isAutoMinimized, corner]);
   
   const { generateResponse } = useUniversalAI();
   const labelStudioService = useLabelStudioBackground();
@@ -1322,30 +1372,73 @@ USER MESSAGE: ${text}
     }
   }, [handleSendMessage]);
 
-  // Floating trigger button - shows product-specific branding when on product page
-  const TriggerButton = () => {
-    const isProductPage = product !== 'studio';
-    const currentProduct = isProductPage && GENIE_PRODUCTS[product as keyof typeof GENIE_PRODUCTS] 
-      ? GENIE_PRODUCTS[product as keyof typeof GENIE_PRODUCTS] 
-      : null;
+  // Handle drag end to snap to nearest corner
+  const handleDragEnd = useCallback((_: any, info: { point: { x: number; y: number } }) => {
+    setIsDragging(false);
     
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    
+    // Determine which quadrant based on drag end position
+    const isRight = info.point.x > viewportWidth / 2;
+    const isBottom = info.point.y > viewportHeight / 2;
+    
+    const newCorner: Corner = 
+      isBottom && isRight ? 'bottom-right' :
+      isBottom && !isRight ? 'bottom-left' :
+      !isBottom && isRight ? 'top-right' : 'top-left';
+    
+    setCorner(newCorner);
+    
+    // Persist preference
+    try {
+      localStorage.setItem('askgenie-corner', newCorner);
+    } catch {}
+  }, []);
+  
+  // Load saved corner preference
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('askgenie-corner') as Corner | null;
+      if (saved && ['bottom-right', 'bottom-left', 'top-right', 'top-left'].includes(saved)) {
+        setCorner(saved);
+      }
+    } catch {}
+  }, []);
+
+  // Floating trigger button - DRAGGABLE to any corner
+  const TriggerButton = () => {
     // Compact mode when auto-minimized (show just a small icon)
     if (isAutoMinimized) {
       return (
         <motion.div
+          drag
+          dragMomentum={false}
+          dragElastic={0.1}
+          onDragStart={() => setIsDragging(true)}
+          onDragEnd={handleDragEnd}
+          whileDrag={{ scale: 1.1, zIndex: 9999 }}
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 0.85 }}
           whileHover={{ scale: 1.05, opacity: 1 }}
-          className="fixed bottom-6 right-6 z-30"
+          className={cn(
+            "fixed z-10",
+            corner === 'bottom-right' && "bottom-6 right-6",
+            corner === 'bottom-left' && "bottom-6 left-6",
+            corner === 'top-right' && "top-20 right-6",
+            corner === 'top-left' && "top-20 left-6"
+          )}
+          style={{ touchAction: 'none' }}
         >
           <Button
             onClick={() => {
+              if (isDragging) return;
               setIsAutoMinimized(false);
               setIsOpen(true);
             }}
-            className="h-12 w-12 rounded-full shadow-lg bg-gradient-to-br from-purple-100 to-violet-100 hover:from-purple-200 hover:to-violet-200 border-2 border-purple-200 p-0"
+            className="h-12 w-12 rounded-full shadow-lg bg-gradient-to-br from-purple-100 to-violet-100 hover:from-purple-200 hover:to-violet-200 border-2 border-purple-200 p-0 cursor-grab active:cursor-grabbing"
             variant="ghost"
-            title="Ask Genie - Click to expand"
+            title="Ask Genie - Click to expand, drag to reposition"
           >
             <img 
               src={ASK_GENIE.logo}
@@ -1359,15 +1452,32 @@ USER MESSAGE: ${text}
     
     return (
       <motion.div
+        ref={dragRef}
+        drag
+        dragMomentum={false}
+        dragElastic={0.1}
+        onDragStart={() => setIsDragging(true)}
+        onDragEnd={handleDragEnd}
+        whileDrag={{ scale: 1.05, zIndex: 9999 }}
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         whileHover={{ scale: 1.02 }}
-        className="fixed bottom-6 right-6 z-30"
+        className={cn(
+          "fixed z-10",
+          corner === 'bottom-right' && "bottom-6 right-6",
+          corner === 'bottom-left' && "bottom-6 left-6",
+          corner === 'top-right' && "top-20 right-6",
+          corner === 'top-left' && "top-20 left-6"
+        )}
+        style={{ touchAction: 'none' }}
       >
         <Button
-          onClick={() => setIsOpen(true)}
+          onClick={() => {
+            if (isDragging) return;
+            setIsOpen(true);
+          }}
           className={cn(
-            "h-auto w-auto rounded-2xl shadow-2xl px-4 py-3 bg-white hover:bg-gray-50 border-2 transition-all duration-300 group",
+            "h-auto w-auto rounded-2xl shadow-2xl px-4 py-3 bg-background hover:bg-muted border-2 transition-all duration-300 group cursor-grab active:cursor-grabbing",
             "border-purple-200 hover:border-purple-300"
           )}
           variant="ghost"
@@ -1394,32 +1504,51 @@ USER MESSAGE: ${text}
           {/* Subtle pulse indicator */}
           <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-green-500 animate-pulse shadow-lg" />
         </Button>
+        {/* Drag hint on hover */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: isDragging ? 1 : 0 }}
+          className="absolute -top-8 left-1/2 -translate-x-1/2 bg-background/90 text-xs px-2 py-1 rounded shadow whitespace-nowrap border"
+        >
+          Drag to reposition
+        </motion.div>
       </motion.div>
     );
   };
 
-  // Main chat interface - with smart positioning to avoid blocking buttons
+  // Main chat interface - with smart positioning based on corner
   const ChatInterface = () => {
     // Show compact collapsed version when auto-minimized
     const effectiveMinimized = isMinimized || isAutoMinimized;
     
+    // Get corner-based position classes for the panel
+    const getPanelPositionClasses = () => {
+      if (position !== 'floating') return '';
+      
+      const horizontal = corner.includes('right') ? 'right-4 sm:right-6' : 'left-4 sm:left-6';
+      const vertical = corner.startsWith('bottom') 
+        ? (isAutoMinimized ? 'bottom-24' : 'bottom-4 sm:bottom-6')
+        : (isAutoMinimized ? 'top-24' : 'top-20');
+      
+      return `${horizontal} ${vertical}`;
+    };
+    
     return (
       <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        initial={{ opacity: 0, scale: 0.95, y: corner.startsWith('bottom') ? 20 : -20 }}
         animate={{ 
           opacity: 1, 
           scale: 1, 
-          y: 0,
-          // Shift up when auto-minimized to avoid blocking bottom buttons
-          ...(isAutoMinimized && position === 'floating' && { y: -80 })
+          y: 0
         }}
-        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        exit={{ opacity: 0, scale: 0.95, y: corner.startsWith('bottom') ? 20 : -20 }}
         className={cn(
           "flex flex-col bg-background border rounded-xl shadow-2xl overflow-hidden transition-all duration-300",
-          // Floating mode - smaller footprint, positioned to avoid blocking
+          // Floating mode - positioned based on corner
           position === 'floating' && cn(
-            "fixed right-4 sm:right-6 sm:w-[380px] w-[320px] z-40 pointer-events-auto",
-            isAutoMinimized ? "bottom-24 max-h-[60px]" : "bottom-4 sm:bottom-6 max-h-[min(550px,65vh)]"
+            "fixed sm:w-[380px] w-[320px] z-10 pointer-events-auto",
+            getPanelPositionClasses(),
+            isAutoMinimized ? "max-h-[60px]" : "max-h-[min(550px,65vh)]"
           ),
           position === 'sidebar' && "h-full w-full",
           position === 'inline' && "w-full h-[500px]",
