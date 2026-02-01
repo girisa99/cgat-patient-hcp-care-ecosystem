@@ -1406,8 +1406,50 @@ USER MESSAGE: ${text}
     } catch {}
   }, []);
 
+  // Track drag distance to distinguish click vs drag
+  const dragStartPos = useRef<{ x: number; y: number } | null>(null);
+  const DRAG_THRESHOLD = 5; // pixels - if moved less than this, it's a click
+  
+  const handleDragStart = useCallback((event: any) => {
+    // Record starting position
+    const clientX = event.clientX || event.touches?.[0]?.clientX || 0;
+    const clientY = event.clientY || event.touches?.[0]?.clientY || 0;
+    dragStartPos.current = { x: clientX, y: clientY };
+    // Don't set isDragging here - wait to see if it's actually a drag
+  }, []);
+  
+  const handleDragEndWrapper = useCallback((event: any, info: { point: { x: number; y: number } }) => {
+    // Check if this was a meaningful drag or just a click
+    if (dragStartPos.current) {
+      const dx = Math.abs(info.point.x - dragStartPos.current.x);
+      const dy = Math.abs(info.point.y - dragStartPos.current.y);
+      if (dx > DRAG_THRESHOLD || dy > DRAG_THRESHOLD) {
+        // This was a real drag - handle corner snapping
+        handleDragEnd(event, info);
+      }
+    }
+    setIsDragging(false);
+    dragStartPos.current = null;
+  }, [handleDragEnd]);
+
   // Floating trigger button - DRAGGABLE to any corner
   const TriggerButton = () => {
+    const handleTriggerClick = (e: React.MouseEvent) => {
+      // Prevent click if we actually dragged
+      if (dragStartPos.current) {
+        const dx = Math.abs(e.clientX - dragStartPos.current.x);
+        const dy = Math.abs(e.clientY - dragStartPos.current.y);
+        if (dx > DRAG_THRESHOLD || dy > DRAG_THRESHOLD) {
+          e.preventDefault();
+          e.stopPropagation();
+          return;
+        }
+      }
+      // This is a genuine click - open the panel
+      setIsAutoMinimized(false);
+      setIsOpen(true);
+    };
+    
     // Compact mode when auto-minimized (show just a small icon)
     if (isAutoMinimized) {
       return (
@@ -1415,8 +1457,8 @@ USER MESSAGE: ${text}
           drag
           dragMomentum={false}
           dragElastic={0.1}
-          onDragStart={() => setIsDragging(true)}
-          onDragEnd={handleDragEnd}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEndWrapper}
           whileDrag={{ scale: 1.1, zIndex: 9999 }}
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 0.85 }}
@@ -1430,22 +1472,17 @@ USER MESSAGE: ${text}
           )}
           style={{ touchAction: 'none' }}
         >
-          <Button
-            onClick={() => {
-              if (isDragging) return;
-              setIsAutoMinimized(false);
-              setIsOpen(true);
-            }}
-            className="h-12 w-12 rounded-full shadow-lg bg-gradient-to-br from-purple-100 to-violet-100 hover:from-purple-200 hover:to-violet-200 border-2 border-purple-200 p-0 cursor-grab active:cursor-grabbing"
-            variant="ghost"
+          <div
+            onClick={handleTriggerClick}
+            className="h-12 w-12 rounded-full shadow-lg bg-gradient-to-br from-purple-100 to-violet-100 hover:from-purple-200 hover:to-violet-200 border-2 border-purple-200 flex items-center justify-center cursor-pointer"
             title="Ask Genie - Click to expand, drag to reposition"
           >
             <img 
               src={ASK_GENIE.logo}
               alt={ASK_GENIE.name}
-              className="h-8 w-8 object-contain"
+              className="h-8 w-8 object-contain pointer-events-none"
             />
-          </Button>
+          </div>
         </motion.div>
       );
     }
@@ -1456,8 +1493,8 @@ USER MESSAGE: ${text}
         drag
         dragMomentum={false}
         dragElastic={0.1}
-        onDragStart={() => setIsDragging(true)}
-        onDragEnd={handleDragEnd}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEndWrapper}
         whileDrag={{ scale: 1.05, zIndex: 9999 }}
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -1471,16 +1508,9 @@ USER MESSAGE: ${text}
         )}
         style={{ touchAction: 'none' }}
       >
-        <Button
-          onClick={() => {
-            if (isDragging) return;
-            setIsOpen(true);
-          }}
-          className={cn(
-            "h-auto w-auto rounded-2xl shadow-2xl px-4 py-3 bg-background hover:bg-muted border-2 transition-all duration-300 group cursor-grab active:cursor-grabbing",
-            "border-purple-200 hover:border-purple-300"
-          )}
-          variant="ghost"
+        <div
+          onClick={handleTriggerClick}
+          className="relative h-auto w-auto rounded-2xl shadow-2xl px-4 py-3 bg-background hover:bg-muted border-2 transition-all duration-300 group cursor-pointer border-purple-200 hover:border-purple-300"
         >
           <div className="flex items-center gap-3">
             {/* Always show Ask Genie logo */}
@@ -1488,7 +1518,7 @@ USER MESSAGE: ${text}
               <img 
                 src={ASK_GENIE.logo}
                 alt={ASK_GENIE.name}
-                className="h-10 w-10 object-contain"
+                className="h-10 w-10 object-contain pointer-events-none"
               />
             </div>
             {/* Always show "Ask Genie" - never product-specific */}
@@ -1503,7 +1533,7 @@ USER MESSAGE: ${text}
           </div>
           {/* Subtle pulse indicator */}
           <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-green-500 animate-pulse shadow-lg" />
-        </Button>
+        </div>
         {/* Drag hint on hover */}
         <motion.div
           initial={{ opacity: 0 }}
