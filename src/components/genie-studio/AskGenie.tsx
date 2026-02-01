@@ -1406,44 +1406,43 @@ USER MESSAGE: ${text}
     } catch {}
   }, []);
 
-  // Track drag distance to distinguish click vs drag
-  const dragStartPos = useRef<{ x: number; y: number } | null>(null);
+  // Track if we're actually dragging (moved more than threshold)
+  const hasDragged = useRef(false);
   const DRAG_THRESHOLD = 5; // pixels - if moved less than this, it's a click
   
-  const handleDragStart = useCallback((event: any) => {
-    // Record starting position
-    const clientX = event.clientX || event.touches?.[0]?.clientX || 0;
-    const clientY = event.clientY || event.touches?.[0]?.clientY || 0;
-    dragStartPos.current = { x: clientX, y: clientY };
-    // Don't set isDragging here - wait to see if it's actually a drag
+  const handleDragStart = useCallback(() => {
+    // Reset drag flag at start
+    hasDragged.current = false;
+    setIsDragging(true);
+  }, []);
+  
+  const handleDrag = useCallback((_: any, info: { offset: { x: number; y: number } }) => {
+    // Mark as dragged if we moved more than threshold
+    if (Math.abs(info.offset.x) > DRAG_THRESHOLD || Math.abs(info.offset.y) > DRAG_THRESHOLD) {
+      hasDragged.current = true;
+    }
   }, []);
   
   const handleDragEndWrapper = useCallback((event: any, info: { point: { x: number; y: number } }) => {
-    // Check if this was a meaningful drag or just a click
-    if (dragStartPos.current) {
-      const dx = Math.abs(info.point.x - dragStartPos.current.x);
-      const dy = Math.abs(info.point.y - dragStartPos.current.y);
-      if (dx > DRAG_THRESHOLD || dy > DRAG_THRESHOLD) {
-        // This was a real drag - handle corner snapping
-        handleDragEnd(event, info);
-      }
-    }
     setIsDragging(false);
-    dragStartPos.current = null;
+    // Only handle corner snapping if we actually dragged
+    if (hasDragged.current) {
+      handleDragEnd(event, info);
+    }
+    // Reset for next interaction after a short delay
+    setTimeout(() => {
+      hasDragged.current = false;
+    }, 100);
   }, [handleDragEnd]);
 
   // Floating trigger button - DRAGGABLE to any corner
   const TriggerButton = () => {
     const handleTriggerClick = (e: React.MouseEvent) => {
       // Prevent click if we actually dragged
-      if (dragStartPos.current) {
-        const dx = Math.abs(e.clientX - dragStartPos.current.x);
-        const dy = Math.abs(e.clientY - dragStartPos.current.y);
-        if (dx > DRAG_THRESHOLD || dy > DRAG_THRESHOLD) {
-          e.preventDefault();
-          e.stopPropagation();
-          return;
-        }
+      if (hasDragged.current) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
       }
       // This is a genuine click - open the panel
       setIsAutoMinimized(false);
@@ -1458,6 +1457,7 @@ USER MESSAGE: ${text}
           dragMomentum={false}
           dragElastic={0.1}
           onDragStart={handleDragStart}
+          onDrag={handleDrag}
           onDragEnd={handleDragEndWrapper}
           whileDrag={{ scale: 1.1, zIndex: 9999 }}
           initial={{ scale: 0.8, opacity: 0 }}
@@ -1494,6 +1494,7 @@ USER MESSAGE: ${text}
         dragMomentum={false}
         dragElastic={0.1}
         onDragStart={handleDragStart}
+        onDrag={handleDrag}
         onDragEnd={handleDragEndWrapper}
         whileDrag={{ scale: 1.05, zIndex: 9999 }}
         initial={{ scale: 0, opacity: 0 }}
