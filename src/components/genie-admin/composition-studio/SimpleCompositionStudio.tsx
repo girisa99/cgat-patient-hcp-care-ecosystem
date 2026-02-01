@@ -790,6 +790,15 @@ interface StoredProject {
   createdAt: string;
 }
 
+// Legacy storage keys to migrate from
+const LEGACY_STORAGE_KEYS = [
+  'composition_studio_projects',
+  'simple_studio_draft', 
+  'studio_draft',
+  'composition_studio_current',
+  'composition_studio_draft',
+];
+
 const loadAllProjects = (): StoredProject[] => {
   try {
     const stored = localStorage.getItem(PROJECTS_STORAGE_KEY);
@@ -797,6 +806,69 @@ const loadAllProjects = (): StoredProject[] => {
   } catch {
     return [];
   }
+};
+
+// Migrate projects from legacy storage keys (one-time recovery)
+const migrateFromLegacyStorage = (): StoredProject[] => {
+  const migratedProjects: StoredProject[] = [];
+  
+  for (const key of LEGACY_STORAGE_KEYS) {
+    try {
+      const data = localStorage.getItem(key);
+      if (!data) continue;
+      
+      const parsed = JSON.parse(data);
+      
+      // Handle array of projects
+      if (Array.isArray(parsed)) {
+        for (const item of parsed) {
+          if (item.projectName || item.name || item.chapters?.length) {
+            migratedProjects.push({
+              id: item.id || generateId(),
+              projectName: item.projectName || item.name || 'Recovered Project',
+              chapters: item.chapters || [],
+              primaryLanguage: item.primaryLanguage || 'en',
+              additionalLanguages: item.additionalLanguages || [],
+              selectedTemplates: item.selectedTemplates || [],
+              selectedVisualTypes: item.selectedVisualTypes || [],
+              audioScope: item.audioScope || 'entire',
+              scriptScope: item.scriptScope || 'entire',
+              outputMode: item.outputMode || 'combined',
+              savedAt: item.savedAt || new Date().toISOString(),
+              createdAt: item.createdAt || new Date().toISOString(),
+            });
+          }
+        }
+      } 
+      // Handle single project object
+      else if (parsed && typeof parsed === 'object') {
+        if (parsed.projectName || parsed.name || parsed.chapters?.length) {
+          migratedProjects.push({
+            id: parsed.id || generateId(),
+            projectName: parsed.projectName || parsed.name || 'Recovered Project',
+            chapters: parsed.chapters || [],
+            primaryLanguage: parsed.primaryLanguage || 'en',
+            additionalLanguages: parsed.additionalLanguages || [],
+            selectedTemplates: parsed.selectedTemplates || [],
+            selectedVisualTypes: parsed.selectedVisualTypes || [],
+            audioScope: parsed.audioScope || 'entire',
+            scriptScope: parsed.scriptScope || 'entire',
+            outputMode: parsed.outputMode || 'combined',
+            savedAt: parsed.savedAt || new Date().toISOString(),
+            createdAt: parsed.createdAt || new Date().toISOString(),
+          });
+        }
+      }
+      
+      // Clear legacy key after successful migration
+      // localStorage.removeItem(key); // Uncomment after confirming migration works
+      console.log(`[Studio] Migrated ${migratedProjects.length} projects from ${key}`);
+    } catch (e) {
+      console.warn(`[Studio] Failed to migrate from ${key}:`, e);
+    }
+  }
+  
+  return migratedProjects;
 };
 
 const saveAllProjects = (projects: StoredProject[]) => {
@@ -821,6 +893,13 @@ const saveProject = (project: StoredProject) => {
 const loadProjectById = (id: string): StoredProject | null => {
   const projects = loadAllProjects();
   return projects.find(p => p.id === id) || null;
+};
+
+// Search for a project by name (case-insensitive partial match)
+const searchProjectsByName = (searchTerm: string): StoredProject[] => {
+  const projects = loadAllProjects();
+  const term = searchTerm.toLowerCase();
+  return projects.filter(p => p.projectName.toLowerCase().includes(term));
 };
 
 export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = ({
@@ -904,10 +983,35 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
     setSearchParams(newParams, { replace: true });
   }, [searchParams, setSearchParams]);
   
-  // Load project history and current project on mount
+  // Load project history and current project on mount (with legacy migration)
   useEffect(() => {
+    // First, migrate any projects from legacy storage keys
+    const migrated = migrateFromLegacyStorage();
+    
     // Load all projects for history picker
-    const allProjects = loadAllProjects();
+    let allProjects = loadAllProjects();
+    
+    // Merge migrated projects (avoid duplicates by ID or name)
+    if (migrated.length > 0) {
+      const existingIds = new Set(allProjects.map(p => p.id));
+      const existingNames = new Set(allProjects.map(p => p.projectName.toLowerCase()));
+      
+      for (const project of migrated) {
+        if (!existingIds.has(project.id) && !existingNames.has(project.projectName.toLowerCase())) {
+          allProjects.push(project);
+          console.log('[Studio] Recovered project:', project.projectName);
+        }
+      }
+      
+      // Sort by savedAt descending and save merged list
+      allProjects.sort((a, b) => new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime());
+      saveAllProjects(allProjects.slice(0, 20));
+      
+      if (migrated.length > 0) {
+        toast.success(`Recovered ${migrated.length} project(s) from legacy storage`);
+      }
+    }
+    
     setProjectHistory(allProjects);
     
     // Get current project ID from storage
