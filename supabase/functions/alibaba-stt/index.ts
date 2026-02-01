@@ -38,11 +38,15 @@ serve(async (req) => {
 
   try {
     const request: STTRequest = await req.json();
+    
+    // Use China (Beijing) API key for Paraformer - only available in China region
+    const ALIBABA_CHINA_API_KEY = Deno.env.get('ALIBABA_CHINA_API_KEY');
     const ALIBABA_API_KEY = Deno.env.get('ALIBABA_API_KEY');
+    const apiKey = ALIBABA_CHINA_API_KEY || ALIBABA_API_KEY;
 
-    if (!ALIBABA_API_KEY) {
+    if (!apiKey) {
       return new Response(
-        JSON.stringify({ error: 'ALIBABA_API_KEY not configured' }),
+        JSON.stringify({ error: 'ALIBABA_CHINA_API_KEY not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -83,10 +87,10 @@ serve(async (req) => {
       dashscopePayload.parameters.language_hints = [request.language];
     }
 
-    // Use international endpoint for non-China regions (US Virginia = dashscope-intl)
-    const apiEndpoint = 'https://dashscope-intl.aliyuncs.com/api/v1/services/audio/asr/transcription';
+    // Use China (Beijing) endpoint - Paraformer is ONLY available in China region
+    const apiEndpoint = 'https://dashscope.aliyuncs.com/api/v1/services/audio/asr/transcription';
     
-    console.log(`🌐 Using international DashScope endpoint for US Virginia region`);
+    console.log(`🇨🇳 Using China (Beijing) DashScope endpoint for Paraformer STT`);
 
     // Call DashScope API
     const response = await fetch(
@@ -94,7 +98,7 @@ serve(async (req) => {
       {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${ALIBABA_API_KEY}`,
+          'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
           'X-DashScope-Async': 'enable', // Use async for longer audio
         },
@@ -135,10 +139,10 @@ serve(async (req) => {
         await new Promise(resolve => setTimeout(resolve, 2000));
         
         const statusResponse = await fetch(
-          `https://dashscope-intl.aliyuncs.com/api/v1/tasks/${taskId}`,
+          `https://dashscope.aliyuncs.com/api/v1/tasks/${taskId}`,
           {
             headers: {
-              'Authorization': `Bearer ${ALIBABA_API_KEY}`,
+              'Authorization': `Bearer ${apiKey}`,
             },
           }
         );

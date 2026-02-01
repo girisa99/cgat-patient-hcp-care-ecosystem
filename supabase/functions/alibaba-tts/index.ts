@@ -53,11 +53,15 @@ serve(async (req) => {
 
   try {
     const request: TTSRequest = await req.json();
+    
+    // Use China (Beijing) API key for CosyVoice - only available in China region
+    const ALIBABA_CHINA_API_KEY = Deno.env.get('ALIBABA_CHINA_API_KEY');
     const ALIBABA_API_KEY = Deno.env.get('ALIBABA_API_KEY');
+    const apiKey = ALIBABA_CHINA_API_KEY || ALIBABA_API_KEY;
 
-    if (!ALIBABA_API_KEY) {
+    if (!apiKey) {
       return new Response(
-        JSON.stringify({ error: 'ALIBABA_API_KEY not configured' }),
+        JSON.stringify({ error: 'ALIBABA_CHINA_API_KEY not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -111,17 +115,17 @@ serve(async (req) => {
       }
     };
 
-    // Use international endpoint for non-China regions (US Virginia = dashscope-intl)
-    const apiEndpoint = 'https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/text2audio/generation';
+    // Use China (Beijing) endpoint - CosyVoice is ONLY available in China region
+    const apiEndpoint = 'https://dashscope.aliyuncs.com/api/v1/services/aigc/text2audio/generation';
     
-    console.log(`🌐 Using international DashScope endpoint for US Virginia region`);
+    console.log(`🇨🇳 Using China (Beijing) DashScope endpoint for CosyVoice TTS`);
     
     const response = await fetch(
       apiEndpoint,
       {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${ALIBABA_API_KEY}`,
+          'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
           'X-DashScope-Async': 'disable', // Synchronous mode
         },
