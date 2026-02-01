@@ -2,14 +2,14 @@
 
 ## Overview
 
-Alibaba's DashScope platform uses **region-locked models**, meaning certain AI capabilities are only available from specific geographic endpoints. This document explains how to configure and route requests correctly.
+Alibaba's DashScope platform has models available across **multiple regional endpoints**. Some newer models (like Wan 2.6) are available internationally, while others require China-region access. This document explains how to configure and route requests correctly.
 
 ## Regional API Keys
 
 | Key Name | Region | Endpoint | Use Case |
 |----------|--------|----------|----------|
-| `ALIBABA_API_KEY` | Singapore/Virginia (International) | `dashscope-intl.aliyuncs.com` | Qwen LLM, Qwen-VL, Qwen-MT |
-| `ALIBABA_CHINA_API_KEY` | China (Beijing) | `dashscope.aliyuncs.com` | CosyVoice, Paraformer, Wan, 3D models |
+| `ALIBABA_API_KEY` | Singapore/Virginia (International) | `dashscope-intl.aliyuncs.com` | Qwen LLM, Wan 2.6, Qwen-VL |
+| `ALIBABA_CHINA_API_KEY` | China (Beijing) | `dashscope.aliyuncs.com` | CosyVoice, Paraformer, Wan 2.1, 3D models |
 
 ## Model Availability by Region
 
@@ -17,16 +17,18 @@ Alibaba's DashScope platform uses **region-locked models**, meaning certain AI c
 **Endpoint:** `https://dashscope-intl.aliyuncs.com`
 **API Key:** `ALIBABA_API_KEY`
 
-| Model | Type | Description |
-|-------|------|-------------|
+| Model Code | Type | Description |
+|------------|------|-------------|
 | Qwen-Max | LLM | Latest flagship model |
 | Qwen-Plus | LLM | Balanced performance/cost |
 | Qwen-Turbo | LLM | Fast inference |
 | Qwen-VL | Vision | Image understanding, OCR |
 | Qwen-MT | Translation | Machine translation |
-| Wanx-v1 | Image | Basic image generation |
+| **wan2.6-t2v** | Video | Wan 2.6 Text-to-Video (latest) |
+| **wan2.6-i2v** | Video | Wan 2.6 Image-to-Video (latest) |
+| **wan2.6-flf2v** | Video | Wan 2.6 First-Last-Frame-to-Video |
 
-### China (Beijing) Region - EXCLUSIVE MODELS
+### China (Beijing) Region - Additional Models
 **Endpoint:** `https://dashscope.aliyuncs.com`
 **API Key:** `ALIBABA_CHINA_API_KEY`
 
@@ -34,7 +36,7 @@ Alibaba's DashScope platform uses **region-locked models**, meaning certain AI c
 |-------|------|-------------|
 | **CosyVoice** | TTS | High-fidelity Chinese/multilingual speech |
 | **Paraformer** | STT | Real-time speech recognition |
-| **Wan 2.1/2.2** | Video | Text-to-video, Image-to-video |
+| **Wan 2.1** | Video | Text-to-video, Image-to-video (stable) |
 | **Wan2.2-Animate** | Avatar | Digital human animation |
 | **Wan2.2-S2V** | Avatar | Speech-to-video (talking head) |
 | **TaoAvatar** | 3D | 3D Gaussian Splatting avatars |
@@ -107,29 +109,34 @@ Alibaba's DashScope platform uses **region-locked models**, meaning certain AI c
 
 ## Setup Instructions
 
-### 1. Create China (Beijing) API Key
+### 1. Resolve "Account Abnormal" Status
 
-1. Log in to [Alibaba Cloud Console](https://www.alibabacloud.com)
-2. Navigate to **DashScope** (Model Studio)
-3. **Switch region to China (Beijing)** in the top-right dropdown
-4. Go to **API Keys** section
-5. Create a new API key (will start with `sk-`)
-6. Copy the key immediately (only shown once)
+If you see **"Account abnormal"** in the DashScope console:
 
-### 2. Activate Models in DashScope
+1. Go to [Alibaba Cloud Console](https://www.alibabacloud.com) → **Account Settings**
+2. Complete **Identity Verification** (required for API access)
+3. Add a **Payment Method** (credit card or Alipay)
+4. Ensure your account has sufficient **balance** (pre-paid model)
+5. Check for any **security alerts** or required actions
 
-1. In DashScope console (Beijing region), go to **Model Square**
-2. Find and **Enable** each model you need:
-   - CosyVoice (TTS)
-   - Paraformer (STT)
-   - Wan 2.1/2.2 (Video)
-   - TaoAvatar (3D)
-   - MACH (Text-to-3D)
-   - Richdreamer (Image-to-3D)
+### 2. Get API Key
 
-### 3. Add Secret to Supabase
+**No "Enable" button needed** - models are available by default once your account is active.
 
-Add `ALIBABA_CHINA_API_KEY` in [Edge Function Secrets](https://supabase.com/dashboard/project/ithspbabhmdntioslfqe/settings/functions)
+1. Log in to [DashScope Console](https://dashscope.console.aliyun.com/)
+2. Ensure correct region in top-right dropdown:
+   - **China (Beijing)** for TTS, STT, Avatar, 3D models
+   - **International** for Wan 2.6 video, Qwen LLM
+3. Go to **API Keys** section
+4. Create a new API key (will start with `sk-`)
+5. Copy the key immediately (only shown once)
+
+### 3. Add Secrets to Supabase
+
+Add both keys in [Edge Function Secrets](https://supabase.com/dashboard/project/ithspbabhmdntioslfqe/settings/functions):
+
+- `ALIBABA_API_KEY` - International region key
+- `ALIBABA_CHINA_API_KEY` - China (Beijing) region key (if needed for STT/TTS)
 
 ## Error Handling
 

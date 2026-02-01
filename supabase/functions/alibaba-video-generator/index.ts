@@ -1,13 +1,17 @@
 /**
  * ALIBABA VIDEO GENERATOR - Production Implementation
  * 
- * Uses DashScope China (Beijing) API for video generation:
- * - Wan 2.1 (Text-to-Video, Image-to-Video)
- * - Wan 2.1-Turbo (Fast video generation)
+ * Uses DashScope API for video generation with Wan models.
  * 
- * CRITICAL: These models are ONLY available in China (Beijing) region
- * Requires: ALIBABA_CHINA_API_KEY (sk- prefix, Beijing region)
- * Endpoint: https://dashscope.aliyuncs.com
+ * Model Availability:
+ * - Wan 2.6 models: Available on INTERNATIONAL endpoint (dashscope-intl.aliyuncs.com)
+ * - Wan 2.1/2.0 models: Available on CHINA endpoint (dashscope.aliyuncs.com)
+ * 
+ * API Keys:
+ * - ALIBABA_API_KEY: For international region (Singapore/Virginia)
+ * - ALIBABA_CHINA_API_KEY: For China (Beijing) region
+ * 
+ * The function auto-selects the correct endpoint based on the model version.
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -17,19 +21,31 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// DashScope China (Beijing) endpoint
-const DASHSCOPE_BASE_URL = 'https://dashscope.aliyuncs.com/api/v1';
+// DashScope endpoints by region
+const DASHSCOPE_INTL_URL = 'https://dashscope-intl.aliyuncs.com/api/v1';
+const DASHSCOPE_CHINA_URL = 'https://dashscope.aliyuncs.com/api/v1';
 
-// Available Wan video models
+// Available Wan video models (latest first)
 const WAN_MODELS = {
-  'wan2.1': 'wanx2.1-v1-text-to-video',           // High quality text-to-video
-  'wan2.1-i2v': 'wanx2.1-v1-image-to-video',      // Image-to-video
-  'wan2.1-turbo': 'wanx2.1-turbo-v1',             // Fast generation
-  'wan2.0': 'wanx2.0-v1',                          // Legacy model
+  // Wan 2.6 - Latest (International endpoint)
+  'wan2.6-t2v': 'wan2.6-t2v',                      // Text-to-video
+  'wan2.6-i2v': 'wan2.6-i2v',                      // Image-to-video (from your screenshot)
+  'wan2.6-flf2v': 'wan2.6-flf2v',                  // First-last-frame-to-video
+  
+  // Wan 2.1 - Stable (China endpoint)
+  'wan2.1-t2v': 'wanx2.1-v1-text-to-video',
+  'wan2.1-i2v': 'wanx2.1-v1-image-to-video',
+  'wan2.1-turbo': 'wanx2.1-turbo-v1',
+  
+  // Legacy
+  'wan2.0': 'wanx2.0-v1',
 } as const;
 
-// API endpoint for video generation
-const VIDEO_API_ENDPOINT = '/services/aigc/video-generation/generation';
+// Models that use international endpoint
+const INTL_MODELS = ['wan2.6-t2v', 'wan2.6-i2v', 'wan2.6-flf2v'];
+
+// API endpoint for video generation (same path, different base URL)
+const VIDEO_API_ENDPOINT = '/services/aigc/video-generation/video-synthesis';
 
 interface VideoRequest {
   model?: keyof typeof WAN_MODELS;
@@ -76,10 +92,20 @@ interface VideoResult {
 }
 
 /**
- * Get API key with China region priority
+ * Get appropriate API key and endpoint based on model
  */
-function getApiKey(): string | null {
-  return Deno.env.get('ALIBABA_CHINA_API_KEY') || Deno.env.get('ALIBABA_API_KEY') || null;
+function getApiConfig(modelKey: string): { apiKey: string | null; baseUrl: string; region: string } {
+  const isIntlModel = INTL_MODELS.includes(modelKey);
+  
+  if (isIntlModel) {
+    // Wan 2.6 models - use international endpoint
+    const apiKey = Deno.env.get('ALIBABA_API_KEY') || Deno.env.get('ALIBABA_CHINA_API_KEY') || null;
+    return { apiKey, baseUrl: DASHSCOPE_INTL_URL, region: 'international' };
+  } else {
+    // Wan 2.1/2.0 models - use China endpoint
+    const apiKey = Deno.env.get('ALIBABA_CHINA_API_KEY') || Deno.env.get('ALIBABA_API_KEY') || null;
+    return { apiKey, baseUrl: DASHSCOPE_CHINA_URL, region: 'china-beijing' };
+  }
 }
 
 /**
@@ -116,11 +142,12 @@ function getResolutionPixels(resolution: string, aspectRatio: string): { width: 
 async function pollTaskStatus(
   taskId: string,
   apiKey: string,
+  baseUrl: string,
   maxAttempts: number = 60,
   intervalMs: number = 3000
 ): Promise<{ success: boolean; data?: any; error?: string }> {
   
-  const statusUrl = `${DASHSCOPE_BASE_URL}/tasks/${taskId}`;
+  const statusUrl = `${baseUrl}/tasks/${taskId}`;
   
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     await new Promise(resolve => setTimeout(resolve, intervalMs));
@@ -151,23 +178,39 @@ async function pollTaskStatus(
 }
 
 /**
- * Generate video with Wan 2.1
+ * Generate video with Wan models (2.6, 2.1, 2.0)
  */
-async function generateVideo(request: VideoRequest, apiKey: string): Promise<VideoResult> {
+async function generateVideo(request: VideoRequest): Promise<VideoResult> {
   const startTime = Date.now();
   
-  const modelKey = request.model || 'wan2.1';
-  const modelId = WAN_MODELS[modelKey];
+  // Default to wan2.6-i2v if image provided, otherwise wan2.6-t2v (latest models)
+  const modelKey = request.model || (request.sourceImage ? 'wan2.6-i2v' : 'wan2.6-t2v');
+  const modelId = WAN_MODELS[modelKey as keyof typeof WAN_MODELS] || modelKey;
   const isI2V = !!request.sourceImage;
   
+  // Get correct endpoint based on model version
+  const { apiKey, baseUrl, region } = getApiConfig(modelKey);
+  
   console.log(`🎬 [Wan ${modelKey}] Starting ${isI2V ? 'image-to-video' : 'text-to-video'} generation`);
+  console.log(`🌐 Using ${region} endpoint: ${baseUrl}`);
+  
+  if (!apiKey) {
+    return {
+      success: false,
+      model: modelKey,
+      provider: 'alibaba',
+      region: region as 'china-beijing',
+      error: `ALIBABA_API_KEY not configured for ${region} region`,
+      fallback: true
+    };
+  }
   
   if (!request.prompt && !request.sourceImage) {
     return {
       success: false,
       model: modelKey,
       provider: 'alibaba',
-      region: 'china-beijing',
+      region: region as 'china-beijing',
       error: 'Prompt or source image required'
     };
   }
@@ -198,10 +241,10 @@ async function generateVideo(request: VideoRequest, apiKey: string): Promise<Vid
     }
   };
   
-  console.log(`🇨🇳 Calling DashScope China: ${DASHSCOPE_BASE_URL}${VIDEO_API_ENDPOINT}`);
+  console.log(`🌐 Calling DashScope ${region}: ${baseUrl}${VIDEO_API_ENDPOINT}`);
   
   try {
-    const response = await fetch(`${DASHSCOPE_BASE_URL}${VIDEO_API_ENDPOINT}`, {
+    const response = await fetch(`${baseUrl}${VIDEO_API_ENDPOINT}`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
@@ -218,13 +261,13 @@ async function generateVideo(request: VideoRequest, apiKey: string): Promise<Vid
       
       try {
         const errorJson = JSON.parse(responseText);
-        if (errorJson.code === 'AccessDenied') {
+        if (errorJson.code === 'AccessDenied' || errorJson.code === 'ModelNotExist') {
           return {
             success: false,
             model: modelKey,
             provider: 'alibaba',
-            region: 'china-beijing',
-            error: 'Wan video model not activated. Enable it in DashScope Model Square (China Beijing region).',
+            region: region as 'china-beijing',
+            error: `Wan ${modelKey} model not available. Check your account status and model activation in DashScope console.`,
             fallback: true
           };
         }
@@ -232,7 +275,7 @@ async function generateVideo(request: VideoRequest, apiKey: string): Promise<Vid
           success: false,
           model: modelKey,
           provider: 'alibaba',
-          region: 'china-beijing',
+          region: region as 'china-beijing',
           error: errorJson.message || `API error: ${response.status}`,
           fallback: true
         };
@@ -241,7 +284,7 @@ async function generateVideo(request: VideoRequest, apiKey: string): Promise<Vid
           success: false,
           model: modelKey,
           provider: 'alibaba',
-          region: 'china-beijing',
+          region: region as 'china-beijing',
           error: `API error: ${response.status}`,
           fallback: true
         };
@@ -256,7 +299,7 @@ async function generateVideo(request: VideoRequest, apiKey: string): Promise<Vid
         success: false,
         model: modelKey,
         provider: 'alibaba',
-        region: 'china-beijing',
+        region: region as 'china-beijing',
         error: 'No task ID returned from API',
         fallback: true
       };
@@ -265,14 +308,14 @@ async function generateVideo(request: VideoRequest, apiKey: string): Promise<Vid
     console.log(`📋 Video generation task created: ${taskId}`);
     
     // Poll for completion (video generation takes time)
-    const pollResult = await pollTaskStatus(taskId, apiKey, 60, 3000);
+    const pollResult = await pollTaskStatus(taskId, apiKey, baseUrl, 60, 3000);
     
     if (!pollResult.success) {
       return {
         success: false,
         model: modelKey,
         provider: 'alibaba',
-        region: 'china-beijing',
+        region: region as 'china-beijing',
         taskId,
         status: 'failed',
         error: pollResult.error
@@ -289,7 +332,7 @@ async function generateVideo(request: VideoRequest, apiKey: string): Promise<Vid
       success: true,
       model: modelKey,
       provider: 'alibaba',
-      region: 'china-beijing',
+      region: region as 'china-beijing',
       videoUrl,
       thumbnailUrl,
       taskId,
@@ -299,7 +342,7 @@ async function generateVideo(request: VideoRequest, apiKey: string): Promise<Vid
         fps: request.fps || 24,
         resolution: request.resolution || '1080p',
         processingTimeMs,
-        estimatedCost: 0.08 * (request.duration || 4), // ~$0.08 per second
+        estimatedCost: 0.086 * (request.duration || 4), // ~$0.086 per second (from your screenshot)
       }
     };
     
@@ -309,7 +352,7 @@ async function generateVideo(request: VideoRequest, apiKey: string): Promise<Vid
       success: false,
       model: modelKey,
       provider: 'alibaba',
-      region: 'china-beijing',
+      region: region as 'china-beijing',
       error: error instanceof Error ? error.message : 'Unknown error',
       fallback: true
     };
@@ -322,25 +365,11 @@ serve(async (req) => {
   }
 
   try {
-    const apiKey = getApiKey();
-    
-    if (!apiKey) {
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'ALIBABA_CHINA_API_KEY not configured. Wan video models require a China (Beijing) region API key.',
-          fallback: true
-        }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
     const request: VideoRequest = await req.json();
     
-    console.log(`🎬 [Alibaba Video] Processing request`);
-    console.log(`🇨🇳 Using China (Beijing) DashScope endpoint`);
+    console.log(`🎬 [Alibaba Video] Processing request for model: ${request.model || 'wan2.6-t2v (default)'}`);
     
-    const result = await generateVideo(request, apiKey);
+    const result = await generateVideo(request);
     
     return new Response(
       JSON.stringify(result),
