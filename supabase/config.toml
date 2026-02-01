@@ -348,6 +348,12 @@ verify_jwt = false
 [functions.alibaba-avatar-generator]
 verify_jwt = false
 
+[functions.alibaba-video-generator]
+verify_jwt = false
+
+[functions.alibaba-3d-generator]
+verify_jwt = false
+
 [functions.landing-video-generator]
 verify_jwt = false
 
