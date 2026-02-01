@@ -206,77 +206,123 @@ async function concatenateAudioBuffers(buffers: ArrayBuffer[]): Promise<ArrayBuf
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function getAvailableProviders(): { id: TTSProvider; available: boolean; priority: number }[] {
+  // Priority order: Azure (best multilingual) -> Alibaba (CJK) -> ElevenLabs (Western) -> Google -> OpenAI (last resort)
   return [
-    { id: 'elevenlabs', available: !!Deno.env.get('ELEVENLABS_API_KEY'), priority: 1 },
-    { id: 'openai', available: !!Deno.env.get('OPENAI_API_KEY'), priority: 2 },
-    { id: 'azure', available: !!Deno.env.get('AZURE_SPEECH_KEY'), priority: 3 },
+    { id: 'azure', available: !!Deno.env.get('AZURE_SPEECH_KEY'), priority: 1 },
+    { id: 'alibaba', available: !!Deno.env.get('ALIBABA_API_KEY'), priority: 2 },
+    { id: 'elevenlabs', available: !!Deno.env.get('ELEVENLABS_API_KEY'), priority: 3 },
     { id: 'google', available: !!(Deno.env.get('GOOGLE_API_KEY') || Deno.env.get('GEMINI_API_KEY')), priority: 4 },
-    { id: 'alibaba', available: !!Deno.env.get('ALIBABA_API_KEY'), priority: 5 },
+    { id: 'openai', available: !!Deno.env.get('OPENAI_API_KEY'), priority: 5 }, // Last resort
   ];
 }
+
+// Indian/South Asian languages that should use Azure Neural
+const INDIC_LANGUAGES = ['hi', 'te', 'ta', 'bn', 'mr', 'gu', 'kn', 'ml', 'pa', 'hi-IN', 'te-IN', 'ta-IN', 'bn-IN', 'mr-IN', 'gu-IN', 'kn-IN', 'ml-IN', 'pa-IN'];
+
+// CJK languages that should use Alibaba CosyVoice
+const CJK_LANGUAGES = ['ja', 'ko', 'zh', 'zh-CN', 'zh-TW', 'zh-HK', 'ja-JP', 'ko-KR'];
+
+// Arabic languages that should use Azure Neural
+const ARABIC_LANGUAGES = ['ar', 'ar-SA', 'ar-AE', 'ar-EG', 'ar-MA', 'ar-JO', 'ar-IQ'];
+
+// Western languages that should use ElevenLabs
+const WESTERN_LANGUAGES = ['en', 'en-US', 'en-GB', 'en-AU', 'de', 'de-DE', 'fr', 'fr-FR', 'es', 'es-ES', 'es-MX', 'it', 'it-IT', 'pt', 'pt-BR', 'pt-PT', 'nl', 'nl-NL', 'pl', 'pl-PL', 'ru', 'ru-RU'];
 
 function selectTTSProvider(region: string, languageCode: string, tier: string = 'standard'): TTSRouting {
   const providers = getAvailableProviders().filter(p => p.available);
   
   if (providers.length === 0) {
-    throw new Error('No TTS API keys configured. Please add OPENAI_API_KEY, ELEVENLABS_API_KEY, AZURE_SPEECH_KEY, or GOOGLE_API_KEY.');
+    throw new Error('No TTS API keys configured. Please add AZURE_SPEECH_KEY, ALIBABA_API_KEY, ELEVENLABS_API_KEY, GOOGLE_API_KEY, or OPENAI_API_KEY.');
   }
   
   const hasProvider = (id: TTSProvider) => providers.some(p => p.id === id);
+  const langBase = languageCode.split('-')[0]; // Extract base language (e.g., 'hi' from 'hi-IN')
   
-  // CJK Zone: Prefer Alibaba
-  if (CJK_REGIONS.includes(region) && hasProvider('alibaba')) {
-    console.log('🌏 CJK Zone: Routing to Alibaba TTS');
-    return { provider: 'alibaba', cost: 0.004, zone: 'alibaba', quality: 'standard' };
-  }
-
-  // MENA Zone: Prefer Azure for Arabic support
-  if (MENA_REGIONS.includes(region) && hasProvider('azure')) {
-    console.log('🌍 MENA Zone: Routing to Azure TTS');
-    return { provider: 'azure', cost: 0.016, zone: 'azure', quality: 'premium' };
-  }
-
-  // Premium tier: ElevenLabs for highest quality
-  if (tier === 'premium' && hasProvider('elevenlabs')) {
-    console.log('🎤 Premium tier: Routing to ElevenLabs');
-    return { provider: 'elevenlabs', cost: 0.03, zone: 'claude', quality: 'premium' };
-  }
-
-  // Western languages: Prefer ElevenLabs, then OpenAI
-  if (ELEVENLABS_REGIONS.includes(region)) {
-    if (hasProvider('elevenlabs')) {
-      console.log('🎤 Claude Zone: Routing to ElevenLabs');
-      return { provider: 'elevenlabs', cost: 0.018, zone: 'claude', quality: 'premium' };
-    }
-    if (hasProvider('openai')) {
-      console.log('🎤 Claude Zone fallback: Routing to OpenAI');
-      return { provider: 'openai', cost: 0.015, zone: 'openai', quality: 'standard' };
-    }
-  }
-
-  // South Asian/SEA: Prefer Azure Neural (excellent Indian language support)
-  if (GEMINI_REGIONS.includes(region)) {
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // ZONE-BASED ROUTING (Per Architecture Document)
+  // ═══════════════════════════════════════════════════════════════════════════════
+  
+  // GEMINI ZONE (India/SEA/Africa): Azure Neural PRIMARY
+  if (INDIC_LANGUAGES.includes(languageCode) || INDIC_LANGUAGES.includes(langBase)) {
     if (hasProvider('azure')) {
-      console.log('🌏 Gemini Zone: Routing to Azure Neural TTS (primary)');
+      console.log(`🌏 Gemini Zone (Indic): Routing to Azure Neural TTS [${languageCode}]`);
       return { provider: 'azure', cost: 0.016, zone: 'gemini', quality: 'premium' };
     }
     if (hasProvider('google')) {
-      console.log('🌏 Gemini Zone: Routing to Google TTS (fallback)');
+      console.log(`🌏 Gemini Zone (Indic) fallback: Routing to Google TTS [${languageCode}]`);
       return { provider: 'google', cost: 0.016, zone: 'gemini', quality: 'standard' };
+    }
+    // OpenAI as last resort
+    if (hasProvider('openai')) {
+      console.log(`🌏 Gemini Zone (Indic) last resort: Routing to OpenAI TTS [${languageCode}]`);
+      return { provider: 'openai', cost: 0.015, zone: 'gemini', quality: 'standard' };
     }
   }
 
-  // Default fallback chain: OpenAI -> ElevenLabs -> Google -> Azure -> Alibaba
-  for (const p of ['openai', 'elevenlabs', 'google', 'azure', 'alibaba'] as TTSProvider[]) {
-    if (hasProvider(p)) {
-      console.log(`🔊 Fallback: Routing to ${p}`);
-      return {
-        provider: p,
-        cost: p === 'elevenlabs' ? 0.018 : p === 'azure' ? 0.016 : 0.015,
-        zone: 'fallback',
-        quality: p === 'elevenlabs' ? 'premium' : 'standard',
-      };
+  // ALIBABA ZONE (CJK): Alibaba CosyVoice PRIMARY
+  if (CJK_LANGUAGES.includes(languageCode) || CJK_LANGUAGES.includes(langBase)) {
+    if (hasProvider('alibaba')) {
+      console.log(`🌸 Alibaba Zone (CJK): Routing to Alibaba CosyVoice [${languageCode}]`);
+      return { provider: 'alibaba', cost: 0.004, zone: 'alibaba', quality: 'premium' };
     }
+    if (hasProvider('azure')) {
+      console.log(`🌸 Alibaba Zone (CJK) fallback: Routing to Azure Neural [${languageCode}]`);
+      return { provider: 'azure', cost: 0.016, zone: 'alibaba', quality: 'premium' };
+    }
+  }
+
+  // MENA ZONE (Arabic): Azure Neural PRIMARY (7 dialects support)
+  if (ARABIC_LANGUAGES.includes(languageCode) || langBase === 'ar') {
+    if (hasProvider('azure')) {
+      console.log(`🌍 MENA Zone (Arabic): Routing to Azure Neural TTS [${languageCode}]`);
+      return { provider: 'azure', cost: 0.016, zone: 'mena', quality: 'premium' };
+    }
+    if (hasProvider('google')) {
+      console.log(`🌍 MENA Zone (Arabic) fallback: Routing to Google TTS [${languageCode}]`);
+      return { provider: 'google', cost: 0.016, zone: 'mena', quality: 'standard' };
+    }
+  }
+
+  // CLAUDE ZONE (Western/EU): ElevenLabs PRIMARY
+  if (WESTERN_LANGUAGES.includes(languageCode) || WESTERN_LANGUAGES.includes(langBase)) {
+    if (tier === 'premium' && hasProvider('elevenlabs')) {
+      console.log(`🎤 Claude Zone (Premium): Routing to ElevenLabs [${languageCode}]`);
+      return { provider: 'elevenlabs', cost: 0.03, zone: 'claude', quality: 'premium' };
+    }
+    if (hasProvider('elevenlabs')) {
+      console.log(`🎤 Claude Zone (Western): Routing to ElevenLabs [${languageCode}]`);
+      return { provider: 'elevenlabs', cost: 0.018, zone: 'claude', quality: 'premium' };
+    }
+    if (hasProvider('azure')) {
+      console.log(`🎤 Claude Zone (Western) fallback: Routing to Azure Neural [${languageCode}]`);
+      return { provider: 'azure', cost: 0.016, zone: 'claude', quality: 'premium' };
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // FALLBACK CHAIN: Azure -> Alibaba -> ElevenLabs -> Google -> OpenAI (last resort)
+  // ═══════════════════════════════════════════════════════════════════════════════
+  console.log(`🔊 Unknown language [${languageCode}], using fallback chain`);
+  
+  if (hasProvider('azure')) {
+    console.log(`🔊 Fallback: Routing to Azure Neural TTS`);
+    return { provider: 'azure', cost: 0.016, zone: 'fallback', quality: 'premium' };
+  }
+  if (hasProvider('alibaba')) {
+    console.log(`🔊 Fallback: Routing to Alibaba CosyVoice`);
+    return { provider: 'alibaba', cost: 0.004, zone: 'fallback', quality: 'standard' };
+  }
+  if (hasProvider('elevenlabs')) {
+    console.log(`🔊 Fallback: Routing to ElevenLabs`);
+    return { provider: 'elevenlabs', cost: 0.018, zone: 'fallback', quality: 'premium' };
+  }
+  if (hasProvider('google')) {
+    console.log(`🔊 Fallback: Routing to Google TTS`);
+    return { provider: 'google', cost: 0.016, zone: 'fallback', quality: 'standard' };
+  }
+  if (hasProvider('openai')) {
+    console.log(`⚠️ Last Resort: Routing to OpenAI TTS`);
+    return { provider: 'openai', cost: 0.015, zone: 'fallback', quality: 'standard' };
   }
 
   throw new Error('No TTS providers available');
