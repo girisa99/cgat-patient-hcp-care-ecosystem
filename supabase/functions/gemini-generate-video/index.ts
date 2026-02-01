@@ -1,18 +1,22 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Updated Veo models - using new API format
-const VIDEO_MODELS = {
-  PRIMARY: 'veo-3.1-generate-preview',
-  FALLBACK: 'veo-2.0-generate-001',
-};
-
-const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
+/**
+ * Universal Video Generation with Multi-Provider Fallback
+ * 
+ * Priority routing (based on configured secrets):
+ * 1. Sora2API - Primary video generation
+ * 2. ModelsLab - AnimateDiff/Video generation
+ * 3. Replicate - LumaAI/Runway alternatives
+ * 4. Lovable AI Gateway - Gemini video
+ * 5. Image fallback - High-quality still frame
+ * 
+ * Note: Google Veo requires Vertex AI service account, not AI Studio key
+ */
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -20,16 +24,8 @@ serve(async (req) => {
   }
 
   try {
-    const GOOGLE_API_KEY = Deno.env.get('GOOGLE_API_KEY') || Deno.env.get('GEMINI_API_KEY');
-    if (!GOOGLE_API_KEY) {
-      throw new Error('GOOGLE_API_KEY or GEMINI_API_KEY is not set');
-    }
-
     const body = await req.json();
-    // Veo 3.1 only supports duration 4-8 seconds
-    const rawDuration = body.duration || 8;
-    const duration = Math.min(8, Math.max(4, rawDuration));
-    const { prompt, aspectRatio = '16:9', model = 'auto' } = body;
+    const { prompt, aspectRatio = '16:9', duration = 5 } = body;
 
     if (!prompt) {
       return new Response(
@@ -38,151 +34,74 @@ serve(async (req) => {
       );
     }
 
-    const selectedModel = model === 'auto' ? VIDEO_MODELS.PRIMARY : model;
-    console.log('🎬 Generating video with Veo API:', { prompt, duration, aspectRatio, model: selectedModel });
+    console.log('🎬 Video generation request:', { prompt: prompt.substring(0, 80), aspectRatio, duration });
 
     const startTime = Date.now();
 
-    // Use the correct predictLongRunning endpoint for Veo
-    const response = await fetch(`${BASE_URL}/models/${selectedModel}:predictLongRunning`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': GOOGLE_API_KEY,
-      },
-      body: JSON.stringify({
-        instances: [{
-          prompt: prompt
-        }],
-        parameters: {
-          aspectRatio: aspectRatio,
-          durationSeconds: duration, // Fixed: must be 4-8
-          sampleCount: 1
-        }
-      }),
-    });
+    // Try providers in priority order
+    const providers = [
+      { name: 'sora2api', fn: () => trySora2API(prompt, aspectRatio, duration) },
+      { name: 'modelslab', fn: () => tryModelsLab(prompt, aspectRatio, duration) },
+      { name: 'replicate', fn: () => tryReplicate(prompt, aspectRatio, duration) },
+      { name: 'lovable', fn: () => tryLovableAI(prompt, aspectRatio, duration) },
+    ];
 
-    const responseText = await response.text();
-    console.log('🔍 Veo API initial response:', { status: response.status, bodyPreview: responseText?.substring(0, 300) });
-
-    let data: any = {};
-    try {
-      data = responseText ? JSON.parse(responseText) : {};
-    } catch (parseError) {
-      console.error('⚠️ Failed to parse Veo response:', responseText?.substring(0, 200));
-      data = { error: { message: `Invalid response: ${responseText?.substring(0, 100) || 'empty'}` } };
-    }
-
-    // Check if we got an operation name for polling
-    if (data.name && !data.done) {
-      console.log('⏳ Got long-running operation, polling for completion:', data.name);
-      
-      // Poll for up to 60 seconds (edge function limit consideration)
-      const maxPolls = 6;
-      const pollInterval = 8000; // 8 seconds between polls
-      
-      for (let i = 0; i < maxPolls; i++) {
-        await new Promise(resolve => setTimeout(resolve, pollInterval));
-        
-        const pollResponse = await fetch(`${BASE_URL}/${data.name}`, {
-          headers: { 'x-goog-api-key': GOOGLE_API_KEY }
-        });
-        
-        const pollText = await pollResponse.text();
-        let pollData: any = {};
-        try {
-          pollData = pollText ? JSON.parse(pollText) : {};
-        } catch {
-          console.error('⚠️ Failed to parse poll response:', pollText?.substring(0, 100));
-          continue;
-        }
-        
-        console.log(`📊 Poll ${i + 1}/${maxPolls}:`, { done: pollData.done, hasResponse: !!pollData.response });
-        
-        if (pollData.done) {
-          data = pollData;
-          break;
-        }
-        
-        if (pollData.error) {
-          throw new Error(pollData.error.message || 'Operation failed');
-        }
-      }
-    }
-
-    // Handle errors or try fallback model
-    if (!response.ok || data.error) {
-      console.log('⚠️ Primary model failed, trying fallback to Imagen sequence...');
-      return await generateImageSequenceFallback(prompt, aspectRatio, GOOGLE_API_KEY, startTime, corsHeaders);
-    }
-
-    // Check for completed video
-    const videoResponse = data.response?.generateVideoResponse;
-    if (videoResponse?.generatedSamples?.[0]?.video) {
-      const videoInfo = videoResponse.generatedSamples[0].video;
-      
-      // If we have a URI, we need to download it
-      if (videoInfo.uri) {
-        console.log('📥 Downloading video from URI:', videoInfo.uri);
-        
-        const videoDownload = await fetch(videoInfo.uri, {
-          headers: { 'x-goog-api-key': GOOGLE_API_KEY }
-        });
-        
-        if (videoDownload.ok) {
-          const videoBuffer = await videoDownload.arrayBuffer();
-          const videoBase64 = btoa(String.fromCharCode(...new Uint8Array(videoBuffer)));
-          
+    for (const provider of providers) {
+      try {
+        const result = await provider.fn();
+        if (result) {
           const processingTime = Date.now() - startTime;
-          console.log('✅ Video generated and downloaded in', processingTime, 'ms');
+          console.log(`✅ Video generated via ${provider.name} in ${processingTime}ms`);
           
           return new Response(JSON.stringify({
             success: true,
-            videoUrl: `data:video/mp4;base64,${videoBase64}`,
-            mediaUrl: `data:video/mp4;base64,${videoBase64}`,
+            videoUrl: result.videoUrl,
+            mediaUrl: result.videoUrl,
             processingTime,
             metadata: {
-              prompt, duration, aspectRatio,
-              model: selectedModel,
+              prompt: prompt.substring(0, 100),
+              duration,
+              aspectRatio,
+              provider: provider.name,
               timestamp: new Date().toISOString()
             }
           }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
         }
-      }
-      
-      // If we have videoBytes directly
-      if (videoInfo.videoBytes) {
-        const processingTime = Date.now() - startTime;
-        return new Response(JSON.stringify({
-          success: true,
-          videoUrl: `data:video/mp4;base64,${videoInfo.videoBytes}`,
-          mediaUrl: `data:video/mp4;base64,${videoInfo.videoBytes}`,
-          processingTime,
-          metadata: {
-            prompt, duration, aspectRatio,
-            model: selectedModel,
-            timestamp: new Date().toISOString()
-          }
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+      } catch (err) {
+        console.log(`⚠️ ${provider.name} failed:`, err instanceof Error ? err.message : 'Unknown error');
       }
     }
 
-    // If operation still not done after polling, return async generation status
-    if (data.name && !data.done) {
-      console.log('⏳ Video generation in progress, returning async status');
-      return await generateImageSequenceFallback(prompt, aspectRatio, GOOGLE_API_KEY, startTime, corsHeaders, true, data.name);
+    // All video providers failed - generate high-quality image fallback
+    console.log('📸 All video providers failed, generating image fallback...');
+    const imageResult = await generateImageFallback(prompt, aspectRatio);
+    
+    if (imageResult) {
+      const processingTime = Date.now() - startTime;
+      return new Response(JSON.stringify({
+        success: true,
+        videoUrl: imageResult,
+        mediaUrl: imageResult,
+        isImageFallback: true,
+        processingTime,
+        metadata: {
+          prompt: prompt.substring(0, 100),
+          aspectRatio,
+          provider: 'image-fallback',
+          timestamp: new Date().toISOString(),
+          note: 'Generated as high-quality image (video providers unavailable)'
+        }
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    // Fallback to image sequence
-    console.log('📸 No video output, falling back to image sequence');
-    return await generateImageSequenceFallback(prompt, aspectRatio, GOOGLE_API_KEY, startTime, corsHeaders);
+    throw new Error('All video generation providers failed');
 
   } catch (error) {
-    console.error('💥 Error in gemini-generate-video function:', error);
+    console.error('💥 Error in video generation:', error);
     return new Response(JSON.stringify({ 
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error occurred',
@@ -194,94 +113,280 @@ serve(async (req) => {
   }
 });
 
-// Fallback to generating image sequence when video generation fails or times out
-async function generateImageSequenceFallback(
-  prompt: string, 
-  aspectRatio: string, 
-  apiKey: string, 
-  startTime: number,
-  corsHeaders: Record<string, string>,
-  asyncGeneration = false,
-  operationName?: string
-): Promise<Response> {
-  console.log('📸 Generating image sequence fallback with Imagen 3.0...');
-  
-  const imagePrompts = [
-    `${prompt} - beginning scene, cinematic wide shot, high quality`,
-    `${prompt} - middle action, dynamic medium shot, detailed`,  
-    `${prompt} - final result, dramatic close-up, professional`
-  ];
+// Provider: Sora2API (Primary)
+async function trySora2API(prompt: string, aspectRatio: string, duration: number): Promise<{ videoUrl: string } | null> {
+  const apiKey = Deno.env.get('SORA2API_KEY');
+  if (!apiKey) return null;
 
-  const images: string[] = [];
+  console.log('🎬 Trying Sora2API...');
   
-  for (const imagePrompt of imagePrompts) {
-    try {
-      // Use the correct Imagen 3 endpoint format
-      const imgResponse = await fetch(`${BASE_URL}/models/imagen-3.0-generate-001:predict`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'x-goog-api-key': apiKey
-        },
-        body: JSON.stringify({
-          instances: [{ prompt: imagePrompt }],
-          parameters: {
-            aspectRatio: aspectRatio,
-            sampleCount: 1
-          }
-        }),
+  const response = await fetch('https://api.sora2api.com/v1/video/generate', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      prompt,
+      aspect_ratio: aspectRatio,
+      duration,
+      quality: 'high'
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Sora2API error: ${response.status} - ${error.substring(0, 100)}`);
+  }
+
+  const data = await response.json();
+  if (data.video_url || data.url) {
+    return { videoUrl: data.video_url || data.url };
+  }
+  
+  // Handle async generation
+  if (data.task_id || data.id) {
+    const taskId = data.task_id || data.id;
+    console.log('⏳ Sora2API async task:', taskId);
+    
+    // Poll for result (max 60 seconds)
+    for (let i = 0; i < 12; i++) {
+      await new Promise(r => setTimeout(r, 5000));
+      
+      const statusResponse = await fetch(`https://api.sora2api.com/v1/video/status/${taskId}`, {
+        headers: { 'Authorization': `Bearer ${apiKey}` }
       });
-
-      const imgText = await imgResponse.text();
-      console.log('📸 Imagen response:', { status: imgResponse.status, preview: imgText?.substring(0, 150) });
       
-      let imgData: any = {};
-      try {
-        imgData = imgText ? JSON.parse(imgText) : {};
-      } catch {
-        console.warn('⚠️ Failed to parse image response');
-        continue;
+      if (statusResponse.ok) {
+        const status = await statusResponse.json();
+        if (status.status === 'completed' && (status.video_url || status.url)) {
+          return { videoUrl: status.video_url || status.url };
+        }
+        if (status.status === 'failed') {
+          throw new Error('Sora2API task failed');
+        }
       }
+    }
+  }
+  
+  return null;
+}
 
-      // Handle different response formats
-      const imageBytes = imgData.predictions?.[0]?.bytesBase64Encoded || 
-                         imgData.predictions?.[0]?.image?.bytesBase64Encoded ||
-                         imgData.generatedImages?.[0]?.imageBytes;
+// Provider: ModelsLab (Backup)
+async function tryModelsLab(prompt: string, aspectRatio: string, duration: number): Promise<{ videoUrl: string } | null> {
+  const apiKey = Deno.env.get('MODELSLAB_API_KEY');
+  if (!apiKey) return null;
+
+  console.log('🎬 Trying ModelsLab...');
+  
+  // ModelsLab text2video endpoint
+  const response = await fetch('https://modelslab.com/api/v6/video/text2video', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      key: apiKey,
+      prompt,
+      negative_prompt: 'blur, distorted, low quality',
+      width: aspectRatio === '16:9' ? 1024 : aspectRatio === '9:16' ? 576 : 768,
+      height: aspectRatio === '16:9' ? 576 : aspectRatio === '9:16' ? 1024 : 768,
+      num_frames: duration * 8,
+      num_inference_steps: 30,
+      guidance_scale: 7.5
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`ModelsLab error: ${response.status} - ${error.substring(0, 100)}`);
+  }
+
+  const data = await response.json();
+  
+  if (data.output?.[0]) {
+    return { videoUrl: data.output[0] };
+  }
+  
+  // Handle fetch_result for async generation
+  if (data.fetch_result || data.id) {
+    const fetchUrl = data.fetch_result || `https://modelslab.com/api/v6/video/fetch/${data.id}`;
+    console.log('⏳ ModelsLab async, polling...');
+    
+    for (let i = 0; i < 12; i++) {
+      await new Promise(r => setTimeout(r, 5000));
       
-      if (imageBytes) {
-        images.push(`data:image/png;base64,${imageBytes}`);
-        console.log('✅ Generated image frame', images.length);
+      const fetchResponse = await fetch(fetchUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: apiKey })
+      });
+      
+      if (fetchResponse.ok) {
+        const fetchData = await fetchResponse.json();
+        if (fetchData.status === 'success' && fetchData.output?.[0]) {
+          return { videoUrl: fetchData.output[0] };
+        }
+        if (fetchData.status === 'failed') {
+          throw new Error('ModelsLab task failed');
+        }
       }
-    } catch (err) {
-      console.warn('⚠️ Failed to generate frame:', err);
+    }
+  }
+  
+  return null;
+}
+
+// Provider: Replicate (LumaAI/alternative models)
+async function tryReplicate(prompt: string, aspectRatio: string, duration: number): Promise<{ videoUrl: string } | null> {
+  const apiKey = Deno.env.get('REPLICATE_API_TOKEN');
+  if (!apiKey) return null;
+
+  console.log('🎬 Trying Replicate...');
+  
+  // Use stable-video-diffusion or similar model
+  const response = await fetch('https://api.replicate.com/v1/predictions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Token ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      version: 'dc6f803f0a0c9d2e8b6da81cf0fe8a8f6c3c8b9f', // stable-video-diffusion
+      input: {
+        prompt,
+        video_length: duration,
+        fps: 8
+      }
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Replicate error: ${response.status} - ${error.substring(0, 100)}`);
+  }
+
+  const prediction = await response.json();
+  
+  // Poll for result
+  if (prediction.id) {
+    console.log('⏳ Replicate prediction:', prediction.id);
+    
+    for (let i = 0; i < 24; i++) {
+      await new Promise(r => setTimeout(r, 5000));
+      
+      const statusResponse = await fetch(`https://api.replicate.com/v1/predictions/${prediction.id}`, {
+        headers: { 'Authorization': `Token ${apiKey}` }
+      });
+      
+      if (statusResponse.ok) {
+        const status = await statusResponse.json();
+        if (status.status === 'succeeded' && status.output) {
+          const videoUrl = Array.isArray(status.output) ? status.output[0] : status.output;
+          return { videoUrl };
+        }
+        if (status.status === 'failed') {
+          throw new Error('Replicate prediction failed');
+        }
+      }
+    }
+  }
+  
+  return null;
+}
+
+// Provider: Lovable AI Gateway
+async function tryLovableAI(prompt: string, aspectRatio: string, duration: number): Promise<{ videoUrl: string } | null> {
+  const apiKey = Deno.env.get('LOVABLE_API_KEY');
+  if (!apiKey) return null;
+
+  console.log('🎬 Trying Lovable AI Gateway...');
+  
+  const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'google/veo-2.0',
+      messages: [{ role: 'user', content: `Generate a ${duration} second video: ${prompt}` }],
+      modalities: ['video']
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Lovable AI error: ${response.status} - ${error.substring(0, 100)}`);
+  }
+
+  const data = await response.json();
+  const videoUrl = data.choices?.[0]?.message?.video_url || data.choices?.[0]?.message?.content;
+  
+  if (videoUrl && (videoUrl.startsWith('http') || videoUrl.startsWith('data:'))) {
+    return { videoUrl };
+  }
+  
+  return null;
+}
+
+// Fallback: Generate high-quality image as placeholder
+async function generateImageFallback(prompt: string, aspectRatio: string): Promise<string | null> {
+  const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+  
+  if (LOVABLE_API_KEY) {
+    console.log('📸 Generating image via Lovable AI Gateway...');
+    
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash-image-preview',
+        messages: [{ 
+          role: 'user', 
+          content: `Generate a cinematic ${aspectRatio} image: ${prompt}. High quality, professional, movie still.` 
+        }],
+        modalities: ['image', 'text']
+      }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+      if (imageUrl) {
+        return imageUrl;
+      }
     }
   }
 
-  const processingTime = Date.now() - startTime;
-
-  if (images.length > 0) {
-    return new Response(JSON.stringify({ 
-      success: true,
-      videoUrl: images[0],
-      mediaUrl: images[0],
-      imageSequence: images,
-      isImageSequence: true,
-      asyncGeneration,
-      operationName,
-      processingTime,
-      metadata: {
-        prompt,
-        aspectRatio,
-        model: 'imagen-3.0-generate-001-sequence',
-        timestamp: new Date().toISOString(),
-        note: asyncGeneration 
-          ? 'Video generation in progress. Images provided as preview.'
-          : 'Generated as image sequence due to video API timeout'
-      }
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  // Try OpenAI DALL-E as backup
+  const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+  if (OPENAI_API_KEY) {
+    console.log('📸 Generating image via OpenAI DALL-E...');
+    
+    const response = await fetch('https://api.openai.com/v1/images/generations', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'dall-e-3',
+        prompt: `Cinematic movie still: ${prompt}. Professional quality, ${aspectRatio} aspect ratio.`,
+        n: 1,
+        size: aspectRatio === '16:9' ? '1792x1024' : '1024x1024',
+        quality: 'hd'
+      }),
     });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.data?.[0]?.url) {
+        return data.data[0].url;
+      }
+    }
   }
 
-  throw new Error('Failed to generate both video and fallback images');
+  return null;
 }
