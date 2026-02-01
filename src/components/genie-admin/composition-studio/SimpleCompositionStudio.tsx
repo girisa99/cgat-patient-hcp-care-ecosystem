@@ -3240,6 +3240,24 @@ Primary Language: ${primaryLanguage}`;
           </div>
 
           <div className="flex flex-wrap gap-2">
+            {/* Save to Library - Direct DB save */}
+            <Button
+              variant="outline"
+              onClick={async () => {
+                await ecosystemServices.saveToLibrary({
+                  name: projectName,
+                  primaryLanguage,
+                  additionalLanguages,
+                  chapters: chapters as any,
+                  outputMode
+                });
+              }}
+              className="gap-2"
+            >
+              <Save className="w-4 h-4" />
+              Save to Library
+            </Button>
+
             {/* Send to Review */}
             <Button
               variant="outline"

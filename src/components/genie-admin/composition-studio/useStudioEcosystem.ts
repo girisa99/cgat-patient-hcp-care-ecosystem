@@ -562,19 +562,82 @@ export function useStudioEcosystem() {
 
   /**
    * Send to Production Hub for review/scheduling
+   * Also saves to landing_page_videos for Content Library visibility
    */
-  const sendToProductionHub = useCallback((project: StudioProject) => {
-    console.log('[StudioEcosystem] Sending to Production Hub');
+  const sendToProductionHub = useCallback(async (project: StudioProject) => {
+    console.log('[StudioEcosystem] Sending to Production Hub and saving to database');
     
+    try {
+      // Save each chapter to landing_page_videos for Content Library
+      for (const chapter of project.chapters) {
+        if (chapter.generatedContent?.videoUrl || chapter.generatedContent?.previewUrl) {
+          const videoData = {
+            title: `${project.name} - ${chapter.title}`,
+            description: chapter.script?.substring(0, 500) || `Chapter: ${chapter.title}`,
+            video_url: chapter.generatedContent.videoUrl || chapter.generatedContent.previewUrl || '',
+            thumbnail_url: chapter.generatedContent.thumbnailUrl || chapter.generatedContent.previewUrl || null,
+            region: getRegionFromLanguage(project.primaryLanguage),
+            language_code: project.primaryLanguage,
+            language_name: getLanguageName(project.primaryLanguage),
+            industry: chapter.visualTypes?.[0] || 'general',
+            content_type: chapter.visualTypes?.[0] || 'video',
+            placement: 'library',
+            display_order: project.chapters.indexOf(chapter),
+            is_active: true,
+            is_featured: false,
+            duration_seconds: chapter.duration || 30,
+            ai_confidence: 85,
+            generation_pipeline: 'composition_studio',
+          };
+
+          const { error } = await supabase.from('landing_page_videos').insert(videoData);
+          if (error) {
+            console.error('[StudioEcosystem] Failed to save chapter to database:', error);
+          } else {
+            console.log('[StudioEcosystem] Saved chapter to database:', chapter.title);
+          }
+        }
+      }
+      
+      toast.success('Content saved to Library');
+    } catch (err) {
+      console.error('[StudioEcosystem] Error saving to database:', err);
+      toast.error('Failed to save to library, but continuing to review queue');
+    }
+    
+    // Continue with session handoff for review queue
     sessionStorage.setItem('studio_handoff', JSON.stringify({
       type: 'production_hub',
       project,
       timestamp: Date.now(),
     }));
     
-    navigate('/genie-admin?tab=review-queue&from=studio');
+    navigate('/genie-admin?tab=library');
     toast.success('Sent to Review Queue');
   }, [navigate]);
+
+  // Helper functions for region/language mapping
+  const getRegionFromLanguage = (langCode: string): string => {
+    const regionMap: Record<string, string> = {
+      'en': 'NAM', 'en-US': 'NAM', 'en-GB': 'EUR',
+      'ar': 'MENA', 'ar-SA': 'MENA', 'ar-AE': 'MENA',
+      'hi': 'IND', 'te': 'IND', 'kn': 'IND', 'ta': 'IND', 'mr': 'IND', 'bn': 'IND',
+      'zh': 'CJK', 'ja': 'CJK', 'ko': 'CJK',
+      'de': 'EUR', 'fr': 'EUR', 'es': 'EUR', 'it': 'EUR', 'pt': 'EUR',
+    };
+    return regionMap[langCode] || 'NAM';
+  };
+
+  const getLanguageName = (langCode: string): string => {
+    const nameMap: Record<string, string> = {
+      'en': 'English', 'en-US': 'English (US)', 'en-GB': 'English (UK)',
+      'ar': 'Arabic', 'ar-SA': 'Arabic (Saudi)', 'ar-AE': 'Arabic (UAE)',
+      'hi': 'Hindi', 'te': 'Telugu', 'kn': 'Kannada', 'ta': 'Tamil', 'mr': 'Marathi', 'bn': 'Bengali',
+      'zh': 'Chinese', 'ja': 'Japanese', 'ko': 'Korean',
+      'de': 'German', 'fr': 'French', 'es': 'Spanish', 'it': 'Italian', 'pt': 'Portuguese',
+    };
+    return nameMap[langCode] || langCode;
+  };
 
   // ========================================
   // 6. FULL PIPELINE EXECUTION
@@ -726,6 +789,62 @@ export function useStudioEcosystem() {
     }
   }, [generateChapterFull, combineChapterVideos]);
 
+  /**
+   * Save project chapters directly to Content Library
+   * Can be called without navigating away
+   */
+  const saveToLibrary = useCallback(async (project: StudioProject): Promise<boolean> => {
+    console.log('[StudioEcosystem] Saving project to Content Library');
+    
+    try {
+      let savedCount = 0;
+      
+      for (const chapter of project.chapters) {
+        // Only save chapters that have generated content
+        if (chapter.generatedContent?.videoUrl || chapter.generatedContent?.previewUrl || chapter.generatedContent?.audioUrl) {
+          const videoData = {
+            title: `${project.name} - ${chapter.title}`,
+            description: chapter.script?.substring(0, 500) || `Chapter: ${chapter.title}`,
+            video_url: chapter.generatedContent.videoUrl || chapter.generatedContent.previewUrl || '',
+            thumbnail_url: chapter.generatedContent.thumbnailUrl || chapter.generatedContent.previewUrl || null,
+            region: getRegionFromLanguage(project.primaryLanguage),
+            language_code: project.primaryLanguage,
+            language_name: getLanguageName(project.primaryLanguage),
+            industry: chapter.visualTypes?.[0] || 'general',
+            content_type: chapter.visualTypes?.[0] || 'video',
+            placement: 'library',
+            display_order: project.chapters.indexOf(chapter),
+            is_active: true,
+            is_featured: false,
+            duration_seconds: chapter.duration || 30,
+            ai_confidence: 85,
+            generation_pipeline: 'composition_studio',
+          };
+
+          const { error } = await supabase.from('landing_page_videos').insert(videoData);
+          if (error) {
+            console.error('[StudioEcosystem] Failed to save chapter:', error);
+          } else {
+            savedCount++;
+            console.log('[StudioEcosystem] Saved chapter:', chapter.title);
+          }
+        }
+      }
+      
+      if (savedCount > 0) {
+        toast.success(`Saved ${savedCount} chapter(s) to Content Library`);
+        return true;
+      } else {
+        toast.info('No completed content to save yet. Generate content first.');
+        return false;
+      }
+    } catch (err) {
+      console.error('[StudioEcosystem] Error saving to library:', err);
+      toast.error('Failed to save to library');
+      return false;
+    }
+  }, []);
+
   return {
     // Status
     isProcessing,
@@ -765,6 +884,9 @@ export function useStudioEcosystem() {
     sendToScriptEditor,
     sendToVideoEditor,
     sendToProductionHub,
+    
+    // Library persistence
+    saveToLibrary,
     
     // Full pipeline
     generateChapterFull,

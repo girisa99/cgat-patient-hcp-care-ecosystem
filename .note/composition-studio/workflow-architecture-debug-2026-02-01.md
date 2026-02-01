@@ -87,9 +87,32 @@ PUBLISH STEP
     3. Chapter 3: script → audio → video
     4. COMBINE: Stitch videos 1+2+3 into single output
 
+## Data Persistence Flow (FIXED 2026-02-01)
+
+### Issue Found: Library Was Empty
+- **Root Cause**: ContentLibrary reads from `landing_page_videos` table
+- **Problem**: SimpleCompositionStudio only saved to localStorage, not database
+- **Fix Applied**: 
+  - `sendToProductionHub()` now saves chapters to `landing_page_videos` table
+  - Added new `saveToLibrary()` function for direct DB save without navigation
+  - Added "Save to Library" button in Create step
+  - Projects now persist to both localStorage (for draft recovery) AND database (for Library visibility)
+
+### Persistence Architecture
+```
+CREATE (localStorage draft)
+  ↓ "Save to Library" or "Send to Review"
+DATABASE (landing_page_videos table)
+  ↓
+LIBRARY TAB (reads from landing_page_videos)
+  ↓
+SCHEDULER → DISTRIBUTION
+```
+
 ## Debug Checklist
 
 1. Check console logs for `[Studio]` prefixed messages
 2. Check edge function logs for `multi-provider-tts`
 3. Verify `audioUrl` in chapter's `generatedContent` object
 4. Check network tab for failed edge function calls
+5. Verify `landing_page_videos` table has data after saving
