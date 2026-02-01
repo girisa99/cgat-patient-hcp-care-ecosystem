@@ -25,23 +25,26 @@ const corsHeaders = {
 
 const MODELSLAB_BASE_URL = 'https://modelslab.com/api/v6';
 
-// Model presets for different use cases
+// Model presets for different use cases - Updated 2026-02-01
 const MODEL_PRESETS = {
-  // Image Models
-  'realistic': 'realistic-vision-v51',
-  'sdxl': 'sdxl',
-  'sd3': 'sd3',
-  'flux-schnell': 'flux-schnell',
+  // Image Models (Use actual ModelsLab model IDs)
+  'realistic': 'realistic-vision-v5-1-inpainting', // Use actual model ID
+  'sdxl': 'sdxl-base-1.0',
+  'sd3': 'sd3-medium',
+  'flux-schnell': 'flux-schnell', // May need enterprise access
   'flux-dev': 'flux-dev',
-  'midjourney-style': 'midjourney',
+  'midjourney-style': 'midjourney-v4',
   'anime': 'anything-v5',
-  'dreamshaper': 'dreamshaper-8',
-  'protogen': 'protogen-x34',
+  'dreamshaper': 'dreamshaper-xl',
+  'protogen': 'protogen-x3.4',
+  'juggernaut': 'juggernaut-xl-v9',
+  // Stable Diffusion Default
+  'default': 'sdxl-base-1.0',
   // Video Models
-  'animatediff': 'animatediff',
-  'svd': 'stable-video-diffusion',
+  'animatediff': 'animatediff-v2',
+  'svd': 'stable-video-diffusion-img2vid',
   // Audio Models
-  'musicgen': 'musicgen',
+  'musicgen': 'musicgen-medium',
   'bark': 'bark',
 };
 
@@ -124,7 +127,7 @@ serve(async (req) => {
 
     let endpoint: string;
     let requestBody: Record<string, unknown>;
-    const selectedModel = model ? (MODEL_PRESETS[model as keyof typeof MODEL_PRESETS] || model) : MODEL_PRESETS.sdxl;
+    const selectedModel = model ? (MODEL_PRESETS[model as keyof typeof MODEL_PRESETS] || model) : MODEL_PRESETS.default;
 
     switch (type) {
       case 'image':

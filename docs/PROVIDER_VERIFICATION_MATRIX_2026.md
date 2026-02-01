@@ -169,10 +169,15 @@ Video: Sora2API → ModelsLab → Alibaba WAN 2.6 fallback
 - **Cause:** China account requires identity verification + payment setup
 - **Action:** Complete verification in [DashScope Console](https://dashscope.console.aliyun.com/)
 
-### ModelsLab API Format
-- **Issue:** `Unsupported type: undefined` error
-- **Cause:** API expects `type` parameter instead of `taskType`
-- **Action:** Update edge function to use correct parameter name
+### ModelsLab API
+- **Status:** ✅ Operational (Fixed 2026-02-01)
+- **Test:** Image generation confirmed working
+- **Response:** `{"status": "processing", "id": 168450125}`
+
+### Stripe Integration
+- **Account:** ✅ Connected (`acct_1SoCi5CEkh96ps4f` - Genie Studio sandbox)
+- **Status:** Fully operational
+- **Features:** One-time payments, subscriptions, customer portal
 
 ---
 
