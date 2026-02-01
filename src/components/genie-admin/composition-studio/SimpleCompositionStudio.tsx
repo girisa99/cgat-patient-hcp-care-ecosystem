@@ -1759,13 +1759,31 @@ IMPORTANT:
       
       if (chapter.voiceSource === 'tts' && script) {
         updateChapter(chapter.id, { progress: 50 });
-        console.log('[Studio] Generating TTS with regional routing for:', primaryLanguage);
+        console.log('[Studio] Generating TTS with regional routing for:', primaryLanguage, 'script length:', script.length);
         
         try {
           // Primary language TTS using ecosystem service
           const voiceResult = await ecosystemServices.generateVoiceover(script, primaryLanguage);
           audioUrl = voiceResult.audioUrl;
-          console.log('[Studio] Primary TTS complete, provider:', voiceResult.provider);
+          
+          if (!audioUrl) {
+            console.warn('[Studio] TTS returned no audioUrl, trying direct edge function');
+            // Direct fallback to multi-provider-tts
+            const { data: directTTS, error: directError } = await supabase.functions.invoke('multi-provider-tts', {
+              body: { 
+                text: script.substring(0, 4000), 
+                languageCode: primaryLanguage,
+                provider: 'openai',
+                tier: 'advanced'
+              }
+            });
+            if (!directError && directTTS?.audioUrl) {
+              audioUrl = directTTS.audioUrl;
+              console.log('[Studio] Direct TTS succeeded');
+            }
+          }
+          
+          console.log('[Studio] Primary TTS complete, provider:', voiceResult.provider, 'hasAudio:', !!audioUrl);
           
           // Additional languages TTS
           if (Object.keys(transcreatedScripts).length > 0) {
@@ -1774,17 +1792,27 @@ IMPORTANT:
             console.log('[Studio] Multi-language audio complete for', Object.keys(transcreatedAudio).length, 'languages');
           }
         } catch (e) {
-          console.warn('[Studio] TTS fallback used:', e);
-          // Fallback to basic TTS
+          const errorMsg = e instanceof Error ? e.message : String(e);
+          console.warn('[Studio] TTS error:', errorMsg);
+          toast.warning(`TTS: ${errorMsg.substring(0, 60)}`);
+          
+          // Fallback to basic OpenAI TTS
           try {
-            const { data: ttsData } = await supabase.functions.invoke('text-to-speech', {
-              body: { text: script.substring(0, 1000), voice: 'alloy', model: 'tts-1' }
+            console.log('[Studio] Trying OpenAI text-to-speech fallback...');
+            const { data: ttsData, error: ttsError } = await supabase.functions.invoke('openai-tts', {
+              body: { text: script.substring(0, 3000), voice: 'alloy' }
             });
-            if (ttsData?.audioContent) {
+            if (!ttsError && ttsData?.audioContent) {
               audioUrl = `data:audio/mp3;base64,${ttsData.audioContent}`;
+              console.log('[Studio] OpenAI TTS fallback succeeded');
+            } else if (!ttsError && ttsData?.audioUrl) {
+              audioUrl = ttsData.audioUrl;
+              console.log('[Studio] OpenAI TTS fallback succeeded (URL)');
+            } else {
+              console.warn('[Studio] OpenAI TTS fallback failed:', ttsError?.message || 'No data');
             }
           } catch (fallbackError) {
-            console.warn('[Studio] TTS completely skipped');
+            console.warn('[Studio] TTS completely skipped:', fallbackError);
           }
         }
       }
@@ -2354,16 +2382,40 @@ Primary Language: ${primaryLanguage}`;
                 case 'audio': {
                   // Regenerate just the audio using TTS
                   const scriptText = chapter.script || chapter.generatedContent?.script || chapter.title;
-                  const voiceResult = await ecosystemServices.generateVoiceover(scriptText, primaryLanguage);
+                  console.log('[Studio] Regenerating audio for:', primaryLanguage, 'text length:', scriptText.length);
                   
-                  if (voiceResult.audioUrl) {
+                  let audioUrl: string | undefined;
+                  
+                  try {
+                    const voiceResult = await ecosystemServices.generateVoiceover(scriptText, primaryLanguage);
+                    audioUrl = voiceResult.audioUrl;
+                  } catch (voiceErr) {
+                    console.warn('[Studio] Ecosystem TTS failed, trying direct:', voiceErr);
+                  }
+                  
+                  // Direct fallback if ecosystem failed
+                  if (!audioUrl) {
+                    const { data: directTTS, error: directError } = await supabase.functions.invoke('multi-provider-tts', {
+                      body: { 
+                        text: scriptText.substring(0, 4000), 
+                        languageCode: primaryLanguage,
+                        provider: 'openai'
+                      }
+                    });
+                    if (!directError && directTTS?.audioUrl) {
+                      audioUrl = directTTS.audioUrl;
+                      console.log('[Studio] Direct TTS succeeded for regeneration');
+                    }
+                  }
+                  
+                  if (audioUrl) {
                     // FIXED: Only update audio confidence, preserve other scores
                     const existingConfidence = chapter.generatedContent?.confidenceScores || {};
                     const newAudioConfidence = 88 + Math.floor(Math.random() * 10);
                     updateChapter(chapter.id, {
                       generatedContent: { 
                         ...chapter.generatedContent, 
-                        audioUrl: voiceResult.audioUrl,
+                        audioUrl: audioUrl,
                         confidenceScores: {
                           ...existingConfidence,
                           audio: newAudioConfidence
@@ -2372,7 +2424,7 @@ Primary Language: ${primaryLanguage}`;
                     });
                     toast.success(`Audio regenerated! Quality: ${newAudioConfidence}%`);
                   } else {
-                    throw new Error('Failed to generate audio');
+                    throw new Error('No audio URL returned from TTS providers');
                   }
                   break;
                 }
