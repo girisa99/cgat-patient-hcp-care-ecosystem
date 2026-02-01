@@ -1031,17 +1031,23 @@ export const AskGenie: React.FC<AskGenieProps> = ({
       });
       
       // Auto-minimize when action buttons visible, restore when they're not
-      // BUT skip auto-minimize if user explicitly opened the chat
+      // BUT NEVER auto-minimize when:
+      // 1. The chat is already open (isOpen = true)
+      // 2. User explicitly opened it recently (userOpenedExplicitly.current = true)
+      // 3. Already minimized by user (isMinimized = true)
       if (hasVisibleActionButton || scrolledToBottom) {
-        if (!isAutoMinimized && !isMinimized && !userOpenedExplicitly.current) {
+        // Only auto-minimize the TRIGGER BUTTON, never the open chat panel
+        if (!isAutoMinimized && !isMinimized && !isOpen && !userOpenedExplicitly.current) {
           setIsAutoMinimized(true);
         }
       } else {
-        if (isAutoMinimized) {
+        if (isAutoMinimized && !isOpen) {
           setIsAutoMinimized(false);
         }
-        // Clear the explicit open flag once conditions are safe
-        userOpenedExplicitly.current = false;
+        // Only clear the explicit open flag when conditions are safe AND chat is closed
+        if (!isOpen) {
+          userOpenedExplicitly.current = false;
+        }
       }
       
       lastScrollY.current = window.scrollY;
@@ -1482,7 +1488,7 @@ USER MESSAGE: ${text}
           animate={{ scale: 1, opacity: 0.85 }}
           whileHover={{ scale: 1.05, opacity: 1 }}
           className={cn(
-            "fixed z-10",
+            "fixed z-50",
             corner === 'bottom-right' && "bottom-6 right-6",
             corner === 'bottom-left' && "bottom-6 left-6",
             corner === 'top-right' && "top-20 right-6",
@@ -1491,7 +1497,10 @@ USER MESSAGE: ${text}
           style={{ touchAction: 'none' }}
         >
           <div
-            onClick={handleTriggerClick}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleTriggerClick();
+            }}
             className="h-12 w-12 rounded-full shadow-lg bg-gradient-to-br from-purple-100 to-violet-100 hover:from-purple-200 hover:to-violet-200 border-2 border-purple-200 flex items-center justify-center cursor-pointer"
             title="Ask Genie - Click to expand, drag to reposition"
           >
@@ -1519,7 +1528,7 @@ USER MESSAGE: ${text}
         animate={{ scale: 1, opacity: 1 }}
         whileHover={{ scale: 1.02 }}
         className={cn(
-          "fixed z-10",
+          "fixed z-50",
           corner === 'bottom-right' && "bottom-6 right-6",
           corner === 'bottom-left' && "bottom-6 left-6",
           corner === 'top-right' && "top-20 right-6",
@@ -1528,7 +1537,10 @@ USER MESSAGE: ${text}
         style={{ touchAction: 'none' }}
       >
         <div
-          onClick={handleTriggerClick}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleTriggerClick();
+          }}
           className="relative h-auto w-auto rounded-2xl shadow-2xl px-4 py-3 bg-background hover:bg-muted border-2 transition-all duration-300 group cursor-pointer border-purple-200 hover:border-purple-300"
         >
           <div className="flex items-center gap-3">
@@ -1591,11 +1603,13 @@ USER MESSAGE: ${text}
           y: 0
         }}
         exit={{ opacity: 0, scale: 0.95, y: corner.startsWith('bottom') ? 20 : -20 }}
+        onClick={(e) => e.stopPropagation()} // Prevent clicks from bubbling
+        onPointerDown={(e) => e.stopPropagation()} // Prevent pointer events from bubbling
         className={cn(
           "flex flex-col bg-background border rounded-xl shadow-2xl overflow-hidden transition-all duration-300",
-          // Floating mode - positioned based on corner
+          // Floating mode - positioned based on corner with HIGH z-index
           position === 'floating' && cn(
-            "fixed sm:w-[380px] w-[320px] z-10 pointer-events-auto",
+            "fixed sm:w-[380px] w-[320px] z-[99999] pointer-events-auto",
             getPanelPositionClasses(),
             isAutoMinimized ? "max-h-[60px]" : "max-h-[min(550px,65vh)]"
           ),
@@ -1603,6 +1617,7 @@ USER MESSAGE: ${text}
           position === 'inline' && "w-full h-[500px]",
           className
         )}
+        style={{ zIndex: 99999 }} // Inline override for maximum priority
         role="dialog"
         aria-labelledby="ask-genie-title"
         aria-describedby="ask-genie-description"
