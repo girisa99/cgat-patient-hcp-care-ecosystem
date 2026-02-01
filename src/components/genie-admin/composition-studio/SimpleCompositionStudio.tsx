@@ -3,6 +3,7 @@
  * 
  * Streamlined 2-step content creation with:
  * - IP-based primary language detection
+ * - Project picker dropdown for draft management
  * - Multi-select dropdowns for templates, languages, visual types
  * - No nested cards/iframes
  * - Voice/music per chapter OR entire video
@@ -44,6 +45,7 @@ import { useLabelStudioBackground } from '@/services/labelStudioBackgroundServic
 import { ChapterPreviewPanel } from './ChapterPreviewPanel';
 import { ReviewEnhanceStep } from './ReviewEnhanceStep';
 import { GeneratedAssetsSidebar, GeneratedAssetsTrigger } from './GeneratedAssetsSidebar';
+import { ProjectPickerDropdown, StoredProjectInfo } from './ProjectPickerDropdown';
 
 // ============================================
 // INDUSTRY-SPECIFIC TEMPLATES (Multi-select ready) - 80+ templates
@@ -931,7 +933,6 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
   
   // Project history for switching
   const [projectHistory, setProjectHistory] = useState<StoredProject[]>([]);
-  const [showProjectPicker, setShowProjectPicker] = useState(false);
   
   // Audio settings scope
   const [audioScope, setAudioScope] = useState<'chapter' | 'entire'>('entire');
@@ -1120,7 +1121,6 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
       setProjectHistory(loadAllProjects());
       
       toast.success(`Loaded: ${project.projectName}`);
-      setShowProjectPicker(false);
     }
   }, [currentProjectId, projectName, chapters, primaryLanguage, additionalLanguages, selectedTemplates, selectedVisualTypes, audioScope, scriptScope, outputMode]);
   
@@ -1142,7 +1142,6 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
     sessionStorage.removeItem('studio_current_draft');
     
     toast.info('Started new project');
-    setShowProjectPicker(false);
   }, []);
   
   // Track user actions for Label Studio learning
@@ -2698,92 +2697,42 @@ Primary Language: ${primaryLanguage}`;
       <div className="space-y-4">
         <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Setup</h3>
         
-        {/* PROJECT SELECTOR - Prominent dropdown for switching projects */}
-        {projectHistory.length > 1 && (
-          <div className="p-3 border rounded-lg bg-muted/30 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Layers className="w-5 h-5 text-primary" />
-              <div>
-                <p className="text-xs text-muted-foreground">Current Project</p>
-                <p className="font-medium">{projectName || 'Untitled Project'}</p>
-              </div>
-            </div>
+        {/* CONSOLIDATED PROJECT PICKER - Always visible dropdown */}
+        <div className="p-3 border rounded-lg bg-muted/30 space-y-3">
+          <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-2">
-              <SearchableSelect
-                options={projectHistory.map(p => ({
-                  id: p.id,
-                  value: p.id,
-                  label: p.projectName || 'Untitled',
-                  category: `${p.chapters?.length || 0} chapters`
-                }))}
-                value={currentProjectId}
-                onValueChange={(id) => loadProject(id)}
-                placeholder="Switch project..."
-                className="w-[200px]"
-              />
-              <Button size="sm" variant="outline" onClick={startNewProject} className="gap-1">
-                <Plus className="w-3 h-3" /> New
-              </Button>
+              <Layers className="w-5 h-5 text-primary" />
+              <span className="font-medium text-sm">Project</span>
             </div>
+            <ProjectPickerDropdown
+              projects={projectHistory.map(p => ({
+                id: p.id,
+                projectName: p.projectName,
+                chapters: p.chapters,
+                primaryLanguage: p.primaryLanguage,
+                additionalLanguages: p.additionalLanguages,
+                savedAt: p.savedAt,
+                createdAt: p.createdAt,
+              } as StoredProjectInfo))}
+              currentProjectId={currentProjectId}
+              currentProjectName={projectName || 'Untitled Project'}
+              onSelectProject={loadProject}
+              onNewProject={startNewProject}
+            />
           </div>
-        )}
+          
+          {/* Inline project name edit */}
+          <div className="flex items-center gap-2">
+            <Input
+              value={projectName}
+              onChange={(e) => setProjectName(e.target.value)}
+              placeholder="Enter project name..."
+              className="flex-1 h-9"
+            />
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Project Name */}
-          <div className="space-y-2">
-            <Label className="flex items-center justify-between">
-              <span>Project Name *</span>
-              {projectHistory.length > 0 && (
-                <Collapsible open={showProjectPicker} onOpenChange={setShowProjectPicker}>
-                  <CollapsibleTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-6 text-xs gap-1">
-                      <Layers className="w-3 h-3" />
-                      {projectHistory.length} saved
-                      <ChevronDown className={cn("w-3 h-3 transition-transform", showProjectPicker && "rotate-180")} />
-                    </Button>
-                  </CollapsibleTrigger>
-                </Collapsible>
-              )}
-            </Label>
-            <div className="flex gap-2">
-              <Input
-                value={projectName}
-                onChange={(e) => setProjectName(e.target.value)}
-                placeholder="My Video Project"
-                className="flex-1"
-              />
-              <Button variant="outline" size="icon" onClick={startNewProject} title="Start new project">
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-            {/* Project History Picker (collapsible) */}
-            {showProjectPicker && projectHistory.length > 0 && (
-              <div className="border rounded-lg p-2 space-y-1 bg-background shadow-lg max-h-48 overflow-y-auto z-50">
-                <p className="text-xs text-muted-foreground font-medium px-2 py-1">Recent Projects</p>
-                {projectHistory.map((project) => (
-                  <div 
-                    key={project.id}
-                    onClick={() => loadProject(project.id)}
-                    className={cn(
-                      "flex items-center justify-between p-2 rounded hover:bg-muted cursor-pointer",
-                      project.id === currentProjectId && "bg-primary/10 border border-primary/30"
-                    )}
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{project.projectName || 'Untitled'}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {project.chapters?.length || 0} chapters • {new Date(project.savedAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                    {project.id === currentProjectId && (
-                      <Badge variant="secondary" className="text-[10px] ml-2">Current</Badge>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
           {/* Primary Language (IP-based default) */}
           <div className="space-y-2">
             <Label className="flex items-center gap-2">
