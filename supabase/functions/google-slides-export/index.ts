@@ -35,7 +35,20 @@ serve(async (req) => {
 
   try {
     const url = new URL(req.url);
-    const action = url.searchParams.get('action') || 'export';
+    
+    // Check action from query params first, then from body
+    let action = url.searchParams.get('action');
+    
+    if (!action && req.method === 'POST') {
+      try {
+        const bodyClone = req.clone();
+        const bodyData = await bodyClone.json().catch(() => ({}));
+        action = bodyData.action || 'export';
+      } catch {
+        action = 'export';
+      }
+    }
+    action = action || 'export';
 
     console.log(`[Google Slides Export] Action: ${action}`);
 
