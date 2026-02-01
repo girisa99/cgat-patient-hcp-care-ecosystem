@@ -1,284 +1,314 @@
 # AI Provider Verification Matrix - February 2026
 
-> **Verification Date:** 2026-02-01T23:07:00Z  
-> **Status:** ✅ 15/15 Providers Configured & Verified (100%)  
-> **Geo-Compliance:** ✅ Operational (Tested from NL → Claude Zone)  
-> **Routing Intelligence:** ✅ Operational (13 Intent Categories Active)
-
-## Executive Summary
-
-All 15 primary AI providers are fully configured with API keys and available for routing. The 4-Zone Regional Intelligence Architecture is operational.
+> **Verification Date:** 2026-02-01  
+> **Status:** ✅ 17 Providers Configured (incl. Meshy 3D, Vertex AI Veo)  
+> **Geo-Compliance:** ✅ Operational (4-Zone Architecture Active)  
+> **Routing Intelligence:** ✅ Operational (13 Intent Categories)
 
 ---
 
-## Provider Status Matrix
+## 🌍 COMPLETE 4-ZONE REGIONAL ROUTING MATRIX
 
-### TIER 1: Primary Providers (Core 10)
+### Zone Architecture Overview
 
-| Provider | Status | Capabilities | Zone Priority |
-|----------|--------|--------------|---------------|
-| **OpenAI** | ✅ Available | LLM, Translation, TTS, STT, Image Gen, Vision, NLP | Fallback Global |
-| **Claude** | ✅ Available | LLM, Translation, Vision, NLP, Long Context | Claude Zone (US/EU/West) |
-| **Gemini** | ✅ Available | LLM, Translation, OCR, TTS, STT, Image Gen, Vision, NLP | Gemini Zone (India/SEA/Africa) |
-| **Vertex AI (Veo)** | ✅ Available | Video Gen (Veo 2/3), Image Gen (Imagen 3) | Global Premium Video |
-| **DeepSeek** | ✅ Available | LLM, Translation, OCR, Vision, NLP | CJK Low-Cost Fallback |
-| **Alibaba** | ✅ Available | LLM, Translation, OCR, TTS, STT, Image Gen, Video Gen, Vision, NLP, Avatar, Lipsync | Alibaba Zone (CJK/Arabic) |
-| **Deepgram** | ✅ Available | STT, Realtime STT (<100ms) | Global Primary STT |
-| **Sora2API** | ✅ Available | Video Gen, Cinematic, Realistic, Commercial | Global Primary Video |
-| **ElevenLabs** | ✅ Available | TTS, Voice Clone, SFX Gen, Music Gen | Claude Zone TTS |
-| **DeepL** | ✅ Available | Translation | Claude Zone Translation |
+| ZONE | REGIONS/COUNTRIES | PRIMARY LLM | PRIMARY TTS | PRIMARY TRANSLATION |
+|------|-------------------|-------------|-------------|---------------------|
+| **CLAUDE ZONE** | US, UK, EU, Brazil, Israel, South Africa, Russia | Claude 3.5 Sonnet | ElevenLabs | DeepL |
+| **ALIBABA ZONE** | Japan, Korea, China, HK, Taiwan, MEA (Arabic) | Qwen-Max | CosyVoice | Qwen-MT |
+| **GEMINI ZONE** | India, Pakistan, SEA, Africa | Gemini Pro | Azure Neural | Google Translate |
+| **FALLBACK ZONE** | When primary fails globally | GPT-4o | OpenAI TTS | Azure Translator |
+
+---
+
+## 📊 LLM ROUTING BY ZONE (Detailed)
+
+### Claude Zone (Western Markets)
+
+| Language | Code | Primary LLM | Fallback | Quality |
+|----------|------|-------------|----------|---------|
+| English (US) | en-US | claude-3-5-sonnet | gpt-4o | ⭐⭐⭐⭐⭐ |
+| English (UK) | en-GB | claude-3-5-sonnet | gpt-4o | ⭐⭐⭐⭐⭐ |
+| German | de | claude-3-5-sonnet | gpt-4o | ⭐⭐⭐⭐⭐ |
+| French | fr | claude-3-5-sonnet | gpt-4o | ⭐⭐⭐⭐⭐ |
+| Spanish | es | claude-3-5-sonnet | gpt-4o | ⭐⭐⭐⭐⭐ |
+| Italian | it | claude-3-5-sonnet | gpt-4o | ⭐⭐⭐⭐⭐ |
+| Portuguese (BR) | pt-BR | claude-3-5-sonnet | gpt-4o | ⭐⭐⭐⭐⭐ |
+| Portuguese (PT) | pt-PT | claude-3-5-sonnet | gpt-4o | ⭐⭐⭐⭐⭐ |
+| Dutch | nl | claude-3-5-sonnet | gpt-4o | ⭐⭐⭐⭐⭐ |
+| Polish | pl | claude-3-5-sonnet | gpt-4o | ⭐⭐⭐⭐⭐ |
+| Russian | ru | claude-3-5-sonnet | gpt-4o | ⭐⭐⭐⭐⭐ |
+| Hebrew | he | claude-3-5-sonnet | gpt-4o | ⭐⭐⭐⭐ |
+
+### Alibaba Zone (CJK + Arabic)
+
+| Language | Code | Primary LLM | Fallback | Quality | Notes |
+|----------|------|-------------|----------|---------|-------|
+| Japanese | ja | qwen-max | gpt-4o | ⭐⭐⭐⭐⭐ | Native CJK |
+| Korean | ko | qwen-max | gpt-4o | ⭐⭐⭐⭐⭐ | Native CJK |
+| Chinese (Simplified) | zh-CN | qwen-max | gpt-4o | ⭐⭐⭐⭐⭐ | Native CJK |
+| Chinese (Traditional) | zh-TW | qwen-max | gpt-4o | ⭐⭐⭐⭐⭐ | Native CJK |
+| Chinese (HK) | zh-HK | qwen-max | gpt-4o | ⭐⭐⭐⭐⭐ | Cantonese |
+| Arabic (MSA) | ar | qwen-max | gpt-4o | ⭐⭐⭐⭐⭐ | **7 dialects - MOAT** |
+| Arabic (Egyptian) | ar-EG | qwen-max | gpt-4o | ⭐⭐⭐⭐⭐ | Egyptian dialect |
+| Arabic (Saudi) | ar-SA | qwen-max | gpt-4o | ⭐⭐⭐⭐⭐ | Gulf dialect |
+| Arabic (UAE) | ar-AE | qwen-max | gpt-4o | ⭐⭐⭐⭐⭐ | Gulf dialect |
+| Arabic (Moroccan) | ar-MA | qwen-max | gpt-4o | ⭐⭐⭐⭐ | Maghrebi dialect |
+| Arabic (Iraqi) | ar-IQ | qwen-max | gpt-4o | ⭐⭐⭐⭐ | Mesopotamian dialect |
+
+### Gemini Zone (India/SEA/Africa)
+
+| Language | Code | Primary LLM | Fallback | Quality | Notes |
+|----------|------|-------------|----------|---------|-------|
+| Hindi | hi | gemini-pro | gpt-4o | ⭐⭐⭐⭐⭐ | **22 Indian languages - MOAT** |
+| Bengali | bn | gemini-pro | gpt-4o | ⭐⭐⭐⭐⭐ | 2nd most spoken in India |
+| Telugu | te | gemini-pro | gpt-4o | ⭐⭐⭐⭐⭐ | South India |
+| Tamil | ta | gemini-pro | gpt-4o | ⭐⭐⭐⭐⭐ | South India |
+| Marathi | mr | gemini-pro | gpt-4o | ⭐⭐⭐⭐ | Maharashtra |
+| Gujarati | gu | gemini-pro | gpt-4o | ⭐⭐⭐⭐ | Gujarat |
+| Kannada | kn | gemini-pro | gpt-4o | ⭐⭐⭐⭐ | Karnataka |
+| Malayalam | ml | gemini-pro | gpt-4o | ⭐⭐⭐⭐ | Kerala |
+| Punjabi | pa | gemini-pro | gpt-4o | ⭐⭐⭐⭐ | Punjab |
+| Urdu | ur | gemini-pro | gpt-4o | ⭐⭐⭐⭐ | Pakistan/India |
+| Indonesian | id | gemini-pro | gpt-4o | ⭐⭐⭐⭐ | SEA |
+| Vietnamese | vi | gemini-pro | gpt-4o | ⭐⭐⭐⭐ | SEA |
+| Thai | th | gemini-pro | gpt-4o | ⭐⭐⭐⭐ | SEA |
+| Filipino | fil | gemini-pro | gpt-4o | ⭐⭐⭐⭐ | SEA |
+| Malay | ms | gemini-pro | gpt-4o | ⭐⭐⭐⭐ | SEA |
+| Swahili | sw | gemini-pro | gpt-4o | ⭐⭐⭐⭐⭐ | **African FIRST MOVER** |
+| Yoruba | yo | gemini-pro | gpt-4o | ⭐⭐⭐⭐ | Nigeria |
+| Hausa | ha | gemini-pro | gpt-4o | ⭐⭐⭐ | Nigeria |
+| Igbo | ig | gemini-pro | gpt-4o | ⭐⭐⭐ | Nigeria |
+| Amharic | am | gemini-pro | gpt-4o | ⭐⭐⭐⭐ | Ethiopia |
+| Zulu | zu | gemini-pro | gpt-4o | ⭐⭐⭐⭐ | South Africa |
+
+---
+
+## 🎤 TTS ROUTING BY ZONE (Detailed)
+
+### Claude Zone TTS
+
+| Language | Primary TTS | Fallback | Quality | Provider Notes |
+|----------|-------------|----------|---------|----------------|
+| English (US/UK/AU) | elevenlabs | openai-tts | ⭐⭐⭐⭐⭐ | Premium voices |
+| German | elevenlabs | azure-neural | ⭐⭐⭐⭐⭐ | Natural European |
+| French | elevenlabs | azure-neural | ⭐⭐⭐⭐⭐ | Natural European |
+| Spanish | elevenlabs | azure-neural | ⭐⭐⭐⭐⭐ | ES + MX variants |
+| Italian | elevenlabs | azure-neural | ⭐⭐⭐⭐⭐ | Natural European |
+| Portuguese (BR/PT) | elevenlabs | azure-neural | ⭐⭐⭐⭐⭐ | Both variants |
+| Dutch | elevenlabs | azure-neural | ⭐⭐⭐⭐⭐ | Netherlands |
+| Polish | elevenlabs | azure-neural | ⭐⭐⭐⭐⭐ | Eastern European |
+| Russian | elevenlabs | azure-neural | ⭐⭐⭐⭐⭐ | Slavic |
+
+### Alibaba Zone TTS
+
+| Language | Primary TTS | Fallback | Quality | Provider Notes |
+|----------|-------------|----------|---------|----------------|
+| Japanese | alibaba-cosyvoice | azure-neural | ⭐⭐⭐⭐⭐ | Native CJK prosody |
+| Korean | alibaba-cosyvoice | azure-neural | ⭐⭐⭐⭐⭐ | Native CJK prosody |
+| Chinese (CN/TW) | alibaba-cosyvoice | azure-neural | ⭐⭐⭐⭐⭐ | Native Mandarin |
+| Chinese (HK) | azure-neural | google-tts | ⭐⭐⭐⭐ | Cantonese support |
+| Arabic (all 7 dialects) | azure-neural | google-tts | ⭐⭐⭐⭐⭐ | **MOAT: 7 dialects** |
+
+### Gemini Zone TTS
+
+| Language | Primary TTS | Fallback | Quality | Provider Notes |
+|----------|-------------|----------|---------|----------------|
+| Hindi/Bengali/Telugu/Tamil | azure-neural | google-tts | ⭐⭐⭐⭐⭐ | Indian languages |
+| All other Indic (22 total) | azure-neural | google-tts | ⭐⭐⭐⭐ | Complete coverage |
+| SEA Languages (ID/VI/TH/FIL/MS) | azure-neural | google-tts | ⭐⭐⭐⭐ | SEA coverage |
+| Swahili | azure-neural | google-tts | ⭐⭐⭐⭐⭐ | African FIRST MOVER |
+| Other African | azure-neural | google-tts | ⭐⭐⭐⭐ | YO/HA/IG/ZU/AM |
+
+---
+
+## 🌐 TRANSLATION ROUTING BY ZONE
+
+| Zone | Languages | Primary | Fallback 1 | Fallback 2 |
+|------|-----------|---------|------------|------------|
+| **Claude** | European (DE/FR/ES/IT/PT/NL/PL/RU) | DeepL | Azure Translator | Google |
+| **Claude** | English | DeepL | Google Translate | - |
+| **Alibaba** | Japanese/Korean | Qwen-MT | DeepL | Google |
+| **Alibaba** | Chinese (CN/TW) | Qwen-MT | Google Translate | - |
+| **Alibaba** | Arabic (all) | Azure Translator | Google Translate | - |
+| **Gemini** | Indian Languages | Google Translate | Azure Translator | - |
+| **Gemini** | SEA Languages | Google Translate | Azure Translator | - |
+| **Gemini** | African Languages | Google Translate | NLLB | - |
+
+---
+
+## 🎙️ STT ROUTING BY ZONE
+
+| Zone | Languages | Primary | Fallback | Real-time |
+|------|-----------|---------|----------|-----------|
+| **Claude** | English | elevenlabs-scribe | whisper | Deepgram (<100ms) |
+| **Claude** | European | whisper | azure-stt | Deepgram |
+| **Alibaba** | CJK | alibaba-paraformer | whisper | Deepgram |
+| **Alibaba** | Arabic | whisper | azure-stt | Deepgram |
+| **Gemini** | Indian | whisper | azure-stt | Deepgram |
+| **Gemini** | African | whisper | google-stt | Deepgram |
+
+> **Deepgram is PRIMARY for all real-time STT** across all zones (<100ms latency).
+
+---
+
+## 🎬 VIDEO GENERATION - Cascade Routing
+
+| Priority | Provider | Capabilities | Quality |
+|----------|----------|--------------|---------|
+| **P1** | Sora2API | Cinematic, Commercial, Documentary, Film | ⭐⭐⭐⭐⭐ |
+| **P2** | Vertex AI Veo 2/3 | High-fidelity, Premium Video | ⭐⭐⭐⭐⭐ |
+| **P3** | ModelsLab | AnimateDiff, SVD, Animation | ⭐⭐⭐⭐ |
+| **P4** | Alibaba WAN 2.6 | Video generation (International) | ⭐⭐⭐⭐ |
+| **P5** | Replicate | Open-source fallback | ⭐⭐⭐ |
+
+---
+
+## 🎨 IMAGE GENERATION - Cascade Routing
+
+| Priority | Provider | Models | Quality |
+|----------|----------|--------|---------|
+| **P1** | ModelsLab | FLUX Pro, FLUX Schnell, SDXL | ⭐⭐⭐⭐⭐ |
+| **P2** | Vertex AI | Imagen 3 | ⭐⭐⭐⭐⭐ |
+| **P3** | OpenAI | DALL-E 3 | ⭐⭐⭐⭐ |
+| **P4** | Replicate | Open-source models | ⭐⭐⭐ |
+
+---
+
+## 🧊 3D GENERATION - Meshy AI (GLOBAL)
+
+> **Meshy AI is the PRIMARY 3D provider globally** - NOT zone-based.
+
+| Capability | Provider | Fallback | Output Formats | Quality |
+|------------|----------|----------|----------------|---------|
+| **Text-to-3D** | Meshy AI | Replicate TripoSR | GLTF, USDZ, FBX, OBJ | ⭐⭐⭐⭐⭐ |
+| **Image-to-3D** | Meshy AI | Replicate TripoSR | GLTF, USDZ, FBX | ⭐⭐⭐⭐⭐ |
+| **Text-to-Texture** | Meshy AI | - | PBR Maps | ⭐⭐⭐⭐⭐ |
+| **3D Rigging** | Meshy AI | - | Animated GLTF | ⭐⭐⭐⭐⭐ |
+| **Product 360°** | Meshy AI | ModelsLab | Turntable Video | ⭐⭐⭐⭐ |
+| **Character Model** | Meshy AI | Alibaba | Rigged Character | ⭐⭐⭐⭐⭐ |
+
+---
+
+## 🥽 VR/AR GENERATION - Global Routing
+
+> **VR/AR uses Meshy + complementary providers globally**
+
+| Pipeline | Primary | Secondary | Output | Quality |
+|----------|---------|-----------|--------|---------|
+| **text-to-vr** | Meshy AI | Alibaba 3D | VR Scene (GLTF) | ⭐⭐⭐⭐ |
+| **text-to-ar** | Meshy AI | Replicate | AR Model (USDZ/GLTF) | ⭐⭐⭐⭐ |
+| **3d-to-vr** | Meshy AI | ModelsLab | VR Environment | ⭐⭐⭐⭐ |
+| **3d-to-ar** | Meshy AI | Replicate | AR Object | ⭐⭐⭐⭐ |
+| **scene-to-vr** | Meshy + Sora2API | ModelsLab | 360° VR Scene | ⭐⭐⭐⭐ |
+| **scene-to-ar** | Meshy AI | Replicate | AR Scene | ⭐⭐⭐⭐ |
+| **immersive-training** | Meshy + Sora2API | ModelsLab | 360° + 3D | ⭐⭐⭐⭐ |
+| **spatial-presentation** | Meshy + ModelsLab | - | VR Deck | ⭐⭐⭐⭐ |
+
+---
+
+## 🧑‍🎤 AVATAR GENERATION - Global Routing (NOT Zone-Based)
+
+> **Avatar features use Alibaba globally for best-in-class quality**
+
+| Feature | Primary | Fallback | Global? | Tier Required |
+|---------|---------|----------|---------|---------------|
+| **Custom Avatar (S2V)** | Alibaba WAN 2.2 | Replicate | ✅ GLOBAL | Pro+ |
+| **Full-body Avatar** | Alibaba OmniAvatar | NONE | ✅ GLOBAL | Enterprise |
+| **Avatar Lip-Sync** | Alibaba WAN 2.2 | Azure Visemes | ✅ GLOBAL | Creator+ |
+| **Priority Rendering** | RunPod | Replicate | ✅ GLOBAL | Pro+ |
+| **Text-to-Avatar** | Alibaba MACH | Replicate | ✅ GLOBAL | Pro+ |
+| **TaoAvatar (3DGS)** | Alibaba TaoAvatar | - | ✅ GLOBAL | Enterprise |
+
+---
+
+## 🎵 AUDIO GENERATION BY ZONE
+
+| Capability | Claude Zone | Alibaba Zone | Gemini Zone | Fallback |
+|------------|-------------|--------------|-------------|----------|
+| **Music Gen** | ElevenLabs | ElevenLabs | ElevenLabs | ModelsLab |
+| **SFX Gen** | ElevenLabs | ElevenLabs | ElevenLabs | ModelsLab |
+| **Voice Clone** | ElevenLabs | CosyVoice | ElevenLabs | - |
+
+---
+
+## Provider Status Summary
+
+### TIER 1: Primary Providers (11)
+
+| Provider | Status | Primary Capabilities | Zone |
+|----------|--------|---------------------|------|
+| **OpenAI** | ✅ | LLM, TTS, STT, Image, Vision | Fallback |
+| **Claude** | ✅ | LLM, Translation, Vision | Claude Zone |
+| **Gemini** | ✅ | LLM, TTS, STT, Image, Vision | Gemini Zone |
+| **Vertex AI (Veo)** | ✅ | Video (Veo 2/3), Image (Imagen 3) | Global |
+| **DeepSeek** | ✅ | LLM, Vision, OCR | CJK Fallback |
+| **Alibaba** | ✅ | LLM, TTS, STT, Video, Avatar | Alibaba Zone |
+| **Deepgram** | ✅ | Realtime STT (<100ms) | **ALL ZONES** |
+| **Sora2API** | ✅ | Cinematic Video | Global |
+| **ElevenLabs** | ✅ | TTS, Voice Clone, Music, SFX | Claude Zone |
+| **DeepL** | ✅ | Translation | Claude Zone |
+| **Meshy** | ✅ | 3D Gen, VR/AR, Rigging | **GLOBAL** |
 
 ### TIER 2: Specialized Providers (6)
 
-| Provider | Status | Capabilities | Use Case |
-|----------|--------|--------------|----------|
-| **Azure** | ✅ Available | TTS, STT, OCR, Vision, Translation, Visemes | Gemini/MENA Zone, Avatar Lip-Sync |
-| **Google** | ✅ Available | TTS, STT, OCR, Vision, Translation, NLP | Gemini Zone Fallback |
-| **ModelsLab** | ✅ Available | Image Gen (FLUX), Video Gen, Animation, AnimateDiff, SVD | Primary Image & Video |
-| **Meshy** | ✅ Available | 3D Gen, Texturing, Rigging | Primary 3D/VR/AR |
-| **Replicate** | ✅ Available | Image Gen, Video Gen, 3D Gen | Open-Source Fallback |
-| **HuggingFace** | ✅ Available | LLM, Image Gen, NLP | Open-Source Fallback |
+| Provider | Status | Primary Capabilities | Use Case |
+|----------|--------|---------------------|----------|
+| **Azure** | ✅ | Neural TTS, STT, OCR, Visemes | Gemini/MENA Zone |
+| **Google** | ✅ | TTS, STT, Translation, Vision | Gemini Fallback |
+| **ModelsLab** | ✅ | FLUX Image, AnimateDiff | Global Image/Video |
+| **Replicate** | ✅ | Open-source models | Universal Fallback |
+| **HuggingFace** | ✅ | LLM, NLP | Open-source Fallback |
+| **Stripe** | ✅ | Payments, Subscriptions | Global |
 
 ---
 
-## Capability Coverage Matrix
-
-| Capability | Primary Provider | Fallback 1 | Fallback 2 | Fallback 3 |
-|------------|------------------|------------|------------|------------|
-| **LLM** | Claude/Gemini/Qwen (zone-based) | OpenAI | DeepSeek | HuggingFace |
-| **Translation** | DeepL (EU) / Qwen-MT (CJK) | Azure Translator | Google Translate | OpenAI |
-| **TTS** | ElevenLabs (West) / CosyVoice (CJK) / Azure (MENA) | Google TTS | OpenAI TTS | - |
-| **STT** | Deepgram (<100ms) | OpenAI Whisper | Azure Speech | Alibaba Paraformer |
-| **Image Gen** | ModelsLab FLUX | Vertex AI Imagen 3 | OpenAI DALL-E | Replicate |
-| **Video Gen** | Sora2API | Vertex AI Veo 2/3 | ModelsLab | Alibaba WAN 2.6 |
-| **3D Gen** | Meshy | Replicate | Alibaba Text-to-3D | - |
-| **Avatar** | Alibaba WAN 2.2 (Global) | Replicate | - | - |
-| **Lip-Sync** | Alibaba WAN 2.2 | Azure Visemes | - | - |
-| **Voice Clone** | ElevenLabs | - | - | - |
-| **Music Gen** | ElevenLabs | - | - | - |
-| **SFX Gen** | ElevenLabs | - | - | - |
-| **OCR** | Azure Document Intelligence | Google Vision | Gemini | DeepSeek |
-| **Vision** | OpenAI GPT-5 | Claude | Gemini | DeepSeek |
-| **Realtime STT** | Deepgram | - | - | - |
-
----
-
-## 4-Zone Regional Routing Architecture
-
-### Zone 1: Claude Zone (US, UK, EU, Brazil, Israel, South Africa)
-```
-LLM: Claude 3.5 Sonnet → GPT-4o fallback
-TTS: ElevenLabs → Azure Neural fallback
-Translation: DeepL → Azure Translator fallback
-```
-
-### Zone 2: Alibaba Zone (Japan, Korea, China, HK, Taiwan, MEA/Arabic)
-```
-LLM: Qwen-Max → GPT-4o fallback
-TTS: CosyVoice (CJK) / Azure Neural (Arabic) → Google TTS fallback
-Translation: Qwen-MT (CJK) / Azure Translator (Arabic) → Google Translate fallback
-STT: Alibaba Paraformer → Whisper fallback
-```
-
-### Zone 3: Gemini Zone (India, Pakistan, SEA, Africa)
-```
-LLM: Gemini Pro → GPT-4o fallback
-TTS: Azure Neural → Google TTS fallback
-Translation: Google Translate → Azure Translator fallback
-STT: Whisper → Azure STT fallback
-```
-
-### Zone 4: Global/Non-Regional (Premium Features)
-```
-Avatar: Alibaba WAN 2.2 (everywhere)
-Full-body Avatar: Alibaba OmniAvatar (everywhere)
-Priority Rendering: RunPod → Replicate fallback
-Video: Sora2API → ModelsLab → Alibaba WAN 2.6 fallback
-3D: Meshy → Replicate fallback
-```
-
----
-
-## API Key Configuration Status (16 Providers)
+## API Key Configuration (17+ Providers)
 
 | Secret Name | Status | Provider |
 |-------------|--------|----------|
-| `OPENAI_API_KEY` | ✅ Configured | OpenAI |
-| `ANTHROPIC_API_KEY` | ✅ Configured | Claude |
-| `CLAUDE_API_KEY` | ✅ Configured | Claude (backup) |
-| `GEMINI_API_KEY` | ✅ Configured | Gemini |
-| `GOOGLE_API_KEY` | ✅ Configured | Google Cloud |
-| `GOOGLE_VERTEX_SERVICE_ACCOUNT` | ✅ Configured | Vertex AI (Veo 2/3, Imagen 3) |
-| `DEEPSEEK_API_KEY` | ✅ Configured | DeepSeek |
-| `ALIBABA_API_KEY` | ✅ Configured | Alibaba (International) |
-| `ALIBABA_CHINA_API_KEY` | ✅ Configured | Alibaba (China/Beijing) |
-| `DEEPGRAM_API_KEY` | ✅ Configured | Deepgram |
-| `SORA2API_KEY` | ✅ Configured | Sora2API |
-| `ELEVENLABS_API_KEY` | ✅ Configured | ElevenLabs |
-| `DEEPL_API_KEY` | ✅ Configured | DeepL |
-| `AZURE_SPEECH_KEY` | ✅ Configured | Azure Speech |
-| `AZURE_FORM_RECOGNIZER_KEY` | ✅ Configured | Azure Document Intelligence |
-| `MICROSOFT_TRANSLATE_API_KEY` | ✅ Configured | Azure Translator |
-| `MODELSLAB_API_KEY` | ✅ Configured | ModelsLab |
-| `MESHY_API_KEY` | ✅ Configured | Meshy |
-| `REPLICATE_API_TOKEN` | ✅ Configured | Replicate |
-| `HUGGING_FACE_ACCESS_TOKEN` | ✅ Configured | HuggingFace |
-| `LOVABLE_API_KEY` | ✅ Configured | Lovable AI Gateway |
-
-| Secret Name | Status | Provider |
-|-------------|--------|----------|
-| `OPENAI_API_KEY` | ✅ Configured | OpenAI |
-| `ANTHROPIC_API_KEY` | ✅ Configured | Claude |
-| `CLAUDE_API_KEY` | ✅ Configured | Claude (backup) |
-| `GEMINI_API_KEY` | ✅ Configured | Gemini |
-| `GOOGLE_API_KEY` | ✅ Configured | Google Cloud |
-| `DEEPSEEK_API_KEY` | ✅ Configured | DeepSeek |
-| `ALIBABA_API_KEY` | ✅ Configured | Alibaba (International) |
-| `ALIBABA_CHINA_API_KEY` | ✅ Configured | Alibaba (China/Beijing) |
-| `DEEPGRAM_API_KEY` | ✅ Configured | Deepgram |
-| `SORA2API_KEY` | ✅ Configured | Sora2API |
-| `ELEVENLABS_API_KEY` | ✅ Configured | ElevenLabs |
-| `DEEPL_API_KEY` | ✅ Configured | DeepL |
-| `AZURE_SPEECH_KEY` | ✅ Configured | Azure Speech |
-| `AZURE_FORM_RECOGNIZER_KEY` | ✅ Configured | Azure Document Intelligence |
-| `MICROSOFT_TRANSLATE_API_KEY` | ✅ Configured | Azure Translator |
-| `MODELSLAB_API_KEY` | ✅ Configured | ModelsLab |
-| `MESHY_API_KEY` | ✅ Configured | Meshy |
-| `REPLICATE_API_TOKEN` | ✅ Configured | Replicate |
-| `HUGGING_FACE_ACCESS_TOKEN` | ✅ Configured | HuggingFace |
-| `LOVABLE_API_KEY` | ✅ Configured | Lovable AI Gateway |
+| `OPENAI_API_KEY` | ✅ | OpenAI |
+| `ANTHROPIC_API_KEY` | ✅ | Claude |
+| `GEMINI_API_KEY` | ✅ | Gemini |
+| `GOOGLE_VERTEX_SERVICE_ACCOUNT` | ✅ | Vertex AI (Veo/Imagen) |
+| `DEEPSEEK_API_KEY` | ✅ | DeepSeek |
+| `ALIBABA_API_KEY` | ✅ | Alibaba (International) |
+| `ALIBABA_CHINA_API_KEY` | ✅ | Alibaba (China/Beijing) |
+| `DEEPGRAM_API_KEY` | ✅ | Deepgram |
+| `SORA2API_KEY` | ✅ | Sora2API |
+| `ELEVENLABS_API_KEY` | ✅ | ElevenLabs |
+| `DEEPL_API_KEY` | ✅ | DeepL |
+| `AZURE_SPEECH_KEY` | ✅ | Azure Speech |
+| `AZURE_FORM_RECOGNIZER_KEY` | ✅ | Azure Document Intelligence |
+| `MICROSOFT_TRANSLATE_API_KEY` | ✅ | Azure Translator |
+| `MODELSLAB_API_KEY` | ✅ | ModelsLab |
+| `MESHY_API_KEY` | ✅ | Meshy AI |
+| `REPLICATE_API_TOKEN` | ✅ | Replicate |
+| `HUGGING_FACE_ACCESS_TOKEN` | ✅ | HuggingFace |
+| `GOOGLE_API_KEY` | ✅ | Google Cloud |
 
 ---
 
-## Edge Function Test Results
+## Routing Intelligence Components
 
-| Function | Status | Notes |
-|----------|--------|-------|
-| `health-check` | ✅ Operational | Basic health check working |
-| `check-ai-provider` | ✅ Operational | All 15 providers detected |
-| `elevenlabs-voice` | ✅ Operational | TTS working |
-| `azure-tts` | ✅ Operational | Neural TTS working |
-| `google-tts` | ✅ Operational | TTS working |
-| `alibaba-tts` | ⚠️ Auth Required | China account verification needed |
-| `alibaba-video-generator` | ⚠️ Auth Required | China account verification needed |
-| `alibaba-3d-generator` | ⚠️ Auth Required | China account verification needed |
-| `modelslab-media` | ⚠️ API Format | Requires `type` parameter |
-| `geo-compliance-check` | ✅ Operational | IP detection working |
+| Component | Location | Status |
+|-----------|----------|--------|
+| `AIRoutingIntelligenceService.ts` | `src/services/ai/` | ✅ Active |
+| `unifiedProviderRoutingAdapter.ts` | `src/services/` | ✅ Active |
+| `multiLanguageAudioOrchestrator.ts` | `src/services/` | ✅ Active |
+| `globalTierService.ts` | `src/services/shared/` | ✅ Active |
+| `check-ai-provider` | Edge Function | ✅ Operational |
+| `geo-compliance-check` | Edge Function | ✅ Operational |
 
 ---
 
-## Routing Intelligence Verification
+## Known Issues
 
-### AI Routing Intelligence Service
-- **Location:** `src/services/ai/AIRoutingIntelligenceService.ts`
-- **Status:** ✅ Fully operational
-- **Features:**
-  - Query intent classification (13 categories)
-  - Auto-model selection based on task
-  - Cost/quality/speed optimization options
-  - 30+ model registry with full specs
-
-### Unified Provider Routing Adapter
-- **Location:** `src/services/unifiedProviderRoutingAdapter.ts`
-- **Status:** ✅ Fully operational
-- **Features:**
-  - 4-zone LLM routing
-  - RTL language detection
-  - Competitive moat language handling
-  - Premium feature global routing (avatars, 3D)
+| Provider | Issue | Status | Action |
+|----------|-------|--------|--------|
+| Alibaba China | Access Denied for CosyVoice/Paraformer | ⚠️ | Complete identity verification in DashScope |
+| ModelsLab | Requires `type` parameter | ✅ Fixed | Working with proper format |
 
 ---
 
-## Known Issues & Next Steps
-
-### Alibaba China Account
-- **Issue:** `Access Denied` for CosyVoice, WAN 2.2, Paraformer models
-- **Cause:** China account requires identity verification + payment setup
-- **Action:** Complete verification in [DashScope Console](https://dashscope.console.aliyun.com/)
-
-### ModelsLab API
-- **Status:** ✅ Operational (Fixed 2026-02-01)
-- **Test:** Image generation confirmed working
-- **Response:** `{"status": "processing", "id": 168450125}`
-
-### Stripe Integration
-- **Account:** ✅ Connected (`acct_1SoCi5CEkh96ps4f` - Genie Studio sandbox)
-- **Status:** Fully operational
-- **Features:** One-time payments, subscriptions, customer portal
-
----
-
-## Verification Command
-
-Test provider status anytime:
-```bash
-curl -X POST https://ithspbabhmdntioslfqe.supabase.co/functions/v1/check-ai-provider \
-  -H "Content-Type: application/json" \
-  -d '{"action": "check_all"}'
-```
-
----
-
-## Live Verification Results (2026-02-01T23:07:00Z)
-
-### Geo-Compliance Check
-```json
-{
-  "ip": "35.204.231.219",
-  "countryCode": "NL",
-  "countryName": "The Netherlands",
-  "isBlocked": false,
-  "detectedZone": "claude" // US/UK/EU → Claude Zone
-}
-```
-
-### All Provider Capabilities Matrix (Live Response)
-
-| Capability | Available Providers |
-|------------|---------------------|
-| **LLM** | OpenAI, Claude, Gemini, DeepSeek, Alibaba, HuggingFace |
-| **Translation** | OpenAI, Claude, Gemini, DeepSeek, Alibaba, DeepL, Azure, Google |
-| **TTS** | OpenAI, Gemini, Alibaba, ElevenLabs, Azure, Google |
-| **STT** | OpenAI, Gemini, Alibaba, Deepgram, Azure, Google |
-| **Realtime STT** | Deepgram (<100ms) |
-| **Image Gen** | OpenAI, Gemini, Alibaba, ModelsLab, Replicate, HuggingFace |
-| **Video Gen** | Alibaba, Sora2API, ModelsLab, Replicate |
-| **3D Gen** | Meshy, Replicate |
-| **Avatar** | Alibaba (Wan 2.2) |
-| **Lip-Sync** | Alibaba |
-| **Voice Clone** | ElevenLabs |
-| **Music Gen** | ElevenLabs |
-| **SFX Gen** | ElevenLabs |
-| **OCR** | Gemini, DeepSeek, Alibaba, Azure, Google |
-| **Vision** | OpenAI, Claude, Gemini, DeepSeek, Alibaba, Azure, Google |
-| **Visemes** | Azure |
-
-### Routing Intelligence Verification
-
-| Component | Status | Details |
-|-----------|--------|---------|
-| `AIRoutingIntelligenceService.ts` | ✅ Active | 13 intent categories, 30+ model registry |
-| `unifiedProviderRoutingAdapter.ts` | ✅ Active | 4-Zone LLM routing, RTL detection |
-| `check-ai-provider` Edge Function | ✅ Operational | Returns all capabilities in <1s |
-| `geo-compliance-check` Edge Function | ✅ Operational | IP detection working |
-| `health-check` Edge Function | ✅ Operational | Edge runtime healthy |
-
-### Model Registry Coverage
-
-| Provider | Models in Registry | Tier Coverage |
-|----------|-------------------|---------------|
-| Gemini | 4 (3 Flash, 2.5 Pro, Flash, Lite) | Economy → Premium |
-| OpenAI | 3 (GPT-5, Mini, Nano) | Economy → Enterprise |
-| Claude | 3 (Opus, Sonnet, Haiku) | Economy → Enterprise |
-| DeepSeek | 2 (V3, Coder) | Economy |
-| Alibaba | 4 (Qwen Max, Turbo, VL, CosyVoice) | Standard → Premium |
-| Azure | 3 (GPT-4o, Mini, Neural TTS) | Standard → Premium |
-| ModelsLab | 3 (FLUX Pro, Schnell, AnimateDiff) | Standard → Premium |
-| ElevenLabs | 2 (Multilingual V2, Turbo) | Standard → Premium |
-| Meshy | 1 (Text-to-3D) | Premium |
-| DeepL | 1 (Translator) | Premium |
-
----
-
-**Last Updated:** 2026-02-01T23:07:00Z  
+**Last Updated:** 2026-02-01  
 **Next Verification:** 2026-02-08
