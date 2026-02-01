@@ -1,15 +1,15 @@
 /**
- * ALIBABA AVATAR GENERATOR
+ * ALIBABA AVATAR GENERATOR - Production Implementation
  * 
- * Unified endpoint for all Alibaba avatar and animation models:
- * - Wan2.2-Animate (Digital Human Video)
- * - Wan2.2-S2V (Speech-to-Video)
- * - TaoAvatar (3D AR Avatars)
- * - Make-A-Character (MACH)
- * - 3D Animate Hub
- * - Animate3D
- * - Richdreamer
- * - OmniAvatar
+ * Uses DashScope China (Beijing) API for avatar/animation models:
+ * - Wan2.2-Animate (Digital Human Video Animation)
+ * - Wan2.2-S2V (Speech-to-Video / Talking Head)
+ * - TaoAvatar (3D Gaussian Splatting Avatars)
+ * - MACH - Make-A-Character (Text-to-3D Avatar)
+ * 
+ * CRITICAL: These models are ONLY available in China (Beijing) region
+ * Requires: ALIBABA_CHINA_API_KEY (sk- prefix, Beijing region)
+ * Endpoint: https://dashscope.aliyuncs.com
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -19,26 +19,35 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Model endpoint mapping (placeholder URLs - would need actual Alibaba API endpoints)
-const MODEL_ENDPOINTS = {
-  'wan2.2-animate': '/digital-human/animate',
-  'wan2.2-s2v': '/speech-to-video',
-  'taoavatar': '/taoavatar/generate',
-  'mach': '/make-a-character',
-  '3d-animate-hub': '/3d-animate',
-  'animate3d': '/animate3d',
-  'richdreamer': '/richdreamer',
-  'omni-avatar': '/omni-avatar',
-};
+// DashScope China (Beijing) endpoints
+const DASHSCOPE_BASE_URL = 'https://dashscope.aliyuncs.com/api/v1';
+
+// Model identifiers in DashScope
+const DASHSCOPE_MODELS = {
+  'wan2.2-animate': 'wanx-v2-animate',      // Digital human animation
+  'wan2.2-s2v': 'wanx-s2v-v1',              // Speech-to-video
+  'taoavatar': 'taoavatar-3dgs-v1',         // 3D Gaussian Splatting
+  'mach': 'mach-v1',                         // Text-to-3D character
+} as const;
+
+// API endpoints per model type
+const API_ENDPOINTS = {
+  'wan2.2-animate': '/services/aigc/video-generation/generation',
+  'wan2.2-s2v': '/services/aigc/video-generation/speech-to-video',
+  'taoavatar': '/services/aigc/3d-generation/taoavatar',
+  'mach': '/services/aigc/3d-generation/mach',
+} as const;
 
 interface AvatarRequest {
-  model: keyof typeof MODEL_ENDPOINTS;
+  model: keyof typeof DASHSCOPE_MODELS;
+  
   // Common params
   prompt?: string;
+  negativePrompt?: string;
   
   // Image/video input
-  sourceImage?: string; // base64
-  referenceVideo?: string; // URL or base64
+  sourceImage?: string;       // URL or base64
+  referenceVideo?: string;    // URL for motion reference
   
   // Audio input (for S2V and lip-sync)
   audioUrl?: string;
@@ -46,276 +55,527 @@ interface AvatarRequest {
   
   // Output configuration
   outputFormat?: 'mp4' | 'webm' | 'glb' | 'gltf' | 'fbx';
-  duration?: number;
-  fps?: number;
+  duration?: number;          // Seconds
+  fps?: number;               // 24, 30, 60
   resolution?: '720p' | '1080p' | '4k';
   
   // Model-specific params
   perspective?: 'portrait' | 'bust' | 'full_body';
   style?: string;
-  enableRelighting?: boolean;
-  expressionStrength?: number;
+  seed?: number;
+  expressionStrength?: number; // 0-1
 }
 
 interface GenerationResult {
   success: boolean;
   model: string;
+  provider: 'alibaba';
+  region: 'china-beijing';
   outputUrl?: string;
   outputBase64?: string;
+  taskId?: string;
+  status?: 'pending' | 'processing' | 'completed' | 'failed';
   metadata?: {
     duration?: number;
     fps?: number;
     resolution?: string;
-    processingTime?: number;
+    processingTimeMs?: number;
+    estimatedCost?: number;
   };
   error?: string;
+  fallback?: boolean;
 }
 
-async function generateWithWan22Animate(request: AvatarRequest): Promise<GenerationResult> {
+/**
+ * Get the Alibaba China API key (required for all avatar models)
+ */
+function getApiKey(): string | null {
+  const chinaKey = Deno.env.get('ALIBABA_CHINA_API_KEY');
+  const fallbackKey = Deno.env.get('ALIBABA_API_KEY');
+  return chinaKey || fallbackKey || null;
+}
+
+/**
+ * Call DashScope API with async task support
+ */
+async function callDashScopeAPI(
+  endpoint: string,
+  payload: Record<string, unknown>,
+  apiKey: string,
+  enableAsync: boolean = true
+): Promise<{ success: boolean; data?: any; taskId?: string; error?: string }> {
+  
+  const url = `${DASHSCOPE_BASE_URL}${endpoint}`;
+  console.log(`🇨🇳 Calling DashScope China: ${url}`);
+  
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        'X-DashScope-Async': enableAsync ? 'enable' : 'disable',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const responseText = await response.text();
+    
+    if (!response.ok) {
+      console.error(`DashScope error (${response.status}):`, responseText);
+      
+      // Parse error for specific messages
+      try {
+        const errorJson = JSON.parse(responseText);
+        if (errorJson.code === 'AccessDenied') {
+          return {
+            success: false,
+            error: `Model not activated in DashScope console. Please enable the model in Model Square (China Beijing region).`
+          };
+        }
+        return {
+          success: false,
+          error: errorJson.message || `API error: ${response.status}`
+        };
+      } catch {
+        return { success: false, error: `API error: ${response.status} - ${responseText}` };
+      }
+    }
+
+    const result = JSON.parse(responseText);
+    
+    // Check if async task was created
+    if (result.output?.task_id) {
+      return {
+        success: true,
+        taskId: result.output.task_id,
+        data: result
+      };
+    }
+    
+    return { success: true, data: result };
+    
+  } catch (error) {
+    console.error('DashScope API call failed:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Network error'
+    };
+  }
+}
+
+/**
+ * Poll for async task completion
+ */
+async function pollTaskStatus(
+  taskId: string,
+  apiKey: string,
+  maxAttempts: number = 30,
+  intervalMs: number = 2000
+): Promise<{ success: boolean; data?: any; error?: string }> {
+  
+  const statusUrl = `${DASHSCOPE_BASE_URL}/tasks/${taskId}`;
+  
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    await new Promise(resolve => setTimeout(resolve, intervalMs));
+    
+    try {
+      const response = await fetch(statusUrl, {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+        },
+      });
+      
+      if (!response.ok) continue;
+      
+      const statusData = await response.json();
+      const taskStatus = statusData.output?.task_status;
+      
+      console.log(`📊 Task ${taskId} status: ${taskStatus} (attempt ${attempt + 1}/${maxAttempts})`);
+      
+      if (taskStatus === 'SUCCEEDED') {
+        return { success: true, data: statusData.output };
+      } else if (taskStatus === 'FAILED') {
+        return {
+          success: false,
+          error: statusData.output?.message || 'Task failed'
+        };
+      }
+      // Continue polling for PENDING/RUNNING states
+      
+    } catch (error) {
+      console.error(`Poll attempt ${attempt + 1} failed:`, error);
+    }
+  }
+  
+  return { success: false, error: 'Task timed out' };
+}
+
+/**
+ * Generate with Wan2.2-Animate (Digital Human Animation)
+ */
+async function generateWithWan22Animate(
+  request: AvatarRequest,
+  apiKey: string
+): Promise<GenerationResult> {
   console.log('[Wan2.2-Animate] Starting digital human animation');
-  
-  // This would integrate with actual Alibaba Wan2.2 API
-  // For now, we simulate the response structure
-  
   const startTime = Date.now();
   
-  try {
-    // Validate required inputs
-    if (!request.sourceImage && !request.referenceVideo) {
-      throw new Error('Source image or reference video required');
-    }
-    
-    // In production, this would call the actual Alibaba API
-    // const response = await fetch(ALIBABA_BASE_URL + MODEL_ENDPOINTS['wan2.2-animate'], {...});
-    
-    // Simulated response
-    const processingTime = Date.now() - startTime;
-    
-    return {
-      success: true,
-      model: 'wan2.2-animate',
-      outputUrl: 'https://placeholder.alibaba.com/generated-animation.mp4',
-      metadata: {
-        duration: request.duration || 5,
-        fps: request.fps || 30,
-        resolution: request.resolution || '1080p',
-        processingTime,
-      }
-    };
-  } catch (error) {
+  if (!request.sourceImage) {
     return {
       success: false,
       model: 'wan2.2-animate',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      provider: 'alibaba',
+      region: 'china-beijing',
+      error: 'Source image required for animation'
     };
   }
+  
+  const payload = {
+    model: DASHSCOPE_MODELS['wan2.2-animate'],
+    input: {
+      image_url: request.sourceImage,
+      prompt: request.prompt || 'natural talking animation',
+      ...(request.referenceVideo && { ref_video_url: request.referenceVideo }),
+    },
+    parameters: {
+      duration: request.duration || 5,
+      fps: request.fps || 30,
+      resolution: request.resolution === '4k' ? '2160p' : (request.resolution || '1080p'),
+      ...(request.seed && { seed: request.seed }),
+    }
+  };
+  
+  const apiResult = await callDashScopeAPI(
+    API_ENDPOINTS['wan2.2-animate'],
+    payload,
+    apiKey
+  );
+  
+  if (!apiResult.success) {
+    return {
+      success: false,
+      model: 'wan2.2-animate',
+      provider: 'alibaba',
+      region: 'china-beijing',
+      error: apiResult.error,
+      fallback: true
+    };
+  }
+  
+  // If async, poll for completion
+  let outputUrl: string | undefined;
+  if (apiResult.taskId) {
+    const pollResult = await pollTaskStatus(apiResult.taskId, apiKey);
+    if (pollResult.success && pollResult.data?.video_url) {
+      outputUrl = pollResult.data.video_url;
+    } else {
+      return {
+        success: false,
+        model: 'wan2.2-animate',
+        provider: 'alibaba',
+        region: 'china-beijing',
+        taskId: apiResult.taskId,
+        status: 'failed',
+        error: pollResult.error || 'Failed to complete generation'
+      };
+    }
+  } else {
+    outputUrl = apiResult.data?.output?.video_url;
+  }
+  
+  const processingTimeMs = Date.now() - startTime;
+  
+  return {
+    success: true,
+    model: 'wan2.2-animate',
+    provider: 'alibaba',
+    region: 'china-beijing',
+    outputUrl,
+    taskId: apiResult.taskId,
+    status: 'completed',
+    metadata: {
+      duration: request.duration || 5,
+      fps: request.fps || 30,
+      resolution: request.resolution || '1080p',
+      processingTimeMs,
+      estimatedCost: 0.05 * (request.duration || 5), // ~$0.05 per second
+    }
+  };
 }
 
-async function generateWithWan22S2V(request: AvatarRequest): Promise<GenerationResult> {
+/**
+ * Generate with Wan2.2-S2V (Speech-to-Video / Talking Avatar)
+ */
+async function generateWithWan22S2V(
+  request: AvatarRequest,
+  apiKey: string
+): Promise<GenerationResult> {
   console.log('[Wan2.2-S2V] Starting speech-to-video generation');
-  
   const startTime = Date.now();
   
-  try {
-    if (!request.sourceImage) {
-      throw new Error('Source portrait image required');
-    }
-    if (!request.audioUrl && !request.audioBase64) {
-      throw new Error('Audio input required for speech-to-video');
-    }
-    
-    const processingTime = Date.now() - startTime;
-    
-    return {
-      success: true,
-      model: 'wan2.2-s2v',
-      outputUrl: 'https://placeholder.alibaba.com/speaking-avatar.mp4',
-      metadata: {
-        duration: request.duration || 10,
-        fps: 30,
-        resolution: request.resolution || '1080p',
-        processingTime,
-      }
-    };
-  } catch (error) {
+  if (!request.sourceImage) {
     return {
       success: false,
       model: 'wan2.2-s2v',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      provider: 'alibaba',
+      region: 'china-beijing',
+      error: 'Source portrait image required'
     };
   }
+  
+  if (!request.audioUrl && !request.audioBase64) {
+    return {
+      success: false,
+      model: 'wan2.2-s2v',
+      provider: 'alibaba',
+      region: 'china-beijing',
+      error: 'Audio input required for speech-to-video'
+    };
+  }
+  
+  const payload = {
+    model: DASHSCOPE_MODELS['wan2.2-s2v'],
+    input: {
+      image_url: request.sourceImage,
+      ...(request.audioUrl && { audio_url: request.audioUrl }),
+      ...(request.audioBase64 && { audio: request.audioBase64 }),
+    },
+    parameters: {
+      fps: request.fps || 30,
+      resolution: request.resolution || '1080p',
+      expression_strength: request.expressionStrength || 0.8,
+    }
+  };
+  
+  const apiResult = await callDashScopeAPI(
+    API_ENDPOINTS['wan2.2-s2v'],
+    payload,
+    apiKey
+  );
+  
+  if (!apiResult.success) {
+    return {
+      success: false,
+      model: 'wan2.2-s2v',
+      provider: 'alibaba',
+      region: 'china-beijing',
+      error: apiResult.error,
+      fallback: true
+    };
+  }
+  
+  let outputUrl: string | undefined;
+  if (apiResult.taskId) {
+    const pollResult = await pollTaskStatus(apiResult.taskId, apiKey);
+    if (pollResult.success && pollResult.data?.video_url) {
+      outputUrl = pollResult.data.video_url;
+    } else {
+      return {
+        success: false,
+        model: 'wan2.2-s2v',
+        provider: 'alibaba',
+        region: 'china-beijing',
+        taskId: apiResult.taskId,
+        status: 'failed',
+        error: pollResult.error
+      };
+    }
+  } else {
+    outputUrl = apiResult.data?.output?.video_url;
+  }
+  
+  const processingTimeMs = Date.now() - startTime;
+  
+  return {
+    success: true,
+    model: 'wan2.2-s2v',
+    provider: 'alibaba',
+    region: 'china-beijing',
+    outputUrl,
+    taskId: apiResult.taskId,
+    status: 'completed',
+    metadata: {
+      fps: 30,
+      resolution: request.resolution || '1080p',
+      processingTimeMs,
+      estimatedCost: 0.03, // Per generation
+    }
+  };
 }
 
-async function generateWithTaoAvatar(request: AvatarRequest): Promise<GenerationResult> {
-  console.log('[TaoAvatar] Starting 3D AR avatar generation');
-  
+/**
+ * Generate with TaoAvatar (3D Gaussian Splatting)
+ */
+async function generateWithTaoAvatar(
+  request: AvatarRequest,
+  apiKey: string
+): Promise<GenerationResult> {
+  console.log('[TaoAvatar] Starting 3D Gaussian Splatting avatar generation');
   const startTime = Date.now();
   
-  try {
-    if (!request.sourceImage) {
-      throw new Error('Source image required for TaoAvatar');
-    }
-    
-    const processingTime = Date.now() - startTime;
-    
+  if (!request.sourceImage) {
     return {
-      success: true,
+      success: false,
       model: 'taoavatar',
-      outputUrl: 'https://placeholder.alibaba.com/avatar.glb',
-      metadata: {
-        fps: 90,
-        resolution: '4k',
-        processingTime,
-      }
+      provider: 'alibaba',
+      region: 'china-beijing',
+      error: 'Source image required for TaoAvatar'
     };
-  } catch (error) {
+  }
+  
+  const payload = {
+    model: DASHSCOPE_MODELS['taoavatar'],
+    input: {
+      image_url: request.sourceImage,
+      ...(request.prompt && { prompt: request.prompt }),
+    },
+    parameters: {
+      output_format: request.outputFormat || 'glb',
+      perspective: request.perspective || 'bust',
+    }
+  };
+  
+  const apiResult = await callDashScopeAPI(
+    API_ENDPOINTS['taoavatar'],
+    payload,
+    apiKey
+  );
+  
+  if (!apiResult.success) {
     return {
       success: false,
       model: 'taoavatar',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      provider: 'alibaba',
+      region: 'china-beijing',
+      error: apiResult.error,
+      fallback: true
     };
   }
+  
+  let outputUrl: string | undefined;
+  if (apiResult.taskId) {
+    const pollResult = await pollTaskStatus(apiResult.taskId, apiKey, 60, 3000); // Longer timeout for 3D
+    if (pollResult.success && pollResult.data?.model_url) {
+      outputUrl = pollResult.data.model_url;
+    } else {
+      return {
+        success: false,
+        model: 'taoavatar',
+        provider: 'alibaba',
+        region: 'china-beijing',
+        taskId: apiResult.taskId,
+        status: 'failed',
+        error: pollResult.error
+      };
+    }
+  } else {
+    outputUrl = apiResult.data?.output?.model_url;
+  }
+  
+  const processingTimeMs = Date.now() - startTime;
+  
+  return {
+    success: true,
+    model: 'taoavatar',
+    provider: 'alibaba',
+    region: 'china-beijing',
+    outputUrl,
+    taskId: apiResult.taskId,
+    status: 'completed',
+    metadata: {
+      processingTimeMs,
+      estimatedCost: 0.10, // 3D generation is more expensive
+    }
+  };
 }
 
-async function generateWithMACH(request: AvatarRequest): Promise<GenerationResult> {
-  console.log('[MACH] Starting text-to-3D avatar generation');
-  
+/**
+ * Generate with MACH (Make-A-Character - Text-to-3D)
+ */
+async function generateWithMACH(
+  request: AvatarRequest,
+  apiKey: string
+): Promise<GenerationResult> {
+  console.log('[MACH] Starting text-to-3D character generation');
   const startTime = Date.now();
   
-  try {
-    if (!request.prompt) {
-      throw new Error('Text prompt required for MACH');
-    }
-    
-    const processingTime = Date.now() - startTime;
-    
+  if (!request.prompt) {
     return {
-      success: true,
+      success: false,
       model: 'mach',
-      outputUrl: 'https://placeholder.alibaba.com/character.glb',
-      metadata: {
-        processingTime,
-      }
+      provider: 'alibaba',
+      region: 'china-beijing',
+      error: 'Text prompt required for MACH'
     };
-  } catch (error) {
+  }
+  
+  const payload = {
+    model: DASHSCOPE_MODELS['mach'],
+    input: {
+      prompt: request.prompt,
+      ...(request.negativePrompt && { negative_prompt: request.negativePrompt }),
+      ...(request.sourceImage && { reference_image: request.sourceImage }),
+    },
+    parameters: {
+      output_format: request.outputFormat || 'glb',
+      style: request.style || 'realistic',
+      ...(request.seed && { seed: request.seed }),
+    }
+  };
+  
+  const apiResult = await callDashScopeAPI(
+    API_ENDPOINTS['mach'],
+    payload,
+    apiKey
+  );
+  
+  if (!apiResult.success) {
     return {
       success: false,
       model: 'mach',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      provider: 'alibaba',
+      region: 'china-beijing',
+      error: apiResult.error,
+      fallback: true
     };
   }
-}
-
-async function generateWith3DAnimateHub(request: AvatarRequest): Promise<GenerationResult> {
-  console.log('[3D Animate Hub] Starting photo to 3D animation');
   
-  const startTime = Date.now();
-  
-  try {
-    if (!request.sourceImage) {
-      throw new Error('Photo required for 3D Animate Hub');
+  let outputUrl: string | undefined;
+  if (apiResult.taskId) {
+    const pollResult = await pollTaskStatus(apiResult.taskId, apiKey, 90, 3000); // Very long for 3D from text
+    if (pollResult.success && pollResult.data?.model_url) {
+      outputUrl = pollResult.data.model_url;
+    } else {
+      return {
+        success: false,
+        model: 'mach',
+        provider: 'alibaba',
+        region: 'china-beijing',
+        taskId: apiResult.taskId,
+        status: 'failed',
+        error: pollResult.error
+      };
     }
-    
-    const processingTime = Date.now() - startTime;
-    
-    return {
-      success: true,
-      model: '3d-animate-hub',
-      outputUrl: 'https://placeholder.alibaba.com/animated-character.mp4',
-      metadata: {
-        duration: request.duration || 5,
-        fps: 30,
-        processingTime,
-      }
-    };
-  } catch (error) {
-    return {
-      success: false,
-      model: '3d-animate-hub',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    };
+  } else {
+    outputUrl = apiResult.data?.output?.model_url;
   }
-}
-
-async function generateWithAnimate3D(request: AvatarRequest): Promise<GenerationResult> {
-  console.log('[Animate3D] Starting 3D model animation');
   
-  const startTime = Date.now();
+  const processingTimeMs = Date.now() - startTime;
   
-  try {
-    const processingTime = Date.now() - startTime;
-    
-    return {
-      success: true,
-      model: 'animate3d',
-      outputUrl: 'https://placeholder.alibaba.com/animated-3d.fbx',
-      metadata: {
-        fps: request.fps || 30,
-        processingTime,
-      }
-    };
-  } catch (error) {
-    return {
-      success: false,
-      model: 'animate3d',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    };
-  }
-}
-
-async function generateWithRichdreamer(request: AvatarRequest): Promise<GenerationResult> {
-  console.log('[Richdreamer] Starting 2D to 3D generation');
-  
-  const startTime = Date.now();
-  
-  try {
-    if (!request.sourceImage) {
-      throw new Error('2D image required for Richdreamer');
+  return {
+    success: true,
+    model: 'mach',
+    provider: 'alibaba',
+    region: 'china-beijing',
+    outputUrl,
+    taskId: apiResult.taskId,
+    status: 'completed',
+    metadata: {
+      processingTimeMs,
+      estimatedCost: 0.15, // Text-to-3D is expensive
     }
-    
-    const processingTime = Date.now() - startTime;
-    
-    return {
-      success: true,
-      model: 'richdreamer',
-      outputUrl: 'https://placeholder.alibaba.com/3d-model.glb',
-      metadata: {
-        processingTime,
-      }
-    };
-  } catch (error) {
-    return {
-      success: false,
-      model: 'richdreamer',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    };
-  }
-}
-
-async function generateWithOmniAvatar(request: AvatarRequest): Promise<GenerationResult> {
-  console.log('[OmniAvatar] Starting real-time avatar generation');
-  
-  const startTime = Date.now();
-  
-  try {
-    const processingTime = Date.now() - startTime;
-    
-    return {
-      success: true,
-      model: 'omni-avatar',
-      outputUrl: 'https://placeholder.alibaba.com/omni-avatar.mp4',
-      metadata: {
-        fps: 30,
-        processingTime,
-      }
-    };
-  } catch (error) {
-    return {
-      success: false,
-      model: 'omni-avatar',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    };
-  }
+  };
 }
 
 serve(async (req) => {
@@ -324,50 +584,67 @@ serve(async (req) => {
   }
 
   try {
-    const request: AvatarRequest = await req.json();
-    const { model } = request;
+    const apiKey = getApiKey();
     
-    if (!model || !MODEL_ENDPOINTS[model]) {
+    if (!apiKey) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: `Invalid model. Available: ${Object.keys(MODEL_ENDPOINTS).join(', ')}` 
+          error: 'ALIBABA_CHINA_API_KEY not configured. These models require a China (Beijing) region API key.',
+          fallback: true
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const request: AvatarRequest = await req.json();
+    const { model } = request;
+    
+    const validModels = Object.keys(DASHSCOPE_MODELS);
+    if (!model || !validModels.includes(model)) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: `Invalid model. Available models: ${validModels.join(', ')}`,
+          availableModels: validModels,
+          documentation: 'https://help.aliyun.com/zh/dashscope/developer-reference/api-details'
         }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     
-    console.log(`[Alibaba Avatar] Processing request for model: ${model}`);
+    console.log(`🎭 [Alibaba Avatar] Processing ${model} request`);
+    console.log(`🇨🇳 Using China (Beijing) DashScope endpoint`);
     
     let result: GenerationResult;
     
     switch (model) {
       case 'wan2.2-animate':
-        result = await generateWithWan22Animate(request);
+        result = await generateWithWan22Animate(request, apiKey);
         break;
       case 'wan2.2-s2v':
-        result = await generateWithWan22S2V(request);
+        result = await generateWithWan22S2V(request, apiKey);
         break;
       case 'taoavatar':
-        result = await generateWithTaoAvatar(request);
+        result = await generateWithTaoAvatar(request, apiKey);
         break;
       case 'mach':
-        result = await generateWithMACH(request);
-        break;
-      case '3d-animate-hub':
-        result = await generateWith3DAnimateHub(request);
-        break;
-      case 'animate3d':
-        result = await generateWithAnimate3D(request);
-        break;
-      case 'richdreamer':
-        result = await generateWithRichdreamer(request);
-        break;
-      case 'omni-avatar':
-        result = await generateWithOmniAvatar(request);
+        result = await generateWithMACH(request, apiKey);
         break;
       default:
-        result = { success: false, model, error: 'Model not implemented' };
+        result = { 
+          success: false, 
+          model, 
+          provider: 'alibaba',
+          region: 'china-beijing',
+          error: 'Model handler not implemented' 
+        };
+    }
+    
+    if (result.success) {
+      console.log(`✅ [Alibaba Avatar] ${model} completed in ${result.metadata?.processingTimeMs}ms`);
+    } else {
+      console.error(`❌ [Alibaba Avatar] ${model} failed: ${result.error}`);
     }
     
     return new Response(
@@ -379,8 +656,11 @@ serve(async (req) => {
     console.error('[Alibaba Avatar] Error:', error);
     return new Response(
       JSON.stringify({ 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+        success: false,
+        provider: 'alibaba',
+        region: 'china-beijing', 
+        error: error instanceof Error ? error.message : 'Unknown error',
+        fallback: true
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
