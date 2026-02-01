@@ -83,9 +83,14 @@ serve(async (req) => {
       dashscopePayload.parameters.language_hints = [request.language];
     }
 
+    // Use international endpoint for non-China regions (US Virginia = dashscope-intl)
+    const apiEndpoint = 'https://dashscope-intl.aliyuncs.com/api/v1/services/audio/asr/transcription';
+    
+    console.log(`🌐 Using international DashScope endpoint for US Virginia region`);
+
     // Call DashScope API
     const response = await fetch(
-      'https://dashscope.aliyuncs.com/api/v1/services/audio/asr/transcription',
+      apiEndpoint,
       {
         method: 'POST',
         headers: {
@@ -130,7 +135,7 @@ serve(async (req) => {
         await new Promise(resolve => setTimeout(resolve, 2000));
         
         const statusResponse = await fetch(
-          `https://dashscope.aliyuncs.com/api/v1/tasks/${taskId}`,
+          `https://dashscope-intl.aliyuncs.com/api/v1/tasks/${taskId}`,
           {
             headers: {
               'Authorization': `Bearer ${ALIBABA_API_KEY}`,
