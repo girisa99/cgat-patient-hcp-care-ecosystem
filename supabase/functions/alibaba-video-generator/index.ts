@@ -1,17 +1,14 @@
 /**
- * ALIBABA VIDEO GENERATOR - Production Implementation
+ * ALIBABA VIDEO GENERATOR - Complete Implementation
  * 
- * Uses DashScope API for video generation with Wan models.
+ * Supports ALL Alibaba video generation models:
+ * - Wan 2.6 (International - Latest T2V/I2V/FLF2V)
+ * - Wan 2.1 (China - Stable T2V/I2V)
+ * - Wan 2.0 (China - Legacy)
  * 
- * Model Availability:
- * - Wan 2.6 models: Available on INTERNATIONAL endpoint (dashscope-intl.aliyuncs.com)
- * - Wan 2.1/2.0 models: Available on CHINA endpoint (dashscope.aliyuncs.com)
- * 
- * API Keys:
- * - ALIBABA_API_KEY: For international region (Singapore/Virginia)
- * - ALIBABA_CHINA_API_KEY: For China (Beijing) region
- * 
- * The function auto-selects the correct endpoint based on the model version.
+ * Regional Routing:
+ * - Wan 2.6: dashscope-intl.aliyuncs.com (International)
+ * - Wan 2.1/2.0: dashscope.aliyuncs.com (China Beijing)
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -21,61 +18,114 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// DashScope endpoints by region
+// Regional endpoints
 const DASHSCOPE_INTL_URL = 'https://dashscope-intl.aliyuncs.com/api/v1';
 const DASHSCOPE_CHINA_URL = 'https://dashscope.aliyuncs.com/api/v1';
 
-// Available Wan video models (latest first)
-const WAN_MODELS = {
-  // Wan 2.6 - Latest (International endpoint)
-  'wan2.6-t2v': 'wan2.6-t2v',                      // Text-to-video
-  'wan2.6-i2v': 'wan2.6-i2v',                      // Image-to-video (from your screenshot)
-  'wan2.6-flf2v': 'wan2.6-flf2v',                  // First-last-frame-to-video
+// ============================================================================
+// MODEL CONFIGURATIONS - All Available Alibaba Video Models
+// ============================================================================
+
+const VIDEO_MODELS = {
+  // Wan 2.6 Series - LATEST (International endpoint)
+  'wan2.6-t2v': { 
+    id: 'wan2.6-t2v', 
+    region: 'intl', 
+    type: 't2v',
+    description: 'Wan 2.6 Text-to-Video (latest)',
+    maxDuration: 10,
+    resolutions: ['720p', '1080p'],
+  },
+  'wan2.6-i2v': { 
+    id: 'wan2.6-i2v', 
+    region: 'intl', 
+    type: 'i2v',
+    description: 'Wan 2.6 Image-to-Video',
+    maxDuration: 10,
+    resolutions: ['720p', '1080p'],
+  },
+  'wan2.6-flf2v': { 
+    id: 'wan2.6-flf2v', 
+    region: 'intl', 
+    type: 'flf2v',
+    description: 'First-Last-Frame to Video interpolation',
+    maxDuration: 10,
+    resolutions: ['720p', '1080p'],
+  },
   
-  // Wan 2.1 - Stable (China endpoint)
-  'wan2.1-t2v': 'wanx2.1-v1-text-to-video',
-  'wan2.1-i2v': 'wanx2.1-v1-image-to-video',
-  'wan2.1-turbo': 'wanx2.1-turbo-v1',
+  // Wan 2.1 Series - STABLE (China endpoint)
+  'wan2.1-t2v': { 
+    id: 'wanx2.1-v1-text-to-video', 
+    region: 'china', 
+    type: 't2v',
+    description: 'Wan 2.1 Text-to-Video (stable)',
+    maxDuration: 8,
+    resolutions: ['720p', '1080p', '4k'],
+  },
+  'wan2.1-i2v': { 
+    id: 'wanx2.1-v1-image-to-video', 
+    region: 'china', 
+    type: 'i2v',
+    description: 'Wan 2.1 Image-to-Video',
+    maxDuration: 8,
+    resolutions: ['720p', '1080p', '4k'],
+  },
+  'wan2.1-turbo': { 
+    id: 'wanx2.1-turbo-v1', 
+    region: 'china', 
+    type: 't2v',
+    description: 'Wan 2.1 Turbo - Fast generation',
+    maxDuration: 6,
+    resolutions: ['720p', '1080p'],
+  },
   
-  // Legacy
-  'wan2.0': 'wanx2.0-v1',
+  // Wan 2.0 - Legacy (China endpoint)
+  'wan2.0': { 
+    id: 'wanx2.0-v1', 
+    region: 'china', 
+    type: 't2v',
+    description: 'Wan 2.0 Legacy',
+    maxDuration: 6,
+    resolutions: ['720p'],
+  },
 } as const;
 
-// Models that use international endpoint
-const INTL_MODELS = ['wan2.6-t2v', 'wan2.6-i2v', 'wan2.6-flf2v'];
+type VideoModelKey = keyof typeof VIDEO_MODELS;
 
-// API endpoint for video generation (same path, different base URL)
+// API endpoint
 const VIDEO_API_ENDPOINT = '/services/aigc/video-generation/video-synthesis';
 
 interface VideoRequest {
-  model?: keyof typeof WAN_MODELS;
+  model?: VideoModelKey;
   
   // Input
   prompt: string;
   negativePrompt?: string;
-  sourceImage?: string;     // URL or base64 for I2V
+  sourceImage?: string;        // URL or base64 for I2V
+  firstFrame?: string;         // URL for FLF2V
+  lastFrame?: string;          // URL for FLF2V
   
   // Output configuration
-  duration?: number;        // 2, 4, 6, 8, 10 seconds
-  fps?: number;             // 24, 30
+  duration?: number;           // 2, 4, 6, 8, 10 seconds
+  fps?: number;                // 24, 30
   resolution?: '720p' | '1080p' | '4k';
   aspectRatio?: '16:9' | '9:16' | '1:1' | '4:3';
   
   // Generation params
   seed?: number;
-  steps?: number;           // Inference steps
-  cfgScale?: number;        // Guidance scale
+  steps?: number;
+  cfgScale?: number;
   
   // Motion control
-  motionStrength?: number;  // 0-1, how much motion
-  cameraMotion?: 'static' | 'pan_left' | 'pan_right' | 'zoom_in' | 'zoom_out' | 'orbit';
+  motionStrength?: number;     // 0-1
+  cameraMotion?: 'static' | 'pan_left' | 'pan_right' | 'zoom_in' | 'zoom_out' | 'orbit' | 'dolly';
 }
 
 interface VideoResult {
   success: boolean;
-  model: string;
   provider: 'alibaba';
-  region: 'china-beijing';
+  region: 'china-beijing' | 'international';
+  model: string;
   videoUrl?: string;
   thumbnailUrl?: string;
   taskId?: string;
@@ -92,24 +142,26 @@ interface VideoResult {
 }
 
 /**
- * Get appropriate API key and endpoint based on model
+ * Get API configuration based on model region
  */
-function getApiConfig(modelKey: string): { apiKey: string | null; baseUrl: string; region: string } {
-  const isIntlModel = INTL_MODELS.includes(modelKey);
+function getApiConfig(modelKey: VideoModelKey): { 
+  apiKey: string | null; 
+  baseUrl: string; 
+  region: 'china-beijing' | 'international';
+} {
+  const modelConfig = VIDEO_MODELS[modelKey];
   
-  if (isIntlModel) {
-    // Wan 2.6 models - use international endpoint
+  if (modelConfig.region === 'intl') {
     const apiKey = Deno.env.get('ALIBABA_API_KEY') || Deno.env.get('ALIBABA_CHINA_API_KEY') || null;
     return { apiKey, baseUrl: DASHSCOPE_INTL_URL, region: 'international' };
   } else {
-    // Wan 2.1/2.0 models - use China endpoint
     const apiKey = Deno.env.get('ALIBABA_CHINA_API_KEY') || Deno.env.get('ALIBABA_API_KEY') || null;
     return { apiKey, baseUrl: DASHSCOPE_CHINA_URL, region: 'china-beijing' };
   }
 }
 
 /**
- * Map resolution string to pixel dimensions
+ * Get resolution dimensions
  */
 function getResolutionPixels(resolution: string, aspectRatio: string): { width: number; height: number } {
   const resMap: Record<string, Record<string, { width: number; height: number }>> = {
@@ -143,7 +195,7 @@ async function pollTaskStatus(
   taskId: string,
   apiKey: string,
   baseUrl: string,
-  maxAttempts: number = 60,
+  maxAttempts: number = 90,
   intervalMs: number = 3000
 ): Promise<{ success: boolean; data?: any; error?: string }> {
   
@@ -162,7 +214,7 @@ async function pollTaskStatus(
       const statusData = await response.json();
       const taskStatus = statusData.output?.task_status;
       
-      console.log(`📊 Video task ${taskId} status: ${taskStatus} (${attempt + 1}/${maxAttempts})`);
+      console.log(`📊 Video task ${taskId}: ${taskStatus} (${attempt + 1}/${maxAttempts})`);
       
       if (taskStatus === 'SUCCEEDED') {
         return { success: true, data: statusData.output };
@@ -178,42 +230,52 @@ async function pollTaskStatus(
 }
 
 /**
- * Generate video with Wan models (2.6, 2.1, 2.0)
+ * Generate video
  */
 async function generateVideo(request: VideoRequest): Promise<VideoResult> {
   const startTime = Date.now();
   
-  // Default to wan2.6-i2v if image provided, otherwise wan2.6-t2v (latest models)
-  const modelKey = request.model || (request.sourceImage ? 'wan2.6-i2v' : 'wan2.6-t2v');
-  const modelId = WAN_MODELS[modelKey as keyof typeof WAN_MODELS] || modelKey;
-  const isI2V = !!request.sourceImage;
+  // Determine model based on input type
+  let modelKey: VideoModelKey = request.model || 'wan2.6-t2v';
   
-  // Get correct endpoint based on model version
+  // Auto-select model based on inputs
+  if (!request.model) {
+    if (request.firstFrame && request.lastFrame) {
+      modelKey = 'wan2.6-flf2v';
+    } else if (request.sourceImage) {
+      modelKey = 'wan2.6-i2v';
+    }
+  }
+  
+  const modelConfig = VIDEO_MODELS[modelKey];
+  
+  if (!modelConfig) {
+    return {
+      success: false,
+      provider: 'alibaba',
+      region: 'china-beijing',
+      model: modelKey,
+      error: `Invalid model. Available: ${Object.keys(VIDEO_MODELS).join(', ')}`,
+    };
+  }
+  
   const { apiKey, baseUrl, region } = getApiConfig(modelKey);
   
-  console.log(`🎬 [Wan ${modelKey}] Starting ${isI2V ? 'image-to-video' : 'text-to-video'} generation`);
-  console.log(`🌐 Using ${region} endpoint: ${baseUrl}`);
+  console.log(`🎬 [Alibaba Video] Model: ${modelKey}, Region: ${region}`);
   
   if (!apiKey) {
     return {
       success: false,
-      model: modelKey,
       provider: 'alibaba',
-      region: region as 'china-beijing',
-      error: `ALIBABA_API_KEY not configured for ${region} region`,
+      region,
+      model: modelKey,
+      error: `API key not configured for ${region} region`,
       fallback: true
     };
   }
   
-  if (!request.prompt && !request.sourceImage) {
-    return {
-      success: false,
-      model: modelKey,
-      provider: 'alibaba',
-      region: region as 'china-beijing',
-      error: 'Prompt or source image required'
-    };
-  }
+  // Validate duration
+  const duration = Math.min(request.duration || 4, modelConfig.maxDuration);
   
   const { width, height } = getResolutionPixels(
     request.resolution || '1080p',
@@ -222,14 +284,13 @@ async function generateVideo(request: VideoRequest): Promise<VideoResult> {
   
   // Build payload based on model type
   const payload: Record<string, unknown> = {
-    model: isI2V ? WAN_MODELS['wan2.1-i2v'] : modelId,
+    model: modelConfig.id,
     input: {
       prompt: request.prompt || 'High quality video',
       ...(request.negativePrompt && { negative_prompt: request.negativePrompt }),
-      ...(request.sourceImage && { image_url: request.sourceImage }),
     },
     parameters: {
-      duration: request.duration || 4,
+      duration,
       fps: request.fps || 24,
       width,
       height,
@@ -241,15 +302,28 @@ async function generateVideo(request: VideoRequest): Promise<VideoResult> {
     }
   };
   
-  console.log(`🌐 Calling DashScope ${region}: ${baseUrl}${VIDEO_API_ENDPOINT}`);
+  // Add image inputs based on type
+  if (modelConfig.type === 'i2v' && request.sourceImage) {
+    (payload.input as Record<string, unknown>).image_url = request.sourceImage;
+  } else if (modelConfig.type === 'flf2v') {
+    if (request.firstFrame) {
+      (payload.input as Record<string, unknown>).first_frame_url = request.firstFrame;
+    }
+    if (request.lastFrame) {
+      (payload.input as Record<string, unknown>).last_frame_url = request.lastFrame;
+    }
+  }
+  
+  const apiUrl = `${baseUrl}${VIDEO_API_ENDPOINT}`;
+  console.log(`🌐 Calling DashScope: ${apiUrl}`);
   
   try {
-    const response = await fetch(`${baseUrl}${VIDEO_API_ENDPOINT}`, {
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
-        'X-DashScope-Async': 'enable', // Video generation is always async
+        'X-DashScope-Async': 'enable',
       },
       body: JSON.stringify(payload),
     });
@@ -261,30 +335,20 @@ async function generateVideo(request: VideoRequest): Promise<VideoResult> {
       
       try {
         const errorJson = JSON.parse(responseText);
-        if (errorJson.code === 'AccessDenied' || errorJson.code === 'ModelNotExist') {
-          return {
-            success: false,
-            model: modelKey,
-            provider: 'alibaba',
-            region: region as 'china-beijing',
-            error: `Wan ${modelKey} model not available. Check your account status and model activation in DashScope console.`,
-            fallback: true
-          };
-        }
         return {
           success: false,
-          model: modelKey,
           provider: 'alibaba',
-          region: region as 'china-beijing',
+          region,
+          model: modelKey,
           error: errorJson.message || `API error: ${response.status}`,
           fallback: true
         };
       } catch {
         return {
           success: false,
-          model: modelKey,
           provider: 'alibaba',
-          region: region as 'china-beijing',
+          region,
+          model: modelKey,
           error: `API error: ${response.status}`,
           fallback: true
         };
@@ -297,25 +361,25 @@ async function generateVideo(request: VideoRequest): Promise<VideoResult> {
     if (!taskId) {
       return {
         success: false,
-        model: modelKey,
         provider: 'alibaba',
-        region: region as 'china-beijing',
-        error: 'No task ID returned from API',
+        region,
+        model: modelKey,
+        error: 'No task ID returned',
         fallback: true
       };
     }
     
-    console.log(`📋 Video generation task created: ${taskId}`);
+    console.log(`📋 Video task created: ${taskId}`);
     
-    // Poll for completion (video generation takes time)
-    const pollResult = await pollTaskStatus(taskId, apiKey, baseUrl, 60, 3000);
+    // Poll for completion
+    const pollResult = await pollTaskStatus(taskId, apiKey, baseUrl);
     
     if (!pollResult.success) {
       return {
         success: false,
-        model: modelKey,
         provider: 'alibaba',
-        region: region as 'china-beijing',
+        region,
+        model: modelKey,
         taskId,
         status: 'failed',
         error: pollResult.error
@@ -326,33 +390,33 @@ async function generateVideo(request: VideoRequest): Promise<VideoResult> {
     const thumbnailUrl = pollResult.data?.cover_image_url;
     const processingTimeMs = Date.now() - startTime;
     
-    console.log(`✅ [Wan ${modelKey}] Video generated in ${processingTimeMs}ms`);
+    console.log(`✅ [Alibaba Video] Generated in ${processingTimeMs}ms`);
     
     return {
       success: true,
-      model: modelKey,
       provider: 'alibaba',
-      region: region as 'china-beijing',
+      region,
+      model: modelKey,
       videoUrl,
       thumbnailUrl,
       taskId,
       status: 'completed',
       metadata: {
-        duration: request.duration || 4,
+        duration,
         fps: request.fps || 24,
         resolution: request.resolution || '1080p',
         processingTimeMs,
-        estimatedCost: 0.086 * (request.duration || 4), // ~$0.086 per second (from your screenshot)
+        estimatedCost: 0.08 * duration, // ~$0.08/second
       }
     };
     
   } catch (error) {
-    console.error('[Wan Video] Error:', error);
+    console.error('[Alibaba Video] Error:', error);
     return {
       success: false,
-      model: modelKey,
       provider: 'alibaba',
-      region: region as 'china-beijing',
+      region,
+      model: modelKey,
       error: error instanceof Error ? error.message : 'Unknown error',
       fallback: true
     };
@@ -367,7 +431,23 @@ serve(async (req) => {
   try {
     const request: VideoRequest = await req.json();
     
-    console.log(`🎬 [Alibaba Video] Processing request for model: ${request.model || 'wan2.6-t2v (default)'}`);
+    if (!request.prompt && !request.sourceImage && !request.firstFrame) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Prompt, sourceImage, or firstFrame required',
+          availableModels: Object.entries(VIDEO_MODELS).map(([key, config]) => ({
+            id: key,
+            type: config.type,
+            description: config.description,
+            region: config.region,
+            maxDuration: config.maxDuration,
+            resolutions: config.resolutions,
+          })),
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
     
     const result = await generateVideo(request);
     
@@ -382,7 +462,6 @@ serve(async (req) => {
       JSON.stringify({ 
         success: false,
         provider: 'alibaba',
-        region: 'china-beijing', 
         error: error instanceof Error ? error.message : 'Unknown error',
         fallback: true
       }),
