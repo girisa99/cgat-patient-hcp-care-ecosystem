@@ -63,8 +63,18 @@ serve(async (req) => {
       }),
     });
 
-    let data = await response.json();
-    console.log('🔍 Gemini video API response:', { status: response.status, model: selectedModel, hasVideo: !!data.generatedVideos });
+    // Handle non-JSON responses from Veo API
+    const responseText = await response.text();
+    let data: any = {};
+    
+    try {
+      data = responseText ? JSON.parse(responseText) : {};
+    } catch (parseError) {
+      console.error('⚠️ Failed to parse Veo response:', responseText?.substring(0, 200));
+      data = { error: { message: `Invalid response from Veo API: ${responseText?.substring(0, 100) || 'empty response'}` } };
+    }
+    
+    console.log('🔍 Gemini video API response:', { status: response.status, model: selectedModel, hasVideo: !!data.generatedVideos, hasError: !!data.error });
 
     // If primary model fails, try fallback model
     if (!response.ok && selectedModel === VIDEO_MODELS.PRIMARY) {
@@ -79,12 +89,21 @@ serve(async (req) => {
         }),
       });
       
-      data = await response.json();
-      console.log('🔍 Fallback model response:', { status: response.status, model: VIDEO_MODELS.FALLBACK, hasVideo: !!data.generatedVideos });
+      // Handle non-JSON responses from fallback model
+      const fallbackText = await response.text();
+      try {
+        data = fallbackText ? JSON.parse(fallbackText) : {};
+      } catch (parseError) {
+        console.error('⚠️ Failed to parse fallback response:', fallbackText?.substring(0, 200));
+        data = { error: { message: `Invalid response from Veo API fallback: ${fallbackText?.substring(0, 100) || 'empty response'}` } };
+      }
+      
+      console.log('🔍 Fallback model response:', { status: response.status, model: VIDEO_MODELS.FALLBACK, hasVideo: !!data.generatedVideos, hasError: !!data.error });
     }
 
-    if (!response.ok) {
-      console.error('❌ Gemini video API error:', data);
+    // If neither Veo model worked, try Imagen sequence
+    if (!response.ok || data.error) {
+      console.error('❌ Gemini video API error:', data.error || 'Non-200 response');
       
       // If video generation is not available, fallback to creating multiple images as frames
       if (data.error?.message?.includes('video') || data.error?.message?.includes('not available')) {
