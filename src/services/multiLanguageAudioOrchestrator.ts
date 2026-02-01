@@ -430,8 +430,22 @@ class MultiLanguageAudioOrchestrator {
       body: payload,
     });
 
-    if (error) throw error;
-    return { audioUrl: data?.audioUrl || data?.url || '' };
+    if (error) {
+      console.error(`[AudioOrchestrator] Edge function error for ${endpoint}:`, error);
+      throw error;
+    }
+    
+    // Handle multiple possible response formats from different providers
+    const audioUrl = data?.audioUrl || data?.url || data?.audio_url || 
+      (data?.audioContent ? `data:audio/mpeg;base64,${data.audioContent}` : '');
+    
+    if (!audioUrl) {
+      console.error(`[AudioOrchestrator] No audio URL in response from ${endpoint}:`, JSON.stringify(data).substring(0, 200));
+    } else {
+      console.log(`[AudioOrchestrator] Successfully got audio from ${endpoint}, URL length: ${audioUrl.length}`);
+    }
+    
+    return { audioUrl };
   }
 
   /**
