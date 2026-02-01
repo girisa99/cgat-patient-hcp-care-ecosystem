@@ -1603,21 +1603,22 @@ USER MESSAGE: ${text}
           y: 0
         }}
         exit={{ opacity: 0, scale: 0.95, y: corner.startsWith('bottom') ? 20 : -20 }}
-        onClick={(e) => e.stopPropagation()} // Prevent clicks from bubbling
-        onPointerDown={(e) => e.stopPropagation()} // Prevent pointer events from bubbling
+        onClick={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
         className={cn(
-          "flex flex-col bg-background border rounded-xl shadow-2xl overflow-hidden transition-all duration-300",
-          // Floating mode - positioned based on corner with HIGH z-index
+          "flex flex-col bg-background border rounded-xl shadow-2xl overflow-hidden",
+          // Floating mode - fixed dimensions and positioning
           position === 'floating' && cn(
-            "fixed sm:w-[380px] w-[320px] z-[99999] pointer-events-auto",
+            "fixed sm:w-[380px] w-[320px] pointer-events-auto",
             getPanelPositionClasses(),
-            isAutoMinimized ? "max-h-[60px]" : "max-h-[min(550px,65vh)]"
+            // Use fixed height instead of max-height for proper containment
+            isAutoMinimized ? "h-[60px]" : "h-[500px] sm:h-[550px]"
           ),
           position === 'sidebar' && "h-full w-full",
           position === 'inline' && "w-full h-[500px]",
           className
         )}
-        style={{ zIndex: 99999 }} // Inline override for maximum priority
+        style={{ zIndex: 99999 }}
         role="dialog"
         aria-labelledby="ask-genie-title"
         aria-describedby="ask-genie-description"
@@ -1703,8 +1704,8 @@ USER MESSAGE: ${text}
 
       {!isMinimized && !isAutoMinimized && (
         <>
-          {/* Messages */}
-          <ScrollArea className="flex-1 p-3 sm:p-4" ref={scrollRef}>
+          {/* Messages - flex-1 to take remaining space, min-h-0 for proper scrolling */}
+          <ScrollArea className="flex-1 min-h-0 p-3 sm:p-4" ref={scrollRef}>
             {showWelcome && messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center">
                 {/* Feature Highlights - Mobile optimized grid */}
@@ -1907,8 +1908,8 @@ USER MESSAGE: ${text}
             )}
           </ScrollArea>
 
-          {/* Input Area - Enhanced with voice controls */}
-          <div className="p-3 sm:p-4 border-t bg-muted/30">
+          {/* Input Area - Fixed at bottom, shrink-0 to prevent compression */}
+          <div className="p-3 sm:p-4 border-t bg-muted/30 shrink-0">
             {/* Voice Status Indicator */}
             <AnimatePresence>
               {(voice.isListening || voice.isSpeaking || voice.isProcessing) && (
