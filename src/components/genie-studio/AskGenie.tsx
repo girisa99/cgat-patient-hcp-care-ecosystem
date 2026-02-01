@@ -955,6 +955,7 @@ export const AskGenie: React.FC<AskGenieProps> = ({
   const [isOpen, setIsOpen] = useState(externalIsOpen ?? false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [isAutoMinimized, setIsAutoMinimized] = useState(false); // Smart auto-minimize when blocking buttons
+  const userOpenedExplicitly = useRef(false); // Track if user explicitly opened to skip auto-minimize
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -1030,14 +1031,17 @@ export const AskGenie: React.FC<AskGenieProps> = ({
       });
       
       // Auto-minimize when action buttons visible, restore when they're not
+      // BUT skip auto-minimize if user explicitly opened the chat
       if (hasVisibleActionButton || scrolledToBottom) {
-        if (!isAutoMinimized && !isMinimized) {
+        if (!isAutoMinimized && !isMinimized && !userOpenedExplicitly.current) {
           setIsAutoMinimized(true);
         }
       } else {
         if (isAutoMinimized) {
           setIsAutoMinimized(false);
         }
+        // Clear the explicit open flag once conditions are safe
+        userOpenedExplicitly.current = false;
       }
       
       lastScrollY.current = window.scrollY;
@@ -1408,11 +1412,13 @@ USER MESSAGE: ${text}
 
   // Track if we're actually dragging (moved more than threshold)
   const hasDragged = useRef(false);
+  const isDragSession = useRef(false); // true from pointerdown until we decide click vs drag
   const DRAG_THRESHOLD = 5; // pixels - if moved less than this, it's a click
   
   const handleDragStart = useCallback(() => {
     // Reset drag flag at start
     hasDragged.current = false;
+    isDragSession.current = true;
     setIsDragging(true);
   }, []);
   
@@ -1429,26 +1435,38 @@ USER MESSAGE: ${text}
     if (hasDragged.current) {
       handleDragEnd(event, info);
     }
-    // Reset for next interaction after a short delay
-    setTimeout(() => {
-      hasDragged.current = false;
-    }, 100);
+    // Mark drag session as ended so click can be processed
+    isDragSession.current = false;
   }, [handleDragEnd]);
+  
+  // Handle click/tap to open the panel
+  const handleTriggerClick = useCallback(() => {
+    console.log('[AskGenie] Trigger clicked, hasDragged:', hasDragged.current);
+    // If we were dragging (moved more than threshold), don't open
+    if (hasDragged.current) {
+      console.log('[AskGenie] Click ignored - was dragging');
+      // Reset for next interaction
+      hasDragged.current = false;
+      return;
+    }
+    // This is a genuine click - open the panel
+    console.log('[AskGenie] Opening panel...');
+    // Mark as explicitly opened to prevent auto-minimize from triggering immediately
+    userOpenedExplicitly.current = true;
+    setIsAutoMinimized(false);
+    setIsOpen(true);
+    
+    // Clear the explicit flag after a short delay to allow normal behavior later
+    setTimeout(() => {
+      userOpenedExplicitly.current = false;
+    }, 2000);
+    
+    // Reset drag state
+    hasDragged.current = false;
+  }, []);
 
   // Floating trigger button - DRAGGABLE to any corner
   const TriggerButton = () => {
-    const handleTriggerClick = (e: React.MouseEvent) => {
-      // Prevent click if we actually dragged
-      if (hasDragged.current) {
-        e.preventDefault();
-        e.stopPropagation();
-        return;
-      }
-      // This is a genuine click - open the panel
-      setIsAutoMinimized(false);
-      setIsOpen(true);
-    };
-    
     // Compact mode when auto-minimized (show just a small icon)
     if (isAutoMinimized) {
       return (
