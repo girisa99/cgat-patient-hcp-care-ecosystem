@@ -396,7 +396,7 @@ class MultiLanguageAudioOrchestrator {
   }
 
   /**
-   * Execute a single audio job
+   * Execute a single audio job with polling support for long TTS
    */
   private async executeJob(job: AudioJob): Promise<{ audioUrl: string }> {
     let endpoint: string;
@@ -449,6 +449,12 @@ class MultiLanguageAudioOrchestrator {
       throw error;
     }
     
+    // Check if this is a background job that needs polling
+    if (data?.jobId && data?.status === 'processing') {
+      console.log(`[AudioOrchestrator] TTS job started in background, polling for completion: ${data.jobId}`);
+      return await this.pollForTTSCompletion(data.jobId, endpoint);
+    }
+    
     // Handle multiple possible response formats from different providers
     const audioUrl = data?.audioUrl || data?.url || data?.audio_url || 
       (data?.audioContent ? `data:audio/mpeg;base64,${data.audioContent}` : '');
@@ -460,6 +466,47 @@ class MultiLanguageAudioOrchestrator {
     }
     
     return { audioUrl };
+  }
+
+  /**
+   * Poll for TTS job completion (background processing for long content)
+   */
+  private async pollForTTSCompletion(jobId: string, endpoint: string): Promise<{ audioUrl: string }> {
+    const maxAttempts = 60; // Max 2 minutes (2s intervals)
+    const pollInterval = 2000; // 2 seconds
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      await new Promise(resolve => setTimeout(resolve, pollInterval));
+
+      const { data, error } = await supabase.functions.invoke(endpoint, {
+        body: { jobId },
+      });
+
+      if (error) {
+        console.error(`[AudioOrchestrator] Polling error for job ${jobId}:`, error);
+        throw error;
+      }
+
+      console.log(`[AudioOrchestrator] Poll ${attempt + 1}/${maxAttempts}: status=${data?.status}, progress=${data?.progress}%`);
+
+      if (data?.status === 'complete') {
+        const audioUrl = data?.audioUrl || data?.url || 
+          (data?.audioContent ? `data:audio/mpeg;base64,${data.audioContent}` : '');
+        
+        if (!audioUrl) {
+          throw new Error('TTS job completed but no audio URL returned');
+        }
+        
+        console.log(`[AudioOrchestrator] TTS job ${jobId} completed, URL length: ${audioUrl.length}`);
+        return { audioUrl };
+      }
+
+      if (data?.status === 'failed') {
+        throw new Error(data?.error || 'TTS job failed');
+      }
+    }
+
+    throw new Error(`TTS job ${jobId} timed out after ${maxAttempts * pollInterval / 1000}s`);
   }
 
   /**
