@@ -1,29 +1,22 @@
 /**
  * GENIE STUDIO LANDING PAGE
- * Geo-contextual landing with 7 products, 206 pipelines, regional content
  * 
- * Test regions: ?simulate_region=IND or ?simulate_region=MENA
+ * Main marketing landing page with:
+ * - Professional AI Avatar video showcase (Veo, Alibaba WAN, ModelsLab)
+ * - Regional presenters with Genie character transitions
+ * - Audio device selection for headphones
+ * - Connected to Production Hub for asset management
  */
-import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+
+import React, { useEffect, useState, Suspense, useRef } from 'react';
+import { motion } from 'framer-motion';
+import { Loader2, Play, Sparkles, ArrowRight, Check, Globe, Zap, Users, ChevronDown, ChevronLeft, ChevronRight, Youtube, Twitter, Linkedin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  ArrowRight, 
-  Check,
-  ChevronRight,
-  ChevronLeft,
-  Youtube,
-  Twitter,
-  Linkedin,
-  Mail,
-  Globe,
-  Play
-} from 'lucide-react';
-import genieSuiteLogo from '@/assets/logos/genie-studio-suite-logo.png';
-
-// Landing page components
-import { LiveVideoShowcase } from '@/components/landing/video/LiveVideoShowcase';
+import { useNavigate, Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
+// Session management via Supabase - no custom auth hook needed
+import { ProfessionalAvatarShowcase } from '@/components/landing/video/ProfessionalAvatarShowcase';
 import { InteractiveLanguageDemo } from '@/components/landing/InteractiveLanguageDemo';
 import { IndustryShowcases } from '@/components/landing/IndustryShowcases';
 import { CrossFunctionalSection } from '@/components/landing/CrossFunctionalSection';
@@ -285,7 +278,7 @@ const GenieStudioLanding: React.FC = () => {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border shadow-md">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <img src={genieSuiteLogo} alt="Genie Suite" className="h-8 w-auto" />
+            <Sparkles className="w-8 h-8 text-primary" />
             <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               Genie Studio
             </span>
@@ -399,9 +392,9 @@ const GenieStudioLanding: React.FC = () => {
               </p>
             </div>
 
-            {/* Right: Live AI Video Showcase with Genie Lamp & Voiceover */}
+            {/* Right: Professional AI Video Showcase with Avatars & Voiceover */}
             <div className="relative">
-              <LiveVideoShowcase autoPlay={true} showControls={true} className="rounded-xl shadow-2xl" />
+              <ProfessionalAvatarShowcase autoPlay={true} showControls={true} className="rounded-xl shadow-2xl" />
               {/* Floating badges */}
               <div className="absolute -top-4 -right-4 px-4 py-2 bg-primary rounded-lg shadow-lg animate-bounce z-20" style={{ animationDuration: '3s' }}>
                 <p className="text-sm font-medium text-primary-foreground">🌍 {hero.stats.languages || hero.stats.dialects} Languages</p>
@@ -809,7 +802,7 @@ const GenieStudioLanding: React.FC = () => {
             </div>
             
             <div className="flex justify-center items-center gap-2">
-              <img src={genieSuiteLogo} alt="Genie Suite" className="h-6 w-auto" />
+              <Sparkles className="w-6 h-6 text-primary" />
               <span className="font-bold text-foreground">Genie Studio</span>
               <span className="text-muted-foreground">© 2026</span>
             </div>
