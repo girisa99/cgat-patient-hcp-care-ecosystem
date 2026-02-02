@@ -21480,6 +21480,63 @@ export type Database = {
           },
         ]
       }
+      tts_jobs: {
+        Row: {
+          audio_content: string | null
+          audio_url: string | null
+          char_count: number | null
+          completed_at: string | null
+          cost: number | null
+          created_at: string
+          error: string | null
+          id: string
+          language_code: string | null
+          progress: number
+          provider: string | null
+          quality: string | null
+          status: string
+          text_length: number | null
+          updated_at: string
+          zone: string | null
+        }
+        Insert: {
+          audio_content?: string | null
+          audio_url?: string | null
+          char_count?: number | null
+          completed_at?: string | null
+          cost?: number | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          language_code?: string | null
+          progress?: number
+          provider?: string | null
+          quality?: string | null
+          status?: string
+          text_length?: number | null
+          updated_at?: string
+          zone?: string | null
+        }
+        Update: {
+          audio_content?: string | null
+          audio_url?: string | null
+          char_count?: number | null
+          completed_at?: string | null
+          cost?: number | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          language_code?: string | null
+          progress?: number
+          provider?: string | null
+          quality?: string | null
+          status?: string
+          text_length?: number | null
+          updated_at?: string
+          zone?: string | null
+        }
+        Relationships: []
+      }
       universal_knowledge_base: {
         Row: {
           body_part: string | null
