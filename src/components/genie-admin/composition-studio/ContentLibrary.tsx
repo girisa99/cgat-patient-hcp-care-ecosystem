@@ -186,18 +186,73 @@ export const ContentLibrary: React.FC<ContentLibraryProps> = ({
     return acc;
   }, {} as Record<string, string>);
 
-  // Fetch content
+  // Fetch content from both landing_page_videos AND composition_projects
   useEffect(() => {
     const fetchContent = async () => {
       setIsLoading(true);
       try {
-        const { data, error } = await supabase
+        // Fetch from landing_page_videos (legacy)
+        const { data: landingData, error: landingError } = await supabase
           .from('landing_page_videos')
           .select('*')
           .order('created_at', { ascending: false });
 
-        if (error) throw error;
-        setContent((data || []) as ContentItem[]);
+        if (landingError) {
+          console.error('Error fetching landing_page_videos:', landingError);
+        }
+
+        // Also fetch from composition_projects with chapters
+        const { data: projectsData, error: projectsError } = await supabase
+          .from('composition_projects')
+          .select(`
+            *,
+            composition_chapters (*)
+          `)
+          .order('updated_at', { ascending: false });
+
+        if (projectsError) {
+          console.error('Error fetching composition_projects:', projectsError);
+        }
+
+        // Convert composition_projects to ContentItem format
+        const projectItems: ContentItem[] = [];
+        for (const project of projectsData || []) {
+          const chapters = (project as any).composition_chapters || [];
+          for (const chapter of chapters) {
+            if (chapter.video_url || chapter.preview_url) {
+              projectItems.push({
+                id: `project-${project.id}-${chapter.id}`,
+                title: `${project.name} - ${chapter.title}`,
+                description: chapter.script_content?.substring(0, 500) || `Chapter: ${chapter.title}`,
+                video_url: chapter.video_url || chapter.preview_url || '',
+                thumbnail_url: chapter.preview_url || null,
+                region: getRegionFromLang(project.primary_language),
+                language_code: project.primary_language,
+                language_name: getLanguageNameFromCode(project.primary_language),
+                industry: chapter.visual_types?.[0] || 'general',
+                content_type: chapter.visual_types?.[0] || 'video',
+                placement: 'studio',
+                display_order: chapter.chapter_order || 0,
+                is_active: true,
+                is_featured: false,
+                view_count: 0,
+                duration_seconds: chapter.duration || 30,
+                ai_confidence: chapter.video_confidence_score || 85,
+                generation_pipeline: 'composition_studio',
+                created_at: chapter.created_at || project.created_at,
+                updated_at: chapter.updated_at || project.updated_at,
+                published_at: null,
+                created_by: project.user_id,
+              });
+            }
+          }
+        }
+
+        // Combine both sources, preferring newer items first
+        const combined = [...(landingData || []), ...projectItems]
+          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+        setContent(combined as ContentItem[]);
       } catch (err) {
         console.error('Error fetching content:', err);
         toast.error('Failed to load content');
@@ -208,6 +263,29 @@ export const ContentLibrary: React.FC<ContentLibraryProps> = ({
 
     fetchContent();
   }, []);
+
+  // Helper functions for language/region mapping
+  const getRegionFromLang = (langCode: string): string => {
+    const regionMap: Record<string, string> = {
+      'en': 'NAM', 'en-US': 'NAM', 'en-GB': 'EUR',
+      'ar': 'MENA', 'ar-SA': 'MENA', 'ar-AE': 'MENA',
+      'hi': 'IND', 'te': 'IND', 'kn': 'IND', 'ta': 'IND', 'mr': 'IND', 'bn': 'IND',
+      'zh': 'CJK', 'ja': 'CJK', 'ko': 'CJK',
+      'de': 'EUR', 'fr': 'EUR', 'es': 'EUR', 'it': 'EUR', 'pt': 'EUR',
+    };
+    return regionMap[langCode] || 'NAM';
+  };
+
+  const getLanguageNameFromCode = (langCode: string): string => {
+    const nameMap: Record<string, string> = {
+      'en': 'English', 'en-US': 'English (US)', 'en-GB': 'English (UK)',
+      'ar': 'Arabic', 'ar-SA': 'Arabic (Saudi)', 'ar-AE': 'Arabic (UAE)',
+      'hi': 'Hindi', 'te': 'Telugu', 'kn': 'Kannada', 'ta': 'Tamil', 'mr': 'Marathi', 'bn': 'Bengali',
+      'zh': 'Chinese', 'ja': 'Japanese', 'ko': 'Korean',
+      'de': 'German', 'fr': 'French', 'es': 'Spanish', 'it': 'Italian', 'pt': 'Portuguese',
+    };
+    return nameMap[langCode] || langCode;
+  };
 
   // Filter content
   const filteredContent = content.filter(item => {
