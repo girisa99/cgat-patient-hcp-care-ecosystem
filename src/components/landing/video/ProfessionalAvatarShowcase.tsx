@@ -185,6 +185,74 @@ export const ProfessionalAvatarShowcase: React.FC<ProfessionalAvatarShowcaseProp
     }
   }, []);
 
+  // Voice ID mapping per provider (provider-specific voice IDs)
+  const getVoiceIdForProvider = useCallback((provider: string, gender: 'male' | 'female', langCode: string): string => {
+    // ElevenLabs voice IDs
+    const elevenLabsVoices = {
+      female: 'EXAVITQu4vr4xnSDxMaL', // Sarah
+      male: 'JBFqnCBsd6RMkjVDRZzb', // George
+    };
+    
+    // Azure Neural voice names (language-specific)
+    const azureVoices: Record<string, { male: string; female: string }> = {
+      hi: { female: 'hi-IN-SwaraNeural', male: 'hi-IN-MadhurNeural' },
+      ar: { female: 'ar-SA-ZariyahNeural', male: 'ar-SA-HamedNeural' },
+      de: { female: 'de-DE-KatjaNeural', male: 'de-DE-ConradNeural' },
+      fr: { female: 'fr-FR-DeniseNeural', male: 'fr-FR-HenriNeural' },
+      es: { female: 'es-ES-ElviraNeural', male: 'es-ES-AlvaroNeural' },
+      pt: { female: 'pt-BR-FranciscaNeural', male: 'pt-BR-AntonioNeural' },
+      tr: { female: 'tr-TR-EmelNeural', male: 'tr-TR-AhmetNeural' },
+      ko: { female: 'ko-KR-SunHiNeural', male: 'ko-KR-InJoonNeural' },
+      sw: { female: 'sw-KE-ZuriNeural', male: 'sw-KE-RafikiNeural' },
+      en: { female: 'en-US-JennyNeural', male: 'en-US-GuyNeural' },
+    };
+    
+    // Alibaba CosyVoice voices for CJK
+    const alibabaVoices: Record<string, { male: string; female: string }> = {
+      zh: { female: 'longxiaochun', male: 'longcheng' },
+      ja: { female: 'cosyvoice-ja-female-01', male: 'cosyvoice-ja-male-01' },
+    };
+    
+    // OpenAI TTS voices (fallback)
+    const openaiVoices = {
+      female: 'nova',
+      male: 'onyx',
+    };
+    
+    if (provider === 'elevenlabs') {
+      return elevenLabsVoices[gender];
+    }
+    if (provider === 'azure') {
+      const langVoices = azureVoices[langCode] || azureVoices.en;
+      return langVoices[gender];
+    }
+    if (provider === 'alibaba') {
+      const langVoices = alibabaVoices[langCode] || alibabaVoices.zh;
+      return langVoices[gender];
+    }
+    // Default to OpenAI
+    return openaiVoices[gender];
+  }, []);
+
+  // Get proper language code with region
+  const getLanguageCode = useCallback((langCode: string): string => {
+    const langCodeMap: Record<string, string> = {
+      hi: 'hi-IN',
+      ar: 'ar-SA',
+      de: 'de-DE',
+      fr: 'fr-FR',
+      es: 'es-ES',
+      pt: 'pt-BR',
+      tr: 'tr-TR',
+      ko: 'ko-KR',
+      sw: 'sw-KE',
+      zh: 'zh-CN',
+      ja: 'ja-JP',
+      en: 'en-US',
+    };
+    return langCodeMap[langCode] || langCode;
+  }, []);
+
   // Generate TTS voice with proper device routing
   const generateVoice = useCallback(async () => {
     if (!currentScript || isMuted) return;
@@ -205,24 +273,30 @@ export const ProfessionalAvatarShowcase: React.FC<ProfessionalAvatarShowcaseProp
 
     if (cleanText.length < 10) return;
 
+    // Get proper voice ID for the selected provider
+    const voiceId = getVoiceIdForProvider(ttsProviderInfo.provider, currentAvatarGender, selectedLanguage);
+    const languageCode = getLanguageCode(selectedLanguage);
+
     try {
       setIsGeneratingVoice(true);
-      console.log(`[TTS] Generating voice for ${selectedLanguage} using ${ttsProviderInfo.displayName}`);
+      console.log(`[TTS] Generating ${languageCode} voice via ${ttsProviderInfo.provider} using voice: ${voiceId}`);
       
-      // Call multi-provider-tts for regional routing
+      // Call multi-provider-tts with correct language code and provider-specific voice
       const { data, error } = await supabase.functions.invoke('multi-provider-tts', {
         body: {
           text: cleanText,
-          language: selectedLanguage,
-          voice: currentAvatarGender === 'female' ? 'nova' : 'onyx',
+          languageCode: languageCode,
+          voice: voiceId,
           provider: ttsProviderInfo.provider,
+          tier: 'premium',
         }
       });
 
       if (error) {
-        // Fallback to basic TTS
+        console.warn('[TTS] Multi-provider failed, using fallback:', error);
+        // Fallback to basic OpenAI TTS
         const fallbackRes = await supabase.functions.invoke('text-to-speech', {
-          body: { text: cleanText, voice: 'nova', model: 'tts-1', speed: 1.0 }
+          body: { text: cleanText, voice: currentAvatarGender === 'female' ? 'nova' : 'onyx', model: 'tts-1', speed: 1.0 }
         });
         if (fallbackRes.error) throw fallbackRes.error;
         if (fallbackRes.data?.audioContent) {
@@ -240,7 +314,7 @@ export const ProfessionalAvatarShowcase: React.FC<ProfessionalAvatarShowcaseProp
     } finally {
       setIsGeneratingVoice(false);
     }
-  }, [currentScript, currentChapter.id, isMuted, selectedLanguage, ttsProviderInfo, currentAvatarGender]);
+  }, [currentScript, currentChapter.id, isMuted, selectedLanguage, ttsProviderInfo, currentAvatarGender, getVoiceIdForProvider, getLanguageCode]);
 
   // Play audio with device selection
   const playAudio = useCallback(async (base64Audio: string) => {
