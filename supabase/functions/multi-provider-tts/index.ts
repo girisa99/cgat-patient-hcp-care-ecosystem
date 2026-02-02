@@ -12,10 +12,21 @@
  * - Smart text chunking for long content (handles 4096 char limits)
  * - Request stitching for smooth transitions between chunks
  * - Multi-provider fallback chain
+ * - Background processing with EdgeRuntime.waitUntil() for long content
+ * - Job-based polling to avoid WORKER_LIMIT errors
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
+
+// Initialize Supabase client for job tracking
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+// Threshold for background processing (chars) - content above this uses job-based async
+const BACKGROUND_THRESHOLD = 3000;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -54,6 +65,7 @@ interface TTSRequest {
   voice?: string;
   speed?: number;
   pitch?: number;
+  jobId?: string; // For polling job status
 }
 
 interface TTSRouting {
@@ -615,6 +627,131 @@ async function generateAlibabaTTS(text: string, languageCode?: string, voice?: s
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// BACKGROUND TTS PROCESSING
+// ═══════════════════════════════════════════════════════════════════════════════
+
+interface TTSJob {
+  id: string;
+  status: 'processing' | 'complete' | 'failed';
+  progress: number;
+  audioContent?: string;
+  audioUrl?: string;
+  provider?: string;
+  zone?: string;
+  quality?: string;
+  cost?: number;
+  charCount?: number;
+  error?: string;
+}
+
+/**
+ * Process TTS in background and store result in tts_jobs table
+ */
+async function processTTSBackground(
+  jobId: string, 
+  request: TTSRequest, 
+  routing: TTSRouting,
+  providers: { id: TTSProvider; available: boolean; priority: number }[]
+) {
+  try {
+    const generateWithProvider = async (provider: TTSProvider): Promise<ArrayBuffer> => {
+      switch (provider) {
+        case 'elevenlabs':
+          return await generateElevenLabsTTS(request.text, request.voice, request.speed);
+        case 'openai':
+          return await generateOpenAITTS(request.text, request.voice, request.speed);
+        case 'azure':
+          return await generateAzureTTS(request.text, request.languageCode || 'en-US', request.voice);
+        case 'google':
+          return await generateGoogleTTS(request.text, request.languageCode || 'en-US', request.voice);
+        case 'alibaba':
+          return await generateAlibabaTTS(request.text, request.languageCode || 'en-US', request.voice);
+        default:
+          throw new Error(`Unknown provider: ${provider}`);
+      }
+    };
+
+    // Update progress
+    await supabase.from('tts_jobs').update({ progress: 10 }).eq('id', jobId);
+
+    let audioBuffer: ArrayBuffer;
+    let finalProvider = routing.provider;
+    let finalZone = routing.zone;
+    
+    try {
+      audioBuffer = await generateWithProvider(routing.provider);
+      await supabase.from('tts_jobs').update({ progress: 70 }).eq('id', jobId);
+    } catch (primaryError) {
+      console.warn(`⚠️ Background: Primary provider ${routing.provider} failed:`, (primaryError as Error).message);
+      
+      // Build fallback chain
+      let fallbackChain: TTSProvider[];
+      if (routing.zone === 'gemini') {
+        fallbackChain = ['azure', 'alibaba', 'google', 'elevenlabs', 'openai'];
+      } else if (routing.zone === 'alibaba') {
+        fallbackChain = ['alibaba', 'azure', 'elevenlabs', 'openai', 'google'];
+      } else if (routing.zone === 'azure') {
+        fallbackChain = ['azure', 'google', 'alibaba', 'elevenlabs', 'openai'];
+      } else {
+        fallbackChain = ['elevenlabs', 'openai', 'azure', 'google'];
+      }
+      
+      const availableProviderIds = providers.filter(p => p.available).map(p => p.id);
+      const remainingProviders = fallbackChain.filter(
+        p => p !== routing.provider && availableProviderIds.includes(p)
+      );
+      
+      let lastError: Error = primaryError as Error;
+      let fallbackSucceeded = false;
+      
+      for (const fallbackProvider of remainingProviders) {
+        try {
+          console.log(`🔄 Background fallback: ${fallbackProvider}`);
+          audioBuffer = await generateWithProvider(fallbackProvider);
+          finalProvider = fallbackProvider;
+          finalZone = 'fallback';
+          fallbackSucceeded = true;
+          break;
+        } catch (fallbackError) {
+          lastError = fallbackError as Error;
+        }
+      }
+      
+      if (!fallbackSucceeded) {
+        throw lastError;
+      }
+    }
+
+    await supabase.from('tts_jobs').update({ progress: 90 }).eq('id', jobId);
+
+    // Encode to base64 - use smaller chunks to avoid memory issues
+    const base64Audio = encodeBase64Chunked(audioBuffer, 512 * 1024);
+    
+    // Update job as complete
+    await supabase.from('tts_jobs').update({
+      status: 'complete',
+      progress: 100,
+      audio_content: base64Audio,
+      audio_url: `data:audio/mpeg;base64,${base64Audio}`,
+      provider: finalProvider,
+      zone: finalZone,
+      quality: routing.quality,
+      cost: routing.cost,
+      char_count: request.text.length
+    }).eq('id', jobId);
+
+    console.log(`✅ Background TTS complete: job ${jobId}, ${base64Audio.length} chars base64`);
+
+  } catch (error) {
+    console.error(`❌ Background TTS failed: job ${jobId}`, error);
+    await supabase.from('tts_jobs').update({
+      status: 'failed',
+      error: (error as Error).message || 'TTS generation failed'
+    }).eq('id', jobId);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // MAIN HANDLER
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -625,6 +762,41 @@ serve(async (req) => {
 
   try {
     const request: TTSRequest = await req.json();
+
+    // Handle job status polling
+    if (request.jobId) {
+      const { data: job, error } = await supabase
+        .from('tts_jobs')
+        .select('*')
+        .eq('id', request.jobId)
+        .single();
+      
+      if (error || !job) {
+        return new Response(
+          JSON.stringify({ error: 'Job not found' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({
+          jobId: job.id,
+          status: job.status,
+          progress: job.progress,
+          ...(job.status === 'complete' && {
+            audioContent: job.audio_content,
+            audioUrl: job.audio_url,
+            provider: job.provider,
+            zone: job.zone,
+            quality: job.quality,
+            cost: job.cost,
+            charCount: job.char_count
+          }),
+          ...(job.status === 'failed' && { error: job.error })
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     if (!request.text) {
       return new Response(
@@ -668,7 +840,50 @@ serve(async (req) => {
 
     console.log(`🎯 Selected provider: ${routing.provider} (zone: ${routing.zone})`);
 
-    // Generate audio based on provider with resilient fallback chain
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // BACKGROUND PROCESSING FOR LONG CONTENT
+    // ═══════════════════════════════════════════════════════════════════════════════
+    if (request.text.length > BACKGROUND_THRESHOLD) {
+      console.log(`📋 Long content (${request.text.length} chars), using background processing`);
+      
+      // Create job record
+      const jobId = crypto.randomUUID();
+      const { error: insertError } = await supabase.from('tts_jobs').insert({
+        id: jobId,
+        status: 'processing',
+        progress: 0,
+        text_length: request.text.length,
+        language_code: languageCode,
+        provider: routing.provider,
+        created_at: new Date().toISOString()
+      });
+
+      if (insertError) {
+        console.error('Failed to create TTS job:', insertError);
+        // Fall back to sync processing if job creation fails
+      } else {
+        // Start background processing using EdgeRuntime.waitUntil
+        // @ts-ignore - EdgeRuntime is available in Supabase Edge Functions
+        EdgeRuntime.waitUntil(
+          processTTSBackground(jobId, request, routing, providers)
+        );
+
+        // Return immediately with job ID
+        return new Response(
+          JSON.stringify({ 
+            jobId,
+            status: 'processing',
+            progress: 0,
+            message: 'TTS generation started. Poll with jobId to check status.'
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // SYNCHRONOUS PROCESSING FOR SHORT CONTENT
+    // ═══════════════════════════════════════════════════════════════════════════════
     let audioBuffer: ArrayBuffer;
     
     const generateWithProvider = async (provider: TTSProvider): Promise<ArrayBuffer> => {
@@ -691,29 +906,21 @@ serve(async (req) => {
     try {
       audioBuffer = await generateWithProvider(routing.provider);
     } catch (primaryError) {
-      console.warn(`⚠️ Primary provider ${routing.provider} failed:`, primaryError.message);
+      console.warn(`⚠️ Primary provider ${routing.provider} failed:`, (primaryError as Error).message);
       
       // Build fallback chain based on zone
       let fallbackChain: TTSProvider[];
       
       if (routing.zone === 'gemini') {
-        // Gemini Zone (India/SEA/Africa): Azure → Alibaba CosyVoice → Google → ElevenLabs → OpenAI
-        // Added Alibaba for excellent Asian language quality
         fallbackChain = ['azure', 'alibaba', 'google', 'elevenlabs', 'openai'];
       } else if (routing.zone === 'alibaba') {
-        // CJK Zone: Alibaba → Azure → ElevenLabs → OpenAI → Google
         fallbackChain = ['alibaba', 'azure', 'elevenlabs', 'openai', 'google'];
       } else if (routing.zone === 'azure') {
-        // MENA Zone: Azure → Google → ElevenLabs → OpenAI
-        // Added Alibaba as last resort for Arabic since it has decent coverage
         fallbackChain = ['azure', 'google', 'alibaba', 'elevenlabs', 'openai'];
       } else {
-        // Claude Zone (Western/EU/LatAm): ElevenLabs → OpenAI → Azure → Google
-        // ElevenLabs is primary for premium voice quality in Western languages
         fallbackChain = ['elevenlabs', 'openai', 'azure', 'google'];
       }
       
-      // Remove already-tried provider and unavailable providers
       const availableProviderIds = providers.filter(p => p.available).map(p => p.id);
       const remainingProviders = fallbackChain.filter(
         p => p !== routing.provider && availableProviderIds.includes(p)
@@ -765,7 +972,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('TTS Error:', error);
     return new Response(
-      JSON.stringify({ error: error.message || 'TTS generation failed' }),
+      JSON.stringify({ error: (error as Error).message || 'TTS generation failed' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
