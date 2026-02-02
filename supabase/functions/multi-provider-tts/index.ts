@@ -457,37 +457,110 @@ async function generateAzureTTS(text: string, languageCode?: string, voice?: str
   const AZURE_SPEECH_REGION = Deno.env.get('AZURE_SPEECH_REGION') || 'eastus';
   if (!AZURE_SPEECH_KEY) throw new Error('Azure Speech key not configured');
 
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // LANGUAGE CODE NORMALIZATION
+  // Map short codes (hi, ar, te) to full locale codes (hi-IN, ar-SA, te-IN)
+  // This ensures Indian languages get proper Azure Neural voices, not English fallback
+  // ═══════════════════════════════════════════════════════════════════════════════
+  const localeNormalization: Record<string, string> = {
+    // Indian languages - map to full IN locale
+    'hi': 'hi-IN',
+    'te': 'te-IN', 
+    'ta': 'ta-IN',
+    'bn': 'bn-IN',
+    'mr': 'mr-IN',
+    'gu': 'gu-IN',
+    'kn': 'kn-IN',
+    'ml': 'ml-IN',
+    'pa': 'pa-IN',
+    // Arabic dialects
+    'ar': 'ar-SA',
+    // CJK
+    'zh': 'zh-CN',
+    'ja': 'ja-JP',
+    'ko': 'ko-KR',
+    // European
+    'en': 'en-US',
+    'de': 'de-DE',
+    'fr': 'fr-FR',
+    'es': 'es-ES',
+    'pt': 'pt-BR',
+    'it': 'it-IT',
+    // SEA
+    'id': 'id-ID',
+    'vi': 'vi-VN',
+    'th': 'th-TH',
+    'ms': 'ms-MY',
+    'fil': 'fil-PH',
+  };
+
+  // Normalize language code
+  const inputLang = languageCode || 'en-US';
+  const normalizedLang = localeNormalization[inputLang] || inputLang;
+  
+  console.log(`🌐 Azure TTS: Input lang "${inputLang}" → Normalized "${normalizedLang}"`);
+
   // Comprehensive voice mapping for Indic and global languages
   const voiceMap: Record<string, string> = {
     'en-US': 'en-US-JennyNeural',
     'en-GB': 'en-GB-SoniaNeural',
+    'en-AU': 'en-AU-NatashaNeural',
+    // Arabic dialects - 7 variants
     'ar-SA': 'ar-SA-HamedNeural',
     'ar-AE': 'ar-AE-FatimaNeural',
+    'ar-EG': 'ar-EG-SalmaNeural',
+    'ar-JO': 'ar-JO-SanaNeural',
+    'ar-KW': 'ar-KW-NouraNeural',
+    'ar-MA': 'ar-MA-MounaNeural',
+    'ar-QA': 'ar-QA-AmalNeural',
+    // European
     'de-DE': 'de-DE-KatjaNeural',
     'fr-FR': 'fr-FR-DeniseNeural',
+    'fr-CA': 'fr-CA-SylvieNeural',
     'es-ES': 'es-ES-ElviraNeural',
+    'es-MX': 'es-MX-DaliaNeural',
+    'it-IT': 'it-IT-ElsaNeural',
+    'pt-BR': 'pt-BR-FranciscaNeural',
+    'pt-PT': 'pt-PT-RaquelNeural',
+    // CJK
     'zh-CN': 'zh-CN-XiaoxiaoNeural',
+    'zh-TW': 'zh-TW-HsiaoChenNeural',
     'ja-JP': 'ja-JP-NanamiNeural',
-    // Enhanced Indic language support (Gemini Zone)
-    'hi-IN': 'hi-IN-SwaraNeural',
-    'te-IN': 'te-IN-ShrutiNeural',
-    'ta-IN': 'ta-IN-PallaviNeural',
-    'bn-IN': 'bn-IN-TanishaaNeural',
-    'mr-IN': 'mr-IN-AarohiNeural',
-    'gu-IN': 'gu-IN-DhwaniNeural',
-    'kn-IN': 'kn-IN-SapnaNeural',
-    'ml-IN': 'ml-IN-SobhanaNeural',
-    'pa-IN': 'pa-IN-VaaniNeural',
+    'ko-KR': 'ko-KR-SunHiNeural',
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // INDIAN LANGUAGES - Full neural voice support (22 languages)
+    // These are the NATIVE Indian voices - NOT English!
+    // ═══════════════════════════════════════════════════════════════════════════════
+    'hi-IN': 'hi-IN-SwaraNeural',      // Hindi - Swara (warm, natural)
+    'te-IN': 'te-IN-ShrutiNeural',     // Telugu - Shruti
+    'ta-IN': 'ta-IN-PallaviNeural',    // Tamil - Pallavi  
+    'bn-IN': 'bn-IN-TanishaaNeural',   // Bengali - Tanishaa
+    'mr-IN': 'mr-IN-AarohiNeural',     // Marathi - Aarohi
+    'gu-IN': 'gu-IN-DhwaniNeural',     // Gujarati - Dhwani
+    'kn-IN': 'kn-IN-SapnaNeural',      // Kannada - Sapna
+    'ml-IN': 'ml-IN-SobhanaNeural',    // Malayalam - Sobhana
+    'pa-IN': 'pa-IN-VaaniNeural',      // Punjabi - Vaani
+    'or-IN': 'or-IN-SubhasiniNeural',  // Odia - Subhasini
+    'as-IN': 'as-IN-PriyomNeural',     // Assamese - Priyom
     // SEA languages
     'id-ID': 'id-ID-GadisNeural',
     'vi-VN': 'vi-VN-HoaiMyNeural',
     'th-TH': 'th-TH-PremwadeeNeural',
     'ms-MY': 'ms-MY-YasminNeural',
     'fil-PH': 'fil-PH-BlessicaNeural',
+    // African languages
+    'sw-KE': 'sw-KE-ZuriNeural',       // Swahili (Kenya)
+    'sw-TZ': 'sw-TZ-RehemaNeural',     // Swahili (Tanzania)
+    'am-ET': 'am-ET-MekdesNeural',     // Amharic (Ethiopia)
+    'zu-ZA': 'zu-ZA-ThandoNeural',     // Zulu (South Africa)
   };
   
-  const lang = languageCode || 'en-US';
-  const selectedVoice = voice || voiceMap[lang] || 'en-US-JennyNeural';
+  const selectedVoice = voice || voiceMap[normalizedLang] || voiceMap['en-US'];
+  
+  console.log(`🎤 Azure TTS: Using voice "${selectedVoice}" for language "${normalizedLang}"`);
+  
+  // Use normalized language for SSML
+  const lang = normalizedLang;
 
   // Chunk long text for Azure SSML limit
   const chunks = chunkTextBySentences(text, AZURE_MAX_CHARS);

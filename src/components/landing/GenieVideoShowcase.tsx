@@ -118,17 +118,22 @@ const SLIDE_VISUALS: Record<string, React.CSSProperties> = {
   }
 };
 
-// Language options
+// Language options with proper locale codes for Azure TTS
 const LANGUAGES = [
-  { code: 'en', name: 'English', flag: '🇺🇸' },
-  { code: 'ar', name: 'العربية', flag: '🇸🇦' },
-  { code: 'hi', name: 'हिंदी', flag: '🇮🇳' },
-  { code: 'zh', name: '中文', flag: '🇨🇳' },
-  { code: 'ja', name: '日本語', flag: '🇯🇵' },
-  { code: 'ko', name: '한국어', flag: '🇰🇷' },
-  { code: 'es', name: 'Español', flag: '🇪🇸' },
-  { code: 'fr', name: 'Français', flag: '🇫🇷' },
-  { code: 'pt', name: 'Português', flag: '🇧🇷' }
+  { code: 'en', name: 'English', flag: '🇺🇸', locale: 'en-US' },
+  { code: 'ar', name: 'العربية', flag: '🇸🇦', locale: 'ar-SA' },
+  { code: 'hi', name: 'हिंदी', flag: '🇮🇳', locale: 'hi-IN' },
+  { code: 'te', name: 'తెలుగు', flag: '🇮🇳', locale: 'te-IN' },
+  { code: 'ta', name: 'தமிழ்', flag: '🇮🇳', locale: 'ta-IN' },
+  { code: 'bn', name: 'বাংলা', flag: '🇮🇳', locale: 'bn-IN' },
+  { code: 'zh', name: '中文', flag: '🇨🇳', locale: 'zh-CN' },
+  { code: 'ja', name: '日本語', flag: '🇯🇵', locale: 'ja-JP' },
+  { code: 'ko', name: '한국어', flag: '🇰🇷', locale: 'ko-KR' },
+  { code: 'es', name: 'Español', flag: '🇪🇸', locale: 'es-ES' },
+  { code: 'fr', name: 'Français', flag: '🇫🇷', locale: 'fr-FR' },
+  { code: 'pt', name: 'Português', flag: '🇧🇷', locale: 'pt-BR' },
+  { code: 'de', name: 'Deutsch', flag: '🇩🇪', locale: 'de-DE' },
+  { code: 'sw', name: 'Kiswahili', flag: '🇰🇪', locale: 'sw-KE' },
 ];
 
 interface GenieVideoShowcaseProps {
@@ -310,7 +315,7 @@ export const GenieVideoShowcase: React.FC<GenieVideoShowcaseProps> = ({
         />
       )}
       
-      {/* Fallback: Animated Background when no video */}
+      {/* Fallback: Enhanced Animated Background when no video */}
       {(!currentVideo || videoError) && (
         <>
           <motion.div 
@@ -320,56 +325,235 @@ export const GenieVideoShowcase: React.FC<GenieVideoShowcaseProps> = ({
             transition={{ duration: 0.5 }}
           />
           
-          {/* Animated stars/particles background */}
+          {/* Dynamic particle system based on chapter */}
           <div className="absolute inset-0 overflow-hidden">
-            {[...Array(30)].map((_, i) => (
+            {/* Floating orbs - different colors per product */}
+            {[...Array(20)].map((_, i) => {
+              const colors = {
+                opening: 'bg-purple-400',
+                spark: 'bg-orange-400',
+                mind: 'bg-blue-400',
+                vibe: 'bg-green-400',
+                deck: 'bg-yellow-400',
+                arc: 'bg-pink-400',
+                'ask-genie': 'bg-cyan-400',
+                cast: 'bg-red-400',
+                closing: 'bg-purple-400',
+              };
+              const color = colors[currentChapter.id as keyof typeof colors] || 'bg-white';
+              return (
+                <motion.div
+                  key={i}
+                  className={`absolute w-2 h-2 ${color} rounded-full blur-sm`}
+                  style={{
+                    left: `${Math.random() * 100}%`,
+                    top: `${Math.random() * 100}%`,
+                  }}
+                  animate={{
+                    opacity: [0.2, 0.8, 0.2],
+                    scale: [0.5, 1.5, 0.5],
+                    y: [0, -30, 0],
+                    x: [0, Math.random() > 0.5 ? 20 : -20, 0],
+                  }}
+                  transition={{
+                    duration: 3 + Math.random() * 3,
+                    repeat: Infinity,
+                    delay: Math.random() * 2,
+                    ease: 'easeInOut',
+                  }}
+                />
+              );
+            })}
+            
+            {/* Floating screenshot mockups for live_demo chapters */}
+            {currentChapter.visual.type === 'live_demo' && (
+              <>
+                {[...Array(3)].map((_, i) => (
+                  <motion.div
+                    key={`screenshot-${i}`}
+                    className="absolute bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 shadow-2xl"
+                    style={{
+                      width: 150 + i * 30,
+                      height: 100 + i * 20,
+                      right: `${10 + i * 15}%`,
+                      top: `${20 + i * 20}%`,
+                    }}
+                    initial={{ opacity: 0, scale: 0.8, rotateY: -15 }}
+                    animate={{ 
+                      opacity: [0.3, 0.6, 0.3], 
+                      scale: [0.95, 1, 0.95],
+                      y: [0, -10, 0],
+                    }}
+                    transition={{
+                      duration: 4,
+                      repeat: Infinity,
+                      delay: i * 0.5,
+                    }}
+                  >
+                    <div className="p-2">
+                      <div className="flex gap-1 mb-2">
+                        <div className="w-2 h-2 rounded-full bg-red-400/60" />
+                        <div className="w-2 h-2 rounded-full bg-yellow-400/60" />
+                        <div className="w-2 h-2 rounded-full bg-green-400/60" />
+                      </div>
+                      <div className="space-y-1">
+                        <div className="h-2 bg-white/20 rounded w-3/4" />
+                        <div className="h-2 bg-white/10 rounded w-1/2" />
+                        <div className="h-2 bg-purple-400/30 rounded w-2/3" />
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </>
+            )}
+
+            {/* 3D rotating elements for 3d_animated chapters */}
+            {currentChapter.visual.type === '3d_animated' && (
+              <>
+                <motion.div
+                  className="absolute left-10 top-1/4 w-16 h-16"
+                  animate={{
+                    rotateY: 360,
+                    rotateX: [0, 15, 0],
+                  }}
+                  transition={{
+                    rotateY: { duration: 8, repeat: Infinity, ease: 'linear' },
+                    rotateX: { duration: 4, repeat: Infinity, ease: 'easeInOut' },
+                  }}
+                  style={{ transformStyle: 'preserve-3d', perspective: 1000 }}
+                >
+                  <div className="w-full h-full bg-gradient-to-br from-purple-400/40 to-pink-400/40 rounded-xl backdrop-blur-sm border border-white/20" />
+                </motion.div>
+                <motion.div
+                  className="absolute right-16 bottom-1/3 w-12 h-12"
+                  animate={{
+                    rotateZ: -360,
+                    scale: [1, 1.2, 1],
+                  }}
+                  transition={{
+                    rotateZ: { duration: 12, repeat: Infinity, ease: 'linear' },
+                    scale: { duration: 3, repeat: Infinity, ease: 'easeInOut' },
+                  }}
+                >
+                  <div className="w-full h-full bg-gradient-to-br from-cyan-400/40 to-blue-400/40 rounded-full backdrop-blur-sm border border-white/20" />
+                </motion.div>
+              </>
+            )}
+
+            {/* Avatar silhouette for avatar_presenter chapters */}
+            {currentChapter.visual.type === 'avatar_presenter' && (
               <motion.div
-                key={i}
-                className="absolute w-1 h-1 bg-white rounded-full"
-                style={{
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`,
-                }}
-                animate={{
-                  opacity: [0.2, 0.8, 0.2],
-                  scale: [0.5, 1.2, 0.5],
-                }}
-                transition={{
-                  duration: 2 + Math.random() * 2,
-                  repeat: Infinity,
-                  delay: Math.random() * 2,
-                }}
-              />
-            ))}
+                className="absolute right-8 bottom-20 w-32 h-48"
+                initial={{ opacity: 0, x: 50 }}
+                animate={{ opacity: 0.6, x: 0 }}
+                transition={{ duration: 0.8 }}
+              >
+                <div className="relative w-full h-full">
+                  {/* Head */}
+                  <motion.div 
+                    className="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-12 bg-gradient-to-br from-purple-300/40 to-purple-500/40 rounded-full"
+                    animate={{ y: [0, -3, 0] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  />
+                  {/* Body */}
+                  <div className="absolute top-10 left-1/2 -translate-x-1/2 w-20 h-32 bg-gradient-to-b from-purple-400/30 to-transparent rounded-t-3xl" />
+                  {/* Glow */}
+                  <motion.div
+                    className="absolute inset-0 bg-purple-400/20 blur-2xl rounded-full"
+                    animate={{ opacity: [0.3, 0.6, 0.3], scale: [1, 1.1, 1] }}
+                    transition={{ duration: 3, repeat: Infinity }}
+                  />
+                </div>
+              </motion.div>
+            )}
+
+            {/* Presentation slides for ppt_slide chapters */}
+            {currentChapter.visual.type === 'ppt_slide' && (
+              <motion.div
+                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+                style={{ perspective: 1000 }}
+              >
+                {[...Array(3)].map((_, i) => (
+                  <motion.div
+                    key={`slide-${i}`}
+                    className="absolute bg-white/10 backdrop-blur-sm rounded-lg border border-white/20"
+                    style={{
+                      width: 200,
+                      height: 120,
+                      transformStyle: 'preserve-3d',
+                    }}
+                    initial={{ 
+                      x: -100 + i * 30,
+                      y: -60 + i * 20,
+                      rotateY: -25 + i * 5,
+                      z: -i * 50,
+                    }}
+                    animate={{
+                      y: [-60 + i * 20, -70 + i * 20, -60 + i * 20],
+                    }}
+                    transition={{
+                      duration: 3,
+                      repeat: Infinity,
+                      delay: i * 0.3,
+                    }}
+                  >
+                    <div className="p-3 h-full flex flex-col justify-between">
+                      <div className="h-2 bg-white/30 rounded w-1/2" />
+                      <div className="space-y-1">
+                        <div className="h-1.5 bg-white/15 rounded w-full" />
+                        <div className="h-1.5 bg-white/15 rounded w-3/4" />
+                        <div className="h-1.5 bg-white/15 rounded w-1/2" />
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </motion.div>
+            )}
           </div>
           
-          {/* Genie Lamp Effect */}
+          {/* Genie Lamp Effect - Enhanced */}
           <motion.div
             className="absolute bottom-20 left-1/2 transform -translate-x-1/2"
             animate={{
-              y: [0, -5, 0],
+              y: [0, -8, 0],
             }}
-            transition={{ duration: 3, repeat: Infinity }}
+            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
           >
             <div className="relative">
-              {/* Smoke coming from lamp */}
-              <motion.div
-                className="absolute -top-32 left-1/2 transform -translate-x-1/2 w-32 h-32"
-                animate={{
-                  opacity: [0.3, 0.6, 0.3],
-                  scale: [1, 1.3, 1],
-                }}
-                transition={{ duration: 4, repeat: Infinity }}
-              >
-                <div className="w-full h-full bg-gradient-to-t from-purple-500/40 via-purple-400/20 to-transparent blur-xl rounded-full" />
-              </motion.div>
+              {/* Magic smoke particles */}
+              {[...Array(8)].map((_, i) => (
+                <motion.div
+                  key={`smoke-${i}`}
+                  className="absolute -top-32 left-1/2 w-4 h-4 bg-purple-400/30 rounded-full blur-lg"
+                  animate={{
+                    y: [-20, -80, -120],
+                    x: [0, (i % 2 ? 30 : -30) * (i / 3), 0],
+                    opacity: [0.6, 0.3, 0],
+                    scale: [0.5, 1.5, 2],
+                  }}
+                  transition={{
+                    duration: 3,
+                    repeat: Infinity,
+                    delay: i * 0.3,
+                    ease: 'easeOut',
+                  }}
+                />
+              ))}
               
-              {/* Lamp glow */}
+              {/* Lamp glow with pulsing rings */}
               <motion.div
-                className="w-16 h-16 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full blur-lg opacity-60"
+                className="w-20 h-20 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full blur-xl opacity-60"
                 animate={{
-                  scale: [1, 1.2, 1],
+                  scale: [1, 1.3, 1],
                   opacity: [0.4, 0.7, 0.4],
+                }}
+                transition={{ duration: 2, repeat: Infinity }}
+              />
+              <motion.div
+                className="absolute inset-0 border-2 border-amber-400/30 rounded-full"
+                animate={{
+                  scale: [1, 2, 2.5],
+                  opacity: [0.6, 0.2, 0],
                 }}
                 transition={{ duration: 2, repeat: Infinity }}
               />
@@ -395,32 +579,37 @@ export const GenieVideoShowcase: React.FC<GenieVideoShowcaseProps> = ({
           transition={{ duration: 0.5 }}
           className="relative z-10 h-full flex flex-col items-center justify-center p-8"
         >
-          {/* AI Provider Badges - Top Left */}
+          {/* AI Provider Badges - Top Left - FIXED: Proper spacing to avoid overlap */}
           {showProviderBadges && (
-            <div className="absolute top-4 left-4 flex flex-col gap-1">
-              <div className="flex items-center gap-2 px-2 py-1 bg-black/40 backdrop-blur-sm rounded-lg">
-                <Cpu className="w-3 h-3 text-purple-400" />
-                <span className="text-[10px] text-white/60 uppercase">Powered by</span>
+            <motion.div 
+              className="absolute top-4 left-4 flex flex-col gap-1 z-30"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <div className="flex items-center gap-2 px-2 py-1 bg-black/60 backdrop-blur-md rounded-lg border border-white/10">
+                <Cpu className="w-3 h-3 text-purple-400 shrink-0" />
+                <span className="text-[10px] text-white/70 uppercase font-medium">Powered by</span>
               </div>
-              <div className="flex flex-col gap-1 px-2 py-2 bg-black/30 backdrop-blur-sm rounded-lg">
+              <div className="flex flex-col gap-1.5 px-2 py-2 bg-black/50 backdrop-blur-md rounded-lg border border-white/10">
                 <ProviderBadge type="Voice" providerId={currentProviders.tts} />
                 <ProviderBadge type="Avatar" providerId={currentProviders.avatar} />
                 <ProviderBadge type="LLM" providerId={currentProviders.llm} />
                 <ProviderBadge type="Trans" providerId={currentProviders.translation} />
               </div>
-            </div>
+            </motion.div>
           )}
           
-          {/* Slide type indicator & duration */}
-          <div className="absolute top-4 right-24 flex items-center gap-2">
-            <span className="px-3 py-1 bg-white/10 backdrop-blur-sm rounded-full text-white/80 text-xs font-medium capitalize">
+          {/* Slide type indicator & duration - FIXED: Better positioning */}
+          <div className="absolute top-4 right-4 flex items-center gap-2 z-30 max-w-[50%] flex-wrap justify-end">
+            <span className="px-3 py-1.5 bg-black/50 backdrop-blur-md rounded-full text-white/90 text-xs font-medium capitalize border border-white/10 whitespace-nowrap">
               {currentChapter.visual.type.replace(/_/g, ' ')}
             </span>
-            <span className="px-3 py-1 bg-purple-500/20 backdrop-blur-sm rounded-full text-purple-200 text-xs">
+            <span className="px-3 py-1.5 bg-purple-500/30 backdrop-blur-md rounded-full text-purple-200 text-xs border border-purple-500/20 whitespace-nowrap">
               {currentChapter.duration}
             </span>
             {currentVideo && (
-              <Badge variant="outline" className="text-[10px] border-green-500/50 text-green-400 bg-green-500/10">
+              <Badge variant="outline" className="text-[10px] border-green-500/50 text-green-400 bg-green-500/20 whitespace-nowrap">
                 Pre-rendered
               </Badge>
             )}
