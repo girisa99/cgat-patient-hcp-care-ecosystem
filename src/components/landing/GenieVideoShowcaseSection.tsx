@@ -1,14 +1,15 @@
 /**
  * GENIE VIDEO SHOWCASE SECTION - Landing Page Section Wrapper
  * 
- * Full-width section with title, description, and video showcase
+ * Full-width section with title, description, and professional video showcase
+ * Uses AI-generated videos with avatars, 3D transitions, and Genie character
  */
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Play, Sparkles } from 'lucide-react';
+import { Play, Sparkles, Film, Wand2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { GenieVideoShowcase } from './GenieVideoShowcase';
+import { ProfessionalVideoShowcase } from './video/ProfessionalVideoShowcase';
 
 interface GenieVideoShowcaseSectionProps {
   className?: string;
@@ -28,21 +29,55 @@ export const GenieVideoShowcaseSection: React.FC<GenieVideoShowcaseSectionProps>
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-500/10 rounded-full mb-6">
-            <Sparkles className="w-4 h-4 text-purple-400" />
-            <span className="text-purple-300 text-sm font-medium">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full mb-6">
+            <Film className="w-4 h-4 text-primary" />
+            <span className="text-primary text-sm font-medium">
               Experience the Magic
             </span>
           </div>
           
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+          <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
             See Genie Studio in Action
           </h2>
           
-          <p className="text-lg text-gray-400 max-w-3xl mx-auto">
+          <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
             Watch how 7 powerful products, 206 AI pipelines, and 12 world-class providers 
             come together to transform your ideas into professional content — in 70+ languages.
           </p>
+          
+          {/* AI Feature badges */}
+          <div className="flex flex-wrap justify-center gap-3 mt-6">
+            <motion.div 
+              className="flex items-center gap-2 px-3 py-1.5 bg-card/50 backdrop-blur-sm rounded-full border border-border"
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+            >
+              <Wand2 className="w-3.5 h-3.5 text-primary" />
+              <span className="text-xs text-muted-foreground">Avatar Presenters</span>
+            </motion.div>
+            <motion.div 
+              className="flex items-center gap-2 px-3 py-1.5 bg-card/50 backdrop-blur-sm rounded-full border border-border"
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.3 }}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-primary" />
+              <span className="text-xs text-muted-foreground">3D Transitions</span>
+            </motion.div>
+            <motion.div 
+              className="flex items-center gap-2 px-3 py-1.5 bg-card/50 backdrop-blur-sm rounded-full border border-border"
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.4 }}
+            >
+              <Film className="w-3.5 h-3.5 text-primary" />
+              <span className="text-xs text-muted-foreground">Genie Character</span>
+            </motion.div>
+          </div>
         </motion.div>
         
         {/* Video Showcase */}
@@ -54,11 +89,11 @@ export const GenieVideoShowcaseSection: React.FC<GenieVideoShowcaseSectionProps>
           className="relative"
         >
           {/* Glow effect */}
-          <div className="absolute -inset-4 bg-purple-500/20 blur-3xl rounded-3xl" />
+          <div className="absolute -inset-4 bg-primary/20 blur-3xl rounded-3xl" />
           
           {/* Video component */}
           <div className="relative">
-            <GenieVideoShowcase 
+            <ProfessionalVideoShowcase 
               autoPlay={false}
               showControls={true}
               className="shadow-2xl"

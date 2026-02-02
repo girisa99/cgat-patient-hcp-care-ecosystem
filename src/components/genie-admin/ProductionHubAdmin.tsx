@@ -26,6 +26,7 @@ import { useShows } from '@/hooks/useShows';
 
 import type { EventCategory } from '@/types/shows';
 import { cn } from '@/lib/utils';
+import { VideoGenerationPanel } from '@/components/landing/video/VideoGenerationPanel';
 
 // Lazy load heavy components
 const GenieCommandCenter = lazy(() => import('@/components/diagrams/genie-command-center/GenieCommandCenter'));
@@ -38,7 +39,7 @@ interface ProductionHubAdminProps {
   className?: string;
 }
 
-type AdminTab = 'kanban' | 'calendar' | 'appointments' | 'library' | 'composition' | 'scheduler' | 'analytics' | 'enterprise-analytics' | 'error-analytics' | 'collaboration' | 'workspaces' | 'team' | 'whitelabel' | 'ai-intelligence' | 'command-center';
+type AdminTab = 'kanban' | 'calendar' | 'appointments' | 'library' | 'composition' | 'scheduler' | 'analytics' | 'enterprise-analytics' | 'error-analytics' | 'collaboration' | 'workspaces' | 'team' | 'whitelabel' | 'ai-intelligence' | 'command-center' | 'landing-videos';
 
 export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ className }) => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -270,6 +271,21 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
               <Suspense fallback={<TabLoading />}>
                 <GenieCommandCenter />
               </Suspense>
+            </div>
+          )}
+
+          {/* Landing Videos Generation */}
+          {activeTab === 'landing-videos' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold">Landing Page Video Generation</h2>
+                  <p className="text-muted-foreground text-sm">
+                    Generate professional marketing videos using Genie Cast with AI avatars and 3D transitions
+                  </p>
+                </div>
+              </div>
+              <VideoGenerationPanel />
             </div>
           )}
         </div>
