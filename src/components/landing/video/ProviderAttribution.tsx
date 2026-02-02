@@ -14,6 +14,7 @@ interface ProviderAttributionProps {
   chapterId: string;
   providers: string[];
   isActive: boolean;
+  languageCode?: string; // Added to show correct TTS provider per language
 }
 
 // Chapter to Genie product mapping - SYNCED with chapterId
@@ -49,9 +50,11 @@ const PROVIDER_CONFIG: Record<string, {
   deepl: { displayName: 'DeepL', category: 'Translation' },
   replicate: { displayName: 'Replicate', category: 'Fallback' },
   gcp: { displayName: 'GCP', category: 'Vision' },
+  cosyvoice: { displayName: 'CosyVoice', category: 'TTS' },
 };
 
-// Get providers for each chapter
+// Get providers for each chapter based on LANGUAGE
+// This mapping shows which providers are actually used per chapter
 const CHAPTER_PROVIDERS: Record<string, string[]> = {
   opening: ['claude', 'elevenlabs', 'meshy'],
   spark: ['claude', 'openai', 'gemini', 'azure'],
@@ -64,13 +67,55 @@ const CHAPTER_PROVIDERS: Record<string, string[]> = {
   closing: ['claude', 'elevenlabs', 'meshy'],
 };
 
+// Language-specific TTS providers - which provider is used for each language
+export const LANGUAGE_TTS_PROVIDERS: Record<string, string> = {
+  en: 'elevenlabs',
+  ar: 'azure',
+  hi: 'azure',
+  te: 'azure',
+  ta: 'azure',
+  bn: 'azure',
+  zh: 'alibaba',
+  ja: 'alibaba',
+  ko: 'azure',
+  es: 'elevenlabs',
+  fr: 'elevenlabs',
+  pt: 'azure',
+  de: 'azure',
+  tr: 'azure',
+  sw: 'azure',
+};
+
 export const ProviderAttribution: React.FC<ProviderAttributionProps> = ({
   chapterId,
   providers,
   isActive,
+  languageCode = 'en',
 }) => {
   const product = CHAPTER_TO_PRODUCT[chapterId] || CHAPTER_TO_PRODUCT.opening;
-  const chapterProviders = providers.length > 0 ? providers : CHAPTER_PROVIDERS[chapterId] || [];
+  
+  // Get the correct TTS provider based on language
+  const ttsProvider = LANGUAGE_TTS_PROVIDERS[languageCode] || 'elevenlabs';
+  
+  // Build provider list with correct TTS for the selected language
+  const buildProvidersForLanguage = (): string[] => {
+    const baseProviders = CHAPTER_PROVIDERS[chapterId] || [];
+    // Replace any TTS providers with the language-specific one
+    const languageAwareProviders = baseProviders.map(p => {
+      if (p === 'elevenlabs' || p === 'azure' || p === 'alibaba') {
+        // Only replace if it's a TTS provider slot
+        if (baseProviders.indexOf(p) === baseProviders.findIndex(bp => 
+          bp === 'elevenlabs' || bp === 'azure' || bp === 'alibaba'
+        )) {
+          return ttsProvider;
+        }
+      }
+      return p;
+    });
+    return [...new Set(languageAwareProviders)]; // Remove duplicates
+  };
+  
+  const chapterProviders = providers.length > 0 ? providers : buildProvidersForLanguage();
   
   return (
     <div className="space-y-2">
@@ -95,14 +140,32 @@ export const ProviderAttribution: React.FC<ProviderAttributionProps> = ({
         </motion.div>
       </AnimatePresence>
       
-      {/* Provider badges */}
+      {/* Provider badges - showing actual providers for this language */}
       {isActive && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           className="flex flex-wrap gap-1.5"
         >
-          {chapterProviders.slice(0, 4).map((providerId, idx) => {
+          {/* Always show the TTS provider first for clarity */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0 }}
+          >
+            <Badge
+              variant="outline"
+              className="bg-purple-500/20 border-purple-400/40 text-purple-200 text-xs"
+            >
+              🎤 {PROVIDER_CONFIG[ttsProvider]?.displayName || ttsProvider}
+              <span className="text-purple-300/60 ml-1 text-[10px]">
+                (TTS)
+              </span>
+            </Badge>
+          </motion.div>
+          
+          {/* Show other providers */}
+          {chapterProviders.filter(p => p !== ttsProvider).slice(0, 3).map((providerId, idx) => {
             const provider = PROVIDER_CONFIG[providerId.toLowerCase()] || {
               displayName: providerId,
               category: 'AI',
@@ -113,7 +176,7 @@ export const ProviderAttribution: React.FC<ProviderAttributionProps> = ({
                 key={providerId}
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: idx * 0.1 }}
+                transition={{ delay: (idx + 1) * 0.1 }}
               >
                 <Badge
                   variant="outline"
