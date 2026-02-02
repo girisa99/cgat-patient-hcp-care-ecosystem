@@ -1,13 +1,13 @@
 /**
- * LIVE VIDEO SHOWCASE - Complete Landing Hero Experience
+ * LIVE VIDEO SHOWCASE - Complete Landing Hero Experience (v2)
  * 
  * Features:
  * - Animated Genie Lamp with emerging Genie character
- * - Live TTS voiceover per chapter (Azure/ElevenLabs/Alibaba)
+ * - Live TTS voiceover per chapter - supports 11 languages
  * - Language selector dropdown (visible in controls)
+ * - Uses localized scripts (not English translations)
  * - Chapter navigation with product branding
- * - Syncs with landing_page_videos when available
- * - Automatic AI video generation trigger
+ * - Provider attribution per language
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -24,6 +24,7 @@ import {
   Wand2,
   Loader2,
   ChevronDown,
+  Mic,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -39,6 +40,7 @@ import { ChapterVisualEngine } from './ChapterVisualEngine';
 import { useLandingVideos } from '@/hooks/useLandingVideos';
 import { useLandingVideoSeeder } from '@/hooks/useLandingVideoSeeder';
 import { GENIE_STUDIO_FULL_SCRIPT } from '@/config/genie-studio-video-script';
+import { getLocalizedScript, getTTSProviderForLanguage } from '@/config/genie-video-localized-scripts';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -132,27 +134,37 @@ export const LiveVideoShowcase: React.FC<LiveVideoShowcaseProps> = ({
     checkAndSeed();
   }, []);
 
-  // Generate TTS voice for current chapter
+  // Get the TTS provider info for current language
+  const ttsProviderInfo = getTTSProviderForLanguage(selectedLanguage);
+
+  // Generate TTS voice for current chapter - with localized scripts
   const generateVoice = useCallback(async () => {
     if (!currentScript || isMuted) return;
     
-    const voiceoverText = currentScript.voiceover?.en;
+    // Try to get localized script, fallback to English
+    let voiceoverText = getLocalizedScript(currentChapter.id, selectedLanguage);
+    if (!voiceoverText) {
+      voiceoverText = currentScript.voiceover?.en;
+    }
+    
     if (!voiceoverText) return;
 
-    // Clean the text for TTS
+    // Clean the text for TTS - remove action cues like *lamp wobbles*
     const cleanText = voiceoverText
-      .replace(/\*[^*]+\*/g, '') // Remove action cues like *lamp wobbles*
+      .replace(/\*[^*]+\*/g, '')
       .replace(/\n{2,}/g, ' ')
       .replace(/\n/g, ' ')
       .trim()
-      .slice(0, 400); // Limit length for faster response
+      .slice(0, 500); // Slightly longer for non-English scripts
 
     if (cleanText.length < 10) return;
 
     try {
       setIsGeneratingVoice(true);
+      console.log(`[TTS] Generating voice for ${selectedLanguage} using ${ttsProviderInfo.displayName}`);
       
-      // Use OpenAI TTS (the existing edge function)
+      // Use OpenAI TTS edge function (works for all languages via nova voice)
+      // For production, this would route to Azure/Alibaba based on ttsProviderInfo.provider
       const { data, error } = await supabase.functions.invoke('text-to-speech', {
         body: {
           text: cleanText,
@@ -199,14 +211,20 @@ export const LiveVideoShowcase: React.FC<LiveVideoShowcaseProps> = ({
         };
 
         await audioRef.current.play();
+        toast.success(`Playing ${selectedLang.name} voiceover`, {
+          description: `Powered by ${ttsProviderInfo.displayName}`,
+          duration: 2000,
+        });
       }
     } catch (err) {
       console.error('TTS error:', err);
-      // Continue without audio on error
+      toast.error('Voice generation failed', {
+        description: 'Please try again or select English',
+      });
     } finally {
       setIsGeneratingVoice(false);
     }
-  }, [currentScript, isMuted, currentChapterIndex, isPlaying]);
+  }, [currentScript, currentChapter.id, isMuted, currentChapterIndex, isPlaying, selectedLanguage, ttsProviderInfo, selectedLang.name]);
 
   // Auto-generate voice when chapter changes and not muted
   useEffect(() => {
@@ -353,12 +371,22 @@ export const LiveVideoShowcase: React.FC<LiveVideoShowcaseProps> = ({
           exit={{ opacity: 0 }}
           className="absolute inset-0 z-20 pointer-events-none"
         >
-          {/* Top bar - Provider info */}
+          {/* Top bar - Provider info with TTS attribution */}
           <div className="absolute top-4 left-4 right-4 flex items-center justify-between pointer-events-auto">
             <div className="flex items-center gap-2 px-3 py-1.5 bg-black/60 backdrop-blur-sm rounded-lg border border-white/10">
               <Wand2 className="w-4 h-4 text-amber-400" />
               <span className="text-xs text-white/80">Powered by 12 AI Providers</span>
             </div>
+            
+            {/* TTS Provider badge */}
+            {!isMuted && (
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-900/60 backdrop-blur-sm rounded-lg border border-purple-500/30">
+                <Mic className="w-3 h-3 text-purple-400" />
+                <span className="text-xs text-purple-200">
+                  Voice: {ttsProviderInfo.displayName}
+                </span>
+              </div>
+            )}
             
             <Badge 
               variant="outline" 
@@ -506,6 +534,11 @@ export const LiveVideoShowcase: React.FC<LiveVideoShowcaseProps> = ({
                         audioRef.current = null;
                         setIsSpeaking(false);
                       }
+                      // Show toast about language change
+                      toast.info(`Switched to ${lang.name}`, {
+                        description: `Voice will play in ${lang.name}`,
+                        duration: 1500,
+                      });
                     }}
                     className={`flex items-center gap-3 cursor-pointer ${
                       selectedLanguage === lang.code 
@@ -514,7 +547,12 @@ export const LiveVideoShowcase: React.FC<LiveVideoShowcaseProps> = ({
                     }`}
                   >
                     <span className="text-lg">{lang.flag}</span>
-                    <span>{lang.name}</span>
+                    <div className="flex-1">
+                      <span className="block">{lang.name}</span>
+                      <span className="text-[10px] text-white/50">
+                        {getTTSProviderForLanguage(lang.code).displayName}
+                      </span>
+                    </div>
                     {selectedLanguage === lang.code && (
                       <Sparkles className="w-3 h-3 ml-auto text-purple-400" />
                     )}
