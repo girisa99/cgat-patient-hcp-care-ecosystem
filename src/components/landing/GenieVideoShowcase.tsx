@@ -29,6 +29,7 @@ import { Badge } from '@/components/ui/badge';
 import { GENIE_STUDIO_FULL_SCRIPT, ChapterScript } from '@/config/genie-studio-video-script';
 import { useLandingVideos, LandingVideo } from '@/hooks/useLandingVideos';
 import { useRegionalDetection } from '@/hooks/useRegionalDetection';
+import { getLocalizedScript, getTTSProviderForLanguage, TTS_PROVIDER_MAP } from '@/config/genie-video-localized-scripts';
 
 // Product logos - using uploaded combined versions
 import genieStudioLogo from '@/assets/logos/genie-studio-combined-6.png';
@@ -57,17 +58,23 @@ const AI_PROVIDERS: Record<string, { name: string; color: string; shortName: str
 };
 
 // Regional provider routing - which providers are used for which region
+// Updated to use correct TTS providers per language
 const REGIONAL_PROVIDER_ROUTING: Record<string, { tts: string; avatar: string; llm: string; translation: string }> = {
   en: { tts: 'elevenlabs', avatar: 'alibaba', llm: 'claude', translation: 'deepl' },
   ar: { tts: 'azure', avatar: 'alibaba', llm: 'openai', translation: 'azure' },
   zh: { tts: 'alibaba', avatar: 'alibaba', llm: 'deepseek', translation: 'alibaba' },
   hi: { tts: 'azure', avatar: 'alibaba', llm: 'gemini', translation: 'azure' },
+  te: { tts: 'azure', avatar: 'alibaba', llm: 'gemini', translation: 'azure' },
+  ta: { tts: 'azure', avatar: 'alibaba', llm: 'gemini', translation: 'azure' },
+  bn: { tts: 'azure', avatar: 'alibaba', llm: 'gemini', translation: 'azure' },
   ja: { tts: 'alibaba', avatar: 'alibaba', llm: 'claude', translation: 'deepl' },
   ko: { tts: 'azure', avatar: 'alibaba', llm: 'claude', translation: 'deepl' },
   es: { tts: 'elevenlabs', avatar: 'alibaba', llm: 'claude', translation: 'deepl' },
   fr: { tts: 'elevenlabs', avatar: 'alibaba', llm: 'claude', translation: 'deepl' },
   pt: { tts: 'azure', avatar: 'alibaba', llm: 'claude', translation: 'deepl' },
-  de: { tts: 'azure', avatar: 'alibaba', llm: 'claude', translation: 'deepl' }
+  de: { tts: 'azure', avatar: 'alibaba', llm: 'claude', translation: 'deepl' },
+  tr: { tts: 'azure', avatar: 'alibaba', llm: 'claude', translation: 'deepl' },
+  sw: { tts: 'azure', avatar: 'alibaba', llm: 'gemini', translation: 'azure' },
 };
 
 // Logo mapping
@@ -133,6 +140,7 @@ const LANGUAGES = [
   { code: 'fr', name: 'Français', flag: '🇫🇷', locale: 'fr-FR' },
   { code: 'pt', name: 'Português', flag: '🇧🇷', locale: 'pt-BR' },
   { code: 'de', name: 'Deutsch', flag: '🇩🇪', locale: 'de-DE' },
+  { code: 'tr', name: 'Türkçe', flag: '🇹🇷', locale: 'tr-TR' },
   { code: 'sw', name: 'Kiswahili', flag: '🇰🇪', locale: 'sw-KE' },
 ];
 
@@ -600,8 +608,8 @@ export const GenieVideoShowcase: React.FC<GenieVideoShowcaseProps> = ({
             </motion.div>
           )}
           
-          {/* Slide type indicator & duration - FIXED: Better positioning */}
-          <div className="absolute top-4 right-4 flex items-center gap-2 z-30 max-w-[50%] flex-wrap justify-end">
+          {/* Slide type indicator & duration - FIXED: Better positioning - moved away from language selector */}
+          <div className="absolute top-16 right-4 flex items-center gap-2 z-30 max-w-[50%] flex-wrap justify-end">
             <span className="px-3 py-1.5 bg-black/50 backdrop-blur-md rounded-full text-white/90 text-xs font-medium capitalize border border-white/10 whitespace-nowrap">
               {currentChapter.visual.type.replace(/_/g, ' ')}
             </span>
@@ -615,16 +623,17 @@ export const GenieVideoShowcase: React.FC<GenieVideoShowcaseProps> = ({
             )}
           </div>
           
-          {/* Language selector */}
-          <div className="absolute top-4 right-4">
+          {/* Language selector - Single instance at top right */}
+          <div className="absolute top-4 right-4 z-40">
             <div className="relative">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowLangSelector(!showLangSelector)}
-                className="text-white/80 hover:text-white hover:bg-white/10"
+                className="text-white/80 hover:text-white hover:bg-white/10 bg-black/40 backdrop-blur-sm"
               >
                 <Globe className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline mr-1">{LANGUAGES.find(l => l.code === selectedRegion)?.name}</span>
                 {LANGUAGES.find(l => l.code === selectedRegion)?.flag || '🌐'}
               </Button>
               
@@ -634,10 +643,13 @@ export const GenieVideoShowcase: React.FC<GenieVideoShowcaseProps> = ({
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="absolute right-0 mt-2 bg-black/80 backdrop-blur-sm rounded-lg p-2 min-w-[150px] z-50"
+                    className="absolute right-0 mt-2 bg-black/90 backdrop-blur-md rounded-lg p-2 min-w-[180px] z-50 border border-white/10 max-h-80 overflow-y-auto"
                   >
                     {LANGUAGES.map(lang => {
                       const hasVideo = videos.some(v => v.language_code === lang.code);
+                      // Get actual TTS provider for this language
+                      const langProviders = REGIONAL_PROVIDER_ROUTING[lang.code] || REGIONAL_PROVIDER_ROUTING.en;
+                      const ttsProvider = AI_PROVIDERS[langProviders.tts];
                       return (
                         <button
                           key={lang.code}
@@ -652,9 +664,13 @@ export const GenieVideoShowcase: React.FC<GenieVideoShowcaseProps> = ({
                             <span>{lang.flag}</span>
                             <span>{lang.name}</span>
                           </div>
-                          {hasVideo && (
-                            <span className="w-2 h-2 bg-green-400 rounded-full" title="Video available" />
-                          )}
+                          <div className="flex items-center gap-1">
+                            {/* Show TTS provider badge */}
+                            <span className={`w-1.5 h-1.5 rounded-full ${ttsProvider?.color || 'bg-gray-400'}`} title={ttsProvider?.name} />
+                            {hasVideo && (
+                              <span className="w-2 h-2 bg-green-400 rounded-full" title="Video available" />
+                            )}
+                          </div>
                         </button>
                       );
                     })}
