@@ -9,7 +9,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Play, Sparkles, Film, Wand2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { LiveVideoShowcase } from './video/LiveVideoShowcase';
+import { ProfessionalAvatarShowcase } from './video/ProfessionalAvatarShowcase';
 
 interface GenieVideoShowcaseSectionProps {
   className?: string;
@@ -93,7 +93,7 @@ export const GenieVideoShowcaseSection: React.FC<GenieVideoShowcaseSectionProps>
           
           {/* Video component */}
           <div className="relative">
-            <LiveVideoShowcase 
+            <ProfessionalAvatarShowcase 
               autoPlay={false}
               showControls={true}
               className="shadow-2xl"
