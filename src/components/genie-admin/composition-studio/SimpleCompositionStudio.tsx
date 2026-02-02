@@ -43,9 +43,11 @@ import { useStudioEcosystem } from './useStudioEcosystem';
 import { AIRecommendationsPanel } from './AIRecommendationsPanel';
 import { useLabelStudioBackground } from '@/services/labelStudioBackgroundService';
 import { ChapterPreviewPanel } from './ChapterPreviewPanel';
+import { ChapterVideoPreview } from './ChapterVideoPreview';
 import { ReviewEnhanceStep } from './ReviewEnhanceStep';
 import { GeneratedAssetsSidebar, GeneratedAssetsTrigger } from './GeneratedAssetsSidebar';
 import { ProjectPickerDropdown, StoredProjectInfo } from './ProjectPickerDropdown';
+import { useCompositionSync } from '@/hooks/useCompositionSync';
 
 // ============================================
 // INDUSTRY-SPECIFIC TEMPLATES (Multi-select ready) - 80+ templates
@@ -3529,14 +3531,16 @@ const ChapterRow: React.FC<ChapterRowProps> = ({
         {/* Expanded Content - Flat layout, no nested ScrollArea */}
         <CollapsibleContent>
           <div className="p-4 pt-2 space-y-4 border-t bg-muted/10" style={{ overflow: 'visible' }}>
-            {/* Preview - Simple inline display */}
-            {chapter.generatedContent?.previewUrl && (
-              <div className="relative aspect-video rounded-lg overflow-hidden bg-black max-w-md">
-                <img src={chapter.generatedContent.previewUrl} alt={chapter.title} className="w-full h-full object-cover" />
-                <div className="absolute bottom-2 right-2">
-                  <Button size="sm" variant="secondary"><Play className="w-3 h-3 mr-1" /> Preview</Button>
-                </div>
-              </div>
+            {/* Preview - Use new ChapterVideoPreview component */}
+            {(chapter.generatedContent?.previewUrl || chapter.generatedContent?.videoUrl) && (
+              <ChapterVideoPreview
+                chapterTitle={chapter.title}
+                previewUrl={chapter.generatedContent.previewUrl}
+                videoUrl={chapter.generatedContent.videoUrl}
+                audioUrl={chapter.generatedContent.audioUrl}
+                onRegenerate={onGenerate}
+                className="max-w-md"
+              />
             )}
 
             {/* AI Prompt Section with Enhance Button */}
