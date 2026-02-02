@@ -1,23 +1,26 @@
 /**
  * PROVIDER ATTRIBUTION COMPONENT
  * 
- * Shows which AI providers and Genie products are powering the current chapter
- * with animated badges and real-time updates
+ * Shows the COMPLETE 4-Zone AI provider routing:
+ * - LLM: Claude (Western/EU), Gemini (India/SEA), Qwen (CJK/Arabic)
+ * - TTS: ElevenLabs (Western), Azure (India/EU), CosyVoice (CJK)
+ * - Video: Vertex AI Veo, ModelsLab, Sora2API
+ * - Translation: DeepL (Western), Google (India), Qwen-MT (CJK)
  */
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
-import { Wand2 } from 'lucide-react';
+import { Wand2, Brain, Mic2, Video, Languages } from 'lucide-react';
 
 interface ProviderAttributionProps {
   chapterId: string;
   providers: string[];
   isActive: boolean;
-  languageCode?: string; // Added to show correct TTS provider per language
+  languageCode?: string;
 }
 
-// Chapter to Genie product mapping - SYNCED with chapterId
+// Chapter to Genie product mapping
 const CHAPTER_TO_PRODUCT: Record<string, {
   name: string;
   description: string;
@@ -33,53 +36,114 @@ const CHAPTER_TO_PRODUCT: Record<string, {
   closing: { name: 'Genie Studio', description: 'Your Story Awaits' },
 };
 
-// Provider branding with categories
-const PROVIDER_CONFIG: Record<string, {
-  displayName: string;
-  category: string;
-}> = {
-  openai: { displayName: 'GPT-4o', category: 'LLM' },
-  claude: { displayName: 'Claude', category: 'LLM' },
-  gemini: { displayName: 'Gemini', category: 'LLM' },
-  deepseek: { displayName: 'DeepSeek', category: 'LLM' },
-  alibaba: { displayName: 'Alibaba WAN 2.2', category: 'Avatar' },
-  azure: { displayName: 'Azure Neural', category: 'TTS' },
-  modelslab: { displayName: 'ModelsLab', category: 'Video/3D' },
-  meshy: { displayName: 'Meshy AI', category: '3D' },
-  elevenlabs: { displayName: 'ElevenLabs', category: 'TTS' },
-  deepl: { displayName: 'DeepL', category: 'Translation' },
-  replicate: { displayName: 'Replicate', category: 'Fallback' },
-  gcp: { displayName: 'GCP', category: 'Vision' },
-  cosyvoice: { displayName: 'CosyVoice', category: 'TTS' },
+// ═══════════════════════════════════════════════════════════════════════════════
+// 4-ZONE REGIONAL ROUTING - COMPLETE PROVIDER MATRIX
+// ═══════════════════════════════════════════════════════════════════════════════
+
+type ZoneType = 'claude' | 'gemini' | 'alibaba' | 'global';
+
+interface ZoneConfig {
+  name: string;
+  llm: { provider: string; displayName: string };
+  tts: { provider: string; displayName: string };
+  video: { provider: string; displayName: string };
+  translation: { provider: string; displayName: string };
+}
+
+// Zone configurations per the 4-Zone Strategy
+const ZONE_CONFIGS: Record<ZoneType, ZoneConfig> = {
+  claude: {
+    name: 'Claude Zone (Western/EU)',
+    llm: { provider: 'claude', displayName: 'Claude 3.5' },
+    tts: { provider: 'elevenlabs', displayName: 'ElevenLabs' },
+    video: { provider: 'vertex', displayName: 'Vertex AI Veo' },
+    translation: { provider: 'deepl', displayName: 'DeepL' },
+  },
+  gemini: {
+    name: 'Gemini Zone (India/SEA/Africa)',
+    llm: { provider: 'gemini', displayName: 'Gemini Pro' },
+    tts: { provider: 'azure', displayName: 'Azure Neural' },
+    video: { provider: 'vertex', displayName: 'Vertex AI Veo' },
+    translation: { provider: 'google', displayName: 'Google Translate' },
+  },
+  alibaba: {
+    name: 'Alibaba Zone (CJK/Arabic)',
+    llm: { provider: 'qwen', displayName: 'Qwen-Max' },
+    tts: { provider: 'cosyvoice', displayName: 'CosyVoice' },
+    video: { provider: 'alibaba', displayName: 'Alibaba WAN' },
+    translation: { provider: 'qwen-mt', displayName: 'Qwen-MT' },
+  },
+  global: {
+    name: 'Global Fallback',
+    llm: { provider: 'gpt4o', displayName: 'GPT-4o' },
+    tts: { provider: 'elevenlabs', displayName: 'ElevenLabs' },
+    video: { provider: 'modelslab', displayName: 'ModelsLab' },
+    translation: { provider: 'google', displayName: 'Google' },
+  },
 };
 
-// Get providers for each chapter based on LANGUAGE
-// This mapping shows which providers are actually used per chapter
-const CHAPTER_PROVIDERS: Record<string, string[]> = {
-  opening: ['claude', 'elevenlabs', 'meshy'],
-  spark: ['claude', 'openai', 'gemini', 'azure'],
-  mind: ['elevenlabs', 'azure', 'alibaba', 'deepl'],
-  vibe: ['modelslab', 'meshy', 'alibaba', 'elevenlabs', 'azure'],
-  deck: ['claude', 'modelslab', 'meshy'],
-  arc: ['claude', 'gemini', 'modelslab'],
-  askGenie: ['claude', 'openai', 'gemini', 'elevenlabs'],
-  cast: ['alibaba', 'modelslab', 'elevenlabs', 'deepl'],
-  closing: ['claude', 'elevenlabs', 'meshy'],
+// Language to Zone mapping
+const LANGUAGE_ZONE_MAP: Record<string, ZoneType> = {
+  // Claude Zone (Western/EU/Brazil)
+  en: 'claude',
+  es: 'claude',
+  fr: 'claude',
+  pt: 'claude',
+  de: 'claude', // German uses Claude LLM but Azure TTS for quality
+  
+  // Gemini Zone (India/SEA/Africa)
+  hi: 'gemini',
+  te: 'gemini',
+  ta: 'gemini',
+  bn: 'gemini',
+  sw: 'gemini',
+  id: 'gemini',
+  vi: 'gemini',
+  
+  // Alibaba Zone (CJK/Arabic)
+  zh: 'alibaba',
+  ja: 'alibaba',
+  ko: 'alibaba',
+  ar: 'alibaba',
+  
+  // Turkish uses Gemini zone
+  tr: 'gemini',
 };
 
-// Language-specific TTS providers - which provider is used for each language
+// Special TTS overrides (some languages have better TTS in different providers)
+const TTS_OVERRIDES: Record<string, { provider: string; displayName: string }> = {
+  de: { provider: 'azure', displayName: 'Azure Neural' }, // German better on Azure
+  pt: { provider: 'azure', displayName: 'Azure Neural' }, // Portuguese better on Azure
+  tr: { provider: 'azure', displayName: 'Azure Neural' }, // Turkish better on Azure
+  ko: { provider: 'azure', displayName: 'Azure Neural' }, // Korean better on Azure
+};
+
+// Get the complete provider stack for a language
+export function getProvidersForLanguage(langCode: string): ZoneConfig {
+  const zone = LANGUAGE_ZONE_MAP[langCode] || 'global';
+  const config = { ...ZONE_CONFIGS[zone] };
+  
+  // Apply TTS overrides
+  if (TTS_OVERRIDES[langCode]) {
+    config.tts = TTS_OVERRIDES[langCode];
+  }
+  
+  return config;
+}
+
+// Export for other components
 export const LANGUAGE_TTS_PROVIDERS: Record<string, string> = {
   en: 'elevenlabs',
-  ar: 'azure',
+  es: 'elevenlabs',
+  fr: 'elevenlabs',
+  ar: 'cosyvoice',
   hi: 'azure',
   te: 'azure',
   ta: 'azure',
   bn: 'azure',
-  zh: 'alibaba',
-  ja: 'alibaba',
+  zh: 'cosyvoice',
+  ja: 'cosyvoice',
   ko: 'azure',
-  es: 'elevenlabs',
-  fr: 'elevenlabs',
   pt: 'azure',
   de: 'azure',
   tr: 'azure',
@@ -88,38 +152,44 @@ export const LANGUAGE_TTS_PROVIDERS: Record<string, string> = {
 
 export const ProviderAttribution: React.FC<ProviderAttributionProps> = ({
   chapterId,
-  providers,
   isActive,
   languageCode = 'en',
 }) => {
   const product = CHAPTER_TO_PRODUCT[chapterId] || CHAPTER_TO_PRODUCT.opening;
+  const providerConfig = getProvidersForLanguage(languageCode);
+  const zone = LANGUAGE_ZONE_MAP[languageCode] || 'global';
   
-  // Get the correct TTS provider based on language
-  const ttsProvider = LANGUAGE_TTS_PROVIDERS[languageCode] || 'elevenlabs';
-  
-  // Build provider list with correct TTS for the selected language
-  const buildProvidersForLanguage = (): string[] => {
-    const baseProviders = CHAPTER_PROVIDERS[chapterId] || [];
-    // Replace any TTS providers with the language-specific one
-    const languageAwareProviders = baseProviders.map(p => {
-      if (p === 'elevenlabs' || p === 'azure' || p === 'alibaba') {
-        // Only replace if it's a TTS provider slot
-        if (baseProviders.indexOf(p) === baseProviders.findIndex(bp => 
-          bp === 'elevenlabs' || bp === 'azure' || bp === 'alibaba'
-        )) {
-          return ttsProvider;
-        }
-      }
-      return p;
-    });
-    return [...new Set(languageAwareProviders)]; // Remove duplicates
-  };
-  
-  const chapterProviders = providers.length > 0 ? providers : buildProvidersForLanguage();
+  // Provider category badges with icons
+  const providerBadges = [
+    { 
+      icon: Brain, 
+      label: providerConfig.llm.displayName, 
+      category: 'LLM',
+      color: 'from-blue-500/30 to-cyan-500/20 border-blue-400/40 text-blue-200'
+    },
+    { 
+      icon: Mic2, 
+      label: providerConfig.tts.displayName, 
+      category: 'TTS',
+      color: 'from-purple-500/30 to-pink-500/20 border-purple-400/40 text-purple-200'
+    },
+    { 
+      icon: Video, 
+      label: providerConfig.video.displayName, 
+      category: 'Video',
+      color: 'from-green-500/30 to-emerald-500/20 border-green-400/40 text-green-200'
+    },
+    { 
+      icon: Languages, 
+      label: providerConfig.translation.displayName, 
+      category: 'i18n',
+      color: 'from-amber-500/30 to-orange-500/20 border-amber-400/40 text-amber-200'
+    },
+  ];
   
   return (
     <div className="space-y-2">
-      {/* Product branding - correctly synced to chapterId */}
+      {/* Product branding */}
       <AnimatePresence mode="wait">
         <motion.div
           key={chapterId}
@@ -132,59 +202,41 @@ export const ProviderAttribution: React.FC<ProviderAttributionProps> = ({
             className="bg-gradient-to-r from-amber-500/30 to-purple-500/20 border-amber-500/40 text-amber-100"
           >
             <Wand2 className="w-3 h-3 mr-1" />
-            Powered by {product.name}
+            {product.name}
           </Badge>
-          <span className="text-xs text-white/50 hidden md:inline">
-            {product.description}
-          </span>
+          <Badge 
+            variant="outline"
+            className="bg-black/40 border-white/20 text-white/60 text-[10px]"
+          >
+            {zone.charAt(0).toUpperCase() + zone.slice(1)} Zone
+          </Badge>
         </motion.div>
       </AnimatePresence>
       
-      {/* Provider badges - showing actual providers for this language */}
+      {/* Complete provider stack - showing all 4 categories */}
       {isActive && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           className="flex flex-wrap gap-1.5"
         >
-          {/* Always show the TTS provider first for clarity */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0 }}
-          >
-            <Badge
-              variant="outline"
-              className="bg-purple-500/20 border-purple-400/40 text-purple-200 text-xs"
-            >
-              🎤 {PROVIDER_CONFIG[ttsProvider]?.displayName || ttsProvider}
-              <span className="text-purple-300/60 ml-1 text-[10px]">
-                (TTS)
-              </span>
-            </Badge>
-          </motion.div>
-          
-          {/* Show other providers */}
-          {chapterProviders.filter(p => p !== ttsProvider).slice(0, 3).map((providerId, idx) => {
-            const provider = PROVIDER_CONFIG[providerId.toLowerCase()] || {
-              displayName: providerId,
-              category: 'AI',
-            };
-            
+          {providerBadges.map((badge, idx) => {
+            const Icon = badge.icon;
             return (
               <motion.div
-                key={providerId}
+                key={badge.category}
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: (idx + 1) * 0.1 }}
+                transition={{ delay: idx * 0.08 }}
               >
                 <Badge
                   variant="outline"
-                  className="bg-black/40 border-white/20 text-white/80 text-xs"
+                  className={`bg-gradient-to-r ${badge.color} text-xs`}
                 >
-                  {provider.displayName}
-                  <span className="text-white/40 ml-1 text-[10px]">
-                    ({provider.category})
+                  <Icon className="w-3 h-3 mr-1" />
+                  {badge.label}
+                  <span className="opacity-60 ml-1 text-[10px]">
+                    ({badge.category})
                   </span>
                 </Badge>
               </motion.div>
