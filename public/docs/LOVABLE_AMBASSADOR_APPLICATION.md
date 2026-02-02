@@ -110,6 +110,55 @@ Commercial-ready AI content creation platform featuring:
 
 ---
 
+### 5. **Genie Studio - Commercial Launch Highlights**
+
+Built a **production-ready AI content creation platform** with:
+
+**4-Quadrant Workflow Architecture:**
+- **CREATE** (Spark, Mind, Deck) → Ideation & script generation
+- **PRODUCE** (Vibe) → Recording studio with teleprompter
+- **MANAGE** (Arc, Hub) → Collaboration & asset management
+- **PUBLISH** (Cast) → Distribution & marketing automation
+
+**Enterprise-Ready Features:**
+- **206+ Transformation Pipelines** across 16 product verticals
+- **6-Tier Credit-Based Monetization** (Free → Enterprise) via Stripe
+- **Multi-Currency Support** with 135+ local payment methods across 9 pricing zones
+- **Team Collaboration** with seats, RBAC, and workspace isolation
+- **Compliance Dashboard** for HIPAA, data residency, and legal governance
+
+**AI Capabilities:**
+- **130+ Visual Style Templates** for video generation
+- **AI Avatar Integration** with lip-sync and 3D support
+- **Multi-Language TTS** with regional provider routing
+- **Quality Gates** for automated output assessment
+
+---
+
+### 6. **AI Document Processing Platform**
+
+**Live Demo**: [Document Processing](https://cgat-patient-hcp-care-ecosystem.lovable.app/presentation/document-processing)
+
+A **multi-model AI extraction system** achieving **95%+ accuracy**:
+
+**Intelligent Model Routing:**
+- Dynamically selects between Claude, GPT-4o, and Gemini based on document complexity
+- Auto-detects document types: healthcare forms, prescriptions, insurance cards, invoices
+- Zero-configuration setup with smart fallback chains
+
+**Healthcare-Specific Features:**
+- PHI-aware extraction with HIPAA compliance
+- Structured data output for EHR integration
+- Confidence scoring for human-in-the-loop validation
+- Batch processing for high-volume workflows
+
+**Technical Architecture:**
+- Edge function orchestration for secure processing
+- Provider failover with automatic retry logic
+- Real-time progress tracking and status updates
+
+---
+
 ## 📊 Technical Statistics
 
 | Metric | Value |
