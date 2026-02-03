@@ -418,7 +418,7 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
           </TabsTrigger>
         </TabsList>
 
-        {/* Overview Tab - Rich Atlabs-style Hero */}
+        {/* Overview Tab - Production Studio Hub */}
         <TabsContent value="overview" className="space-y-8">
           {/* Hero Section */}
           <GenieCastHero 

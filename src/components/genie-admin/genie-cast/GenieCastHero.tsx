@@ -1,11 +1,11 @@
 /**
  * GENIE CAST HERO SECTION
  * 
- * Atlabs-inspired rich hero with:
- * - Gradient backgrounds
- * - Stats display
+ * Rich hero component for the video production studio:
+ * - Gradient backgrounds with glass morphism
+ * - Real-time stats display
  * - Video showcase carousel
- * - Trust indicators
+ * - Trust indicators and social proof
  */
 
 import React from 'react';

@@ -1,5 +1,5 @@
 /**
- * Genie Cast Components - Atlabs-inspired rich UI
+ * Genie Cast Components - Rich video production studio UI
  */
 
 export { GenieCastHero } from './GenieCastHero';
