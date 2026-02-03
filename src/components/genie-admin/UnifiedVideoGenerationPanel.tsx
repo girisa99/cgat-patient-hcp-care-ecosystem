@@ -447,18 +447,20 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
                   <Button 
                     variant="outline" 
                     onClick={async () => {
-                      toast.loading('Syncing brand logos to storage...');
+                      const toastId = toast.loading('Syncing brand logos to storage...');
                       try {
                         const result = await uploadBrandLogosToStorage();
+                        toast.dismiss(toastId);
                         if (result.success) {
                           toast.success(`Uploaded ${result.uploaded} logos to storage`);
                         } else {
                           toast.error(`Failed to upload logos: ${result.results.find(r => !r.success)?.error}`);
                         }
                       } catch (error) {
+                        toast.dismiss(toastId);
                         toast.error('Failed to sync logos');
                       }
-                    }} 
+                    }}
                     className="gap-2"
                   >
                     <Upload className="w-4 h-4" />
