@@ -126,12 +126,45 @@ interface ExistingVideo {
   created_at: string;
 }
 
+// Persistence key for tab state
+const GENIE_CAST_TAB_KEY = 'genie_cast_active_tab';
+const GENIE_CAST_STATE_KEY = 'genie_cast_panel_state';
+
 export const UnifiedVideoGenerationPanel: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'screenshots' | 'generate' | 'matrix' | 'library' | 'analytics' | 'alerts' | 'messaging' | 'flow'>('screenshots');
+  // Persist tab state to prevent loss on navigation/refresh
+  const [activeTab, setActiveTab] = useState<'screenshots' | 'generate' | 'matrix' | 'library' | 'analytics' | 'alerts' | 'messaging' | 'flow'>(() => {
+    try {
+      const saved = localStorage.getItem(GENIE_CAST_TAB_KEY);
+      if (saved && ['screenshots', 'generate', 'matrix', 'library', 'analytics', 'alerts', 'messaging', 'flow'].includes(saved)) {
+        return saved as any;
+      }
+    } catch { /* ignore */ }
+    return 'screenshots';
+  });
+  
+  // Persist other key state
   const [screenshotGalleries, setScreenshotGalleries] = useState<ProductGallery[]>([]);
-  const [selectedLanguage, setSelectedLanguage] = useState('en');
+  const [selectedLanguage, setSelectedLanguage] = useState(() => {
+    try {
+      const saved = localStorage.getItem(GENIE_CAST_STATE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed?.selectedLanguage || 'en';
+      }
+    } catch { /* ignore */ }
+    return 'en';
+  });
   const totalScreenshots = screenshotGalleries.reduce((sum, g) => sum + g.screenshots.length, 0);
-  const [quality, setQuality] = useState<'preview' | 'production' | 'cinematic'>('production');
+  const [quality, setQuality] = useState<'preview' | 'production' | 'cinematic'>(() => {
+    try {
+      const saved = localStorage.getItem(GENIE_CAST_STATE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed?.quality || 'production';
+      }
+    } catch { /* ignore */ }
+    return 'production';
+  });
   const [includeVisuals, setIncludeVisuals] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedVideos, setGeneratedVideos] = useState<Map<string, GeneratedVideo>>(new Map());
@@ -139,8 +172,45 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
   const [loadingExisting, setLoadingExisting] = useState(true);
   
   // Full Production Mode state
-  const [enableFullProduction, setEnableFullProduction] = useState(false);
+  const [enableFullProduction, setEnableFullProduction] = useState(() => {
+    try {
+      const saved = localStorage.getItem(GENIE_CAST_STATE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed?.enableFullProduction ?? false;
+      }
+    } catch { /* ignore */ }
+    return false;
+  });
   const [productionConfig, setProductionConfig] = useState<ProductionModeConfig>(DEFAULT_PRODUCTION_CONFIG);
+
+  // Persist tab state when it changes
+  useEffect(() => {
+    console.log('[GenieCast] Persisting tab state:', activeTab);
+    localStorage.setItem(GENIE_CAST_TAB_KEY, activeTab);
+  }, [activeTab]);
+
+  // Persist other key state when it changes
+  useEffect(() => {
+    const stateToSave = {
+      selectedLanguage,
+      quality,
+      enableFullProduction,
+      savedAt: Date.now(),
+    };
+    console.log('[GenieCast] Persisting panel state:', stateToSave);
+    localStorage.setItem(GENIE_CAST_STATE_KEY, JSON.stringify(stateToSave));
+  }, [selectedLanguage, quality, enableFullProduction]);
+
+  // Log restoration on mount
+  useEffect(() => {
+    console.log('[GenieCast] Component mounted, restored state:', {
+      activeTab,
+      selectedLanguage,
+      quality,
+      enableFullProduction,
+    });
+  }, []);
 
   const selectedLang = LANGUAGES.find(l => l.code === selectedLanguage);
   const totalDuration = CHAPTERS.reduce((sum, c) => sum + c.duration, 0);
