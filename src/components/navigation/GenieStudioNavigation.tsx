@@ -73,7 +73,7 @@ export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({
   const { genieUser, signOut } = useGenieStudioAuth();
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
   const [openCategories, setOpenCategories] = useState<string[]>(['manage']); // MANAGE open by default
-  const [openSubCategories, setOpenSubCategories] = useState<string[]>(['Workflow']);
+  const [openSubCategories, setOpenSubCategories] = useState<string[]>(['Create', 'Plan']); // Create expanded to show Genie Cast
 
   const toggleCategory = (category: string) => {
     setOpenCategories(prev => 
