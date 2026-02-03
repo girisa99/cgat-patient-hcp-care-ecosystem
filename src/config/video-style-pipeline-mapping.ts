@@ -23,7 +23,7 @@ export interface StyleProviderConfig {
   pacing?: 'slow' | 'normal' | 'fast' | 'dynamic';
 }
 
-// Maps video styles to their AI provider configurations
+// Maps video styles to their AI provider configurations (only styles in VideoStyleType)
 export const VIDEO_STYLE_PROVIDERS: Record<VideoStyleType, StyleProviderConfig> = {
   // === STORYTELLING ===
   smart_storytelling: {
@@ -44,7 +44,7 @@ export const VIDEO_STYLE_PROVIDERS: Record<VideoStyleType, StyleProviderConfig> 
   },
   micro_drama: {
     videoProvider: 'vertex-ai',
-    animationProvider: 'runway',
+    animationProvider: 'modelslab',
     ttsStyle: 'dramatic',
     visualEffect: 'cinematic',
     scriptTone: 'dramatic_arc',
@@ -54,7 +54,7 @@ export const VIDEO_STYLE_PROVIDERS: Record<VideoStyleType, StyleProviderConfig> 
   // === AVATAR STYLES ===
   ugc_avatar_photorealistic: {
     videoProvider: 'alibaba-wan',
-    avatarProvider: 'alibaba-wan2.2', // Primary for photorealistic
+    avatarProvider: 'alibaba-wan2.2',
     ttsStyle: 'conversational',
     visualEffect: 'presenter',
     scriptTone: 'personal',
@@ -62,7 +62,7 @@ export const VIDEO_STYLE_PROVIDERS: Record<VideoStyleType, StyleProviderConfig> 
   },
   ugc_avatar_3d_pixar: {
     videoProvider: 'modelslab',
-    avatarProvider: 'meshy-3d', // 3D Pixar style
+    avatarProvider: 'meshy-3d',
     animationProvider: 'modelslab',
     ttsStyle: 'friendly',
     visualEffect: '3d_character',
@@ -71,7 +71,7 @@ export const VIDEO_STYLE_PROVIDERS: Record<VideoStyleType, StyleProviderConfig> 
   },
   ugc_avatar_2d_animated: {
     videoProvider: 'modelslab',
-    avatarProvider: 'modelslab-animate', // 2D animation
+    avatarProvider: 'modelslab-animate',
     animationProvider: 'modelslab',
     ttsStyle: 'animated',
     visualEffect: '2d_cartoon',
@@ -80,7 +80,7 @@ export const VIDEO_STYLE_PROVIDERS: Record<VideoStyleType, StyleProviderConfig> 
   },
   talking_photos: {
     videoProvider: 'alibaba-wan',
-    avatarProvider: 'alibaba-wan2.2-s2v', // Speech-to-video for photo animation
+    avatarProvider: 'alibaba-wan2.2-s2v',
     ttsStyle: 'natural',
     visualEffect: 'photo_animate',
     scriptTone: 'conversational',
@@ -98,7 +98,7 @@ export const VIDEO_STYLE_PROVIDERS: Record<VideoStyleType, StyleProviderConfig> 
   },
   image_to_life: {
     videoProvider: 'alibaba-wan',
-    animationProvider: 'alibaba-wan2.6-i2v', // Image to video
+    animationProvider: 'alibaba-wan2.6-i2v',
     ttsStyle: 'ambient',
     visualEffect: 'parallax_motion',
     scriptTone: 'descriptive',
@@ -112,14 +112,6 @@ export const VIDEO_STYLE_PROVIDERS: Record<VideoStyleType, StyleProviderConfig> 
     scriptTone: 'clear',
     pacing: 'normal',
   },
-  music_video: {
-    videoProvider: 'vertex-ai',
-    animationProvider: 'runway',
-    ttsStyle: 'musical',
-    visualEffect: 'beat_sync',
-    scriptTone: 'lyrical',
-    pacing: 'dynamic',
-  },
 
   // === INTERACTIVE ===
   educational: {
@@ -130,13 +122,6 @@ export const VIDEO_STYLE_PROVIDERS: Record<VideoStyleType, StyleProviderConfig> 
     scriptTone: 'instructional',
     pacing: 'normal',
   },
-  chapter_navigation: {
-    videoProvider: 'vertex-ai',
-    ttsStyle: 'professional',
-    visualEffect: 'chapter_markers',
-    scriptTone: 'structured',
-    pacing: 'normal',
-  },
   interactive_quiz: {
     videoProvider: 'modelslab',
     animationProvider: 'modelslab',
@@ -144,13 +129,6 @@ export const VIDEO_STYLE_PROVIDERS: Record<VideoStyleType, StyleProviderConfig> 
     visualEffect: 'interactive_overlay',
     scriptTone: 'quiz_format',
     pacing: 'dynamic',
-  },
-  progress_tracking: {
-    videoProvider: 'vertex-ai',
-    ttsStyle: 'encouraging',
-    visualEffect: 'progress_bar',
-    scriptTone: 'supportive',
-    pacing: 'normal',
   },
   cta_videos: {
     videoProvider: 'modelslab',
@@ -185,78 +163,34 @@ export const VIDEO_STYLE_PROVIDERS: Record<VideoStyleType, StyleProviderConfig> 
     scriptTone: 'feature_focused',
     pacing: 'normal',
   },
-  testimonial: {
-    videoProvider: 'alibaba-wan',
-    avatarProvider: 'alibaba-wan2.2',
-    ttsStyle: 'authentic',
-    visualEffect: 'testimonial',
-    scriptTone: 'personal_story',
-    pacing: 'normal',
-  },
-
-  // === PRODUCTION ===
-  storyboarding: {
-    videoProvider: 'modelslab',
-    ttsStyle: 'outline',
-    visualEffect: 'sketch',
-    scriptTone: 'planning',
-    pacing: 'slow',
-  },
 };
 
-// Avatar style to provider mapping (Using only integrated providers)
+// Avatar style to provider mapping
 export const AVATAR_STYLE_PROVIDERS: Record<AvatarStyleType, { 
   provider: string; 
   model: string;
-  alternatives: string[]; // Fallback providers (only integrated ones)
+  alternatives: string[];
 }> = {
   photorealistic: {
     provider: 'alibaba',
-    model: 'wan2.2-s2v', // Speech-to-video with lip-sync
+    model: 'wan2.2-s2v',
     alternatives: ['alibaba-omniavatar', 'alibaba-mach'],
   },
   '3d_pixar': {
     provider: 'meshy',
-    model: 'character-3d', // 3D character generation
+    model: 'character-3d',
     alternatives: ['alibaba-3d', 'modelslab-3d'],
   },
   '2d_animated': {
     provider: 'modelslab',
-    model: 'animatediff-cartoon', // 2D animation style
+    model: 'animatediff-cartoon',
     alternatives: ['alibaba-wan', 'replicate-svd'],
   },
 };
 
-// Extended provider capabilities registry (Only integrated providers)
-export const PROVIDER_CAPABILITIES: Record<string, {
-  category: string[];
-  strengths: string[];
-  maxDuration: number;
-  quality: 'standard' | 'hd' | '4k';
-}> = {
-  // Video Generation (Integrated)
-  'vertex-veo': { category: ['video'], strengths: ['cinematic', 'realistic', 'documentary'], maxDuration: 16, quality: '4k' },
-  'sora2api': { category: ['video'], strengths: ['cinematic', 'creative', 'physics'], maxDuration: 20, quality: '4k' },
-  'alibaba-wan26': { category: ['video'], strengths: ['asian-style', 'realistic', 'fast'], maxDuration: 10, quality: 'hd' },
-  'alibaba-wan22': { category: ['video', 'avatar', 'lipsync'], strengths: ['avatar', 'asian-faces', 'lipsync'], maxDuration: 10, quality: 'hd' },
-  'modelslab': { category: ['video', 'image', '3d'], strengths: ['anime', 'stylized', 'fast'], maxDuration: 8, quality: 'hd' },
-  'replicate-svd': { category: ['video'], strengths: ['stable', 'reliable', 'image-to-video'], maxDuration: 4, quality: 'hd' },
-  'gemini-video': { category: ['video'], strengths: ['google-integration', 'fast'], maxDuration: 8, quality: 'hd' },
-  
-  // Avatar & Lip-sync (Alibaba Suite - Integrated)
-  'alibaba-omniavatar': { category: ['avatar'], strengths: ['full-body', 'expressive'], maxDuration: 120, quality: 'hd' },
-  'alibaba-taoavatar': { category: ['avatar', '3d'], strengths: ['3dgs', 'ar-ready'], maxDuration: 60, quality: 'hd' },
-  'alibaba-mach': { category: ['avatar'], strengths: ['character', 'animation-ready'], maxDuration: 60, quality: 'hd' },
-  
-  // 3D Generation (Integrated)
-  'meshy': { category: ['3d'], strengths: ['text-to-3d', 'texturing', 'game-ready'], maxDuration: 0, quality: 'hd' },
-  'alibaba-richdreamer': { category: ['3d'], strengths: ['high-fidelity', 'detailed'], maxDuration: 0, quality: 'hd' },
-  'modelslab-3d': { category: ['3d'], strengths: ['fast', 'stylized'], maxDuration: 0, quality: 'hd' },
-};
-
 // Script tone adjustments per style
 export const SCRIPT_TONE_MODIFIERS: Record<string, {
-  hookIntensity: number; // 0-1
+  hookIntensity: number;
   emotionalArc: boolean;
   ctaFrequency: 'none' | 'subtle' | 'moderate' | 'aggressive';
   humorLevel: 'none' | 'light' | 'medium' | 'heavy';
@@ -271,6 +205,11 @@ export const SCRIPT_TONE_MODIFIERS: Record<string, {
   quiz_format: { hookIntensity: 0.6, emotionalArc: false, ctaFrequency: 'moderate', humorLevel: 'light' },
   persuasive: { hookIntensity: 0.9, emotionalArc: true, ctaFrequency: 'aggressive', humorLevel: 'none' },
   casual: { hookIntensity: 0.5, emotionalArc: false, ctaFrequency: 'subtle', humorLevel: 'medium' },
+  expressive: { hookIntensity: 0.7, emotionalArc: true, ctaFrequency: 'none', humorLevel: 'light' },
+  descriptive: { hookIntensity: 0.3, emotionalArc: false, ctaFrequency: 'none', humorLevel: 'none' },
+  clear: { hookIntensity: 0.4, emotionalArc: false, ctaFrequency: 'moderate', humorLevel: 'none' },
+  action_oriented: { hookIntensity: 0.9, emotionalArc: false, ctaFrequency: 'aggressive', humorLevel: 'none' },
+  feature_focused: { hookIntensity: 0.5, emotionalArc: false, ctaFrequency: 'moderate', humorLevel: 'none' },
 };
 
 // Get the complete configuration for a video style
@@ -298,24 +237,24 @@ export function styleRequires3D(style: VideoStyleType): boolean {
   return config.visualEffect?.includes('3d') || config.animationProvider?.includes('meshy') || false;
 }
 
-// Get visual effect parameters for a style
-export function getVisualEffectParams(style: VideoStyleType): {
-  transitionType: string;
-  colorGrading: string;
-  motionIntensity: number;
-} {
-  const config = VIDEO_STYLE_PROVIDERS[style];
-  
-  const effectParams: Record<string, { transitionType: string; colorGrading: string; motionIntensity: number }> = {
-    cinematic: { transitionType: 'crossfade', colorGrading: 'film', motionIntensity: 0.6 },
-    attention_grab: { transitionType: 'zoom_burst', colorGrading: 'vibrant', motionIntensity: 1.0 },
-    presenter: { transitionType: 'cut', colorGrading: 'natural', motionIntensity: 0.3 },
-    '3d_character': { transitionType: 'morph', colorGrading: 'animated', motionIntensity: 0.7 },
-    '2d_cartoon': { transitionType: 'wipe', colorGrading: 'cartoon', motionIntensity: 0.8 },
-    anime: { transitionType: 'flash', colorGrading: 'anime', motionIntensity: 0.9 },
-    clean: { transitionType: 'fade', colorGrading: 'neutral', motionIntensity: 0.2 },
-    commercial: { transitionType: 'slide', colorGrading: 'commercial', motionIntensity: 0.5 },
-  };
-
-  return effectParams[config.visualEffect || 'clean'] || effectParams.clean;
-}
+// Provider capabilities registry (Integrated providers only)
+export const PROVIDER_CAPABILITIES: Record<string, {
+  category: string[];
+  strengths: string[];
+  maxDuration: number;
+  quality: 'standard' | 'hd' | '4k';
+}> = {
+  'vertex-veo': { category: ['video'], strengths: ['cinematic', 'realistic', 'documentary'], maxDuration: 16, quality: '4k' },
+  'sora2api': { category: ['video'], strengths: ['cinematic', 'creative', 'physics'], maxDuration: 20, quality: '4k' },
+  'alibaba-wan26': { category: ['video'], strengths: ['asian-style', 'realistic', 'fast'], maxDuration: 10, quality: 'hd' },
+  'alibaba-wan22': { category: ['video', 'avatar', 'lipsync'], strengths: ['avatar', 'asian-faces', 'lipsync'], maxDuration: 10, quality: 'hd' },
+  'modelslab': { category: ['video', 'image', '3d'], strengths: ['anime', 'stylized', 'fast'], maxDuration: 8, quality: 'hd' },
+  'replicate-svd': { category: ['video'], strengths: ['stable', 'reliable', 'image-to-video'], maxDuration: 4, quality: 'hd' },
+  'gemini-video': { category: ['video'], strengths: ['google-integration', 'fast'], maxDuration: 8, quality: 'hd' },
+  'alibaba-omniavatar': { category: ['avatar'], strengths: ['full-body', 'expressive'], maxDuration: 120, quality: 'hd' },
+  'alibaba-taoavatar': { category: ['avatar', '3d'], strengths: ['3dgs', 'ar-ready'], maxDuration: 60, quality: 'hd' },
+  'alibaba-mach': { category: ['avatar'], strengths: ['character', 'animation-ready'], maxDuration: 60, quality: 'hd' },
+  'meshy': { category: ['3d'], strengths: ['text-to-3d', 'texturing', 'game-ready'], maxDuration: 0, quality: 'hd' },
+  'alibaba-richdreamer': { category: ['3d'], strengths: ['high-fidelity', 'detailed'], maxDuration: 0, quality: 'hd' },
+  'modelslab-3d': { category: ['3d'], strengths: ['fast', 'stylized'], maxDuration: 0, quality: 'hd' },
+};
