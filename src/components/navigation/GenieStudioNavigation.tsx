@@ -4,7 +4,7 @@
  * MANAGE category expands to show sub-categories
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useGenieStudioNavigation } from '@/hooks/useGenieStudioNavigation';
 import { useGenieStudioAuth } from '@/hooks/useGenieStudioAuth';
@@ -72,8 +72,27 @@ export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({
   const { navByCategory, tierInfo, userTier, isInternal } = useGenieStudioNavigation();
   const { genieUser, signOut } = useGenieStudioAuth();
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
-  const [openCategories, setOpenCategories] = useState<string[]>(['manage']); // MANAGE open by default
-  const [openSubCategories, setOpenSubCategories] = useState<string[]>(['Create', 'Plan']); // Create expanded to show Genie Cast
+  
+  // Persist navigation state to localStorage to prevent losing Genie Cast visibility
+  const [openCategories, setOpenCategories] = useState<string[]>(() => {
+    const saved = localStorage.getItem('genie_nav_open_categories');
+    return saved ? JSON.parse(saved) : ['manage'];
+  });
+  
+  const [openSubCategories, setOpenSubCategories] = useState<string[]>(() => {
+    const saved = localStorage.getItem('genie_nav_open_subcategories');
+    return saved ? JSON.parse(saved) : ['Create', 'Plan'];
+  });
+
+  // Persist open categories state
+  useEffect(() => {
+    localStorage.setItem('genie_nav_open_categories', JSON.stringify(openCategories));
+  }, [openCategories]);
+
+  // Persist open subcategories state
+  useEffect(() => {
+    localStorage.setItem('genie_nav_open_subcategories', JSON.stringify(openSubCategories));
+  }, [openSubCategories]);
 
   // Memoize manage subcategories to prevent unnecessary recalculations
   const manageSubCategories = React.useMemo(() => 
@@ -82,11 +101,22 @@ export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({
   );
 
   // Auto-expand Create subcategory when internal user and it has items
-  React.useEffect(() => {
+  useEffect(() => {
     if (isInternal && manageSubCategories['Create']?.length > 0) {
       setOpenSubCategories(prev => {
         if (!prev.includes('Create')) {
-          return [...prev, 'Create'];
+          const updated = [...prev, 'Create'];
+          localStorage.setItem('genie_nav_open_subcategories', JSON.stringify(updated));
+          return updated;
+        }
+        return prev;
+      });
+      // Also ensure MANAGE is open
+      setOpenCategories(prev => {
+        if (!prev.includes('manage')) {
+          const updated = [...prev, 'manage'];
+          localStorage.setItem('genie_nav_open_categories', JSON.stringify(updated));
+          return updated;
         }
         return prev;
       });
