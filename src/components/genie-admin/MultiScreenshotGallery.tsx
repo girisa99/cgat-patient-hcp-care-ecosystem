@@ -346,20 +346,50 @@ export const MultiScreenshotGallery: React.FC<MultiScreenshotGalleryProps> = ({
     });
   };
 
-  // Remove screenshot
+  // Remove screenshot from both state and storage
   const handleRemove = async (productId: string, screenshotId: string) => {
-    setGalleries(prev => {
-      const updated = prev.map(g => {
-        if (g.productId !== productId) return g;
-        return {
-          ...g,
-          screenshots: g.screenshots.filter(s => s.id !== screenshotId).map((s, idx) => ({ ...s, order: idx })),
-        };
+    try {
+      // Find the screenshot to get its storage path
+      const gallery = galleries.find(g => g.productId === productId);
+      const screenshot = gallery?.screenshots.find(s => s.id === screenshotId);
+      
+      if (screenshot?.imageUrl) {
+        // Extract the file path from the URL
+        // URL format: .../storage/v1/object/public/product-screenshots/screenshots/filename.png
+        const urlParts = screenshot.imageUrl.split('/product-screenshots/');
+        if (urlParts.length > 1) {
+          const filePath = urlParts[1]; // e.g., "screenshots/ask-genie-123.png"
+          
+          const { error } = await supabase.storage
+            .from('product-screenshots')
+            .remove([filePath]);
+          
+          if (error) {
+            console.error('Failed to delete from storage:', error);
+            toast.error('Failed to delete screenshot from storage');
+            return;
+          }
+        }
+      }
+
+      // Update local state
+      setGalleries(prev => {
+        const updated = prev.map(g => {
+          if (g.productId !== productId) return g;
+          return {
+            ...g,
+            screenshots: g.screenshots.filter(s => s.id !== screenshotId).map((s, idx) => ({ ...s, order: idx })),
+          };
+        });
+        onGalleriesUpdated?.(updated);
+        return updated;
       });
-      onGalleriesUpdated?.(updated);
-      return updated;
-    });
-    toast.success('Screenshot removed');
+      
+      toast.success('Screenshot deleted');
+    } catch (err) {
+      console.error('Failed to remove screenshot:', err);
+      toast.error('Failed to delete screenshot');
+    }
   };
 
   // State for Cast screen capture dialog
