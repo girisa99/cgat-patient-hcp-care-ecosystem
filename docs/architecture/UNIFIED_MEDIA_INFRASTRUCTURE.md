@@ -1,12 +1,59 @@
 # Unified Media Infrastructure Architecture
 
-> **Document Version:** 1.0.0  
+> **Document Version:** 1.1.0  
 > **Last Updated:** 2026-02-03  
-> **Status:** Active - Phase 1 Implementation
+> **Status:** Active - Phase 1 Implementation (JSON2Video Integrated in genie-cast-assembler)
 
 ## Overview
 
 This document defines the shared media infrastructure architecture for the Genie Studio ecosystem, enabling video assembly, avatar generation, 3D rendering, and VR/AR across all products with tier-based access control.
+
+## Integration Scope by Application
+
+| Application | JSON2Video | Video Assembly | Avatar/Lip-sync | 3D | Notes |
+|-------------|------------|----------------|-----------------|-----|-------|
+| **Production Hub / Cast** | ✅ Primary | Full pipeline | Phase 2 | Phase 2 | Main batch production via `genie-cast-assembler` |
+| **Vibe (Desktop)** | ✅ Recording edits | Recording + editing | Phase 2 | - | `ai-video-generator` |
+| **Vibe (Mobile)** | ❌ Preview only | Submit to backend | - | - | View-only, jobs sent to desktop/backend |
+| **Deck** | ✅ Slide exports | Slide-to-video | - | - | `share-presentation` |
+| **Spark** | ❌ | ❌ | ❌ | ❌ | Text/ideation only |
+| **Mind** | ❌ | TTS audio only | ❌ | ❌ | Script enhancement |
+| **Ask Genie** | ❌ | ❌ | ❌ | ❌ | Chat support only |
+
+## Workflow: Create → Produce → Publish
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         GENIE STUDIO PIPELINE                          │
+├─────────────────┬─────────────────────────┬─────────────────────────────┤
+│   CREATE        │      PRODUCE            │        PUBLISH              │
+│   (Assets)      │      (Assembly)         │        (Distribution)       │
+├─────────────────┼─────────────────────────┼─────────────────────────────┤
+│ • Spark: Ideas  │ • Vibe: Recording       │ • Cast: Distribution        │
+│ • Mind: Scripts │ • Deck: Presentations   │ • Arc: Scheduling           │
+│ • TTS: Audio    │ • JSON2Video: Stitching │ • Hub: Assets Library       │
+│ • Screenshots   │ • Avatar (Phase 2)      │ • Analytics                 │
+└─────────────────┴─────────────────────────┴─────────────────────────────┘
+```
+
+## Production Hub Navigation Structure
+
+The Production Hub Admin is organized into two main sections:
+
+### CREATE Section
+| Tab | Component | Purpose |
+|-----|-----------|---------|
+| **Studio** | `SimpleCompositionStudio` | Video composition workspace |
+| **Genie Cast** | `UnifiedVideoGenerationPanel` | 8-tab video production (Screenshots, Generate, Matrix, Library, Alerts, Messaging, Analytics, Flow) |
+| **Library** | `ContentLibrary` | Asset management and search |
+
+### PUBLISH Section
+| Tab | Component | Purpose |
+|-----|-----------|---------|
+| **Review & Enhance** | Quality control | Final review before distribution |
+| **Assets** | Asset export | Download/prepare assets for platforms |
+| **Scheduler** | `ContentSchedulerDashboard` | Schedule content publishing |
+| **Distribution** | Platform publishing | Push to YouTube, TikTok, LinkedIn, etc. |
 
 ## Architecture Diagram
 
@@ -274,4 +321,5 @@ const mediaConsumption = {
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-02-03 | 1.1.0 | Added Integration Scope table, Production Hub navigation structure, updated app documentation |
 | 2026-02-03 | 1.0.0 | Initial documentation, Phase 1 JSON2Video integration |

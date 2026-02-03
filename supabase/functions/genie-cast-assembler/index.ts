@@ -511,7 +511,8 @@ function getChapterScript(chapterId: string, language: string): string {
 
 /**
  * Stitch all chapter audio/visuals into one continuous video
- * Uses Replicate's video merging/assembly or ModelsLab for stitching
+ * PRIMARY: JSON2Video (Render tier) for timeline-based stitching
+ * FALLBACK: Replicate/ModelsLab for video generation
  */
 async function stitchChaptersToVideo(
   chapters: ChapterResult[],
@@ -531,7 +532,20 @@ async function stitchChaptersToVideo(
   console.log(`🎬 Stitching ${successfulChapters.length} chapters into video`);
   console.log(`   Audio files: ${audioUrls.length}, Visual files: ${visualUrls.length}`);
 
-  // Try Replicate first for video assembly
+  // === PHASE 1: JSON2VIDEO (PRIMARY - Timeline Assembly) ===
+  const json2videoResult = await tryJSON2VideoAssembly(successfulChapters, audioUrls, visualUrls, language, quality);
+  if (json2videoResult.success) {
+    console.log(`✅ Video assembled via JSON2Video: ${json2videoResult.videoUrl}`);
+    return {
+      success: true,
+      videoUrl: json2videoResult.videoUrl,
+      thumbnailUrl: json2videoResult.thumbnailUrl,
+      pendingGeneration: json2videoResult.pending || false,
+      taskId: json2videoResult.taskId,
+    };
+  }
+
+  // === FALLBACK 1: Replicate for video assembly ===
   const replicateResult = await tryReplicateVideoAssembly(audioUrls, visualUrls, language);
   if (replicateResult.success) {
     console.log(`✅ Video assembled via Replicate: ${replicateResult.videoUrl}`);
@@ -544,7 +558,7 @@ async function stitchChaptersToVideo(
     };
   }
 
-  // Fallback to ModelsLab video generation from images + audio
+  // === FALLBACK 2: ModelsLab video generation from images + audio ===
   const modelsLabResult = await tryModelsLabVideoAssembly(audioUrls, visualUrls, language);
   if (modelsLabResult.success) {
     console.log(`✅ Video assembled via ModelsLab: ${modelsLabResult.videoUrl}`);
@@ -557,7 +571,7 @@ async function stitchChaptersToVideo(
     };
   }
 
-  // Final fallback: Create slideshow-style video with audio overlay
+  // === FALLBACK 3: Create slideshow-style video with audio overlay ===
   const slideshowResult = await createSlideshowVideo(audioUrls, visualUrls, language);
   if (slideshowResult.success) {
     return {
@@ -577,6 +591,232 @@ async function stitchChaptersToVideo(
     success: true,
     videoUrl: placeholderUrl,
     pendingGeneration: true,
+  };
+}
+
+// ================================
+// JSON2VIDEO INTEGRATION (Phase 1)
+// ================================
+
+/**
+ * JSON2Video API for timeline-based video assembly
+ * - Precise frame-by-frame timeline control
+ * - Synchronizes TTS audio with product screenshots
+ * - Supports text overlays, transitions, and effects
+ * 
+ * @see https://json2video.com/docs/api/
+ */
+async function tryJSON2VideoAssembly(
+  chapters: ChapterResult[],
+  audioUrls: string[],
+  visualUrls: string[],
+  language: string,
+  quality: string
+): Promise<{ success: boolean; videoUrl?: string; thumbnailUrl?: string; pending?: boolean; taskId?: string }> {
+  const apiKey = Deno.env.get('JSON2VIDEO_API_KEY');
+  if (!apiKey) {
+    console.log('⚠️ JSON2VIDEO_API_KEY not configured - skipping JSON2Video assembly');
+    return { success: false };
+  }
+
+  try {
+    console.log(`🎥 Starting JSON2Video timeline assembly for ${language}`);
+
+    // Build timeline from chapters
+    const timeline = buildJSON2VideoTimeline(chapters, audioUrls, visualUrls, language, quality);
+
+    // Call JSON2Video Render API
+    const response = await fetch('https://api.json2video.com/v2/movies', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+      },
+      body: JSON.stringify(timeline),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`JSON2Video API error: ${response.status} - ${errorText}`);
+      return { success: false };
+    }
+
+    const data = await response.json();
+    console.log(`📹 JSON2Video job created: ${data.project}`);
+
+    // JSON2Video returns project ID - we need to poll for completion
+    if (data.project) {
+      const result = await pollJSON2VideoResult(data.project, apiKey);
+      return result;
+    }
+
+    // If immediate output available
+    if (data.url) {
+      return {
+        success: true,
+        videoUrl: data.url,
+        thumbnailUrl: data.poster || data.thumbnail,
+        pending: false,
+      };
+    }
+
+    return { success: false };
+  } catch (error) {
+    console.error('JSON2Video assembly error:', error);
+    return { success: false };
+  }
+}
+
+/**
+ * Build JSON2Video timeline from chapter data
+ * Uses "scenes" structure for precise timing control
+ */
+function buildJSON2VideoTimeline(
+  chapters: ChapterResult[],
+  audioUrls: string[],
+  visualUrls: string[],
+  language: string,
+  quality: string
+): object {
+  // Determine resolution based on quality tier
+  const resolution = quality === 'cinematic' ? '4k' : quality === 'production' ? '1080p' : '720p';
+  const width = resolution === '4k' ? 3840 : resolution === '1080p' ? 1920 : 1280;
+  const height = resolution === '4k' ? 2160 : resolution === '1080p' ? 1080 : 720;
+
+  // Build scenes array from chapters
+  const scenes = chapters.map((chapter, index) => {
+    const audioUrl = audioUrls[index] || null;
+    const visualUrl = visualUrls[index] || null;
+    
+    const scene: any = {
+      comment: `${chapter.product} - ${chapter.chapterId}`,
+      duration: chapter.duration,
+      elements: [],
+    };
+
+    // Background image/video from product screenshots
+    if (visualUrl) {
+      scene.elements.push({
+        type: 'image',
+        src: visualUrl,
+        duration: chapter.duration,
+        position: 'center',
+        scale: 'cover',
+        // Subtle Ken Burns effect
+        animations: [
+          { type: 'scale', from: 1.0, to: 1.05, duration: chapter.duration },
+        ],
+      });
+    } else {
+      // Fallback solid color background
+      scene.background = chapter.product === 'Genie Studio' ? '#9333EA' : '#1e293b';
+    }
+
+    // Audio track (TTS voiceover)
+    if (audioUrl) {
+      scene.elements.push({
+        type: 'audio',
+        src: audioUrl,
+        start: 0,
+        volume: 1.0,
+      });
+    }
+
+    // Product name text overlay (lower-third style)
+    scene.elements.push({
+      type: 'text',
+      text: chapter.product,
+      font: 'Inter',
+      size: 48,
+      color: '#ffffff',
+      position: { x: 100, y: height - 120 },
+      duration: Math.min(5, chapter.duration),
+      animations: [
+        { type: 'fade-in', duration: 0.5 },
+        { type: 'fade-out', start: chapter.duration - 0.5, duration: 0.5 },
+      ],
+    });
+
+    // Transition to next scene (if not last)
+    if (index < chapters.length - 1) {
+      scene.transition = {
+        type: 'fade',
+        duration: 0.5,
+      };
+    }
+
+    return scene;
+  });
+
+  // Complete movie structure
+  return {
+    resolution,
+    quality: quality === 'cinematic' ? 'high' : 'medium',
+    fps: 30,
+    scenes,
+    // Global settings
+    settings: {
+      language,
+      watermark: false, // Disabled for production
+    },
+    // Webhook for async completion (optional)
+    webhook: null,
+  };
+}
+
+/**
+ * Poll JSON2Video for job completion
+ */
+async function pollJSON2VideoResult(
+  projectId: string,
+  apiKey: string
+): Promise<{ success: boolean; videoUrl?: string; thumbnailUrl?: string; pending?: boolean; taskId?: string }> {
+  const maxAttempts = 24; // ~2 minutes with 5s intervals (videos can take time)
+
+  for (let i = 0; i < maxAttempts; i++) {
+    await new Promise(r => setTimeout(r, 5000));
+
+    try {
+      const response = await fetch(`https://api.json2video.com/v2/movies/${projectId}`, {
+        headers: {
+          'x-api-key': apiKey,
+        },
+      });
+
+      if (!response.ok) {
+        console.error(`JSON2Video polling error: ${response.status}`);
+        continue;
+      }
+
+      const data = await response.json();
+      console.log(`   JSON2Video poll ${i + 1}/${maxAttempts}: status=${data.status}`);
+
+      if (data.status === 'done' && data.url) {
+        return {
+          success: true,
+          videoUrl: data.url,
+          thumbnailUrl: data.poster || data.thumbnail,
+          pending: false,
+        };
+      }
+
+      if (data.status === 'error' || data.status === 'failed') {
+        console.error('JSON2Video job failed:', data.error || data.message);
+        return { success: false };
+      }
+
+      // Still processing, continue polling
+    } catch (error) {
+      console.error('JSON2Video polling error:', error);
+    }
+  }
+
+  // Timeout - return as pending for background processing
+  console.log(`⏳ JSON2Video job ${projectId} still processing - marking as pending`);
+  return {
+    success: true,
+    pending: true,
+    taskId: projectId,
   };
 }
 
