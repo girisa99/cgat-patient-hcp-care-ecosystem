@@ -492,8 +492,7 @@ async function generateChapterAudio(
 
 /**
  * Generate product visual for a chapter
- * Uses high-quality placeholder images from reliable CDN
- * Since brand-assets bucket is empty, use picsum.photos with deterministic IDs
+ * Uses AI-generated brand assets from the brand-assets bucket
  */
 async function generateChapterVisual(
   chapterId: string,
@@ -504,53 +503,55 @@ async function generateChapterVisual(
   const visuals = PRODUCT_VISUALS[chapterId];
   if (!visuals) return undefined;
 
-  // Use picsum.photos with deterministic seed IDs for consistent placeholders
-  // These are high-quality images that JSON2Video can download
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  
+  // Use AI-generated brand assets from storage bucket
   const productBranding: Record<string, { image: string; color: string }> = {
     'opening': { 
-      image: 'https://picsum.photos/seed/genie-studio/1920/1080',
+      image: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-opening-demo.jpg`,
       color: '#9333EA'
     },
     'spark': {
-      image: 'https://picsum.photos/seed/genie-spark/1920/1080',
+      image: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-spark-demo.jpg`,
       color: '#F97316'
     },
     'mind': {
-      image: 'https://picsum.photos/seed/genie-mind/1920/1080',
+      image: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-mind-demo.jpg`,
       color: '#3B82F6'
     },
     'vibe': {
-      image: 'https://picsum.photos/seed/genie-vibe/1920/1080',
+      image: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-vibe-demo.jpg`,
       color: '#22C55E'
     },
     'deck': {
-      image: 'https://picsum.photos/seed/genie-deck/1920/1080',
+      image: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-deck-demo.jpg`,
       color: '#EAB308'
     },
     'arc': {
-      image: 'https://picsum.photos/seed/genie-arc/1920/1080',
+      image: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-arc-demo.jpg`,
       color: '#EC4899'
     },
     'ask-genie': {
-      image: 'https://picsum.photos/seed/ask-genie/1920/1080',
+      image: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-ask-genie-demo.jpg`,
       color: '#06B6D4'
     },
     'cast': {
-      image: 'https://picsum.photos/seed/genie-cast/1920/1080',
+      image: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-cast-demo.jpg`,
       color: '#EF4444'
     },
     'closing': {
-      image: 'https://picsum.photos/seed/genie-cta/1920/1080',
+      image: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-closing-demo.jpg`,
       color: '#9333EA'
     },
   };
 
   const branding = productBranding[chapterId];
   if (branding?.image) {
+    console.log(`   🖼️ Using brand asset for ${chapterId}: ${branding.image}`);
     return branding.image;
   }
 
-  // Fallback to a generic placeholder
+  // Fallback to picsum if brand asset missing
   return `https://picsum.photos/seed/${chapterId}/1920/1080`;
 }
 
