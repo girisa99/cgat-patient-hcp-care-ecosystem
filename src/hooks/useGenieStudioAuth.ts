@@ -60,16 +60,24 @@ interface GenieStudioAuthState {
   isInternalUser: boolean;
 }
 
+// Cache key for internal user status - prevents Genie Cast tab flicker
+const INTERNAL_USER_CACHE_KEY = 'genie_studio_is_internal';
+
 export function useGenieStudioAuth() {
   const { toast } = useToast();
-  const [state, setState] = useState<GenieStudioAuthState>({
-    user: null,
-    session: null,
-    genieUser: null,
-    isLoading: true,
-    isAuthenticated: false,
-    hasMarketingAccess: false,
-    isInternalUser: false,
+  
+  // Initialize isInternalUser from cache to prevent navigation flicker
+  const [state, setState] = useState<GenieStudioAuthState>(() => {
+    const cachedIsInternal = localStorage.getItem(INTERNAL_USER_CACHE_KEY);
+    return {
+      user: null,
+      session: null,
+      genieUser: null,
+      isLoading: true,
+      isAuthenticated: false,
+      hasMarketingAccess: false,
+      isInternalUser: cachedIsInternal === 'true', // Use cached value immediately
+    };
   });
 
   // Fetch Genie Studio user profile
@@ -241,6 +249,9 @@ export function useGenieStudioAuth() {
             }
 
             if (mounted && genieUser) {
+              // Cache internal user status to prevent navigation flicker on refresh
+              localStorage.setItem(INTERNAL_USER_CACHE_KEY, String(genieUser.is_internal));
+              
               setState(prev => ({
                 ...prev,
                 genieUser,
@@ -253,6 +264,9 @@ export function useGenieStudioAuth() {
             }
           }, 0);
         } else {
+          // Clear cache on logout
+          localStorage.removeItem(INTERNAL_USER_CACHE_KEY);
+          
           setState(prev => ({
             ...prev,
             genieUser: null,
@@ -282,6 +296,11 @@ export function useGenieStudioAuth() {
         }
 
         if (mounted) {
+          // Cache internal user status
+          if (genieUser) {
+            localStorage.setItem(INTERNAL_USER_CACHE_KEY, String(genieUser.is_internal));
+          }
+          
           setState(prev => ({
             ...prev,
             genieUser,
