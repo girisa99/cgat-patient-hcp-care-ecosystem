@@ -44,5 +44,9 @@ export {
 export { unifiedProviderRouter } from '@/services/unifiedProviderRoutingAdapter';
 export { contextualRecommendationService } from '@/services/contextualRecommendationService';
 
+// Unified Media Infrastructure (JSON2Video + Cloud Run planned)
+export { unifiedMediaOrchestrator, MEDIA_PROVIDERS, TIER_QUOTAS } from '@/services/shared/unifiedMediaOrchestrator';
+export type { MediaJobConfig, MediaAsset, OutputConfig, MediaJobResult, MediaType } from '@/services/shared/unifiedMediaOrchestrator';
+
 // Proactive Editing
 export { proactivePipelineEditorService } from '@/services/proactivePipelineEditorService';

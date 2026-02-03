@@ -64,6 +64,11 @@ export const PROVIDER_TIERS: Record<string, GlobalTier> = {
   'runway-gen3': 'premium',
   'openai-sora': 'premium',
   
+  // Video Assembly (JSON2Video - Phase 1)
+  'json2video-standard': 'standard',
+  'json2video-hd': 'advanced',
+  'json2video-4k': 'premium',
+  
   // Voice
   'google-tts': 'standard',
   'aws-polly': 'standard',
@@ -71,6 +76,16 @@ export const PROVIDER_TIERS: Record<string, GlobalTier> = {
   'azure-neural': 'advanced',
   'elevenlabs': 'premium',
   'alibaba-cosyvoice': 'advanced',
+  
+  // Avatar (Phase 2 - Cloud Run)
+  'avatar-preset': 'standard',
+  'avatar-custom': 'advanced',
+  'avatar-wan-lipsync': 'premium',
+  
+  // 3D/VR (Phase 2 - Cloud Run)
+  'meshy-basic': 'advanced',
+  'meshy-hd': 'premium',
+  'taoavatar-vr': 'premium',
   
   // Translation
   'google-translate': 'standard',
