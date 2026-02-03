@@ -49,6 +49,7 @@ import { cn } from '@/lib/utils';
 import { MultiScreenshotGallery, ProductGallery } from './MultiScreenshotGallery';
 import { VideoGenerationMatrix } from './VideoGenerationMatrix';
 import { FullProductionModeConfig, DEFAULT_PRODUCTION_CONFIG, REGIONAL_AVATARS, type ProductionModeConfig } from './FullProductionModeConfig';
+import { TokenConsumptionBreakdown } from './TokenConsumptionBreakdown';
 
 // Supported languages with zone routing
 const LANGUAGES = [
@@ -479,6 +480,13 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
                     disabled={isGenerating}
                   />
                 )}
+
+                {/* Token Consumption Breakdown */}
+                <TokenConsumptionBreakdown
+                  config={productionConfig}
+                  selectedLanguage={selectedLanguage}
+                  isFullProduction={enableFullProduction}
+                />
 
                 {/* Video Info */}
                 <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg space-y-2">
