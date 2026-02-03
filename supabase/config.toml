@@ -374,3 +374,9 @@ verify_jwt = false
 
 [functions.purchase-credits]
 verify_jwt = false
+
+[functions.genie-cast-assembler]
+verify_jwt = false
+
+[functions.multi-provider-tts]
+verify_jwt = false
