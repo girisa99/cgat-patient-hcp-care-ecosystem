@@ -26,7 +26,7 @@ import { useShows } from '@/hooks/useShows';
 
 import type { EventCategory } from '@/types/shows';
 import { cn } from '@/lib/utils';
-import { VideoGenerationPanel } from '@/components/landing/video/VideoGenerationPanel';
+import { UnifiedVideoGenerationPanel } from './UnifiedVideoGenerationPanel';
 
 // Lazy load heavy components
 const GenieCommandCenter = lazy(() => import('@/components/diagrams/genie-command-center/GenieCommandCenter'));
@@ -274,19 +274,9 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
             </div>
           )}
 
-          {/* Landing Videos Generation */}
+          {/* Landing Videos Generation - Unified Panel */}
           {activeTab === 'landing-videos' && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold">Landing Page Video Generation</h2>
-                  <p className="text-muted-foreground text-sm">
-                    Generate professional marketing videos using Genie Cast with AI avatars and 3D transitions
-                  </p>
-                </div>
-              </div>
-              <VideoGenerationPanel />
-            </div>
+            <UnifiedVideoGenerationPanel />
           )}
         </div>
       </ScrollArea>
