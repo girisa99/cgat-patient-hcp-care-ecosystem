@@ -117,7 +117,8 @@ interface ChapterResult {
   product: string;
   audioBase64?: string;
   audioUrl?: string;
-  visualUrl?: string;
+  visualUrl?: string;  // Primary visual (first screenshot or logo)
+  visualUrls?: string[]; // All product screenshots for this chapter
   duration: number;
   ttsProvider: string;
   videoProvider: string;
@@ -185,7 +186,15 @@ serve(async (req) => {
       includeVisuals = true,
       fullProductionMode = false,
       productionConfig = null,
+      // Accept screenshots from orchestration service
+      screenshots = [] as Array<{ screenId: string; imageUrl: string; order: number; productId?: string }>,
+      customScript = null,
+      customHook = null,
+      customCta = null,
+      useApprovedMessaging = false,
     } = await req.json();
+    
+    console.log(`📷 Received ${screenshots.length} screenshots from orchestration service`);
 
     if (!language) {
       throw new Error('Language is required');
@@ -223,15 +232,18 @@ serve(async (req) => {
           ttsConfig.provider
         );
 
-        // Step 2: Generate product visual for this chapter (if enabled)
-        let visualUrl: string | undefined;
-        if (includeVisuals && PRODUCT_VISUALS[chapter.id]) {
-          visualUrl = await generateChapterVisual(
+        // Step 2: Generate product visuals for this chapter (if enabled)
+        // Now uses product screenshots from the orchestration service
+        let visualUrls: string[] = [];
+        if (includeVisuals) {
+          visualUrls = await generateChapterVisual(
             chapter.id,
             chapter.product,
             chapter.color,
-            quality
+            quality,
+            screenshots // Pass screenshots from request
           );
+          console.log(`   🖼️ ${visualUrls.length} visuals for ${chapter.id}`);
         }
 
         // Step 3: Generate Avatar (if Full Production Mode enabled)
@@ -286,7 +298,8 @@ serve(async (req) => {
           product: chapter.product,
           audioBase64: audioResult.audioBase64,
           audioUrl: audioResult.audioUrl,
-          visualUrl,
+          visualUrl: visualUrls[0], // Primary visual for backwards compatibility
+          visualUrls, // All screenshots for this chapter
           duration: chapter.duration,
           ttsProvider: ttsConfig.provider,
           videoProvider,
@@ -503,74 +516,132 @@ async function generateChapterAudio(
 
 /**
  * Generate product visual for a chapter
- * Uses REAL uploaded logos from the brand-assets bucket (not AI-generated)
- * Logos are uploaded via upload-brand-logos edge function
- * Logos are uploaded via upload-brand-logos edge function
+ * 
+ * Priority order:
+ * 1. Use product screenshots from 'product-screenshots' bucket (passed via request)
+ * 2. Fall back to brand logos from 'brand-assets' bucket
+ * 3. Fall back to preview app URL
  */
 async function generateChapterVisual(
   chapterId: string,
   product: string,
   color: string,
-  quality: string
-): Promise<string | undefined> {
+  quality: string,
+  screenshots: Array<{ screenId: string; imageUrl: string; order: number; productId?: string }> = []
+): Promise<string[]> {
   const visuals = PRODUCT_VISUALS[chapterId];
-  if (!visuals) return undefined;
-
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   
-  // Use REAL uploaded brand logos from storage bucket
-  // These are the actual logos uploaded by the user via upload-brand-logos function
-  // Files are stored as .jpg in the bucket (converted from PNG on upload)
-  const productBranding: Record<string, { image: string; color: string }> = {
+  // Map chapter IDs to product IDs for screenshot matching
+  const chapterToProductId: Record<string, string> = {
+    'opening': 'studio',
+    'spark': 'spark',
+    'mind': 'mind',
+    'vibe': 'vibe',
+    'deck': 'deck',
+    'arc': 'arc',
+    'ask-genie': 'ask-genie',
+    'cast': 'cast',
+    'closing': 'studio',
+  };
+  
+  const productId = chapterToProductId[chapterId];
+  
+  // PRIORITY 1: Use product screenshots from the orchestration service
+  // These are the actual UI screenshots uploaded by the user
+  const productScreenshots = screenshots.filter(s => {
+    // Match screenshots by product ID (in screenId or productId field)
+    const screenProductId = s.productId || s.screenId.split('-')[0];
+    return screenProductId === productId || 
+           s.screenId.toLowerCase().includes(productId.toLowerCase());
+  });
+  
+  if (productScreenshots.length > 0) {
+    const sortedScreenshots = productScreenshots.sort((a, b) => a.order - b.order);
+    console.log(`   📸 Using ${sortedScreenshots.length} product screenshots for ${chapterId}`);
+    return sortedScreenshots.map(s => s.imageUrl);
+  }
+  
+  // PRIORITY 2: Load screenshots directly from product-screenshots bucket
+  try {
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.50.0");
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    const { data: files, error } = await supabase.storage
+      .from('product-screenshots')
+      .list('screenshots', { limit: 100 });
+    
+    if (!error && files && files.length > 0) {
+      // Filter files for this product
+      const productFiles = files.filter(f => 
+        f.name.toLowerCase().startsWith(productId.toLowerCase() + '-') ||
+        f.name.toLowerCase().startsWith(chapterId.toLowerCase() + '-')
+      );
+      
+      if (productFiles.length > 0) {
+        const screenshotUrls = productFiles.map(f => 
+          `${supabaseUrl}/storage/v1/object/public/product-screenshots/screenshots/${f.name}`
+        );
+        console.log(`   📸 Found ${screenshotUrls.length} screenshots in storage for ${chapterId}`);
+        return screenshotUrls;
+      }
+    }
+  } catch (err) {
+    console.log(`   ⚠️ Could not load screenshots from bucket: ${err}`);
+  }
+  
+  // PRIORITY 3: Fall back to brand logos (PNG format)
+  const productBranding: Record<string, { logo: string; color: string }> = {
     'opening': { 
-      image: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-opening-logo.jpg`,
+      logo: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-opening-logo.png`,
       color: '#9333EA'
     },
     'spark': {
-      image: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-spark-logo.jpg`,
+      logo: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-spark-logo.png`,
       color: '#F97316'
     },
     'mind': {
-      image: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-mind-logo.jpg`,
+      logo: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-mind-logo.png`,
       color: '#3B82F6'
     },
     'vibe': {
-      image: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-vibe-logo.jpg`,
+      logo: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-vibe-logo.png`,
       color: '#22C55E'
     },
     'deck': {
-      image: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-deck-logo.jpg`,
+      logo: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-deck-logo.png`,
       color: '#EAB308'
     },
     'arc': {
-      image: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-arc-logo.jpg`,
+      logo: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-arc-logo.png`,
       color: '#EC4899'
     },
     'ask-genie': {
-      image: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-ask-genie-logo.jpg`,
+      logo: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-ask-genie-logo.png`,
       color: '#06B6D4'
     },
     'cast': {
-      image: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-cast-logo.jpg`,
+      logo: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-cast-logo.png`,
       color: '#EF4444'
     },
     'closing': {
-      image: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-closing-logo.jpg`,
+      logo: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-closing-logo.png`,
       color: '#9333EA'
     },
   };
 
   const branding = productBranding[chapterId];
-  if (branding?.image) {
-    console.log(`   🖼️ Using real brand logo for ${chapterId}: ${branding.image}`);
-    return branding.image;
+  if (branding?.logo) {
+    console.log(`   🖼️ Using brand logo for ${chapterId} (no screenshots found)`);
+    return [branding.logo];
   }
 
-  // Fallback to the preview URL (which has the logos)
+  // PRIORITY 4: Fallback to the preview URL
   const previewAppUrl = 'https://id-preview--0e30badf-cab5-4682-9459-1076c06d2310.lovable.app';
   const fallbackLogoUrl = `${previewAppUrl}/brand-assets/genie-${chapterId}-logo.png`;
-  console.log(`   ⚠️ Brand logo not in storage, using preview URL: ${fallbackLogoUrl}`);
-  return fallbackLogoUrl;
+  console.log(`   ⚠️ No assets found, using preview URL: ${fallbackLogoUrl}`);
+  return [fallbackLogoUrl];
 }
 
 /**
@@ -656,12 +727,14 @@ async function stitchChaptersToVideo(
     return { success: false, pendingGeneration: false };
   }
 
-  // Collect all audio URLs and visual URLs from chapters
+  // Collect all audio URLs and ALL visual URLs from chapters (including multiple screenshots)
   const audioUrls = successfulChapters.map(c => c.audioUrl).filter(Boolean) as string[];
-  const visualUrls = successfulChapters.map(c => c.visualUrl).filter(Boolean) as string[];
+  // Flatten all visualUrls from each chapter to include all product screenshots
+  const visualUrls = successfulChapters.flatMap(c => c.visualUrls || (c.visualUrl ? [c.visualUrl] : []));
 
   console.log(`🎬 Stitching ${successfulChapters.length} chapters into video`);
   console.log(`   Audio files: ${audioUrls.length}, Visual files: ${visualUrls.length}`);
+  console.log(`   Screenshots per chapter:`, successfulChapters.map(c => `${c.chapterId}: ${c.visualUrls?.length || 1}`).join(', '));
 
   // === PHASE 1: JSON2VIDEO (PRIMARY - Timeline Assembly) ===
   const json2videoResult = await tryJSON2VideoAssembly(successfulChapters, audioUrls, visualUrls, language, quality);
@@ -855,59 +928,114 @@ async function tryJSON2VideoAssembly(
 function buildJSON2VideoTimeline(
   chapters: ChapterResult[],
   audioUrls: string[],
-  visualUrls: string[],
+  visualUrls: string[], // All visuals flattened
   language: string,
   quality: string
 ): object {
   // Resolution options: sd, hd, full-hd, 4k, instagram-story, instagram-post, etc.
   const resolution = quality === 'cinematic' ? '4k' : quality === 'production' ? 'full-hd' : 'hd';
 
-  // Build scenes array from chapters - simplified for v2 API
-  const scenes = chapters.map((chapter, index) => {
-    const audioUrl = audioUrls[index] || null;
-    const visualUrl = visualUrls[index] || null;
+  // Build scenes array from chapters - each chapter can have multiple screenshots
+  const scenes: any[] = [];
+  
+  chapters.forEach((chapter, chapterIndex) => {
+    const audioUrl = audioUrls[chapterIndex] || null;
+    const chapterVisuals = chapter.visualUrls || (chapter.visualUrl ? [chapter.visualUrl] : []);
     
-    const elements: any[] = [];
+    // If we have multiple screenshots, create sub-scenes for each
+    if (chapterVisuals.length > 1) {
+      const durationPerVisual = Math.floor(chapter.duration / chapterVisuals.length);
+      
+      chapterVisuals.forEach((visualUrl, visualIndex) => {
+        const elements: any[] = [];
+        const isFirstVisual = visualIndex === 0;
+        const isLastVisual = visualIndex === chapterVisuals.length - 1;
+        
+        // Background image element
+        elements.push({
+          type: 'image',
+          src: visualUrl,
+          duration: durationPerVisual,
+        });
 
-    // Background image element
-    if (visualUrl) {
+        // Audio element - only on first visual of chapter (continuous audio)
+        if (isFirstVisual && audioUrl) {
+          elements.push({
+            type: 'audio',
+            src: audioUrl,
+            duration: chapter.duration, // Full chapter duration
+          });
+        }
+
+        // Text overlay for product name (first visual only)
+        if (isFirstVisual) {
+          elements.push({
+            type: 'text',
+            text: chapter.product,
+            duration: Math.min(5, durationPerVisual),
+            settings: {
+              'font-family': 'Inter',
+              'font-size': '48px',
+              'font-color': '#ffffff',
+              'text-shadow': '2px 2px 4px rgba(0,0,0,0.5)',
+            },
+            position: 'bottom-left',
+            start: 0,
+          });
+        }
+
+        scenes.push({
+          comment: `${chapter.product} - Screenshot ${visualIndex + 1}/${chapterVisuals.length}`,
+          duration: durationPerVisual,
+          'background-color': chapter.product === 'Genie Studio' ? '#9333EA' : '#1e293b',
+          elements,
+        });
+      });
+    } else {
+      // Single visual (or logo fallback)
+      const elements: any[] = [];
+      const visualUrl = chapterVisuals[0] || null;
+
+      // Background image element
+      if (visualUrl) {
+        elements.push({
+          type: 'image',
+          src: visualUrl,
+          duration: chapter.duration,
+        });
+      }
+
+      // Audio element (TTS voiceover)
+      if (audioUrl) {
+        elements.push({
+          type: 'audio',
+          src: audioUrl,
+          duration: chapter.duration,
+        });
+      }
+
+      // Text overlay for product name
       elements.push({
-        type: 'image',
-        src: visualUrl,
+        type: 'text',
+        text: chapter.product,
+        duration: Math.min(5, chapter.duration),
+        settings: {
+          'font-family': 'Inter',
+          'font-size': '48px',
+          'font-color': '#ffffff',
+          'text-shadow': '2px 2px 4px rgba(0,0,0,0.5)',
+        },
+        position: 'bottom-left',
+        start: 0,
+      });
+
+      scenes.push({
+        comment: `${chapter.product} - Chapter ${chapterIndex + 1}`,
         duration: chapter.duration,
+        'background-color': chapter.product === 'Genie Studio' ? '#9333EA' : '#1e293b',
+        elements,
       });
     }
-
-    // Audio element (TTS voiceover)
-    if (audioUrl) {
-      elements.push({
-        type: 'audio',
-        src: audioUrl,
-        duration: chapter.duration,
-      });
-    }
-
-    // Text overlay for product name
-    elements.push({
-      type: 'text',
-      text: chapter.product,
-      duration: Math.min(5, chapter.duration),
-      settings: {
-        'font-family': 'Inter',
-        'font-size': '48px',
-        'font-color': '#ffffff',
-        'text-shadow': '2px 2px 4px rgba(0,0,0,0.5)',
-      },
-      position: 'bottom-left',
-      start: 0,
-    });
-
-    return {
-      comment: `${chapter.product} - Chapter ${index + 1}`,
-      duration: chapter.duration,
-      'background-color': chapter.product === 'Genie Studio' ? '#9333EA' : '#1e293b',
-      elements,
-    };
   });
 
   // Complete movie structure per JSON2Video v2 spec
