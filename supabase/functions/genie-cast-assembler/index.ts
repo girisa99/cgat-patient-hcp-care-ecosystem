@@ -167,6 +167,9 @@ interface AssemblyResult {
     features: string[];
   };
   error?: string;
+  // New status tracking fields
+  generationStatus?: 'pending' | 'processing' | 'completed' | 'failed';
+  message?: string;
 }
 
 serve(async (req) => {
@@ -317,7 +320,7 @@ serve(async (req) => {
       quality
     );
 
-    // Step 6: Save to database as single entry
+    // Step 6: Save to database as single entry with status tracking
     if (assemblyResult.success && assemblyResult.videoUrl) {
       await saveAssembledVideo(supabase, {
         language,
@@ -328,6 +331,7 @@ serve(async (req) => {
         videoProvider,
         fullProductionMode,
         productionConfig,
+        pendingGeneration: assemblyResult.pendingGeneration,
       });
     }
 
@@ -356,9 +360,17 @@ serve(async (req) => {
         enabled: true,
         features: enabledFeatures,
       } : undefined,
+      // Status tracking for async video generation
+      generationStatus: assemblyResult.pendingGeneration ? 'pending' : 'completed',
+      message: assemblyResult.pendingGeneration 
+        ? 'TTS audio generated. Full video assembly requires manual processing or external video assembly service.'
+        : 'Video generation completed.',
     };
 
     console.log(`✅ Assembly complete for ${language}: ${totalDuration}s total`);
+    if (assemblyResult.pendingGeneration) {
+      console.log(`⚠️ Video file pending - TTS audio ready, awaiting video assembly`);
+    }
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -499,36 +511,41 @@ function getChapterScript(chapterId: string, language: string): string {
 
 /**
  * Stitch all chapter audio/visuals into one continuous video
+ * NOTE: Full video assembly requires external tools (FFmpeg) which can't run in Edge Functions
+ * This creates placeholder entries that track pending generation status
  */
 async function stitchChaptersToVideo(
   chapters: ChapterResult[],
   language: string,
   videoProvider: string,
   quality: string
-): Promise<{ success: boolean; videoUrl?: string; thumbnailUrl?: string }> {
-  // In production, this would call a video assembly service
-  // For now, we generate a combined video URL placeholder
-  
+): Promise<{ success: boolean; videoUrl?: string; thumbnailUrl?: string; pendingGeneration: boolean }> {
   const successfulChapters = chapters.filter(c => c.success);
   if (successfulChapters.length === 0) {
-    return { success: false };
+    return { success: false, pendingGeneration: false };
   }
 
-  // Generate combined video using video provider
-  // This is a placeholder - real implementation would use FFmpeg or cloud video assembly
+  // For now, we generate a placeholder that indicates pending status
+  // Real video assembly would require:
+  // 1. FFmpeg running in a container (Cloud Run, Lambda, etc.)
+  // 2. Or a video assembly service (Shotstack, Creatomate, etc.)
   const timestamp = Date.now();
   const videoUrl = `https://ithspbabhmdntioslfqe.supabase.co/storage/v1/object/public/landing-videos/${language}/genie-studio-full-${timestamp}.mp4`;
   const thumbnailUrl = `https://ithspbabhmdntioslfqe.supabase.co/storage/v1/object/public/landing-videos/${language}/thumbnail-${timestamp}.jpg`;
+
+  console.log(`⚠️ Video assembly requires external processing - marking as pending`);
+  console.log(`📝 TTS audio generated successfully for ${successfulChapters.length} chapters`);
 
   return {
     success: true,
     videoUrl,
     thumbnailUrl,
+    pendingGeneration: true, // Indicates video file doesn't exist yet
   };
 }
 
 /**
- * Save assembled video to database
+ * Save assembled video to database with proper status tracking
  */
 async function saveAssembledVideo(
   supabase: any,
@@ -541,6 +558,7 @@ async function saveAssembledVideo(
     videoProvider: string;
     fullProductionMode?: boolean;
     productionConfig?: ProductionConfig | null;
+    pendingGeneration?: boolean;
   }
 ): Promise<void> {
   const languageNames: Record<string, string> = {
@@ -566,6 +584,9 @@ async function saveAssembledVideo(
     }
   }
 
+  // Determine generation status based on pending flag
+  const generationStatus = params.pendingGeneration ? 'pending' : 'completed';
+
   const { error } = await supabase.from('landing_page_videos').upsert({
     title,
     description,
@@ -582,12 +603,18 @@ async function saveAssembledVideo(
     view_count: 0,
     ai_confidence: 0.95,
     generation_pipeline: 'genie-cast-assembler',
+    // New status tracking columns
+    generation_status: generationStatus,
+    generation_started_at: new Date().toISOString(),
+    generation_error: null,
   }, {
     onConflict: 'content_type,language_code',
   });
 
   if (error) {
     console.error('Failed to save video:', error);
+  } else {
+    console.log(`📝 Saved video entry with status: ${generationStatus}`);
   }
 }
 
