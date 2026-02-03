@@ -29,6 +29,10 @@ import {
   Layers,
   Camera,
   Grid3X3,
+  Crown,
+  User,
+  Box,
+  Zap,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -44,6 +48,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { MultiScreenshotGallery, ProductGallery } from './MultiScreenshotGallery';
 import { VideoGenerationMatrix } from './VideoGenerationMatrix';
+import { FullProductionModeConfig, DEFAULT_PRODUCTION_CONFIG, REGIONAL_AVATARS, type ProductionModeConfig } from './FullProductionModeConfig';
 
 // Supported languages with zone routing
 const LANGUAGES = [
@@ -123,9 +128,18 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
   const [generatedVideos, setGeneratedVideos] = useState<Map<string, GeneratedVideo>>(new Map());
   const [existingVideos, setExistingVideos] = useState<ExistingVideo[]>([]);
   const [loadingExisting, setLoadingExisting] = useState(true);
+  
+  // Full Production Mode state
+  const [enableFullProduction, setEnableFullProduction] = useState(false);
+  const [productionConfig, setProductionConfig] = useState<ProductionModeConfig>(DEFAULT_PRODUCTION_CONFIG);
 
   const selectedLang = LANGUAGES.find(l => l.code === selectedLanguage);
   const totalDuration = CHAPTERS.reduce((sum, c) => sum + c.duration, 0);
+  
+  // Calculate estimated time based on production mode
+  const baseTime = 7; // minutes
+  const productionMultiplier = enableFullProduction ? productionConfig.estimatedTimeMultiplier : 1;
+  const estimatedTime = Math.round(baseTime * productionMultiplier);
 
   // Load existing videos from database
   useEffect(() => {
@@ -177,12 +191,32 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
     setGeneratedVideos(prev => new Map(prev).set(selectedLanguage, newVideo));
 
     try {
-      // Call the unified assembly edge function
+      // Call the unified assembly edge function with production mode config
       const { data, error } = await supabase.functions.invoke('genie-cast-assembler', {
         body: {
           language: selectedLanguage,
           quality,
           includeVisuals,
+          // Full Production Mode settings
+          fullProductionMode: enableFullProduction,
+          productionConfig: enableFullProduction ? {
+            avatar: {
+              enabled: productionConfig.enableAvatar,
+              gender: productionConfig.avatarGender,
+              placement: productionConfig.avatarPlacement,
+              size: productionConfig.avatarSize,
+            },
+            animations: {
+              enabled: productionConfig.enableAnimations,
+              style: productionConfig.transitionStyle,
+              intensity: productionConfig.animationIntensity,
+            },
+            threeD: {
+              enabled: productionConfig.enable3D,
+              style: productionConfig.threeDStyle,
+              quality: productionConfig.renderQuality,
+            },
+          } : null,
         },
       });
 
@@ -393,7 +427,7 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
                   </Select>
                 </div>
 
-                {/* Toggles */}
+                {/* Basic Toggles */}
                 <div className="space-y-3 p-3 bg-muted/30 rounded-lg">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="visuals" className="text-sm">Product Screenshots</Label>
@@ -405,6 +439,47 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Full Production Mode Toggle */}
+                <div className={cn(
+                  "p-3 rounded-lg border-2 transition-all",
+                  enableFullProduction 
+                    ? "bg-gradient-to-br from-purple-500/10 via-amber-500/10 to-cyan-500/10 border-primary" 
+                    : "bg-muted/30 border-transparent"
+                )}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Crown className={cn("w-4 h-4", enableFullProduction ? "text-primary" : "text-muted-foreground")} />
+                      <Label htmlFor="fullprod" className="text-sm font-medium">Full Production Mode</Label>
+                    </div>
+                    <Switch 
+                      id="fullprod" 
+                      checked={enableFullProduction} 
+                      onCheckedChange={setEnableFullProduction}
+                    />
+                  </div>
+                  <div className="text-xs text-muted-foreground flex items-center gap-2">
+                    {enableFullProduction ? (
+                      <>
+                        <User className="w-3 h-3" /> Avatar
+                        <Sparkles className="w-3 h-3" /> Animations
+                        <Box className="w-3 h-3" /> 3D
+                      </>
+                    ) : (
+                      'Add AI Avatar, animations, and 3D showcases'
+                    )}
+                  </div>
+                </div>
+
+                {/* Full Production Mode Config (when enabled) */}
+                {enableFullProduction && (
+                  <FullProductionModeConfig
+                    config={productionConfig}
+                    onConfigChange={setProductionConfig}
+                    selectedLanguage={selectedLanguage}
+                    disabled={isGenerating}
+                  />
+                )}
+
                 {/* Video Info */}
                 <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg space-y-2">
                   <div className="flex items-center gap-2 text-sm font-medium">
@@ -412,7 +487,12 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
                     Output: 1 Full Video
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {CHAPTERS.length} chapters • ~{Math.round(totalDuration / 60)} min total
+                    {CHAPTERS.length} chapters • ~{Math.round(totalDuration / 60)} min content
+                    {enableFullProduction && (
+                      <span className="ml-1 text-primary font-medium">
+                        • ~{estimatedTime} min to generate
+                      </span>
+                    )}
                   </div>
                 </div>
 
