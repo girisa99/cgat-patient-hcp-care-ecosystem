@@ -762,327 +762,324 @@ export const ContentLibrary: React.FC<ContentLibraryProps> = ({
         </div>
       )}
 
-      {/* Video Preview Dialog */}
-      <Dialog open={!!selectedContent} onOpenChange={() => { setSelectedContent(null); setIsPlaying(false); }}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+      {/* Video Preview Dialog - Fixed layout with proper z-index and structure */}
+      <Dialog open={!!selectedContent} onOpenChange={() => { setSelectedContent(null); setIsPlaying(false); setActiveDialogTab('details'); }}>
+        <DialogContent className="max-w-5xl p-0 overflow-hidden">
+          {/* Fixed Header */}
+          <DialogHeader className="p-4 pb-2 border-b bg-background">
+            <DialogTitle className="flex items-center gap-2 text-base">
               {selectedContent?.title}
               {selectedContent?.is_featured && (
                 <Badge className="bg-accent text-accent-foreground">Featured</Badge>
               )}
             </DialogTitle>
-            <DialogDescription>{selectedContent?.description}</DialogDescription>
+            <DialogDescription className="line-clamp-1 text-xs">{selectedContent?.description}</DialogDescription>
           </DialogHeader>
           
-          {/* Video Player - Handle generation status */}
-          <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
-            {/* Pending generation - show status message */}
-            {selectedContent?.generation_status === 'pending' ? (
-              <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-yellow-900/30 to-amber-900/30 p-6 text-center">
-                <div className="w-16 h-16 rounded-full bg-yellow-500/20 flex items-center justify-center mb-4">
-                  <Clock className="w-8 h-8 text-yellow-400" />
-                </div>
-                <h3 className="text-lg font-semibold text-white mb-2">Video Processing Pending</h3>
-                <p className="text-sm text-yellow-200/80 max-w-md mb-4">
-                  TTS audio has been generated successfully. Video assembly is being processed via AI providers (Replicate/ModelsLab).
-                </p>
-                <div className="flex gap-2">
-                  <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30">
-                    Audio: Ready
-                  </Badge>
-                  <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30">
-                    Video: Assembling
-                  </Badge>
-                </div>
-              </div>
-            ) : selectedContent?.generation_status === 'processing' ? (
-              <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-blue-900/30 to-indigo-900/30 p-6 text-center">
-                <Loader2 className="w-16 h-16 text-blue-400 animate-spin mb-4" />
-                <h3 className="text-lg font-semibold text-white mb-2">Generating Video...</h3>
-                <p className="text-sm text-blue-200/80 max-w-md">
-                  Video is being assembled from audio and visual assets. This may take a few minutes.
-                </p>
-              </div>
-            ) : selectedContent?.generation_status === 'failed' ? (
-              <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-red-900/30 to-rose-900/30 p-6 text-center">
-                <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mb-4">
-                  <AlertCircle className="w-8 h-8 text-red-400" />
-                </div>
-                <h3 className="text-lg font-semibold text-white mb-2">Generation Failed</h3>
-                <p className="text-sm text-red-200/80 max-w-md mb-4">
-                  {selectedContent?.generation_error || 'Video generation encountered an error. Please try regenerating.'}
-                </p>
-                <Button variant="outline" size="sm" className="border-red-500/50 text-red-300 hover:bg-red-500/20">
-                  Retry Generation
-                </Button>
-              </div>
-            ) : selectedContent?.video_url && !selectedContent.video_url.startsWith('composite://') ? (
-              <>
-                <video
-                  ref={videoRef}
-                  src={selectedContent.video_url}
-                  poster={selectedContent.thumbnail_url || undefined}
-                  className="w-full h-full object-contain"
-                  onEnded={() => setIsPlaying(false)}
-                  onClick={togglePlayback}
-                  onError={() => {
-                    console.error('Video load error:', selectedContent.video_url);
-                    toast.error('Failed to load video. The file may not exist yet.');
-                  }}
-                />
-                
-                {/* Video controls overlay */}
-                <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
-                  <div className="flex items-center gap-3">
-                    <Button 
-                      size="icon" 
-                      variant="ghost" 
-                      className="text-white hover:bg-white/20"
-                      onClick={togglePlayback}
-                    >
-                      {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
-                    </Button>
-                    <Button 
-                      size="icon" 
-                      variant="ghost" 
-                      className="text-white hover:bg-white/20"
-                      onClick={toggleMute}
-                    >
-                      {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-                    </Button>
-                    <span className="text-white text-sm">
-                      {formatDuration(selectedContent.duration_seconds)}
-                    </span>
+          {/* Scrollable Content Area */}
+          <div className="max-h-[calc(90vh-180px)] overflow-y-auto">
+            {/* Video Player - Fixed aspect ratio container */}
+            <div className="relative w-full bg-black" style={{ aspectRatio: '16/9', maxHeight: '400px' }}>
+              {/* Pending generation - show status message */}
+              {selectedContent?.generation_status === 'pending' ? (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-yellow-900/30 to-amber-900/30 p-6 text-center">
+                  <div className="w-14 h-14 rounded-full bg-yellow-500/20 flex items-center justify-center mb-3">
+                    <Clock className="w-7 h-7 text-yellow-400" />
+                  </div>
+                  <h3 className="text-base font-semibold text-white mb-2">Video Processing Pending</h3>
+                  <p className="text-xs text-yellow-200/80 max-w-sm mb-3">
+                    TTS audio has been generated. Video assembly is being processed via AI providers.
+                  </p>
+                  <div className="flex gap-2">
+                    <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30 text-xs">
+                      Audio: Ready
+                    </Badge>
+                    <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30 text-xs">
+                      Video: Assembling
+                    </Badge>
                   </div>
                 </div>
-              </>
-            ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center">
-                <Video className="w-16 h-16 text-muted-foreground mb-4" />
-                <p className="text-sm text-muted-foreground">No video available</p>
-              </div>
-            )}
-          </div>
-
-          {/* Metadata Tabs - Fixed layout to prevent video covering tabs */}
-          <Tabs defaultValue="details" className="mt-4" value={activeDialogTab} onValueChange={setActiveDialogTab}>
-            <div className="sticky top-0 z-10 bg-background pb-2">
-              <TabsList className="w-full grid grid-cols-3">
-                <TabsTrigger value="details">Details</TabsTrigger>
-                <TabsTrigger value="publishing">Publishing</TabsTrigger>
-                <TabsTrigger value="analytics">Analytics</TabsTrigger>
-              </TabsList>
-            </div>
-            
-            <TabsContent value="details" className="space-y-4">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div>
-                  <Label className="text-muted-foreground text-xs">Region</Label>
-                  <p className="font-medium flex items-center gap-1 mt-1">
-                    <MapPin className="w-4 h-4" />
-                    {REGION_LABELS[selectedContent?.region || ''] || selectedContent?.region}
+              ) : selectedContent?.generation_status === 'processing' ? (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-blue-900/30 to-indigo-900/30 p-6 text-center">
+                  <Loader2 className="w-12 h-12 text-blue-400 animate-spin mb-3" />
+                  <h3 className="text-base font-semibold text-white mb-2">Generating Video...</h3>
+                  <p className="text-xs text-blue-200/80 max-w-sm">
+                    Video is being assembled from audio and visual assets.
                   </p>
                 </div>
-                <div>
-                  <Label className="text-muted-foreground text-xs">Language</Label>
-                  <p className="font-medium flex items-center gap-1 mt-1">
-                    <Languages className="w-4 h-4" />
-                    {selectedContent?.language_name} ({selectedContent?.language_code})
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground text-xs">Industry</Label>
-                  <p className="font-medium mt-1">{selectedContent?.industry || 'General'}</p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground text-xs">Content Type</Label>
-                  <p className="font-medium mt-1">{selectedContent?.content_type}</p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground text-xs">Placement</Label>
-                  <p className="font-medium mt-1">{selectedContent?.placement}</p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground text-xs">Pipeline</Label>
-                  <p className="font-medium mt-1">{selectedContent?.generation_pipeline || 'N/A'}</p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground text-xs">AI Confidence</Label>
-                  <p className="font-medium mt-1">{selectedContent?.ai_confidence}%</p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground text-xs">Status</Label>
-                  <div className="mt-1">{selectedContent && getStatusBadge(selectedContent)}</div>
-                </div>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="publishing" className="space-y-4">
-              {/* Back to Details link */}
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-7 px-2 text-xs"
-                  onClick={() => setActiveDialogTab('details')}
-                >
-                  <ArrowLeft className="w-3 h-3 mr-1" />
-                  Back to Details
-                </Button>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-muted-foreground text-xs">Created</Label>
-                  <p className="font-medium mt-1">
-                    {selectedContent && format(new Date(selectedContent.created_at), 'PPP p')}
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground text-xs">Last Updated</Label>
-                  <p className="font-medium mt-1">
-                    {selectedContent && format(new Date(selectedContent.updated_at), 'PPP p')}
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground text-xs">Published</Label>
-                  <p className="font-medium mt-1">
-                    {selectedContent?.published_at 
-                      ? format(new Date(selectedContent.published_at), 'PPP p')
-                      : 'Not published yet'}
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground text-xs">Active Status</Label>
-                  <p className="font-medium mt-1">
-                    {selectedContent?.is_active ? 'Active (Live)' : 'Inactive'}
-                  </p>
-                </div>
-              </div>
-              
-              {/* Magic Clips - AI Auto-generate platform-specific clips */}
-              <div className="pt-4 border-t">
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <Label className="text-sm font-medium flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-primary" />
-                      Magic Clips (AI Auto-generate)
-                    </Label>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      AI creates optimized short-form clips for each platform
-                    </p>
+              ) : selectedContent?.generation_status === 'failed' ? (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-red-900/30 to-rose-900/30 p-6 text-center">
+                  <div className="w-14 h-14 rounded-full bg-red-500/20 flex items-center justify-center mb-3">
+                    <AlertCircle className="w-7 h-7 text-red-400" />
                   </div>
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={() => handleGenerateMagicClips(selectedContent!)}
-                    disabled={!selectedContent?.video_url || selectedContent?.generation_status !== 'completed'}
-                    className="gap-1"
-                  >
-                    <Wand2 className="w-4 h-4" />
-                    Generate All
+                  <h3 className="text-base font-semibold text-white mb-2">Generation Failed</h3>
+                  <p className="text-xs text-red-200/80 max-w-sm mb-3">
+                    {selectedContent?.generation_error || 'Video generation encountered an error.'}
+                  </p>
+                  <Button variant="outline" size="sm" className="border-red-500/50 text-red-300 hover:bg-red-500/20">
+                    Retry Generation
                   </Button>
                 </div>
+              ) : selectedContent?.video_url && !selectedContent.video_url.startsWith('composite://') ? (
+                <>
+                  <video
+                    ref={videoRef}
+                    src={selectedContent.video_url}
+                    poster={selectedContent.thumbnail_url || undefined}
+                    className="absolute inset-0 w-full h-full object-contain"
+                    onEnded={() => setIsPlaying(false)}
+                    onClick={togglePlayback}
+                    onError={() => {
+                      console.error('Video load error:', selectedContent.video_url);
+                      toast.error('Failed to load video. The file may not exist yet.');
+                    }}
+                  />
+                  
+                  {/* Video controls overlay */}
+                  <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
+                    <div className="flex items-center gap-3">
+                      <Button 
+                        size="icon" 
+                        variant="ghost" 
+                        className="text-white hover:bg-white/20 h-8 w-8"
+                        onClick={togglePlayback}
+                      >
+                        {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                      </Button>
+                      <Button 
+                        size="icon" 
+                        variant="ghost" 
+                        className="text-white hover:bg-white/20 h-8 w-8"
+                        onClick={toggleMute}
+                      >
+                        {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                      </Button>
+                      <span className="text-white text-xs">
+                        {formatDuration(selectedContent.duration_seconds)}
+                      </span>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-muted/50">
+                  <Video className="w-12 h-12 text-muted-foreground mb-3" />
+                  <p className="text-sm text-muted-foreground">No video available</p>
+                  <p className="text-xs text-muted-foreground/70 mt-1">Video may still be processing</p>
+                </div>
+              )}
+            </div>
+
+            {/* Tabs Section - Outside video container to prevent overlap */}
+            <div className="p-4 pt-2">
+              <Tabs defaultValue="details" value={activeDialogTab} onValueChange={setActiveDialogTab}>
+                <TabsList className="w-full grid grid-cols-3 mb-4">
+                  <TabsTrigger value="details">Details</TabsTrigger>
+                  <TabsTrigger value="publishing">Publishing</TabsTrigger>
+                  <TabsTrigger value="analytics">Analytics</TabsTrigger>
+                </TabsList>
                 
-                {/* Platform-specific clip options */}
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                  {[
-                    { id: 'youtube_shorts', name: 'YouTube Shorts', duration: '60s', aspect: '9:16' },
-                    { id: 'tiktok', name: 'TikTok', duration: '30s', aspect: '9:16' },
-                    { id: 'instagram_reels', name: 'Instagram Reels', duration: '30s', aspect: '9:16' },
-                    { id: 'linkedin', name: 'LinkedIn', duration: '30s', aspect: '16:9' },
-                    { id: 'twitter', name: 'Twitter/X', duration: '45s', aspect: '16:9' },
-                    { id: 'facebook', name: 'Facebook', duration: '60s', aspect: '16:9' },
-                  ].map(platform => (
-                    <Card key={platform.id} className="p-2 hover:border-primary/50 cursor-pointer transition-colors">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-xs font-medium">{platform.name}</p>
-                          <p className="text-[10px] text-muted-foreground">{platform.duration} • {platform.aspect}</p>
-                        </div>
-                        <Button 
-                          size="icon" 
-                          variant="ghost" 
-                          className="h-6 w-6"
-                          onClick={() => handleGenerateSingleClip(selectedContent!, platform.id)}
-                          disabled={!selectedContent?.video_url || selectedContent?.generation_status !== 'completed'}
-                        >
-                          <Scissors className="w-3 h-3" />
-                        </Button>
+                <TabsContent value="details" className="space-y-4 mt-0">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div>
+                      <Label className="text-muted-foreground text-xs">Region</Label>
+                      <p className="font-medium flex items-center gap-1 mt-1 text-sm">
+                        <MapPin className="w-3 h-3" />
+                        {REGION_LABELS[selectedContent?.region || ''] || selectedContent?.region}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground text-xs">Language</Label>
+                      <p className="font-medium flex items-center gap-1 mt-1 text-sm">
+                        <Languages className="w-3 h-3" />
+                        {selectedContent?.language_name} ({selectedContent?.language_code})
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground text-xs">Industry</Label>
+                      <p className="font-medium mt-1 text-sm">{selectedContent?.industry || 'General'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground text-xs">Content Type</Label>
+                      <p className="font-medium mt-1 text-sm">{selectedContent?.content_type}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground text-xs">Placement</Label>
+                      <p className="font-medium mt-1 text-sm">{selectedContent?.placement}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground text-xs">Pipeline</Label>
+                      <p className="font-medium mt-1 text-sm">{selectedContent?.generation_pipeline || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground text-xs">AI Confidence</Label>
+                      <p className="font-medium mt-1 text-sm">{selectedContent?.ai_confidence}%</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground text-xs">Status</Label>
+                      <div className="mt-1">{selectedContent && getStatusBadge(selectedContent)}</div>
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="publishing" className="space-y-4 mt-0">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-muted-foreground text-xs">Created</Label>
+                      <p className="font-medium mt-1 text-sm">
+                        {selectedContent && format(new Date(selectedContent.created_at), 'PPP p')}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground text-xs">Last Updated</Label>
+                      <p className="font-medium mt-1 text-sm">
+                        {selectedContent && format(new Date(selectedContent.updated_at), 'PPP p')}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground text-xs">Published</Label>
+                      <p className="font-medium mt-1 text-sm">
+                        {selectedContent?.published_at 
+                          ? format(new Date(selectedContent.published_at), 'PPP p')
+                          : 'Not published yet'}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground text-xs">Active Status</Label>
+                      <p className="font-medium mt-1 text-sm">
+                        {selectedContent?.is_active ? 'Active (Live)' : 'Inactive'}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Magic Clips - AI Auto-generate platform-specific clips */}
+                  <div className="pt-3 border-t">
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <Label className="text-sm font-medium flex items-center gap-2">
+                          <Sparkles className="w-4 h-4 text-primary" />
+                          Magic Clips (AI Auto-generate)
+                        </Label>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          AI creates optimized short-form clips for each platform
+                        </p>
                       </div>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handleGenerateMagicClips(selectedContent!)}
+                        disabled={!selectedContent?.video_url || selectedContent?.generation_status !== 'completed'}
+                        className="gap-1 h-7 text-xs"
+                      >
+                        <Wand2 className="w-3 h-3" />
+                        Generate All
+                      </Button>
+                    </div>
+                    
+                    {/* Platform-specific clip options */}
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      {[
+                        { id: 'youtube_shorts', name: 'YouTube Shorts', duration: '60s', aspect: '9:16' },
+                        { id: 'tiktok', name: 'TikTok', duration: '30s', aspect: '9:16' },
+                        { id: 'instagram_reels', name: 'Instagram Reels', duration: '30s', aspect: '9:16' },
+                        { id: 'linkedin', name: 'LinkedIn', duration: '30s', aspect: '16:9' },
+                        { id: 'twitter', name: 'Twitter/X', duration: '45s', aspect: '16:9' },
+                        { id: 'facebook', name: 'Facebook', duration: '60s', aspect: '16:9' },
+                      ].map(platform => (
+                        <Card key={platform.id} className="p-2 hover:border-primary/50 cursor-pointer transition-colors">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-xs font-medium">{platform.name}</p>
+                              <p className="text-[10px] text-muted-foreground">{platform.duration} • {platform.aspect}</p>
+                            </div>
+                            <Button 
+                              size="icon" 
+                              variant="ghost" 
+                              className="h-6 w-6"
+                              onClick={() => handleGenerateSingleClip(selectedContent!, platform.id)}
+                              disabled={!selectedContent?.video_url || selectedContent?.generation_status !== 'completed'}
+                            >
+                              <Scissors className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* Publish to platforms */}
+                  <div className="pt-3 border-t">
+                    <Label className="text-muted-foreground text-xs mb-2 block">Publish to Platforms</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {['landing_page', 'youtube', 'linkedin', 'facebook', 'instagram', 'twitter', 'tiktok'].map(platform => (
+                        <Button key={platform} variant="outline" size="sm" className="text-xs h-7">
+                          {getPlatformIcon(platform as PublishingDestination)}
+                          <span className="ml-1 capitalize">{platform.replace('_', ' ')}</span>
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="analytics" className="space-y-4 mt-0">
+                  <div className="grid grid-cols-3 gap-3">
+                    <Card>
+                      <CardContent className="pt-3 pb-3 text-center">
+                        <Eye className="w-5 h-5 mx-auto text-muted-foreground mb-1" />
+                        <p className="text-xl font-bold">{selectedContent?.view_count?.toLocaleString() || 0}</p>
+                        <p className="text-xs text-muted-foreground">Views</p>
+                      </CardContent>
                     </Card>
-                  ))}
-                </div>
-              </div>
-              
-              {/* Publish to platforms */}
-              <div className="pt-4 border-t">
-                <Label className="text-muted-foreground text-xs mb-2 block">Publish to Platforms</Label>
-                <div className="flex flex-wrap gap-2">
-                  {['landing_page', 'youtube', 'linkedin', 'facebook', 'instagram', 'twitter', 'tiktok'].map(platform => (
-                    <Button key={platform} variant="outline" size="sm" className="text-xs">
-                      {getPlatformIcon(platform as PublishingDestination)}
-                      <span className="ml-1 capitalize">{platform.replace('_', ' ')}</span>
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            </TabsContent>
+                    <Card>
+                      <CardContent className="pt-3 pb-3 text-center">
+                        <Clock className="w-5 h-5 mx-auto text-muted-foreground mb-1" />
+                        <p className="text-xl font-bold">{formatDuration(selectedContent?.duration_seconds || 0)}</p>
+                        <p className="text-xs text-muted-foreground">Duration</p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="pt-3 pb-3 text-center">
+                        <CheckCircle className="w-5 h-5 mx-auto text-muted-foreground mb-1" />
+                        <p className="text-xl font-bold">{selectedContent?.display_order}</p>
+                        <p className="text-xs text-muted-foreground">Priority</p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </div>
+          </div>
 
-            <TabsContent value="analytics" className="space-y-4">
-              {/* Back to Details link */}
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-7 px-2 text-xs"
-                  onClick={() => setActiveDialogTab('details')}
-                >
-                  <ArrowLeft className="w-3 h-3 mr-1" />
-                  Back to Details
-                </Button>
-              </div>
-              
-              <div className="grid grid-cols-3 gap-4">
-                <Card>
-                  <CardContent className="pt-4 text-center">
-                    <Eye className="w-6 h-6 mx-auto text-muted-foreground mb-2" />
-                    <p className="text-2xl font-bold">{selectedContent?.view_count?.toLocaleString() || 0}</p>
-                    <p className="text-xs text-muted-foreground">Views</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-4 text-center">
-                    <Clock className="w-6 h-6 mx-auto text-muted-foreground mb-2" />
-                    <p className="text-2xl font-bold">{formatDuration(selectedContent?.duration_seconds || 0)}</p>
-                    <p className="text-xs text-muted-foreground">Duration</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-4 text-center">
-                    <CheckCircle className="w-6 h-6 mx-auto text-muted-foreground mb-2" />
-                    <p className="text-2xl font-bold">{selectedContent?.display_order}</p>
-                    <p className="text-xs text-muted-foreground">Priority</p>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-          </Tabs>
-
-          <DialogFooter className="flex-col sm:flex-row gap-2">
-            <Button variant="outline" onClick={() => { setSelectedContent(null); setIsPlaying(false); }}>
+          {/* Fixed Footer */}
+          <DialogFooter className="p-4 pt-2 border-t bg-background flex-row gap-2 justify-end">
+            <Button variant="outline" size="sm" onClick={() => { setSelectedContent(null); setIsPlaying(false); setActiveDialogTab('details'); }}>
               Close
             </Button>
-            <Button variant="outline" onClick={() => window.open(selectedContent?.video_url, '_blank')}>
-              <ExternalLink className="w-4 h-4 mr-2" />
-              Open Full Screen
-            </Button>
-            <Button onClick={() => {
-              onEdit?.(selectedContent!.id);
-              setSelectedContent(null);
-            }}>
-              <Edit className="w-4 h-4 mr-2" />
+            {selectedContent?.video_url && (
+              <Button variant="outline" size="sm" onClick={() => window.open(selectedContent?.video_url, '_blank')}>
+                <ExternalLink className="w-3 h-3 mr-1" />
+                Full Screen
+              </Button>
+            )}
+            <Button 
+              size="sm"
+              onClick={() => {
+                // Route based on content source - Genie Cast vs Studio
+                const isGenieCast = selectedContent?.generation_pipeline === 'genie-cast-assembler' || 
+                                   selectedContent?.placement === 'hero_showcase' ||
+                                   !selectedContent?.id.startsWith('project-');
+                if (isGenieCast) {
+                  // For Genie Cast content, stay in the current context (show edit options inline)
+                  toast.info('Edit mode coming soon for Genie Cast content', {
+                    description: 'You can regenerate or update this video from the Generate tab'
+                  });
+                } else {
+                  // For Studio content, call the onEdit handler
+                  onEdit?.(selectedContent!.id);
+                  setSelectedContent(null);
+                }
+              }}
+            >
+              <Edit className="w-3 h-3 mr-1" />
               Edit Content
             </Button>
           </DialogFooter>
