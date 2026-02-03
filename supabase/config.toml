@@ -383,3 +383,6 @@ verify_jwt = false
 
 [functions.magic-clips-generator]
 verify_jwt = false
+
+[functions.generate-brand-assets]
+verify_jwt = false
