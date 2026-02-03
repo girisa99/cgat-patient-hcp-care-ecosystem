@@ -124,10 +124,12 @@ export const ProfessionalAvatarShowcase: React.FC<ProfessionalAvatarShowcaseProp
   const [currentAvatarGender, setCurrentAvatarGender] = useState<'male' | 'female'>('female');
   const [videoUrls, setVideoUrls] = useState<Record<string, string>>({});
   const [loadingVideo, setLoadingVideo] = useState(false);
+  const [preloadedAudio, setPreloadedAudio] = useState<Record<string, string>>({});
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const progressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isGeneratingRef = useRef<Set<string>>(new Set());
 
   const currentChapter = CHAPTERS[currentChapterIndex];
   const currentColor = PRODUCT_COLORS[currentChapter.id] || '#9333EA';
@@ -216,28 +218,37 @@ export const ProfessionalAvatarShowcase: React.FC<ProfessionalAvatarShowcaseProp
     }
   }, []);
 
-  // Generate TTS voice - delegates to edge function for 4-zone routing
-  const generateVoice = useCallback(async () => {
-    if (isMuted) return;
+  // Generate TTS voice for a specific chapter - with caching and preloading
+  const generateVoiceForChapter = useCallback(async (chapterId: string, langCode: string): Promise<string | null> => {
+    const cacheKey = `${chapterId}_${langCode}`;
     
-    const script = getHighLevelScript(currentChapter.id, selectedLanguage);
-    if (!script || script.length < 10) return;
+    // Return cached audio if available
+    if (preloadedAudio[cacheKey]) {
+      return preloadedAudio[cacheKey];
+    }
+    
+    // Prevent duplicate generation
+    if (isGeneratingRef.current.has(cacheKey)) {
+      return null;
+    }
+    
+    const script = getHighLevelScript(chapterId, langCode);
+    if (!script || script.length < 10) return null;
 
-    // Clean script for TTS
     const cleanText = script
       .replace(/\n{2,}/g, ' ')
       .replace(/\n/g, ' ')
       .trim()
       .slice(0, 800);
 
-    const languageCode = getFullLanguageCode(selectedLanguage);
+    const languageCode = getFullLanguageCode(langCode);
+    const routing = getTTSRouting(langCode);
 
     try {
-      setIsGeneratingVoice(true);
+      isGeneratingRef.current.add(cacheKey);
       
-      console.log(`[TTS] Generating ${languageCode} voice via ${ttsConfig.provider} (${ttsConfig.zone})`);
+      console.log(`[TTS] Generating ${languageCode} voice via ${routing.provider} (${routing.zone})`);
       
-      // Let edge function handle 4-zone routing - DON'T pass provider!
       const { data, error } = await supabase.functions.invoke('multi-provider-tts', {
         body: {
           text: cleanText,
@@ -248,23 +259,54 @@ export const ProfessionalAvatarShowcase: React.FC<ProfessionalAvatarShowcaseProp
 
       if (error) {
         console.warn('[TTS] Failed:', error.message);
-        toast.error(`Voice generation failed: ${error.message}`);
-        return;
+        return null;
       }
 
       if (data?.provider) {
-        console.log(`[TTS] ✅ Generated via ${data.provider} (${data.zone || ttsConfig.zone})`);
+        console.log(`[TTS] ✅ Generated via ${data.provider} (${data.zone || routing.zone})`);
       }
 
-      if (data?.audioContent || data?.audio_base64) {
-        await playAudio(data.audioContent || data.audio_base64);
+      const audioBase64 = data?.audioContent || data?.audio_base64;
+      if (audioBase64) {
+        // Cache the audio
+        setPreloadedAudio(prev => ({ ...prev, [cacheKey]: audioBase64 }));
+        return audioBase64;
       }
+      return null;
     } catch (err) {
       console.error('[TTS] Error:', err);
+      return null;
+    } finally {
+      isGeneratingRef.current.delete(cacheKey);
+    }
+  }, [preloadedAudio]);
+
+  // Preload next chapter's audio while current is playing
+  const preloadNextChapter = useCallback(async () => {
+    if (currentChapterIndex < CHAPTERS.length - 1) {
+      const nextChapter = CHAPTERS[currentChapterIndex + 1];
+      await generateVoiceForChapter(nextChapter.id, selectedLanguage);
+    }
+  }, [currentChapterIndex, selectedLanguage, generateVoiceForChapter]);
+
+  // Main voice generation - uses cache or generates fresh
+  const generateVoice = useCallback(async () => {
+    if (isMuted) return;
+    
+    setIsGeneratingVoice(true);
+    
+    try {
+      const audioBase64 = await generateVoiceForChapter(currentChapter.id, selectedLanguage);
+      
+      if (audioBase64) {
+        await playAudio(audioBase64);
+        // Start preloading next chapter
+        preloadNextChapter();
+      }
     } finally {
       setIsGeneratingVoice(false);
     }
-  }, [currentChapter.id, isMuted, selectedLanguage, ttsConfig]);
+  }, [currentChapter.id, isMuted, selectedLanguage, generateVoiceForChapter, preloadNextChapter]);
 
   // Play audio
   const playAudio = useCallback(async (base64Audio: string) => {
@@ -290,12 +332,10 @@ export const ProfessionalAvatarShowcase: React.FC<ProfessionalAvatarShowcaseProp
     audioRef.current.onended = () => {
       setIsSpeaking(false);
       URL.revokeObjectURL(audioUrl);
-      // Auto-advance to next chapter
+      // Seamless transition - advance immediately (next audio is preloaded)
       if (currentChapterIndex < CHAPTERS.length - 1 && isPlaying) {
-        setTimeout(() => {
-          setCurrentChapterIndex(prev => prev + 1);
-          setProgress(0);
-        }, 500);
+        setCurrentChapterIndex(prev => prev + 1);
+        setProgress(0);
       }
     };
     audioRef.current.onerror = () => {
@@ -304,13 +344,9 @@ export const ProfessionalAvatarShowcase: React.FC<ProfessionalAvatarShowcaseProp
     };
 
     await audioRef.current.play();
-    toast.success(`${selectedLang.name} voiceover`, {
-      description: `${ttsConfig.displayName} • ${ttsConfig.zone}`,
-      duration: 2000,
-    });
-  }, [selectedAudioDevice, setAudioOutput, currentChapterIndex, isPlaying, selectedLang.name, ttsConfig]);
+  }, [selectedAudioDevice, setAudioOutput, currentChapterIndex, isPlaying]);
 
-  // Generate voice when chapter changes (if not muted)
+  // Generate voice when chapter changes (if not muted) - uses cached audio for seamless transitions
   useEffect(() => {
     if (isPlaying && !isMuted) {
       generateVoice();
@@ -323,7 +359,7 @@ export const ProfessionalAvatarShowcase: React.FC<ProfessionalAvatarShowcaseProp
         setIsSpeaking(false);
       }
     };
-  }, [currentChapterIndex, isPlaying, isMuted, selectedLanguage]);
+  }, [currentChapterIndex, isPlaying, isMuted, selectedLanguage, generateVoice]);
 
   // Progress timer
   useEffect(() => {
