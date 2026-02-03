@@ -1584,54 +1584,72 @@ USER MESSAGE: ${text}
     // Show compact collapsed version when auto-minimized
     const effectiveMinimized = isMinimized || isAutoMinimized;
     
-    // Get corner-based position classes for the panel
-    const getPanelPositionClasses = () => {
-      if (position !== 'floating') return '';
+    // Calculate initial position based on corner for floating mode
+    const getInitialPosition = () => {
+      if (position !== 'floating' || typeof window === 'undefined') return {};
       
-      const horizontal = corner.includes('right') ? 'right-4 sm:right-6' : 'left-4 sm:left-6';
-      const vertical = corner.startsWith('bottom') 
-        ? (isAutoMinimized ? 'bottom-24' : 'bottom-4 sm:bottom-6')
-        : (isAutoMinimized ? 'top-24' : 'top-20');
+      const padding = 24; // 6 * 4 = 24px
+      const panelWidth = 380;
+      const panelHeight = isAutoMinimized ? 60 : 550;
       
-      return `${horizontal} ${vertical}`;
+      let x = 0;
+      let y = 0;
+      
+      if (corner.includes('right')) {
+        x = window.innerWidth - panelWidth - padding;
+      } else {
+        x = padding;
+      }
+      
+      if (corner.startsWith('bottom')) {
+        y = window.innerHeight - panelHeight - padding;
+      } else {
+        y = 80; // top-20 = 80px
+      }
+      
+      return { x, y };
     };
+    
+    const initialPos = getInitialPosition();
     
     return (
       <motion.div
-        // Enable dragging for floating mode only - drag from anywhere on the panel
+        ref={dragRef}
+        // Enable dragging for floating mode - entire panel is draggable
         drag={position === 'floating'}
         dragMomentum={false}
-        dragElastic={0.1}
-        onDragStart={() => {
-          if (position === 'floating') {
-            setIsDragging(true);
-            console.log('[AskGenie] Drag started');
-          }
+        dragElastic={0.05}
+        dragConstraints={{
+          top: 0,
+          left: 0,
+          right: typeof window !== 'undefined' ? window.innerWidth - 380 : 800,
+          bottom: typeof window !== 'undefined' ? window.innerHeight - 100 : 600
         }}
-        onDragEnd={(e, info) => {
-          if (position === 'floating') {
-            console.log('[AskGenie] Drag ended at:', info.point);
-            handleDragEnd(e, info);
-          }
-        }}
-        whileDrag={position === 'floating' ? { 
+        onDragStart={handleDragStart}
+        onDrag={handleDrag}
+        onDragEnd={handleDragEndWrapper}
+        whileDrag={{ 
           scale: 1.02, 
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
-          cursor: 'grabbing'
-        } : undefined}
-        initial={{ opacity: 0, scale: 0.95, y: corner.startsWith('bottom') ? 20 : -20 }}
-        animate={{ 
-          opacity: 1, 
-          scale: 1, 
-          y: 0
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.4)',
+          cursor: 'grabbing',
+          zIndex: 999999
         }}
-        exit={{ opacity: 0, scale: 0.95, y: corner.startsWith('bottom') ? 20 : -20 }}
+        initial={position === 'floating' ? { 
+          opacity: 0, 
+          scale: 0.95,
+          ...initialPos
+        } : { opacity: 0, scale: 0.95 }}
+        animate={position === 'floating' ? { 
+          opacity: 1, 
+          scale: 1,
+          ...initialPos
+        } : { opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
         className={cn(
           "flex flex-col bg-background border rounded-xl shadow-2xl overflow-hidden",
-          // Floating mode - fixed dimensions and positioning with drag cursor
+          // Floating mode - fixed dimensions with drag cursor (no position classes - handled by framer-motion)
           position === 'floating' && cn(
-            "fixed sm:w-[380px] w-[320px] pointer-events-auto cursor-grab active:cursor-grabbing",
-            getPanelPositionClasses(),
+            "fixed sm:w-[380px] w-[320px] pointer-events-auto cursor-grab active:cursor-grabbing select-none",
             // Use fixed height instead of max-height for proper containment
             isAutoMinimized ? "h-[60px]" : "h-[500px] sm:h-[550px]"
           ),
@@ -1639,7 +1657,11 @@ USER MESSAGE: ${text}
           position === 'inline' && "w-full h-[500px]",
           className
         )}
-        style={{ zIndex: 99999, touchAction: position === 'floating' ? 'none' : undefined }}
+        style={{ 
+          zIndex: 99999, 
+          touchAction: position === 'floating' ? 'none' : undefined,
+          userSelect: position === 'floating' ? 'none' : undefined
+        }}
         role="dialog"
         aria-labelledby="ask-genie-title"
         aria-describedby="ask-genie-description"
