@@ -53,7 +53,8 @@ import {
   MicOff,
   Volume2,
   VolumeX,
-  Globe
+  Globe,
+  GripVertical
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { InlineTrainAIFeedback } from './InlineTrainAIFeedback';
@@ -1578,6 +1579,7 @@ USER MESSAGE: ${text}
   };
 
   // Main chat interface - with smart positioning based on corner
+  // DRAGGABLE panel that floats as user scrolls
   const ChatInterface = () => {
     // Show compact collapsed version when auto-minimized
     const effectiveMinimized = isMinimized || isAutoMinimized;
@@ -1596,6 +1598,13 @@ USER MESSAGE: ${text}
     
     return (
       <motion.div
+        // Enable dragging for floating mode only
+        drag={position === 'floating'}
+        dragMomentum={false}
+        dragElastic={0.1}
+        onDragStart={() => position === 'floating' && setIsDragging(true)}
+        onDragEnd={(e, info) => position === 'floating' && handleDragEnd(e, info)}
+        whileDrag={position === 'floating' ? { scale: 1.02, boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' } : undefined}
         initial={{ opacity: 0, scale: 0.95, y: corner.startsWith('bottom') ? 20 : -20 }}
         animate={{ 
           opacity: 1, 
@@ -1607,7 +1616,7 @@ USER MESSAGE: ${text}
         onPointerDown={(e) => e.stopPropagation()}
         className={cn(
           "flex flex-col bg-background border rounded-xl shadow-2xl overflow-hidden",
-          // Floating mode - fixed dimensions and positioning
+          // Floating mode - fixed dimensions and positioning with drag cursor
           position === 'floating' && cn(
             "fixed sm:w-[380px] w-[320px] pointer-events-auto",
             getPanelPositionClasses(),
@@ -1618,14 +1627,16 @@ USER MESSAGE: ${text}
           position === 'inline' && "w-full h-[500px]",
           className
         )}
-        style={{ zIndex: 99999 }}
+        style={{ zIndex: 99999, touchAction: position === 'floating' ? 'none' : undefined }}
         role="dialog"
         aria-labelledby="ask-genie-title"
         aria-describedby="ask-genie-description"
       >
       {/* Header - Compact when auto-minimized, full when normal */}
+      {/* Drag handle for floating mode */}
       <div className={cn(
-        "flex flex-col border-b overflow-hidden cursor-pointer",
+        "flex flex-col border-b overflow-hidden",
+        position === 'floating' ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
         `bg-gradient-to-br ${ASK_GENIE.color}`
       )} onClick={() => isAutoMinimized && setIsAutoMinimized(false)}>
         {/* Compact header when auto-minimized */}
@@ -1648,6 +1659,12 @@ USER MESSAGE: ${text}
         ) : (
           /* Full header when not auto-minimized */
           <div className="px-3 sm:px-5 py-3 sm:py-4 flex items-center gap-3 sm:gap-4">
+            {/* Drag handle indicator for floating mode */}
+            {position === 'floating' && (
+              <div className="absolute top-1 left-1/2 -translate-x-1/2 flex items-center gap-0.5 opacity-40 hover:opacity-70 transition-opacity">
+                <GripVertical className="h-3 w-3 text-white rotate-90" />
+              </div>
+            )}
             {/* Always show Ask Genie Logo - smaller on mobile */}
             <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-xl sm:rounded-2xl bg-white flex items-center justify-center overflow-hidden shadow-xl border-2 border-white/50 flex-shrink-0">
               <img 
