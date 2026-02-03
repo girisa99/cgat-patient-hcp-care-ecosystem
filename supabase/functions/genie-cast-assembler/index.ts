@@ -518,8 +518,9 @@ async function generateChapterVisual(
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   
-  // Use REAL uploaded brand logos from storage bucket (JPG format)
+  // Use REAL uploaded brand logos from storage bucket
   // These are the actual logos uploaded by the user via upload-brand-logos function
+  // Files are stored as .jpg in the bucket (converted from PNG on upload)
   const productBranding: Record<string, { image: string; color: string }> = {
     'opening': { 
       image: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-opening-logo.jpg`,
