@@ -308,17 +308,42 @@ const CATEGORY_LABELS: Record<string, { label: string; description: string }> = 
 
 interface VideoStyleCardsProps {
   selectedStyle?: VideoStyleType;
+  selectedStyles?: VideoStyleType[]; // NEW: Multi-select support
   onSelectStyle: (style: VideoStyleType) => void;
+  onSelectStyles?: (styles: VideoStyleType[]) => void; // NEW: Multi-select callback
   showCategories?: boolean;
+  allowMultiple?: boolean; // NEW: Enable multi-select mode
   className?: string;
 }
 
 export const VideoStyleCards: React.FC<VideoStyleCardsProps> = ({
   selectedStyle,
+  selectedStyles = [],
   onSelectStyle,
+  onSelectStyles,
   showCategories = true,
+  allowMultiple = false,
   className,
 }) => {
+  // Handle style selection (single or multi)
+  const handleStyleClick = (styleId: VideoStyleType) => {
+    if (allowMultiple && onSelectStyles) {
+      if (selectedStyles.includes(styleId)) {
+        onSelectStyles(selectedStyles.filter(s => s !== styleId));
+      } else {
+        onSelectStyles([...selectedStyles, styleId]);
+      }
+    } else {
+      onSelectStyle(styleId);
+    }
+  };
+  
+  const isStyleSelected = (styleId: VideoStyleType) => {
+    if (allowMultiple) {
+      return selectedStyles.includes(styleId);
+    }
+    return selectedStyle === styleId;
+  };
   // Group styles by category
   const groupedStyles = VIDEO_STYLES.reduce((acc, style) => {
     if (!acc[style.category]) acc[style.category] = [];
@@ -342,9 +367,16 @@ export const VideoStyleCards: React.FC<VideoStyleCardsProps> = ({
           <Palette className="w-5 h-5 text-primary" />
           Built for Any Story You Want to Tell
         </h3>
-        <Badge variant="outline" className="text-xs bg-primary/5 border-primary/20">
-          {VIDEO_STYLES.length}+ Visual Styles
-        </Badge>
+        <div className="flex items-center gap-2">
+          {allowMultiple && selectedStyles.length > 0 && (
+            <Badge variant="secondary" className="text-xs bg-green-500/10 text-green-600 border-green-500/30">
+              {selectedStyles.length} selected
+            </Badge>
+          )}
+          <Badge variant="outline" className="text-xs bg-primary/5 border-primary/20">
+            {VIDEO_STYLES.length}+ Visual Styles
+          </Badge>
+        </div>
       </div>
 
       {showCategories ? (
@@ -371,8 +403,8 @@ export const VideoStyleCards: React.FC<VideoStyleCardsProps> = ({
                       key={style.id}
                       style={style}
                       index={index}
-                      isSelected={selectedStyle === style.id}
-                      onClick={() => !style.comingSoon && onSelectStyle(style.id)}
+                      isSelected={isStyleSelected(style.id)}
+                      onClick={() => !style.comingSoon && handleStyleClick(style.id)}
                     />
                   ))}
                 </div>
@@ -388,8 +420,8 @@ export const VideoStyleCards: React.FC<VideoStyleCardsProps> = ({
               key={style.id}
               style={style}
               index={index}
-              isSelected={selectedStyle === style.id}
-              onClick={() => !style.comingSoon && onSelectStyle(style.id)}
+              isSelected={isStyleSelected(style.id)}
+              onClick={() => !style.comingSoon && handleStyleClick(style.id)}
             />
           ))}
         </div>

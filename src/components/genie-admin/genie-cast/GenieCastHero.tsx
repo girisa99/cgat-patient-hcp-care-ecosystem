@@ -55,8 +55,8 @@ export const GenieCastHero: React.FC<GenieCastHeroProps> = ({
       <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-gradient-to-bl from-primary/10 via-accent/5 to-transparent rounded-full blur-3xl" />
       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-to-tr from-accent/10 via-primary/5 to-transparent rounded-full blur-3xl" />
       
-      {/* Content */}
-      <div className="relative z-10 px-6 py-10 lg:px-12 lg:py-16">
+      {/* Content - Reduced padding for compact layout */}
+      <div className="relative z-10 px-4 py-6 lg:px-8 lg:py-8">
         {/* Trust Badges */}
         <div className="flex items-center justify-center gap-3 mb-6">
           <Badge variant="outline" className="bg-background/80 backdrop-blur-sm border-primary/20 px-3 py-1.5">
@@ -69,12 +69,12 @@ export const GenieCastHero: React.FC<GenieCastHeroProps> = ({
           </Badge>
         </div>
 
-        {/* Headline */}
+        {/* Headline - Compact spacing */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="text-center max-w-3xl mx-auto mb-8"
+          className="text-center max-w-3xl mx-auto mb-5"
         >
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-4">
             Create a video in{' '}
@@ -88,12 +88,12 @@ export const GenieCastHero: React.FC<GenieCastHeroProps> = ({
           </p>
         </motion.div>
 
-        {/* CTA Buttons */}
+        {/* CTA Buttons - Compact spacing */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="flex items-center justify-center gap-4 mb-10"
+          className="flex items-center justify-center gap-3 mb-6"
         >
           <Button 
             onClick={onGetStarted}
@@ -116,12 +116,12 @@ export const GenieCastHero: React.FC<GenieCastHeroProps> = ({
           )}
         </motion.div>
 
-        {/* Video Showcase Carousel */}
+        {/* Video Showcase Carousel - Compact */}
         <motion.div 
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="flex justify-center gap-4 mb-10 overflow-x-auto pb-2 no-scrollbar"
+          className="flex justify-center gap-3 mb-6 overflow-x-auto pb-2 no-scrollbar"
         >
           {SAMPLE_THUMBNAILS.map((thumb, index) => (
             <motion.div
