@@ -64,15 +64,13 @@ export const GENIE_PRODUCTS = [
   { id: 'cast', name: 'Genie Cast', route: '/genie-admin?tab=landing-videos', color: '#EF4444', description: 'Video studio' },
 ];
 
-// Screen sections to capture for Genie Cast
+// Screen sections to capture for Genie Cast - with proper tab value selectors
 export const GENIE_CAST_SCREENS = [
-  { id: 'screenshots-tab', name: 'Screenshots Tab', selector: '[value="screenshots"]', description: 'Screenshot gallery view' },
-  { id: 'generate-tab', name: 'Quick Generate', selector: '[value="generate"]', description: 'Video generation panel' },
-  { id: 'matrix-tab', name: 'Matrix View', selector: '[value="matrix"]', description: 'Full generation matrix' },
-  { id: 'library-tab', name: 'Video Library', selector: '[value="library"]', description: 'Generated videos list' },
-  { id: 'analytics-tab', name: 'Analytics', selector: '[value="analytics"]', description: 'Performance metrics' },
-  { id: 'production-mode', name: 'Full Production Config', selector: '.full-production-config', description: 'Production settings panel' },
-  { id: 'token-breakdown', name: 'Token Breakdown', selector: '.token-consumption-breakdown', description: 'Cost estimation view' },
+  { id: 'screenshots-tab', name: 'Screenshots Tab', tabValue: 'screenshots', description: 'Screenshot gallery view' },
+  { id: 'generate-tab', name: 'Quick Generate', tabValue: 'generate', description: 'Video generation panel' },
+  { id: 'matrix-tab', name: 'Matrix View', tabValue: 'matrix', description: 'Full generation matrix' },
+  { id: 'library-tab', name: 'Video Library', tabValue: 'library', description: 'Generated videos list' },
+  { id: 'analytics-tab', name: 'Analytics', tabValue: 'analytics', description: 'Performance metrics' },
 ];
 
 export interface ProductScreenshot {
@@ -360,40 +358,71 @@ export const MultiScreenshotGallery: React.FC<MultiScreenshotGalleryProps> = ({
 
     setIsAutoCapturing(true);
     setCastCaptureDialogOpen(false);
+    setDialogOpen(false); // Close the main dialog too
     const capturedCount = { success: 0, failed: 0 };
     const screensToCapture = GENIE_CAST_SCREENS.filter(s => selectedScreens.includes(s.id));
 
+    // Find the tabs container
+    const tabsContainer = document.querySelector('[role="tablist"]');
+    
     for (let i = 0; i < screensToCapture.length; i++) {
       const screen = screensToCapture[i];
       setCaptureProgress({ current: i + 1, total: screensToCapture.length, screen: screen.name });
       
       try {
-        // For tab-based screens, click the tab first
-        if (screen.selector.includes('value=')) {
-          const tabButton = document.querySelector(`[${screen.selector.slice(1, -1)}]`) as HTMLElement;
-          if (tabButton) {
-            tabButton.click();
-            await new Promise(resolve => setTimeout(resolve, 800)); // Wait for tab transition
+        // Click the correct tab button using data-value or aria attributes
+        if (screen.tabValue && tabsContainer) {
+          // Find all tab triggers and click the matching one
+          const allTabs = tabsContainer.querySelectorAll('button[role="tab"]');
+          let tabFound = false;
+          
+          allTabs.forEach((tab) => {
+            const tabEl = tab as HTMLElement;
+            // Check various ways tabs might store their value
+            if (tabEl.dataset.value === screen.tabValue || 
+                tabEl.dataset.state === screen.tabValue ||
+                tabEl.getAttribute('data-radix-collection-item') !== null && 
+                tabEl.textContent?.toLowerCase().includes(screen.tabValue)) {
+              tabEl.click();
+              tabFound = true;
+            }
+          });
+
+          // Alternative: try finding by text content
+          if (!tabFound) {
+            allTabs.forEach((tab) => {
+              const tabEl = tab as HTMLElement;
+              const tabText = tabEl.textContent?.toLowerCase() || '';
+              if (tabText.includes(screen.name.toLowerCase().split(' ')[0])) {
+                tabEl.click();
+                tabFound = true;
+              }
+            });
           }
+
+          // Wait for tab content to render
+          await new Promise(resolve => setTimeout(resolve, 1200));
         }
 
-        // Find the content area to capture
-        let captureTarget: HTMLElement | null = null;
-        
-        // Try to find the main content panel
-        const mainPanel = document.querySelector('.space-y-6') as HTMLElement;
-        const tabContent = document.querySelector('[role="tabpanel"]') as HTMLElement;
-        captureTarget = tabContent || mainPanel;
+        toast.info(`Capturing: ${screen.name}...`);
+
+        // Find the active tab panel content
+        const tabPanel = document.querySelector('[role="tabpanel"][data-state="active"]') as HTMLElement;
+        const captureTarget = tabPanel || document.querySelector('.space-y-6') as HTMLElement;
 
         if (captureTarget) {
-          toast.info(`Capturing: ${screen.name}...`);
+          // Scroll to top of the panel
+          captureTarget.scrollTop = 0;
+          await new Promise(resolve => setTimeout(resolve, 300));
           
           const canvas = await html2canvas(captureTarget, {
             scale: 2,
             useCORS: true,
             allowTaint: true,
-            backgroundColor: '#0a0a0a',
+            backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--background') || '#0a0a0a',
             logging: false,
+            windowWidth: captureTarget.scrollWidth,
+            windowHeight: captureTarget.scrollHeight,
           });
 
           // Convert to blob
@@ -405,7 +434,7 @@ export const MultiScreenshotGallery: React.FC<MultiScreenshotGalleryProps> = ({
           });
 
           // Upload to storage
-          const imageUrl = await uploadScreenshot(new File([blob], `${screen.id}.png`, { type: 'image/png' }), 'cast');
+          const imageUrl = await uploadScreenshot(new File([blob], `cast-${screen.id}.png`, { type: 'image/png' }), 'cast');
           
           if (imageUrl) {
             const newScreenshot: ProductScreenshot = {
@@ -428,11 +457,14 @@ export const MultiScreenshotGallery: React.FC<MultiScreenshotGalleryProps> = ({
               return updated;
             });
             capturedCount.success++;
+            console.log(`✅ Captured: ${screen.name}`);
           } else {
             capturedCount.failed++;
+            console.warn(`❌ Upload failed for: ${screen.name}`);
           }
         } else {
           capturedCount.failed++;
+          console.warn(`❌ No capture target for: ${screen.name}`);
         }
       } catch (err) {
         console.error(`Failed to capture ${screen.name}:`, err);
@@ -440,7 +472,13 @@ export const MultiScreenshotGallery: React.FC<MultiScreenshotGalleryProps> = ({
       }
 
       // Brief pause between captures
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    // Return to screenshots tab
+    if (tabsContainer) {
+      const screenshotsTab = tabsContainer.querySelector('button[role="tab"]');
+      if (screenshotsTab) (screenshotsTab as HTMLElement).click();
     }
 
     setCaptureProgress(null);
@@ -688,6 +726,43 @@ export const MultiScreenshotGallery: React.FC<MultiScreenshotGalleryProps> = ({
           })}
         </div>
 
+        {/* Dogfood Architecture Info */}
+        <Card className="border-warning/30 bg-warning/5">
+          <CardContent className="pt-4">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-warning/20 rounded-lg">
+                <RefreshCw className="w-5 h-5 text-warning" />
+              </div>
+              <div className="flex-1 space-y-2">
+                <h4 className="font-semibold text-sm flex items-center gap-2">
+                  🐕 Dogfood Architecture
+                  <Badge variant="outline" className="text-[10px]">Self-Referential</Badge>
+                </h4>
+                <p className="text-xs text-muted-foreground">
+                  <strong>Genie Cast uses its own pipelines</strong> to generate marketing videos about itself:
+                </p>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="p-2 bg-muted/30 rounded">
+                    <span className="font-medium">Screenshots →</span> Captured from Cast UI tabs
+                  </div>
+                  <div className="p-2 bg-muted/30 rounded">
+                    <span className="font-medium">TTS →</span> 4-zone regional voiceover
+                  </div>
+                  <div className="p-2 bg-muted/30 rounded">
+                    <span className="font-medium">Video →</span> genie-cast-assembler Edge Function
+                  </div>
+                  <div className="p-2 bg-muted/30 rounded">
+                    <span className="font-medium">Output →</span> landing_page_videos table
+                  </div>
+                </div>
+                <p className="text-[10px] text-muted-foreground/70 mt-1">
+                  The same ai-universal-processor and regional routing logic powers all 206 ecosystem pipelines.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Actions */}
         <div className="flex gap-2 pt-2 border-t">
           <Button
@@ -699,20 +774,100 @@ export const MultiScreenshotGallery: React.FC<MultiScreenshotGalleryProps> = ({
             <RefreshCw className="w-4 h-4" />
             Refresh
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2"
-            onClick={handleAutoCaptureCast}
-            disabled={isAutoCapturing}
-          >
-            {isAutoCapturing ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Monitor className="w-4 h-4" />
-            )}
-            Auto-Capture All Cast Screens
-          </Button>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                disabled={isAutoCapturing}
+              >
+                {isAutoCapturing ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    {captureProgress ? `${captureProgress.current}/${captureProgress.total}` : 'Preparing...'}
+                  </>
+                ) : (
+                  <>
+                    <Scan className="w-4 h-4" />
+                    Capture Cast Screens
+                  </>
+                )}
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Scan className="w-5 h-5 text-destructive" />
+                  Capture Genie Cast Screens
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Select which screens/tabs to capture. Each will be saved as a separate screenshot for the Cast product.
+                </p>
+                <div className="space-y-3 max-h-64 overflow-y-auto">
+                  {GENIE_CAST_SCREENS.map(screen => (
+                    <div 
+                      key={screen.id}
+                      className={cn(
+                        "flex items-start space-x-3 p-2 rounded-lg border transition-colors",
+                        selectedScreens.includes(screen.id) 
+                          ? "border-primary bg-primary/5" 
+                          : "border-muted hover:border-muted-foreground/30"
+                      )}
+                    >
+                      <Checkbox
+                        id={`main-${screen.id}`}
+                        checked={selectedScreens.includes(screen.id)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setSelectedScreens(prev => [...prev, screen.id]);
+                          } else {
+                            setSelectedScreens(prev => prev.filter(id => id !== screen.id));
+                          }
+                        }}
+                      />
+                      <div className="flex-1">
+                        <Label htmlFor={`main-${screen.id}`} className="font-medium text-sm cursor-pointer">
+                          {screen.name}
+                        </Label>
+                        <p className="text-xs text-muted-foreground">
+                          {screen.description}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedScreens(GENIE_CAST_SCREENS.map(s => s.id))}
+                  >
+                    Select All
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedScreens([])}
+                  >
+                    Deselect All
+                  </Button>
+                </div>
+                <DialogClose asChild>
+                  <Button
+                    className="w-full gap-2"
+                    onClick={handleAutoCaptureCast}
+                    disabled={selectedScreens.length === 0}
+                  >
+                    <Camera className="w-4 h-4" />
+                    Capture {selectedScreens.length} Screen{selectedScreens.length !== 1 ? 's' : ''}
+                  </Button>
+                </DialogClose>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
 
         {/* Preview Dialog */}
