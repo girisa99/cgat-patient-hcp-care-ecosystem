@@ -715,13 +715,15 @@ async function tryJSON2VideoAssembly(
 
   try {
     console.log(`🎥 Starting JSON2Video timeline assembly for ${language}`);
-    console.log(`   API Key present: ${apiKey.substring(0, 8)}...`);
+    console.log(`   API Key present: ${apiKey.substring(0, 8)}...${apiKey.substring(apiKey.length - 4)}`);
 
     // Build timeline from chapters
     const timeline = buildJSON2VideoTimeline(chapters, audioUrls, visualUrls, language, quality);
     
-    console.log(`📋 Timeline built with ${chapters.length} scenes`);
-    console.log(`   Request payload size: ${JSON.stringify(timeline).length} bytes`);
+    // Log full payload for debugging (first attempt)
+    const payloadStr = JSON.stringify(timeline, null, 2);
+    console.log(`📋 JSON2Video Request Payload (first 2000 chars):\n${payloadStr.substring(0, 2000)}`);
+    console.log(`   Total scenes: ${(timeline as any).scenes?.length || 0}`);
 
     // Call JSON2Video Render API
     const response = await fetch('https://api.json2video.com/v2/movies', {
@@ -735,7 +737,7 @@ async function tryJSON2VideoAssembly(
 
     const responseText = await response.text();
     console.log(`📹 JSON2Video response status: ${response.status}`);
-    console.log(`📹 JSON2Video response body: ${responseText.substring(0, 1000)}`);
+    console.log(`📹 JSON2Video full response: ${responseText}`);
 
     if (!response.ok) {
       console.error(`JSON2Video API error: ${response.status} - ${responseText}`);
@@ -750,8 +752,8 @@ async function tryJSON2VideoAssembly(
       return { success: false };
     }
 
-    // JSON2Video returns different response formats based on endpoint version
-    // Check for 'project' (v2) or 'id' (v1) or direct 'url'
+    // JSON2Video returns { success: true, project: "xxx" } on success
+    // If no 'project' returned, API key may not have render permissions
     const projectId = data.project || data.id || data.movie_id || data.movie?.id;
     
     if (projectId) {
@@ -770,13 +772,23 @@ async function tryJSON2VideoAssembly(
       };
     }
 
+    // No project ID means API key doesn't have render permissions
+    // This happens with Free tier or incorrect API key
+    if (data.success === true && !projectId) {
+      console.error(`⚠️ JSON2Video: success=true but no project ID returned.`);
+      console.error(`   This typically means: 1) Free tier API key (no render access), 2) API key misconfigured, 3) Account quota exhausted`);
+      console.error(`   Full response: ${JSON.stringify(data)}`);
+      console.error(`   Please verify your JSON2Video account has Professional or higher plan at json2video.com`);
+      return { success: false };
+    }
+
     // If response indicates processing started but no ID returned, check for error message
     if (data.error || data.message) {
       console.error(`JSON2Video API error: ${data.error || data.message}`);
       return { success: false };
     }
 
-    console.log(`⚠️ JSON2Video returned unexpected response format - no project ID or URL`);
+    console.log(`⚠️ JSON2Video returned unexpected response format`);
     return { success: false };
   } catch (error) {
     console.error('JSON2Video assembly error:', error);
@@ -868,7 +880,9 @@ async function pollJSON2VideoResult(
     await new Promise(r => setTimeout(r, 5000));
 
     try {
-      const response = await fetch(`https://api.json2video.com/v2/movies/${projectId}`, {
+      // Correct endpoint: GET with query param, not path param
+      const response = await fetch(`https://api.json2video.com/v2/movies?project=${projectId}`, {
+        method: 'GET',
         headers: {
           'x-api-key': apiKey,
         },
@@ -880,19 +894,21 @@ async function pollJSON2VideoResult(
       }
 
       const data = await response.json();
-      console.log(`   JSON2Video poll ${i + 1}/${maxAttempts}: status=${data.status}`);
+      const movieData = data.movie || data;
+      console.log(`   JSON2Video poll ${i + 1}/${maxAttempts}: status=${movieData.status || data.status}`);
 
-      if (data.status === 'done' && data.url) {
+      // Check movie object (v2 API returns { success, movie: {...} })
+      if (movieData.status === 'done' && movieData.url) {
         return {
           success: true,
-          videoUrl: data.url,
-          thumbnailUrl: data.poster || data.thumbnail,
+          videoUrl: movieData.url,
+          thumbnailUrl: movieData.poster || movieData.thumbnail,
           pending: false,
         };
       }
 
-      if (data.status === 'error' || data.status === 'failed') {
-        console.error('JSON2Video job failed:', data.error || data.message);
+      if (movieData.status === 'error' || movieData.status === 'failed') {
+        console.error('JSON2Video job failed:', movieData.error || movieData.message || data.message);
         return { success: false };
       }
 
