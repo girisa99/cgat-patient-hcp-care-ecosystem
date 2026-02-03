@@ -419,10 +419,14 @@ export const MultiScreenshotGallery: React.FC<MultiScreenshotGalleryProps> = ({
             scale: 2,
             useCORS: true,
             allowTaint: true,
-            backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--background') || '#0a0a0a',
+            backgroundColor: '#0a0a0a', // Use fixed dark background to avoid CSS parsing issues
             logging: false,
-            windowWidth: captureTarget.scrollWidth,
-            windowHeight: captureTarget.scrollHeight,
+            ignoreElements: (element) => {
+              // Ignore elements that might cause CSS parsing issues
+              return element.classList?.contains('animate-spin') || 
+                     element.tagName === 'VIDEO' ||
+                     element.tagName === 'IFRAME';
+            },
           });
 
           // Convert to blob
@@ -543,149 +547,19 @@ export const MultiScreenshotGallery: React.FC<MultiScreenshotGalleryProps> = ({
                     {gallery.screenshots.length} shot{gallery.screenshots.length !== 1 ? 's' : ''}
                   </Badge>
                   
-                  {/* Add button */}
-                  <Dialog open={dialogOpen && selectedProduct === gallery.productId} onOpenChange={(open) => {
-                    setDialogOpen(open);
-                    if (open) setSelectedProduct(gallery.productId);
-                  }}>
-                    <DialogTrigger asChild>
-                      <Button variant="ghost" size="sm" className="ml-auto h-7 gap-1">
-                        <Plus className="w-3 h-3" />
-                        Add
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-md">
-                      <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: product?.color }} />
-                          Add Screenshots - {product?.name}
-                        </DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label>Upload Images (supports multiple)</Label>
-                          <Input
-                            ref={fileInputRef}
-                            type="file"
-                            accept="image/*"
-                            multiple
-                            onChange={handleFileUpload}
-                            disabled={!!isUploading}
-                          />
-                        </div>
-                        {isUploading && (
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            Uploading...
-                          </div>
-                        )}
-                        {isCast && (
-                          <>
-                            <div className="border-t pt-4">
-                              <Label className="text-sm font-medium mb-2 block">Or Auto-Capture Cast UI Screens</Label>
-                              <p className="text-xs text-muted-foreground mb-3">
-                                Automatically capture different tabs/sections of the Genie Cast interface
-                              </p>
-                              <Dialog open={castCaptureDialogOpen} onOpenChange={setCastCaptureDialogOpen}>
-                                <DialogTrigger asChild>
-                                  <Button
-                                    variant="outline"
-                                    className="w-full gap-2"
-                                    disabled={isAutoCapturing}
-                                  >
-                                    {isAutoCapturing ? (
-                                      <>
-                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                        {captureProgress 
-                                          ? `Capturing ${captureProgress.current}/${captureProgress.total}: ${captureProgress.screen}` 
-                                          : 'Preparing...'
-                                        }
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Scan className="w-4 h-4" />
-                                        Select Screens to Capture
-                                      </>
-                                    )}
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent className="sm:max-w-md">
-                                  <DialogHeader>
-                                    <DialogTitle className="flex items-center gap-2">
-                                      <Scan className="w-5 h-5 text-destructive" />
-                                      Capture Genie Cast Screens
-                                    </DialogTitle>
-                                  </DialogHeader>
-                                  <div className="space-y-4">
-                                    <p className="text-sm text-muted-foreground">
-                                      Select which screens/tabs to capture. Each will be saved as a separate screenshot.
-                                    </p>
-                                    <div className="space-y-3 max-h-64 overflow-y-auto">
-                                      {GENIE_CAST_SCREENS.map(screen => (
-                                        <div 
-                                          key={screen.id}
-                                          className={cn(
-                                            "flex items-start space-x-3 p-2 rounded-lg border transition-colors",
-                                            selectedScreens.includes(screen.id) 
-                                              ? "border-primary bg-primary/5" 
-                                              : "border-muted hover:border-muted-foreground/30"
-                                          )}
-                                        >
-                                          <Checkbox
-                                            id={screen.id}
-                                            checked={selectedScreens.includes(screen.id)}
-                                            onCheckedChange={(checked) => {
-                                              if (checked) {
-                                                setSelectedScreens(prev => [...prev, screen.id]);
-                                              } else {
-                                                setSelectedScreens(prev => prev.filter(id => id !== screen.id));
-                                              }
-                                            }}
-                                          />
-                                          <div className="flex-1">
-                                            <Label htmlFor={screen.id} className="font-medium text-sm cursor-pointer">
-                                              {screen.name}
-                                            </Label>
-                                            <p className="text-xs text-muted-foreground">
-                                              {screen.description}
-                                            </p>
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </div>
-                                    <div className="flex gap-2 pt-2">
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => setSelectedScreens(GENIE_CAST_SCREENS.map(s => s.id))}
-                                      >
-                                        Select All
-                                      </Button>
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => setSelectedScreens([])}
-                                      >
-                                        Deselect All
-                                      </Button>
-                                    </div>
-                                    <Button
-                                      className="w-full gap-2"
-                                      onClick={handleAutoCaptureCast}
-                                      disabled={selectedScreens.length === 0}
-                                    >
-                                      <Camera className="w-4 h-4" />
-                                      Capture {selectedScreens.length} Screen{selectedScreens.length !== 1 ? 's' : ''}
-                                    </Button>
-                                  </div>
-                                </DialogContent>
-                              </Dialog>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </DialogContent>
-                  </Dialog>
+                  {/* Add button - just opens the dialog */}
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="ml-auto h-7 gap-1"
+                    onClick={() => {
+                      setSelectedProduct(gallery.productId);
+                      setDialogOpen(true);
+                    }}
+                  >
+                    <Plus className="w-3 h-3" />
+                    Add
+                  </Button>
                 </div>
 
                 {/* Screenshot Strip with Drag & Drop */}
@@ -725,6 +599,146 @@ export const MultiScreenshotGallery: React.FC<MultiScreenshotGalleryProps> = ({
             );
           })}
         </div>
+
+        {/* Add Screenshots Dialog - Outside the loop */}
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <div 
+                  className="w-3 h-3 rounded-full" 
+                  style={{ backgroundColor: GENIE_PRODUCTS.find(p => p.id === selectedProduct)?.color }} 
+                />
+                Add Screenshots - {GENIE_PRODUCTS.find(p => p.id === selectedProduct)?.name}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Upload Images (supports multiple)</Label>
+                <Input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleFileUpload}
+                  disabled={!!isUploading}
+                />
+              </div>
+              {isUploading && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Uploading...
+                </div>
+              )}
+              {selectedProduct === 'cast' && (
+                <div className="border-t pt-4">
+                  <Label className="text-sm font-medium mb-2 block">Or Auto-Capture Cast UI Screens</Label>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Automatically capture different tabs/sections of the Genie Cast interface
+                  </p>
+                  <Button
+                    variant="outline"
+                    className="w-full gap-2"
+                    onClick={() => {
+                      setDialogOpen(false);
+                      setCastCaptureDialogOpen(true);
+                    }}
+                    disabled={isAutoCapturing}
+                  >
+                    {isAutoCapturing ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        {captureProgress 
+                          ? `Capturing ${captureProgress.current}/${captureProgress.total}` 
+                          : 'Preparing...'
+                        }
+                      </>
+                    ) : (
+                      <>
+                        <Scan className="w-4 h-4" />
+                        Select Screens to Capture
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Cast Screen Capture Dialog - Separate */}
+        <Dialog open={castCaptureDialogOpen} onOpenChange={setCastCaptureDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Scan className="w-5 h-5 text-destructive" />
+                Capture Genie Cast Screens
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Select which screens/tabs to capture. Each will be saved as a separate screenshot.
+              </p>
+              <div className="space-y-3 max-h-64 overflow-y-auto">
+                {GENIE_CAST_SCREENS.map(screen => (
+                  <div 
+                    key={screen.id}
+                    className={cn(
+                      "flex items-start space-x-3 p-2 rounded-lg border transition-colors",
+                      selectedScreens.includes(screen.id) 
+                        ? "border-primary bg-primary/5" 
+                        : "border-muted hover:border-muted-foreground/30"
+                    )}
+                  >
+                    <Checkbox
+                      id={`capture-${screen.id}`}
+                      checked={selectedScreens.includes(screen.id)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSelectedScreens(prev => [...prev, screen.id]);
+                        } else {
+                          setSelectedScreens(prev => prev.filter(id => id !== screen.id));
+                        }
+                      }}
+                    />
+                    <div className="flex-1">
+                      <Label htmlFor={`capture-${screen.id}`} className="font-medium text-sm cursor-pointer">
+                        {screen.name}
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        {screen.description}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedScreens(GENIE_CAST_SCREENS.map(s => s.id))}
+                >
+                  Select All
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedScreens([])}
+                >
+                  Deselect All
+                </Button>
+              </div>
+              <Button
+                className="w-full gap-2"
+                onClick={handleAutoCaptureCast}
+                disabled={selectedScreens.length === 0}
+              >
+                <Camera className="w-4 h-4" />
+                Capture {selectedScreens.length} Screen{selectedScreens.length !== 1 ? 's' : ''}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Dogfood Architecture Info */}
         <Card className="border-warning/30 bg-warning/5">
