@@ -609,24 +609,41 @@ export const ARABIC_SCRIPTS: Record<string, string> = {
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// PROVIDER MAPPING - Which TTS provider for each language
+// 4-ZONE ARCHITECTURE TTS PROVIDER MAPPING
+// ═══════════════════════════════════════════════════════════════════════════════
+// IMPORTANT: This is display-only. Actual routing happens in multi-provider-tts edge function!
+// The edge function uses languageCode to auto-route:
+// - CLAUDE ZONE (Western): ElevenLabs PRIMARY → en, es, fr
+// - ALIBABA ZONE (CJK): Alibaba CosyVoice PRIMARY → zh, ja
+// - MENA ZONE (Arabic): Azure Neural PRIMARY → ar (7 dialects)
+// - GEMINI ZONE (India/Africa): Azure Neural PRIMARY → hi, sw, te, ta, bn
+// - German/Portuguese: Azure Neural (superior prosody)
 // ═══════════════════════════════════════════════════════════════════════════════
 export const TTS_PROVIDER_MAP: Record<string, { provider: 'elevenlabs' | 'azure' | 'alibaba'; displayName: string }> = {
+  // CLAUDE ZONE (Western) - ElevenLabs primary
   en: { provider: 'elevenlabs', displayName: 'ElevenLabs' },
+  es: { provider: 'elevenlabs', displayName: 'ElevenLabs' },
+  fr: { provider: 'elevenlabs', displayName: 'ElevenLabs' },
+  
+  // ALIBABA ZONE (CJK) - Alibaba CosyVoice primary
+  zh: { provider: 'alibaba', displayName: 'Alibaba CosyVoice' },
+  ja: { provider: 'alibaba', displayName: 'Alibaba CosyVoice' },
+  
+  // MENA ZONE (Arabic) - Azure Neural primary (7 dialects)
   ar: { provider: 'azure', displayName: 'Azure Neural' },
+  
+  // GEMINI ZONE (India/SEA/Africa) - Azure Neural primary (Viseme support)
   hi: { provider: 'azure', displayName: 'Azure Neural' },
   te: { provider: 'azure', displayName: 'Azure Neural' },
   ta: { provider: 'azure', displayName: 'Azure Neural' },
   bn: { provider: 'azure', displayName: 'Azure Neural' },
-  zh: { provider: 'alibaba', displayName: 'Alibaba CosyVoice' },
-  ja: { provider: 'alibaba', displayName: 'Alibaba CosyVoice' },
+  sw: { provider: 'azure', displayName: 'Azure Neural' },
+  
+  // Azure for superior prosody in these languages
   ko: { provider: 'azure', displayName: 'Azure Neural' },
-  es: { provider: 'elevenlabs', displayName: 'ElevenLabs' },
-  fr: { provider: 'elevenlabs', displayName: 'ElevenLabs' },
   pt: { provider: 'azure', displayName: 'Azure Neural' },
   de: { provider: 'azure', displayName: 'Azure Neural' },
   tr: { provider: 'azure', displayName: 'Azure Neural' },
-  sw: { provider: 'azure', displayName: 'Azure Neural' },
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════

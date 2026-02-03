@@ -83,10 +83,19 @@ const REGIONAL_AVATARS: Record<string, { male: string; female: string; provider:
   sw: { male: 'Juma', female: 'Amina', provider: 'Alibaba WAN 2.2' },
 };
 
-// Language options with flags and TTS provider mapping
+// ═══════════════════════════════════════════════════════════════════════════════
+// 4-ZONE ARCHITECTURE TTS MAPPING (FIXED - Matches Edge Function Routing)
+// ═══════════════════════════════════════════════════════════════════════════════
+// CLAUDE ZONE (Western): ElevenLabs PRIMARY → English, Spanish, French
+// ALIBABA ZONE (CJK): Alibaba CosyVoice PRIMARY → Chinese, Japanese  
+// ALIBABA ZONE (Arabic): Azure Neural PRIMARY → Arabic (7 dialects)
+// GEMINI ZONE (India/Africa): Azure Neural PRIMARY → Hindi, Swahili
+// Korean uses Azure Neural (best quality for K-TTS)
+// German, Portuguese use Azure Neural (better prosody than ElevenLabs)
+// ═══════════════════════════════════════════════════════════════════════════════
 const LANGUAGES = [
   { code: 'en', name: 'English', flag: '🇺🇸', ttsProvider: 'ElevenLabs', zone: 'Claude Zone' },
-  { code: 'ar', name: 'العربية', flag: '🇸🇦', ttsProvider: 'Azure Neural', zone: 'Alibaba Zone' },
+  { code: 'ar', name: 'العربية', flag: '🇸🇦', ttsProvider: 'Azure Neural', zone: 'MENA Zone' },
   { code: 'hi', name: 'हिंदी', flag: '🇮🇳', ttsProvider: 'Azure Neural', zone: 'Gemini Zone' },
   { code: 'zh', name: '中文', flag: '🇨🇳', ttsProvider: 'Alibaba CosyVoice', zone: 'Alibaba Zone' },
   { code: 'ja', name: '日本語', flag: '🇯🇵', ttsProvider: 'Alibaba CosyVoice', zone: 'Alibaba Zone' },
@@ -185,54 +194,10 @@ export const ProfessionalAvatarShowcase: React.FC<ProfessionalAvatarShowcaseProp
     }
   }, []);
 
-  // Voice ID mapping per provider (provider-specific voice IDs)
-  const getVoiceIdForProvider = useCallback((provider: string, gender: 'male' | 'female', langCode: string): string => {
-    // ElevenLabs voice IDs
-    const elevenLabsVoices = {
-      female: 'EXAVITQu4vr4xnSDxMaL', // Sarah
-      male: 'JBFqnCBsd6RMkjVDRZzb', // George
-    };
-    
-    // Azure Neural voice names (language-specific)
-    const azureVoices: Record<string, { male: string; female: string }> = {
-      hi: { female: 'hi-IN-SwaraNeural', male: 'hi-IN-MadhurNeural' },
-      ar: { female: 'ar-SA-ZariyahNeural', male: 'ar-SA-HamedNeural' },
-      de: { female: 'de-DE-KatjaNeural', male: 'de-DE-ConradNeural' },
-      fr: { female: 'fr-FR-DeniseNeural', male: 'fr-FR-HenriNeural' },
-      es: { female: 'es-ES-ElviraNeural', male: 'es-ES-AlvaroNeural' },
-      pt: { female: 'pt-BR-FranciscaNeural', male: 'pt-BR-AntonioNeural' },
-      tr: { female: 'tr-TR-EmelNeural', male: 'tr-TR-AhmetNeural' },
-      ko: { female: 'ko-KR-SunHiNeural', male: 'ko-KR-InJoonNeural' },
-      sw: { female: 'sw-KE-ZuriNeural', male: 'sw-KE-RafikiNeural' },
-      en: { female: 'en-US-JennyNeural', male: 'en-US-GuyNeural' },
-    };
-    
-    // Alibaba CosyVoice voices for CJK
-    const alibabaVoices: Record<string, { male: string; female: string }> = {
-      zh: { female: 'longxiaochun', male: 'longcheng' },
-      ja: { female: 'cosyvoice-ja-female-01', male: 'cosyvoice-ja-male-01' },
-    };
-    
-    // OpenAI TTS voices (fallback)
-    const openaiVoices = {
-      female: 'nova',
-      male: 'onyx',
-    };
-    
-    if (provider === 'elevenlabs') {
-      return elevenLabsVoices[gender];
-    }
-    if (provider === 'azure') {
-      const langVoices = azureVoices[langCode] || azureVoices.en;
-      return langVoices[gender];
-    }
-    if (provider === 'alibaba') {
-      const langVoices = alibabaVoices[langCode] || alibabaVoices.zh;
-      return langVoices[gender];
-    }
-    // Default to OpenAI
-    return openaiVoices[gender];
-  }, []);
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // NOTE: Voice selection is handled by multi-provider-tts edge function
+  // based on languageCode. We only need to map short codes to full locales.
+  // ═══════════════════════════════════════════════════════════════════════════════
 
   // Get proper language code with region
   const getLanguageCode = useCallback((langCode: string): string => {
@@ -253,10 +218,13 @@ export const ProfessionalAvatarShowcase: React.FC<ProfessionalAvatarShowcaseProp
     return langCodeMap[langCode] || langCode;
   }, []);
 
-  // Generate TTS voice with proper device routing
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // GENERATE TTS - Let Edge Function Handle 4-Zone Routing (DON'T override provider!)
+  // ═══════════════════════════════════════════════════════════════════════════════
   const generateVoice = useCallback(async () => {
     if (!currentScript || isMuted) return;
     
+    // Get localized script or fallback to English
     let voiceoverText = getLocalizedScript(currentChapter.id, selectedLanguage);
     if (!voiceoverText) {
       voiceoverText = currentScript.voiceover?.en;
@@ -264,6 +232,7 @@ export const ProfessionalAvatarShowcase: React.FC<ProfessionalAvatarShowcaseProp
     
     if (!voiceoverText) return;
 
+    // Clean script for TTS (remove stage directions, collapse whitespace)
     const cleanText = voiceoverText
       .replace(/\*[^*]+\*/g, '')
       .replace(/\n{2,}/g, ' ')
@@ -273,48 +242,53 @@ export const ProfessionalAvatarShowcase: React.FC<ProfessionalAvatarShowcaseProp
 
     if (cleanText.length < 10) return;
 
-    // Get proper voice ID for the selected provider
-    const voiceId = getVoiceIdForProvider(ttsProviderInfo.provider, currentAvatarGender, selectedLanguage);
+    // Get proper language code with region (hi-IN, ar-SA, zh-CN, etc.)
     const languageCode = getLanguageCode(selectedLanguage);
 
     try {
       setIsGeneratingVoice(true);
-      console.log(`[TTS] Generating ${languageCode} voice via ${ttsProviderInfo.provider} using voice: ${voiceId}`);
       
-      // Call multi-provider-tts with correct language code and provider-specific voice
+      // ═══════════════════════════════════════════════════════════════════════════════
+      // IMPORTANT: Do NOT pass 'provider' - let edge function handle 4-zone routing!
+      // Edge function will automatically route based on languageCode:
+      // - hi-IN, sw-KE → Azure Neural (Gemini Zone)
+      // - zh-CN, ja-JP → Alibaba CosyVoice (Alibaba Zone)
+      // - ar-SA → Azure Neural (MENA Zone)
+      // - en-US, es-ES, fr-FR → ElevenLabs (Claude Zone)
+      // - de-DE, pt-BR → Azure Neural (better prosody)
+      // ═══════════════════════════════════════════════════════════════════════════════
+      console.log(`[TTS] Generating ${languageCode} voice - Edge function will route to correct provider`);
+      
       const { data, error } = await supabase.functions.invoke('multi-provider-tts', {
         body: {
           text: cleanText,
           languageCode: languageCode,
-          voice: voiceId,
-          provider: ttsProviderInfo.provider,
           tier: 'premium',
+          // DO NOT pass 'provider' - let edge function auto-route based on language!
         }
       });
 
       if (error) {
-        console.warn('[TTS] Multi-provider failed, using fallback:', error);
-        // Fallback to basic OpenAI TTS
-        const fallbackRes = await supabase.functions.invoke('text-to-speech', {
-          body: { text: cleanText, voice: currentAvatarGender === 'female' ? 'nova' : 'onyx', model: 'tts-1', speed: 1.0 }
-        });
-        if (fallbackRes.error) throw fallbackRes.error;
-        if (fallbackRes.data?.audioContent) {
-          await playAudio(fallbackRes.data.audioContent);
-        }
+        console.warn('[TTS] Multi-provider failed:', error.message);
+        toast.error(`TTS failed: ${error.message}`);
         return;
+      }
+
+      // Log which provider was used (from edge function response)
+      if (data?.provider) {
+        console.log(`[TTS] ✅ Audio generated via ${data.provider} (${data.zone || 'auto'})`);
       }
 
       if (data?.audioContent || data?.audio_base64) {
         await playAudio(data.audioContent || data.audio_base64);
       }
     } catch (err) {
-      console.error('TTS error:', err);
+      console.error('[TTS] Error:', err);
       toast.error('Voice generation failed');
     } finally {
       setIsGeneratingVoice(false);
     }
-  }, [currentScript, currentChapter.id, isMuted, selectedLanguage, ttsProviderInfo, currentAvatarGender, getVoiceIdForProvider, getLanguageCode]);
+  }, [currentScript, currentChapter.id, isMuted, selectedLanguage, currentAvatarGender, getLanguageCode]);
 
   // Play audio with device selection
   const playAudio = useCallback(async (base64Audio: string) => {
