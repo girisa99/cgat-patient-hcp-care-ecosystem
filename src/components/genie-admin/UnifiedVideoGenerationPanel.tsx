@@ -33,6 +33,9 @@ import {
   User,
   Box,
   Zap,
+  AlertTriangle,
+  TrendingUp,
+  MessageSquare,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -50,6 +53,9 @@ import { MultiScreenshotGallery, ProductGallery } from './MultiScreenshotGallery
 import { VideoGenerationMatrix } from './VideoGenerationMatrix';
 import { FullProductionModeConfig, DEFAULT_PRODUCTION_CONFIG, REGIONAL_AVATARS, type ProductionModeConfig } from './FullProductionModeConfig';
 import { TokenConsumptionBreakdown } from './TokenConsumptionBreakdown';
+import { ProductChangeAlertPanel } from './ProductChangeAlertPanel';
+import { MessagingImprovementPanel } from './MessagingImprovementPanel';
+import { FeatureVideoGenerator } from './FeatureVideoGenerator';
 
 // Supported languages with zone routing
 const LANGUAGES = [
@@ -119,7 +125,7 @@ interface ExistingVideo {
 }
 
 export const UnifiedVideoGenerationPanel: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'screenshots' | 'generate' | 'matrix' | 'library' | 'analytics'>('screenshots');
+  const [activeTab, setActiveTab] = useState<'screenshots' | 'generate' | 'matrix' | 'library' | 'analytics' | 'alerts' | 'messaging'>('screenshots');
   const [screenshotGalleries, setScreenshotGalleries] = useState<ProductGallery[]>([]);
   const [selectedLanguage, setSelectedLanguage] = useState('en');
   const totalScreenshots = screenshotGalleries.reduce((sum, g) => sum + g.screenshots.length, 0);
@@ -292,7 +298,7 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-        <TabsList className="grid w-full grid-cols-5 max-w-2xl">
+        <TabsList className="grid w-full grid-cols-7 max-w-4xl">
           <TabsTrigger value="screenshots" className="gap-2">
             <Camera className="w-4 h-4" />
             Screenshots
@@ -311,6 +317,14 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
           <TabsTrigger value="library" className="gap-2">
             <Layers className="w-4 h-4" />
             Library ({existingVideos.length})
+          </TabsTrigger>
+          <TabsTrigger value="alerts" className="gap-2">
+            <AlertTriangle className="w-4 h-4" />
+            Alerts
+          </TabsTrigger>
+          <TabsTrigger value="messaging" className="gap-2">
+            <TrendingUp className="w-4 h-4" />
+            Messaging
           </TabsTrigger>
           <TabsTrigger value="analytics" className="gap-2">
             <Eye className="w-4 h-4" />
@@ -714,6 +728,35 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Alerts Tab - Product Change Detection */}
+        <TabsContent value="alerts" className="space-y-6">
+          <ProductChangeAlertPanel
+            onCaptureScreenshots={(productId) => {
+              toast.info(`Navigating to capture screenshots for ${productId}`);
+              setActiveTab('screenshots');
+            }}
+            onRegenerateVideo={(productId) => {
+              toast.info(`Starting video regeneration for ${productId}`);
+              setActiveTab('generate');
+            }}
+          />
+          <FeatureVideoGenerator
+            onGenerateVideo={(request, messaging) => {
+              toast.success(`Generated feature video for ${request.featureName}`);
+              loadExistingVideos();
+            }}
+          />
+        </TabsContent>
+
+        {/* Messaging Improvement Tab */}
+        <TabsContent value="messaging" className="space-y-6">
+          <MessagingImprovementPanel
+            onApplyImprovement={(id, newMessaging) => {
+              toast.success('Messaging improvement applied');
+            }}
+          />
         </TabsContent>
 
         {/* Analytics Tab */}

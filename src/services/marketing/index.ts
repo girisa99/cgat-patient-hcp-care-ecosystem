@@ -81,6 +81,22 @@ export {
   type CompetitorAnalysis,
 } from './aiMessagingGeneratorService';
 
+// Messaging Feedback & Improvement (Bi-weekly analysis)
+export {
+  messagingFeedbackService,
+  IMPROVEMENT_CYCLE_DAYS,
+  CONFUSION_SIGNAL_WEIGHTS,
+  SENTIMENT_KEYWORDS,
+  COMPETITOR_KEYWORDS,
+  type UserFeedback,
+  type ConfusionSignal,
+  type UsagePattern,
+  type MessagingImprovement,
+  type ImprovementCycle,
+  type MessagingAnalysis,
+  type FeedbackSource,
+} from './messagingFeedbackService';
+
 // Unified Ecosystem Publishing (shared across all products)
 export {
   unifiedEcosystemPublishingService,
