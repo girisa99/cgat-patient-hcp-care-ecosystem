@@ -17,9 +17,8 @@ import askGenieLogo from '@/assets/logos/ask-genie-combined.png';
 import genieDeckLogo from '@/assets/logos/genie-deck-combined.png';
 import genieCastLogo from '@/assets/logos/genie-cast-logo.png';
 
-// Map chapter IDs to logo imports
+// Map product IDs to logo imports (8 unique logos)
 const LOGO_ASSETS: Record<string, { logo: string; displayName: string }> = {
-  'opening': { logo: genieStudioBanner, displayName: 'Genie Studio' },
   'studio': { logo: genieStudioBanner, displayName: 'Genie Studio' },
   'spark': { logo: genieSparkLogo, displayName: 'Genie Spark' },
   'mind': { logo: genieMindLogo, displayName: 'Genie Mind' },
@@ -28,7 +27,6 @@ const LOGO_ASSETS: Record<string, { logo: string; displayName: string }> = {
   'arc': { logo: genieArcLogo, displayName: 'Genie Arc' },
   'ask-genie': { logo: askGenieLogo, displayName: 'Ask Genie' },
   'cast': { logo: genieCastLogo, displayName: 'Genie Cast' },
-  'closing': { logo: genieStudioBanner, displayName: 'Genie Studio' },
 };
 
 export interface UploadResult {
@@ -141,8 +139,6 @@ export async function checkBrandLogosInStorage(): Promise<{
   const results: { productId: string; displayName: string; exists: boolean; url?: string }[] = [];
 
   for (const [productId, asset] of Object.entries(LOGO_ASSETS)) {
-    // Skip duplicates (opening/closing use studio)
-    if (productId === 'closing') continue;
     
     const storagePath = `genie-${productId}-logo.png`;
     
