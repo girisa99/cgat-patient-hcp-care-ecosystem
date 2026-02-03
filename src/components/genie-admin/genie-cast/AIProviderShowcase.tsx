@@ -29,39 +29,58 @@ interface AIProvider {
 }
 
 const AI_PROVIDERS: AIProvider[] = [
-  // Video
-  { name: 'Alibaba Wan2.2', category: 'video', color: '#FF6A00' },
-  { name: 'Kling AI', category: 'video', color: '#7C3AED' },
-  { name: 'Runway Gen-3', category: 'video', color: '#3B82F6' },
-  { name: 'Minimax', category: 'video', color: '#EC4899' },
-  { name: 'Stable Video', category: 'video', color: '#8B5CF6' },
+  // === VIDEO GENERATION (Extended with all major providers) ===
+  { name: 'Google Veo 3', category: 'video', color: '#4285F4' },
+  { name: 'OpenAI Sora', category: 'video', color: '#10A37F' },
+  { name: 'Runway Gen-3 Alpha', category: 'video', color: '#6366F1' },
+  { name: 'Kling AI 1.6', category: 'video', color: '#7C3AED' },
+  { name: 'Alibaba Wan 2.6', category: 'video', color: '#FF6A00' },
+  { name: 'Pika Labs 2.0', category: 'video', color: '#EC4899' },
+  { name: 'Luma Dream Machine', category: 'video', color: '#8B5CF6' },
+  { name: 'Minimax Hailuo', category: 'video', color: '#F97316' },
   { name: 'ByteDance', category: 'video', color: '#000000' },
-  { name: 'ModelsLab', category: 'video', color: '#10B981' },
-  { name: 'Google Veo', category: 'video', color: '#4285F4' },
+  { name: 'Stable Video Diffusion', category: 'video', color: '#A855F7' },
+  { name: 'ModelsLab AnimateDiff', category: 'video', color: '#10B981' },
+  { name: 'Replicate SVD', category: 'video', color: '#0EA5E9' },
   
-  // LLM
-  { name: 'Claude 3.5', category: 'llm', color: '#D97706' },
+  // === AVATAR & LIP-SYNC (Full range of avatar providers) ===
+  { name: 'HeyGen', category: 'video', color: '#06B6D4' },
+  { name: 'Hedra Character-1', category: 'video', color: '#D946EF' },
+  { name: 'D-ID', category: 'video', color: '#F43F5E' },
+  { name: 'Synthesia', category: 'video', color: '#22C55E' },
+  { name: 'Alibaba Wan2.2 Avatar', category: 'video', color: '#FF6A00' },
+  
+  // === LLM ===
+  { name: 'Claude 3.5 Sonnet', category: 'llm', color: '#D97706' },
   { name: 'GPT-4o', category: 'llm', color: '#10A37F' },
-  { name: 'Gemini Pro', category: 'llm', color: '#4285F4' },
-  { name: 'Qwen 2.5', category: 'llm', color: '#FF6A00' },
-  { name: 'DeepSeek', category: 'llm', color: '#1E40AF' },
+  { name: 'Gemini 2.0 Flash', category: 'llm', color: '#4285F4' },
+  { name: 'Qwen 2.5 Max', category: 'llm', color: '#FF6A00' },
+  { name: 'DeepSeek V3', category: 'llm', color: '#1E40AF' },
+  { name: 'Llama 3.3', category: 'llm', color: '#8B5CF6' },
   
-  // TTS
+  // === TTS & VOICE ===
   { name: 'ElevenLabs', category: 'tts', color: '#000000' },
-  { name: 'Azure Neural', category: 'tts', color: '#0078D4' },
+  { name: 'Azure Neural TTS', category: 'tts', color: '#0078D4' },
   { name: 'CosyVoice', category: 'tts', color: '#FF6A00' },
-  { name: 'Google TTS', category: 'tts', color: '#4285F4' },
+  { name: 'Google Cloud TTS', category: 'tts', color: '#4285F4' },
+  { name: 'OpenAI TTS', category: 'tts', color: '#10A37F' },
+  { name: 'Amazon Polly', category: 'tts', color: '#FF9900' },
   
-  // 3D
+  // === 3D GENERATION ===
   { name: 'Meshy AI', category: '3d', color: '#7C3AED' },
-  { name: 'Alibaba 3D', category: '3d', color: '#FF6A00' },
+  { name: 'Alibaba 3D Suite', category: '3d', color: '#FF6A00' },
   { name: 'ModelsLab 3D', category: '3d', color: '#10B981' },
+  { name: 'Tripo AI', category: '3d', color: '#0EA5E9' },
+  { name: 'Rodin Gen-1', category: '3d', color: '#F97316' },
   
-  // Image
-  { name: 'FLUX', category: 'image', color: '#000000' },
-  { name: 'SDXL', category: 'image', color: '#8B5CF6' },
-  { name: 'Midjourney', category: 'image', color: '#FFFFFF' },
+  // === IMAGE GENERATION ===
+  { name: 'FLUX Pro', category: 'image', color: '#000000' },
+  { name: 'SDXL Turbo', category: 'image', color: '#8B5CF6' },
+  { name: 'Midjourney V6', category: 'image', color: '#FFFFFF' },
   { name: 'DALL-E 3', category: 'image', color: '#10A37F' },
+  { name: 'Imagen 3', category: 'image', color: '#4285F4' },
+  { name: 'Ideogram 2.0', category: 'image', color: '#EC4899' },
+  { name: 'Leonardo AI', category: 'image', color: '#F97316' },
 ];
 
 const getCategoryIcon = (category: AIProvider['category']) => {
@@ -88,7 +107,7 @@ export const AIProviderShowcase: React.FC<AIProviderShowcaseProps> = ({ classNam
       {/* Header */}
       <div className="flex items-center justify-center gap-2">
         <Sparkles className="w-5 h-5 text-primary" />
-        <h3 className="text-lg font-semibold">50+ AI Models in One Platform</h3>
+        <h3 className="text-lg font-semibold">{AI_PROVIDERS.length}+ AI Models in One Platform</h3>
       </div>
       
       {/* Scrolling Marquee - Row 1 */}
