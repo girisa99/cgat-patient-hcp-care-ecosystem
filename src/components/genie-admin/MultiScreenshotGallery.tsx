@@ -206,7 +206,25 @@ export const MultiScreenshotGallery: React.FC<MultiScreenshotGalleryProps> = ({
       const updatedGalleries = [...galleries];
       
       for (const file of files || []) {
-        const productId = file.name.split('-')[0];
+        // Parse product ID from filename - handle hyphenated IDs like "ask-genie"
+        // Filename format: productId-timestamp.png
+        const fileNameWithoutExt = file.name.replace('.png', '');
+        const parts = fileNameWithoutExt.split('-');
+        
+        // Try to match against known product IDs (longest match first)
+        let productId = '';
+        for (const product of GENIE_PRODUCTS) {
+          if (fileNameWithoutExt.startsWith(`${product.id}-`)) {
+            productId = product.id;
+            break;
+          }
+        }
+        
+        // Fallback to first segment if no match found
+        if (!productId) {
+          productId = parts[0];
+        }
+        
         const gallery = updatedGalleries.find(g => g.productId === productId);
         if (!gallery) continue;
 
@@ -217,7 +235,7 @@ export const MultiScreenshotGallery: React.FC<MultiScreenshotGalleryProps> = ({
         // Check if screenshot already exists
         if (!gallery.screenshots.some(s => s.imageUrl === urlData.publicUrl)) {
           gallery.screenshots.push({
-            id: file.name.replace('.png', ''),
+            id: fileNameWithoutExt,
             productId,
             imageUrl: urlData.publicUrl,
             order: gallery.screenshots.length,
