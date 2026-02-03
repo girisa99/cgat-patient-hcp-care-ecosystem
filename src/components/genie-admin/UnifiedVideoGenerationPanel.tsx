@@ -382,296 +382,283 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
           />
         </TabsContent>
 
-        {/* Generate Tab */}
+        {/* Generate Tab - Flat Layout */}
         <TabsContent value="generate" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left: Configuration */}
-            <Card className="lg:col-span-1">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Globe className="w-5 h-5" />
-                  Configuration
-                </CardTitle>
-                <CardDescription>
-                  Select language and quality settings
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Language Selection */}
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <Languages className="w-4 h-4" />
-                    Target Language
-                  </Label>
-                  <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {LANGUAGES.map(lang => (
-                        <SelectItem key={lang.code} value={lang.code}>
-                          <div className="flex items-center gap-2">
-                            <span>{lang.flag}</span>
-                            <span>{lang.name}</span>
-                            <Badge variant="secondary" className="text-[10px] ml-auto">
-                              {lang.zone}
-                            </Badge>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {selectedLang && (
-                    <div className="flex flex-wrap gap-1.5 mt-2">
-                      <Badge variant="outline" className="text-[10px]">
-                        <Mic className="w-2.5 h-2.5 mr-1" />
-                        {selectedLang.tts}
-                      </Badge>
-                      <Badge variant="outline" className="text-[10px]">
-                        <Video className="w-2.5 h-2.5 mr-1" />
-                        {selectedLang.zone.includes('Alibaba') ? 'Alibaba WAN' : 'Vertex AI'}
-                      </Badge>
-                    </div>
-                  )}
-                </div>
+            {/* Left: Configuration - Flat without Card wrapper */}
+            <div className="lg:col-span-1 space-y-5">
+              <div className="flex items-center gap-2 pb-2 border-b border-border">
+                <Globe className="w-5 h-5 text-primary" />
+                <h3 className="font-semibold">Configuration</h3>
+              </div>
 
-                {/* Quality Selection */}
-                <div className="space-y-2">
-                  <Label>Quality</Label>
-                  <Select value={quality} onValueChange={(v) => setQuality(v as any)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="preview">Preview (480p, fast)</SelectItem>
-                      <SelectItem value="production">Production (1080p)</SelectItem>
-                      <SelectItem value="cinematic">Cinematic (4K)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Basic Toggles */}
-                <div className="space-y-3 p-3 bg-muted/30 rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="visuals" className="text-sm">Product Screenshots</Label>
-                    <Switch 
-                      id="visuals" 
-                      checked={includeVisuals} 
-                      onCheckedChange={setIncludeVisuals}
-                    />
+              {/* Language Selection */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2 text-sm">
+                  <Languages className="w-4 h-4" />
+                  Target Language
+                </Label>
+                <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LANGUAGES.map(lang => (
+                      <SelectItem key={lang.code} value={lang.code}>
+                        <div className="flex items-center gap-2">
+                          <span>{lang.flag}</span>
+                          <span>{lang.name}</span>
+                          <Badge variant="secondary" className="text-[10px] ml-auto">
+                            {lang.zone}
+                          </Badge>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedLang && (
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    <Badge variant="outline" className="text-[10px]">
+                      <Mic className="w-2.5 h-2.5 mr-1" />
+                      {selectedLang.tts}
+                    </Badge>
+                    <Badge variant="outline" className="text-[10px]">
+                      <Video className="w-2.5 h-2.5 mr-1" />
+                      {selectedLang.zone.includes('Alibaba') ? 'Alibaba WAN' : 'Vertex AI'}
+                    </Badge>
                   </div>
-                </div>
-
-                {/* Full Production Mode Toggle */}
-                <div className={cn(
-                  "p-3 rounded-lg border-2 transition-all",
-                  enableFullProduction 
-                    ? "bg-gradient-to-br from-purple-500/10 via-amber-500/10 to-cyan-500/10 border-primary" 
-                    : "bg-muted/30 border-transparent"
-                )}>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <Crown className={cn("w-4 h-4", enableFullProduction ? "text-primary" : "text-muted-foreground")} />
-                      <Label htmlFor="fullprod" className="text-sm font-medium">Full Production Mode</Label>
-                    </div>
-                    <Switch 
-                      id="fullprod" 
-                      checked={enableFullProduction} 
-                      onCheckedChange={setEnableFullProduction}
-                    />
-                  </div>
-                  <div className="text-xs text-muted-foreground flex items-center gap-2">
-                    {enableFullProduction ? (
-                      <>
-                        <User className="w-3 h-3" /> Avatar
-                        <Sparkles className="w-3 h-3" /> Animations
-                        <Box className="w-3 h-3" /> 3D
-                      </>
-                    ) : (
-                      'Add AI Avatar, animations, and 3D showcases'
-                    )}
-                  </div>
-                </div>
-
-                {/* Full Production Mode Config (when enabled) */}
-                {enableFullProduction && (
-                  <FullProductionModeConfig
-                    config={productionConfig}
-                    onConfigChange={setProductionConfig}
-                    selectedLanguage={selectedLanguage}
-                    disabled={isGenerating}
-                  />
                 )}
+              </div>
 
-                {/* Token Consumption Breakdown */}
-                <TokenConsumptionBreakdown
-                  config={productionConfig}
-                  selectedLanguage={selectedLanguage}
-                  isFullProduction={enableFullProduction}
+              {/* Quality Selection */}
+              <div className="space-y-2">
+                <Label className="text-sm">Quality</Label>
+                <Select value={quality} onValueChange={(v) => setQuality(v as any)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="preview">Preview (480p, fast)</SelectItem>
+                    <SelectItem value="production">Production (1080p)</SelectItem>
+                    <SelectItem value="cinematic">Cinematic (4K)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Basic Toggles */}
+              <div className="flex items-center justify-between py-2">
+                <Label htmlFor="visuals" className="text-sm">Product Screenshots</Label>
+                <Switch 
+                  id="visuals" 
+                  checked={includeVisuals} 
+                  onCheckedChange={setIncludeVisuals}
                 />
+              </div>
 
-                {/* Video Info */}
-                <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg space-y-2">
-                  <div className="flex items-center gap-2 text-sm font-medium">
-                    <Clock className="w-4 h-4 text-primary" />
-                    Output: 1 Full Video
+              {/* Full Production Mode Toggle */}
+              <div className={cn(
+                "p-3 rounded-lg border transition-all",
+                enableFullProduction 
+                  ? "bg-primary/5 border-primary/30" 
+                  : "bg-muted/20 border-border"
+              )}>
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    <Crown className={cn("w-4 h-4", enableFullProduction ? "text-primary" : "text-muted-foreground")} />
+                    <Label htmlFor="fullprod" className="text-sm font-medium">Full Production Mode</Label>
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    {CHAPTERS.length} chapters • ~{Math.round(totalDuration / 60)} min content
-                    {enableFullProduction && (
-                      <span className="ml-1 text-primary font-medium">
-                        • ~{estimatedTime} min to generate
-                      </span>
-                    )}
-                  </div>
+                  <Switch 
+                    id="fullprod" 
+                    checked={enableFullProduction} 
+                    onCheckedChange={setEnableFullProduction}
+                  />
                 </div>
-
-                {/* Generate Button */}
-                <Button 
-                  onClick={handleGenerate}
-                  disabled={isGenerating}
-                  className="w-full"
-                  size="lg"
-                >
-                  {isGenerating ? (
+                <div className="text-xs text-muted-foreground flex items-center gap-2">
+                  {enableFullProduction ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Generating...
+                      <User className="w-3 h-3" /> Avatar
+                      <Sparkles className="w-3 h-3" /> Animations
+                      <Box className="w-3 h-3" /> 3D
                     </>
                   ) : (
-                    <>
-                      <Play className="w-4 h-4 mr-2" />
-                      Generate Full Video
-                    </>
+                    'Add AI Avatar, animations, and 3D showcases'
                   )}
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Right: Chapters & Progress */}
-            <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Layers className="w-5 h-5" />
-                  9 Chapters → 1 Video
-                </CardTitle>
-                <CardDescription>
-                  All chapters are stitched into a single continuous video
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {/* Chapter Grid */}
-                <div className="grid grid-cols-3 gap-3 mb-6">
-                  {CHAPTERS.map((chapter, idx) => {
-                    const chapterStatus = currentVideo?.chapters.find(c => c.id === chapter.id);
-                    const isActive = isGenerating && currentVideo?.status === 'generating';
-
-                    return (
-                      <motion.div
-                        key={chapter.id}
-                        className={cn(
-                          "p-3 rounded-lg border transition-all",
-                          isActive && "border-primary bg-primary/5",
-                          chapterStatus?.success && "border-emerald-500/50 bg-emerald-500/5",
-                          chapterStatus?.error && "border-destructive/50 bg-destructive/5"
-                        )}
-                        animate={isActive ? { scale: [1, 1.02, 1] } : {}}
-                        transition={{ duration: 1, repeat: isActive ? Infinity : 0 }}
-                      >
-                        <div className="flex items-center gap-2 mb-1">
-                          <div 
-                            className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: chapter.color }}
-                          />
-                          <span className="text-xs font-medium truncate">{chapter.product}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] text-muted-foreground">{chapter.duration}s</span>
-                          {chapterStatus?.success && <CheckCircle className="w-3 h-3 text-emerald-500" />}
-                          {chapterStatus?.error && <XCircle className="w-3 h-3 text-destructive" />}
-                          {isActive && <Loader2 className="w-3 h-3 animate-spin text-primary" />}
-                        </div>
-                      </motion.div>
-                    );
-                  })}
                 </div>
+              </div>
 
-                {/* Progress */}
-                <AnimatePresence>
-                  {isGenerating && (
+              {/* Full Production Mode Config (when enabled) */}
+              {enableFullProduction && (
+                <FullProductionModeConfig
+                  config={productionConfig}
+                  onConfigChange={setProductionConfig}
+                  selectedLanguage={selectedLanguage}
+                  disabled={isGenerating}
+                />
+              )}
+
+              {/* Token Consumption Breakdown */}
+              <TokenConsumptionBreakdown
+                config={productionConfig}
+                selectedLanguage={selectedLanguage}
+                isFullProduction={enableFullProduction}
+              />
+
+              {/* Video Info */}
+              <div className="p-3 bg-muted/30 rounded-lg space-y-1">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <Clock className="w-4 h-4 text-primary" />
+                  Output: 1 Full Video
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {CHAPTERS.length} chapters • ~{Math.round(totalDuration / 60)} min content
+                  {enableFullProduction && (
+                    <span className="ml-1 text-primary font-medium">
+                      • ~{estimatedTime} min to generate
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Generate Button */}
+              <Button 
+                onClick={handleGenerate}
+                disabled={isGenerating}
+                className="w-full"
+                size="lg"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-4 h-4 mr-2" />
+                    Generate Full Video
+                  </>
+                )}
+              </Button>
+            </div>
+
+            {/* Right: Chapters & Progress - Flat */}
+            <div className="lg:col-span-2 space-y-4">
+              <div className="flex items-center gap-2 pb-2 border-b border-border">
+                <Layers className="w-5 h-5 text-primary" />
+                <h3 className="font-semibold">9 Chapters → 1 Video</h3>
+                <span className="text-xs text-muted-foreground ml-auto">All chapters stitched together</span>
+              </div>
+
+              {/* Chapter Grid */}
+              <div className="grid grid-cols-3 gap-3">
+                {CHAPTERS.map((chapter) => {
+                  const chapterStatus = currentVideo?.chapters.find(c => c.id === chapter.id);
+                  const isActive = isGenerating && currentVideo?.status === 'generating';
+
+                  return (
                     <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="space-y-3 p-4 bg-muted/30 rounded-lg"
+                      key={chapter.id}
+                      className={cn(
+                        "p-3 rounded-lg border transition-all",
+                        isActive && "border-primary bg-primary/5",
+                        chapterStatus?.success && "border-green-600/50 bg-green-600/5",
+                        chapterStatus?.error && "border-destructive/50 bg-destructive/5"
+                      )}
+                      animate={isActive ? { scale: [1, 1.02, 1] } : {}}
+                      transition={{ duration: 1, repeat: isActive ? Infinity : 0 }}
                     >
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">
-                          Generating {selectedLang?.name} video...
-                        </span>
-                        <span className="font-medium">{currentVideo?.progress || 0}%</span>
+                      <div className="flex items-center gap-2 mb-1">
+                        <div 
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: chapter.color }}
+                        />
+                        <span className="text-xs font-medium truncate">{chapter.product}</span>
                       </div>
-                      <Progress value={currentVideo?.progress || 0} className="h-2" />
-                      <div className="flex gap-2 text-[10px] text-muted-foreground">
-                        <Badge variant="outline" className="text-[10px]">
-                          TTS: {currentVideo?.providers.tts}
-                        </Badge>
-                        <Badge variant="outline" className="text-[10px]">
-                          Video: {currentVideo?.providers.video}
-                        </Badge>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-muted-foreground">{chapter.duration}s</span>
+                        {chapterStatus?.success && <CheckCircle className="w-3 h-3 text-green-600" />}
+                        {chapterStatus?.error && <XCircle className="w-3 h-3 text-destructive" />}
+                        {isActive && <Loader2 className="w-3 h-3 animate-spin text-primary" />}
                       </div>
                     </motion.div>
-                  )}
-                </AnimatePresence>
+                  );
+                })}
+              </div>
 
-                {/* Result */}
-                {currentVideo?.status === 'complete' && (
+              {/* Progress */}
+              <AnimatePresence>
+                {isGenerating && (
                   <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg space-y-3"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="space-y-3 p-4 bg-muted/30 rounded-lg"
                   >
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="w-5 h-5 text-emerald-500" />
-                      <span className="font-medium">Video Generated Successfully!</span>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">
+                        Generating {selectedLang?.name} video...
+                      </span>
+                      <span className="font-medium">{currentVideo?.progress || 0}%</span>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Button size="sm" variant="outline" className="gap-2">
-                        <Eye className="w-4 h-4" />
-                        Preview
-                      </Button>
-                      <Button size="sm" className="gap-2">
-                        <Upload className="w-4 h-4" />
-                        Publish to Landing
-                      </Button>
+                    <Progress value={currentVideo?.progress || 0} className="h-2" />
+                    <div className="flex gap-2 text-[10px] text-muted-foreground">
+                      <Badge variant="outline" className="text-[10px]">
+                        TTS: {currentVideo?.providers.tts}
+                      </Badge>
+                      <Badge variant="outline" className="text-[10px]">
+                        Video: {currentVideo?.providers.video}
+                      </Badge>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      {currentVideo.chapters.filter(c => c.success).length}/{CHAPTERS.length} chapters • 
-                      ~{Math.round(totalDuration / 60)} min • 
-                      Saved to library
-                    </p>
                   </motion.div>
                 )}
+              </AnimatePresence>
 
-                {currentVideo?.status === 'error' && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="p-4 bg-destructive/10 border border-destructive/30 rounded-lg space-y-2"
-                  >
-                    <div className="flex items-center gap-2">
-                      <XCircle className="w-5 h-5 text-destructive" />
-                      <span className="font-medium">Generation Failed</span>
-                    </div>
-                    <p className="text-sm text-destructive">{currentVideo.error}</p>
-                    <Button size="sm" variant="outline" onClick={handleGenerate} className="gap-2">
-                      <RotateCcw className="w-4 h-4" />
-                      Retry
+              {/* Result */}
+              {currentVideo?.status === 'complete' && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-4 bg-green-600/10 border border-green-600/30 rounded-lg space-y-3"
+                >
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    <span className="font-medium">Video Generated Successfully!</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Button size="sm" variant="outline" className="gap-2">
+                      <Eye className="w-4 h-4" />
+                      Preview
                     </Button>
-                  </motion.div>
-                )}
-              </CardContent>
-            </Card>
+                    <Button size="sm" className="gap-2">
+                      <Upload className="w-4 h-4" />
+                      Publish to Landing
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {currentVideo.chapters.filter(c => c.success).length}/{CHAPTERS.length} chapters • 
+                    ~{Math.round(totalDuration / 60)} min • 
+                    Saved to library
+                  </p>
+                </motion.div>
+              )}
+
+              {currentVideo?.status === 'error' && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-4 bg-destructive/10 border border-destructive/30 rounded-lg space-y-2"
+                >
+                  <div className="flex items-center gap-2">
+                    <XCircle className="w-5 h-5 text-destructive" />
+                    <span className="font-medium">Generation Failed</span>
+                  </div>
+                  <p className="text-sm text-destructive">{currentVideo.error}</p>
+                  <Button size="sm" variant="outline" onClick={handleGenerate} className="gap-2">
+                    <RotateCcw className="w-4 h-4" />
+                    Retry
+                  </Button>
+                </motion.div>
+              )}
+            </div>
           </div>
         </TabsContent>
 
