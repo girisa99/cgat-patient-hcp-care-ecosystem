@@ -15,9 +15,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Map chapter IDs to actual logo file names in /brand-assets/ (files in public folder)
+// Map product IDs to actual logo file names (8 unique logos)
 const LOGO_MAPPING: Record<string, { fileName: string; displayName: string }> = {
-  'opening': { fileName: 'genie-studio-logo.png', displayName: 'Genie Studio' },
+  'studio': { fileName: 'genie-studio-logo.png', displayName: 'Genie Studio' },
   'spark': { fileName: 'genie-spark-logo.png', displayName: 'Genie Spark' },
   'mind': { fileName: 'genie-mind-logo.png', displayName: 'Genie Mind' },
   'vibe': { fileName: 'genie-vibe-logo.png', displayName: 'Genie Vibe' },
@@ -25,7 +25,6 @@ const LOGO_MAPPING: Record<string, { fileName: string; displayName: string }> = 
   'arc': { fileName: 'genie-arc-logo.png', displayName: 'Genie Arc' },
   'ask-genie': { fileName: 'ask-genie-logo.png', displayName: 'Ask Genie' },
   'cast': { fileName: 'genie-cast-logo.png', displayName: 'Genie Cast' },
-  'closing': { fileName: 'genie-studio-logo.png', displayName: 'Genie Studio' },
 };
 
 serve(async (req) => {
