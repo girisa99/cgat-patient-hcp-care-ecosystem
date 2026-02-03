@@ -298,43 +298,48 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
         </Badge>
       </div>
 
-      {/* Tabs */}
+      {/* Tabs - Responsive with scroll */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-        <TabsList className="grid w-full grid-cols-8 max-w-5xl">
-          <TabsTrigger value="screenshots" className="gap-1 text-xs">
-            <Camera className="w-3.5 h-3.5" />
-            Screenshots
+        <TabsList className="flex w-full overflow-x-auto scrollbar-hide gap-1 p-1">
+          <TabsTrigger value="screenshots" className="flex-shrink-0 gap-1.5 px-3 text-xs whitespace-nowrap">
+            <Camera className="w-3.5 h-3.5 flex-shrink-0" />
+            <span className="hidden sm:inline">Screenshots</span>
+            <span className="sm:hidden">Shots</span>
             {totalScreenshots > 0 && (
-              <Badge variant="secondary" className="ml-1 text-[10px]">{totalScreenshots}</Badge>
+              <Badge variant="secondary" className="ml-1 text-[10px] px-1">{totalScreenshots}</Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="generate" className="gap-1 text-xs">
-            <Video className="w-3.5 h-3.5" />
-            Generate
+          <TabsTrigger value="generate" className="flex-shrink-0 gap-1.5 px-3 text-xs whitespace-nowrap">
+            <Video className="w-3.5 h-3.5 flex-shrink-0" />
+            <span className="hidden sm:inline">Generate</span>
+            <span className="sm:hidden">Gen</span>
           </TabsTrigger>
-          <TabsTrigger value="matrix" className="gap-1 text-xs">
-            <Grid3X3 className="w-3.5 h-3.5" />
-            Matrix
+          <TabsTrigger value="matrix" className="flex-shrink-0 gap-1.5 px-3 text-xs whitespace-nowrap">
+            <Grid3X3 className="w-3.5 h-3.5 flex-shrink-0" />
+            <span>Matrix</span>
           </TabsTrigger>
-          <TabsTrigger value="library" className="gap-1 text-xs">
-            <Layers className="w-3.5 h-3.5" />
-            Library
+          <TabsTrigger value="library" className="flex-shrink-0 gap-1.5 px-3 text-xs whitespace-nowrap">
+            <Layers className="w-3.5 h-3.5 flex-shrink-0" />
+            <span className="hidden sm:inline">Library</span>
+            <span className="sm:hidden">Lib</span>
           </TabsTrigger>
-          <TabsTrigger value="alerts" className="gap-1 text-xs">
-            <AlertTriangle className="w-3.5 h-3.5" />
-            Alerts
+          <TabsTrigger value="alerts" className="flex-shrink-0 gap-1.5 px-3 text-xs whitespace-nowrap">
+            <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+            <span>Alerts</span>
           </TabsTrigger>
-          <TabsTrigger value="messaging" className="gap-1 text-xs">
-            <TrendingUp className="w-3.5 h-3.5" />
-            Messaging
+          <TabsTrigger value="messaging" className="flex-shrink-0 gap-1.5 px-3 text-xs whitespace-nowrap">
+            <TrendingUp className="w-3.5 h-3.5 flex-shrink-0" />
+            <span className="hidden md:inline">Messaging</span>
+            <span className="md:hidden">Msg</span>
           </TabsTrigger>
-          <TabsTrigger value="analytics" className="gap-1 text-xs">
-            <Eye className="w-3.5 h-3.5" />
-            Analytics
+          <TabsTrigger value="analytics" className="flex-shrink-0 gap-1.5 px-3 text-xs whitespace-nowrap">
+            <Eye className="w-3.5 h-3.5 flex-shrink-0" />
+            <span className="hidden md:inline">Analytics</span>
+            <span className="md:hidden">Stats</span>
           </TabsTrigger>
-          <TabsTrigger value="flow" className="gap-1 text-xs">
-            <GitBranch className="w-3.5 h-3.5" />
-            Flow
+          <TabsTrigger value="flow" className="flex-shrink-0 gap-1.5 px-3 text-xs whitespace-nowrap">
+            <GitBranch className="w-3.5 h-3.5 flex-shrink-0" />
+            <span>Flow</span>
           </TabsTrigger>
         </TabsList>
 
