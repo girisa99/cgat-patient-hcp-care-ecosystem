@@ -11,7 +11,7 @@
 import React, { Suspense, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { QuadrantNavigation, QUADRANT_CONFIG, type Quadrant } from './QuadrantNavigation';
-import { AskGenieFAB } from '@/components/genie-support/AskGenieFAB';
+import { AskGenie } from '@/components/genie-studio/AskGenie';
 import { useGenieStudioAuth } from '@/hooks/useGenieStudioAuth';
 import { Loader2, Lock, Crown, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -169,8 +169,8 @@ export const QuadrantLayout: React.FC<QuadrantLayoutProps> = ({
     genieUser?.current_subscription_tier === 'enterprise' ||
     genieUser?.current_subscription_tier === 'business';
 
-  // Don't show FAB on support page
-  const showFAB = !location.pathname.includes('/genie-support');
+  // Don't show Ask Genie on support page
+  const showAskGenie = !location.pathname.includes('/genie-support');
 
   return (
     <div className="min-h-screen bg-background">
@@ -182,7 +182,7 @@ export const QuadrantLayout: React.FC<QuadrantLayoutProps> = ({
         </Suspense>
       </main>
 
-      {showFAB && <AskGenieFAB />}
+      {showAskGenie && <AskGenie position="floating" />}
       <UserErrorReporting position="bottom-left" />
       <DebugPanel />
     </div>
