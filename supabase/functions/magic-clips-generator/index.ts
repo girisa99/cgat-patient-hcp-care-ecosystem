@@ -247,6 +247,9 @@ serve(async (req) => {
       await saveMagicClips(supabase, sourceVideoId, clips);
     }
 
+    // Track credit consumption
+    await trackMagicClipsCredits(supabase, clips);
+
     const result: MagicClipsResult = {
       success: completedCount > 0,
       sourceVideoId,
@@ -478,5 +481,47 @@ async function saveMagicClips(
 
   } catch (err) {
     console.error('Failed to save magic clips:', err);
+  }
+}
+
+/**
+ * Track credit consumption for magic clips generation
+ */
+async function trackMagicClipsCredits(
+  supabase: any,
+  clips: ClipResult[]
+): Promise<void> {
+  try {
+    const completedClips = clips.filter(c => c.status === 'completed');
+    if (completedClips.length === 0) return;
+
+    // Calculate credits: 1 credit per 15 seconds of output video
+    const totalDuration = completedClips.reduce((sum, c) => sum + c.duration, 0);
+    const creditsUsed = Math.ceil(totalDuration / 15);
+
+    const { error } = await supabase
+      .from('ai_credit_transactions')
+      .insert({
+        transaction_type: 'debit',
+        credits_amount: -creditsUsed,
+        feature_used: 'magic_clips',
+        description: `Magic Clips for ${completedClips.length} platform(s)`,
+        feature_metadata: {
+          clips_count: completedClips.length,
+          total_duration: totalDuration,
+          platforms: completedClips.map(c => c.platformId),
+          provider: 'json2video',
+          pipeline: 'magic-clips-generator',
+        },
+        created_at: new Date().toISOString(),
+      });
+
+    if (error) {
+      console.error('Credit tracking failed:', error.message);
+    } else {
+      console.log(`💳 Tracked ${creditsUsed} credits for ${completedClips.length} magic clips`);
+    }
+  } catch (err) {
+    console.error('Credit tracking error:', err);
   }
 }
