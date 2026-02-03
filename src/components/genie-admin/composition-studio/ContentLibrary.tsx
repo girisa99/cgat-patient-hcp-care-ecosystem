@@ -326,10 +326,23 @@ export const ContentLibrary: React.FC<ContentLibraryProps> = ({
     const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.description?.toLowerCase().includes(searchQuery.toLowerCase());
     
-    const matchesStatus = statusFilter === 'all' || 
-      (statusFilter === 'published' && item.published_at) ||
-      (statusFilter === 'active' && item.is_active && !item.published_at) ||
-      (statusFilter === 'draft' && !item.is_active);
+    // Enhanced status filter with generation_status support
+    let matchesStatus = false;
+    if (statusFilter === 'all') {
+      matchesStatus = true;
+    } else if (statusFilter === 'completed') {
+      matchesStatus = item.generation_status === 'completed';
+    } else if (statusFilter === 'pending') {
+      matchesStatus = item.generation_status === 'pending';
+    } else if (statusFilter === 'processing') {
+      matchesStatus = item.generation_status === 'processing';
+    } else if (statusFilter === 'failed') {
+      matchesStatus = item.generation_status === 'failed';
+    } else if (statusFilter === 'published') {
+      matchesStatus = !!item.published_at;
+    } else if (statusFilter === 'active') {
+      matchesStatus = item.is_active && !item.published_at;
+    }
     
     const matchesRegion = regionFilter === 'all' || item.region === regionFilter;
     const matchesLanguage = languageFilter === 'all' || item.language_code === languageFilter;
@@ -462,15 +475,18 @@ export const ContentLibrary: React.FC<ContentLibraryProps> = ({
         </div>
         
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-36">
+          <SelectTrigger className="w-44">
             <Filter className="w-4 h-4 mr-2" />
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="published">Published</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="draft">Draft</SelectItem>
+            <SelectItem value="completed">✅ Completed</SelectItem>
+            <SelectItem value="pending">⏳ Pending</SelectItem>
+            <SelectItem value="processing">🔄 Processing</SelectItem>
+            <SelectItem value="failed">❌ Failed</SelectItem>
+            <SelectItem value="published">📢 Published</SelectItem>
+            <SelectItem value="active">🟢 Active</SelectItem>
           </SelectContent>
         </Select>
 
@@ -676,9 +692,49 @@ export const ContentLibrary: React.FC<ContentLibraryProps> = ({
             <DialogDescription>{selectedContent?.description}</DialogDescription>
           </DialogHeader>
           
-          {/* Video Player */}
+          {/* Video Player - Handle generation status */}
           <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
-            {selectedContent?.video_url ? (
+            {/* Pending generation - show status message */}
+            {selectedContent?.generation_status === 'pending' ? (
+              <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-yellow-900/30 to-amber-900/30 p-6 text-center">
+                <div className="w-16 h-16 rounded-full bg-yellow-500/20 flex items-center justify-center mb-4">
+                  <Clock className="w-8 h-8 text-yellow-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-white mb-2">Video Processing Pending</h3>
+                <p className="text-sm text-yellow-200/80 max-w-md mb-4">
+                  TTS audio has been generated successfully. Video assembly is being processed via AI providers (Replicate/ModelsLab).
+                </p>
+                <div className="flex gap-2">
+                  <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30">
+                    Audio: Ready
+                  </Badge>
+                  <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30">
+                    Video: Assembling
+                  </Badge>
+                </div>
+              </div>
+            ) : selectedContent?.generation_status === 'processing' ? (
+              <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-blue-900/30 to-indigo-900/30 p-6 text-center">
+                <Loader2 className="w-16 h-16 text-blue-400 animate-spin mb-4" />
+                <h3 className="text-lg font-semibold text-white mb-2">Generating Video...</h3>
+                <p className="text-sm text-blue-200/80 max-w-md">
+                  Video is being assembled from audio and visual assets. This may take a few minutes.
+                </p>
+              </div>
+            ) : selectedContent?.generation_status === 'failed' ? (
+              <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-red-900/30 to-rose-900/30 p-6 text-center">
+                <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mb-4">
+                  <AlertCircle className="w-8 h-8 text-red-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-white mb-2">Generation Failed</h3>
+                <p className="text-sm text-red-200/80 max-w-md mb-4">
+                  {selectedContent?.generation_error || 'Video generation encountered an error. Please try regenerating.'}
+                </p>
+                <Button variant="outline" size="sm" className="border-red-500/50 text-red-300 hover:bg-red-500/20">
+                  Retry Generation
+                </Button>
+              </div>
+            ) : selectedContent?.video_url && !selectedContent.video_url.startsWith('composite://') ? (
               <>
                 <video
                   ref={videoRef}
@@ -687,6 +743,10 @@ export const ContentLibrary: React.FC<ContentLibraryProps> = ({
                   className="w-full h-full object-contain"
                   onEnded={() => setIsPlaying(false)}
                   onClick={togglePlayback}
+                  onError={() => {
+                    console.error('Video load error:', selectedContent.video_url);
+                    toast.error('Failed to load video. The file may not exist yet.');
+                  }}
                 />
                 
                 {/* Video controls overlay */}
@@ -715,8 +775,9 @@ export const ContentLibrary: React.FC<ContentLibraryProps> = ({
                 </div>
               </>
             ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <Video className="w-16 h-16 text-muted-foreground" />
+              <div className="w-full h-full flex flex-col items-center justify-center">
+                <Video className="w-16 h-16 text-muted-foreground mb-4" />
+                <p className="text-sm text-muted-foreground">No video available</p>
               </div>
             )}
           </div>
