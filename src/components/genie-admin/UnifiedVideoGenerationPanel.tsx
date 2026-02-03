@@ -726,15 +726,15 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
                 >
                   <div className="flex items-center gap-2">
                     <Clock className="w-5 h-5 text-amber-600 animate-pulse" />
-                    <span className="font-medium text-amber-700 dark:text-amber-400">TTS Audio Generated - Video Pending</span>
+                    <span className="font-medium text-amber-700 dark:text-amber-400">TTS Audio Generated - JSON2Video Assembly In Progress</span>
                   </div>
                   <p className="text-sm text-muted-foreground">
                     Text-to-Speech audio has been generated for all {currentVideo.chapters.filter(c => c.success).length} chapters. 
-                    Full video assembly requires external processing (FFmpeg or video assembly service like Shotstack/Creatomate).
+                    JSON2Video is now assembling the final video with synchronized audio and visuals.
                   </p>
-                  <div className="flex items-center gap-2 text-xs text-amber-700 dark:text-amber-400 bg-amber-500/5 p-2 rounded">
-                    <AlertTriangle className="w-4 h-4" />
-                    <span>Video file not yet generated - playback will not work until assembled</span>
+                  <div className="flex items-center gap-2 text-xs text-blue-700 dark:text-blue-400 bg-blue-500/5 p-2 rounded">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Video rendering in progress - this may take 5-10 minutes</span>
                   </div>
                   <p className="text-xs text-muted-foreground">
                     {currentVideo.chapters.filter(c => c.success).length}/{CHAPTERS.length} chapters • 
