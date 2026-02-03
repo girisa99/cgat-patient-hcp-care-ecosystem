@@ -265,7 +265,8 @@ serve(async (req) => {
               language,
               productionConfig.avatar.gender,
               productionConfig.avatar.size,
-              audioResult.audioBase64
+              audioResult.audioBase64,
+              audioResult.audioUrl  // Pass the audio URL for avatar lip-sync
             );
             console.log(`👤 Avatar generated for ${chapter.id}: ${avatarUrl ? 'success' : 'skipped'}`);
           }
@@ -277,6 +278,7 @@ serve(async (req) => {
           // 3D for product chapters and hero sections
           if (chapter.id !== 'opening' && chapter.id !== 'closing') {
             threeDUrl = await generate3DElement(
+              supabase,  // Pass supabase client for edge function calls
               chapter.product,
               productionConfig.threeD.style,
               productionConfig.threeD.quality
@@ -289,6 +291,7 @@ serve(async (req) => {
         let transitionUrl: string | undefined;
         if (fullProductionMode && productionConfig?.animations?.enabled) {
           transitionUrl = await generateTransition(
+            supabase,  // Pass supabase client for edge function calls
             chapter.id,
             chapter.product,
             chapter.color,
@@ -1559,7 +1562,8 @@ const REGIONAL_AVATARS: Record<string, { male: string; female: string; style: st
 
 /**
  * Generate AI Avatar segment for a chapter
- * Uses Alibaba Wan2.2 S2V (Speech-to-Video) for lip-synced avatars
+ * NOW PRODUCTION: Calls ai-video-generator with type: 'avatar'
+ * Supports Alibaba Wan2.2 S2V, ModelsLab, Azure fallback chain
  */
 async function generateAvatarSegment(
   supabase: any,
@@ -1567,34 +1571,54 @@ async function generateAvatarSegment(
   language: string,
   gender: 'male' | 'female',
   size: 'small' | 'medium' | 'large',
-  audioBase64?: string
+  audioBase64?: string,
+  audioUrl?: string
 ): Promise<string | undefined> {
   const avatarConfig = REGIONAL_AVATARS[language] || REGIONAL_AVATARS['en'];
   const avatarName = gender === 'male' ? avatarConfig.male : avatarConfig.female;
   
-  console.log(`🎭 Generating ${gender} avatar (${avatarName}) for chapter: ${chapterId}`);
+  console.log(`🎭 [PRODUCTION] Generating ${gender} avatar (${avatarName}) for chapter: ${chapterId}`);
   
-  // In production, this would call Alibaba Wan2.2 S2V or OmniAvatar
-  // For now, return placeholder URL
-  const timestamp = Date.now();
-  const avatarUrl = `https://ithspbabhmdntioslfqe.supabase.co/storage/v1/object/public/avatar-segments/${language}/${chapterId}-${gender}-${timestamp}.mp4`;
-  
-  // Simulate API call to avatar generation service
   try {
-    // This would be the actual call:
-    // const { data, error } = await supabase.functions.invoke('alibaba-avatar-generator', {
-    //   body: {
-    //     audioBase64,
-    //     avatarStyle: avatarConfig.style,
-    //     gender,
-    //     size,
-    //     language,
-    //   }
-    // });
+    // Get a source image for the avatar presenter (regional stock or AI-generated)
+    const sourceImage = await getRegionalAvatarImage(supabase, language, gender, avatarConfig.style);
     
-    // For now, log and return placeholder
-    console.log(`✅ Avatar segment would be generated via Alibaba Wan2.2`);
-    return avatarUrl;
+    if (!sourceImage) {
+      console.warn(`⚠️ No avatar source image for ${language}/${gender}, skipping avatar generation`);
+      return undefined;
+    }
+
+    // Call the production ai-video-generator edge function
+    const { data, error } = await supabase.functions.invoke('ai-video-generator', {
+      body: {
+        type: 'avatar',
+        sourceImage,
+        audioUrl: audioUrl,  // Use uploaded audio URL
+        script: getChapterScript(chapterId, language),
+        language: language === 'en' ? 'en-US' : `${language}-${language.toUpperCase()}`,
+        fullBody: size === 'large',
+        priorityRendering: size === 'large',
+        visualType: 'avatar_presenter',
+      },
+    });
+
+    if (error) {
+      console.error(`❌ Avatar generation error for ${chapterId}:`, error.message);
+      return undefined;
+    }
+
+    if (data?.success && data?.videoUrl) {
+      console.log(`✅ Avatar generated via ${data.provider || 'ai-video-generator'}: ${data.videoUrl}`);
+      
+      // Upload to Supabase storage for persistence
+      const storagePath = `avatar-segments/${language}/${chapterId}-${gender}-${Date.now()}.mp4`;
+      const storageUrl = await uploadVideoToStorage(supabase, data.videoUrl, storagePath);
+      
+      return storageUrl || data.videoUrl;
+    }
+
+    console.warn(`⚠️ Avatar generation returned no video for ${chapterId}`);
+    return undefined;
   } catch (err) {
     console.error('Avatar generation failed:', err);
     return undefined;
@@ -1602,45 +1626,173 @@ async function generateAvatarSegment(
 }
 
 /**
+ * Get a regional avatar source image
+ * Returns stock photo or AI-generated presenter image based on region/gender
+ */
+async function getRegionalAvatarImage(
+  supabase: any,
+  language: string,
+  gender: 'male' | 'female',
+  style: string
+): Promise<string | undefined> {
+  // Check for pre-uploaded avatar source images in storage
+  const avatarPath = `avatar-sources/${language}/${gender}-${style}.png`;
+  
+  const { data: files } = await supabase.storage
+    .from('brand-assets')
+    .list(`avatar-sources/${language}`, { search: `${gender}-` });
+  
+  if (files && files.length > 0) {
+    const { data: urlData } = supabase.storage
+      .from('brand-assets')
+      .getPublicUrl(`avatar-sources/${language}/${files[0].name}`);
+    
+    if (urlData?.publicUrl) {
+      console.log(`   📸 Found existing avatar source: ${urlData.publicUrl}`);
+      return urlData.publicUrl;
+    }
+  }
+  
+  // Fallback: Use regional stock photos or AI-generated images
+  // These would be high-quality presenter photos optimized for lip-sync
+  const stockAvatars: Record<string, Record<string, string>> = {
+    'en': {
+      'male': 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=512&h=512&fit=crop',
+      'female': 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=512&h=512&fit=crop',
+    },
+    'zh': {
+      'male': 'https://images.unsplash.com/photo-1556157382-97edd2f44668?w=512&h=512&fit=crop',
+      'female': 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=512&h=512&fit=crop',
+    },
+    'ar': {
+      'male': 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=512&h=512&fit=crop',
+      'female': 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=512&h=512&fit=crop',
+    },
+    'hi': {
+      'male': 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=512&h=512&fit=crop',
+      'female': 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&h=512&fit=crop',
+    },
+  };
+  
+  const regionalStock = stockAvatars[language] || stockAvatars['en'];
+  return regionalStock[gender] || regionalStock['male'];
+}
+
+/**
+ * Upload video from URL to Supabase storage
+ */
+async function uploadVideoToStorage(
+  supabase: any,
+  sourceUrl: string,
+  storagePath: string
+): Promise<string | null> {
+  try {
+    // Fetch the video file
+    const response = await fetch(sourceUrl);
+    if (!response.ok) return null;
+    
+    const videoBlob = await response.blob();
+    const videoBuffer = await videoBlob.arrayBuffer();
+    
+    // Upload to storage
+    const { data, error } = await supabase.storage
+      .from('genie-media')
+      .upload(storagePath, videoBuffer, {
+        contentType: 'video/mp4',
+        upsert: true,
+      });
+    
+    if (error) {
+      console.warn(`Failed to upload video to storage: ${error.message}`);
+      return null;
+    }
+    
+    // Get public URL
+    const { data: urlData } = supabase.storage
+      .from('genie-media')
+      .getPublicUrl(storagePath);
+    
+    return urlData?.publicUrl || null;
+  } catch (err) {
+    console.warn('Video upload to storage failed:', err);
+    return null;
+  }
+}
+
+/**
  * Generate 3D product showcase element
- * Uses Meshy AI for text-to-3D generation
+ * NOW PRODUCTION: Calls alibaba-3d-generator or modelslab-media
  */
 async function generate3DElement(
+  supabase: any,
   product: string,
   style: string,
   quality: 'standard' | 'high' | 'premium'
 ): Promise<string | undefined> {
-  console.log(`📦 Generating 3D element for ${product} (style: ${style}, quality: ${quality})`);
+  console.log(`📦 [PRODUCTION] Generating 3D element for ${product} (style: ${style}, quality: ${quality})`);
   
   // Product-specific 3D prompts
   const prompts: Record<string, string> = {
-    'Genie Spark': 'Glowing electric spark lightning bolt 3D icon, yellow and orange energy, modern design',
-    'Genie Mind': 'Glowing brain neural network 3D icon, blue and purple gradients, tech aesthetic',
-    'Genie Vibe': 'Sound wave visualization 3D icon, audio frequencies, green tones, modern',
-    'Genie Deck': 'Floating presentation slides 3D icon, stacked layers, professional',
-    'Genie Arc': 'Orbital rings production hub 3D icon, interconnected nodes, pink accent',
-    'Ask Genie': 'Magical genie lamp 3D icon, cyan glow, mystical design',
-    'Genie Cast': 'Broadcasting tower 3D icon, signal waves, red accent, global distribution',
-    'Genie Studio': 'Complete creative suite 3D logo, all elements combined, purple gradient',
+    'Genie Spark': 'Glowing electric spark lightning bolt 3D icon, yellow and orange energy, modern minimalist design, glass material',
+    'Genie Mind': 'Glowing brain neural network 3D icon, blue and purple holographic gradients, futuristic tech aesthetic',
+    'Genie Vibe': 'Sound wave visualization 3D icon, audio frequencies, emerald green tones, floating particles',
+    'Genie Deck': 'Floating presentation slides 3D icon, stacked translucent layers, professional gold accent',
+    'Genie Arc': 'Orbital rings production hub 3D icon, interconnected nodes, pink and magenta gradient',
+    'Ask Genie': 'Magical genie lamp 3D icon, cyan glow aura, mystical swirling smoke, golden lamp',
+    'Genie Cast': 'Broadcasting tower 3D icon, emanating signal waves, red accent, global distribution sphere',
+    'Genie Studio': 'Complete creative suite 3D logo, purple gradient crystal, seven floating elements orbiting',
   };
   
-  const prompt = prompts[product] || `${product} 3D logo icon, professional design`;
-  
-  // In production, this would call Meshy AI
-  const timestamp = Date.now();
-  const threeDUrl = `https://ithspbabhmdntioslfqe.supabase.co/storage/v1/object/public/3d-elements/${product.toLowerCase().replace(' ', '-')}-${style}-${timestamp}.glb`;
+  const prompt = prompts[product] || `${product} 3D logo icon, professional glass material design`;
   
   try {
-    // This would be the actual call:
-    // const meshyApiKey = Deno.env.get('MESHY_API_KEY');
-    // const response = await fetch('https://api.meshy.ai/v2/text-to-3d', {
-    //   method: 'POST',
-    //   headers: { 'Authorization': `Bearer ${meshyApiKey}`, 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ prompt, style, quality })
-    // });
+    // Try Alibaba 3D Generator first (text-to-3d model)
+    const alibabaKey = Deno.env.get('ALIBABA_CHINA_API_KEY');
+    const meshyKey = Deno.env.get('MESHY_API_KEY');
     
-    console.log(`✅ 3D element would be generated via Meshy AI: ${prompt}`);
-    return threeDUrl;
+    if (alibabaKey) {
+      console.log(`   🇨🇳 Calling Alibaba 3D Generator (text-to-3d)`);
+      
+      const { data, error } = await supabase.functions.invoke('alibaba-3d-generator', {
+        body: {
+          model: 'text-to-3d',
+          prompt,
+          style: style === 'hologram' ? 'stylized' : 'realistic',
+          outputFormat: 'glb',
+          textureResolution: quality === 'premium' ? '4k' : quality === 'high' ? '2k' : '1k',
+          polyCount: quality === 'premium' ? 'high' : 'medium',
+        },
+      });
+      
+      if (!error && data?.success && data?.modelUrl) {
+        console.log(`✅ 3D element generated via Alibaba: ${data.modelUrl}`);
+        return data.modelUrl;
+      }
+      
+      console.warn(`⚠️ Alibaba 3D failed: ${data?.error || error?.message}, trying fallback...`);
+    }
+    
+    // Fallback: ModelsLab 3D generation
+    if (meshyKey || Deno.env.get('MODELSLAB_API_KEY')) {
+      console.log(`   🎨 Falling back to ModelsLab 3D generation`);
+      
+      const { data, error } = await supabase.functions.invoke('modelslab-media', {
+        body: {
+          type: '3d',
+          prompt,
+          model: 'default',
+        },
+      });
+      
+      if (!error && data?.success && data?.output) {
+        const modelUrl = Array.isArray(data.output) ? data.output[0] : data.output;
+        console.log(`✅ 3D element generated via ModelsLab: ${modelUrl}`);
+        return modelUrl;
+      }
+    }
+    
+    console.warn(`⚠️ All 3D providers failed for ${product}`);
+    return undefined;
   } catch (err) {
     console.error('3D generation failed:', err);
     return undefined;
@@ -1649,37 +1801,60 @@ async function generate3DElement(
 
 /**
  * Generate animated transition between chapters
- * Uses ModelsLab for motion graphics or CSS/Framer for simpler effects
+ * NOW PRODUCTION: Uses ModelsLab AnimateDiff for motion graphics
  */
 async function generateTransition(
+  supabase: any,
   chapterId: string,
   product: string,
   color: string,
   style: string,
   intensity: number
 ): Promise<string | undefined> {
-  console.log(`✨ Generating ${style} transition for ${chapterId} (intensity: ${intensity}%)`);
+  console.log(`✨ [PRODUCTION] Generating ${style} transition for ${chapterId} (intensity: ${intensity}%)`);
   
-  // Style-specific transition configurations
-  const transitionConfig: Record<string, { type: string; duration: number }> = {
-    'kinetic': { type: 'text_reveal', duration: 2 },
-    'slide': { type: 'slide_transition', duration: 1 },
-    'particle': { type: 'particle_effect', duration: 1.5 },
-    'morph': { type: 'shape_morph', duration: 2 },
-    'glass': { type: 'glass_blur', duration: 1 },
+  // Style-specific transition prompts for AnimateDiff
+  const transitionPrompts: Record<string, string> = {
+    'kinetic': `Kinetic typography animation, text "${product}" revealing with energy particles, ${color} color theme, dynamic motion blur, 2 seconds`,
+    'slide': `Smooth slide transition, elegant wipe effect, ${color} gradient, professional corporate, 1 second`,
+    'particle': `Particle explosion transition, sparkle and glow effects, ${color} energy particles dispersing, magical, 1.5 seconds`,
+    'morph': `Shape morphing transition, abstract forms transforming, ${color} liquid metal effect, 2 seconds`,
+    'glass': `Glass morphism blur transition, frosted glass effect with ${color} accent, modern UI aesthetic, 1 second`,
   };
   
-  const config = transitionConfig[style] || transitionConfig['slide'];
-  
-  // In production, this would generate animated transition clips
-  const timestamp = Date.now();
-  const transitionUrl = `https://ithspbabhmdntioslfqe.supabase.co/storage/v1/object/public/transitions/${chapterId}-${style}-${timestamp}.mp4`;
+  const prompt = transitionPrompts[style] || transitionPrompts['slide'];
   
   try {
-    // For complex animations, call ModelsLab AnimateDiff
-    // For simple ones, use CSS keyframes rendered to video
-    console.log(`✅ Transition would be generated: ${config.type} (${config.duration}s)`);
-    return transitionUrl;
+    // Use ModelsLab AnimateDiff for animation generation
+    console.log(`   🎬 Calling ModelsLab AnimateDiff for transition`);
+    
+    const { data, error } = await supabase.functions.invoke('modelslab-media', {
+      body: {
+        type: 'video',
+        prompt,
+        model: 'animatediff',
+        duration: style === 'kinetic' || style === 'morph' ? 2 : 1,
+        fps: 24,
+        width: 1920,
+        height: 1080,
+      },
+    });
+    
+    if (!error && data?.success && data?.output) {
+      const transitionUrl = Array.isArray(data.output) ? data.output[0] : data.output;
+      console.log(`✅ Transition generated via ModelsLab: ${transitionUrl}`);
+      return transitionUrl;
+    }
+    
+    // If processing, return task ID for polling later
+    if (data?.status === 'processing' && data?.fetch_url) {
+      console.log(`⏳ Transition processing, poll at: ${data.fetch_url}`);
+      // For now, return the fetch URL - caller can poll later
+      return data.fetch_url;
+    }
+    
+    console.warn(`⚠️ Transition generation failed: ${data?.error || error?.message}`);
+    return undefined;
   } catch (err) {
     console.error('Transition generation failed:', err);
     return undefined;
