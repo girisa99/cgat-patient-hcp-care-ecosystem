@@ -2,10 +2,11 @@
  * UNIFIED VIDEO GENERATION PANEL
  * 
  * Generates ONE complete video per language with all 9 chapters stitched together.
+ * Supports multiple generation modes: per language, per product, per tier, or full matrix.
  * Uses Genie Cast pipeline for professional marketing videos.
  * 
  * Flow:
- * 1. Upload Screenshots → 2. Select language → 3. Generate (all chapters) → 4. Preview → 5. Publish
+ * 1. Upload Screenshots (unlimited per product) → 2. Select mode → 3. Generate → 4. Preview → 5. Publish
  */
 
 import React, { useState, useEffect } from 'react';
@@ -27,6 +28,7 @@ import {
   Clock,
   Layers,
   Camera,
+  Grid3X3,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -40,7 +42,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { ProductScreenshotCapture } from './ProductScreenshotCapture';
+import { MultiScreenshotGallery, ProductGallery } from './MultiScreenshotGallery';
+import { VideoGenerationMatrix } from './VideoGenerationMatrix';
 
 // Supported languages with zone routing
 const LANGUAGES = [
@@ -110,8 +113,10 @@ interface ExistingVideo {
 }
 
 export const UnifiedVideoGenerationPanel: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'screenshots' | 'generate' | 'library' | 'analytics'>('screenshots');
+  const [activeTab, setActiveTab] = useState<'screenshots' | 'generate' | 'matrix' | 'library' | 'analytics'>('screenshots');
+  const [screenshotGalleries, setScreenshotGalleries] = useState<ProductGallery[]>([]);
   const [selectedLanguage, setSelectedLanguage] = useState('en');
+  const totalScreenshots = screenshotGalleries.reduce((sum, g) => sum + g.screenshots.length, 0);
   const [quality, setQuality] = useState<'preview' | 'production' | 'cinematic'>('production');
   const [includeVisuals, setIncludeVisuals] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -252,14 +257,21 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-        <TabsList className="grid w-full grid-cols-4 max-w-lg">
+        <TabsList className="grid w-full grid-cols-5 max-w-2xl">
           <TabsTrigger value="screenshots" className="gap-2">
             <Camera className="w-4 h-4" />
             Screenshots
+            {totalScreenshots > 0 && (
+              <Badge variant="secondary" className="ml-1 text-[10px]">{totalScreenshots}</Badge>
+            )}
           </TabsTrigger>
           <TabsTrigger value="generate" className="gap-2">
             <Video className="w-4 h-4" />
-            Generate
+            Quick Generate
+          </TabsTrigger>
+          <TabsTrigger value="matrix" className="gap-2">
+            <Grid3X3 className="w-4 h-4" />
+            Matrix
           </TabsTrigger>
           <TabsTrigger value="library" className="gap-2">
             <Layers className="w-4 h-4" />
@@ -271,12 +283,15 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
           </TabsTrigger>
         </TabsList>
 
-        {/* Screenshots Tab - NEW */}
+        {/* Screenshots Tab - Multi-Gallery */}
         <TabsContent value="screenshots" className="space-y-6">
-          <ProductScreenshotCapture
-            onScreenshotsUpdated={(screenshots) => {
-              console.log('Screenshots updated:', screenshots);
-              toast.success(`${screenshots.length} screenshots ready for video generation`);
+          <MultiScreenshotGallery
+            onGalleriesUpdated={(galleries) => {
+              setScreenshotGalleries(galleries);
+              const total = galleries.reduce((sum, g) => sum + g.screenshots.length, 0);
+              if (total > 0) {
+                toast.success(`${total} screenshots ready for video generation`);
+              }
             }}
           />
           
@@ -285,18 +300,29 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
               <div className="flex items-center gap-4">
                 <Camera className="w-8 h-8 text-primary" />
                 <div className="flex-1">
-                  <h3 className="font-semibold">Automatic Screenshot Capture</h3>
+                  <h3 className="font-semibold">Unlimited Screenshots Per Product</h3>
                   <p className="text-sm text-muted-foreground">
-                    Upload screenshots of each product page. These will be used as visual highlights during voiceover in the generated videos.
+                    Upload multiple screenshots for each product. Drag to reorder. These will be used as visual highlights during voiceover in the generated videos.
                   </p>
                 </div>
-                <Button onClick={() => setActiveTab('generate')} className="gap-2">
-                  <Play className="w-4 h-4" />
-                  Continue to Generate
-                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setActiveTab('generate')} className="gap-2">
+                    <Play className="w-4 h-4" />
+                    Quick Generate
+                  </Button>
+                  <Button onClick={() => setActiveTab('matrix')} className="gap-2">
+                    <Grid3X3 className="w-4 h-4" />
+                    Full Matrix
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Matrix Tab - New */}
+        <TabsContent value="matrix" className="space-y-6">
+          <VideoGenerationMatrix />
         </TabsContent>
 
         {/* Generate Tab */}
