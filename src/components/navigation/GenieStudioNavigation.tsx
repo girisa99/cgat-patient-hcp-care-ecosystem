@@ -75,6 +75,24 @@ export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({
   const [openCategories, setOpenCategories] = useState<string[]>(['manage']); // MANAGE open by default
   const [openSubCategories, setOpenSubCategories] = useState<string[]>(['Create', 'Plan']); // Create expanded to show Genie Cast
 
+  // Memoize manage subcategories to prevent unnecessary recalculations
+  const manageSubCategories = React.useMemo(() => 
+    getManageItemsBySubCategory(userTier, isInternal),
+    [userTier, isInternal]
+  );
+
+  // Auto-expand Create subcategory when internal user and it has items
+  React.useEffect(() => {
+    if (isInternal && manageSubCategories['Create']?.length > 0) {
+      setOpenSubCategories(prev => {
+        if (!prev.includes('Create')) {
+          return [...prev, 'Create'];
+        }
+        return prev;
+      });
+    }
+  }, [isInternal, manageSubCategories]);
+
   const toggleCategory = (category: string) => {
     setOpenCategories(prev => 
       prev.includes(category) 
@@ -98,8 +116,6 @@ export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({
     .map(n => n[0])
     .join('')
     .toUpperCase() || 'GU';
-
-  const manageSubCategories = getManageItemsBySubCategory(userTier, isInternal);
 
   const toggleSubCategory = (subCat: string) => {
     setOpenSubCategories(prev => 
