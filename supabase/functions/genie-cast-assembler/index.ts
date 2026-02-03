@@ -715,9 +715,13 @@ async function tryJSON2VideoAssembly(
 
   try {
     console.log(`🎥 Starting JSON2Video timeline assembly for ${language}`);
+    console.log(`   API Key present: ${apiKey.substring(0, 8)}...`);
 
     // Build timeline from chapters
     const timeline = buildJSON2VideoTimeline(chapters, audioUrls, visualUrls, language, quality);
+    
+    console.log(`📋 Timeline built with ${chapters.length} scenes`);
+    console.log(`   Request payload size: ${JSON.stringify(timeline).length} bytes`);
 
     // Call JSON2Video Render API
     const response = await fetch('https://api.json2video.com/v2/movies', {
@@ -729,18 +733,26 @@ async function tryJSON2VideoAssembly(
       body: JSON.stringify(timeline),
     });
 
+    const responseText = await response.text();
+    console.log(`📹 JSON2Video response status: ${response.status}`);
+    console.log(`📹 JSON2Video response body: ${responseText.substring(0, 1000)}`);
+
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`JSON2Video API error: ${response.status} - ${errorText}`);
+      console.error(`JSON2Video API error: ${response.status} - ${responseText}`);
       return { success: false };
     }
 
-    const data = await response.json();
-    console.log(`📹 JSON2Video response:`, JSON.stringify(data).substring(0, 500));
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (parseErr) {
+      console.error('Failed to parse JSON2Video response:', parseErr);
+      return { success: false };
+    }
 
     // JSON2Video returns different response formats based on endpoint version
     // Check for 'project' (v2) or 'id' (v1) or direct 'url'
-    const projectId = data.project || data.id || data.movie_id;
+    const projectId = data.project || data.id || data.movie_id || data.movie?.id;
     
     if (projectId) {
       console.log(`📹 JSON2Video job created: ${projectId}`);
@@ -749,19 +761,22 @@ async function tryJSON2VideoAssembly(
     }
 
     // If immediate output available (synchronous render)
-    if (data.url || data.movie_url) {
+    if (data.url || data.movie_url || data.movie?.url) {
       return {
         success: true,
-        videoUrl: data.url || data.movie_url,
-        thumbnailUrl: data.poster || data.thumbnail,
+        videoUrl: data.url || data.movie_url || data.movie?.url,
+        thumbnailUrl: data.poster || data.thumbnail || data.movie?.poster,
         pending: false,
       };
     }
 
-    // If response indicates processing started but no ID returned, create composite reference
-    console.log(`⚠️ JSON2Video returned no project ID - using composite fallback`);
-    return { success: false };
+    // If response indicates processing started but no ID returned, check for error message
+    if (data.error || data.message) {
+      console.error(`JSON2Video API error: ${data.error || data.message}`);
+      return { success: false };
+    }
 
+    console.log(`⚠️ JSON2Video returned unexpected response format - no project ID or URL`);
     return { success: false };
   } catch (error) {
     console.error('JSON2Video assembly error:', error);
@@ -771,7 +786,8 @@ async function tryJSON2VideoAssembly(
 
 /**
  * Build JSON2Video timeline from chapter data
- * Uses "scenes" structure for precise timing control
+ * Uses JSON2Video v2 API format with "scenes" structure
+ * @see https://json2video.com/docs/v2/api-reference/json-syntax/
  */
 function buildJSON2VideoTimeline(
   chapters: ChapterResult[],
@@ -780,89 +796,62 @@ function buildJSON2VideoTimeline(
   language: string,
   quality: string
 ): object {
-  // Determine resolution based on quality tier
-  const resolution = quality === 'cinematic' ? '4k' : quality === 'production' ? '1080p' : '720p';
-  const width = resolution === '4k' ? 3840 : resolution === '1080p' ? 1920 : 1280;
-  const height = resolution === '4k' ? 2160 : resolution === '1080p' ? 1080 : 720;
+  // Resolution options: sd, hd, full-hd, 4k, instagram-story, instagram-post, etc.
+  const resolution = quality === 'cinematic' ? '4k' : quality === 'production' ? 'full-hd' : 'hd';
 
-  // Build scenes array from chapters
+  // Build scenes array from chapters - simplified for v2 API
   const scenes = chapters.map((chapter, index) => {
     const audioUrl = audioUrls[index] || null;
     const visualUrl = visualUrls[index] || null;
     
-    const scene: any = {
-      comment: `${chapter.product} - ${chapter.chapterId}`,
-      duration: chapter.duration,
-      elements: [],
-    };
+    const elements: any[] = [];
 
-    // Background image/video from product screenshots
+    // Background image element
     if (visualUrl) {
-      scene.elements.push({
+      elements.push({
         type: 'image',
         src: visualUrl,
         duration: chapter.duration,
-        position: 'center',
-        scale: 'cover',
-        // Subtle Ken Burns effect
-        animations: [
-          { type: 'scale', from: 1.0, to: 1.05, duration: chapter.duration },
-        ],
       });
-    } else {
-      // Fallback solid color background
-      scene.background = chapter.product === 'Genie Studio' ? '#9333EA' : '#1e293b';
     }
 
-    // Audio track (TTS voiceover)
+    // Audio element (TTS voiceover)
     if (audioUrl) {
-      scene.elements.push({
+      elements.push({
         type: 'audio',
         src: audioUrl,
-        start: 0,
-        volume: 1.0,
+        duration: chapter.duration,
       });
     }
 
-    // Product name text overlay (lower-third style)
-    scene.elements.push({
+    // Text overlay for product name
+    elements.push({
       type: 'text',
       text: chapter.product,
-      font: 'Inter',
-      size: 48,
-      color: '#ffffff',
-      position: { x: 100, y: height - 120 },
       duration: Math.min(5, chapter.duration),
-      animations: [
-        { type: 'fade-in', duration: 0.5 },
-        { type: 'fade-out', start: chapter.duration - 0.5, duration: 0.5 },
-      ],
+      settings: {
+        'font-family': 'Inter',
+        'font-size': '48px',
+        'font-color': '#ffffff',
+        'text-shadow': '2px 2px 4px rgba(0,0,0,0.5)',
+      },
+      position: 'bottom-left',
+      start: 0,
     });
 
-    // Transition to next scene (if not last)
-    if (index < chapters.length - 1) {
-      scene.transition = {
-        type: 'fade',
-        duration: 0.5,
-      };
-    }
-
-    return scene;
+    return {
+      comment: `${chapter.product} - Chapter ${index + 1}`,
+      duration: chapter.duration,
+      'background-color': chapter.product === 'Genie Studio' ? '#9333EA' : '#1e293b',
+      elements,
+    };
   });
 
-  // Complete movie structure
+  // Complete movie structure per JSON2Video v2 spec
   return {
     resolution,
     quality: quality === 'cinematic' ? 'high' : 'medium',
-    fps: 30,
     scenes,
-    // Global settings
-    settings: {
-      language,
-      watermark: false, // Disabled for production
-    },
-    // Webhook for async completion (optional)
-    webhook: null,
   };
 }
 
