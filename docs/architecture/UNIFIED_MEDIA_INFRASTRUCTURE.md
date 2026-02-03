@@ -8,13 +8,66 @@
 
 This document defines the shared media infrastructure architecture for the Genie Studio ecosystem, enabling video assembly, avatar generation, 3D rendering, and VR/AR across all products with tier-based access control.
 
+## Mobile-to-Cloud Sync Architecture
+
+Vibe Mobile uses **unique offline capture services** that sync to desktop/cloud:
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         VIBE MOBILE SYNC FLOW                           │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  📱 Mobile (Offline)                                                     │
+│  ├── Capture: MediaRecorder / Camera API                                │
+│  ├── Store: IndexedDB + useVibeMobileSync queue                         │
+│  └── Status: VibeMobileSyncStatus component                             │
+│                     │                                                    │
+│                     ▼ [Network Restored]                                 │
+│                                                                          │
+│  ☁️ Cloud Sync                                                          │
+│  ├── Auto-sync on reconnect                                             │
+│  ├── Manual sync button                                                 │
+│  └── Background sync with push notifications                            │
+│                     │                                                    │
+│                     ▼                                                    │
+│                                                                          │
+│  🗄️ Supabase Storage                                                    │
+│  ├── genie-media/vibe-recordings/                                       │
+│  ├── genie-media/vibe-clips/                                            │
+│  └── vibe_recordings + vibe_timeline_clips tables                       │
+│                     │                                                    │
+│                     ▼                                                    │
+│                                                                          │
+│  🖥️ Desktop/Backend                                                     │
+│  ├── JSON2Video Assembly (genie-cast-assembler)                         │
+│  ├── Avatar Lip-Sync (Phase 2: Cloud Run GPU)                           │
+│  └── Completed video returned to mobile for preview                     │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Sync Options (All Enabled)
+
+| Option | Description |
+|--------|-------------|
+| **Auto-sync on reconnect** | Automatically uploads queued recordings when network is restored |
+| **Manual sync button** | User explicitly triggers sync to control bandwidth/timing |
+| **Background sync + notification** | Silent upload when app is backgrounded, with push notification on complete |
+
+### Key Files
+
+- `src/hooks/useVibeMobileSync.ts` - Core sync service with queue management
+- `src/components/mobile/VibeMobileSyncStatus.tsx` - UI indicator (compact + full modes)
+- `src/hooks/useVibeRecordingPersistence.ts` - Database persistence for recordings
+- `src/hooks/useOfflineSync.ts` - Generic offline queue (used as base pattern)
+
 ## Integration Scope by Application
 
 | Application | JSON2Video | Video Assembly | Avatar/Lip-sync | 3D | Notes |
 |-------------|------------|----------------|-----------------|-----|-------|
 | **Production Hub / Cast** | ✅ Primary | Full pipeline | Phase 2 | Phase 2 | Main batch production via `genie-cast-assembler` |
 | **Vibe (Desktop)** | ✅ Recording edits | Recording + editing | Phase 2 | - | `ai-video-generator` |
-| **Vibe (Mobile)** | ❌ Preview only | Submit to backend | - | - | View-only, jobs sent to desktop/backend |
+| **Vibe (Mobile)** | ❌ Sync to cloud | Submit to backend | - | - | `useVibeMobileSync` for offline queue |
 | **Deck** | ✅ Slide exports | Slide-to-video | - | - | `share-presentation` |
 | **Spark** | ❌ | ❌ | ❌ | ❌ | Text/ideation only |
 | **Mind** | ❌ | TTS audio only | ❌ | ❌ | Script enhancement |
@@ -321,5 +374,6 @@ const mediaConsumption = {
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-02-03 | 1.2.0 | Added Mobile-to-Cloud Sync architecture, `useVibeMobileSync` hook, `VibeMobileSyncStatus` component |
 | 2026-02-03 | 1.1.0 | Added Integration Scope table, Production Hub navigation structure, updated app documentation |
 | 2026-02-03 | 1.0.0 | Initial documentation, Phase 1 JSON2Video integration |

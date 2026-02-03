@@ -46,6 +46,8 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useMobileFeatures } from '@/hooks/useMobileFeatures';
+import { useVibeMobileSync } from '@/hooks/useVibeMobileSync';
+import { VibeMobileSyncStatus } from '@/components/mobile/VibeMobileSyncStatus';
 
 // Mobile Components
 import { 
@@ -97,6 +99,13 @@ export const MobileRecordingView: React.FC<MobileRecordingViewProps> = ({
   const isMobile = useIsMobile();
   const { capabilities, isOnline, shareContent, vibrate } = useMobileFeatures();
   
+  // Mobile-to-Cloud sync
+  const mobileSync = useVibeMobileSync({
+    autoSyncOnReconnect: true,
+    backgroundSyncEnabled: true,
+    notificationsEnabled: true,
+  });
+  
   const [activeTab, setActiveTab] = useState<MobileTab>('guide'); // Start with guide
   const [recordings, setRecordings] = useState<RecordingResult[]>([]);
   const [timelineClips, setTimelineClips] = useState<TimelineClip[]>([]);
@@ -140,7 +149,7 @@ export const MobileRecordingView: React.FC<MobileRecordingViewProps> = ({
   }, [onStitchComplete]);
 
   // Handle recording completion
-  const handleRecordingComplete = useCallback((result: RecordingResult) => {
+  const handleRecordingComplete = useCallback(async (result: RecordingResult) => {
     setRecordings(prev => [result, ...prev]);
     
     // Auto-create timeline clip
@@ -164,10 +173,20 @@ export const MobileRecordingView: React.FC<MobileRecordingViewProps> = ({
     setTimelineClips(prev => [...prev, newClip]);
     onRecordingComplete?.(result);
     
-    // Switch to clips tab to show the new recording
+    // Queue for mobile sync if blob is available
+    if (result.blob) {
+      const recordingType = result.type === 'audio' ? 'audio' : result.type === 'photo' ? 'photo' : 'video';
+      await mobileSync.queueRecording(result.blob, {
+        title: `Recording ${recordings.length + 1}`,
+        recording_type: recordingType,
+        duration_seconds: result.duration,
+        thumbnail_url: result.thumbnailUrl,
+      });
+    }
+    
     vibrate?.(100);
     toast.success('Recording added to timeline!');
-  }, [recordings.length, timelineClips, onRecordingComplete, vibrate]);
+  }, [recordings.length, timelineClips, onRecordingComplete, vibrate, mobileSync]);
 
   // Export timeline
   const handleExport = useCallback(async (format: string) => {
@@ -239,6 +258,16 @@ export const MobileRecordingView: React.FC<MobileRecordingViewProps> = ({
         </div>
         
         <div className="flex items-center gap-1 flex-shrink-0">
+          {/* Sync Status - Compact */}
+          <VibeMobileSyncStatus
+            state={mobileSync.state}
+            pendingCount={mobileSync.pendingItems.length}
+            syncProgress={mobileSync.syncProgress}
+            onSync={mobileSync.syncNow}
+            onCancel={mobileSync.cancelSync}
+            compact
+          />
+          
           {/* Desktop Switch button - icon only on very small screens */}
           {onSwitchToDesktop && (
             <Button 
