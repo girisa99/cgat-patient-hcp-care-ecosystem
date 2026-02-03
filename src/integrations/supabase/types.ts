@@ -13476,7 +13476,11 @@ export type Database = {
           description: string | null
           display_order: number | null
           duration_seconds: number | null
+          generation_error: string | null
           generation_pipeline: string | null
+          generation_started_at: string | null
+          generation_status: string | null
+          generation_task_id: string | null
           id: string
           industry: string | null
           is_active: boolean | null
@@ -13500,7 +13504,11 @@ export type Database = {
           description?: string | null
           display_order?: number | null
           duration_seconds?: number | null
+          generation_error?: string | null
           generation_pipeline?: string | null
+          generation_started_at?: string | null
+          generation_status?: string | null
+          generation_task_id?: string | null
           id?: string
           industry?: string | null
           is_active?: boolean | null
@@ -13524,7 +13532,11 @@ export type Database = {
           description?: string | null
           display_order?: number | null
           duration_seconds?: number | null
+          generation_error?: string | null
           generation_pipeline?: string | null
+          generation_started_at?: string | null
+          generation_status?: string | null
+          generation_task_id?: string | null
           id?: string
           industry?: string | null
           is_active?: boolean | null

@@ -301,10 +301,11 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
 
       if (error) throw error;
 
-      // Update with results
+      // Update with results - check for pending generation status
+      const isPending = data.generationStatus === 'pending';
       const updatedVideo: GeneratedVideo = {
         ...newVideo,
-        status: data.success ? 'complete' : 'error',
+        status: data.success ? (isPending ? 'pending' : 'complete') : 'error',
         progress: 100,
         videoUrl: data.videoUrl,
         thumbnailUrl: data.thumbnailUrl,
@@ -322,7 +323,14 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
       setGeneratedVideos(prev => new Map(prev).set(selectedLanguage, updatedVideo));
 
       if (data.success) {
-        toast.success(`Video generated for ${langName}!`);
+        if (isPending) {
+          toast.info(`TTS audio generated for ${langName}. Video file pending external processing.`, {
+            description: data.message || 'Full video assembly requires manual processing.',
+            duration: 8000,
+          });
+        } else {
+          toast.success(`Video generated for ${langName}!`);
+        }
         loadExistingVideos(); // Refresh library
       } else {
         toast.error(`Generation failed: ${data.error}`);
@@ -687,7 +695,34 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
                 )}
               </AnimatePresence>
 
-              {/* Result */}
+              {/* Result - Pending status */}
+              {currentVideo?.status === 'pending' && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg space-y-3"
+                >
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-amber-600 animate-pulse" />
+                    <span className="font-medium text-amber-700 dark:text-amber-400">TTS Audio Generated - Video Pending</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Text-to-Speech audio has been generated for all {currentVideo.chapters.filter(c => c.success).length} chapters. 
+                    Full video assembly requires external processing (FFmpeg or video assembly service like Shotstack/Creatomate).
+                  </p>
+                  <div className="flex items-center gap-2 text-xs text-amber-700 dark:text-amber-400 bg-amber-500/5 p-2 rounded">
+                    <AlertTriangle className="w-4 h-4" />
+                    <span>Video file not yet generated - playback will not work until assembled</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {currentVideo.chapters.filter(c => c.success).length}/{CHAPTERS.length} chapters • 
+                    ~{Math.round(totalDuration / 60)} min • 
+                    Entry saved to library
+                  </p>
+                </motion.div>
+              )}
+
+              {/* Result - Complete status */}
               {currentVideo?.status === 'complete' && (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}

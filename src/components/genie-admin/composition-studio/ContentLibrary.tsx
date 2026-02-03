@@ -63,6 +63,10 @@ interface ContentItem {
   updated_at: string;
   published_at: string | null;
   created_by: string | null;
+  // New generation status fields
+  generation_status?: 'pending' | 'processing' | 'completed' | 'failed' | null;
+  generation_error?: string | null;
+  generation_started_at?: string | null;
 }
 
 // Region display names
@@ -111,7 +115,29 @@ const isSeedData = (item: ContentItem): boolean => {
 };
 
 const getStatusBadge = (item: ContentItem) => {
-  // Show seed data indicator first
+  // Show generation status first for Genie Cast generated content
+  if (item.generation_status === 'pending') {
+    return (
+      <Badge className="bg-yellow-500/20 border-yellow-500/30 text-yellow-600">
+        <Clock className="w-3 h-3 mr-1 animate-pulse" /> Pending Generation
+      </Badge>
+    );
+  }
+  if (item.generation_status === 'processing') {
+    return (
+      <Badge className="bg-blue-500/20 border-blue-500/30 text-blue-600">
+        <Loader2 className="w-3 h-3 mr-1 animate-spin" /> Processing...
+      </Badge>
+    );
+  }
+  if (item.generation_status === 'failed') {
+    return (
+      <Badge className="bg-destructive/20 border-destructive/30 text-destructive">
+        <AlertCircle className="w-3 h-3 mr-1" /> Failed
+      </Badge>
+    );
+  }
+  // Show seed data indicator
   if (isSeedData(item)) {
     return (
       <Badge className="bg-amber-500/20 border-amber-500/30 text-amber-600">
@@ -123,6 +149,14 @@ const getStatusBadge = (item: ContentItem) => {
     return (
       <Badge className="bg-emerald-500/20 border-emerald-500/30 text-emerald-600">
         <CheckCircle className="w-3 h-3 mr-1" /> Published
+      </Badge>
+    );
+  }
+  // Check if video is generated successfully
+  if (item.generation_status === 'completed') {
+    return (
+      <Badge className="bg-emerald-500/20 border-emerald-500/30 text-emerald-600">
+        <CheckCircle className="w-3 h-3 mr-1" /> Ready
       </Badge>
     );
   }
