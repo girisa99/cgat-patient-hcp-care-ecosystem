@@ -58,7 +58,7 @@ import { ProductChangeAlertPanel } from './ProductChangeAlertPanel';
 import { MessagingImprovementPanel } from './MessagingImprovementPanel';
 import { FeatureVideoGenerator } from './FeatureVideoGenerator';
 import { GenieCastFlowDiagram } from './GenieCastFlowDiagram';
-
+import { uploadBrandLogosToStorage } from '@/services/marketing/brandAssetUploadService';
 // Supported languages with zone routing
 const LANGUAGES = [
   { code: 'en', name: 'English', flag: '🇺🇸', zone: 'Claude Zone', tts: 'ElevenLabs' },
@@ -443,7 +443,27 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
                     Upload multiple screenshots for each product. Drag to reorder. These will be used as visual highlights during voiceover in the generated videos.
                   </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
+                  <Button 
+                    variant="outline" 
+                    onClick={async () => {
+                      toast.loading('Syncing brand logos to storage...');
+                      try {
+                        const result = await uploadBrandLogosToStorage();
+                        if (result.success) {
+                          toast.success(`Uploaded ${result.uploaded} logos to storage`);
+                        } else {
+                          toast.error(`Failed to upload logos: ${result.results.find(r => !r.success)?.error}`);
+                        }
+                      } catch (error) {
+                        toast.error('Failed to sync logos');
+                      }
+                    }} 
+                    className="gap-2"
+                  >
+                    <Upload className="w-4 h-4" />
+                    Sync Logos
+                  </Button>
                   <Button variant="outline" onClick={() => setActiveTab('generate')} className="gap-2">
                     <Play className="w-4 h-4" />
                     Quick Generate

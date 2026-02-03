@@ -15,7 +15,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Map chapter IDs to actual logo file names in /brand-assets/
+// Map chapter IDs to actual logo file names in /brand-assets/ (files in public folder)
 const LOGO_MAPPING: Record<string, { fileName: string; displayName: string }> = {
   'opening': { fileName: 'genie-studio-logo.png', displayName: 'Genie Studio' },
   'spark': { fileName: 'genie-spark-logo.png', displayName: 'Genie Spark' },
