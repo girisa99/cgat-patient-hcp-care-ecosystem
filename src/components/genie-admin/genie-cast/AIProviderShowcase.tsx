@@ -1,9 +1,9 @@
 /**
  * AI PROVIDER SHOWCASE
  * 
- * Atlabs-inspired animated showcase of 50+ AI models:
- * - Scrolling logo marquee
- * - Provider badges
+ * Animated showcase of 50+ AI models powering Genie Cast:
+ * - Auto-scrolling logo marquee
+ * - Provider badges with capability indicators
  * - Unified subscription messaging
  */
 
