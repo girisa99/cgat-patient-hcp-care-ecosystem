@@ -1598,13 +1598,27 @@ USER MESSAGE: ${text}
     
     return (
       <motion.div
-        // Enable dragging for floating mode only
+        // Enable dragging for floating mode only - drag from anywhere on the panel
         drag={position === 'floating'}
         dragMomentum={false}
         dragElastic={0.1}
-        onDragStart={() => position === 'floating' && setIsDragging(true)}
-        onDragEnd={(e, info) => position === 'floating' && handleDragEnd(e, info)}
-        whileDrag={position === 'floating' ? { scale: 1.02, boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' } : undefined}
+        onDragStart={() => {
+          if (position === 'floating') {
+            setIsDragging(true);
+            console.log('[AskGenie] Drag started');
+          }
+        }}
+        onDragEnd={(e, info) => {
+          if (position === 'floating') {
+            console.log('[AskGenie] Drag ended at:', info.point);
+            handleDragEnd(e, info);
+          }
+        }}
+        whileDrag={position === 'floating' ? { 
+          scale: 1.02, 
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
+          cursor: 'grabbing'
+        } : undefined}
         initial={{ opacity: 0, scale: 0.95, y: corner.startsWith('bottom') ? 20 : -20 }}
         animate={{ 
           opacity: 1, 
@@ -1612,13 +1626,11 @@ USER MESSAGE: ${text}
           y: 0
         }}
         exit={{ opacity: 0, scale: 0.95, y: corner.startsWith('bottom') ? 20 : -20 }}
-        onClick={(e) => e.stopPropagation()}
-        onPointerDown={(e) => e.stopPropagation()}
         className={cn(
           "flex flex-col bg-background border rounded-xl shadow-2xl overflow-hidden",
           // Floating mode - fixed dimensions and positioning with drag cursor
           position === 'floating' && cn(
-            "fixed sm:w-[380px] w-[320px] pointer-events-auto",
+            "fixed sm:w-[380px] w-[320px] pointer-events-auto cursor-grab active:cursor-grabbing",
             getPanelPositionClasses(),
             // Use fixed height instead of max-height for proper containment
             isAutoMinimized ? "h-[60px]" : "h-[500px] sm:h-[550px]"
