@@ -215,27 +215,84 @@ export const ContentLibrary: React.FC<ContentLibraryProps> = ({
 
   // Magic clips handler - generate platform-specific clips
   const handleGenerateMagicClips = async (item: ContentItem) => {
+    if (!item.video_url || item.generation_status !== 'completed') {
+      toast.error('Video must be fully generated before creating magic clips');
+      return;
+    }
+
     toast.info('Generating Magic Clips for all platforms...', {
       description: 'AI is creating optimized versions for YouTube Shorts, TikTok, Instagram, LinkedIn, Twitter, and Facebook'
     });
-    
-    // TODO: Call edge function to generate clips via AI routing
-    // For now, show placeholder
-    setTimeout(() => {
-      toast.success('Magic Clips generated!', {
-        description: '6 platform-specific clips created'
+
+    try {
+      const { data, error } = await supabase.functions.invoke('magic-clips-generator', {
+        body: {
+          sourceVideoUrl: item.video_url,
+          sourceVideoId: item.id,
+          platforms: ['youtube_shorts', 'tiktok', 'instagram_reels', 'linkedin', 'twitter', 'facebook'],
+          mode: 'auto',
+          language: item.language_code,
+          addCaptions: true,
+        },
       });
-    }, 3000);
+
+      if (error) throw new Error(error.message);
+
+      if (data?.success) {
+        const completed = data.completedClips || 0;
+        const total = data.totalClips || 6;
+        toast.success(`Magic Clips generated!`, {
+          description: `${completed}/${total} platform-specific clips created`
+        });
+      } else {
+        toast.warning('Some clips are pending', {
+          description: data?.message || 'Video assembly is being processed in the background'
+        });
+      }
+    } catch (err) {
+      console.error('Magic clips error:', err);
+      toast.error('Failed to generate magic clips', {
+        description: err instanceof Error ? err.message : 'Unknown error'
+      });
+    }
   };
 
   // Single clip generation handler
   const handleGenerateSingleClip = async (item: ContentItem, platformId: string) => {
+    if (!item.video_url || item.generation_status !== 'completed') {
+      toast.error('Video must be fully generated before creating clips');
+      return;
+    }
+
     toast.info(`Generating clip for ${platformId}...`);
-    
-    // TODO: Call edge function with specific platform
-    setTimeout(() => {
-      toast.success(`${platformId} clip ready!`);
-    }, 2000);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('magic-clips-generator', {
+        body: {
+          sourceVideoUrl: item.video_url,
+          sourceVideoId: item.id,
+          platforms: [platformId],
+          mode: 'auto',
+          language: item.language_code,
+          addCaptions: true,
+        },
+      });
+
+      if (error) throw new Error(error.message);
+
+      if (data?.success && data.clips?.[0]?.status === 'completed') {
+        toast.success(`${platformId} clip ready!`, {
+          description: 'Clip is available for publishing'
+        });
+      } else {
+        toast.info(`${platformId} clip is being processed`, {
+          description: 'Check back in a few minutes'
+        });
+      }
+    } catch (err) {
+      console.error('Single clip error:', err);
+      toast.error(`Failed to generate ${platformId} clip`);
+    }
   };
 
   // Get unique regions and languages for filters

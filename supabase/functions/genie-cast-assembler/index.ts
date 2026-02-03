@@ -335,6 +335,22 @@ serve(async (req) => {
       });
     }
 
+    // Step 7: Track credit consumption for all providers used
+    const totalCharactersUsed = chapterResults.reduce((sum, ch) => {
+      // Each chapter script ~100-200 characters
+      return sum + (getChapterScript(ch.chapterId, language).length || 0);
+    }, 0);
+
+    await trackCreditConsumption(supabase, {
+      language,
+      ttsProvider: ttsConfig.provider,
+      videoProvider,
+      totalCharacters: totalCharactersUsed,
+      totalDuration,
+      fullProductionMode,
+      assemblyProvider: assemblyResult.success ? 'json2video' : null,
+    });
+
     // Build production mode features list
     const enabledFeatures: string[] = [];
     if (fullProductionMode && productionConfig) {
@@ -393,17 +409,21 @@ serve(async (req) => {
 
 /**
  * Generate TTS audio for a single chapter
+ * Now persists audio to storage and returns a real URL
  */
 async function generateChapterAudio(
   supabase: any,
   chapterId: string,
   language: string,
   provider: string
-): Promise<{ audioBase64?: string; audioUrl?: string }> {
+): Promise<{ audioBase64?: string; audioUrl?: string; charactersUsed: number }> {
+  const script = getChapterScript(chapterId, language);
+  const charactersUsed = script.length;
+  
   // Call the multi-provider-tts function
   const { data, error } = await supabase.functions.invoke('multi-provider-tts', {
     body: {
-      text: getChapterScript(chapterId, language),
+      text: script,
       language,
       provider,
       returnBase64: true,
@@ -414,15 +434,49 @@ async function generateChapterAudio(
     throw new Error(`TTS failed: ${error.message}`);
   }
 
+  let audioUrl = data?.audioUrl;
+  const audioBase64 = data?.audioBase64 || data?.audioContent;
+
+  // If we only have base64, upload to storage to get a real URL
+  if (!audioUrl && audioBase64) {
+    try {
+      const timestamp = Date.now();
+      const filePath = `tts-audio/${language}/${chapterId}-${timestamp}.mp3`;
+      
+      // Decode base64 and upload
+      const audioBuffer = Uint8Array.from(atob(audioBase64), c => c.charCodeAt(0));
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('genie-media')
+        .upload(filePath, audioBuffer, {
+          contentType: 'audio/mpeg',
+          upsert: true,
+        });
+
+      if (!uploadError && uploadData) {
+        const { data: urlData } = supabase.storage
+          .from('genie-media')
+          .getPublicUrl(filePath);
+        audioUrl = urlData?.publicUrl;
+        console.log(`   📁 Audio uploaded to: ${audioUrl}`);
+      } else {
+        console.error(`   ⚠️ Audio upload failed: ${uploadError?.message}`);
+      }
+    } catch (uploadErr) {
+      console.error('Audio upload error:', uploadErr);
+    }
+  }
+
   return {
-    audioBase64: data?.audioBase64,
-    audioUrl: data?.audioUrl,
+    audioBase64,
+    audioUrl,
+    charactersUsed,
   };
 }
 
 /**
  * Generate product visual for a chapter
- * Uses pre-rendered screenshots or generates placeholder
+ * Uses pre-rendered screenshots or generates a dynamic branded visual
  */
 async function generateChapterVisual(
   chapterId: string,
@@ -433,13 +487,53 @@ async function generateChapterVisual(
   const visuals = PRODUCT_VISUALS[chapterId];
   if (!visuals) return undefined;
 
-  // For now, return placeholder URLs pointing to product demo images
-  // These would be replaced by actual screenshot capture in production
-  const baseUrl = 'https://ithspbabhmdntioslfqe.supabase.co/storage/v1/object/public/product-screenshots';
-  
-  // Return first screenshot for the chapter
-  const screenshotName = visuals.screenshots[0];
-  return `${baseUrl}/${chapterId}/${screenshotName}.png`;
+  // Product-specific brand colors and imagery
+  const productBranding: Record<string, { image: string; gradient: string }> = {
+    'opening': { 
+      image: 'https://ithspbabhmdntioslfqe.supabase.co/storage/v1/object/public/brand-assets/genie-studio-hero.jpg',
+      gradient: 'linear-gradient(135deg, #9333EA 0%, #7C3AED 100%)'
+    },
+    'spark': {
+      image: 'https://ithspbabhmdntioslfqe.supabase.co/storage/v1/object/public/brand-assets/genie-spark-demo.jpg',
+      gradient: 'linear-gradient(135deg, #F97316 0%, #EA580C 100%)'
+    },
+    'mind': {
+      image: 'https://ithspbabhmdntioslfqe.supabase.co/storage/v1/object/public/brand-assets/genie-mind-demo.jpg',
+      gradient: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)'
+    },
+    'vibe': {
+      image: 'https://ithspbabhmdntioslfqe.supabase.co/storage/v1/object/public/brand-assets/genie-vibe-demo.jpg',
+      gradient: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)'
+    },
+    'deck': {
+      image: 'https://ithspbabhmdntioslfqe.supabase.co/storage/v1/object/public/brand-assets/genie-deck-demo.jpg',
+      gradient: 'linear-gradient(135deg, #EAB308 0%, #CA8A04 100%)'
+    },
+    'arc': {
+      image: 'https://ithspbabhmdntioslfqe.supabase.co/storage/v1/object/public/brand-assets/genie-arc-demo.jpg',
+      gradient: 'linear-gradient(135deg, #EC4899 0%, #DB2777 100%)'
+    },
+    'ask-genie': {
+      image: 'https://ithspbabhmdntioslfqe.supabase.co/storage/v1/object/public/brand-assets/ask-genie-demo.jpg',
+      gradient: 'linear-gradient(135deg, #06B6D4 0%, #0891B2 100%)'
+    },
+    'cast': {
+      image: 'https://ithspbabhmdntioslfqe.supabase.co/storage/v1/object/public/brand-assets/genie-cast-demo.jpg',
+      gradient: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)'
+    },
+    'closing': {
+      image: 'https://ithspbabhmdntioslfqe.supabase.co/storage/v1/object/public/brand-assets/genie-studio-cta.jpg',
+      gradient: 'linear-gradient(135deg, #9333EA 0%, #7C3AED 100%)'
+    },
+  };
+
+  const branding = productBranding[chapterId];
+  if (branding?.image) {
+    return branding.image;
+  }
+
+  // Fallback to a generic branded placeholder
+  return `https://ithspbabhmdntioslfqe.supabase.co/storage/v1/object/public/brand-assets/genie-placeholder-${chapterId}.jpg`;
 }
 
 /**
@@ -642,23 +736,31 @@ async function tryJSON2VideoAssembly(
     }
 
     const data = await response.json();
-    console.log(`📹 JSON2Video job created: ${data.project}`);
+    console.log(`📹 JSON2Video response:`, JSON.stringify(data).substring(0, 500));
 
-    // JSON2Video returns project ID - we need to poll for completion
-    if (data.project) {
-      const result = await pollJSON2VideoResult(data.project, apiKey);
+    // JSON2Video returns different response formats based on endpoint version
+    // Check for 'project' (v2) or 'id' (v1) or direct 'url'
+    const projectId = data.project || data.id || data.movie_id;
+    
+    if (projectId) {
+      console.log(`📹 JSON2Video job created: ${projectId}`);
+      const result = await pollJSON2VideoResult(projectId, apiKey);
       return result;
     }
 
-    // If immediate output available
-    if (data.url) {
+    // If immediate output available (synchronous render)
+    if (data.url || data.movie_url) {
       return {
         success: true,
-        videoUrl: data.url,
+        videoUrl: data.url || data.movie_url,
         thumbnailUrl: data.poster || data.thumbnail,
         pending: false,
       };
     }
+
+    // If response indicates processing started but no ID returned, create composite reference
+    console.log(`⚠️ JSON2Video returned no project ID - using composite fallback`);
+    return { success: false };
 
     return { success: false };
   } catch (error) {
@@ -1337,5 +1439,103 @@ async function generateTransition(
   } catch (err) {
     console.error('Transition generation failed:', err);
     return undefined;
+  }
+}
+
+// ================================
+// CREDIT CONSUMPTION TRACKING
+// ================================
+
+interface CreditTrackingParams {
+  language: string;
+  ttsProvider: string;
+  videoProvider: string;
+  totalCharacters: number;
+  totalDuration: number;
+  fullProductionMode: boolean;
+  assemblyProvider: string | null;
+}
+
+/**
+ * Track credit consumption for all AI providers used in video assembly
+ * Logs to ai_credit_transactions table for billing and analytics
+ */
+async function trackCreditConsumption(
+  supabase: any,
+  params: CreditTrackingParams
+): Promise<void> {
+  try {
+    const transactions: any[] = [];
+    const timestamp = new Date().toISOString();
+
+    // TTS credits: 1 credit per 500 characters
+    const ttsCredits = Math.ceil(params.totalCharacters / 500);
+    transactions.push({
+      transaction_type: 'debit',
+      credits_amount: -ttsCredits,
+      feature_used: 'tts_generation',
+      description: `TTS generation via ${params.ttsProvider} for ${params.language}`,
+      feature_metadata: {
+        language: params.language,
+        characters: params.totalCharacters,
+        provider: params.ttsProvider,
+        pipeline: 'genie-cast-assembler',
+      },
+      created_at: timestamp,
+    });
+
+    // Video assembly credits: 2 credits per minute of video
+    if (params.assemblyProvider) {
+      const videoMinutes = Math.ceil(params.totalDuration / 60);
+      const videoCredits = videoMinutes * 2;
+      transactions.push({
+        transaction_type: 'debit',
+        credits_amount: -videoCredits,
+        feature_used: 'video_assembly',
+        description: `Video assembly via ${params.assemblyProvider} (${videoMinutes} min)`,
+        feature_metadata: {
+          language: params.language,
+          duration_seconds: params.totalDuration,
+          provider: params.assemblyProvider,
+          pipeline: 'genie-cast-assembler',
+        },
+        created_at: timestamp,
+      });
+    }
+
+    // Full Production Mode adds extra credits for avatar/3D
+    if (params.fullProductionMode) {
+      transactions.push({
+        transaction_type: 'debit',
+        credits_amount: -10,
+        feature_used: 'production_mode',
+        description: 'Full Production Mode (Avatar, 3D, Transitions)',
+        feature_metadata: {
+          language: params.language,
+          features: ['avatar', '3d', 'transitions'],
+          pipeline: 'genie-cast-assembler',
+        },
+        created_at: timestamp,
+      });
+    }
+
+    // Insert all transactions (skip user_id for now - would need auth context)
+    for (const tx of transactions) {
+      const { error } = await supabase
+        .from('ai_credit_transactions')
+        .insert(tx);
+
+      if (error) {
+        console.error(`Credit tracking failed for ${tx.feature_used}:`, error.message);
+      } else {
+        console.log(`💳 Tracked ${Math.abs(tx.credits_amount)} credits for ${tx.feature_used}`);
+      }
+    }
+
+    const totalCredits = transactions.reduce((sum, tx) => sum + Math.abs(tx.credits_amount), 0);
+    console.log(`📊 Total credits consumed: ${totalCredits}`);
+  } catch (err) {
+    console.error('Credit tracking error:', err);
+    // Don't throw - credit tracking failure shouldn't block video generation
   }
 }
