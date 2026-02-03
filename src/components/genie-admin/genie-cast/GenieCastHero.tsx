@@ -1,0 +1,193 @@
+/**
+ * GENIE CAST HERO SECTION
+ * 
+ * Atlabs-inspired rich hero with:
+ * - Gradient backgrounds
+ * - Stats display
+ * - Video showcase carousel
+ * - Trust indicators
+ */
+
+import React from 'react';
+import { motion } from 'framer-motion';
+import { 
+  Play, 
+  Sparkles, 
+  Globe, 
+  Video, 
+  Users, 
+  Clock,
+  Star,
+  Zap,
+  Award,
+  TrendingUp
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+
+interface GenieCastHeroProps {
+  onGetStarted: () => void;
+  onWatchDemo?: () => void;
+  totalVideos?: number;
+  totalLanguages?: number;
+  className?: string;
+}
+
+const SAMPLE_THUMBNAILS = [
+  { id: 1, title: 'Home Traveller', gradient: 'from-amber-500 to-orange-600' },
+  { id: 2, title: 'The Drive', gradient: 'from-slate-700 to-slate-900' },
+  { id: 3, title: 'Oath of the Blade', gradient: 'from-red-600 to-rose-800' },
+  { id: 4, title: 'Caretaker', gradient: 'from-orange-700 to-amber-900' },
+];
+
+export const GenieCastHero: React.FC<GenieCastHeroProps> = ({
+  onGetStarted,
+  onWatchDemo,
+  totalVideos = 100,
+  totalLanguages = 14,
+  className,
+}) => {
+  return (
+    <div className={cn("relative overflow-hidden rounded-2xl", className)}>
+      {/* Gradient Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-primary/5" />
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-gradient-to-bl from-primary/10 via-accent/5 to-transparent rounded-full blur-3xl" />
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-to-tr from-accent/10 via-primary/5 to-transparent rounded-full blur-3xl" />
+      
+      {/* Content */}
+      <div className="relative z-10 px-6 py-10 lg:px-12 lg:py-16">
+        {/* Trust Badges */}
+        <div className="flex items-center justify-center gap-3 mb-6">
+          <Badge variant="outline" className="bg-background/80 backdrop-blur-sm border-primary/20 px-3 py-1.5">
+            <Star className="w-3.5 h-3.5 mr-1.5 text-yellow-500 fill-yellow-500" />
+            <span className="text-xs font-medium">4.9 Rating</span>
+          </Badge>
+          <Badge variant="outline" className="bg-background/80 backdrop-blur-sm border-green-500/30 px-3 py-1.5">
+            <Award className="w-3.5 h-3.5 mr-1.5 text-green-500" />
+            <span className="text-xs font-medium">Enterprise Ready</span>
+          </Badge>
+        </div>
+
+        {/* Headline */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="text-center max-w-3xl mx-auto mb-8"
+        >
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-4">
+            Create a video in{' '}
+            <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
+              2 mins
+            </span>
+            . Period.
+          </h1>
+          <p className="text-muted-foreground text-base md:text-lg max-w-2xl mx-auto">
+            Bring your stories to life with AI visuals, consistent characters, voices, and special effects.
+          </p>
+        </motion.div>
+
+        {/* CTA Buttons */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="flex items-center justify-center gap-4 mb-10"
+        >
+          <Button 
+            onClick={onGetStarted}
+            size="lg" 
+            className="gap-2 px-6 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-shadow"
+          >
+            <Zap className="w-4 h-4" />
+            Get Started
+          </Button>
+          {onWatchDemo && (
+            <Button 
+              variant="outline" 
+              size="lg" 
+              onClick={onWatchDemo}
+              className="gap-2 px-6 bg-background/80 backdrop-blur-sm"
+            >
+              <Play className="w-4 h-4" />
+              Watch Demo
+            </Button>
+          )}
+        </motion.div>
+
+        {/* Video Showcase Carousel */}
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="flex justify-center gap-4 mb-10 overflow-x-auto pb-2 no-scrollbar"
+        >
+          {SAMPLE_THUMBNAILS.map((thumb, index) => (
+            <motion.div
+              key={thumb.id}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4, delay: 0.3 + index * 0.1 }}
+              className={cn(
+                "relative flex-shrink-0 w-[180px] md:w-[220px] aspect-video rounded-xl overflow-hidden cursor-pointer group",
+                "bg-gradient-to-br shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105",
+                thumb.gradient
+              )}
+            >
+              {/* Play Button Overlay */}
+              <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors">
+                <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                  <Play className="w-5 h-5 text-slate-900 ml-0.5" />
+                </div>
+              </div>
+              {/* Title */}
+              <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
+                <p className="text-white text-sm font-semibold">{thumb.title}</p>
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
+
+        {/* Stats Row */}
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.5 }}
+          className="flex items-center justify-center gap-8 md:gap-12 flex-wrap"
+        >
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-1.5 mb-1">
+              <Video className="w-4 h-4 text-primary" />
+              <span className="text-2xl md:text-3xl font-bold">{totalVideos}k+</span>
+            </div>
+            <p className="text-xs text-muted-foreground">Videos Created</p>
+          </div>
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-1.5 mb-1">
+              <Globe className="w-4 h-4 text-accent" />
+              <span className="text-2xl md:text-3xl font-bold">{totalLanguages}</span>
+            </div>
+            <p className="text-xs text-muted-foreground">Languages</p>
+          </div>
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-1.5 mb-1">
+              <Users className="w-4 h-4 text-green-500" />
+              <span className="text-2xl md:text-3xl font-bold">50k+</span>
+            </div>
+            <p className="text-xs text-muted-foreground">Creators</p>
+          </div>
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-1.5 mb-1">
+              <Clock className="w-4 h-4 text-orange-500" />
+              <span className="text-2xl md:text-3xl font-bold">2min</span>
+            </div>
+            <p className="text-xs text-muted-foreground">Avg. Time</p>
+          </div>
+        </motion.div>
+      </div>
+    </div>
+  );
+};
+
+export default GenieCastHero;

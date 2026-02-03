@@ -37,6 +37,7 @@ import {
   TrendingUp,
   MessageSquare,
   GitBranch,
+  Palette,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -59,6 +60,7 @@ import { MessagingImprovementPanel } from './MessagingImprovementPanel';
 import { FeatureVideoGenerator } from './FeatureVideoGenerator';
 import { GenieCastFlowDiagram } from './GenieCastFlowDiagram';
 import { uploadBrandLogosToStorage } from '@/services/marketing/brandAssetUploadService';
+import { GenieCastHero, VideoStyleCards, AIProviderShowcase, type VideoStyleType } from './genie-cast';
 // Supported languages with zone routing
 const LANGUAGES = [
   { code: 'en', name: 'English', flag: '🇺🇸', zone: 'Claude Zone', tts: 'ElevenLabs' },
@@ -132,15 +134,18 @@ const GENIE_CAST_STATE_KEY = 'genie_cast_panel_state';
 
 export const UnifiedVideoGenerationPanel: React.FC = () => {
   // Persist tab state to prevent loss on navigation/refresh
-  const [activeTab, setActiveTab] = useState<'screenshots' | 'generate' | 'matrix' | 'library' | 'analytics' | 'alerts' | 'messaging' | 'flow'>(() => {
+  const [activeTab, setActiveTab] = useState<'overview' | 'screenshots' | 'generate' | 'matrix' | 'library' | 'analytics' | 'alerts' | 'messaging' | 'flow'>(() => {
     try {
       const saved = localStorage.getItem(GENIE_CAST_TAB_KEY);
-      if (saved && ['screenshots', 'generate', 'matrix', 'library', 'analytics', 'alerts', 'messaging', 'flow'].includes(saved)) {
+      if (saved && ['overview', 'screenshots', 'generate', 'matrix', 'library', 'analytics', 'alerts', 'messaging', 'flow'].includes(saved)) {
         return saved as any;
       }
     } catch { /* ignore */ }
-    return 'screenshots';
+    return 'overview';
   });
+  
+  // Video style selection
+  const [selectedVideoStyle, setSelectedVideoStyle] = useState<VideoStyleType>('educational');
   
   // Persist other key state
   const [screenshotGalleries, setScreenshotGalleries] = useState<ProductGallery[]>([]);
@@ -364,26 +369,13 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <Film className="w-6 h-6 text-primary" />
-            Genie Cast Video Studio
-          </h2>
-          <p className="text-muted-foreground text-sm">
-            Generate complete marketing videos with all 9 chapters stitched together
-          </p>
-        </div>
-        <Badge variant="outline" className="text-xs">
-          <Sparkles className="w-3 h-3 mr-1" />
-          Powered by Genie Cast
-        </Badge>
-      </div>
-
       {/* Tabs - Responsive with scroll */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-        <TabsList className="flex w-full overflow-x-auto scrollbar-hide gap-1 p-1">
+        <TabsList className="flex w-full overflow-x-auto scrollbar-hide gap-1 p-1 bg-muted/50">
+          <TabsTrigger value="overview" className="flex-shrink-0 gap-1.5 px-3 text-xs whitespace-nowrap">
+            <Sparkles className="w-3.5 h-3.5 flex-shrink-0" />
+            <span>Overview</span>
+          </TabsTrigger>
           <TabsTrigger value="screenshots" className="flex-shrink-0 gap-1.5 px-3 text-xs whitespace-nowrap">
             <Camera className="w-3.5 h-3.5 flex-shrink-0" />
             <span className="hidden sm:inline">Screenshots</span>
@@ -425,6 +417,70 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
             <span>Flow</span>
           </TabsTrigger>
         </TabsList>
+
+        {/* Overview Tab - Rich Atlabs-style Hero */}
+        <TabsContent value="overview" className="space-y-8">
+          {/* Hero Section */}
+          <GenieCastHero 
+            onGetStarted={() => setActiveTab('generate')}
+            onWatchDemo={() => {
+              toast.info('Demo video coming soon!');
+            }}
+            totalVideos={existingVideos.length || 100}
+            totalLanguages={LANGUAGES.length}
+          />
+          
+          {/* Video Style Cards */}
+          <VideoStyleCards 
+            selectedStyle={selectedVideoStyle}
+            onSelectStyle={(style) => {
+              setSelectedVideoStyle(style);
+              toast.success(`Selected ${style.replace('_', ' ')} style`);
+            }}
+          />
+          
+          {/* AI Provider Showcase */}
+          <AIProviderShowcase />
+          
+          {/* Quick Actions */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="border-primary/20 hover:border-primary/40 transition-colors cursor-pointer group" onClick={() => setActiveTab('screenshots')}>
+              <CardContent className="pt-6 flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Camera className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <h4 className="font-semibold">Upload Screenshots</h4>
+                  <p className="text-xs text-muted-foreground">Add product visuals for your videos</p>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="border-primary/20 hover:border-primary/40 transition-colors cursor-pointer group" onClick={() => setActiveTab('generate')}>
+              <CardContent className="pt-6 flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500/20 to-emerald-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Zap className="w-6 h-6 text-green-500" />
+                </div>
+                <div>
+                  <h4 className="font-semibold">Quick Generate</h4>
+                  <p className="text-xs text-muted-foreground">Create a single video in minutes</p>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="border-primary/20 hover:border-primary/40 transition-colors cursor-pointer group" onClick={() => setActiveTab('matrix')}>
+              <CardContent className="pt-6 flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Grid3X3 className="w-6 h-6 text-violet-500" />
+                </div>
+                <div>
+                  <h4 className="font-semibold">Batch Matrix</h4>
+                  <p className="text-xs text-muted-foreground">Generate for all languages at once</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
 
         {/* Screenshots Tab - Multi-Gallery */}
         <TabsContent value="screenshots" className="space-y-6">
