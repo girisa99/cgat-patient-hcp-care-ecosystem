@@ -380,65 +380,78 @@ export const MultiScreenshotGallery: React.FC<MultiScreenshotGalleryProps> = ({
     const capturedCount = { success: 0, failed: 0 };
     const screensToCapture = GENIE_CAST_SCREENS.filter(s => selectedScreens.includes(s.id));
 
-    // Find the tabs container
-    const tabsContainer = document.querySelector('[role="tablist"]');
+    // Tab value to index mapping based on UnifiedVideoGenerationPanel tab order
+    const TAB_INDICES: Record<string, number> = {
+      'screenshots': 0,
+      'generate': 1,
+      'matrix': 2,
+      'library': 3,
+      'analytics': 4,
+    };
     
     for (let i = 0; i < screensToCapture.length; i++) {
       const screen = screensToCapture[i];
       setCaptureProgress({ current: i + 1, total: screensToCapture.length, screen: screen.name });
       
       try {
-        // Click the correct tab button using data-value or aria attributes
-        if (screen.tabValue && tabsContainer) {
-          // Find all tab triggers and click the matching one
-          const allTabs = tabsContainer.querySelectorAll('button[role="tab"]');
-          let tabFound = false;
-          
-          allTabs.forEach((tab) => {
-            const tabEl = tab as HTMLElement;
-            // Check various ways tabs might store their value
-            if (tabEl.dataset.value === screen.tabValue || 
-                tabEl.dataset.state === screen.tabValue ||
-                tabEl.getAttribute('data-radix-collection-item') !== null && 
-                tabEl.textContent?.toLowerCase().includes(screen.tabValue)) {
-              tabEl.click();
-              tabFound = true;
-            }
-          });
+        // Find the correct tablist - the one with 5 tabs for the video generation panel
+        const allTablists = document.querySelectorAll('[role="tablist"]');
+        let targetTablist: Element | null = null;
+        
+        allTablists.forEach((tablist) => {
+          const tabs = tablist.querySelectorAll('button[role="tab"]');
+          // The video generation panel has exactly 5 tabs
+          if (tabs.length === 5) {
+            targetTablist = tablist;
+          }
+        });
 
-          // Alternative: try finding by text content
-          if (!tabFound) {
-            allTabs.forEach((tab) => {
-              const tabEl = tab as HTMLElement;
-              const tabText = tabEl.textContent?.toLowerCase() || '';
-              if (tabText.includes(screen.name.toLowerCase().split(' ')[0])) {
-                tabEl.click();
-                tabFound = true;
-              }
-            });
+        if (screen.tabValue && targetTablist) {
+          const tabIndex = TAB_INDICES[screen.tabValue];
+          const allTabs = targetTablist.querySelectorAll('button[role="tab"]');
+          
+          if (tabIndex !== undefined && allTabs[tabIndex]) {
+            const tabEl = allTabs[tabIndex] as HTMLElement;
+            console.log(`🖱️ Clicking tab ${tabIndex}: ${screen.name} (${screen.tabValue})`);
+            
+            // Trigger click event
+            tabEl.click();
+            
+            // Also dispatch mouse events for more reliable activation
+            tabEl.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+            tabEl.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+          } else {
+            console.warn(`Tab index ${tabIndex} not found for ${screen.tabValue}`);
           }
 
-          // Wait for tab content to render
-          await new Promise(resolve => setTimeout(resolve, 1200));
+          // Wait for tab content to render - increased delay for React state updates
+          await new Promise(resolve => setTimeout(resolve, 1500));
         }
 
         toast.info(`Capturing: ${screen.name}...`);
 
+        // Wait a bit more after toast to ensure UI is stable
+        await new Promise(resolve => setTimeout(resolve, 500));
+
         // Find the active tab panel content
         const tabPanel = document.querySelector('[role="tabpanel"][data-state="active"]') as HTMLElement;
-        const captureTarget = tabPanel || document.querySelector('.space-y-6') as HTMLElement;
+        
+        // Log what we found for debugging
+        console.log(`📸 Tab panel found: ${!!tabPanel}, data-state: ${tabPanel?.getAttribute('data-state')}`);
 
-        if (captureTarget) {
+        if (tabPanel) {
           // Scroll to top of the panel
-          captureTarget.scrollTop = 0;
+          tabPanel.scrollTop = 0;
           await new Promise(resolve => setTimeout(resolve, 300));
           
-          const canvas = await html2canvas(captureTarget, {
+          const canvas = await html2canvas(tabPanel, {
             scale: 2,
             useCORS: true,
             allowTaint: true,
             backgroundColor: '#0a0a0a', // Use fixed dark background to avoid CSS parsing issues
             logging: false,
+            windowWidth: tabPanel.scrollWidth,
+            windowHeight: tabPanel.scrollHeight,
             ignoreElements: (element) => {
               // Ignore elements that might cause CSS parsing issues
               return element.classList?.contains('animate-spin') || 
@@ -498,10 +511,13 @@ export const MultiScreenshotGallery: React.FC<MultiScreenshotGalleryProps> = ({
     }
 
     // Return to screenshots tab
-    if (tabsContainer) {
-      const screenshotsTab = tabsContainer.querySelector('button[role="tab"]');
-      if (screenshotsTab) (screenshotsTab as HTMLElement).click();
-    }
+    const allTablists = document.querySelectorAll('[role="tablist"]');
+    allTablists.forEach((tablist) => {
+      const tabs = tablist.querySelectorAll('button[role="tab"]');
+      if (tabs.length === 5 && tabs[0]) {
+        (tabs[0] as HTMLElement).click();
+      }
+    });
 
     setCaptureProgress(null);
     setIsAutoCapturing(false);
