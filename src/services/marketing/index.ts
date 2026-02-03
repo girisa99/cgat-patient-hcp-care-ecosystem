@@ -7,6 +7,8 @@
  * - AI generation integration (avatars, 3D, video)
  * - Feature auto-discovery & configurable messaging
  * - Unified ecosystem publishing (cross-product, company pages, industry filtering)
+ * - Product version tracking & change detection
+ * - AI messaging generator with approval workflow
  */
 
 // Scheduler
@@ -56,6 +58,28 @@ export {
   type MessagingTemplate,
   type PositioningStatement,
 } from './featureDiscoveryService';
+
+// Product Version Tracking (Change Detection)
+export {
+  productVersionTrackingService,
+  GENIE_PRODUCTS as VERSION_TRACKED_PRODUCTS,
+  type ProductVersion,
+  type ChangedFeature,
+  type ProductChangeAlert,
+  type VersionHistory,
+  type GenieProductId,
+} from './productVersionTrackingService';
+
+// AI Messaging Generator (Hooks, CTAs, Positioning)
+export {
+  aiMessagingGeneratorService,
+  MESSAGING_FRAMEWORKS,
+  TARGET_AUDIENCES,
+  COMPETITOR_DATABASE,
+  type MessagingRequest,
+  type GeneratedMessaging,
+  type CompetitorAnalysis,
+} from './aiMessagingGeneratorService';
 
 // Unified Ecosystem Publishing (shared across all products)
 export {
