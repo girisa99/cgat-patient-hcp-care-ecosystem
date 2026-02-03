@@ -192,6 +192,8 @@ serve(async (req) => {
       customHook = null,
       customCta = null,
       useApprovedMessaging = false,
+      // NEW: Skip TTS regeneration if audio already exists
+      skipExistingTTS = false,
     } = await req.json();
     
     console.log(`📷 Received ${screenshots.length} screenshots from orchestration service`);
@@ -202,6 +204,7 @@ serve(async (req) => {
 
     console.log(`🎬 Starting Genie Cast assembly for language: ${language}`);
     console.log(`🎥 Mode: ${fullProductionMode ? 'Full Production' : 'Standard'}`);
+    console.log(`🔊 Skip existing TTS: ${skipExistingTTS ? 'Yes (reuse cached audio)' : 'No (regenerate all)'}`);
     
     if (fullProductionMode && productionConfig) {
       console.log(`👤 Avatar: ${productionConfig.avatar?.enabled ? `${productionConfig.avatar.gender} (${productionConfig.avatar.placement})` : 'disabled'}`);
@@ -224,12 +227,13 @@ serve(async (req) => {
       console.log(`📹 Processing chapter: ${chapter.product}`);
 
       try {
-        // Step 1: Generate TTS audio for this chapter
+        // Step 1: Generate TTS audio for this chapter (or reuse existing)
         const audioResult = await generateChapterAudio(
           supabase,
           chapter.id,
           language,
-          ttsConfig.provider
+          ttsConfig.provider,
+          skipExistingTTS  // Pass the skip flag
         );
 
         // Step 2: Generate product visuals for this chapter (if enabled)
@@ -423,13 +427,28 @@ serve(async (req) => {
 /**
  * Generate TTS audio for a single chapter
  * Now persists audio to storage and returns a real URL
+ * Supports skipIfExists to reuse cached audio
  */
 async function generateChapterAudio(
   supabase: any,
   chapterId: string,
   language: string,
-  provider: string
-): Promise<{ audioBase64?: string; audioUrl?: string; charactersUsed: number }> {
+  provider: string,
+  skipIfExists: boolean = false
+): Promise<{ audioBase64?: string; audioUrl?: string; charactersUsed: number; cached: boolean }> {
+  // Check for existing audio if skipIfExists is enabled
+  if (skipIfExists) {
+    const existingAudio = await findExistingAudio(supabase, chapterId, language);
+    if (existingAudio) {
+      console.log(`   ♻️ Reusing cached TTS for ${chapterId} (${language}): ${existingAudio}`);
+      return {
+        audioUrl: existingAudio,
+        charactersUsed: 0, // No new characters consumed
+        cached: true,
+      };
+    }
+  }
+  
   const script = getChapterScript(chapterId, language);
   const charactersUsed = script.length;
   
@@ -511,7 +530,48 @@ async function generateChapterAudio(
     audioBase64,
     audioUrl,
     charactersUsed,
+    cached: false,
   };
+}
+
+/**
+ * Find existing audio file in storage for a chapter/language combo
+ */
+async function findExistingAudio(
+  supabase: any,
+  chapterId: string,
+  language: string
+): Promise<string | null> {
+  try {
+    const folderPath = `tts-audio/${language}`;
+    
+    // List files in the language folder
+    const { data: files, error } = await supabase.storage
+      .from('genie-media')
+      .list(folderPath, {
+        search: chapterId,
+        sortBy: { column: 'created_at', order: 'desc' },
+        limit: 1,
+      });
+
+    if (error || !files || files.length === 0) {
+      return null;
+    }
+
+    // Get the most recent audio file for this chapter
+    const latestFile = files[0];
+    if (latestFile && latestFile.name.startsWith(chapterId)) {
+      const { data: urlData } = supabase.storage
+        .from('genie-media')
+        .getPublicUrl(`${folderPath}/${latestFile.name}`);
+      return urlData?.publicUrl || null;
+    }
+
+    return null;
+  } catch (err) {
+    console.error(`   ⚠️ Error checking existing audio for ${chapterId}:`, err);
+    return null;
+  }
 }
 
 /**

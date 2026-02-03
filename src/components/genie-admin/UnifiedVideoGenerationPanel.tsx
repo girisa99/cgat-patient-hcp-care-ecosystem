@@ -183,6 +183,9 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
     return false;
   });
   const [productionConfig, setProductionConfig] = useState<ProductionModeConfig>(DEFAULT_PRODUCTION_CONFIG);
+  
+  // Skip TTS regeneration if audio already exists (saves credits)
+  const [skipExistingTTS, setSkipExistingTTS] = useState(true);
 
   // Persist tab state when it changes
   useEffect(() => {
@@ -276,6 +279,8 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
           language: selectedLanguage,
           quality,
           includeVisuals,
+          // Skip TTS regeneration if audio already exists
+          skipExistingTTS,
           // Full Production Mode settings
           fullProductionMode: enableFullProduction,
           productionConfig: enableFullProduction ? {
@@ -600,6 +605,28 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
                   disabled={isGenerating}
                 />
               )}
+
+              {/* Reuse Existing TTS Toggle */}
+              <div className="p-3 bg-muted/30 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <Label htmlFor="skipTTS" className="text-sm font-medium flex items-center gap-2">
+                      <Mic className="w-4 h-4" />
+                      Reuse Cached TTS Audio
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      {skipExistingTTS 
+                        ? 'Skip TTS regeneration if audio already exists (saves credits)' 
+                        : 'Regenerate all TTS audio from scratch'}
+                    </p>
+                  </div>
+                  <Switch 
+                    id="skipTTS" 
+                    checked={skipExistingTTS} 
+                    onCheckedChange={setSkipExistingTTS}
+                  />
+                </div>
+              </div>
 
               {/* Token Consumption Breakdown */}
               <TokenConsumptionBreakdown
