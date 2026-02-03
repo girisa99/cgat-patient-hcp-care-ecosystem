@@ -97,6 +97,18 @@ export {
   type FeedbackSource,
 } from './messagingFeedbackService';
 
+// Genie Cast Orchestration (Unified Video Pipeline)
+export {
+  genieCastOrchestrationService,
+  TTS_PROVIDERS,
+  LANGUAGE_NAMES,
+  type ProductScreenshot,
+  type LocalizedScript,
+  type VideoGenerationRequest,
+  type GenerationPipeline,
+  type MessagingContext,
+} from './genieCastOrchestrationService';
+
 // Unified Ecosystem Publishing (shared across all products)
 export {
   unifiedEcosystemPublishingService,

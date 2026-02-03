@@ -371,7 +371,9 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
 
         {/* Matrix Tab - New */}
         <TabsContent value="matrix" className="space-y-6">
-          <VideoGenerationMatrix />
+          <VideoGenerationMatrix 
+            onNavigateToScreenshots={() => setActiveTab('screenshots')}
+          />
         </TabsContent>
 
         {/* Generate Tab */}

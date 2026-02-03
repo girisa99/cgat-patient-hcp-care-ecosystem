@@ -1,15 +1,16 @@
 # Memory: architecture/marketing/video-messaging-and-version-tracking-v1
 Updated: just now
 
-## Video Messaging & Version Tracking Architecture
+## Video Messaging, Orchestration & Version Tracking Architecture
 
 ### Overview
-The Genie Cast video production system includes four critical services for maintaining up-to-date, compelling marketing content:
+The Genie Cast video production system includes five integrated services for maintaining up-to-date, compelling marketing content:
 
 1. **Product Version Tracking Service** (`productVersionTrackingService.ts`)
 2. **AI Messaging Generator Service** (`aiMessagingGeneratorService.ts`)
-3. **Messaging Feedback Service** (`messagingFeedbackService.ts`) - NEW
-4. **React Hooks** (`useProductChangeAlerts.ts`, `useAIMessaging.ts`, `useMessagingFeedback.ts`)
+3. **Messaging Feedback Service** (`messagingFeedbackService.ts`)
+4. **Genie Cast Orchestration Service** (`genieCastOrchestrationService.ts`) - NEW
+5. **React Hooks** (`useProductChangeAlerts.ts`, `useAIMessaging.ts`, `useMessagingFeedback.ts`, `useGenieCastOrchestration.ts`)
 
 ### Product Version Tracking
 

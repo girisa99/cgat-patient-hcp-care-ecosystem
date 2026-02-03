@@ -6,9 +6,14 @@
  * - Per Product (8 products)
  * - Per Subscription Tier (Free/Starter/Pro/Enterprise)
  * - All combinations (Language × Product × Tier)
+ * 
+ * Now integrated with:
+ * - Screenshots from Screenshots tab
+ * - AI Messaging (hooks, CTAs, positioning)
+ * - Localized scripts for all languages
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   Play,
   Loader2,
@@ -24,6 +29,12 @@ import {
   Settings2,
   ArrowRight,
   AlertCircle,
+  Camera,
+  MessageSquare,
+  RefreshCw,
+  Image,
+  FileText,
+  Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -35,9 +46,12 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Switch } from '@/components/ui/switch';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useGenieCastOrchestration } from '@/hooks/useGenieCastOrchestration';
 
 // Languages with zone routing
 const LANGUAGES = [
@@ -94,18 +108,31 @@ interface GenerationJob {
 
 interface VideoGenerationMatrixProps {
   onJobsUpdated?: (jobs: GenerationJob[]) => void;
+  onNavigateToScreenshots?: () => void;
 }
 
 export const VideoGenerationMatrix: React.FC<VideoGenerationMatrixProps> = ({
   onJobsUpdated,
+  onNavigateToScreenshots,
 }) => {
   const [mode, setMode] = useState<GenerationMode>('language');
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>(['en']);
-  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
-  const [selectedTiers, setSelectedTiers] = useState<string[]>([]);
+  const [selectedProducts, setSelectedProducts] = useState<string[]>(['spark', 'mind', 'vibe']);
+  const [selectedTiers, setSelectedTiers] = useState<string[]>(['pro']);
   const [isGenerating, setIsGenerating] = useState(false);
   const [jobs, setJobs] = useState<GenerationJob[]>([]);
   const [currentJobIndex, setCurrentJobIndex] = useState(0);
+  
+  // Integration toggles
+  const [useApprovedMessaging, setUseApprovedMessaging] = useState(true);
+  const [includeScreenshots, setIncludeScreenshots] = useState(true);
+
+  // Orchestration hook for screenshots & messaging status
+  const {
+    products: productReadiness,
+    isLoading: loadingReadiness,
+    refreshScreenshots,
+  } = useGenieCastOrchestration({ autoRefresh: false });
 
   // Calculate total jobs based on mode and selections
   const calculateJobs = useCallback((): GenerationJob[] => {
@@ -281,6 +308,41 @@ export const VideoGenerationMatrix: React.FC<VideoGenerationMatrixProps> = ({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Integration Options */}
+        <div className="flex items-center gap-6 p-3 bg-muted/30 rounded-lg">
+          <div className="flex items-center gap-2">
+            <Switch 
+              id="use-messaging" 
+              checked={useApprovedMessaging}
+              onCheckedChange={setUseApprovedMessaging}
+            />
+            <Label htmlFor="use-messaging" className="text-sm flex items-center gap-1.5">
+              <MessageSquare className="w-3.5 h-3.5" />
+              Use Approved Messaging
+            </Label>
+          </div>
+          <div className="flex items-center gap-2">
+            <Switch 
+              id="use-screenshots" 
+              checked={includeScreenshots}
+              onCheckedChange={setIncludeScreenshots}
+            />
+            <Label htmlFor="use-screenshots" className="text-sm flex items-center gap-1.5">
+              <Camera className="w-3.5 h-3.5" />
+              Include Screenshots
+            </Label>
+          </div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => refreshScreenshots()}
+            className="ml-auto gap-1"
+          >
+            <RefreshCw className="w-3 h-3" />
+            Refresh
+          </Button>
+        </div>
+
         {/* Mode Selection */}
         <Tabs value={mode} onValueChange={(v) => setMode(v as GenerationMode)}>
           <TabsList className="grid w-full grid-cols-4">
@@ -323,28 +385,90 @@ export const VideoGenerationMatrix: React.FC<VideoGenerationMatrixProps> = ({
 
           {/* Product Selection (for product and matrix modes) */}
           <TabsContent value="product" className="mt-0">
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Select Products</Label>
-              <div className="grid grid-cols-4 gap-2">
-                {PRODUCTS.map(prod => (
-                  <div
-                    key={prod.id}
-                    onClick={() => toggleProduct(prod.id)}
-                    className={cn(
-                      "p-2 rounded-lg border cursor-pointer transition-all text-center",
-                      selectedProducts.includes(prod.id)
-                        ? "border-primary bg-primary/10"
-                        : "border-muted hover:border-muted-foreground/50"
-                    )}
-                  >
-                    <div
-                      className="w-4 h-4 rounded-full mx-auto mb-1"
-                      style={{ backgroundColor: prod.color }}
-                    />
-                    <span className="text-[11px]">{prod.name}</span>
-                  </div>
-                ))}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">Select Products</Label>
+                {includeScreenshots && (
+                  <span className="text-xs text-muted-foreground">
+                    {productReadiness.filter(p => p.screenshotCount > 0).length}/{productReadiness.length} have screenshots
+                  </span>
+                )}
               </div>
+              <div className="grid grid-cols-4 gap-2">
+                {PRODUCTS.map(prod => {
+                  const readiness = productReadiness.find(p => p.id === prod.id);
+                  const hasScreenshots = (readiness?.screenshotCount || 0) > 0;
+                  const hasMessaging = readiness?.hasApprovedMessaging || false;
+                  
+                  return (
+                    <Tooltip key={prod.id}>
+                      <TooltipTrigger asChild>
+                        <div
+                          onClick={() => toggleProduct(prod.id)}
+                          className={cn(
+                            "p-2 rounded-lg border cursor-pointer transition-all text-center relative",
+                            selectedProducts.includes(prod.id)
+                              ? "border-primary bg-primary/10"
+                              : "border-muted hover:border-muted-foreground/50"
+                          )}
+                        >
+                          <div
+                            className="w-4 h-4 rounded-full mx-auto mb-1"
+                            style={{ backgroundColor: prod.color }}
+                          />
+                          <span className="text-[11px]">{prod.name}</span>
+                          
+                          {/* Status indicators */}
+                          <div className="flex items-center justify-center gap-0.5 mt-1">
+                            {hasScreenshots ? (
+                              <Camera className="w-2.5 h-2.5 text-green-500" />
+                            ) : (
+                              <Camera className="w-2.5 h-2.5 text-muted-foreground/30" />
+                            )}
+                            {hasMessaging ? (
+                              <FileText className="w-2.5 h-2.5 text-green-500" />
+                            ) : (
+                              <FileText className="w-2.5 h-2.5 text-muted-foreground/30" />
+                            )}
+                          </div>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <div className="text-xs space-y-1">
+                          <p className="font-medium">{prod.name}</p>
+                          <p className={hasScreenshots ? 'text-green-500' : 'text-amber-500'}>
+                            {hasScreenshots ? `${readiness?.screenshotCount} screenshots` : 'No screenshots'}
+                          </p>
+                          <p className={hasMessaging ? 'text-green-500' : 'text-amber-500'}>
+                            {hasMessaging ? 'Messaging approved' : 'Using fallback messaging'}
+                          </p>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                })}
+              </div>
+              
+              {/* Warning if no screenshots */}
+              {includeScreenshots && selectedProducts.some(pid => {
+                const r = productReadiness.find(p => p.id === pid);
+                return !r || r.screenshotCount === 0;
+              }) && (
+                <Alert variant="default" className="border-amber-200 bg-amber-50/50">
+                  <AlertCircle className="h-4 w-4 text-amber-500" />
+                  <AlertDescription className="text-xs">
+                    Some products don't have screenshots. 
+                    <Button 
+                      variant="link" 
+                      size="sm" 
+                      className="p-0 h-auto ml-1 text-xs"
+                      onClick={onNavigateToScreenshots}
+                    >
+                      Add screenshots →
+                    </Button>
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
           </TabsContent>
 
