@@ -97,6 +97,8 @@ import {
   Command,
   FileCheck,
   Package,
+  Film,
+  Camera,
 } from "lucide-react";
 
 export type SubscriptionTier = 'free' | 'starter' | 'creator' | 'pro' | 'business' | 'enterprise';
@@ -267,6 +269,17 @@ export const genieStudioNavItems: GenieNavItem[] = [
     url: "/genie-admin?tab=composition",
     icon: Layers,
     description: "Create new compositions and combine media elements",
+    minTier: 'free',
+    category: 'manage',
+    subCategory: 'Create',
+    isInternal: true,
+  },
+  // Genie Cast - Landing video production (Internal Only)
+  {
+    title: "Genie Cast",
+    url: "/genie-admin?tab=landing-videos",
+    icon: Film,
+    description: "Generate and manage landing page marketing videos",
     minTier: 'free',
     category: 'manage',
     subCategory: 'Create',
