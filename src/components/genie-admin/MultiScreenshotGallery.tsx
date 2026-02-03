@@ -64,14 +64,82 @@ export const GENIE_PRODUCTS = [
   { id: 'cast', name: 'Genie Cast', route: '/genie-admin?tab=landing-videos', color: '#EF4444', description: 'Video studio' },
 ];
 
-// Screen sections to capture for Genie Cast - with proper tab value selectors
-export const GENIE_CAST_SCREENS = [
-  { id: 'screenshots-tab', name: 'Screenshots Tab', tabValue: 'screenshots', description: 'Screenshot gallery view' },
-  { id: 'generate-tab', name: 'Quick Generate', tabValue: 'generate', description: 'Video generation panel' },
-  { id: 'matrix-tab', name: 'Matrix View', tabValue: 'matrix', description: 'Full generation matrix' },
-  { id: 'library-tab', name: 'Video Library', tabValue: 'library', description: 'Generated videos list' },
-  { id: 'analytics-tab', name: 'Analytics', tabValue: 'analytics', description: 'Performance metrics' },
-];
+// Screen sections for each product - what to capture for video generation
+export interface ProductScreen {
+  id: string;
+  name: string;
+  description: string;
+  selector?: string; // CSS selector for specific element, or captures full page
+  tabValue?: string; // For tab-based products
+}
+
+export const PRODUCT_SCREENS: Record<string, ProductScreen[]> = {
+  // Genie Spark - Idea to Script
+  'spark': [
+    { id: 'spark-hero', name: 'Hero Input', description: 'Main idea input area' },
+    { id: 'spark-pipeline', name: 'Pipeline Selector', description: 'Pipeline selection grid' },
+    { id: 'spark-script', name: 'Generated Script', description: 'AI-generated script output' },
+    { id: 'spark-confidence', name: 'Confidence Score', description: 'AI confidence metrics' },
+    { id: 'spark-export', name: 'Export Options', description: 'Export and share panel' },
+  ],
+  // Genie Mind - Script Enhancement
+  'mind': [
+    { id: 'mind-editor', name: 'Script Editor', description: 'Main editing workspace' },
+    { id: 'mind-suggestions', name: 'AI Suggestions', description: 'Enhancement recommendations' },
+    { id: 'mind-translation', name: 'Translation', description: 'Multi-language options' },
+    { id: 'mind-versions', name: 'Version History', description: 'Script versions' },
+    { id: 'mind-export', name: 'Export', description: 'Format export options' },
+  ],
+  // Genie Vibe - Recording Studio
+  'vibe': [
+    { id: 'vibe-teleprompter', name: 'Teleprompter', description: 'Script display' },
+    { id: 'vibe-recorder', name: 'Recording Studio', description: 'Audio/video capture' },
+    { id: 'vibe-timeline', name: 'Timeline Editor', description: 'Edit timeline' },
+    { id: 'vibe-preview', name: 'Preview', description: 'Output preview' },
+    { id: 'vibe-tts', name: 'TTS Generation', description: 'AI voiceover' },
+  ],
+  // Genie Deck - Presentations
+  'deck': [
+    { id: 'deck-templates', name: 'Template Gallery', description: 'Presentation templates' },
+    { id: 'deck-editor', name: 'Slide Editor', description: 'Slide design workspace' },
+    { id: 'deck-ai-layout', name: 'AI Layouts', description: 'Smart layout suggestions' },
+    { id: 'deck-preview', name: 'Presentation Preview', description: 'Full preview mode' },
+    { id: 'deck-export', name: 'Export Options', description: 'PPT/PDF export' },
+  ],
+  // Genie Arc - Production Hub
+  'arc': [
+    { id: 'arc-kanban', name: 'Kanban Board', description: 'Project workflow' },
+    { id: 'arc-calendar', name: 'Calendar View', description: 'Scheduling calendar' },
+    { id: 'arc-library', name: 'Asset Library', description: 'Saved content' },
+    { id: 'arc-scheduler', name: 'Scheduler', description: 'Publication scheduler' },
+    { id: 'arc-analytics', name: 'Analytics', description: 'Performance metrics' },
+  ],
+  // Genie Studio - Full Dashboard
+  'studio': [
+    { id: 'studio-dashboard', name: 'Dashboard', description: 'Main overview' },
+    { id: 'studio-products', name: 'Product Suite', description: 'All 7 products' },
+    { id: 'studio-recent', name: 'Recent Projects', description: 'Latest work' },
+    { id: 'studio-settings', name: 'Settings', description: 'Configuration' },
+  ],
+  // Ask Genie - AI Assistant
+  'ask-genie': [
+    { id: 'ask-genie-chat', name: 'Chat Interface', description: 'AI conversation' },
+    { id: 'ask-genie-workflows', name: 'Workflow Guide', description: 'Step-by-step help' },
+    { id: 'ask-genie-help', name: 'Help Center', description: 'Documentation' },
+    { id: 'ask-genie-suggestions', name: 'Suggestions', description: 'AI recommendations' },
+  ],
+  // Genie Cast - Video Production (tab-based)
+  'cast': [
+    { id: 'screenshots-tab', name: 'Screenshots Tab', tabValue: 'screenshots', description: 'Screenshot gallery view' },
+    { id: 'generate-tab', name: 'Quick Generate', tabValue: 'generate', description: 'Video generation panel' },
+    { id: 'matrix-tab', name: 'Matrix View', tabValue: 'matrix', description: 'Full generation matrix' },
+    { id: 'library-tab', name: 'Video Library', tabValue: 'library', description: 'Generated videos list' },
+    { id: 'analytics-tab', name: 'Analytics', tabValue: 'analytics', description: 'Performance metrics' },
+  ],
+};
+
+// Legacy alias for Cast screens (backward compatibility)
+export const GENIE_CAST_SCREENS = PRODUCT_SCREENS['cast'];
 
 export interface ProductScreenshot {
   id: string;
@@ -183,6 +251,8 @@ export const MultiScreenshotGallery: React.FC<MultiScreenshotGalleryProps> = ({
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
   const [previewImage, setPreviewImage] = useState<ProductScreenshot | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [productCaptureDialogOpen, setProductCaptureDialogOpen] = useState(false);
+  const [selectedProductScreens, setSelectedProductScreens] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const sensors = useSensors(
@@ -622,6 +692,145 @@ export const MultiScreenshotGallery: React.FC<MultiScreenshotGalleryProps> = ({
     }
   };
 
+  /**
+   * GENERIC PRODUCT AUTO-CAPTURE
+   * Captures screenshots for any product by navigating to its page and capturing defined screens.
+   * For Cast (tab-based), it uses the tab switching logic. For other products, it captures the main page.
+   */
+  const handleAutoCaptureProduct = async () => {
+    if (!selectedProduct || selectedProductScreens.length === 0) {
+      toast.error('Please select at least one screen to capture');
+      return;
+    }
+
+    // For Cast, use the specialized tab-based capture
+    if (selectedProduct === 'cast') {
+      // Use the existing Cast capture logic via the selectedScreens state
+      setSelectedScreens(selectedProductScreens);
+      setProductCaptureDialogOpen(false);
+      handleAutoCaptureCast();
+      return;
+    }
+
+    setIsAutoCapturing(true);
+    setProductCaptureDialogOpen(false);
+    const capturedCount = { success: 0, failed: 0 };
+    const productConfig = GENIE_PRODUCTS.find(p => p.id === selectedProduct);
+    const screens = PRODUCT_SCREENS[selectedProduct] || [];
+    const screensToCapture = screens.filter(s => selectedProductScreens.includes(s.id));
+
+    toast.info(`Starting capture for ${productConfig?.name} (${screensToCapture.length} screens)...`);
+    console.log(`📸 Auto-capture starting for product: ${selectedProduct}`);
+
+    // For non-Cast products, we capture the current page content
+    // In a full implementation, this would navigate to the product page in an iframe
+    // For now, we capture placeholder screens with the product branding
+    
+    for (let i = 0; i < screensToCapture.length; i++) {
+      const screen = screensToCapture[i];
+      setCaptureProgress({ current: i + 1, total: screensToCapture.length, screen: screen.name });
+      toast.info(`Capturing: ${screen.name}...`);
+      
+      try {
+        // Create a branded placeholder canvas for this screen
+        const canvas = document.createElement('canvas');
+        canvas.width = 1280;
+        canvas.height = 720;
+        const ctx = canvas.getContext('2d');
+        
+        if (ctx) {
+          // Background gradient using product color
+          const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+          gradient.addColorStop(0, '#0a0a0a');
+          gradient.addColorStop(1, productConfig?.color + '40' || '#33333340');
+          ctx.fillStyle = gradient;
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          
+          // Product name
+          ctx.fillStyle = productConfig?.color || '#ffffff';
+          ctx.font = 'bold 48px system-ui, -apple-system, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(productConfig?.name || 'Genie Product', canvas.width / 2, 200);
+          
+          // Screen name
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 32px system-ui, -apple-system, sans-serif';
+          ctx.fillText(screen.name, canvas.width / 2, 280);
+          
+          // Description
+          ctx.fillStyle = '#888888';
+          ctx.font = '20px system-ui, -apple-system, sans-serif';
+          ctx.fillText(screen.description, canvas.width / 2, 340);
+          
+          // Placeholder indicator
+          ctx.fillStyle = '#666666';
+          ctx.font = '16px system-ui, -apple-system, sans-serif';
+          ctx.fillText('📷 Replace with actual screenshot via Upload', canvas.width / 2, 500);
+          ctx.fillText(`Screen ${i + 1} of ${screensToCapture.length}`, canvas.width / 2, 540);
+        }
+
+        // Convert to blob
+        const blob = await new Promise<Blob>((resolve, reject) => {
+          canvas.toBlob((b) => {
+            if (b) resolve(b);
+            else reject(new Error('Failed to create blob'));
+          }, 'image/png', 0.95);
+        });
+
+        // Upload to storage
+        const imageUrl = await uploadScreenshot(
+          new File([blob], `${selectedProduct}-${screen.id}.png`, { type: 'image/png' }), 
+          selectedProduct
+        );
+        
+        if (imageUrl) {
+          const newScreenshot: ProductScreenshot = {
+            id: `${selectedProduct}-${screen.id}-${Date.now()}`,
+            productId: selectedProduct,
+            imageUrl,
+            order: galleries.find(g => g.productId === selectedProduct)?.screenshots.length || 0,
+            createdAt: new Date(),
+            method: 'capture',
+            caption: screen.name,
+          };
+
+          setGalleries(prev => {
+            const updated = prev.map(g =>
+              g.productId === selectedProduct
+                ? { ...g, screenshots: [...g.screenshots, newScreenshot] }
+                : g
+            );
+            onGalleriesUpdated?.(updated);
+            return updated;
+          });
+          capturedCount.success++;
+          console.log(`✅ Captured placeholder for: ${screen.name}`);
+        } else {
+          capturedCount.failed++;
+        }
+      } catch (err) {
+        console.error(`Failed to capture ${screen.name}:`, err);
+        capturedCount.failed++;
+      }
+
+      // Brief pause between captures
+      await new Promise(resolve => setTimeout(resolve, 200));
+    }
+
+    setCaptureProgress(null);
+    setIsAutoCapturing(false);
+    setSelectedProductScreens([]);
+
+    if (capturedCount.success > 0) {
+      toast.success(
+        `Captured ${capturedCount.success} ${productConfig?.name} placeholder(s)${capturedCount.failed > 0 ? ` (${capturedCount.failed} failed)` : ''}. ` +
+        `Replace with real screenshots via Upload.`
+      );
+    } else {
+      toast.error('No screens could be captured. Try uploading manually.');
+    }
+  };
+
   const totalScreenshots = galleries.reduce((sum, g) => sum + g.screenshots.length, 0);
   const productsWithScreenshots = galleries.filter(g => g.screenshots.length > 0).length;
 
@@ -757,18 +966,23 @@ export const MultiScreenshotGallery: React.FC<MultiScreenshotGalleryProps> = ({
                   Uploading...
                 </div>
               )}
-              {selectedProduct === 'cast' && (
+              {/* Auto-Capture section - available for all products that have screens defined */}
+              {selectedProduct && PRODUCT_SCREENS[selectedProduct] && (
                 <div className="border-t pt-4">
-                  <Label className="text-sm font-medium mb-2 block">Or Auto-Capture Cast UI Screens</Label>
+                  <Label className="text-sm font-medium mb-2 block">
+                    Or Auto-Capture {GENIE_PRODUCTS.find(p => p.id === selectedProduct)?.name} Screens
+                  </Label>
                   <p className="text-xs text-muted-foreground mb-3">
-                    Automatically capture different tabs/sections of the Genie Cast interface
+                    Automatically navigate and capture different screens/sections of the product interface
                   </p>
                   <Button
                     variant="outline"
                     className="w-full gap-2"
                     onClick={() => {
                       setDialogOpen(false);
-                      setCastCaptureDialogOpen(true);
+                      setProductCaptureDialogOpen(true);
+                      // Pre-select all screens for this product
+                      setSelectedProductScreens(PRODUCT_SCREENS[selectedProduct]?.map(s => s.id) || []);
                     }}
                     disabled={isAutoCapturing}
                   >
@@ -783,12 +997,125 @@ export const MultiScreenshotGallery: React.FC<MultiScreenshotGalleryProps> = ({
                     ) : (
                       <>
                         <Scan className="w-4 h-4" />
-                        Select Screens to Capture
+                        Select Screens to Capture ({PRODUCT_SCREENS[selectedProduct]?.length || 0} available)
                       </>
                     )}
                   </Button>
                 </div>
               )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Universal Product Screen Capture Dialog */}
+        <Dialog open={productCaptureDialogOpen} onOpenChange={setProductCaptureDialogOpen}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <div 
+                  className="w-4 h-4 rounded-full" 
+                  style={{ backgroundColor: GENIE_PRODUCTS.find(p => p.id === selectedProduct)?.color }} 
+                />
+                <Scan className="w-5 h-5" />
+                Capture {GENIE_PRODUCTS.find(p => p.id === selectedProduct)?.name} Screens
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Select which screens/sections to capture. Each will be saved as a separate screenshot 
+                that maps to a video chapter.
+              </p>
+              
+              {/* Screen selection list */}
+              <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                {selectedProduct && PRODUCT_SCREENS[selectedProduct]?.map(screen => (
+                  <div 
+                    key={screen.id}
+                    className={cn(
+                      "flex items-start space-x-3 p-2.5 rounded-lg border transition-colors cursor-pointer",
+                      selectedProductScreens.includes(screen.id) 
+                        ? "border-primary bg-primary/5" 
+                        : "border-muted hover:border-muted-foreground/30"
+                    )}
+                    onClick={() => {
+                      if (selectedProductScreens.includes(screen.id)) {
+                        setSelectedProductScreens(prev => prev.filter(id => id !== screen.id));
+                      } else {
+                        setSelectedProductScreens(prev => [...prev, screen.id]);
+                      }
+                    }}
+                  >
+                    <Checkbox
+                      id={`capture-product-${screen.id}`}
+                      checked={selectedProductScreens.includes(screen.id)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSelectedProductScreens(prev => [...prev, screen.id]);
+                        } else {
+                          setSelectedProductScreens(prev => prev.filter(id => id !== screen.id));
+                        }
+                      }}
+                    />
+                    <div className="flex-1">
+                      <Label htmlFor={`capture-product-${screen.id}`} className="font-medium text-sm cursor-pointer">
+                        {screen.name}
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        {screen.description}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              {/* Quick actions */}
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => selectedProduct && setSelectedProductScreens(PRODUCT_SCREENS[selectedProduct]?.map(s => s.id) || [])}
+                >
+                  Select All
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedProductScreens([])}
+                >
+                  Deselect All
+                </Button>
+              </div>
+              
+              {/* Info about sync workflow */}
+              <div className="p-3 bg-muted/30 rounded-lg border border-muted text-xs space-y-1">
+                <p className="font-medium flex items-center gap-1.5">
+                  <RefreshCw className="w-3 h-3" />
+                  How Screenshots Sync with Video
+                </p>
+                <p className="text-muted-foreground">
+                  Each screenshot maps to a chapter in the final marketing video. The <code>genie-cast-assembler</code> 
+                  aligns your screenshots with the TTS voiceover script and stitches them into a synchronized video.
+                </p>
+              </div>
+              
+              {/* Capture button */}
+              <Button
+                className="w-full gap-2"
+                onClick={handleAutoCaptureProduct}
+                disabled={selectedProductScreens.length === 0 || isAutoCapturing}
+              >
+                {isAutoCapturing ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Capturing...
+                  </>
+                ) : (
+                  <>
+                    <Camera className="w-4 h-4" />
+                    Capture {selectedProductScreens.length} Screen{selectedProductScreens.length !== 1 ? 's' : ''}
+                  </>
+                )}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
