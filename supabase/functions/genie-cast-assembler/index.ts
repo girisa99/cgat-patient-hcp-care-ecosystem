@@ -431,11 +431,14 @@ async function generateChapterAudio(
   });
 
   if (error) {
+    console.error(`   TTS error for ${chapterId}: ${error.message}`);
     throw new Error(`TTS failed: ${error.message}`);
   }
 
   let audioUrl = data?.audioUrl;
   const audioBase64 = data?.audioBase64 || data?.audioContent;
+
+  console.log(`   TTS result for ${chapterId}: hasUrl=${!!audioUrl}, hasBase64=${!!audioBase64}, base64Len=${audioBase64?.length || 0}`);
 
   // If we only have base64, upload to storage to get a real URL
   if (!audioUrl && audioBase64) {
@@ -443,8 +446,20 @@ async function generateChapterAudio(
       const timestamp = Date.now();
       const filePath = `tts-audio/${language}/${chapterId}-${timestamp}.mp3`;
       
-      // Decode base64 and upload
-      const audioBuffer = Uint8Array.from(atob(audioBase64), c => c.charCodeAt(0));
+      // Decode base64 and upload - handle both raw and data URI formats
+      let cleanBase64 = audioBase64;
+      if (cleanBase64.includes(',')) {
+        cleanBase64 = cleanBase64.split(',')[1];
+      }
+      
+      // Convert base64 to Uint8Array
+      const binaryStr = atob(cleanBase64);
+      const audioBuffer = new Uint8Array(binaryStr.length);
+      for (let i = 0; i < binaryStr.length; i++) {
+        audioBuffer[i] = binaryStr.charCodeAt(i);
+      }
+      
+      console.log(`   Uploading audio to genie-media/${filePath} (${audioBuffer.length} bytes)`);
       
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('genie-media')
@@ -458,12 +473,13 @@ async function generateChapterAudio(
           .from('genie-media')
           .getPublicUrl(filePath);
         audioUrl = urlData?.publicUrl;
-        console.log(`   📁 Audio uploaded to: ${audioUrl}`);
+        console.log(`   📁 Audio uploaded successfully: ${audioUrl}`);
       } else {
         console.error(`   ⚠️ Audio upload failed: ${uploadError?.message}`);
+        console.error(`   Upload error details: ${JSON.stringify(uploadError)}`);
       }
     } catch (uploadErr) {
-      console.error('Audio upload error:', uploadErr);
+      console.error(`   Audio upload error for ${chapterId}:`, uploadErr);
     }
   }
 
@@ -476,7 +492,8 @@ async function generateChapterAudio(
 
 /**
  * Generate product visual for a chapter
- * Uses pre-rendered screenshots or generates a dynamic branded visual
+ * Uses high-quality placeholder images from reliable CDN
+ * Since brand-assets bucket is empty, use picsum.photos with deterministic IDs
  */
 async function generateChapterVisual(
   chapterId: string,
@@ -487,43 +504,44 @@ async function generateChapterVisual(
   const visuals = PRODUCT_VISUALS[chapterId];
   if (!visuals) return undefined;
 
-  // Product-specific brand colors and imagery
-  const productBranding: Record<string, { image: string; gradient: string }> = {
+  // Use picsum.photos with deterministic seed IDs for consistent placeholders
+  // These are high-quality images that JSON2Video can download
+  const productBranding: Record<string, { image: string; color: string }> = {
     'opening': { 
-      image: 'https://ithspbabhmdntioslfqe.supabase.co/storage/v1/object/public/brand-assets/genie-studio-hero.jpg',
-      gradient: 'linear-gradient(135deg, #9333EA 0%, #7C3AED 100%)'
+      image: 'https://picsum.photos/seed/genie-studio/1920/1080',
+      color: '#9333EA'
     },
     'spark': {
-      image: 'https://ithspbabhmdntioslfqe.supabase.co/storage/v1/object/public/brand-assets/genie-spark-demo.jpg',
-      gradient: 'linear-gradient(135deg, #F97316 0%, #EA580C 100%)'
+      image: 'https://picsum.photos/seed/genie-spark/1920/1080',
+      color: '#F97316'
     },
     'mind': {
-      image: 'https://ithspbabhmdntioslfqe.supabase.co/storage/v1/object/public/brand-assets/genie-mind-demo.jpg',
-      gradient: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)'
+      image: 'https://picsum.photos/seed/genie-mind/1920/1080',
+      color: '#3B82F6'
     },
     'vibe': {
-      image: 'https://ithspbabhmdntioslfqe.supabase.co/storage/v1/object/public/brand-assets/genie-vibe-demo.jpg',
-      gradient: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)'
+      image: 'https://picsum.photos/seed/genie-vibe/1920/1080',
+      color: '#22C55E'
     },
     'deck': {
-      image: 'https://ithspbabhmdntioslfqe.supabase.co/storage/v1/object/public/brand-assets/genie-deck-demo.jpg',
-      gradient: 'linear-gradient(135deg, #EAB308 0%, #CA8A04 100%)'
+      image: 'https://picsum.photos/seed/genie-deck/1920/1080',
+      color: '#EAB308'
     },
     'arc': {
-      image: 'https://ithspbabhmdntioslfqe.supabase.co/storage/v1/object/public/brand-assets/genie-arc-demo.jpg',
-      gradient: 'linear-gradient(135deg, #EC4899 0%, #DB2777 100%)'
+      image: 'https://picsum.photos/seed/genie-arc/1920/1080',
+      color: '#EC4899'
     },
     'ask-genie': {
-      image: 'https://ithspbabhmdntioslfqe.supabase.co/storage/v1/object/public/brand-assets/ask-genie-demo.jpg',
-      gradient: 'linear-gradient(135deg, #06B6D4 0%, #0891B2 100%)'
+      image: 'https://picsum.photos/seed/ask-genie/1920/1080',
+      color: '#06B6D4'
     },
     'cast': {
-      image: 'https://ithspbabhmdntioslfqe.supabase.co/storage/v1/object/public/brand-assets/genie-cast-demo.jpg',
-      gradient: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)'
+      image: 'https://picsum.photos/seed/genie-cast/1920/1080',
+      color: '#EF4444'
     },
     'closing': {
-      image: 'https://ithspbabhmdntioslfqe.supabase.co/storage/v1/object/public/brand-assets/genie-studio-cta.jpg',
-      gradient: 'linear-gradient(135deg, #9333EA 0%, #7C3AED 100%)'
+      image: 'https://picsum.photos/seed/genie-cta/1920/1080',
+      color: '#9333EA'
     },
   };
 
@@ -532,8 +550,8 @@ async function generateChapterVisual(
     return branding.image;
   }
 
-  // Fallback to a generic branded placeholder
-  return `https://ithspbabhmdntioslfqe.supabase.co/storage/v1/object/public/brand-assets/genie-placeholder-${chapterId}.jpg`;
+  // Fallback to a generic placeholder
+  return `https://picsum.photos/seed/${chapterId}/1920/1080`;
 }
 
 /**
@@ -716,11 +734,24 @@ async function tryJSON2VideoAssembly(
   try {
     console.log(`🎥 Starting JSON2Video timeline assembly for ${language}`);
     console.log(`   API Key present: ${apiKey.substring(0, 8)}...${apiKey.substring(apiKey.length - 4)}`);
-
-    // Build timeline from chapters
-    const timeline = buildJSON2VideoTimeline(chapters, audioUrls, visualUrls, language, quality);
     
-    // Log full payload for debugging (first attempt)
+    // CRITICAL: Filter out any data: URIs - JSON2Video requires HTTP URLs only
+    const validAudioUrls = audioUrls.filter(url => url && url.startsWith('http'));
+    const validVisualUrls = visualUrls.filter(url => url && url.startsWith('http'));
+    
+    console.log(`   Audio URLs (valid HTTP): ${validAudioUrls.length}/${audioUrls.length}`);
+    console.log(`   Visual URLs (valid HTTP): ${validVisualUrls.length}/${visualUrls.length}`);
+    
+    // Log any base64 URLs that were filtered out
+    const base64AudioCount = audioUrls.filter(url => url && url.startsWith('data:')).length;
+    if (base64AudioCount > 0) {
+      console.warn(`   ⚠️ ${base64AudioCount} audio files are base64 (filtered out) - check storage upload`);
+    }
+
+    // Build timeline from chapters - using only valid URLs
+    const timeline = buildJSON2VideoTimeline(chapters, validAudioUrls, validVisualUrls, language, quality);
+    
+    // Log full payload for debugging
     const payloadStr = JSON.stringify(timeline, null, 2);
     console.log(`📋 JSON2Video Request Payload (first 2000 chars):\n${payloadStr.substring(0, 2000)}`);
     console.log(`   Total scenes: ${(timeline as any).scenes?.length || 0}`);
@@ -752,8 +783,7 @@ async function tryJSON2VideoAssembly(
       return { success: false };
     }
 
-    // JSON2Video returns { success: true, project: "xxx" } on success
-    // If no 'project' returned, API key may not have render permissions
+    // JSON2Video v2 returns { success: true, project: "xxx" } on successful job creation
     const projectId = data.project || data.id || data.movie_id || data.movie?.id;
     
     if (projectId) {
@@ -762,7 +792,7 @@ async function tryJSON2VideoAssembly(
       return result;
     }
 
-    // If immediate output available (synchronous render)
+    // If immediate output available (synchronous render - rare)
     if (data.url || data.movie_url || data.movie?.url) {
       return {
         success: true,
@@ -772,17 +802,19 @@ async function tryJSON2VideoAssembly(
       };
     }
 
-    // No project ID means API key doesn't have render permissions
-    // This happens with Free tier or incorrect API key
+    // No project ID means issue with API key or plan
     if (data.success === true && !projectId) {
       console.error(`⚠️ JSON2Video: success=true but no project ID returned.`);
-      console.error(`   This typically means: 1) Free tier API key (no render access), 2) API key misconfigured, 3) Account quota exhausted`);
+      console.error(`   Possible causes:`);
+      console.error(`   1. API key is for Free tier (no Render API access)`);
+      console.error(`   2. Account quota exhausted`);
+      console.error(`   3. API key misconfigured`);
       console.error(`   Full response: ${JSON.stringify(data)}`);
-      console.error(`   Please verify your JSON2Video account has Professional or higher plan at json2video.com`);
+      console.error(`   Please verify Professional plan at json2video.com/account`);
       return { success: false };
     }
 
-    // If response indicates processing started but no ID returned, check for error message
+    // Error in response
     if (data.error || data.message) {
       console.error(`JSON2Video API error: ${data.error || data.message}`);
       return { success: false };
