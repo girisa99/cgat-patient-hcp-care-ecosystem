@@ -388,118 +388,186 @@ export const MultiScreenshotGallery: React.FC<MultiScreenshotGalleryProps> = ({
       'library': 3,
       'analytics': 4,
     };
+
+    // Helper to find the video generation panel's tablist (has 5 tabs)
+    const findVideoGenTablist = (): Element | null => {
+      const allTablists = document.querySelectorAll('[role="tablist"]');
+      for (const tablist of allTablists) {
+        const tabs = tablist.querySelectorAll('button[role="tab"]');
+        if (tabs.length === 5) {
+          return tablist;
+        }
+      }
+      return null;
+    };
+
+    // Helper to click a tab and wait for panel to become active
+    const switchToTab = async (tabIndex: number): Promise<HTMLElement | null> => {
+      const tablist = findVideoGenTablist();
+      if (!tablist) {
+        console.warn('❌ Could not find video generation tablist');
+        return null;
+      }
+
+      const allTabs = tablist.querySelectorAll('button[role="tab"]');
+      const tabEl = allTabs[tabIndex] as HTMLElement;
+      
+      if (!tabEl) {
+        console.warn(`❌ Tab at index ${tabIndex} not found`);
+        return null;
+      }
+
+      // Get the current active tab to verify switch
+      const currentActive = tablist.querySelector('button[role="tab"][data-state="active"]');
+      const currentActiveIndex = currentActive ? Array.from(allTabs).indexOf(currentActive) : -1;
+      
+      console.log(`🔄 Switching from tab ${currentActiveIndex} to tab ${tabIndex}`);
+      
+      // Click the tab - use focus + click for more reliable activation
+      tabEl.focus();
+      tabEl.click();
+      
+      // Wait for React to process the state change
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Verify the tab switched by checking data-state
+      let attempts = 0;
+      const maxAttempts = 20; // 2 seconds max
+      
+      while (attempts < maxAttempts) {
+        const newActiveTab = tablist.querySelector('button[role="tab"][data-state="active"]');
+        const newActiveIndex = newActiveTab ? Array.from(allTabs).indexOf(newActiveTab) : -1;
+        
+        if (newActiveIndex === tabIndex) {
+          console.log(`✅ Tab ${tabIndex} is now active`);
+          break;
+        }
+        
+        // Try clicking again if not switched
+        if (attempts === 5 || attempts === 10) {
+          tabEl.click();
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
+      }
+
+      // Wait for content to render
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      // Find the tabpanel that's now active - get all tabpanels and find the visible one
+      const allPanels = document.querySelectorAll('[role="tabpanel"]');
+      let activePanel: HTMLElement | null = null;
+      
+      for (const panel of allPanels) {
+        const state = panel.getAttribute('data-state');
+        const isHidden = (panel as HTMLElement).hidden;
+        const display = window.getComputedStyle(panel).display;
+        
+        // Check if this panel is active and visible
+        if (state === 'active' && !isHidden && display !== 'none') {
+          // Additional check: make sure it's the panel associated with our tablist
+          // by checking if it's a sibling or near the tablist
+          const tablistParent = tablist.parentElement;
+          if (tablistParent && tablistParent.contains(panel)) {
+            activePanel = panel as HTMLElement;
+            break;
+          }
+          // Fallback: just use the first active panel if parent check fails
+          if (!activePanel) {
+            activePanel = panel as HTMLElement;
+          }
+        }
+      }
+      
+      console.log(`📋 Found active panel: ${!!activePanel}`);
+      return activePanel;
+    };
     
     for (let i = 0; i < screensToCapture.length; i++) {
       const screen = screensToCapture[i];
       setCaptureProgress({ current: i + 1, total: screensToCapture.length, screen: screen.name });
       
       try {
-        // Find the correct tablist - the one with 5 tabs for the video generation panel
-        const allTablists = document.querySelectorAll('[role="tablist"]');
-        let targetTablist: Element | null = null;
+        const tabIndex = TAB_INDICES[screen.tabValue];
         
-        allTablists.forEach((tablist) => {
-          const tabs = tablist.querySelectorAll('button[role="tab"]');
-          // The video generation panel has exactly 5 tabs
-          if (tabs.length === 5) {
-            targetTablist = tablist;
-          }
-        });
+        if (tabIndex === undefined) {
+          console.warn(`❌ Unknown tab value: ${screen.tabValue}`);
+          capturedCount.failed++;
+          continue;
+        }
 
-        if (screen.tabValue && targetTablist) {
-          const tabIndex = TAB_INDICES[screen.tabValue];
-          const allTabs = targetTablist.querySelectorAll('button[role="tab"]');
-          
-          if (tabIndex !== undefined && allTabs[tabIndex]) {
-            const tabEl = allTabs[tabIndex] as HTMLElement;
-            console.log(`🖱️ Clicking tab ${tabIndex}: ${screen.name} (${screen.tabValue})`);
-            
-            // Trigger click event
-            tabEl.click();
-            
-            // Also dispatch mouse events for more reliable activation
-            tabEl.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-            tabEl.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
-          } else {
-            console.warn(`Tab index ${tabIndex} not found for ${screen.tabValue}`);
-          }
-
-          // Wait for tab content to render - increased delay for React state updates
-          await new Promise(resolve => setTimeout(resolve, 1500));
+        toast.info(`Switching to: ${screen.name}...`);
+        
+        // Switch to the target tab
+        const tabPanel = await switchToTab(tabIndex);
+        
+        if (!tabPanel) {
+          console.warn(`❌ Could not switch to tab ${tabIndex} for ${screen.name}`);
+          capturedCount.failed++;
+          continue;
         }
 
         toast.info(`Capturing: ${screen.name}...`);
-
-        // Wait a bit more after toast to ensure UI is stable
+        
+        // Additional wait for any animations to complete
         await new Promise(resolve => setTimeout(resolve, 500));
 
-        // Find the active tab panel content
-        const tabPanel = document.querySelector('[role="tabpanel"][data-state="active"]') as HTMLElement;
+        // Scroll to top of the panel
+        tabPanel.scrollTop = 0;
+        await new Promise(resolve => setTimeout(resolve, 200));
         
-        // Log what we found for debugging
-        console.log(`📸 Tab panel found: ${!!tabPanel}, data-state: ${tabPanel?.getAttribute('data-state')}`);
+        const canvas = await html2canvas(tabPanel, {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: '#0a0a0a',
+          logging: false,
+          width: tabPanel.offsetWidth,
+          height: Math.min(tabPanel.scrollHeight, 2000), // Cap height to avoid huge captures
+          ignoreElements: (element) => {
+            return element.classList?.contains('animate-spin') || 
+                   element.tagName === 'VIDEO' ||
+                   element.tagName === 'IFRAME';
+          },
+        });
 
-        if (tabPanel) {
-          // Scroll to top of the panel
-          tabPanel.scrollTop = 0;
-          await new Promise(resolve => setTimeout(resolve, 300));
-          
-          const canvas = await html2canvas(tabPanel, {
-            scale: 2,
-            useCORS: true,
-            allowTaint: true,
-            backgroundColor: '#0a0a0a', // Use fixed dark background to avoid CSS parsing issues
-            logging: false,
-            windowWidth: tabPanel.scrollWidth,
-            windowHeight: tabPanel.scrollHeight,
-            ignoreElements: (element) => {
-              // Ignore elements that might cause CSS parsing issues
-              return element.classList?.contains('animate-spin') || 
-                     element.tagName === 'VIDEO' ||
-                     element.tagName === 'IFRAME';
-            },
+        // Convert to blob
+        const blob = await new Promise<Blob>((resolve, reject) => {
+          canvas.toBlob((b) => {
+            if (b) resolve(b);
+            else reject(new Error('Failed to create blob'));
+          }, 'image/png', 0.95);
+        });
+
+        // Upload to storage
+        const imageUrl = await uploadScreenshot(new File([blob], `cast-${screen.id}.png`, { type: 'image/png' }), 'cast');
+        
+        if (imageUrl) {
+          const newScreenshot: ProductScreenshot = {
+            id: `cast-${screen.id}-${Date.now()}`,
+            productId: 'cast',
+            imageUrl,
+            order: galleries.find(g => g.productId === 'cast')?.screenshots.length || 0,
+            createdAt: new Date(),
+            method: 'capture',
+            caption: screen.name,
+          };
+
+          setGalleries(prev => {
+            const updated = prev.map(g =>
+              g.productId === 'cast'
+                ? { ...g, screenshots: [...g.screenshots, newScreenshot] }
+                : g
+            );
+            onGalleriesUpdated?.(updated);
+            return updated;
           });
-
-          // Convert to blob
-          const blob = await new Promise<Blob>((resolve, reject) => {
-            canvas.toBlob((b) => {
-              if (b) resolve(b);
-              else reject(new Error('Failed to create blob'));
-            }, 'image/png', 0.95);
-          });
-
-          // Upload to storage
-          const imageUrl = await uploadScreenshot(new File([blob], `cast-${screen.id}.png`, { type: 'image/png' }), 'cast');
-          
-          if (imageUrl) {
-            const newScreenshot: ProductScreenshot = {
-              id: `cast-${screen.id}-${Date.now()}`,
-              productId: 'cast',
-              imageUrl,
-              order: galleries.find(g => g.productId === 'cast')?.screenshots.length || 0,
-              createdAt: new Date(),
-              method: 'capture',
-              caption: screen.name,
-            };
-
-            setGalleries(prev => {
-              const updated = prev.map(g =>
-                g.productId === 'cast'
-                  ? { ...g, screenshots: [...g.screenshots, newScreenshot] }
-                  : g
-              );
-              onGalleriesUpdated?.(updated);
-              return updated;
-            });
-            capturedCount.success++;
-            console.log(`✅ Captured: ${screen.name}`);
-          } else {
-            capturedCount.failed++;
-            console.warn(`❌ Upload failed for: ${screen.name}`);
-          }
+          capturedCount.success++;
+          console.log(`✅ Captured: ${screen.name}`);
         } else {
           capturedCount.failed++;
-          console.warn(`❌ No capture target for: ${screen.name}`);
+          console.warn(`❌ Upload failed for: ${screen.name}`);
         }
       } catch (err) {
         console.error(`Failed to capture ${screen.name}:`, err);
@@ -507,17 +575,12 @@ export const MultiScreenshotGallery: React.FC<MultiScreenshotGalleryProps> = ({
       }
 
       // Brief pause between captures
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 300));
     }
 
-    // Return to screenshots tab
-    const allTablists = document.querySelectorAll('[role="tablist"]');
-    allTablists.forEach((tablist) => {
-      const tabs = tablist.querySelectorAll('button[role="tab"]');
-      if (tabs.length === 5 && tabs[0]) {
-        (tabs[0] as HTMLElement).click();
-      }
-    });
+    // Return to screenshots tab at the end
+    console.log('🔄 Returning to Screenshots tab...');
+    await switchToTab(0);
 
     setCaptureProgress(null);
     setIsAutoCapturing(false);
