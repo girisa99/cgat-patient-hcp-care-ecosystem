@@ -599,8 +599,9 @@ const AppContent = () => {
                 </>
               ) : (
                 <>
-                  <Route path="/" element={<Login />} />
-                  <Route path="*" element={<Navigate to="/login" replace />} />
+                  {/* Unauthenticated users - redirect to Genie landing or login based on context */}
+                  <Route path="/" element={<Navigate to="/genie-landing" replace />} />
+                  <Route path="*" element={<Navigate to="/genie-landing" replace />} />
                 </>
               )}
             </Routes>

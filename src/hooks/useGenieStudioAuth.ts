@@ -304,16 +304,49 @@ export function useGenieStudioAuth() {
   }, [fetchGenieUserProfile, createGenieUserProfile]);
 
   // Sign in with Google (PRIMARY method)
+  // For custom domains, bypass auth-bridge to prevent redirect issues
   const signInWithGoogle = useCallback(async (redirectTo?: string) => {
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: redirectTo || `${window.location.origin}/genie-studio`,
-        },
-      });
+      const finalRedirectTo = redirectTo || `${window.location.origin}/genie-studio`;
+      
+      // Detect if we're on a custom domain (not Lovable preview)
+      const isCustomDomain = 
+        !window.location.hostname.includes('lovable.app') &&
+        !window.location.hostname.includes('lovableproject.com') &&
+        !window.location.hostname.includes('localhost');
 
-      if (error) throw error;
+      if (isCustomDomain) {
+        // Bypass auth-bridge by getting OAuth URL directly
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: finalRedirectTo,
+            skipBrowserRedirect: true, // Critical: prevents automatic redirect through auth-bridge
+          },
+        });
+
+        if (error) throw error;
+
+        // Validate OAuth URL before redirect (security: prevent open redirect)
+        if (data?.url) {
+          const oauthUrl = new URL(data.url);
+          const allowedHosts = ['accounts.google.com', 'www.google.com'];
+          if (!allowedHosts.some(host => oauthUrl.hostname === host || oauthUrl.hostname.endsWith('.google.com'))) {
+            throw new Error('Invalid OAuth redirect URL');
+          }
+          window.location.href = data.url; // Manual redirect
+        }
+      } else {
+        // For Lovable domains, use normal flow
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: finalRedirectTo,
+          },
+        });
+
+        if (error) throw error;
+      }
     } catch (error) {
       console.error('❌ Google sign-in error:', error);
       toast({
