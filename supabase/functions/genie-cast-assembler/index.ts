@@ -438,10 +438,14 @@ async function generateChapterAudio(
   let audioUrl = data?.audioUrl;
   const audioBase64 = data?.audioBase64 || data?.audioContent;
 
-  console.log(`   TTS result for ${chapterId}: hasUrl=${!!audioUrl}, hasBase64=${!!audioBase64}, base64Len=${audioBase64?.length || 0}`);
+  console.log(`   TTS result for ${chapterId}: hasUrl=${!!audioUrl}, urlIsHttp=${audioUrl?.startsWith('http')}, hasBase64=${!!audioBase64}, base64Len=${audioBase64?.length || 0}`);
 
-  // If we only have base64, upload to storage to get a real URL
-  if (!audioUrl && audioBase64) {
+  // CRITICAL: Check if audioUrl is a valid HTTP URL, not a data URI
+  // JSON2Video REQUIRES http(s):// URLs - data URIs won't work
+  const hasValidHttpUrl = audioUrl && audioUrl.startsWith('http');
+  
+  // If we don't have a valid HTTP URL but have base64, upload to storage
+  if (!hasValidHttpUrl && audioBase64) {
     try {
       const timestamp = Date.now();
       const filePath = `tts-audio/${language}/${chapterId}-${timestamp}.mp3`;
@@ -451,6 +455,10 @@ async function generateChapterAudio(
       if (cleanBase64.includes(',')) {
         cleanBase64 = cleanBase64.split(',')[1];
       }
+      // Also handle if there's a prefix like "base64:"
+      if (cleanBase64.startsWith('base64:')) {
+        cleanBase64 = cleanBase64.substring(7);
+      }
       
       // Convert base64 to Uint8Array
       const binaryStr = atob(cleanBase64);
@@ -459,7 +467,7 @@ async function generateChapterAudio(
         audioBuffer[i] = binaryStr.charCodeAt(i);
       }
       
-      console.log(`   Uploading audio to genie-media/${filePath} (${audioBuffer.length} bytes)`);
+      console.log(`   📤 Uploading audio to genie-media/${filePath} (${audioBuffer.length} bytes)`);
       
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('genie-media')
@@ -473,14 +481,17 @@ async function generateChapterAudio(
           .from('genie-media')
           .getPublicUrl(filePath);
         audioUrl = urlData?.publicUrl;
-        console.log(`   📁 Audio uploaded successfully: ${audioUrl}`);
+        console.log(`   ✅ Audio uploaded successfully: ${audioUrl}`);
       } else {
-        console.error(`   ⚠️ Audio upload failed: ${uploadError?.message}`);
+        console.error(`   ❌ Audio upload failed: ${uploadError?.message}`);
         console.error(`   Upload error details: ${JSON.stringify(uploadError)}`);
+        // Keep the base64 for fallback, but log the issue
       }
     } catch (uploadErr) {
-      console.error(`   Audio upload error for ${chapterId}:`, uploadErr);
+      console.error(`   ❌ Audio upload exception for ${chapterId}:`, uploadErr);
     }
+  } else if (hasValidHttpUrl) {
+    console.log(`   ✅ Using existing HTTP audio URL: ${audioUrl}`);
   }
 
   return {
@@ -492,7 +503,9 @@ async function generateChapterAudio(
 
 /**
  * Generate product visual for a chapter
- * Uses AI-generated brand assets from the brand-assets bucket
+ * Uses REAL uploaded logos from the brand-assets bucket (not AI-generated)
+ * Logos are uploaded via upload-brand-logos edge function
+ * Logos are uploaded via upload-brand-logos edge function
  */
 async function generateChapterVisual(
   chapterId: string,
@@ -505,54 +518,58 @@ async function generateChapterVisual(
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   
-  // Use AI-generated brand assets from storage bucket
+  // Use REAL uploaded brand logos from storage bucket (JPG format)
+  // These are the actual logos uploaded by the user via upload-brand-logos function
   const productBranding: Record<string, { image: string; color: string }> = {
     'opening': { 
-      image: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-opening-demo.jpg`,
+      image: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-opening-logo.jpg`,
       color: '#9333EA'
     },
     'spark': {
-      image: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-spark-demo.jpg`,
+      image: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-spark-logo.jpg`,
       color: '#F97316'
     },
     'mind': {
-      image: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-mind-demo.jpg`,
+      image: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-mind-logo.jpg`,
       color: '#3B82F6'
     },
     'vibe': {
-      image: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-vibe-demo.jpg`,
+      image: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-vibe-logo.jpg`,
       color: '#22C55E'
     },
     'deck': {
-      image: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-deck-demo.jpg`,
+      image: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-deck-logo.jpg`,
       color: '#EAB308'
     },
     'arc': {
-      image: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-arc-demo.jpg`,
+      image: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-arc-logo.jpg`,
       color: '#EC4899'
     },
     'ask-genie': {
-      image: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-ask-genie-demo.jpg`,
+      image: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-ask-genie-logo.jpg`,
       color: '#06B6D4'
     },
     'cast': {
-      image: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-cast-demo.jpg`,
+      image: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-cast-logo.jpg`,
       color: '#EF4444'
     },
     'closing': {
-      image: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-closing-demo.jpg`,
+      image: `${supabaseUrl}/storage/v1/object/public/brand-assets/genie-closing-logo.jpg`,
       color: '#9333EA'
     },
   };
 
   const branding = productBranding[chapterId];
   if (branding?.image) {
-    console.log(`   🖼️ Using brand asset for ${chapterId}: ${branding.image}`);
+    console.log(`   🖼️ Using real brand logo for ${chapterId}: ${branding.image}`);
     return branding.image;
   }
 
-  // Fallback to picsum if brand asset missing
-  return `https://picsum.photos/seed/${chapterId}/1920/1080`;
+  // Fallback to the preview URL (which has the logos)
+  const previewAppUrl = 'https://id-preview--0e30badf-cab5-4682-9459-1076c06d2310.lovable.app';
+  const fallbackLogoUrl = `${previewAppUrl}/brand-assets/genie-${chapterId}-logo.png`;
+  console.log(`   ⚠️ Brand logo not in storage, using preview URL: ${fallbackLogoUrl}`);
+  return fallbackLogoUrl;
 }
 
 /**

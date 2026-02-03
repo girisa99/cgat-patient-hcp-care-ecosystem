@@ -386,3 +386,6 @@ verify_jwt = false
 
 [functions.generate-brand-assets]
 verify_jwt = false
+
+[functions.upload-brand-logos]
+verify_jwt = false
