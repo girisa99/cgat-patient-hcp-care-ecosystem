@@ -69,18 +69,56 @@ export function useGenieCastOrchestration(
 ): UseGenieCastOrchestrationReturn {
   const { showNotifications = true, autoRefresh = false, refreshInterval = 30000 } = options;
 
+  // Persist key state in localStorage to prevent loss on refresh
+  const STORAGE_KEY = 'genie_cast_pipeline_state';
+
   const [products, setProducts] = useState<ProductReadiness[]>([]);
   const [languages] = useState(Object.keys(LANGUAGE_NAMES));
   const [tiers] = useState(['free', 'starter', 'pro', 'enterprise']);
-  const [activePipeline, setActivePipeline] = useState<GenerationPipeline | null>(null);
-  const [allPipelines, setAllPipelines] = useState<GenerationPipeline[]>([]);
+  const [activePipeline, setActivePipeline] = useState<GenerationPipeline | null>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Only restore if pipeline was running (not stale)
+        if (parsed?.activePipeline?.status === 'running') {
+          return parsed.activePipeline;
+        }
+      }
+    } catch { /* ignore */ }
+    return null;
+  });
+  const [allPipelines, setAllPipelines] = useState<GenerationPipeline[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed?.allPipelines || [];
+      }
+    } catch { /* ignore */ }
+    return [];
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // Persist state to localStorage when it changes
+  useEffect(() => {
+    if (activePipeline || allPipelines.length > 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        activePipeline,
+        allPipelines,
+        savedAt: Date.now(),
+      }));
+    }
+  }, [activePipeline, allPipelines]);
 
   // Load initial data
   const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
+      // Clear screenshot cache to get fresh data
+      genieCastOrchestrationService.clearScreenshotCache();
+      
       const matrixData = await genieCastOrchestrationService.getMatrixData();
       
       const productReadiness: ProductReadiness[] = matrixData.products.map(p => ({

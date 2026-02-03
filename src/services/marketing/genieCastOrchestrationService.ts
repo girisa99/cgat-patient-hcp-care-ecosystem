@@ -151,19 +151,26 @@ class GenieCastOrchestrationService {
     }
 
     try {
-      // Fetch from storage bucket
+      // Fetch from storage bucket - screenshots folder structure
+      // MultiScreenshotGallery saves to: screenshots/{productId}-{timestamp}.png
       const { data: files, error } = await supabase.storage
         .from('product-screenshots')
-        .list(productId, { limit: 100 });
+        .list('screenshots', { limit: 500 });
 
       if (error) throw error;
 
-      const screenshots: ProductScreenshot[] = (files || []).map((file, idx) => ({
+      // Filter files that belong to this product (handle hyphenated IDs like ask-genie)
+      const productFiles = (files || []).filter(file => {
+        const fileName = file.name.replace(/\.(png|jpg|webp)$/i, '');
+        return fileName.startsWith(`${productId}-`);
+      });
+
+      const screenshots: ProductScreenshot[] = productFiles.map((file, idx) => ({
         id: `${productId}-${file.name}`,
         productId,
         screenId: file.name.replace(/\.(png|jpg|webp)$/i, ''),
         screenName: file.name.replace(/[-_]/g, ' ').replace(/\.(png|jpg|webp)$/i, ''),
-        imageUrl: supabase.storage.from('product-screenshots').getPublicUrl(`${productId}/${file.name}`).data.publicUrl,
+        imageUrl: supabase.storage.from('product-screenshots').getPublicUrl(`screenshots/${file.name}`).data.publicUrl,
         order: idx,
         capturedAt: new Date(file.created_at || Date.now()),
         captureMethod: 'manual',
