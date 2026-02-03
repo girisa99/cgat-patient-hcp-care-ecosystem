@@ -632,41 +632,52 @@ export const ContentLibrary: React.FC<ContentLibraryProps> = ({
             >
               {/* Thumbnail with Play overlay */}
               <div className="relative aspect-video bg-muted rounded-t-lg overflow-hidden">
-                {item.thumbnail_url ? (
+                {/* Background gradient - always present */}
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10" />
+                
+                {/* Thumbnail image with fallback */}
+                {item.thumbnail_url && item.thumbnail_url.startsWith('http') ? (
                   <img 
                     src={item.thumbnail_url} 
-                    alt={item.title}
-                    className="w-full h-full object-cover"
+                    alt=""
+                    className="absolute inset-0 w-full h-full object-cover"
+                    onError={(e) => {
+                      // Hide broken image, show fallback
+                      e.currentTarget.style.display = 'none';
+                    }}
                   />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-accent/20">
-                    <Video className="w-12 h-12 text-muted-foreground" />
-                  </div>
-                )}
+                ) : null}
                 
-                {/* Play button overlay */}
-                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <Button size="lg" variant="secondary" className="rounded-full w-14 h-14">
-                    <Play className="w-6 h-6" />
+                {/* Fallback video icon - shows through if no image */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="w-16 h-16 rounded-full bg-background/80 flex items-center justify-center shadow-lg">
+                    <Video className="w-8 h-8 text-muted-foreground" />
+                  </div>
+                </div>
+                
+                {/* Play button overlay on hover */}
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <Button size="lg" variant="secondary" className="rounded-full w-12 h-12 shadow-lg">
+                    <Play className="w-5 h-5" />
                   </Button>
                 </div>
                 
-                {/* Status badge */}
-                <div className="absolute top-2 right-2">
-                  {getStatusBadge(item)}
-                </div>
-                
-                {/* Duration badge */}
-                {item.duration_seconds && (
-                  <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
-                    {formatDuration(item.duration_seconds)}
+                {/* Featured badge - top left */}
+                {item.is_featured && (
+                  <div className="absolute top-2 left-2 z-10">
+                    <Badge className="bg-accent text-accent-foreground text-xs">Featured</Badge>
                   </div>
                 )}
                 
-                {/* Featured badge */}
-                {item.is_featured && (
-                  <div className="absolute top-2 left-2">
-                    <Badge className="bg-accent text-accent-foreground">Featured</Badge>
+                {/* Status badge - top right */}
+                <div className="absolute top-2 right-2 z-10">
+                  {getStatusBadge(item)}
+                </div>
+                
+                {/* Duration badge - bottom right */}
+                {item.duration_seconds && (
+                  <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-1.5 py-0.5 rounded font-mono z-10">
+                    {formatDuration(item.duration_seconds)}
                   </div>
                 )}
               </div>
@@ -1068,10 +1079,11 @@ export const ContentLibrary: React.FC<ContentLibraryProps> = ({
                                    selectedContent?.placement === 'hero_showcase' ||
                                    !selectedContent?.id.startsWith('project-');
                 if (isGenieCast) {
-                  // For Genie Cast content, stay in the current context (show edit options inline)
-                  toast.info('Edit mode coming soon for Genie Cast content', {
-                    description: 'You can regenerate or update this video from the Generate tab'
-                  });
+                  // Navigate to Genie Cast tab with the selected content ID
+                  setSelectedContent(null);
+                  setIsPlaying(false);
+                  // Use URL params to navigate to Genie Cast
+                  window.location.href = `/genie-admin?tab=genie-cast&edit=${selectedContent?.id}`;
                 } else {
                   // For Studio content, call the onEdit handler
                   onEdit?.(selectedContent!.id);
