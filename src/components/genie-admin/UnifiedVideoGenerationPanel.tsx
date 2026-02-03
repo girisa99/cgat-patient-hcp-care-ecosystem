@@ -36,6 +36,7 @@ import {
   AlertTriangle,
   TrendingUp,
   MessageSquare,
+  GitBranch,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -56,6 +57,7 @@ import { TokenConsumptionBreakdown } from './TokenConsumptionBreakdown';
 import { ProductChangeAlertPanel } from './ProductChangeAlertPanel';
 import { MessagingImprovementPanel } from './MessagingImprovementPanel';
 import { FeatureVideoGenerator } from './FeatureVideoGenerator';
+import { GenieCastFlowDiagram } from './GenieCastFlowDiagram';
 
 // Supported languages with zone routing
 const LANGUAGES = [
@@ -125,7 +127,7 @@ interface ExistingVideo {
 }
 
 export const UnifiedVideoGenerationPanel: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'screenshots' | 'generate' | 'matrix' | 'library' | 'analytics' | 'alerts' | 'messaging'>('screenshots');
+  const [activeTab, setActiveTab] = useState<'screenshots' | 'generate' | 'matrix' | 'library' | 'analytics' | 'alerts' | 'messaging' | 'flow'>('screenshots');
   const [screenshotGalleries, setScreenshotGalleries] = useState<ProductGallery[]>([]);
   const [selectedLanguage, setSelectedLanguage] = useState('en');
   const totalScreenshots = screenshotGalleries.reduce((sum, g) => sum + g.screenshots.length, 0);
@@ -298,37 +300,41 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-        <TabsList className="grid w-full grid-cols-7 max-w-4xl">
-          <TabsTrigger value="screenshots" className="gap-2">
-            <Camera className="w-4 h-4" />
+        <TabsList className="grid w-full grid-cols-8 max-w-5xl">
+          <TabsTrigger value="screenshots" className="gap-1 text-xs">
+            <Camera className="w-3.5 h-3.5" />
             Screenshots
             {totalScreenshots > 0 && (
               <Badge variant="secondary" className="ml-1 text-[10px]">{totalScreenshots}</Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="generate" className="gap-2">
-            <Video className="w-4 h-4" />
-            Quick Generate
+          <TabsTrigger value="generate" className="gap-1 text-xs">
+            <Video className="w-3.5 h-3.5" />
+            Generate
           </TabsTrigger>
-          <TabsTrigger value="matrix" className="gap-2">
-            <Grid3X3 className="w-4 h-4" />
+          <TabsTrigger value="matrix" className="gap-1 text-xs">
+            <Grid3X3 className="w-3.5 h-3.5" />
             Matrix
           </TabsTrigger>
-          <TabsTrigger value="library" className="gap-2">
-            <Layers className="w-4 h-4" />
-            Library ({existingVideos.length})
+          <TabsTrigger value="library" className="gap-1 text-xs">
+            <Layers className="w-3.5 h-3.5" />
+            Library
           </TabsTrigger>
-          <TabsTrigger value="alerts" className="gap-2">
-            <AlertTriangle className="w-4 h-4" />
+          <TabsTrigger value="alerts" className="gap-1 text-xs">
+            <AlertTriangle className="w-3.5 h-3.5" />
             Alerts
           </TabsTrigger>
-          <TabsTrigger value="messaging" className="gap-2">
-            <TrendingUp className="w-4 h-4" />
+          <TabsTrigger value="messaging" className="gap-1 text-xs">
+            <TrendingUp className="w-3.5 h-3.5" />
             Messaging
           </TabsTrigger>
-          <TabsTrigger value="analytics" className="gap-2">
-            <Eye className="w-4 h-4" />
+          <TabsTrigger value="analytics" className="gap-1 text-xs">
+            <Eye className="w-3.5 h-3.5" />
             Analytics
+          </TabsTrigger>
+          <TabsTrigger value="flow" className="gap-1 text-xs">
+            <GitBranch className="w-3.5 h-3.5" />
+            Flow
           </TabsTrigger>
         </TabsList>
 
@@ -778,6 +784,11 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Flow Diagram Tab */}
+        <TabsContent value="flow" className="space-y-6">
+          <GenieCastFlowDiagram />
         </TabsContent>
       </Tabs>
     </div>
