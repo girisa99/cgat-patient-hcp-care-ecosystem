@@ -228,17 +228,55 @@ function getAvailableProviders(): { id: TTSProvider; available: boolean; priorit
   ];
 }
 
-// Indian/South Asian languages that should use Azure Neural
-const INDIC_LANGUAGES = ['hi', 'te', 'ta', 'bn', 'mr', 'gu', 'kn', 'ml', 'pa', 'hi-IN', 'te-IN', 'ta-IN', 'bn-IN', 'mr-IN', 'gu-IN', 'kn-IN', 'ml-IN', 'pa-IN'];
+// ═══════════════════════════════════════════════════════════════════════════════
+// LANGUAGE ZONE DEFINITIONS (4-Zone Architecture)
+// ═══════════════════════════════════════════════════════════════════════════════
 
-// CJK languages that should use Alibaba CosyVoice
-const CJK_LANGUAGES = ['ja', 'ko', 'zh', 'zh-CN', 'zh-TW', 'zh-HK', 'ja-JP', 'ko-KR'];
+// GEMINI ZONE - India/South Asia/SEA/Africa: Azure Neural PRIMARY (Viseme support)
+const GEMINI_LANGUAGES = [
+  // South Asian
+  'hi', 'hi-IN', 'bn', 'bn-BD', 'bn-IN', 'te', 'te-IN', 'ta', 'ta-IN', 
+  'mr', 'mr-IN', 'gu', 'gu-IN', 'kn', 'kn-IN', 'ml', 'ml-IN', 'pa', 'pa-IN',
+  'ur', 'ur-PK', 'ur-IN', // Urdu (Pakistan/India)
+  // Southeast Asian
+  'id', 'id-ID', 'ms', 'ms-MY', 'th', 'th-TH', 'vi', 'vi-VN', 'fil', 'fil-PH',
+  // African
+  'sw', 'sw-KE', 'sw-TZ', 'yo', 'yo-NG', 'am', 'am-ET', 'zu', 'zu-ZA',
+  'af', 'af-ZA', 'ha', 'ig', 'xh',
+];
 
-// Arabic languages that should use Azure Neural
-const ARABIC_LANGUAGES = ['ar', 'ar-SA', 'ar-AE', 'ar-EG', 'ar-MA', 'ar-JO', 'ar-IQ'];
+// ALIBABA ZONE - CJK: Alibaba CosyVoice PRIMARY
+const CJK_LANGUAGES = ['ja', 'ja-JP', 'ko', 'ko-KR', 'zh', 'zh-CN', 'zh-TW', 'zh-HK', 'zh-SG'];
 
-// Western languages that should use ElevenLabs
-const WESTERN_LANGUAGES = ['en', 'en-US', 'en-GB', 'en-AU', 'de', 'de-DE', 'fr', 'fr-FR', 'es', 'es-ES', 'es-MX', 'it', 'it-IT', 'pt', 'pt-BR', 'pt-PT', 'nl', 'nl-NL', 'pl', 'pl-PL', 'ru', 'ru-RU'];
+// MENA ZONE - Arabic (7 dialects): Azure Neural PRIMARY
+const ARABIC_LANGUAGES = [
+  'ar', 'ar-SA', 'ar-AE', 'ar-EG', 'ar-MA', 'ar-JO', 'ar-IQ', 'ar-KW',
+  'ar-QA', 'ar-BH', 'ar-OM', 'ar-YE', 'ar-LB', 'ar-SY', 'ar-TN', 'ar-DZ',
+];
+
+// CLAUDE ZONE - Western/EU: ElevenLabs PRIMARY
+const WESTERN_LANGUAGES = [
+  'en', 'en-US', 'en-GB', 'en-AU', 'en-CA', 'en-NZ', 'en-ZA', 'en-IE',
+  'de', 'de-DE', 'de-AT', 'de-CH',
+  'fr', 'fr-FR', 'fr-CA', 'fr-BE', 'fr-CH',
+  'es', 'es-ES', 'es-MX', 'es-AR', 'es-CO', 'es-CL', 'es-VE',
+  'it', 'it-IT',
+  'pt', 'pt-BR', 'pt-PT',
+  'nl', 'nl-NL', 'nl-BE',
+  'pl', 'pl-PL',
+  'ru', 'ru-RU',
+  'tr', 'tr-TR',
+  'cs', 'cs-CZ',
+  'da', 'da-DK',
+  'fi', 'fi-FI',
+  'el', 'el-GR',
+  'hu', 'hu-HU',
+  'no', 'nb', 'nb-NO',
+  'ro', 'ro-RO',
+  'sk', 'sk-SK',
+  'sv', 'sv-SE',
+  'uk', 'uk-UA',
+];
 
 function selectTTSProvider(region: string, languageCode: string, tier: string = 'standard'): TTSRouting {
   const providers = getAvailableProviders().filter(p => p.available);
@@ -254,20 +292,15 @@ function selectTTSProvider(region: string, languageCode: string, tier: string = 
   // ZONE-BASED ROUTING (Per Architecture Document)
   // ═══════════════════════════════════════════════════════════════════════════════
   
-  // GEMINI ZONE (India/SEA/Africa): Azure Neural PRIMARY
-  if (INDIC_LANGUAGES.includes(languageCode) || INDIC_LANGUAGES.includes(langBase)) {
+  // GEMINI ZONE (India/SEA/Africa): Azure Neural PRIMARY - best Viseme support for these regions
+  if (GEMINI_LANGUAGES.includes(languageCode) || GEMINI_LANGUAGES.includes(langBase)) {
     if (hasProvider('azure')) {
-      console.log(`🌏 Gemini Zone (Indic): Routing to Azure Neural TTS [${languageCode}]`);
+      console.log(`🌏 Gemini Zone: Routing to Azure Neural TTS [${languageCode}]`);
       return { provider: 'azure', cost: 0.016, zone: 'gemini', quality: 'premium' };
     }
     if (hasProvider('google')) {
-      console.log(`🌏 Gemini Zone (Indic) fallback: Routing to Google TTS [${languageCode}]`);
+      console.log(`🌏 Gemini Zone fallback: Routing to Google TTS [${languageCode}]`);
       return { provider: 'google', cost: 0.016, zone: 'gemini', quality: 'standard' };
-    }
-    // OpenAI as last resort
-    if (hasProvider('openai')) {
-      console.log(`🌏 Gemini Zone (Indic) last resort: Routing to OpenAI TTS [${languageCode}]`);
-      return { provider: 'openai', cost: 0.015, zone: 'gemini', quality: 'standard' };
     }
   }
 
