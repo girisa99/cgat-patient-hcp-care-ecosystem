@@ -19,6 +19,7 @@ import {
   Monitor,
   Plus,
   X,
+  Scan,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -28,9 +29,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import html2canvas from 'html2canvas';
 import {
   DndContext,
   closestCenter,
@@ -59,6 +62,17 @@ export const GENIE_PRODUCTS = [
   { id: 'studio', name: 'Genie Studio', route: '/genie-studio', color: '#9333EA', description: 'Full dashboard' },
   { id: 'ask-genie', name: 'Ask Genie', route: '/genie-support', color: '#06B6D4', description: 'AI assistant' },
   { id: 'cast', name: 'Genie Cast', route: '/genie-admin?tab=landing-videos', color: '#EF4444', description: 'Video studio' },
+];
+
+// Screen sections to capture for Genie Cast
+export const GENIE_CAST_SCREENS = [
+  { id: 'screenshots-tab', name: 'Screenshots Tab', selector: '[value="screenshots"]', description: 'Screenshot gallery view' },
+  { id: 'generate-tab', name: 'Quick Generate', selector: '[value="generate"]', description: 'Video generation panel' },
+  { id: 'matrix-tab', name: 'Matrix View', selector: '[value="matrix"]', description: 'Full generation matrix' },
+  { id: 'library-tab', name: 'Video Library', selector: '[value="library"]', description: 'Generated videos list' },
+  { id: 'analytics-tab', name: 'Analytics', selector: '[value="analytics"]', description: 'Performance metrics' },
+  { id: 'production-mode', name: 'Full Production Config', selector: '.full-production-config', description: 'Production settings panel' },
+  { id: 'token-breakdown', name: 'Token Breakdown', selector: '.token-consumption-breakdown', description: 'Cost estimation view' },
 ];
 
 export interface ProductScreenshot {
@@ -332,20 +346,110 @@ export const MultiScreenshotGallery: React.FC<MultiScreenshotGalleryProps> = ({
     toast.success('Screenshot removed');
   };
 
-  // Auto-capture Cast UI screenshots
-  const handleAutoCaptureCast = async () => {
-    setIsAutoCapturing(true);
-    toast.info('Auto-capturing Genie Cast UI...');
+  // State for Cast screen capture dialog
+  const [castCaptureDialogOpen, setCastCaptureDialogOpen] = useState(false);
+  const [selectedScreens, setSelectedScreens] = useState<string[]>(GENIE_CAST_SCREENS.map(s => s.id));
+  const [captureProgress, setCaptureProgress] = useState<{ current: number; total: number; screen: string } | null>(null);
 
-    try {
-      // This would integrate with a headless browser or screenshot service
-      // For now, we'll prompt the user to upload manually
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      toast.success('Auto-capture complete. Please upload any missing screens manually.');
-    } catch (err) {
-      toast.error('Auto-capture failed');
-    } finally {
-      setIsAutoCapturing(false);
+  // Auto-capture Cast UI screenshots - captures separate screens/tabs
+  const handleAutoCaptureCast = async () => {
+    if (selectedScreens.length === 0) {
+      toast.error('Please select at least one screen to capture');
+      return;
+    }
+
+    setIsAutoCapturing(true);
+    setCastCaptureDialogOpen(false);
+    const capturedCount = { success: 0, failed: 0 };
+    const screensToCapture = GENIE_CAST_SCREENS.filter(s => selectedScreens.includes(s.id));
+
+    for (let i = 0; i < screensToCapture.length; i++) {
+      const screen = screensToCapture[i];
+      setCaptureProgress({ current: i + 1, total: screensToCapture.length, screen: screen.name });
+      
+      try {
+        // For tab-based screens, click the tab first
+        if (screen.selector.includes('value=')) {
+          const tabButton = document.querySelector(`[${screen.selector.slice(1, -1)}]`) as HTMLElement;
+          if (tabButton) {
+            tabButton.click();
+            await new Promise(resolve => setTimeout(resolve, 800)); // Wait for tab transition
+          }
+        }
+
+        // Find the content area to capture
+        let captureTarget: HTMLElement | null = null;
+        
+        // Try to find the main content panel
+        const mainPanel = document.querySelector('.space-y-6') as HTMLElement;
+        const tabContent = document.querySelector('[role="tabpanel"]') as HTMLElement;
+        captureTarget = tabContent || mainPanel;
+
+        if (captureTarget) {
+          toast.info(`Capturing: ${screen.name}...`);
+          
+          const canvas = await html2canvas(captureTarget, {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: '#0a0a0a',
+            logging: false,
+          });
+
+          // Convert to blob
+          const blob = await new Promise<Blob>((resolve, reject) => {
+            canvas.toBlob((b) => {
+              if (b) resolve(b);
+              else reject(new Error('Failed to create blob'));
+            }, 'image/png', 0.95);
+          });
+
+          // Upload to storage
+          const imageUrl = await uploadScreenshot(new File([blob], `${screen.id}.png`, { type: 'image/png' }), 'cast');
+          
+          if (imageUrl) {
+            const newScreenshot: ProductScreenshot = {
+              id: `cast-${screen.id}-${Date.now()}`,
+              productId: 'cast',
+              imageUrl,
+              order: galleries.find(g => g.productId === 'cast')?.screenshots.length || 0,
+              createdAt: new Date(),
+              method: 'capture',
+              caption: screen.name,
+            };
+
+            setGalleries(prev => {
+              const updated = prev.map(g =>
+                g.productId === 'cast'
+                  ? { ...g, screenshots: [...g.screenshots, newScreenshot] }
+                  : g
+              );
+              onGalleriesUpdated?.(updated);
+              return updated;
+            });
+            capturedCount.success++;
+          } else {
+            capturedCount.failed++;
+          }
+        } else {
+          capturedCount.failed++;
+        }
+      } catch (err) {
+        console.error(`Failed to capture ${screen.name}:`, err);
+        capturedCount.failed++;
+      }
+
+      // Brief pause between captures
+      await new Promise(resolve => setTimeout(resolve, 300));
+    }
+
+    setCaptureProgress(null);
+    setIsAutoCapturing(false);
+
+    if (capturedCount.success > 0) {
+      toast.success(`Captured ${capturedCount.success} Genie Cast screen(s)${capturedCount.failed > 0 ? ` (${capturedCount.failed} failed)` : ''}`);
+    } else {
+      toast.error('No screens could be captured. Try uploading manually.');
     }
   };
 
@@ -438,19 +542,108 @@ export const MultiScreenshotGallery: React.FC<MultiScreenshotGalleryProps> = ({
                           </div>
                         )}
                         {isCast && (
-                          <Button
-                            variant="outline"
-                            className="w-full gap-2"
-                            onClick={handleAutoCaptureCast}
-                            disabled={isAutoCapturing}
-                          >
-                            {isAutoCapturing ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <Monitor className="w-4 h-4" />
-                            )}
-                            Auto-Capture Cast UI
-                          </Button>
+                          <>
+                            <div className="border-t pt-4">
+                              <Label className="text-sm font-medium mb-2 block">Or Auto-Capture Cast UI Screens</Label>
+                              <p className="text-xs text-muted-foreground mb-3">
+                                Automatically capture different tabs/sections of the Genie Cast interface
+                              </p>
+                              <Dialog open={castCaptureDialogOpen} onOpenChange={setCastCaptureDialogOpen}>
+                                <DialogTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    className="w-full gap-2"
+                                    disabled={isAutoCapturing}
+                                  >
+                                    {isAutoCapturing ? (
+                                      <>
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        {captureProgress 
+                                          ? `Capturing ${captureProgress.current}/${captureProgress.total}: ${captureProgress.screen}` 
+                                          : 'Preparing...'
+                                        }
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Scan className="w-4 h-4" />
+                                        Select Screens to Capture
+                                      </>
+                                    )}
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-md">
+                                  <DialogHeader>
+                                    <DialogTitle className="flex items-center gap-2">
+                                      <Scan className="w-5 h-5 text-destructive" />
+                                      Capture Genie Cast Screens
+                                    </DialogTitle>
+                                  </DialogHeader>
+                                  <div className="space-y-4">
+                                    <p className="text-sm text-muted-foreground">
+                                      Select which screens/tabs to capture. Each will be saved as a separate screenshot.
+                                    </p>
+                                    <div className="space-y-3 max-h-64 overflow-y-auto">
+                                      {GENIE_CAST_SCREENS.map(screen => (
+                                        <div 
+                                          key={screen.id}
+                                          className={cn(
+                                            "flex items-start space-x-3 p-2 rounded-lg border transition-colors",
+                                            selectedScreens.includes(screen.id) 
+                                              ? "border-primary bg-primary/5" 
+                                              : "border-muted hover:border-muted-foreground/30"
+                                          )}
+                                        >
+                                          <Checkbox
+                                            id={screen.id}
+                                            checked={selectedScreens.includes(screen.id)}
+                                            onCheckedChange={(checked) => {
+                                              if (checked) {
+                                                setSelectedScreens(prev => [...prev, screen.id]);
+                                              } else {
+                                                setSelectedScreens(prev => prev.filter(id => id !== screen.id));
+                                              }
+                                            }}
+                                          />
+                                          <div className="flex-1">
+                                            <Label htmlFor={screen.id} className="font-medium text-sm cursor-pointer">
+                                              {screen.name}
+                                            </Label>
+                                            <p className="text-xs text-muted-foreground">
+                                              {screen.description}
+                                            </p>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                    <div className="flex gap-2 pt-2">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setSelectedScreens(GENIE_CAST_SCREENS.map(s => s.id))}
+                                      >
+                                        Select All
+                                      </Button>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setSelectedScreens([])}
+                                      >
+                                        Deselect All
+                                      </Button>
+                                    </div>
+                                    <Button
+                                      className="w-full gap-2"
+                                      onClick={handleAutoCaptureCast}
+                                      disabled={selectedScreens.length === 0}
+                                    >
+                                      <Camera className="w-4 h-4" />
+                                      Capture {selectedScreens.length} Screen{selectedScreens.length !== 1 ? 's' : ''}
+                                    </Button>
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
+                            </div>
+                          </>
                         )}
                       </div>
                     </DialogContent>
