@@ -1,15 +1,14 @@
 /**
- * PROFESSIONAL AVATAR SHOWCASE (v2)
+ * PROFESSIONAL AVATAR SHOWCASE (v3)
  * 
- * Premium landing page video experience featuring:
- * - Real AI-generated avatar presenters (regional male/female)
- * - Genie character transformation effects
- * - Professional 3D elements and transitions
- * - Real-time TTS with audio device selection
- * - Synced to Production Hub for library/publish
+ * High-level product overview with:
+ * - Simplified scripts focused on product VALUE (not UI details)
+ * - Real AI video from DB when available, placeholder fallback
+ * - 4-Zone TTS routing (ElevenLabs, Azure, Alibaba, Google)
+ * - Regional languages: South Asian, SEA, African, Caribbean
  */
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Play,
@@ -20,14 +19,13 @@ import {
   ChevronRight,
   Globe,
   Sparkles,
-  Wand2,
   Loader2,
   ChevronDown,
   Mic,
-  Settings,
-  User,
   Video,
   Headphones,
+  User,
+  RefreshCw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -42,8 +40,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { getLocalizedScript, getTTSProviderForLanguage } from '@/config/genie-video-localized-scripts';
-import { GENIE_STUDIO_FULL_SCRIPT } from '@/config/genie-studio-video-script';
+import {
+  CHAPTERS,
+  AVAILABLE_LANGUAGES,
+  getHighLevelScript,
+  getTTSRouting,
+  getFullLanguageCode,
+} from '@/config/genie-video-high-level-scripts';
 
 // Product logos
 import genieStudioLogo from '@/assets/logos/genie-studio-combined-6.png';
@@ -55,57 +58,48 @@ import genieArcLogo from '@/assets/logos/genie-arc-presentation-6.png';
 import askGenieLogo from '@/assets/logos/ask-genie-combined-7.png';
 import genieCastLogo from '@/assets/logos/genie-cast-logo-2.png';
 
-// Chapter configurations
-const CHAPTERS = [
-  { id: 'opening', product: 'Genie Studio', tagline: 'Mind to Media', logo: genieStudioLogo, color: '#9333EA', visualStyle: 'genie_emergence' },
-  { id: 'spark', product: 'Genie Spark', tagline: 'Ignite Your Ideas', logo: genieSparkLogo, color: '#F97316', visualStyle: 'avatar_presenter' },
-  { id: 'mind', product: 'Genie Mind', tagline: 'AI That Understands', logo: genieMindLogo, color: '#3B82F6', visualStyle: 'avatar_presenter' },
-  { id: 'vibe', product: 'Genie Vibe', tagline: 'Script to Screen', logo: genieVibeLogo, color: '#22C55E', visualStyle: '3d_studio' },
-  { id: 'deck', product: 'Genie Deck', tagline: 'Ideas to Impact', logo: genieDeckLogo, color: '#EAB308', visualStyle: 'avatar_presenter' },
-  { id: 'arc', product: 'Production Hub', tagline: 'Infinite Possibilities', logo: genieArcLogo, color: '#EC4899', visualStyle: 'full_body_avatar' },
-  { id: 'askGenie', product: 'Ask Genie', tagline: 'Your Wish is My Command', logo: askGenieLogo, color: '#06B6D4', visualStyle: 'genie_interaction' },
-  { id: 'cast', product: 'Genie Cast', tagline: 'Make It. Show It. Scale It.', logo: genieCastLogo, color: '#EF4444', visualStyle: 'avatar_presenter' },
-  { id: 'closing', product: 'Genie Studio', tagline: 'Your Wish is Our Command', logo: genieStudioLogo, color: '#9333EA', visualStyle: 'genie_return' },
-];
+// Logo mapping
+const PRODUCT_LOGOS: Record<string, string> = {
+  'Genie Studio': genieStudioLogo,
+  'Genie Spark': genieSparkLogo,
+  'Genie Mind': genieMindLogo,
+  'Genie Vibe': genieVibeLogo,
+  'Genie Deck': genieDeckLogo,
+  'Production Hub': genieArcLogo,
+  'Ask Genie': askGenieLogo,
+  'Genie Cast': genieCastLogo,
+};
+
+// Product colors
+const PRODUCT_COLORS: Record<string, string> = {
+  'opening': '#9333EA',
+  'spark': '#F97316',
+  'mind': '#3B82F6',
+  'vibe': '#22C55E',
+  'deck': '#EAB308',
+  'arc': '#EC4899',
+  'askGenie': '#06B6D4',
+  'cast': '#EF4444',
+  'closing': '#9333EA',
+};
 
 // Regional avatar configurations
 const REGIONAL_AVATARS: Record<string, { male: string; female: string; provider: string }> = {
-  en: { male: 'James', female: 'Sarah', provider: 'Alibaba WAN 2.2' },
-  ar: { male: 'Ahmed', female: 'Fatima', provider: 'Alibaba WAN 2.2' },
-  hi: { male: 'Rahul', female: 'Priya', provider: 'Alibaba WAN 2.2' },
-  zh: { male: 'Wei', female: 'Mei', provider: 'Alibaba WAN 2.2' },
-  ja: { male: 'Takeshi', female: 'Yuki', provider: 'Alibaba WAN 2.2' },
-  ko: { male: 'Joon', female: 'Min-ji', provider: 'Alibaba WAN 2.2' },
-  es: { male: 'Carlos', female: 'Maria', provider: 'Alibaba WAN 2.2' },
-  pt: { male: 'Pedro', female: 'Ana', provider: 'Alibaba WAN 2.2' },
-  fr: { male: 'Pierre', female: 'Sophie', provider: 'Alibaba WAN 2.2' },
-  de: { male: 'Hans', female: 'Emma', provider: 'Alibaba WAN 2.2' },
-  sw: { male: 'Juma', female: 'Amina', provider: 'Alibaba WAN 2.2' },
+  en: { male: 'James', female: 'Sarah', provider: 'Vertex AI Veo' },
+  hi: { male: 'Rahul', female: 'Priya', provider: 'Alibaba WAN' },
+  bn: { male: 'Arjun', female: 'Ishita', provider: 'Alibaba WAN' },
+  ur: { male: 'Ahmed', female: 'Fatima', provider: 'Alibaba WAN' },
+  ar: { male: 'Omar', female: 'Layla', provider: 'Alibaba WAN' },
+  id: { male: 'Budi', female: 'Sari', provider: 'Alibaba WAN' },
+  sw: { male: 'Juma', female: 'Amina', provider: 'Alibaba WAN' },
+  de: { male: 'Hans', female: 'Emma', provider: 'Vertex AI Veo' },
+  fr: { male: 'Pierre', female: 'Sophie', provider: 'Vertex AI Veo' },
+  es: { male: 'Carlos', female: 'Maria', provider: 'Vertex AI Veo' },
+  pt: { male: 'Pedro', female: 'Ana', provider: 'Vertex AI Veo' },
+  zh: { male: 'Wei', female: 'Mei', provider: 'Alibaba WAN' },
+  ja: { male: 'Takeshi', female: 'Yuki', provider: 'Alibaba WAN' },
+  ko: { male: 'Joon', female: 'Min-ji', provider: 'Alibaba WAN' },
 };
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// 4-ZONE ARCHITECTURE TTS MAPPING (FIXED - Matches Edge Function Routing)
-// ═══════════════════════════════════════════════════════════════════════════════
-// CLAUDE ZONE (Western): ElevenLabs PRIMARY → English, Spanish, French
-// ALIBABA ZONE (CJK): Alibaba CosyVoice PRIMARY → Chinese, Japanese  
-// ALIBABA ZONE (Arabic): Azure Neural PRIMARY → Arabic (7 dialects)
-// GEMINI ZONE (India/Africa): Azure Neural PRIMARY → Hindi, Swahili
-// Korean uses Azure Neural (best quality for K-TTS)
-// German, Portuguese use Azure Neural (better prosody than ElevenLabs)
-// ═══════════════════════════════════════════════════════════════════════════════
-const LANGUAGES = [
-  { code: 'en', name: 'English', flag: '🇺🇸', ttsProvider: 'ElevenLabs', zone: 'Claude Zone' },
-  { code: 'ar', name: 'العربية', flag: '🇸🇦', ttsProvider: 'Azure Neural', zone: 'MENA Zone' },
-  { code: 'hi', name: 'हिंदी', flag: '🇮🇳', ttsProvider: 'Azure Neural', zone: 'Gemini Zone' },
-  { code: 'zh', name: '中文', flag: '🇨🇳', ttsProvider: 'Alibaba CosyVoice', zone: 'Alibaba Zone' },
-  { code: 'ja', name: '日本語', flag: '🇯🇵', ttsProvider: 'Alibaba CosyVoice', zone: 'Alibaba Zone' },
-  { code: 'ko', name: '한국어', flag: '🇰🇷', ttsProvider: 'Azure Neural', zone: 'Alibaba Zone' },
-  { code: 'es', name: 'Español', flag: '🇪🇸', ttsProvider: 'ElevenLabs', zone: 'Claude Zone' },
-  { code: 'pt', name: 'Português', flag: '🇧🇷', ttsProvider: 'Azure Neural', zone: 'Claude Zone' },
-  { code: 'fr', name: 'Français', flag: '🇫🇷', ttsProvider: 'ElevenLabs', zone: 'Claude Zone' },
-  { code: 'de', name: 'Deutsch', flag: '🇩🇪', ttsProvider: 'Azure Neural', zone: 'Claude Zone' },
-  { code: 'sw', name: 'Kiswahili', flag: '🇰🇪', ttsProvider: 'Azure Neural', zone: 'Gemini Zone' },
-];
 
 interface ProfessionalAvatarShowcaseProps {
   autoPlay?: boolean;
@@ -128,30 +122,64 @@ export const ProfessionalAvatarShowcase: React.FC<ProfessionalAvatarShowcaseProp
   const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedAudioDevice, setSelectedAudioDevice] = useState<string>('');
   const [currentAvatarGender, setCurrentAvatarGender] = useState<'male' | 'female'>('female');
-  const [videoProviders, setVideoProviders] = useState<string[]>([]);
+  const [videoUrls, setVideoUrls] = useState<Record<string, string>>({});
+  const [loadingVideo, setLoadingVideo] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const progressTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const currentChapter = CHAPTERS[currentChapterIndex];
-  const scriptChapters = GENIE_STUDIO_FULL_SCRIPT.chapters;
-  const currentScript = scriptChapters[currentChapterIndex];
-  const selectedLang = LANGUAGES.find(l => l.code === selectedLanguage) || LANGUAGES[0];
+  const currentColor = PRODUCT_COLORS[currentChapter.id] || '#9333EA';
+  const currentLogo = PRODUCT_LOGOS[currentChapter.product] || genieStudioLogo;
+  const selectedLang = AVAILABLE_LANGUAGES.find(l => l.code === selectedLanguage) || AVAILABLE_LANGUAGES[0];
   const regionalAvatar = REGIONAL_AVATARS[selectedLanguage] || REGIONAL_AVATARS.en;
-  const ttsProviderInfo = getTTSProviderForLanguage(selectedLanguage);
+  const ttsConfig = getTTSRouting(selectedLanguage);
 
-  // Get available audio output devices
+  // Fetch videos from database
+  useEffect(() => {
+    const fetchVideos = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('landing_page_videos')
+          .select('video_url, language_code, title')
+          .eq('is_active', true)
+          .eq('placement', 'hero_showcase');
+
+        if (error) throw error;
+
+        const urls: Record<string, string> = {};
+        data?.forEach((video: { video_url: string | null; language_code: string; title: string }) => {
+          if (video.video_url) {
+            const key = `${video.language_code}_${video.title.toLowerCase().includes('spark') ? 'spark' : 
+              video.title.toLowerCase().includes('mind') ? 'mind' :
+              video.title.toLowerCase().includes('vibe') ? 'vibe' :
+              video.title.toLowerCase().includes('deck') ? 'deck' :
+              video.title.toLowerCase().includes('arc') ? 'arc' :
+              video.title.toLowerCase().includes('ask') ? 'askGenie' :
+              video.title.toLowerCase().includes('cast') ? 'cast' : 'opening'}`;
+            urls[key] = video.video_url;
+          }
+        });
+        setVideoUrls(urls);
+      } catch (err) {
+        console.warn('[Video] Could not fetch videos from DB:', err);
+      }
+    };
+
+    fetchVideos();
+  }, []);
+
+  // Get audio output devices
   useEffect(() => {
     const getAudioDevices = async () => {
       try {
-        // Request permission first
         await navigator.mediaDevices.getUserMedia({ audio: true });
         const devices = await navigator.mediaDevices.enumerateDevices();
         const audioOutputs = devices.filter(d => d.kind === 'audiooutput');
         setAudioDevices(audioOutputs);
         
-        // Auto-select headphones if available
+        // Auto-select headphones
         const headset = audioOutputs.find(d => 
           d.label.toLowerCase().includes('headphone') || 
           d.label.toLowerCase().includes('headset') ||
@@ -166,117 +194,66 @@ export const ProfessionalAvatarShowcase: React.FC<ProfessionalAvatarShowcaseProp
           setSelectedAudioDevice(audioOutputs[0].deviceId);
         }
       } catch (err) {
-        console.warn('[Audio] Could not enumerate audio devices:', err);
+        console.warn('[Audio] Could not enumerate devices:', err);
       }
     };
     
     getAudioDevices();
-    
-    // Listen for device changes
     navigator.mediaDevices.addEventListener('devicechange', getAudioDevices);
-    return () => {
-      navigator.mediaDevices.removeEventListener('devicechange', getAudioDevices);
-    };
+    return () => navigator.mediaDevices.removeEventListener('devicechange', getAudioDevices);
   }, []);
 
-  // Set audio output device when changed
+  // Set audio output device
   const setAudioOutput = useCallback(async (audio: HTMLAudioElement, deviceId: string) => {
     if (!deviceId) return;
-    
     try {
-      // @ts-ignore - setSinkId is not in all browser types yet
+      // @ts-ignore - setSinkId is not in all browser types
       if (typeof audio.setSinkId === 'function') {
         await audio.setSinkId(deviceId);
-        console.log('[Audio] Output set to device:', deviceId);
       }
     } catch (err) {
-      console.warn('[Audio] Could not set audio output device:', err);
+      console.warn('[Audio] Could not set output device:', err);
     }
   }, []);
 
-  // ═══════════════════════════════════════════════════════════════════════════════
-  // NOTE: Voice selection is handled by multi-provider-tts edge function
-  // based on languageCode. We only need to map short codes to full locales.
-  // ═══════════════════════════════════════════════════════════════════════════════
-
-  // Get proper language code with region
-  const getLanguageCode = useCallback((langCode: string): string => {
-    const langCodeMap: Record<string, string> = {
-      hi: 'hi-IN',
-      ar: 'ar-SA',
-      de: 'de-DE',
-      fr: 'fr-FR',
-      es: 'es-ES',
-      pt: 'pt-BR',
-      tr: 'tr-TR',
-      ko: 'ko-KR',
-      sw: 'sw-KE',
-      zh: 'zh-CN',
-      ja: 'ja-JP',
-      en: 'en-US',
-    };
-    return langCodeMap[langCode] || langCode;
-  }, []);
-
-  // ═══════════════════════════════════════════════════════════════════════════════
-  // GENERATE TTS - Let Edge Function Handle 4-Zone Routing (DON'T override provider!)
-  // ═══════════════════════════════════════════════════════════════════════════════
+  // Generate TTS voice - delegates to edge function for 4-zone routing
   const generateVoice = useCallback(async () => {
-    if (!currentScript || isMuted) return;
+    if (isMuted) return;
     
-    // Get localized script or fallback to English
-    let voiceoverText = getLocalizedScript(currentChapter.id, selectedLanguage);
-    if (!voiceoverText) {
-      voiceoverText = currentScript.voiceover?.en;
-    }
-    
-    if (!voiceoverText) return;
+    const script = getHighLevelScript(currentChapter.id, selectedLanguage);
+    if (!script || script.length < 10) return;
 
-    // Clean script for TTS (remove stage directions, collapse whitespace)
-    const cleanText = voiceoverText
-      .replace(/\*[^*]+\*/g, '')
+    // Clean script for TTS
+    const cleanText = script
       .replace(/\n{2,}/g, ' ')
       .replace(/\n/g, ' ')
       .trim()
-      .slice(0, 500);
+      .slice(0, 800);
 
-    if (cleanText.length < 10) return;
-
-    // Get proper language code with region (hi-IN, ar-SA, zh-CN, etc.)
-    const languageCode = getLanguageCode(selectedLanguage);
+    const languageCode = getFullLanguageCode(selectedLanguage);
 
     try {
       setIsGeneratingVoice(true);
       
-      // ═══════════════════════════════════════════════════════════════════════════════
-      // IMPORTANT: Do NOT pass 'provider' - let edge function handle 4-zone routing!
-      // Edge function will automatically route based on languageCode:
-      // - hi-IN, sw-KE → Azure Neural (Gemini Zone)
-      // - zh-CN, ja-JP → Alibaba CosyVoice (Alibaba Zone)
-      // - ar-SA → Azure Neural (MENA Zone)
-      // - en-US, es-ES, fr-FR → ElevenLabs (Claude Zone)
-      // - de-DE, pt-BR → Azure Neural (better prosody)
-      // ═══════════════════════════════════════════════════════════════════════════════
-      console.log(`[TTS] Generating ${languageCode} voice - Edge function will route to correct provider`);
+      console.log(`[TTS] Generating ${languageCode} voice via ${ttsConfig.provider} (${ttsConfig.zone})`);
       
+      // Let edge function handle 4-zone routing - DON'T pass provider!
       const { data, error } = await supabase.functions.invoke('multi-provider-tts', {
         body: {
           text: cleanText,
           languageCode: languageCode,
           tier: 'premium',
-          // DO NOT pass 'provider' - let edge function auto-route based on language!
         }
       });
 
       if (error) {
-        console.warn('[TTS] Multi-provider failed:', error.message);
-        toast.error(`TTS failed: ${error.message}`);
+        console.warn('[TTS] Failed:', error.message);
+        toast.error(`Voice generation failed: ${error.message}`);
         return;
       }
 
-      // Log which provider was used (from edge function response)
       if (data?.provider) {
-        console.log(`[TTS] ✅ Audio generated via ${data.provider} (${data.zone || 'auto'})`);
+        console.log(`[TTS] ✅ Generated via ${data.provider} (${data.zone || ttsConfig.zone})`);
       }
 
       if (data?.audioContent || data?.audio_base64) {
@@ -284,15 +261,13 @@ export const ProfessionalAvatarShowcase: React.FC<ProfessionalAvatarShowcaseProp
       }
     } catch (err) {
       console.error('[TTS] Error:', err);
-      toast.error('Voice generation failed');
     } finally {
       setIsGeneratingVoice(false);
     }
-  }, [currentScript, currentChapter.id, isMuted, selectedLanguage, currentAvatarGender, getLanguageCode]);
+  }, [currentChapter.id, isMuted, selectedLanguage, ttsConfig]);
 
-  // Play audio with device selection
+  // Play audio
   const playAudio = useCallback(async (base64Audio: string) => {
-    // Stop any existing audio
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
@@ -307,7 +282,6 @@ export const ProfessionalAvatarShowcase: React.FC<ProfessionalAvatarShowcaseProp
     audioRef.current = new Audio(audioUrl);
     audioRef.current.volume = 0.8;
     
-    // Set output device
     if (selectedAudioDevice) {
       await setAudioOutput(audioRef.current, selectedAudioDevice);
     }
@@ -316,6 +290,7 @@ export const ProfessionalAvatarShowcase: React.FC<ProfessionalAvatarShowcaseProp
     audioRef.current.onended = () => {
       setIsSpeaking(false);
       URL.revokeObjectURL(audioUrl);
+      // Auto-advance to next chapter
       if (currentChapterIndex < CHAPTERS.length - 1 && isPlaying) {
         setTimeout(() => {
           setCurrentChapterIndex(prev => prev + 1);
@@ -329,13 +304,13 @@ export const ProfessionalAvatarShowcase: React.FC<ProfessionalAvatarShowcaseProp
     };
 
     await audioRef.current.play();
-    toast.success(`Playing ${selectedLang.name} voiceover`, {
-      description: `Avatar: ${currentAvatarGender === 'female' ? regionalAvatar.female : regionalAvatar.male} • Voice: ${ttsProviderInfo.displayName}`,
+    toast.success(`${selectedLang.name} voiceover`, {
+      description: `${ttsConfig.displayName} • ${ttsConfig.zone}`,
       duration: 2000,
     });
-  }, [selectedAudioDevice, setAudioOutput, currentChapterIndex, isPlaying, selectedLang.name, currentAvatarGender, regionalAvatar, ttsProviderInfo]);
+  }, [selectedAudioDevice, setAudioOutput, currentChapterIndex, isPlaying, selectedLang.name, ttsConfig]);
 
-  // Auto-generate voice when chapter changes
+  // Generate voice when chapter changes (if not muted)
   useEffect(() => {
     if (isPlaying && !isMuted) {
       generateVoice();
@@ -357,7 +332,7 @@ export const ProfessionalAvatarShowcase: React.FC<ProfessionalAvatarShowcaseProp
       return;
     }
 
-    const duration = parseInt(currentScript?.duration || '30') * 1000;
+    const duration = currentChapter.durationSeconds * 1000;
     const interval = 100;
     let elapsed = 0;
 
@@ -378,7 +353,7 @@ export const ProfessionalAvatarShowcase: React.FC<ProfessionalAvatarShowcaseProp
     return () => {
       if (progressTimerRef.current) clearInterval(progressTimerRef.current);
     };
-  }, [isPlaying, currentChapterIndex, currentScript]);
+  }, [isPlaying, currentChapterIndex, currentChapter.durationSeconds]);
 
   const togglePlay = useCallback(() => {
     setIsPlaying(prev => !prev);
@@ -404,228 +379,89 @@ export const ProfessionalAvatarShowcase: React.FC<ProfessionalAvatarShowcaseProp
 
   const goToChapter = useCallback((index: number) => {
     if (index >= 0 && index < CHAPTERS.length) {
+      setCurrentChapterIndex(index);
+      setProgress(0);
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current = null;
         setIsSpeaking(false);
       }
-      setCurrentChapterIndex(index);
-      setProgress(0);
     }
   }, []);
 
-  // Determine current visual style
-  const isGenieScene = currentChapter.visualStyle === 'genie_emergence' || currentChapter.visualStyle === 'genie_return' || currentChapter.visualStyle === 'genie_interaction';
-  const isAvatarScene = currentChapter.visualStyle === 'avatar_presenter' || currentChapter.visualStyle === 'full_body_avatar';
+  // Check if we have a real video for current chapter/language
+  const currentVideoUrl = videoUrls[`${selectedLanguage}_${currentChapter.id}`];
+  const hasRealVideo = Boolean(currentVideoUrl);
+
+  // Current script text for display
+  const currentScript = useMemo(() => {
+    return getHighLevelScript(currentChapter.id, selectedLanguage);
+  }, [currentChapter.id, selectedLanguage]);
 
   return (
-    <div 
-      className={`relative w-full aspect-video rounded-2xl overflow-hidden ${className}`}
-      style={{ background: `linear-gradient(135deg, ${currentChapter.color}20, #0a0a12 60%, ${currentChapter.color}10)` }}
-    >
-      {/* Professional Visual Background */}
-      <div className="absolute inset-0">
-        {/* Animated gradient mesh */}
-        <div className="absolute inset-0 opacity-30">
-          <div 
-            className="absolute inset-0 animate-pulse"
-            style={{
-              background: `radial-gradient(ellipse at 30% 20%, ${currentChapter.color}40 0%, transparent 50%),
-                           radial-gradient(ellipse at 70% 80%, ${currentChapter.color}30 0%, transparent 50%)`
-            }}
-          />
-        </div>
-        
-        {/* Floating particles */}
-        <div className="absolute inset-0 overflow-hidden">
-          {[...Array(30)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute w-1 h-1 rounded-full"
-              style={{
-                background: currentChapter.color,
-                left: `${Math.random() * 100}%`,
-              }}
-              initial={{ y: '110%', opacity: 0 }}
-              animate={{ y: '-10%', opacity: [0, 0.8, 0] }}
-              transition={{
-                duration: 4 + Math.random() * 4,
-                repeat: Infinity,
-                delay: Math.random() * 3,
-                ease: "linear"
-              }}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Avatar/Genie Visual */}
+    <div className={`relative w-full aspect-video bg-gradient-to-br from-slate-900 via-purple-900/20 to-slate-900 rounded-xl overflow-hidden ${className}`}>
+      {/* Background gradient */}
+      <div 
+        className="absolute inset-0 opacity-30"
+        style={{
+          background: `radial-gradient(ellipse at center, ${currentColor}40, transparent 70%)`,
+        }}
+      />
+      
+      {/* Video or Placeholder Content */}
       <AnimatePresence mode="wait">
         <motion.div
-          key={`visual-${currentChapterIndex}`}
-          className="absolute inset-0 flex items-center justify-center z-10"
-          initial={{ opacity: 0, scale: 0.9 }}
+          key={`${currentChapter.id}-${selectedLanguage}`}
+          className="absolute inset-0 flex items-center justify-center p-8"
+          initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 1.1 }}
+          exit={{ opacity: 0, scale: 1.05 }}
           transition={{ duration: 0.5 }}
         >
-          {isGenieScene ? (
-            // Genie emergence/interaction scene
-            <div className="relative flex flex-col items-center">
-              {/* Magical lamp with genie */}
-              <motion.div
-                className="relative"
-                animate={{ y: [0, -10, 0] }}
-                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-              >
-                {/* Magic glow */}
-                <div 
-                  className="absolute -inset-12 rounded-full blur-3xl opacity-50"
-                  style={{ background: `radial-gradient(circle, ${currentChapter.color}, transparent)` }}
-                />
-                
-                {/* Genie character - professional 3D style */}
-                <div className="relative w-48 h-64 md:w-64 md:h-80">
-                  {/* Smoke trail from lamp */}
-                  <motion.div
-                    className="absolute bottom-0 left-1/2 -translate-x-1/2 w-24 h-40"
-                    style={{
-                      background: `linear-gradient(to top, ${currentChapter.color}80, ${currentChapter.color}40, transparent)`,
-                      borderRadius: '100% 100% 50% 50%',
-                      filter: 'blur(8px)',
-                    }}
-                    animate={{ scaleY: [1, 1.1, 1], opacity: [0.6, 0.9, 0.6] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  />
-                  
-                  {/* Genie body - modern glass morphism */}
-                  <motion.div
-                    className="absolute bottom-8 left-1/2 -translate-x-1/2 w-28 h-36 md:w-36 md:h-48 rounded-t-full"
-                    style={{
-                      background: `linear-gradient(180deg, ${currentChapter.color}90, ${currentChapter.color}40)`,
-                      boxShadow: `0 0 40px ${currentChapter.color}60`,
-                    }}
-                    animate={isSpeaking ? { scaleX: [1, 1.02, 0.98, 1] } : {}}
-                    transition={{ duration: 0.3, repeat: Infinity }}
-                  />
-                  
-                  {/* Genie head */}
-                  <motion.div
-                    className="absolute bottom-40 md:bottom-52 left-1/2 -translate-x-1/2 w-20 h-20 md:w-24 md:h-24 rounded-full"
-                    style={{
-                      background: `linear-gradient(135deg, ${currentChapter.color}90, ${currentChapter.color}60)`,
-                      boxShadow: `0 0 30px ${currentChapter.color}50`,
-                    }}
-                  >
-                    {/* Eyes */}
-                    <div className="absolute top-5 left-3 w-3 h-3 md:w-4 md:h-4 rounded-full bg-white shadow-lg">
-                      <div className="absolute top-0.5 left-0.5 w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-slate-800" />
-                    </div>
-                    <div className="absolute top-5 right-3 w-3 h-3 md:w-4 md:h-4 rounded-full bg-white shadow-lg">
-                      <div className="absolute top-0.5 left-0.5 w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-slate-800" />
-                    </div>
-                    
-                    {/* Smile */}
-                    <motion.div
-                      className="absolute bottom-4 left-1/2 -translate-x-1/2 w-8 h-3 border-b-2 border-white/80 rounded-b-full"
-                      animate={isSpeaking ? { scaleY: [1, 1.5, 0.8, 1.2, 1] } : {}}
-                      transition={{ duration: 0.2, repeat: Infinity }}
-                    />
-                  </motion.div>
-                  
-                  {/* Crossed arms gesture */}
-                  <motion.div
-                    className="absolute bottom-20 md:bottom-28 left-0 w-10 h-3 rounded-full"
-                    style={{ background: `${currentChapter.color}80` }}
-                    animate={{ rotate: [-15, 15, -15] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  />
-                  <motion.div
-                    className="absolute bottom-20 md:bottom-28 right-0 w-10 h-3 rounded-full"
-                    style={{ background: `${currentChapter.color}80` }}
-                    animate={{ rotate: [15, -15, 15] }}
-                    transition={{ duration: 2, repeat: Infinity, delay: 0.2 }}
-                  />
-                </div>
-                
-                {/* Magic lamp at bottom */}
-                <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-24 h-16 md:w-32 md:h-20">
-                  <svg viewBox="0 0 100 60" className="w-full h-full">
-                    <defs>
-                      <linearGradient id="lampGoldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stopColor="#FFD700" />
-                        <stop offset="50%" stopColor="#FFA500" />
-                        <stop offset="100%" stopColor="#B8860B" />
-                      </linearGradient>
-                    </defs>
-                    {/* Lamp body */}
-                    <ellipse cx="50" cy="50" rx="35" ry="10" fill="url(#lampGoldGrad)" />
-                    <path d="M20 45 Q10 35 15 25 Q25 15 50 12 Q75 15 85 25 Q90 35 80 45" fill="url(#lampGoldGrad)" />
-                    {/* Spout */}
-                    <path d="M80 30 Q95 25 100 15" fill="none" stroke="#FFD700" strokeWidth="6" strokeLinecap="round" />
-                    {/* Handle */}
-                    <path d="M20 30 Q5 25 8 15 Q15 8 25 15" fill="none" stroke="#FFD700" strokeWidth="5" strokeLinecap="round" />
-                  </svg>
-                </div>
-              </motion.div>
-              
-              {/* Sparkles */}
-              {[...Array(8)].map((_, i) => (
-                <motion.div
-                  key={i}
-                  className="absolute"
-                  style={{
-                    left: `${30 + Math.random() * 40}%`,
-                    top: `${10 + Math.random() * 50}%`,
-                  }}
-                  animate={{
-                    scale: [0, 1, 0],
-                    opacity: [0, 1, 0],
-                    rotate: [0, 180],
-                  }}
-                  transition={{
-                    duration: 1.5,
-                    repeat: Infinity,
-                    delay: Math.random() * 2,
-                  }}
-                >
-                  <Sparkles className="w-4 h-4 text-amber-400" />
-                </motion.div>
-              ))}
-            </div>
+          {hasRealVideo ? (
+            // Real AI-generated video from database
+            <video
+              ref={videoRef}
+              src={currentVideoUrl}
+              className="w-full h-full object-cover rounded-lg"
+              autoPlay
+              muted={isMuted}
+              loop={false}
+              playsInline
+            />
           ) : (
-            // Avatar presenter scene
-            <div className="relative flex items-center gap-8">
-              {/* Avatar silhouette with glow */}
+            // Placeholder: Avatar + Product Card
+            <div className="relative flex items-center gap-8 max-w-4xl mx-auto">
+              {/* Avatar placeholder */}
               <motion.div
                 className="relative"
-                initial={{ x: -50, opacity: 0 }}
+                initial={{ x: -30, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 transition={{ delay: 0.2 }}
               >
                 <div 
                   className="absolute -inset-4 rounded-full blur-2xl opacity-40"
-                  style={{ background: currentChapter.color }}
+                  style={{ background: currentColor }}
                 />
                 
-                {/* Avatar placeholder with professional styling */}
-                <div className="relative w-32 h-40 md:w-48 md:h-60 rounded-2xl overflow-hidden border border-white/20 shadow-2xl">
-                  <div 
-                    className="absolute inset-0"
-                    style={{
-                      background: `linear-gradient(135deg, ${currentChapter.color}40, #1a1a2e, ${currentChapter.color}20)`,
-                    }}
-                  />
-                  
-                  {/* Avatar icon */}
+                <div 
+                  className="relative w-40 h-52 md:w-52 md:h-64 rounded-2xl overflow-hidden border border-white/20 shadow-2xl"
+                  style={{
+                    background: `linear-gradient(135deg, ${currentColor}30, #1a1a2e, ${currentColor}15)`,
+                  }}
+                >
+                  {/* Avatar silhouette */}
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <User className="w-16 h-16 md:w-24 md:h-24 text-white/60" />
-                    <p className="mt-2 text-xs md:text-sm text-white/80 font-medium">
+                    <div 
+                      className="w-20 h-20 md:w-24 md:h-24 rounded-full mb-3"
+                      style={{ background: `linear-gradient(135deg, ${currentColor}60, ${currentColor}30)` }}
+                    />
+                    <p className="text-white/90 font-medium text-sm md:text-base">
                       {currentAvatarGender === 'female' ? regionalAvatar.female : regionalAvatar.male}
                     </p>
                     <Badge 
                       variant="outline" 
-                      className="mt-1 text-[10px] border-white/20 text-white/60"
+                      className="mt-2 text-[10px] border-white/20 text-white/60"
                     >
                       {regionalAvatar.provider}
                     </Badge>
@@ -634,16 +470,16 @@ export const ProfessionalAvatarShowcase: React.FC<ProfessionalAvatarShowcaseProp
                   {/* Speaking indicator */}
                   {isSpeaking && (
                     <motion.div
-                      className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-0.5"
+                      className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                     >
-                      {[...Array(3)].map((_, i) => (
+                      {[...Array(4)].map((_, i) => (
                         <motion.div
                           key={i}
-                          className="w-1 rounded-full"
-                          style={{ background: currentChapter.color }}
-                          animate={{ height: [8, 16, 8] }}
+                          className="w-1.5 rounded-full"
+                          style={{ background: currentColor }}
+                          animate={{ height: [8, 20, 8] }}
                           transition={{ duration: 0.4, repeat: Infinity, delay: i * 0.1 }}
                         />
                       ))}
@@ -652,19 +488,60 @@ export const ProfessionalAvatarShowcase: React.FC<ProfessionalAvatarShowcaseProp
                 </div>
               </motion.div>
               
-              {/* Product logo card */}
+              {/* Product card */}
               <motion.div
-                className="relative bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20"
-                initial={{ x: 50, opacity: 0 }}
+                className="relative flex-1 max-w-md"
+                initial={{ x: 30, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 transition={{ delay: 0.3 }}
               >
-                <img 
-                  src={currentChapter.logo} 
-                  alt={currentChapter.product}
-                  className="w-24 h-24 md:w-32 md:h-32 object-contain"
-                />
+                <div className="bg-white/5 backdrop-blur-md rounded-2xl p-6 border border-white/10">
+                  <img 
+                    src={currentLogo} 
+                    alt={currentChapter.product}
+                    className="w-20 h-20 md:w-24 md:h-24 object-contain mb-4"
+                  />
+                  <h3 className="text-2xl md:text-3xl font-bold text-white mb-2">
+                    {currentChapter.product}
+                  </h3>
+                  <p 
+                    className="text-lg font-medium mb-4"
+                    style={{ color: currentColor }}
+                  >
+                    {currentChapter.tagline}
+                  </p>
+                  
+                  {/* Script preview */}
+                  {currentScript && (
+                    <p className="text-white/70 text-sm leading-relaxed line-clamp-3">
+                      {currentScript.slice(0, 150)}...
+                    </p>
+                  )}
+                </div>
               </motion.div>
+              
+              {/* Sparkles */}
+              {[...Array(6)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute"
+                  style={{
+                    left: `${20 + Math.random() * 60}%`,
+                    top: `${10 + Math.random() * 60}%`,
+                  }}
+                  animate={{
+                    scale: [0, 1, 0],
+                    opacity: [0, 0.8, 0],
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    delay: Math.random() * 2,
+                  }}
+                >
+                  <Sparkles className="w-4 h-4 text-amber-400" />
+                </motion.div>
+              ))}
             </div>
           )}
         </motion.div>
@@ -675,7 +552,7 @@ export const ProfessionalAvatarShowcase: React.FC<ProfessionalAvatarShowcaseProp
         <div className="flex items-center gap-2 px-3 py-1.5 bg-black/60 backdrop-blur-sm rounded-lg border border-white/10">
           <Video className="w-4 h-4 text-emerald-400" />
           <span className="text-xs text-white/80">
-            Video: Vertex AI Veo + {regionalAvatar.provider}
+            {hasRealVideo ? 'AI Video' : 'Placeholder'} • {regionalAvatar.provider}
           </span>
         </div>
         
@@ -683,7 +560,7 @@ export const ProfessionalAvatarShowcase: React.FC<ProfessionalAvatarShowcaseProp
           <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-900/60 backdrop-blur-sm rounded-lg border border-purple-500/30">
             <Mic className="w-3 h-3 text-purple-400" />
             <span className="text-xs text-purple-200">
-              Voice: {ttsProviderInfo.displayName}
+              {ttsConfig.displayName} • {ttsConfig.zone}
             </span>
           </div>
         )}
@@ -705,11 +582,11 @@ export const ProfessionalAvatarShowcase: React.FC<ProfessionalAvatarShowcaseProp
           className="flex items-center gap-4"
         >
           <img 
-            src={currentChapter.logo} 
+            src={currentLogo} 
             alt={currentChapter.product}
             className="w-12 h-12 md:w-16 md:h-16 object-contain"
           />
-          <div>
+          <div className="flex-1">
             <h3 className="text-xl md:text-2xl font-bold text-white">
               {currentChapter.product}
             </h3>
@@ -718,7 +595,7 @@ export const ProfessionalAvatarShowcase: React.FC<ProfessionalAvatarShowcaseProp
 
           {isSpeaking && (
             <motion.div
-              className="ml-auto flex items-center gap-2 px-3 py-1.5 bg-green-500/20 rounded-full border border-green-500/30"
+              className="flex items-center gap-2 px-3 py-1.5 bg-green-500/20 rounded-full border border-green-500/30"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
             >
@@ -855,27 +732,30 @@ export const ProfessionalAvatarShowcase: React.FC<ProfessionalAvatarShowcaseProp
                     <ChevronDown className="w-3 h-3 opacity-60" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuContent align="end" className="w-64 max-h-80 overflow-y-auto">
                   <DropdownMenuLabel>Select Language</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  {LANGUAGES.map(lang => (
-                    <DropdownMenuItem
-                      key={lang.code}
-                      onClick={() => {
-                        setSelectedLanguage(lang.code);
-                        if (!isMuted && isPlaying) {
-                          setTimeout(() => generateVoice(), 100);
-                        }
-                      }}
-                      className={selectedLanguage === lang.code ? 'bg-primary/20' : ''}
-                    >
-                      <span className="text-lg mr-2">{lang.flag}</span>
-                      <span className="flex-1">{lang.name}</span>
-                      <Badge variant="outline" className="text-[10px] ml-auto">
-                        {lang.ttsProvider}
-                      </Badge>
-                    </DropdownMenuItem>
-                  ))}
+                  {AVAILABLE_LANGUAGES.map(lang => {
+                    const config = getTTSRouting(lang.code);
+                    return (
+                      <DropdownMenuItem
+                        key={lang.code}
+                        onClick={() => {
+                          setSelectedLanguage(lang.code);
+                          if (!isMuted && isPlaying) {
+                            setTimeout(() => generateVoice(), 100);
+                          }
+                        }}
+                        className={selectedLanguage === lang.code ? 'bg-primary/20' : ''}
+                      >
+                        <span className="text-lg mr-2">{lang.flag}</span>
+                        <span className="flex-1">{lang.name}</span>
+                        <Badge variant="outline" className="text-[10px] ml-auto">
+                          {config.displayName}
+                        </Badge>
+                      </DropdownMenuItem>
+                    );
+                  })}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -892,7 +772,9 @@ export const ProfessionalAvatarShowcase: React.FC<ProfessionalAvatarShowcaseProp
         >
           <div className="flex items-center gap-3 px-4 py-2 bg-black/60 rounded-full">
             <Loader2 className="w-5 h-5 text-purple-400 animate-spin" />
-            <span className="text-sm text-white/80">Generating {selectedLang.name} voice...</span>
+            <span className="text-sm text-white/80">
+              Generating {selectedLang.name} voice via {ttsConfig.displayName}...
+            </span>
           </div>
         </motion.div>
       )}
