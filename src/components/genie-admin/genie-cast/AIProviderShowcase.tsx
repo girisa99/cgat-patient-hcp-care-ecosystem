@@ -29,36 +29,29 @@ interface AIProvider {
 }
 
 const AI_PROVIDERS: AIProvider[] = [
-  // === VIDEO GENERATION (Extended with all major providers) ===
-  { name: 'Google Veo 3', category: 'video', color: '#4285F4' },
-  { name: 'OpenAI Sora', category: 'video', color: '#10A37F' },
-  { name: 'Runway Gen-3 Alpha', category: 'video', color: '#6366F1' },
-  { name: 'Kling AI 1.6', category: 'video', color: '#7C3AED' },
+  // === VIDEO GENERATION (Actually integrated) ===
+  { name: 'Google Vertex Veo 3', category: 'video', color: '#4285F4' },
+  { name: 'Sora2API', category: 'video', color: '#10A37F' },
   { name: 'Alibaba Wan 2.6', category: 'video', color: '#FF6A00' },
-  { name: 'Pika Labs 2.0', category: 'video', color: '#EC4899' },
-  { name: 'Luma Dream Machine', category: 'video', color: '#8B5CF6' },
-  { name: 'Minimax Hailuo', category: 'video', color: '#F97316' },
-  { name: 'ByteDance', category: 'video', color: '#000000' },
-  { name: 'Stable Video Diffusion', category: 'video', color: '#A855F7' },
+  { name: 'Alibaba Wan 2.2', category: 'video', color: '#FF6A00' },
   { name: 'ModelsLab AnimateDiff', category: 'video', color: '#10B981' },
   { name: 'Replicate SVD', category: 'video', color: '#0EA5E9' },
+  { name: 'Gemini Video', category: 'video', color: '#4285F4' },
   
-  // === AVATAR & LIP-SYNC (Full range of avatar providers) ===
-  { name: 'HeyGen', category: 'video', color: '#06B6D4' },
-  { name: 'Hedra Character-1', category: 'video', color: '#D946EF' },
-  { name: 'D-ID', category: 'video', color: '#F43F5E' },
-  { name: 'Synthesia', category: 'video', color: '#22C55E' },
+  // === AVATAR & LIP-SYNC (Integrated via Alibaba) ===
   { name: 'Alibaba Wan2.2 Avatar', category: 'video', color: '#FF6A00' },
+  { name: 'Alibaba OmniAvatar', category: 'video', color: '#FF6A00' },
+  { name: 'Alibaba TaoAvatar', category: 'video', color: '#FF6A00' },
+  { name: 'Alibaba MACH', category: 'video', color: '#FF6A00' },
   
-  // === LLM ===
+  // === LLM (Integrated) ===
   { name: 'Claude 3.5 Sonnet', category: 'llm', color: '#D97706' },
   { name: 'GPT-4o', category: 'llm', color: '#10A37F' },
   { name: 'Gemini 2.0 Flash', category: 'llm', color: '#4285F4' },
   { name: 'Qwen 2.5 Max', category: 'llm', color: '#FF6A00' },
   { name: 'DeepSeek V3', category: 'llm', color: '#1E40AF' },
-  { name: 'Llama 3.3', category: 'llm', color: '#8B5CF6' },
   
-  // === TTS & VOICE ===
+  // === TTS & VOICE (Integrated) ===
   { name: 'ElevenLabs', category: 'tts', color: '#000000' },
   { name: 'Azure Neural TTS', category: 'tts', color: '#0078D4' },
   { name: 'CosyVoice', category: 'tts', color: '#FF6A00' },
@@ -66,21 +59,17 @@ const AI_PROVIDERS: AIProvider[] = [
   { name: 'OpenAI TTS', category: 'tts', color: '#10A37F' },
   { name: 'Amazon Polly', category: 'tts', color: '#FF9900' },
   
-  // === 3D GENERATION ===
+  // === 3D GENERATION (Integrated) ===
   { name: 'Meshy AI', category: '3d', color: '#7C3AED' },
   { name: 'Alibaba 3D Suite', category: '3d', color: '#FF6A00' },
+  { name: 'Alibaba Richdreamer', category: '3d', color: '#FF6A00' },
   { name: 'ModelsLab 3D', category: '3d', color: '#10B981' },
-  { name: 'Tripo AI', category: '3d', color: '#0EA5E9' },
-  { name: 'Rodin Gen-1', category: '3d', color: '#F97316' },
   
-  // === IMAGE GENERATION ===
+  // === IMAGE GENERATION (Integrated) ===
   { name: 'FLUX Pro', category: 'image', color: '#000000' },
-  { name: 'SDXL Turbo', category: 'image', color: '#8B5CF6' },
-  { name: 'Midjourney V6', category: 'image', color: '#FFFFFF' },
-  { name: 'DALL-E 3', category: 'image', color: '#10A37F' },
-  { name: 'Imagen 3', category: 'image', color: '#4285F4' },
-  { name: 'Ideogram 2.0', category: 'image', color: '#EC4899' },
-  { name: 'Leonardo AI', category: 'image', color: '#F97316' },
+  { name: 'SDXL', category: 'image', color: '#8B5CF6' },
+  { name: 'Gemini Imagen 3', category: 'image', color: '#4285F4' },
+  { name: 'ModelsLab Image', category: 'image', color: '#10B981' },
 ];
 
 const getCategoryIcon = (category: AIProvider['category']) => {
