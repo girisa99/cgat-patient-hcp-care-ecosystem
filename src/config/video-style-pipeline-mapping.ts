@@ -204,57 +204,54 @@ export const VIDEO_STYLE_PROVIDERS: Record<VideoStyleType, StyleProviderConfig> 
   },
 };
 
-// Avatar style to provider mapping (Extended with all avatar providers)
+// Avatar style to provider mapping (Using only integrated providers)
 export const AVATAR_STYLE_PROVIDERS: Record<AvatarStyleType, { 
   provider: string; 
   model: string;
-  alternatives: string[]; // Fallback providers
+  alternatives: string[]; // Fallback providers (only integrated ones)
 }> = {
   photorealistic: {
     provider: 'alibaba',
     model: 'wan2.2-s2v', // Speech-to-video with lip-sync
-    alternatives: ['heygen', 'd-id', 'synthesia', 'hedra'],
+    alternatives: ['alibaba-omniavatar', 'alibaba-mach'],
   },
   '3d_pixar': {
     provider: 'meshy',
     model: 'character-3d', // 3D character generation
-    alternatives: ['modelslab-3d', 'tripo', 'rodin'],
+    alternatives: ['alibaba-3d', 'modelslab-3d'],
   },
   '2d_animated': {
     provider: 'modelslab',
     model: 'animatediff-cartoon', // 2D animation style
-    alternatives: ['runway-gen3', 'pika', 'luma'],
+    alternatives: ['alibaba-wan', 'replicate-svd'],
   },
 };
 
-// Extended provider capabilities registry
+// Extended provider capabilities registry (Only integrated providers)
 export const PROVIDER_CAPABILITIES: Record<string, {
   category: string[];
   strengths: string[];
   maxDuration: number;
   quality: 'standard' | 'hd' | '4k';
 }> = {
-  // Video Generation
+  // Video Generation (Integrated)
   'vertex-veo': { category: ['video'], strengths: ['cinematic', 'realistic', 'documentary'], maxDuration: 16, quality: '4k' },
-  'sora': { category: ['video'], strengths: ['cinematic', 'creative', 'physics'], maxDuration: 20, quality: '4k' },
-  'runway-gen3': { category: ['video', 'avatar'], strengths: ['motion', 'creative', 'style-transfer'], maxDuration: 10, quality: 'hd' },
-  'kling-1.6': { category: ['video'], strengths: ['chinese-style', 'anime', 'realistic'], maxDuration: 5, quality: 'hd' },
-  'pika-2.0': { category: ['video'], strengths: ['lip-sync', 'creative', 'fast'], maxDuration: 4, quality: 'hd' },
-  'luma': { category: ['video'], strengths: ['dreamlike', 'creative', 'motion'], maxDuration: 5, quality: 'hd' },
-  'minimax': { category: ['video'], strengths: ['chinese', 'realistic', 'fast'], maxDuration: 6, quality: 'hd' },
-  'alibaba-wan': { category: ['video', 'avatar', 'lipsync'], strengths: ['avatar', 'asian-faces', 'lipsync'], maxDuration: 10, quality: 'hd' },
+  'sora2api': { category: ['video'], strengths: ['cinematic', 'creative', 'physics'], maxDuration: 20, quality: '4k' },
+  'alibaba-wan26': { category: ['video'], strengths: ['asian-style', 'realistic', 'fast'], maxDuration: 10, quality: 'hd' },
+  'alibaba-wan22': { category: ['video', 'avatar', 'lipsync'], strengths: ['avatar', 'asian-faces', 'lipsync'], maxDuration: 10, quality: 'hd' },
   'modelslab': { category: ['video', 'image', '3d'], strengths: ['anime', 'stylized', 'fast'], maxDuration: 8, quality: 'hd' },
+  'replicate-svd': { category: ['video'], strengths: ['stable', 'reliable', 'image-to-video'], maxDuration: 4, quality: 'hd' },
+  'gemini-video': { category: ['video'], strengths: ['google-integration', 'fast'], maxDuration: 8, quality: 'hd' },
   
-  // Avatar & Lip-sync
-  'heygen': { category: ['avatar'], strengths: ['business', 'professional', 'multi-language'], maxDuration: 300, quality: 'hd' },
-  'hedra': { category: ['avatar'], strengths: ['character', 'expressive', 'creative'], maxDuration: 60, quality: 'hd' },
-  'd-id': { category: ['avatar'], strengths: ['photo-to-video', 'simple', 'fast'], maxDuration: 120, quality: 'hd' },
-  'synthesia': { category: ['avatar'], strengths: ['enterprise', 'professional', 'templates'], maxDuration: 300, quality: 'hd' },
+  // Avatar & Lip-sync (Alibaba Suite - Integrated)
+  'alibaba-omniavatar': { category: ['avatar'], strengths: ['full-body', 'expressive'], maxDuration: 120, quality: 'hd' },
+  'alibaba-taoavatar': { category: ['avatar', '3d'], strengths: ['3dgs', 'ar-ready'], maxDuration: 60, quality: 'hd' },
+  'alibaba-mach': { category: ['avatar'], strengths: ['character', 'animation-ready'], maxDuration: 60, quality: 'hd' },
   
-  // 3D Generation
+  // 3D Generation (Integrated)
   'meshy': { category: ['3d'], strengths: ['text-to-3d', 'texturing', 'game-ready'], maxDuration: 0, quality: 'hd' },
-  'tripo': { category: ['3d'], strengths: ['image-to-3d', 'fast', 'detailed'], maxDuration: 0, quality: 'hd' },
-  'rodin': { category: ['3d'], strengths: ['character', 'animation-ready', 'rigged'], maxDuration: 0, quality: 'hd' },
+  'alibaba-richdreamer': { category: ['3d'], strengths: ['high-fidelity', 'detailed'], maxDuration: 0, quality: 'hd' },
+  'modelslab-3d': { category: ['3d'], strengths: ['fast', 'stylized'], maxDuration: 0, quality: 'hd' },
 };
 
 // Script tone adjustments per style
