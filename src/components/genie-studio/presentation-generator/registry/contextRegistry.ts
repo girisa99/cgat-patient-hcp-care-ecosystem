@@ -587,6 +587,25 @@ export const VISUAL_FEATURES: VisualFeatureItem[] = [
   { id: 'character-illustration', name: 'Character Illustration', category: 'media', providers: ['modelslab', 'dalle', 'midjourney'], tier: 'pro', compatibleOutputs: ['presentation', 'pdf', 'video', 'infographic'] },
   { id: 'mascot', name: 'Brand Mascot', category: 'media', providers: ['modelslab', 'dalle'], tier: 'pro', compatibleOutputs: ['presentation', 'pdf', 'video', 'infographic'] },
   { id: 'animated-character', name: 'Animated Character', category: 'animation', providers: ['heygen', 'modelslab'], tier: 'enterprise', compatibleOutputs: ['video-mp4', '3d-presentation'] },
+  
+  // ==========================================
+  // NEW: VIDEO STYLE PRESETS (From Genie Cast)
+  // These enable multi-format video generation across Vibe, Deck, and Cast
+  // ==========================================
+  { id: 'smart-storytelling', name: 'Smart Storytelling', category: 'animation', providers: ['vertex-ai', 'modelslab'], tier: 'pro', compatibleOutputs: ['video-mp4', 'presentation'] },
+  { id: 'hook-video', name: 'Hook Video', category: 'animation', providers: ['modelslab'], tier: 'pro', compatibleOutputs: ['video-mp4', 'animated-gif'] },
+  { id: 'micro-drama', name: 'Micro-Drama', category: 'animation', providers: ['vertex-ai', 'runway'], tier: 'enterprise', compatibleOutputs: ['video-mp4'] },
+  { id: 'photorealistic-avatar', name: 'Photorealistic Avatar', category: 'media', providers: ['alibaba-wan2.2'], tier: 'enterprise', compatibleOutputs: ['video-mp4'] },
+  { id: '3d-pixar-avatar', name: '3D Pixar Avatar', category: 'media', providers: ['meshy-3d', 'modelslab'], tier: 'enterprise', compatibleOutputs: ['video-mp4', '3d-presentation'] },
+  { id: '2d-animated-avatar', name: '2D Animated Avatar', category: 'media', providers: ['modelslab-animate'], tier: 'pro', compatibleOutputs: ['video-mp4', 'animated-gif'] },
+  { id: 'talking-photo', name: 'Talking Photo', category: 'media', providers: ['alibaba-wan2.2-s2v'], tier: 'pro', compatibleOutputs: ['video-mp4'] },
+  { id: 'anime-style', name: 'Anime Style', category: 'animation', providers: ['modelslab-anime'], tier: 'pro', compatibleOutputs: ['video-mp4', 'presentation'] },
+  { id: 'image-to-life', name: 'Image to Life', category: 'animation', providers: ['alibaba-wan2.6-i2v'], tier: 'pro', compatibleOutputs: ['video-mp4'] },
+  { id: '3d-explainer', name: '3D Explainer', category: '3d', providers: ['meshy-ai', 'modelslab'], tier: 'enterprise', compatibleOutputs: ['video-mp4', '3d-presentation'] },
+  { id: 'chapter-navigation', name: 'Chapter Navigation', category: 'interactive', providers: ['json2video'], tier: 'pro', compatibleOutputs: ['video-mp4', 'interactive-web'] },
+  { id: 'quiz-overlay', name: 'Quiz Overlay', category: 'interactive', providers: ['json2video', 'custom'], tier: 'pro', compatibleOutputs: ['video-mp4', 'interactive-web'] },
+  { id: 'cta-video', name: 'CTA Video', category: 'interactive', providers: ['modelslab', 'json2video'], tier: 'pro', compatibleOutputs: ['video-mp4', 'presentation'] },
+  { id: 'progress-tracker', name: 'Progress Tracker', category: 'interactive', providers: ['json2video'], tier: 'pro', compatibleOutputs: ['video-mp4', 'interactive-web'] },
 ];
 
 // ==========================================
@@ -725,6 +744,22 @@ export const VISUAL_FEATURE_TO_CATEGORY_MAP: Record<string, {
   'clickable-hotspots': { category: 'distribution', product: 'cast', edgeFunction: 'social-publish' },
   'data-filters': { category: 'distribution', product: 'cast', edgeFunction: 'social-publish' },
   'embedded-forms': { category: 'distribution', product: 'cast', edgeFunction: 'social-publish' },
+  
+  // Video Styles (Genie Cast) → Vibe/Cast
+  'smart-storytelling': { category: 'video-generation', product: 'vibe', edgeFunction: 'ai-video-generator' },
+  'hook-video': { category: 'video-generation', product: 'vibe', edgeFunction: 'ai-video-generator' },
+  'micro-drama': { category: 'video-generation', product: 'vibe', edgeFunction: 'ai-video-generator' },
+  'photorealistic-avatar': { category: 'avatar-lipsync', product: 'vibe', edgeFunction: 'ai-video-generator' },
+  '3d-pixar-avatar': { category: 'avatar-lipsync', product: 'vibe', edgeFunction: 'modelslab-media' },
+  '2d-animated-avatar': { category: 'avatar-lipsync', product: 'vibe', edgeFunction: 'modelslab-media' },
+  'talking-photo': { category: 'avatar-lipsync', product: 'vibe', edgeFunction: 'ai-video-generator' },
+  'anime-style': { category: 'video-generation', product: 'vibe', edgeFunction: 'modelslab-media' },
+  'image-to-life': { category: 'video-generation', product: 'vibe', edgeFunction: 'ai-video-generator' },
+  '3d-explainer': { category: '3d-immersive', product: 'deck', edgeFunction: 'modelslab-media' },
+  'chapter-navigation': { category: 'distribution', product: 'cast', edgeFunction: 'genie-cast-assembler' },
+  'quiz-overlay': { category: 'distribution', product: 'cast', edgeFunction: 'genie-cast-assembler' },
+  'cta-video': { category: 'distribution', product: 'cast', edgeFunction: 'genie-cast-assembler' },
+  'progress-tracker': { category: 'distribution', product: 'cast', edgeFunction: 'genie-cast-assembler' },
 };
 
 /**

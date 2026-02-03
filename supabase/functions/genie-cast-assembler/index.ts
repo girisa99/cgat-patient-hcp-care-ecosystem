@@ -194,6 +194,23 @@ serve(async (req) => {
       useApprovedMessaging = false,
       // NEW: Skip TTS regeneration if audio already exists
       skipExistingTTS = false,
+      // NEW: Video style configuration from style cards
+      videoStyle = 'educational',
+      styleConfig = null as {
+        videoProvider?: string;
+        avatarProvider?: string;
+        animationProvider?: string;
+        ttsStyle?: string;
+        visualEffect?: string;
+        scriptTone?: string;
+        pacing?: string;
+        toneModifier?: {
+          hookIntensity?: number;
+          emotionalArc?: boolean;
+          ctaFrequency?: string;
+          humorLevel?: string;
+        };
+      } | null,
     } = await req.json();
     
     console.log(`📷 Received ${screenshots.length} screenshots from orchestration service`);
@@ -203,8 +220,18 @@ serve(async (req) => {
     }
 
     console.log(`🎬 Starting Genie Cast assembly for language: ${language}`);
+    console.log(`🎨 Video Style: ${videoStyle}`);
     console.log(`🎥 Mode: ${fullProductionMode ? 'Full Production' : 'Standard'}`);
     console.log(`🔊 Skip existing TTS: ${skipExistingTTS ? 'Yes (reuse cached audio)' : 'No (regenerate all)'}`);
+    
+    // Log style-specific configuration
+    if (styleConfig) {
+      console.log(`🎯 Style Config: provider=${styleConfig.videoProvider}, avatar=${styleConfig.avatarProvider || 'none'}, effect=${styleConfig.visualEffect}`);
+      console.log(`📝 Script Tone: ${styleConfig.scriptTone}, Pacing: ${styleConfig.pacing}`);
+      if (styleConfig.toneModifier) {
+        console.log(`🎭 Tone Modifier: hook=${styleConfig.toneModifier.hookIntensity}, emotional=${styleConfig.toneModifier.emotionalArc}, humor=${styleConfig.toneModifier.humorLevel}`);
+      }
+    }
     
     if (fullProductionMode && productionConfig) {
       console.log(`👤 Avatar: ${productionConfig.avatar?.enabled ? `${productionConfig.avatar.gender} (${productionConfig.avatar.placement})` : 'disabled'}`);

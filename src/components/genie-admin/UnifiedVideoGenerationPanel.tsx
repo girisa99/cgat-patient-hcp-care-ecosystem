@@ -61,6 +61,7 @@ import { FeatureVideoGenerator } from './FeatureVideoGenerator';
 import { GenieCastFlowDiagram } from './GenieCastFlowDiagram';
 import { uploadBrandLogosToStorage } from '@/services/marketing/brandAssetUploadService';
 import { GenieCastHero, VideoStyleCards, AIProviderShowcase, type VideoStyleType } from './genie-cast';
+import { getStylePipelineConfig, styleRequiresAvatar, styleRequires3D } from '@/config/video-style-pipeline-mapping';
 // Supported languages with zone routing
 const LANGUAGES = [
   { code: 'en', name: 'English', flag: '🇺🇸', zone: 'Claude Zone', tts: 'ElevenLabs' },
@@ -278,7 +279,11 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
     setGeneratedVideos(prev => new Map(prev).set(selectedLanguage, newVideo));
 
     try {
-      // Call the unified assembly edge function with production mode config
+      // Get style-specific pipeline configuration
+      const styleConfig = getStylePipelineConfig(selectedVideoStyle);
+      console.log('[GenieCast] Using video style:', selectedVideoStyle, styleConfig);
+
+      // Call the unified assembly edge function with production mode config + video style
       const { data, error } = await supabase.functions.invoke('genie-cast-assembler', {
         body: {
           language: selectedLanguage,
@@ -286,14 +291,27 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
           includeVisuals,
           // Skip TTS regeneration if audio already exists
           skipExistingTTS,
-          // Full Production Mode settings
-          fullProductionMode: enableFullProduction,
+          // NEW: Video style configuration from style cards
+          videoStyle: selectedVideoStyle,
+          styleConfig: {
+            videoProvider: styleConfig.videoProvider,
+            avatarProvider: styleConfig.avatarProvider,
+            animationProvider: styleConfig.animationProvider,
+            ttsStyle: styleConfig.ttsStyle,
+            visualEffect: styleConfig.visualEffect,
+            scriptTone: styleConfig.scriptTone,
+            pacing: styleConfig.pacing,
+            toneModifier: styleConfig.toneModifier,
+          },
+          // Full Production Mode settings (enhanced with style requirements)
+          fullProductionMode: enableFullProduction || styleRequiresAvatar(selectedVideoStyle) || styleRequires3D(selectedVideoStyle),
           productionConfig: enableFullProduction ? {
             avatar: {
-              enabled: productionConfig.enableAvatar,
+              enabled: productionConfig.enableAvatar || styleRequiresAvatar(selectedVideoStyle),
               gender: productionConfig.avatarGender,
               placement: productionConfig.avatarPlacement,
               size: productionConfig.avatarSize,
+              style: selectedVideoStyle.includes('avatar') ? selectedVideoStyle.replace('ugc_avatar_', '') : 'photorealistic',
             },
             animations: {
               enabled: productionConfig.enableAnimations,
@@ -301,7 +319,7 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
               intensity: productionConfig.animationIntensity,
             },
             threeD: {
-              enabled: productionConfig.enable3D,
+              enabled: productionConfig.enable3D || styleRequires3D(selectedVideoStyle),
               style: productionConfig.threeDStyle,
               quality: productionConfig.renderQuality,
             },
