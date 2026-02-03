@@ -5,7 +5,7 @@
  * Uses Genie Cast pipeline for professional marketing videos.
  * 
  * Flow:
- * 1. Select language → 2. Generate (all chapters) → 3. Preview → 4. Publish
+ * 1. Upload Screenshots → 2. Select language → 3. Generate (all chapters) → 4. Preview → 5. Publish
  */
 
 import React, { useState, useEffect } from 'react';
@@ -26,6 +26,7 @@ import {
   Languages,
   Clock,
   Layers,
+  Camera,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -39,6 +40,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { ProductScreenshotCapture } from './ProductScreenshotCapture';
 
 // Supported languages with zone routing
 const LANGUAGES = [
@@ -108,7 +110,7 @@ interface ExistingVideo {
 }
 
 export const UnifiedVideoGenerationPanel: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'generate' | 'library' | 'analytics'>('generate');
+  const [activeTab, setActiveTab] = useState<'screenshots' | 'generate' | 'library' | 'analytics'>('screenshots');
   const [selectedLanguage, setSelectedLanguage] = useState('en');
   const [quality, setQuality] = useState<'preview' | 'production' | 'cinematic'>('production');
   const [includeVisuals, setIncludeVisuals] = useState(true);
@@ -250,7 +252,11 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-        <TabsList className="grid w-full grid-cols-3 max-w-md">
+        <TabsList className="grid w-full grid-cols-4 max-w-lg">
+          <TabsTrigger value="screenshots" className="gap-2">
+            <Camera className="w-4 h-4" />
+            Screenshots
+          </TabsTrigger>
           <TabsTrigger value="generate" className="gap-2">
             <Video className="w-4 h-4" />
             Generate
@@ -264,6 +270,34 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
             Analytics
           </TabsTrigger>
         </TabsList>
+
+        {/* Screenshots Tab - NEW */}
+        <TabsContent value="screenshots" className="space-y-6">
+          <ProductScreenshotCapture
+            onScreenshotsUpdated={(screenshots) => {
+              console.log('Screenshots updated:', screenshots);
+              toast.success(`${screenshots.length} screenshots ready for video generation`);
+            }}
+          />
+          
+          <Card className="border-primary/20 bg-primary/5">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+                <Camera className="w-8 h-8 text-primary" />
+                <div className="flex-1">
+                  <h3 className="font-semibold">Automatic Screenshot Capture</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Upload screenshots of each product page. These will be used as visual highlights during voiceover in the generated videos.
+                  </p>
+                </div>
+                <Button onClick={() => setActiveTab('generate')} className="gap-2">
+                  <Play className="w-4 h-4" />
+                  Continue to Generate
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         {/* Generate Tab */}
         <TabsContent value="generate" className="space-y-6">
