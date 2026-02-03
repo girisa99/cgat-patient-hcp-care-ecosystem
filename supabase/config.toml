@@ -380,3 +380,6 @@ verify_jwt = false
 
 [functions.multi-provider-tts]
 verify_jwt = false
+
+[functions.magic-clips-generator]
+verify_jwt = false
