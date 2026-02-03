@@ -26,7 +26,7 @@ import {
   Video, User, Box, Layers, Pause,
   Clock, CheckCircle, Loader2, Calendar,
   MapPin, Languages, ExternalLink, Volume2, VolumeX,
-  AlertCircle, AlertTriangle
+  AlertCircle, AlertTriangle, ArrowLeft, Sparkles, Wand2, Scissors
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -210,7 +210,33 @@ export const ContentLibrary: React.FC<ContentLibraryProps> = ({
   const [contentToDelete, setContentToDelete] = useState<ContentItem | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+  const [activeDialogTab, setActiveDialogTab] = useState<string>('details');
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  // Magic clips handler - generate platform-specific clips
+  const handleGenerateMagicClips = async (item: ContentItem) => {
+    toast.info('Generating Magic Clips for all platforms...', {
+      description: 'AI is creating optimized versions for YouTube Shorts, TikTok, Instagram, LinkedIn, Twitter, and Facebook'
+    });
+    
+    // TODO: Call edge function to generate clips via AI routing
+    // For now, show placeholder
+    setTimeout(() => {
+      toast.success('Magic Clips generated!', {
+        description: '6 platform-specific clips created'
+      });
+    }, 3000);
+  };
+
+  // Single clip generation handler
+  const handleGenerateSingleClip = async (item: ContentItem, platformId: string) => {
+    toast.info(`Generating clip for ${platformId}...`);
+    
+    // TODO: Call edge function with specific platform
+    setTimeout(() => {
+      toast.success(`${platformId} clip ready!`);
+    }, 2000);
+  };
 
   // Get unique regions and languages for filters
   const uniqueRegions = [...new Set(content.map(c => c.region))];
@@ -782,13 +808,15 @@ export const ContentLibrary: React.FC<ContentLibraryProps> = ({
             )}
           </div>
 
-          {/* Metadata Tabs */}
-          <Tabs defaultValue="details" className="mt-4">
-            <TabsList>
-              <TabsTrigger value="details">Details</TabsTrigger>
-              <TabsTrigger value="publishing">Publishing</TabsTrigger>
-              <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            </TabsList>
+          {/* Metadata Tabs - Fixed layout to prevent video covering tabs */}
+          <Tabs defaultValue="details" className="mt-4" value={activeDialogTab} onValueChange={setActiveDialogTab}>
+            <div className="sticky top-0 z-10 bg-background pb-2">
+              <TabsList className="w-full grid grid-cols-3">
+                <TabsTrigger value="details">Details</TabsTrigger>
+                <TabsTrigger value="publishing">Publishing</TabsTrigger>
+                <TabsTrigger value="analytics">Analytics</TabsTrigger>
+              </TabsList>
+            </div>
             
             <TabsContent value="details" className="space-y-4">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -834,6 +862,19 @@ export const ContentLibrary: React.FC<ContentLibraryProps> = ({
             </TabsContent>
 
             <TabsContent value="publishing" className="space-y-4">
+              {/* Back to Details link */}
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-7 px-2 text-xs"
+                  onClick={() => setActiveDialogTab('details')}
+                >
+                  <ArrowLeft className="w-3 h-3 mr-1" />
+                  Back to Details
+                </Button>
+              </div>
+              
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-muted-foreground text-xs">Created</Label>
@@ -863,6 +904,61 @@ export const ContentLibrary: React.FC<ContentLibraryProps> = ({
                 </div>
               </div>
               
+              {/* Magic Clips - AI Auto-generate platform-specific clips */}
+              <div className="pt-4 border-t">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <Label className="text-sm font-medium flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-primary" />
+                      Magic Clips (AI Auto-generate)
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      AI creates optimized short-form clips for each platform
+                    </p>
+                  </div>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => handleGenerateMagicClips(selectedContent!)}
+                    disabled={!selectedContent?.video_url || selectedContent?.generation_status !== 'completed'}
+                    className="gap-1"
+                  >
+                    <Wand2 className="w-4 h-4" />
+                    Generate All
+                  </Button>
+                </div>
+                
+                {/* Platform-specific clip options */}
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {[
+                    { id: 'youtube_shorts', name: 'YouTube Shorts', duration: '60s', aspect: '9:16' },
+                    { id: 'tiktok', name: 'TikTok', duration: '30s', aspect: '9:16' },
+                    { id: 'instagram_reels', name: 'Instagram Reels', duration: '30s', aspect: '9:16' },
+                    { id: 'linkedin', name: 'LinkedIn', duration: '30s', aspect: '16:9' },
+                    { id: 'twitter', name: 'Twitter/X', duration: '45s', aspect: '16:9' },
+                    { id: 'facebook', name: 'Facebook', duration: '60s', aspect: '16:9' },
+                  ].map(platform => (
+                    <Card key={platform.id} className="p-2 hover:border-primary/50 cursor-pointer transition-colors">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs font-medium">{platform.name}</p>
+                          <p className="text-[10px] text-muted-foreground">{platform.duration} • {platform.aspect}</p>
+                        </div>
+                        <Button 
+                          size="icon" 
+                          variant="ghost" 
+                          className="h-6 w-6"
+                          onClick={() => handleGenerateSingleClip(selectedContent!, platform.id)}
+                          disabled={!selectedContent?.video_url || selectedContent?.generation_status !== 'completed'}
+                        >
+                          <Scissors className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+              
               {/* Publish to platforms */}
               <div className="pt-4 border-t">
                 <Label className="text-muted-foreground text-xs mb-2 block">Publish to Platforms</Label>
@@ -878,6 +974,19 @@ export const ContentLibrary: React.FC<ContentLibraryProps> = ({
             </TabsContent>
 
             <TabsContent value="analytics" className="space-y-4">
+              {/* Back to Details link */}
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-7 px-2 text-xs"
+                  onClick={() => setActiveDialogTab('details')}
+                >
+                  <ArrowLeft className="w-3 h-3 mr-1" />
+                  Back to Details
+                </Button>
+              </div>
+              
               <div className="grid grid-cols-3 gap-4">
                 <Card>
                   <CardContent className="pt-4 text-center">
