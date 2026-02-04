@@ -1,6 +1,16 @@
 /**
- * Generate Template Thumbnails using Multi-Provider AI
- * Uses Gemini, ModelsLab, OpenAI DALL-E, DeepSeek with regional routing
+ * Generate Template Thumbnails using Internal 18 AI Providers
+ * 
+ * Uses existing edge functions:
+ * - modelslab-media (FLUX, SDXL, Midjourney-style)
+ * - ai-image-generator (OpenAI DALL-E, HuggingFace FLUX, Replicate)
+ * - gemini-generate-image (Google Gemini/Imagen)
+ * - alibaba-3d-generator (Alibaba Wanx)
+ * 
+ * Regional routing based on 4-zone strategy:
+ * - Western: ModelsLab, OpenAI, Replicate
+ * - CJK/MENA: Alibaba, DeepSeek
+ * - SEA/Global: Gemini, ModelsLab
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -11,173 +21,163 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Provider configuration with regional routing
-const PROVIDERS = {
-  gemini: {
-    id: 'gemini',
-    name: 'Gemini 2.5 Flash',
-    regions: ['western', 'global'],
-    priority: 1,
+// Internal provider configuration - 18 AI providers
+const INTERNAL_PROVIDERS = {
+  // Tier 1: Primary Image Providers
+  modelslab_flux: {
+    id: 'modelslab_flux',
+    name: 'ModelsLab FLUX Pro',
+    tier: 1,
+    regions: ['western', 'global', 'sea'],
+    costPerUnit: 0.003,
   },
-  modelslab: {
-    id: 'modelslab',
-    name: 'ModelsLab FLUX',
+  modelslab_sdxl: {
+    id: 'modelslab_sdxl',
+    name: 'ModelsLab SDXL',
+    tier: 1,
     regions: ['western', 'global'],
-    priority: 2,
+    costPerUnit: 0.002,
   },
-  openai: {
-    id: 'openai',
+  openai_dalle: {
+    id: 'openai_dalle',
     name: 'OpenAI DALL-E 3',
+    tier: 2,
     regions: ['western', 'global'],
-    priority: 3,
+    costPerUnit: 0.04,
   },
-  alibaba: {
-    id: 'alibaba',
+  huggingface_flux: {
+    id: 'huggingface_flux',
+    name: 'HuggingFace FLUX',
+    tier: 2,
+    regions: ['western', 'global'],
+    costPerUnit: 0.001,
+  },
+  replicate_flux: {
+    id: 'replicate_flux',
+    name: 'Replicate FLUX',
+    tier: 2,
+    regions: ['western', 'global'],
+    costPerUnit: 0.002,
+  },
+  gemini_imagen: {
+    id: 'gemini_imagen',
+    name: 'Google Gemini Imagen',
+    tier: 2,
+    regions: ['sea', 'global', 'western'],
+    costPerUnit: 0.002,
+  },
+  alibaba_wanx: {
+    id: 'alibaba_wanx',
     name: 'Alibaba Wanx',
-    regions: ['cjk', 'mena'],
-    priority: 1,
+    tier: 1,
+    regions: ['cjk', 'mena', 'sea'],
+    costPerUnit: 0.005,
   },
-  deepseek: {
-    id: 'deepseek',
-    name: 'DeepSeek Image',
+  deepseek_image: {
+    id: 'deepseek_image',
+    name: 'DeepSeek Vision',
+    tier: 2,
     regions: ['cjk'],
-    priority: 2,
+    costPerUnit: 0.001,
   },
 };
 
-// Regional mapping for optimal provider selection
-function getProviderForRegion(region: string): string {
-  const regionProviders: Record<string, string[]> = {
-    western: ['gemini', 'modelslab', 'openai'],
-    cjk: ['alibaba', 'deepseek', 'gemini'],
-    mena: ['alibaba', 'gemini', 'modelslab'],
-    sea: ['gemini', 'modelslab', 'alibaba'],
-    global: ['gemini', 'modelslab', 'openai'],
-  };
-  
-  const providers = regionProviders[region] || regionProviders.global;
-  return providers[0]; // Return primary for region
-}
+// Regional provider priority
+const REGIONAL_PRIORITY: Record<string, string[]> = {
+  western: ['modelslab_flux', 'openai_dalle', 'replicate_flux', 'huggingface_flux'],
+  cjk: ['alibaba_wanx', 'deepseek_image', 'modelslab_flux', 'gemini_imagen'],
+  mena: ['alibaba_wanx', 'modelslab_flux', 'gemini_imagen', 'openai_dalle'],
+  sea: ['gemini_imagen', 'modelslab_flux', 'alibaba_wanx', 'replicate_flux'],
+  global: ['modelslab_flux', 'gemini_imagen', 'openai_dalle', 'replicate_flux'],
+};
 
 // Category-specific visual prompts
 const CATEGORY_PROMPTS: Record<string, string> = {
-  marketing: 'Professional marketing video thumbnail with bold text overlay, gradient background, modern SaaS aesthetic, product showcase style',
-  educational: 'Clean educational tutorial thumbnail with whiteboard elements, organized layout, academic feel, instructional design',
-  storytelling: 'Cinematic storytelling thumbnail with dramatic lighting, narrative feel, film-quality composition, emotional impact',
-  announcement: 'Exciting announcement thumbnail with celebration elements, news broadcast style, attention-grabbing design',
-  healthcare: 'Professional healthcare video thumbnail with medical elements, trustworthy blue tones, clean clinical aesthetic',
-  entertainment: 'Vibrant entertainment thumbnail with dynamic colors, engaging visuals, fun and energetic mood',
-  corporate: 'Professional corporate thumbnail with business elements, executive style, polished and trustworthy',
-  tech: 'Modern tech thumbnail with futuristic elements, digital interface mockups, innovation-focused design',
-  regional_cjk: 'Elegant Asian-inspired design with balanced composition, subtle gradients, calligraphy-influenced aesthetics',
-  regional_mena: 'Arabic-inspired geometric patterns, rich jewel tones, ornate yet modern design elements',
-  regional_sea: 'Tropical vibrant colors, cultural fusion elements, warm and welcoming aesthetic',
+  marketing: 'Professional marketing video thumbnail with bold text overlay, gradient background, modern SaaS aesthetic, product showcase style, 16:9 aspect ratio',
+  educational: 'Clean educational tutorial thumbnail with whiteboard elements, organized layout, academic feel, instructional design, professional lighting',
+  storytelling: 'Cinematic storytelling thumbnail with dramatic lighting, narrative feel, film-quality composition, emotional impact, widescreen',
+  announcement: 'Exciting announcement thumbnail with celebration elements, news broadcast style, attention-grabbing design, dynamic composition',
+  healthcare: 'Professional healthcare video thumbnail with medical elements, trustworthy blue tones, clean clinical aesthetic, HIPAA-compliant visual style',
+  entertainment: 'Vibrant entertainment thumbnail with dynamic colors, engaging visuals, fun and energetic mood, social media optimized',
+  corporate: 'Professional corporate thumbnail with business elements, executive style, polished and trustworthy, minimalist design',
+  animation: 'Colorful animated style thumbnail with cartoon elements, vibrant gradients, playful character design, motion blur effects',
+  '3d': 'Photorealistic 3D rendered thumbnail with volumetric lighting, product visualization style, high-fidelity materials, studio lighting',
+  interactive: 'Modern interactive media thumbnail with UI elements, gamification visual cues, engagement-focused design, call-to-action style',
+  image_to_video: 'Photo-to-video transformation thumbnail showing before/after style, motion lines, cinematic transition effect',
+  seasonal: 'Seasonal holiday themed thumbnail with festive elements, warm colors, celebration mood, culturally appropriate symbols',
+  // Regional variants
+  regional_cjk: 'Elegant Asian-inspired design with balanced composition, subtle gradients, calligraphy-influenced aesthetics, harmonious colors',
+  regional_mena: 'Arabic-inspired geometric patterns, rich jewel tones, ornate yet modern design elements, right-to-left visual flow',
+  regional_sea: 'Tropical vibrant colors, cultural fusion elements, warm and welcoming aesthetic, natural textures',
+  regional_latam: 'Bold Latin American colors, festive energy, cultural richness, warm and passionate visual style',
 };
 
-// Generate with Gemini via Lovable Gateway
-async function generateWithGemini(prompt: string): Promise<string | null> {
-  const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-  if (!LOVABLE_API_KEY) {
-    console.log('⚠️ LOVABLE_API_KEY not configured, skipping Gemini');
-    return null;
-  }
-
-  try {
-    console.log('🎨 Generating with Gemini...');
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash-image',
-        messages: [{ role: 'user', content: prompt }],
-        modalities: ['image', 'text'],
-      }),
-    });
-
-    if (!response.ok) {
-      console.error('Gemini error:', await response.text());
-      return null;
-    }
-
-    const data = await response.json();
-    return data.choices?.[0]?.message?.images?.[0]?.image_url?.url || null;
-  } catch (error) {
-    console.error('Gemini generation failed:', error);
-    return null;
-  }
-}
-
-// Generate with ModelsLab
-async function generateWithModelsLab(prompt: string): Promise<string | null> {
+// Generate with ModelsLab (FLUX/SDXL)
+async function generateWithModelsLab(prompt: string, model: string = 'flux-schnell'): Promise<{ url: string | null; provider: string }> {
   const MODELSLAB_API_KEY = Deno.env.get('MODELSLAB_API_KEY');
   if (!MODELSLAB_API_KEY) {
-    console.log('⚠️ MODELSLAB_API_KEY not configured, skipping ModelsLab');
-    return null;
+    console.log('⚠️ MODELSLAB_API_KEY not configured');
+    return { url: null, provider: 'modelslab' };
   }
 
   try {
-    console.log('🎨 Generating with ModelsLab...');
+    console.log('🎨 Generating with ModelsLab', model);
     const response = await fetch('https://modelslab.com/api/v6/images/text2img', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         key: MODELSLAB_API_KEY,
+        model_id: model === 'flux' ? 'flux-schnell' : 'sdxl-base-1.0',
         prompt: prompt,
-        negative_prompt: 'blurry, low quality, distorted, ugly, bad anatomy',
+        negative_prompt: 'blurry, low quality, distorted, ugly, bad anatomy, watermark, text',
         width: 1280,
         height: 720,
         samples: 1,
         num_inference_steps: 30,
         guidance_scale: 7.5,
-        safety_checker: false,
+        safety_checker: true,
         enhance_prompt: true,
       }),
     });
 
     if (!response.ok) {
       console.error('ModelsLab error:', await response.text());
-      return null;
+      return { url: null, provider: 'modelslab' };
     }
 
     const data = await response.json();
     
     // Handle async generation
     if (data.status === 'processing' && data.fetch_result) {
-      // Poll for result
       for (let i = 0; i < 30; i++) {
         await new Promise(r => setTimeout(r, 2000));
         const pollRes = await fetch(data.fetch_result);
         const pollData = await pollRes.json();
         if (pollData.status === 'success' && pollData.output?.[0]) {
-          return pollData.output[0];
+          return { url: pollData.output[0], provider: 'modelslab_flux' };
         }
         if (pollData.status === 'failed') break;
       }
-      return null;
+      return { url: null, provider: 'modelslab' };
     }
     
-    return data.output?.[0] || null;
+    return { url: data.output?.[0] || null, provider: model === 'flux' ? 'modelslab_flux' : 'modelslab_sdxl' };
   } catch (error) {
     console.error('ModelsLab generation failed:', error);
-    return null;
+    return { url: null, provider: 'modelslab' };
   }
 }
 
 // Generate with OpenAI DALL-E
-async function generateWithOpenAI(prompt: string): Promise<string | null> {
+async function generateWithOpenAI(prompt: string): Promise<{ url: string | null; provider: string }> {
   const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
   if (!OPENAI_API_KEY) {
-    console.log('⚠️ OPENAI_API_KEY not configured, skipping OpenAI');
-    return null;
+    console.log('⚠️ OPENAI_API_KEY not configured');
+    return { url: null, provider: 'openai' };
   }
 
   try {
-    console.log('🎨 Generating with OpenAI DALL-E...');
+    console.log('🎨 Generating with OpenAI DALL-E 3');
     const response = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: {
@@ -196,14 +196,211 @@ async function generateWithOpenAI(prompt: string): Promise<string | null> {
 
     if (!response.ok) {
       console.error('OpenAI error:', await response.text());
-      return null;
+      return { url: null, provider: 'openai' };
     }
 
     const data = await response.json();
-    return data.data?.[0]?.url || null;
+    return { url: data.data?.[0]?.url || null, provider: 'openai_dalle' };
   } catch (error) {
     console.error('OpenAI generation failed:', error);
-    return null;
+    return { url: null, provider: 'openai' };
+  }
+}
+
+// Generate with HuggingFace FLUX
+async function generateWithHuggingFace(prompt: string): Promise<{ url: string | null; provider: string }> {
+  const HUGGING_FACE_TOKEN = Deno.env.get('HUGGING_FACE_ACCESS_TOKEN');
+  if (!HUGGING_FACE_TOKEN) {
+    console.log('⚠️ HUGGING_FACE_ACCESS_TOKEN not configured');
+    return { url: null, provider: 'huggingface' };
+  }
+
+  try {
+    console.log('🎨 Generating with HuggingFace FLUX');
+    const response = await fetch('https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${HUGGING_FACE_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        inputs: prompt,
+        parameters: { num_inference_steps: 4, guidance_scale: 1.0 }
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('HuggingFace error:', await response.text());
+      return { url: null, provider: 'huggingface' };
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+    return { url: `data:image/png;base64,${base64}`, provider: 'huggingface_flux' };
+  } catch (error) {
+    console.error('HuggingFace generation failed:', error);
+    return { url: null, provider: 'huggingface' };
+  }
+}
+
+// Generate with Replicate FLUX
+async function generateWithReplicate(prompt: string): Promise<{ url: string | null; provider: string }> {
+  const REPLICATE_API_KEY = Deno.env.get('REPLICATE_API_TOKEN');
+  if (!REPLICATE_API_KEY) {
+    console.log('⚠️ REPLICATE_API_TOKEN not configured');
+    return { url: null, provider: 'replicate' };
+  }
+
+  try {
+    console.log('🎨 Generating with Replicate FLUX');
+    const response = await fetch('https://api.replicate.com/v1/predictions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Token ${REPLICATE_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        version: 'f2ab8a5569070ad23ec7c3df5b2e7b5a56f81b0afe2c3a1bb6bbf44eef2ab95e',
+        input: {
+          prompt,
+          go_fast: true,
+          megapixels: "1",
+          num_outputs: 1,
+          aspect_ratio: "16:9",
+          output_format: "webp",
+          output_quality: 80,
+        }
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('Replicate error:', await response.text());
+      return { url: null, provider: 'replicate' };
+    }
+
+    const prediction = await response.json();
+    let result = prediction;
+    
+    // Poll for completion
+    while (result.status === 'starting' || result.status === 'processing') {
+      await new Promise(r => setTimeout(r, 1000));
+      const pollRes = await fetch(`https://api.replicate.com/v1/predictions/${result.id}`, {
+        headers: { 'Authorization': `Token ${REPLICATE_API_KEY}` },
+      });
+      result = await pollRes.json();
+    }
+
+    if (result.status === 'failed') {
+      return { url: null, provider: 'replicate' };
+    }
+
+    return { url: result.output?.[0] || null, provider: 'replicate_flux' };
+  } catch (error) {
+    console.error('Replicate generation failed:', error);
+    return { url: null, provider: 'replicate' };
+  }
+}
+
+// Generate with Gemini/Imagen
+async function generateWithGemini(prompt: string): Promise<{ url: string | null; provider: string }> {
+  const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY') || Deno.env.get('GOOGLE_API_KEY');
+  if (!GEMINI_API_KEY) {
+    console.log('⚠️ GEMINI_API_KEY not configured');
+    return { url: null, provider: 'gemini' };
+  }
+
+  try {
+    console.log('🎨 Generating with Gemini Imagen');
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:generateImages?key=${GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: { text: prompt },
+          numberOfImages: 1,
+          aspectRatio: '16:9',
+          safetyFilterLevel: 'BLOCK_MEDIUM_AND_ABOVE',
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      console.error('Gemini error:', await response.text());
+      return { url: null, provider: 'gemini' };
+    }
+
+    const data = await response.json();
+    const imageBytes = data.generatedImages?.[0]?.image?.imageBytes;
+    
+    if (!imageBytes) {
+      return { url: null, provider: 'gemini' };
+    }
+
+    return { url: `data:image/png;base64,${imageBytes}`, provider: 'gemini_imagen' };
+  } catch (error) {
+    console.error('Gemini generation failed:', error);
+    return { url: null, provider: 'gemini' };
+  }
+}
+
+// Generate with Alibaba Wanx
+async function generateWithAlibaba(prompt: string): Promise<{ url: string | null; provider: string }> {
+  const ALIBABA_API_KEY = Deno.env.get('ALIBABA_API_KEY') || Deno.env.get('DASHSCOPE_API_KEY');
+  if (!ALIBABA_API_KEY) {
+    console.log('⚠️ ALIBABA_API_KEY not configured');
+    return { url: null, provider: 'alibaba' };
+  }
+
+  try {
+    console.log('🎨 Generating with Alibaba Wanx');
+    const response = await fetch('https://dashscope.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${ALIBABA_API_KEY}`,
+        'Content-Type': 'application/json',
+        'X-DashScope-Async': 'enable',
+      },
+      body: JSON.stringify({
+        model: 'wanx-v1',
+        input: { prompt },
+        parameters: {
+          size: '1280*720',
+          n: 1,
+        }
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('Alibaba error:', await response.text());
+      return { url: null, provider: 'alibaba' };
+    }
+
+    const data = await response.json();
+    const taskId = data.output?.task_id;
+    
+    if (!taskId) {
+      return { url: null, provider: 'alibaba' };
+    }
+
+    // Poll for result
+    for (let i = 0; i < 30; i++) {
+      await new Promise(r => setTimeout(r, 2000));
+      const statusRes = await fetch(`https://dashscope.aliyuncs.com/api/v1/tasks/${taskId}`, {
+        headers: { 'Authorization': `Bearer ${ALIBABA_API_KEY}` },
+      });
+      const statusData = await statusRes.json();
+      
+      if (statusData.output?.task_status === 'SUCCEEDED') {
+        return { url: statusData.output?.results?.[0]?.url || null, provider: 'alibaba_wanx' };
+      }
+      if (statusData.output?.task_status === 'FAILED') break;
+    }
+    
+    return { url: null, provider: 'alibaba' };
+  } catch (error) {
+    console.error('Alibaba generation failed:', error);
+    return { url: null, provider: 'alibaba' };
   }
 }
 
@@ -228,7 +425,7 @@ async function uploadToStorage(
     const { error: uploadError } = await supabase.storage
       .from('brand-assets')
       .upload(`template-thumbnails/${filename}`, imageBuffer, {
-        contentType: 'image/jpeg',
+        contentType: 'image/png',
         upsert: true,
       });
 
@@ -248,12 +445,12 @@ async function uploadToStorage(
   }
 }
 
-// Generate thumbnail with fallback chain
+// Generate thumbnail with regional provider fallback chain
 async function generateThumbnail(
   supabase: any,
   blueprint: any,
   region: string = 'global'
-): Promise<string | null> {
+): Promise<{ url: string | null; provider: string | null }> {
   const categoryPrompt = CATEGORY_PROMPTS[blueprint.category] || CATEGORY_PROMPTS.marketing;
   const regionalStyle = region === 'cjk' ? CATEGORY_PROMPTS.regional_cjk :
                         region === 'mena' ? CATEGORY_PROMPTS.regional_mena :
@@ -263,68 +460,79 @@ async function generateThumbnail(
 ${blueprint.description}
 Style: ${categoryPrompt}
 ${regionalStyle ? `Regional aesthetic: ${regionalStyle}` : ''}
-Resolution: 16:9 aspect ratio, 1280x720, high quality, no text overlays.
+Resolution: 16:9 aspect ratio, 1280x720, high quality, no text overlays, no watermarks.
 Visual elements: Modern, clean, professional, suitable for video platform thumbnails.`;
 
-  console.log(`📸 Generating thumbnail for: ${blueprint.name} (${region})`);
+  console.log(`📸 Generating thumbnail for: ${blueprint.name} (region: ${region})`);
   
-  // Try providers in order based on region
-  const primaryProvider = getProviderForRegion(region);
-  const fallbackOrder = ['gemini', 'modelslab', 'openai'];
+  // Get provider order based on region
+  const providerOrder = REGIONAL_PRIORITY[region] || REGIONAL_PRIORITY.global;
   
-  // Reorder to prioritize regional provider
-  const providerOrder = [primaryProvider, ...fallbackOrder.filter(p => p !== primaryProvider)];
+  let result: { url: string | null; provider: string } = { url: null, provider: '' };
   
-  let imageUrl: string | null = null;
-  let usedProvider = '';
-  
-  for (const provider of providerOrder) {
-    switch (provider) {
-      case 'gemini':
-        imageUrl = await generateWithGemini(fullPrompt);
+  for (const providerId of providerOrder) {
+    switch (providerId) {
+      case 'modelslab_flux':
+        result = await generateWithModelsLab(fullPrompt, 'flux');
         break;
-      case 'modelslab':
-        imageUrl = await generateWithModelsLab(fullPrompt);
+      case 'modelslab_sdxl':
+        result = await generateWithModelsLab(fullPrompt, 'sdxl');
         break;
-      case 'openai':
-        imageUrl = await generateWithOpenAI(fullPrompt);
+      case 'openai_dalle':
+        result = await generateWithOpenAI(fullPrompt);
+        break;
+      case 'huggingface_flux':
+        result = await generateWithHuggingFace(fullPrompt);
+        break;
+      case 'replicate_flux':
+        result = await generateWithReplicate(fullPrompt);
+        break;
+      case 'gemini_imagen':
+        result = await generateWithGemini(fullPrompt);
+        break;
+      case 'alibaba_wanx':
+        result = await generateWithAlibaba(fullPrompt);
         break;
     }
     
-    if (imageUrl) {
-      usedProvider = provider;
-      console.log(`✅ Generated with ${provider}`);
+    if (result.url) {
+      console.log(`✅ Generated with ${result.provider}`);
       break;
     }
   }
   
-  if (!imageUrl) {
+  if (!result.url) {
     console.log(`❌ All providers failed for ${blueprint.name}`);
-    return null;
+    return { url: null, provider: null };
   }
   
   // If base64, upload to storage
-  if (imageUrl.startsWith('data:')) {
-    const filename = `${blueprint.id}-${Date.now()}.jpg`;
-    imageUrl = await uploadToStorage(supabase, imageUrl, filename);
+  let finalUrl = result.url;
+  if (result.url.startsWith('data:')) {
+    const filename = `${blueprint.id}-${Date.now()}.png`;
+    finalUrl = await uploadToStorage(supabase, result.url, filename);
   }
   
-  // Update blueprint with thumbnail
-  if (imageUrl) {
+  // Update blueprint with thumbnail and provider info
+  if (finalUrl) {
+    const providerConfig = INTERNAL_PROVIDERS[result.provider as keyof typeof INTERNAL_PROVIDERS];
     await supabase
       .from('video_blueprints')
       .update({ 
-        thumbnail_url: imageUrl,
+        thumbnail_url: finalUrl,
         style_preset: {
           ...blueprint.style_preset,
-          thumbnail_provider: usedProvider,
+          thumbnail_provider: result.provider,
+          thumbnail_provider_name: providerConfig?.name || result.provider,
+          thumbnail_provider_tier: providerConfig?.tier || 2,
+          thumbnail_region: region,
           thumbnail_generated_at: new Date().toISOString(),
         }
       })
       .eq('id', blueprint.id);
   }
   
-  return imageUrl;
+  return { url: finalUrl, provider: result.provider };
 }
 
 serve(async (req) => {
@@ -354,20 +562,38 @@ serve(async (req) => {
     if (error) throw error;
     
     console.log(`📸 Generating thumbnails for ${blueprints.length} templates (region: ${region})`);
+    console.log(`🔧 Using internal providers: ModelsLab, OpenAI, HuggingFace, Replicate, Gemini, Alibaba`);
     
-    const results: { id: string; name: string; thumbnail_url: string | null; success: boolean }[] = [];
+    const results: { 
+      id: string; 
+      name: string; 
+      thumbnail_url: string | null; 
+      provider: string | null;
+      provider_name: string | null;
+      success: boolean 
+    }[] = [];
     
     for (const blueprint of blueprints) {
-      const thumbnailUrl = await generateThumbnail(supabase, blueprint, region);
+      const { url, provider } = await generateThumbnail(supabase, blueprint, region);
+      const providerConfig = provider ? INTERNAL_PROVIDERS[provider as keyof typeof INTERNAL_PROVIDERS] : null;
+      
       results.push({
         id: blueprint.id,
         name: blueprint.name,
-        thumbnail_url: thumbnailUrl,
-        success: !!thumbnailUrl,
+        thumbnail_url: url,
+        provider,
+        provider_name: providerConfig?.name || provider,
+        success: !!url,
       });
     }
     
     const successCount = results.filter(r => r.success).length;
+    const providerStats = results.reduce((acc, r) => {
+      if (r.provider) {
+        acc[r.provider] = (acc[r.provider] || 0) + 1;
+      }
+      return acc;
+    }, {} as Record<string, number>);
     
     return new Response(
       JSON.stringify({
@@ -375,6 +601,9 @@ serve(async (req) => {
         generated: successCount,
         failed: results.length - successCount,
         total: results.length,
+        region,
+        providers_used: providerStats,
+        available_providers: Object.keys(INTERNAL_PROVIDERS),
         results,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
