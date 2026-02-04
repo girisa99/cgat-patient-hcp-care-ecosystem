@@ -1,6 +1,7 @@
 /**
  * Blueprint Templates Grid
  * Displays all available templates with category filtering, AI thumbnails, and preview
+ * Enhanced with provider-specific templates, industry filters, and regional variants
  */
 
 import React, { useState, useMemo } from 'react';
@@ -10,6 +11,13 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Search,
   Clock,
@@ -27,6 +35,21 @@ import {
   Heart,
   Stethoscope,
   Globe2,
+  Plane,
+  Building2,
+  Cpu,
+  Video,
+  User,
+  Palette,
+  Zap,
+  Music,
+  Mic,
+  Clapperboard,
+  Box,
+  MousePointer,
+  ImagePlay,
+  CalendarDays,
+  Filter,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useVideoBlueprints, type VideoBlueprint } from '@/hooks/useVideoBlueprints';
@@ -39,14 +62,7 @@ interface BlueprintTemplatesGridProps {
   selectedBlueprintId?: string;
 }
 
-import {
-  Clapperboard,
-  Box,
-  MousePointer,
-  ImagePlay,
-  CalendarDays,
-} from 'lucide-react';
-
+// Extended category icons including new categories
 const categoryIcons: Record<string, React.ReactNode> = {
   marketing: <Target className="h-4 w-4" />,
   educational: <BookOpen className="h-4 w-4" />,
@@ -54,12 +70,15 @@ const categoryIcons: Record<string, React.ReactNode> = {
   announcement: <Megaphone className="h-4 w-4" />,
   healthcare: <Stethoscope className="h-4 w-4" />,
   entertainment: <Heart className="h-4 w-4" />,
-  corporate: <Globe2 className="h-4 w-4" />,
+  corporate: <Building2 className="h-4 w-4" />,
   animation: <Clapperboard className="h-4 w-4" />,
   '3d': <Box className="h-4 w-4" />,
   interactive: <MousePointer className="h-4 w-4" />,
   image_to_video: <ImagePlay className="h-4 w-4" />,
   seasonal: <CalendarDays className="h-4 w-4" />,
+  travel: <Plane className="h-4 w-4" />,
+  avatar: <User className="h-4 w-4" />,
+  effects: <Palette className="h-4 w-4" />,
 };
 
 const categoryColors: Record<string, string> = {
@@ -75,6 +94,9 @@ const categoryColors: Record<string, string> = {
   interactive: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
   image_to_video: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30',
   seasonal: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+  travel: 'bg-sky-500/20 text-sky-400 border-sky-500/30',
+  avatar: 'bg-fuchsia-500/20 text-fuchsia-400 border-fuchsia-500/30',
+  effects: 'bg-teal-500/20 text-teal-400 border-teal-500/30',
 };
 
 // Category gradient backgrounds for cards without thumbnails
@@ -91,7 +113,58 @@ const categoryGradients: Record<string, string> = {
   interactive: 'bg-gradient-to-br from-amber-600/30 via-yellow-500/20 to-orange-600/30',
   image_to_video: 'bg-gradient-to-br from-indigo-600/30 via-blue-500/20 to-violet-600/30',
   seasonal: 'bg-gradient-to-br from-emerald-600/30 via-green-500/20 to-teal-600/30',
+  travel: 'bg-gradient-to-br from-sky-600/30 via-cyan-500/20 to-blue-600/30',
+  avatar: 'bg-gradient-to-br from-fuchsia-600/30 via-pink-500/20 to-purple-600/30',
+  effects: 'bg-gradient-to-br from-teal-600/30 via-emerald-500/20 to-green-600/30',
 };
+
+// AI Provider info for badges
+const AI_PROVIDER_BADGES: Record<string, { name: string; icon: string; color: string }> = {
+  vertex_veo: { name: 'Vertex AI Veo', icon: '🎬', color: 'from-red-500 to-orange-500' },
+  sora2: { name: 'Sora 2', icon: '🌟', color: 'from-purple-500 to-blue-500' },
+  alibaba_wan: { name: 'Alibaba Wan', icon: '🌊', color: 'from-orange-500 to-red-500' },
+  meshy_3d: { name: 'Meshy 3D', icon: '🧊', color: 'from-blue-500 to-cyan-500' },
+  modelslab_flux: { name: 'ModelsLab FLUX', icon: '⚡', color: 'from-blue-600 to-cyan-500' },
+  openai_dalle: { name: 'DALL-E 3', icon: '🖼️', color: 'from-green-600 to-emerald-500' },
+  gemini_imagen: { name: 'Gemini Imagen', icon: '💎', color: 'from-red-500 to-orange-500' },
+  alibaba_avatar: { name: 'OmniAvatar', icon: '👤', color: 'from-orange-600 to-red-500' },
+  deepseek_image: { name: 'DeepSeek', icon: '🔍', color: 'from-teal-600 to-cyan-500' },
+  elevenlabs: { name: 'ElevenLabs', icon: '🎙️', color: 'from-violet-600 to-purple-500' },
+  replicate_svd: { name: 'Replicate SVD', icon: '🔄', color: 'from-purple-600 to-pink-500' },
+};
+
+// Capability tags for filtering
+const CAPABILITY_FILTERS = [
+  { value: 'all', label: 'All Capabilities' },
+  { value: 'text_to_video', label: '📹 Text-to-Video' },
+  { value: 'image_to_video', label: '🎞️ Image-to-Video' },
+  { value: 'video_to_video', label: '🔄 Video-to-Video' },
+  { value: '3d_generation', label: '🧊 3D Generation' },
+  { value: 'avatar', label: '👤 Avatar' },
+  { value: 'full_body_avatar', label: '🧍 Full Body Avatar' },
+  { value: 'lipsync', label: '👄 Lipsync' },
+  { value: 'tts', label: '🎙️ TTS Voiceover' },
+  { value: 'music_gen', label: '🎵 Music Generation' },
+  { value: 'video_effects', label: '✨ Video Effects' },
+  { value: 'pixar_style', label: '🎨 Pixar Style' },
+  { value: 'anime_style', label: '🎌 Anime Style' },
+];
+
+// Regional filters
+const REGION_FILTERS = [
+  { value: 'all', label: 'All Regions' },
+  { value: 'western', label: '🇺🇸 Western' },
+  { value: 'europe', label: '🇪🇺 Europe' },
+  { value: 'cjk', label: '🇨🇳 CJK (China/Japan/Korea)' },
+  { value: 'india', label: '🇮🇳 India' },
+  { value: 'mena', label: '🇸🇦 MENA' },
+  { value: 'sea', label: '🇸🇬 Southeast Asia' },
+  { value: 'africa', label: '🌍 Africa' },
+  { value: 'latam', label: '🇧🇷 Latin America' },
+  { value: 'caribbean', label: '🏝️ Caribbean' },
+  { value: 'pakistan', label: '🇵🇰 Pakistan' },
+  { value: 'indonesia', label: '🇮🇩 Indonesia' },
+];
 
 export function BlueprintTemplatesGrid({
   onSelectBlueprint,
@@ -112,30 +185,51 @@ export function BlueprintTemplatesGrid({
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('all');
+  const [capabilityFilter, setCapabilityFilter] = useState<string>('all');
+  const [regionFilter, setRegionFilter] = useState<string>('all');
   const [previewBlueprintId, setPreviewBlueprintId] = useState<string | null>(null);
   const [isGeneratingThumbnails, setIsGeneratingThumbnails] = useState(false);
   const [generatingId, setGeneratingId] = useState<string | null>(null);
+  const [isQueueing, setIsQueueing] = useState(false);
 
   // Fetch blueprint with scenes for preview
   const { data: previewBlueprint } = useBlueprintWithScenes(previewBlueprintId);
 
-  // Generate thumbnail for a single blueprint
-  const generateThumbnail = async (blueprintId: string) => {
+  // Queue thumbnail generation for a single blueprint (async pattern)
+  const queueThumbnailGeneration = async (blueprintId: string, region: string = 'global') => {
     setGeneratingId(blueprintId);
     try {
-      const { data, error } = await supabase.functions.invoke('generate-template-thumbnails', {
-        body: { blueprintId, region: 'global' },
+      // Insert into queue
+      const { error: queueError } = await supabase
+        .from('thumbnail_generation_queue')
+        .insert({
+          blueprint_id: blueprintId,
+          region,
+          status: 'pending',
+        });
+      
+      if (queueError) throw queueError;
+      
+      // Trigger queue processor
+      const { error: processError } = await supabase.functions.invoke('process-thumbnail-queue', {
+        body: { limit: 1 },
       });
-      if (error) throw error;
+      
+      if (processError) {
+        console.warn('Queue processor call failed, but job is queued:', processError);
+      }
+      
       toast({
-        title: 'Thumbnail Generated',
-        description: data.generated === 1 ? 'AI thumbnail created successfully' : 'Generation completed',
+        title: 'Generation Queued',
+        description: 'Thumbnail will be generated shortly. Refresh to see updates.',
       });
-      refetch();
+      
+      // Poll for completion
+      setTimeout(() => refetch(), 5000);
     } catch (err: any) {
       toast({
-        title: 'Generation Failed',
-        description: err.message || 'Could not generate thumbnail',
+        title: 'Queue Failed',
+        description: err.message || 'Could not queue generation',
         variant: 'destructive',
       });
     } finally {
@@ -143,27 +237,50 @@ export function BlueprintTemplatesGrid({
     }
   };
 
-  // Generate all missing thumbnails
-  const generateAllThumbnails = async () => {
-    setIsGeneratingThumbnails(true);
+  // Queue batch thumbnail generation
+  const queueAllThumbnails = async () => {
+    setIsQueueing(true);
     try {
-      const { data, error } = await supabase.functions.invoke('generate-template-thumbnails', {
-        body: { generateAll: false, region: 'global' },
+      const missingThumbnails = blueprints.filter(bp => !bp.thumbnail_url);
+      
+      if (missingThumbnails.length === 0) {
+        toast({ title: 'All Done', description: 'All templates already have thumbnails' });
+        return;
+      }
+
+      // Queue all missing thumbnails
+      const queueItems = missingThumbnails.map(bp => ({
+        blueprint_id: bp.id,
+        region: 'global',
+        status: 'pending',
+      }));
+
+      const { error: queueError } = await supabase
+        .from('thumbnail_generation_queue')
+        .insert(queueItems);
+
+      if (queueError) throw queueError;
+
+      // Trigger processor
+      const { error: processError } = await supabase.functions.invoke('process-thumbnail-queue', {
+        body: { limit: 5 },
       });
-      if (error) throw error;
+
       toast({
-        title: 'Thumbnails Generated',
-        description: `Created ${data.generated} thumbnails, ${data.failed} failed`,
+        title: 'Batch Queued',
+        description: `${missingThumbnails.length} thumbnails queued for generation`,
       });
-      refetch();
+
+      // Poll for updates
+      setTimeout(() => refetch(), 10000);
     } catch (err: any) {
       toast({
-        title: 'Generation Failed',
-        description: err.message || 'Could not generate thumbnails',
+        title: 'Queue Failed',
+        description: err.message || 'Could not queue thumbnails',
         variant: 'destructive',
       });
     } finally {
-      setIsGeneratingThumbnails(false);
+      setIsQueueing(false);
     }
   };
 
@@ -306,11 +423,11 @@ export function BlueprintTemplatesGrid({
             <Button
               variant="outline"
               size="sm"
-              onClick={generateAllThumbnails}
-              disabled={isGeneratingThumbnails}
+              onClick={queueAllThumbnails}
+              disabled={isQueueing}
               className="gap-2"
             >
-              {isGeneratingThumbnails ? (
+              {isQueueing ? (
                 <RefreshCw className="h-4 w-4 animate-spin" />
               ) : (
                 <Wand2 className="h-4 w-4" />
@@ -449,7 +566,7 @@ export function BlueprintTemplatesGrid({
                       className="gap-2 bg-background/80"
                       onClick={(e) => {
                         e.stopPropagation();
-                        generateThumbnail(blueprint.id);
+                        queueThumbnailGeneration(blueprint.id);
                       }}
                       disabled={generatingId === blueprint.id}
                     >

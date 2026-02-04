@@ -20938,6 +20938,62 @@ export type Database = {
         }
         Relationships: []
       }
+      thumbnail_generation_queue: {
+        Row: {
+          attempts: number | null
+          blueprint_id: string | null
+          completed_at: string | null
+          created_at: string | null
+          error_message: string | null
+          id: string
+          max_attempts: number | null
+          metadata: Json | null
+          provider: string | null
+          region: string | null
+          started_at: string | null
+          status: string
+          thumbnail_url: string | null
+        }
+        Insert: {
+          attempts?: number | null
+          blueprint_id?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          max_attempts?: number | null
+          metadata?: Json | null
+          provider?: string | null
+          region?: string | null
+          started_at?: string | null
+          status?: string
+          thumbnail_url?: string | null
+        }
+        Update: {
+          attempts?: number | null
+          blueprint_id?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          max_attempts?: number | null
+          metadata?: Json | null
+          provider?: string | null
+          region?: string | null
+          started_at?: string | null
+          status?: string
+          thumbnail_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "thumbnail_generation_queue_blueprint_id_fkey"
+            columns: ["blueprint_id"]
+            isOneToOne: false
+            referencedRelation: "video_blueprints"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tiktok_oauth_tokens: {
         Row: {
           access_token: string
@@ -23186,6 +23242,8 @@ export type Database = {
       }
       video_blueprints: {
         Row: {
+          ai_capabilities: Json | null
+          capability_tags: string[] | null
           category: string
           created_at: string
           created_by: string | null
@@ -23199,13 +23257,20 @@ export type Database = {
           is_system_default: boolean | null
           name: string
           preview_video_url: string | null
+          primary_model: string | null
+          regional_variants: Json | null
+          secondary_models: string[] | null
           style_preset: Json | null
           target_platform: string[] | null
+          thumbnail_provider: string | null
+          thumbnail_region: string | null
           thumbnail_url: string | null
           updated_at: string
           usage_count: number | null
         }
         Insert: {
+          ai_capabilities?: Json | null
+          capability_tags?: string[] | null
           category?: string
           created_at?: string
           created_by?: string | null
@@ -23219,13 +23284,20 @@ export type Database = {
           is_system_default?: boolean | null
           name: string
           preview_video_url?: string | null
+          primary_model?: string | null
+          regional_variants?: Json | null
+          secondary_models?: string[] | null
           style_preset?: Json | null
           target_platform?: string[] | null
+          thumbnail_provider?: string | null
+          thumbnail_region?: string | null
           thumbnail_url?: string | null
           updated_at?: string
           usage_count?: number | null
         }
         Update: {
+          ai_capabilities?: Json | null
+          capability_tags?: string[] | null
           category?: string
           created_at?: string
           created_by?: string | null
@@ -23239,8 +23311,13 @@ export type Database = {
           is_system_default?: boolean | null
           name?: string
           preview_video_url?: string | null
+          primary_model?: string | null
+          regional_variants?: Json | null
+          secondary_models?: string[] | null
           style_preset?: Json | null
           target_platform?: string[] | null
+          thumbnail_provider?: string | null
+          thumbnail_region?: string | null
           thumbnail_url?: string | null
           updated_at?: string
           usage_count?: number | null
