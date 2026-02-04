@@ -235,50 +235,8 @@ async function generateWithGemini(prompt: string): Promise<{ url: string | null;
   }
 }
 
-async function generateWithLovable(prompt: string): Promise<{ url: string | null; provider: string; isBase64: boolean }> {
-  const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-  if (!LOVABLE_API_KEY) {
-    console.log('❌ Lovable API key not configured');
-    return { url: null, provider: 'lovable', isBase64: false };
-  }
-
-  try {
-    console.log('🔄 Trying Lovable AI Gateway (Gemini Flash Image)...');
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash-image',
-        messages: [{ role: 'user', content: prompt }],
-        modalities: ['image', 'text'],
-      }),
-    });
-
-    if (!response.ok) {
-      console.log(`❌ Lovable error: ${response.status}`);
-      return { url: null, provider: 'lovable', isBase64: false };
-    }
-
-    const data = await response.json();
-    const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-    
-    if (imageUrl && imageUrl.startsWith('data:image')) {
-      // Extract base64 from data URL
-      const base64Match = imageUrl.match(/^data:image\/\w+;base64,(.+)$/);
-      if (base64Match) {
-        return { url: base64Match[1], provider: 'lovable_gemini', isBase64: true };
-      }
-    }
-    
-    return { url: null, provider: 'lovable', isBase64: false };
-  } catch (error) {
-    console.error('Lovable error:', error);
-    return { url: null, provider: 'lovable', isBase64: false };
-  }
-}
+// Lovable AI REMOVED - using integrated providers only (Gemini, ModelsLab, OpenAI, Alibaba)
+// Per architecture requirement: all thumbnail generation uses the 18 internal AI providers
 
 async function generateWithAlibaba(prompt: string): Promise<{ url: string | null; provider: string; isBase64: boolean }> {
   const ALIBABA_API_KEY = Deno.env.get('ALIBABA_API_KEY') || Deno.env.get('DASHSCOPE_API_KEY');
@@ -333,18 +291,20 @@ async function generateWithAlibaba(prompt: string): Promise<{ url: string | null
   }
 }
 
-// Regional provider priority - updated with Lovable as fallback
+// Regional provider priority - uses ONLY integrated AI providers (NO Lovable AI)
+// Per architecture requirement: all 18 internal AI providers for generation
 const REGIONAL_PRIORITY: Record<string, string[]> = {
-  western: ['modelslab', 'openai', 'lovable', 'gemini'],
-  cjk: ['alibaba', 'modelslab', 'lovable', 'gemini'],
-  mena: ['alibaba', 'lovable', 'gemini', 'modelslab'],
-  sea: ['gemini', 'lovable', 'alibaba', 'modelslab'],
-  india: ['gemini', 'lovable', 'modelslab', 'openai'],
-  africa: ['gemini', 'lovable', 'modelslab', 'openai'],
-  global: ['lovable', 'modelslab', 'gemini', 'openai', 'alibaba'],
+  western: ['gemini', 'modelslab', 'openai', 'alibaba'],
+  cjk: ['alibaba', 'gemini', 'modelslab', 'openai'],
+  mena: ['alibaba', 'gemini', 'modelslab', 'openai'],
+  sea: ['gemini', 'alibaba', 'modelslab', 'openai'],
+  india: ['gemini', 'alibaba', 'modelslab', 'openai'],
+  africa: ['gemini', 'modelslab', 'alibaba', 'openai'],
+  latam: ['gemini', 'modelslab', 'openai', 'alibaba'],
+  global: ['gemini', 'modelslab', 'openai', 'alibaba'],
 };
 
-// Category prompts
+// Category prompts - EXPANDED with all template categories
 const CATEGORY_PROMPTS: Record<string, string> = {
   marketing: 'Professional marketing video thumbnail, bold design, gradient background, modern SaaS aesthetic',
   corporate: 'Professional corporate thumbnail, business style, executive, polished minimalist design',
@@ -360,10 +320,13 @@ const CATEGORY_PROMPTS: Record<string, string> = {
   effects: 'Video effects thumbnail, cinematic, motion graphics, transitions',
   image_to_video: 'Photo-to-video transformation, motion lines, cinematic transition',
   announcement: 'Product announcement thumbnail, exciting, launch event style',
-  storytelling: 'Cinematic storytelling thumbnail, narrative, emotional connection',
-  smb: 'Small business promotional thumbnail, friendly, approachable',
-  ppt: 'Professional presentation thumbnail, clean slides, business style',
-  'oil-gas': 'Industrial energy sector thumbnail, professional, technical',
+  storytelling: 'Cinematic storytelling thumbnail, narrative, emotional connection, dramatic',
+  smb: 'Small business promotional thumbnail, friendly, approachable, local',
+  ppt: 'Professional presentation thumbnail, clean slides, business graphics',
+  oil_gas: 'Industrial energy sector thumbnail, professional, technical, engineering',
+  customer_journey: 'Customer journey map thumbnail, funnel stages, touchpoints, pathway visualization',
+  infographic: 'Data visualization thumbnail, charts, graphs, statistics, clean modern design',
+  combination: 'Multi-modal content thumbnail, hybrid elements, premium production, dynamic composition',
 };
 
 async function generateThumbnail(
@@ -383,18 +346,16 @@ Requirements: 16:9 aspect ratio, 1280x720, high quality, no text overlays, no wa
   for (const provider of providers) {
     let result: { url: string | null; provider: string; isBase64: boolean } = { url: null, provider: '', isBase64: false };
     
+    // Route to integrated AI providers ONLY (no Lovable AI)
     switch (provider) {
-      case 'lovable':
-        result = await generateWithLovable(prompt);
+      case 'gemini':
+        result = await generateWithGemini(prompt);
         break;
       case 'modelslab':
         result = await generateWithModelsLab(prompt);
         break;
       case 'openai':
         result = await generateWithOpenAI(prompt);
-        break;
-      case 'gemini':
-        result = await generateWithGemini(prompt);
         break;
       case 'alibaba':
         result = await generateWithAlibaba(prompt);
