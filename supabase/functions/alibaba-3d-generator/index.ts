@@ -48,11 +48,14 @@ const MODEL_CONFIG = {
     description: 'Animate existing 3D models',
     inputType: 'model',
   },
+  // NOTE: Alibaba DashScope doesn't have public text-to-3d API yet
+  // Using Meshy AI as primary fallback for text-to-3d
   'text-to-3d': {
     id: 'text-to-3d-v1',
     endpoint: '/services/aigc/3d-generation/text-to-3d',
-    description: 'Generate 3D from text prompt',
+    description: 'Generate 3D from text prompt (falls back to Meshy)',
     inputType: 'text',
+    useFallback: true, // Flag to use Meshy instead
   },
 } as const;
 
@@ -156,7 +159,116 @@ async function pollTaskStatus(
 }
 
 /**
+ * Meshy AI fallback for text-to-3D generation
+ * Used when Alibaba endpoint is not available
+ */
+async function generateWithMeshy(request: ThreeDRequest, startTime: number): Promise<ThreeDResult> {
+  const meshyKey = Deno.env.get('MESHY_API_KEY');
+  
+  if (!meshyKey) {
+    // Final fallback: return error with fallback flag
+    return {
+      success: false,
+      model: request.model,
+      provider: 'alibaba',
+      region: 'china-beijing',
+      error: 'MESHY_API_KEY not configured for text-to-3D fallback',
+      fallback: true,
+    };
+  }
+  
+  console.log(`🎨 [Meshy] Generating 3D from text: "${request.prompt?.slice(0, 50)}..."`);
+  
+  try {
+    // Create Meshy text-to-3D task
+    const createResponse = await fetch('https://api.meshy.ai/v2/text-to-3d', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${meshyKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        mode: 'preview',
+        prompt: request.prompt,
+        art_style: request.style === 'stylized' ? 'cartoon' : 'realistic',
+        negative_prompt: 'low quality, blurry, distorted',
+      }),
+    });
+    
+    if (!createResponse.ok) {
+      const errText = await createResponse.text();
+      console.error('Meshy create error:', errText);
+      throw new Error(`Meshy API error: ${createResponse.status}`);
+    }
+    
+    const createData = await createResponse.json();
+    const taskId = createData.result;
+    
+    console.log(`📋 Meshy task created: ${taskId}`);
+    
+    // Poll for completion (Meshy preview mode is typically fast: 30-90 seconds)
+    const maxAttempts = 30;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      await new Promise(r => setTimeout(r, 3000)); // 3 second intervals
+      
+      const statusResponse = await fetch(`https://api.meshy.ai/v2/text-to-3d/${taskId}`, {
+        headers: { 'Authorization': `Bearer ${meshyKey}` },
+      });
+      
+      if (!statusResponse.ok) continue;
+      
+      const statusData = await statusResponse.json();
+      console.log(`⏳ Meshy status (${attempt + 1}/${maxAttempts}): ${statusData.status}`);
+      
+      if (statusData.status === 'SUCCEEDED') {
+        const processingTime = Date.now() - startTime;
+        return {
+          success: true,
+          model: 'meshy-text-to-3d',
+          provider: 'alibaba', // Report as alibaba for consistency
+          region: 'china-beijing',
+          modelUrl: statusData.model_urls?.glb || statusData.model_urls?.obj,
+          textureUrls: statusData.texture_urls || [],
+          previewUrl: statusData.thumbnail_url,
+          status: 'completed',
+          metadata: {
+            outputFormat: 'glb',
+            processingTimeMs: processingTime,
+          },
+          fallback: true, // Flag that Meshy was used
+        };
+      } else if (statusData.status === 'FAILED') {
+        throw new Error(statusData.message || 'Meshy 3D generation failed');
+      }
+    }
+    
+    // Return as pending if still processing
+    return {
+      success: true,
+      model: 'meshy-text-to-3d',
+      provider: 'alibaba',
+      region: 'china-beijing',
+      taskId,
+      status: 'processing',
+      fallback: true,
+    };
+    
+  } catch (error) {
+    console.error('Meshy error:', error);
+    return {
+      success: false,
+      model: request.model,
+      provider: 'alibaba',
+      region: 'china-beijing',
+      error: error instanceof Error ? error.message : 'Meshy fallback failed',
+      fallback: true,
+    };
+  }
+}
+
+/**
  * Generate 3D model with specified model type
+ * Uses Meshy AI fallback for text-to-3d since Alibaba doesn't support it yet
  */
 async function generate3D(request: ThreeDRequest, apiKey: string): Promise<ThreeDResult> {
   const startTime = Date.now();
@@ -173,6 +285,12 @@ async function generate3D(request: ThreeDRequest, apiKey: string): Promise<Three
   }
   
   console.log(`🧊 [${request.model}] Starting ${modelConfig.description}`);
+  
+  // Check if this model requires fallback to Meshy
+  if ('useFallback' in modelConfig && modelConfig.useFallback) {
+    console.log(`⚡ [${request.model}] Using Meshy AI fallback (Alibaba endpoint not available)`);
+    return await generateWithMeshy(request, startTime);
+  }
   
   // Validate input based on model type
   if (modelConfig.inputType === 'image' && !request.sourceImage) {

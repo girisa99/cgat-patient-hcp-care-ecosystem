@@ -1063,19 +1063,48 @@ async function generateAvatarWithAlibaba(request: AvatarRequest, fullBody = fals
   provider: string;
   model: string;
 }> {
-  const apiKey = Deno.env.get('ALIBABA_API_KEY');
-  if (!apiKey) throw new Error('ALIBABA_API_KEY is not configured');
+  // Use CHINA API key for avatar/video models (Beijing region)
+  // Fall back to international key if China key not available
+  const chinaApiKey = Deno.env.get('ALIBABA_CHINA_API_KEY');
+  const intlApiKey = Deno.env.get('ALIBABA_API_KEY');
+  const apiKey = chinaApiKey || intlApiKey;
+  
+  if (!apiKey) throw new Error('ALIBABA_API_KEY or ALIBABA_CHINA_API_KEY is not configured');
 
   const modelName = fullBody ? 'omniavatar' : 'wan-2.2';
   console.log(`🎭 Generating avatar with Alibaba ${fullBody ? 'OmniAvatar (full-body)' : 'WAN 2.2 Animate'}`);
+  console.log(`   Using ${chinaApiKey ? 'China (Beijing)' : 'International'} API endpoint`);
 
-  // Step 1: Generate audio with Alibaba CosyVoice if script provided
+  // Step 1: Generate audio with Azure TTS as primary (more reliable), Alibaba CosyVoice as fallback
   let audioUrl = request.audioUrl;
   if (!audioUrl && request.script) {
-    audioUrl = await generateAudioWithAlibabaCosyVoice(request.script, request.language || 'en-US', apiKey);
+    try {
+      // Try Azure Neural TTS first (more reliable for lip-sync visemes)
+      audioUrl = await generateAudioWithAzure(request.script, request.language || 'en-US');
+    } catch (azureErr) {
+      console.warn('⚠️ Azure TTS failed, trying Alibaba CosyVoice:', azureErr);
+      if (chinaApiKey) {
+        try {
+          audioUrl = await generateAudioWithAlibabaCosyVoice(request.script, request.language || 'en-US', chinaApiKey);
+        } catch (aliErr) {
+          console.warn('⚠️ Alibaba CosyVoice also failed:', aliErr);
+        }
+      }
+    }
+    
+    // Final fallback: Return without audio URL, client can use existing audio
+    if (!audioUrl) {
+      console.warn('⚠️ All TTS providers failed, proceeding without generated audio');
+    }
   }
 
-  // Step 2: Animate the source image with lip-sync
+  // Step 2: Try ModelsLab first (more reliable) if no China key
+  if (!chinaApiKey) {
+    console.log('   No China API key, using ModelsLab for avatar');
+    return await generateAvatarWithModelsLab(request);
+  }
+
+  // Step 3: Animate the source image with lip-sync
   const endpoint = fullBody 
     ? 'https://dashscope.aliyuncs.com/api/v1/services/aigc/omniavatar/generation'
     : 'https://dashscope.aliyuncs.com/api/v1/services/aigc/video-generation/generation';
@@ -1097,42 +1126,103 @@ async function generateAvatarWithAlibaba(request: AvatarRequest, fullBody = fals
     }
   };
 
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-      'X-DashScope-Async': 'enable',
-    },
-    body: JSON.stringify(requestBody),
-  });
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${chinaApiKey}`,
+        'Content-Type': 'application/json',
+        'X-DashScope-Async': 'enable',
+      },
+      body: JSON.stringify(requestBody),
+    });
 
-  if (!response.ok) {
-    throw new Error(`Alibaba Avatar API error: ${response.status}`);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.warn(`Alibaba Avatar API error (${response.status}):`, errorText);
+      throw new Error(`Alibaba Avatar API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    if (data.output?.task_id) {
+      const result = await pollAlibabaTask(data.output.task_id, chinaApiKey);
+      return { ...result, audioUrl };
+    }
+
+    return {
+      videoUrl: data.output?.video_url,
+      audioUrl,
+      provider: 'alibaba',
+      model: 'wan-2.2-animate',
+    };
+  } catch (err) {
+    console.warn('⚠️ Alibaba Avatar failed, falling back to ModelsLab:', err);
+    return await generateAvatarWithModelsLab(request);
   }
-
-  const data = await response.json();
-  
-  if (data.output?.task_id) {
-    const result = await pollAlibabaTask(data.output.task_id, apiKey);
-    return { ...result, audioUrl };
-  }
-
-  return {
-    videoUrl: data.output?.video_url,
-    audioUrl,
-    provider: 'alibaba',
-    model: 'wan-2.2-animate',
-  };
 }
 
-// Alibaba CosyVoice TTS
+// Azure Neural TTS for reliable audio generation
+async function generateAudioWithAzure(text: string, language: string): Promise<string> {
+  const azureKey = Deno.env.get('AZURE_SPEECH_KEY');
+  const azureRegion = Deno.env.get('AZURE_SPEECH_REGION') || 'eastus';
+  
+  if (!azureKey) throw new Error('AZURE_SPEECH_KEY not configured');
+
+  const voiceMap: Record<string, string> = {
+    'en-US': 'en-US-JennyNeural',
+    'en-GB': 'en-GB-SoniaNeural',
+    'zh-CN': 'zh-CN-XiaoxiaoNeural',
+    'ja-JP': 'ja-JP-NanamiNeural',
+    'ko-KR': 'ko-KR-SunHiNeural',
+    'ar-SA': 'ar-SA-ZariyahNeural',
+    'hi-IN': 'hi-IN-SwaraNeural',
+    'es-ES': 'es-ES-ElviraNeural',
+    'fr-FR': 'fr-FR-DeniseNeural',
+    'de-DE': 'de-DE-KatjaNeural',
+  };
+
+  const voice = voiceMap[language] || voiceMap['en-US'];
+
+  const ssml = `
+    <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${language}">
+      <voice name="${voice}">${text}</voice>
+    </speak>
+  `;
+
+  const response = await fetch(
+    `https://${azureRegion}.tts.speech.microsoft.com/cognitiveservices/v1`,
+    {
+      method: 'POST',
+      headers: {
+        'Ocp-Apim-Subscription-Key': azureKey,
+        'Content-Type': 'application/ssml+xml',
+        'X-Microsoft-OutputFormat': 'audio-16khz-128kbitrate-mono-mp3',
+      },
+      body: ssml,
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Azure TTS error: ${response.status}`);
+  }
+
+  // Convert audio to base64 data URL
+  const audioBlob = await response.blob();
+  const audioBuffer = await audioBlob.arrayBuffer();
+  const audioBase64 = btoa(String.fromCharCode(...new Uint8Array(audioBuffer)));
+  
+  console.log('✅ Azure TTS generated audio successfully');
+  return `data:audio/mp3;base64,${audioBase64}`;
+}
+
+// Alibaba CosyVoice TTS (China region fallback)
 async function generateAudioWithAlibabaCosyVoice(
   text: string, 
   language: string, 
   apiKey: string
 ): Promise<string> {
-  console.log('🎙️ Generating audio with Alibaba CosyVoice');
+  console.log('🎙️ Generating audio with Alibaba CosyVoice (China region)');
   
   const voiceMap: Record<string, string> = {
     'en-US': 'cosyvoice-longxiaochun-en',
@@ -1153,7 +1243,7 @@ async function generateAudioWithAlibabaCosyVoice(
         model: 'cosyvoice-v1',
         input: { text },
         parameters: {
-          voice: voiceMap[language] || voiceMap['en-US'],
+          voice: voiceMap[language] || voiceMap['zh-CN'],
           format: 'mp3',
         }
       }),
