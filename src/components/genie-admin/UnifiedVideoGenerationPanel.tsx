@@ -59,6 +59,7 @@ import { DEFAULT_PRODUCTION_CONFIG, REGIONAL_AVATARS, type ProductionModeConfig 
 import { TokenConsumptionBreakdown } from './TokenConsumptionBreakdown';
 import { ProductChangeAlertPanel } from './ProductChangeAlertPanel';
 import { MessagingImprovementPanel } from './MessagingImprovementPanel';
+import { MessagingGeneratorPanel } from './MessagingGeneratorPanel';
 import { FeatureVideoGenerator } from './FeatureVideoGenerator';
 import { GenieCastFlowDiagram } from './GenieCastFlowDiagram';
 import { uploadBrandLogosToStorage } from '@/services/marketing/brandAssetUploadService';
@@ -1048,13 +1049,36 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
           />
         </TabsContent>
 
-        {/* Messaging Improvement Tab */}
+        {/* Messaging Tab - Generator + Improvement */}
         <TabsContent value="messaging" className="space-y-6">
-          <MessagingImprovementPanel
-            onApplyImprovement={(id, newMessaging) => {
-              toast.success('Messaging improvement applied');
-            }}
-          />
+          <Tabs defaultValue="generator" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="generator" className="gap-1.5">
+                <MessageSquare className="w-3.5 h-3.5" />
+                Create Messaging
+              </TabsTrigger>
+              <TabsTrigger value="improvement" className="gap-1.5">
+                <TrendingUp className="w-3.5 h-3.5" />
+                Bi-Weekly Refinement
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="generator">
+              <MessagingGeneratorPanel
+                onMessagingApproved={(productId, messaging) => {
+                  toast.success(`Messaging approved for ${productId}`);
+                }}
+              />
+            </TabsContent>
+            
+            <TabsContent value="improvement">
+              <MessagingImprovementPanel
+                onApplyImprovement={(id, newMessaging) => {
+                  toast.success('Messaging improvement applied');
+                }}
+              />
+            </TabsContent>
+          </Tabs>
         </TabsContent>
 
         {/* Analytics Tab */}
