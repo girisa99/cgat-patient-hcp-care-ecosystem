@@ -97,9 +97,8 @@ const TAB_DEFINITIONS = {
     inactiveColor: 'border-orange-300 text-orange-700 hover:bg-orange-50',
     subTabs: [
       { id: 'styles', label: 'Styles', icon: Palette, description: 'Video style selection (43+ options)' },
-      { id: 'screenshots', label: 'Screenshots', icon: Camera, description: 'Product visual capture' },
+      { id: 'assets', label: 'Assets', icon: Upload, description: 'Logos, Screenshots, Colors, Templates' },
       { id: 'messaging', label: 'Messaging', icon: TrendingUp, description: 'Marketing copy generation' },
-      { id: 'assets', label: 'Assets', icon: Upload, description: 'Brand assets & logos' },
     ],
   },
   produce: {
@@ -298,41 +297,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
               </motion.div>
             )}
             
-            {currentSubTab === 'screenshots' && (
-              <motion.div
-                key="screenshots"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                transition={{ duration: 0.2 }}
-              >
-                <MultiScreenshotGallery onGalleriesUpdated={onGalleriesUpdated} />
-                
-                <Card className="mt-4 border-primary/20 bg-primary/5">
-                  <CardContent className="pt-6">
-                    <div className="flex items-center gap-4">
-                      <Camera className="w-8 h-8 text-primary" />
-                      <div className="flex-1">
-                        <h3 className="font-semibold">Unlimited Screenshots Per Product</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {totalScreenshots} screenshots captured. Drag to reorder.
-                        </p>
-                      </div>
-                      <Button 
-                        onClick={() => {
-                          setActiveMainTab('produce');
-                          setSubTab('produce', 'generate');
-                        }}
-                        className="gap-2"
-                      >
-                        <Play className="w-4 h-4" />
-                        Generate Video
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            )}
+            {/* Screenshots tab removed - now consolidated into Assets */}
             
             {currentSubTab === 'messaging' && (
               <motion.div
