@@ -1,12 +1,13 @@
 /**
- * BRAND ASSETS PANEL
+ * BRAND ASSETS PANEL (UNIFIED)
  * 
- * Functional UI for managing brand assets in Genie Cast:
+ * Single source of truth for all visual assets:
  * - Product logos (8 official logos)
  * - Brand colors (primary, secondary, accent)
  * - Video templates
+ * - Screenshots (consolidated from Screenshots tab)
  * 
- * Integrates with brand-assets storage bucket
+ * Integrates with brand-assets and product-screenshots storage buckets
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -24,6 +25,9 @@ import {
   Copy,
   Sparkles,
   Film,
+  Camera,
+  GripVertical,
+  Eye,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -40,6 +44,7 @@ import { type GenieProductId, GENIE_PRODUCTS } from '@/services/marketing/produc
 
 interface BrandAssetsPanelProps {
   className?: string;
+  onScreenshotsUpdated?: (galleries: any[]) => void;
 }
 
 // 8 Official Products with their brand colors
@@ -71,9 +76,17 @@ interface LogoAsset {
   lastUpdated?: string;
 }
 
-export const BrandAssetsPanel: React.FC<BrandAssetsPanelProps> = ({ className }) => {
-  const [activeTab, setActiveTab] = useState<'logos' | 'colors' | 'templates'>('logos');
+interface ScreenshotAsset {
+  productId: string;
+  url: string;
+  name: string;
+  createdAt: string;
+}
+
+export const BrandAssetsPanel: React.FC<BrandAssetsPanelProps> = ({ className, onScreenshotsUpdated }) => {
+  const [activeTab, setActiveTab] = useState<'logos' | 'screenshots' | 'colors' | 'templates'>('logos');
   const [logos, setLogos] = useState<LogoAsset[]>([]);
+  const [screenshots, setScreenshots] = useState<ScreenshotAsset[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [selectedColors, setSelectedColors] = useState<Record<string, string>>({});
@@ -126,9 +139,50 @@ export const BrandAssetsPanel: React.FC<BrandAssetsPanelProps> = ({ className })
     }
   }, []);
 
+  // Load screenshots from storage
+  const loadScreenshots = useCallback(async () => {
+    try {
+      const { data: files, error } = await supabase.storage
+        .from('product-screenshots')
+        .list('screenshots', { limit: 100 });
+
+      if (error) {
+        console.error('[BrandAssets] Error loading screenshots:', error);
+        return;
+      }
+
+      const screenshotAssets: ScreenshotAsset[] = (files || []).map(file => {
+        const productId = file.name.split('-')[0];
+        const { data: urlData } = supabase.storage
+          .from('product-screenshots')
+          .getPublicUrl(`screenshots/${file.name}`);
+        return {
+          productId,
+          url: urlData.publicUrl,
+          name: file.name,
+          createdAt: file.created_at || '',
+        };
+      });
+
+      setScreenshots(screenshotAssets);
+      
+      // Group by product for callback
+      if (onScreenshotsUpdated) {
+        const grouped = Object.keys(PRODUCT_BRAND_CONFIG).map(productId => ({
+          productId,
+          screenshots: screenshotAssets.filter(s => s.productId === productId),
+        }));
+        onScreenshotsUpdated(grouped);
+      }
+    } catch (err) {
+      console.error('[BrandAssets] Screenshot load error:', err);
+    }
+  }, [onScreenshotsUpdated]);
+
   useEffect(() => {
     loadLogos();
-  }, [loadLogos]);
+    loadScreenshots();
+  }, [loadLogos, loadScreenshots]);
 
   // Sync official logos
   const handleSyncLogos = async () => {
@@ -215,10 +269,16 @@ export const BrandAssetsPanel: React.FC<BrandAssetsPanelProps> = ({ className })
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="logos" className="gap-1.5">
             <Image className="w-3.5 h-3.5" />
             Logos
+            <Badge variant="secondary" className="ml-1 text-[10px] px-1">{syncedCount}</Badge>
+          </TabsTrigger>
+          <TabsTrigger value="screenshots" className="gap-1.5">
+            <Camera className="w-3.5 h-3.5" />
+            Screenshots
+            <Badge variant="secondary" className="ml-1 text-[10px] px-1">{screenshots.length}</Badge>
           </TabsTrigger>
           <TabsTrigger value="colors" className="gap-1.5">
             <Palette className="w-3.5 h-3.5" />
@@ -338,6 +398,99 @@ export const BrandAssetsPanel: React.FC<BrandAssetsPanelProps> = ({ className })
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Screenshots Tab */}
+        <TabsContent value="screenshots" className="mt-6">
+          <div className="space-y-4">
+            {/* Screenshot Grid by Product */}
+            {Object.entries(PRODUCT_BRAND_CONFIG).map(([productId, config]) => {
+              const productScreenshots = screenshots.filter(s => s.productId === productId);
+              
+              return (
+                <Card key={productId}>
+                  <CardHeader className="py-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <div 
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: config.primary }}
+                        />
+                        {config.name}
+                        <Badge variant="secondary" className="ml-2 text-[10px]">
+                          {productScreenshots.length} screenshots
+                        </Badge>
+                      </CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    {productScreenshots.length > 0 ? (
+                      <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
+                        {productScreenshots.map((screenshot, idx) => (
+                          <div 
+                            key={screenshot.name}
+                            className="aspect-video rounded-md border overflow-hidden bg-muted relative group"
+                          >
+                            <img 
+                              src={screenshot.url}
+                              alt={`${config.name} screenshot ${idx + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
+                              <Button variant="ghost" size="icon" className="h-6 w-6 text-white">
+                                <Eye className="w-3 h-3" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-6 w-6 text-white">
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
+                            </div>
+                            <Badge 
+                              className="absolute bottom-1 left-1 text-[8px] px-1 py-0"
+                              variant="secondary"
+                            >
+                              {idx + 1}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-6 text-muted-foreground">
+                        <Camera className="w-6 h-6 mx-auto mb-2 opacity-30" />
+                        <p className="text-xs">No screenshots captured yet</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+
+            {/* Total Summary */}
+            <Card className="border-primary/20 bg-primary/5">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-4">
+                  <Camera className="w-8 h-8 text-primary" />
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium">Screenshot Coverage</h4>
+                      <span className="text-sm text-muted-foreground">
+                        {screenshots.length} total across {Object.keys(PRODUCT_BRAND_CONFIG).length} products
+                      </span>
+                    </div>
+                    <Progress 
+                      value={(Object.keys(PRODUCT_BRAND_CONFIG).filter(p => 
+                        screenshots.some(s => s.productId === p)
+                      ).length / Object.keys(PRODUCT_BRAND_CONFIG).length) * 100} 
+                      className="h-2" 
+                    />
+                  </div>
+                  <Button variant="outline" size="sm" onClick={loadScreenshots} className="gap-1.5">
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    Refresh
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         {/* Colors Tab */}
