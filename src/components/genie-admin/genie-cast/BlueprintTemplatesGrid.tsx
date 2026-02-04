@@ -412,16 +412,24 @@ export function BlueprintTemplatesGrid({
                   </>
                 )}
 
-                {/* Regional badge if applicable */}
-                {(blueprint.style_preset as any)?.region && (
-                  <Badge className="absolute top-2 left-2 bg-background/90 text-foreground text-xs">
-                    <Globe2 className="h-3 w-3 mr-1" />
-                    {(blueprint.style_preset as any).region.toUpperCase()}
+                {/* AI Provider badge - shows which model generated the thumbnail */}
+                {(blueprint.style_preset as any)?.thumbnail_provider && (
+                  <Badge className="absolute top-2 left-2 bg-gradient-to-r from-purple-600/90 to-pink-600/90 text-white text-xs border-0">
+                    <Wand2 className="h-3 w-3 mr-1" />
+                    {(blueprint.style_preset as any).thumbnail_provider_name || (blueprint.style_preset as any).thumbnail_provider}
                   </Badge>
                 )}
 
-                {/* System badge */}
-                {blueprint.is_system_default && (
+                {/* Regional badge if applicable */}
+                {(blueprint.style_preset as any)?.thumbnail_region && (blueprint.style_preset as any).thumbnail_region !== 'global' && (
+                  <Badge className="absolute top-2 right-2 bg-background/90 text-foreground text-xs">
+                    <Globe2 className="h-3 w-3 mr-1" />
+                    {(blueprint.style_preset as any).thumbnail_region.toUpperCase()}
+                  </Badge>
+                )}
+
+                {/* System badge - moved to bottom left when provider badge exists */}
+                {blueprint.is_system_default && !(blueprint.style_preset as any)?.thumbnail_provider && (
                   <Badge className="absolute top-2 right-2 bg-background/90 text-foreground text-xs">
                     <Sparkles className="h-3 w-3 mr-1" />
                     System

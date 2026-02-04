@@ -1,7 +1,7 @@
 /**
  * Blueprint Preview Modal
- * Shows template details with scene timeline and preview capabilities
- * Combines modal + inline expansion for rich preview experience
+ * Shows template details with scene timeline, AI provider info, and preview capabilities
+ * Enhanced with thumbnail display and AI model metadata
  */
 
 import React, { useState } from 'react';
@@ -26,6 +26,11 @@ import {
   Video,
   FileText,
   Settings2,
+  Wand2,
+  Globe2,
+  Cpu,
+  Zap,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { VideoBlueprint, BlueprintScene } from '@/hooks/useVideoBlueprints';
@@ -38,6 +43,18 @@ interface BlueprintPreviewModalProps {
   onSelect: (blueprint: VideoBlueprint) => void;
   onAssign?: (blueprint: VideoBlueprint, productId: string) => void;
 }
+
+// AI Provider display names and colors
+const AI_PROVIDER_INFO: Record<string, { name: string; color: string; icon: string }> = {
+  modelslab_flux: { name: 'ModelsLab FLUX Pro', color: 'from-blue-600 to-cyan-500', icon: '⚡' },
+  modelslab_sdxl: { name: 'ModelsLab SDXL', color: 'from-blue-500 to-indigo-500', icon: '🎨' },
+  openai_dalle: { name: 'OpenAI DALL-E 3', color: 'from-green-600 to-emerald-500', icon: '🖼️' },
+  huggingface_flux: { name: 'HuggingFace FLUX', color: 'from-yellow-600 to-orange-500', icon: '🤗' },
+  replicate_flux: { name: 'Replicate FLUX', color: 'from-purple-600 to-pink-500', icon: '🔄' },
+  gemini_imagen: { name: 'Google Gemini Imagen', color: 'from-red-500 to-orange-500', icon: '💎' },
+  alibaba_wanx: { name: 'Alibaba Wanx', color: 'from-orange-600 to-red-500', icon: '🌏' },
+  deepseek_image: { name: 'DeepSeek Vision', color: 'from-teal-600 to-cyan-500', icon: '🔍' },
+};
 
 const sceneTypeColors: Record<string, string> = {
   intro: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
@@ -82,27 +99,73 @@ export function BlueprintPreviewModal({
     return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
   };
 
+  // Extract AI provider metadata from style_preset
+  const stylePreset = blueprint.style_preset as any || {};
+  const thumbnailProvider = stylePreset.thumbnail_provider;
+  const providerInfo = thumbnailProvider ? AI_PROVIDER_INFO[thumbnailProvider] : null;
+  const thumbnailRegion = stylePreset.thumbnail_region;
+  const thumbnailGeneratedAt = stylePreset.thumbnail_generated_at;
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-hidden bg-background/95 backdrop-blur-xl border-border/50">
-        <DialogHeader className="p-6 pb-0">
-          <div className="flex items-start justify-between">
-            <div>
-              <DialogTitle className="text-2xl font-bold">{blueprint.name}</DialogTitle>
-              <p className="text-muted-foreground mt-1">{blueprint.description}</p>
-            </div>
-            <div className="flex gap-2">
-              <Badge variant="outline" className="capitalize">
-                {blueprint.category}
-              </Badge>
-              {blueprint.is_system_default && (
-                <Badge className="bg-primary/20 text-primary border-primary/30">
-                  System Template
+      <DialogContent className="max-w-5xl max-h-[90vh] p-0 overflow-hidden bg-background/95 backdrop-blur-xl border-border/50">
+        {/* Hero Section with Thumbnail */}
+        <div className="relative">
+          {blueprint.thumbnail_url ? (
+            <div className="relative h-48 md:h-56 overflow-hidden">
+              <img 
+                src={blueprint.thumbnail_url} 
+                alt={blueprint.name}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+              
+              {/* AI Provider Badge on thumbnail */}
+              {providerInfo && (
+                <Badge className={cn(
+                  "absolute top-4 left-4 bg-gradient-to-r text-white border-0 shadow-lg",
+                  providerInfo.color
+                )}>
+                  <Wand2 className="h-3 w-3 mr-1" />
+                  {providerInfo.icon} {providerInfo.name}
+                </Badge>
+              )}
+              
+              {/* Region badge */}
+              {thumbnailRegion && thumbnailRegion !== 'global' && (
+                <Badge className="absolute top-4 right-4 bg-background/90 text-foreground">
+                  <Globe2 className="h-3 w-3 mr-1" />
+                  {thumbnailRegion.toUpperCase()}
                 </Badge>
               )}
             </div>
-          </div>
-        </DialogHeader>
+          ) : (
+            <div className="h-32 bg-gradient-to-br from-primary/20 via-primary/10 to-background flex items-center justify-center">
+              <ImageIcon className="h-12 w-12 text-muted-foreground/50" />
+            </div>
+          )}
+          
+          {/* Title overlaid on gradient */}
+          <DialogHeader className="absolute bottom-0 left-0 right-0 p-6 pt-12">
+            <div className="flex items-start justify-between">
+              <div>
+                <DialogTitle className="text-2xl font-bold text-foreground drop-shadow-sm">{blueprint.name}</DialogTitle>
+                <p className="text-muted-foreground mt-1 max-w-2xl">{blueprint.description}</p>
+              </div>
+              <div className="flex gap-2 flex-wrap justify-end">
+                <Badge variant="outline" className="capitalize bg-background/80">
+                  {blueprint.category}
+                </Badge>
+                {blueprint.is_system_default && (
+                  <Badge className="bg-primary/20 text-primary border-primary/30">
+                    <Sparkles className="h-3 w-3 mr-1" />
+                    System
+                  </Badge>
+                )}
+              </div>
+            </div>
+          </DialogHeader>
+        </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1">
           <div className="px-6 border-b border-border/50">
@@ -112,6 +175,10 @@ export function BlueprintPreviewModal({
               </TabsTrigger>
               <TabsTrigger value="timeline" className="data-[state=active]:bg-primary/10">
                 Scene Timeline
+              </TabsTrigger>
+              <TabsTrigger value="ai-info" className="data-[state=active]:bg-primary/10">
+                <Cpu className="h-3 w-3 mr-1" />
+                AI Models
               </TabsTrigger>
               <TabsTrigger value="settings" className="data-[state=active]:bg-primary/10">
                 Style & Settings
@@ -283,6 +350,110 @@ export function BlueprintPreviewModal({
                     )}
                   </div>
                 ))}
+              </div>
+            </TabsContent>
+
+            {/* AI Models Tab - Shows which providers are used */}
+            <TabsContent value="ai-info" className="p-6 space-y-6 mt-0">
+              {/* Thumbnail Generation Info */}
+              <div>
+                <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                  <Wand2 className="h-4 w-4" />
+                  Thumbnail Generation
+                </h3>
+                {providerInfo ? (
+                  <div className="bg-card/50 rounded-lg p-4 border border-border/50 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={cn(
+                          "w-10 h-10 rounded-lg flex items-center justify-center text-lg bg-gradient-to-br",
+                          providerInfo.color
+                        )}>
+                          {providerInfo.icon}
+                        </div>
+                        <div>
+                          <p className="font-medium">{providerInfo.name}</p>
+                          <p className="text-xs text-muted-foreground">AI Image Provider</p>
+                        </div>
+                      </div>
+                      <Badge variant="outline" className="capitalize">
+                        {thumbnailRegion || 'global'}
+                      </Badge>
+                    </div>
+                    {thumbnailGeneratedAt && (
+                      <p className="text-xs text-muted-foreground">
+                        Generated: {new Date(thumbnailGeneratedAt).toLocaleString()}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="bg-card/50 rounded-lg p-4 border border-border/50 border-dashed text-center text-muted-foreground">
+                    <ImageIcon className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">No AI thumbnail generated yet</p>
+                    <p className="text-xs mt-1">Click "Generate Thumbnail" to create one</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Available Providers */}
+              <div>
+                <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                  <Cpu className="h-4 w-4" />
+                  Available AI Providers (18 Integrated)
+                </h3>
+                <div className="grid grid-cols-2 gap-3">
+                  {Object.entries(AI_PROVIDER_INFO).map(([id, info]) => (
+                    <div 
+                      key={id}
+                      className={cn(
+                        "p-3 rounded-lg border transition-all",
+                        thumbnailProvider === id 
+                          ? "border-primary bg-primary/5" 
+                          : "border-border/50 bg-card/30"
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">{info.icon}</span>
+                        <div>
+                          <p className="text-sm font-medium">{info.name}</p>
+                          <p className="text-xs text-muted-foreground capitalize">{id.split('_')[0]}</p>
+                        </div>
+                        {thumbnailProvider === id && (
+                          <Badge className="ml-auto text-xs bg-primary/20 text-primary border-0">
+                            <Zap className="h-3 w-3 mr-1" />
+                            Used
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Regional Routing Info */}
+              <div>
+                <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                  <Globe2 className="h-4 w-4" />
+                  4-Zone Regional Routing
+                </h3>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="p-3 bg-card/50 rounded-lg border border-border/50">
+                    <p className="font-medium text-blue-400">Western Zone</p>
+                    <p className="text-xs text-muted-foreground">ModelsLab, OpenAI, Replicate</p>
+                  </div>
+                  <div className="p-3 bg-card/50 rounded-lg border border-border/50">
+                    <p className="font-medium text-orange-400">CJK Zone</p>
+                    <p className="text-xs text-muted-foreground">Alibaba Wanx, DeepSeek</p>
+                  </div>
+                  <div className="p-3 bg-card/50 rounded-lg border border-border/50">
+                    <p className="font-medium text-green-400">SEA Zone</p>
+                    <p className="text-xs text-muted-foreground">Gemini, ModelsLab, Alibaba</p>
+                  </div>
+                  <div className="p-3 bg-card/50 rounded-lg border border-border/50">
+                    <p className="font-medium text-purple-400">Global Fallback</p>
+                    <p className="text-xs text-muted-foreground">ModelsLab, Gemini, OpenAI</p>
+                  </div>
+                </div>
               </div>
             </TabsContent>
 
