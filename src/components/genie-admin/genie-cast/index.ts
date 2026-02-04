@@ -8,6 +8,7 @@
  * - PUBLISH: Scheduler, Distribution, SEO, A/B Testing
  */
 
+export { GenieCastHub } from './GenieCastHub';
 export { GenieCastHero } from './GenieCastHero';
 export { GenieCastOverview } from './GenieCastOverview';
 export { VideoStyleCards, type VideoStyleType } from './VideoStyleCards';
