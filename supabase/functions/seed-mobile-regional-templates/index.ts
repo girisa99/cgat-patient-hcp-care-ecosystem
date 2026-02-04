@@ -16,27 +16,50 @@ const corsHeaders = {
 
 // ============================================
 // TTS PROVIDER ROUTING (4-ZONE STRATEGY)
+// DIFFERENTIATOR: Azure Neural as PRIMARY for Europe/LATAM (not ElevenLabs!)
+// This is our competitive advantage for Visemes/Lip-sync quality
 // ============================================
 const TTS_ROUTING = {
-  // Claude Zone (Western/Europe): ElevenLabs
-  western: { primary: 'elevenlabs', fallback: 'azure_neural' },
-  europe: { primary: 'elevenlabs', fallback: 'azure_neural' },
-  latam: { primary: 'elevenlabs', fallback: 'azure_neural' },
+  // Claude Zone (Western): Azure Neural PRIMARY (differentiator - NOT ElevenLabs!)
+  western: { primary: 'azure_neural', fallback: 'elevenlabs', tertiary: 'google_tts' },
+  europe: { primary: 'azure_neural', fallback: 'alibaba_cosyvoice', tertiary: 'elevenlabs' },
+  latam: { primary: 'azure_neural', fallback: 'alibaba_cosyvoice', tertiary: 'elevenlabs' },
   
-  // Alibaba Zone (CJK, MENA): CosyVoice
-  cjk: { primary: 'cosyvoice', fallback: 'azure_neural' },
-  china: { primary: 'cosyvoice', fallback: 'azure_neural' },
-  japan: { primary: 'azure_neural', fallback: 'cosyvoice' },
-  korea: { primary: 'azure_neural', fallback: 'cosyvoice' },
-  mena: { primary: 'azure_neural', fallback: 'cosyvoice' },
+  // Alibaba Zone (CJK, MENA): CosyVoice PRIMARY
+  cjk: { primary: 'alibaba_cosyvoice', fallback: 'azure_neural', tertiary: 'google_tts' },
+  china: { primary: 'alibaba_cosyvoice', fallback: 'azure_neural', tertiary: 'google_tts' },
+  japan: { primary: 'azure_neural', fallback: 'alibaba_cosyvoice', tertiary: 'google_tts' },
+  korea: { primary: 'azure_neural', fallback: 'alibaba_cosyvoice', tertiary: 'google_tts' },
+  mena: { primary: 'azure_neural', fallback: 'alibaba_cosyvoice', tertiary: 'google_tts' },
+  arabic: { primary: 'azure_neural', fallback: 'alibaba_cosyvoice', tertiary: 'google_tts' },
   
-  // Gemini Zone (South Asia, SEA, Africa): Azure Neural (for Visemes/Lip-sync)
-  india: { primary: 'azure_neural', fallback: 'google_tts' },
-  pakistan: { primary: 'azure_neural', fallback: 'google_tts' },
-  bangladesh: { primary: 'azure_neural', fallback: 'google_tts' },
-  sea: { primary: 'azure_neural', fallback: 'google_tts' },
-  indonesia: { primary: 'azure_neural', fallback: 'google_tts' },
-  africa: { primary: 'azure_neural', fallback: 'google_tts' },
+  // Gemini Zone (South Asia, SEA, Africa): Azure Neural PRIMARY (Visemes/Lip-sync)
+  india: { primary: 'azure_neural', fallback: 'alibaba_cosyvoice', tertiary: 'google_tts' },
+  pakistan: { primary: 'azure_neural', fallback: 'alibaba_cosyvoice', tertiary: 'google_tts' },
+  bangladesh: { primary: 'azure_neural', fallback: 'alibaba_cosyvoice', tertiary: 'google_tts' },
+  sea: { primary: 'azure_neural', fallback: 'alibaba_cosyvoice', tertiary: 'google_tts' },
+  indonesia: { primary: 'azure_neural', fallback: 'alibaba_cosyvoice', tertiary: 'google_tts' },
+  africa: { primary: 'azure_neural', fallback: 'alibaba_cosyvoice', tertiary: 'google_tts' },
+};
+
+// ============================================
+// VIDEO PROVIDER ROUTING (Production Priority)
+// ============================================
+const VIDEO_ROUTING = {
+  primary: ['vertex_veo_3', 'sora2', 'alibaba_wan26'],
+  secondary: ['alibaba_wan22', 'modelslab', 'deepseek'],
+  fallback: ['replicate', 'gemini_video'],
+};
+
+// ============================================
+// IMAGE/THUMBNAIL PROVIDER ROUTING
+// Gemini 3 (Vertex AI) PRIMARY, Gemini 2.0 FALLBACK
+// ============================================
+const IMAGE_ROUTING = {
+  primary: ['vertex_imagen3', 'banana_nano', 'gemini_3_pro'],
+  secondary: ['alibaba_wanx', 'modelslab_flux', 'deepseek'],
+  fallback: ['gemini_2_flash', 'replicate_sdxl', 'huggingface_flux'],
+  last_resort: ['openai_dalle'], // OpenAI DALL-E is LAST resort, not primary
 };
 
 // ============================================
