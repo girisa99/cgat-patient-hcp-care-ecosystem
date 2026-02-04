@@ -9,7 +9,19 @@
  * - Unified ecosystem publishing (cross-product, company pages, industry filtering)
  * - Product version tracking & change detection
  * - AI messaging generator with approval workflow
+ * - Dynamic marketing registry (database-driven products/audiences/languages)
  */
+
+// Dynamic Registry (NEW - Database-driven)
+export {
+  dynamicMarketingRegistryService,
+  type MarketingProduct,
+  type MarketingAudience,
+  type MarketingBrandAsset,
+  type MarketingLanguage,
+  type LegacyProduct,
+  type LegacyAudience,
+} from './dynamicMarketingRegistryService';
 
 // Scheduler
 export { 
@@ -59,7 +71,7 @@ export {
   type PositioningStatement,
 } from './featureDiscoveryService';
 
-// Product Version Tracking (Change Detection)
+// Product Version Tracking (Change Detection) - Legacy hardcoded, use dynamicMarketingRegistryService for new code
 export {
   productVersionTrackingService,
   GENIE_PRODUCTS as VERSION_TRACKED_PRODUCTS,
@@ -70,7 +82,7 @@ export {
   type GenieProductId,
 } from './productVersionTrackingService';
 
-// AI Messaging Generator (Hooks, CTAs, Positioning)
+// AI Messaging Generator (Hooks, CTAs, Positioning) - Legacy hardcoded audiences, use dynamicMarketingRegistryService for new code
 export {
   aiMessagingGeneratorService,
   MESSAGING_FRAMEWORKS,
