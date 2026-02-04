@@ -100,12 +100,36 @@ export const MESSAGING_FRAMEWORKS = {
 };
 
 export const TARGET_AUDIENCES = [
-  { id: 'content_creators', label: 'Content Creators', painPoints: ['time-consuming editing', 'creative blocks'] },
-  { id: 'marketers', label: 'Marketing Teams', painPoints: ['content velocity', 'brand consistency'] },
-  { id: 'trainers', label: 'L&D Professionals', painPoints: ['engagement', 'scalability'] },
-  { id: 'entrepreneurs', label: 'Entrepreneurs', painPoints: ['resource constraints', 'professional output'] },
-  { id: 'enterprises', label: 'Enterprise Teams', painPoints: ['compliance', 'collaboration'] },
-  { id: 'educators', label: 'Educators', painPoints: ['student engagement', 'content creation time'] },
+  // Core Creator Segments
+  { id: 'content_creators', label: 'Content Creators', painPoints: ['time-consuming editing', 'creative blocks', 'platform algorithm changes'] },
+  { id: 'influencers', label: 'Influencers', painPoints: ['content fatigue', 'audience engagement', 'multi-platform demands'] },
+  { id: 'knowledge_sharers', label: 'Knowledge Sharers', painPoints: ['monetizing expertise', 'production quality', 'audience building'] },
+  
+  // Business & Marketing
+  { id: 'marketers', label: 'Marketing Teams', painPoints: ['content velocity', 'brand consistency', 'campaign ROI'] },
+  { id: 'sales_teams', label: 'Sales Teams', painPoints: ['pitch personalization', 'demo creation', 'proposal turnaround'] },
+  { id: 'agencies', label: 'Agencies & Freelancers', painPoints: ['client deliverables', 'scaling projects', 'white-label needs'] },
+  { id: 'entrepreneurs', label: 'Entrepreneurs', painPoints: ['resource constraints', 'professional output', 'time-to-market'] },
+  { id: 'smb', label: 'Small & Medium Business', painPoints: ['limited marketing budget', 'competing with big brands', 'DIY content'] },
+  
+  // Enterprise & Corporate
+  { id: 'enterprises', label: 'Enterprise Teams', painPoints: ['compliance', 'collaboration', 'brand governance'] },
+  { id: 'product_managers', label: 'Product Managers', painPoints: ['stakeholder communication', 'roadmap visualization', 'feature demos'] },
+  { id: 'customer_success', label: 'Customer Success', painPoints: ['onboarding content', 'tutorial creation', 'support scalability'] },
+  { id: 'executive_leadership', label: 'Executive Leadership', painPoints: ['board presentations', 'investor updates', 'internal comms'] },
+  { id: 'developers', label: 'Developers & Tech Teams', painPoints: ['documentation', 'API demos', 'technical tutorials'] },
+  
+  // HR & People
+  { id: 'hr_recruiters', label: 'HR & Recruiters', painPoints: ['employer branding', 'onboarding videos', 'culture content'] },
+  { id: 'trainers', label: 'L&D Professionals', painPoints: ['engagement', 'scalability', 'learning retention'] },
+  
+  // Education
+  { id: 'educators', label: 'Educators', painPoints: ['student engagement', 'content creation time', 'remote learning'] },
+  
+  // Specialized Industries
+  { id: 'healthcare', label: 'Healthcare Professionals', painPoints: ['patient education', 'compliance requirements', 'clinical training'] },
+  { id: 'compliance', label: 'Compliance & Legal', painPoints: ['policy communication', 'audit documentation', 'training requirements'] },
+  { id: 'travelers', label: 'Travel & Hospitality', painPoints: ['destination marketing', 'multilingual content', 'seasonal campaigns'] },
 ];
 
 export const COMPETITOR_DATABASE = [
