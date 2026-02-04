@@ -48,6 +48,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -179,6 +180,8 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
   const [existingVideos, setExistingVideos] = useState<ExistingVideo[]>([]);
   const [loadingExisting, setLoadingExisting] = useState(true);
   
+  // Video preview state
+  const [previewVideo, setPreviewVideo] = useState<{ url: string; title: string } | null>(null);
   // Production config for avatar gender preference
   const [productionConfig, setProductionConfig] = useState<ProductionModeConfig>(DEFAULT_PRODUCTION_CONFIG);
   
@@ -803,7 +806,21 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
                     <span className="font-medium">Video Generated Successfully!</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <Button size="sm" variant="outline" className="gap-2">
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="gap-2"
+                      onClick={() => {
+                        if (currentVideo?.videoUrl) {
+                          setPreviewVideo({
+                            url: currentVideo.videoUrl,
+                            title: `${currentVideo.languageName} Marketing Video`
+                          });
+                        } else {
+                          toast.error('Video URL not available yet');
+                        }
+                      }}
+                    >
                       <Eye className="w-4 h-4" />
                       Preview
                     </Button>
@@ -867,8 +884,15 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
                     {existingVideos.map(video => {
                       const lang = LANGUAGES.find(l => l.code === video.language_code);
                       return (
-                        <Card key={video.id} className="overflow-hidden">
-                          <div className="aspect-video bg-muted flex items-center justify-center">
+                        <Card 
+                          key={video.id} 
+                          className="overflow-hidden cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
+                          onClick={() => setPreviewVideo({
+                            url: video.video_url,
+                            title: `${video.language_name} Marketing Video`
+                          })}
+                        >
+                          <div className="aspect-video bg-muted flex items-center justify-center relative group">
                             {video.thumbnail_url ? (
                               <img 
                                 src={video.thumbnail_url} 
@@ -878,6 +902,12 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
                             ) : (
                               <Film className="w-8 h-8 text-muted-foreground" />
                             )}
+                            {/* Play overlay */}
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center">
+                                <Play className="w-6 h-6 text-primary ml-1" />
+                              </div>
+                            </div>
                           </div>
                           <CardContent className="p-3">
                             <div className="flex items-center gap-2 mb-2">
@@ -957,6 +987,27 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
           <GenieCastFlowDiagram />
         </TabsContent>
       </Tabs>
+
+      {/* Video Preview Dialog */}
+      <Dialog open={!!previewVideo} onOpenChange={(open) => !open && setPreviewVideo(null)}>
+        <DialogContent className="max-w-4xl p-0 overflow-hidden">
+          <DialogHeader className="p-4 pb-0">
+            <DialogTitle>{previewVideo?.title || 'Video Preview'}</DialogTitle>
+          </DialogHeader>
+          <div className="aspect-video bg-black">
+            {previewVideo?.url && (
+              <video
+                src={previewVideo.url}
+                controls
+                autoPlay
+                className="w-full h-full"
+              >
+                Your browser does not support video playback.
+              </video>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
