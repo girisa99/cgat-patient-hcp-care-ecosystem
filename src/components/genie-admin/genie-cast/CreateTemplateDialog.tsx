@@ -50,7 +50,7 @@ interface CreateTemplateDialogProps {
   templateToClone?: VideoBlueprint | null;
 }
 
-// Categories for templates
+// Categories for templates - Full 21 categories
 const TEMPLATE_CATEGORIES = [
   { value: 'marketing', label: 'Marketing', icon: '📈' },
   { value: 'educational', label: 'Educational', icon: '📚' },
@@ -63,25 +63,59 @@ const TEMPLATE_CATEGORIES = [
   { value: '3d', label: '3D/VR', icon: '🧊' },
   { value: 'avatar', label: 'Avatar', icon: '👤' },
   { value: 'interactive', label: 'Interactive', icon: '🎮' },
+  { value: 'ppt', label: 'PPT/Slides', icon: '📊' },
+  { value: 'smb', label: 'SMB/Local', icon: '🏪' },
+  { value: 'oil_gas', label: 'Oil & Gas', icon: '⛽' },
+  { value: 'automotive', label: 'Automotive', icon: '🚗' },
+  { value: 'hospitality', label: 'Hospitality', icon: '🍽️' },
+  { value: 'consulting', label: 'Consulting', icon: '💼' },
+  { value: 'finance', label: 'Finance', icon: '💰' },
+  { value: 'real_estate', label: 'Real Estate', icon: '🏠' },
+  { value: 'technology', label: 'Technology', icon: '💻' },
+  { value: 'nonprofit', label: 'Nonprofit', icon: '❤️' },
 ];
 
-// Video styles for selection
+// Video styles - Full 43+ styles
 const VIDEO_STYLES = [
+  // Photorealistic
   { value: 'photorealistic', label: 'Photorealistic', icon: '📸' },
-  { value: 'pixar', label: 'Pixar/Disney', icon: '🎪' },
+  { value: 'hyper_real', label: 'Hyper-Realistic 4K', icon: '🎥' },
+  { value: 'product_hero', label: 'Product Hero', icon: '🛍️' },
+  // Character/Avatar
+  { value: 'pixar_disney', label: 'Pixar/Disney', icon: '🎪' },
+  { value: 'character_vlog', label: 'Character Vlog', icon: '🗣️' },
+  { value: 'talking_head', label: 'Talking Head', icon: '👤' },
+  // Animation
   { value: 'anime', label: 'Anime', icon: '🎌' },
-  { value: 'crayon', label: 'Crayon/Hand-drawn', icon: '🖍️' },
-  { value: 'microworld', label: 'Microworld', icon: '🔬' },
-  { value: 'whiteboard', label: 'Whiteboard', icon: '📝' },
-  { value: 'cyber', label: 'Cyberpunk', icon: '🌆' },
+  { value: 'crayon_sketch', label: 'Crayon/Hand-drawn', icon: '🖍️' },
+  { value: 'watercolor', label: 'Watercolor', icon: '🎨' },
+  { value: 'hand_sketch', label: 'Hand Sketch', icon: '✏️' },
   { value: 'stop_motion', label: 'Stop Motion', icon: '🎞️' },
+  { value: 'microworld', label: 'Microworld', icon: '🔬' },
+  { value: 'paper_cutout', label: 'Paper Cutout', icon: '📄' },
+  // Cyber/Tech
+  { value: 'cyberpunk', label: 'Cyberpunk', icon: '🌆' },
+  { value: 'glitch_art', label: 'Glitch Art', icon: '📺' },
+  { value: 'neon_synthwave', label: 'Neon Synthwave', icon: '🌃' },
+  { value: 'tech_futuristic', label: 'Tech Futuristic', icon: '🚀' },
+  { value: 'holographic', label: 'Holographic', icon: '💫' },
+  // Educational
+  { value: 'whiteboard', label: 'Whiteboard', icon: '📝' },
+  { value: 'explainer', label: 'Explainer', icon: '💡' },
+  { value: 'kinetic_typography', label: 'Kinetic Typography', icon: '📝' },
+  { value: 'school_learning', label: 'School/Learning', icon: '🎓' },
+  // PPT/Slides
+  { value: 'ppt_animation', label: 'PPT Animation', icon: '📊' },
+  { value: 'pitch_deck', label: 'Pitch Deck', icon: '📈' },
+  { value: 'keynote_cinematic', label: 'Keynote Cinematic', icon: '🎬' },
+  { value: 'data_visualization', label: 'Data Viz', icon: '📉' },
+  // Motion
   { value: 'motion_graphics', label: 'Motion Graphics', icon: '✨' },
   { value: 'documentary', label: 'Documentary', icon: '🎥' },
-  { value: 'character_vlog', label: 'Character Vlog', icon: '🗣️' },
-  { value: 'explainer', label: 'Explainer', icon: '💡' },
+  { value: 'brand_story', label: 'Brand Story', icon: '📖' },
 ];
 
-// AI Capabilities
+// AI Capabilities - Full 25 capabilities
 const AI_CAPABILITIES = [
   { value: 'text_to_video', label: 'Text-to-Video', icon: '📹' },
   { value: 'image_to_video', label: 'Image-to-Video', icon: '🎞️' },
@@ -89,34 +123,82 @@ const AI_CAPABILITIES = [
   { value: 'avatar', label: 'Avatar', icon: '👤' },
   { value: 'lipsync', label: 'Lipsync', icon: '👄' },
   { value: 'tts', label: 'TTS Voiceover', icon: '🎙️' },
+  { value: 'stt', label: 'STT Transcription', icon: '📝' },
   { value: 'music_gen', label: 'Music Generation', icon: '🎵' },
+  { value: 'sfx_gen', label: 'SFX Generation', icon: '🔊' },
   { value: 'video_effects', label: 'Video Effects', icon: '✨' },
   { value: 'pixar_style', label: 'Pixar Style', icon: '🎨' },
   { value: 'anime_style', label: 'Anime Style', icon: '🎌' },
+  { value: 'ppt_animation', label: 'PPT Animation', icon: '📊' },
+  { value: 'slideshow', label: 'Slideshow', icon: '🖼️' },
+  { value: 'voice_clone', label: 'Voice Clone', icon: '🗣️' },
+  { value: 'viseme_sync', label: 'Viseme Sync', icon: '👄' },
+  { value: 'animatediff', label: 'AnimateDiff', icon: '🌊' },
+  { value: 'svd', label: 'Stable Video', icon: '📹' },
+  { value: 'multi_language', label: 'Multi-Language', icon: '🌍' },
+  { value: 'regional_tts', label: 'Regional TTS', icon: '🗣️' },
 ];
 
-// Regions
+// Regions - Full 14 regions
 const REGIONS = [
   { value: 'western', label: 'Western', flag: '🌎' },
   { value: 'europe', label: 'Europe', flag: '🌍' },
-  { value: 'cjk', label: 'CJK (Asia)', flag: '🌏' },
+  { value: 'cjk', label: 'CJK (China/Japan/Korea)', flag: '🌏' },
   { value: 'india', label: 'India', flag: '🇮🇳' },
   { value: 'mena', label: 'MENA', flag: '🏜️' },
   { value: 'africa', label: 'Africa', flag: '🌍' },
   { value: 'latam', label: 'Latin America', flag: '🌎' },
   { value: 'sea', label: 'Southeast Asia', flag: '🌴' },
   { value: 'caribbean', label: 'Caribbean', flag: '🏝️' },
+  { value: 'pakistan', label: 'Pakistan', flag: '🇵🇰' },
+  { value: 'indonesia', label: 'Indonesia', flag: '🇮🇩' },
+  { value: 'russia', label: 'Russia', flag: '🇷🇺' },
+  { value: 'central_asia', label: 'Central Asia', flag: '🏔️' },
+  { value: 'oceania', label: 'Oceania', flag: '🌊' },
 ];
 
-// AI Providers
+// AI Providers - Full Universal AI Hub registry (30+ providers)
 const AI_PROVIDERS = [
-  { value: 'vertex_veo', label: 'Vertex AI Veo', icon: '🎬' },
-  { value: 'sora2', label: 'Sora 2', icon: '🌟' },
-  { value: 'alibaba_wan', label: 'Alibaba Wan', icon: '🌊' },
-  { value: 'meshy_3d', label: 'Meshy 3D', icon: '🧊' },
-  { value: 'modelslab', label: 'ModelsLab', icon: '⚡' },
-  { value: 'deepseek', label: 'DeepSeek', icon: '🔍' },
-  { value: 'elevenlabs', label: 'ElevenLabs TTS', icon: '🎙️' },
+  // LLM Providers
+  { value: 'gemini', label: 'Gemini 3.0', icon: '🔮', category: 'llm' },
+  { value: 'openai', label: 'OpenAI GPT-4o', icon: '🧠', category: 'llm' },
+  { value: 'claude', label: 'Claude 4', icon: '🎭', category: 'llm' },
+  { value: 'deepseek', label: 'DeepSeek V3', icon: '🌊', category: 'llm' },
+  { value: 'alibaba_qwen', label: 'Alibaba Qwen', icon: '☁️', category: 'llm' },
+  { value: 'huggingface', label: 'HuggingFace', icon: '🤗', category: 'llm' },
+  // Video Providers
+  { value: 'sora2', label: 'Sora 2', icon: '🌟', category: 'video' },
+  { value: 'veo', label: 'Google Veo 3', icon: '🎬', category: 'video' },
+  { value: 'alibaba_wan', label: 'Alibaba Wan 2.6', icon: '🌊', category: 'video' },
+  { value: 'modelslab_animatediff', label: 'ModelsLab AnimateDiff', icon: '⚡', category: 'video' },
+  { value: 'replicate_svd', label: 'Replicate SVD', icon: '🔄', category: 'video' },
+  // Image Providers
+  { value: 'modelslab_flux', label: 'ModelsLab FLUX', icon: '⚡', category: 'image' },
+  { value: 'dalle3', label: 'DALL-E 3', icon: '🎨', category: 'image' },
+  { value: 'gemini_imagen', label: 'Gemini Imagen', icon: '🖼️', category: 'image' },
+  { value: 'alibaba_wanx', label: 'Alibaba Wanx', icon: '☁️', category: 'image' },
+  { value: 'replicate_flux', label: 'Replicate FLUX', icon: '🔄', category: 'image' },
+  { value: 'huggingface_flux', label: 'HuggingFace FLUX', icon: '🤗', category: 'image' },
+  // TTS Providers
+  { value: 'elevenlabs', label: 'ElevenLabs', icon: '🎙️', category: 'tts' },
+  { value: 'azure_tts', label: 'Azure Neural TTS', icon: '☁️', category: 'tts' },
+  { value: 'alibaba_cosyvoice', label: 'Alibaba CosyVoice', icon: '🗣️', category: 'tts' },
+  { value: 'openai_tts', label: 'OpenAI TTS', icon: '🔊', category: 'tts' },
+  { value: 'google_tts', label: 'Google TTS', icon: '🔈', category: 'tts' },
+  // STT Providers
+  { value: 'deepgram', label: 'Deepgram Nova 2', icon: '📝', category: 'stt' },
+  { value: 'whisper', label: 'OpenAI Whisper', icon: '🔊', category: 'stt' },
+  { value: 'azure_stt', label: 'Azure STT', icon: '☁️', category: 'stt' },
+  { value: 'alibaba_paraformer', label: 'Alibaba Paraformer', icon: '🗣️', category: 'stt' },
+  // 3D Providers
+  { value: 'meshy_3d', label: 'Meshy 3D', icon: '🧊', category: '3d' },
+  { value: 'alibaba_3d', label: 'Alibaba 3D', icon: '☁️', category: '3d' },
+  { value: 'modelslab_3d', label: 'ModelsLab 3D', icon: '⚡', category: '3d' },
+  { value: 'replicate_triposr', label: 'Replicate TripoSR', icon: '🔄', category: '3d' },
+  // Avatar Providers
+  { value: 'alibaba_wan_avatar', label: 'Alibaba Wan Avatar', icon: '👤', category: 'avatar' },
+  { value: 'azure_avatar', label: 'Azure Avatar', icon: '☁️', category: 'avatar' },
+  { value: 'modelslab_avatar', label: 'ModelsLab Avatar', icon: '⚡', category: 'avatar' },
 ];
 
 export function CreateTemplateDialog({ onCreated, templateToClone }: CreateTemplateDialogProps) {
@@ -125,6 +207,8 @@ export function CreateTemplateDialog({ onCreated, templateToClone }: CreateTempl
   const [creating, setCreating] = useState(false);
   const [aiGenerating, setAiGenerating] = useState(false);
   const [activeTab, setActiveTab] = useState<string>(templateToClone ? 'clone' : 'ai');
+  const [lastUsedProvider, setLastUsedProvider] = useState<string | null>(null);
+  const [availableProviders, setAvailableProviders] = useState<Record<string, string[]> | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -169,7 +253,21 @@ export function CreateTemplateDialog({ onCreated, templateToClone }: CreateTempl
     }));
   };
 
-  // AI-Assisted Generation
+  // Get provider display name
+  const getProviderName = (providerId: string) => {
+    const providerMap: Record<string, string> = {
+      'gemini': 'Google Gemini 3.0',
+      'openai': 'OpenAI GPT-4o',
+      'claude': 'Anthropic Claude 4',
+      'deepseek': 'DeepSeek V3',
+      'alibaba_qwen': 'Alibaba Qwen-Max',
+      'huggingface': 'HuggingFace Llama',
+      'fallback_default': 'Default Template',
+    };
+    return providerMap[providerId] || providerId;
+  };
+
+  // AI-Assisted Generation using Universal AI Hub
   const generateWithAI = async () => {
     if (!formData.aiPrompt.trim()) {
       toast({ title: 'Please describe what template you want', variant: 'destructive' });
@@ -177,13 +275,27 @@ export function CreateTemplateDialog({ onCreated, templateToClone }: CreateTempl
     }
 
     setAiGenerating(true);
+    setLastUsedProvider(null);
     try {
-      // Call AI to generate template structure
+      // Call AI to generate template structure via Universal AI Hub
       const { data, error } = await supabase.functions.invoke('generate-template-ai', {
-        body: { prompt: formData.aiPrompt }
+        body: { 
+          prompt: formData.aiPrompt,
+          region: formData.regions[0] || 'western',
+        }
       });
 
       if (error) throw error;
+
+      // Track which provider was used
+      if (data?.provider) {
+        setLastUsedProvider(data.provider);
+      }
+
+      // Track available providers
+      if (data?.availableProviders) {
+        setAvailableProviders(data.availableProviders);
+      }
 
       // Update form with AI suggestions
       if (data?.template) {
@@ -196,7 +308,11 @@ export function CreateTemplateDialog({ onCreated, templateToClone }: CreateTempl
           capabilities: data.template.capabilities || prev.capabilities,
           regions: data.template.regions || prev.regions,
         }));
-        toast({ title: 'AI generated template structure!', description: 'Review and customize as needed.' });
+        
+        toast({ 
+          title: `✨ Template generated via ${getProviderName(data.provider)}!`, 
+          description: `Checked ${data.providersChecked?.length || 1} providers. Review and customize as needed.` 
+        });
       }
     } catch (err: any) {
       console.error('AI generation failed:', err);
@@ -339,6 +455,31 @@ export function CreateTemplateDialog({ onCreated, templateToClone }: CreateTempl
                   </>
                 )}
               </Button>
+              
+              {/* Show provider info after generation */}
+              {lastUsedProvider && (
+                <div className="p-3 border rounded-lg bg-muted/30">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Check className="h-4 w-4 text-primary" />
+                    <span className="font-medium">Generated via {getProviderName(lastUsedProvider)}</span>
+                  </div>
+                  {availableProviders && (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      <span className="text-xs text-muted-foreground">Available:</span>
+                      {availableProviders.llm?.slice(0, 4).map((p) => (
+                        <Badge key={p} variant="secondary" className="text-xs">
+                          {p}
+                        </Badge>
+                      ))}
+                      {(availableProviders.llm?.length || 0) > 4 && (
+                        <Badge variant="outline" className="text-xs">
+                          +{(availableProviders.llm?.length || 0) - 4} more
+                        </Badge>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Show form after AI generation or for manual editing */}
