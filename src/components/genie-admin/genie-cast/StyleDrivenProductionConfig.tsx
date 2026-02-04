@@ -3,6 +3,8 @@
  * 
  * Auto-derives production settings from selected video styles.
  * Replaces manual toggles with smart, style-based configuration.
+ * 
+ * v2: Shows ALL selected styles with their individual requirements
  */
 
 import React, { useMemo } from 'react';
@@ -15,19 +17,20 @@ import {
   Palette,
   ArrowRight,
   Settings2,
+  Film,
+  Mic,
+  X,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 import { 
   VIDEO_STYLE_PROVIDERS, 
   styleRequiresAvatar, 
   styleRequires3D,
-  getStylePipelineConfig,
 } from '@/config/video-style-pipeline-mapping';
 import type { VideoStyleType } from './VideoStyleCards';
 import { REGIONAL_AVATARS } from '../FullProductionModeConfig';
@@ -43,6 +46,26 @@ interface StyleDrivenConfigProps {
   disabled?: boolean;
 }
 
+// Style display names
+const STYLE_DISPLAY_NAMES: Record<VideoStyleType, string> = {
+  smart_storytelling: 'Smart Storytelling',
+  hook_videos: 'Hook Videos',
+  micro_drama: 'Micro-Drama',
+  ugc_avatar_photorealistic: 'Photorealistic Avatar',
+  ugc_avatar_3d_pixar: '3D Pixar Avatar',
+  ugc_avatar_2d_animated: '2D Animated Avatar',
+  talking_photos: 'Talking Photos',
+  anime: 'Anime Style',
+  image_to_life: 'Image to Life',
+  explainer_3d: '3D Explainer',
+  educational: 'Educational',
+  interactive_quiz: 'Quiz Overlay',
+  cta_videos: 'CTA Videos',
+  social: 'Social Media',
+  video_ads: 'Video Ads',
+  product_demo: 'Product Demo',
+};
+
 // Derive what production features are needed from styles
 export function deriveProductionRequirements(styles: VideoStyleType[]) {
   const requirements = {
@@ -55,11 +78,28 @@ export function deriveProductionRequirements(styles: VideoStyleType[]) {
     videoProviders: new Set<string>(),
     pacing: 'normal' as 'slow' | 'normal' | 'fast' | 'dynamic',
     ttsStyles: new Set<string>(),
+    // Track which styles contribute what
+    styleBreakdown: [] as Array<{
+      style: VideoStyleType;
+      needsAvatar: boolean;
+      needsAnimation: boolean;
+      needs3D: boolean;
+      provider?: string;
+    }>,
   };
 
   styles.forEach(style => {
     const config = VIDEO_STYLE_PROVIDERS[style];
     if (!config) return;
+
+    const styleReq = {
+      style,
+      needsAvatar: !!config.avatarProvider,
+      needsAnimation: !!config.animationProvider,
+      needs3D: styleRequires3D(style),
+      provider: config.avatarProvider || config.animationProvider || config.videoProvider,
+    };
+    requirements.styleBreakdown.push(styleReq);
 
     // Video providers
     requirements.videoProviders.add(config.videoProvider);
@@ -154,9 +194,9 @@ export const StyleDrivenProductionConfig: React.FC<StyleDrivenConfigProps> = ({
 
   return (
     <div className="space-y-3">
-      {/* Auto-Detected Production Requirements */}
+      {/* Selected Styles with Requirements */}
       <div className="p-3 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20">
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between mb-3">
           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
             Auto-Configured from Styles
           </span>
@@ -166,27 +206,69 @@ export const StyleDrivenProductionConfig: React.FC<StyleDrivenConfigProps> = ({
           </Badge>
         </div>
 
-        {/* Feature Pills */}
+        {/* Individual Style Breakdown */}
+        <div className="space-y-2 mb-3">
+          {requirements.styleBreakdown.map(({ style, needsAvatar, needsAnimation, needs3D }) => (
+            <div 
+              key={style}
+              className="flex items-center justify-between py-1.5 px-2 rounded bg-background/50 border border-border/50"
+            >
+              <div className="flex items-center gap-2">
+                <Film className="w-3 h-3 text-muted-foreground" />
+                <span className="text-xs font-medium">
+                  {STYLE_DISPLAY_NAMES[style] || style}
+                </span>
+              </div>
+              <div className="flex items-center gap-1">
+                {needsAvatar && (
+                  <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 gap-0.5">
+                    <User className="w-2.5 h-2.5" />
+                    Avatar
+                  </Badge>
+                )}
+                {needsAnimation && (
+                  <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 gap-0.5">
+                    <Sparkles className="w-2.5 h-2.5" />
+                    Anim
+                  </Badge>
+                )}
+                {needs3D && (
+                  <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 gap-0.5">
+                    <Box className="w-2.5 h-2.5" />
+                    3D
+                  </Badge>
+                )}
+                {!needsAvatar && !needsAnimation && !needs3D && (
+                  <Badge variant="secondary" className="text-[9px] px-1 py-0 h-4">
+                    Basic
+                  </Badge>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Aggregated Feature Pills */}
         <div className="flex flex-wrap gap-2">
           {requirements.needsAvatar && (
             <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-primary/10 border border-primary/30">
               <User className="w-3.5 h-3.5 text-primary" />
               <span className="text-xs font-medium">Avatar</span>
-              <Check className="w-3 h-3 text-accent" />
+              <Check className="w-3 h-3 text-green-500" />
             </div>
           )}
           {requirements.needsAnimation && (
             <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-accent/10 border border-accent/30">
               <Sparkles className="w-3.5 h-3.5 text-accent" />
               <span className="text-xs font-medium">Animations</span>
-              <Check className="w-3 h-3 text-accent" />
+              <Check className="w-3 h-3 text-green-500" />
             </div>
           )}
           {requirements.needs3D && (
             <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-secondary/50 border border-secondary">
               <Box className="w-3.5 h-3.5 text-primary" />
               <span className="text-xs font-medium">3D Elements</span>
-              <Check className="w-3 h-3 text-accent" />
+              <Check className="w-3 h-3 text-green-500" />
             </div>
           )}
           {!requirements.needsAvatar && !requirements.needsAnimation && !requirements.needs3D && (
@@ -197,16 +279,26 @@ export const StyleDrivenProductionConfig: React.FC<StyleDrivenConfigProps> = ({
         </div>
 
         {/* Provider Attribution */}
-        {(requirements.needsAvatar || requirements.needs3D) && (
+        {(requirements.needsAvatar || requirements.needs3D || requirements.needsAnimation) && (
           <div className="mt-2 pt-2 border-t border-border/50">
             <div className="flex flex-wrap gap-1.5">
               {Array.from(requirements.avatarProviders).map(p => (
-                <Badge key={p} variant="outline" className="text-[9px] px-1.5 py-0">
+                <Badge key={`avatar-${p}`} variant="outline" className="text-[9px] px-1.5 py-0 gap-1">
+                  <User className="w-2 h-2" />
                   {p}
                 </Badge>
               ))}
               {Array.from(requirements.threeDProviders).map(p => (
-                <Badge key={p} variant="outline" className="text-[9px] px-1.5 py-0">
+                <Badge key={`3d-${p}`} variant="outline" className="text-[9px] px-1.5 py-0 gap-1">
+                  <Box className="w-2 h-2" />
+                  {p}
+                </Badge>
+              ))}
+              {Array.from(requirements.animationProviders).filter(p => 
+                !requirements.avatarProviders.has(p) && !requirements.threeDProviders.has(p)
+              ).map(p => (
+                <Badge key={`anim-${p}`} variant="outline" className="text-[9px] px-1.5 py-0 gap-1">
+                  <Sparkles className="w-2 h-2" />
                   {p}
                 </Badge>
               ))}
@@ -214,6 +306,21 @@ export const StyleDrivenProductionConfig: React.FC<StyleDrivenConfigProps> = ({
           </div>
         )}
       </div>
+
+      {/* TTS Style Summary */}
+      {requirements.ttsStyles.size > 0 && (
+        <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/30 border">
+          <Mic className="w-4 h-4 text-muted-foreground" />
+          <span className="text-xs text-muted-foreground">Voice styles:</span>
+          <div className="flex flex-wrap gap-1">
+            {Array.from(requirements.ttsStyles).map(tts => (
+              <Badge key={tts} variant="secondary" className="text-[10px]">
+                {tts}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Advanced Options (Collapsible) - Only show if avatar is needed */}
       {requirements.needsAvatar && (
@@ -270,9 +377,8 @@ export const StyleDrivenProductionConfig: React.FC<StyleDrivenConfigProps> = ({
 
       {/* Style Summary */}
       <div className="text-[10px] text-muted-foreground">
-        {selectedStyles.length} style{selectedStyles.length > 1 ? 's' : ''} selected → 
-        {requirements.ttsStyles.size > 0 && ` ${Array.from(requirements.ttsStyles).join(', ')} TTS •`}
-        {requirements.pacing !== 'normal' && ` ${requirements.pacing} pacing`}
+        {selectedStyles.length} style{selectedStyles.length > 1 ? 's' : ''} selected
+        {requirements.pacing !== 'normal' && ` • ${requirements.pacing} pacing`}
       </div>
     </div>
   );

@@ -858,13 +858,22 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
           </div>
         </TabsContent>
 
-        {/* Library Tab */}
+        {/* Library Tab - Genie Cast Specific (Landing Page Videos) */}
         <TabsContent value="library">
           <Card>
             <CardHeader>
-              <CardTitle>Generated Videos Library</CardTitle>
-              <CardDescription>
-                {existingVideos.length} complete videos ready for landing page
+              <CardTitle className="flex items-center gap-2">
+                <Film className="w-5 h-5 text-primary" />
+                Genie Cast Video Library
+              </CardTitle>
+              <CardDescription className="space-y-1">
+                <span className="block">
+                  {existingVideos.length} complete marketing videos for landing pages
+                </span>
+                <span className="block text-xs text-muted-foreground/80">
+                  <strong>Note:</strong> This is different from Create → Library which stores general content assets (scripts, recordings, media). 
+                  This library specifically holds Genie Cast generated marketing videos.
+                </span>
               </CardDescription>
             </CardHeader>
             <CardContent>
