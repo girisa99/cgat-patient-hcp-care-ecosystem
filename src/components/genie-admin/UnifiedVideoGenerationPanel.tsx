@@ -9,7 +9,7 @@
  * 1. Upload Screenshots (unlimited per product) → 2. Select mode → 3. Generate → 4. Preview → 5. Publish
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Play,
@@ -53,7 +53,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { MultiScreenshotGallery, ProductGallery } from './MultiScreenshotGallery';
 import { VideoGenerationMatrix } from './VideoGenerationMatrix';
-import { FullProductionModeConfig, DEFAULT_PRODUCTION_CONFIG, REGIONAL_AVATARS, type ProductionModeConfig } from './FullProductionModeConfig';
+import { DEFAULT_PRODUCTION_CONFIG, REGIONAL_AVATARS, type ProductionModeConfig } from './FullProductionModeConfig';
 import { TokenConsumptionBreakdown } from './TokenConsumptionBreakdown';
 import { ProductChangeAlertPanel } from './ProductChangeAlertPanel';
 import { MessagingImprovementPanel } from './MessagingImprovementPanel';
@@ -61,6 +61,7 @@ import { FeatureVideoGenerator } from './FeatureVideoGenerator';
 import { GenieCastFlowDiagram } from './GenieCastFlowDiagram';
 import { uploadBrandLogosToStorage } from '@/services/marketing/brandAssetUploadService';
 import { GenieCastOverview, VideoStyleCards, AIProviderShowcase, type VideoStyleType } from './genie-cast';
+import { StyleDrivenProductionConfig, deriveProductionRequirements } from './genie-cast/StyleDrivenProductionConfig';
 import { getStylePipelineConfig, styleRequiresAvatar, styleRequires3D } from '@/config/video-style-pipeline-mapping';
 // Supported languages with zone routing
 const LANGUAGES = [
@@ -178,21 +179,17 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
   const [existingVideos, setExistingVideos] = useState<ExistingVideo[]>([]);
   const [loadingExisting, setLoadingExisting] = useState(true);
   
-  // Full Production Mode state
-  const [enableFullProduction, setEnableFullProduction] = useState(() => {
-    try {
-      const saved = localStorage.getItem(GENIE_CAST_STATE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        return parsed?.enableFullProduction ?? false;
-      }
-    } catch { /* ignore */ }
-    return false;
-  });
+  // Production config for avatar gender preference
   const [productionConfig, setProductionConfig] = useState<ProductionModeConfig>(DEFAULT_PRODUCTION_CONFIG);
   
   // Skip TTS regeneration if audio already exists (saves credits)
   const [skipExistingTTS, setSkipExistingTTS] = useState(true);
+  
+  // Derive production requirements from selected styles
+  const styleRequirements = useMemo(
+    () => deriveProductionRequirements(selectedVideoStyles),
+    [selectedVideoStyles]
+  );
 
   // Persist tab state when it changes
   useEffect(() => {
@@ -205,12 +202,12 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
     const stateToSave = {
       selectedLanguage,
       quality,
-      enableFullProduction,
+      selectedVideoStyles,
       savedAt: Date.now(),
     };
     console.log('[GenieCast] Persisting panel state:', stateToSave);
     localStorage.setItem(GENIE_CAST_STATE_KEY, JSON.stringify(stateToSave));
-  }, [selectedLanguage, quality, enableFullProduction]);
+  }, [selectedLanguage, quality, selectedVideoStyles]);
 
   // Log restoration on mount
   useEffect(() => {
@@ -218,16 +215,18 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
       activeTab,
       selectedLanguage,
       quality,
-      enableFullProduction,
+      selectedVideoStyles,
+      styleRequirements,
     });
   }, []);
 
   const selectedLang = LANGUAGES.find(l => l.code === selectedLanguage);
   const totalDuration = CHAPTERS.reduce((sum, c) => sum + c.duration, 0);
   
-  // Calculate estimated time based on production mode
+  // Calculate estimated time based on style requirements
+  const isFullProduction = styleRequirements.needsAvatar || styleRequirements.needsAnimation || styleRequirements.needs3D;
   const baseTime = 7; // minutes
-  const productionMultiplier = enableFullProduction ? productionConfig.estimatedTimeMultiplier : 1;
+  const productionMultiplier = isFullProduction ? productionConfig.estimatedTimeMultiplier : 1;
   const estimatedTime = Math.round(baseTime * productionMultiplier);
 
   // Load existing videos from database
@@ -304,25 +303,28 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
             pacing: styleConfig.pacing,
             toneModifier: styleConfig.toneModifier,
           },
-          // Full Production Mode settings (enhanced with style requirements)
-          fullProductionMode: enableFullProduction || styleRequiresAvatar(selectedVideoStyle) || styleRequires3D(selectedVideoStyle),
-          productionConfig: enableFullProduction ? {
+          // Full Production Mode settings (derived from style requirements)
+          fullProductionMode: isFullProduction,
+          productionConfig: isFullProduction ? {
             avatar: {
-              enabled: productionConfig.enableAvatar || styleRequiresAvatar(selectedVideoStyle),
+              enabled: styleRequirements.needsAvatar,
               gender: productionConfig.avatarGender,
-              placement: productionConfig.avatarPlacement,
-              size: productionConfig.avatarSize,
+              placement: 'intro_outro',
+              size: 'medium',
               style: selectedVideoStyle.includes('avatar') ? selectedVideoStyle.replace('ugc_avatar_', '') : 'photorealistic',
+              providers: Array.from(styleRequirements.avatarProviders),
             },
             animations: {
-              enabled: productionConfig.enableAnimations,
-              style: productionConfig.transitionStyle,
-              intensity: productionConfig.animationIntensity,
+              enabled: styleRequirements.needsAnimation,
+              style: 'kinetic',
+              intensity: 70,
+              providers: Array.from(styleRequirements.animationProviders),
             },
             threeD: {
-              enabled: productionConfig.enable3D || styleRequires3D(selectedVideoStyle),
-              style: productionConfig.threeDStyle,
-              quality: productionConfig.renderQuality,
+              enabled: styleRequirements.needs3D,
+              style: 'rotating',
+              quality: quality === 'cinematic' ? 'premium' : 'high',
+              providers: Array.from(styleRequirements.threeDProviders),
             },
           } : null,
         },
@@ -514,59 +516,31 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
 
         {/* Generate Tab - Flat Layout */}
         <TabsContent value="generate" className="space-y-6">
-          {/* Selected Styles Summary - Synced from Overview */}
+          {/* Selected Styles Header - Compact */}
           {selectedVideoStyles.length > 0 && (
-            <div className="p-3 rounded-lg border border-primary/20 bg-primary/5">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <Palette className="w-4 h-4 text-primary" />
-                  <span className="text-sm font-medium">Selected Styles</span>
-                  <Badge variant="secondary" className="text-[10px]">
-                    from Overview
+            <div className="flex items-center justify-between p-2 rounded-lg bg-muted/30 border">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Palette className="w-4 h-4 text-primary" />
+                <span className="text-sm font-medium">Styles:</span>
+                {selectedVideoStyles.slice(0, 4).map(styleId => (
+                  <Badge key={styleId} variant="outline" className="text-[10px]">
+                    {styleId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                   </Badge>
-                </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-6 text-xs"
-                  onClick={() => setActiveTab('overview')}
-                >
-                  Edit Styles
-                </Button>
+                ))}
+                {selectedVideoStyles.length > 4 && (
+                  <Badge variant="secondary" className="text-[10px]">
+                    +{selectedVideoStyles.length - 4} more
+                  </Badge>
+                )}
               </div>
-              <div className="flex flex-wrap gap-1.5">
-                {selectedVideoStyles.map(styleId => {
-                  const styleConfig = getStylePipelineConfig(styleId);
-                  const requiresAvatar = styleRequiresAvatar(styleId);
-                  const requires3D = styleRequires3D(styleId);
-                  return (
-                    <Badge 
-                      key={styleId} 
-                      variant="outline" 
-                      className="text-[10px] gap-1"
-                    >
-                      {styleId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                      {requiresAvatar && <User className="w-2.5 h-2.5 text-primary" />}
-                      {requires3D && <Box className="w-2.5 h-2.5 text-primary" />}
-                    </Badge>
-                  );
-                })}
-              </div>
-              {/* Auto-enable Full Production hint */}
-              {selectedVideoStyles.some(s => styleRequiresAvatar(s) || styleRequires3D(s)) && !enableFullProduction && (
-                <div className="mt-2 flex items-center gap-2 text-xs text-destructive">
-                  <AlertTriangle className="w-3 h-3" />
-                  <span>Selected styles require Full Production Mode for avatars/3D</span>
-                  <Button
-                    variant="link" 
-                    size="sm" 
-                    className="h-auto p-0 text-xs text-primary"
-                    onClick={() => setEnableFullProduction(true)}
-                  >
-                    Enable
-                  </Button>
-                </div>
-              )}
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 text-xs"
+                onClick={() => setActiveTab('overview')}
+              >
+                Edit
+              </Button>
             </div>
           )}
 
@@ -641,46 +615,16 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
                 />
               </div>
 
-              {/* Full Production Mode Toggle */}
-              <div className={cn(
-                "p-3 rounded-lg border transition-all",
-                enableFullProduction 
-                  ? "bg-primary/5 border-primary/30" 
-                  : "bg-muted/20 border-border"
-              )}>
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-2">
-                    <Crown className={cn("w-4 h-4", enableFullProduction ? "text-primary" : "text-muted-foreground")} />
-                    <Label htmlFor="fullprod" className="text-sm font-medium">Full Production Mode</Label>
-                  </div>
-                  <Switch 
-                    id="fullprod" 
-                    checked={enableFullProduction} 
-                    onCheckedChange={setEnableFullProduction}
-                  />
-                </div>
-                <div className="text-xs text-muted-foreground flex items-center gap-2">
-                  {enableFullProduction ? (
-                    <>
-                      <User className="w-3 h-3" /> Avatar
-                      <Sparkles className="w-3 h-3" /> Animations
-                      <Box className="w-3 h-3" /> 3D
-                    </>
-                  ) : (
-                    'Add AI Avatar, animations, and 3D showcases'
-                  )}
-                </div>
-              </div>
-
-              {/* Full Production Mode Config (when enabled) */}
-              {enableFullProduction && (
-                <FullProductionModeConfig
-                  config={productionConfig}
-                  onConfigChange={setProductionConfig}
-                  selectedLanguage={selectedLanguage}
-                  disabled={isGenerating}
-                />
-              )}
+              {/* Style-Driven Production Configuration */}
+              <StyleDrivenProductionConfig
+                selectedStyles={selectedVideoStyles}
+                selectedLanguage={selectedLanguage}
+                onNavigateToOverview={() => setActiveTab('overview')}
+                avatarGender={productionConfig.avatarGender}
+                onAvatarGenderChange={(gender) => setProductionConfig(prev => ({ ...prev, avatarGender: gender }))}
+                quality={quality}
+                disabled={isGenerating}
+              />
 
               {/* Reuse Existing TTS Toggle */}
               <div className="p-3 bg-muted/30 rounded-lg">
@@ -708,7 +652,7 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
               <TokenConsumptionBreakdown
                 config={productionConfig}
                 selectedLanguage={selectedLanguage}
-                isFullProduction={enableFullProduction}
+                isFullProduction={isFullProduction}
               />
 
               {/* Video Info */}
@@ -719,7 +663,7 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
                 </div>
                 <div className="text-xs text-muted-foreground">
                   {CHAPTERS.length} chapters • ~{Math.round(totalDuration / 60)} min content
-                  {enableFullProduction && (
+                  {isFullProduction && (
                     <span className="ml-1 text-primary font-medium">
                       • ~{estimatedTime} min to generate
                     </span>
