@@ -230,6 +230,11 @@ export const useVideoBlueprints = () => {
     interactive: 'Interactive',
     image_to_video: 'Image to Video',
     seasonal: 'Seasonal',
+    travel: 'Travel & Tourism',
+    avatar: 'Avatar',
+    ppt: 'PPT/Slides',
+    smb: 'Small Business',
+    oil_gas: 'Oil & Gas',
     other: 'Other'
   };
 

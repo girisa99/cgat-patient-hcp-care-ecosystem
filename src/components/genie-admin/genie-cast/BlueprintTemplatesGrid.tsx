@@ -83,6 +83,9 @@ const categoryIcons: Record<string, React.ReactNode> = {
   travel: <Plane className="h-4 w-4" />,
   avatar: <User className="h-4 w-4" />,
   effects: <Palette className="h-4 w-4" />,
+  ppt: <Layers className="h-4 w-4" />,
+  smb: <Building2 className="h-4 w-4" />,
+  oil_gas: <Zap className="h-4 w-4" />,
 };
 
 const categoryColors: Record<string, string> = {
@@ -101,6 +104,9 @@ const categoryColors: Record<string, string> = {
   travel: 'bg-sky-500/20 text-sky-400 border-sky-500/30',
   avatar: 'bg-fuchsia-500/20 text-fuchsia-400 border-fuchsia-500/30',
   effects: 'bg-teal-500/20 text-teal-400 border-teal-500/30',
+  ppt: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+  smb: 'bg-lime-500/20 text-lime-400 border-lime-500/30',
+  oil_gas: 'bg-stone-500/20 text-stone-400 border-stone-500/30',
 };
 
 // Category gradient backgrounds for cards without thumbnails
@@ -120,6 +126,9 @@ const categoryGradients: Record<string, string> = {
   travel: 'bg-gradient-to-br from-sky-600/30 via-cyan-500/20 to-blue-600/30',
   avatar: 'bg-gradient-to-br from-fuchsia-600/30 via-pink-500/20 to-purple-600/30',
   effects: 'bg-gradient-to-br from-teal-600/30 via-emerald-500/20 to-green-600/30',
+  ppt: 'bg-gradient-to-br from-yellow-600/30 via-amber-500/20 to-orange-600/30',
+  smb: 'bg-gradient-to-br from-lime-600/30 via-green-500/20 to-emerald-600/30',
+  oil_gas: 'bg-gradient-to-br from-stone-600/30 via-slate-500/20 to-gray-600/30',
 };
 
 // AI Provider info for badges
@@ -174,7 +183,7 @@ const REGION_FILTERS = [
   { value: 'indonesia', label: '🇮🇩 Indonesia' },
 ];
 
-// Industry filters
+// Industry filters - EXPANDED with SMB, Oil & Gas, PPT
 const INDUSTRY_FILTERS = [
   { value: 'all', label: 'All Industries' },
   { value: 'saas', label: '💻 SaaS/Tech' },
@@ -190,6 +199,22 @@ const INDUSTRY_FILTERS = [
   { value: 'hospitality', label: '🏨 Hospitality' },
   { value: 'gaming', label: '🎮 Gaming' },
   { value: 'fitness', label: '💪 Fitness/Wellness' },
+  // NEW: SMB Industries
+  { value: 'restaurants', label: '🍽️ Restaurants' },
+  { value: 'coffee', label: '☕ Coffee Shops' },
+  { value: 'grocery', label: '🛒 Grocery' },
+  { value: 'auto_repair', label: '🔧 Auto Repair' },
+  { value: 'cleaners', label: '🧹 Cleaners' },
+  { value: 'salon', label: '💇 Salons/Beauty' },
+  { value: 'food', label: '🍕 Food & Beverage' },
+  { value: 'smb', label: '🏪 Small Business' },
+  // NEW: Oil & Gas
+  { value: 'oil_gas', label: '⛽ Oil & Gas' },
+  { value: 'energy', label: '⚡ Energy' },
+  // NEW: PPT & Presentations
+  { value: 'ppt', label: '📊 PPT/Slides' },
+  { value: 'presentations', label: '🎯 Presentations' },
+  { value: 'schools', label: '🏫 Schools/Learning' },
 ];
 
 export function BlueprintTemplatesGrid({
