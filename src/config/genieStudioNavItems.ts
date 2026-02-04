@@ -217,7 +217,7 @@ export const genieStudioNavItems: GenieNavItem[] = [
   // Genie Cast - SINGLE ENTRY POINT for all video production
   {
     title: "Genie Cast",
-    url: "/genie-admin?tab=landing-videos",
+    url: "/genie-admin?tab=genie-cast",
     icon: Film,
     description: "Unified video production: CREATE → PRODUCE → MANAGE → PUBLISH",
     minTier: 'free',
