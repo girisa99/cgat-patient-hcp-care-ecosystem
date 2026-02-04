@@ -46,8 +46,8 @@ interface StyleDrivenConfigProps {
   disabled?: boolean;
 }
 
-// Style display names
-const STYLE_DISPLAY_NAMES: Record<VideoStyleType, string> = {
+// Style display names - use Partial since not all styles need explicit mapping
+const STYLE_DISPLAY_NAMES: Partial<Record<VideoStyleType, string>> = {
   smart_storytelling: 'Smart Storytelling',
   hook_videos: 'Hook Videos',
   micro_drama: 'Micro-Drama',
@@ -64,6 +64,11 @@ const STYLE_DISPLAY_NAMES: Record<VideoStyleType, string> = {
   social: 'Social Media',
   video_ads: 'Video Ads',
   product_demo: 'Product Demo',
+};
+
+// Helper to get style display name with fallback
+const getStyleDisplayName = (styleId: VideoStyleType): string => {
+  return STYLE_DISPLAY_NAMES[styleId] || styleId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 };
 
 // Derive what production features are needed from styles

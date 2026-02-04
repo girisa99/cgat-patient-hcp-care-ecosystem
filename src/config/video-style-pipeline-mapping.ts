@@ -8,9 +8,15 @@
  * - Visual generation parameters
  * 
  * Used by Genie Cast, Vibe, and Deck for consistent style generation
+ * 
+ * NOTE: Uses MASTER_VIDEO_STYLES from master-ecosystem-registry.ts as source of truth
  */
 
-import type { VideoStyleType, AvatarStyleType } from '@/components/genie-admin/genie-cast/VideoStyleCards';
+import { MASTER_VIDEO_STYLES, type VideoStyleId } from '@/config/master-ecosystem-registry';
+
+// Re-export for backward compatibility
+export type VideoStyleType = VideoStyleId;
+export type AvatarStyleType = 'photorealistic' | '3d_pixar' | '2d_animated';
 
 // Provider routing for each video style
 export interface StyleProviderConfig {
@@ -23,8 +29,20 @@ export interface StyleProviderConfig {
   pacing?: 'slow' | 'normal' | 'fast' | 'dynamic';
 }
 
-// Maps video styles to their AI provider configurations (only styles in VideoStyleType)
-export const VIDEO_STYLE_PROVIDERS: Record<VideoStyleType, StyleProviderConfig> = {
+// Auto-generate provider config from master registry
+export const VIDEO_STYLE_PROVIDERS: Partial<Record<VideoStyleId, StyleProviderConfig>> = MASTER_VIDEO_STYLES.reduce((acc, style) => {
+  acc[style.id] = {
+    videoProvider: style.videoProvider,
+    avatarProvider: style.avatarProvider,
+    animationProvider: style.animationProvider,
+    ttsStyle: style.ttsStyle,
+    pacing: style.pacing,
+  };
+  return acc;
+}, {} as Record<VideoStyleId, StyleProviderConfig>);
+
+// Legacy mapping for backward compatibility (subset of styles)
+const LEGACY_VIDEO_STYLE_PROVIDERS: Record<string, StyleProviderConfig> = {
   // === STORYTELLING ===
   smart_storytelling: {
     videoProvider: 'vertex-ai',
