@@ -715,13 +715,18 @@ export const ROUTING_SUMMARY = {
 } as const;
 
 // Freeze all routing configs to prevent mutation
+Object.freeze(INTEGRATED_PROVIDERS);
+Object.freeze(VIDEO_ASSEMBLY_ROUTING);
 Object.freeze(TTS_MASTER_ROUTING);
 Object.freeze(TTS_LANGUAGE_ROUTING);
 Object.freeze(VIDEO_MASTER_ROUTING);
 Object.freeze(IMAGE_MASTER_ROUTING);
 Object.freeze(AVATAR_MASTER_ROUTING);
-Object.freeze(THREED_MASTER_ROUTING);
+Object.freeze(THREED_MASTER_ROUTING);  // VR/AR included here
 Object.freeze(AUDIO_MASTER_ROUTING);
 Object.freeze(STYLE_MASTER_ROUTING);
 Object.freeze(TEMPLATE_MASTER_ROUTING);
 Object.freeze(ROUTING_SUMMARY);
+Object.freeze(ARABIC_DIALECTS);
+Object.freeze(ZONE_COUNTRIES);
+Object.freeze(LANGUAGE_TO_ZONE);
