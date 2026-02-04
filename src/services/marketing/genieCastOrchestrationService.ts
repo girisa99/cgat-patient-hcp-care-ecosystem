@@ -379,7 +379,7 @@ class GenieCastOrchestrationService {
               // Get product screenshots
               const screenshots = allScreenshots?.get(productId) || [];
 
-              // Call edge function
+              // Call edge function with FULL messaging context
               const { data, error } = await supabase.functions.invoke('genie-cast-assembler', {
                 body: {
                   language: lang,
@@ -397,6 +397,24 @@ class GenieCastOrchestrationService {
                     order: s.order,
                   })),
                   useApprovedMessaging: request.useApprovedMessaging,
+                  // NEW: Pass full approved messaging object for rich script generation
+                  approvedMessaging: messagingContext?.messaging ? {
+                    headline: messagingContext.messaging.headline,
+                    hook: messagingContext.messaging.hook,
+                    subHook: messagingContext.messaging.subHook,
+                    cta: messagingContext.messaging.cta,
+                    ctaSecondary: messagingContext.messaging.ctaSecondary,
+                    valueProposition: messagingContext.messaging.valueProposition,
+                    painPoints: messagingContext.messaging.painPoints,
+                    benefits: messagingContext.messaging.benefits,
+                    differentiators: messagingContext.messaging.differentiators,
+                    openingLine: messagingContext.messaging.openingLine,
+                    closingLine: messagingContext.messaging.closingLine,
+                    transitionPhrases: messagingContext.messaging.transitionPhrases,
+                    shortScript: messagingContext.messaging.shortScript,
+                    mediumScript: messagingContext.messaging.mediumScript,
+                    longScript: messagingContext.messaging.longScript,
+                  } : null,
                 },
               });
 
