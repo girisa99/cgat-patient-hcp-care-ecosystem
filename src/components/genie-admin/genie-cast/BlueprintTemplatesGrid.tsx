@@ -148,6 +148,10 @@ const CAPABILITY_FILTERS = [
   { value: 'video_effects', label: '✨ Video Effects' },
   { value: 'pixar_style', label: '🎨 Pixar Style' },
   { value: 'anime_style', label: '🎌 Anime Style' },
+  { value: 'motion_control', label: '🎯 Motion Control' },
+  { value: 'video_extend', label: '📏 Video Extend' },
+  { value: 'transitions', label: '🔀 Transitions' },
+  { value: 'voice_clone', label: '🎤 Voice Clone' },
 ];
 
 // Regional filters
@@ -164,6 +168,24 @@ const REGION_FILTERS = [
   { value: 'caribbean', label: '🏝️ Caribbean' },
   { value: 'pakistan', label: '🇵🇰 Pakistan' },
   { value: 'indonesia', label: '🇮🇩 Indonesia' },
+];
+
+// Industry filters
+const INDUSTRY_FILTERS = [
+  { value: 'all', label: 'All Industries' },
+  { value: 'saas', label: '💻 SaaS/Tech' },
+  { value: 'healthcare', label: '🏥 Healthcare' },
+  { value: 'travel', label: '✈️ Travel/Tourism' },
+  { value: 'finance', label: '💰 Finance/Banking' },
+  { value: 'retail', label: '🛍️ Retail/E-commerce' },
+  { value: 'education', label: '📚 Education' },
+  { value: 'entertainment', label: '🎬 Entertainment' },
+  { value: 'consulting', label: '📊 Consulting' },
+  { value: 'automotive', label: '🚗 Automotive' },
+  { value: 'real_estate', label: '🏠 Real Estate' },
+  { value: 'hospitality', label: '🏨 Hospitality' },
+  { value: 'gaming', label: '🎮 Gaming' },
+  { value: 'fitness', label: '💪 Fitness/Wellness' },
 ];
 
 export function BlueprintTemplatesGrid({
@@ -284,14 +306,16 @@ export function BlueprintTemplatesGrid({
     }
   };
 
-  // Seed expanded templates
-  const seedExpandedTemplates = async () => {
+  // Seed comprehensive templates (150+ with all regions, providers, industries)
+  const [isSeeding150, setIsSeeding150] = useState(false);
+  const seedComprehensiveTemplates = async () => {
+    setIsSeeding150(true);
     try {
-      const { data, error } = await supabase.functions.invoke('seed-blueprints-expanded');
+      const { data, error } = await supabase.functions.invoke('seed-blueprints-comprehensive');
       if (error) throw error;
       toast({
-        title: 'Templates Expanded',
-        description: `Added ${data.created} new templates (${data.skipped} already existed)`,
+        title: 'Full Template Library Loaded!',
+        description: `Added ${data.created} templates (${data.skipped} already existed). Total: ${data.total}`,
       });
       refetch();
     } catch (err: any) {
@@ -300,35 +324,112 @@ export function BlueprintTemplatesGrid({
         description: err.message || 'Could not seed templates',
         variant: 'destructive',
       });
+    } finally {
+      setIsSeeding150(false);
     }
   };
 
-  // Seed full library (Animation, 3D, Interactive, Seasonal, Image-to-Video)
-  const seedFullLibrary = async () => {
+  // Seed provider-specific templates
+  const [isSeedingProviders, setIsSeedingProviders] = useState(false);
+  const seedProviderTemplates = async () => {
+    setIsSeedingProviders(true);
     try {
-      const { data, error } = await supabase.functions.invoke('seed-blueprints-full-library');
+      const { data, error } = await supabase.functions.invoke('seed-provider-templates');
       if (error) throw error;
       toast({
-        title: 'Full Library Added',
-        description: `Added ${data.created} templates: Animation, 3D, Interactive, Seasonal, Image-to-Video`,
+        title: 'Provider Templates Added',
+        description: `Added ${data.created} provider-specific templates`,
       });
       refetch();
     } catch (err: any) {
       toast({
         title: 'Seeding Failed',
-        description: err.message || 'Could not seed full library',
+        description: err.message || 'Could not seed provider templates',
         variant: 'destructive',
       });
+    } finally {
+      setIsSeedingProviders(false);
     }
   };
 
-  // Filter blueprints
+  // Industry filter state
+  const [industryFilter, setIndustryFilter] = useState<string>('all');
+
+  // Filter blueprints - fully wired with all filters
   const filteredBlueprints = useMemo(() => {
     let filtered = blueprints;
 
     // Category filter
     if (activeCategory !== 'all') {
       filtered = filtered.filter(bp => bp.category === activeCategory);
+    }
+
+    // Industry filter - check industry_tags array
+    if (industryFilter !== 'all') {
+      filtered = filtered.filter(bp =>
+        bp.industry_tags?.some(tag => tag.toLowerCase().includes(industryFilter.toLowerCase()))
+      );
+    }
+
+    // Capability filter - check default_settings.ai_capabilities or name
+    if (capabilityFilter !== 'all') {
+      filtered = filtered.filter(bp => {
+        const settings = bp.default_settings as any;
+        const capabilities = settings?.ai_capabilities || [];
+        const capTags = capabilities.map((c: any) => c.type?.toLowerCase() || '');
+        const nameLC = bp.name.toLowerCase();
+        const descLC = (bp.description || '').toLowerCase();
+        
+        // Match capability
+        if (capabilityFilter === 'text_to_video') return nameLC.includes('video') || capTags.includes('video');
+        if (capabilityFilter === 'image_to_video') return nameLC.includes('image-to-video') || nameLC.includes('image to video');
+        if (capabilityFilter === '3d_generation') return nameLC.includes('3d') || capTags.includes('3d');
+        if (capabilityFilter === 'avatar') return nameLC.includes('avatar') || capTags.includes('avatar');
+        if (capabilityFilter === 'full_body_avatar') return nameLC.includes('full body') || descLC.includes('full body');
+        if (capabilityFilter === 'lipsync') return nameLC.includes('lipsync') || capTags.includes('lipsync');
+        if (capabilityFilter === 'tts') return nameLC.includes('tts') || nameLC.includes('voiceover') || capTags.includes('audio');
+        if (capabilityFilter === 'music_gen') return nameLC.includes('music') || capTags.includes('music');
+        if (capabilityFilter === 'video_effects') return nameLC.includes('effect') || capTags.includes('effects');
+        if (capabilityFilter === 'pixar_style') return nameLC.includes('pixar') || descLC.includes('pixar');
+        if (capabilityFilter === 'anime_style') return nameLC.includes('anime') || descLC.includes('anime');
+        if (capabilityFilter === 'motion_control') return nameLC.includes('motion') || descLC.includes('motion control');
+        if (capabilityFilter === 'video_extend') return nameLC.includes('extend') || descLC.includes('extend');
+        if (capabilityFilter === 'transitions') return nameLC.includes('transition') || capTags.includes('effects');
+        if (capabilityFilter === 'voice_clone') return nameLC.includes('voice clone') || nameLC.includes('dubbing');
+        
+        return true;
+      });
+    }
+
+    // Region filter - check default_settings.regional_variants or name
+    if (regionFilter !== 'all') {
+      filtered = filtered.filter(bp => {
+        const settings = bp.default_settings as any;
+        const regions = settings?.regional_variants || [];
+        const nameLC = bp.name.toLowerCase();
+        const descLC = (bp.description || '').toLowerCase();
+        
+        // Direct region match
+        if (regions.includes(regionFilter)) return true;
+        
+        // Fallback to name/description match
+        const regionKeywords: Record<string, string[]> = {
+          western: ['western', 'us', 'american', 'english'],
+          europe: ['europe', 'european', 'german', 'french', 'italian'],
+          cjk: ['cjk', 'china', 'japan', 'korea', 'chinese', 'japanese', 'korean', 'anime'],
+          india: ['india', 'indian', 'hindi', 'bollywood'],
+          mena: ['mena', 'arabic', 'arab', 'middle east', 'rtl'],
+          sea: ['sea', 'southeast asia', 'thailand', 'vietnam', 'indonesia'],
+          africa: ['africa', 'african', 'nigeria'],
+          latam: ['latam', 'latin america', 'spanish', 'portuguese', 'brazil'],
+          caribbean: ['caribbean', 'tropical', 'island'],
+          pakistan: ['pakistan', 'urdu', 'pakistani'],
+          indonesia: ['indonesia', 'indonesian', 'jakarta'],
+        };
+        
+        const keywords = regionKeywords[regionFilter] || [];
+        return keywords.some(kw => nameLC.includes(kw) || descLC.includes(kw));
+      });
     }
 
     // Search filter
@@ -342,7 +443,7 @@ export function BlueprintTemplatesGrid({
     }
 
     return filtered;
-  }, [blueprints, activeCategory, searchQuery]);
+  }, [blueprints, activeCategory, searchQuery, capabilityFilter, regionFilter, industryFilter]);
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -388,11 +489,16 @@ export function BlueprintTemplatesGrid({
             )}
           </Button>
           <Button 
-            onClick={seedExpandedTemplates}
-            className="gap-2"
+            onClick={seedComprehensiveTemplates}
+            disabled={isSeeding150}
+            className="gap-2 bg-gradient-to-r from-primary to-primary/80"
           >
-            <Globe2 className="h-4 w-4" />
-            Full Library (50+)
+            {isSeeding150 ? (
+              <RefreshCw className="h-4 w-4 animate-spin" />
+            ) : (
+              <Globe2 className="h-4 w-4" />
+            )}
+            Full Library (150+)
           </Button>
         </div>
       </div>
@@ -437,20 +543,82 @@ export function BlueprintTemplatesGrid({
             <Button
               variant="outline"
               size="sm"
-              onClick={seedExpandedTemplates}
+              onClick={seedProviderTemplates}
+              disabled={isSeedingProviders}
               className="gap-2"
             >
-              <Globe2 className="h-4 w-4" />
-              Add Core
+              {isSeedingProviders ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Cpu className="h-4 w-4" />}
+              + Provider Templates
             </Button>
             <Button
               size="sm"
-              onClick={seedFullLibrary}
-              className="gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+              onClick={seedComprehensiveTemplates}
+              disabled={isSeeding150}
+              className="gap-2 bg-gradient-to-r from-primary to-accent"
             >
-              <Sparkles className="h-4 w-4" />
-              Full Library (Animation, 3D, Seasonal...)
+              {isSeeding150 ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+              Full Library (150+)
             </Button>
+          </div>
+        </div>
+
+        {/* Filter Row - Industry, Capability, Region */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-muted-foreground">Filters:</span>
+          </div>
+          
+          <Select value={industryFilter} onValueChange={setIndustryFilter}>
+            <SelectTrigger className="w-[160px] h-8 text-xs">
+              <SelectValue placeholder="Industry" />
+            </SelectTrigger>
+            <SelectContent>
+              {INDUSTRY_FILTERS.map(f => (
+                <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <Select value={capabilityFilter} onValueChange={setCapabilityFilter}>
+            <SelectTrigger className="w-[160px] h-8 text-xs">
+              <SelectValue placeholder="Capability" />
+            </SelectTrigger>
+            <SelectContent>
+              {CAPABILITY_FILTERS.map(f => (
+                <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <Select value={regionFilter} onValueChange={setRegionFilter}>
+            <SelectTrigger className="w-[180px] h-8 text-xs">
+              <SelectValue placeholder="Region" />
+            </SelectTrigger>
+            <SelectContent>
+              {REGION_FILTERS.map(f => (
+                <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          {(industryFilter !== 'all' || capabilityFilter !== 'all' || regionFilter !== 'all') && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setIndustryFilter('all');
+                setCapabilityFilter('all');
+                setRegionFilter('all');
+              }}
+              className="h-8 text-xs"
+            >
+              Clear Filters
+            </Button>
+          )}
+          
+          <div className="ml-auto text-sm text-muted-foreground">
+            Showing {filteredBlueprints.length} of {blueprints.length} templates
           </div>
         </div>
 
