@@ -178,19 +178,21 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
     <div className="space-y-4">
       {/* Main 4-Tab Navigation */}
       <Tabs value={activeMainTab} onValueChange={(v) => setActiveMainTab(v as ConsolidatedTab)}>
-        <TabsList className="grid w-full grid-cols-4 h-auto p-1 bg-muted/50">
+        <TabsList className="grid w-full grid-cols-4 h-auto p-1.5 bg-card border rounded-lg shadow-sm">
           {(Object.entries(TAB_DEFINITIONS) as [ConsolidatedTab, typeof TAB_DEFINITIONS.create][]).map(([key, def]) => (
             <TabsTrigger 
               key={key}
               value={key}
               className={cn(
-                "flex flex-col items-center gap-1 py-3 px-2 data-[state=active]:shadow-md transition-all",
-                "data-[state=active]:bg-background"
+                "flex flex-col items-center gap-1 py-3 px-2 transition-all rounded-md",
+                "text-foreground font-semibold",
+                "data-[state=active]:shadow-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground",
+                "data-[state=inactive]:bg-transparent data-[state=inactive]:hover:bg-muted/50"
               )}
             >
               <def.icon className="w-5 h-5" />
               <span className="text-xs font-bold tracking-wide">{def.label}</span>
-              <span className="text-[10px] text-muted-foreground hidden sm:block">{def.description}</span>
+              <span className="text-[10px] opacity-70 hidden sm:block">{def.description}</span>
             </TabsTrigger>
           ))}
         </TabsList>

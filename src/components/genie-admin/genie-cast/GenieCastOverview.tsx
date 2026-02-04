@@ -2,12 +2,14 @@
  * GENIE CAST OVERVIEW - COMPACT STUDIO HEADER
  * 
  * Clean, focused overview with:
- * - Multi-select style dropdown at the top
+ * - Multi-select style dropdown (pulls from MASTER_ECOSYSTEM_REGISTRY)
  * - AI provider chips (no marquee to prevent scroll)
  * - Compact quick action buttons
+ * 
+ * Now uses 43+ styles from master registry instead of hardcoded list
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Camera, 
   Zap, 
@@ -28,34 +30,41 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import type { VideoStyleType } from './VideoStyleCards';
+import { 
+  MASTER_VIDEO_STYLES, 
+  getVideoStylesByCategory,
+  calculateEcosystemMetrics,
+  type VideoStyleCategory,
+} from '@/config/master-ecosystem-registry';
 
-// Style definitions with categories
+// Style definitions derived from master registry
 interface VideoStyle {
   id: VideoStyleType;
   title: string;
   category: string;
 }
 
-const VIDEO_STYLES: VideoStyle[] = [
-  { id: 'smart_storytelling', title: 'Smart Storytelling', category: 'Storytelling' },
-  { id: 'hook_videos', title: 'Hook Videos', category: 'Storytelling' },
-  { id: 'micro_drama', title: 'Micro-Drama', category: 'Storytelling' },
-  { id: 'ugc_avatar_photorealistic', title: 'Photorealistic Avatar', category: 'Avatar' },
-  { id: 'ugc_avatar_3d_pixar', title: '3D Pixar Style', category: 'Avatar' },
-  { id: 'ugc_avatar_2d_animated', title: '2D Animated', category: 'Avatar' },
-  { id: 'talking_photos', title: 'Talking Photos', category: 'Avatar' },
-  { id: 'anime', title: 'Anime Style', category: 'Animation' },
-  { id: 'image_to_life', title: 'Image to Life', category: 'Animation' },
-  { id: 'explainer_3d', title: '3D Explainer', category: 'Animation' },
-  { id: 'educational', title: 'Educational', category: 'Interactive' },
-  { id: 'interactive_quiz', title: 'Quiz Overlay', category: 'Interactive' },
-  { id: 'cta_videos', title: 'CTA Videos', category: 'Interactive' },
-  { id: 'social', title: 'Social Media', category: 'Marketing' },
-  { id: 'video_ads', title: 'Video Ads', category: 'Marketing' },
-  { id: 'product_demo', title: 'Product Demo', category: 'Marketing' },
+// Category display order
+const CATEGORY_ORDER: VideoStyleCategory[] = [
+  'storytelling', 'avatar', 'animation', 'interactive', 'marketing',
+  'enterprise', 'healthcare', 'entertainment', 'education', 'ecommerce'
 ];
 
-const CATEGORIES = ['Storytelling', 'Avatar', 'Animation', 'Interactive', 'Marketing'];
+// Category labels
+const CATEGORY_LABELS: Record<string, string> = {
+  storytelling: 'Storytelling',
+  avatar: 'Avatar & Presenters',
+  animation: 'Animation',
+  interactive: 'Interactive',
+  marketing: 'Marketing',
+  enterprise: 'Enterprise',
+  healthcare: 'Healthcare',
+  entertainment: 'Entertainment',
+  education: 'Education',
+  ecommerce: 'E-Commerce',
+  news_media: 'News & Media',
+  social_platform: 'Social Platform',
+};
 
 interface GenieCastOverviewProps {
   selectedStyles: VideoStyleType[];
@@ -71,6 +80,43 @@ export const GenieCastOverview: React.FC<GenieCastOverviewProps> = ({
   className,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  
+  // Get metrics from registry
+  const metrics = useMemo(() => calculateEcosystemMetrics(), []);
+
+  // Convert master registry to simple format
+  const VIDEO_STYLES: VideoStyle[] = useMemo(() => 
+    MASTER_VIDEO_STYLES.map(s => ({
+      id: s.id as VideoStyleType,
+      title: s.title,
+      category: CATEGORY_LABELS[s.category] || s.category,
+    }))
+  , []);
+
+  // Get ordered category keys for rendering
+  const CATEGORIES = useMemo(() => 
+    CATEGORY_ORDER
+      .filter(cat => MASTER_VIDEO_STYLES.some(s => s.category === cat))
+      .map(cat => CATEGORY_LABELS[cat] || cat)
+  , []);
+
+  // Group styles by category
+  const groupedStyles = useMemo(() => {
+    const groups: Record<string, VideoStyle[]> = {};
+    CATEGORY_ORDER.forEach(cat => {
+      const catStyles = MASTER_VIDEO_STYLES
+        .filter(s => s.category === cat)
+        .map(s => ({
+          id: s.id as VideoStyleType,
+          title: s.title,
+          category: CATEGORY_LABELS[cat] || cat,
+        }));
+      if (catStyles.length > 0) {
+        groups[CATEGORY_LABELS[cat] || cat] = catStyles;
+      }
+    });
+    return groups;
+  }, []);
 
   const toggleStyle = (styleId: VideoStyleType) => {
     if (selectedStyles.includes(styleId)) {
@@ -92,11 +138,6 @@ export const GenieCastOverview: React.FC<GenieCastOverviewProps> = ({
     return VIDEO_STYLES.find(s => s.id === id)?.title || id;
   };
 
-  const groupedStyles = CATEGORIES.reduce((acc, cat) => {
-    acc[cat] = VIDEO_STYLES.filter(s => s.category === cat);
-    return acc;
-  }, {} as Record<string, VideoStyle[]>);
-
   return (
     <div className={cn("space-y-3 max-w-full overflow-hidden", className)}>
       {/* Compact Header Row */}
@@ -105,9 +146,11 @@ export const GenieCastOverview: React.FC<GenieCastOverviewProps> = ({
           <div className="w-7 h-7 rounded-md bg-gradient-to-br from-primary to-accent flex items-center justify-center">
             <Film className="w-3.5 h-3.5 text-white" />
           </div>
-          <h2 className="text-base font-semibold">Genie Cast</h2>
+          <h2 className="text-base font-semibold text-foreground">Genie Cast</h2>
         </div>
-        <Badge variant="secondary" className="text-[10px] h-5">30 AI Models</Badge>
+        <Badge variant="secondary" className="text-[10px] h-5">
+          {metrics.providers.total} Providers • {metrics.videoStyles.total} Styles
+        </Badge>
       </div>
 
       {/* Style Selector - Compact */}
