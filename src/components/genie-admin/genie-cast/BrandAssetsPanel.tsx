@@ -91,13 +91,14 @@ export const BrandAssetsPanel: React.FC<BrandAssetsPanelProps> = ({ className, o
   const [isSyncing, setIsSyncing] = useState(false);
   const [selectedColors, setSelectedColors] = useState<Record<string, string>>({});
 
-  // Load existing logos from storage
+  // Load existing logos from storage - check root level (where files actually are)
   const loadLogos = useCallback(async () => {
     setIsLoading(true);
     try {
+      // Files are stored at ROOT level, not in logos/ subfolder
       const { data: files, error } = await supabase.storage
         .from('brand-assets')
-        .list('logos', { limit: 100 });
+        .list('', { limit: 100 });
 
       if (error) {
         console.error('[BrandAssets] Error loading logos:', error);
@@ -111,12 +112,22 @@ export const BrandAssetsPanel: React.FC<BrandAssetsPanelProps> = ({ className, o
         return;
       }
 
+      console.log('[BrandAssets] Found files:', files?.length, files?.map(f => f.name));
+
       const logoAssets: LogoAsset[] = Object.keys(PRODUCT_BRAND_CONFIG).map(productId => {
-        const file = files?.find(f => f.name.toLowerCase().includes(productId.toLowerCase()));
+        // Map ask_genie to ask-genie for file matching
+        const searchId = productId === 'ask_genie' ? 'ask-genie' : productId;
+        // Look for files like genie-spark-logo.png or genie-spark-logo.jpg
+        const file = files?.find(f => 
+          f.name.toLowerCase().includes(`genie-${searchId}-logo`) ||
+          f.name.toLowerCase().includes(`${searchId}-logo`)
+        );
+        
         if (file) {
+          // Get public URL from ROOT level
           const { data: urlData } = supabase.storage
             .from('brand-assets')
-            .getPublicUrl(`logos/${file.name}`);
+            .getPublicUrl(file.name);
           return {
             productId: productId as GenieProductId,
             url: urlData.publicUrl,
@@ -131,6 +142,7 @@ export const BrandAssetsPanel: React.FC<BrandAssetsPanelProps> = ({ className, o
         };
       });
 
+      console.log('[BrandAssets] Logo assets:', logoAssets.map(l => `${l.productId}: ${l.status}`));
       setLogos(logoAssets);
     } catch (err) {
       console.error('[BrandAssets] Error:', err);
@@ -209,10 +221,13 @@ export const BrandAssetsPanel: React.FC<BrandAssetsPanelProps> = ({ className, o
     }
   };
 
-  // Upload custom logo
+  // Upload custom logo - upload to ROOT level
   const handleUploadLogo = async (productId: GenieProductId, file: File) => {
     try {
-      const fileName = `logos/${productId}-logo.${file.name.split('.').pop()}`;
+      // Map ask_genie to ask-genie for consistent naming
+      const fileId = productId === 'ask_genie' ? 'ask-genie' : productId;
+      const extension = file.name.split('.').pop() || 'png';
+      const fileName = `genie-${fileId}-logo.${extension}`;
       
       const { error } = await supabase.storage
         .from('brand-assets')

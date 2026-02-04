@@ -15,7 +15,8 @@
  * - Optional immediate transcreation to 14 languages
  */
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { useRegionalDetection } from '@/hooks/useRegionalDetection';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles,
@@ -60,6 +61,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cn } from '@/lib/utils';
 import { useAIMessaging } from '@/hooks/useAIMessaging';
 import { type GenieProductId, GENIE_PRODUCTS } from '@/services/marketing/productVersionTrackingService';
+import { VirtualizedMessagingMatrix } from './genie-cast/VirtualizedMessagingMatrix';
 import { toast } from 'sonner';
 
 interface MessagingGeneratorPanelProps {
@@ -129,6 +131,16 @@ export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = (
     isGenerating,
     latestMessaging,
   } = useAIMessaging({ showNotifications: true });
+
+  // Regional detection for IP-based transcreation
+  const { 
+    selectedRegion, 
+    detectedRegion, 
+    regionName, 
+    isRTL, 
+    setRegion, 
+    resetToDetected 
+  } = useRegionalDetection();
 
   // Generation mode
   const [generationMode, setGenerationMode] = useState<GenerationMode>('single');
@@ -916,6 +928,35 @@ export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = (
                   </div>
                 </div>
 
+                {/* Regional Detection Banner */}
+                <Card className="border-blue-200/50 bg-blue-50/30 dark:bg-blue-950/10 p-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Globe className="w-4 h-4 text-blue-500" />
+                      <div>
+                        <p className="text-xs font-medium">Auto-Detected Region</p>
+                        <p className="text-sm font-semibold">{regionName} ({selectedRegion.toUpperCase()})</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {isRTL && (
+                        <Badge variant="outline" className="text-[10px]">RTL</Badge>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 text-[10px]"
+                        onClick={resetToDetected}
+                      >
+                        Reset
+                      </Button>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    IP-based detection routes TTS/Video to optimal regional providers
+                  </p>
+                </Card>
+
                 {/* Transcreation Mode */}
                 <div className="space-y-3 pt-2 border-t">
                   <Label className="text-sm font-medium flex items-center gap-2">
@@ -1060,92 +1101,84 @@ export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = (
           </div>
         </TabsContent>
 
-        {/* Matrix View Tab */}
+        {/* Matrix View Tab - Using VirtualizedMessagingMatrix */}
         <TabsContent value="matrix" className="space-y-6 mt-6">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Grid3X3 className="w-5 h-5" />
-                    Product × Audience Matrix
-                  </CardTitle>
-                  <CardDescription>
-                    {matrixStats.totalCombinations} total combinations • {matrixStats.approvedCount} products with approved messaging
-                  </CardDescription>
-                </div>
-                <Button 
-                  onClick={handleMatrixGenerate}
-                  disabled={isBatchGenerating}
-                  className="gap-2"
-                >
-                  {isBatchGenerating ? (
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Wand2 className="w-4 h-4" />
-                  )}
-                  Generate Full Matrix
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left p-2 font-medium">Product</th>
-                      {targetAudiences.map(audience => (
-                        <th key={audience.id} className="text-center p-2 font-medium text-xs">
-                          {audience.label}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {MAIN_PRODUCTS.map(productId => {
-                      const product = products[productId];
-                      const hasApproved = approvedByProduct[productId];
-                      
-                      return (
-                        <tr key={productId} className="border-b hover:bg-muted/30">
-                          <td className="p-2">
-                            <div className="flex items-center gap-2">
-                              <div 
-                                className="w-3 h-3 rounded-full"
-                                style={{ backgroundColor: PRODUCT_COLORS[productId] }}
-                              />
-                              <span className="font-medium">{product?.name}</span>
-                              {hasApproved && (
-                                <CheckCircle className="w-3 h-3 text-green-500" />
-                              )}
-                            </div>
-                          </td>
-                          {targetAudiences.map(audience => {
-                            // Check if we have approved messaging for this combo
-                            const hasMsgForAudience = hasApproved; // Simplified - in reality would check audience
-                            
-                            return (
-                              <td key={audience.id} className="text-center p-2">
-                                {hasMsgForAudience ? (
-                                  <Badge variant="default" className="text-[10px]">
-                                    ✓
-                                  </Badge>
-                                ) : (
-                                  <Badge variant="outline" className="text-[10px] text-muted-foreground">
-                                    —
-                                  </Badge>
-                                )}
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
+          <VirtualizedMessagingMatrix
+            products={products}
+            audiences={targetAudiences.map(a => ({ id: a.id, label: a.label }))}
+            messagingData={(() => {
+              // Build messaging data from approved + pending
+              const data: Array<{
+                id: string;
+                productId: GenieProductId;
+                audienceId: string;
+                status: 'pending' | 'approved' | 'rejected' | 'missing';
+                messaging?: { headline: string; hook: string; cta: string; valueProposition: string; };
+                generatedAt?: string;
+                approvedAt?: string;
+              }> = [];
+              
+              // Create entries for all product × audience combinations
+              MAIN_PRODUCTS.forEach(productId => {
+                targetAudiences.forEach(audience => {
+                  const approvedMsg = approvedByProduct[productId];
+                  const pendingReq = pendingApprovals.find(p => p.productId === productId);
+                  
+                  if (approvedMsg) {
+                    data.push({
+                      id: `${productId}_${audience.id}_approved`,
+                      productId,
+                      audienceId: audience.id,
+                      status: 'approved',
+                      messaging: {
+                        headline: approvedMsg.headline || '',
+                        hook: approvedMsg.hook || '',
+                        cta: approvedMsg.cta || '',
+                        valueProposition: approvedMsg.valueProposition || '',
+                      },
+                      approvedAt: approvedMsg.approvedAt?.toISOString?.() || undefined,
+                    });
+                  } else if (pendingReq) {
+                    data.push({
+                      id: pendingReq.id,
+                      productId,
+                      audienceId: audience.id,
+                      status: 'pending',
+                      // Pending requests don't have messaging content yet
+                      generatedAt: pendingReq.generatedAt?.toISOString?.() || undefined,
+                    });
+                  } else {
+                    data.push({
+                      id: `${productId}_${audience.id}_missing`,
+                      productId,
+                      audienceId: audience.id,
+                      status: 'missing',
+                    });
+                  }
+                });
+              });
+              
+              return data;
+            })()}
+            onApprove={(itemId) => {
+              const pending = pendingApprovals.find(p => p.id === itemId);
+              if (pending) {
+                handleApprove(itemId);
+              }
+            }}
+            onReject={(itemId) => {
+              rejectMessaging(itemId, 'admin');
+            }}
+            onGenerate={(productId, audienceId) => {
+              generateMessaging(productId, {
+                type: 'product',
+                targetAudience: [audienceId],
+                competitors: [],
+              });
+            }}
+            onGenerateAll={handleMatrixGenerate}
+            isGenerating={isBatchGenerating || isGenerating}
+          />
         </TabsContent>
 
         {/* Pending Approval Tab */}
