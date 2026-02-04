@@ -188,10 +188,37 @@ serve(async (req) => {
       productionConfig = null,
       // Accept screenshots from orchestration service
       screenshots = [] as Array<{ screenId: string; imageUrl: string; order: number; productId?: string }>,
-      customScript = null,
-      customHook = null,
-      customCta = null,
+      // AI Messaging integration (from aiMessagingGeneratorService)
+      customScript = null as string | null,
+      customHook = null as string | null,
+      customCta = null as string | null,
       useApprovedMessaging = false,
+      // Approved messaging data (passed from orchestration service)
+      approvedMessaging = null as {
+        headline?: string;
+        hook?: string;
+        subHook?: string;
+        cta?: string;
+        ctaSecondary?: string;
+        valueProposition?: string;
+        painPoints?: string[];
+        benefits?: string[];
+        differentiators?: string[];
+        openingLine?: string;
+        closingLine?: string;
+        transitionPhrases?: string[];
+        shortScript?: string;
+        mediumScript?: string;
+        longScript?: string;
+      } | null,
+      // Per-chapter messaging (from Matrix view)
+      chapterMessaging = null as Record<string, {
+        hook?: string;
+        script?: string;
+        cta?: string;
+        painPoints?: string[];
+        benefits?: string[];
+      }> | null,
       // NEW: Skip TTS regeneration if audio already exists
       skipExistingTTS = false,
       // NEW: Generate unified audio track (seamless, no breaks between chapters)
@@ -214,6 +241,16 @@ serve(async (req) => {
         };
       } | null,
     } = await req.json();
+    
+    // Create messaging context for script generation
+    const messagingContext = {
+      customScript,
+      customHook,
+      customCta,
+      useApprovedMessaging,
+      approvedMessaging,
+      chapterMessaging,
+    };
     
     console.log(`📷 Received ${screenshots.length} screenshots from orchestration service`);
 
@@ -251,6 +288,14 @@ serve(async (req) => {
     const chapterResults: ChapterResult[] = [];
     let totalDuration = 0;
     
+    // Log messaging context
+    if (useApprovedMessaging || approvedMessaging) {
+      console.log(`📝 Using approved messaging: hook="${approvedMessaging?.hook?.substring(0, 50)}..."`);
+    }
+    if (chapterMessaging) {
+      console.log(`📝 Chapter-specific messaging provided for: ${Object.keys(chapterMessaging).join(', ')}`);
+    }
+    
     // ═══════════════════════════════════════════════════════════════════════════════
     // UNIFIED AUDIO GENERATION (Seamless single track for all chapters)
     // ═══════════════════════════════════════════════════════════════════════════════
@@ -261,8 +306,9 @@ serve(async (req) => {
       console.log(`🎵 Generating unified audio track for seamless playback...`);
       
       // Combine all chapter scripts into one continuous script with natural transitions
+      // NOW INTEGRATES: approved messaging, hooks, CTAs, and positioning statements
       const allChapterScripts = CHAPTERS.map(chapter => {
-        const script = getChapterScript(chapter.id, language, styleConfig);
+        const script = getChapterScript(chapter.id, language, styleConfig, messagingContext);
         return script;
       }).join(' ... '); // Add natural pauses between chapters
       
@@ -863,17 +909,148 @@ interface StyleConfig {
   };
 }
 
+// ============================================================================
+// MESSAGING CONTEXT INTERFACE
+// Defines the structure for approved messaging integration
+// ============================================================================
+interface MessagingContextType {
+  customScript?: string | null;
+  customHook?: string | null;
+  customCta?: string | null;
+  useApprovedMessaging?: boolean;
+  approvedMessaging?: {
+    headline?: string;
+    hook?: string;
+    subHook?: string;
+    cta?: string;
+    ctaSecondary?: string;
+    valueProposition?: string;
+    painPoints?: string[];
+    benefits?: string[];
+    differentiators?: string[];
+    openingLine?: string;
+    closingLine?: string;
+    transitionPhrases?: string[];
+    shortScript?: string;
+    mediumScript?: string;
+    longScript?: string;
+  } | null;
+  chapterMessaging?: Record<string, {
+    hook?: string;
+    script?: string;
+    cta?: string;
+    painPoints?: string[];
+    benefits?: string[];
+  }> | null;
+}
+
 /**
- * DYNAMIC SCRIPT GENERATION
- * Adapts scripts based on selected video style configuration
+ * DYNAMIC SCRIPT GENERATION WITH MESSAGING INTEGRATION
+ * 
+ * Priority order:
+ * 1. Chapter-specific custom messaging (from Matrix view)
+ * 2. Approved messaging (from aiMessagingGeneratorService)
+ * 3. Custom script/hook/cta (from Quick Generate)
+ * 4. Rich transcreated base scripts (landing page quality)
+ * 
+ * Adapts scripts based on selected video style configuration:
  * - Hook Videos: Strong attention-grabbing hooks, high energy
  * - Educational: Clear, informative, methodical
  * - UGC Avatar / 3D Pixar: Warm, playful, conversational
  * - Smart Storytelling: Emotional narrative arc
  */
-function getChapterScript(chapterId: string, language: string, styleConfig?: StyleConfig | null): string {
+function getChapterScript(
+  chapterId: string, 
+  language: string, 
+  styleConfig?: StyleConfig | null,
+  messagingContext?: MessagingContextType | null
+): string {
+  
   // ═══════════════════════════════════════════════════════════════════════════════
-  // RICH TRANSCREATED SCRIPTS - Full, engaging content from landing page showcase
+  // PRIORITY 1: Chapter-specific custom messaging (from Matrix view)
+  // ═══════════════════════════════════════════════════════════════════════════════
+  if (messagingContext?.chapterMessaging?.[chapterId]) {
+    const chapterMsg = messagingContext.chapterMessaging[chapterId];
+    if (chapterMsg.script) {
+      console.log(`   📝 Using chapter-specific script for ${chapterId}`);
+      let script = chapterMsg.script;
+      
+      // Prepend hook if available
+      if (chapterMsg.hook) {
+        script = `${chapterMsg.hook}\n\n${script}`;
+      }
+      
+      // Append CTA if available and this is a product chapter
+      if (chapterMsg.cta && chapterId !== 'opening') {
+        script = `${script}\n\n${chapterMsg.cta}`;
+      }
+      
+      // Apply style transformations
+      if (styleConfig) {
+        script = applyStyleTransformations(chapterId, script, styleConfig, language);
+      }
+      
+      return script;
+    }
+  }
+  
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // PRIORITY 2: Approved messaging from aiMessagingGeneratorService
+  // ═══════════════════════════════════════════════════════════════════════════════
+  if (messagingContext?.useApprovedMessaging && messagingContext?.approvedMessaging) {
+    const msg = messagingContext.approvedMessaging;
+    
+    // Build script from approved messaging components
+    let script = '';
+    
+    if (chapterId === 'opening') {
+      // Opening uses headline, hook, and value proposition
+      script = buildOpeningFromMessaging(msg);
+    } else if (chapterId === 'closing') {
+      // Closing uses closing line and CTA
+      script = buildClosingFromMessaging(msg);
+    } else {
+      // Product chapters use medium script or build from components
+      script = buildProductChapterFromMessaging(chapterId, msg);
+    }
+    
+    if (script) {
+      console.log(`   📝 Using approved messaging for ${chapterId}`);
+      
+      // Apply style transformations
+      if (styleConfig) {
+        script = applyStyleTransformations(chapterId, script, styleConfig, language);
+      }
+      
+      return script;
+    }
+  }
+  
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // PRIORITY 3: Custom script/hook/cta (from Quick Generate)
+  // ═══════════════════════════════════════════════════════════════════════════════
+  if (messagingContext?.customScript && chapterId === 'opening') {
+    let script = messagingContext.customScript;
+    
+    if (messagingContext.customHook) {
+      script = `${messagingContext.customHook}\n\n${script}`;
+    }
+    
+    if (messagingContext.customCta) {
+      script = `${script}\n\n${messagingContext.customCta}`;
+    }
+    
+    console.log(`   📝 Using custom script for ${chapterId}`);
+    
+    if (styleConfig) {
+      script = applyStyleTransformations(chapterId, script, styleConfig, language);
+    }
+    
+    return script;
+  }
+  
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // PRIORITY 4: RICH TRANSCREATED SCRIPTS - Full, engaging content
   // These are the same professional scripts used on the landing page for each language
   // ═══════════════════════════════════════════════════════════════════════════════
   
@@ -1071,6 +1248,118 @@ AI驱动的增强功能提升您的信息。您的语言中的真实声音，听
   }
   
   return script;
+}
+
+/**
+ * Build opening chapter from approved messaging
+ */
+function buildOpeningFromMessaging(msg: MessagingContextType['approvedMessaging']): string {
+  if (!msg) return '';
+  
+  const parts: string[] = [];
+  
+  // Start with hook or headline
+  if (msg.hook) {
+    parts.push(msg.hook);
+  } else if (msg.headline) {
+    parts.push(msg.headline);
+  }
+  
+  // Add opening line if different from hook
+  if (msg.openingLine && msg.openingLine !== msg.hook) {
+    parts.push(msg.openingLine);
+  }
+  
+  // Add value proposition
+  if (msg.valueProposition) {
+    parts.push(msg.valueProposition);
+  }
+  
+  // Add sub-hook for intrigue
+  if (msg.subHook) {
+    parts.push(msg.subHook);
+  }
+  
+  // Add a transition phrase if available
+  if (msg.transitionPhrases && msg.transitionPhrases.length > 0) {
+    parts.push(msg.transitionPhrases[0]);
+  }
+  
+  return parts.join('\n\n');
+}
+
+/**
+ * Build closing chapter from approved messaging
+ */
+function buildClosingFromMessaging(msg: MessagingContextType['approvedMessaging']): string {
+  if (!msg) return '';
+  
+  const parts: string[] = [];
+  
+  // Add differentiators as a summary
+  if (msg.differentiators && msg.differentiators.length > 0) {
+    parts.push(msg.differentiators.slice(0, 2).join('. ') + '.');
+  }
+  
+  // Add closing line
+  if (msg.closingLine) {
+    parts.push(msg.closingLine);
+  }
+  
+  // Add CTA
+  if (msg.cta) {
+    parts.push(msg.cta);
+  }
+  
+  // Add secondary CTA for urgency
+  if (msg.ctaSecondary) {
+    parts.push(msg.ctaSecondary);
+  }
+  
+  return parts.join('\n\n');
+}
+
+/**
+ * Build product chapter from approved messaging
+ * Uses medium script if available, otherwise builds from components
+ */
+function buildProductChapterFromMessaging(chapterId: string, msg: MessagingContextType['approvedMessaging']): string {
+  if (!msg) return '';
+  
+  // Prefer pre-written scripts
+  if (msg.mediumScript) {
+    return msg.mediumScript;
+  }
+  
+  if (msg.shortScript) {
+    return msg.shortScript;
+  }
+  
+  // Build from components
+  const parts: string[] = [];
+  
+  // Start with a pain point (problem)
+  if (msg.painPoints && msg.painPoints.length > 0) {
+    parts.push(`Ever struggled with ${msg.painPoints[0].toLowerCase()}?`);
+  }
+  
+  // Add value proposition as solution
+  if (msg.valueProposition) {
+    parts.push(msg.valueProposition);
+  }
+  
+  // Add benefits
+  if (msg.benefits && msg.benefits.length > 0) {
+    const benefitText = msg.benefits.slice(0, 3).join('. ') + '.';
+    parts.push(benefitText);
+  }
+  
+  // Add transition for next chapter
+  if (msg.transitionPhrases && msg.transitionPhrases.length > 1) {
+    parts.push(msg.transitionPhrases[1]);
+  }
+  
+  return parts.join('\n\n');
 }
 
 /**
