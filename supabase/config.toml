@@ -404,3 +404,6 @@ verify_jwt = false
 
 [functions.generate-template-ai]
 verify_jwt = false
+
+[functions.queue-missing-thumbnails]
+verify_jwt = false
