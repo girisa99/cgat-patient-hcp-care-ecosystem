@@ -5,18 +5,32 @@ Updated: just now
 
 The file `src/config/master-provider-routing-registry.ts` is the **single source of truth** for ALL media capability routing. All configs are frozen via `Object.freeze()` to prevent mutation.
 
+### 18 Integrated Providers
+
+**VIDEO**: Vertex Veo 3, Sora 2, Alibaba Wan 2.6/2.2, ModelsLab, Replicate, DeepSeek
+**IMAGE**: Gemini 3 Pro, Vertex Imagen 3, Banana Nano, ModelsLab FLUX/SDXL, Stability SDXL, OpenAI DALL-E
+**LLM**: Claude 3.5, Qwen Max, Gemini Pro, GPT-4o, DeepSeek V3, Mistral, Cohere, Groq
+**TTS**: Azure Neural, Alibaba CosyVoice, Google TTS, ElevenLabs, OpenAI TTS, Amazon Polly
+**STT**: Deepgram Nova 2, Alibaba Paraformer, Azure STT, OpenAI Whisper
+**AVATAR/3D**: Alibaba Wan 2.2, OmniAvatar, TaoAvatar, MACH, Meshy AI, ModelsLab 3D
+**TRANSLATION**: DeepL, Qwen-MT, Azure Translator, Google Translate, AWS Translate
+
 ### TTS Routing Hierarchy (Differentiator-First)
 
 | Region/Zone | PRIMARY | SECONDARY | TERTIARY | Voice Clone |
 |-------------|---------|-----------|----------|-------------|
 | **Western/Europe/LATAM** | Azure Neural | Alibaba CosyVoice | Google TTS | ElevenLabs (premium) |
 | **CJK (China/Japan/Korea)** | Alibaba CosyVoice | Azure Neural | Google TTS | Alibaba CosyVoice |
-| **MENA/RTL (Arabic/Hebrew)** | Azure Neural | Alibaba CosyVoice | Google TTS | ElevenLabs |
+| **MENA/RTL (7 Arabic dialects)** | Azure Neural | Alibaba CosyVoice | Google TTS | ElevenLabs |
 | **South Asia (India/Pakistan/Bangladesh)** | Azure Neural | Google TTS | Alibaba CosyVoice | ElevenLabs |
 | **SEA (Indonesia/Vietnam/Thailand)** | Azure Neural | Google TTS | Alibaba CosyVoice | ElevenLabs |
 | **Africa (Swahili/Yoruba/Amharic)** | Azure Neural | Google TTS | Alibaba CosyVoice | — |
 
-**Key**: ElevenLabs is **NEVER** primary for production TTS. Azure Neural provides Viseme data for lip-sync.
+**Key**: 
+- Azure Neural is PRIMARY for MENA/RTL because it provides superior Viseme data for lip-sync
+- 7 Arabic dialects: ar-SA, ar-AE, ar-EG, ar-MA, ar-JO, ar-IQ, ar-LB
+- ElevenLabs is **NEVER** primary for production TTS (premium clone only)
+- Alibaba CosyVoice PRIMARY for CJK (native dialect handling)
 
 ### Video Generation Hierarchy
 
@@ -79,6 +93,17 @@ The file `src/config/master-provider-routing-registry.ts` is the **single source
 | **Cinematic** | Vertex Veo 3 | Sora 2 | Alibaba Wan 2.6 |
 | **Watercolor** | ModelsLab | Vertex Imagen 3 | Alibaba |
 
+### LLM Routing by Zone
+
+| Zone | PRIMARY | FALLBACK |
+|------|---------|----------|
+| **Claude Zone** (Western/EU) | Claude 3.5 Sonnet | GPT-4o |
+| **Alibaba Zone** (CJK/MENA) | Qwen Max | GPT-4o |
+| **Gemini Zone** (India/SEA/Africa) | Gemini Pro | GPT-4o |
+| **Technical/Code** | DeepSeek V3 | Claude 3.5 |
+| **Enterprise Embeddings** | Cohere | OpenAI |
+| **Ultra-Fast Inference** | Groq | Gemini Flash |
+
 ### Enforcement
 
 All routing configurations in `master-provider-routing-registry.ts` are **frozen** with `Object.freeze()`. Any code that needs provider routing MUST import from this file:
@@ -87,14 +112,19 @@ All routing configurations in `master-provider-routing-registry.ts` are **frozen
 import { 
   getTTSRouting, 
   getVideoRouting, 
-  getAvatarRouting 
+  getAvatarRouting,
+  INTEGRATED_PROVIDERS,
+  ARABIC_DIALECTS,
+  RTL_LANGUAGES,
 } from '@/config/master-provider-routing-registry';
 ```
 
 ### Competitive Differentiators
 
 1. **Azure Neural over ElevenLabs** for production TTS → Superior Viseme data for lip-sync
-2. **Alibaba CosyVoice for CJK** → Native dialect support
-3. **Vertex Veo 3 over Sora** for video → Better availability
-4. **Gemini 3 Pro over DALL-E** for images → Cost-effective, higher quality
-5. **Deepgram Nova 2 for STT** → <100ms real-time latency
+2. **7 Arabic dialects** vs competitors' 1-2 → ar-SA, ar-AE, ar-EG, ar-MA, ar-JO, ar-IQ, ar-LB
+3. **Alibaba CosyVoice for CJK** → Native dialect support (keigo, tones)
+4. **Vertex Veo 3 over Sora** for video → Better availability
+5. **Gemini 3 Pro over DALL-E** for images → Cost-effective, higher quality
+6. **Deepgram Nova 2 for STT** → <100ms real-time latency
+7. **18 integrated providers** vs competitors' 1-3 → Maximum flexibility
