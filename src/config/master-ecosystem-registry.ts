@@ -198,7 +198,7 @@ export const MASTER_AI_PROVIDERS: AIProviderEntry[] = [
     speedScore: 99,
     strengths: ['<100ms latency', 'Best STT accuracy', '36+ languages', 'Real-time streaming'],
     models: ['nova-2', 'nova-2-streaming'],
-    wiredToGenieCast: false, // GAP: Wire to Genie Cast
+    wiredToGenieCast: true, // Video captioning, STT for voice input
   },
   {
     id: 'sora2api',
@@ -213,7 +213,7 @@ export const MASTER_AI_PROVIDERS: AIProviderEntry[] = [
     speedScore: 60,
     strengths: ['Cinematic quality', 'Realistic scenes', 'Film quality', 'Documentary style'],
     models: ['sora-1.0-turbo', 'sora-1.0'],
-    wiredToGenieCast: false, // GAP: Wire to Genie Cast
+    wiredToGenieCast: true, // Documentary, micro-drama, narrative styles
   },
 
   // ═══════════════════════════════════════════════════════════════
@@ -356,7 +356,7 @@ export const MASTER_AI_PROVIDERS: AIProviderEntry[] = [
     speedScore: 85,
     strengths: ['Ultra low cost', 'Best Chinese', 'Technical content', 'Code'],
     models: ['deepseek-chat', 'deepseek-coder', 'deepseek-vl'],
-    wiredToGenieCast: false, // GAP: Wire to Genie Cast
+    wiredToGenieCast: true, // Alibaba zone fallback LLM, CJK translation
   },
   {
     id: 'replicate',
@@ -401,7 +401,7 @@ export const MASTER_AI_PROVIDERS: AIProviderEntry[] = [
     speedScore: 60,
     strengths: ['Open source', 'Free tier', 'Customizable', 'Privacy'],
     models: ['FLUX.1-schnell', 'mistral-7b', 'llama-3'],
-    wiredToGenieCast: false, // GAP: Wire to Genie Cast
+    wiredToGenieCast: true, // Free tier fallback, FLUX.1-schnell for images
   },
 ];
 

@@ -63,11 +63,14 @@ import { MessagingGeneratorPanel } from './MessagingGeneratorPanel';
 import { FeatureVideoGenerator } from './FeatureVideoGenerator';
 import { GenieCastFlowDiagram } from './GenieCastFlowDiagram';
 import { uploadBrandLogosToStorage } from '@/services/marketing/brandAssetUploadService';
-import { GenieCastOverview, VideoStyleCards, AIProviderShowcase, type VideoStyleType } from './genie-cast';
+import { GenieCastOverview, VideoStyleCards, AIProviderShowcase, GenieCastConsolidatedTabs, type VideoStyleType } from './genie-cast';
 import { StyleDrivenProductionConfig, deriveProductionRequirements } from './genie-cast/StyleDrivenProductionConfig';
 import { getStylePipelineConfig, styleRequiresAvatar, styleRequires3D } from '@/config/video-style-pipeline-mapping';
 import { useVideoStatusPolling } from '@/hooks/useVideoStatusPolling';
 import { GenieCastHubMockup } from './genie-cast/mockups';
+
+// Feature flag for new consolidated 4-tab structure
+const USE_CONSOLIDATED_TABS = true;
 // Supported languages with zone routing
 const LANGUAGES = [
   { code: 'en', name: 'English', flag: '🇺🇸', zone: 'Claude Zone', tts: 'ElevenLabs' },
@@ -438,6 +441,30 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
 
   const currentVideo = generatedVideos.get(selectedLanguage);
 
+  // NEW: Consolidated 4-Tab Structure (CREATE/PRODUCE/MANAGE/PUBLISH)
+  if (USE_CONSOLIDATED_TABS) {
+    return (
+      <div className="space-y-6">
+        <GenieCastConsolidatedTabs
+          selectedVideoStyles={selectedVideoStyles}
+          onStylesChange={setSelectedVideoStyles}
+          screenshotGalleries={screenshotGalleries}
+          onGalleriesUpdated={(galleries) => {
+            setScreenshotGalleries(galleries);
+            const total = galleries.reduce((sum, g) => sum + g.screenshots.length, 0);
+            if (total > 0) {
+              toast.success(`${total} screenshots ready for video generation`);
+            }
+          }}
+          totalScreenshots={totalScreenshots}
+          onGenerate={handleGenerate}
+          isGenerating={isGenerating}
+        />
+      </div>
+    );
+  }
+
+  // LEGACY: Old 10-tab structure (will be removed after validation)
   return (
     <div className="space-y-6">
       {/* Tabs - Responsive with scroll */}
