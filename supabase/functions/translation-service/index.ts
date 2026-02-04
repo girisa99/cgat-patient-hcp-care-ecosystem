@@ -300,9 +300,9 @@ async function translateWithAmazon(
   formality?: 'formal' | 'informal' | 'neutral'
 ): Promise<TranslationResponse> {
   // Amazon Translate requires AWS SDK which is complex in Deno
-  // Fallback to Lovable AI translation
-  console.log('[TranslationService] Amazon Translate not implemented, using Lovable AI translation');
-  return translateWithLovableAI(text, sourceLanguage, targetLanguage, undefined, formality);
+  // Fallback to Gemini translation (NO LOVABLE AI)
+  console.log('[TranslationService] Amazon Translate not implemented, using Gemini translation');
+  return translateWithGemini(text, sourceLanguage, targetLanguage, undefined, formality);
 }
 
 // Alibaba/Qwen-MT Translation - Best for CJK (Chinese, Japanese, Korean)
@@ -315,8 +315,8 @@ async function translateWithAlibaba(
   const alibabaKey = Deno.env.get('ALIBABA_API_KEY') || Deno.env.get('QWEN_API_KEY');
   
   if (!alibabaKey) {
-    console.log('[TranslationService] Alibaba/Qwen API key not found, falling back to Lovable AI');
-    return translateWithLovableAI(text, sourceLanguage, targetLanguage, context);
+    console.log('[TranslationService] Alibaba/Qwen API key not found, falling back to Gemini translation');
+    return translateWithGemini(text, sourceLanguage, targetLanguage, context);
   }
 
   try {
