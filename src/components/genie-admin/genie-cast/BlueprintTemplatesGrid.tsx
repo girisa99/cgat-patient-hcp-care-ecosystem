@@ -2,6 +2,7 @@
  * Blueprint Templates Grid
  * Displays all available templates with category filtering, AI thumbnails, and preview
  * Enhanced with provider-specific templates, industry filters, and regional variants
+ * Now includes Create Template functionality
  */
 
 import React, { useState, useMemo } from 'react';
@@ -50,10 +51,13 @@ import {
   ImagePlay,
   CalendarDays,
   Filter,
+  Plus,
+  Copy,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useVideoBlueprints, type VideoBlueprint } from '@/hooks/useVideoBlueprints';
 import { BlueprintPreviewModal } from './BlueprintPreviewModal';
+import { CreateTemplateDialog } from './CreateTemplateDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -526,6 +530,9 @@ export function BlueprintTemplatesGrid({
           </Tabs>
 
           <div className="flex items-center gap-2 flex-wrap">
+            {/* Create Template Button */}
+            <CreateTemplateDialog onCreated={refetch} />
+            
             <Button
               variant="outline"
               size="sm"
@@ -557,7 +564,7 @@ export function BlueprintTemplatesGrid({
               className="gap-2 bg-gradient-to-r from-primary to-accent"
             >
               {isSeeding150 ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-              Full Library (150+)
+              Full Library (180+)
             </Button>
           </div>
         </div>
