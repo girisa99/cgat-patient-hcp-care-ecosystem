@@ -317,10 +317,10 @@ async function generateWithGemini(prompt: string): Promise<{ url: string | null;
   }
 
   try {
-    // Use Gemini 2.5 Flash for image generation (new model per quota error recommendation)
-    console.log('🔄 Trying Gemini 2.5 Flash Image Generation...');
+    // Use Gemini 2.0 Flash (stable model with image generation support)
+    console.log('🔄 Trying Gemini 2.0 Flash Image Generation...');
     const geminiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -342,7 +342,7 @@ async function generateWithGemini(prompt: string): Promise<{ url: string | null;
       );
       
       if (imagePart?.inlineData?.data) {
-        console.log('✅ Gemini 2.5 Flash image generated');
+        console.log('✅ Gemini 2.0 Flash image generated');
         return { 
           url: imagePart.inlineData.data,
           provider: 'gemini_flash', 
@@ -351,21 +351,22 @@ async function generateWithGemini(prompt: string): Promise<{ url: string | null;
       }
     } else {
       const errorText = await geminiResponse.text();
-      console.log(`❌ Gemini 2.5 Flash error: ${geminiResponse.status} - ${errorText.substring(0, 150)}`);
+      console.log(`❌ Gemini 2.0 Flash error: ${geminiResponse.status} - ${errorText.substring(0, 150)}`);
     }
 
-    // Fallback to Imagen 3 via Vertex AI style endpoint
-    console.log('🔄 Trying Imagen 3 via generateImages endpoint...');
+    // Fallback to Imagen 3.0 generate model
+    console.log('🔄 Trying Imagen 3.0 generate...');
     const imagenResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:generateImages?key=${GEMINI_API_KEY}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          instances: [{ prompt: `Professional 16:9 video thumbnail: ${prompt}` }],
-          parameters: {
-            sampleCount: 1,
+          prompt: `Professional 16:9 video thumbnail: ${prompt}`,
+          config: {
+            numberOfImages: 1,
             aspectRatio: '16:9',
+            outputMimeType: 'image/png',
           }
         }),
       }
@@ -373,13 +374,14 @@ async function generateWithGemini(prompt: string): Promise<{ url: string | null;
 
     if (imagenResponse.ok) {
       const data = await imagenResponse.json();
-      const base64Image = data.predictions?.[0]?.bytesBase64Encoded;
+      const base64Image = data.generatedImages?.[0]?.image?.imageBytes;
       if (base64Image) {
-        console.log('✅ Imagen 3 image generated');
+        console.log('✅ Imagen 3.0 image generated');
         return { url: base64Image, provider: 'google_imagen3', isBase64: true };
       }
     } else {
-      console.log(`❌ Imagen 3 error: ${imagenResponse.status}`);
+      const errText = await imagenResponse.text();
+      console.log(`❌ Imagen 3.0 error: ${imagenResponse.status} - ${errText.substring(0, 100)}`);
     }
     
     return { url: null, provider: 'gemini', isBase64: false };
@@ -445,17 +447,22 @@ async function generateWithAlibaba(prompt: string): Promise<{ url: string | null
   }
 }
 
-// Regional provider priority - uses ALL 30+ integrated AI providers (NO Lovable AI)
-// Per architecture: Gemini → ModelsLab → OpenAI → Alibaba → HuggingFace → Replicate
+// Regional provider priority - diversified to avoid OpenAI-only results
+// Per architecture: HuggingFace → Replicate → Gemini → ModelsLab → OpenAI → Alibaba
+// HuggingFace FLUX and Replicate SDXL are FREE and reliable - use first!
 const REGIONAL_PRIORITY: Record<string, string[]> = {
-  western: ['gemini', 'modelslab', 'openai', 'huggingface', 'replicate', 'alibaba'],
-  cjk: ['alibaba', 'gemini', 'modelslab', 'openai', 'huggingface', 'replicate'],
-  mena: ['alibaba', 'gemini', 'modelslab', 'openai', 'huggingface', 'replicate'],
-  sea: ['gemini', 'alibaba', 'modelslab', 'openai', 'huggingface', 'replicate'],
-  india: ['gemini', 'alibaba', 'modelslab', 'openai', 'huggingface', 'replicate'],
-  africa: ['gemini', 'modelslab', 'alibaba', 'openai', 'huggingface', 'replicate'],
-  latam: ['gemini', 'modelslab', 'openai', 'alibaba', 'huggingface', 'replicate'],
-  global: ['gemini', 'modelslab', 'openai', 'alibaba', 'huggingface', 'replicate'],
+  western: ['huggingface', 'replicate', 'gemini', 'modelslab', 'openai', 'alibaba'],
+  cjk: ['alibaba', 'huggingface', 'replicate', 'gemini', 'modelslab', 'openai'],
+  mena: ['alibaba', 'huggingface', 'replicate', 'gemini', 'modelslab', 'openai'],
+  sea: ['huggingface', 'replicate', 'gemini', 'alibaba', 'modelslab', 'openai'],
+  india: ['huggingface', 'replicate', 'gemini', 'alibaba', 'modelslab', 'openai'],
+  africa: ['huggingface', 'replicate', 'gemini', 'modelslab', 'alibaba', 'openai'],
+  latam: ['huggingface', 'replicate', 'gemini', 'modelslab', 'openai', 'alibaba'],
+  europe: ['huggingface', 'replicate', 'gemini', 'modelslab', 'openai', 'alibaba'],
+  pakistan: ['huggingface', 'alibaba', 'replicate', 'gemini', 'modelslab', 'openai'],
+  bangladesh: ['huggingface', 'alibaba', 'replicate', 'gemini', 'modelslab', 'openai'],
+  indonesia: ['huggingface', 'alibaba', 'replicate', 'gemini', 'modelslab', 'openai'],
+  global: ['huggingface', 'replicate', 'gemini', 'modelslab', 'openai', 'alibaba'],
 };
 
 // Category prompts - EXPANDED with all template categories including regional
