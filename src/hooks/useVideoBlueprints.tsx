@@ -222,6 +222,9 @@ export const useVideoBlueprints = () => {
     educational: 'Educational',
     storytelling: 'Storytelling',
     announcement: 'Announcements',
+    healthcare: 'Healthcare',
+    entertainment: 'Entertainment',
+    corporate: 'Corporate',
     other: 'Other'
   };
 
