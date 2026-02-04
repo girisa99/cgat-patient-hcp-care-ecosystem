@@ -317,10 +317,10 @@ async function generateWithGemini(prompt: string): Promise<{ url: string | null;
   }
 
   try {
-    // Use Gemini 2.0 Flash with imageGeneration config (correct approach)
-    console.log('🔄 Trying Gemini 2.0 Flash Image Generation...');
+    // Use Gemini 2.5 Flash for image generation (new model per quota error recommendation)
+    console.log('🔄 Trying Gemini 2.5 Flash Image Generation...');
     const geminiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${GEMINI_API_KEY}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -342,7 +342,7 @@ async function generateWithGemini(prompt: string): Promise<{ url: string | null;
       );
       
       if (imagePart?.inlineData?.data) {
-        console.log('✅ Gemini 2.0 Flash image generated');
+        console.log('✅ Gemini 2.5 Flash image generated');
         return { 
           url: imagePart.inlineData.data,
           provider: 'gemini_flash', 
@@ -351,7 +351,7 @@ async function generateWithGemini(prompt: string): Promise<{ url: string | null;
       }
     } else {
       const errorText = await geminiResponse.text();
-      console.log(`❌ Gemini 2.0 Flash error: ${geminiResponse.status} - ${errorText.substring(0, 150)}`);
+      console.log(`❌ Gemini 2.5 Flash error: ${geminiResponse.status} - ${errorText.substring(0, 150)}`);
     }
 
     // Fallback to Imagen 3 via Vertex AI style endpoint
@@ -561,9 +561,9 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { limit = 10, autoProcess = true, maxBatches = 20 } = await req.json().catch(() => ({}));
+    const { limit = 5, autoProcess = true, maxBatches = 100, parallelJobs = 3 } = await req.json().catch(() => ({}));
 
-    console.log(`🔄 Processing thumbnail queue (limit: ${limit}, autoProcess: ${autoProcess}, maxBatches: ${maxBatches})`);
+    console.log(`🔄 Processing thumbnail queue (limit: ${limit}, autoProcess: ${autoProcess}, maxBatches: ${maxBatches}, parallel: ${parallelJobs})`);
 
     let totalProcessed = 0;
     let totalSucceeded = 0;
@@ -594,7 +594,8 @@ serve(async (req) => {
 
       console.log(`📋 Batch ${batchCount}: Found ${jobs.length} pending jobs`);
 
-      for (const job of jobs) {
+      // Process jobs in parallel for speed
+      const processJob = async (job: any) => {
         const blueprint = job.video_blueprints;
         const region = job.region || 'global';
 
@@ -641,8 +642,7 @@ serve(async (req) => {
               })
               .eq('id', job.id);
 
-            totalSucceeded++;
-            allDetails.push({ name: blueprint.name, status: 'success', provider, batch: batchCount });
+            return { name: blueprint.name, status: 'success', provider, batch: batchCount };
           } else {
             throw new Error('All providers failed');
           }
@@ -658,11 +658,26 @@ serve(async (req) => {
             })
             .eq('id', job.id);
 
-          totalFailed++;
-          allDetails.push({ name: blueprint.name, status: 'failed', error: errorMsg, batch: batchCount });
+          return { name: blueprint.name, status: 'failed', error: errorMsg, batch: batchCount };
         }
+      };
 
+      // Process in parallel batches
+      const results = await Promise.allSettled(jobs.map(processJob));
+      
+      for (const result of results) {
         totalProcessed++;
+        if (result.status === 'fulfilled') {
+          if (result.value.status === 'success') {
+            totalSucceeded++;
+          } else {
+            totalFailed++;
+          }
+          allDetails.push(result.value);
+        } else {
+          totalFailed++;
+          allDetails.push({ status: 'failed', error: result.reason, batch: batchCount });
+        }
       }
 
       console.log(`✅ Batch ${batchCount}: Processed ${jobs.length}, Total: ${totalProcessed}`);
