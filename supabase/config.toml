@@ -413,3 +413,6 @@ verify_jwt = false
 
 [functions.seed-regional-templates]
 verify_jwt = false
+
+[functions.seed-mobile-regional-templates]
+verify_jwt = false
