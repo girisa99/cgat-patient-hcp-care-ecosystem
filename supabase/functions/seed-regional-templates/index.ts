@@ -969,6 +969,718 @@ const BENGALI_TEMPLATES: RegionalTemplate[] = [
   },
 ];
 
+// ============================================
+// INDIAN REGIONAL LANGUAGE TEMPLATES
+// Telugu, Kannada, Tamil, Marathi, Assamese
+// ============================================
+const INDIAN_REGIONAL_TEMPLATES: RegionalTemplate[] = [
+  // TELUGU TEMPLATES
+  {
+    name: 'Product Demo - Telugu',
+    native_name: 'ఉత్పత్తి డెమో - తెలుగు',
+    description: 'Product demonstration for Telugu-speaking audience',
+    native_description: 'తెలుగు మాట్లాడే ప్రేక్షకుల కోసం ఉత్పత్తి ప్రదర్శన',
+    category: 'marketing',
+    region_code: 'india',
+    language_code: 'te-IN',
+    primary_model: 'vertex_veo',
+    secondary_models: ['azure_neural', 'alibaba_avatar'],
+    ai_capabilities: [
+      { type: 'video', provider: 'Vertex AI', feature: 'Telugu Market' },
+      { type: 'tts', provider: 'Azure Neural', feature: 'Telugu' }
+    ],
+    industry_tags: ['ecommerce', 'technology', 'telugu', 'andhra', 'telangana'],
+    target_platform: ['youtube', 'instagram', 'whatsapp'],
+    estimated_duration_seconds: 60,
+    cultural_notes: 'Telugu cinema influence, vibrant colors, family-centric messaging',
+    design_style: 'telugu_vibrant',
+    tts_provider: 'azure_neural',
+    style_preset: { vibrant: true, tollywood: true }
+  },
+  {
+    name: 'Educational Course - Telugu',
+    native_name: 'విద్యా కోర్సు - తెలుగు',
+    description: 'Online education content in Telugu',
+    native_description: 'తెలుగులో ఆన్‌లైన్ విద్యా కంటెంట్',
+    category: 'educational',
+    region_code: 'india',
+    language_code: 'te-IN',
+    primary_model: 'alibaba_avatar',
+    secondary_models: ['azure_neural'],
+    ai_capabilities: [
+      { type: 'avatar', provider: 'Alibaba', feature: 'Telugu Instructor' },
+      { type: 'tts', provider: 'Azure Neural', feature: 'Telugu Teacher' }
+    ],
+    industry_tags: ['education', 'edtech', 'competitive_exams', 'telugu'],
+    target_platform: ['youtube', 'byju', 'unacademy'],
+    estimated_duration_seconds: 300,
+    cultural_notes: 'Strong exam prep culture, respectful formal Telugu',
+    design_style: 'telugu_educational',
+    tts_provider: 'azure_neural',
+    style_preset: { formal: true, educational: true }
+  },
+  // KANNADA TEMPLATES
+  {
+    name: 'Product Demo - Kannada',
+    native_name: 'ಉತ್ಪನ್ನ ಡೆಮೊ - ಕನ್ನಡ',
+    description: 'Product demonstration for Karnataka market',
+    native_description: 'ಕರ್ನಾಟಕ ಮಾರುಕಟ್ಟೆಗಾಗಿ ಉತ್ಪನ್ನ ಪ್ರದರ್ಶನ',
+    category: 'marketing',
+    region_code: 'india',
+    language_code: 'kn-IN',
+    primary_model: 'vertex_veo',
+    secondary_models: ['azure_neural', 'modelslab_effects'],
+    ai_capabilities: [
+      { type: 'video', provider: 'Vertex AI', feature: 'Karnataka Market' },
+      { type: 'tts', provider: 'Azure Neural', feature: 'Kannada' }
+    ],
+    industry_tags: ['technology', 'startup', 'bangalore', 'karnataka'],
+    target_platform: ['youtube', 'linkedin', 'whatsapp'],
+    estimated_duration_seconds: 60,
+    cultural_notes: 'Tech hub culture, startup ecosystem, Sandalwood influence',
+    design_style: 'kannada_tech',
+    tts_provider: 'azure_neural',
+    style_preset: { tech: true, bangalore_startup: true }
+  },
+  {
+    name: 'Healthcare Awareness - Kannada',
+    native_name: 'ಆರೋಗ್ಯ ಜಾಗೃತಿ - ಕನ್ನಡ',
+    description: 'Health awareness content for Karnataka',
+    native_description: 'ಕರ್ನಾಟಕಕ್ಕಾಗಿ ಆರೋಗ್ಯ ಜಾಗೃತಿ ವಿಷಯ',
+    category: 'healthcare',
+    region_code: 'india',
+    language_code: 'kn-IN',
+    primary_model: 'meshy_3d',
+    secondary_models: ['azure_neural', 'vertex_veo'],
+    ai_capabilities: [
+      { type: '3d', provider: 'Meshy AI', feature: 'Medical Visualization' },
+      { type: 'tts', provider: 'Azure Neural', feature: 'Kannada Medical' }
+    ],
+    industry_tags: ['healthcare', 'medical', 'karnataka'],
+    target_platform: ['youtube', 'whatsapp', 'hospital_app'],
+    estimated_duration_seconds: 90,
+    cultural_notes: 'Ayurveda heritage, holistic health approach, family care',
+    design_style: 'kannada_healthcare',
+    tts_provider: 'azure_neural',
+    style_preset: { medical: true, ayurveda: true }
+  },
+  // TAMIL TEMPLATES
+  {
+    name: 'Product Demo - Tamil',
+    native_name: 'தயாரிப்பு டெமோ - தமிழ்',
+    description: 'Product demonstration for Tamil Nadu market',
+    native_description: 'தமிழ்நாடு சந்தைக்கான தயாரிப்பு ஆர்ப்பாட்டம்',
+    category: 'marketing',
+    region_code: 'india',
+    language_code: 'ta-IN',
+    primary_model: 'vertex_veo',
+    secondary_models: ['azure_neural', 'alibaba_avatar'],
+    ai_capabilities: [
+      { type: 'video', provider: 'Vertex AI', feature: 'Tamil Nadu Market' },
+      { type: 'tts', provider: 'Azure Neural', feature: 'Tamil' }
+    ],
+    industry_tags: ['ecommerce', 'automotive', 'tamil_nadu', 'chennai'],
+    target_platform: ['youtube', 'instagram', 'whatsapp'],
+    estimated_duration_seconds: 60,
+    cultural_notes: 'Kollywood influence, Tamil pride, classical heritage',
+    design_style: 'tamil_cultural',
+    tts_provider: 'azure_neural',
+    style_preset: { cultural: true, kollywood: true }
+  },
+  {
+    name: 'Educational - Tamil',
+    native_name: 'கல்வி - தமிழ்',
+    description: 'Educational content in Tamil',
+    native_description: 'தமிழில் கல்வி உள்ளடக்கம்',
+    category: 'educational',
+    region_code: 'india',
+    language_code: 'ta-IN',
+    primary_model: 'alibaba_avatar',
+    secondary_models: ['azure_neural'],
+    ai_capabilities: [
+      { type: 'avatar', provider: 'Alibaba', feature: 'Tamil Teacher' },
+      { type: 'tts', provider: 'Azure Neural', feature: 'Tamil Educational' }
+    ],
+    industry_tags: ['education', 'tamil_nadu', 'competitive_exams'],
+    target_platform: ['youtube', 'byju', 'vedantu'],
+    estimated_duration_seconds: 240,
+    cultural_notes: 'High education emphasis, NEET/JEE focus, respectful tone',
+    design_style: 'tamil_educational',
+    tts_provider: 'azure_neural',
+    style_preset: { educational: true, exam_prep: true }
+  },
+  // MARATHI TEMPLATES
+  {
+    name: 'Product Demo - Marathi',
+    native_name: 'उत्पादन डेमो - मराठी',
+    description: 'Product demonstration for Maharashtra market',
+    native_description: 'महाराष्ट्र बाजारपेठेसाठी उत्पादन प्रात्यक्षिक',
+    category: 'marketing',
+    region_code: 'india',
+    language_code: 'mr-IN',
+    primary_model: 'vertex_veo',
+    secondary_models: ['azure_neural', 'modelslab_effects'],
+    ai_capabilities: [
+      { type: 'video', provider: 'Vertex AI', feature: 'Maharashtra Market' },
+      { type: 'tts', provider: 'Azure Neural', feature: 'Marathi' }
+    ],
+    industry_tags: ['ecommerce', 'mumbai', 'pune', 'maharashtra'],
+    target_platform: ['youtube', 'instagram', 'whatsapp'],
+    estimated_duration_seconds: 60,
+    cultural_notes: 'Marathi Manoos pride, Bollywood influence, Mumbai hustle',
+    design_style: 'marathi_vibrant',
+    tts_provider: 'azure_neural',
+    style_preset: { vibrant: true, mumbai: true }
+  },
+  {
+    name: 'Fintech Explainer - Marathi',
+    native_name: 'फिनटेक स्पष्टीकरण - मराठी',
+    description: 'Digital payments education in Marathi',
+    native_description: 'मराठीत डिजिटल पेमेंट शिक्षण',
+    category: 'corporate',
+    region_code: 'india',
+    language_code: 'mr-IN',
+    primary_model: 'vertex_veo',
+    secondary_models: ['azure_neural', 'modelslab_effects'],
+    ai_capabilities: [
+      { type: 'video', provider: 'Vertex AI', feature: 'Fintech Marathi' },
+      { type: 'tts', provider: 'Azure Neural', feature: 'Marathi Business' }
+    ],
+    industry_tags: ['fintech', 'upi', 'mumbai', 'maharashtra'],
+    target_platform: ['youtube', 'app_store'],
+    estimated_duration_seconds: 60,
+    cultural_notes: 'Financial hub focus, UPI adoption, trust-building',
+    design_style: 'marathi_fintech',
+    tts_provider: 'azure_neural',
+    style_preset: { fintech: true, trust: true }
+  },
+  // ASSAMESE TEMPLATES
+  {
+    name: 'Product Demo - Assamese',
+    native_name: 'প্ৰডাক্ট ডেম - অসমীয়া',
+    description: 'Product demonstration for Assam market',
+    native_description: 'অসম বজাৰৰ বাবে প্ৰডাক্ট প্ৰদৰ্শন',
+    category: 'marketing',
+    region_code: 'india',
+    language_code: 'as-IN',
+    primary_model: 'vertex_veo',
+    secondary_models: ['azure_neural', 'modelslab_effects'],
+    ai_capabilities: [
+      { type: 'video', provider: 'Vertex AI', feature: 'Assam Market' },
+      { type: 'tts', provider: 'Azure Neural', feature: 'Assamese' }
+    ],
+    industry_tags: ['tea', 'northeast', 'assam', 'guwahati'],
+    target_platform: ['youtube', 'facebook', 'whatsapp'],
+    estimated_duration_seconds: 60,
+    cultural_notes: 'Tea garden heritage, Bihu festival colors, nature-focused',
+    design_style: 'assamese_natural',
+    tts_provider: 'azure_neural',
+    style_preset: { nature: true, bihu: true }
+  },
+  {
+    name: 'Agricultural Training - Assamese',
+    native_name: 'কৃষি প্ৰশিক্ষণ - অসমীয়া',
+    description: 'Agricultural education for Northeast farmers',
+    native_description: 'উত্তৰ-পূব কৃষকৰ বাবে কৃষি শিক্ষা',
+    category: 'educational',
+    region_code: 'india',
+    language_code: 'as-IN',
+    primary_model: 'alibaba_avatar',
+    secondary_models: ['azure_neural'],
+    ai_capabilities: [
+      { type: 'avatar', provider: 'Alibaba', feature: 'Assamese Instructor' },
+      { type: 'tts', provider: 'Azure Neural', feature: 'Assamese Educational' }
+    ],
+    industry_tags: ['agriculture', 'tea', 'northeast', 'farming'],
+    target_platform: ['youtube', 'whatsapp', 'farmer_app'],
+    estimated_duration_seconds: 180,
+    cultural_notes: 'Tea cultivation focus, organic farming, sustainable practices',
+    design_style: 'assamese_agricultural',
+    tts_provider: 'azure_neural',
+    style_preset: { agricultural: true, organic: true }
+  },
+];
+
+// ============================================
+// PODCAST & WEBCAST TEMPLATES
+// ============================================
+const PODCAST_WEBCAST_TEMPLATES: RegionalTemplate[] = [
+  {
+    name: 'Podcast Cover - Professional',
+    native_name: 'Podcast Cover - Professional',
+    description: 'Professional podcast thumbnail with microphone and audio waveforms',
+    native_description: 'Professional podcast cover for audio content creators',
+    category: 'podcast',
+    region_code: 'global',
+    language_code: 'en',
+    primary_model: 'vertex_veo',
+    secondary_models: ['modelslab', 'openai_dalle'],
+    ai_capabilities: [
+      { type: 'image', provider: 'Vertex AI', feature: 'Podcast Thumbnail' },
+      { type: 'audio', provider: 'ElevenLabs', feature: 'Voice Generation' }
+    ],
+    industry_tags: ['podcast', 'audio', 'media', 'creator'],
+    target_platform: ['spotify', 'apple_podcasts', 'youtube'],
+    estimated_duration_seconds: 0,
+    cultural_notes: 'Professional broadcasting aesthetic, microphone-centric design',
+    design_style: 'podcast_professional',
+    tts_provider: 'elevenlabs',
+    style_preset: { podcast: true, professional: true }
+  },
+  {
+    name: 'Podcast - Interview Format',
+    native_name: 'Podcast - Interview Format',
+    description: 'Two-person interview style podcast video template',
+    native_description: 'Interview podcast format with split screen capability',
+    category: 'podcast',
+    region_code: 'global',
+    language_code: 'en',
+    primary_model: 'alibaba_avatar',
+    secondary_models: ['vertex_veo', 'elevenlabs'],
+    ai_capabilities: [
+      { type: 'avatar', provider: 'Alibaba', feature: 'Dual Presenters' },
+      { type: 'tts', provider: 'ElevenLabs', feature: 'Conversational Voices' }
+    ],
+    industry_tags: ['podcast', 'interview', 'talk_show', 'media'],
+    target_platform: ['youtube', 'spotify', 'linkedin'],
+    estimated_duration_seconds: 600,
+    cultural_notes: 'Professional interview setup, comfortable atmosphere',
+    design_style: 'podcast_interview',
+    tts_provider: 'elevenlabs',
+    style_preset: { interview: true, split_screen: true }
+  },
+  {
+    name: 'Webcast - Corporate Event',
+    native_name: 'Webcast - Corporate Event',
+    description: 'Professional webcast template for corporate events and announcements',
+    native_description: 'High-quality webcast for corporate communications',
+    category: 'webcast',
+    region_code: 'global',
+    language_code: 'en',
+    primary_model: 'vertex_veo',
+    secondary_models: ['alibaba_avatar', 'elevenlabs'],
+    ai_capabilities: [
+      { type: 'video', provider: 'Vertex AI', feature: 'Webcast Production' },
+      { type: 'tts', provider: 'ElevenLabs', feature: 'Professional Narrator' }
+    ],
+    industry_tags: ['webcast', 'corporate', 'event', 'announcement'],
+    target_platform: ['zoom', 'teams', 'linkedin_live', 'youtube'],
+    estimated_duration_seconds: 900,
+    cultural_notes: 'Professional streaming setup, global audience ready',
+    design_style: 'webcast_corporate',
+    tts_provider: 'elevenlabs',
+    style_preset: { webcast: true, corporate: true, live_ready: true }
+  },
+  {
+    name: 'Webcast - Product Launch',
+    native_name: 'Webcast - Product Launch',
+    description: 'Live product launch webcast with demo capabilities',
+    native_description: 'Exciting product launch webcast with visual effects',
+    category: 'webcast',
+    region_code: 'global',
+    language_code: 'en',
+    primary_model: 'sora2',
+    secondary_models: ['alibaba_avatar', 'modelslab_effects'],
+    ai_capabilities: [
+      { type: 'video', provider: 'Sora 2', feature: 'Launch Event' },
+      { type: 'effects', provider: 'ModelsLab', feature: 'Visual Effects' }
+    ],
+    industry_tags: ['webcast', 'product_launch', 'event', 'technology'],
+    target_platform: ['youtube_live', 'twitter_spaces', 'linkedin_live'],
+    estimated_duration_seconds: 1800,
+    cultural_notes: 'Apple-style product reveals, excitement building',
+    design_style: 'webcast_launch',
+    tts_provider: 'elevenlabs',
+    style_preset: { launch: true, exciting: true }
+  },
+  {
+    name: 'Podcast - Hindi',
+    native_name: 'पॉडकास्ट - हिंदी',
+    description: 'Hindi podcast template for Indian audience',
+    native_description: 'भारतीय दर्शकों के लिए हिंदी पॉडकास्ट टेम्पलेट',
+    category: 'podcast',
+    region_code: 'india',
+    language_code: 'hi',
+    primary_model: 'alibaba_avatar',
+    secondary_models: ['azure_neural'],
+    ai_capabilities: [
+      { type: 'avatar', provider: 'Alibaba', feature: 'Hindi Host' },
+      { type: 'tts', provider: 'Azure Neural', feature: 'Hindi Voice' }
+    ],
+    industry_tags: ['podcast', 'hindi', 'india', 'audio'],
+    target_platform: ['spotify', 'gaana', 'jio_saavn', 'youtube'],
+    estimated_duration_seconds: 600,
+    cultural_notes: 'Bollywood-inspired energy, conversational Hindi',
+    design_style: 'podcast_hindi',
+    tts_provider: 'azure_neural',
+    style_preset: { podcast: true, hindi: true }
+  },
+  {
+    name: 'Podcast - Arabic',
+    native_name: 'بودكاست - عربي',
+    description: 'Arabic podcast template for MENA audience',
+    native_description: 'قالب بودكاست عربي لجمهور الشرق الأوسط',
+    category: 'podcast',
+    region_code: 'mena',
+    language_code: 'ar',
+    primary_model: 'alibaba_avatar',
+    secondary_models: ['azure_neural'],
+    ai_capabilities: [
+      { type: 'avatar', provider: 'Alibaba', feature: 'Arabic Host' },
+      { type: 'tts', provider: 'Azure Neural', feature: 'Arabic Voice' }
+    ],
+    industry_tags: ['podcast', 'arabic', 'mena', 'audio'],
+    target_platform: ['spotify', 'anghami', 'youtube'],
+    estimated_duration_seconds: 600,
+    cultural_notes: 'RTL design, Islamic-friendly content',
+    design_style: 'podcast_arabic',
+    tts_provider: 'azure_neural',
+    style_preset: { podcast: true, rtl: true }
+  },
+];
+
+// ============================================
+// VISION & HERITAGE TEMPLATES
+// ============================================
+const VISION_HERITAGE_TEMPLATES: RegionalTemplate[] = [
+  {
+    name: 'Saudi Vision 2030',
+    native_name: 'رؤية السعودية 2030',
+    description: 'Saudi Vision 2030 transformation and progress showcase',
+    native_description: 'عرض تحول ورؤية السعودية 2030',
+    category: 'vision',
+    region_code: 'mena',
+    language_code: 'ar-SA',
+    primary_model: 'vertex_veo',
+    secondary_models: ['azure_neural', 'meshy_3d'],
+    ai_capabilities: [
+      { type: 'video', provider: 'Vertex AI', feature: 'Vision Video' },
+      { type: '3d', provider: 'Meshy AI', feature: 'NEOM Visualization' }
+    ],
+    industry_tags: ['government', 'vision_2030', 'saudi', 'transformation'],
+    target_platform: ['youtube', 'twitter', 'linkedin'],
+    estimated_duration_seconds: 120,
+    cultural_notes: 'National pride, futuristic megaprojects, green/vision colors',
+    design_style: 'saudi_vision',
+    tts_provider: 'azure_neural',
+    style_preset: { vision: true, futuristic: true, national_pride: true }
+  },
+  {
+    name: 'Andhra Pradesh Transformation',
+    native_name: 'ఆంధ్రప్రదేశ్ పరివర్తన',
+    description: 'Andhra Pradesh development and transformation showcase',
+    native_description: 'ఆంధ్రప్రదేశ్ అభివృద్ధి మరియు పరివర్తన ప్రదర్శన',
+    category: 'vision',
+    region_code: 'india',
+    language_code: 'te-IN',
+    primary_model: 'vertex_veo',
+    secondary_models: ['azure_neural', 'meshy_3d'],
+    ai_capabilities: [
+      { type: 'video', provider: 'Vertex AI', feature: 'State Development' },
+      { type: 'tts', provider: 'Azure Neural', feature: 'Telugu' }
+    ],
+    industry_tags: ['government', 'andhra_pradesh', 'development', 'infrastructure'],
+    target_platform: ['youtube', 'twitter', 'facebook'],
+    estimated_duration_seconds: 120,
+    cultural_notes: 'Amaravati vision, infrastructure projects, Telugu pride',
+    design_style: 'ap_transformation',
+    tts_provider: 'azure_neural',
+    style_preset: { vision: true, development: true }
+  },
+  {
+    name: 'India Heritage',
+    native_name: 'भारत की विरासत',
+    description: 'India cultural heritage and tourism showcase',
+    native_description: 'भारत की सांस्कृतिक विरासत और पर्यटन प्रदर्शन',
+    category: 'heritage',
+    region_code: 'india',
+    language_code: 'hi',
+    primary_model: 'vertex_veo',
+    secondary_models: ['azure_neural', 'alibaba_avatar'],
+    ai_capabilities: [
+      { type: 'video', provider: 'Vertex AI', feature: 'Heritage Showcase' },
+      { type: 'tts', provider: 'Azure Neural', feature: 'Hindi Narrator' }
+    ],
+    industry_tags: ['tourism', 'heritage', 'culture', 'india', 'incredible_india'],
+    target_platform: ['youtube', 'instagram', 'twitter'],
+    estimated_duration_seconds: 90,
+    cultural_notes: 'Rich cultural tapestry, monuments, festivals, traditions',
+    design_style: 'india_heritage',
+    tts_provider: 'azure_neural',
+    style_preset: { heritage: true, cultural: true, tourism: true }
+  },
+  {
+    name: 'UPI Success Story',
+    native_name: 'UPI सफलता की कहानी',
+    description: 'India UPI digital payments revolution showcase',
+    native_description: 'भारत की UPI डिजिटल भुगतान क्रांति प्रदर्शन',
+    category: 'fintech',
+    region_code: 'india',
+    language_code: 'hi',
+    primary_model: 'vertex_veo',
+    secondary_models: ['azure_neural', 'modelslab_effects'],
+    ai_capabilities: [
+      { type: 'video', provider: 'Vertex AI', feature: 'Fintech Story' },
+      { type: 'effects', provider: 'ModelsLab', feature: 'Data Visualization' }
+    ],
+    industry_tags: ['fintech', 'upi', 'digital_india', 'payments', 'success_story'],
+    target_platform: ['youtube', 'linkedin', 'twitter'],
+    estimated_duration_seconds: 90,
+    cultural_notes: 'Digital India success, financial inclusion, mobile payments',
+    design_style: 'upi_success',
+    tts_provider: 'azure_neural',
+    style_preset: { fintech: true, success: true, digital_india: true }
+  },
+  {
+    name: 'Digital India Initiative',
+    native_name: 'डिजिटल भारत पहल',
+    description: 'Digital India transformation and e-governance showcase',
+    native_description: 'डिजिटल भारत परिवर्तन और ई-शासन प्रदर्शन',
+    category: 'vision',
+    region_code: 'india',
+    language_code: 'hi',
+    primary_model: 'vertex_veo',
+    secondary_models: ['azure_neural', 'meshy_3d'],
+    ai_capabilities: [
+      { type: 'video', provider: 'Vertex AI', feature: 'Digital Transformation' },
+      { type: 'tts', provider: 'Azure Neural', feature: 'Hindi' }
+    ],
+    industry_tags: ['government', 'digital_india', 'e_governance', 'technology'],
+    target_platform: ['youtube', 'twitter', 'linkedin'],
+    estimated_duration_seconds: 120,
+    cultural_notes: 'Tech-forward, citizen services, national progress',
+    design_style: 'digital_india',
+    tts_provider: 'azure_neural',
+    style_preset: { vision: true, digital: true, governance: true }
+  },
+];
+
+// ============================================
+// SMB (SMALL & MEDIUM BUSINESS) TEMPLATES
+// ============================================
+const SMB_TEMPLATES: RegionalTemplate[] = [
+  {
+    name: 'Food Cart Promo - Hindi',
+    native_name: 'फूड कार्ट प्रोमो - हिंदी',
+    description: 'Street food vendor promotional video',
+    native_description: 'स्ट्रीट फूड विक्रेता प्रचार वीडियो',
+    category: 'food_business',
+    region_code: 'india',
+    language_code: 'hi',
+    primary_model: 'vertex_veo',
+    secondary_models: ['azure_neural', 'modelslab_effects'],
+    ai_capabilities: [
+      { type: 'video', provider: 'Vertex AI', feature: 'Food Video' },
+      { type: 'tts', provider: 'Azure Neural', feature: 'Hindi Casual' }
+    ],
+    industry_tags: ['food', 'street_food', 'smb', 'vendor', 'local_business'],
+    target_platform: ['instagram', 'whatsapp', 'facebook'],
+    estimated_duration_seconds: 30,
+    cultural_notes: 'Mouth-watering visuals, local flavor, affordable messaging',
+    design_style: 'food_cart_indian',
+    tts_provider: 'azure_neural',
+    style_preset: { food: true, street: true, local: true }
+  },
+  {
+    name: 'Mom and Pop Store - Hindi',
+    native_name: 'किराना दुकान - हिंदी',
+    description: 'Small local retail store promotional template',
+    native_description: 'छोटी स्थानीय खुदरा दुकान प्रचार टेम्पलेट',
+    category: 'retail',
+    region_code: 'india',
+    language_code: 'hi',
+    primary_model: 'vertex_veo',
+    secondary_models: ['azure_neural', 'modelslab_effects'],
+    ai_capabilities: [
+      { type: 'video', provider: 'Vertex AI', feature: 'Retail Video' },
+      { type: 'tts', provider: 'Azure Neural', feature: 'Hindi Friendly' }
+    ],
+    industry_tags: ['retail', 'kirana', 'smb', 'local_store', 'family_business'],
+    target_platform: ['whatsapp', 'instagram', 'facebook'],
+    estimated_duration_seconds: 30,
+    cultural_notes: 'Trust-based relationship, neighborhood focus, value pricing',
+    design_style: 'kirana_store',
+    tts_provider: 'azure_neural',
+    style_preset: { retail: true, local: true, trust: true }
+  },
+  {
+    name: 'Commodities Market - Hindi',
+    native_name: 'सब्जी मंडी - हिंदी',
+    description: 'Vegetable and commodities market vendor template',
+    native_description: 'सब्जी और कमोडिटी मार्केट विक्रेता टेम्पलेट',
+    category: 'food_business',
+    region_code: 'india',
+    language_code: 'hi',
+    primary_model: 'vertex_veo',
+    secondary_models: ['azure_neural', 'modelslab_effects'],
+    ai_capabilities: [
+      { type: 'video', provider: 'Vertex AI', feature: 'Market Video' },
+      { type: 'tts', provider: 'Azure Neural', feature: 'Hindi Market' }
+    ],
+    industry_tags: ['commodities', 'vegetables', 'mandi', 'smb', 'wholesale'],
+    target_platform: ['whatsapp', 'facebook'],
+    estimated_duration_seconds: 30,
+    cultural_notes: 'Fresh produce showcase, early morning market energy',
+    design_style: 'sabzi_mandi',
+    tts_provider: 'azure_neural',
+    style_preset: { market: true, fresh: true, wholesale: true }
+  },
+  {
+    name: 'Homecare Services - Hindi',
+    native_name: 'होमकेयर सेवाएं - हिंदी',
+    description: 'Home healthcare and elderly care services',
+    native_description: 'घरेलू स्वास्थ्य सेवा और बुजुर्गों की देखभाल सेवाएं',
+    category: 'homecare',
+    region_code: 'india',
+    language_code: 'hi',
+    primary_model: 'vertex_veo',
+    secondary_models: ['azure_neural', 'alibaba_avatar'],
+    ai_capabilities: [
+      { type: 'video', provider: 'Vertex AI', feature: 'Homecare Video' },
+      { type: 'tts', provider: 'Azure Neural', feature: 'Hindi Compassionate' }
+    ],
+    industry_tags: ['homecare', 'elderly_care', 'healthcare', 'smb', 'family'],
+    target_platform: ['youtube', 'facebook', 'whatsapp'],
+    estimated_duration_seconds: 60,
+    cultural_notes: 'Family values, respect for elders, trust and compassion',
+    design_style: 'homecare_indian',
+    tts_provider: 'azure_neural',
+    style_preset: { homecare: true, compassion: true, family: true }
+  },
+  {
+    name: 'Nursing Care Services - Hindi',
+    native_name: 'नर्सिंग केयर सेवाएं - हिंदी',
+    description: 'Professional nursing and patient care services',
+    native_description: 'पेशेवर नर्सिंग और रोगी देखभाल सेवाएं',
+    category: 'nursing',
+    region_code: 'india',
+    language_code: 'hi',
+    primary_model: 'vertex_veo',
+    secondary_models: ['azure_neural', 'meshy_3d'],
+    ai_capabilities: [
+      { type: 'video', provider: 'Vertex AI', feature: 'Healthcare Video' },
+      { type: 'tts', provider: 'Azure Neural', feature: 'Hindi Medical' }
+    ],
+    industry_tags: ['nursing', 'healthcare', 'patient_care', 'smb', 'medical'],
+    target_platform: ['youtube', 'linkedin', 'facebook'],
+    estimated_duration_seconds: 60,
+    cultural_notes: 'Professional care, trained staff, trust building',
+    design_style: 'nursing_care_indian',
+    tts_provider: 'azure_neural',
+    style_preset: { nursing: true, professional: true, medical: true }
+  },
+  {
+    name: 'Food Cart - Telugu',
+    native_name: 'ఫుడ్ కార్ట్ - తెలుగు',
+    description: 'Andhra/Telangana street food promotion',
+    native_description: 'ఆంధ్ర/తెలంగాణ స్ట్రీట్ ఫుడ్ ప్రమోషన్',
+    category: 'food_business',
+    region_code: 'india',
+    language_code: 'te-IN',
+    primary_model: 'vertex_veo',
+    secondary_models: ['azure_neural', 'modelslab_effects'],
+    ai_capabilities: [
+      { type: 'video', provider: 'Vertex AI', feature: 'Telugu Food' },
+      { type: 'tts', provider: 'Azure Neural', feature: 'Telugu' }
+    ],
+    industry_tags: ['food', 'biryani', 'andhra', 'telangana', 'spicy'],
+    target_platform: ['instagram', 'whatsapp', 'youtube'],
+    estimated_duration_seconds: 30,
+    cultural_notes: 'Spicy Andhra cuisine, biryani focus, local flavors',
+    design_style: 'andhra_food',
+    tts_provider: 'azure_neural',
+    style_preset: { food: true, spicy: true, regional: true }
+  },
+  {
+    name: 'Local Store - Tamil',
+    native_name: 'உள்ளூர் கடை - தமிழ்',
+    description: 'Tamil Nadu local retail promotion',
+    native_description: 'தமிழ்நாடு உள்ளூர் சில்லறை விற்பனை பரப்புரை',
+    category: 'retail',
+    region_code: 'india',
+    language_code: 'ta-IN',
+    primary_model: 'vertex_veo',
+    secondary_models: ['azure_neural', 'modelslab_effects'],
+    ai_capabilities: [
+      { type: 'video', provider: 'Vertex AI', feature: 'Tamil Retail' },
+      { type: 'tts', provider: 'Azure Neural', feature: 'Tamil' }
+    ],
+    industry_tags: ['retail', 'tamil_nadu', 'local_business', 'smb'],
+    target_platform: ['whatsapp', 'instagram', 'facebook'],
+    estimated_duration_seconds: 30,
+    cultural_notes: 'Tamil business culture, festival-focused promotions',
+    design_style: 'tamil_retail',
+    tts_provider: 'azure_neural',
+    style_preset: { retail: true, tamil: true }
+  },
+  {
+    name: 'Restaurant Promo - Indonesian',
+    native_name: 'Promo Restoran - Indonesia',
+    description: 'Indonesian restaurant and food business promotion',
+    native_description: 'Promosi restoran dan bisnis makanan Indonesia',
+    category: 'food_business',
+    region_code: 'sea',
+    language_code: 'id',
+    primary_model: 'vertex_veo',
+    secondary_models: ['azure_neural', 'modelslab_effects'],
+    ai_capabilities: [
+      { type: 'video', provider: 'Vertex AI', feature: 'Indonesian Food' },
+      { type: 'tts', provider: 'Azure Neural', feature: 'Indonesian' }
+    ],
+    industry_tags: ['food', 'restaurant', 'indonesia', 'halal', 'smb'],
+    target_platform: ['instagram', 'tokopedia', 'gojek'],
+    estimated_duration_seconds: 30,
+    cultural_notes: 'Halal-certified, local cuisine variety, family dining',
+    design_style: 'indonesian_food',
+    tts_provider: 'azure_neural',
+    style_preset: { food: true, halal: true, indonesia: true }
+  },
+  {
+    name: 'SMB Promo - Nigerian Pidgin',
+    native_name: 'SMB Promo - Naija',
+    description: 'Small business promotion in Nigerian Pidgin',
+    native_description: 'Small business promo for Nigerian market',
+    category: 'retail',
+    region_code: 'africa',
+    language_code: 'pcm',
+    primary_model: 'vertex_veo',
+    secondary_models: ['azure_neural', 'modelslab_effects'],
+    ai_capabilities: [
+      { type: 'video', provider: 'Vertex AI', feature: 'Nigerian Market' },
+      { type: 'tts', provider: 'Azure Neural', feature: 'Nigerian Pidgin' }
+    ],
+    industry_tags: ['smb', 'nigeria', 'africa', 'local_business'],
+    target_platform: ['whatsapp', 'instagram', 'facebook'],
+    estimated_duration_seconds: 30,
+    cultural_notes: 'Pidgin for mass appeal, vibrant energy, local humor',
+    design_style: 'nigerian_smb',
+    tts_provider: 'azure_neural',
+    style_preset: { pidgin: true, vibrant: true, local: true }
+  },
+  {
+    name: 'Market Vendor - Swahili',
+    native_name: 'Mfanyabiashara wa Soko - Kiswahili',
+    description: 'East African market vendor promotion',
+    native_description: 'Utangazaji wa mfanyabiashara wa soko la Afrika Mashariki',
+    category: 'retail',
+    region_code: 'africa',
+    language_code: 'sw',
+    primary_model: 'vertex_veo',
+    secondary_models: ['azure_neural', 'modelslab_effects'],
+    ai_capabilities: [
+      { type: 'video', provider: 'Vertex AI', feature: 'East African Market' },
+      { type: 'tts', provider: 'Azure Neural', feature: 'Swahili' }
+    ],
+    industry_tags: ['retail', 'market', 'east_africa', 'smb'],
+    target_platform: ['whatsapp', 'facebook'],
+    estimated_duration_seconds: 30,
+    cultural_notes: 'Community market culture, mobile money integration',
+    design_style: 'swahili_market',
+    tts_provider: 'azure_neural',
+    style_preset: { market: true, community: true }
+  },
+];
+
 // Combine all regional templates
 const ALL_REGIONAL_TEMPLATES: RegionalTemplate[] = [
   ...ARABIC_TEMPLATES,
@@ -987,6 +1699,10 @@ const ALL_REGIONAL_TEMPLATES: RegionalTemplate[] = [
   ...TURKISH_TEMPLATES,
   ...URDU_TEMPLATES,
   ...BENGALI_TEMPLATES,
+  ...INDIAN_REGIONAL_TEMPLATES,
+  ...PODCAST_WEBCAST_TEMPLATES,
+  ...VISION_HERITAGE_TEMPLATES,
+  ...SMB_TEMPLATES,
 ];
 
 serve(async (req) => {
