@@ -97,11 +97,14 @@
  */
 
 // ============================================
-// INTEGRATED PROVIDER REGISTRY
+// INTEGRATED PROVIDER REGISTRY (19 Core Providers)
 // ============================================
 export const INTEGRATED_PROVIDERS = {
-  // Video Generation
-  video: ['vertex_veo3', 'sora2', 'alibaba_wan26', 'alibaba_wan22', 'modelslab', 'replicate', 'deepseek'],
+  // Video Generation (AI-based content creation)
+  video_generation: ['vertex_veo3', 'sora2', 'alibaba_wan26', 'alibaba_wan22', 'modelslab', 'replicate', 'deepseek'],
+  
+  // Video Assembly/Stitching (Composition layer - NOT AI generation)
+  video_assembly: ['json2video', 'cloud_run_gpu'],
   
   // Image Generation
   image: ['gemini_3_pro', 'vertex_imagen3', 'banana_nano', 'modelslab_flux', 'modelslab_sdxl', 'stability_sdxl', 'openai_dalle'],
@@ -115,11 +118,11 @@ export const INTEGRATED_PROVIDERS = {
   // STT
   stt: ['deepgram_nova2', 'alibaba_paraformer', 'azure_stt', 'openai_whisper'],
   
-  // Avatar/3D
+  // Avatar
   avatar: ['alibaba_wan22', 'alibaba_omniavatar', 'alibaba_taoavatar', 'alibaba_mach', 'meshy', 'modelslab_3d'],
   
-  // 3D Generation
-  threed: ['meshy', 'alibaba_richdreamer', 'alibaba_mach', 'modelslab_3d', 'replicate_3d'],
+  // 3D/VR/AR Generation
+  threed_vr_ar: ['meshy', 'alibaba_richdreamer', 'alibaba_mach', 'alibaba_taoavatar', 'modelslab_3d', 'replicate_3d'],
   
   // Audio
   audio: ['alibaba_cosyvoice', 'elevenlabs', 'alibaba_funaudio', 'deepgram'],
@@ -128,8 +131,31 @@ export const INTEGRATED_PROVIDERS = {
   translation: ['deepl', 'alibaba_qwen_mt', 'azure_translator', 'google_translate', 'aws_translate'],
 } as const;
 
-// Total unique providers count
-export const TOTAL_PROVIDER_COUNT = 18;
+// Total unique providers count (including JSON2Video)
+export const TOTAL_PROVIDER_COUNT = 19;
+
+// ============================================
+// VIDEO ASSEMBLY ROUTING (Composition Layer)
+// ============================================
+/**
+ * JSON2Video is the video ASSEMBLY provider (stitching TTS + visuals)
+ * NOT a video GENERATION provider (AI content creation)
+ * 
+ * Phase 1: JSON2Video Professional Plan (current)
+ * Phase 2: Cloud Run GPU infrastructure (future cost reduction)
+ */
+export const VIDEO_ASSEMBLY_ROUTING = {
+  timeline_stitching: {
+    primary: 'json2video',
+    fallback: 'cloud_run_gpu',
+    features: ['tts_audio_sync', 'screenshot_composition', 'transition_effects', 'multi_language_output'],
+  },
+  constraints: {
+    requires_public_urls: true,
+    max_render_time_minutes: 10,
+    async_polling_required: true,
+  },
+} as const;
 
 // ============================================
 // REGIONAL ZONES (4-Zone Architecture)
