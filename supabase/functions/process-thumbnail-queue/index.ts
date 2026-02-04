@@ -1,12 +1,11 @@
 /**
  * Process Thumbnail Generation Queue
  * 
+ * FIXED: Now uploads all generated images to Supabase Storage
+ * to prevent expired URLs from external providers (OpenAI, etc.)
+ * 
  * Background worker that processes queued thumbnail generation jobs
  * Uses async pattern to avoid Edge Function timeout limits
- * 
- * This function should be called:
- * 1. By a cron job (every 30 seconds)
- * 2. Manually when queue has items
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -17,12 +16,91 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Provider generation functions
-async function generateWithModelsLab(prompt: string): Promise<{ url: string | null; provider: string }> {
+// Helper: Convert base64 to Uint8Array
+function base64ToUint8Array(base64: string): Uint8Array {
+  const binaryString = atob(base64);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes;
+}
+
+// Helper: Upload image to Supabase Storage and return permanent URL
+async function uploadToStorage(
+  supabase: any,
+  imageData: string | Uint8Array,
+  blueprintId: string,
+  isBase64: boolean = false,
+  mimeType: string = 'image/png'
+): Promise<string | null> {
+  try {
+    let fileBuffer: Uint8Array;
+    
+    if (isBase64) {
+      // Handle base64 data
+      const base64Data = typeof imageData === 'string' ? imageData : '';
+      fileBuffer = base64ToUint8Array(base64Data);
+    } else if (typeof imageData === 'string') {
+      // Download from URL
+      console.log(`📥 Downloading image from external URL...`);
+      const response = await fetch(imageData);
+      if (!response.ok) {
+        console.error(`Failed to download: ${response.status}`);
+        return null;
+      }
+      const arrayBuffer = await response.arrayBuffer();
+      fileBuffer = new Uint8Array(arrayBuffer);
+      
+      // Get mime type from response
+      const contentType = response.headers.get('content-type');
+      if (contentType) mimeType = contentType.split(';')[0];
+    } else {
+      fileBuffer = imageData;
+    }
+    
+    // Determine file extension
+    const extension = mimeType.includes('jpeg') || mimeType.includes('jpg') ? 'jpg' : 'png';
+    const fileName = `template-thumbnails/${blueprintId}-${Date.now()}.${extension}`;
+    
+    console.log(`📤 Uploading to storage: ${fileName}`);
+    
+    // Upload to Supabase Storage
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('brand-assets')
+      .upload(fileName, fileBuffer, {
+        contentType: mimeType,
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.error('Storage upload error:', uploadError);
+      return null;
+    }
+
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('brand-assets')
+      .getPublicUrl(fileName);
+
+    console.log(`✅ Uploaded to: ${publicUrl}`);
+    return publicUrl;
+  } catch (error) {
+    console.error('Upload to storage failed:', error);
+    return null;
+  }
+}
+
+// Provider generation functions - now return raw data for upload
+async function generateWithModelsLab(prompt: string): Promise<{ url: string | null; provider: string; isBase64: boolean }> {
   const MODELSLAB_API_KEY = Deno.env.get('MODELSLAB_API_KEY');
-  if (!MODELSLAB_API_KEY) return { url: null, provider: 'modelslab' };
+  if (!MODELSLAB_API_KEY) {
+    console.log('❌ ModelsLab API key not configured');
+    return { url: null, provider: 'modelslab', isBase64: false };
+  }
 
   try {
+    console.log('🔄 Trying ModelsLab FLUX...');
     const response = await fetch('https://modelslab.com/api/v6/images/text2img', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -41,33 +119,42 @@ async function generateWithModelsLab(prompt: string): Promise<{ url: string | nu
       }),
     });
 
-    if (!response.ok) return { url: null, provider: 'modelslab' };
+    if (!response.ok) {
+      console.log(`❌ ModelsLab error: ${response.status}`);
+      return { url: null, provider: 'modelslab', isBase64: false };
+    }
 
     const data = await response.json();
     
     if (data.status === 'processing' && data.fetch_result) {
+      console.log('⏳ ModelsLab processing, polling...');
       for (let i = 0; i < 30; i++) {
         await new Promise(r => setTimeout(r, 2000));
         const pollRes = await fetch(data.fetch_result);
         const pollData = await pollRes.json();
         if (pollData.status === 'success' && pollData.output?.[0]) {
-          return { url: pollData.output[0], provider: 'modelslab_flux' };
+          return { url: pollData.output[0], provider: 'modelslab_flux', isBase64: false };
         }
         if (pollData.status === 'failed') break;
       }
     }
     
-    return { url: data.output?.[0] || null, provider: 'modelslab_flux' };
-  } catch {
-    return { url: null, provider: 'modelslab' };
+    return { url: data.output?.[0] || null, provider: 'modelslab_flux', isBase64: false };
+  } catch (error) {
+    console.error('ModelsLab error:', error);
+    return { url: null, provider: 'modelslab', isBase64: false };
   }
 }
 
-async function generateWithOpenAI(prompt: string): Promise<{ url: string | null; provider: string }> {
+async function generateWithOpenAI(prompt: string): Promise<{ url: string | null; provider: string; isBase64: boolean }> {
   const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
-  if (!OPENAI_API_KEY) return { url: null, provider: 'openai' };
+  if (!OPENAI_API_KEY) {
+    console.log('❌ OpenAI API key not configured');
+    return { url: null, provider: 'openai', isBase64: false };
+  }
 
   try {
+    console.log('🔄 Trying OpenAI DALL-E 3...');
     const response = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: {
@@ -80,33 +167,41 @@ async function generateWithOpenAI(prompt: string): Promise<{ url: string | null;
         n: 1,
         size: '1792x1024',
         quality: 'standard',
-        response_format: 'url',
+        response_format: 'url', // We'll download and re-upload to storage
       }),
     });
 
-    if (!response.ok) return { url: null, provider: 'openai' };
+    if (!response.ok) {
+      console.log(`❌ OpenAI error: ${response.status}`);
+      return { url: null, provider: 'openai', isBase64: false };
+    }
 
     const data = await response.json();
-    return { url: data.data?.[0]?.url || null, provider: 'openai_dalle' };
-  } catch {
-    return { url: null, provider: 'openai' };
+    // Return the temporary URL - we'll download and upload to storage
+    return { url: data.data?.[0]?.url || null, provider: 'openai_dalle', isBase64: false };
+  } catch (error) {
+    console.error('OpenAI error:', error);
+    return { url: null, provider: 'openai', isBase64: false };
   }
 }
 
-async function generateWithGemini(prompt: string): Promise<{ url: string | null; provider: string }> {
+async function generateWithGemini(prompt: string): Promise<{ url: string | null; provider: string; isBase64: boolean }> {
   const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY') || Deno.env.get('GOOGLE_API_KEY');
-  if (!GEMINI_API_KEY) return { url: null, provider: 'gemini' };
+  if (!GEMINI_API_KEY) {
+    console.log('❌ Gemini API key not configured');
+    return { url: null, provider: 'gemini', isBase64: false };
+  }
 
   try {
-    // Use Gemini 2.5 Flash Image via chat completions
+    console.log('🔄 Trying Gemini 2.0 Flash Image...');
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key=${GEMINI_API_KEY}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{
-            parts: [{ text: `Generate a high-quality image: ${prompt}` }]
+            parts: [{ text: `Generate a high-quality 16:9 aspect ratio image: ${prompt}` }]
           }],
           generationConfig: {
             responseModalities: ['image', 'text'],
@@ -115,26 +210,85 @@ async function generateWithGemini(prompt: string): Promise<{ url: string | null;
       }
     );
 
-    if (!response.ok) return { url: null, provider: 'gemini' };
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.log(`❌ Gemini error: ${response.status} - ${errorText}`);
+      return { url: null, provider: 'gemini', isBase64: false };
+    }
 
     const data = await response.json();
     const imagePart = data.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData?.mimeType?.startsWith('image/'));
     
     if (imagePart?.inlineData?.data) {
-      return { url: `data:${imagePart.inlineData.mimeType};base64,${imagePart.inlineData.data}`, provider: 'gemini_imagen' };
+      // Return base64 data - we'll upload to storage
+      return { 
+        url: imagePart.inlineData.data, // Just the base64 without data: prefix
+        provider: 'gemini_imagen', 
+        isBase64: true 
+      };
     }
     
-    return { url: null, provider: 'gemini' };
-  } catch {
-    return { url: null, provider: 'gemini' };
+    return { url: null, provider: 'gemini', isBase64: false };
+  } catch (error) {
+    console.error('Gemini error:', error);
+    return { url: null, provider: 'gemini', isBase64: false };
   }
 }
 
-async function generateWithAlibaba(prompt: string): Promise<{ url: string | null; provider: string }> {
-  const ALIBABA_API_KEY = Deno.env.get('ALIBABA_API_KEY') || Deno.env.get('DASHSCOPE_API_KEY');
-  if (!ALIBABA_API_KEY) return { url: null, provider: 'alibaba' };
+async function generateWithLovable(prompt: string): Promise<{ url: string | null; provider: string; isBase64: boolean }> {
+  const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+  if (!LOVABLE_API_KEY) {
+    console.log('❌ Lovable API key not configured');
+    return { url: null, provider: 'lovable', isBase64: false };
+  }
 
   try {
+    console.log('🔄 Trying Lovable AI Gateway (Gemini Flash Image)...');
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash-image',
+        messages: [{ role: 'user', content: prompt }],
+        modalities: ['image', 'text'],
+      }),
+    });
+
+    if (!response.ok) {
+      console.log(`❌ Lovable error: ${response.status}`);
+      return { url: null, provider: 'lovable', isBase64: false };
+    }
+
+    const data = await response.json();
+    const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+    
+    if (imageUrl && imageUrl.startsWith('data:image')) {
+      // Extract base64 from data URL
+      const base64Match = imageUrl.match(/^data:image\/\w+;base64,(.+)$/);
+      if (base64Match) {
+        return { url: base64Match[1], provider: 'lovable_gemini', isBase64: true };
+      }
+    }
+    
+    return { url: null, provider: 'lovable', isBase64: false };
+  } catch (error) {
+    console.error('Lovable error:', error);
+    return { url: null, provider: 'lovable', isBase64: false };
+  }
+}
+
+async function generateWithAlibaba(prompt: string): Promise<{ url: string | null; provider: string; isBase64: boolean }> {
+  const ALIBABA_API_KEY = Deno.env.get('ALIBABA_API_KEY') || Deno.env.get('DASHSCOPE_API_KEY');
+  if (!ALIBABA_API_KEY) {
+    console.log('❌ Alibaba API key not configured');
+    return { url: null, provider: 'alibaba', isBase64: false };
+  }
+
+  try {
+    console.log('🔄 Trying Alibaba Wanx...');
     const response = await fetch('https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis', {
       method: 'POST',
       headers: {
@@ -149,12 +303,16 @@ async function generateWithAlibaba(prompt: string): Promise<{ url: string | null
       }),
     });
 
-    if (!response.ok) return { url: null, provider: 'alibaba' };
+    if (!response.ok) {
+      console.log(`❌ Alibaba error: ${response.status}`);
+      return { url: null, provider: 'alibaba', isBase64: false };
+    }
 
     const data = await response.json();
     const taskId = data.output?.task_id;
-    if (!taskId) return { url: null, provider: 'alibaba' };
+    if (!taskId) return { url: null, provider: 'alibaba', isBase64: false };
 
+    console.log('⏳ Alibaba processing, polling...');
     for (let i = 0; i < 30; i++) {
       await new Promise(r => setTimeout(r, 2000));
       const statusRes = await fetch(`https://dashscope-intl.aliyuncs.com/api/v1/tasks/${taskId}`, {
@@ -163,26 +321,27 @@ async function generateWithAlibaba(prompt: string): Promise<{ url: string | null
       const statusData = await statusRes.json();
       
       if (statusData.output?.task_status === 'SUCCEEDED') {
-        return { url: statusData.output?.results?.[0]?.url || null, provider: 'alibaba_wanx' };
+        return { url: statusData.output?.results?.[0]?.url || null, provider: 'alibaba_wanx', isBase64: false };
       }
       if (statusData.output?.task_status === 'FAILED') break;
     }
     
-    return { url: null, provider: 'alibaba' };
-  } catch {
-    return { url: null, provider: 'alibaba' };
+    return { url: null, provider: 'alibaba', isBase64: false };
+  } catch (error) {
+    console.error('Alibaba error:', error);
+    return { url: null, provider: 'alibaba', isBase64: false };
   }
 }
 
-// Regional provider priority
+// Regional provider priority - updated with Lovable as fallback
 const REGIONAL_PRIORITY: Record<string, string[]> = {
-  western: ['modelslab', 'openai', 'gemini'],
-  cjk: ['alibaba', 'modelslab', 'gemini'],
-  mena: ['alibaba', 'gemini', 'modelslab'],
-  sea: ['gemini', 'alibaba', 'modelslab'],
-  india: ['gemini', 'modelslab', 'openai'],
-  africa: ['gemini', 'modelslab', 'openai'],
-  global: ['modelslab', 'gemini', 'openai', 'alibaba'],
+  western: ['modelslab', 'openai', 'lovable', 'gemini'],
+  cjk: ['alibaba', 'modelslab', 'lovable', 'gemini'],
+  mena: ['alibaba', 'lovable', 'gemini', 'modelslab'],
+  sea: ['gemini', 'lovable', 'alibaba', 'modelslab'],
+  india: ['gemini', 'lovable', 'modelslab', 'openai'],
+  africa: ['gemini', 'lovable', 'modelslab', 'openai'],
+  global: ['lovable', 'modelslab', 'gemini', 'openai', 'alibaba'],
 };
 
 // Category prompts
@@ -200,25 +359,34 @@ const CATEGORY_PROMPTS: Record<string, string> = {
   seasonal: 'Seasonal holiday thumbnail, festive elements, celebration mood',
   effects: 'Video effects thumbnail, cinematic, motion graphics, transitions',
   image_to_video: 'Photo-to-video transformation, motion lines, cinematic transition',
+  announcement: 'Product announcement thumbnail, exciting, launch event style',
+  storytelling: 'Cinematic storytelling thumbnail, narrative, emotional connection',
+  smb: 'Small business promotional thumbnail, friendly, approachable',
+  ppt: 'Professional presentation thumbnail, clean slides, business style',
+  'oil-gas': 'Industrial energy sector thumbnail, professional, technical',
 };
 
 async function generateThumbnail(
+  supabase: any,
   blueprint: any,
   region: string
 ): Promise<{ url: string | null; provider: string }> {
   const categoryPrompt = CATEGORY_PROMPTS[blueprint.category] || CATEGORY_PROMPTS.marketing;
   
   const prompt = `Create a professional video thumbnail for "${blueprint.name}". 
-${blueprint.description}
+${blueprint.description || ''}
 Style: ${categoryPrompt}
-Resolution: 16:9, 1280x720, high quality, no text overlays, no watermarks.`;
+Requirements: 16:9 aspect ratio, 1280x720, high quality, no text overlays, no watermarks, no people faces.`;
 
   const providers = REGIONAL_PRIORITY[region] || REGIONAL_PRIORITY.global;
   
   for (const provider of providers) {
-    let result: { url: string | null; provider: string } = { url: null, provider: '' };
+    let result: { url: string | null; provider: string; isBase64: boolean } = { url: null, provider: '', isBase64: false };
     
     switch (provider) {
+      case 'lovable':
+        result = await generateWithLovable(prompt);
+        break;
       case 'modelslab':
         result = await generateWithModelsLab(prompt);
         break;
@@ -234,8 +402,19 @@ Resolution: 16:9, 1280x720, high quality, no text overlays, no watermarks.`;
     }
     
     if (result.url) {
-      console.log(`✅ Generated with ${result.provider}`);
-      return result;
+      // CRITICAL: Upload to Supabase Storage to get permanent URL
+      console.log(`🔄 Uploading ${result.provider} result to storage...`);
+      const permanentUrl = await uploadToStorage(
+        supabase,
+        result.url,
+        blueprint.id,
+        result.isBase64
+      );
+      
+      if (permanentUrl) {
+        console.log(`✅ Permanent URL created: ${permanentUrl}`);
+        return { url: permanentUrl, provider: result.provider };
+      }
     }
   }
   
@@ -300,10 +479,10 @@ serve(async (req) => {
       try {
         console.log(`🎨 Generating for: ${blueprint.name} (region: ${region})`);
         
-        const { url, provider } = await generateThumbnail(blueprint, region);
+        const { url, provider } = await generateThumbnail(supabase, blueprint, region);
 
         if (url) {
-          // Update blueprint with thumbnail
+          // Update blueprint with permanent thumbnail URL
           await supabase
             .from('video_blueprints')
             .update({
