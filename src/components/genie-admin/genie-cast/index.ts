@@ -12,6 +12,7 @@ export { GenieCastHero } from './GenieCastHero';
 export { GenieCastOverview } from './GenieCastOverview';
 export { VideoStyleCards, type VideoStyleType } from './VideoStyleCards';
 export { AIProviderShowcase } from './AIProviderShowcase';
+export { BrandAssetsPanel } from './BrandAssetsPanel';
 export { 
   GenieCastConsolidatedTabs, 
   type ConsolidatedTab,

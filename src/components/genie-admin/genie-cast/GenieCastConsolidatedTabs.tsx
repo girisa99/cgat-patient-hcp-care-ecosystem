@@ -53,6 +53,7 @@ import { MessagingGeneratorPanel } from '../MessagingGeneratorPanel';
 import { ProductChangeAlertPanel } from '../ProductChangeAlertPanel';
 import { GenieCastFlowDiagram } from '../GenieCastFlowDiagram';
 import { GenieCastHubMockup } from './mockups';
+import { BrandAssetsPanel } from './BrandAssetsPanel';
 
 // Import master registry for metrics
 import { 
@@ -353,42 +354,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.2 }}
               >
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Upload className="w-5 h-5" />
-                      Brand Assets
-                    </CardTitle>
-                    <CardDescription>
-                      Manage logos, brand colors, and visual assets for video production
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-3 gap-4">
-                      <Card className="border-dashed">
-                        <CardContent className="p-6 text-center">
-                          <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
-                          <p className="text-sm font-medium">Logos</p>
-                          <p className="text-xs text-muted-foreground">Upload brand logos</p>
-                        </CardContent>
-                      </Card>
-                      <Card className="border-dashed">
-                        <CardContent className="p-6 text-center">
-                          <Palette className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
-                          <p className="text-sm font-medium">Colors</p>
-                          <p className="text-xs text-muted-foreground">Brand color palette</p>
-                        </CardContent>
-                      </Card>
-                      <Card className="border-dashed">
-                        <CardContent className="p-6 text-center">
-                          <Globe className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
-                          <p className="text-sm font-medium">Templates</p>
-                          <p className="text-xs text-muted-foreground">Video templates</p>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  </CardContent>
-                </Card>
+                <BrandAssetsPanel />
               </motion.div>
             )}
           </AnimatePresence>
