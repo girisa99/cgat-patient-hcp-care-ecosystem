@@ -13737,6 +13737,197 @@ export type Database = {
         }
         Relationships: []
       }
+      marketing_audiences: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          industry: string | null
+          is_active: boolean | null
+          is_system_default: boolean | null
+          label: string
+          messaging_angles: Json | null
+          pain_points: Json | null
+          sort_order: number | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          industry?: string | null
+          is_active?: boolean | null
+          is_system_default?: boolean | null
+          label: string
+          messaging_angles?: Json | null
+          pain_points?: Json | null
+          sort_order?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          industry?: string | null
+          is_active?: boolean | null
+          is_system_default?: boolean | null
+          label?: string
+          messaging_angles?: Json | null
+          pain_points?: Json | null
+          sort_order?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      marketing_brand_assets: {
+        Row: {
+          asset_metadata: Json | null
+          asset_type: string
+          asset_url: string | null
+          created_at: string | null
+          id: string
+          is_primary: boolean | null
+          product_id: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          asset_metadata?: Json | null
+          asset_type: string
+          asset_url?: string | null
+          created_at?: string | null
+          id?: string
+          is_primary?: boolean | null
+          product_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          asset_metadata?: Json | null
+          asset_type?: string
+          asset_url?: string | null
+          created_at?: string | null
+          id?: string
+          is_primary?: boolean | null
+          product_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_brand_assets_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_languages: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_enabled: boolean | null
+          is_rtl: boolean | null
+          is_system_default: boolean | null
+          language_code: string
+          language_name: string
+          region: string | null
+          sort_order: number | null
+          tts_provider: string | null
+          tts_voice_id: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          is_rtl?: boolean | null
+          is_system_default?: boolean | null
+          language_code: string
+          language_name: string
+          region?: string | null
+          sort_order?: number | null
+          tts_provider?: string | null
+          tts_voice_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          is_rtl?: boolean | null
+          is_system_default?: boolean | null
+          language_code?: string
+          language_name?: string
+          region?: string | null
+          sort_order?: number | null
+          tts_provider?: string | null
+          tts_voice_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      marketing_products: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          description: string | null
+          features: Json | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          is_system_default: boolean | null
+          name: string
+          primary_color: string | null
+          secondary_color: string | null
+          sort_order: number | null
+          tagline: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          features?: Json | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_system_default?: boolean | null
+          name: string
+          primary_color?: string | null
+          secondary_color?: string | null
+          sort_order?: number | null
+          tagline?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          features?: Json | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_system_default?: boolean | null
+          name?: string
+          primary_color?: string | null
+          secondary_color?: string | null
+          sort_order?: number | null
+          tagline?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       marketplace_listings: {
         Row: {
           category: string
