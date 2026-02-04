@@ -3408,6 +3408,127 @@ export type Database = {
         }
         Relationships: []
       }
+      blueprint_assignments: {
+        Row: {
+          assigned_by: string | null
+          blueprint_id: string
+          campaign_id: string | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          product_id: string | null
+          scene_overrides: Json | null
+          style_overrides: Json | null
+          updated_at: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          blueprint_id: string
+          campaign_id?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          product_id?: string | null
+          scene_overrides?: Json | null
+          style_overrides?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          assigned_by?: string | null
+          blueprint_id?: string
+          campaign_id?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          product_id?: string | null
+          scene_overrides?: Json | null
+          style_overrides?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blueprint_assignments_blueprint_id_fkey"
+            columns: ["blueprint_id"]
+            isOneToOne: false
+            referencedRelation: "video_blueprints"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      blueprint_scenes: {
+        Row: {
+          audio_config: Json | null
+          blueprint_id: string
+          created_at: string
+          description: string | null
+          duration_seconds: number | null
+          id: string
+          is_optional: boolean | null
+          is_repeatable: boolean | null
+          max_duration_seconds: number | null
+          min_duration_seconds: number | null
+          order_index: number
+          scene_key: string
+          scene_type: string
+          script_template: string | null
+          script_variables: Json | null
+          title: string
+          transition_config: Json | null
+          updated_at: string
+          visual_config: Json | null
+        }
+        Insert: {
+          audio_config?: Json | null
+          blueprint_id: string
+          created_at?: string
+          description?: string | null
+          duration_seconds?: number | null
+          id?: string
+          is_optional?: boolean | null
+          is_repeatable?: boolean | null
+          max_duration_seconds?: number | null
+          min_duration_seconds?: number | null
+          order_index?: number
+          scene_key: string
+          scene_type?: string
+          script_template?: string | null
+          script_variables?: Json | null
+          title: string
+          transition_config?: Json | null
+          updated_at?: string
+          visual_config?: Json | null
+        }
+        Update: {
+          audio_config?: Json | null
+          blueprint_id?: string
+          created_at?: string
+          description?: string | null
+          duration_seconds?: number | null
+          id?: string
+          is_optional?: boolean | null
+          is_repeatable?: boolean | null
+          max_duration_seconds?: number | null
+          min_duration_seconds?: number | null
+          order_index?: number
+          scene_key?: string
+          scene_type?: string
+          script_template?: string | null
+          script_variables?: Json | null
+          title?: string
+          transition_config?: Json | null
+          updated_at?: string
+          visual_config?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blueprint_scenes_blueprint_id_fkey"
+            columns: ["blueprint_id"]
+            isOneToOne: false
+            referencedRelation: "video_blueprints"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bulk_jobs: {
         Row: {
           completed_at: string | null
@@ -19117,6 +19238,71 @@ export type Database = {
         }
         Relationships: []
       }
+      scene_elements: {
+        Row: {
+          created_at: string
+          element_config: Json | null
+          element_key: string
+          element_type: string
+          end_time_ms: number | null
+          entrance_animation: Json | null
+          exit_animation: Json | null
+          height_percent: number | null
+          id: string
+          layer_order: number | null
+          position_x: number | null
+          position_y: number | null
+          scene_id: string
+          start_time_ms: number | null
+          updated_at: string
+          width_percent: number | null
+        }
+        Insert: {
+          created_at?: string
+          element_config?: Json | null
+          element_key: string
+          element_type: string
+          end_time_ms?: number | null
+          entrance_animation?: Json | null
+          exit_animation?: Json | null
+          height_percent?: number | null
+          id?: string
+          layer_order?: number | null
+          position_x?: number | null
+          position_y?: number | null
+          scene_id: string
+          start_time_ms?: number | null
+          updated_at?: string
+          width_percent?: number | null
+        }
+        Update: {
+          created_at?: string
+          element_config?: Json | null
+          element_key?: string
+          element_type?: string
+          end_time_ms?: number | null
+          entrance_animation?: Json | null
+          exit_animation?: Json | null
+          height_percent?: number | null
+          id?: string
+          layer_order?: number | null
+          position_x?: number | null
+          position_y?: number | null
+          scene_id?: string
+          start_time_ms?: number | null
+          updated_at?: string
+          width_percent?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scene_elements_scene_id_fkey"
+            columns: ["scene_id"]
+            isOneToOne: false
+            referencedRelation: "blueprint_scenes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scheduled_posts: {
         Row: {
           content_data: Json
@@ -22997,6 +23183,69 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      video_blueprints: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          default_settings: Json | null
+          description: string | null
+          estimated_duration_seconds: number | null
+          id: string
+          industry_tags: string[] | null
+          is_active: boolean | null
+          is_public: boolean | null
+          is_system_default: boolean | null
+          name: string
+          preview_video_url: string | null
+          style_preset: Json | null
+          target_platform: string[] | null
+          thumbnail_url: string | null
+          updated_at: string
+          usage_count: number | null
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          default_settings?: Json | null
+          description?: string | null
+          estimated_duration_seconds?: number | null
+          id?: string
+          industry_tags?: string[] | null
+          is_active?: boolean | null
+          is_public?: boolean | null
+          is_system_default?: boolean | null
+          name: string
+          preview_video_url?: string | null
+          style_preset?: Json | null
+          target_platform?: string[] | null
+          thumbnail_url?: string | null
+          updated_at?: string
+          usage_count?: number | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          default_settings?: Json | null
+          description?: string | null
+          estimated_duration_seconds?: number | null
+          id?: string
+          industry_tags?: string[] | null
+          is_active?: boolean | null
+          is_public?: boolean | null
+          is_system_default?: boolean | null
+          name?: string
+          preview_video_url?: string | null
+          style_preset?: Json | null
+          target_platform?: string[] | null
+          thumbnail_url?: string | null
+          updated_at?: string
+          usage_count?: number | null
+        }
+        Relationships: []
       }
       vision_analysis_logs: {
         Row: {

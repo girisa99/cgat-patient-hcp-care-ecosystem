@@ -41,6 +41,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { type GenieProductId, GENIE_PRODUCTS } from '@/services/marketing/productVersionTrackingService';
+import { BlueprintTemplatesGrid } from './BlueprintTemplatesGrid';
 
 interface BrandAssetsPanelProps {
   className?: string;
@@ -59,15 +60,7 @@ const PRODUCT_BRAND_CONFIG: Record<GenieProductId, { name: string; primary: stri
   ask_genie: { name: 'Ask Genie', primary: '#06B6D4', secondary: '#22D3EE', accent: '#67E8F9' },
 };
 
-// Template types
-const VIDEO_TEMPLATES = [
-  { id: 'product-demo', name: 'Product Demo', description: '9-chapter demo with hooks', chapters: 9 },
-  { id: 'feature-spotlight', name: 'Feature Spotlight', description: 'Single feature focus', chapters: 5 },
-  { id: 'comparison', name: 'Comparison', description: 'Side-by-side with competitor', chapters: 7 },
-  { id: 'tutorial', name: 'Tutorial', description: 'Step-by-step walkthrough', chapters: 6 },
-  { id: 'social-ad', name: 'Social Ad', description: 'Short-form for social', chapters: 3 },
-  { id: 'testimonial', name: 'Testimonial', description: 'Customer success story', chapters: 4 },
-];
+// VIDEO_TEMPLATES removed - now using database-driven BlueprintTemplatesGrid
 
 interface LogoAsset {
   productId: GenieProductId;
@@ -593,49 +586,9 @@ export const BrandAssetsPanel: React.FC<BrandAssetsPanelProps> = ({ className, o
           </div>
         </TabsContent>
 
-        {/* Templates Tab */}
+        {/* Templates Tab - Now using database-driven BlueprintTemplatesGrid */}
         <TabsContent value="templates" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {VIDEO_TEMPLATES.map((template) => (
-              <Card key={template.id} className="hover:border-primary/50 transition-colors cursor-pointer">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <Film className="w-4 h-4 text-primary" />
-                    {template.name}
-                  </CardTitle>
-                  <CardDescription className="text-xs">
-                    {template.description}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <Badge variant="outline" className="text-[10px]">
-                      {template.chapters} chapters
-                    </Badge>
-                    <Button variant="ghost" size="sm" className="text-xs gap-1">
-                      <Download className="w-3 h-3" />
-                      Use
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {/* Custom Template Upload */}
-          <Card className="mt-6 border-dashed">
-            <CardContent className="py-8 text-center">
-              <Upload className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
-              <h4 className="font-medium mb-1">Upload Custom Template</h4>
-              <p className="text-sm text-muted-foreground mb-4">
-                Import your own video structure and chapter configurations
-              </p>
-              <Button variant="outline" className="gap-2">
-                <Upload className="w-4 h-4" />
-                Upload Template
-              </Button>
-            </CardContent>
-          </Card>
+          <BlueprintTemplatesGrid />
         </TabsContent>
       </Tabs>
     </div>
