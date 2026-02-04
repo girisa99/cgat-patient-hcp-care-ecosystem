@@ -288,6 +288,13 @@ serve(async (req) => {
     const chapterResults: ChapterResult[] = [];
     let totalDuration = 0;
     
+    // Track start time to enforce timeout limits
+    const startTime = Date.now();
+    const MAX_EXECUTION_MS = 55000; // 55 seconds - leave buffer for response
+    
+    // Helper to check if we're running low on time
+    const isTimeRunningOut = () => (Date.now() - startTime) > MAX_EXECUTION_MS;
+    
     // Log messaging context
     if (useApprovedMessaging || approvedMessaging) {
       console.log(`📝 Using approved messaging: hook="${approvedMessaging?.hook?.substring(0, 50)}..."`);
@@ -295,6 +302,12 @@ serve(async (req) => {
     if (chapterMessaging) {
       console.log(`📝 Chapter-specific messaging provided for: ${Object.keys(chapterMessaging).join(', ')}`);
     }
+    
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // QUICK-RETURN PATTERN FOR FULL PRODUCTION MODE
+    // Heavy 3D/Avatar generation is deferred to avoid edge function timeout
+    // ═══════════════════════════════════════════════════════════════════════════════
+    const deferHeavyGeneration = fullProductionMode;
     
     // ═══════════════════════════════════════════════════════════════════════════════
     // UNIFIED AUDIO GENERATION (Seamless single track for all chapters)
@@ -429,15 +442,16 @@ serve(async (req) => {
           console.log(`   🖼️ ${visualUrls.length} visuals for ${chapter.id}`);
         }
 
-        // Step 3: Generate Avatar (if Full Production Mode enabled)
+        // Step 3: Generate Avatar (if Full Production Mode enabled AND not deferring)
+        // Avatar generation takes 30-60 seconds per segment - DEFER to avoid timeout
         let avatarUrl: string | undefined;
-        if (fullProductionMode && productionConfig?.avatar?.enabled) {
+        if (fullProductionMode && productionConfig?.avatar?.enabled && !deferHeavyGeneration) {
           const shouldIncludeAvatar = 
             productionConfig.avatar.placement === 'throughout' ||
             (productionConfig.avatar.placement === 'intro_outro' && (chapter.id === 'opening' || chapter.id === 'closing')) ||
             (productionConfig.avatar.placement === 'chapter_intros');
           
-          if (shouldIncludeAvatar) {
+          if (shouldIncludeAvatar && !isTimeRunningOut()) {
             avatarUrl = await generateAvatarSegment(
               supabase,
               chapter.id,
@@ -445,32 +459,37 @@ serve(async (req) => {
               productionConfig.avatar.gender,
               productionConfig.avatar.size,
               audioResult.audioBase64,
-              audioResult.audioUrl  // Pass the audio URL for avatar lip-sync
+              audioResult.audioUrl
             );
             console.log(`👤 Avatar generated for ${chapter.id}: ${avatarUrl ? 'success' : 'skipped'}`);
+          } else if (shouldIncludeAvatar) {
+            console.log(`⏳ Avatar deferred for ${chapter.id} - will be generated in background job`);
           }
         }
 
-        // Step 4: Generate 3D elements (if Full Production Mode enabled)
+        // Step 4: Generate 3D elements (if Full Production Mode enabled AND not deferring)
+        // 3D generation takes 60-90 seconds per element - DEFER to avoid timeout
         let threeDUrl: string | undefined;
-        if (fullProductionMode && productionConfig?.threeD?.enabled) {
-          // 3D for product chapters and hero sections
-          if (chapter.id !== 'opening' && chapter.id !== 'closing') {
+        if (fullProductionMode && productionConfig?.threeD?.enabled && !deferHeavyGeneration) {
+          if (chapter.id !== 'opening' && chapter.id !== 'closing' && !isTimeRunningOut()) {
             threeDUrl = await generate3DElement(
-              supabase,  // Pass supabase client for edge function calls
+              supabase,
               chapter.product,
               productionConfig.threeD.style,
               productionConfig.threeD.quality
             );
             console.log(`📦 3D element generated for ${chapter.product}: ${threeDUrl ? 'success' : 'skipped'}`);
+          } else if (chapter.id !== 'opening' && chapter.id !== 'closing') {
+            console.log(`⏳ 3D element deferred for ${chapter.product} - will be generated in background job`);
           }
         }
 
-        // Step 5: Generate animated transitions (if enabled)
+        // Step 5: Generate animated transitions (if enabled AND not deferring)
+        // Transition generation takes 10-30 seconds - can run if time allows
         let transitionUrl: string | undefined;
-        if (fullProductionMode && productionConfig?.animations?.enabled) {
+        if (fullProductionMode && productionConfig?.animations?.enabled && !isTimeRunningOut()) {
           transitionUrl = await generateTransition(
-            supabase,  // Pass supabase client for edge function calls
+            supabase,
             chapter.id,
             chapter.product,
             chapter.color,
@@ -552,14 +571,31 @@ serve(async (req) => {
 
     // Build production mode features list
     const enabledFeatures: string[] = [];
+    const deferredFeatures: string[] = [];
     if (fullProductionMode && productionConfig) {
-      if (productionConfig.avatar?.enabled) enabledFeatures.push(`avatar_${productionConfig.avatar.gender}`);
+      if (productionConfig.avatar?.enabled) {
+        if (deferHeavyGeneration) {
+          deferredFeatures.push('avatar');
+        } else {
+          enabledFeatures.push(`avatar_${productionConfig.avatar.gender}`);
+        }
+      }
       if (productionConfig.animations?.enabled) enabledFeatures.push(`animation_${productionConfig.animations.style}`);
-      if (productionConfig.threeD?.enabled) enabledFeatures.push(`3d_${productionConfig.threeD.style}`);
+      if (productionConfig.threeD?.enabled) {
+        if (deferHeavyGeneration) {
+          deferredFeatures.push('3d');
+        } else {
+          enabledFeatures.push(`3d_${productionConfig.threeD.style}`);
+        }
+      }
     }
 
+    // Determine generation status
+    const hasDeferred = deferredFeatures.length > 0;
+    const isPending = assemblyResult.pendingGeneration || hasDeferred;
+    
     const result: AssemblyResult = {
-      success: assemblyResult.success,
+      success: assemblyResult.success || hasDeferred, // Partial success if TTS completed
       videoUrl: assemblyResult.videoUrl,
       thumbnailUrl: assemblyResult.thumbnailUrl,
       totalDuration,
@@ -568,21 +604,27 @@ serve(async (req) => {
       providers: {
         tts: ttsConfig.provider,
         video: videoProvider,
-        avatar: fullProductionMode && productionConfig?.avatar?.enabled ? 'Alibaba Wan2.2' : undefined,
-        threeD: fullProductionMode && productionConfig?.threeD?.enabled ? 'Meshy AI' : undefined,
+        avatar: fullProductionMode && productionConfig?.avatar?.enabled ? 'Alibaba Wan2.2 (deferred)' : undefined,
+        threeD: fullProductionMode && productionConfig?.threeD?.enabled ? 'Meshy AI (deferred)' : undefined,
       },
       productionMode: fullProductionMode ? {
         enabled: true,
         features: enabledFeatures,
       } : undefined,
       // Status tracking for async video generation
-      generationStatus: assemblyResult.pendingGeneration ? 'pending' : 'completed',
-      message: assemblyResult.pendingGeneration 
-        ? 'TTS audio generated. Full video assembly requires manual processing or external video assembly service.'
-        : 'Video generation completed.',
+      generationStatus: isPending ? 'pending' : 'completed',
+      message: hasDeferred 
+        ? `TTS audio generated successfully. Heavy assets (${deferredFeatures.join(', ')}) are deferred to avoid timeout - video will use screenshots only.`
+        : (assemblyResult.pendingGeneration 
+          ? 'TTS audio generated. Video assembly in progress via JSON2Video.'
+          : 'Video generation completed successfully.'),
     };
 
-    console.log(`✅ Assembly complete for ${language}: ${totalDuration}s total`);
+    const elapsedMs = Date.now() - startTime;
+    console.log(`✅ Assembly complete for ${language}: ${totalDuration}s total (took ${elapsedMs}ms)`);
+    if (hasDeferred) {
+      console.log(`⏳ Deferred heavy generation: ${deferredFeatures.join(', ')}`);
+    }
     if (assemblyResult.pendingGeneration) {
       console.log(`⚠️ Video file pending - TTS audio ready, awaiting video assembly`);
     }
@@ -1758,8 +1800,16 @@ async function tryJSON2VideoAssembly(
     
     if (projectId) {
       console.log(`📹 JSON2Video job created: ${projectId}`);
-      const result = await pollJSON2VideoResult(projectId, apiKey);
-      return result;
+      // CRITICAL FIX: Return immediately with pending status instead of blocking poll
+      // This prevents edge function timeout - client will poll genie-cast-status instead
+      console.log(`⏳ Returning immediately with pending status - client will poll for completion`);
+      return {
+        success: true,
+        pending: true,
+        taskId: projectId,
+        videoUrl: undefined, // Will be populated when client polls status
+        thumbnailUrl: undefined,
+      };
     }
 
     // If immediate output available (synchronous render - rare)

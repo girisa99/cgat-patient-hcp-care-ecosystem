@@ -74,88 +74,94 @@ export const TokenEstimatePanel: React.FC<TokenEstimatePanelProps> = ({
   const tierConfig = TIER_CONFIGS[tier];
   const tierMultiplier = tierConfig.costMultiplier;
 
-  // Calculate cost breakdown
+  // Calculate cost breakdown - CORRECTED REALISTIC COSTS
+  // Based on actual provider pricing: TTS ~1 credit/500 chars, Video assembly ~2 credits/min
   const costBreakdown = useMemo((): CostLineItem[] => {
     const items: CostLineItem[] = [];
 
-    // Text generation (per 1000 words)
+    // Text generation (per 1000 words) - LLM transcreation
+    // Realistic: ~0.5 credits per 500 words
     if (wordCount > 0) {
-      const textUnits = Math.ceil(wordCount / 500);
+      const textUnits = Math.ceil(wordCount / 1000);
       items.push({
         id: 'text',
-        label: 'Text Generation',
+        label: 'Script Generation',
         icon: FileText,
-        baseCredits: 2,
+        baseCredits: 1,
         quantity: textUnits,
         tierMultiplier,
-        totalCredits: Math.ceil(2 * textUnits * tierMultiplier),
+        totalCredits: Math.ceil(1 * textUnits * tierMultiplier),
       });
     }
 
-    // Image generation (per image)
+    // Image generation (per image) - Only for AI-generated images
+    // Note: Screenshots from storage are FREE
     if (imageCount > 0) {
       items.push({
         id: 'images',
-        label: 'Image Generation',
+        label: 'AI Image Generation',
         icon: Image,
-        baseCredits: 5,
+        baseCredits: 2,
         quantity: imageCount,
         tierMultiplier,
-        totalCredits: Math.ceil(5 * imageCount * tierMultiplier),
+        totalCredits: Math.ceil(2 * imageCount * tierMultiplier),
       });
     }
 
-    // Video generation (per 10 seconds)
+    // Video ASSEMBLY (not generation) - per minute, not per 10 seconds
+    // JSON2Video is ~2 credits per minute of assembled video
     if (videoEnabled && videoDurationSeconds > 0) {
-      const videoUnits = Math.ceil(videoDurationSeconds / 10);
+      const videoMinutes = Math.ceil(videoDurationSeconds / 60);
       items.push({
         id: 'video',
-        label: 'Video Generation',
+        label: 'Video Assembly',
         icon: Video,
-        baseCredits: 15,
-        quantity: videoUnits,
+        baseCredits: 2, // 2 credits per minute (not 15 per 10 seconds!)
+        quantity: videoMinutes,
         tierMultiplier,
-        totalCredits: Math.ceil(15 * videoUnits * tierMultiplier),
+        totalCredits: Math.ceil(2 * videoMinutes * tierMultiplier),
       });
     }
 
-    // Voice generation (per slide with voice)
-    if (voiceEnabled && slideCount > 0) {
-      const voiceCredits = languageCount > 1 ? 3 * languageCount : 3;
+    // Voice/TTS generation - per 500 characters, estimated from word count
+    // ~1 credit per 500 chars = ~1 credit per 100 words
+    if (voiceEnabled && wordCount > 0) {
+      const ttsUnits = Math.ceil(wordCount / 100); // ~5 chars per word avg
+      const langMultiplier = languageCount > 1 ? languageCount : 1;
       items.push({
         id: 'voice',
-        label: languageCount > 1 ? `Voice (${languageCount} languages)` : 'Voice Generation',
+        label: languageCount > 1 ? `TTS (${languageCount} languages)` : 'TTS Voice Generation',
         icon: Mic,
-        baseCredits: voiceCredits,
-        quantity: slideCount,
+        baseCredits: 1,
+        quantity: ttsUnits * langMultiplier,
         tierMultiplier,
-        totalCredits: Math.ceil(voiceCredits * slideCount * tierMultiplier),
+        totalCredits: Math.ceil(1 * ttsUnits * langMultiplier * tierMultiplier),
       });
     }
 
-    // Music generation
+    // Music generation (one-time)
     if (musicEnabled) {
       items.push({
         id: 'music',
         label: 'Background Music',
         icon: Music,
-        baseCredits: 10,
+        baseCredits: 5,
         quantity: 1,
         tierMultiplier,
-        totalCredits: Math.ceil(10 * tierMultiplier),
+        totalCredits: Math.ceil(5 * tierMultiplier),
       });
     }
 
-    // SFX generation (per slide)
+    // SFX generation - minimal cost
     if (sfxEnabled && slideCount > 0) {
       items.push({
         id: 'sfx',
         label: 'Sound Effects',
         icon: Sparkles,
-        baseCredits: 2,
-        quantity: slideCount,
+        baseCredits: 1,
+        quantity: Math.ceil(slideCount / 3), // SFX per 3 slides
         tierMultiplier,
-        totalCredits: Math.ceil(2 * slideCount * tierMultiplier),
+        totalCredits: Math.ceil(1 * Math.ceil(slideCount / 3) * tierMultiplier),
       });
     }
 
