@@ -180,49 +180,8 @@ export const genieStudioNavItems: GenieNavItem[] = [
   },
 
   // === PUBLISH ===
-  // Review & Enhance - Business+ tier, visible to internal users
-  {
-    title: "Review & Enhance",
-    url: "/genie-admin?tab=composition&step=review",
-    icon: FileCheck,
-    description: "Review and enhance generated content before publishing",
-    minTier: 'business',
-    category: 'publish',
-    isInternal: true,
-  },
-  // Assets - Business+ tier, visible to internal users
-  {
-    title: "Assets",
-    url: "/genie-admin?tab=composition&view=assets",
-    icon: Package,
-    description: "View and manage all generated assets",
-    minTier: 'business',
-    category: 'publish',
-    isInternal: true,
-  },
-  // Scheduler - Pro+ tier, visible to internal users
-  {
-    title: "Scheduler",
-    url: "/genie-admin?tab=scheduler",
-    icon: Send,
-    description: "Schedule content across platforms",
-    minTier: 'pro',
-    category: 'publish',
-    isInternal: true,
-  },
-  // Distribution - Available to ALL tiers with tiered capabilities:
-  // - Free: Download only (manual distribution)
-  // - Pro+: YouTube, TikTok, Facebook, Instagram
-  // - Business/Enterprise/Internal: All channels including LinkedIn Company Pages
-  {
-    title: "Distribution",
-    url: "/genie-admin?tab=library",
-    icon: Megaphone,
-    description: "Download & distribute content (Pro+: social platforms, Business+: all channels)",
-    minTier: 'free',
-    category: 'publish',
-    // NOTE: Available to all users, but capabilities are tiered within the component
-  },
+  // CONSOLIDATED: All publish features now live in Genie Cast → PUBLISH tab
+  // See GenieCastConsolidatedTabs.tsx for: Schedule, Distribute, SEO, A/B Testing
   
   // === MANAGE (Merged Production Hub) ===
   // PLAN - Task management, scheduling, and meetings
@@ -253,33 +212,14 @@ export const genieStudioNavItems: GenieNavItem[] = [
     category: 'manage',
     subCategory: 'Plan',
   },
-  // CREATE - Content library and composition tools (Internal Only)
-  {
-    title: "Library",
-    url: "/genie-admin?tab=library",
-    icon: FolderOpen,
-    description: "Browse, search, and organize all your media assets",
-    minTier: 'free',
-    category: 'manage',
-    subCategory: 'Create',
-    isInternal: true,
-  },
-  {
-    title: "Studio",
-    url: "/genie-admin?tab=composition",
-    icon: Layers,
-    description: "Create new compositions and combine media elements",
-    minTier: 'free',
-    category: 'manage',
-    subCategory: 'Create',
-    isInternal: true,
-  },
-  // Genie Cast - Landing video production (Internal Only)
+  // CREATE - CONSOLIDATED into Genie Cast 4-tab structure
+  // Library, Studio, Review, Assets, Scheduler all now live in Genie Cast
+  // Genie Cast - SINGLE ENTRY POINT for all video production
   {
     title: "Genie Cast",
     url: "/genie-admin?tab=landing-videos",
     icon: Film,
-    description: "Generate and manage landing page marketing videos",
+    description: "Unified video production: CREATE → PRODUCE → MANAGE → PUBLISH",
     minTier: 'free',
     category: 'manage',
     subCategory: 'Create',
