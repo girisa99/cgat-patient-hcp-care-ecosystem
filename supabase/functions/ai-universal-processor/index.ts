@@ -911,11 +911,11 @@ Analyze the provided image and return a JSON object with:
       return await callClaudeVision(model || 'claude-3-5-sonnet-20241022', analysisPrompt, fullSystemPrompt, imageBase64);
     case 'gemini':
       return await callGeminiVision(model || 'gemini-2.0-flash-exp', analysisPrompt, fullSystemPrompt, imageBase64);
-    case 'lovable':
-      return await callLovableAIVision(model || 'google/gemini-2.5-flash', analysisPrompt, fullSystemPrompt, imageBase64);
+    case 'lovable': // DEPRECATED - route to Gemini direct API
+    case 'default':
     default:
-      // Default to Lovable AI Gateway for vision
-      return await callLovableAIVision('google/gemini-2.5-flash', analysisPrompt, fullSystemPrompt, imageBase64);
+      // Default to Gemini Vision (NO LOVABLE AI)
+      return await callGeminiVision(model || 'gemini-2.0-flash-exp', analysisPrompt, fullSystemPrompt, imageBase64);
   }
 }
 
@@ -1081,64 +1081,23 @@ async function callGeminiVision(model: string, prompt: string, systemPrompt: str
 }
 
 /**
- * Lovable AI Gateway Vision call
+ * DEPRECATED: Lovable AI Gateway Vision call
+ * Replaced with direct Gemini Vision API calls
+ * Kept for backward compatibility - routes to Gemini
  */
 async function callLovableAIVision(model: string, prompt: string, systemPrompt: string, imageBase64: string) {
-  const apiKey = Deno.env.get('LOVABLE_API_KEY');
-  if (!apiKey) {
-    throw new Error('LOVABLE_API_KEY not configured for vision analysis.');
-  }
+  console.log('[Vision] DEPRECATED: callLovableAIVision routing to Gemini Vision API');
+  return await callGeminiVision('gemini-2.0-flash-exp', prompt, systemPrompt, imageBase64);
+}
 
-  // Use vision-capable model
-  const targetModel = model.startsWith('google/') ? model : 'google/gemini-2.5-flash';
-
-  console.log(`[Vision-Lovable] Using model: ${targetModel}`);
-
-  const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: targetModel,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        {
-          role: 'user',
-          content: [
-            { type: 'text', text: prompt },
-            {
-              type: 'image_url',
-              image_url: {
-                url: `data:image/jpeg;base64,${imageBase64}`
-              }
-            }
-          ]
-        }
-      ]
-    }),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error(`[Vision-Lovable] Error (${response.status}):`, errorText);
-    
-    if (response.status === 429) {
-      throw new Error('Rate limit exceeded. Please try again later.');
-    }
-    if (response.status === 402) {
-      throw new Error('API credits exhausted. Please add funds.');
-    }
-    
-    throw new Error(`Lovable AI Vision error: ${response.status}`);
-  }
-
-  const data = await response.json();
-  return {
-    content: data.choices?.[0]?.message?.content || '',
-    usage: data.usage
-  };
+/**
+ * DEPRECATED: Lovable AI Gateway LLM call
+ * Replaced with direct Gemini API calls
+ * Kept for backward compatibility - routes to Gemini
+ */
+async function callLovableAI(model: string, prompt: string, systemPrompt: string, json?: boolean) {
+  console.log('[LLM] DEPRECATED: callLovableAI routing to Gemini API');
+  return await callGemini('gemini-2.0-flash', prompt, systemPrompt);
 }
 
 // ============================================
@@ -1291,7 +1250,8 @@ Return ONLY the translated text, no explanations.`;
       break;
     case 'gemini':
     default:
-      result = await callLovableAI('google/gemini-2.5-flash', text, systemPrompt, false);
+      // Use Gemini direct API (NO LOVABLE AI)
+      result = await callGemini('gemini-2.0-flash', text, systemPrompt, 0.3, 4000);
   }
 
   return {
@@ -1575,7 +1535,8 @@ Return as JSON.`;
       break;
     case 'gemini':
     default:
-      result = await callLovableAI('google/gemini-2.5-flash', text, systemPrompt, false);
+      // Use Gemini direct API (NO LOVABLE AI)
+      result = await callGemini('gemini-2.0-flash', text, systemPrompt, 0.3, 4000);
   }
 
   // Try to parse JSON from response

@@ -8,14 +8,18 @@ const corsHeaders = {
 /**
  * Universal Video Generation with Multi-Provider Fallback
  * 
- * Priority routing (based on configured secrets):
- * 1. Sora2API - Primary video generation
- * 2. ModelsLab - AnimateDiff/Video generation
- * 3. Replicate - LumaAI/Runway alternatives
- * 4. Lovable AI Gateway - Gemini video
- * 5. Image fallback - High-quality still frame
+ * INTERNAL AI PROVIDERS ONLY - NO LOVABLE AI
  * 
- * Note: Google Veo requires Vertex AI service account, not AI Studio key
+ * Priority routing (based on configured secrets):
+ * 1. Vertex AI Veo - Primary (Google Cloud)
+ * 2. Sora2API - OpenAI video generation
+ * 3. ModelsLab - AnimateDiff/Video generation
+ * 4. Replicate - LumaAI/Runway alternatives
+ * 5. Alibaba Wan 2.6 - CJK region video
+ * 6. HuggingFace - Open source models
+ * 7. Image fallback - High-quality still frame (Gemini/DALL-E/ModelsLab)
+ * 
+ * Note: All providers are direct API integrations - NO Lovable AI Gateway
  */
 
 serve(async (req) => {
@@ -39,12 +43,14 @@ serve(async (req) => {
     const startTime = Date.now();
 
     // Try providers in priority order
+    // INTERNAL AI PROVIDERS ONLY - NO LOVABLE AI
     const providers = [
       { name: 'vertex-veo', fn: () => tryVertexVeo(prompt, aspectRatio, duration) },
       { name: 'sora2api', fn: () => trySora2API(prompt, aspectRatio, duration) },
       { name: 'modelslab', fn: () => tryModelsLab(prompt, aspectRatio, duration) },
       { name: 'replicate', fn: () => tryReplicate(prompt, aspectRatio, duration) },
-      { name: 'lovable', fn: () => tryLovableAI(prompt, aspectRatio, duration) },
+      { name: 'alibaba-wan', fn: () => tryAlibabaWan(prompt, aspectRatio, duration) },
+      { name: 'huggingface', fn: () => tryHuggingFace(prompt, aspectRatio, duration) },
     ];
 
     for (const provider of providers) {
@@ -497,98 +503,237 @@ async function tryReplicate(prompt: string, aspectRatio: string, duration: numbe
   return null;
 }
 
-// Provider: Lovable AI Gateway
-async function tryLovableAI(prompt: string, aspectRatio: string, duration: number): Promise<{ videoUrl: string } | null> {
-  const apiKey = Deno.env.get('LOVABLE_API_KEY');
+// Provider: Alibaba Wan 2.6 - CJK region video generation
+async function tryAlibabaWan(prompt: string, aspectRatio: string, duration: number): Promise<{ videoUrl: string } | null> {
+  const apiKey = Deno.env.get('ALIBABA_API_KEY') || Deno.env.get('DASHSCOPE_API_KEY');
   if (!apiKey) return null;
 
-  console.log('🎬 Trying Lovable AI Gateway...');
+  console.log('🎬 Trying Alibaba Wan 2.6...');
   
-  const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+  const response = await fetch('https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/text2video/video-synthesis', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+      'X-DashScope-Async': 'enable',
+    },
+    body: JSON.stringify({
+      model: 'wan2.6-t2v',
+      input: { 
+        prompt,
+        aspect_ratio: aspectRatio === '16:9' ? '16:9' : aspectRatio === '9:16' ? '9:16' : '1:1',
+      },
+      parameters: { 
+        duration: Math.min(duration, 10),
+        resolution: '720p',
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Alibaba Wan error: ${response.status} - ${error.substring(0, 100)}`);
+  }
+
+  const data = await response.json();
+  const taskId = data.output?.task_id;
+  if (!taskId) return null;
+
+  console.log('⏳ Alibaba Wan processing, polling...');
+  for (let i = 0; i < 60; i++) {
+    await new Promise(r => setTimeout(r, 3000));
+    const statusRes = await fetch(`https://dashscope-intl.aliyuncs.com/api/v1/tasks/${taskId}`, {
+      headers: { 'Authorization': `Bearer ${apiKey}` },
+    });
+    const statusData = await statusRes.json();
+    
+    if (statusData.output?.task_status === 'SUCCEEDED') {
+      const videoUrl = statusData.output?.video_url || statusData.output?.results?.[0]?.url;
+      if (videoUrl) return { videoUrl };
+    }
+    if (statusData.output?.task_status === 'FAILED') break;
+  }
+  
+  return null;
+}
+
+// Provider: HuggingFace - Open source video models
+async function tryHuggingFace(prompt: string, aspectRatio: string, duration: number): Promise<{ videoUrl: string } | null> {
+  const apiKey = Deno.env.get('HUGGING_FACE_ACCESS_TOKEN') || Deno.env.get('HUGGINGFACE_API_KEY');
+  if (!apiKey) return null;
+
+  console.log('🎬 Trying HuggingFace video models...');
+  
+  // Use AnimateDiff Lightning model for fast generation
+  const response = await fetch('https://api-inference.huggingface.co/models/ByteDance/AnimateDiff-Lightning', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'google/veo-2.0',
-      messages: [{ role: 'user', content: `Generate a ${duration} second video: ${prompt}` }],
-      modalities: ['video']
+      inputs: prompt,
+      parameters: {
+        num_frames: duration * 8, // 8fps
+      }
     }),
   });
 
   if (!response.ok) {
     const error = await response.text();
-    throw new Error(`Lovable AI error: ${response.status} - ${error.substring(0, 100)}`);
+    throw new Error(`HuggingFace error: ${response.status} - ${error.substring(0, 100)}`);
   }
 
-  const data = await response.json();
-  const videoUrl = data.choices?.[0]?.message?.video_url || data.choices?.[0]?.message?.content;
-  
-  if (videoUrl && (videoUrl.startsWith('http') || videoUrl.startsWith('data:'))) {
-    return { videoUrl };
+  // HuggingFace returns binary video data
+  const videoBlob = await response.blob();
+  if (videoBlob.size > 0) {
+    // Convert to base64 data URL
+    const arrayBuffer = await videoBlob.arrayBuffer();
+    const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+    return { videoUrl: `data:video/mp4;base64,${base64}` };
   }
   
   return null;
 }
 
 // Fallback: Generate high-quality image as placeholder
+// USES INTERNAL AI PROVIDERS ONLY - NO LOVABLE AI
 async function generateImageFallback(prompt: string, aspectRatio: string): Promise<string | null> {
-  const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-  
-  if (LOVABLE_API_KEY) {
-    console.log('📸 Generating image via Lovable AI Gateway...');
+  // Priority 1: Gemini Direct API (Imagen)
+  const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY') || Deno.env.get('GOOGLE_API_KEY');
+  if (GEMINI_API_KEY) {
+    console.log('📸 Generating image via Gemini Imagen (direct API)...');
     
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash-image-preview',
-        messages: [{ 
-          role: 'user', 
-          content: `Generate a cinematic ${aspectRatio} image: ${prompt}. High quality, professional, movie still.` 
-        }],
-        modalities: ['image', 'text']
-      }),
-    });
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{ text: `Generate a cinematic ${aspectRatio} image: ${prompt}. High quality, professional, movie still.` }]
+            }],
+            generationConfig: { responseModalities: ['image', 'text'] }
+          }),
+        }
+      );
 
-    if (response.ok) {
-      const data = await response.json();
-      const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-      if (imageUrl) {
-        return imageUrl;
+      if (response.ok) {
+        const data = await response.json();
+        const imagePart = data.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData?.mimeType?.startsWith('image/'));
+        if (imagePart?.inlineData?.data) {
+          return `data:${imagePart.inlineData.mimeType};base64,${imagePart.inlineData.data}`;
+        }
       }
+    } catch (e) {
+      console.log('Gemini Imagen failed:', e);
     }
   }
 
-  // Try OpenAI DALL-E as backup
+  // Priority 2: OpenAI DALL-E 3
   const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
   if (OPENAI_API_KEY) {
-    console.log('📸 Generating image via OpenAI DALL-E...');
+    console.log('📸 Generating image via OpenAI DALL-E 3...');
     
-    const response = await fetch('https://api.openai.com/v1/images/generations', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'dall-e-3',
-        prompt: `Cinematic movie still: ${prompt}. Professional quality, ${aspectRatio} aspect ratio.`,
-        n: 1,
-        size: aspectRatio === '16:9' ? '1792x1024' : '1024x1024',
-        quality: 'hd'
-      }),
-    });
+    try {
+      const response = await fetch('https://api.openai.com/v1/images/generations', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'dall-e-3',
+          prompt: `Cinematic movie still: ${prompt}. Professional quality, ${aspectRatio} aspect ratio.`,
+          n: 1,
+          size: aspectRatio === '16:9' ? '1792x1024' : '1024x1024',
+          quality: 'hd'
+        }),
+      });
 
-    if (response.ok) {
-      const data = await response.json();
-      if (data.data?.[0]?.url) {
-        return data.data[0].url;
+      if (response.ok) {
+        const data = await response.json();
+        if (data.data?.[0]?.url) {
+          return data.data[0].url;
+        }
       }
+    } catch (e) {
+      console.log('OpenAI DALL-E failed:', e);
+    }
+  }
+
+  // Priority 3: ModelsLab FLUX
+  const MODELSLAB_API_KEY = Deno.env.get('MODELSLAB_API_KEY');
+  if (MODELSLAB_API_KEY) {
+    console.log('📸 Generating image via ModelsLab FLUX...');
+    
+    try {
+      const response = await fetch('https://modelslab.com/api/v6/images/text2img', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          key: MODELSLAB_API_KEY,
+          model_id: 'flux-schnell',
+          prompt: `Cinematic movie still: ${prompt}. Professional quality.`,
+          width: aspectRatio === '16:9' ? 1280 : 1024,
+          height: aspectRatio === '16:9' ? 720 : 1024,
+          samples: 1,
+          num_inference_steps: 30,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.output?.[0]) {
+          return data.output[0];
+        }
+      }
+    } catch (e) {
+      console.log('ModelsLab FLUX failed:', e);
+    }
+  }
+
+  // Priority 4: Alibaba Wanx
+  const ALIBABA_API_KEY = Deno.env.get('ALIBABA_API_KEY') || Deno.env.get('DASHSCOPE_API_KEY');
+  if (ALIBABA_API_KEY) {
+    console.log('📸 Generating image via Alibaba Wanx...');
+    
+    try {
+      const response = await fetch('https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${ALIBABA_API_KEY}`,
+          'Content-Type': 'application/json',
+          'X-DashScope-Async': 'enable',
+        },
+        body: JSON.stringify({
+          model: 'wanx-v1',
+          input: { prompt: `Cinematic movie still: ${prompt}` },
+          parameters: { size: '1280*720', n: 1 },
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const taskId = data.output?.task_id;
+        if (taskId) {
+          // Poll for result
+          for (let i = 0; i < 20; i++) {
+            await new Promise(r => setTimeout(r, 2000));
+            const statusRes = await fetch(`https://dashscope-intl.aliyuncs.com/api/v1/tasks/${taskId}`, {
+              headers: { 'Authorization': `Bearer ${ALIBABA_API_KEY}` },
+            });
+            const statusData = await statusRes.json();
+            if (statusData.output?.task_status === 'SUCCEEDED' && statusData.output?.results?.[0]?.url) {
+              return statusData.output.results[0].url;
+            }
+            if (statusData.output?.task_status === 'FAILED') break;
+          }
+        }
+      }
+    } catch (e) {
+      console.log('Alibaba Wanx failed:', e);
     }
   }
 

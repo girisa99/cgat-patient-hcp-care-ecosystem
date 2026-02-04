@@ -54,8 +54,8 @@ import type { IndustryTag } from '@/services/segmentPipelineMappingRegistry';
 // ==========================================
 
 const TEXT_PROVIDERS = [
-  // Tier 1 - Primary/Recommended
-  { id: 'google/gemini-3-flash-preview', name: 'Gemini 3 Flash Preview', short: 'Gemini 3 Flash', tier: 1, description: 'Fastest, multimodal via Lovable AI' },
+  // Tier 1 - Primary/Recommended (Direct API Integration)
+  { id: 'google/gemini-3-flash-preview', name: 'Gemini 3 Flash Preview', short: 'Gemini 3 Flash', tier: 1, description: 'Fastest, multimodal (Direct API)' },
   { id: 'google/gemini-3-pro-preview', name: 'Gemini 3 Pro Preview', short: 'Gemini 3 Pro', tier: 1, description: 'Next-gen reasoning' },
   { id: 'google/gemini-2.5-pro', name: 'Gemini 2.5 Pro', short: 'Gemini Pro', tier: 1, description: 'Best for complex reasoning, 1M context' },
   { id: 'google/gemini-2.5-flash', name: 'Gemini 2.5 Flash', short: 'Gemini Flash', tier: 1, description: 'Fast balanced multimodal' },
@@ -68,26 +68,26 @@ const TEXT_PROVIDERS = [
   { id: 'anthropic/claude-3-5-sonnet', name: 'Claude 3.5 Sonnet', short: 'Claude 3.5', tier: 2, description: 'Compliance-sensitive content' },
   { id: 'deepseek/deepseek-chat', name: 'DeepSeek Chat', short: 'DeepSeek', tier: 3, description: 'Best for Chinese, low cost' },
   { id: 'deepseek/deepseek-coder', name: 'DeepSeek Coder', short: 'DeepSeek Code', tier: 3, description: 'Technical/code content' },
-  // Tier 3 - Alibaba/Azure
+  // Tier 3 - Alibaba/Azure/HuggingFace
   { id: 'alibaba/qwen-max', name: 'Qwen Max', short: 'Qwen Max', tier: 3, description: 'Excellent CJK, full-stack' },
   { id: 'alibaba/qwen-2.5', name: 'Qwen 2.5', short: 'Qwen 2.5', tier: 3, description: 'Asian language optimized' },
   { id: 'alibaba/qwen-turbo', name: 'Qwen Turbo', short: 'Qwen Fast', tier: 3, description: 'Fast, low cost' },
+  { id: 'huggingface/llama-3.2', name: 'HuggingFace Llama 3.2', short: 'HF Llama', tier: 3, description: 'Open source, customizable' },
   { id: 'azure/gpt-4o', name: 'Azure OpenAI GPT-4o', short: 'Azure GPT-4o', tier: 2, description: 'Enterprise SLA, HIPAA' },
 ];
 
 const IMAGE_PROVIDERS = [
-  // Tier 1 - Primary via Lovable AI / ModelsLab
-  { id: 'gemini-nano-banana', name: 'Gemini 2.5 Flash Image', short: 'Gemini Image', tier: 1, description: 'Fast via Lovable AI' },
-  { id: 'gemini-3-pro-image', name: 'Gemini 3 Pro Image', short: 'Gemini 3 Image', tier: 1, description: 'Highest quality via Lovable AI' },
+  // Tier 1 - Primary (Direct API Integration - NO Lovable AI)
+  { id: 'gemini-imagen', name: 'Gemini Imagen 3', short: 'Gemini Image', tier: 1, description: 'Fast (Direct Google API)' },
+  { id: 'dall-e-3', name: 'OpenAI DALL-E 3', short: 'DALL-E 3', tier: 1, description: 'Excellent text rendering' },
   { id: 'modelslab', name: 'ModelsLab Hub', short: 'ModelsLab', tier: 1, description: 'Multi-model hub for Image/Video/3D' },
   { id: 'modelslab-realvision', name: 'ModelsLab RealVision', short: 'RealVision', tier: 1, description: 'Photorealistic images' },
   { id: 'modelslab-video', name: 'ModelsLab Video', short: 'ModelsLab Video', tier: 1, description: 'Video generation' },
   // Tier 2 - Premium
   { id: 'flux-pro', name: 'Flux Pro', short: 'Flux Pro', tier: 2, description: 'High quality, fine control' },
   { id: 'flux-schnell', name: 'Flux Schnell', short: 'Flux Fast', tier: 2, description: 'Fast generation' },
-  { id: 'dall-e-3', name: 'OpenAI DALL-E 3', short: 'DALL-E 3', tier: 2, description: 'Excellent text rendering' },
   { id: 'stability', name: 'Stability AI SDXL', short: 'Stability', tier: 2, description: 'Fine control, ControlNet' },
-  // Tier 3 - Alibaba/Replicate
+  // Tier 3 - Alibaba/Replicate/HuggingFace
   { id: 'alibaba-wanx', name: 'Alibaba Wanx', short: 'Wanx', tier: 3, description: 'Asian aesthetics, low cost' },
   { id: 'replicate', name: 'Replicate', short: 'Replicate', tier: 3, description: 'Open source models' },
   { id: 'huggingface', name: 'HuggingFace FLUX', short: 'HF FLUX', tier: 3, description: 'Open models, customizable' },
@@ -95,15 +95,15 @@ const IMAGE_PROVIDERS = [
 ];
 
 const TRANSLATION_PROVIDERS = [
-  // Tier 1 - Best quality
+  // Tier 1 - Best quality (Direct API)
   { id: 'deepl', name: 'DeepL Pro', short: 'DeepL', tier: 1, description: 'Highest quality EU languages' },
   { id: 'google-translate', name: 'Google Translate', short: 'Google', tier: 1, description: '249+ languages, reliable' },
   // Tier 2 - Specialized
   { id: 'qwen-mt', name: 'Qwen-MT', short: 'Qwen MT', tier: 2, description: 'Best for CJK languages' },
   { id: 'azure', name: 'Azure Translator', short: 'Azure', tier: 2, description: 'Enterprise, 135+ languages' },
   { id: 'aws-translate', name: 'AWS Translate', short: 'AWS', tier: 2, description: 'High volume, custom terminology' },
-  // Tier 3 - LLM-based
-  { id: 'gemini-translate', name: 'Gemini Translation', short: 'Gemini', tier: 3, description: 'Context-aware via Lovable AI' },
+  // Tier 3 - LLM-based (Direct API - NO Lovable AI)
+  { id: 'gemini-translate', name: 'Gemini Translation', short: 'Gemini', tier: 3, description: 'Context-aware (Direct API)' },
   { id: 'gpt-translate', name: 'GPT Translation', short: 'GPT', tier: 3, description: 'Context-aware, creative' },
   { id: 'claude-translate', name: 'Claude Translation', short: 'Claude', tier: 3, description: 'Literary, nuanced' },
   { id: 'nllb', name: 'NLLB (Meta)', short: 'NLLB', tier: 3, description: '200 languages, open source' },
