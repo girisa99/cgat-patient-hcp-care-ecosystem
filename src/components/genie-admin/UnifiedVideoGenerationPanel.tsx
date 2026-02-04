@@ -67,6 +67,7 @@ import { GenieCastOverview, VideoStyleCards, AIProviderShowcase, type VideoStyle
 import { StyleDrivenProductionConfig, deriveProductionRequirements } from './genie-cast/StyleDrivenProductionConfig';
 import { getStylePipelineConfig, styleRequiresAvatar, styleRequires3D } from '@/config/video-style-pipeline-mapping';
 import { useVideoStatusPolling } from '@/hooks/useVideoStatusPolling';
+import { GenieCastHubMockup } from './genie-cast/mockups';
 // Supported languages with zone routing
 const LANGUAGES = [
   { code: 'en', name: 'English', flag: '🇺🇸', zone: 'Claude Zone', tts: 'ElevenLabs' },
@@ -140,10 +141,10 @@ const GENIE_CAST_STATE_KEY = 'genie_cast_panel_state';
 
 export const UnifiedVideoGenerationPanel: React.FC = () => {
   // Persist tab state to prevent loss on navigation/refresh
-  const [activeTab, setActiveTab] = useState<'overview' | 'screenshots' | 'generate' | 'matrix' | 'library' | 'analytics' | 'alerts' | 'messaging' | 'flow'>(() => {
+  const [activeTab, setActiveTab] = useState<'overview' | 'screenshots' | 'generate' | 'matrix' | 'library' | 'analytics' | 'alerts' | 'messaging' | 'flow' | 'mockup'>(() => {
     try {
       const saved = localStorage.getItem(GENIE_CAST_TAB_KEY);
-      if (saved && ['overview', 'screenshots', 'generate', 'matrix', 'library', 'analytics', 'alerts', 'messaging', 'flow'].includes(saved)) {
+      if (saved && ['overview', 'screenshots', 'generate', 'matrix', 'library', 'analytics', 'alerts', 'messaging', 'flow', 'mockup'].includes(saved)) {
         return saved as any;
       }
     } catch { /* ignore */ }
@@ -485,6 +486,10 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
           <TabsTrigger value="flow" className="flex-shrink-0 gap-1.5 px-3 text-xs whitespace-nowrap">
             <GitBranch className="w-3.5 h-3.5 flex-shrink-0" />
             <span>Flow</span>
+          </TabsTrigger>
+          <TabsTrigger value="mockup" className="flex-shrink-0 gap-1.5 px-3 text-xs whitespace-nowrap bg-primary/10 border border-primary/30">
+            <Palette className="w-3.5 h-3.5 flex-shrink-0" />
+            <span>🆕 UI Mockup</span>
           </TabsTrigger>
         </TabsList>
 
@@ -1103,6 +1108,21 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
         {/* Flow Diagram Tab */}
         <TabsContent value="flow" className="space-y-6">
           <GenieCastFlowDiagram />
+        </TabsContent>
+
+        {/* UI Mockup Tab - Preview of Consolidated Hub */}
+        <TabsContent value="mockup" className="space-y-4">
+          <div className="border-2 border-dashed border-primary/30 rounded-lg p-2 bg-primary/5">
+            <div className="text-center mb-2">
+              <Badge variant="outline" className="bg-primary/10 text-primary">
+                🆕 Preview: Consolidated Genie Cast Hub
+              </Badge>
+              <p className="text-xs text-muted-foreground mt-1">
+                Toggle between modes and user types to explore the proposed workflow
+              </p>
+            </div>
+            <GenieCastHubMockup />
+          </div>
         </TabsContent>
       </Tabs>
 
