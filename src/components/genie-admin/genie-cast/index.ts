@@ -16,6 +16,8 @@ export { AIProviderShowcase } from './AIProviderShowcase';
 export { BrandAssetsPanel } from './BrandAssetsPanel';
 export { VirtualizedMessagingMatrix } from './VirtualizedMessagingMatrix';
 export { ScriptPreviewPanel } from './ScriptPreviewPanel';
+export { BlueprintPreviewModal } from './BlueprintPreviewModal';
+export { BlueprintTemplatesGrid } from './BlueprintTemplatesGrid';
 export { 
   GenieCastConsolidatedTabs, 
   type ConsolidatedTab,
