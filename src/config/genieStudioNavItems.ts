@@ -410,15 +410,21 @@ export const genieStudioNavItems: GenieNavItem[] = [
   },
 ];
 
+// DEV_MODE: Set to true to show all internal tabs regardless of user status
+const DEV_MODE_SHOW_ALL_TABS = true;
+
 export function getGenieStudioNavItems(
   userTier: SubscriptionTier = 'free',
   isInternal: boolean = false
 ): GenieNavItem[] {
+  // In dev mode OR for internal users, show all tabs
+  const showAllInternalTabs = DEV_MODE_SHOW_ALL_TABS || isInternal;
+  
   return genieStudioNavItems.filter(item => {
     if (!meetsTierRequirement(userTier, item.minTier)) {
       return false;
     }
-    if (item.isInternal && !isInternal) {
+    if (item.isInternal && !showAllInternalTabs) {
       return false;
     }
     return true;
