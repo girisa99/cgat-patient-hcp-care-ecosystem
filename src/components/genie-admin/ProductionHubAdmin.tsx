@@ -34,12 +34,13 @@ const AIIntelligenceHub = lazy(() => import('@/components/ai/AIIntelligenceHub')
 const VerticalKanban = lazy(() => import('@/components/production/VerticalKanban').then(m => ({ default: m.VerticalKanban })));
 const ProductionCalendar = lazy(() => import('@/components/production/ProductionCalendar').then(m => ({ default: m.ProductionCalendar })));
 const AppointmentScheduler = lazy(() => import('@/components/arc/AppointmentScheduler').catch(() => ({ default: () => <div className="p-8 text-center text-muted-foreground">Appointments module loading...</div> })));
+const GenieCastHubMockup = lazy(() => import('./genie-cast/mockups/GenieCastHubMockup'));
 
 interface ProductionHubAdminProps {
   className?: string;
 }
 
-type AdminTab = 'kanban' | 'calendar' | 'appointments' | 'library' | 'composition' | 'scheduler' | 'analytics' | 'enterprise-analytics' | 'error-analytics' | 'collaboration' | 'workspaces' | 'team' | 'whitelabel' | 'ai-intelligence' | 'command-center' | 'landing-videos';
+type AdminTab = 'kanban' | 'calendar' | 'appointments' | 'library' | 'composition' | 'scheduler' | 'analytics' | 'enterprise-analytics' | 'error-analytics' | 'collaboration' | 'workspaces' | 'team' | 'whitelabel' | 'ai-intelligence' | 'command-center' | 'landing-videos' | 'genie-cast-mockup';
 
 export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ className }) => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -277,6 +278,13 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
           {/* Landing Videos Generation - Unified Panel */}
           {activeTab === 'landing-videos' && (
             <UnifiedVideoGenerationPanel />
+          )}
+
+          {/* Genie Cast Hub Mockup - UI Preview */}
+          {activeTab === 'genie-cast-mockup' && (
+            <Suspense fallback={<TabLoading />}>
+              <GenieCastHubMockup />
+            </Suspense>
           )}
         </div>
       </ScrollArea>
