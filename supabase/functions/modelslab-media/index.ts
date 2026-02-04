@@ -152,6 +152,11 @@ serve(async (req) => {
         endpoint = options.init_image 
           ? `${MODELSLAB_BASE_URL}/video/img2video`
           : `${MODELSLAB_BASE_URL}/video/text2video`;
+        // ModelsLab requires minimum 16 FPS for video and max 25 frames
+        const videoFps = Math.max(options.fps || 16, 16);
+        const videoDuration = options.duration || 2;
+        // Cap frames at 25 (ModelsLab limit) - adjust duration if needed
+        const targetFrames = Math.min(videoDuration * videoFps, 25);
         requestBody = {
           key: MODELSLAB_API_KEY,
           model_id: selectedModel || 'animatediff',
@@ -159,11 +164,12 @@ serve(async (req) => {
           negative_prompt: options.negative_prompt || 'blurry, jittery, distorted',
           width: options.width || 512,
           height: options.height || 512,
-          num_frames: (options.duration || 3) * (options.fps || 8),
-          fps: options.fps || 8,
+          num_frames: targetFrames,
+          fps: videoFps,
           init_image: options.init_image || null,
           strength: options.strength || 0.8,
         };
+        console.log(`📹 ModelsLab video: ${targetFrames} frames @ ${videoFps}fps (~${(targetFrames / videoFps).toFixed(1)}s)`);
         break;
 
       case 'audio':
