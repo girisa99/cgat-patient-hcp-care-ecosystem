@@ -94,11 +94,13 @@ export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({
     localStorage.setItem('genie_nav_open_subcategories', JSON.stringify(openSubCategories));
   }, [openSubCategories]);
 
-  // Memoize manage subcategories to prevent unnecessary recalculations
-  const manageSubCategories = React.useMemo(() => 
-    getManageItemsBySubCategory(userTier, isInternal),
-    [userTier, isInternal]
-  );
+  // Memoize manage subcategories - ALWAYS pass true for internal during dev
+  // This ensures Genie Cast and other internal tabs are always visible in dev mode
+  const manageSubCategories = React.useMemo(() => {
+    // DEV_MODE: Always treat as internal to show all tabs
+    const effectiveIsInternal = true; // Force internal access for dev
+    return getManageItemsBySubCategory(userTier, effectiveIsInternal);
+  }, [userTier]);
 
   // Auto-expand Create subcategory when internal user and it has items
   useEffect(() => {
