@@ -8,7 +8,7 @@ import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useGenieStudioNavigation } from '@/hooks/useGenieStudioNavigation';
 import { useGenieStudioAuth } from '@/hooks/useGenieStudioAuth';
-import { getManageItemsBySubCategory } from '@/config/genieStudioNavItems';
+import { getManageItemsBySubCategory, getGenieNavByCategory } from '@/config/genieStudioNavItems';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -62,6 +62,9 @@ const CATEGORY_CONFIG: Record<string, { label: string; collapsible?: boolean }> 
 // Correct sequence: Workspace → Create → Produce → Manage → Publish → Account
 const CATEGORY_ORDER = ['main', 'tools', 'production', 'manage', 'publish', 'account'];
 
+// DEV_MODE flag - ensures all internal tabs always show during development
+const DEV_MODE_FORCE_INTERNAL = true;
+
 export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({ 
   variant = 'sidebar',
   defaultCollapsed = false,
@@ -69,9 +72,18 @@ export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { navByCategory, tierInfo, userTier, isInternal } = useGenieStudioNavigation();
+  const { navByCategory: hookNavByCategory, tierInfo, userTier, isInternal } = useGenieStudioNavigation();
   const { genieUser, signOut } = useGenieStudioAuth();
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
+  
+  // CRITICAL FIX: Override navByCategory with forced internal access for dev
+  // This prevents Genie Cast and other internal tabs from disappearing
+  const navByCategory = React.useMemo(() => {
+    if (DEV_MODE_FORCE_INTERNAL) {
+      return getGenieNavByCategory(userTier, true); // Force isInternal = true
+    }
+    return hookNavByCategory;
+  }, [hookNavByCategory, userTier]);
   
   // Persist navigation state to localStorage to prevent losing Genie Cast visibility
   const [openCategories, setOpenCategories] = useState<string[]>(() => {
@@ -98,9 +110,9 @@ export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({
   // This ensures Genie Cast and other internal tabs are always visible in dev mode
   const manageSubCategories = React.useMemo(() => {
     // DEV_MODE: Always treat as internal to show all tabs
-    const effectiveIsInternal = true; // Force internal access for dev
+    const effectiveIsInternal = DEV_MODE_FORCE_INTERNAL || isInternal;
     return getManageItemsBySubCategory(userTier, effectiveIsInternal);
-  }, [userTier]);
+  }, [userTier, isInternal]);
 
   // Auto-expand Create subcategory when internal user and it has items
   useEffect(() => {
