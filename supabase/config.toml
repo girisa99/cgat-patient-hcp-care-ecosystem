@@ -392,3 +392,12 @@ verify_jwt = false
 
 [functions.genie-cast-status]
 verify_jwt = false
+
+[functions.seed-blueprints-comprehensive]
+verify_jwt = false
+
+[functions.seed-provider-templates]
+verify_jwt = false
+
+[functions.process-thumbnail-queue]
+verify_jwt = false
