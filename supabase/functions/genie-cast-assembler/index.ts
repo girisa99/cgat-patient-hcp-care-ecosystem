@@ -194,6 +194,8 @@ serve(async (req) => {
       useApprovedMessaging = false,
       // NEW: Skip TTS regeneration if audio already exists
       skipExistingTTS = false,
+      // NEW: Generate unified audio track (seamless, no breaks between chapters)
+      unifiedAudio = true,  // Default to unified for seamless playback
       // NEW: Video style configuration from style cards
       videoStyle = 'educational',
       styleConfig = null as {
@@ -223,7 +225,7 @@ serve(async (req) => {
     console.log(`🎨 Video Style: ${videoStyle}`);
     console.log(`🎥 Mode: ${fullProductionMode ? 'Full Production' : 'Standard'}`);
     console.log(`🔊 Skip existing TTS: ${skipExistingTTS ? 'Yes (reuse cached audio)' : 'No (regenerate all)'}`);
-    
+    console.log(`🔗 Unified Audio: ${unifiedAudio ? 'Yes (seamless single track)' : 'No (per-chapter)'}`);
     // Log style-specific configuration
     if (styleConfig) {
       console.log(`🎯 Style Config: provider=${styleConfig.videoProvider}, avatar=${styleConfig.avatarProvider || 'none'}, effect=${styleConfig.visualEffect}`);
@@ -248,22 +250,124 @@ serve(async (req) => {
 
     const chapterResults: ChapterResult[] = [];
     let totalDuration = 0;
+    
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // UNIFIED AUDIO GENERATION (Seamless single track for all chapters)
+    // ═══════════════════════════════════════════════════════════════════════════════
+    let unifiedAudioUrl: string | undefined;
+    let unifiedAudioBase64: string | undefined;
+    
+    if (unifiedAudio) {
+      console.log(`🎵 Generating unified audio track for seamless playback...`);
+      
+      // Combine all chapter scripts into one continuous script with natural transitions
+      const allChapterScripts = CHAPTERS.map(chapter => {
+        const script = getChapterScript(chapter.id, language, styleConfig);
+        return script;
+      }).join(' ... '); // Add natural pauses between chapters
+      
+      console.log(`   📜 Unified script length: ${allChapterScripts.length} chars`);
+      console.log(`   📜 Preview: "${allChapterScripts.substring(0, 150)}..."`);
+      
+      try {
+        // Check for cached unified audio first
+        const cachedUnifiedAudio = skipExistingTTS 
+          ? await findExistingAudio(supabase, 'unified-full', language) 
+          : null;
+        
+        if (cachedUnifiedAudio) {
+          console.log(`   ♻️ Reusing cached unified audio: ${cachedUnifiedAudio}`);
+          unifiedAudioUrl = cachedUnifiedAudio;
+        } else {
+          // Generate unified TTS via multi-provider-tts
+          const { data: ttsData, error: ttsError } = await supabase.functions.invoke('multi-provider-tts', {
+            body: {
+              text: allChapterScripts,
+              language,
+              languageCode: language,
+              provider: ttsConfig.provider,
+              returnBase64: true,
+            },
+          });
+          
+          if (ttsError) {
+            console.error(`   ❌ Unified TTS failed: ${ttsError.message}`);
+            // Fall back to per-chapter generation
+          } else if (ttsData?.audioContent || ttsData?.audioBase64) {
+            unifiedAudioBase64 = ttsData.audioContent || ttsData.audioBase64;
+            
+            // Upload to storage
+            const timestamp = Date.now();
+            const filePath = `tts-audio/${language}/unified-full-${timestamp}.mp3`;
+            
+            let cleanBase64 = unifiedAudioBase64!;
+            if (cleanBase64.includes(',')) {
+              cleanBase64 = cleanBase64.split(',')[1];
+            }
+            
+            const binaryStr = atob(cleanBase64);
+            const audioBuffer = new Uint8Array(binaryStr.length);
+            for (let i = 0; i < binaryStr.length; i++) {
+              audioBuffer[i] = binaryStr.charCodeAt(i);
+            }
+            
+            console.log(`   📤 Uploading unified audio: ${audioBuffer.length} bytes`);
+            
+            const { data: uploadData, error: uploadError } = await supabase.storage
+              .from('genie-media')
+              .upload(filePath, audioBuffer, {
+                contentType: 'audio/mpeg',
+                upsert: true,
+              });
+            
+            if (!uploadError && uploadData) {
+              const { data: urlData } = supabase.storage
+                .from('genie-media')
+                .getPublicUrl(filePath);
+              unifiedAudioUrl = urlData?.publicUrl;
+              console.log(`   ✅ Unified audio uploaded: ${unifiedAudioUrl}`);
+            }
+          } else if (ttsData?.jobId) {
+            // Background job - poll for completion
+            console.log(`   ⏳ Unified TTS started as background job: ${ttsData.jobId}`);
+            // For now, fall back to per-chapter if async
+          }
+        }
+      } catch (err) {
+        console.error(`   ❌ Unified audio generation failed:`, err);
+        // Fall back to per-chapter generation below
+      }
+    }
 
     // Process each chapter
     for (const chapter of CHAPTERS) {
       console.log(`📹 Processing chapter: ${chapter.product}`);
 
       try {
-        // Step 1: Generate TTS audio for this chapter (or reuse existing)
-        // Now passes styleConfig for dynamic script generation
-        const audioResult = await generateChapterAudio(
-          supabase,
-          chapter.id,
-          language,
-          ttsConfig.provider,
-          skipExistingTTS,  // Pass the skip flag
-          styleConfig       // Pass style config for dynamic scripts
-        );
+        // Step 1: Generate TTS audio for this chapter (or use unified audio)
+        // If unified audio is available, skip per-chapter TTS generation
+        let audioResult: { audioBase64?: string; audioUrl?: string; charactersUsed: number; cached: boolean };
+        
+        if (unifiedAudioUrl) {
+          // Use unified audio - pass URL but set as "unified" source
+          audioResult = {
+            audioUrl: unifiedAudioUrl, // Same URL for all chapters (timeline will sync)
+            audioBase64: unifiedAudioBase64,
+            charactersUsed: 0, // Already counted in unified generation
+            cached: true,
+          };
+          console.log(`   🔗 Using unified audio track for ${chapter.id}`);
+        } else {
+          // Fall back to per-chapter TTS generation
+          audioResult = await generateChapterAudio(
+            supabase,
+            chapter.id,
+            language,
+            ttsConfig.provider,
+            skipExistingTTS,  // Pass the skip flag
+            styleConfig       // Pass style config for dynamic scripts
+          );
+        }
 
         // Step 2: Generate product visuals for this chapter (if enabled)
         // Now uses product screenshots from the orchestration service
@@ -1065,13 +1169,25 @@ async function stitchChaptersToVideo(
   const audioUrls = successfulChapters.map(c => c.audioUrl).filter(Boolean) as string[];
   // Flatten all visualUrls from each chapter to include all product screenshots
   const visualUrls = successfulChapters.flatMap(c => c.visualUrls || (c.visualUrl ? [c.visualUrl] : []));
+  
+  // Detect unified audio mode: all chapters have the same audio URL
+  const uniqueAudioUrls = [...new Set(audioUrls)];
+  const isUnifiedAudio = uniqueAudioUrls.length === 1 && audioUrls.length > 1;
 
   console.log(`🎬 Stitching ${successfulChapters.length} chapters into video`);
-  console.log(`   Audio files: ${audioUrls.length}, Visual files: ${visualUrls.length}`);
+  console.log(`   Audio mode: ${isUnifiedAudio ? 'UNIFIED (seamless single track)' : 'PER-CHAPTER'}`);
+  console.log(`   Audio files: ${audioUrls.length} (unique: ${uniqueAudioUrls.length}), Visual files: ${visualUrls.length}`);
   console.log(`   Screenshots per chapter:`, successfulChapters.map(c => `${c.chapterId}: ${c.visualUrls?.length || 1}`).join(', '));
 
   // === PHASE 1: JSON2VIDEO (PRIMARY - Timeline Assembly) ===
-  const json2videoResult = await tryJSON2VideoAssembly(successfulChapters, audioUrls, visualUrls, language, quality);
+  const json2videoResult = await tryJSON2VideoAssembly(
+    successfulChapters, 
+    audioUrls, 
+    visualUrls, 
+    language, 
+    quality,
+    isUnifiedAudio  // Pass unified audio flag
+  );
   if (json2videoResult.success) {
     console.log(`✅ Video assembled via JSON2Video: ${json2videoResult.videoUrl}`);
     return {
@@ -1149,7 +1265,8 @@ async function tryJSON2VideoAssembly(
   audioUrls: string[],
   visualUrls: string[],
   language: string,
-  quality: string
+  quality: string,
+  isUnifiedAudio: boolean = false  // NEW: Flag for unified audio mode
 ): Promise<{ success: boolean; videoUrl?: string; thumbnailUrl?: string; pending?: boolean; taskId?: string }> {
   const apiKey = Deno.env.get('JSON2VIDEO_API_KEY');
   if (!apiKey) {
@@ -1175,7 +1292,7 @@ async function tryJSON2VideoAssembly(
     }
 
     // Build timeline from chapters - using only valid URLs
-    const timeline = buildJSON2VideoTimeline(chapters, validAudioUrls, validVisualUrls, language, quality);
+    const timeline = buildJSON2VideoTimeline(chapters, validAudioUrls, validVisualUrls, language, quality, isUnifiedAudio);
     
     // Log full payload for debugging
     const payloadStr = JSON.stringify(timeline, null, 2);
@@ -1257,6 +1374,7 @@ async function tryJSON2VideoAssembly(
 /**
  * Build JSON2Video timeline from chapter data
  * Uses JSON2Video v2 API format with "scenes" structure
+ * Supports UNIFIED AUDIO mode for seamless playback (no breaks between chapters)
  * @see https://json2video.com/docs/v2/api-reference/json-syntax/
  */
 function buildJSON2VideoTimeline(
@@ -1264,16 +1382,24 @@ function buildJSON2VideoTimeline(
   audioUrls: string[],
   visualUrls: string[], // All visuals flattened
   language: string,
-  quality: string
+  quality: string,
+  isUnifiedAudio: boolean = false  // NEW: Flag for unified audio mode
 ): object {
   // Resolution options: sd, hd, full-hd, 4k, instagram-story, instagram-post, etc.
   const resolution = quality === 'cinematic' ? '4k' : quality === 'production' ? 'full-hd' : 'hd';
+  
+  // Calculate total duration for unified audio
+  const totalDuration = chapters.reduce((sum, c) => sum + c.duration, 0);
+  
+  // Get unified audio URL (same for all chapters in unified mode)
+  const unifiedAudioUrl = isUnifiedAudio && audioUrls.length > 0 ? audioUrls[0] : null;
 
   // Build scenes array from chapters - each chapter can have multiple screenshots
   const scenes: any[] = [];
+  let isFirstScene = true; // Track if this is the first scene (for unified audio placement)
   
   chapters.forEach((chapter, chapterIndex) => {
-    const audioUrl = audioUrls[chapterIndex] || null;
+    const audioUrl = isUnifiedAudio ? null : (audioUrls[chapterIndex] || null); // Per-chapter audio (non-unified mode only)
     const chapterVisuals = chapter.visualUrls || (chapter.visualUrl ? [chapter.visualUrl] : []);
     
     // If we have multiple screenshots, create sub-scenes for each
@@ -1283,7 +1409,6 @@ function buildJSON2VideoTimeline(
       chapterVisuals.forEach((visualUrl, visualIndex) => {
         const elements: any[] = [];
         const isFirstVisual = visualIndex === 0;
-        const isLastVisual = visualIndex === chapterVisuals.length - 1;
         
         // Background image element
         elements.push({
@@ -1292,8 +1417,19 @@ function buildJSON2VideoTimeline(
           duration: durationPerVisual,
         });
 
-        // Audio element - only on first visual of chapter (continuous audio)
-        if (isFirstVisual && audioUrl) {
+        // UNIFIED AUDIO: Add audio only to the FIRST scene of the entire video
+        if (isUnifiedAudio && isFirstScene && unifiedAudioUrl) {
+          elements.push({
+            type: 'audio',
+            src: unifiedAudioUrl,
+            duration: totalDuration, // Full video duration
+            volume: 1.0,
+          });
+          isFirstScene = false;
+        }
+        
+        // PER-CHAPTER AUDIO: Add audio to first visual of each chapter
+        if (!isUnifiedAudio && isFirstVisual && audioUrl) {
           elements.push({
             type: 'audio',
             src: audioUrl,
@@ -1339,8 +1475,19 @@ function buildJSON2VideoTimeline(
         });
       }
 
-      // Audio element (TTS voiceover)
-      if (audioUrl) {
+      // UNIFIED AUDIO: Add audio only to the FIRST scene
+      if (isUnifiedAudio && isFirstScene && unifiedAudioUrl) {
+        elements.push({
+          type: 'audio',
+          src: unifiedAudioUrl,
+          duration: totalDuration, // Full video duration
+          volume: 1.0,
+        });
+        isFirstScene = false;
+      }
+      
+      // PER-CHAPTER AUDIO: Add audio to each chapter
+      if (!isUnifiedAudio && audioUrl) {
         elements.push({
           type: 'audio',
           src: audioUrl,
@@ -1371,6 +1518,8 @@ function buildJSON2VideoTimeline(
       });
     }
   });
+
+  console.log(`📹 Built JSON2Video timeline: ${scenes.length} scenes, ${isUnifiedAudio ? 'unified' : 'per-chapter'} audio, total ${totalDuration}s`);
 
   // Complete movie structure per JSON2Video v2 spec
   return {

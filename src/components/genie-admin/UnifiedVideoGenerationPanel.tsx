@@ -149,8 +149,20 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
     return 'overview';
   });
   
-  // Video style selection (supports multi-select)
-  const [selectedVideoStyles, setSelectedVideoStyles] = useState<VideoStyleType[]>(['educational']);
+  // Video style selection (supports multi-select) - restored from localStorage
+  const [selectedVideoStyles, setSelectedVideoStyles] = useState<VideoStyleType[]>(() => {
+    try {
+      const saved = localStorage.getItem(GENIE_CAST_STATE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed?.selectedVideoStyles && Array.isArray(parsed.selectedVideoStyles) && parsed.selectedVideoStyles.length > 0) {
+          console.log('[GenieCast] Restoring video styles from localStorage:', parsed.selectedVideoStyles);
+          return parsed.selectedVideoStyles;
+        }
+      }
+    } catch { /* ignore */ }
+    return ['educational'];
+  });
   const selectedVideoStyle = selectedVideoStyles[0] || 'educational'; // Primary style for generation
   
   // Persist other key state
