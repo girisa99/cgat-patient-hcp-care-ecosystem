@@ -514,6 +514,62 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
 
         {/* Generate Tab - Flat Layout */}
         <TabsContent value="generate" className="space-y-6">
+          {/* Selected Styles Summary - Synced from Overview */}
+          {selectedVideoStyles.length > 0 && (
+            <div className="p-3 rounded-lg border border-primary/20 bg-primary/5">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Palette className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-medium">Selected Styles</span>
+                  <Badge variant="secondary" className="text-[10px]">
+                    from Overview
+                  </Badge>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-6 text-xs"
+                  onClick={() => setActiveTab('overview')}
+                >
+                  Edit Styles
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {selectedVideoStyles.map(styleId => {
+                  const styleConfig = getStylePipelineConfig(styleId);
+                  const requiresAvatar = styleRequiresAvatar(styleId);
+                  const requires3D = styleRequires3D(styleId);
+                  return (
+                    <Badge 
+                      key={styleId} 
+                      variant="outline" 
+                      className="text-[10px] gap-1"
+                    >
+                      {styleId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      {requiresAvatar && <User className="w-2.5 h-2.5 text-primary" />}
+                      {requires3D && <Box className="w-2.5 h-2.5 text-primary" />}
+                    </Badge>
+                  );
+                })}
+              </div>
+              {/* Auto-enable Full Production hint */}
+              {selectedVideoStyles.some(s => styleRequiresAvatar(s) || styleRequires3D(s)) && !enableFullProduction && (
+                <div className="mt-2 flex items-center gap-2 text-xs text-destructive">
+                  <AlertTriangle className="w-3 h-3" />
+                  <span>Selected styles require Full Production Mode for avatars/3D</span>
+                  <Button
+                    variant="link" 
+                    size="sm" 
+                    className="h-auto p-0 text-xs text-primary"
+                    onClick={() => setEnableFullProduction(true)}
+                  >
+                    Enable
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left: Configuration - Flat without Card wrapper */}
             <div className="lg:col-span-1 space-y-5">
