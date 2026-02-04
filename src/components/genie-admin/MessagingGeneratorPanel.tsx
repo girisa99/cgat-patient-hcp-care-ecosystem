@@ -146,9 +146,21 @@ export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = (
   const [isBatchGenerating, setIsBatchGenerating] = useState(false);
   const [batchProgress, setBatchProgress] = useState(0);
   
+  // AI suggestions toggle
+  const [showAISuggestions, setShowAISuggestions] = useState(false);
+  
   // UI state
   const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState<'generate' | 'pending' | 'approved' | 'matrix'>('generate');
+
+  // Auto-select all products when mode changes to 'all_products'
+  React.useEffect(() => {
+    if (generationMode === 'all_products') {
+      setSelectedProducts([...MAIN_PRODUCTS]);
+    } else if (generationMode === 'single') {
+      setSelectedProducts([selectedProduct]);
+    }
+  }, [generationMode, selectedProduct]);
 
   // Get approved messaging for all products
   const approvedByProduct = useMemo(() => {
@@ -813,7 +825,70 @@ export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = (
 
                 {/* Target Audiences */}
                 <div className="space-y-2">
-                  <Label className="text-sm">Target Audiences</Label>
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm">Target Audiences</Label>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 text-[10px] gap-1"
+                        onClick={() => setSelectedAudiences(targetAudiences.map(a => a.id))}
+                      >
+                        Select All
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 text-[10px] gap-1"
+                        onClick={() => setShowAISuggestions(!showAISuggestions)}
+                      >
+                        <Lightbulb className="w-3 h-3" />
+                        AI Suggest
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {/* AI Suggestions Panel */}
+                  {showAISuggestions && (
+                    <Card className="border-primary/20 bg-primary/5 p-3">
+                      <p className="text-xs font-medium flex items-center gap-1.5 mb-2">
+                        <Lightbulb className="w-3.5 h-3.5 text-primary" />
+                        AI Recommended Combinations
+                      </p>
+                      <div className="space-y-1.5 text-xs text-muted-foreground">
+                        <p>• <strong>Consolidated:</strong> Single message covering all audiences (good for unified campaigns)</p>
+                        <p>• <strong>Segmented:</strong> Separate messaging per audience (best for targeted campaigns)</p>
+                        <p>• <strong>Hybrid:</strong> Group similar audiences (Content Creators + Influencers, Enterprise + Product Managers)</p>
+                      </div>
+                      <div className="flex gap-2 mt-3">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="text-[10px] h-7"
+                          onClick={() => setSelectedAudiences(['content_creators', 'influencers', 'knowledge_sharers'])}
+                        >
+                          Creator Focus
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="text-[10px] h-7"
+                          onClick={() => setSelectedAudiences(['marketing_teams', 'sales_teams', 'agencies_freelancers'])}
+                        >
+                          Business Focus
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="text-[10px] h-7"
+                          onClick={() => setSelectedAudiences(['enterprise_teams', 'product_managers', 'executive_leadership'])}
+                        >
+                          Enterprise Focus
+                        </Button>
+                      </div>
+                    </Card>
+                  )}
+                  
                   <div className="space-y-2 max-h-[150px] overflow-y-auto">
                     {targetAudiences.map(audience => (
                       <div key={audience.id} className="flex items-center space-x-2">
@@ -827,6 +902,17 @@ export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = (
                         </Label>
                       </div>
                     ))}
+                  </div>
+                  
+                  {/* Selection summary */}
+                  <div className="text-xs text-muted-foreground flex items-center gap-2 pt-1">
+                    <Users className="w-3 h-3" />
+                    {selectedAudiences.length} audience{selectedAudiences.length !== 1 ? 's' : ''} selected
+                    {generationMode === 'matrix' && (
+                      <Badge variant="secondary" className="text-[10px]">
+                        = {selectedProducts.length * selectedAudiences.length} combinations
+                      </Badge>
+                    )}
                   </div>
                 </div>
 
