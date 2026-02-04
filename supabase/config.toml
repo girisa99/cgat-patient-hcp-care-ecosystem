@@ -410,3 +410,6 @@ verify_jwt = false
 
 [functions.fix-broken-thumbnails]
 verify_jwt = false
+
+[functions.seed-regional-templates]
+verify_jwt = false
