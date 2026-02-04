@@ -330,13 +330,23 @@ export const BrandAssetsPanel: React.FC<BrandAssetsPanelProps> = ({ className, o
                         className="aspect-square rounded-lg flex items-center justify-center overflow-hidden"
                         style={{ backgroundColor: `${config.primary}15` }}
                       >
-                        {logo.url ? (
+                        {logo.url && logo.status === 'synced' ? (
                           <img 
-                            src={logo.url} 
+                            src={`${logo.url}?t=${Date.now()}`} 
                             alt={config.name}
                             className="w-full h-full object-contain p-2"
+                            loading="lazy"
                             onError={(e) => {
-                              e.currentTarget.style.display = 'none';
+                              console.log(`[BrandAssets] Image load failed for ${logo.productId}:`, logo.url);
+                              // Try alternative extension
+                              const currentSrc = e.currentTarget.src;
+                              if (currentSrc.includes('.png')) {
+                                e.currentTarget.src = currentSrc.replace('.png', '.jpg').split('?')[0];
+                              } else if (currentSrc.includes('.jpg')) {
+                                e.currentTarget.src = currentSrc.replace('.jpg', '.png').split('?')[0];
+                              } else {
+                                e.currentTarget.style.display = 'none';
+                              }
                             }}
                           />
                         ) : (
