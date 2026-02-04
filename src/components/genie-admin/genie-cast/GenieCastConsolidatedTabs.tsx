@@ -91,7 +91,9 @@ const TAB_DEFINITIONS = {
     label: 'CREATE',
     icon: Sparkles,
     description: 'Styles, Assets & Messaging',
-    color: 'bg-orange-500/10 border-orange-500/30 text-orange-600',
+    // Separate active/inactive colors for proper contrast
+    activeColor: 'bg-orange-600 text-white border-orange-600',
+    inactiveColor: 'border-orange-300 text-orange-700 hover:bg-orange-50',
     subTabs: [
       { id: 'styles', label: 'Styles', icon: Palette, description: 'Video style selection (43+ options)' },
       { id: 'screenshots', label: 'Screenshots', icon: Camera, description: 'Product visual capture' },
@@ -103,7 +105,8 @@ const TAB_DEFINITIONS = {
     label: 'PRODUCE',
     icon: Video,
     description: 'Generate & Edit Videos',
-    color: 'bg-blue-500/10 border-blue-500/30 text-blue-600',
+    activeColor: 'bg-blue-600 text-white border-blue-600',
+    inactiveColor: 'border-blue-300 text-blue-700 hover:bg-blue-50',
     subTabs: [
       { id: 'generate', label: 'Quick Gen', icon: Play, description: 'Single video generation' },
       { id: 'matrix', label: 'Matrix', icon: Grid3X3, description: 'Batch production matrix' },
@@ -115,7 +118,8 @@ const TAB_DEFINITIONS = {
     label: 'MANAGE',
     icon: Layers,
     description: 'Library & Analytics',
-    color: 'bg-green-500/10 border-green-500/30 text-green-600',
+    activeColor: 'bg-green-600 text-white border-green-600',
+    inactiveColor: 'border-green-300 text-green-700 hover:bg-green-50',
     subTabs: [
       { id: 'library', label: 'Library', icon: Layers, description: 'Video content library' },
       { id: 'analytics', label: 'Analytics', icon: BarChart3, description: 'Performance metrics' },
@@ -127,7 +131,8 @@ const TAB_DEFINITIONS = {
     label: 'PUBLISH',
     icon: Share2,
     description: 'Distribution & Scheduling',
-    color: 'bg-purple-500/10 border-purple-500/30 text-purple-600',
+    activeColor: 'bg-purple-600 text-white border-purple-600',
+    inactiveColor: 'border-purple-300 text-purple-700 hover:bg-purple-50',
     subTabs: [
       { id: 'scheduler', label: 'Schedule', icon: Calendar, description: 'Content calendar' },
       { id: 'distribution', label: 'Distribute', icon: Share2, description: 'Multi-platform publishing' },
@@ -197,11 +202,13 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
             return (
               <Button
                 key={sub.id}
-                variant={isActive ? "default" : "outline"}
+                variant="outline"
                 size="sm"
                 className={cn(
-                  "flex-shrink-0 gap-1.5 text-xs",
-                  isActive && currentMainDef.color.replace('bg-', 'bg-').replace('/10', '')
+                  "flex-shrink-0 gap-1.5 text-xs font-medium",
+                  isActive 
+                    ? currentMainDef.activeColor 
+                    : currentMainDef.inactiveColor
                 )}
                 onClick={() => setSubTab(activeMainTab, sub.id)}
               >
