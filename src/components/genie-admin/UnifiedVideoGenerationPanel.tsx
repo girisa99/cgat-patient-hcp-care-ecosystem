@@ -9,7 +9,7 @@
  * 1. Upload Screenshots (unlimited per product) → 2. Select mode → 3. Generate → 4. Preview → 5. Publish
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Play,
@@ -38,6 +38,7 @@ import {
   MessageSquare,
   GitBranch,
   Palette,
+  RefreshCw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -64,6 +65,7 @@ import { uploadBrandLogosToStorage } from '@/services/marketing/brandAssetUpload
 import { GenieCastOverview, VideoStyleCards, AIProviderShowcase, type VideoStyleType } from './genie-cast';
 import { StyleDrivenProductionConfig, deriveProductionRequirements } from './genie-cast/StyleDrivenProductionConfig';
 import { getStylePipelineConfig, styleRequiresAvatar, styleRequires3D } from '@/config/video-style-pipeline-mapping';
+import { useVideoStatusPolling } from '@/hooks/useVideoStatusPolling';
 // Supported languages with zone routing
 const LANGUAGES = [
   { code: 'en', name: 'English', flag: '🇺🇸', zone: 'Claude Zone', tts: 'ElevenLabs' },
@@ -188,11 +190,42 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
   // Skip TTS regeneration if audio already exists (saves credits)
   const [skipExistingTTS, setSkipExistingTTS] = useState(true);
   
+  // Status polling state
+  const [isCheckingStatus, setIsCheckingStatus] = useState(false);
+  
   // Derive production requirements from selected styles
   const styleRequirements = useMemo(
     () => deriveProductionRequirements(selectedVideoStyles),
     [selectedVideoStyles]
   );
+  
+  // Video status polling for pending videos
+  const { checkAllStatuses, isPolling } = useVideoStatusPolling({
+    onVideoComplete: (video) => {
+      console.log('[GenieCast] Video completed via polling:', video);
+      loadExistingVideos(); // Refresh library
+      // Update current video if it matches
+      if (video.videoUrl) {
+        setGeneratedVideos(prev => {
+          const updated = new Map(prev);
+          const langCode = selectedLanguage;
+          const existing = updated.get(langCode);
+          if (existing?.status === 'pending') {
+            updated.set(langCode, {
+              ...existing,
+              status: 'complete',
+              videoUrl: video.videoUrl,
+              thumbnailUrl: video.thumbnailUrl,
+            });
+          }
+          return updated;
+        });
+      }
+    },
+    onVideoFailed: (video) => {
+      console.log('[GenieCast] Video failed via polling:', video);
+    },
+  });
 
   // Persist tab state when it changes
   useEffect(() => {
@@ -772,19 +805,59 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg space-y-3"
+                  className="p-4 bg-warning/10 border border-warning/30 rounded-lg space-y-3"
                 >
                   <div className="flex items-center gap-2">
-                    <Clock className="w-5 h-5 text-amber-600 animate-pulse" />
-                    <span className="font-medium text-amber-700 dark:text-amber-400">TTS Audio Generated - JSON2Video Assembly In Progress</span>
+                    <Clock className="w-5 h-5 text-warning animate-pulse" />
+                    <span className="font-medium text-warning">TTS Audio Generated - JSON2Video Assembly In Progress</span>
                   </div>
                   <p className="text-sm text-muted-foreground">
                     Text-to-Speech audio has been generated for all {currentVideo.chapters.filter(c => c.success).length} chapters. 
                     JSON2Video is now assembling the final video with synchronized audio and visuals.
                   </p>
-                  <div className="flex items-center gap-2 text-xs text-blue-700 dark:text-blue-400 bg-blue-500/5 p-2 rounded">
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                  <div className="flex items-center gap-2 text-xs text-primary bg-primary/5 p-2 rounded">
+                    {isPolling || isCheckingStatus ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="w-4 h-4" />
+                    )}
                     <span>Video rendering in progress - this may take 5-10 minutes</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="gap-2"
+                      disabled={isCheckingStatus}
+                      onClick={async () => {
+                        setIsCheckingStatus(true);
+                        try {
+                          await checkAllStatuses();
+                          await loadExistingVideos();
+                          toast.info('Status check complete - check Library tab for updates');
+                        } catch (err) {
+                          toast.error('Failed to check status');
+                        } finally {
+                          setIsCheckingStatus(false);
+                        }
+                      }}
+                    >
+                      {isCheckingStatus ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="w-4 h-4" />
+                      )}
+                      Check Status
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      className="gap-2"
+                      onClick={() => setActiveTab('library')}
+                    >
+                      <Layers className="w-4 h-4" />
+                      View Library
+                    </Button>
                   </div>
                   <p className="text-xs text-muted-foreground">
                     {currentVideo.chapters.filter(c => c.success).length}/{CHAPTERS.length} chapters • 

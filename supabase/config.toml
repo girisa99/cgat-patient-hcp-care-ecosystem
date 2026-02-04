@@ -389,3 +389,6 @@ verify_jwt = false
 
 [functions.upload-brand-logos]
 verify_jwt = false
+
+[functions.genie-cast-status]
+verify_jwt = false
