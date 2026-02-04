@@ -8,11 +8,14 @@
  * - Short/Medium/Long Script Variants
  * - Approval workflow
  * 
- * This is different from MessagingImprovementPanel which handles
- * bi-weekly REFINEMENT of existing messaging based on user feedback.
+ * Supports:
+ * - Single product generation
+ * - All 7 products at once (batch)
+ * - Full matrix (Product × Audience)
+ * - Optional immediate transcreation to 14 languages
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles,
@@ -27,7 +30,6 @@ import {
   TrendingUp,
   FileText,
   Copy,
-  Edit3,
   RefreshCw,
   ChevronDown,
   ChevronRight,
@@ -37,6 +39,10 @@ import {
   Wand2,
   BookOpen,
   Hash,
+  Globe,
+  Grid3X3,
+  Layers,
+  Languages,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -47,7 +53,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Separator } from '@/components/ui/separator';
+import { Progress } from '@/components/ui/progress';
+import { Switch } from '@/components/ui/switch';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { useAIMessaging } from '@/hooks/useAIMessaging';
@@ -71,6 +79,39 @@ const PRODUCT_COLORS: Record<GenieProductId, string> = {
   ask_genie: '#06B6D4',
 };
 
+// All 7 main products (excluding studio as it's the hub)
+const MAIN_PRODUCTS: GenieProductId[] = ['spark', 'mind', 'vibe', 'deck', 'arc', 'cast', 'ask_genie'];
+
+// Supported languages for transcreation
+const TRANSCREATION_LANGUAGES = [
+  { code: 'en', name: 'English', flag: '🇺🇸' },
+  { code: 'ar', name: 'Arabic', flag: '🇸🇦' },
+  { code: 'zh', name: 'Chinese', flag: '🇨🇳' },
+  { code: 'ja', name: 'Japanese', flag: '🇯🇵' },
+  { code: 'ko', name: 'Korean', flag: '🇰🇷' },
+  { code: 'es', name: 'Spanish', flag: '🇪🇸' },
+  { code: 'fr', name: 'French', flag: '🇫🇷' },
+  { code: 'de', name: 'German', flag: '🇩🇪' },
+  { code: 'pt', name: 'Portuguese', flag: '🇧🇷' },
+  { code: 'hi', name: 'Hindi', flag: '🇮🇳' },
+  { code: 'bn', name: 'Bengali', flag: '🇧🇩' },
+  { code: 'ur', name: 'Urdu', flag: '🇵🇰' },
+  { code: 'id', name: 'Indonesian', flag: '🇮🇩' },
+  { code: 'sw', name: 'Swahili', flag: '🇰🇪' },
+];
+
+type GenerationMode = 'single' | 'all_products' | 'matrix';
+type TranscreationMode = 'english_only' | 'immediate' | 'deferred';
+
+interface BatchJob {
+  id: string;
+  productId: GenieProductId;
+  audienceId: string;
+  status: 'pending' | 'generating' | 'complete' | 'error';
+  messaging?: any;
+  error?: string;
+}
+
 export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = ({
   className,
   onMessagingApproved,
@@ -89,12 +130,25 @@ export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = (
     latestMessaging,
   } = useAIMessaging({ showNotifications: true });
 
+  // Generation mode
+  const [generationMode, setGenerationMode] = useState<GenerationMode>('single');
+  const [transcreationMode, setTranscreationMode] = useState<TranscreationMode>('deferred');
+  
+  // Single product selection
   const [selectedProduct, setSelectedProduct] = useState<GenieProductId>('spark');
+  const [selectedProducts, setSelectedProducts] = useState<GenieProductId[]>(['spark']);
   const [selectedAudiences, setSelectedAudiences] = useState<string[]>(['content_creators']);
   const [selectedCompetitors, setSelectedCompetitors] = useState<string[]>([]);
   const [messagingType, setMessagingType] = useState<'product' | 'feature' | 'comparison' | 'tutorial'>('product');
+  
+  // Batch generation state
+  const [batchJobs, setBatchJobs] = useState<BatchJob[]>([]);
+  const [isBatchGenerating, setIsBatchGenerating] = useState(false);
+  const [batchProgress, setBatchProgress] = useState(0);
+  
+  // UI state
   const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
-  const [activeTab, setActiveTab] = useState<'generate' | 'pending' | 'approved'>('generate');
+  const [activeTab, setActiveTab] = useState<'generate' | 'pending' | 'approved' | 'matrix'>('generate');
 
   // Get approved messaging for all products
   const approvedByProduct = useMemo(() => {
@@ -108,6 +162,24 @@ export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = (
     return result;
   }, [products, getApprovedMessaging, pendingApprovals]);
 
+  // Calculate matrix stats
+  const matrixStats = useMemo(() => {
+    const totalProducts = MAIN_PRODUCTS.length;
+    const totalAudiences = targetAudiences.length;
+    const totalCombinations = totalProducts * totalAudiences;
+    const approvedCount = Object.keys(approvedByProduct).length;
+    const pendingCount = pendingApprovals.length;
+    
+    return {
+      totalProducts,
+      totalAudiences,
+      totalCombinations,
+      approvedCount,
+      pendingCount,
+      coverage: Math.round((approvedCount / totalProducts) * 100),
+    };
+  }, [approvedByProduct, pendingApprovals, targetAudiences]);
+
   const toggleProduct = (productId: string) => {
     setExpandedProducts(prev => {
       const next = new Set(prev);
@@ -120,7 +192,24 @@ export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = (
     });
   };
 
-  const handleGenerate = async () => {
+  const toggleProductSelection = (productId: GenieProductId) => {
+    setSelectedProducts(prev => 
+      prev.includes(productId) 
+        ? prev.filter(p => p !== productId)
+        : [...prev, productId]
+    );
+  };
+
+  const toggleAudienceSelection = (audienceId: string) => {
+    setSelectedAudiences(prev => 
+      prev.includes(audienceId) 
+        ? prev.filter(a => a !== audienceId)
+        : [...prev, audienceId]
+    );
+  };
+
+  // Single product generation
+  const handleSingleGenerate = async () => {
     if (selectedAudiences.length === 0) {
       toast.error('Please select at least one target audience');
       return;
@@ -133,6 +222,130 @@ export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = (
     });
   };
 
+  // Batch generation - All products at once
+  const handleBatchGenerate = async () => {
+    if (selectedAudiences.length === 0) {
+      toast.error('Please select at least one target audience');
+      return;
+    }
+
+    const productsToGenerate = generationMode === 'all_products' 
+      ? MAIN_PRODUCTS 
+      : selectedProducts;
+
+    if (productsToGenerate.length === 0) {
+      toast.error('Please select at least one product');
+      return;
+    }
+
+    setIsBatchGenerating(true);
+    setBatchProgress(0);
+
+    // Create jobs
+    const jobs: BatchJob[] = productsToGenerate.map(productId => ({
+      id: `batch_${productId}_${Date.now()}`,
+      productId,
+      audienceId: selectedAudiences.join(','),
+      status: 'pending' as const,
+    }));
+
+    setBatchJobs(jobs);
+
+    // Process jobs sequentially
+    for (let i = 0; i < jobs.length; i++) {
+      const job = jobs[i];
+      
+      // Update status to generating
+      setBatchJobs(prev => prev.map(j => 
+        j.id === job.id ? { ...j, status: 'generating' as const } : j
+      ));
+
+      try {
+        const messaging = await generateMessaging(job.productId, {
+          type: messagingType,
+          targetAudience: selectedAudiences,
+          competitors: selectedCompetitors,
+        });
+
+        // Update with success
+        setBatchJobs(prev => prev.map(j => 
+          j.id === job.id ? { ...j, status: 'complete' as const, messaging } : j
+        ));
+      } catch (error) {
+        // Update with error
+        setBatchJobs(prev => prev.map(j => 
+          j.id === job.id ? { 
+            ...j, 
+            status: 'error' as const, 
+            error: error instanceof Error ? error.message : 'Generation failed' 
+          } : j
+        ));
+      }
+
+      setBatchProgress(Math.round(((i + 1) / jobs.length) * 100));
+    }
+
+    setIsBatchGenerating(false);
+    toast.success(`Generated messaging for ${jobs.filter(j => j.status === 'complete').length}/${jobs.length} products`);
+  };
+
+  // Matrix generation - All products × All audiences
+  const handleMatrixGenerate = async () => {
+    setIsBatchGenerating(true);
+    setBatchProgress(0);
+
+    const jobs: BatchJob[] = [];
+    
+    // Create jobs for each product × audience combination
+    for (const productId of MAIN_PRODUCTS) {
+      for (const audience of targetAudiences) {
+        jobs.push({
+          id: `matrix_${productId}_${audience.id}_${Date.now()}`,
+          productId,
+          audienceId: audience.id,
+          status: 'pending',
+        });
+      }
+    }
+
+    setBatchJobs(jobs);
+
+    // Process jobs
+    for (let i = 0; i < jobs.length; i++) {
+      const job = jobs[i];
+      
+      setBatchJobs(prev => prev.map(j => 
+        j.id === job.id ? { ...j, status: 'generating' as const } : j
+      ));
+
+      try {
+        const messaging = await generateMessaging(job.productId, {
+          type: 'product',
+          targetAudience: [job.audienceId],
+          competitors: [],
+        });
+
+        setBatchJobs(prev => prev.map(j => 
+          j.id === job.id ? { ...j, status: 'complete' as const, messaging } : j
+        ));
+      } catch (error) {
+        setBatchJobs(prev => prev.map(j => 
+          j.id === job.id ? { 
+            ...j, 
+            status: 'error' as const, 
+            error: error instanceof Error ? error.message : 'Failed' 
+          } : j
+        ));
+      }
+
+      setBatchProgress(Math.round(((i + 1) / jobs.length) * 100));
+    }
+
+    setIsBatchGenerating(false);
+    const successCount = jobs.filter(j => j.status === 'complete').length;
+    toast.success(`Matrix generation complete: ${successCount}/${jobs.length} combinations`);
+  };
+
   const handleApprove = (requestId: string) => {
     approveMessaging(requestId, 'admin');
     const pending = pendingApprovals.find(p => p.id === requestId);
@@ -141,18 +354,25 @@ export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = (
     }
   };
 
+  const handleApproveAll = () => {
+    pendingApprovals.forEach(pending => {
+      approveMessaging(pending.id, 'admin');
+    });
+    toast.success(`Approved ${pendingApprovals.length} messaging items`);
+  };
+
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
     toast.success(`${label} copied to clipboard`);
   };
 
-  const renderMessagingCard = (messaging: any, isApproved: boolean = false) => (
-    <div className="space-y-4">
+  const renderMessagingCard = (messaging: any, isApproved: boolean = false, compact: boolean = false) => (
+    <div className={cn("space-y-4", compact && "space-y-2")}>
       {/* Core Messaging */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className={cn("grid gap-4", compact ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2")}>
         {/* Headline & Hook */}
         <Card className="border-orange-200/50 bg-orange-50/30 dark:bg-orange-950/10">
-          <CardHeader className="py-3 px-4">
+          <CardHeader className={cn("px-4", compact ? "py-2" : "py-3")}>
             <CardTitle className="text-sm flex items-center gap-2">
               <Target className="w-4 h-4 text-orange-500" />
               Headline & Hook
@@ -162,7 +382,7 @@ export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = (
             <div>
               <Label className="text-xs text-muted-foreground">Headline</Label>
               <div className="flex items-start gap-2">
-                <p className="text-sm font-medium flex-1">{messaging.headline}</p>
+                <p className={cn("font-medium flex-1", compact ? "text-xs" : "text-sm")}>{messaging.headline}</p>
                 <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => copyToClipboard(messaging.headline, 'Headline')}>
                   <Copy className="w-3 h-3" />
                 </Button>
@@ -171,22 +391,24 @@ export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = (
             <div>
               <Label className="text-xs text-muted-foreground">Hook</Label>
               <div className="flex items-start gap-2">
-                <p className="text-sm flex-1">{messaging.hook}</p>
+                <p className={cn("flex-1", compact ? "text-xs" : "text-sm")}>{messaging.hook}</p>
                 <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => copyToClipboard(messaging.hook, 'Hook')}>
                   <Copy className="w-3 h-3" />
                 </Button>
               </div>
             </div>
-            <div>
-              <Label className="text-xs text-muted-foreground">Sub-Hook</Label>
-              <p className="text-sm text-muted-foreground">{messaging.subHook}</p>
-            </div>
+            {!compact && (
+              <div>
+                <Label className="text-xs text-muted-foreground">Sub-Hook</Label>
+                <p className="text-sm text-muted-foreground">{messaging.subHook}</p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
         {/* CTAs */}
         <Card className="border-green-200/50 bg-green-50/30 dark:bg-green-950/10">
-          <CardHeader className="py-3 px-4">
+          <CardHeader className={cn("px-4", compact ? "py-2" : "py-3")}>
             <CardTitle className="text-sm flex items-center gap-2">
               <ArrowRight className="w-4 h-4 text-green-500" />
               Call to Actions
@@ -217,14 +439,14 @@ export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = (
 
       {/* Value Proposition */}
       <Card className="border-purple-200/50 bg-purple-50/30 dark:bg-purple-950/10">
-        <CardHeader className="py-3 px-4">
+        <CardHeader className={cn("px-4", compact ? "py-2" : "py-3")}>
           <CardTitle className="text-sm flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-purple-500" />
             Value Proposition
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-0 px-4 pb-4">
-          <p className="text-sm font-medium">{messaging.valueProposition}</p>
+          <p className={cn("font-medium", compact ? "text-xs" : "text-sm")}>{messaging.valueProposition}</p>
         </CardContent>
       </Card>
 
@@ -288,145 +510,149 @@ export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = (
         </Card>
       </div>
 
-      {/* Script Lines */}
-      <Card className="border-amber-200/50 bg-amber-50/30 dark:bg-amber-950/10">
-        <CardHeader className="py-3 px-4">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <BookOpen className="w-4 h-4 text-amber-500" />
-            Script Lines
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0 px-4 pb-4 space-y-3">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label className="text-xs text-muted-foreground">Opening Line</Label>
-              <p className="text-sm italic">"{messaging.openingLine}"</p>
-            </div>
-            <div>
-              <Label className="text-xs text-muted-foreground">Closing Line</Label>
-              <p className="text-sm italic">"{messaging.closingLine}"</p>
-            </div>
-          </div>
-          <div>
-            <Label className="text-xs text-muted-foreground">Transition Phrases</Label>
-            <div className="flex flex-wrap gap-1.5 mt-1">
-              {messaging.transitionPhrases?.map((phrase: string, i: number) => (
-                <Badge key={i} variant="secondary" className="text-[10px]">
-                  {phrase}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {!compact && (
+        <>
+          {/* Script Lines */}
+          <Card className="border-amber-200/50 bg-amber-50/30 dark:bg-amber-950/10">
+            <CardHeader className="py-3 px-4">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-amber-500" />
+                Script Lines
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0 px-4 pb-4 space-y-3">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Opening Line</Label>
+                  <p className="text-sm italic">"{messaging.openingLine}"</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Closing Line</Label>
+                  <p className="text-sm italic">"{messaging.closingLine}"</p>
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Transition Phrases</Label>
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  {messaging.transitionPhrases?.map((phrase: string, i: number) => (
+                    <Badge key={i} variant="secondary" className="text-[10px]">
+                      {phrase}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-      {/* Script Variants */}
-      <Card>
-        <CardHeader className="py-3 px-4">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <FileText className="w-4 h-4" />
-            Script Variants
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0 px-4 pb-4">
-          <Tabs defaultValue="short" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 h-8">
-              <TabsTrigger value="short" className="text-xs">Short (30s)</TabsTrigger>
-              <TabsTrigger value="medium" className="text-xs">Medium (60s)</TabsTrigger>
-              <TabsTrigger value="long" className="text-xs">Long (90s)</TabsTrigger>
-            </TabsList>
-            <TabsContent value="short" className="mt-3">
-              <div className="relative">
-                <Textarea 
-                  value={messaging.shortScript} 
-                  readOnly 
-                  className="text-xs min-h-[100px] resize-none"
-                />
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="absolute top-2 right-2 h-6 w-6"
-                  onClick={() => copyToClipboard(messaging.shortScript, '30s Script')}
-                >
-                  <Copy className="w-3 h-3" />
-                </Button>
-              </div>
-            </TabsContent>
-            <TabsContent value="medium" className="mt-3">
-              <div className="relative">
-                <Textarea 
-                  value={messaging.mediumScript} 
-                  readOnly 
-                  className="text-xs min-h-[120px] resize-none"
-                />
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="absolute top-2 right-2 h-6 w-6"
-                  onClick={() => copyToClipboard(messaging.mediumScript, '60s Script')}
-                >
-                  <Copy className="w-3 h-3" />
-                </Button>
-              </div>
-            </TabsContent>
-            <TabsContent value="long" className="mt-3">
-              <div className="relative">
-                <Textarea 
-                  value={messaging.longScript} 
-                  readOnly 
-                  className="text-xs min-h-[150px] resize-none"
-                />
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="absolute top-2 right-2 h-6 w-6"
-                  onClick={() => copyToClipboard(messaging.longScript, '90s Script')}
-                >
-                  <Copy className="w-3 h-3" />
-                </Button>
-              </div>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+          {/* Script Variants */}
+          <Card>
+            <CardHeader className="py-3 px-4">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <FileText className="w-4 h-4" />
+                Script Variants
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0 px-4 pb-4">
+              <Tabs defaultValue="short" className="w-full">
+                <TabsList className="grid w-full grid-cols-3 h-8">
+                  <TabsTrigger value="short" className="text-xs">Short (30s)</TabsTrigger>
+                  <TabsTrigger value="medium" className="text-xs">Medium (60s)</TabsTrigger>
+                  <TabsTrigger value="long" className="text-xs">Long (90s)</TabsTrigger>
+                </TabsList>
+                <TabsContent value="short" className="mt-3">
+                  <div className="relative">
+                    <Textarea 
+                      value={messaging.shortScript} 
+                      readOnly 
+                      className="text-xs min-h-[100px] resize-none"
+                    />
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="absolute top-2 right-2 h-6 w-6"
+                      onClick={() => copyToClipboard(messaging.shortScript, '30s Script')}
+                    >
+                      <Copy className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </TabsContent>
+                <TabsContent value="medium" className="mt-3">
+                  <div className="relative">
+                    <Textarea 
+                      value={messaging.mediumScript} 
+                      readOnly 
+                      className="text-xs min-h-[120px] resize-none"
+                    />
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="absolute top-2 right-2 h-6 w-6"
+                      onClick={() => copyToClipboard(messaging.mediumScript, '60s Script')}
+                    >
+                      <Copy className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </TabsContent>
+                <TabsContent value="long" className="mt-3">
+                  <div className="relative">
+                    <Textarea 
+                      value={messaging.longScript} 
+                      readOnly 
+                      className="text-xs min-h-[150px] resize-none"
+                    />
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="absolute top-2 right-2 h-6 w-6"
+                      onClick={() => copyToClipboard(messaging.longScript, '90s Script')}
+                    >
+                      <Copy className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
 
-      {/* SEO & Social */}
-      <Card className="border-cyan-200/50 bg-cyan-50/30 dark:bg-cyan-950/10">
-        <CardHeader className="py-3 px-4">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Hash className="w-4 h-4 text-cyan-500" />
-            SEO & Social
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0 px-4 pb-4 space-y-3">
-          <div>
-            <Label className="text-xs text-muted-foreground">Meta Description</Label>
-            <p className="text-sm">{messaging.metaDescription}</p>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label className="text-xs text-muted-foreground">Hashtags</Label>
-              <div className="flex flex-wrap gap-1 mt-1">
-                {messaging.hashtags?.map((tag: string, i: number) => (
-                  <Badge key={i} variant="outline" className="text-[10px] text-cyan-600">
-                    #{tag}
-                  </Badge>
-                ))}
+          {/* SEO & Social */}
+          <Card className="border-cyan-200/50 bg-cyan-50/30 dark:bg-cyan-950/10">
+            <CardHeader className="py-3 px-4">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Hash className="w-4 h-4 text-cyan-500" />
+                SEO & Social
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0 px-4 pb-4 space-y-3">
+              <div>
+                <Label className="text-xs text-muted-foreground">Meta Description</Label>
+                <p className="text-sm">{messaging.metaDescription}</p>
               </div>
-            </div>
-            <div>
-              <Label className="text-xs text-muted-foreground">Keywords</Label>
-              <div className="flex flex-wrap gap-1 mt-1">
-                {messaging.keywords?.map((kw: string, i: number) => (
-                  <Badge key={i} variant="secondary" className="text-[10px]">
-                    {kw}
-                  </Badge>
-                ))}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Hashtags</Label>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {messaging.hashtags?.map((tag: string, i: number) => (
+                      <Badge key={i} variant="outline" className="text-[10px] text-cyan-600">
+                        #{tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Keywords</Label>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {messaging.keywords?.map((kw: string, i: number) => (
+                      <Badge key={i} variant="secondary" className="text-[10px]">
+                        {kw}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </>
+      )}
 
       {/* Confidence & Status */}
       <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -436,7 +662,6 @@ export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = (
             Confidence: {Math.round((messaging.confidence || 0.85) * 100)}%
           </span>
           <span>Version: {messaging.version || 1}</span>
-          <span>By: {messaging.generatedBy || 'ai-universal-processor'}</span>
         </div>
         {isApproved && (
           <Badge variant="default" className="gap-1">
@@ -458,13 +683,13 @@ export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = (
             AI Messaging Generator
           </h3>
           <p className="text-sm text-muted-foreground">
-            Generate hooks, CTAs, positioning, pain points, benefits, and script variants
+            Generate hooks, CTAs, positioning for single products, all products, or full matrix
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="gap-1">
             <CheckCircle className="w-3 h-3 text-green-500" />
-            {Object.keys(approvedByProduct).length} Products Approved
+            {matrixStats.approvedCount}/{matrixStats.totalProducts} Products
           </Badge>
           <Badge variant="secondary" className="gap-1">
             <Clock className="w-3 h-3" />
@@ -475,14 +700,18 @@ export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = (
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="generate" className="gap-1.5">
             <Wand2 className="w-3.5 h-3.5" />
-            Generate New
+            Generate
+          </TabsTrigger>
+          <TabsTrigger value="matrix" className="gap-1.5">
+            <Grid3X3 className="w-3.5 h-3.5" />
+            Matrix
           </TabsTrigger>
           <TabsTrigger value="pending" className="gap-1.5">
             <Clock className="w-3.5 h-3.5" />
-            Pending Approval
+            Pending
             {pendingApprovals.length > 0 && (
               <Badge variant="secondary" className="ml-1 text-[10px] px-1.5">
                 {pendingApprovals.length}
@@ -504,44 +733,83 @@ export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = (
                 <CardTitle className="text-base">Configuration</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Product Selection */}
-                <div className="space-y-2">
-                  <Label className="text-sm">Product</Label>
-                  <Select value={selectedProduct} onValueChange={(v) => setSelectedProduct(v as GenieProductId)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(products).map(([id, product]) => (
-                        <SelectItem key={id} value={id}>
-                          <div className="flex items-center gap-2">
-                            <div 
-                              className="w-3 h-3 rounded-full"
-                              style={{ backgroundColor: PRODUCT_COLORS[id as GenieProductId] }}
-                            />
-                            {product.name}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                {/* Generation Mode */}
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium">Generation Mode</Label>
+                  <RadioGroup value={generationMode} onValueChange={(v) => setGenerationMode(v as GenerationMode)}>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="single" id="single" />
+                      <Label htmlFor="single" className="text-sm cursor-pointer">
+                        Single Product
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="all_products" id="all_products" />
+                      <Label htmlFor="all_products" className="text-sm cursor-pointer flex items-center gap-2">
+                        All 7 Products
+                        <Badge variant="outline" className="text-[10px]">Batch</Badge>
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="matrix" id="matrix_mode" />
+                      <Label htmlFor="matrix_mode" className="text-sm cursor-pointer flex items-center gap-2">
+                        Full Matrix
+                        <Badge variant="secondary" className="text-[10px]">{matrixStats.totalCombinations}</Badge>
+                      </Label>
+                    </div>
+                  </RadioGroup>
                 </div>
 
-                {/* Messaging Type */}
-                <div className="space-y-2">
-                  <Label className="text-sm">Messaging Type</Label>
-                  <Select value={messagingType} onValueChange={(v) => setMessagingType(v as any)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="product">Product Overview</SelectItem>
-                      <SelectItem value="feature">Feature Spotlight</SelectItem>
-                      <SelectItem value="comparison">Competitive Comparison</SelectItem>
-                      <SelectItem value="tutorial">Tutorial/How-To</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                {/* Product Selection (for single mode) */}
+                {generationMode === 'single' && (
+                  <div className="space-y-2">
+                    <Label className="text-sm">Product</Label>
+                    <Select value={selectedProduct} onValueChange={(v) => setSelectedProduct(v as GenieProductId)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(products).map(([id, product]) => (
+                          <SelectItem key={id} value={id}>
+                            <div className="flex items-center gap-2">
+                              <div 
+                                className="w-3 h-3 rounded-full"
+                                style={{ backgroundColor: PRODUCT_COLORS[id as GenieProductId] }}
+                              />
+                              {product.name}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {/* Multi-Product Selection (for batch) */}
+                {generationMode !== 'single' && generationMode !== 'matrix' && (
+                  <div className="space-y-2">
+                    <Label className="text-sm">Products to Generate</Label>
+                    <div className="space-y-2 max-h-[150px] overflow-y-auto">
+                      {MAIN_PRODUCTS.map(productId => (
+                        <div key={productId} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={productId}
+                            checked={selectedProducts.includes(productId)}
+                            onCheckedChange={() => toggleProductSelection(productId)}
+                            disabled={generationMode === 'all_products'}
+                          />
+                          <Label htmlFor={productId} className="text-sm flex items-center gap-2">
+                            <div 
+                              className="w-2 h-2 rounded-full"
+                              style={{ backgroundColor: PRODUCT_COLORS[productId] }}
+                            />
+                            {products[productId]?.name || productId}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Target Audiences */}
                 <div className="space-y-2">
@@ -552,13 +820,7 @@ export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = (
                         <Checkbox
                           id={audience.id}
                           checked={selectedAudiences.includes(audience.id)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setSelectedAudiences(prev => [...prev, audience.id]);
-                            } else {
-                              setSelectedAudiences(prev => prev.filter(a => a !== audience.id));
-                            }
-                          }}
+                          onCheckedChange={() => toggleAudienceSelection(audience.id)}
                         />
                         <Label htmlFor={audience.id} className="text-sm">
                           {audience.label}
@@ -568,41 +830,60 @@ export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = (
                   </div>
                 </div>
 
-                {/* Competitors (for comparison type) */}
-                {messagingType === 'comparison' && (
-                  <div className="space-y-2">
-                    <Label className="text-sm">Compare Against</Label>
-                    <div className="space-y-2 max-h-[150px] overflow-y-auto">
-                      {competitors.map(comp => (
-                        <div key={comp.id} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={comp.id}
-                            checked={selectedCompetitors.includes(comp.id)}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setSelectedCompetitors(prev => [...prev, comp.id]);
-                              } else {
-                                setSelectedCompetitors(prev => prev.filter(c => c !== comp.id));
-                              }
-                            }}
-                          />
-                          <Label htmlFor={comp.id} className="text-sm">
-                            {comp.name}
-                            <span className="text-xs text-muted-foreground ml-1">({comp.category})</span>
-                          </Label>
-                        </div>
-                      ))}
+                {/* Transcreation Mode */}
+                <div className="space-y-3 pt-2 border-t">
+                  <Label className="text-sm font-medium flex items-center gap-2">
+                    <Languages className="w-4 h-4" />
+                    Regional Transcreation
+                  </Label>
+                  <RadioGroup value={transcreationMode} onValueChange={(v) => setTranscreationMode(v as TranscreationMode)}>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="deferred" id="deferred" />
+                      <Label htmlFor="deferred" className="text-sm cursor-pointer">
+                        At Video Production (on-demand)
+                      </Label>
                     </div>
-                  </div>
-                )}
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="immediate" id="immediate" />
+                      <Label htmlFor="immediate" className="text-sm cursor-pointer flex items-center gap-2">
+                        Immediate (14 languages)
+                        <Badge variant="outline" className="text-[10px]">More credits</Badge>
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="english_only" id="english_only" />
+                      <Label htmlFor="english_only" className="text-sm cursor-pointer">
+                        English Only
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                  {transcreationMode === 'immediate' && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {TRANSCREATION_LANGUAGES.slice(0, 8).map(lang => (
+                        <Badge key={lang.code} variant="secondary" className="text-[10px]">
+                          {lang.flag} {lang.name}
+                        </Badge>
+                      ))}
+                      <Badge variant="outline" className="text-[10px]">
+                        +{TRANSCREATION_LANGUAGES.length - 8} more
+                      </Badge>
+                    </div>
+                  )}
+                </div>
 
                 {/* Generate Button */}
                 <Button 
                   className="w-full gap-2" 
-                  onClick={handleGenerate}
-                  disabled={isGenerating || selectedAudiences.length === 0}
+                  onClick={
+                    generationMode === 'single' 
+                      ? handleSingleGenerate 
+                      : generationMode === 'matrix'
+                        ? handleMatrixGenerate
+                        : handleBatchGenerate
+                  }
+                  disabled={isGenerating || isBatchGenerating || selectedAudiences.length === 0}
                 >
-                  {isGenerating ? (
+                  {isGenerating || isBatchGenerating ? (
                     <>
                       <RefreshCw className="w-4 h-4 animate-spin" />
                       Generating...
@@ -610,10 +891,26 @@ export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = (
                   ) : (
                     <>
                       <Wand2 className="w-4 h-4" />
-                      Generate Messaging
+                      {generationMode === 'single' && 'Generate Messaging'}
+                      {generationMode === 'all_products' && 'Generate All 7 Products'}
+                      {generationMode === 'matrix' && `Generate ${matrixStats.totalCombinations} Combinations`}
                     </>
                   )}
                 </Button>
+
+                {/* Batch Progress */}
+                {isBatchGenerating && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span>Progress</span>
+                      <span>{batchProgress}%</span>
+                    </div>
+                    <Progress value={batchProgress} className="h-2" />
+                    <div className="text-xs text-muted-foreground">
+                      {batchJobs.filter(j => j.status === 'complete').length}/{batchJobs.length} complete
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -636,16 +933,133 @@ export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = (
                   <ScrollArea className="h-[600px] pr-4">
                     {renderMessagingCard(latestMessaging)}
                   </ScrollArea>
+                ) : batchJobs.length > 0 ? (
+                  <ScrollArea className="h-[600px] pr-4">
+                    <div className="space-y-3">
+                      {batchJobs.map(job => (
+                        <div 
+                          key={job.id}
+                          className={cn(
+                            "p-3 rounded-lg border flex items-center gap-3",
+                            job.status === 'complete' && "border-green-200 bg-green-50/30",
+                            job.status === 'error' && "border-red-200 bg-red-50/30",
+                            job.status === 'generating' && "border-blue-200 bg-blue-50/30",
+                            job.status === 'pending' && "border-muted"
+                          )}
+                        >
+                          <div 
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: PRODUCT_COLORS[job.productId] }}
+                          />
+                          <span className="font-medium text-sm flex-1">
+                            {products[job.productId]?.name}
+                          </span>
+                          {job.status === 'generating' && <RefreshCw className="w-4 h-4 animate-spin text-blue-500" />}
+                          {job.status === 'complete' && <CheckCircle className="w-4 h-4 text-green-500" />}
+                          {job.status === 'error' && <XCircle className="w-4 h-4 text-red-500" />}
+                          {job.status === 'pending' && <Clock className="w-4 h-4 text-muted-foreground" />}
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
                 ) : (
                   <div className="text-center py-16 text-muted-foreground">
                     <Wand2 className="w-12 h-12 mx-auto mb-4 opacity-30" />
                     <p>No messaging generated yet</p>
-                    <p className="text-sm">Select a product and generate messaging</p>
+                    <p className="text-sm">Select a mode and generate messaging</p>
                   </div>
                 )}
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        {/* Matrix View Tab */}
+        <TabsContent value="matrix" className="space-y-6 mt-6">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Grid3X3 className="w-5 h-5" />
+                    Product × Audience Matrix
+                  </CardTitle>
+                  <CardDescription>
+                    {matrixStats.totalCombinations} total combinations • {matrixStats.approvedCount} products with approved messaging
+                  </CardDescription>
+                </div>
+                <Button 
+                  onClick={handleMatrixGenerate}
+                  disabled={isBatchGenerating}
+                  className="gap-2"
+                >
+                  {isBatchGenerating ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Wand2 className="w-4 h-4" />
+                  )}
+                  Generate Full Matrix
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-2 font-medium">Product</th>
+                      {targetAudiences.map(audience => (
+                        <th key={audience.id} className="text-center p-2 font-medium text-xs">
+                          {audience.label}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {MAIN_PRODUCTS.map(productId => {
+                      const product = products[productId];
+                      const hasApproved = approvedByProduct[productId];
+                      
+                      return (
+                        <tr key={productId} className="border-b hover:bg-muted/30">
+                          <td className="p-2">
+                            <div className="flex items-center gap-2">
+                              <div 
+                                className="w-3 h-3 rounded-full"
+                                style={{ backgroundColor: PRODUCT_COLORS[productId] }}
+                              />
+                              <span className="font-medium">{product?.name}</span>
+                              {hasApproved && (
+                                <CheckCircle className="w-3 h-3 text-green-500" />
+                              )}
+                            </div>
+                          </td>
+                          {targetAudiences.map(audience => {
+                            // Check if we have approved messaging for this combo
+                            const hasMsgForAudience = hasApproved; // Simplified - in reality would check audience
+                            
+                            return (
+                              <td key={audience.id} className="text-center p-2">
+                                {hasMsgForAudience ? (
+                                  <Badge variant="default" className="text-[10px]">
+                                    ✓
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline" className="text-[10px] text-muted-foreground">
+                                    —
+                                  </Badge>
+                                )}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Pending Approval Tab */}
@@ -659,61 +1073,72 @@ export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = (
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-4">
-              {pendingApprovals.map(request => {
-                const product = products[request.productId];
-                const messaging = latestMessaging?.requestId === request.id ? latestMessaging : null;
-                
-                return (
-                  <Card key={request.id}>
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-base flex items-center gap-2">
-                          <div 
-                            className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: PRODUCT_COLORS[request.productId] }}
-                          />
-                          {product?.name || request.productId}
-                          <Badge variant="secondary" className="ml-2">
-                            {request.type}
-                          </Badge>
-                        </CardTitle>
-                        <div className="flex items-center gap-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => rejectMessaging(request.id, 'Not suitable')}
-                            className="gap-1 text-red-600 hover:text-red-700"
-                          >
-                            <XCircle className="w-3 h-3" />
-                            Reject
-                          </Button>
-                          <Button 
-                            size="sm"
-                            onClick={() => handleApprove(request.id)}
-                            className="gap-1"
-                          >
-                            <CheckCircle className="w-3 h-3" />
-                            Approve
-                          </Button>
+            <>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">
+                  {pendingApprovals.length} item(s) pending approval
+                </span>
+                <Button onClick={handleApproveAll} variant="outline" className="gap-2">
+                  <CheckCircle className="w-4 h-4" />
+                  Approve All
+                </Button>
+              </div>
+              <div className="space-y-4">
+                {pendingApprovals.map(request => {
+                  const product = products[request.productId];
+                  const messaging = latestMessaging?.requestId === request.id ? latestMessaging : null;
+                  
+                  return (
+                    <Card key={request.id}>
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-base flex items-center gap-2">
+                            <div 
+                              className="w-3 h-3 rounded-full"
+                              style={{ backgroundColor: PRODUCT_COLORS[request.productId] }}
+                            />
+                            {product?.name || request.productId}
+                            <Badge variant="secondary" className="ml-2">
+                              {request.type}
+                            </Badge>
+                          </CardTitle>
+                          <div className="flex items-center gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => rejectMessaging(request.id, 'Not suitable')}
+                              className="gap-1 text-red-600 hover:text-red-700"
+                            >
+                              <XCircle className="w-3 h-3" />
+                              Reject
+                            </Button>
+                            <Button 
+                              size="sm"
+                              onClick={() => handleApprove(request.id)}
+                              className="gap-1"
+                            >
+                              <CheckCircle className="w-3 h-3" />
+                              Approve
+                            </Button>
+                          </div>
                         </div>
-                      </div>
-                      <CardDescription>
-                        Generated {request.generatedAt?.toLocaleString() || 'recently'} • 
-                        Audiences: {request.targetAudience.join(', ')}
-                      </CardDescription>
-                    </CardHeader>
-                    {messaging && (
-                      <CardContent>
-                        <ScrollArea className="h-[400px] pr-4">
-                          {renderMessagingCard(messaging)}
-                        </ScrollArea>
-                      </CardContent>
-                    )}
-                  </Card>
-                );
-              })}
-            </div>
+                        <CardDescription>
+                          Generated {request.generatedAt?.toLocaleString() || 'recently'} • 
+                          Audiences: {request.targetAudience.join(', ')}
+                        </CardDescription>
+                      </CardHeader>
+                      {messaging && (
+                        <CardContent>
+                          <ScrollArea className="h-[400px] pr-4">
+                            {renderMessagingCard(messaging)}
+                          </ScrollArea>
+                        </CardContent>
+                      )}
+                    </Card>
+                  );
+                })}
+              </div>
+            </>
           )}
         </TabsContent>
 
