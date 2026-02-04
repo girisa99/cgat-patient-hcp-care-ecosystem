@@ -1,13 +1,21 @@
 /**
- * VIDEO STYLE COMPACT SELECTOR
+ * VIDEO STYLE SELECTOR (EXPANDED)
  * 
- * Compact horizontal chip-based style selector:
- * - Categories as collapsible sections
- * - Small, clickable chips instead of large cards
- * - Multi-select support
+ * Uses MASTER_ECOSYSTEM_REGISTRY for 43+ video styles
+ * across all industries, segments, and use cases.
+ * 
+ * Categories:
+ * - Storytelling (6): Smart, Hook, Micro-Drama, Documentary, Narrative, Testimonial
+ * - Avatar (7): Photorealistic, 3D Pixar, 2D, Talking Photos, Full-Body, Digital Twin, Mascot
+ * - Animation (6): Anime, Image-to-Life, 3D Explainer, Motion Graphics, Kinetic, Whiteboard
+ * - Interactive (5): Educational, Quiz, CTA, Shoppable, Branching
+ * - Marketing (8): Social, Ads, Demo, Comparison, Case Study, Event, BTS, News
+ * - Enterprise (4): Training, Internal Comms, Investor, Compliance
+ * - Healthcare (3): Patient Ed, Provider Training, Medical Explainer
+ * - Entertainment (4): Gaming, Music Video, Short Film, Podcast
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   GraduationCap, 
   Share2, 
@@ -25,76 +33,80 @@ import {
   Mic2,
   Camera,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Building,
+  Heart,
+  Gamepad,
+  Music,
+  Clapperboard,
+  Mic,
+  Users,
+  TrendingUp,
+  MessageCircle,
+  UserCheck,
+  Layers,
+  Type,
+  PenTool,
+  ShoppingCart,
+  GitBranch,
+  Scale,
+  FileText,
+  Calendar,
+  Eye,
+  Newspaper,
+  Shield,
+  Activity,
+  Crown,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { 
+  MASTER_VIDEO_STYLES, 
+  getVideoStylesByCategory,
+  type VideoStyleId,
+  type VideoStyleCategory,
+} from '@/config/master-ecosystem-registry';
 
-export type VideoStyleType = 
-  | 'smart_storytelling'
-  | 'educational' 
-  | 'social' 
-  | 'ugc_avatar_photorealistic'
-  | 'ugc_avatar_3d_pixar'
-  | 'ugc_avatar_2d_animated'
-  | 'anime' 
-  | 'video_ads' 
-  | 'micro_drama'
-  | 'image_to_life'
-  | 'talking_photos'
-  | 'interactive_quiz'
-  | 'cta_videos'
-  | 'hook_videos'
-  | 'explainer_3d'
-  | 'product_demo';
-
+// Re-export types for backward compatibility
+export type VideoStyleType = VideoStyleId;
 export type AvatarStyleType = 'photorealistic' | '3d_pixar' | '2d_animated';
 
-interface VideoStyle {
-  id: VideoStyleType;
-  title: string;
-  icon: React.ElementType;
-  category: 'storytelling' | 'avatar' | 'animation' | 'interactive' | 'marketing';
-  popular?: boolean;
-  new?: boolean;
-}
-
-// Compact style definitions - removed unnecessary/duplicate ones
-const VIDEO_STYLES: VideoStyle[] = [
-  // STORYTELLING
-  { id: 'smart_storytelling', title: 'Smart Storytelling', icon: BookOpen, category: 'storytelling', popular: true, new: true },
-  { id: 'hook_videos', title: 'Hook Videos', icon: Sparkles, category: 'storytelling', popular: true },
-  { id: 'micro_drama', title: 'Micro-Drama', icon: Film, category: 'storytelling' },
-  
-  // AVATAR
-  { id: 'ugc_avatar_photorealistic', title: 'Photorealistic', icon: User, category: 'avatar', popular: true },
-  { id: 'ugc_avatar_3d_pixar', title: '3D Pixar Style', icon: Box, category: 'avatar', new: true },
-  { id: 'ugc_avatar_2d_animated', title: '2D Animated', icon: Palette, category: 'avatar' },
-  { id: 'talking_photos', title: 'Talking Photos', icon: Mic2, category: 'avatar' },
-  
-  // ANIMATION
-  { id: 'anime', title: 'Anime Style', icon: Wand2, category: 'animation', popular: true },
-  { id: 'image_to_life', title: 'Image to Life', icon: Image, category: 'animation', new: true },
-  { id: 'explainer_3d', title: '3D Explainer', icon: Box, category: 'animation' },
-  
-  // INTERACTIVE
-  { id: 'educational', title: 'Educational', icon: GraduationCap, category: 'interactive', popular: true },
-  { id: 'interactive_quiz', title: 'Quiz Overlay', icon: MousePointer, category: 'interactive', new: true },
-  { id: 'cta_videos', title: 'CTA Videos', icon: MousePointer, category: 'interactive' },
-  
-  // MARKETING
-  { id: 'social', title: 'Social Media', icon: Share2, category: 'marketing', popular: true },
-  { id: 'video_ads', title: 'Video Ads', icon: Megaphone, category: 'marketing' },
-  { id: 'product_demo', title: 'Product Demo', icon: Camera, category: 'marketing' },
-];
-
-const CATEGORY_INFO: Record<string, { label: string; icon: React.ElementType }> = {
-  storytelling: { label: 'Storytelling', icon: BookOpen },
-  avatar: { label: 'Avatar & Presenters', icon: User },
-  animation: { label: 'Animation', icon: Wand2 },
-  interactive: { label: 'Interactive', icon: MousePointer },
-  marketing: { label: 'Marketing', icon: Megaphone },
+// Icon mapping for dynamic rendering
+const ICON_MAP: Record<string, React.ElementType> = {
+  BookOpen, Sparkles, Film, Camera, TrendingUp, MessageCircle,
+  User, Box, Palette, Mic2, UserCheck, Heart,
+  Wand2, Image, Layers, Type, PenTool,
+  GraduationCap, MousePointer, ShoppingCart, GitBranch,
+  Share2, Megaphone, Scale, FileText, Calendar, Eye, Newspaper,
+  Building, Users, Shield, Activity,
+  Gamepad, Music, Clapperboard, Mic,
 };
+
+// Category display info
+const CATEGORY_INFO: Record<VideoStyleCategory, { 
+  label: string; 
+  icon: React.ElementType;
+  description: string;
+}> = {
+  storytelling: { label: 'Storytelling', icon: BookOpen, description: 'Narrative-driven content' },
+  avatar: { label: 'Avatar & Presenters', icon: User, description: 'AI presenters and characters' },
+  animation: { label: 'Animation', icon: Wand2, description: 'Motion and visual effects' },
+  interactive: { label: 'Interactive', icon: MousePointer, description: 'Engaging interactive content' },
+  marketing: { label: 'Marketing', icon: Megaphone, description: 'Promotional content' },
+  education: { label: 'Education', icon: GraduationCap, description: 'Learning content' },
+  enterprise: { label: 'Enterprise', icon: Building, description: 'Business & corporate' },
+  ecommerce: { label: 'E-Commerce', icon: ShoppingCart, description: 'Product & sales content' },
+  healthcare: { label: 'Healthcare', icon: Heart, description: 'Medical & wellness' },
+  entertainment: { label: 'Entertainment', icon: Film, description: 'Creative & media' },
+  news_media: { label: 'News & Media', icon: Newspaper, description: 'Journalism & reporting' },
+  social_platform: { label: 'Social Platforms', icon: Share2, description: 'Platform-specific content' },
+};
+
+// Get categories that have styles
+const ACTIVE_CATEGORIES: VideoStyleCategory[] = [
+  'storytelling', 'avatar', 'animation', 'interactive', 
+  'marketing', 'enterprise', 'healthcare', 'entertainment'
+];
 
 interface VideoStyleCardsProps {
   selectedStyle?: VideoStyleType;
@@ -103,6 +115,8 @@ interface VideoStyleCardsProps {
   onSelectStyles?: (styles: VideoStyleType[]) => void;
   allowMultiple?: boolean;
   compact?: boolean;
+  showPremium?: boolean;
+  industryFilter?: string;
   className?: string;
 }
 
@@ -113,11 +127,38 @@ export const VideoStyleCards: React.FC<VideoStyleCardsProps> = ({
   onSelectStyles,
   allowMultiple = false,
   compact = true,
+  showPremium = true,
+  industryFilter,
   className,
 }) => {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
     new Set(['storytelling', 'avatar', 'animation', 'interactive', 'marketing'])
   );
+  const [showAllCategories, setShowAllCategories] = useState(false);
+
+  // Filter styles based on industry if provided
+  const filteredStyles = useMemo(() => {
+    let styles = MASTER_VIDEO_STYLES;
+    
+    if (industryFilter) {
+      styles = styles.filter(s => s.industries.includes(industryFilter));
+    }
+    
+    if (!showPremium) {
+      styles = styles.filter(s => !s.premium);
+    }
+    
+    return styles;
+  }, [industryFilter, showPremium]);
+
+  // Group styles by category
+  const groupedStyles = useMemo(() => {
+    return filteredStyles.reduce((acc, style) => {
+      if (!acc[style.category]) acc[style.category] = [];
+      acc[style.category].push(style);
+      return acc;
+    }, {} as Record<string, typeof MASTER_VIDEO_STYLES>);
+  }, [filteredStyles]);
 
   const handleStyleClick = (styleId: VideoStyleType) => {
     if (allowMultiple && onSelectStyles) {
@@ -150,14 +191,10 @@ export const VideoStyleCards: React.FC<VideoStyleCardsProps> = ({
     });
   };
 
-  // Group styles by category
-  const groupedStyles = VIDEO_STYLES.reduce((acc, style) => {
-    if (!acc[style.category]) acc[style.category] = [];
-    acc[style.category].push(style);
-    return acc;
-  }, {} as Record<string, VideoStyle[]>);
-
-  const categories: Array<keyof typeof CATEGORY_INFO> = ['storytelling', 'avatar', 'animation', 'interactive', 'marketing'];
+  // Categories to show (primary 5 or all 8)
+  const visibleCategories = showAllCategories 
+    ? ACTIVE_CATEGORIES 
+    : ACTIVE_CATEGORIES.slice(0, 5);
 
   return (
     <div className={cn("space-y-2", className)}>
@@ -174,15 +211,25 @@ export const VideoStyleCards: React.FC<VideoStyleCardsProps> = ({
             </Badge>
           )}
           <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5">
-            {VIDEO_STYLES.length} styles
+            {filteredStyles.length} styles
           </Badge>
+          {!showAllCategories && ACTIVE_CATEGORIES.length > 5 && (
+            <button
+              onClick={() => setShowAllCategories(true)}
+              className="text-[10px] text-primary hover:underline"
+            >
+              +{ACTIVE_CATEGORIES.length - 5} more
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Compact Category Groups */}
+      {/* Category Groups */}
       <div className="space-y-1.5">
-        {categories.map((category) => {
+        {visibleCategories.map((category) => {
           const styles = groupedStyles[category] || [];
+          if (styles.length === 0) return null;
+          
           const info = CATEGORY_INFO[category];
           const isExpanded = expandedCategories.has(category);
           const Icon = info.icon;
@@ -210,13 +257,14 @@ export const VideoStyleCards: React.FC<VideoStyleCardsProps> = ({
               {isExpanded && (
                 <div className="flex flex-wrap gap-1.5 p-2 bg-background">
                   {styles.map((style) => {
-                    const StyleIcon = style.icon;
+                    const StyleIcon = ICON_MAP[style.icon] || Sparkles;
                     const selected = isStyleSelected(style.id);
                     
                     return (
                       <button
                         key={style.id}
                         onClick={() => handleStyleClick(style.id)}
+                        title={style.description}
                         className={cn(
                           "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all",
                           "border hover:shadow-sm",
@@ -237,6 +285,9 @@ export const VideoStyleCards: React.FC<VideoStyleCardsProps> = ({
                         {style.new && !selected && (
                           <span className="text-[9px] text-green-600 font-semibold">NEW</span>
                         )}
+                        {style.premium && !selected && (
+                          <Crown className="w-3 h-3 text-amber-500" />
+                        )}
                       </button>
                     );
                   })}
@@ -246,6 +297,16 @@ export const VideoStyleCards: React.FC<VideoStyleCardsProps> = ({
           );
         })}
       </div>
+
+      {/* Show More/Less Toggle */}
+      {ACTIVE_CATEGORIES.length > 5 && (
+        <button
+          onClick={() => setShowAllCategories(!showAllCategories)}
+          className="w-full text-center text-xs text-muted-foreground hover:text-foreground py-1"
+        >
+          {showAllCategories ? 'Show fewer categories' : `Show all ${ACTIVE_CATEGORIES.length} categories`}
+        </button>
+      )}
     </div>
   );
 };
