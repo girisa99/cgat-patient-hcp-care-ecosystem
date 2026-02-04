@@ -193,9 +193,38 @@ async function generateWithGemini(prompt: string): Promise<{ url: string | null;
   }
 
   try {
-    console.log('🔄 Trying Gemini 2.0 Flash Image...');
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key=${GEMINI_API_KEY}`,
+    // Try Imagen 3 first (production model)
+    console.log('🔄 Trying Google Imagen 3...');
+    const imagenResponse = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          instances: [{ prompt: `Create a high-quality 16:9 aspect ratio image: ${prompt}` }],
+          parameters: {
+            sampleCount: 1,
+            aspectRatio: '16:9',
+            safetyFilterLevel: 'block_only_high',
+          }
+        }),
+      }
+    );
+
+    if (imagenResponse.ok) {
+      const data = await imagenResponse.json();
+      const base64Image = data.predictions?.[0]?.bytesBase64Encoded;
+      if (base64Image) {
+        return { url: base64Image, provider: 'google_imagen3', isBase64: true };
+      }
+    } else {
+      console.log(`❌ Imagen 3 error: ${imagenResponse.status}`);
+    }
+
+    // Fallback to Gemini 2.0 Flash with image generation
+    console.log('🔄 Trying Gemini 2.0 Flash...');
+    const geminiResponse = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -210,20 +239,19 @@ async function generateWithGemini(prompt: string): Promise<{ url: string | null;
       }
     );
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.log(`❌ Gemini error: ${response.status} - ${errorText}`);
+    if (!geminiResponse.ok) {
+      const errorText = await geminiResponse.text();
+      console.log(`❌ Gemini error: ${geminiResponse.status} - ${errorText.substring(0, 200)}`);
       return { url: null, provider: 'gemini', isBase64: false };
     }
 
-    const data = await response.json();
+    const data = await geminiResponse.json();
     const imagePart = data.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData?.mimeType?.startsWith('image/'));
     
     if (imagePart?.inlineData?.data) {
-      // Return base64 data - we'll upload to storage
       return { 
-        url: imagePart.inlineData.data, // Just the base64 without data: prefix
-        provider: 'gemini_imagen', 
+        url: imagePart.inlineData.data,
+        provider: 'gemini_flash', 
         isBase64: true 
       };
     }
@@ -392,112 +420,137 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { limit = 5 } = await req.json().catch(() => ({}));
+    const { limit = 10, autoProcess = true, maxBatches = 20 } = await req.json().catch(() => ({}));
 
-    console.log(`🔄 Processing thumbnail queue (limit: ${limit})`);
+    console.log(`🔄 Processing thumbnail queue (limit: ${limit}, autoProcess: ${autoProcess}, maxBatches: ${maxBatches})`);
 
-    // Get pending jobs
-    const { data: jobs, error: fetchError } = await supabase
-      .from('thumbnail_generation_queue')
-      .select('*, video_blueprints!inner(*)')
-      .eq('status', 'pending')
-      .lt('attempts', 3)
-      .order('created_at', { ascending: true })
-      .limit(limit);
+    let totalProcessed = 0;
+    let totalSucceeded = 0;
+    let totalFailed = 0;
+    let batchCount = 0;
+    const allDetails: any[] = [];
 
-    if (fetchError) throw fetchError;
+    // Auto-process multiple batches if enabled
+    do {
+      batchCount++;
+      console.log(`📦 Processing batch ${batchCount}...`);
 
-    if (!jobs || jobs.length === 0) {
-      return new Response(
-        JSON.stringify({ success: true, processed: 0, message: 'No pending jobs' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    console.log(`📋 Found ${jobs.length} pending jobs`);
-
-    const results = {
-      processed: 0,
-      succeeded: 0,
-      failed: 0,
-      details: [] as any[],
-    };
-
-    for (const job of jobs) {
-      const blueprint = job.video_blueprints;
-      const region = job.region || 'global';
-
-      // Mark as processing
-      await supabase
+      // Get pending jobs
+      const { data: jobs, error: fetchError } = await supabase
         .from('thumbnail_generation_queue')
-        .update({
-          status: 'processing',
-          started_at: new Date().toISOString(),
-          attempts: job.attempts + 1,
-        })
-        .eq('id', job.id);
+        .select('*, video_blueprints!inner(*)')
+        .eq('status', 'pending')
+        .lt('attempts', 3)
+        .order('created_at', { ascending: true })
+        .limit(limit);
 
-      try {
-        console.log(`🎨 Generating for: ${blueprint.name} (region: ${region})`);
-        
-        const { url, provider } = await generateThumbnail(supabase, blueprint, region);
+      if (fetchError) throw fetchError;
 
-        if (url) {
-          // Update blueprint with permanent thumbnail URL
-          await supabase
-            .from('video_blueprints')
-            .update({
-              thumbnail_url: url,
-              thumbnail_provider: provider,
-              thumbnail_region: region,
-              style_preset: {
-                ...blueprint.style_preset,
-                thumbnail_provider: provider,
-                thumbnail_region: region,
-                thumbnail_generated_at: new Date().toISOString(),
-              },
-            })
-            .eq('id', blueprint.id);
+      if (!jobs || jobs.length === 0) {
+        console.log(`✅ No more pending jobs after ${batchCount} batches`);
+        break;
+      }
 
-          // Mark job as completed
-          await supabase
-            .from('thumbnail_generation_queue')
-            .update({
-              status: 'completed',
-              completed_at: new Date().toISOString(),
-              thumbnail_url: url,
-              provider,
-            })
-            .eq('id', job.id);
+      console.log(`📋 Batch ${batchCount}: Found ${jobs.length} pending jobs`);
 
-          results.succeeded++;
-          results.details.push({ name: blueprint.name, status: 'success', provider });
-        } else {
-          throw new Error('All providers failed');
-        }
+      for (const job of jobs) {
+        const blueprint = job.video_blueprints;
+        const region = job.region || 'global';
 
-      } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-        
+        // Mark as processing
         await supabase
           .from('thumbnail_generation_queue')
           .update({
-            status: job.attempts + 1 >= 3 ? 'failed' : 'pending',
-            error_message: errorMsg,
+            status: 'processing',
+            started_at: new Date().toISOString(),
+            attempts: job.attempts + 1,
           })
           .eq('id', job.id);
 
-        results.failed++;
-        results.details.push({ name: blueprint.name, status: 'failed', error: errorMsg });
+        try {
+          console.log(`🎨 Generating for: ${blueprint.name} (region: ${region})`);
+          
+          const { url, provider } = await generateThumbnail(supabase, blueprint, region);
+
+          if (url) {
+            // Update blueprint with permanent thumbnail URL
+            await supabase
+              .from('video_blueprints')
+              .update({
+                thumbnail_url: url,
+                thumbnail_provider: provider,
+                thumbnail_region: region,
+                style_preset: {
+                  ...blueprint.style_preset,
+                  thumbnail_provider: provider,
+                  thumbnail_region: region,
+                  thumbnail_generated_at: new Date().toISOString(),
+                },
+              })
+              .eq('id', blueprint.id);
+
+            // Mark job as completed
+            await supabase
+              .from('thumbnail_generation_queue')
+              .update({
+                status: 'completed',
+                completed_at: new Date().toISOString(),
+                thumbnail_url: url,
+                provider,
+              })
+              .eq('id', job.id);
+
+            totalSucceeded++;
+            allDetails.push({ name: blueprint.name, status: 'success', provider, batch: batchCount });
+          } else {
+            throw new Error('All providers failed');
+          }
+
+        } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+          
+          await supabase
+            .from('thumbnail_generation_queue')
+            .update({
+              status: job.attempts + 1 >= 3 ? 'failed' : 'pending',
+              error_message: errorMsg,
+            })
+            .eq('id', job.id);
+
+          totalFailed++;
+          allDetails.push({ name: blueprint.name, status: 'failed', error: errorMsg, batch: batchCount });
+        }
+
+        totalProcessed++;
       }
 
-      results.processed++;
-    }
+      console.log(`✅ Batch ${batchCount}: Processed ${jobs.length}, Total: ${totalProcessed}`);
 
-    console.log(`✅ Processed: ${results.processed}, Success: ${results.succeeded}, Failed: ${results.failed}`);
+      // Small delay between batches to avoid rate limiting
+      if (autoProcess && batchCount < maxBatches) {
+        await new Promise(r => setTimeout(r, 1000));
+      }
+
+    } while (autoProcess && batchCount < maxBatches);
+
+    // Check remaining pending jobs
+    const { count: remainingCount } = await supabase
+      .from('thumbnail_generation_queue')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'pending');
+
+    console.log(`✅ TOTAL: Processed ${totalProcessed}, Success: ${totalSucceeded}, Failed: ${totalFailed}, Remaining: ${remainingCount}`);
 
     return new Response(
-      JSON.stringify({ success: true, ...results }),
+      JSON.stringify({
+        success: true,
+        processed: totalProcessed,
+        succeeded: totalSucceeded,
+        failed: totalFailed,
+        batches: batchCount,
+        remaining: remainingCount,
+        details: allDetails.slice(-50), // Last 50 for response size
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
