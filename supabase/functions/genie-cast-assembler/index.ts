@@ -872,75 +872,202 @@ interface StyleConfig {
  * - Smart Storytelling: Emotional narrative arc
  */
 function getChapterScript(chapterId: string, language: string, styleConfig?: StyleConfig | null): string {
-  // Base scripts for each chapter (neutral tone)
-  const baseScripts: Record<string, Record<string, string>> = {
-    'opening': {
-      'en': "Welcome to Genie Studio. Your creative vision, powered by AI. Seven products, one platform, infinite possibilities.",
-      'ar': "مرحباً بكم في جيني ستوديو. رؤيتكم الإبداعية مدعومة بالذكاء الاصطناعي.",
-      'hi': "जीनी स्टूडियो में आपका स्वागत है। आपकी रचनात्मक दृष्टि, एआई द्वारा संचालित।",
-      'zh': "欢迎来到精灵工作室。您的创意愿景，由人工智能驱动。",
-    },
-    'spark': {
-      'en': "Genie Spark ignites your creativity. Transform any idea into a professional script in seconds. AI-powered confidence scoring ensures your message resonates.",
-      'ar': "جيني سبارك يشعل إبداعك. حول أي فكرة إلى سيناريو احترافي.",
-      'hi': "जीनी स्पार्क आपकी रचनात्मकता को प्रज्वलित करता है।",
-      'zh': "精灵火花点燃您的创造力。将任何想法转化为专业脚本。",
-    },
-    'mind': {
-      'en': "Genie Mind enhances your scripts with AI intelligence. Real-time suggestions, clarity improvements, and multi-language translation.",
-      'ar': "جيني مايند يعزز نصوصك بذكاء اصطناعي.",
-      'hi': "जीनी माइंड एआई इंटेलिजेंस के साथ आपकी स्क्रिप्ट को बेहतर बनाता है।",
-      'zh': "精灵思维用人工智能增强您的脚本。",
-    },
-    'vibe': {
-      'en': "Genie Vibe is your complete recording studio. Teleprompter, AI editing, and professional-grade output. From script to screen in minutes.",
-      'ar': "جيني فايب هو استوديو التسجيل الكامل الخاص بك.",
-      'hi': "जीनी वाइब आपका पूर्ण रिकॉर्डिंग स्टूडियो है।",
-      'zh': "精灵氛围是您完整的录音室。",
-    },
-    'deck': {
-      'en': "Genie Deck transforms ideas into stunning presentations. AI-designed templates, smart layouts, and instant export to PowerPoint or PDF.",
-      'ar': "جيني ديك يحول الأفكار إلى عروض تقديمية مذهلة.",
-      'hi': "जीनी डेक विचारों को शानदार प्रस्तुतियों में बदलता है।",
-      'zh': "精灵甲板将想法转化为精彩的演示文稿。",
-    },
-    'arc': {
-      'en': "Genie Arc manages your entire production workflow. Kanban boards, content calendars, and smart scheduling keep your team in sync.",
-      'ar': "جيني آرك يدير سير عمل الإنتاج بالكامل.",
-      'hi': "जीनी आर्क आपके पूरे प्रोडक्शन वर्कफ़्लो को प्रबंधित करता है।",
-      'zh': "精灵弧管理您的整个生产工作流程。",
-    },
-    'ask-genie': {
-      'en': "Ask Genie is your personal AI assistant. Ask anything about the platform, get instant guidance, and master every feature.",
-      'ar': "اسأل جيني هو مساعدك الشخصي بالذكاء الاصطناعي.",
-      'hi': "आस्क जीनी आपका व्यक्तिगत एआई सहायक है।",
-      'zh': "问精灵是您的个人AI助手。",
-    },
-    'cast': {
-      'en': "Genie Cast distributes your content globally. One click publishing to YouTube, LinkedIn, TikTok, and more. Analytics that drive growth.",
-      'ar': "جيني كاست يوزع محتواك عالمياً.",
-      'hi': "जीनी कास्ट आपकी सामग्री को विश्व स्तर पर वितरित करता है।",
-      'zh': "精灵广播在全球分发您的内容。",
-    },
-    'closing': {
-      'en': "Your wish is our command. Start creating with Genie Studio today. From mind to media, your story awaits.",
-      'ar': "أمرك مطاع. ابدأ الإبداع مع جيني ستوديو اليوم.",
-      'hi': "आपकी इच्छा हमारा आदेश है। आज ही जीनी स्टूडियो के साथ बनाना शुरू करें।",
-      'zh': "您的愿望就是我的命令。今天就开始使用精灵工作室创作。",
-    },
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // RICH TRANSCREATED SCRIPTS - Full, engaging content from landing page showcase
+  // These are the same professional scripts used on the landing page for each language
+  // ═══════════════════════════════════════════════════════════════════════════════
+  
+  const ENGLISH_SCRIPTS: Record<string, string> = {
+    'opening': `Welcome to Genie Studio – where your ideas become reality.
+
+Seven powerful products. 206 AI pipelines. 12 world-class providers. Over 70 languages with authentic regional voices.
+
+From Tokyo to Dubai, São Paulo to Mumbai – your creative vision, instantly realized.
+
+Let me show you the magic.`,
+    'spark': `Genie Spark transforms chaos into clarity.
+
+Drop any input – a video, a document, a URL, or just speak your idea – and watch as AI crafts the perfect script for your audience, your industry, your style.
+
+From idea to words in seconds.`,
+    'mind': `Genie Mind doesn't just write – it understands.
+
+AI-powered enhancement that elevates your message. Native voices in your language that sound authentic, not robotic.
+
+We don't translate. We transcreate. Every language sounds like home.`,
+    'vibe': `Genie Vibe brings scripts to life.
+
+Professional video production with AI avatars that speak naturally in any language. Perfect lip-sync. Cinematic quality.
+
+74 video pipelines. 4K resolution. From your phone to the world.`,
+    'deck': `Genie Deck ends presentation pain.
+
+One prompt. One click. A complete professional presentation with 3D elements, animated charts, and avatars that present for you.
+
+101 frameworks. 25 industries. From boardroom to social media.`,
+    'arc': `Production Hub is your creative command center.
+
+AI-powered timeline editing with real-time suggestions. Multi-track audio, effects, and transitions – all in one place.
+
+Edit like a pro. Export anywhere.`,
+    'ask-genie': `Ask Genie understands natural language.
+
+Just tell it what you need. A presentation for investors? A training video? A social campaign?
+
+Ask, and Genie orchestrates every tool to deliver exactly what you imagined.`,
+    'cast': `Genie Cast takes you global.
+
+Publish to YouTube, TikTok, Instagram, LinkedIn, WeChat, WhatsApp – all from one place.
+
+Real-time analytics. A/B testing. 50+ countries. 70+ languages.
+
+Your story, everywhere.`,
+    'closing': `This is Genie Studio. Seven products. 206 pipelines. Unlimited possibilities.
+
+Spark ignites ideas. Mind understands. Vibe visualizes. Deck presents. Arc perfects. Ask Genie orchestrates. Cast amplifies.
+
+Your wish is our command.`
   };
 
-  // Get base script
-  let script = baseScripts[chapterId]?.[language] || baseScripts[chapterId]?.['en'] || '';
-  
-  // If no style config, return base script
-  if (!styleConfig) {
-    return script;
-  }
+  const HINDI_SCRIPTS: Record<string, string> = {
+    'opening': `जीनी स्टूडियो में आपका स्वागत है – जहां आपके आइडियाज़ हकीकत बन जाते हैं।
 
-  // Apply style-specific transformations (English only for now - can be extended)
-  if (language === 'en') {
-    script = applyStyleTransformations(chapterId, script, styleConfig);
+सात शक्तिशाली प्रोडक्ट्स। 206 AI पाइपलाइन। 12 विश्व स्तरीय प्रोवाइडर्स। 70 से ज़्यादा भाषाएं असली क्षेत्रीय आवाज़ों के साथ।
+
+टोक्यो से दुबई, साओ पाउलो से मुंबई तक – आपकी रचनात्मक कल्पना, तुरंत साकार।
+
+चलिए जादू दिखाते हैं।`,
+    'spark': `जीनी स्पार्क अराजकता को स्पष्टता में बदलता है।
+
+कोई भी इनपुट डालें – वीडियो, डॉक्यूमेंट, URL, या बस अपना आइडिया बोलें – और देखें AI कैसे परफेक्ट स्क्रिप्ट बनाता है।
+
+आइडिया से शब्द, सेकंड्स में।`,
+    'mind': `जीनी माइंड सिर्फ लिखता नहीं – समझता है।
+
+AI-पावर्ड एन्हांसमेंट जो आपके मैसेज को ऊंचाई देता है। आपकी भाषा में असली आवाज़ें।
+
+हम ट्रांसलेट नहीं करते। ट्रांसक्रिएट करते हैं। हर भाषा घर जैसी लगती है।`,
+    'vibe': `जीनी वाइब स्क्रिप्ट्स को जिंदा करता है।
+
+AI अवतारों के साथ प्रोफेशनल वीडियो प्रोडक्शन। परफेक्ट लिप-सिंक। सिनेमैटिक क्वालिटी।
+
+74 वीडियो पाइपलाइन। 4K रेज़ॉल्यूशन। आपके फ़ोन से दुनिया तक।`,
+    'deck': `जीनी डेक प्रेज़ेंटेशन का दर्द खत्म करता है।
+
+एक प्रॉम्प्ट। एक क्लिक। 3D एलिमेंट्स और एनिमेटेड चार्ट्स के साथ पूरी प्रोफेशनल प्रेज़ेंटेशन।
+
+101 फ्रेमवर्क। 25 इंडस्ट्रीज़। बोर्डरूम से सोशल मीडिया तक।`,
+    'arc': `प्रोडक्शन हब आपका क्रिएटिव कमांड सेंटर है।
+
+रियल-टाइम सुझावों के साथ AI-पावर्ड टाइमलाइन एडिटिंग। मल्टी-ट्रैक ऑडियो, इफेक्ट्स – सब एक जगह।
+
+प्रो की तरह एडिट करें। कहीं भी एक्सपोर्ट करें।`,
+    'ask-genie': `आस्क जीनी नेचुरल लैंग्वेज समझता है।
+
+बस बताइए क्या चाहिए। इन्वेस्टर्स के लिए प्रेज़ेंटेशन? ट्रेनिंग वीडियो? सोशल कैम्पेन?
+
+पूछिए, और जीनी आपकी कल्पना को साकार करता है।`,
+    'cast': `जीनी कास्ट आपको ग्लोबल ले जाता है।
+
+YouTube, TikTok, Instagram, LinkedIn, WhatsApp – एक जगह से सब पर पब्लिश करें।
+
+रियल-टाइम एनालिटिक्स। 50+ देश। 70+ भाषाएं।
+
+आपकी कहानी, हर जगह।`,
+    'closing': `यह है जीनी स्टूडियो। सात प्रोडक्ट्स। 206 पाइपलाइन। असीमित संभावनाएं।
+
+आपकी इच्छा ही हमारा आदेश है।`
+  };
+
+  const ARABIC_SCRIPTS: Record<string, string> = {
+    'opening': `مرحباً بك في جيني ستوديو – حيث تتحول أفكارك إلى واقع.
+
+سبعة منتجات قوية. 206 خط أنابيب للذكاء الاصطناعي. 12 مزودًا عالميًا. أكثر من 70 لغة بأصوات إقليمية أصيلة.
+
+من طوكيو إلى دبي، من ساو باولو إلى مومباي – رؤيتك الإبداعية تتحقق فورًا.
+
+دعني أريك السحر.`,
+    'spark': `جيني سبارك يحول الفوضى إلى وضوح.
+
+أدخل أي مدخل – فيديو، مستند، رابط، أو فقط تحدث بفكرتك – وشاهد كيف يصنع الذكاء الاصطناعي النص المثالي لجمهورك.
+
+من الفكرة إلى الكلمات، في ثوانٍ.`,
+    'mind': `جيني مايند لا يكتب فقط – بل يفهم.
+
+تحسين مدعوم بالذكاء الاصطناعي يرتقي برسالتك. أصوات أصيلة بلغتك تبدو طبيعية، ليست آلية.
+
+نحن لا نترجم. نحن نبدع من جديد. كل لغة تبدو كالوطن.`,
+    'vibe': `جيني فايب يحيي النصوص.
+
+إنتاج فيديو احترافي مع أفاتارات ذكاء اصطناعي تتحدث بشكل طبيعي بأي لغة. مزامنة شفاه مثالية. جودة سينمائية.
+
+74 خط أنابيب فيديو. دقة 4K. من هاتفك إلى العالم.`,
+    'deck': `جيني ديك يحول الأفكار إلى عروض تقديمية مذهلة. عرض كامل بعناصر ثلاثية الأبعاد ورسوم متحركة.
+
+101 إطار. 25 صناعة. من غرفة الاجتماعات إلى وسائل التواصل.`,
+    'arc': `مركز الإنتاج هو مركز التحكم الإبداعي الخاص بك.
+
+تحرير الجدول الزمني بالذكاء الاصطناعي مع اقتراحات فورية. صوت متعدد المسارات، تأثيرات – كل شيء في مكان واحد.`,
+    'ask-genie': `اسأل جيني يفهم اللغة الطبيعية.
+
+فقط قل ما تحتاجه. عرض للمستثمرين؟ فيديو تدريبي؟ حملة اجتماعية؟
+
+اسأل، وجيني ينسق كل أداة لتقديم ما تخيلته بالضبط.`,
+    'cast': `جيني كاست يأخذك عالميًا.
+
+انشر على يوتيوب، تيك توك، إنستغرام، لينكد إن – كل شيء من مكان واحد.
+
+تحليلات فورية. أكثر من 50 دولة. أكثر من 70 لغة.
+
+قصتك، في كل مكان.`,
+    'closing': `هذا هو جيني ستوديو. سبعة منتجات. 206 خط أنابيب. إمكانيات لا حدود لها.
+
+أمنيتك هي أمرنا.`
+  };
+
+  const CHINESE_SCRIPTS: Record<string, string> = {
+    'opening': `欢迎来到 Genie Studio – 让您的想法变为现实。
+
+七款强大产品。206条AI管道。12家世界级供应商。70多种语言，配备真实的区域语音。
+
+从东京到迪拜，从圣保罗到孟买 – 您的创意愿景，即刻实现。
+
+让我向您展示魔法。`,
+    'spark': `Genie Spark 将混乱转化为清晰。
+
+输入任何内容 – 视频、文档、链接，或直接说出您的想法 – 看AI如何为您的受众打造完美脚本。
+
+从想法到文字，只需几秒。`,
+    'mind': `Genie Mind 不仅仅是写作 – 它理解。
+
+AI驱动的增强功能提升您的信息。您的语言中的真实声音，听起来自然，不是机器人。
+
+我们不翻译。我们转创作。每种语言都像家一样。`,
+    'vibe': `Genie Vibe 让脚本栩栩如生。
+
+专业视频制作，配备AI头像，可用任何语言自然说话。完美的口型同步。电影级质量。
+
+74条视频管道。4K分辨率。从您的手机到世界。`,
+    'closing': `这就是 Genie Studio。七款产品。206条管道。无限可能。
+
+您的愿望就是我们的命令。`
+  };
+
+  // Map language code to script set
+  const SCRIPT_MAPS: Record<string, Record<string, string>> = {
+    'en': ENGLISH_SCRIPTS,
+    'hi': HINDI_SCRIPTS,
+    'ar': ARABIC_SCRIPTS,
+    'zh': CHINESE_SCRIPTS,
+  };
+
+  // Get base script from rich transcreated content
+  const langScripts = SCRIPT_MAPS[language] || SCRIPT_MAPS['en'];
+  let script = langScripts[chapterId] || ENGLISH_SCRIPTS[chapterId] || '';
+  
+  // Apply style-specific transformations (works for ALL languages now)
+  if (styleConfig) {
+    script = applyStyleTransformations(chapterId, script, styleConfig, language);
   }
   
   return script;
@@ -949,34 +1076,45 @@ function getChapterScript(chapterId: string, language: string, styleConfig?: Sty
 /**
  * Apply style-specific transformations to scripts
  * Creates engaging hooks, emotional arcs, and tone variations
+ * NOW WORKS FOR ALL LANGUAGES (not just English)
  */
-function applyStyleTransformations(chapterId: string, baseScript: string, styleConfig: StyleConfig): string {
+function applyStyleTransformations(chapterId: string, baseScript: string, styleConfig: StyleConfig, language: string = 'en'): string {
   const { scriptTone, pacing, toneModifier } = styleConfig;
   const hookIntensity = toneModifier?.hookIntensity ?? 0.5;
   const emotionalArc = toneModifier?.emotionalArc ?? false;
   const humorLevel = toneModifier?.humorLevel ?? 'none';
 
-  // Strong hooks for hook_videos style (hookIntensity > 0.7)
+  // For non-English languages, apply intensity modifiers but keep transcreated base content
+  // This preserves authentic regional scripts while adding style energy
+  if (language !== 'en') {
+    // High hook intensity - add energy markers that work cross-linguistically
+    if (hookIntensity >= 0.7) {
+      // Add emphasis punctuation and exclamations that work universally
+      return baseScript
+        .replace(/\.\s/g, '! ')  // Add excitement
+        .replace(/\n\n/g, '\n\n... ');  // Add dramatic pauses
+    }
+    // Return rich base script for non-English (already engaging and transcreated)
+    return baseScript;
+  }
+
+  // English-specific transformations (full style options)
   if (hookIntensity >= 0.7) {
     return getHookStyleScript(chapterId, baseScript, hookIntensity);
   }
 
-  // Emotional storytelling for emotionalArc
   if (emotionalArc && scriptTone === 'storytelling') {
     return getEmotionalStoryScript(chapterId, baseScript);
   }
 
-  // Playful/warm tone for UGC Avatar / 3D Pixar styles
   if (scriptTone === 'friendly' || scriptTone === 'playful') {
     return getPlayfulScript(chapterId, baseScript, humorLevel);
   }
 
-  // Fast-paced for energetic styles
   if (pacing === 'fast') {
     return getFastPacedScript(chapterId, baseScript);
   }
 
-  // Educational tone - clear, methodical
   if (scriptTone === 'professional' || scriptTone === 'educational') {
     return getEducationalScript(chapterId, baseScript);
   }

@@ -218,13 +218,14 @@ async function concatenateAudioBuffers(buffers: ArrayBuffer[]): Promise<ArrayBuf
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function getAvailableProviders(): { id: TTSProvider; available: boolean; priority: number }[] {
-  // Priority order: Azure (best multilingual) -> Alibaba (CJK) -> ElevenLabs (Western) -> Google -> OpenAI (last resort)
+  // Priority order: ElevenLabs (Western) -> Azure (multilingual) -> Alibaba (CJK) -> Google
+  // NOTE: OpenAI TTS removed from production - use ElevenLabs/Azure/Alibaba/Google per 4-zone strategy
   return [
-    { id: 'azure', available: !!Deno.env.get('AZURE_SPEECH_KEY'), priority: 1 },
-    { id: 'alibaba', available: !!(Deno.env.get('ALIBABA_CHINA_API_KEY') || Deno.env.get('ALIBABA_API_KEY')), priority: 2 },
-    { id: 'elevenlabs', available: !!Deno.env.get('ELEVENLABS_API_KEY'), priority: 3 },
+    { id: 'elevenlabs', available: !!Deno.env.get('ELEVENLABS_API_KEY'), priority: 1 },
+    { id: 'azure', available: !!Deno.env.get('AZURE_SPEECH_KEY'), priority: 2 },
+    { id: 'alibaba', available: !!(Deno.env.get('ALIBABA_CHINA_API_KEY') || Deno.env.get('ALIBABA_API_KEY')), priority: 3 },
     { id: 'google', available: !!(Deno.env.get('GOOGLE_API_KEY') || Deno.env.get('GEMINI_API_KEY')), priority: 4 },
-    { id: 'openai', available: !!Deno.env.get('OPENAI_API_KEY'), priority: 5 }, // Last resort
+    // OpenAI intentionally excluded - not part of 4-zone TTS routing strategy
   ];
 }
 
@@ -345,32 +346,29 @@ function selectTTSProvider(region: string, languageCode: string, tier: string = 
   }
 
   // ═══════════════════════════════════════════════════════════════════════════════
-  // FALLBACK CHAIN: Azure -> Alibaba -> ElevenLabs -> Google -> OpenAI (last resort)
+  // FALLBACK CHAIN: ElevenLabs -> Azure -> Alibaba -> Google (4-Zone strategy)
+  // NOTE: OpenAI TTS intentionally excluded from production routing
   // ═══════════════════════════════════════════════════════════════════════════════
   console.log(`🔊 Unknown language [${languageCode}], using fallback chain`);
   
+  if (hasProvider('elevenlabs')) {
+    console.log(`🔊 Fallback: Routing to ElevenLabs (Premium Western voices)`);
+    return { provider: 'elevenlabs', cost: 0.018, zone: 'fallback', quality: 'premium' };
+  }
   if (hasProvider('azure')) {
-    console.log(`🔊 Fallback: Routing to Azure Neural TTS`);
+    console.log(`🔊 Fallback: Routing to Azure Neural TTS (Multilingual)`);
     return { provider: 'azure', cost: 0.016, zone: 'fallback', quality: 'premium' };
   }
   if (hasProvider('alibaba')) {
-    console.log(`🔊 Fallback: Routing to Alibaba CosyVoice`);
+    console.log(`🔊 Fallback: Routing to Alibaba CosyVoice (CJK)`);
     return { provider: 'alibaba', cost: 0.004, zone: 'fallback', quality: 'standard' };
-  }
-  if (hasProvider('elevenlabs')) {
-    console.log(`🔊 Fallback: Routing to ElevenLabs`);
-    return { provider: 'elevenlabs', cost: 0.018, zone: 'fallback', quality: 'premium' };
   }
   if (hasProvider('google')) {
     console.log(`🔊 Fallback: Routing to Google TTS`);
     return { provider: 'google', cost: 0.016, zone: 'fallback', quality: 'standard' };
   }
-  if (hasProvider('openai')) {
-    console.log(`⚠️ Last Resort: Routing to OpenAI TTS`);
-    return { provider: 'openai', cost: 0.015, zone: 'fallback', quality: 'standard' };
-  }
 
-  throw new Error('No TTS providers available');
+  throw new Error('No TTS providers available. Configure ELEVENLABS_API_KEY, AZURE_SPEECH_KEY, ALIBABA_API_KEY, or GOOGLE_API_KEY.');
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
