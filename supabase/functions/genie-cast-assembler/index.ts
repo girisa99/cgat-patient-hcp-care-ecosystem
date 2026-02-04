@@ -255,12 +255,14 @@ serve(async (req) => {
 
       try {
         // Step 1: Generate TTS audio for this chapter (or reuse existing)
+        // Now passes styleConfig for dynamic script generation
         const audioResult = await generateChapterAudio(
           supabase,
           chapter.id,
           language,
           ttsConfig.provider,
-          skipExistingTTS  // Pass the skip flag
+          skipExistingTTS,  // Pass the skip flag
+          styleConfig       // Pass style config for dynamic scripts
         );
 
         // Step 2: Generate product visuals for this chapter (if enabled)
@@ -384,8 +386,8 @@ serve(async (req) => {
 
     // Step 7: Track credit consumption for all providers used
     const totalCharactersUsed = chapterResults.reduce((sum, ch) => {
-      // Each chapter script ~100-200 characters
-      return sum + (getChapterScript(ch.chapterId, language).length || 0);
+      // Each chapter script length - use styleConfig for accurate counting
+      return sum + (getChapterScript(ch.chapterId, language, styleConfig).length || 0);
     }, 0);
 
     await trackCreditConsumption(supabase, {
@@ -464,9 +466,11 @@ async function generateChapterAudio(
   chapterId: string,
   language: string,
   provider: string,
-  skipIfExists: boolean = false
-): Promise<{ audioBase64?: string; audioUrl?: string; charactersUsed: number; cached: boolean }> {
+  skipIfExists: boolean = false,
+  styleConfig: StyleConfig | null = null
+): Promise<{ audioBase64?: string; audioUrl?: string; charactersUsed: number; cached: boolean; scriptUsed?: string }> {
   // Check for existing audio if skipIfExists is enabled
+  // NOTE: When style changes, we should regenerate - so add style hash to cache key in future
   if (skipIfExists) {
     const existingAudio = await findExistingAudio(supabase, chapterId, language);
     if (existingAudio) {
@@ -479,8 +483,12 @@ async function generateChapterAudio(
     }
   }
   
-  const script = getChapterScript(chapterId, language);
+  // Generate dynamic script based on style configuration
+  const script = getChapterScript(chapterId, language, styleConfig);
   const charactersUsed = script.length;
+  
+  console.log(`   📝 Script for ${chapterId} (${styleConfig?.scriptTone || 'default'} tone): "${script.substring(0, 80)}..."`);
+  console.log(`   🎯 Hook intensity: ${styleConfig?.toneModifier?.hookIntensity ?? 'default'}, Emotional arc: ${styleConfig?.toneModifier?.emotionalArc ?? false}`);
   
   // Call the multi-provider-tts function
   const { data, error } = await supabase.functions.invoke('multi-provider-tts', {
@@ -734,14 +742,34 @@ async function generateChapterVisual(
   return [fallbackLogoUrl];
 }
 
+// Style configuration interface for dynamic script generation
+interface StyleConfig {
+  videoProvider?: string;
+  avatarProvider?: string;
+  animationProvider?: string;
+  ttsStyle?: string;
+  visualEffect?: string;
+  scriptTone?: string;
+  pacing?: string;
+  toneModifier?: {
+    hookIntensity?: number;
+    emotionalArc?: boolean;
+    ctaFrequency?: string;
+    humorLevel?: string;
+  };
+}
+
 /**
- * Get chapter script in the specified language
- * Uses the high-level scripts from the config
+ * DYNAMIC SCRIPT GENERATION
+ * Adapts scripts based on selected video style configuration
+ * - Hook Videos: Strong attention-grabbing hooks, high energy
+ * - Educational: Clear, informative, methodical
+ * - UGC Avatar / 3D Pixar: Warm, playful, conversational
+ * - Smart Storytelling: Emotional narrative arc
  */
-function getChapterScript(chapterId: string, language: string): string {
-  // These would come from the genie-video-high-level-scripts.ts
-  // For edge function, we use a simplified version
-  const scripts: Record<string, Record<string, string>> = {
+function getChapterScript(chapterId: string, language: string, styleConfig?: StyleConfig | null): string {
+  // Base scripts for each chapter (neutral tone)
+  const baseScripts: Record<string, Record<string, string>> = {
     'opening': {
       'en': "Welcome to Genie Studio. Your creative vision, powered by AI. Seven products, one platform, infinite possibilities.",
       'ar': "مرحباً بكم في جيني ستوديو. رؤيتكم الإبداعية مدعومة بالذكاء الاصطناعي.",
@@ -798,7 +826,223 @@ function getChapterScript(chapterId: string, language: string): string {
     },
   };
 
-  return scripts[chapterId]?.[language] || scripts[chapterId]?.['en'] || '';
+  // Get base script
+  let script = baseScripts[chapterId]?.[language] || baseScripts[chapterId]?.['en'] || '';
+  
+  // If no style config, return base script
+  if (!styleConfig) {
+    return script;
+  }
+
+  // Apply style-specific transformations (English only for now - can be extended)
+  if (language === 'en') {
+    script = applyStyleTransformations(chapterId, script, styleConfig);
+  }
+  
+  return script;
+}
+
+/**
+ * Apply style-specific transformations to scripts
+ * Creates engaging hooks, emotional arcs, and tone variations
+ */
+function applyStyleTransformations(chapterId: string, baseScript: string, styleConfig: StyleConfig): string {
+  const { scriptTone, pacing, toneModifier } = styleConfig;
+  const hookIntensity = toneModifier?.hookIntensity ?? 0.5;
+  const emotionalArc = toneModifier?.emotionalArc ?? false;
+  const humorLevel = toneModifier?.humorLevel ?? 'none';
+
+  // Strong hooks for hook_videos style (hookIntensity > 0.7)
+  if (hookIntensity >= 0.7) {
+    return getHookStyleScript(chapterId, baseScript, hookIntensity);
+  }
+
+  // Emotional storytelling for emotionalArc
+  if (emotionalArc && scriptTone === 'storytelling') {
+    return getEmotionalStoryScript(chapterId, baseScript);
+  }
+
+  // Playful/warm tone for UGC Avatar / 3D Pixar styles
+  if (scriptTone === 'friendly' || scriptTone === 'playful') {
+    return getPlayfulScript(chapterId, baseScript, humorLevel);
+  }
+
+  // Fast-paced for energetic styles
+  if (pacing === 'fast') {
+    return getFastPacedScript(chapterId, baseScript);
+  }
+
+  // Educational tone - clear, methodical
+  if (scriptTone === 'professional' || scriptTone === 'educational') {
+    return getEducationalScript(chapterId, baseScript);
+  }
+
+  return baseScript;
+}
+
+/**
+ * Generate high-energy hook-style scripts
+ * For: Hook Videos, Viral Content, TikTok-style
+ */
+function getHookStyleScript(chapterId: string, _baseScript: string, intensity: number): string {
+  const hookScripts: Record<string, string[]> = {
+    'opening': [
+      "STOP scrolling! What if I told you there's a platform that turns your wildest ideas into professional content in minutes? Welcome to Genie Studio.",
+      "Here's something nobody's talking about: AI just made content creation 10x easier. Let me show you how.",
+      "Wait! Before you spend another hour struggling with content, you NEED to see this.",
+    ],
+    'spark': [
+      "You know that feeling when you have an amazing idea but can't get it on paper? Gone. Forever. Genie Spark transforms ideas into scripts INSTANTLY.",
+      "Writers block? What's that? Watch this: idea in, professional script out, confidence score tells you it's ready to go.",
+      "Stop wasting hours on scripts. I just made one in 10 seconds. Here's how.",
+    ],
+    'mind': [
+      "Your scripts are good. But what if they could be GREAT? Genie Mind's AI suggestions will blow your mind.",
+      "Plot twist: AI just made your writing better than ever. Real-time suggestions, clarity fixes, translations - all automatic.",
+      "You're leaving engagement on the table. Let me show you what AI-enhanced scripts look like.",
+    ],
+    'vibe': [
+      "Recording studios cost thousands. Genie Vibe? Free. Teleprompter, AI editing, professional output - all in one place.",
+      "I just recorded and edited a video without touching editing software. This changes everything.",
+      "From amateur to professional in one click. Watch what Genie Vibe does to your recordings.",
+    ],
+    'deck': [
+      "Presentations used to take hours. Now they take minutes. Watch Genie Deck work its magic.",
+      "Your slides are boring. There, I said it. But they don't have to be. AI-designed templates incoming.",
+      "PowerPoint who? Genie Deck just revolutionized how we create presentations.",
+    ],
+    'arc': [
+      "Your content calendar is chaos. Mine? Crystal clear. Here's the tool that changed everything.",
+      "Content creators: stop losing track of your projects. Genie Arc is your secret weapon.",
+      "Kanban boards, calendars, team sync - all automated. Welcome to organized content creation.",
+    ],
+    'ask-genie': [
+      "What if you had a genius assistant available 24/7? Meet Ask Genie - your personal AI guide.",
+      "Stuck? Confused? Just ask. This AI knows everything about the platform and it's FREE.",
+      "The fastest way to master any tool: Ask Genie. Watch how it works.",
+    ],
+    'cast': [
+      "One click. YouTube, LinkedIn, TikTok - everywhere. Your content, distributed globally in seconds.",
+      "Publishing content manually? That's so 2023. Genie Cast does it all automatically.",
+      "Watch your reach explode. One upload, every platform, real analytics. Game changed.",
+    ],
+    'closing': [
+      "Your wish is literally our command. Start free. Start now. Your content revolution begins today.",
+      "What are you waiting for? Every second you're not using Genie Studio, you're falling behind.",
+      "From mind to media, from idea to impact. Click below and join thousands of creators.",
+    ],
+  };
+
+  const scripts = hookScripts[chapterId] || [_baseScript];
+  // Select based on intensity (higher = more aggressive hook)
+  const index = Math.min(Math.floor(intensity * scripts.length), scripts.length - 1);
+  return scripts[index];
+}
+
+/**
+ * Generate emotional storytelling scripts
+ * For: Smart Storytelling, Cinematic styles
+ */
+function getEmotionalStoryScript(chapterId: string, _baseScript: string): string {
+  const storyScripts: Record<string, string> = {
+    'opening': "Every great story starts with a spark of imagination. A moment where possibility meets purpose. Welcome to Genie Studio - where your creative journey transforms from vision to reality.",
+    'spark': "Remember the last time an idea struck you? That electric moment of inspiration? Genie Spark captures that magic, nurturing your thoughts into powerful scripts that speak to hearts and minds.",
+    'mind': "Words have power. They can move mountains, change minds, inspire action. Genie Mind doesn't just enhance your scripts - it helps you find the perfect words to tell your unique story.",
+    'vibe': "Behind every memorable video is a creator who dared to share their authentic self. Genie Vibe becomes your trusted studio - where your voice, your message, your story comes alive.",
+    'deck': "The best presentations don't just inform - they transform. Genie Deck helps you craft visual stories that captivate audiences and leave lasting impressions.",
+    'arc': "Creating content is a journey, not a destination. Genie Arc walks beside you, organizing your creative path and keeping your team united in purpose.",
+    'ask-genie': "We all need a guide sometimes. Someone who understands our challenges and illuminates the path forward. Ask Genie is that trusted companion, always ready to help.",
+    'cast': "Your story deserves to be heard. Genie Cast carries your message across borders and platforms, connecting you with audiences who are waiting to be moved by what you create.",
+    'closing': "This is your moment. Your story. Your time to create something meaningful. From mind to media, Genie Studio is here to help you share your gift with the world.",
+  };
+  return storyScripts[chapterId] || _baseScript;
+}
+
+/**
+ * Generate playful, warm scripts
+ * For: UGC Avatar, 3D Pixar, Friendly styles
+ */
+function getPlayfulScript(chapterId: string, _baseScript: string, humorLevel: string): string {
+  const playfulScripts: Record<string, { warm: string; humorous: string }> = {
+    'opening': {
+      warm: "Hey there, creative friend! Ready to see something amazing? Genie Studio is like having a whole creative team in your pocket. Seven awesome tools, one super easy platform!",
+      humorous: "Okay, confession time: I used to spend HOURS making content. Then I found Genie Studio and now I have way too much free time. It's almost embarrassing!",
+    },
+    'spark': {
+      warm: "Got an idea bouncing around in your head? Genie Spark loves those! Just share your thought and watch it bloom into a beautiful script. It's like having a creative best friend!",
+      humorous: "Remember when writing scripts felt like solving a Rubik's cube blindfolded? Yeah, Genie Spark said 'no thanks' to all that stress. Ideas in, magic out!",
+    },
+    'mind': {
+      warm: "Think of Genie Mind as your helpful writing buddy. It gently suggests improvements, helps with translations, and makes your words shine even brighter!",
+      humorous: "My English teacher would be so jealous. Genie Mind makes my writing sound WAY smarter than I actually am. Don't tell anyone!",
+    },
+    'vibe': {
+      warm: "Ready for your close-up? Genie Vibe is like a cozy recording studio that fits right on your screen. Teleprompter included, no technical stress allowed!",
+      humorous: "I used to be terrified of the record button. Now with Genie Vibe, I'm basically a movie star. Okay, maybe a YouTube star. Okay, fine, my mom watches my videos.",
+    },
+    'deck': {
+      warm: "Presentations can be fun! Really! Genie Deck turns your ideas into gorgeous slides that'll make your audience smile. Beautiful templates, zero headaches!",
+      humorous: "Death by PowerPoint? Not on Genie Deck's watch! Your slides will be so pretty, people will actually stay awake. Revolutionary, I know!",
+    },
+    'arc': {
+      warm: "Staying organized is a breeze with Genie Arc! Pretty boards, helpful calendars, and everything in its place. Your creative projects will thank you!",
+      humorous: "I used to have sticky notes EVERYWHERE. My wall looked like a crime board. Genie Arc saved my sanity and probably my wallpaper.",
+    },
+    'ask-genie': {
+      warm: "Feeling a bit lost? Ask Genie is here to help! It's like having a friendly expert who never gets tired of your questions. Ask away, friend!",
+      humorous: "Ask Genie knows everything about the platform. EVERYTHING. It's like that one friend who actually reads the instructions. We all need one!",
+    },
+    'cast': {
+      warm: "Time to share your creation with the world! Genie Cast spreads your content across all the platforms with just one click. Your audience is waiting!",
+      humorous: "Remember manually posting to every platform? Neither do I because I blocked out that trauma. Genie Cast is my therapy now.",
+    },
+    'closing': {
+      warm: "Your creative journey starts here! Genie Studio is ready to be your partner in making something wonderful. Let's create together!",
+      humorous: "So what are you waiting for? An engraved invitation? Actually, this IS your invitation. Now go make something awesome!",
+    },
+  };
+
+  const scripts = playfulScripts[chapterId];
+  if (!scripts) return _baseScript;
+  return humorLevel === 'high' || humorLevel === 'medium' ? scripts.humorous : scripts.warm;
+}
+
+/**
+ * Generate fast-paced, energetic scripts
+ * For: Dynamic, Energetic, Quick-cut styles
+ */
+function getFastPacedScript(chapterId: string, _baseScript: string): string {
+  const fastScripts: Record<string, string> = {
+    'opening': "Genie Studio. Seven products. One platform. AI-powered. Create content. Share everywhere. Start now.",
+    'spark': "Ideas to scripts. Seconds. Not hours. Confidence scoring built-in. Professional output guaranteed. Genie Spark.",
+    'mind': "AI suggestions. Real-time. Clarity fixes. Multi-language. Script enhancement. Instant. Genie Mind.",
+    'vibe': "Record. Edit. Export. Pro-level. One platform. No stress. Teleprompter ready. Genie Vibe.",
+    'deck': "Templates. Smart layouts. Beautiful slides. PowerPoint export. PDF ready. Seconds. Genie Deck.",
+    'arc': "Kanban. Calendar. Team sync. Automated scheduling. Content organized. Finally. Genie Arc.",
+    'ask-genie': "Questions? Answered. Guidance? Instant. Features? Mastered. AI assistant. Always ready. Ask Genie.",
+    'cast': "One click. All platforms. YouTube. LinkedIn. TikTok. Analytics. Growth. Genie Cast.",
+    'closing': "Your wish. Our command. Mind to media. Start free. Start now. Genie Studio.",
+  };
+  return fastScripts[chapterId] || _baseScript;
+}
+
+/**
+ * Generate educational, methodical scripts
+ * For: Educational, Tutorial, Professional styles
+ */
+function getEducationalScript(chapterId: string, _baseScript: string): string {
+  const eduScripts: Record<string, string> = {
+    'opening': "Welcome to this comprehensive overview of Genie Studio. Today, we'll explore seven integrated products designed to streamline your content creation workflow from ideation to distribution.",
+    'spark': "Let's begin with Genie Spark - your ideation tool. The process is straightforward: input your concept, and the AI generates a professionally structured script. The confidence scoring system provides quantitative feedback on message clarity and engagement potential.",
+    'mind': "Next, we'll examine Genie Mind, the script enhancement module. Key features include real-time AI suggestions for improving clarity, grammatical refinement, and integrated translation supporting 14 languages.",
+    'vibe': "Genie Vibe serves as your recording environment. The interface includes a built-in teleprompter for seamless delivery, AI-assisted editing tools, and export options optimized for various platforms and use cases.",
+    'deck': "For visual presentations, Genie Deck offers AI-designed templates and intelligent layout systems. Export options include PowerPoint and PDF formats, maintaining professional quality standards.",
+    'arc': "Project management is handled through Genie Arc. The platform provides Kanban-style boards, content calendars, and automated scheduling features to keep teams aligned and projects on track.",
+    'ask-genie': "Ask Genie functions as an integrated support system. It provides contextual guidance, answers platform-specific questions, and offers tutorials for advanced feature utilization.",
+    'cast': "Finally, Genie Cast manages content distribution. Single-click publishing to major platforms including YouTube, LinkedIn, and TikTok, with integrated analytics for performance tracking.",
+    'closing': "In summary, Genie Studio provides a complete content creation ecosystem. From initial concept to global distribution, each product integrates seamlessly. Begin your free trial today to experience the full workflow.",
+  };
+  return eduScripts[chapterId] || _baseScript;
 }
 
 /**

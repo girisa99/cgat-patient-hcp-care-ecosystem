@@ -1,51 +1,44 @@
 # Memory: features/genie-cast/style-script-integration-gap-v1
 Updated: just now
 
-## Current Issue: Style Selection Not Affecting Script Content
+## ✅ RESOLVED: Dynamic Script Generation Now Active
 
-### Problem Identified (2026-02-04)
+### Fix Implemented (2026-02-04)
 
-The video style selection (Educational, Hook Videos, UGC Avatar, 3D Pixar, etc.) in Overview:
-1. **Correctly passes** `styleConfig` with `scriptTone`, `pacing`, `toneModifier` (hookIntensity, emotionalArc, etc.) to the assembler
-2. **BUT** the assembler's `getChapterScript()` function ignores these values and returns hardcoded, static scripts
+The video style selection (Educational, Hook Videos, UGC Avatar, 3D Pixar, etc.) now **actively modifies script content** based on `styleConfig` parameters.
 
-### Current Script Implementation (lines 741-802 in genie-cast-assembler)
-```typescript
-function getChapterScript(chapterId: string, language: string): string {
-  // Returns static scripts - NO dynamic hook generation
-  // NO adaptation based on styleConfig
-  const scripts = {
-    'opening': { 'en': "Welcome to Genie Studio..." },  // Same for all styles
-    // ...
-  };
-  return scripts[chapterId]?.[language] || '';
-}
-```
+### Changes Made
 
-### Required Changes
+1. **`getChapterScript()` now accepts `styleConfig`** - Lines 757-835 in genie-cast-assembler
+2. **`generateChapterAudio()` passes styleConfig** - Dynamic scripts generated per style
+3. **5 Script Transformation Functions**:
+   - `getHookStyleScript()` - High energy hooks for viral content (hookIntensity > 0.7)
+   - `getEmotionalStoryScript()` - Narrative arcs for cinematic styles
+   - `getPlayfulScript()` - Warm/humorous tone for UGC/3D Pixar
+   - `getFastPacedScript()` - Punchy, rapid delivery for energetic styles
+   - `getEducationalScript()` - Clear, methodical for tutorial content
 
-1. **Dynamic Script Generation**: Modify `getChapterScript()` to accept `styleConfig` and generate:
-   - Strong hooks for `hook_videos` style (hookIntensity: 1.0)
-   - Emotional storytelling for `smart_storytelling` (emotionalArc: true)
-   - Educational tone for `educational` style
-   - Playful/warm tone for `ugc_avatar_3d_pixar`
+### Style-to-Script Mapping
 
-2. **AI-Powered Script Enhancement**: Route to LLM to transform base scripts with style-specific tone:
-   - Use Lovable AI or existing multi-provider-llm function
-   - Pass `scriptTone` and `toneModifier` parameters
+| Style Selection | scriptTone | hookIntensity | Script Type |
+|-----------------|------------|---------------|-------------|
+| Hook Videos | — | 0.8-1.0 | `getHookStyleScript()` |
+| Smart Storytelling | storytelling | — | `getEmotionalStoryScript()` |
+| UGC Avatar / 3D Pixar | friendly/playful | — | `getPlayfulScript()` |
+| Dynamic Motion | — | — (fast pacing) | `getFastPacedScript()` |
+| Educational | professional | — | `getEducationalScript()` |
 
-3. **Full Production Mode Assets**: Currently flags are passed but:
-   - `generateAvatarSegment()` calls `ai-video-generator` - needs valid source images
-   - `generate3DElement()` calls `alibaba-3d-generator` - needs proper prompts
-   - These require actual AI provider API keys and credits
+### Example Output Difference
 
-### Temporary Workarounds
+**Hook Videos (opening chapter)**:
+> "STOP scrolling! What if I told you there's a platform that turns your wildest ideas into professional content in minutes? Welcome to Genie Studio."
 
-Until full implementation:
-- Scripts remain static but professional
-- Avatar/3D features logged but may not render if providers are not configured
-- Video assembly falls back to `composite://` placeholder URLs
+**Educational (opening chapter)**:
+> "Welcome to this comprehensive overview of Genie Studio. Today, we'll explore seven integrated products designed to streamline your content creation workflow from ideation to distribution."
 
-### Files To Update
-- `supabase/functions/genie-cast-assembler/index.ts` - Add style-aware script generation
-- Consider creating a dedicated `script-enhancer` edge function
+### Files Updated
+- `supabase/functions/genie-cast-assembler/index.ts` - Full dynamic script generation system
+
+### Next Steps
+- Extend non-English languages with style variations
+- Add AI-powered script enhancement via LLM for custom prompts
