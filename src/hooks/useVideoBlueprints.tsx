@@ -216,7 +216,7 @@ export const useVideoBlueprints = () => {
     return acc;
   }, {} as Record<string, VideoBlueprint[]>);
 
-  // Get category display names
+  // Get category display names - EXPANDED for all categories
   const categoryLabels: Record<string, string> = {
     marketing: 'Marketing',
     educational: 'Educational',
@@ -225,6 +225,11 @@ export const useVideoBlueprints = () => {
     healthcare: 'Healthcare',
     entertainment: 'Entertainment',
     corporate: 'Corporate',
+    animation: 'Animation',
+    '3d': '3D & VR/AR',
+    interactive: 'Interactive',
+    image_to_video: 'Image to Video',
+    seasonal: 'Seasonal',
     other: 'Other'
   };
 

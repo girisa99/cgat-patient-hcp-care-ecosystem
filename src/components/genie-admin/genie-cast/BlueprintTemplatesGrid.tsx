@@ -39,6 +39,14 @@ interface BlueprintTemplatesGridProps {
   selectedBlueprintId?: string;
 }
 
+import {
+  Clapperboard,
+  Box,
+  MousePointer,
+  ImagePlay,
+  CalendarDays,
+} from 'lucide-react';
+
 const categoryIcons: Record<string, React.ReactNode> = {
   marketing: <Target className="h-4 w-4" />,
   educational: <BookOpen className="h-4 w-4" />,
@@ -47,6 +55,11 @@ const categoryIcons: Record<string, React.ReactNode> = {
   healthcare: <Stethoscope className="h-4 w-4" />,
   entertainment: <Heart className="h-4 w-4" />,
   corporate: <Globe2 className="h-4 w-4" />,
+  animation: <Clapperboard className="h-4 w-4" />,
+  '3d': <Box className="h-4 w-4" />,
+  interactive: <MousePointer className="h-4 w-4" />,
+  image_to_video: <ImagePlay className="h-4 w-4" />,
+  seasonal: <CalendarDays className="h-4 w-4" />,
 };
 
 const categoryColors: Record<string, string> = {
@@ -57,6 +70,11 @@ const categoryColors: Record<string, string> = {
   healthcare: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
   entertainment: 'bg-pink-500/20 text-pink-400 border-pink-500/30',
   corporate: 'bg-slate-500/20 text-slate-400 border-slate-500/30',
+  animation: 'bg-violet-500/20 text-violet-400 border-violet-500/30',
+  '3d': 'bg-rose-500/20 text-rose-400 border-rose-500/30',
+  interactive: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+  image_to_video: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30',
+  seasonal: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
 };
 
 // Category gradient backgrounds for cards without thumbnails
@@ -68,6 +86,11 @@ const categoryGradients: Record<string, string> = {
   healthcare: 'bg-gradient-to-br from-cyan-600/30 via-sky-500/20 to-blue-600/30',
   entertainment: 'bg-gradient-to-br from-pink-600/30 via-rose-500/20 to-red-600/30',
   corporate: 'bg-gradient-to-br from-slate-600/30 via-gray-500/20 to-zinc-600/30',
+  animation: 'bg-gradient-to-br from-violet-600/30 via-purple-500/20 to-fuchsia-600/30',
+  '3d': 'bg-gradient-to-br from-rose-600/30 via-pink-500/20 to-red-600/30',
+  interactive: 'bg-gradient-to-br from-amber-600/30 via-yellow-500/20 to-orange-600/30',
+  image_to_video: 'bg-gradient-to-br from-indigo-600/30 via-blue-500/20 to-violet-600/30',
+  seasonal: 'bg-gradient-to-br from-emerald-600/30 via-green-500/20 to-teal-600/30',
 };
 
 export function BlueprintTemplatesGrid({
@@ -158,6 +181,25 @@ export function BlueprintTemplatesGrid({
       toast({
         title: 'Seeding Failed',
         description: err.message || 'Could not seed templates',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  // Seed full library (Animation, 3D, Interactive, Seasonal, Image-to-Video)
+  const seedFullLibrary = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('seed-blueprints-full-library');
+      if (error) throw error;
+      toast({
+        title: 'Full Library Added',
+        description: `Added ${data.created} templates: Animation, 3D, Interactive, Seasonal, Image-to-Video`,
+      });
+      refetch();
+    } catch (err: any) {
+      toast({
+        title: 'Seeding Failed',
+        description: err.message || 'Could not seed full library',
         variant: 'destructive',
       });
     }
@@ -260,7 +302,7 @@ export function BlueprintTemplatesGrid({
             </TabsList>
           </Tabs>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Button
               variant="outline"
               size="sm"
@@ -282,7 +324,15 @@ export function BlueprintTemplatesGrid({
               className="gap-2"
             >
               <Globe2 className="h-4 w-4" />
-              Add More
+              Add Core
+            </Button>
+            <Button
+              size="sm"
+              onClick={seedFullLibrary}
+              className="gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+            >
+              <Sparkles className="h-4 w-4" />
+              Full Library (Animation, 3D, Seasonal...)
             </Button>
           </div>
         </div>
