@@ -1,0 +1,799 @@
+/**
+ * GENIE CAST CONSOLIDATED 4-TAB STRUCTURE
+ * 
+ * Consolidates 10+ scattered tabs into unified workflow:
+ * - CREATE: Styles, Screenshots, Messaging, Assets
+ * - PRODUCE: Generate, Matrix, Studio Editor, Review
+ * - MANAGE: Library, Analytics, Flow, Content Repurposing
+ * - PUBLISH: Scheduler, Distribution, SEO, A/B Testing
+ * 
+ * This is the SINGLE interface for all Genie Cast functionality.
+ * Removes redundancy from separate Library/Studio/Review/Assets/Scheduler pages.
+ */
+
+import React, { useState, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Sparkles,
+  Camera,
+  Video,
+  Grid3X3,
+  Layers,
+  AlertTriangle,
+  TrendingUp,
+  Eye,
+  GitBranch,
+  Palette,
+  Upload,
+  Calendar,
+  Share2,
+  Search,
+  Wand2,
+  Film,
+  Settings,
+  Play,
+  BarChart3,
+  FileText,
+  Globe,
+} from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+
+// Import sub-components from parent panel
+import { GenieCastOverview, VideoStyleCards, AIProviderShowcase, type VideoStyleType } from './index';
+import { MultiScreenshotGallery, type ProductGallery } from '../MultiScreenshotGallery';
+import { VideoGenerationMatrix } from '../VideoGenerationMatrix';
+import { MessagingGeneratorPanel } from '../MessagingGeneratorPanel';
+import { ProductChangeAlertPanel } from '../ProductChangeAlertPanel';
+import { GenieCastFlowDiagram } from '../GenieCastFlowDiagram';
+import { GenieCastHubMockup } from './mockups';
+
+// Import master registry for metrics
+import { 
+  MASTER_AI_PROVIDERS, 
+  MASTER_VIDEO_STYLES, 
+  MASTER_MARKETING_PIPELINES,
+  getPipelinesByTab,
+  calculateEcosystemMetrics,
+} from '@/config/master-ecosystem-registry';
+
+export type ConsolidatedTab = 'create' | 'produce' | 'manage' | 'publish';
+export type CreateSubTab = 'styles' | 'screenshots' | 'messaging' | 'assets';
+export type ProduceSubTab = 'generate' | 'matrix' | 'studio' | 'review';
+export type ManageSubTab = 'library' | 'analytics' | 'flow' | 'repurpose';
+export type PublishSubTab = 'scheduler' | 'distribution' | 'seo' | 'testing';
+
+interface GenieCastConsolidatedTabsProps {
+  // State from parent
+  selectedVideoStyles: VideoStyleType[];
+  onStylesChange: (styles: VideoStyleType[]) => void;
+  screenshotGalleries: ProductGallery[];
+  onGalleriesUpdated: (galleries: ProductGallery[]) => void;
+  totalScreenshots: number;
+  
+  // Generation callbacks
+  onGenerate: () => void;
+  isGenerating: boolean;
+  
+  // Optional: For navigation from other components
+  defaultTab?: ConsolidatedTab;
+  defaultSubTab?: string;
+}
+
+const TAB_DEFINITIONS = {
+  create: {
+    label: 'CREATE',
+    icon: Sparkles,
+    description: 'Styles, Assets & Messaging',
+    color: 'bg-orange-500/10 border-orange-500/30 text-orange-600',
+    subTabs: [
+      { id: 'styles', label: 'Styles', icon: Palette, description: 'Video style selection (43+ options)' },
+      { id: 'screenshots', label: 'Screenshots', icon: Camera, description: 'Product visual capture' },
+      { id: 'messaging', label: 'Messaging', icon: TrendingUp, description: 'Marketing copy generation' },
+      { id: 'assets', label: 'Assets', icon: Upload, description: 'Brand assets & logos' },
+    ],
+  },
+  produce: {
+    label: 'PRODUCE',
+    icon: Video,
+    description: 'Generate & Edit Videos',
+    color: 'bg-blue-500/10 border-blue-500/30 text-blue-600',
+    subTabs: [
+      { id: 'generate', label: 'Quick Gen', icon: Play, description: 'Single video generation' },
+      { id: 'matrix', label: 'Matrix', icon: Grid3X3, description: 'Batch production matrix' },
+      { id: 'studio', label: 'Studio', icon: Film, description: 'Timeline editor' },
+      { id: 'review', label: 'Review', icon: Eye, description: 'Quality review & enhance' },
+    ],
+  },
+  manage: {
+    label: 'MANAGE',
+    icon: Layers,
+    description: 'Library & Analytics',
+    color: 'bg-green-500/10 border-green-500/30 text-green-600',
+    subTabs: [
+      { id: 'library', label: 'Library', icon: Layers, description: 'Video content library' },
+      { id: 'analytics', label: 'Analytics', icon: BarChart3, description: 'Performance metrics' },
+      { id: 'flow', label: 'Flow', icon: GitBranch, description: 'Pipeline visualization' },
+      { id: 'repurpose', label: 'Repurpose', icon: FileText, description: 'Content repurposing' },
+    ],
+  },
+  publish: {
+    label: 'PUBLISH',
+    icon: Share2,
+    description: 'Distribution & Scheduling',
+    color: 'bg-purple-500/10 border-purple-500/30 text-purple-600',
+    subTabs: [
+      { id: 'scheduler', label: 'Schedule', icon: Calendar, description: 'Content calendar' },
+      { id: 'distribution', label: 'Distribute', icon: Share2, description: 'Multi-platform publishing' },
+      { id: 'seo', label: 'SEO', icon: Search, description: 'Search optimization' },
+      { id: 'testing', label: 'A/B Test', icon: Wand2, description: 'Variation testing' },
+    ],
+  },
+};
+
+export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps> = ({
+  selectedVideoStyles,
+  onStylesChange,
+  screenshotGalleries,
+  onGalleriesUpdated,
+  totalScreenshots,
+  onGenerate,
+  isGenerating,
+  defaultTab = 'create',
+  defaultSubTab,
+}) => {
+  const [activeMainTab, setActiveMainTab] = useState<ConsolidatedTab>(defaultTab);
+  const [subTabs, setSubTabs] = useState<Record<ConsolidatedTab, string>>({
+    create: defaultSubTab || 'styles',
+    produce: 'generate',
+    manage: 'library',
+    publish: 'scheduler',
+  });
+
+  const metrics = calculateEcosystemMetrics();
+
+  const setSubTab = useCallback((mainTab: ConsolidatedTab, subTab: string) => {
+    setSubTabs(prev => ({ ...prev, [mainTab]: subTab }));
+  }, []);
+
+  const currentMainDef = TAB_DEFINITIONS[activeMainTab];
+  const currentSubTab = subTabs[activeMainTab];
+
+  // Get active pipelines for current tab
+  const activePipelines = getPipelinesByTab(activeMainTab.toUpperCase() as any).filter(p => p.isActive);
+  const inactivePipelines = getPipelinesByTab(activeMainTab.toUpperCase() as any).filter(p => !p.isActive);
+
+  return (
+    <div className="space-y-4">
+      {/* Main 4-Tab Navigation */}
+      <Tabs value={activeMainTab} onValueChange={(v) => setActiveMainTab(v as ConsolidatedTab)}>
+        <TabsList className="grid w-full grid-cols-4 h-auto p-1 bg-muted/50">
+          {(Object.entries(TAB_DEFINITIONS) as [ConsolidatedTab, typeof TAB_DEFINITIONS.create][]).map(([key, def]) => (
+            <TabsTrigger 
+              key={key}
+              value={key}
+              className={cn(
+                "flex flex-col items-center gap-1 py-3 px-2 data-[state=active]:shadow-md transition-all",
+                "data-[state=active]:bg-background"
+              )}
+            >
+              <def.icon className="w-5 h-5" />
+              <span className="text-xs font-bold tracking-wide">{def.label}</span>
+              <span className="text-[10px] text-muted-foreground hidden sm:block">{def.description}</span>
+            </TabsTrigger>
+          ))}
+        </TabsList>
+
+        {/* Sub-Tab Navigation for Active Main Tab */}
+        <div className="mt-4 flex items-center gap-2 overflow-x-auto pb-2">
+          {currentMainDef.subTabs.map((sub) => {
+            const isActive = currentSubTab === sub.id;
+            return (
+              <Button
+                key={sub.id}
+                variant={isActive ? "default" : "outline"}
+                size="sm"
+                className={cn(
+                  "flex-shrink-0 gap-1.5 text-xs",
+                  isActive && currentMainDef.color.replace('bg-', 'bg-').replace('/10', '')
+                )}
+                onClick={() => setSubTab(activeMainTab, sub.id)}
+              >
+                <sub.icon className="w-3.5 h-3.5" />
+                {sub.label}
+              </Button>
+            );
+          })}
+          
+          {/* Pipeline indicator */}
+          <Separator orientation="vertical" className="h-6 mx-2" />
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span className="font-medium">{activePipelines.length} active</span>
+            {inactivePipelines.length > 0 && (
+              <Badge variant="outline" className="text-[10px]">
+                +{inactivePipelines.length} available
+              </Badge>
+            )}
+          </div>
+        </div>
+
+        {/* ═══════════════════════════════════════════════════════════════ */}
+        {/* CREATE TAB CONTENT */}
+        {/* ═══════════════════════════════════════════════════════════════ */}
+        <TabsContent value="create" className="mt-4 space-y-6">
+          <AnimatePresence mode="wait">
+            {currentSubTab === 'styles' && (
+              <motion.div
+                key="styles"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.2 }}
+              >
+                <GenieCastOverview
+                  selectedStyles={selectedVideoStyles}
+                  onStylesChange={onStylesChange}
+                  onNavigate={(tab) => {
+                    if (tab === 'screenshots') {
+                      setSubTab('create', 'screenshots');
+                    } else if (tab === 'generate') {
+                      setActiveMainTab('produce');
+                      setSubTab('produce', 'generate');
+                    } else if (tab === 'matrix') {
+                      setActiveMainTab('produce');
+                      setSubTab('produce', 'matrix');
+                    }
+                  }}
+                />
+                
+                {/* Ecosystem Metrics Card */}
+                <Card className="mt-6 border-primary/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-primary" />
+                      Ecosystem Status
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-4 gap-4 text-center">
+                      <div>
+                        <div className="text-2xl font-bold text-primary">{metrics.providers.total}</div>
+                        <div className="text-xs text-muted-foreground">AI Providers</div>
+                        <div className="text-[10px] text-green-600">{metrics.providers.wiredToGenieCast} wired</div>
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold text-blue-600">{metrics.videoStyles.total}</div>
+                        <div className="text-xs text-muted-foreground">Video Styles</div>
+                        <div className="text-[10px] text-green-600">{metrics.videoStyles.popular} popular</div>
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold text-green-600">{metrics.pipelines.active}</div>
+                        <div className="text-xs text-muted-foreground">Active Pipelines</div>
+                        <div className="text-[10px] text-muted-foreground">of {metrics.pipelines.total}</div>
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold text-purple-600">{metrics.zones}</div>
+                        <div className="text-xs text-muted-foreground">Regional Zones</div>
+                        <div className="text-[10px] text-green-600">4-zone routing</div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+            
+            {currentSubTab === 'screenshots' && (
+              <motion.div
+                key="screenshots"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.2 }}
+              >
+                <MultiScreenshotGallery onGalleriesUpdated={onGalleriesUpdated} />
+                
+                <Card className="mt-4 border-primary/20 bg-primary/5">
+                  <CardContent className="pt-6">
+                    <div className="flex items-center gap-4">
+                      <Camera className="w-8 h-8 text-primary" />
+                      <div className="flex-1">
+                        <h3 className="font-semibold">Unlimited Screenshots Per Product</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {totalScreenshots} screenshots captured. Drag to reorder.
+                        </p>
+                      </div>
+                      <Button 
+                        onClick={() => {
+                          setActiveMainTab('produce');
+                          setSubTab('produce', 'generate');
+                        }}
+                        className="gap-2"
+                      >
+                        <Play className="w-4 h-4" />
+                        Generate Video
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+            
+            {currentSubTab === 'messaging' && (
+              <motion.div
+                key="messaging"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.2 }}
+              >
+                <MessagingGeneratorPanel />
+              </motion.div>
+            )}
+            
+            {currentSubTab === 'assets' && (
+              <motion.div
+                key="assets"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Upload className="w-5 h-5" />
+                      Brand Assets
+                    </CardTitle>
+                    <CardDescription>
+                      Manage logos, brand colors, and visual assets for video production
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-3 gap-4">
+                      <Card className="border-dashed">
+                        <CardContent className="p-6 text-center">
+                          <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+                          <p className="text-sm font-medium">Logos</p>
+                          <p className="text-xs text-muted-foreground">Upload brand logos</p>
+                        </CardContent>
+                      </Card>
+                      <Card className="border-dashed">
+                        <CardContent className="p-6 text-center">
+                          <Palette className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+                          <p className="text-sm font-medium">Colors</p>
+                          <p className="text-xs text-muted-foreground">Brand color palette</p>
+                        </CardContent>
+                      </Card>
+                      <Card className="border-dashed">
+                        <CardContent className="p-6 text-center">
+                          <Globe className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+                          <p className="text-sm font-medium">Templates</p>
+                          <p className="text-xs text-muted-foreground">Video templates</p>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </TabsContent>
+
+        {/* ═══════════════════════════════════════════════════════════════ */}
+        {/* PRODUCE TAB CONTENT */}
+        {/* ═══════════════════════════════════════════════════════════════ */}
+        <TabsContent value="produce" className="mt-4 space-y-6">
+          <AnimatePresence mode="wait">
+            {currentSubTab === 'generate' && (
+              <motion.div
+                key="generate"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.2 }}
+              >
+                {/* Quick Generate UI - imported from parent */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Play className="w-5 h-5 text-primary" />
+                      Quick Generate
+                    </CardTitle>
+                    <CardDescription>
+                      Generate a single video with selected styles ({selectedVideoStyles.length} selected)
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center gap-4">
+                      <Button 
+                        onClick={onGenerate} 
+                        disabled={isGenerating}
+                        className="gap-2"
+                      >
+                        {isGenerating ? (
+                          <>
+                            <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }}>
+                              <Settings className="w-4 h-4" />
+                            </motion.div>
+                            Generating...
+                          </>
+                        ) : (
+                          <>
+                            <Play className="w-4 h-4" />
+                            Generate Video
+                          </>
+                        )}
+                      </Button>
+                      
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setSubTab('produce', 'matrix')}
+                        className="gap-2"
+                      >
+                        <Grid3X3 className="w-4 h-4" />
+                        Batch Matrix
+                      </Button>
+                    </div>
+                    
+                    {selectedVideoStyles.length > 0 && (
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <span className="text-sm text-muted-foreground">Styles:</span>
+                        {selectedVideoStyles.map(style => (
+                          <Badge key={style} variant="outline" className="text-xs">
+                            {style.replace(/_/g, ' ')}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+            
+            {currentSubTab === 'matrix' && (
+              <motion.div
+                key="matrix"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.2 }}
+              >
+                <VideoGenerationMatrix 
+                  onNavigateToScreenshots={() => {
+                    setActiveMainTab('create');
+                    setSubTab('create', 'screenshots');
+                  }}
+                />
+              </motion.div>
+            )}
+            
+            {currentSubTab === 'studio' && (
+              <motion.div
+                key="studio"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Film className="w-5 h-5" />
+                      Composition Studio
+                    </CardTitle>
+                    <CardDescription>
+                      Timeline-based video editing and chapter management
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="min-h-[400px] flex items-center justify-center">
+                    <div className="text-center text-muted-foreground">
+                      <Film className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p>Timeline editor consolidates from /composition-studio</p>
+                      <p className="text-sm">Chapter reordering, transitions, audio mixing</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+            
+            {currentSubTab === 'review' && (
+              <motion.div
+                key="review"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Eye className="w-5 h-5" />
+                      Review & Enhance
+                    </CardTitle>
+                    <CardDescription>
+                      Quality check and AI-powered enhancements
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="min-h-[400px] flex items-center justify-center">
+                    <div className="text-center text-muted-foreground">
+                      <Eye className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p>Review consolidates from /review-enhance</p>
+                      <p className="text-sm">Quality scoring, enhancement suggestions</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </TabsContent>
+
+        {/* ═══════════════════════════════════════════════════════════════ */}
+        {/* MANAGE TAB CONTENT */}
+        {/* ═══════════════════════════════════════════════════════════════ */}
+        <TabsContent value="manage" className="mt-4 space-y-6">
+          <AnimatePresence mode="wait">
+            {currentSubTab === 'library' && (
+              <motion.div
+                key="library"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Layers className="w-5 h-5" />
+                      Content Library
+                    </CardTitle>
+                    <CardDescription>
+                      All generated videos and marketing content
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="min-h-[400px] flex items-center justify-center">
+                    <div className="text-center text-muted-foreground">
+                      <Layers className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p>Library consolidates from /content-library</p>
+                      <p className="text-sm">Video grid, search, filters, status tracking</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+            
+            {currentSubTab === 'analytics' && (
+              <motion.div
+                key="analytics"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <BarChart3 className="w-5 h-5" />
+                      Analytics Dashboard
+                    </CardTitle>
+                    <CardDescription>
+                      Performance metrics and usage statistics
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="min-h-[400px]">
+                    <div className="grid grid-cols-4 gap-4 mb-6">
+                      <Card className="bg-primary/5">
+                        <CardContent className="p-4 text-center">
+                          <div className="text-2xl font-bold">0</div>
+                          <div className="text-xs text-muted-foreground">Videos Generated</div>
+                        </CardContent>
+                      </Card>
+                      <Card className="bg-blue-500/5">
+                        <CardContent className="p-4 text-center">
+                          <div className="text-2xl font-bold">0</div>
+                          <div className="text-xs text-muted-foreground">Views</div>
+                        </CardContent>
+                      </Card>
+                      <Card className="bg-green-500/5">
+                        <CardContent className="p-4 text-center">
+                          <div className="text-2xl font-bold">0</div>
+                          <div className="text-xs text-muted-foreground">Languages</div>
+                        </CardContent>
+                      </Card>
+                      <Card className="bg-purple-500/5">
+                        <CardContent className="p-4 text-center">
+                          <div className="text-2xl font-bold">$0</div>
+                          <div className="text-xs text-muted-foreground">Cost Saved</div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                    <div className="text-center text-muted-foreground py-8">
+                      <BarChart3 className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p>Analytics consolidates from multiple sources</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+            
+            {currentSubTab === 'flow' && (
+              <motion.div
+                key="flow"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.2 }}
+              >
+                <GenieCastFlowDiagram />
+              </motion.div>
+            )}
+            
+            {currentSubTab === 'repurpose' && (
+              <motion.div
+                key="repurpose"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="w-5 h-5" />
+                      Content Repurposing
+                    </CardTitle>
+                    <CardDescription>
+                      Transform videos into shorts, clips, and other formats
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="min-h-[400px] flex items-center justify-center">
+                    <div className="text-center text-muted-foreground">
+                      <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p>Pipelines: video-shorts, video-thumbnail, video-captioning</p>
+                      <p className="text-sm">Currently {inactivePipelines.length} dormant pipelines available</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </TabsContent>
+
+        {/* ═══════════════════════════════════════════════════════════════ */}
+        {/* PUBLISH TAB CONTENT */}
+        {/* ═══════════════════════════════════════════════════════════════ */}
+        <TabsContent value="publish" className="mt-4 space-y-6">
+          <AnimatePresence mode="wait">
+            {currentSubTab === 'scheduler' && (
+              <motion.div
+                key="scheduler"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Calendar className="w-5 h-5" />
+                      Content Scheduler
+                    </CardTitle>
+                    <CardDescription>
+                      Plan and schedule content distribution
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="min-h-[400px] flex items-center justify-center">
+                    <div className="text-center text-muted-foreground">
+                      <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p>Scheduler consolidates from /scheduler</p>
+                      <p className="text-sm">Calendar view, smart timing, batch scheduling</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+            
+            {currentSubTab === 'distribution' && (
+              <motion.div
+                key="distribution"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Share2 className="w-5 h-5" />
+                      Multi-Platform Distribution
+                    </CardTitle>
+                    <CardDescription>
+                      Publish to YouTube, TikTok, LinkedIn, Instagram, and more
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-5 gap-4">
+                      {['YouTube', 'TikTok', 'LinkedIn', 'Instagram', 'Twitter'].map(platform => (
+                        <Card key={platform} className="border-dashed hover:border-primary/50 cursor-pointer transition-colors">
+                          <CardContent className="p-4 text-center">
+                            <Globe className="w-6 h-6 mx-auto text-muted-foreground mb-2" />
+                            <p className="text-xs font-medium">{platform}</p>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+            
+            {currentSubTab === 'seo' && (
+              <motion.div
+                key="seo"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Search className="w-5 h-5" />
+                      SEO Optimizer
+                    </CardTitle>
+                    <CardDescription>
+                      Optimize video titles, descriptions, and tags for search
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="min-h-[400px] flex items-center justify-center">
+                    <div className="text-center text-muted-foreground">
+                      <Search className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p>Pipeline: seo-optimizer</p>
+                      <p className="text-sm">Keyword research, meta generation, tag suggestions</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+            
+            {currentSubTab === 'testing' && (
+              <motion.div
+                key="testing"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Wand2 className="w-5 h-5" />
+                      A/B Testing
+                    </CardTitle>
+                    <CardDescription>
+                      Create and test content variations
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="min-h-[400px] flex items-center justify-center">
+                    <div className="text-center text-muted-foreground">
+                      <Wand2 className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p>Pipeline: ab-test-generator (dormant)</p>
+                      <p className="text-sm">Thumbnail variants, title testing, CTA optimization</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+};
+
+export default GenieCastConsolidatedTabs;
