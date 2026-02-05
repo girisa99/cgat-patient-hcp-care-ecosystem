@@ -26,3 +26,9 @@ export {
   type ManageSubTab,
   type PublishSubTab,
 } from './GenieCastConsolidatedTabs';
+
+// Re-export shared authoring components for convenience
+export { useUnifiedAuthoring } from '@/hooks/useUnifiedAuthoring';
+export { AuthoringStageIndicator } from '@/components/shared/AuthoringStageIndicator';
+export { RegionalDialectSelector, REGIONAL_CONFIG } from '@/components/shared/RegionalDialectSelector';
+export { ScriptTemplateMapper } from '@/components/shared/ScriptTemplateMapper';
