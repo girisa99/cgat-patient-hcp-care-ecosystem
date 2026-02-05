@@ -1,6 +1,6 @@
 /**
  * Create Template Dialog - Consolidated
- * Clean, non-duplicate form with proper portal-based dropdowns
+ * Fixed dropdowns with proper scroll and interaction handling
  */
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -19,7 +19,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import * as PopoverPrimitive from '@radix-ui/react-popover';
 import {
   Plus,
   Wand2,
@@ -140,7 +139,7 @@ const AI_PROVIDERS = [
   { value: 'meshy_3d', label: 'Meshy 3D', icon: '🧊' },
 ];
 
-// Portal Dropdown Component with proper z-index
+// Custom Dropdown with fixed scroll and interactions
 interface DropdownProps {
   label: string;
   icon?: React.ReactNode;
@@ -151,7 +150,7 @@ interface DropdownProps {
   placeholder?: string;
 }
 
-const PortalDropdown: React.FC<DropdownProps> = ({
+const CustomDropdown: React.FC<DropdownProps> = ({
   label,
   icon,
   options,
@@ -161,81 +160,88 @@ const PortalDropdown: React.FC<DropdownProps> = ({
   placeholder = 'Select...',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const [triggerWidth, setTriggerWidth] = useState(280);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const selectedLabels = options.filter(o => selected.includes(o.value));
 
+  // Close on outside click
   useEffect(() => {
-    if (isOpen && triggerRef.current) {
-      setTriggerWidth(triggerRef.current.offsetWidth);
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
     }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
+  const handleItemClick = (value: string) => {
+    onToggle(value);
+    if (!multi) {
+      setIsOpen(false);
+    }
+  };
+
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" ref={dropdownRef}>
       <Label className="flex items-center gap-2 text-sm">
         {icon}
         {label}
       </Label>
-      <PopoverPrimitive.Root open={isOpen} onOpenChange={setIsOpen}>
-        <PopoverPrimitive.Trigger asChild>
-          <Button
-            ref={triggerRef}
-            type="button"
-            variant="outline"
-            className="w-full justify-between h-auto min-h-10 text-left"
+      <div className="relative">
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full justify-between h-auto min-h-10 text-left"
+          onClick={() => setIsOpen(!isOpen)}
+        >
+          {selectedLabels.length > 0 ? (
+            <div className="flex flex-wrap gap-1 pr-6">
+              {selectedLabels.slice(0, 3).map(opt => (
+                <Badge key={opt.value} variant="secondary" className="text-xs">
+                  {opt.icon && <span className="mr-1">{opt.icon}</span>}
+                  {opt.label}
+                </Badge>
+              ))}
+              {selectedLabels.length > 3 && (
+                <Badge variant="outline" className="text-xs">+{selectedLabels.length - 3}</Badge>
+              )}
+            </div>
+          ) : (
+            <span className="text-muted-foreground">{placeholder}</span>
+          )}
+          <ChevronDown className={cn("h-4 w-4 ml-2 shrink-0 transition-transform absolute right-3", isOpen && "rotate-180")} />
+        </Button>
+        
+        {isOpen && (
+          <div 
+            className="absolute top-full left-0 right-0 mt-1 bg-popover border rounded-md shadow-lg z-[999999] overflow-hidden"
+            style={{ maxHeight: '220px' }}
           >
-            {selectedLabels.length > 0 ? (
-              <div className="flex flex-wrap gap-1 pr-6">
-                {selectedLabels.slice(0, 3).map(opt => (
-                  <Badge key={opt.value} variant="secondary" className="text-xs">
-                    {opt.icon && <span className="mr-1">{opt.icon}</span>}
-                    {opt.label}
-                  </Badge>
-                ))}
-                {selectedLabels.length > 3 && (
-                  <Badge variant="outline" className="text-xs">+{selectedLabels.length - 3}</Badge>
-                )}
-              </div>
-            ) : (
-              <span className="text-muted-foreground">{placeholder}</span>
-            )}
-            <ChevronDown className={cn("h-4 w-4 ml-2 shrink-0 transition-transform", isOpen && "rotate-180")} />
-          </Button>
-        </PopoverPrimitive.Trigger>
-        <PopoverPrimitive.Portal>
-          <PopoverPrimitive.Content
-            align="start"
-            sideOffset={4}
-            style={{ width: triggerWidth, zIndex: 999999 }}
-            className="rounded-md border bg-popover text-popover-foreground shadow-lg outline-none animate-in fade-in-0 zoom-in-95"
-            onOpenAutoFocus={(e) => e.preventDefault()}
-          >
-            <div className="max-h-[220px] overflow-y-auto p-1">
+            <div 
+              className="overflow-y-auto p-1"
+              style={{ maxHeight: '220px' }}
+              onWheel={(e) => e.stopPropagation()}
+            >
               {options.map(opt => (
-                <button
+                <div
                   key={opt.value}
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onToggle(opt.value);
-                    if (!multi) setIsOpen(false);
-                  }}
+                  onClick={() => handleItemClick(opt.value)}
                   className={cn(
-                    "w-full flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-accent text-left cursor-pointer transition-colors",
+                    "flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-accent cursor-pointer transition-colors",
                     selected.includes(opt.value) && "bg-accent"
                   )}
                 >
                   <Check className={cn("h-4 w-4 shrink-0", selected.includes(opt.value) ? "opacity-100" : "opacity-0")} />
                   {opt.icon && <span>{opt.icon}</span>}
                   <span>{opt.label}</span>
-                </button>
+                </div>
               ))}
             </div>
-          </PopoverPrimitive.Content>
-        </PopoverPrimitive.Portal>
-      </PopoverPrimitive.Root>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
@@ -257,84 +263,96 @@ const CloneTemplateDropdown: React.FC<CloneDropdownProps> = ({
   onSearchChange,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const [triggerWidth, setTriggerWidth] = useState(400);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
+  // Close on outside click
   useEffect(() => {
-    if (isOpen && triggerRef.current) {
-      setTriggerWidth(triggerRef.current.offsetWidth);
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
+
+  // Focus input when opened
+  useEffect(() => {
+    if (isOpen && inputRef.current) {
+      inputRef.current.focus();
     }
   }, [isOpen]);
 
+  const handleSelect = (template: VideoBlueprint) => {
+    onSelect(template);
+    setIsOpen(false);
+  };
+
   return (
-    <PopoverPrimitive.Root open={isOpen} onOpenChange={setIsOpen}>
-      <PopoverPrimitive.Trigger asChild>
-        <Button
-          ref={triggerRef}
-          type="button"
-          variant="outline"
-          className="w-full justify-between h-auto min-h-10"
-        >
-          {selected ? (
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary">{selected.category}</Badge>
-              <span className="truncate">{selected.name}</span>
-            </div>
-          ) : (
-            <span className="text-muted-foreground">Search 407 templates...</span>
-          )}
-          <ChevronDown className={cn("h-4 w-4 ml-2 shrink-0 transition-transform", isOpen && "rotate-180")} />
-        </Button>
-      </PopoverPrimitive.Trigger>
-      <PopoverPrimitive.Portal>
-        <PopoverPrimitive.Content
-          align="start"
-          sideOffset={4}
-          style={{ width: triggerWidth, zIndex: 999999 }}
-          className="rounded-md border bg-popover text-popover-foreground shadow-lg outline-none animate-in fade-in-0 zoom-in-95"
-          onOpenAutoFocus={(e) => e.preventDefault()}
+    <div className="relative" ref={dropdownRef}>
+      <Button
+        type="button"
+        variant="outline"
+        className="w-full justify-between h-auto min-h-10"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        {selected ? (
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary">{selected.category}</Badge>
+            <span className="truncate">{selected.name}</span>
+          </div>
+        ) : (
+          <span className="text-muted-foreground">Search 407 templates...</span>
+        )}
+        <ChevronDown className={cn("h-4 w-4 ml-2 shrink-0 transition-transform", isOpen && "rotate-180")} />
+      </Button>
+      
+      {isOpen && (
+        <div 
+          className="absolute top-full left-0 right-0 mt-1 bg-popover border rounded-md shadow-lg z-[999999] overflow-hidden"
         >
           <div className="p-2 border-b">
             <div className="relative">
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
+                ref={inputRef}
                 placeholder="Search templates..."
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
                 className="pl-8 h-8"
-                autoFocus
               />
             </div>
           </div>
-          <div className="max-h-[200px] overflow-y-auto p-1">
+          <div 
+            className="overflow-y-auto p-1"
+            style={{ maxHeight: '200px' }}
+            onWheel={(e) => e.stopPropagation()}
+          >
             {templates.length > 0 ? (
               templates.map(t => (
-                <button
+                <div
                   key={t.id}
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onSelect(t);
-                    setIsOpen(false);
-                  }}
+                  onClick={() => handleSelect(t)}
                   className={cn(
-                    "w-full flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-accent text-left cursor-pointer transition-colors",
+                    "flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-accent cursor-pointer transition-colors",
                     selected?.id === t.id && "bg-accent"
                   )}
                 >
                   <Check className={cn("h-4 w-4 shrink-0", selected?.id === t.id ? "opacity-100" : "opacity-0")} />
                   <Badge variant="outline" className="text-[10px] shrink-0">{t.category}</Badge>
                   <span className="flex-1 truncate">{t.name}</span>
-                </button>
+                </div>
               ))
             ) : (
               <p className="p-4 text-center text-sm text-muted-foreground">No templates found</p>
             )}
           </div>
-        </PopoverPrimitive.Content>
-      </PopoverPrimitive.Portal>
-    </PopoverPrimitive.Root>
+        </div>
+      )}
+    </div>
   );
 };
 
@@ -385,7 +403,7 @@ export function CreateTemplateDialog({ onCreated, templateToClone }: CreateTempl
     }));
   };
 
-  // Set single value
+  // Set single value (wraps in array for consistency)
   const setSingleValue = (key: keyof typeof formData, item: string) => {
     setFormData(prev => ({ ...prev, [key]: item }));
   };
@@ -394,7 +412,7 @@ export function CreateTemplateDialog({ onCreated, templateToClone }: CreateTempl
   const filteredCloneTemplates = blueprints.filter(bp =>
     bp.name.toLowerCase().includes(cloneSearchQuery.toLowerCase()) ||
     bp.description?.toLowerCase().includes(cloneSearchQuery.toLowerCase())
-  ).slice(0, 20);
+  ).slice(0, 30);
 
   // Select template to clone
   const selectTemplateToClone = (template: VideoBlueprint) => {
@@ -497,7 +515,7 @@ export function CreateTemplateDialog({ onCreated, templateToClone }: CreateTempl
           {templateToClone ? 'Clone' : 'Create Template'}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden" style={{ zIndex: 99998 }}>
+      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col" style={{ zIndex: 99998 }}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Layers className="h-5 w-5 text-primary" />
@@ -506,7 +524,7 @@ export function CreateTemplateDialog({ onCreated, templateToClone }: CreateTempl
           <DialogDescription>Choose a method to create your template</DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[65vh] pr-4">
+        <div className="flex-1 overflow-y-auto pr-2" style={{ maxHeight: 'calc(85vh - 180px)' }}>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-2">
             <TabsList className="grid grid-cols-3 w-full">
               <TabsTrigger value="ai" className="gap-1.5 text-xs">
@@ -581,7 +599,7 @@ export function CreateTemplateDialog({ onCreated, templateToClone }: CreateTempl
             </TabsContent>
 
             {/* Manual Tab */}
-            <TabsContent value="visual" className="mt-4 space-y-4">
+            <TabsContent value="visual" className="mt-4 space-y-4 pb-4">
               {/* Name + Category */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -592,7 +610,7 @@ export function CreateTemplateDialog({ onCreated, templateToClone }: CreateTempl
                     placeholder="My Custom Template"
                   />
                 </div>
-                <PortalDropdown
+                <CustomDropdown
                   label="Category"
                   options={TEMPLATE_CATEGORIES}
                   selected={[formData.category]}
@@ -603,7 +621,7 @@ export function CreateTemplateDialog({ onCreated, templateToClone }: CreateTempl
               </div>
 
               {/* Video Style */}
-              <PortalDropdown
+              <CustomDropdown
                 label="Video Style"
                 options={VIDEO_STYLES}
                 selected={[formData.videoStyle]}
@@ -612,55 +630,60 @@ export function CreateTemplateDialog({ onCreated, templateToClone }: CreateTempl
                 placeholder="Select style"
               />
 
-              {/* Platforms */}
-              <PortalDropdown
+              {/* Platforms - Multi-select */}
+              <CustomDropdown
                 label="Target Platforms"
                 icon={<Globe2 className="h-4 w-4" />}
                 options={PLATFORM_OPTIONS}
                 selected={formData.platforms}
                 onToggle={(v) => toggleArrayItem('platforms', v)}
+                multi={true}
                 placeholder="Select platforms"
               />
 
-              {/* AI Capabilities */}
-              <PortalDropdown
+              {/* AI Capabilities - Multi-select */}
+              <CustomDropdown
                 label="AI Capabilities"
                 icon={<Sparkles className="h-4 w-4" />}
                 options={AI_CAPABILITIES}
                 selected={formData.capabilities}
                 onToggle={(v) => toggleArrayItem('capabilities', v)}
+                multi={true}
                 placeholder="Select capabilities"
               />
 
-              {/* Regions */}
-              <PortalDropdown
+              {/* Regions - Multi-select */}
+              <CustomDropdown
                 label="Target Regions"
                 icon={<Globe2 className="h-4 w-4" />}
                 options={REGIONS.map(r => ({ value: r.value, label: r.label, icon: r.icon }))}
                 selected={formData.regions}
                 onToggle={(v) => toggleArrayItem('regions', v)}
+                multi={true}
                 placeholder="Select regions"
               />
 
-              {/* Languages */}
+              {/* Languages - Multi-select */}
               {availableLanguages.length > 0 && (
-                <PortalDropdown
+                <CustomDropdown
                   label={`Languages (${availableLanguages.length} available)`}
                   icon={<Languages className="h-4 w-4" />}
                   options={availableLanguages.map(l => ({ value: l, label: LANGUAGE_NAMES[l] || l, icon: '' }))}
                   selected={formData.languages}
                   onToggle={(v) => toggleArrayItem('languages', v)}
+                  multi={true}
                   placeholder="Select languages"
                 />
               )}
 
-              {/* AI Providers */}
-              <PortalDropdown
+              {/* AI Providers - Multi-select */}
+              <CustomDropdown
                 label="AI Providers"
                 icon={<Wand2 className="h-4 w-4" />}
                 options={AI_PROVIDERS}
                 selected={formData.providers}
                 onToggle={(v) => toggleArrayItem('providers', v)}
+                multi={true}
                 placeholder="Select providers"
               />
 
@@ -676,10 +699,10 @@ export function CreateTemplateDialog({ onCreated, templateToClone }: CreateTempl
               </div>
             </TabsContent>
           </Tabs>
-        </ScrollArea>
+        </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-2 pt-4 border-t">
+        <div className="flex justify-end gap-2 pt-4 border-t mt-auto">
           <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
           <Button
             onClick={createTemplate}
