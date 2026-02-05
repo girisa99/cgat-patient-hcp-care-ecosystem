@@ -55,6 +55,9 @@ import { AVSyncPreview } from '@/components/shared/AVSyncPreview';
 import { ApprovalDashboard } from '@/components/shared/ApprovalDashboard';
 import type { StyleIntent, RegionZone } from '@/services/styleIntentResolver';
 
+// Import P2 Live Generation Preview component (uses internal hooks)
+import { LiveGenerationPreview } from './LiveGenerationPreview';
+
 // Import sub-components from parent panel
 import { GenieCastOverview, VideoStyleCards, AIProviderShowcase, type VideoStyleType } from './index';
 import { MultiScreenshotGallery, type ProductGallery } from '../MultiScreenshotGallery';
@@ -726,7 +729,8 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   }}
                   onPlayScene={(sceneId) => {
                     console.log('[Studio] Play scene:', sceneId);
-                    toast.info(`Playing scene preview...`);
+                    toast.info(`Playing scene preview for ${sceneId}...`);
+                    // The LiveGenerationPreview below handles TTS playback internally
                   }}
                   onSeek={(time) => {
                     console.log('[Studio] Seek to:', time);
@@ -735,6 +739,50 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                     console.log('[Studio] Sync fix:', sceneId, action);
                     toast.info(`Applying ${action} to fix sync...`);
                   }}
+                />
+
+                {/* P2: Live Generation Preview - Real-time TTS & Video Generation */}
+                <LiveGenerationPreview
+                  mapping={authoring.state.templateMapping || {
+                    templateId: 'demo-template',
+                    templateName: 'Product Demo Template',
+                    scenes: [
+                      { sceneId: 'scene-1', sceneKey: 'opening', title: 'Opening Hook', orderIndex: 0, scriptText: 'Discover the solution you\'ve been waiting for.', sourceType: 'template', durationSeconds: 15, minDuration: 10, maxDuration: 30, ttsConfig: { provider: 'Azure Neural', speed: 1.0, pitch: 1.0 }, approvalStatus: 'approved' },
+                      { sceneId: 'scene-2', sceneKey: 'problem', title: 'Problem Statement', orderIndex: 1, scriptText: 'Are you struggling with manual processes? You\'re not alone.', sourceType: 'template', durationSeconds: 20, minDuration: 15, maxDuration: 40, ttsConfig: { provider: 'Azure Neural', speed: 1.0, pitch: 1.0 }, approvalStatus: 'approved' },
+                      { sceneId: 'scene-3', sceneKey: 'solution', title: 'Solution Intro', orderIndex: 2, scriptText: 'Our platform uses AI-powered automation to transform your workflow.', sourceType: 'messaging', durationSeconds: 25, minDuration: 15, maxDuration: 45, ttsConfig: { provider: 'Azure Neural', speed: 1.0, pitch: 1.0 }, approvalStatus: 'approved' },
+                      { sceneId: 'scene-4', sceneKey: 'benefits', title: 'Key Benefits', orderIndex: 3, scriptText: 'Experience faster workflows, reduced errors, and cost savings.', sourceType: 'messaging', durationSeconds: 30, minDuration: 20, maxDuration: 50, ttsConfig: { provider: 'Azure Neural', speed: 1.0, pitch: 1.0 }, approvalStatus: 'approved' },
+                      { sceneId: 'scene-5', sceneKey: 'proof', title: 'Social Proof', orderIndex: 4, scriptText: 'Join thousands of satisfied customers who trust our platform.', sourceType: 'template', durationSeconds: 20, minDuration: 10, maxDuration: 35, ttsConfig: { provider: 'Azure Neural', speed: 1.0, pitch: 1.0 }, approvalStatus: 'approved' },
+                      { sceneId: 'scene-6', sceneKey: 'cta', title: 'Call to Action', orderIndex: 5, scriptText: 'Get started today! Visit our website for a free trial.', sourceType: 'custom', durationSeconds: 15, minDuration: 10, maxDuration: 25, ttsConfig: { provider: 'Azure Neural', speed: 1.0, pitch: 1.0 }, approvalStatus: 'approved' },
+                    ],
+                    totalDuration: 125,
+                    styleIntent: 'product-hero',
+                    resolvedProviders: {
+                      image: 'Gemini 3 Pro',
+                      video: 'Vertex Veo 3',
+                      tts: 'Azure Neural',
+                      llm: 'Gemini 3.0',
+                    },
+                  }}
+                  styleIntent="product-hero"
+                  region={selectedDialectCodes[0]?.startsWith('ar-') ? 'mena' : 
+                          ['zh-CN', 'ja-JP', 'ko-KR'].includes(selectedDialectCodes[0] || '') ? 'cjk' : 
+                          ['hi-IN', 'te-IN'].includes(selectedDialectCodes[0] || '') ? 'india' : 'global'}
+                  language={selectedDialectCodes[0] || 'en-US'}
+                  onTTSComplete={(results) => {
+                    console.log('[Studio] TTS generation complete:', results.length, 'scenes');
+                    toast.success(`TTS complete for ${results.length} scenes`);
+                  }}
+                  onVideoComplete={(results) => {
+                    console.log('[Studio] Video preview complete:', results.length, 'thumbnails');
+                    toast.success(`Video previews generated: ${results.length}`);
+                  }}
+                  onAssemblyComplete={(videoUrl) => {
+                    console.log('[Studio] Video assembly complete:', videoUrl);
+                    castSession.goToStage('approval');
+                    toast.success('Full production complete! Ready for review.');
+                    setSubTab('produce', 'review');
+                  }}
+                  showAdvancedControls={true}
                 />
               </motion.div>
             )}
