@@ -1,0 +1,4 @@
+ # Memory: architecture/composition/unified-authoring-strategy
+ Updated: just now
+ 
+ The authoring and publishing workflow (Template -> Messaging -> Script -> TTS -> Sync -> Publish) utilizes a cross-product reuse strategy, centralizing core logic for script-to-template mapping and A/V synchronization within a shared `useUnifiedAuthoring.ts` hook. This ensures functional consistency and reduces technical debt across Spark, Mind, Deck, and Genie Cast. The pipeline's implementation is anchored by three specialized components: `ScriptTemplateMapper` (for scene-to-script alignment and duration estimation), `AVSyncPreview` (for timeline scrubbing and waveform sync), and a unified `ApprovalDashboard` for stage-gate tracking through the creation lifecycle.
