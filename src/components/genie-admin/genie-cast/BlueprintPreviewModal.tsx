@@ -113,9 +113,12 @@ export function BlueprintPreviewModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-5xl p-0 bg-background/95 backdrop-blur-xl border-border/50 flex flex-col" style={{ maxHeight: '85vh' }}>
+      <DialogContent 
+        className="max-w-5xl p-0 bg-background/95 backdrop-blur-xl border-border/50 !flex !flex-col overflow-hidden"
+        style={{ maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}
+      >
         {/* Scrollable Content Area - This is the only scrollable part */}
-        <div className="flex-1 overflow-y-auto" style={{ minHeight: 0 }}>
+        <div className="flex-1 overflow-y-auto min-h-0">
           {/* Hero Section with Thumbnail */}
           <div className="relative">
             {blueprint.thumbnail_url ? (
@@ -493,7 +496,7 @@ export function BlueprintPreviewModal({
         </div>
 
         {/* Footer Actions - ALWAYS visible outside scroll area */}
-        <div className="p-4 border-t border-border/50 flex justify-between items-center bg-background shrink-0">
+        <div className="p-4 border-t border-border/50 flex justify-between items-center bg-background flex-shrink-0" style={{ flexShrink: 0 }}>
           <div className="text-sm text-muted-foreground">
             Used {blueprint.usage_count} times
           </div>
