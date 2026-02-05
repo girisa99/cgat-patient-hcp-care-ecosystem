@@ -58,6 +58,14 @@ import { cn } from '@/lib/utils';
 import { useVideoBlueprints, type VideoBlueprint } from '@/hooks/useVideoBlueprints';
 import { BlueprintPreviewModal } from './BlueprintPreviewModal';
 import { CreateTemplateDialog } from './CreateTemplateDialog';
+import { 
+  TemplateFilterBar, 
+  type FilterState,
+  matchesCombinationFilter,
+  matchesDeviceFilter,
+  REGION_FILTERS as NEW_REGION_FILTERS,
+  CAPABILITY_FILTERS as NEW_CAPABILITY_FILTERS,
+} from './TemplateFilterBar';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -318,10 +326,44 @@ export function BlueprintTemplatesGrid({
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [capabilityFilter, setCapabilityFilter] = useState<string>('all');
   const [regionFilter, setRegionFilter] = useState<string>('all');
+  const [combinationFilter, setCombinationFilter] = useState<string>('all');
+  const [deviceFilter, setDeviceFilter] = useState<string>('all');
   const [previewBlueprintId, setPreviewBlueprintId] = useState<string | null>(null);
+  const [industryFilter, setIndustryFilter] = useState<string>('all');
   const [isGeneratingThumbnails, setIsGeneratingThumbnails] = useState(false);
   const [generatingId, setGeneratingId] = useState<string | null>(null);
   const [isQueueing, setIsQueueing] = useState(false);
+
+  // Unified filter state for TemplateFilterBar
+  const filterState: FilterState = useMemo(() => ({
+    search: searchQuery,
+    category: activeCategory,
+    combination: combinationFilter,
+    device: deviceFilter,
+    region: regionFilter,
+    capability: capabilityFilter,
+    industry: industryFilter,
+  }), [searchQuery, activeCategory, combinationFilter, deviceFilter, regionFilter, capabilityFilter, industryFilter]);
+
+  const handleFiltersChange = (newFilters: FilterState) => {
+    setSearchQuery(newFilters.search);
+    setActiveCategory(newFilters.category);
+    setCombinationFilter(newFilters.combination);
+    setDeviceFilter(newFilters.device);
+    setRegionFilter(newFilters.region);
+    setCapabilityFilter(newFilters.capability);
+    setIndustryFilter(newFilters.industry);
+  };
+
+  const handleResetFilters = () => {
+    setSearchQuery('');
+    setActiveCategory('all');
+    setCombinationFilter('all');
+    setDeviceFilter('all');
+    setRegionFilter('all');
+    setCapabilityFilter('all');
+    setIndustryFilter('all');
+  };
 
   // Fetch blueprint with scenes for preview
   const { data: previewBlueprint } = useBlueprintWithScenes(previewBlueprintId);
@@ -461,9 +503,6 @@ export function BlueprintTemplatesGrid({
     }
   };
 
-  // Industry filter state
-  const [industryFilter, setIndustryFilter] = useState<string>('all');
-
   // Filter blueprints - fully wired with all filters
   const filteredBlueprints = useMemo(() => {
     let filtered = blueprints;
@@ -478,6 +517,16 @@ export function BlueprintTemplatesGrid({
       filtered = filtered.filter(bp =>
         bp.industry_tags?.some(tag => tag.toLowerCase().includes(industryFilter.toLowerCase()))
       );
+    }
+
+    // Combination filter - NEW
+    if (combinationFilter !== 'all') {
+      filtered = filtered.filter(bp => matchesCombinationFilter(bp, combinationFilter));
+    }
+
+    // Device/Platform filter - NEW
+    if (deviceFilter !== 'all') {
+      filtered = filtered.filter(bp => matchesDeviceFilter(bp, deviceFilter));
     }
 
     // Capability filter - check default_settings.ai_capabilities or name
@@ -552,7 +601,7 @@ export function BlueprintTemplatesGrid({
     }
 
     return filtered;
-  }, [blueprints, activeCategory, searchQuery, capabilityFilter, regionFilter, industryFilter]);
+  }, [blueprints, activeCategory, searchQuery, capabilityFilter, regionFilter, industryFilter, combinationFilter, deviceFilter]);
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -616,25 +665,9 @@ export function BlueprintTemplatesGrid({
 
   return (
     <div className="space-y-4">
-      {/* Header with Search, Category Tabs, and Actions */}
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <Tabs value={activeCategory} onValueChange={setActiveCategory}>
-            <TabsList className="bg-card/50 flex-wrap h-auto">
-              <TabsTrigger value="all" className="text-xs">All ({blueprints.length})</TabsTrigger>
-              {Object.keys(categoryLabels).map(cat => (
-                <TabsTrigger key={cat} value={cat} className="text-xs gap-1">
-                  {categoryIcons[cat]}
-                  {categoryLabels[cat]}
-                  <span className="text-muted-foreground">
-                    ({blueprintsByCategory[cat]?.length || 0})
-                  </span>
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-
-          <div className="flex items-center gap-2 flex-wrap">
+      {/* Header with Actions */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2 flex-wrap">
             {/* Create Template Button */}
             <CreateTemplateDialog onCreated={refetch} />
             
@@ -657,7 +690,8 @@ export function BlueprintTemplatesGrid({
               size="sm"
               onClick={seedProviderTemplates}
               disabled={isSeedingProviders}
-              className="gap-2"
+              className="gap-2 hidden sm:flex"
+              title="Add 100+ templates organized by AI provider capabilities (Vertex, Sora, Alibaba, etc.)"
             >
               {isSeedingProviders ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Cpu className="h-4 w-4" />}
               + Provider Templates
@@ -674,76 +708,14 @@ export function BlueprintTemplatesGrid({
           </div>
         </div>
 
-        {/* Filter Row - Industry, Capability, Region */}
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium text-muted-foreground">Filters:</span>
-          </div>
-          
-          <Select value={industryFilter} onValueChange={setIndustryFilter}>
-            <SelectTrigger className="w-[160px] h-8 text-xs">
-              <SelectValue placeholder="Industry" />
-            </SelectTrigger>
-            <SelectContent>
-              {INDUSTRY_FILTERS.map(f => (
-                <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
-          <Select value={capabilityFilter} onValueChange={setCapabilityFilter}>
-            <SelectTrigger className="w-[160px] h-8 text-xs">
-              <SelectValue placeholder="Capability" />
-            </SelectTrigger>
-            <SelectContent>
-              {CAPABILITY_FILTERS.map(f => (
-                <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
-          <Select value={regionFilter} onValueChange={setRegionFilter}>
-            <SelectTrigger className="w-[180px] h-8 text-xs">
-              <SelectValue placeholder="Region" />
-            </SelectTrigger>
-            <SelectContent>
-              {REGION_FILTERS.map(f => (
-                <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
-          {(industryFilter !== 'all' || capabilityFilter !== 'all' || regionFilter !== 'all') && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setIndustryFilter('all');
-                setCapabilityFilter('all');
-                setRegionFilter('all');
-              }}
-              className="h-8 text-xs"
-            >
-              Clear Filters
-            </Button>
-          )}
-          
-          <div className="ml-auto text-sm text-muted-foreground">
-            Showing {filteredBlueprints.length} of {blueprints.length} templates
-          </div>
-        </div>
-
-        <div className="relative w-full sm:w-80">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search templates by name, tag..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-      </div>
+      {/* Smart Filter Bar - 6 filter types with chips */}
+      <TemplateFilterBar
+        filters={filterState}
+        onFiltersChange={handleFiltersChange}
+        totalCount={blueprints.length}
+        filteredCount={filteredBlueprints.length}
+        onReset={handleResetFilters}
+      />
 
       {/* Loading State */}
       {isLoading && (
