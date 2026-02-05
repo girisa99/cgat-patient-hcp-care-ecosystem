@@ -49,6 +49,12 @@ export interface VideoBlueprint {
   created_at: string;
   updated_at: string;
   scenes?: BlueprintScene[];
+   // Phase 1: Style Abstraction fields
+   style_intent?: string;
+   target_regions?: string[];
+   supported_dialects?: Record<string, string[]>;
+   tone_modifier?: string;
+   aesthetic_keywords?: string[];
 }
 
 export interface BlueprintAssignment {
