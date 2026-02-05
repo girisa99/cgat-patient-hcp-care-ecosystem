@@ -26,6 +26,8 @@ export { SmartSchedulerPanel } from './SmartSchedulerPanel';
 export { AnalyticsDashboard } from './AnalyticsDashboard';
 export { ContentRepurposingPanel } from './ContentRepurposingPanel';
 export { DistributionPanel } from './DistributionPanel';
+export { SEOOptimizerPanel } from './SEOOptimizerPanel';
+export { ABTestingPanel } from './ABTestingPanel';
 
 export { 
   GenieCastConsolidatedTabs, 
