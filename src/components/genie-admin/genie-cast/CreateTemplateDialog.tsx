@@ -1,9 +1,9 @@
  /**
   * Create Template Dialog - Consolidated
-  * Clean, non-duplicate form with working dropdowns
+  * Clean, non-duplicate form with Radix Popover dropdowns
   */
  
- import React, { useState, useEffect, useRef } from 'react';
+ import React, { useState, useEffect } from 'react';
  import {
    Dialog,
    DialogContent,
@@ -19,6 +19,7 @@
  import { Badge } from '@/components/ui/badge';
  import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
  import { ScrollArea } from '@/components/ui/scroll-area';
+ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
  import {
    Plus,
    Wand2,
@@ -28,7 +29,6 @@
    Globe2,
    Loader2,
    Check,
-   Monitor,
    Languages,
    Search,
    ChevronDown,
@@ -88,13 +88,13 @@
  
  // Platforms
  const PLATFORM_OPTIONS = [
-   { value: 'tiktok', label: 'TikTok (9:16)' },
-   { value: 'instagram_reels', label: 'Instagram Reels (9:16)' },
-   { value: 'instagram_feed', label: 'Instagram Feed (1:1)' },
-   { value: 'youtube', label: 'YouTube (16:9)' },
-   { value: 'youtube_shorts', label: 'YouTube Shorts (9:16)' },
-   { value: 'facebook', label: 'Facebook (16:9)' },
-   { value: 'linkedin', label: 'LinkedIn (16:9)' },
+   { value: 'tiktok', label: 'TikTok (9:16)', icon: '' },
+   { value: 'instagram_reels', label: 'Instagram Reels (9:16)', icon: '' },
+   { value: 'instagram_feed', label: 'Instagram Feed (1:1)', icon: '' },
+   { value: 'youtube', label: 'YouTube (16:9)', icon: '' },
+   { value: 'youtube_shorts', label: 'YouTube Shorts (9:16)', icon: '' },
+   { value: 'facebook', label: 'Facebook (16:9)', icon: '' },
+   { value: 'linkedin', label: 'LinkedIn (16:9)', icon: '' },
  ];
  
  // AI Capabilities
@@ -140,7 +140,7 @@
    { value: 'meshy_3d', label: 'Meshy 3D', icon: '🧊' },
  ];
  
- // Dropdown Component
+ // Dropdown Component using Radix Popover for proper z-index/portal
  interface DropdownProps {
    label: string;
    icon?: React.ReactNode;
@@ -161,63 +161,57 @@
    placeholder = 'Select...',
  }) => {
    const [isOpen, setIsOpen] = useState(false);
-   const ref = useRef<HTMLDivElement>(null);
- 
-   // Close on outside click
-   useEffect(() => {
-     const handleClickOutside = (e: MouseEvent) => {
-       if (ref.current && !ref.current.contains(e.target as Node)) {
-         setIsOpen(false);
-       }
-     };
-     document.addEventListener('mousedown', handleClickOutside);
-     return () => document.removeEventListener('mousedown', handleClickOutside);
-   }, []);
- 
    const selectedLabels = options.filter(o => selected.includes(o.value));
  
    return (
-     <div className="space-y-2" ref={ref}>
+     <div className="space-y-2">
        <Label className="flex items-center gap-2">
          {icon}
          {label}
        </Label>
-       <div className="relative">
-         <Button
-           type="button"
-           variant="outline"
-           onClick={() => setIsOpen(!isOpen)}
-           className="w-full justify-between h-auto min-h-10 text-left"
+       <Popover open={isOpen} onOpenChange={setIsOpen}>
+         <PopoverTrigger asChild>
+           <Button
+             type="button"
+             variant="outline"
+             className="w-full justify-between h-auto min-h-10 text-left"
+           >
+             {selectedLabels.length > 0 ? (
+               <div className="flex flex-wrap gap-1 pr-6">
+                 {selectedLabels.slice(0, 3).map(opt => (
+                   <Badge key={opt.value} variant="secondary" className="text-xs">
+                     {opt.icon && <span className="mr-1">{opt.icon}</span>}
+                     {opt.label}
+                   </Badge>
+                 ))}
+                 {selectedLabels.length > 3 && (
+                   <Badge variant="outline" className="text-xs">+{selectedLabels.length - 3}</Badge>
+                 )}
+               </div>
+             ) : (
+               <span className="text-muted-foreground">{placeholder}</span>
+             )}
+             <ChevronDown className={cn("h-4 w-4 ml-2 shrink-0 transition-transform", isOpen && "rotate-180")} />
+           </Button>
+         </PopoverTrigger>
+         <PopoverContent 
+           className="w-[--radix-popover-trigger-width] p-0" 
+           align="start"
+           sideOffset={4}
          >
-           {selectedLabels.length > 0 ? (
-             <div className="flex flex-wrap gap-1 pr-6">
-               {selectedLabels.slice(0, 3).map(opt => (
-                 <Badge key={opt.value} variant="secondary" className="text-xs">
-                   {opt.icon && <span className="mr-1">{opt.icon}</span>}
-                   {opt.label}
-                 </Badge>
-               ))}
-               {selectedLabels.length > 3 && (
-                 <Badge variant="outline" className="text-xs">+{selectedLabels.length - 3}</Badge>
-               )}
-             </div>
-           ) : (
-             <span className="text-muted-foreground">{placeholder}</span>
-           )}
-           <ChevronDown className={cn("h-4 w-4 absolute right-3 top-1/2 -translate-y-1/2 transition-transform", isOpen && "rotate-180")} />
-         </Button>
-         {isOpen && (
-           <div className="absolute z-[10000] w-full mt-1 bg-popover border rounded-md shadow-lg max-h-[200px] overflow-y-auto">
+           <ScrollArea className="max-h-[200px]">
              {options.map(opt => (
                <button
                  key={opt.value}
                  type="button"
-                 onClick={() => {
+                 onClick={(e) => {
+                   e.preventDefault();
+                   e.stopPropagation();
                    onToggle(opt.value);
                    if (!multi) setIsOpen(false);
                  }}
                  className={cn(
-                   "w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent text-left",
+                   "w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent text-left cursor-pointer",
                    selected.includes(opt.value) && "bg-accent/50"
                  )}
                >
@@ -226,9 +220,9 @@
                  <span>{opt.label}</span>
                </button>
              ))}
-           </div>
-         )}
-       </div>
+           </ScrollArea>
+         </PopoverContent>
+       </Popover>
      </div>
    );
  };
@@ -243,7 +237,6 @@
    const [cloneSearchQuery, setCloneSearchQuery] = useState('');
    const [selectedCloneTemplate, setSelectedCloneTemplate] = useState<VideoBlueprint | null>(templateToClone || null);
    const [cloneDropdownOpen, setCloneDropdownOpen] = useState(false);
-   const cloneRef = useRef<HTMLDivElement>(null);
  
    // Form state
    const [formData, setFormData] = useState({
@@ -258,17 +251,6 @@
      platforms: ['youtube', 'tiktok'] as string[],
      aiPrompt: '',
    });
- 
-   // Close clone dropdown on outside click
-   useEffect(() => {
-     const handleClickOutside = (e: MouseEvent) => {
-       if (cloneRef.current && !cloneRef.current.contains(e.target as Node)) {
-         setCloneDropdownOpen(false);
-       }
-     };
-     document.addEventListener('mousedown', handleClickOutside);
-     return () => document.removeEventListener('mousedown', handleClickOutside);
-   }, []);
  
    // Get available languages based on regions
    const availableLanguages = [...new Set(
@@ -455,26 +437,31 @@
  
              {/* Clone Tab */}
              <TabsContent value="clone" className="mt-4 space-y-4">
-               <div className="space-y-2 relative" ref={cloneRef}>
+               <div className="space-y-2">
                  <Label>Select template to clone</Label>
-                 <Button
-                   type="button"
-                   variant="outline"
-                   onClick={() => setCloneDropdownOpen(!cloneDropdownOpen)}
-                   className="w-full justify-between h-auto min-h-10"
-                 >
-                   {selectedCloneTemplate ? (
-                     <div className="flex items-center gap-2">
-                       <Badge variant="secondary">{selectedCloneTemplate.category}</Badge>
-                       <span className="truncate">{selectedCloneTemplate.name}</span>
-                     </div>
-                   ) : (
-                     <span className="text-muted-foreground">Search templates...</span>
-                   )}
-                   <ChevronDown className={cn("h-4 w-4 transition-transform", cloneDropdownOpen && "rotate-180")} />
-                 </Button>
-                 {cloneDropdownOpen && (
-                   <div className="absolute z-[10000] w-full mt-1 bg-popover border rounded-md shadow-lg">
+                 <Popover open={cloneDropdownOpen} onOpenChange={setCloneDropdownOpen}>
+                   <PopoverTrigger asChild>
+                     <Button
+                       type="button"
+                       variant="outline"
+                       className="w-full justify-between h-auto min-h-10"
+                     >
+                       {selectedCloneTemplate ? (
+                         <div className="flex items-center gap-2">
+                           <Badge variant="secondary">{selectedCloneTemplate.category}</Badge>
+                           <span className="truncate">{selectedCloneTemplate.name}</span>
+                         </div>
+                       ) : (
+                         <span className="text-muted-foreground">Search templates...</span>
+                       )}
+                       <ChevronDown className={cn("h-4 w-4 ml-2 shrink-0 transition-transform", cloneDropdownOpen && "rotate-180")} />
+                     </Button>
+                   </PopoverTrigger>
+                   <PopoverContent 
+                     className="w-[--radix-popover-trigger-width] p-0" 
+                     align="start"
+                     sideOffset={4}
+                   >
                      <div className="p-2 border-b">
                        <div className="relative">
                          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -483,31 +470,37 @@
                            value={cloneSearchQuery}
                            onChange={(e) => setCloneSearchQuery(e.target.value)}
                            className="pl-8 h-8"
+                           onClick={(e) => e.stopPropagation()}
                          />
                        </div>
                      </div>
                      <ScrollArea className="max-h-[200px]">
-                       {filteredCloneTemplates.map(t => (
-                         <button
-                           key={t.id}
-                           type="button"
-                           onClick={() => selectTemplateToClone(t)}
-                           className={cn(
-                             "w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent text-left",
-                             selectedCloneTemplate?.id === t.id && "bg-accent/50"
-                           )}
-                         >
-                           <Check className={cn("h-4 w-4 shrink-0", selectedCloneTemplate?.id === t.id ? "opacity-100" : "opacity-0")} />
-                           <Badge variant="outline" className="text-[10px] shrink-0">{t.category}</Badge>
-                           <span className="flex-1 truncate">{t.name}</span>
-                         </button>
-                       ))}
-                       {filteredCloneTemplates.length === 0 && (
+                       {filteredCloneTemplates.length > 0 ? (
+                         filteredCloneTemplates.map(t => (
+                           <button
+                             key={t.id}
+                             type="button"
+                             onClick={(e) => {
+                               e.preventDefault();
+                               e.stopPropagation();
+                               selectTemplateToClone(t);
+                             }}
+                             className={cn(
+                               "w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent text-left cursor-pointer",
+                               selectedCloneTemplate?.id === t.id && "bg-accent/50"
+                             )}
+                           >
+                             <Check className={cn("h-4 w-4 shrink-0", selectedCloneTemplate?.id === t.id ? "opacity-100" : "opacity-0")} />
+                             <Badge variant="outline" className="text-[10px] shrink-0">{t.category}</Badge>
+                             <span className="flex-1 truncate">{t.name}</span>
+                           </button>
+                         ))
+                       ) : (
                          <p className="p-4 text-center text-sm text-muted-foreground">No templates found</p>
                        )}
                      </ScrollArea>
-                   </div>
-                 )}
+                   </PopoverContent>
+                 </Popover>
                </div>
  
                {selectedCloneTemplate && (
@@ -600,7 +593,7 @@
                  <Dropdown
                    label={`Languages (${availableLanguages.length} available)`}
                    icon={<Languages className="h-4 w-4" />}
-                   options={availableLanguages.map(l => ({ value: l, label: LANGUAGE_NAMES[l] || l }))}
+                   options={availableLanguages.map(l => ({ value: l, label: LANGUAGE_NAMES[l] || l, icon: '' }))}
                    selected={formData.languages}
                    onToggle={(v) => toggleArrayItem('languages', v)}
                    placeholder="Select languages"
