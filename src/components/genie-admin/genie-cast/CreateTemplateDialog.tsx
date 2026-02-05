@@ -45,10 +45,14 @@ import {
   Tablet,
   Languages,
   Search,
+  ChevronDown,
+  X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import type { VideoBlueprint } from '@/hooks/useVideoBlueprints';
 import { useVideoBlueprints } from '@/hooks/useVideoBlueprints';
 
@@ -464,7 +468,7 @@ export function CreateTemplateDialog({ onCreated, templateToClone }: CreateTempl
           {templateToClone ? 'Clone Template' : 'Create Template'}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden z-[100]">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden z-[9999]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Layers className="h-5 w-5 text-primary" />
@@ -502,6 +506,75 @@ export function CreateTemplateDialog({ onCreated, templateToClone }: CreateTempl
                   onChange={(e) => setFormData(prev => ({ ...prev, aiPrompt: e.target.value }))}
                   className="min-h-[100px]"
                 />
+                
+                {/* AI-Assisted Category Dropdown */}
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <div className="space-y-2">
+                    <Label>Category (optional pre-selection)</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" role="combobox" className="w-full justify-between">
+                          {TEMPLATE_CATEGORIES.find(c => c.value === formData.category)?.icon}{' '}
+                          {TEMPLATE_CATEGORIES.find(c => c.value === formData.category)?.label || 'Select category'}
+                          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[300px] p-0 z-[10000]" align="start">
+                        <Command>
+                          <CommandInput placeholder="Search categories..." />
+                          <CommandList>
+                            <CommandEmpty>No category found.</CommandEmpty>
+                            <CommandGroup>
+                              {TEMPLATE_CATEGORIES.map((cat) => (
+                                <CommandItem
+                                  key={cat.value}
+                                  value={cat.value}
+                                  onSelect={(v) => setFormData(prev => ({ ...prev, category: v }))}
+                                >
+                                  <Check className={cn("mr-2 h-4 w-4", formData.category === cat.value ? "opacity-100" : "opacity-0")} />
+                                  {cat.icon} {cat.label}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Video Style (optional)</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" role="combobox" className="w-full justify-between">
+                          {VIDEO_STYLES.find(s => s.value === formData.videoStyle)?.icon}{' '}
+                          {VIDEO_STYLES.find(s => s.value === formData.videoStyle)?.label || 'Select style'}
+                          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[300px] p-0 z-[10000]" align="start">
+                        <Command>
+                          <CommandInput placeholder="Search styles..." />
+                          <CommandList>
+                            <CommandEmpty>No style found.</CommandEmpty>
+                            <CommandGroup>
+                              {VIDEO_STYLES.map((style) => (
+                                <CommandItem
+                                  key={style.value}
+                                  value={style.value}
+                                  onSelect={(v) => setFormData(prev => ({ ...prev, videoStyle: v }))}
+                                >
+                                  <Check className={cn("mr-2 h-4 w-4", formData.videoStyle === style.value ? "opacity-100" : "opacity-0")} />
+                                  {style.icon} {style.label}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+                
                 <Button onClick={generateWithAI} disabled={aiGenerating} className="w-full gap-2">
                   {aiGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                   {aiGenerating ? 'Generating...' : 'Generate Template Structure'}
@@ -512,38 +585,73 @@ export function CreateTemplateDialog({ onCreated, templateToClone }: CreateTempl
             {/* Clone & Customize Tab - NEW: Template selection grid */}
             <TabsContent value="clone" className="space-y-4 mt-4">
               <div className="space-y-2">
-                <Label>Search templates to clone</Label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search by name or description..."
-                    value={cloneSearchQuery}
-                    onChange={(e) => setCloneSearchQuery(e.target.value)}
-                    className="pl-9"
-                  />
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-3 gap-2 max-h-[200px] overflow-y-auto">
-                {filteredCloneTemplates.map(template => (
-                  <div
-                    key={template.id}
-                    onClick={() => selectTemplateToClone(template)}
-                    className={cn(
-                      "p-2 border rounded-lg cursor-pointer transition-all hover:border-primary/50",
-                      selectedCloneTemplate?.id === template.id && "border-primary bg-primary/10"
-                    )}
-                  >
-                    <p className="font-medium text-sm truncate">{template.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">{template.category}</p>
-                  </div>
-                ))}
+                <Label>Select template to clone</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" role="combobox" className="w-full justify-between h-auto min-h-10">
+                      {selectedCloneTemplate ? (
+                        <div className="flex items-center gap-2 text-left">
+                          <Badge variant="secondary">{selectedCloneTemplate.category}</Badge>
+                          <span className="truncate">{selectedCloneTemplate.name}</span>
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">Search and select a template to clone...</span>
+                      )}
+                      <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[500px] p-0 z-[10000]" align="start">
+                    <Command>
+                      <CommandInput 
+                        placeholder="Search 407 templates..." 
+                        value={cloneSearchQuery}
+                        onValueChange={setCloneSearchQuery}
+                      />
+                      <CommandList className="max-h-[300px]">
+                        <CommandEmpty>No template found.</CommandEmpty>
+                        <CommandGroup heading={`Templates (${filteredCloneTemplates.length})`}>
+                          {filteredCloneTemplates.map((template) => (
+                            <CommandItem
+                              key={template.id}
+                              value={template.name}
+                              onSelect={() => selectTemplateToClone(template)}
+                              className="flex items-center gap-2"
+                            >
+                              <Check className={cn("h-4 w-4", selectedCloneTemplate?.id === template.id ? "opacity-100" : "opacity-0")} />
+                              <Badge variant="outline" className="text-[10px]">{template.category}</Badge>
+                              <span className="flex-1 truncate">{template.name}</span>
+                              <span className="text-xs text-muted-foreground">{template.estimated_duration_seconds}s</span>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               {selectedCloneTemplate && (
-                <div className="p-3 border rounded-lg bg-muted/30">
-                  <p className="text-sm text-muted-foreground">Cloning:</p>
-                  <p className="font-medium">{selectedCloneTemplate.name}</p>
+                <div className="p-4 border rounded-lg bg-muted/30 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Selected for cloning:</p>
+                      <p className="font-medium">{selectedCloneTemplate.name}</p>
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => setSelectedCloneTemplate(null)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant="outline">{selectedCloneTemplate.category}</Badge>
+                    <Badge variant="outline">{selectedCloneTemplate.estimated_duration_seconds}s duration</Badge>
+                    {selectedCloneTemplate.target_platform?.slice(0, 3).map(p => (
+                      <Badge key={p} variant="secondary" className="text-[10px]">{p}</Badge>
+                    ))}
+                  </div>
                 </div>
               )}
             </TabsContent>
@@ -561,122 +669,256 @@ export function CreateTemplateDialog({ onCreated, templateToClone }: CreateTempl
                 </div>
                 <div className="space-y-2">
                   <Label>Category</Label>
-                  <Select
-                    value={formData.category}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
-                  >
-                    <SelectTrigger className="z-[150]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="z-[200] max-h-[300px]">
-                      {TEMPLATE_CATEGORIES.map(cat => (
-                        <SelectItem key={cat.value} value={cat.value}>
-                          {cat.icon} {cat.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" role="combobox" className="w-full justify-between">
+                        {TEMPLATE_CATEGORIES.find(c => c.value === formData.category)?.icon}{' '}
+                        {TEMPLATE_CATEGORIES.find(c => c.value === formData.category)?.label || 'Select category'}
+                        <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[300px] p-0 z-[10000]" align="start">
+                      <Command>
+                        <CommandInput placeholder="Search categories..." />
+                        <CommandList>
+                          <CommandEmpty>No category found.</CommandEmpty>
+                          <CommandGroup>
+                            {TEMPLATE_CATEGORIES.map((cat) => (
+                              <CommandItem
+                                key={cat.value}
+                                value={cat.value}
+                                onSelect={(v) => setFormData(prev => ({ ...prev, category: v }))}
+                              >
+                                <Check className={cn("mr-2 h-4 w-4", formData.category === cat.value ? "opacity-100" : "opacity-0")} />
+                                {cat.icon} {cat.label}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label>Video Style</Label>
-                <Select
-                  value={formData.videoStyle}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, videoStyle: value }))}
-                >
-                  <SelectTrigger className="z-[150]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="z-[200] max-h-[300px]">
-                    {VIDEO_STYLES.map(style => (
-                      <SelectItem key={style.value} value={style.value}>
-                        {style.icon} {style.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" role="combobox" className="w-full justify-between">
+                      {VIDEO_STYLES.find(s => s.value === formData.videoStyle)?.icon}{' '}
+                      {VIDEO_STYLES.find(s => s.value === formData.videoStyle)?.label || 'Select style'}
+                      <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[300px] p-0 z-[10000]" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search styles..." />
+                      <CommandList>
+                        <CommandEmpty>No style found.</CommandEmpty>
+                        <CommandGroup>
+                          {VIDEO_STYLES.map((style) => (
+                            <CommandItem
+                              key={style.value}
+                              value={style.value}
+                              onSelect={(v) => setFormData(prev => ({ ...prev, videoStyle: v }))}
+                            >
+                              <Check className={cn("mr-2 h-4 w-4", formData.videoStyle === style.value ? "opacity-100" : "opacity-0")} />
+                              {style.icon} {style.label}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               {/* Devices */}
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
-                  <Monitor className="h-4 w-4" /> Devices
+                  <Monitor className="h-4 w-4" /> Devices (multi-select)
                 </Label>
-                <div className="flex flex-wrap gap-2">
-                  {DEVICE_OPTIONS.map(device => (
-                    <Badge
-                      key={device.value}
-                      variant={formData.devices.includes(device.value) ? 'default' : 'outline'}
-                      className="cursor-pointer hover:bg-primary/20"
-                      onClick={() => toggleArrayItem('devices', device.value)}
-                    >
-                      <device.icon className="h-3 w-3 mr-1" />
-                      {device.label}
-                      {formData.devices.includes(device.value) && <Check className="h-3 w-3 ml-1" />}
-                    </Badge>
-                  ))}
-                </div>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" role="combobox" className="w-full justify-between h-auto min-h-10">
+                      {formData.devices.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {formData.devices.map(d => (
+                            <Badge key={d} variant="secondary" className="text-xs">
+                              {DEVICE_OPTIONS.find(o => o.value === d)?.label}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">Select devices...</span>
+                      )}
+                      <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[250px] p-0 z-[10000]" align="start">
+                    <Command>
+                      <CommandList>
+                        <CommandGroup>
+                          {DEVICE_OPTIONS.map((device) => (
+                            <CommandItem
+                              key={device.value}
+                              value={device.value}
+                              onSelect={() => toggleArrayItem('devices', device.value)}
+                            >
+                              <Check className={cn("mr-2 h-4 w-4", formData.devices.includes(device.value) ? "opacity-100" : "opacity-0")} />
+                              <device.icon className="mr-2 h-4 w-4" />
+                              {device.label}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               {/* Platforms */}
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
-                  <Globe2 className="h-4 w-4" /> Target Platforms
+                  <Globe2 className="h-4 w-4" /> Target Platforms (multi-select)
                 </Label>
-                <div className="flex flex-wrap gap-2">
-                  {PLATFORM_OPTIONS.map(platform => (
-                    <Badge
-                      key={platform.value}
-                      variant={formData.platforms.includes(platform.value) ? 'default' : 'outline'}
-                      className="cursor-pointer hover:bg-primary/20"
-                      onClick={() => toggleArrayItem('platforms', platform.value)}
-                    >
-                      {platform.label} ({platform.aspect})
-                      {formData.platforms.includes(platform.value) && <Check className="h-3 w-3 ml-1" />}
-                    </Badge>
-                  ))}
-                </div>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" role="combobox" className="w-full justify-between h-auto min-h-10">
+                      {formData.platforms.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {formData.platforms.slice(0, 4).map(p => (
+                            <Badge key={p} variant="secondary" className="text-xs">
+                              {PLATFORM_OPTIONS.find(o => o.value === p)?.label}
+                            </Badge>
+                          ))}
+                          {formData.platforms.length > 4 && (
+                            <Badge variant="outline" className="text-xs">+{formData.platforms.length - 4}</Badge>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">Select platforms...</span>
+                      )}
+                      <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[300px] p-0 z-[10000]" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search platforms..." />
+                      <CommandList>
+                        <CommandEmpty>No platform found.</CommandEmpty>
+                        <CommandGroup>
+                          {PLATFORM_OPTIONS.map((platform) => (
+                            <CommandItem
+                              key={platform.value}
+                              value={platform.value}
+                              onSelect={() => toggleArrayItem('platforms', platform.value)}
+                            >
+                              <Check className={cn("mr-2 h-4 w-4", formData.platforms.includes(platform.value) ? "opacity-100" : "opacity-0")} />
+                              {platform.label}
+                              <Badge variant="outline" className="ml-auto text-[10px]">{platform.aspect}</Badge>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               {/* AI Capabilities */}
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4" /> AI Capabilities
+                  <Sparkles className="h-4 w-4" /> AI Capabilities (multi-select)
                 </Label>
-                <div className="flex flex-wrap gap-2">
-                  {AI_CAPABILITIES.map(cap => (
-                    <Badge
-                      key={cap.value}
-                      variant={formData.capabilities.includes(cap.value) ? 'default' : 'outline'}
-                      className="cursor-pointer hover:bg-primary/20"
-                      onClick={() => toggleArrayItem('capabilities', cap.value)}
-                    >
-                      {cap.icon} {cap.label}
-                      {formData.capabilities.includes(cap.value) && <Check className="h-3 w-3 ml-1" />}
-                    </Badge>
-                  ))}
-                </div>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" role="combobox" className="w-full justify-between h-auto min-h-10">
+                      {formData.capabilities.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {formData.capabilities.slice(0, 4).map(c => (
+                            <Badge key={c} variant="secondary" className="text-xs">
+                              {AI_CAPABILITIES.find(o => o.value === c)?.icon} {AI_CAPABILITIES.find(o => o.value === c)?.label}
+                            </Badge>
+                          ))}
+                          {formData.capabilities.length > 4 && (
+                            <Badge variant="outline" className="text-xs">+{formData.capabilities.length - 4}</Badge>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">Select AI capabilities...</span>
+                      )}
+                      <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[300px] p-0 z-[10000]" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search capabilities..." />
+                      <CommandList>
+                        <CommandEmpty>No capability found.</CommandEmpty>
+                        <CommandGroup>
+                          {AI_CAPABILITIES.map((cap) => (
+                            <CommandItem
+                              key={cap.value}
+                              value={cap.value}
+                              onSelect={() => toggleArrayItem('capabilities', cap.value)}
+                            >
+                              <Check className={cn("mr-2 h-4 w-4", formData.capabilities.includes(cap.value) ? "opacity-100" : "opacity-0")} />
+                              {cap.icon} {cap.label}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               {/* Regions with Languages - ENHANCED */}
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
-                  <Globe2 className="h-4 w-4" /> Target Regions
+                  <Globe2 className="h-4 w-4" /> Target Regions (multi-select)
                 </Label>
-                <div className="flex flex-wrap gap-2">
-                  {REGIONS_WITH_LANGUAGES.map(region => (
-                    <Badge
-                      key={region.value}
-                      variant={formData.regions.includes(region.value) ? 'default' : 'outline'}
-                      className="cursor-pointer hover:bg-primary/20"
-                      onClick={() => toggleArrayItem('regions', region.value)}
-                    >
-                      {region.flag} {region.label}
-                      {formData.regions.includes(region.value) && <Check className="h-3 w-3 ml-1" />}
-                    </Badge>
-                  ))}
-                </div>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" role="combobox" className="w-full justify-between h-auto min-h-10">
+                      {formData.regions.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {formData.regions.map(r => (
+                            <Badge key={r} variant="secondary" className="text-xs">
+                              {REGIONS_WITH_LANGUAGES.find(o => o.value === r)?.flag} {REGIONS_WITH_LANGUAGES.find(o => o.value === r)?.label}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">Select regions...</span>
+                      )}
+                      <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[300px] p-0 z-[10000]" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search regions..." />
+                      <CommandList>
+                        <CommandEmpty>No region found.</CommandEmpty>
+                        <CommandGroup>
+                          {REGIONS_WITH_LANGUAGES.map((region) => (
+                            <CommandItem
+                              key={region.value}
+                              value={region.value}
+                              onSelect={() => toggleArrayItem('regions', region.value)}
+                            >
+                              <Check className={cn("mr-2 h-4 w-4", formData.regions.includes(region.value) ? "opacity-100" : "opacity-0")} />
+                              {region.flag} {region.label}
+                              <span className="ml-auto text-xs text-muted-foreground">{region.languages.length} langs</span>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
                 
                 {/* TTS/STT Provider Info */}
                 {formData.regions.length > 0 && (
@@ -690,42 +932,146 @@ export function CreateTemplateDialog({ onCreated, templateToClone }: CreateTempl
               {availableLanguages.length > 0 && (
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2">
-                    <Languages className="h-4 w-4" /> Languages ({availableLanguages.length} available)
+                    <Languages className="h-4 w-4" /> Languages (multi-select - {availableLanguages.length} available)
                   </Label>
-                  <div className="flex flex-wrap gap-2 max-h-[100px] overflow-y-auto">
-                    {availableLanguages.map(lang => (
-                      <Badge
-                        key={lang}
-                        variant={formData.languages.includes(lang) ? 'default' : 'outline'}
-                        className="cursor-pointer hover:bg-primary/20"
-                        onClick={() => toggleArrayItem('languages', lang)}
-                      >
-                        {LANGUAGE_NAMES[lang] || lang}
-                        {formData.languages.includes(lang) && <Check className="h-3 w-3 ml-1" />}
-                      </Badge>
-                    ))}
-                  </div>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" role="combobox" className="w-full justify-between h-auto min-h-10">
+                        {formData.languages.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {formData.languages.slice(0, 5).map(l => (
+                              <Badge key={l} variant="secondary" className="text-xs">
+                                {LANGUAGE_NAMES[l] || l}
+                              </Badge>
+                            ))}
+                            {formData.languages.length > 5 && (
+                              <Badge variant="outline" className="text-xs">+{formData.languages.length - 5}</Badge>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">Select languages...</span>
+                        )}
+                        <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[300px] p-0 z-[10000]" align="start">
+                      <Command>
+                        <CommandInput placeholder="Search languages..." />
+                        <CommandList>
+                          <CommandEmpty>No language found.</CommandEmpty>
+                          <CommandGroup>
+                            {availableLanguages.map((lang) => (
+                              <CommandItem
+                                key={lang}
+                                value={lang}
+                                onSelect={() => toggleArrayItem('languages', lang)}
+                              >
+                                <Check className={cn("mr-2 h-4 w-4", formData.languages.includes(lang) ? "opacity-100" : "opacity-0")} />
+                                {LANGUAGE_NAMES[lang] || lang}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
               )}
 
               {/* AI Providers */}
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
-                  <Wand2 className="h-4 w-4" /> AI Providers
+                  <Wand2 className="h-4 w-4" /> AI Providers (multi-select)
                 </Label>
-                <div className="flex flex-wrap gap-2">
-                  {AI_PROVIDERS.map(provider => (
-                    <Badge
-                      key={provider.value}
-                      variant={formData.providers.includes(provider.value) ? 'default' : 'outline'}
-                      className="cursor-pointer hover:bg-primary/20"
-                      onClick={() => toggleArrayItem('providers', provider.value)}
-                    >
-                      {provider.icon} {provider.label}
-                      {formData.providers.includes(provider.value) && <Check className="h-3 w-3 ml-1" />}
-                    </Badge>
-                  ))}
-                </div>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" role="combobox" className="w-full justify-between h-auto min-h-10">
+                      {formData.providers.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {formData.providers.slice(0, 4).map(p => (
+                            <Badge key={p} variant="secondary" className="text-xs">
+                              {AI_PROVIDERS.find(o => o.value === p)?.icon} {AI_PROVIDERS.find(o => o.value === p)?.label}
+                            </Badge>
+                          ))}
+                          {formData.providers.length > 4 && (
+                            <Badge variant="outline" className="text-xs">+{formData.providers.length - 4}</Badge>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">Select AI providers...</span>
+                      )}
+                      <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[320px] p-0 z-[10000]" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search providers..." />
+                      <CommandList>
+                        <CommandEmpty>No provider found.</CommandEmpty>
+                        <CommandGroup heading="LLM">
+                          {AI_PROVIDERS.filter(p => p.category === 'llm').map((provider) => (
+                            <CommandItem
+                              key={provider.value}
+                              value={provider.value}
+                              onSelect={() => toggleArrayItem('providers', provider.value)}
+                            >
+                              <Check className={cn("mr-2 h-4 w-4", formData.providers.includes(provider.value) ? "opacity-100" : "opacity-0")} />
+                              {provider.icon} {provider.label}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                        <CommandGroup heading="Video">
+                          {AI_PROVIDERS.filter(p => p.category === 'video').map((provider) => (
+                            <CommandItem
+                              key={provider.value}
+                              value={provider.value}
+                              onSelect={() => toggleArrayItem('providers', provider.value)}
+                            >
+                              <Check className={cn("mr-2 h-4 w-4", formData.providers.includes(provider.value) ? "opacity-100" : "opacity-0")} />
+                              {provider.icon} {provider.label}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                        <CommandGroup heading="Image">
+                          {AI_PROVIDERS.filter(p => p.category === 'image').map((provider) => (
+                            <CommandItem
+                              key={provider.value}
+                              value={provider.value}
+                              onSelect={() => toggleArrayItem('providers', provider.value)}
+                            >
+                              <Check className={cn("mr-2 h-4 w-4", formData.providers.includes(provider.value) ? "opacity-100" : "opacity-0")} />
+                              {provider.icon} {provider.label}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                        <CommandGroup heading="TTS/Audio">
+                          {AI_PROVIDERS.filter(p => p.category === 'tts').map((provider) => (
+                            <CommandItem
+                              key={provider.value}
+                              value={provider.value}
+                              onSelect={() => toggleArrayItem('providers', provider.value)}
+                            >
+                              <Check className={cn("mr-2 h-4 w-4", formData.providers.includes(provider.value) ? "opacity-100" : "opacity-0")} />
+                              {provider.icon} {provider.label}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                        <CommandGroup heading="3D">
+                          {AI_PROVIDERS.filter(p => p.category === '3d').map((provider) => (
+                            <CommandItem
+                              key={provider.value}
+                              value={provider.value}
+                              onSelect={() => toggleArrayItem('providers', provider.value)}
+                            >
+                              <Check className={cn("mr-2 h-4 w-4", formData.providers.includes(provider.value) ? "opacity-100" : "opacity-0")} />
+                              {provider.icon} {provider.label}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               {/* Description */}
@@ -754,21 +1100,35 @@ export function CreateTemplateDialog({ onCreated, templateToClone }: CreateTempl
                 </div>
                 <div className="space-y-2">
                   <Label>Category</Label>
-                  <Select
-                    value={formData.category}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="z-[200]">
-                      {TEMPLATE_CATEGORIES.map(cat => (
-                        <SelectItem key={cat.value} value={cat.value}>
-                          {cat.icon} {cat.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" role="combobox" className="w-full justify-between">
+                        {TEMPLATE_CATEGORIES.find(c => c.value === formData.category)?.icon}{' '}
+                        {TEMPLATE_CATEGORIES.find(c => c.value === formData.category)?.label || 'Select category'}
+                        <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[300px] p-0 z-[10000]" align="start">
+                      <Command>
+                        <CommandInput placeholder="Search categories..." />
+                        <CommandList>
+                          <CommandEmpty>No category found.</CommandEmpty>
+                          <CommandGroup>
+                            {TEMPLATE_CATEGORIES.map((cat) => (
+                              <CommandItem
+                                key={cat.value}
+                                value={cat.value}
+                                onSelect={(v) => setFormData(prev => ({ ...prev, category: v }))}
+                              >
+                                <Check className={cn("mr-2 h-4 w-4", formData.category === cat.value ? "opacity-100" : "opacity-0")} />
+                                {cat.icon} {cat.label}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
               <div className="space-y-2">
