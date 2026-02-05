@@ -66,6 +66,8 @@ import { SmartSchedulerPanel } from './SmartSchedulerPanel';
 import { AnalyticsDashboard } from './AnalyticsDashboard';
 import { ContentRepurposingPanel } from './ContentRepurposingPanel';
 import { DistributionPanel } from './DistributionPanel';
+import { SEOOptimizerPanel } from './SEOOptimizerPanel';
+import { ABTestingPanel } from './ABTestingPanel';
 
 // Import sub-components from parent panel
 import { GenieCastOverview, VideoStyleCards, AIProviderShowcase, type VideoStyleType } from './index';
@@ -969,24 +971,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.2 }}
               >
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Search className="w-5 h-5" />
-                      SEO Optimizer
-                    </CardTitle>
-                    <CardDescription>
-                      Optimize video titles, descriptions, and tags for search
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="min-h-[400px] flex items-center justify-center">
-                    <div className="text-center text-muted-foreground">
-                      <Search className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p>Pipeline: seo-optimizer</p>
-                      <p className="text-sm">Keyword research, meta generation, tag suggestions</p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <SEOOptimizerPanel />
               </motion.div>
             )}
             
@@ -998,24 +983,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.2 }}
               >
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Wand2 className="w-5 h-5" />
-                      A/B Testing
-                    </CardTitle>
-                    <CardDescription>
-                      Create and test content variations
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="min-h-[400px] flex items-center justify-center">
-                    <div className="text-center text-muted-foreground">
-                      <Wand2 className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p>Pipeline: ab-test-generator (dormant)</p>
-                      <p className="text-sm">Thumbnail variants, title testing, CTA optimization</p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <ABTestingPanel />
               </motion.div>
             )}
           </AnimatePresence>
