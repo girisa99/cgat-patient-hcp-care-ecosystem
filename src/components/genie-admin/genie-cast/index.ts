@@ -19,6 +19,7 @@ export { ScriptPreviewPanel } from './ScriptPreviewPanel';
 export { LiveGenerationPreview } from './LiveGenerationPreview';
 export { BlueprintPreviewModal } from './BlueprintPreviewModal';
 export { BlueprintTemplatesGrid } from './BlueprintTemplatesGrid';
+export { ContentLibraryGrid } from './ContentLibraryGrid';
 export { 
   GenieCastConsolidatedTabs, 
   type ConsolidatedTab,
