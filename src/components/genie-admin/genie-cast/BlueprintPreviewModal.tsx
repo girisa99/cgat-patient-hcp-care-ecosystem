@@ -108,7 +108,7 @@ export function BlueprintPreviewModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-5xl max-h-[90vh] p-0 overflow-hidden bg-background/95 backdrop-blur-xl border-border/50">
+      <DialogContent className="max-w-5xl max-h-[85vh] p-0 overflow-hidden bg-background/95 backdrop-blur-xl border-border/50 flex flex-col">
         {/* Hero Section with Thumbnail */}
         <div className="relative">
           {blueprint.thumbnail_url ? (
@@ -167,7 +167,7 @@ export function BlueprintPreviewModal({
           </DialogHeader>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
           <div className="px-6 border-b border-border/50">
             <TabsList className="bg-transparent">
               <TabsTrigger value="overview" className="data-[state=active]:bg-primary/10">
@@ -186,7 +186,7 @@ export function BlueprintPreviewModal({
             </TabsList>
           </div>
 
-          <ScrollArea className="h-[500px]">
+          <ScrollArea className="flex-1 max-h-[45vh]">
             {/* Overview Tab */}
             <TabsContent value="overview" className="p-6 space-y-6 mt-0">
               {/* Quick Stats */}
@@ -485,8 +485,8 @@ export function BlueprintPreviewModal({
           </ScrollArea>
         </Tabs>
 
-        {/* Footer Actions */}
-        <div className="p-6 border-t border-border/50 flex justify-between items-center bg-card/50">
+        {/* Footer Actions - Always visible */}
+        <div className="p-4 border-t border-border/50 flex justify-between items-center bg-card/50 shrink-0 sticky bottom-0">
           <div className="text-sm text-muted-foreground">
             Used {blueprint.usage_count} times
           </div>
