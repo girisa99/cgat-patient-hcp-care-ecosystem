@@ -37,6 +37,8 @@ export { ScriptTemplateMapper } from '@/components/shared/ScriptTemplateMapper';
 export { AVSyncPreview, type SyncStatus, type AVSyncPreviewProps } from '@/components/shared/AVSyncPreview';
 export { ApprovalDashboard } from '@/components/shared/ApprovalDashboard';
 
-// Re-export P2 Live Generation hooks
+// Re-export P2 Live Generation hooks and types
 export { useLiveTTSPreview, type TTSAudioResult, type TTSGenerationProgress, type TTSPlaybackState } from '@/hooks/useLiveTTSPreview';
 export { useLiveVideoPreview, type VideoGenerationResult, type VideoGenerationProgress, type VideoAssemblyConfig } from '@/hooks/useLiveVideoPreview';
+export type { UseLiveTTSPreviewReturn } from '@/hooks/useLiveTTSPreview';
+export type { UseLiveVideoPreviewReturn } from '@/hooks/useLiveVideoPreview';
