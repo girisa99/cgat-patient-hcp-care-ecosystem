@@ -16,6 +16,7 @@ export { AIProviderShowcase } from './AIProviderShowcase';
 export { BrandAssetsPanel } from './BrandAssetsPanel';
 export { VirtualizedMessagingMatrix } from './VirtualizedMessagingMatrix';
 export { ScriptPreviewPanel } from './ScriptPreviewPanel';
+export { LiveGenerationPreview } from './LiveGenerationPreview';
 export { BlueprintPreviewModal } from './BlueprintPreviewModal';
 export { BlueprintTemplatesGrid } from './BlueprintTemplatesGrid';
 export { 
@@ -35,3 +36,7 @@ export { RegionalDialectSelector, REGIONAL_CONFIG } from '@/components/shared/Re
 export { ScriptTemplateMapper } from '@/components/shared/ScriptTemplateMapper';
 export { AVSyncPreview, type SyncStatus, type AVSyncPreviewProps } from '@/components/shared/AVSyncPreview';
 export { ApprovalDashboard } from '@/components/shared/ApprovalDashboard';
+
+// Re-export P2 Live Generation hooks
+export { useLiveTTSPreview, type TTSAudioResult, type TTSGenerationProgress, type TTSPlaybackState } from '@/hooks/useLiveTTSPreview';
+export { useLiveVideoPreview, type VideoGenerationResult, type VideoGenerationProgress, type VideoAssemblyConfig } from '@/hooks/useLiveVideoPreview';
