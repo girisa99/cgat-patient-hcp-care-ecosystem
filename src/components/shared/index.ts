@@ -7,9 +7,10 @@
  export { RegionalDialectSelector, REGIONAL_CONFIG } from './RegionalDialectSelector';
  export type { DialectOption, SubRegion, RegionConfig } from './RegionalDialectSelector';
  
- // Authoring Workflow
- export { ScriptTemplateMapper } from './ScriptTemplateMapper';
- export { AuthoringStageIndicator } from './AuthoringStageIndicator';
+// Authoring Workflow
+export { ScriptTemplateMapper } from './ScriptTemplateMapper';
+export { AuthoringStageIndicator } from './AuthoringStageIndicator';
+export { AVSyncPreview, type SyncStatus, type AVSyncPreviewProps } from './AVSyncPreview';
  
  // Re-export unified authoring hook for convenience
  export { useUnifiedAuthoring } from '@/hooks/useUnifiedAuthoring';
