@@ -20,6 +20,13 @@ export { LiveGenerationPreview } from './LiveGenerationPreview';
 export { BlueprintPreviewModal } from './BlueprintPreviewModal';
 export { BlueprintTemplatesGrid } from './BlueprintTemplatesGrid';
 export { ContentLibraryGrid } from './ContentLibraryGrid';
+
+// New fully-implemented tab components
+export { SmartSchedulerPanel } from './SmartSchedulerPanel';
+export { AnalyticsDashboard } from './AnalyticsDashboard';
+export { ContentRepurposingPanel } from './ContentRepurposingPanel';
+export { DistributionPanel } from './DistributionPanel';
+
 export { 
   GenieCastConsolidatedTabs, 
   type ConsolidatedTab,
