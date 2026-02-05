@@ -164,7 +164,7 @@ export const SEOOptimizerPanel: React.FC = () => {
     [videos, selectedVideoId]
   );
 
-  // Generate SEO analysis
+  // Generate SEO analysis - NOW WIRED TO AI UNIVERSAL PROCESSOR
   const analyzeSEO = async () => {
     if (!selectedVideo && !customTitle) {
       toast.error('Please select a video or enter a title');
@@ -192,14 +192,111 @@ export const SEOOptimizerPanel: React.FC = () => {
       ].filter(Boolean)) || [];
 
       const industryKeywords = INDUSTRY_KEYWORDS[targetIndustry] || [];
+      const contextKeywords = [...productKeywords, ...audienceKeywords, ...industryKeywords];
 
-      // Generate AI-powered analysis (simulated - would call edge function)
-      const analysis = generateSEOAnalysis(
-        title,
-        description,
-        [...productKeywords, ...audienceKeywords, ...industryKeywords],
-        existingTags
-      );
+      // Call AI Universal Processor for real SEO analysis
+      const { data: aiResult, error: aiError } = await supabase.functions.invoke('ai-universal-processor', {
+        body: {
+          provider: 'gemini',
+          model: 'gemini-2.0-flash',
+          action: 'analyze_seo',
+          prompt: `Analyze this video content for SEO optimization:
+            Title: "${title}"
+            Description: "${description}"
+            Industry: ${targetIndustry}
+            Context Keywords: ${contextKeywords.slice(0, 20).join(', ')}
+            
+            Provide SEO recommendations including:
+            1. Optimized title (max 100 chars)
+            2. Optimized description (max 500 chars)
+            3. Primary keywords (3)
+            4. Secondary keywords (5)
+            5. Long-tail keywords (5)
+            6. Hashtags for social (10)
+            7. Platform-specific titles for YouTube, LinkedIn, TikTok
+            
+            Return as JSON with structure:
+            {
+              "optimizedTitle": "...",
+              "optimizedDescription": "...",
+              "keywords": { "primary": [], "secondary": [], "longtail": [] },
+              "hashtags": [],
+              "platforms": { "youtube": {...}, "linkedin": {...}, "tiktok": {...} },
+              "score": 0-100
+            }`,
+          systemPrompt: 'You are an expert SEO analyst specializing in video content optimization. Provide actionable, data-driven recommendations.',
+          temperature: 0.3,
+        }
+      });
+
+      if (aiError) {
+        console.warn('AI analysis failed, using fallback:', aiError);
+      }
+
+      // Parse AI response or use fallback
+      let analysis: SEOAnalysis;
+      if (aiResult?.content) {
+        try {
+          const jsonMatch = aiResult.content.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const parsed = JSON.parse(jsonMatch[0]);
+            analysis = {
+              score: parsed.score || 75,
+              title: {
+                current: title,
+                optimized: parsed.optimizedTitle || title,
+                charCount: title.length,
+                keywords: parsed.keywords?.primary || [],
+                score: parsed.score || 75,
+              },
+              description: {
+                current: description,
+                optimized: parsed.optimizedDescription || description,
+                charCount: description.length,
+                keywords: parsed.keywords?.secondary || [],
+                score: parsed.score || 75,
+              },
+              tags: [...(parsed.keywords?.primary || []), ...(parsed.keywords?.secondary || [])],
+              hashtags: parsed.hashtags || [],
+              keywords: parsed.keywords || { primary: [], secondary: [], longtail: [] },
+              platformOptimizations: {
+                youtube: {
+                  title: parsed.platforms?.youtube?.title || title,
+                  description: parsed.platforms?.youtube?.description || description,
+                  tags: parsed.keywords?.primary || [],
+                  hashtags: parsed.hashtags?.slice(0, 3) || [],
+                  charLimits: PLATFORM_LIMITS.youtube,
+                  score: parsed.score || 75,
+                },
+                linkedin: {
+                  title: parsed.platforms?.linkedin?.title || title,
+                  description: parsed.platforms?.linkedin?.description || description,
+                  tags: parsed.keywords?.secondary || [],
+                  hashtags: parsed.hashtags?.slice(0, 5) || [],
+                  charLimits: PLATFORM_LIMITS.linkedin,
+                  score: parsed.score || 75,
+                },
+                tiktok: {
+                  title: parsed.platforms?.tiktok?.title || title.slice(0, 50),
+                  description: parsed.platforms?.tiktok?.description || description.slice(0, 150),
+                  tags: parsed.keywords?.primary?.slice(0, 5) || [],
+                  hashtags: parsed.hashtags?.slice(0, 8) || [],
+                  charLimits: PLATFORM_LIMITS.tiktok,
+                  score: parsed.score || 70,
+                },
+              },
+            };
+          } else {
+            throw new Error('No JSON in response');
+          }
+        } catch {
+          // Fallback to local generation
+          analysis = generateSEOAnalysis(title, description, contextKeywords, existingTags);
+        }
+      } else {
+        // Fallback to local generation
+        analysis = generateSEOAnalysis(title, description, contextKeywords, existingTags);
+      }
 
       setSeoAnalysis(analysis);
       toast.success('SEO analysis complete!');
