@@ -1,9 +1,10 @@
 /**
- * Create Template Dialog - Consolidated
- * Fixed dropdowns with proper scroll and interaction handling
+ * Create Template Dialog - Portal-based dropdowns
+ * Uses React Portal to render dropdowns outside dialog for proper z-index and scroll
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Dialog,
   DialogContent,
@@ -18,7 +19,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Plus,
   Wand2,
@@ -108,39 +108,117 @@ const AI_CAPABILITIES = [
   { value: 'video_effects', label: 'Video Effects', icon: '✨' },
 ];
 
-// Regions
+// Expanded Regions with comprehensive languages
 const REGIONS = [
-  { value: 'western', label: 'Western/US', icon: '🇺🇸', languages: ['en', 'es', 'fr'] },
-  { value: 'europe', label: 'Europe', icon: '🇪🇺', languages: ['en', 'de', 'fr', 'it', 'es'] },
-  { value: 'cjk', label: 'CJK', icon: '🇨🇳', languages: ['zh', 'ja', 'ko'] },
-  { value: 'india', label: 'India', icon: '🇮🇳', languages: ['hi', 'te', 'kn', 'ta', 'mr', 'bn'] },
-  { value: 'mena', label: 'MENA', icon: '🇸🇦', languages: ['ar', 'he', 'fa', 'tr'] },
-  { value: 'sea', label: 'Southeast Asia', icon: '🇸🇬', languages: ['id', 'ms', 'th', 'vi'] },
-  { value: 'latam', label: 'Latin America', icon: '🇧🇷', languages: ['es', 'pt'] },
+  { value: 'western', label: 'Western/US', icon: '🇺🇸', languages: ['en', 'es_mx', 'es_us', 'fr_ca'] },
+  { value: 'europe', label: 'Europe', icon: '🇪🇺', languages: ['en_gb', 'de', 'de_at', 'de_ch', 'fr', 'fr_be', 'fr_ch', 'it', 'es', 'pt_pt', 'nl', 'nl_be', 'pl', 'cs', 'sk', 'hu', 'ro', 'bg', 'el', 'sv', 'da', 'no', 'fi', 'et', 'lv', 'lt', 'sl', 'hr', 'sr', 'bs', 'mk', 'sq', 'uk', 'be', 'ru', 'ga', 'cy', 'gd', 'mt', 'lb', 'is', 'fo', 'ca', 'gl', 'eu', 'ast'] },
+  { value: 'cjk', label: 'CJK', icon: '🇨🇳', languages: ['zh_cn', 'zh_tw', 'zh_hk', 'ja', 'ko', 'mn'] },
+  { value: 'india', label: 'India', icon: '🇮🇳', languages: ['hi', 'en_in', 'te', 'kn', 'ta', 'mr', 'bn', 'gu', 'ml', 'pa', 'or', 'as', 'ks', 'ne', 'sd', 'ur', 'si', 'dv', 'bho', 'mai', 'kok', 'doi', 'mni', 'sat'] },
+  { value: 'mena', label: 'MENA', icon: '🇸🇦', languages: ['ar_sa', 'ar_eg', 'ar_ae', 'ar_ma', 'ar_dz', 'ar_tn', 'ar_lb', 'ar_jo', 'ar_iq', 'ar_kw', 'ar_bh', 'ar_qa', 'ar_om', 'ar_ye', 'ar_ly', 'ar_sd', 'he', 'fa', 'ps', 'ku', 'tr', 'az'] },
+  { value: 'sea', label: 'Southeast Asia', icon: '🇸🇬', languages: ['id', 'ms', 'th', 'vi', 'fil', 'tl', 'my', 'km', 'lo', 'jv', 'su', 'ceb', 'ilo', 'war', 'bcl'] },
+  { value: 'latam', label: 'Latin America', icon: '🇧🇷', languages: ['es_ar', 'es_mx', 'es_co', 'es_cl', 'es_pe', 'es_ve', 'es_ec', 'es_bo', 'es_py', 'es_uy', 'es_cr', 'es_pa', 'es_cu', 'es_do', 'es_pr', 'es_gt', 'es_hn', 'es_sv', 'es_ni', 'pt_br', 'ht', 'gn', 'qu', 'ay'] },
+  { value: 'africa', label: 'Africa', icon: '🌍', languages: ['en_za', 'en_ng', 'en_ke', 'en_gh', 'af', 'zu', 'xh', 'st', 'tn', 'sw', 'am', 'om', 'ti', 'so', 'ha', 'ig', 'yo', 'rw', 'mg', 'sn', 'nd', 'ny', 'lg'] },
+  { value: 'oceania', label: 'Oceania', icon: '🇦🇺', languages: ['en_au', 'en_nz', 'mi', 'sm', 'to', 'fj', 'ty', 'haw'] },
 ];
 
-// Language names
+// Comprehensive Language names (140+ languages)
 const LANGUAGE_NAMES: Record<string, string> = {
-  en: 'English', es: 'Spanish', fr: 'French', de: 'German', it: 'Italian',
-  pt: 'Portuguese', zh: 'Chinese', ja: 'Japanese', ko: 'Korean', hi: 'Hindi',
-  te: 'Telugu', kn: 'Kannada', ta: 'Tamil', mr: 'Marathi', bn: 'Bengali',
-  ar: 'Arabic', he: 'Hebrew', fa: 'Persian', tr: 'Turkish', id: 'Indonesian',
-  ms: 'Malay', th: 'Thai', vi: 'Vietnamese',
+  // English variants
+  en: 'English (US)', en_us: 'English (US)', en_gb: 'English (UK)', en_au: 'English (Australia)', 
+  en_nz: 'English (New Zealand)', en_in: 'English (India)', en_za: 'English (South Africa)',
+  en_ng: 'English (Nigeria)', en_ke: 'English (Kenya)', en_gh: 'English (Ghana)',
+  // Spanish variants
+  es: 'Spanish (Spain)', es_mx: 'Spanish (Mexico)', es_us: 'Spanish (US)', es_ar: 'Spanish (Argentina)',
+  es_co: 'Spanish (Colombia)', es_cl: 'Spanish (Chile)', es_pe: 'Spanish (Peru)', es_ve: 'Spanish (Venezuela)',
+  es_ec: 'Spanish (Ecuador)', es_bo: 'Spanish (Bolivia)', es_py: 'Spanish (Paraguay)', es_uy: 'Spanish (Uruguay)',
+  es_cr: 'Spanish (Costa Rica)', es_pa: 'Spanish (Panama)', es_cu: 'Spanish (Cuba)', es_do: 'Spanish (Dominican Rep)',
+  es_pr: 'Spanish (Puerto Rico)', es_gt: 'Spanish (Guatemala)', es_hn: 'Spanish (Honduras)',
+  es_sv: 'Spanish (El Salvador)', es_ni: 'Spanish (Nicaragua)',
+  // Portuguese variants
+  pt: 'Portuguese', pt_br: 'Portuguese (Brazil)', pt_pt: 'Portuguese (Portugal)',
+  // French variants
+  fr: 'French (France)', fr_ca: 'French (Canada)', fr_be: 'French (Belgium)', fr_ch: 'French (Switzerland)',
+  // German variants
+  de: 'German (Germany)', de_at: 'German (Austria)', de_ch: 'German (Switzerland)',
+  // Chinese variants
+  zh: 'Chinese', zh_cn: 'Chinese (Simplified)', zh_tw: 'Chinese (Traditional)', zh_hk: 'Chinese (Hong Kong)',
+  // Arabic variants (7 dialects)
+  ar: 'Arabic (Standard)', ar_sa: 'Arabic (Saudi)', ar_eg: 'Arabic (Egyptian)', ar_ae: 'Arabic (UAE)',
+  ar_ma: 'Arabic (Moroccan)', ar_dz: 'Arabic (Algerian)', ar_tn: 'Arabic (Tunisian)', ar_lb: 'Arabic (Lebanese)',
+  ar_jo: 'Arabic (Jordanian)', ar_iq: 'Arabic (Iraqi)', ar_kw: 'Arabic (Kuwaiti)', ar_bh: 'Arabic (Bahraini)',
+  ar_qa: 'Arabic (Qatari)', ar_om: 'Arabic (Omani)', ar_ye: 'Arabic (Yemeni)', ar_ly: 'Arabic (Libyan)',
+  ar_sd: 'Arabic (Sudanese)',
+  // Dutch variants
+  nl: 'Dutch (Netherlands)', nl_be: 'Dutch (Belgium/Flemish)',
+  // European languages
+  it: 'Italian', pl: 'Polish', cs: 'Czech', sk: 'Slovak', hu: 'Hungarian',
+  ro: 'Romanian', bg: 'Bulgarian', el: 'Greek', sv: 'Swedish', da: 'Danish',
+  no: 'Norwegian', fi: 'Finnish', et: 'Estonian', lv: 'Latvian', lt: 'Lithuanian',
+  sl: 'Slovenian', hr: 'Croatian', sr: 'Serbian', bs: 'Bosnian', mk: 'Macedonian',
+  sq: 'Albanian', uk: 'Ukrainian', be: 'Belarusian', ru: 'Russian',
+  ga: 'Irish', cy: 'Welsh', gd: 'Scottish Gaelic', mt: 'Maltese', lb: 'Luxembourgish',
+  is: 'Icelandic', fo: 'Faroese', ca: 'Catalan', gl: 'Galician', eu: 'Basque', ast: 'Asturian',
+  // CJK
+  ja: 'Japanese', ko: 'Korean', mn: 'Mongolian',
+  // Indian languages (24+)
+  hi: 'Hindi', te: 'Telugu', kn: 'Kannada', ta: 'Tamil', mr: 'Marathi', bn: 'Bengali',
+  gu: 'Gujarati', ml: 'Malayalam', pa: 'Punjabi', or: 'Odia', as: 'Assamese',
+  ks: 'Kashmiri', ne: 'Nepali', sd: 'Sindhi', ur: 'Urdu', si: 'Sinhala', dv: 'Dhivehi',
+  bho: 'Bhojpuri', mai: 'Maithili', kok: 'Konkani', doi: 'Dogri', mni: 'Manipuri', sat: 'Santali',
+  // MENA
+  he: 'Hebrew', fa: 'Persian/Farsi', ps: 'Pashto', ku: 'Kurdish', tr: 'Turkish', az: 'Azerbaijani',
+  // Southeast Asian
+  id: 'Indonesian', ms: 'Malay', th: 'Thai', vi: 'Vietnamese', fil: 'Filipino', tl: 'Tagalog',
+  my: 'Burmese', km: 'Khmer', lo: 'Lao', jv: 'Javanese', su: 'Sundanese',
+  ceb: 'Cebuano', ilo: 'Ilocano', war: 'Waray', bcl: 'Bikol',
+  // Latin American indigenous
+  ht: 'Haitian Creole', gn: 'Guaraní', qu: 'Quechua', ay: 'Aymara',
+  // African languages
+  af: 'Afrikaans', zu: 'Zulu', xh: 'Xhosa', st: 'Sotho', tn: 'Tswana',
+  sw: 'Swahili', am: 'Amharic', om: 'Oromo', ti: 'Tigrinya', so: 'Somali',
+  ha: 'Hausa', ig: 'Igbo', yo: 'Yoruba', rw: 'Kinyarwanda', mg: 'Malagasy',
+  sn: 'Shona', nd: 'Ndebele', ny: 'Chewa', lg: 'Luganda',
+  // Oceanian
+  mi: 'Māori', sm: 'Samoan', to: 'Tongan', fj: 'Fijian', ty: 'Tahitian', haw: 'Hawaiian',
 };
 
-// AI Providers
+// AI Providers - Expanded
 const AI_PROVIDERS = [
   { value: 'openai', label: 'OpenAI GPT-4o', icon: '🧠' },
-  { value: 'gemini', label: 'Gemini 3.0', icon: '🔮' },
+  { value: 'openai_gpt5', label: 'OpenAI GPT-5', icon: '🧠' },
+  { value: 'gemini', label: 'Gemini 3.0 Pro', icon: '🔮' },
+  { value: 'gemini_flash', label: 'Gemini 3.0 Flash', icon: '⚡' },
+  { value: 'claude', label: 'Claude 3.5 Sonnet', icon: '🎭' },
   { value: 'sora2', label: 'Sora 2', icon: '🌟' },
   { value: 'veo', label: 'Google Veo 3', icon: '🎬' },
-  { value: 'alibaba_wan', label: 'Alibaba Wan', icon: '🌊' },
+  { value: 'alibaba_wan', label: 'Alibaba Wan 2.1', icon: '🌊' },
+  { value: 'runway', label: 'Runway Gen-3', icon: '🎥' },
+  { value: 'pika', label: 'Pika Labs', icon: '🎞️' },
+  { value: 'kling', label: 'Kling AI', icon: '🎦' },
+  { value: 'luma', label: 'Luma Dream Machine', icon: '💫' },
+  { value: 'minimax', label: 'MiniMax Hailuo', icon: '🌀' },
   { value: 'elevenlabs', label: 'ElevenLabs', icon: '🎙️' },
+  { value: 'azure_neural', label: 'Azure Neural TTS', icon: '🔊' },
+  { value: 'amazon_polly', label: 'Amazon Polly', icon: '📢' },
+  { value: 'google_tts', label: 'Google Cloud TTS', icon: '🗣️' },
   { value: 'meshy_3d', label: 'Meshy 3D', icon: '🧊' },
+  { value: 'rodin', label: 'Rodin Gen-1', icon: '🗿' },
+  { value: 'tripo3d', label: 'Tripo3D AI', icon: '🔺' },
+  { value: 'heygen', label: 'HeyGen Avatar', icon: '👤' },
+  { value: 'synthesia', label: 'Synthesia', icon: '🎭' },
+  { value: 'd_id', label: 'D-ID', icon: '🧑' },
+  { value: 'stability', label: 'Stability AI', icon: '🎨' },
+  { value: 'midjourney', label: 'Midjourney', icon: '🖼️' },
+  { value: 'flux', label: 'Flux Pro', icon: '✨' },
+  { value: 'ideogram', label: 'Ideogram', icon: '🔤' },
+  { value: 'suno', label: 'Suno AI Music', icon: '🎵' },
+  { value: 'udio', label: 'Udio Music', icon: '🎶' },
 ];
 
-// Custom Dropdown with fixed scroll and interactions
-interface DropdownProps {
+// ============================================
+// Portal-based Dropdown with search and scroll
+// ============================================
+interface PortalDropdownProps {
   label: string;
   icon?: React.ReactNode;
   options: { value: string; label: string; icon?: string }[];
@@ -148,9 +226,10 @@ interface DropdownProps {
   onToggle: (value: string) => void;
   multi?: boolean;
   placeholder?: string;
+  maxHeight?: number;
 }
 
-const CustomDropdown: React.FC<DropdownProps> = ({
+const PortalDropdown: React.FC<PortalDropdownProps> = ({
   label,
   icon,
   options,
@@ -158,119 +237,234 @@ const CustomDropdown: React.FC<DropdownProps> = ({
   onToggle,
   multi = true,
   placeholder = 'Select...',
+  maxHeight = 280,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
+  
   const selectedLabels = options.filter(o => selected.includes(o.value));
+  
+  // Filtered options
+  const filteredOptions = options.filter(opt => 
+    opt.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    opt.value.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Update position when opened
+  useEffect(() => {
+    if (isOpen && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setPosition({
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+      });
+    }
+  }, [isOpen]);
 
   // Close on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (
+        triggerRef.current && !triggerRef.current.contains(target) &&
+        dropdownRef.current && !dropdownRef.current.contains(target)
+      ) {
         setIsOpen(false);
+        setSearchQuery('');
       }
     };
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
     return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
+
+  // Close on escape
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsOpen(false);
+        setSearchQuery('');
+      }
+    };
+    if (isOpen) {
+      document.addEventListener('keydown', handleEsc);
+    }
+    return () => document.removeEventListener('keydown', handleEsc);
   }, [isOpen]);
 
   const handleItemClick = (value: string) => {
     onToggle(value);
     if (!multi) {
       setIsOpen(false);
+      setSearchQuery('');
     }
   };
 
+  const dropdownContent = isOpen ? createPortal(
+    <div
+      ref={dropdownRef}
+      className="fixed bg-popover border rounded-lg shadow-xl overflow-hidden"
+      style={{
+        top: position.top,
+        left: position.left,
+        width: position.width,
+        zIndex: 999999,
+      }}
+    >
+      {/* Search input for long lists */}
+      {options.length > 10 && (
+        <div className="p-2 border-b bg-muted/30">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-8 pr-3 py-1.5 text-sm bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+              autoFocus
+            />
+          </div>
+        </div>
+      )}
+      <div 
+        className="overflow-y-auto p-1"
+        style={{ maxHeight }}
+      >
+        {filteredOptions.length > 0 ? (
+          filteredOptions.map(opt => (
+            <div
+              key={opt.value}
+              onClick={() => handleItemClick(opt.value)}
+              className={cn(
+                "flex items-center gap-2 px-3 py-2 text-sm rounded-md cursor-pointer transition-colors",
+                selected.includes(opt.value) 
+                  ? "bg-primary/10 text-primary" 
+                  : "hover:bg-accent"
+              )}
+            >
+              <div className={cn(
+                "w-4 h-4 rounded border flex items-center justify-center shrink-0",
+                selected.includes(opt.value) 
+                  ? "bg-primary border-primary" 
+                  : "border-muted-foreground/30"
+              )}>
+                {selected.includes(opt.value) && (
+                  <Check className="h-3 w-3 text-primary-foreground" />
+                )}
+              </div>
+              {opt.icon && <span className="shrink-0">{opt.icon}</span>}
+              <span className="truncate">{opt.label}</span>
+            </div>
+          ))
+        ) : (
+          <div className="py-6 text-center text-sm text-muted-foreground">
+            No options found
+          </div>
+        )}
+      </div>
+      {multi && selected.length > 0 && (
+        <div className="p-2 border-t bg-muted/30 text-xs text-muted-foreground">
+          {selected.length} selected
+        </div>
+      )}
+    </div>,
+    document.body
+  ) : null;
+
   return (
-    <div className="space-y-2" ref={dropdownRef}>
+    <div className="space-y-2">
       <Label className="flex items-center gap-2 text-sm">
         {icon}
         {label}
       </Label>
-      <div className="relative">
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full justify-between h-auto min-h-10 text-left"
-          onClick={() => setIsOpen(!isOpen)}
-        >
-          {selectedLabels.length > 0 ? (
-            <div className="flex flex-wrap gap-1 pr-6">
-              {selectedLabels.slice(0, 3).map(opt => (
-                <Badge key={opt.value} variant="secondary" className="text-xs">
-                  {opt.icon && <span className="mr-1">{opt.icon}</span>}
-                  {opt.label}
-                </Badge>
-              ))}
-              {selectedLabels.length > 3 && (
-                <Badge variant="outline" className="text-xs">+{selectedLabels.length - 3}</Badge>
-              )}
-            </div>
-          ) : (
-            <span className="text-muted-foreground">{placeholder}</span>
-          )}
-          <ChevronDown className={cn("h-4 w-4 ml-2 shrink-0 transition-transform absolute right-3", isOpen && "rotate-180")} />
-        </Button>
-        
-        {isOpen && (
-          <div 
-            className="absolute top-full left-0 right-0 mt-1 bg-popover border rounded-md shadow-lg z-[999999] overflow-hidden"
-            style={{ maxHeight: '220px' }}
-          >
-            <div 
-              className="overflow-y-auto p-1"
-              style={{ maxHeight: '220px' }}
-              onWheel={(e) => e.stopPropagation()}
-            >
-              {options.map(opt => (
-                <div
-                  key={opt.value}
-                  onClick={() => handleItemClick(opt.value)}
-                  className={cn(
-                    "flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-accent cursor-pointer transition-colors",
-                    selected.includes(opt.value) && "bg-accent"
-                  )}
-                >
-                  <Check className={cn("h-4 w-4 shrink-0", selected.includes(opt.value) ? "opacity-100" : "opacity-0")} />
-                  {opt.icon && <span>{opt.icon}</span>}
-                  <span>{opt.label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+      <button
+        ref={triggerRef}
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className={cn(
+          "w-full flex items-center justify-between gap-2 px-3 py-2 min-h-10 text-left",
+          "border rounded-md bg-background",
+          "hover:bg-accent/50 transition-colors",
+          isOpen && "ring-2 ring-primary"
         )}
-      </div>
+      >
+        {selectedLabels.length > 0 ? (
+          <div className="flex flex-wrap gap-1 pr-4 flex-1">
+            {selectedLabels.slice(0, 3).map(opt => (
+              <Badge key={opt.value} variant="secondary" className="text-xs">
+                {opt.icon && <span className="mr-1">{opt.icon}</span>}
+                {opt.label}
+              </Badge>
+            ))}
+            {selectedLabels.length > 3 && (
+              <Badge variant="outline" className="text-xs">+{selectedLabels.length - 3}</Badge>
+            )}
+          </div>
+        ) : (
+          <span className="text-muted-foreground">{placeholder}</span>
+        )}
+        <ChevronDown className={cn("h-4 w-4 shrink-0 transition-transform", isOpen && "rotate-180")} />
+      </button>
+      {dropdownContent}
     </div>
   );
 };
 
-// Clone Template Searchable Dropdown
-interface CloneDropdownProps {
+// ============================================
+// Portal-based Clone Template Dropdown
+// ============================================
+interface PortalCloneDropdownProps {
   templates: VideoBlueprint[];
   selected: VideoBlueprint | null;
   onSelect: (t: VideoBlueprint) => void;
-  searchQuery: string;
-  onSearchChange: (q: string) => void;
 }
 
-const CloneTemplateDropdown: React.FC<CloneDropdownProps> = ({
+const PortalCloneDropdown: React.FC<PortalCloneDropdownProps> = ({
   templates,
   selected,
   onSelect,
-  searchQuery,
-  onSearchChange,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
+
+  // Filtered templates
+  const filteredTemplates = templates.filter(t =>
+    t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    t.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    t.category?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Update position when opened
+  useEffect(() => {
+    if (isOpen && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setPosition({
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+      });
+    }
+  }, [isOpen]);
 
   // Close on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (
+        triggerRef.current && !triggerRef.current.contains(target) &&
+        dropdownRef.current && !dropdownRef.current.contains(target)
+      ) {
         setIsOpen(false);
+        setSearchQuery('');
       }
     };
     if (isOpen) {
@@ -279,83 +473,124 @@ const CloneTemplateDropdown: React.FC<CloneDropdownProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
-  // Focus input when opened
+  // Close on escape
   useEffect(() => {
-    if (isOpen && inputRef.current) {
-      inputRef.current.focus();
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsOpen(false);
+        setSearchQuery('');
+      }
+    };
+    if (isOpen) {
+      document.addEventListener('keydown', handleEsc);
     }
+    return () => document.removeEventListener('keydown', handleEsc);
   }, [isOpen]);
 
   const handleSelect = (template: VideoBlueprint) => {
     onSelect(template);
     setIsOpen(false);
+    setSearchQuery('');
   };
 
+  const dropdownContent = isOpen ? createPortal(
+    <div
+      ref={dropdownRef}
+      className="fixed bg-popover border rounded-lg shadow-xl overflow-hidden"
+      style={{
+        top: position.top,
+        left: position.left,
+        width: position.width,
+        zIndex: 999999,
+      }}
+    >
+      <div className="p-2 border-b bg-muted/30">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Search templates..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-8 pr-3 py-2 text-sm bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+            autoFocus
+          />
+        </div>
+      </div>
+      <div 
+        className="overflow-y-auto p-1"
+        style={{ maxHeight: '300px' }}
+      >
+        {filteredTemplates.length > 0 ? (
+          filteredTemplates.map(t => (
+            <div
+              key={t.id}
+              onClick={() => handleSelect(t)}
+              className={cn(
+                "flex items-center gap-2 px-3 py-2.5 text-sm rounded-md cursor-pointer transition-colors",
+                selected?.id === t.id 
+                  ? "bg-primary/10 text-primary" 
+                  : "hover:bg-accent"
+              )}
+            >
+              <div className={cn(
+                "w-4 h-4 rounded-full border flex items-center justify-center shrink-0",
+                selected?.id === t.id 
+                  ? "bg-primary border-primary" 
+                  : "border-muted-foreground/30"
+              )}>
+                {selected?.id === t.id && (
+                  <Check className="h-2.5 w-2.5 text-primary-foreground" />
+                )}
+              </div>
+              <Badge variant="outline" className="text-[10px] shrink-0">{t.category}</Badge>
+              <span className="flex-1 truncate">{t.name}</span>
+            </div>
+          ))
+        ) : (
+          <div className="py-8 text-center text-sm text-muted-foreground">
+            No templates found for "{searchQuery}"
+          </div>
+        )}
+      </div>
+      <div className="p-2 border-t bg-muted/30 text-xs text-muted-foreground">
+        {filteredTemplates.length} of {templates.length} templates
+      </div>
+    </div>,
+    document.body
+  ) : null;
+
   return (
-    <div className="relative" ref={dropdownRef}>
-      <Button
+    <>
+      <button
+        ref={triggerRef}
         type="button"
-        variant="outline"
-        className="w-full justify-between h-auto min-h-10"
         onClick={() => setIsOpen(!isOpen)}
+        className={cn(
+          "w-full flex items-center justify-between gap-2 px-3 py-2.5 min-h-10 text-left",
+          "border rounded-md bg-background",
+          "hover:bg-accent/50 transition-colors",
+          isOpen && "ring-2 ring-primary"
+        )}
       >
         {selected ? (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-1">
             <Badge variant="secondary">{selected.category}</Badge>
             <span className="truncate">{selected.name}</span>
           </div>
         ) : (
-          <span className="text-muted-foreground">Search 407 templates...</span>
+          <span className="text-muted-foreground">Search {templates.length} templates...</span>
         )}
-        <ChevronDown className={cn("h-4 w-4 ml-2 shrink-0 transition-transform", isOpen && "rotate-180")} />
-      </Button>
-      
-      {isOpen && (
-        <div 
-          className="absolute top-full left-0 right-0 mt-1 bg-popover border rounded-md shadow-lg z-[999999] overflow-hidden"
-        >
-          <div className="p-2 border-b">
-            <div className="relative">
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                ref={inputRef}
-                placeholder="Search templates..."
-                value={searchQuery}
-                onChange={(e) => onSearchChange(e.target.value)}
-                className="pl-8 h-8"
-              />
-            </div>
-          </div>
-          <div 
-            className="overflow-y-auto p-1"
-            style={{ maxHeight: '200px' }}
-            onWheel={(e) => e.stopPropagation()}
-          >
-            {templates.length > 0 ? (
-              templates.map(t => (
-                <div
-                  key={t.id}
-                  onClick={() => handleSelect(t)}
-                  className={cn(
-                    "flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-accent cursor-pointer transition-colors",
-                    selected?.id === t.id && "bg-accent"
-                  )}
-                >
-                  <Check className={cn("h-4 w-4 shrink-0", selected?.id === t.id ? "opacity-100" : "opacity-0")} />
-                  <Badge variant="outline" className="text-[10px] shrink-0">{t.category}</Badge>
-                  <span className="flex-1 truncate">{t.name}</span>
-                </div>
-              ))
-            ) : (
-              <p className="p-4 text-center text-sm text-muted-foreground">No templates found</p>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
+        <ChevronDown className={cn("h-4 w-4 shrink-0 transition-transform", isOpen && "rotate-180")} />
+      </button>
+      {dropdownContent}
+    </>
   );
 };
 
+// ============================================
+// Main Component
+// ============================================
 export function CreateTemplateDialog({ onCreated, templateToClone }: CreateTemplateDialogProps) {
   const { toast } = useToast();
   const { blueprints } = useVideoBlueprints();
@@ -363,7 +598,6 @@ export function CreateTemplateDialog({ onCreated, templateToClone }: CreateTempl
   const [creating, setCreating] = useState(false);
   const [aiGenerating, setAiGenerating] = useState(false);
   const [activeTab, setActiveTab] = useState<string>(templateToClone ? 'clone' : 'ai');
-  const [cloneSearchQuery, setCloneSearchQuery] = useState('');
   const [selectedCloneTemplate, setSelectedCloneTemplate] = useState<VideoBlueprint | null>(templateToClone || null);
 
   // Form state
@@ -380,16 +614,25 @@ export function CreateTemplateDialog({ onCreated, templateToClone }: CreateTempl
     aiPrompt: '',
   });
 
-  // Get available languages based on regions
+  // Get all available languages based on selected regions
   const availableLanguages = [...new Set(
-    REGIONS.filter(r => formData.regions.includes(r.value)).flatMap(r => r.languages)
-  )];
+    REGIONS
+      .filter(r => formData.regions.includes(r.value))
+      .flatMap(r => r.languages)
+  )].map(code => ({
+    value: code,
+    label: LANGUAGE_NAMES[code] || code,
+    icon: ''
+  }));
 
-  // Update languages when regions change
+  // Update languages when regions change - keep valid ones
   useEffect(() => {
+    const validLangCodes = availableLanguages.map(l => l.value);
     setFormData(prev => ({
       ...prev,
-      languages: prev.languages.filter(l => availableLanguages.includes(l)) || availableLanguages.slice(0, 1),
+      languages: prev.languages.filter(l => validLangCodes.includes(l)).length > 0 
+        ? prev.languages.filter(l => validLangCodes.includes(l))
+        : validLangCodes.slice(0, 1),
     }));
   }, [formData.regions.join(',')]);
 
@@ -403,16 +646,10 @@ export function CreateTemplateDialog({ onCreated, templateToClone }: CreateTempl
     }));
   };
 
-  // Set single value (wraps in array for consistency)
+  // Set single value
   const setSingleValue = (key: keyof typeof formData, item: string) => {
     setFormData(prev => ({ ...prev, [key]: item }));
   };
-
-  // Clone templates filter
-  const filteredCloneTemplates = blueprints.filter(bp =>
-    bp.name.toLowerCase().includes(cloneSearchQuery.toLowerCase()) ||
-    bp.description?.toLowerCase().includes(cloneSearchQuery.toLowerCase())
-  ).slice(0, 30);
 
   // Select template to clone
   const selectTemplateToClone = (template: VideoBlueprint) => {
@@ -515,7 +752,7 @@ export function CreateTemplateDialog({ onCreated, templateToClone }: CreateTempl
           {templateToClone ? 'Clone' : 'Create Template'}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col" style={{ zIndex: 99998 }}>
+      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col overflow-visible" style={{ zIndex: 99998 }}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Layers className="h-5 w-5 text-primary" />
@@ -566,12 +803,10 @@ export function CreateTemplateDialog({ onCreated, templateToClone }: CreateTempl
             <TabsContent value="clone" className="mt-4 space-y-4">
               <div className="space-y-2">
                 <Label>Select template to clone</Label>
-                <CloneTemplateDropdown
-                  templates={filteredCloneTemplates}
+                <PortalCloneDropdown
+                  templates={blueprints}
                   selected={selectedCloneTemplate}
                   onSelect={selectTemplateToClone}
-                  searchQuery={cloneSearchQuery}
-                  onSearchChange={setCloneSearchQuery}
                 />
               </div>
 
@@ -610,7 +845,7 @@ export function CreateTemplateDialog({ onCreated, templateToClone }: CreateTempl
                     placeholder="My Custom Template"
                   />
                 </div>
-                <CustomDropdown
+                <PortalDropdown
                   label="Category"
                   options={TEMPLATE_CATEGORIES}
                   selected={[formData.category]}
@@ -621,7 +856,7 @@ export function CreateTemplateDialog({ onCreated, templateToClone }: CreateTempl
               </div>
 
               {/* Video Style */}
-              <CustomDropdown
+              <PortalDropdown
                 label="Video Style"
                 options={VIDEO_STYLES}
                 selected={[formData.videoStyle]}
@@ -631,7 +866,7 @@ export function CreateTemplateDialog({ onCreated, templateToClone }: CreateTempl
               />
 
               {/* Platforms - Multi-select */}
-              <CustomDropdown
+              <PortalDropdown
                 label="Target Platforms"
                 icon={<Globe2 className="h-4 w-4" />}
                 options={PLATFORM_OPTIONS}
@@ -642,7 +877,7 @@ export function CreateTemplateDialog({ onCreated, templateToClone }: CreateTempl
               />
 
               {/* AI Capabilities - Multi-select */}
-              <CustomDropdown
+              <PortalDropdown
                 label="AI Capabilities"
                 icon={<Sparkles className="h-4 w-4" />}
                 options={AI_CAPABILITIES}
@@ -653,7 +888,7 @@ export function CreateTemplateDialog({ onCreated, templateToClone }: CreateTempl
               />
 
               {/* Regions - Multi-select */}
-              <CustomDropdown
+              <PortalDropdown
                 label="Target Regions"
                 icon={<Globe2 className="h-4 w-4" />}
                 options={REGIONS.map(r => ({ value: r.value, label: r.label, icon: r.icon }))}
@@ -665,19 +900,20 @@ export function CreateTemplateDialog({ onCreated, templateToClone }: CreateTempl
 
               {/* Languages - Multi-select */}
               {availableLanguages.length > 0 && (
-                <CustomDropdown
+                <PortalDropdown
                   label={`Languages (${availableLanguages.length} available)`}
                   icon={<Languages className="h-4 w-4" />}
-                  options={availableLanguages.map(l => ({ value: l, label: LANGUAGE_NAMES[l] || l, icon: '' }))}
+                  options={availableLanguages}
                   selected={formData.languages}
                   onToggle={(v) => toggleArrayItem('languages', v)}
                   multi={true}
                   placeholder="Select languages"
+                  maxHeight={320}
                 />
               )}
 
               {/* AI Providers - Multi-select */}
-              <CustomDropdown
+              <PortalDropdown
                 label="AI Providers"
                 icon={<Wand2 className="h-4 w-4" />}
                 options={AI_PROVIDERS}
@@ -685,6 +921,7 @@ export function CreateTemplateDialog({ onCreated, templateToClone }: CreateTempl
                 onToggle={(v) => toggleArrayItem('providers', v)}
                 multi={true}
                 placeholder="Select providers"
+                maxHeight={320}
               />
 
               {/* Description */}
