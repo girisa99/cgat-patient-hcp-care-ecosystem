@@ -241,20 +241,11 @@ export const GenieCastOverview: React.FC<GenieCastOverviewProps> = ({
         <Button 
           size="sm" 
           className="h-8 text-xs gap-1.5"
-          onClick={() => onNavigate('generate')}
-        >
-          <Zap className="w-3.5 h-3.5" />
-          Generate
-          <ArrowRight className="w-3 h-3" />
-        </Button>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="h-8 text-xs gap-1.5"
           onClick={() => onNavigate('messaging')}
         >
-          <Grid3X3 className="w-3.5 h-3.5" />
-          Matrix (Messaging)
+          <Zap className="w-3.5 h-3.5" />
+          Generate Messaging
+          <ArrowRight className="w-3 h-3" />
         </Button>
       </div>
     </div>
