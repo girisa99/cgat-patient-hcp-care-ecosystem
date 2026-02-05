@@ -27,13 +27,13 @@
 | **Script Template Mapper** | `ScriptTemplateMapper.tsx` | ✅ NEW - Scene-to-script alignment |
 | **Authoring Stage Indicator** | `AuthoringStageIndicator.tsx` | ✅ NEW - Visual progress indicator |
  
- ### ⚠️ Partially Implemented (Needs Connection)
- 
- | Component | File | What's Missing |
- |-----------|------|----------------|
+### ⚠️ Partially Implemented (Needs Connection)
+
+| Component | File | What's Missing |
+|-----------|------|----------------|
 | **Script Preview** | `ScriptPreviewPanel.tsx` | ✅ Has TTS, needs useUnifiedAuthoring integration |
-| **Messaging → Script** | ⚠️ Hook ready | useUnifiedAuthoring provides handoff - needs UI wiring |
- | **Style-Driven Config** | `StyleDrivenProductionConfig.tsx` | Exists but not integrated |
+| **ScriptTemplateMapper** | ✅ WIRED | Integrated into PRODUCE > Studio sub-tab |
+| **Style-Driven Config** | `StyleDrivenProductionConfig.tsx` | Exists but not integrated |
  
  ### ❌ Missing Components
  
