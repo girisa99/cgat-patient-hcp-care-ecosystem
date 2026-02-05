@@ -106,13 +106,18 @@ export function BlueprintPreviewModal({
   const thumbnailRegion = stylePreset.thumbnail_region;
   const thumbnailGeneratedAt = stylePreset.thumbnail_generated_at;
 
+  const handleUseTemplate = () => {
+    onSelect(blueprint);
+    onClose();
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-5xl h-[85vh] p-0 overflow-hidden bg-background/95 backdrop-blur-xl border-border/50 flex flex-col">
-        {/* Scrollable Content Area */}
-        <div className="flex-1 overflow-y-auto min-h-0">
+      <DialogContent className="max-w-5xl p-0 bg-background/95 backdrop-blur-xl border-border/50 flex flex-col" style={{ maxHeight: '85vh' }}>
+        {/* Scrollable Content Area - This is the only scrollable part */}
+        <div className="flex-1 overflow-y-auto" style={{ minHeight: 0 }}>
           {/* Hero Section with Thumbnail */}
-          <div className="relative shrink-0">
+          <div className="relative">
             {blueprint.thumbnail_url ? (
               <div className="relative h-40 md:h-48 overflow-hidden">
                 <img 
@@ -169,26 +174,26 @@ export function BlueprintPreviewModal({
             </DialogHeader>
           </div>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col">
-          <div className="px-6 border-b border-border/50">
-            <TabsList className="bg-transparent">
-              <TabsTrigger value="overview" className="data-[state=active]:bg-primary/10">
-                Overview
-              </TabsTrigger>
-              <TabsTrigger value="timeline" className="data-[state=active]:bg-primary/10">
-                Scene Timeline
-              </TabsTrigger>
-              <TabsTrigger value="ai-info" className="data-[state=active]:bg-primary/10">
-                <Cpu className="h-3 w-3 mr-1" />
-                AI Models
-              </TabsTrigger>
-              <TabsTrigger value="settings" className="data-[state=active]:bg-primary/10">
-                Style & Settings
-              </TabsTrigger>
-            </TabsList>
-          </div>
+          {/* Tabs Section */}
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <div className="px-6 border-b border-border/50 sticky top-0 bg-background/95 backdrop-blur-sm z-10">
+              <TabsList className="bg-transparent">
+                <TabsTrigger value="overview" className="data-[state=active]:bg-primary/10">
+                  Overview
+                </TabsTrigger>
+                <TabsTrigger value="timeline" className="data-[state=active]:bg-primary/10">
+                  Scene Timeline
+                </TabsTrigger>
+                <TabsTrigger value="ai-info" className="data-[state=active]:bg-primary/10">
+                  <Cpu className="h-3 w-3 mr-1" />
+                  AI Models
+                </TabsTrigger>
+                <TabsTrigger value="settings" className="data-[state=active]:bg-primary/10">
+                  Style & Settings
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
-          <ScrollArea className="flex-1 max-h-[45vh]">
             {/* Overview Tab */}
             <TabsContent value="overview" className="p-6 space-y-6 mt-0">
               {/* Quick Stats */}
@@ -484,11 +489,11 @@ export function BlueprintPreviewModal({
                 </div>
               </div>
             </TabsContent>
-          </ScrollArea>
           </Tabs>
         </div>
-        {/* Footer Actions - Always visible */}
-        <div className="p-4 border-t border-border/50 flex justify-between items-center bg-card/50 shrink-0 sticky bottom-0">
+
+        {/* Footer Actions - ALWAYS visible outside scroll area */}
+        <div className="p-4 border-t border-border/50 flex justify-between items-center bg-background shrink-0">
           <div className="text-sm text-muted-foreground">
             Used {blueprint.usage_count} times
           </div>
@@ -496,7 +501,7 @@ export function BlueprintPreviewModal({
             <Button variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button onClick={() => onSelect(blueprint)} className="gap-2">
+            <Button onClick={handleUseTemplate} className="gap-2">
               <Play className="h-4 w-4" />
               Use This Template
             </Button>
