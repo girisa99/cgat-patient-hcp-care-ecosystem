@@ -108,66 +108,68 @@ export function BlueprintPreviewModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-5xl max-h-[85vh] p-0 overflow-hidden bg-background/95 backdrop-blur-xl border-border/50 flex flex-col">
-        {/* Hero Section with Thumbnail */}
-        <div className="relative">
-          {blueprint.thumbnail_url ? (
-            <div className="relative h-48 md:h-56 overflow-hidden">
-              <img 
-                src={blueprint.thumbnail_url} 
-                alt={blueprint.name}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
-              
-              {/* AI Provider Badge on thumbnail */}
-              {providerInfo && (
-                <Badge className={cn(
-                  "absolute top-4 left-4 bg-gradient-to-r text-white border-0 shadow-lg",
-                  providerInfo.color
-                )}>
-                  <Wand2 className="h-3 w-3 mr-1" />
-                  {providerInfo.icon} {providerInfo.name}
-                </Badge>
-              )}
-              
-              {/* Region badge */}
-              {thumbnailRegion && thumbnailRegion !== 'global' && (
-                <Badge className="absolute top-4 right-4 bg-background/90 text-foreground">
-                  <Globe2 className="h-3 w-3 mr-1" />
-                  {thumbnailRegion.toUpperCase()}
-                </Badge>
-              )}
-            </div>
-          ) : (
-            <div className="h-32 bg-gradient-to-br from-primary/20 via-primary/10 to-background flex items-center justify-center">
-              <ImageIcon className="h-12 w-12 text-muted-foreground/50" />
-            </div>
-          )}
-          
-          {/* Title overlaid on gradient */}
-          <DialogHeader className="absolute bottom-0 left-0 right-0 p-6 pt-12">
-            <div className="flex items-start justify-between">
-              <div>
-                <DialogTitle className="text-2xl font-bold text-foreground drop-shadow-sm">{blueprint.name}</DialogTitle>
-                <p className="text-muted-foreground mt-1 max-w-2xl">{blueprint.description}</p>
-              </div>
-              <div className="flex gap-2 flex-wrap justify-end">
-                <Badge variant="outline" className="capitalize bg-background/80">
-                  {blueprint.category}
-                </Badge>
-                {blueprint.is_system_default && (
-                  <Badge className="bg-primary/20 text-primary border-primary/30">
-                    <Sparkles className="h-3 w-3 mr-1" />
-                    System
+      <DialogContent className="max-w-5xl h-[85vh] p-0 overflow-hidden bg-background/95 backdrop-blur-xl border-border/50 flex flex-col">
+        {/* Scrollable Content Area */}
+        <div className="flex-1 overflow-y-auto min-h-0">
+          {/* Hero Section with Thumbnail */}
+          <div className="relative shrink-0">
+            {blueprint.thumbnail_url ? (
+              <div className="relative h-40 md:h-48 overflow-hidden">
+                <img 
+                  src={blueprint.thumbnail_url} 
+                  alt={blueprint.name}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+                
+                {/* AI Provider Badge on thumbnail */}
+                {providerInfo && (
+                  <Badge className={cn(
+                    "absolute top-4 left-4 bg-gradient-to-r text-white border-0 shadow-lg",
+                    providerInfo.color
+                  )}>
+                    <Wand2 className="h-3 w-3 mr-1" />
+                    {providerInfo.icon} {providerInfo.name}
+                  </Badge>
+                )}
+                
+                {/* Region badge */}
+                {thumbnailRegion && thumbnailRegion !== 'global' && (
+                  <Badge className="absolute top-4 right-4 bg-background/90 text-foreground">
+                    <Globe2 className="h-3 w-3 mr-1" />
+                    {thumbnailRegion.toUpperCase()}
                   </Badge>
                 )}
               </div>
-            </div>
-          </DialogHeader>
-        </div>
+            ) : (
+              <div className="h-24 bg-gradient-to-br from-primary/20 via-primary/10 to-background flex items-center justify-center">
+                <ImageIcon className="h-10 w-10 text-muted-foreground/50" />
+              </div>
+            )}
+            
+            {/* Title overlaid on gradient */}
+            <DialogHeader className="absolute bottom-0 left-0 right-0 p-4 pt-8">
+              <div className="flex items-start justify-between">
+                <div>
+                  <DialogTitle className="text-xl font-bold text-foreground drop-shadow-sm">{blueprint.name}</DialogTitle>
+                  <p className="text-sm text-muted-foreground mt-1 max-w-2xl line-clamp-2">{blueprint.description}</p>
+                </div>
+                <div className="flex gap-2 flex-wrap justify-end">
+                  <Badge variant="outline" className="capitalize bg-background/80 text-xs">
+                    {blueprint.category}
+                  </Badge>
+                  {blueprint.is_system_default && (
+                    <Badge className="bg-primary/20 text-primary border-primary/30 text-xs">
+                      <Sparkles className="h-3 w-3 mr-1" />
+                      System
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </DialogHeader>
+          </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col">
           <div className="px-6 border-b border-border/50">
             <TabsList className="bg-transparent">
               <TabsTrigger value="overview" className="data-[state=active]:bg-primary/10">
@@ -483,8 +485,8 @@ export function BlueprintPreviewModal({
               </div>
             </TabsContent>
           </ScrollArea>
-        </Tabs>
-
+          </Tabs>
+        </div>
         {/* Footer Actions - Always visible */}
         <div className="p-4 border-t border-border/50 flex justify-between items-center bg-card/50 shrink-0 sticky bottom-0">
           <div className="text-sm text-muted-foreground">
