@@ -239,15 +239,6 @@ export const GenieCastOverview: React.FC<GenieCastOverviewProps> = ({
       {/* Quick Actions - Inline Buttons */}
       <div className="flex items-center gap-2 flex-wrap pt-1">
         <Button 
-          variant="outline" 
-          size="sm" 
-          className="h-8 text-xs gap-1.5"
-          onClick={() => onNavigate('screenshots')}
-        >
-          <Camera className="w-3.5 h-3.5" />
-          Upload Screenshots
-        </Button>
-        <Button 
           size="sm" 
           className="h-8 text-xs gap-1.5"
           onClick={() => onNavigate('generate')}
@@ -260,10 +251,10 @@ export const GenieCastOverview: React.FC<GenieCastOverviewProps> = ({
           variant="outline" 
           size="sm" 
           className="h-8 text-xs gap-1.5"
-          onClick={() => onNavigate('matrix')}
+          onClick={() => onNavigate('messaging')}
         >
           <Grid3X3 className="w-3.5 h-3.5" />
-          Batch Matrix
+          Matrix (Messaging)
         </Button>
       </div>
     </div>
