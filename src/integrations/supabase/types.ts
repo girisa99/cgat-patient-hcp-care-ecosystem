@@ -23242,6 +23242,7 @@ export type Database = {
       }
       video_blueprints: {
         Row: {
+          aesthetic_keywords: string[] | null
           ai_capabilities: Json | null
           capability_tags: string[] | null
           category: string
@@ -23260,15 +23261,20 @@ export type Database = {
           primary_model: string | null
           regional_variants: Json | null
           secondary_models: string[] | null
+          style_intent: string | null
           style_preset: Json | null
+          supported_dialects: Json | null
           target_platform: string[] | null
+          target_regions: string[] | null
           thumbnail_provider: string | null
           thumbnail_region: string | null
           thumbnail_url: string | null
+          tone_modifier: string | null
           updated_at: string
           usage_count: number | null
         }
         Insert: {
+          aesthetic_keywords?: string[] | null
           ai_capabilities?: Json | null
           capability_tags?: string[] | null
           category?: string
@@ -23287,15 +23293,20 @@ export type Database = {
           primary_model?: string | null
           regional_variants?: Json | null
           secondary_models?: string[] | null
+          style_intent?: string | null
           style_preset?: Json | null
+          supported_dialects?: Json | null
           target_platform?: string[] | null
+          target_regions?: string[] | null
           thumbnail_provider?: string | null
           thumbnail_region?: string | null
           thumbnail_url?: string | null
+          tone_modifier?: string | null
           updated_at?: string
           usage_count?: number | null
         }
         Update: {
+          aesthetic_keywords?: string[] | null
           ai_capabilities?: Json | null
           capability_tags?: string[] | null
           category?: string
@@ -23314,11 +23325,15 @@ export type Database = {
           primary_model?: string | null
           regional_variants?: Json | null
           secondary_models?: string[] | null
+          style_intent?: string | null
           style_preset?: Json | null
+          supported_dialects?: Json | null
           target_platform?: string[] | null
+          target_regions?: string[] | null
           thumbnail_provider?: string | null
           thumbnail_region?: string | null
           thumbnail_url?: string | null
+          tone_modifier?: string | null
           updated_at?: string
           usage_count?: number | null
         }
