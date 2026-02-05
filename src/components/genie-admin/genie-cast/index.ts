@@ -29,7 +29,9 @@ export {
 
 // Re-export shared authoring components for convenience
 export { useUnifiedAuthoring } from '@/hooks/useUnifiedAuthoring';
+export { useGenieCastSession } from '@/hooks/useGenieCastSession';
 export { AuthoringStageIndicator } from '@/components/shared/AuthoringStageIndicator';
 export { RegionalDialectSelector, REGIONAL_CONFIG } from '@/components/shared/RegionalDialectSelector';
 export { ScriptTemplateMapper } from '@/components/shared/ScriptTemplateMapper';
 export { AVSyncPreview, type SyncStatus, type AVSyncPreviewProps } from '@/components/shared/AVSyncPreview';
+export { ApprovalDashboard } from '@/components/shared/ApprovalDashboard';

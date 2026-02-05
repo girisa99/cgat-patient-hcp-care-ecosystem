@@ -11,6 +11,7 @@
 export { ScriptTemplateMapper } from './ScriptTemplateMapper';
 export { AuthoringStageIndicator } from './AuthoringStageIndicator';
 export { AVSyncPreview, type SyncStatus, type AVSyncPreviewProps } from './AVSyncPreview';
+export { ApprovalDashboard } from './ApprovalDashboard';
  
  // Re-export unified authoring hook for convenience
  export { useUnifiedAuthoring } from '@/hooks/useUnifiedAuthoring';

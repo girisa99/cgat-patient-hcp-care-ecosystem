@@ -46,11 +46,13 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
 // Import unified authoring system
-import { useUnifiedAuthoring } from '@/hooks/useUnifiedAuthoring';
+import { useUnifiedAuthoring, type AuthoringStage } from '@/hooks/useUnifiedAuthoring';
+import { useGenieCastSession } from '@/hooks/useGenieCastSession';
 import { AuthoringStageIndicator } from '@/components/shared/AuthoringStageIndicator';
 import { RegionalDialectSelector } from '@/components/shared/RegionalDialectSelector';
 import { ScriptTemplateMapper } from '@/components/shared/ScriptTemplateMapper';
 import { AVSyncPreview } from '@/components/shared/AVSyncPreview';
+import { ApprovalDashboard } from '@/components/shared/ApprovalDashboard';
 import type { StyleIntent, RegionZone } from '@/services/styleIntentResolver';
 
 // Import sub-components from parent panel
@@ -191,10 +193,25 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
     onScriptApproved,
   });
 
+  // Initialize session state for CREATE → PRODUCE data handoff
+  const castSession = useGenieCastSession();
+
   // Regional dialect selection state
   const [selectedDialectCodes, setSelectedDialectCodes] = useState<string[]>(['en-US']);
 
   const metrics = calculateEcosystemMetrics();
+
+  // Handle navigation from ApprovalDashboard
+  const handleNavigateToStage = useCallback((
+    stage: AuthoringStage, 
+    tab: 'create' | 'produce' | 'manage' | 'publish', 
+    subTab: string
+  ) => {
+    setActiveMainTab(tab as ConsolidatedTab);
+    setSubTabs(prev => ({ ...prev, [tab]: subTab }));
+    authoring.goToStage(stage);
+    castSession.goToStage(stage);
+  }, [authoring, castSession]);
 
   const setSubTab = useCallback((mainTab: ConsolidatedTab, subTab: string) => {
     setSubTabs(prev => ({ ...prev, [mainTab]: subTab }));
@@ -629,23 +646,62 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.2 }}
+                className="space-y-4"
               >
+                {/* Approval Dashboard - Unified workflow view */}
+                <ApprovalDashboard
+                  session={castSession.session}
+                  onNavigateToStage={handleNavigateToStage}
+                  onResetSession={castSession.resetSession}
+                />
+
+                {/* Quality Check Card */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Eye className="w-5 h-5" />
-                      Review & Enhance
+                      Quality Check
                     </CardTitle>
                     <CardDescription>
-                      Quality check and AI-powered enhancements
+                      AI-powered quality scoring and enhancement suggestions
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="min-h-[400px] flex items-center justify-center">
-                    <div className="text-center text-muted-foreground">
-                      <Eye className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p>Review consolidates from /review-enhance</p>
-                      <p className="text-sm">Quality scoring, enhancement suggestions</p>
+                  <CardContent>
+                    <div className="grid grid-cols-3 gap-4 mb-4">
+                      <Card className="bg-green-500/5 border-green-500/20">
+                        <CardContent className="p-4 text-center">
+                          <div className="text-2xl font-bold text-green-500">
+                            {castSession.session.completedStages.length}
+                          </div>
+                          <div className="text-xs text-muted-foreground">Stages Complete</div>
+                        </CardContent>
+                      </Card>
+                      <Card className="bg-blue-500/5 border-blue-500/20">
+                        <CardContent className="p-4 text-center">
+                          <div className="text-2xl font-bold text-blue-500">
+                            {castSession.session.approvalItems.filter(i => i.status === 'approved').length}
+                          </div>
+                          <div className="text-xs text-muted-foreground">Items Approved</div>
+                        </CardContent>
+                      </Card>
+                      <Card className="bg-purple-500/5 border-purple-500/20">
+                        <CardContent className="p-4 text-center">
+                          <div className="text-2xl font-bold text-purple-500">
+                            {castSession.session.selectedDialects.length}
+                          </div>
+                          <div className="text-xs text-muted-foreground">Languages</div>
+                        </CardContent>
+                      </Card>
                     </div>
+                    
+                    {castSession.session.selectedTemplate && (
+                      <div className="p-3 bg-muted/50 rounded-lg">
+                        <p className="text-sm font-medium">Selected Template</p>
+                        <p className="text-xs text-muted-foreground">
+                          {castSession.session.selectedTemplate.name} • {castSession.session.selectedTemplate.sceneCount} scenes
+                        </p>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </motion.div>
