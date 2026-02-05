@@ -5,9 +5,9 @@
  
  ---
  
- ## 📊 Current Implementation Status
+## 📊 Current Implementation Status (Updated Phase 2)
  
- ### ✅ Fully Implemented (Can Reuse)
+### ✅ Fully Implemented
  
  | Component | File | Description |
  |-----------|------|-------------|
@@ -21,26 +21,30 @@
  | **Style Cards** | `VideoStyleCards.tsx` | 43 video styles from registry |
  | **Flow Diagram** | `GenieCastFlowDiagram.tsx` | Pipeline visualization |
  | **Filter Bar** | `TemplateFilterBar.tsx` | Region, device, capability, combination filters |
+| **Style Intent Resolver** | `styleIntentResolver.ts` | ✅ NEW - Decouples templates from providers |
+| **Regional Dialect Selector** | `RegionalDialectSelector.tsx` | ✅ NEW - India/MENA/CJK sub-regions |
+| **Unified Authoring Hook** | `useUnifiedAuthoring.ts` | ✅ NEW - Cross-product authoring workflow |
+| **Script Template Mapper** | `ScriptTemplateMapper.tsx` | ✅ NEW - Scene-to-script alignment |
+| **Authoring Stage Indicator** | `AuthoringStageIndicator.tsx` | ✅ NEW - Visual progress indicator |
  
  ### ⚠️ Partially Implemented (Needs Connection)
  
  | Component | File | What's Missing |
  |-----------|------|----------------|
- | **Script Preview** | `ScriptPreviewPanel.tsx` | ✅ Has TTS generation, ❌ NOT connected to template scenes |
- | **Messaging → Script** | (gap) | No handoff from approved messaging to ScriptPreviewPanel |
- | **Script → Template** | (gap) | No mapping of script to template chapters/scenes |
+| **Script Preview** | `ScriptPreviewPanel.tsx` | ✅ Has TTS, needs useUnifiedAuthoring integration |
+| **Messaging → Script** | ⚠️ Hook ready | useUnifiedAuthoring provides handoff - needs UI wiring |
  | **Style-Driven Config** | `StyleDrivenProductionConfig.tsx` | Exists but not integrated |
  
  ### ❌ Missing Components
  
  | Component | Purpose | Priority |
  |-----------|---------|----------|
- | **`style_intent` Field** | Decouple templates from hardcoded providers | P0 |
- | **ScriptTemplateMapper** | Align scripts to template scenes with duration | P0 |
- | **AVSyncPreview** | Timeline with audio waveform sync preview | P1 |
+| **`style_intent` Field** | ✅ DONE - Added to video_blueprints | ~~P0~~ |
+| **ScriptTemplateMapper** | ✅ DONE - Created component | ~~P0~~ |
+| **AVSyncPreview** | Timeline with audio waveform sync preview | P1 (Next) |
  | **ApprovalDashboard** | Unified approval queue (Messaging → Script → A/V → Publish) | P1 |
  | **Regional Sub-Selector** | Granular dialect selection (India regions, Arabic dialects) | P1 |
- | **useUnifiedAuthoring** | Shared hook across Spark/Mind/Deck/Vibe/Cast | P2 |
+| **useUnifiedAuthoring** | ✅ DONE - Cross-product hook created | ~~P2~~ |
  
  ---
  
