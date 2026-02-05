@@ -86,6 +86,18 @@ const categoryIcons: Record<string, React.ReactNode> = {
   ppt: <Layers className="h-4 w-4" />,
   smb: <Building2 className="h-4 w-4" />,
   oil_gas: <Zap className="h-4 w-4" />,
+  combination: <Layers className="h-4 w-4" />,
+  customer_journey: <Target className="h-4 w-4" />,
+  fintech: <Building2 className="h-4 w-4" />,
+  food_business: <Heart className="h-4 w-4" />,
+  heritage: <Globe2 className="h-4 w-4" />,
+  homecare: <Stethoscope className="h-4 w-4" />,
+  infographic: <Layers className="h-4 w-4" />,
+  nursing: <Stethoscope className="h-4 w-4" />,
+  podcast: <Mic className="h-4 w-4" />,
+  retail: <Building2 className="h-4 w-4" />,
+  vision: <Target className="h-4 w-4" />,
+  webcast: <Video className="h-4 w-4" />,
 };
 
 const categoryColors: Record<string, string> = {
@@ -107,6 +119,18 @@ const categoryColors: Record<string, string> = {
   ppt: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
   smb: 'bg-lime-500/20 text-lime-400 border-lime-500/30',
   oil_gas: 'bg-stone-500/20 text-stone-400 border-stone-500/30',
+  combination: 'bg-violet-500/20 text-violet-400 border-violet-500/30',
+  customer_journey: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+  fintech: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+  food_business: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+  heritage: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+  homecare: 'bg-sky-500/20 text-sky-400 border-sky-500/30',
+  infographic: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30',
+  nursing: 'bg-teal-500/20 text-teal-400 border-teal-500/30',
+  podcast: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+  retail: 'bg-pink-500/20 text-pink-400 border-pink-500/30',
+  vision: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
+  webcast: 'bg-red-500/20 text-red-400 border-red-500/30',
 };
 
 // Category gradient backgrounds for cards without thumbnails
@@ -129,6 +153,62 @@ const categoryGradients: Record<string, string> = {
   ppt: 'bg-gradient-to-br from-yellow-600/30 via-amber-500/20 to-orange-600/30',
   smb: 'bg-gradient-to-br from-lime-600/30 via-green-500/20 to-emerald-600/30',
   oil_gas: 'bg-gradient-to-br from-stone-600/30 via-slate-500/20 to-gray-600/30',
+  combination: 'bg-gradient-to-br from-violet-600/30 via-indigo-500/20 to-blue-600/30',
+  customer_journey: 'bg-gradient-to-br from-blue-600/30 via-indigo-500/20 to-purple-600/30',
+  fintech: 'bg-gradient-to-br from-emerald-600/30 via-teal-500/20 to-cyan-600/30',
+  food_business: 'bg-gradient-to-br from-orange-600/30 via-red-500/20 to-pink-600/30',
+  heritage: 'bg-gradient-to-br from-amber-600/30 via-yellow-500/20 to-orange-600/30',
+  homecare: 'bg-gradient-to-br from-sky-600/30 via-blue-500/20 to-indigo-600/30',
+  infographic: 'bg-gradient-to-br from-indigo-600/30 via-violet-500/20 to-purple-600/30',
+  nursing: 'bg-gradient-to-br from-teal-600/30 via-cyan-500/20 to-sky-600/30',
+  podcast: 'bg-gradient-to-br from-purple-600/30 via-fuchsia-500/20 to-pink-600/30',
+  retail: 'bg-gradient-to-br from-pink-600/30 via-rose-500/20 to-red-600/30',
+  vision: 'bg-gradient-to-br from-cyan-600/30 via-teal-500/20 to-emerald-600/30',
+  webcast: 'bg-gradient-to-br from-red-600/30 via-orange-500/20 to-yellow-600/30',
+};
+
+// Default placeholder thumbnails by category using Unsplash CDN for reliable display
+// These ensure templates ALWAYS show a visual even if AI generation hasn't completed
+const CATEGORY_PLACEHOLDER_THUMBNAILS: Record<string, string> = {
+  marketing: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=640&h=360&fit=crop',
+  educational: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=640&h=360&fit=crop',
+  storytelling: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=640&h=360&fit=crop',
+  announcement: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=640&h=360&fit=crop',
+  healthcare: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?w=640&h=360&fit=crop',
+  entertainment: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=640&h=360&fit=crop',
+  corporate: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=640&h=360&fit=crop',
+  animation: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=640&h=360&fit=crop',
+  '3d': 'https://images.unsplash.com/photo-1620428268482-cf1851a36764?w=640&h=360&fit=crop',
+  interactive: 'https://images.unsplash.com/photo-1551650975-87deedd944c3?w=640&h=360&fit=crop',
+  image_to_video: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?w=640&h=360&fit=crop',
+  seasonal: 'https://images.unsplash.com/photo-1482517967863-00e15c9b44be?w=640&h=360&fit=crop',
+  travel: 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=640&h=360&fit=crop',
+  avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=640&h=360&fit=crop',
+  effects: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=640&h=360&fit=crop',
+  ppt: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=640&h=360&fit=crop',
+  smb: 'https://images.unsplash.com/photo-1556761175-4b46a572b786?w=640&h=360&fit=crop',
+  oil_gas: 'https://images.unsplash.com/photo-1518709766631-a6a7f45921c3?w=640&h=360&fit=crop',
+  combination: 'https://images.unsplash.com/photo-1618761714954-0b8cd0026356?w=640&h=360&fit=crop',
+  customer_journey: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=640&h=360&fit=crop',
+  fintech: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=640&h=360&fit=crop',
+  food_business: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=640&h=360&fit=crop',
+  heritage: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=640&h=360&fit=crop',
+  homecare: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=640&h=360&fit=crop',
+  infographic: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=640&h=360&fit=crop',
+  nursing: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?w=640&h=360&fit=crop',
+  podcast: 'https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=640&h=360&fit=crop',
+  retail: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=640&h=360&fit=crop',
+  vision: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=640&h=360&fit=crop',
+  webcast: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=640&h=360&fit=crop',
+};
+
+// Get effective thumbnail for a blueprint (actual or placeholder)
+const getEffectiveThumbnail = (blueprint: VideoBlueprint): string | null => {
+  // Use actual thumbnail if available
+  if (blueprint.thumbnail_url) return blueprint.thumbnail_url;
+  
+  // Fallback to category placeholder
+  return CATEGORY_PLACEHOLDER_THUMBNAILS[blueprint.category] || CATEGORY_PLACEHOLDER_THUMBNAILS.marketing;
 };
 
 // AI Provider info for badges
@@ -706,32 +786,39 @@ export function BlueprintTemplatesGrid({
               )}
               onClick={() => setPreviewBlueprintId(blueprint.id)}
             >
-              {/* Thumbnail Area - AI Generated or Gradient Fallback */}
-              <div className={cn(
-                "h-36 flex items-center justify-center relative overflow-hidden",
-                !blueprint.thumbnail_url && (categoryGradients[blueprint.category] || categoryGradients.marketing)
-              )}>
-                {blueprint.thumbnail_url ? (
-                  <img 
-                    src={blueprint.thumbnail_url} 
-                    alt={blueprint.name}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                  />
-                ) : (
-                  <>
-                    <div className="absolute inset-0 bg-gradient-to-br from-transparent to-black/30" />
-                    <div className="relative z-10 p-4 text-center">
-                      <div className="text-4xl mb-2 opacity-80">
-                        {categoryIcons[blueprint.category] || <Target className="h-10 w-10 mx-auto" />}
+              {/* Thumbnail Area - AI Generated, Placeholder, or Gradient Fallback */}
+              <div className="h-36 flex items-center justify-center relative overflow-hidden">
+                {/* Always show an image - either actual thumbnail or category placeholder */}
+                <img 
+                  src={getEffectiveThumbnail(blueprint) || ''}
+                  alt={blueprint.name}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                  onError={(e) => {
+                    // On image error, fall back to gradient
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    target.parentElement?.classList.add(
+                      categoryGradients[blueprint.category] || categoryGradients.marketing
+                    );
+                  }}
+                />
+                
+                {/* Category icon overlay for placeholder images */}
+                {!blueprint.thumbnail_url && (
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center pointer-events-none">
+                    <div className="text-white/80 flex flex-col items-center gap-1">
+                      <div className="text-3xl opacity-80">
+                        {categoryIcons[blueprint.category] || <Target className="h-8 w-8" />}
                       </div>
+                      <span className="text-xs opacity-60">Template Preview</span>
                     </div>
-                  </>
+                  </div>
                 )}
 
                 {/* AI Provider badge - shows which model generated the thumbnail */}
                 {(blueprint.style_preset as any)?.thumbnail_provider && (
-                  <Badge className="absolute top-2 left-2 bg-gradient-to-r from-purple-600/90 to-pink-600/90 text-white text-xs border-0">
+                  <Badge className="absolute top-2 left-2 bg-primary/90 text-primary-foreground text-xs border-0">
                     <Wand2 className="h-3 w-3 mr-1" />
                     {(blueprint.style_preset as any).thumbnail_provider_name || (blueprint.style_preset as any).thumbnail_provider}
                   </Badge>
@@ -739,7 +826,7 @@ export function BlueprintTemplatesGrid({
 
                 {/* Regional badge if applicable */}
                 {(blueprint.style_preset as any)?.thumbnail_region && (blueprint.style_preset as any).thumbnail_region !== 'global' && (
-                  <Badge className="absolute top-2 right-2 bg-background/90 text-foreground text-xs">
+                  <Badge variant="secondary" className="absolute top-2 right-2 text-xs">
                     <Globe2 className="h-3 w-3 mr-1" />
                     {(blueprint.style_preset as any).thumbnail_region.toUpperCase()}
                   </Badge>
@@ -747,7 +834,7 @@ export function BlueprintTemplatesGrid({
 
                 {/* System badge - moved to bottom left when provider badge exists */}
                 {blueprint.is_system_default && !(blueprint.style_preset as any)?.thumbnail_provider && (
-                  <Badge className="absolute top-2 right-2 bg-background/90 text-foreground text-xs">
+                  <Badge variant="secondary" className="absolute top-2 right-2 text-xs">
                     <Sparkles className="h-3 w-3 mr-1" />
                     System
                   </Badge>
@@ -759,25 +846,23 @@ export function BlueprintTemplatesGrid({
                     <Play className="h-4 w-4" />
                     Preview
                   </Button>
-                  {!blueprint.thumbnail_url && (
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      className="gap-2 bg-background/80"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        queueThumbnailGeneration(blueprint.id);
-                      }}
-                      disabled={generatingId === blueprint.id}
-                    >
-                      {generatingId === blueprint.id ? (
-                        <RefreshCw className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Wand2 className="h-4 w-4" />
-                      )}
-                      Generate
-                    </Button>
-                  )}
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    className="gap-2 bg-background/80"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      queueThumbnailGeneration(blueprint.id);
+                    }}
+                    disabled={generatingId === blueprint.id}
+                  >
+                    {generatingId === blueprint.id ? (
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Wand2 className="h-4 w-4" />
+                    )}
+                    {blueprint.thumbnail_url ? 'Regen' : 'Generate'}
+                  </Button>
                 </div>
               </div>
 
