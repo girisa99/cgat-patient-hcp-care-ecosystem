@@ -61,6 +61,12 @@ import { LiveGenerationPreview } from './LiveGenerationPreview';
 // Import Content Library component
 import { ContentLibraryGrid } from './ContentLibraryGrid';
 
+// Import new fully-implemented tab components
+import { SmartSchedulerPanel } from './SmartSchedulerPanel';
+import { AnalyticsDashboard } from './AnalyticsDashboard';
+import { ContentRepurposingPanel } from './ContentRepurposingPanel';
+import { DistributionPanel } from './DistributionPanel';
+
 // Import sub-components from parent panel
 import { GenieCastOverview, VideoStyleCards, AIProviderShowcase, type VideoStyleType } from './index';
 import { MultiScreenshotGallery, type ProductGallery } from '../MultiScreenshotGallery';
@@ -896,49 +902,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.2 }}
               >
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <BarChart3 className="w-5 h-5" />
-                      Analytics Dashboard
-                    </CardTitle>
-                    <CardDescription>
-                      Performance metrics and usage statistics
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="min-h-[400px]">
-                    <div className="grid grid-cols-4 gap-4 mb-6">
-                      <Card className="bg-primary/5">
-                        <CardContent className="p-4 text-center">
-                          <div className="text-2xl font-bold">0</div>
-                          <div className="text-xs text-muted-foreground">Videos Generated</div>
-                        </CardContent>
-                      </Card>
-                      <Card className="bg-blue-500/5">
-                        <CardContent className="p-4 text-center">
-                          <div className="text-2xl font-bold">0</div>
-                          <div className="text-xs text-muted-foreground">Views</div>
-                        </CardContent>
-                      </Card>
-                      <Card className="bg-green-500/5">
-                        <CardContent className="p-4 text-center">
-                          <div className="text-2xl font-bold">0</div>
-                          <div className="text-xs text-muted-foreground">Languages</div>
-                        </CardContent>
-                      </Card>
-                      <Card className="bg-purple-500/5">
-                        <CardContent className="p-4 text-center">
-                          <div className="text-2xl font-bold">$0</div>
-                          <div className="text-xs text-muted-foreground">Cost Saved</div>
-                        </CardContent>
-                      </Card>
-                    </div>
-                    <div className="text-center text-muted-foreground py-8">
-                      <BarChart3 className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p>Analytics consolidates from multiple sources</p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <AnalyticsDashboard />
               </motion.div>
             )}
             
@@ -962,24 +926,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.2 }}
               >
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <FileText className="w-5 h-5" />
-                      Content Repurposing
-                    </CardTitle>
-                    <CardDescription>
-                      Transform videos into shorts, clips, and other formats
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="min-h-[400px] flex items-center justify-center">
-                    <div className="text-center text-muted-foreground">
-                      <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p>Pipelines: video-shorts, video-thumbnail, video-captioning</p>
-                      <p className="text-sm">Currently {inactivePipelines.length} dormant pipelines available</p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <ContentRepurposingPanel />
               </motion.div>
             )}
           </AnimatePresence>
@@ -998,24 +945,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.2 }}
               >
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Calendar className="w-5 h-5" />
-                      Content Scheduler
-                    </CardTitle>
-                    <CardDescription>
-                      Plan and schedule content distribution
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="min-h-[400px] flex items-center justify-center">
-                    <div className="text-center text-muted-foreground">
-                      <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p>Scheduler consolidates from /scheduler</p>
-                      <p className="text-sm">Calendar view, smart timing, batch scheduling</p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <SmartSchedulerPanel />
               </motion.div>
             )}
             
@@ -1027,29 +957,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.2 }}
               >
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Share2 className="w-5 h-5" />
-                      Multi-Platform Distribution
-                    </CardTitle>
-                    <CardDescription>
-                      Publish to YouTube, TikTok, LinkedIn, Instagram, and more
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-5 gap-4">
-                      {['YouTube', 'TikTok', 'LinkedIn', 'Instagram', 'Twitter'].map(platform => (
-                        <Card key={platform} className="border-dashed hover:border-primary/50 cursor-pointer transition-colors">
-                          <CardContent className="p-4 text-center">
-                            <Globe className="w-6 h-6 mx-auto text-muted-foreground mb-2" />
-                            <p className="text-xs font-medium">{platform}</p>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
+                <DistributionPanel />
               </motion.div>
             )}
             
