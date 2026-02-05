@@ -164,7 +164,7 @@ export const ABTestingPanel: React.FC = () => {
     [videos, selectedVideoId]
   );
 
-  // Generate AI variants
+  // Generate AI variants - NOW WIRED TO AI UNIVERSAL PROCESSOR
   const generateVariants = async () => {
     if (!selectedVideo) {
       toast.error('Please select a video first');
@@ -177,43 +177,83 @@ export const ABTestingPanel: React.FC = () => {
       const baseTitle = selectedVideo.title;
       const product = products?.find(p => p.name === selectedVideo.product_name);
 
+      // Call AI Universal Processor for intelligent variant generation
+      const { data: aiResult, error: aiError } = await supabase.functions.invoke('ai-universal-processor', {
+        body: {
+          provider: 'gemini',
+          model: 'gemini-2.0-flash',
+          action: 'generate_variants',
+          prompt: `Generate 4 A/B test variants for a ${testType} test.
+            
+            Original content: "${baseTitle}"
+            Product: ${product?.name || 'Genie Studio'}
+            Product tagline: ${product?.tagline || 'AI-powered content creation'}
+            Test type: ${testType}
+            
+            For ${testType} variants:
+            ${testType === 'title' ? 'Create compelling title variations that test different angles: curiosity, benefit-driven, how-to, and social proof.' : ''}
+            ${testType === 'cta' ? 'Create action-oriented CTA variations that test urgency, value, and personalization.' : ''}
+            ${testType === 'hook' ? 'Create attention-grabbing hook variations that test pain points, benefits, curiosity, and controversy.' : ''}
+            ${testType === 'thumbnail' ? 'Describe 4 thumbnail style variations: bold text, before/after, emotional face, minimalist.' : ''}
+            
+            Return as JSON array of 4 strings: ["variant1", "variant2", "variant3", "variant4"]`,
+          systemPrompt: 'You are an expert A/B testing strategist. Generate variants optimized for engagement and conversion.',
+          temperature: 0.7,
+        }
+      });
+
       let generatedVariants: string[] = [];
 
-      switch (testType) {
-        case 'title':
-          generatedVariants = TITLE_TEMPLATES.map(template => {
-            const core = baseTitle.replace(/^(How to|The|Why|Master)\s+/i, '');
-            return `${template.prefix} ${core} ${template.suffix}`.trim();
-          }).slice(0, 4);
-          break;
+      if (aiResult?.content && !aiError) {
+        try {
+          // Try to parse JSON array from response
+          const jsonMatch = aiResult.content.match(/\[[\s\S]*?\]/);
+          if (jsonMatch) {
+            generatedVariants = JSON.parse(jsonMatch[0]);
+          }
+        } catch {
+          console.warn('Failed to parse AI variants, using fallback');
+        }
+      }
 
-        case 'cta':
-          generatedVariants = CTA_TEMPLATES.slice(0, 4);
-          break;
+      // Fallback to templates if AI fails
+      if (generatedVariants.length === 0) {
+        switch (testType) {
+          case 'title':
+            generatedVariants = TITLE_TEMPLATES.map(template => {
+              const core = baseTitle.replace(/^(How to|The|Why|Master)\s+/i, '');
+              return `${template.prefix} ${core} ${template.suffix}`.trim();
+            }).slice(0, 4);
+            break;
 
-        case 'hook':
-          generatedVariants = HOOK_TEMPLATES.map(template => 
-            template
-              .replace('{benefit}', product?.tagline || 'success')
-              .replace('{pain_point}', 'manual work')
-              .replace('{task}', 'content creation')
-          ).slice(0, 4);
-          break;
+          case 'cta':
+            generatedVariants = CTA_TEMPLATES.slice(0, 4);
+            break;
 
-        case 'thumbnail':
-          // For thumbnails, we'd generate image variants via AI
-          generatedVariants = [
-            `Style: Bold text overlay - "${baseTitle}"`,
-            `Style: Before/After comparison`,
-            `Style: Face + emoji reaction`,
-            `Style: Minimalist with logo`,
-          ];
-          break;
+          case 'hook':
+            generatedVariants = HOOK_TEMPLATES.map(template => 
+              template
+                .replace('{benefit}', product?.tagline || 'success')
+                .replace('{pain_point}', 'manual work')
+                .replace('{task}', 'content creation')
+            ).slice(0, 4);
+            break;
+
+          case 'thumbnail':
+            generatedVariants = [
+              `Style: Bold text overlay - "${baseTitle}"`,
+              `Style: Before/After comparison`,
+              `Style: Face + emoji reaction`,
+              `Style: Minimalist with logo`,
+            ];
+            break;
+        }
       }
 
       setVariants([selectedVideo.title, ...generatedVariants.slice(0, 3)]);
-      toast.success(`Generated ${generatedVariants.length} variants!`);
+      toast.success(`Generated ${generatedVariants.length} AI-powered variants!`);
     } catch (error) {
+      console.error('Variant generation failed:', error);
       toast.error('Failed to generate variants');
     } finally {
       setIsGenerating(false);
