@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useEffect, lazy, Suspense } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Video, Users, CalendarDays, Sparkles, Loader2, Download } from 'lucide-react';
@@ -46,6 +46,7 @@ type AdminTab = 'kanban' | 'calendar' | 'appointments' | 'library' | 'compositio
 export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ className }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
   
   const { 
     shows, 
@@ -56,8 +57,10 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
     getShowsByStage 
   } = useShows();
   
-  const initialTab = (searchParams.get('tab') as AdminTab) || 'kanban';
-  const [activeTab, setActiveTab] = useState<AdminTab>(initialTab);
+  // CRITICAL FIX: Derive activeTab directly from URL to prevent tab loss during re-renders
+  // This ensures the Genie Cast tab persists even when auth state or lazy loading causes re-renders
+  const activeTab: AdminTab = (searchParams.get('tab') as AdminTab) || 'kanban';
+  
   const [activeCategory, setActiveCategory] = useState<EventCategory>('media_production');
   const [selectedShow, setSelectedShow] = useState<any>(null);
   
@@ -65,24 +68,25 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
   const linkScriptId = searchParams.get('linkScript');
   const showsByStage = getShowsByStage(activeCategory);
 
-  // Sync tab with URL
-  useEffect(() => {
-    const tabFromUrl = searchParams.get('tab') as AdminTab;
-    if (tabFromUrl && tabFromUrl !== activeTab) {
-      setActiveTab(tabFromUrl);
-    }
-  }, [searchParams]);
+  // Helper to change tab via URL (not state)
+  const setActiveTab = (tab: AdminTab) => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('tab', tab);
+    setSearchParams(newParams);
+  };
 
   useEffect(() => {
     if (showId || linkScriptId) {
-      setActiveTab('composition');
-      if (showId) {
+      if (activeTab !== 'composition') {
+        setActiveTab('composition');
+      }
+      if (showId && activeTab === 'composition') {
         toast.info(`Opening show: ${showId}`);
-      } else if (linkScriptId) {
+      } else if (linkScriptId && activeTab === 'composition') {
         toast.info('Ready to link script to new composition');
       }
     }
-  }, [showId, linkScriptId]);
+  }, [showId, linkScriptId, activeTab]);
 
   const handleShowClick = (show: any) => {
     setSelectedShow(show);
