@@ -29,6 +29,13 @@ export { DistributionPanel } from './DistributionPanel';
 export { SEOOptimizerPanel } from './SEOOptimizerPanel';
 export { ABTestingPanel } from './ABTestingPanel';
 
+// Premium SEO Features
+export { CompetitorAnalysisPanel } from './seo/CompetitorAnalysisPanel';
+export { RealTimeTrendsPanel } from './seo/RealTimeTrendsPanel';
+export { SERPPreviewPanel } from './seo/SERPPreviewPanel';
+export { PerformanceTrackingPanel } from './seo/PerformanceTrackingPanel';
+export { SEO_FEATURE_TIERS, isPremiumSEOFeature } from './seo';
+
 export { 
   GenieCastConsolidatedTabs, 
   type ConsolidatedTab,

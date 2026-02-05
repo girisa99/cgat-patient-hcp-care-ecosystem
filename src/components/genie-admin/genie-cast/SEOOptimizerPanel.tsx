@@ -1,14 +1,29 @@
 /**
- * SEO Optimizer Panel
+ * SEO Optimizer Panel - ENHANCED with 4 Premium Features
  * 
  * AI-powered SEO optimization for video content:
- * - Keyword research based on content analysis
- * - Meta title/description generation
- * - Tag suggestions from ecosystem registry
- * - Platform-specific optimization (YouTube, LinkedIn, TikTok)
- * - Trend analysis integration
+ * - Basic: Keyword research, title/description optimization, platform-specific copy
+ * - Premium: Competitor Analysis, Real-time Trends, SERP Preview, Performance Tracking
  * 
- * Uses: dynamicMarketingRegistryService, master-ecosystem-registry
+ * GENIE CAST SEO DIFFERENTIATORS vs Traditional Agencies (WebFX, Thrive, etc.):
+ * 
+ * | Traditional Agencies | Genie Cast SEO |
+ * |---------------------|----------------|
+ * | Website-focused SEO | Video-first SEO (YouTube, TikTok, LinkedIn) |
+ * | Manual keyword research | AI-automated keyword extraction |
+ * | Monthly reports, slow turnaround | Real-time optimization during creation |
+ * | Separate tools for each platform | Unified cross-platform optimization |
+ * | Text-only optimization | Multimodal (script → audio → video → SEO) |
+ * | $3K-$20K/mo agency retainer | Built-in to content creation workflow |
+ * | No content generation | End-to-end: create video + optimize SEO |
+ * 
+ * PRICING MODEL (Hybrid Freemium - Industry Best Practice):
+ * - FREE: Basic SEO analysis, platform optimization, keyword extraction
+ * - PRO ($49/mo): SERP Preview, enhanced recommendations
+ * - BUSINESS ($149/mo): Real-time Trends, Performance Tracking
+ * - ENTERPRISE (Custom): Competitor Analysis, API access, white-label
+ * 
+ * Uses: dynamicMarketingRegistryService, master-ecosystem-registry, ai-universal-processor
  */
 
 import React, { useState, useMemo } from 'react';
@@ -29,6 +44,9 @@ import {
   BarChart3,
   Target,
   Lightbulb,
+  Users,
+  Eye,
+  Flame,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -43,6 +61,12 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { dynamicMarketingRegistryService } from '@/services/marketing/dynamicMarketingRegistryService';
 import { MASTER_AI_PROVIDERS, MASTER_VIDEO_STYLES } from '@/config/master-ecosystem-registry';
+
+// Import premium SEO feature panels
+import { CompetitorAnalysisPanel } from './seo/CompetitorAnalysisPanel';
+import { RealTimeTrendsPanel } from './seo/RealTimeTrendsPanel';
+import { SERPPreviewPanel } from './seo/SERPPreviewPanel';
+import { PerformanceTrackingPanel } from './seo/PerformanceTrackingPanel';
 
 // SEO Analysis Types
 interface SEOAnalysis {
@@ -113,9 +137,13 @@ export const SEOOptimizerPanel: React.FC = () => {
   const queryClient = useQueryClient();
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'analyze' | 'keywords' | 'platforms'>('analyze');
+  const [masterTab, setMasterTab] = useState<'basic' | 'competitors' | 'trends' | 'serp' | 'performance'>('basic');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [seoAnalysis, setSeoAnalysis] = useState<SEOAnalysis | null>(null);
+  
+  // For demo, assume Business tier (would come from auth context)
+  const userTier: 'free' | 'pro' | 'business' | 'enterprise' = 'business';
   
 // Custom inputs for analysis
   const [customTitle, setCustomTitle] = useState('');
@@ -426,6 +454,56 @@ export const SEOOptimizerPanel: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Master Feature Tabs */}
+      <Tabs value={masterTab} onValueChange={(v) => setMasterTab(v as any)}>
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="basic" className="flex items-center gap-1">
+            <Search className="w-3 h-3" />
+            Basic SEO
+          </TabsTrigger>
+          <TabsTrigger value="competitors" className="flex items-center gap-1">
+            <Users className="w-3 h-3" />
+            Competitors
+            <Badge variant="secondary" className="text-xs ml-1">PRO</Badge>
+          </TabsTrigger>
+          <TabsTrigger value="trends" className="flex items-center gap-1">
+            <Flame className="w-3 h-3" />
+            Trends
+            <Badge variant="secondary" className="text-xs ml-1">BIZ</Badge>
+          </TabsTrigger>
+          <TabsTrigger value="serp" className="flex items-center gap-1">
+            <Eye className="w-3 h-3" />
+            SERP Preview
+          </TabsTrigger>
+          <TabsTrigger value="performance" className="flex items-center gap-1">
+            <BarChart3 className="w-3 h-3" />
+            Performance
+            <Badge variant="secondary" className="text-xs ml-1">BIZ</Badge>
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Competitor Analysis */}
+        <TabsContent value="competitors" className="mt-4">
+          <CompetitorAnalysisPanel isPremium={userTier === 'business' || userTier === 'enterprise'} />
+        </TabsContent>
+
+        {/* Real-time Trends */}
+        <TabsContent value="trends" className="mt-4">
+          <RealTimeTrendsPanel isPremium={userTier === 'business' || userTier === 'enterprise'} />
+        </TabsContent>
+
+        {/* SERP Preview */}
+        <TabsContent value="serp" className="mt-4">
+          <SERPPreviewPanel isPremium={true} />
+        </TabsContent>
+
+        {/* Performance Tracking */}
+        <TabsContent value="performance" className="mt-4">
+          <PerformanceTrackingPanel isPremium={userTier === 'business' || userTier === 'enterprise'} />
+        </TabsContent>
+
+        {/* Basic SEO (original content) */}
+        <TabsContent value="basic" className="mt-4 space-y-6">
       {/* Header */}
       <Card>
         <CardHeader>
@@ -894,6 +972,8 @@ export const SEOOptimizerPanel: React.FC = () => {
           </CardContent>
         </Card>
       )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
