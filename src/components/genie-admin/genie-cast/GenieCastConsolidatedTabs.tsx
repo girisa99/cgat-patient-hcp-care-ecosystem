@@ -64,6 +64,7 @@ import { ProductChangeAlertPanel } from '../ProductChangeAlertPanel';
 import { GenieCastFlowDiagram } from '../GenieCastFlowDiagram';
 import { GenieCastHubMockup } from './mockups';
 import { BrandAssetsPanel } from './BrandAssetsPanel';
+import { StyleDrivenProductionConfig, deriveProductionRequirements, estimateGenerationTime } from './StyleDrivenProductionConfig';
 
 // Import master registry for metrics
 import { 
@@ -198,6 +199,8 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
 
   // Regional dialect selection state
   const [selectedDialectCodes, setSelectedDialectCodes] = useState<string[]>(['en-US']);
+  const [avatarGender, setAvatarGender] = useState<'male' | 'female'>('female');
+  const [productionQuality, setProductionQuality] = useState<'preview' | 'production' | 'cinematic'>('production');
 
   const metrics = calculateEcosystemMetrics();
 
@@ -415,7 +418,34 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   </CardContent>
                 </Card>
                 
-                <MessagingGeneratorPanel />
+                <MessagingGeneratorPanel 
+                  onMessagingApproved={(productId, messaging) => {
+                    console.log('[GenieCast] Messaging approved for', productId);
+                    // Wire to castSession
+                    if (messaging) {
+                      castSession.approveMessaging({
+                        id: `messaging-${productId}-${Date.now()}`,
+                        productId: productId || 'cast',
+                        hook: messaging.hook || '',
+                        valueProposition: messaging.valueProposition || '',
+                        painPoints: messaging.painPoints || [],
+                        benefits: messaging.benefits || [],
+                        differentiators: messaging.differentiators || [],
+                        cta: messaging.cta || '',
+                        shortScript: messaging.shortScript || '',
+                        mediumScript: messaging.mediumScript || '',
+                        longScript: messaging.longScript || '',
+                        approvalStatus: 'approved',
+                        language: 'en',
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                      });
+                    }
+                    // Navigate to PRODUCE > Studio after approval
+                    setActiveMainTab('produce');
+                    setSubTab('produce', 'studio');
+                  }}
+                />
               </motion.div>
             )}
             
@@ -427,7 +457,23 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.2 }}
               >
-                <BrandAssetsPanel />
+                <BrandAssetsPanel 
+                  onTemplateSelected={(template) => {
+                    console.log('[GenieCast] Template selected:', template.name);
+                    castSession.selectTemplate({
+                      id: template.id,
+                      name: template.name,
+                      category: template.category,
+                      thumbnailUrl: template.thumbnailUrl,
+                      sceneCount: template.sceneCount,
+                      estimatedDuration: template.estimatedDuration,
+                      styleIntent: template.styleIntent as StyleIntent,
+                    });
+                    // Navigate to Messaging after template selection
+                    setSubTab('create', 'messaging');
+                  }}
+                  selectedTemplateId={castSession.session.selectedTemplate?.id}
+                />
               </motion.div>
             )}
           </AnimatePresence>
@@ -501,6 +547,60 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                     )}
                   </CardContent>
                 </Card>
+
+                {/* Style-Driven Production Config */}
+                <Card className="mt-4">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Settings className="w-4 h-4 text-primary" />
+                      Production Configuration
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      Auto-configured based on selected styles
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <StyleDrivenProductionConfig
+                      selectedStyles={selectedVideoStyles}
+                      selectedLanguage={selectedDialectCodes[0]?.split('-')[0] || 'en'}
+                      onNavigateToOverview={() => {
+                        setActiveMainTab('create');
+                        setSubTab('create', 'styles');
+                      }}
+                      avatarGender={avatarGender}
+                      onAvatarGenderChange={setAvatarGender}
+                      quality={productionQuality}
+                      disabled={isGenerating}
+                    />
+                  </CardContent>
+                </Card>
+
+                {/* Session Summary */}
+                {(castSession.session.selectedTemplate || castSession.session.approvedMessaging) && (
+                  <Card className="mt-4 border-primary/20 bg-primary/5">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm">Session Summary</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {castSession.session.selectedTemplate && (
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground">Template:</span>
+                          <Badge variant="outline">{castSession.session.selectedTemplate.name}</Badge>
+                        </div>
+                      )}
+                      {castSession.session.approvedMessaging && (
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground">Messaging:</span>
+                          <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-200">Approved</Badge>
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Stages Complete:</span>
+                        <span>{castSession.session.completedStages.length}/8</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </motion.div>
             )}
             

@@ -33,18 +33,21 @@
 |-----------|------|----------------|
 | **Script Preview** | `ScriptPreviewPanel.tsx` | ✅ Has TTS, needs useUnifiedAuthoring integration |
 | **ScriptTemplateMapper** | ✅ WIRED | Integrated into PRODUCE > Studio sub-tab |
-| **Style-Driven Config** | `StyleDrivenProductionConfig.tsx` | Exists but not integrated |
+| **Style-Driven Config** | ✅ WIRED | Integrated into PRODUCE > Generate sub-tab |
  
- ### ❌ Missing Components
- 
+ ### ❌ Missing Components (All P1 Complete!)
+
  | Component | Purpose | Priority |
  |-----------|---------|----------|
 | **`style_intent` Field** | ✅ DONE - Added to video_blueprints | ~~P0~~ |
 | **ScriptTemplateMapper** | ✅ DONE - Created component | ~~P0~~ |
 | **AVSyncPreview** | ✅ DONE - Timeline, waveform, playhead, sync indicators | ~~P1~~ |
 | **ApprovalDashboard** | ✅ DONE - Unified approval queue with session state | ~~P1~~ |
- | **Regional Sub-Selector** | Granular dialect selection (India regions, Arabic dialects) | P1 |
+| **Regional Sub-Selector** | ✅ DONE - RegionalDialectSelector created | ~~P1~~ |
 | **useUnifiedAuthoring** | ✅ DONE - Cross-product hook created | ~~P2~~ |
+| **Template Selection Wiring** | ✅ DONE - BrandAssetsPanel → castSession.selectTemplate | ~~P1~~ |
+| **Messaging Approval Wiring** | ✅ DONE - MessagingGeneratorPanel → castSession.approveMessaging | ~~P1~~ |
+| **CREATE → PRODUCE Handoff** | ✅ DONE - useGenieCastSession persists state across tabs | ~~P1~~ |
  
  ---
  

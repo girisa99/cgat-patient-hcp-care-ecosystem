@@ -46,6 +46,16 @@ import { BlueprintTemplatesGrid } from './BlueprintTemplatesGrid';
 interface BrandAssetsPanelProps {
   className?: string;
   onScreenshotsUpdated?: (galleries: any[]) => void;
+  onTemplateSelected?: (template: {
+    id: string;
+    name: string;
+    category: string;
+    thumbnailUrl?: string;
+    sceneCount: number;
+    estimatedDuration: number;
+    styleIntent: string;
+  }) => void;
+  selectedTemplateId?: string;
 }
 
 // 8 Official Products with their brand colors
@@ -76,7 +86,12 @@ interface ScreenshotAsset {
   createdAt: string;
 }
 
-export const BrandAssetsPanel: React.FC<BrandAssetsPanelProps> = ({ className, onScreenshotsUpdated }) => {
+export const BrandAssetsPanel: React.FC<BrandAssetsPanelProps> = ({ 
+  className, 
+  onScreenshotsUpdated,
+  onTemplateSelected,
+  selectedTemplateId,
+}) => {
   const [activeTab, setActiveTab] = useState<'logos' | 'screenshots' | 'colors' | 'templates'>('logos');
   const [logos, setLogos] = useState<LogoAsset[]>([]);
   const [screenshots, setScreenshots] = useState<ScreenshotAsset[]>([]);
@@ -588,7 +603,22 @@ export const BrandAssetsPanel: React.FC<BrandAssetsPanelProps> = ({ className, o
 
         {/* Templates Tab - Now using database-driven BlueprintTemplatesGrid */}
         <TabsContent value="templates" className="mt-6">
-          <BlueprintTemplatesGrid />
+          <BlueprintTemplatesGrid 
+            onSelectBlueprint={(blueprint) => {
+              if (onTemplateSelected) {
+                onTemplateSelected({
+                  id: blueprint.id,
+                  name: blueprint.name,
+                  category: blueprint.category,
+                  thumbnailUrl: blueprint.thumbnail_url || undefined,
+                  sceneCount: blueprint.scenes?.length || 0,
+                  estimatedDuration: blueprint.estimated_duration_seconds,
+                  styleIntent: (blueprint.default_settings as any)?.style_intent || 'corporate',
+                });
+              }
+            }}
+            selectedBlueprintId={selectedTemplateId}
+          />
         </TabsContent>
       </Tabs>
     </div>
