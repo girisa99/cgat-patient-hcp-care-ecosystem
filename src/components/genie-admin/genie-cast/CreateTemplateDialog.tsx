@@ -1,1157 +1,649 @@
-/**
- * Create Template Dialog
- * ENHANCED: Fixed z-index, clone from grid, device/platform options, region-language mapping
- */
-
-import React, { useState, useEffect } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import {
-  Plus,
-  Wand2,
-  Copy,
-  Layers,
-  Sparkles,
-  Globe2,
-  Video,
-  Box,
-  User,
-  Music,
-  Mic,
-  Loader2,
-  Check,
-  Smartphone,
-  Monitor,
-  Tablet,
-  Languages,
-  Search,
-  ChevronDown,
-  X,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import type { VideoBlueprint } from '@/hooks/useVideoBlueprints';
-import { useVideoBlueprints } from '@/hooks/useVideoBlueprints';
-
-interface CreateTemplateDialogProps {
-  onCreated?: () => void;
-  templateToClone?: VideoBlueprint | null;
-}
-
-// Categories for templates - Full 21 categories
-const TEMPLATE_CATEGORIES = [
-  { value: 'marketing', label: 'Marketing', icon: '📈' },
-  { value: 'educational', label: 'Educational', icon: '📚' },
-  { value: 'storytelling', label: 'Storytelling', icon: '📖' },
-  { value: 'healthcare', label: 'Healthcare', icon: '🏥' },
-  { value: 'entertainment', label: 'Entertainment', icon: '🎬' },
-  { value: 'travel', label: 'Travel', icon: '✈️' },
-  { value: 'corporate', label: 'Corporate', icon: '🏢' },
-  { value: 'animation', label: 'Animation', icon: '🎨' },
-  { value: '3d', label: '3D/VR', icon: '🧊' },
-  { value: 'avatar', label: 'Avatar', icon: '👤' },
-  { value: 'interactive', label: 'Interactive', icon: '🎮' },
-  { value: 'ppt', label: 'PPT/Slides', icon: '📊' },
-  { value: 'smb', label: 'SMB/Local', icon: '🏪' },
-  { value: 'oil_gas', label: 'Oil & Gas', icon: '⛽' },
-  { value: 'podcast', label: 'Podcast', icon: '🎙️' },
-  { value: 'webcast', label: 'Webcast', icon: '📡' },
-  { value: 'hospitality', label: 'Hospitality', icon: '🍽️' },
-  { value: 'consulting', label: 'Consulting', icon: '💼' },
-  { value: 'finance', label: 'Finance', icon: '💰' },
-  { value: 'real_estate', label: 'Real Estate', icon: '🏠' },
-  { value: 'technology', label: 'Technology', icon: '💻' },
-];
-
-// Video styles - Full 43+ styles
-const VIDEO_STYLES = [
-  { value: 'photorealistic', label: 'Photorealistic', icon: '📸' },
-  { value: 'hyper_real', label: 'Hyper-Realistic 4K', icon: '🎥' },
-  { value: 'product_hero', label: 'Product Hero', icon: '🛍️' },
-  { value: 'pixar_disney', label: 'Pixar/Disney', icon: '🎪' },
-  { value: 'character_vlog', label: 'Character Vlog', icon: '🗣️' },
-  { value: 'talking_head', label: 'Talking Head', icon: '👤' },
-  { value: 'anime', label: 'Anime', icon: '🎌' },
-  { value: 'crayon_sketch', label: 'Crayon/Hand-drawn', icon: '🖍️' },
-  { value: 'watercolor', label: 'Watercolor', icon: '🎨' },
-  { value: 'stop_motion', label: 'Stop Motion', icon: '🎞️' },
-  { value: 'cyberpunk', label: 'Cyberpunk', icon: '🌆' },
-  { value: 'neon_synthwave', label: 'Neon Synthwave', icon: '🌃' },
-  { value: 'whiteboard', label: 'Whiteboard', icon: '📝' },
-  { value: 'explainer', label: 'Explainer', icon: '💡' },
-  { value: 'kinetic_typography', label: 'Kinetic Typography', icon: '📝' },
-  { value: 'ppt_animation', label: 'PPT Animation', icon: '📊' },
-  { value: 'pitch_deck', label: 'Pitch Deck', icon: '📈' },
-  { value: 'motion_graphics', label: 'Motion Graphics', icon: '✨' },
-  { value: 'documentary', label: 'Documentary', icon: '🎥' },
-  { value: 'podcast_visual', label: 'Podcast Visual', icon: '🎙️' },
-  { value: 'webcast_broadcast', label: 'Webcast Broadcast', icon: '📡' },
-];
-
-// AI Capabilities
-const AI_CAPABILITIES = [
-  { value: 'text_to_video', label: 'Text-to-Video', icon: '📹' },
-  { value: 'image_to_video', label: 'Image-to-Video', icon: '🎞️' },
-  { value: '3d_generation', label: '3D Generation', icon: '🧊' },
-  { value: 'avatar', label: 'Avatar', icon: '👤' },
-  { value: 'lipsync', label: 'Lipsync', icon: '👄' },
-  { value: 'tts', label: 'TTS Voiceover', icon: '🎙️' },
-  { value: 'stt', label: 'STT Transcription', icon: '📝' },
-  { value: 'music_gen', label: 'Music Generation', icon: '🎵' },
-  { value: 'sfx_gen', label: 'SFX Generation', icon: '🔊' },
-  { value: 'video_effects', label: 'Video Effects', icon: '✨' },
-  { value: 'pixar_style', label: 'Pixar Style', icon: '🎨' },
-  { value: 'anime_style', label: 'Anime Style', icon: '🎌' },
-  { value: 'ppt_animation', label: 'PPT Animation', icon: '📊' },
-  { value: 'slideshow', label: 'Slideshow', icon: '🖼️' },
-  { value: 'voice_clone', label: 'Voice Clone', icon: '🗣️' },
-  { value: 'multi_language', label: 'Multi-Language', icon: '🌍' },
-  { value: 'regional_tts', label: 'Regional TTS', icon: '🗣️' },
-];
-
-// Regions with LANGUAGES - Enhanced with TTS providers
-const REGIONS_WITH_LANGUAGES = [
-  { 
-    value: 'western', 
-    label: 'Western', 
-    flag: '🌎',
-    languages: ['en', 'es', 'fr'],
-    ttsProvider: 'ElevenLabs',
-    sttProvider: 'Deepgram',
-  },
-  { 
-    value: 'europe', 
-    label: 'Europe', 
-    flag: '🌍',
-    languages: ['en', 'de', 'fr', 'it', 'es', 'pt', 'nl', 'pl'],
-    ttsProvider: 'ElevenLabs',
-    sttProvider: 'Deepgram',
-  },
-  { 
-    value: 'cjk', 
-    label: 'CJK', 
-    flag: '🌏',
-    languages: ['zh', 'ja', 'ko'],
-    ttsProvider: 'Alibaba CosyVoice',
-    sttProvider: 'Alibaba Paraformer',
-  },
-  { 
-    value: 'india', 
-    label: 'India', 
-    flag: '🇮🇳',
-    languages: ['hi', 'te', 'kn', 'ta', 'mr', 'as', 'bn', 'gu', 'pa', 'ml'],
-    ttsProvider: 'Azure Neural',
-    sttProvider: 'Azure STT',
-  },
-  { 
-    value: 'mena', 
-    label: 'MENA', 
-    flag: '🏜️',
-    languages: ['ar', 'he', 'fa', 'tr'],
-    ttsProvider: 'Azure Neural',
-    sttProvider: 'Azure STT',
-  },
-  { 
-    value: 'africa', 
-    label: 'Africa', 
-    flag: '🌍',
-    languages: ['en', 'sw', 'yo', 'ha', 'am', 'zu', 'ig', 'fr'],
-    ttsProvider: 'Azure Neural',
-    sttProvider: 'Azure STT',
-  },
-  { 
-    value: 'latam', 
-    label: 'Latin America', 
-    flag: '🌎',
-    languages: ['es', 'pt'],
-    ttsProvider: 'ElevenLabs',
-    sttProvider: 'Deepgram',
-  },
-  { 
-    value: 'sea', 
-    label: 'Southeast Asia', 
-    flag: '🌴',
-    languages: ['id', 'ms', 'th', 'vi', 'tl'],
-    ttsProvider: 'Azure Neural',
-    sttProvider: 'Azure STT',
-  },
-  { 
-    value: 'pakistan', 
-    label: 'Pakistan', 
-    flag: '🇵🇰',
-    languages: ['ur', 'pa', 'sd', 'ps'],
-    ttsProvider: 'Azure Neural',
-    sttProvider: 'Azure STT',
-  },
-  { 
-    value: 'bangladesh', 
-    label: 'Bangladesh', 
-    flag: '🇧🇩',
-    languages: ['bn'],
-    ttsProvider: 'Azure Neural',
-    sttProvider: 'Azure STT',
-  },
-  { 
-    value: 'indonesia', 
-    label: 'Indonesia', 
-    flag: '🇮🇩',
-    languages: ['id', 'jv', 'su'],
-    ttsProvider: 'Azure Neural',
-    sttProvider: 'Azure STT',
-  },
-];
-
-// Language code to name mapping
-const LANGUAGE_NAMES: Record<string, string> = {
-  en: 'English', es: 'Spanish', fr: 'French', de: 'German', it: 'Italian',
-  pt: 'Portuguese', nl: 'Dutch', pl: 'Polish', zh: 'Chinese', ja: 'Japanese',
-  ko: 'Korean', hi: 'Hindi', te: 'Telugu', kn: 'Kannada', ta: 'Tamil',
-  mr: 'Marathi', as: 'Assamese', bn: 'Bengali', gu: 'Gujarati', pa: 'Punjabi',
-  ml: 'Malayalam', ar: 'Arabic', he: 'Hebrew', fa: 'Persian', tr: 'Turkish',
-  sw: 'Swahili', yo: 'Yoruba', ha: 'Hausa', am: 'Amharic', zu: 'Zulu',
-  ig: 'Igbo', id: 'Indonesian', ms: 'Malay', th: 'Thai', vi: 'Vietnamese',
-  tl: 'Tagalog', ur: 'Urdu', sd: 'Sindhi', ps: 'Pashto', jv: 'Javanese', su: 'Sundanese',
-};
-
-// Device/Platform options
-const DEVICE_OPTIONS = [
-  { value: 'mobile', label: 'Mobile', icon: Smartphone },
-  { value: 'desktop', label: 'Desktop', icon: Monitor },
-  { value: 'tablet', label: 'Tablet', icon: Tablet },
-];
-
-// Platform options
-const PLATFORM_OPTIONS = [
-  { value: 'tiktok', label: 'TikTok', aspect: '9:16' },
-  { value: 'instagram_reels', label: 'Instagram Reels', aspect: '9:16' },
-  { value: 'instagram_feed', label: 'Instagram Feed', aspect: '1:1' },
-  { value: 'youtube', label: 'YouTube', aspect: '16:9' },
-  { value: 'youtube_shorts', label: 'YouTube Shorts', aspect: '9:16' },
-  { value: 'facebook', label: 'Facebook', aspect: '16:9' },
-  { value: 'linkedin', label: 'LinkedIn', aspect: '16:9' },
-  { value: 'x_twitter', label: 'X/Twitter', aspect: '16:9' },
-  { value: 'whatsapp_status', label: 'WhatsApp Status', aspect: '9:16' },
-  { value: 'snapchat', label: 'Snapchat', aspect: '9:16' },
-  { value: 'douyin', label: 'Douyin', aspect: '9:16' },
-  { value: 'wechat', label: 'WeChat', aspect: '9:16' },
-];
-
-// AI Providers
-const AI_PROVIDERS = [
-  { value: 'gemini', label: 'Gemini 3.0', icon: '🔮', category: 'llm' },
-  { value: 'openai', label: 'OpenAI GPT-4o', icon: '🧠', category: 'llm' },
-  { value: 'claude', label: 'Claude 4', icon: '🎭', category: 'llm' },
-  { value: 'deepseek', label: 'DeepSeek V3', icon: '🌊', category: 'llm' },
-  { value: 'sora2', label: 'Sora 2', icon: '🌟', category: 'video' },
-  { value: 'veo', label: 'Google Veo 3', icon: '🎬', category: 'video' },
-  { value: 'alibaba_wan', label: 'Alibaba Wan 2.6', icon: '🌊', category: 'video' },
-  { value: 'modelslab_flux', label: 'ModelsLab FLUX', icon: '⚡', category: 'image' },
-  { value: 'dalle3', label: 'DALL-E 3', icon: '🎨', category: 'image' },
-  { value: 'huggingface', label: 'HuggingFace FLUX', icon: '🤗', category: 'image' },
-  { value: 'replicate', label: 'Replicate SDXL', icon: '🔄', category: 'image' },
-  { value: 'elevenlabs', label: 'ElevenLabs', icon: '🎙️', category: 'tts' },
-  { value: 'azure_tts', label: 'Azure Neural TTS', icon: '☁️', category: 'tts' },
-  { value: 'alibaba_cosyvoice', label: 'Alibaba CosyVoice', icon: '🗣️', category: 'tts' },
-  { value: 'meshy_3d', label: 'Meshy 3D', icon: '🧊', category: '3d' },
-];
-
-export function CreateTemplateDialog({ onCreated, templateToClone }: CreateTemplateDialogProps) {
-  const { toast } = useToast();
-  const { blueprints } = useVideoBlueprints();
-  const [open, setOpen] = useState(false);
-  const [creating, setCreating] = useState(false);
-  const [aiGenerating, setAiGenerating] = useState(false);
-  const [activeTab, setActiveTab] = useState<string>(templateToClone ? 'clone' : 'ai');
-  const [lastUsedProvider, setLastUsedProvider] = useState<string | null>(null);
-  const [cloneSearchQuery, setCloneSearchQuery] = useState('');
-  const [selectedCloneTemplate, setSelectedCloneTemplate] = useState<VideoBlueprint | null>(templateToClone || null);
-
-  // Form state
-  const [formData, setFormData] = useState({
-    name: templateToClone?.name ? `${templateToClone.name} (Copy)` : '',
-    description: templateToClone?.description || '',
-    category: templateToClone?.category || 'marketing',
-    videoStyle: 'motion_graphics',
-    duration: templateToClone?.estimated_duration_seconds || 60,
-    capabilities: [] as string[],
-    regions: ['western'] as string[],
-    languages: ['en'] as string[],
-    providers: ['huggingface', 'replicate'] as string[],
-    devices: ['mobile', 'desktop'] as string[],
-    platforms: ['youtube', 'tiktok', 'instagram_reels'] as string[],
-    aiPrompt: '',
-  });
-
-  // Update languages when regions change
-  useEffect(() => {
-    const selectedRegions = REGIONS_WITH_LANGUAGES.filter(r => formData.regions.includes(r.value));
-    const availableLanguages = [...new Set(selectedRegions.flatMap(r => r.languages))];
-    setFormData(prev => ({
-      ...prev,
-      languages: prev.languages.filter(l => availableLanguages.includes(l)) || availableLanguages.slice(0, 1),
-    }));
-  }, [formData.regions]);
-
-  // Toggle helper
-  const toggleArrayItem = (key: keyof typeof formData, item: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [key]: (prev[key] as string[]).includes(item)
-        ? (prev[key] as string[]).filter(i => i !== item)
-        : [...(prev[key] as string[]), item]
-    }));
-  };
-
-  // Get available languages based on selected regions
-  const availableLanguages = [...new Set(
-    REGIONS_WITH_LANGUAGES
-      .filter(r => formData.regions.includes(r.value))
-      .flatMap(r => r.languages)
-  )];
-
-  // Get TTS/STT providers for selected regions
-  const getProvidersForRegions = () => {
-    const selectedRegions = REGIONS_WITH_LANGUAGES.filter(r => formData.regions.includes(r.value));
-    const ttsProviders = [...new Set(selectedRegions.map(r => r.ttsProvider))];
-    const sttProviders = [...new Set(selectedRegions.map(r => r.sttProvider))];
-    return { ttsProviders, sttProviders };
-  };
-
-  // Filtered templates for clone tab
-  const filteredCloneTemplates = blueprints.filter(bp =>
-    bp.name.toLowerCase().includes(cloneSearchQuery.toLowerCase()) ||
-    bp.description?.toLowerCase().includes(cloneSearchQuery.toLowerCase())
-  ).slice(0, 20);
-
-  // Select template to clone
-  const selectTemplateToClone = (template: VideoBlueprint) => {
-    setSelectedCloneTemplate(template);
-    setFormData(prev => ({
-      ...prev,
-      name: `${template.name} (Copy)`,
-      description: template.description || '',
-      category: template.category,
-      duration: template.estimated_duration_seconds,
-    }));
-  };
-
-  // AI-Assisted Generation
-  const generateWithAI = async () => {
-    if (!formData.aiPrompt.trim()) {
-      toast({ title: 'Please describe what template you want', variant: 'destructive' });
-      return;
-    }
-
-    setAiGenerating(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('generate-template-ai', {
-        body: { 
-          prompt: formData.aiPrompt,
-          region: formData.regions[0] || 'western',
-        }
-      });
-
-      if (error) throw error;
-
-      if (data?.provider) setLastUsedProvider(data.provider);
-
-      if (data?.template) {
-        setFormData(prev => ({
-          ...prev,
-          name: data.template.name || prev.name,
-          description: data.template.description || prev.description,
-          category: data.template.category || prev.category,
-          videoStyle: data.template.videoStyle || prev.videoStyle,
-          capabilities: data.template.capabilities || prev.capabilities,
-          regions: data.template.regions || prev.regions,
-        }));
-        toast({ title: `✨ Template generated!`, description: 'Review and customize as needed.' });
-      }
-    } catch (err: any) {
-      toast({ title: 'AI generation failed', description: err.message, variant: 'destructive' });
-    } finally {
-      setAiGenerating(false);
-    }
-  };
-
-  // Create template
-  const createTemplate = async () => {
-    if (!formData.name.trim()) {
-      toast({ title: 'Template name is required', variant: 'destructive' });
-      return;
-    }
-
-    setCreating(true);
-    try {
-      const { data: user } = await supabase.auth.getUser();
-      const { ttsProviders, sttProviders } = getProvidersForRegions();
-
-      const templateData = {
-        name: formData.name,
-        description: formData.description,
-        category: formData.category,
-        estimated_duration_seconds: formData.duration,
-        target_platform: formData.platforms,
-        industry_tags: [formData.category, formData.videoStyle, ...formData.devices],
-        default_settings: {
-          videoStyle: formData.videoStyle,
-          providers: formData.providers,
-          devices: formData.devices,
-          platforms: formData.platforms,
-          languages: formData.languages,
-          ttsProviders,
-          sttProviders,
-        },
-        style_preset: {
-          style: formData.videoStyle,
-          capabilities: formData.capabilities,
-          devices: formData.devices,
-        },
-        is_system_default: false,
-        created_by: user?.user?.id || null,
-        is_active: true,
-        is_public: true,
-        usage_count: 0,
-      };
-
-      const { error } = await supabase.from('video_blueprints').insert(templateData);
-      if (error) throw error;
-
-      toast({ title: 'Template created!', description: formData.name });
-      setOpen(false);
-      onCreated?.();
-
-      // Reset form
-      setFormData({
-        name: '', description: '', category: 'marketing', videoStyle: 'motion_graphics',
-        duration: 60, capabilities: [], regions: ['western'], languages: ['en'],
-        providers: ['huggingface', 'replicate'], devices: ['mobile', 'desktop'],
-        platforms: ['youtube', 'tiktok', 'instagram_reels'], aiPrompt: '',
-      });
-    } catch (err: any) {
-      toast({ title: 'Failed to create template', description: err.message, variant: 'destructive' });
-    } finally {
-      setCreating(false);
-    }
-  };
-
-  const { ttsProviders, sttProviders } = getProvidersForRegions();
-
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
-          <Plus className="h-4 w-4" />
-          {templateToClone ? 'Clone Template' : 'Create Template'}
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden z-[9999]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Layers className="h-5 w-5 text-primary" />
-            Create New Template
-          </DialogTitle>
-          <DialogDescription>
-            Build a custom video template with regional languages, devices, and platforms
-          </DialogDescription>
-        </DialogHeader>
-
-        <ScrollArea className="max-h-[70vh] pr-4">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
-            <TabsList className="grid grid-cols-3 w-full">
-              <TabsTrigger value="ai" className="gap-2">
-                <Wand2 className="h-4 w-4" />
-                AI-Assisted
-              </TabsTrigger>
-              <TabsTrigger value="clone" className="gap-2">
-                <Copy className="h-4 w-4" />
-                Clone & Customize
-              </TabsTrigger>
-              <TabsTrigger value="visual" className="gap-2">
-                <Layers className="h-4 w-4" />
-                Visual Builder
-              </TabsTrigger>
-            </TabsList>
-
-            {/* AI-Assisted Tab */}
-            <TabsContent value="ai" className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <Label>Describe your template</Label>
-                <Textarea
-                  placeholder="E.g., Create a podcast thumbnail template for Telugu audience with professional studio look..."
-                  value={formData.aiPrompt}
-                  onChange={(e) => setFormData(prev => ({ ...prev, aiPrompt: e.target.value }))}
-                  className="min-h-[100px]"
-                />
-                
-                {/* AI-Assisted Category Dropdown */}
-                <div className="grid grid-cols-2 gap-4 mt-4">
-                  <div className="space-y-2">
-                    <Label>Category (optional pre-selection)</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" role="combobox" className="w-full justify-between">
-                          {TEMPLATE_CATEGORIES.find(c => c.value === formData.category)?.icon}{' '}
-                          {TEMPLATE_CATEGORIES.find(c => c.value === formData.category)?.label || 'Select category'}
-                          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[300px] p-0 z-[10000]" align="start">
-                        <Command>
-                          <CommandInput placeholder="Search categories..." />
-                          <CommandList>
-                            <CommandEmpty>No category found.</CommandEmpty>
-                            <CommandGroup>
-                              {TEMPLATE_CATEGORIES.map((cat) => (
-                                <CommandItem
-                                  key={cat.value}
-                                  value={cat.value}
-                                  onSelect={(v) => setFormData(prev => ({ ...prev, category: v }))}
-                                >
-                                  <Check className={cn("mr-2 h-4 w-4", formData.category === cat.value ? "opacity-100" : "opacity-0")} />
-                                  {cat.icon} {cat.label}
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Video Style (optional)</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" role="combobox" className="w-full justify-between">
-                          {VIDEO_STYLES.find(s => s.value === formData.videoStyle)?.icon}{' '}
-                          {VIDEO_STYLES.find(s => s.value === formData.videoStyle)?.label || 'Select style'}
-                          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[300px] p-0 z-[10000]" align="start">
-                        <Command>
-                          <CommandInput placeholder="Search styles..." />
-                          <CommandList>
-                            <CommandEmpty>No style found.</CommandEmpty>
-                            <CommandGroup>
-                              {VIDEO_STYLES.map((style) => (
-                                <CommandItem
-                                  key={style.value}
-                                  value={style.value}
-                                  onSelect={(v) => setFormData(prev => ({ ...prev, videoStyle: v }))}
-                                >
-                                  <Check className={cn("mr-2 h-4 w-4", formData.videoStyle === style.value ? "opacity-100" : "opacity-0")} />
-                                  {style.icon} {style.label}
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                </div>
-                
-                <Button onClick={generateWithAI} disabled={aiGenerating} className="w-full gap-2">
-                  {aiGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                  {aiGenerating ? 'Generating...' : 'Generate Template Structure'}
-                </Button>
-              </div>
-            </TabsContent>
-
-            {/* Clone & Customize Tab - NEW: Template selection grid */}
-            <TabsContent value="clone" className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <Label>Select template to clone</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" role="combobox" className="w-full justify-between h-auto min-h-10">
-                      {selectedCloneTemplate ? (
-                        <div className="flex items-center gap-2 text-left">
-                          <Badge variant="secondary">{selectedCloneTemplate.category}</Badge>
-                          <span className="truncate">{selectedCloneTemplate.name}</span>
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground">Search and select a template to clone...</span>
-                      )}
-                      <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[500px] p-0 z-[10000]" align="start">
-                    <Command>
-                      <CommandInput 
-                        placeholder="Search 407 templates..." 
-                        value={cloneSearchQuery}
-                        onValueChange={setCloneSearchQuery}
-                      />
-                      <CommandList className="max-h-[300px]">
-                        <CommandEmpty>No template found.</CommandEmpty>
-                        <CommandGroup heading={`Templates (${filteredCloneTemplates.length})`}>
-                          {filteredCloneTemplates.map((template) => (
-                            <CommandItem
-                              key={template.id}
-                              value={template.name}
-                              onSelect={() => selectTemplateToClone(template)}
-                              className="flex items-center gap-2"
-                            >
-                              <Check className={cn("h-4 w-4", selectedCloneTemplate?.id === template.id ? "opacity-100" : "opacity-0")} />
-                              <Badge variant="outline" className="text-[10px]">{template.category}</Badge>
-                              <span className="flex-1 truncate">{template.name}</span>
-                              <span className="text-xs text-muted-foreground">{template.estimated_duration_seconds}s</span>
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              {selectedCloneTemplate && (
-                <div className="p-4 border rounded-lg bg-muted/30 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Selected for cloning:</p>
-                      <p className="font-medium">{selectedCloneTemplate.name}</p>
-                    </div>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => setSelectedCloneTemplate(null)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Badge variant="outline">{selectedCloneTemplate.category}</Badge>
-                    <Badge variant="outline">{selectedCloneTemplate.estimated_duration_seconds}s duration</Badge>
-                    {selectedCloneTemplate.target_platform?.slice(0, 3).map(p => (
-                      <Badge key={p} variant="secondary" className="text-[10px]">{p}</Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </TabsContent>
-
-            {/* Visual Builder Tab - ENHANCED */}
-            <TabsContent value="visual" className="space-y-4 mt-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Template Name</Label>
-                  <Input
-                    value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="My Custom Template"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Category</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" role="combobox" className="w-full justify-between">
-                        {TEMPLATE_CATEGORIES.find(c => c.value === formData.category)?.icon}{' '}
-                        {TEMPLATE_CATEGORIES.find(c => c.value === formData.category)?.label || 'Select category'}
-                        <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[300px] p-0 z-[10000]" align="start">
-                      <Command>
-                        <CommandInput placeholder="Search categories..." />
-                        <CommandList>
-                          <CommandEmpty>No category found.</CommandEmpty>
-                          <CommandGroup>
-                            {TEMPLATE_CATEGORIES.map((cat) => (
-                              <CommandItem
-                                key={cat.value}
-                                value={cat.value}
-                                onSelect={(v) => setFormData(prev => ({ ...prev, category: v }))}
-                              >
-                                <Check className={cn("mr-2 h-4 w-4", formData.category === cat.value ? "opacity-100" : "opacity-0")} />
-                                {cat.icon} {cat.label}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Video Style</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" role="combobox" className="w-full justify-between">
-                      {VIDEO_STYLES.find(s => s.value === formData.videoStyle)?.icon}{' '}
-                      {VIDEO_STYLES.find(s => s.value === formData.videoStyle)?.label || 'Select style'}
-                      <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[300px] p-0 z-[10000]" align="start">
-                    <Command>
-                      <CommandInput placeholder="Search styles..." />
-                      <CommandList>
-                        <CommandEmpty>No style found.</CommandEmpty>
-                        <CommandGroup>
-                          {VIDEO_STYLES.map((style) => (
-                            <CommandItem
-                              key={style.value}
-                              value={style.value}
-                              onSelect={(v) => setFormData(prev => ({ ...prev, videoStyle: v }))}
-                            >
-                              <Check className={cn("mr-2 h-4 w-4", formData.videoStyle === style.value ? "opacity-100" : "opacity-0")} />
-                              {style.icon} {style.label}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              {/* Devices */}
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  <Monitor className="h-4 w-4" /> Devices (multi-select)
-                </Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" role="combobox" className="w-full justify-between h-auto min-h-10">
-                      {formData.devices.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {formData.devices.map(d => (
-                            <Badge key={d} variant="secondary" className="text-xs">
-                              {DEVICE_OPTIONS.find(o => o.value === d)?.label}
-                            </Badge>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground">Select devices...</span>
-                      )}
-                      <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[250px] p-0 z-[10000]" align="start">
-                    <Command>
-                      <CommandList>
-                        <CommandGroup>
-                          {DEVICE_OPTIONS.map((device) => (
-                            <CommandItem
-                              key={device.value}
-                              value={device.value}
-                              onSelect={() => toggleArrayItem('devices', device.value)}
-                            >
-                              <Check className={cn("mr-2 h-4 w-4", formData.devices.includes(device.value) ? "opacity-100" : "opacity-0")} />
-                              <device.icon className="mr-2 h-4 w-4" />
-                              {device.label}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              {/* Platforms */}
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  <Globe2 className="h-4 w-4" /> Target Platforms (multi-select)
-                </Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" role="combobox" className="w-full justify-between h-auto min-h-10">
-                      {formData.platforms.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {formData.platforms.slice(0, 4).map(p => (
-                            <Badge key={p} variant="secondary" className="text-xs">
-                              {PLATFORM_OPTIONS.find(o => o.value === p)?.label}
-                            </Badge>
-                          ))}
-                          {formData.platforms.length > 4 && (
-                            <Badge variant="outline" className="text-xs">+{formData.platforms.length - 4}</Badge>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground">Select platforms...</span>
-                      )}
-                      <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[300px] p-0 z-[10000]" align="start">
-                    <Command>
-                      <CommandInput placeholder="Search platforms..." />
-                      <CommandList>
-                        <CommandEmpty>No platform found.</CommandEmpty>
-                        <CommandGroup>
-                          {PLATFORM_OPTIONS.map((platform) => (
-                            <CommandItem
-                              key={platform.value}
-                              value={platform.value}
-                              onSelect={() => toggleArrayItem('platforms', platform.value)}
-                            >
-                              <Check className={cn("mr-2 h-4 w-4", formData.platforms.includes(platform.value) ? "opacity-100" : "opacity-0")} />
-                              {platform.label}
-                              <Badge variant="outline" className="ml-auto text-[10px]">{platform.aspect}</Badge>
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              {/* AI Capabilities */}
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4" /> AI Capabilities (multi-select)
-                </Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" role="combobox" className="w-full justify-between h-auto min-h-10">
-                      {formData.capabilities.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {formData.capabilities.slice(0, 4).map(c => (
-                            <Badge key={c} variant="secondary" className="text-xs">
-                              {AI_CAPABILITIES.find(o => o.value === c)?.icon} {AI_CAPABILITIES.find(o => o.value === c)?.label}
-                            </Badge>
-                          ))}
-                          {formData.capabilities.length > 4 && (
-                            <Badge variant="outline" className="text-xs">+{formData.capabilities.length - 4}</Badge>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground">Select AI capabilities...</span>
-                      )}
-                      <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[300px] p-0 z-[10000]" align="start">
-                    <Command>
-                      <CommandInput placeholder="Search capabilities..." />
-                      <CommandList>
-                        <CommandEmpty>No capability found.</CommandEmpty>
-                        <CommandGroup>
-                          {AI_CAPABILITIES.map((cap) => (
-                            <CommandItem
-                              key={cap.value}
-                              value={cap.value}
-                              onSelect={() => toggleArrayItem('capabilities', cap.value)}
-                            >
-                              <Check className={cn("mr-2 h-4 w-4", formData.capabilities.includes(cap.value) ? "opacity-100" : "opacity-0")} />
-                              {cap.icon} {cap.label}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              {/* Regions with Languages - ENHANCED */}
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  <Globe2 className="h-4 w-4" /> Target Regions (multi-select)
-                </Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" role="combobox" className="w-full justify-between h-auto min-h-10">
-                      {formData.regions.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {formData.regions.map(r => (
-                            <Badge key={r} variant="secondary" className="text-xs">
-                              {REGIONS_WITH_LANGUAGES.find(o => o.value === r)?.flag} {REGIONS_WITH_LANGUAGES.find(o => o.value === r)?.label}
-                            </Badge>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground">Select regions...</span>
-                      )}
-                      <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[300px] p-0 z-[10000]" align="start">
-                    <Command>
-                      <CommandInput placeholder="Search regions..." />
-                      <CommandList>
-                        <CommandEmpty>No region found.</CommandEmpty>
-                        <CommandGroup>
-                          {REGIONS_WITH_LANGUAGES.map((region) => (
-                            <CommandItem
-                              key={region.value}
-                              value={region.value}
-                              onSelect={() => toggleArrayItem('regions', region.value)}
-                            >
-                              <Check className={cn("mr-2 h-4 w-4", formData.regions.includes(region.value) ? "opacity-100" : "opacity-0")} />
-                              {region.flag} {region.label}
-                              <span className="ml-auto text-xs text-muted-foreground">{region.languages.length} langs</span>
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-                
-                {/* TTS/STT Provider Info */}
-                {formData.regions.length > 0 && (
-                  <div className="text-xs text-muted-foreground mt-1">
-                    TTS: {ttsProviders.join(', ')} | STT: {sttProviders.join(', ')}
-                  </div>
-                )}
-              </div>
-
-              {/* Languages dropdown - shows based on selected regions */}
-              {availableLanguages.length > 0 && (
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <Languages className="h-4 w-4" /> Languages (multi-select - {availableLanguages.length} available)
-                  </Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" role="combobox" className="w-full justify-between h-auto min-h-10">
-                        {formData.languages.length > 0 ? (
-                          <div className="flex flex-wrap gap-1">
-                            {formData.languages.slice(0, 5).map(l => (
-                              <Badge key={l} variant="secondary" className="text-xs">
-                                {LANGUAGE_NAMES[l] || l}
-                              </Badge>
-                            ))}
-                            {formData.languages.length > 5 && (
-                              <Badge variant="outline" className="text-xs">+{formData.languages.length - 5}</Badge>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground">Select languages...</span>
-                        )}
-                        <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[300px] p-0 z-[10000]" align="start">
-                      <Command>
-                        <CommandInput placeholder="Search languages..." />
-                        <CommandList>
-                          <CommandEmpty>No language found.</CommandEmpty>
-                          <CommandGroup>
-                            {availableLanguages.map((lang) => (
-                              <CommandItem
-                                key={lang}
-                                value={lang}
-                                onSelect={() => toggleArrayItem('languages', lang)}
-                              >
-                                <Check className={cn("mr-2 h-4 w-4", formData.languages.includes(lang) ? "opacity-100" : "opacity-0")} />
-                                {LANGUAGE_NAMES[lang] || lang}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-              )}
-
-              {/* AI Providers */}
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  <Wand2 className="h-4 w-4" /> AI Providers (multi-select)
-                </Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" role="combobox" className="w-full justify-between h-auto min-h-10">
-                      {formData.providers.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {formData.providers.slice(0, 4).map(p => (
-                            <Badge key={p} variant="secondary" className="text-xs">
-                              {AI_PROVIDERS.find(o => o.value === p)?.icon} {AI_PROVIDERS.find(o => o.value === p)?.label}
-                            </Badge>
-                          ))}
-                          {formData.providers.length > 4 && (
-                            <Badge variant="outline" className="text-xs">+{formData.providers.length - 4}</Badge>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground">Select AI providers...</span>
-                      )}
-                      <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[320px] p-0 z-[10000]" align="start">
-                    <Command>
-                      <CommandInput placeholder="Search providers..." />
-                      <CommandList>
-                        <CommandEmpty>No provider found.</CommandEmpty>
-                        <CommandGroup heading="LLM">
-                          {AI_PROVIDERS.filter(p => p.category === 'llm').map((provider) => (
-                            <CommandItem
-                              key={provider.value}
-                              value={provider.value}
-                              onSelect={() => toggleArrayItem('providers', provider.value)}
-                            >
-                              <Check className={cn("mr-2 h-4 w-4", formData.providers.includes(provider.value) ? "opacity-100" : "opacity-0")} />
-                              {provider.icon} {provider.label}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                        <CommandGroup heading="Video">
-                          {AI_PROVIDERS.filter(p => p.category === 'video').map((provider) => (
-                            <CommandItem
-                              key={provider.value}
-                              value={provider.value}
-                              onSelect={() => toggleArrayItem('providers', provider.value)}
-                            >
-                              <Check className={cn("mr-2 h-4 w-4", formData.providers.includes(provider.value) ? "opacity-100" : "opacity-0")} />
-                              {provider.icon} {provider.label}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                        <CommandGroup heading="Image">
-                          {AI_PROVIDERS.filter(p => p.category === 'image').map((provider) => (
-                            <CommandItem
-                              key={provider.value}
-                              value={provider.value}
-                              onSelect={() => toggleArrayItem('providers', provider.value)}
-                            >
-                              <Check className={cn("mr-2 h-4 w-4", formData.providers.includes(provider.value) ? "opacity-100" : "opacity-0")} />
-                              {provider.icon} {provider.label}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                        <CommandGroup heading="TTS/Audio">
-                          {AI_PROVIDERS.filter(p => p.category === 'tts').map((provider) => (
-                            <CommandItem
-                              key={provider.value}
-                              value={provider.value}
-                              onSelect={() => toggleArrayItem('providers', provider.value)}
-                            >
-                              <Check className={cn("mr-2 h-4 w-4", formData.providers.includes(provider.value) ? "opacity-100" : "opacity-0")} />
-                              {provider.icon} {provider.label}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                        <CommandGroup heading="3D">
-                          {AI_PROVIDERS.filter(p => p.category === '3d').map((provider) => (
-                            <CommandItem
-                              key={provider.value}
-                              value={provider.value}
-                              onSelect={() => toggleArrayItem('providers', provider.value)}
-                            >
-                              <Check className={cn("mr-2 h-4 w-4", formData.providers.includes(provider.value) ? "opacity-100" : "opacity-0")} />
-                              {provider.icon} {provider.label}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              {/* Description */}
-              <div className="space-y-2">
-                <Label>Description</Label>
-                <Textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="Describe what this template is for..."
-                />
-              </div>
-            </TabsContent>
-          </Tabs>
-
-          {/* Common form fields for AI and Clone tabs */}
-          {(activeTab === 'ai' || activeTab === 'clone') && (
-            <div className="border-t pt-4 mt-4 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Template Name</Label>
-                  <Input
-                    value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="My Custom Template"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Category</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" role="combobox" className="w-full justify-between">
-                        {TEMPLATE_CATEGORIES.find(c => c.value === formData.category)?.icon}{' '}
-                        {TEMPLATE_CATEGORIES.find(c => c.value === formData.category)?.label || 'Select category'}
-                        <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[300px] p-0 z-[10000]" align="start">
-                      <Command>
-                        <CommandInput placeholder="Search categories..." />
-                        <CommandList>
-                          <CommandEmpty>No category found.</CommandEmpty>
-                          <CommandGroup>
-                            {TEMPLATE_CATEGORIES.map((cat) => (
-                              <CommandItem
-                                key={cat.value}
-                                value={cat.value}
-                                onSelect={(v) => setFormData(prev => ({ ...prev, category: v }))}
-                              >
-                                <Check className={cn("mr-2 h-4 w-4", formData.category === cat.value ? "opacity-100" : "opacity-0")} />
-                                {cat.icon} {cat.label}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label>Description</Label>
-                <Textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="Describe what this template is for..."
-                />
-              </div>
-            </div>
-          )}
-        </ScrollArea>
-
-        {/* Action buttons */}
-        <div className="flex justify-end gap-2 pt-4 border-t">
-          <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-          <Button onClick={createTemplate} disabled={creating} className="gap-2">
-            {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-            {creating ? 'Creating...' : 'Create Template'}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
+ /**
+  * Create Template Dialog - Consolidated
+  * Clean, non-duplicate form with working dropdowns
+  */
+ 
+ import React, { useState, useEffect, useRef } from 'react';
+ import {
+   Dialog,
+   DialogContent,
+   DialogDescription,
+   DialogHeader,
+   DialogTitle,
+   DialogTrigger,
+ } from '@/components/ui/dialog';
+ import { Button } from '@/components/ui/button';
+ import { Input } from '@/components/ui/input';
+ import { Label } from '@/components/ui/label';
+ import { Textarea } from '@/components/ui/textarea';
+ import { Badge } from '@/components/ui/badge';
+ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+ import { ScrollArea } from '@/components/ui/scroll-area';
+ import {
+   Plus,
+   Wand2,
+   Copy,
+   Layers,
+   Sparkles,
+   Globe2,
+   Loader2,
+   Check,
+   Monitor,
+   Languages,
+   Search,
+   ChevronDown,
+   X,
+   ArrowRight,
+ } from 'lucide-react';
+ import { cn } from '@/lib/utils';
+ import { supabase } from '@/integrations/supabase/client';
+ import { useToast } from '@/hooks/use-toast';
+ import type { VideoBlueprint } from '@/hooks/useVideoBlueprints';
+ import { useVideoBlueprints } from '@/hooks/useVideoBlueprints';
+ 
+ interface CreateTemplateDialogProps {
+   onCreated?: () => void;
+   templateToClone?: VideoBlueprint | null;
+ }
+ 
+ // Categories
+ const TEMPLATE_CATEGORIES = [
+   { value: 'marketing', label: 'Marketing', icon: '📈' },
+   { value: 'educational', label: 'Educational', icon: '📚' },
+   { value: 'storytelling', label: 'Storytelling', icon: '📖' },
+   { value: 'healthcare', label: 'Healthcare', icon: '🏥' },
+   { value: 'entertainment', label: 'Entertainment', icon: '🎬' },
+   { value: 'travel', label: 'Travel', icon: '✈️' },
+   { value: 'corporate', label: 'Corporate', icon: '🏢' },
+   { value: 'animation', label: 'Animation', icon: '🎨' },
+   { value: '3d', label: '3D/VR', icon: '🧊' },
+   { value: 'avatar', label: 'Avatar', icon: '👤' },
+   { value: 'interactive', label: 'Interactive', icon: '🎮' },
+   { value: 'ppt', label: 'PPT/Slides', icon: '📊' },
+   { value: 'smb', label: 'SMB/Local', icon: '🏪' },
+   { value: 'oil_gas', label: 'Oil & Gas', icon: '⛽' },
+   { value: 'podcast', label: 'Podcast', icon: '🎙️' },
+   { value: 'hospitality', label: 'Hospitality', icon: '🍽️' },
+   { value: 'consulting', label: 'Consulting', icon: '💼' },
+   { value: 'finance', label: 'Finance', icon: '💰' },
+   { value: 'real_estate', label: 'Real Estate', icon: '🏠' },
+   { value: 'technology', label: 'Technology', icon: '💻' },
+ ];
+ 
+ // Video styles
+ const VIDEO_STYLES = [
+   { value: 'photorealistic', label: 'Photorealistic', icon: '📸' },
+   { value: 'hyper_real', label: 'Hyper-Realistic 4K', icon: '🎥' },
+   { value: 'product_hero', label: 'Product Hero', icon: '🛍️' },
+   { value: 'pixar_disney', label: 'Pixar/Disney', icon: '🎪' },
+   { value: 'talking_head', label: 'Talking Head', icon: '👤' },
+   { value: 'anime', label: 'Anime', icon: '🎌' },
+   { value: 'whiteboard', label: 'Whiteboard', icon: '📝' },
+   { value: 'explainer', label: 'Explainer', icon: '💡' },
+   { value: 'motion_graphics', label: 'Motion Graphics', icon: '✨' },
+   { value: 'documentary', label: 'Documentary', icon: '🎥' },
+   { value: 'kinetic_typography', label: 'Kinetic Typography', icon: '📝' },
+   { value: 'ppt_animation', label: 'PPT Animation', icon: '📊' },
+ ];
+ 
+ // Platforms
+ const PLATFORM_OPTIONS = [
+   { value: 'tiktok', label: 'TikTok (9:16)' },
+   { value: 'instagram_reels', label: 'Instagram Reels (9:16)' },
+   { value: 'instagram_feed', label: 'Instagram Feed (1:1)' },
+   { value: 'youtube', label: 'YouTube (16:9)' },
+   { value: 'youtube_shorts', label: 'YouTube Shorts (9:16)' },
+   { value: 'facebook', label: 'Facebook (16:9)' },
+   { value: 'linkedin', label: 'LinkedIn (16:9)' },
+ ];
+ 
+ // AI Capabilities
+ const AI_CAPABILITIES = [
+   { value: 'text_to_video', label: 'Text-to-Video', icon: '📹' },
+   { value: 'image_to_video', label: 'Image-to-Video', icon: '🎞️' },
+   { value: '3d_generation', label: '3D Generation', icon: '🧊' },
+   { value: 'avatar', label: 'Avatar', icon: '👤' },
+   { value: 'lipsync', label: 'Lipsync', icon: '👄' },
+   { value: 'tts', label: 'TTS Voiceover', icon: '🎙️' },
+   { value: 'music_gen', label: 'Music Generation', icon: '🎵' },
+   { value: 'video_effects', label: 'Video Effects', icon: '✨' },
+ ];
+ 
+ // Regions
+ const REGIONS = [
+   { value: 'western', label: 'Western/US', icon: '🇺🇸', languages: ['en', 'es', 'fr'] },
+   { value: 'europe', label: 'Europe', icon: '🇪🇺', languages: ['en', 'de', 'fr', 'it', 'es'] },
+   { value: 'cjk', label: 'CJK', icon: '🇨🇳', languages: ['zh', 'ja', 'ko'] },
+   { value: 'india', label: 'India', icon: '🇮🇳', languages: ['hi', 'te', 'kn', 'ta', 'mr', 'bn'] },
+   { value: 'mena', label: 'MENA', icon: '🇸🇦', languages: ['ar', 'he', 'fa', 'tr'] },
+   { value: 'sea', label: 'Southeast Asia', icon: '🇸🇬', languages: ['id', 'ms', 'th', 'vi'] },
+   { value: 'latam', label: 'Latin America', icon: '🇧🇷', languages: ['es', 'pt'] },
+ ];
+ 
+ // Language names
+ const LANGUAGE_NAMES: Record<string, string> = {
+   en: 'English', es: 'Spanish', fr: 'French', de: 'German', it: 'Italian',
+   pt: 'Portuguese', zh: 'Chinese', ja: 'Japanese', ko: 'Korean', hi: 'Hindi',
+   te: 'Telugu', kn: 'Kannada', ta: 'Tamil', mr: 'Marathi', bn: 'Bengali',
+   ar: 'Arabic', he: 'Hebrew', fa: 'Persian', tr: 'Turkish', id: 'Indonesian',
+   ms: 'Malay', th: 'Thai', vi: 'Vietnamese',
+ };
+ 
+ // AI Providers
+ const AI_PROVIDERS = [
+   { value: 'openai', label: 'OpenAI GPT-4o', icon: '🧠' },
+   { value: 'gemini', label: 'Gemini 3.0', icon: '🔮' },
+   { value: 'sora2', label: 'Sora 2', icon: '🌟' },
+   { value: 'veo', label: 'Google Veo 3', icon: '🎬' },
+   { value: 'alibaba_wan', label: 'Alibaba Wan', icon: '🌊' },
+   { value: 'elevenlabs', label: 'ElevenLabs', icon: '🎙️' },
+   { value: 'meshy_3d', label: 'Meshy 3D', icon: '🧊' },
+ ];
+ 
+ // Dropdown Component
+ interface DropdownProps {
+   label: string;
+   icon?: React.ReactNode;
+   options: { value: string; label: string; icon?: string }[];
+   selected: string[];
+   onToggle: (value: string) => void;
+   multi?: boolean;
+   placeholder?: string;
+ }
+ 
+ const Dropdown: React.FC<DropdownProps> = ({
+   label,
+   icon,
+   options,
+   selected,
+   onToggle,
+   multi = true,
+   placeholder = 'Select...',
+ }) => {
+   const [isOpen, setIsOpen] = useState(false);
+   const ref = useRef<HTMLDivElement>(null);
+ 
+   // Close on outside click
+   useEffect(() => {
+     const handleClickOutside = (e: MouseEvent) => {
+       if (ref.current && !ref.current.contains(e.target as Node)) {
+         setIsOpen(false);
+       }
+     };
+     document.addEventListener('mousedown', handleClickOutside);
+     return () => document.removeEventListener('mousedown', handleClickOutside);
+   }, []);
+ 
+   const selectedLabels = options.filter(o => selected.includes(o.value));
+ 
+   return (
+     <div className="space-y-2" ref={ref}>
+       <Label className="flex items-center gap-2">
+         {icon}
+         {label}
+       </Label>
+       <div className="relative">
+         <Button
+           type="button"
+           variant="outline"
+           onClick={() => setIsOpen(!isOpen)}
+           className="w-full justify-between h-auto min-h-10 text-left"
+         >
+           {selectedLabels.length > 0 ? (
+             <div className="flex flex-wrap gap-1 pr-6">
+               {selectedLabels.slice(0, 3).map(opt => (
+                 <Badge key={opt.value} variant="secondary" className="text-xs">
+                   {opt.icon && <span className="mr-1">{opt.icon}</span>}
+                   {opt.label}
+                 </Badge>
+               ))}
+               {selectedLabels.length > 3 && (
+                 <Badge variant="outline" className="text-xs">+{selectedLabels.length - 3}</Badge>
+               )}
+             </div>
+           ) : (
+             <span className="text-muted-foreground">{placeholder}</span>
+           )}
+           <ChevronDown className={cn("h-4 w-4 absolute right-3 top-1/2 -translate-y-1/2 transition-transform", isOpen && "rotate-180")} />
+         </Button>
+         {isOpen && (
+           <div className="absolute z-[10000] w-full mt-1 bg-popover border rounded-md shadow-lg max-h-[200px] overflow-y-auto">
+             {options.map(opt => (
+               <button
+                 key={opt.value}
+                 type="button"
+                 onClick={() => {
+                   onToggle(opt.value);
+                   if (!multi) setIsOpen(false);
+                 }}
+                 className={cn(
+                   "w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent text-left",
+                   selected.includes(opt.value) && "bg-accent/50"
+                 )}
+               >
+                 <Check className={cn("h-4 w-4 shrink-0", selected.includes(opt.value) ? "opacity-100" : "opacity-0")} />
+                 {opt.icon && <span>{opt.icon}</span>}
+                 <span>{opt.label}</span>
+               </button>
+             ))}
+           </div>
+         )}
+       </div>
+     </div>
+   );
+ };
+ 
+ export function CreateTemplateDialog({ onCreated, templateToClone }: CreateTemplateDialogProps) {
+   const { toast } = useToast();
+   const { blueprints } = useVideoBlueprints();
+   const [open, setOpen] = useState(false);
+   const [creating, setCreating] = useState(false);
+   const [aiGenerating, setAiGenerating] = useState(false);
+   const [activeTab, setActiveTab] = useState<string>(templateToClone ? 'clone' : 'ai');
+   const [cloneSearchQuery, setCloneSearchQuery] = useState('');
+   const [selectedCloneTemplate, setSelectedCloneTemplate] = useState<VideoBlueprint | null>(templateToClone || null);
+   const [cloneDropdownOpen, setCloneDropdownOpen] = useState(false);
+   const cloneRef = useRef<HTMLDivElement>(null);
+ 
+   // Form state
+   const [formData, setFormData] = useState({
+     name: templateToClone?.name ? `${templateToClone.name} (Copy)` : '',
+     description: templateToClone?.description || '',
+     category: templateToClone?.category || 'marketing',
+     videoStyle: 'motion_graphics',
+     capabilities: [] as string[],
+     regions: ['western'] as string[],
+     languages: ['en'] as string[],
+     providers: ['openai', 'elevenlabs'] as string[],
+     platforms: ['youtube', 'tiktok'] as string[],
+     aiPrompt: '',
+   });
+ 
+   // Close clone dropdown on outside click
+   useEffect(() => {
+     const handleClickOutside = (e: MouseEvent) => {
+       if (cloneRef.current && !cloneRef.current.contains(e.target as Node)) {
+         setCloneDropdownOpen(false);
+       }
+     };
+     document.addEventListener('mousedown', handleClickOutside);
+     return () => document.removeEventListener('mousedown', handleClickOutside);
+   }, []);
+ 
+   // Get available languages based on regions
+   const availableLanguages = [...new Set(
+     REGIONS.filter(r => formData.regions.includes(r.value)).flatMap(r => r.languages)
+   )];
+ 
+   // Update languages when regions change
+   useEffect(() => {
+     setFormData(prev => ({
+       ...prev,
+       languages: prev.languages.filter(l => availableLanguages.includes(l)) || availableLanguages.slice(0, 1),
+     }));
+   }, [formData.regions.join(',')]);
+ 
+   // Toggle array helper
+   const toggleArrayItem = (key: keyof typeof formData, item: string) => {
+     setFormData(prev => ({
+       ...prev,
+       [key]: (prev[key] as string[]).includes(item)
+         ? (prev[key] as string[]).filter(i => i !== item)
+         : [...(prev[key] as string[]), item]
+     }));
+   };
+ 
+   // Set single value
+   const setSingleValue = (key: keyof typeof formData, item: string) => {
+     setFormData(prev => ({ ...prev, [key]: item }));
+   };
+ 
+   // Clone templates filter
+   const filteredCloneTemplates = blueprints.filter(bp =>
+     bp.name.toLowerCase().includes(cloneSearchQuery.toLowerCase()) ||
+     bp.description?.toLowerCase().includes(cloneSearchQuery.toLowerCase())
+   ).slice(0, 20);
+ 
+   // Select template to clone
+   const selectTemplateToClone = (template: VideoBlueprint) => {
+     setSelectedCloneTemplate(template);
+     setFormData(prev => ({
+       ...prev,
+       name: `${template.name} (Copy)`,
+       description: template.description || '',
+       category: template.category,
+     }));
+     setCloneDropdownOpen(false);
+   };
+ 
+   // AI Generation
+   const generateWithAI = async () => {
+     if (!formData.aiPrompt.trim()) {
+       toast({ title: 'Please describe what template you want', variant: 'destructive' });
+       return;
+     }
+     setAiGenerating(true);
+     try {
+       const { data, error } = await supabase.functions.invoke('generate-template-ai', {
+         body: { prompt: formData.aiPrompt, region: formData.regions[0] || 'western' }
+       });
+       if (error) throw error;
+       if (data?.template) {
+         setFormData(prev => ({
+           ...prev,
+           name: data.template.name || prev.name,
+           description: data.template.description || prev.description,
+           category: data.template.category || prev.category,
+           videoStyle: data.template.videoStyle || prev.videoStyle,
+           capabilities: data.template.capabilities || prev.capabilities,
+           regions: data.template.regions || prev.regions,
+         }));
+         setActiveTab('visual');
+         toast({ title: '✨ Generated!', description: 'Review configuration in Manual tab.' });
+       }
+     } catch (err: any) {
+       toast({ title: 'Generation failed', description: err.message, variant: 'destructive' });
+     } finally {
+       setAiGenerating(false);
+     }
+   };
+ 
+   // Create template
+   const createTemplate = async () => {
+     if (!formData.name.trim()) {
+       toast({ title: 'Template name is required', variant: 'destructive' });
+       return;
+     }
+     setCreating(true);
+     try {
+       const { data: user } = await supabase.auth.getUser();
+       const templateData = {
+         name: formData.name,
+         description: formData.description,
+         category: formData.category,
+         estimated_duration_seconds: 60,
+         target_platform: formData.platforms,
+         industry_tags: [formData.category, formData.videoStyle],
+         default_settings: {
+           videoStyle: formData.videoStyle,
+           providers: formData.providers,
+           platforms: formData.platforms,
+           languages: formData.languages,
+         },
+         style_preset: {
+           style: formData.videoStyle,
+           capabilities: formData.capabilities,
+         },
+         is_system_default: false,
+         created_by: user?.user?.id || null,
+         is_active: true,
+         is_public: true,
+         usage_count: 0,
+       };
+       const { error } = await supabase.from('video_blueprints').insert(templateData);
+       if (error) throw error;
+       toast({ title: 'Template created!', description: formData.name });
+       setOpen(false);
+       onCreated?.();
+       // Reset
+       setFormData({
+         name: '', description: '', category: 'marketing', videoStyle: 'motion_graphics',
+         capabilities: [], regions: ['western'], languages: ['en'],
+         providers: ['openai', 'elevenlabs'], platforms: ['youtube', 'tiktok'], aiPrompt: '',
+       });
+     } catch (err: any) {
+       toast({ title: 'Failed to create template', description: err.message, variant: 'destructive' });
+     } finally {
+       setCreating(false);
+     }
+   };
+ 
+   return (
+     <Dialog open={open} onOpenChange={setOpen}>
+       <DialogTrigger asChild>
+         <Button variant="outline" size="sm" className="gap-2">
+           <Plus className="h-4 w-4" />
+           {templateToClone ? 'Clone' : 'Create Template'}
+         </Button>
+       </DialogTrigger>
+       <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden">
+         <DialogHeader>
+           <DialogTitle className="flex items-center gap-2">
+             <Layers className="h-5 w-5 text-primary" />
+             Create New Template
+           </DialogTitle>
+           <DialogDescription>Choose a method to create your template</DialogDescription>
+         </DialogHeader>
+ 
+         <ScrollArea className="max-h-[65vh] pr-4">
+           <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-2">
+             <TabsList className="grid grid-cols-3 w-full">
+               <TabsTrigger value="ai" className="gap-1.5 text-xs">
+                 <Wand2 className="h-3.5 w-3.5" />
+                 AI-Assisted
+               </TabsTrigger>
+               <TabsTrigger value="clone" className="gap-1.5 text-xs">
+                 <Copy className="h-3.5 w-3.5" />
+                 Clone
+               </TabsTrigger>
+               <TabsTrigger value="visual" className="gap-1.5 text-xs">
+                 <Layers className="h-3.5 w-3.5" />
+                 Manual
+               </TabsTrigger>
+             </TabsList>
+ 
+             {/* AI Tab */}
+             <TabsContent value="ai" className="mt-4">
+               <div className="p-4 border rounded-lg bg-muted/30 space-y-4">
+                 <p className="text-sm text-muted-foreground flex items-center gap-2">
+                   <Sparkles className="h-4 w-4 text-primary" />
+                   Describe your template and AI will configure it
+                 </p>
+                 <Textarea
+                   placeholder="E.g., Create a TikTok product demo template with 3D avatar for Indian Telugu audience..."
+                   value={formData.aiPrompt}
+                   onChange={(e) => setFormData(prev => ({ ...prev, aiPrompt: e.target.value }))}
+                   className="min-h-[100px] bg-background"
+                 />
+                 <Button onClick={generateWithAI} disabled={aiGenerating || !formData.aiPrompt.trim()} className="w-full gap-2">
+                   {aiGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                   {aiGenerating ? 'Generating...' : 'Generate & Review'}
+                   <ArrowRight className="h-4 w-4 ml-auto" />
+                 </Button>
+               </div>
+             </TabsContent>
+ 
+             {/* Clone Tab */}
+             <TabsContent value="clone" className="mt-4 space-y-4">
+               <div className="space-y-2 relative" ref={cloneRef}>
+                 <Label>Select template to clone</Label>
+                 <Button
+                   type="button"
+                   variant="outline"
+                   onClick={() => setCloneDropdownOpen(!cloneDropdownOpen)}
+                   className="w-full justify-between h-auto min-h-10"
+                 >
+                   {selectedCloneTemplate ? (
+                     <div className="flex items-center gap-2">
+                       <Badge variant="secondary">{selectedCloneTemplate.category}</Badge>
+                       <span className="truncate">{selectedCloneTemplate.name}</span>
+                     </div>
+                   ) : (
+                     <span className="text-muted-foreground">Search templates...</span>
+                   )}
+                   <ChevronDown className={cn("h-4 w-4 transition-transform", cloneDropdownOpen && "rotate-180")} />
+                 </Button>
+                 {cloneDropdownOpen && (
+                   <div className="absolute z-[10000] w-full mt-1 bg-popover border rounded-md shadow-lg">
+                     <div className="p-2 border-b">
+                       <div className="relative">
+                         <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                         <Input
+                           placeholder="Search 407 templates..."
+                           value={cloneSearchQuery}
+                           onChange={(e) => setCloneSearchQuery(e.target.value)}
+                           className="pl-8 h-8"
+                         />
+                       </div>
+                     </div>
+                     <ScrollArea className="max-h-[200px]">
+                       {filteredCloneTemplates.map(t => (
+                         <button
+                           key={t.id}
+                           type="button"
+                           onClick={() => selectTemplateToClone(t)}
+                           className={cn(
+                             "w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent text-left",
+                             selectedCloneTemplate?.id === t.id && "bg-accent/50"
+                           )}
+                         >
+                           <Check className={cn("h-4 w-4 shrink-0", selectedCloneTemplate?.id === t.id ? "opacity-100" : "opacity-0")} />
+                           <Badge variant="outline" className="text-[10px] shrink-0">{t.category}</Badge>
+                           <span className="flex-1 truncate">{t.name}</span>
+                         </button>
+                       ))}
+                       {filteredCloneTemplates.length === 0 && (
+                         <p className="p-4 text-center text-sm text-muted-foreground">No templates found</p>
+                       )}
+                     </ScrollArea>
+                   </div>
+                 )}
+               </div>
+ 
+               {selectedCloneTemplate && (
+                 <div className="space-y-4">
+                   <div className="p-3 border rounded-lg bg-muted/30 flex items-center justify-between">
+                     <div>
+                       <p className="text-xs text-muted-foreground">Cloning from:</p>
+                       <p className="font-medium">{selectedCloneTemplate.name}</p>
+                     </div>
+                     <Button variant="ghost" size="sm" onClick={() => setSelectedCloneTemplate(null)}>
+                       <X className="h-4 w-4" />
+                     </Button>
+                   </div>
+                   <div className="space-y-2">
+                     <Label>New Template Name</Label>
+                     <Input
+                       value={formData.name}
+                       onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                       placeholder="My Template (Copy)"
+                     />
+                   </div>
+                 </div>
+               )}
+             </TabsContent>
+ 
+             {/* Manual Tab */}
+             <TabsContent value="visual" className="mt-4 space-y-4">
+               {/* Name + Category */}
+               <div className="grid grid-cols-2 gap-4">
+                 <div className="space-y-2">
+                   <Label>Template Name</Label>
+                   <Input
+                     value={formData.name}
+                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                     placeholder="My Custom Template"
+                   />
+                 </div>
+                 <Dropdown
+                   label="Category"
+                   options={TEMPLATE_CATEGORIES}
+                   selected={[formData.category]}
+                   onToggle={(v) => setSingleValue('category', v)}
+                   multi={false}
+                   placeholder="Select category"
+                 />
+               </div>
+ 
+               {/* Video Style */}
+               <Dropdown
+                 label="Video Style"
+                 options={VIDEO_STYLES}
+                 selected={[formData.videoStyle]}
+                 onToggle={(v) => setSingleValue('videoStyle', v)}
+                 multi={false}
+                 placeholder="Select style"
+               />
+ 
+               {/* Platforms */}
+               <Dropdown
+                 label="Target Platforms"
+                 icon={<Globe2 className="h-4 w-4" />}
+                 options={PLATFORM_OPTIONS}
+                 selected={formData.platforms}
+                 onToggle={(v) => toggleArrayItem('platforms', v)}
+                 placeholder="Select platforms"
+               />
+ 
+               {/* AI Capabilities */}
+               <Dropdown
+                 label="AI Capabilities"
+                 icon={<Sparkles className="h-4 w-4" />}
+                 options={AI_CAPABILITIES}
+                 selected={formData.capabilities}
+                 onToggle={(v) => toggleArrayItem('capabilities', v)}
+                 placeholder="Select capabilities"
+               />
+ 
+               {/* Regions */}
+               <Dropdown
+                 label="Target Regions"
+                 icon={<Globe2 className="h-4 w-4" />}
+                 options={REGIONS.map(r => ({ value: r.value, label: r.label, icon: r.icon }))}
+                 selected={formData.regions}
+                 onToggle={(v) => toggleArrayItem('regions', v)}
+                 placeholder="Select regions"
+               />
+ 
+               {/* Languages */}
+               {availableLanguages.length > 0 && (
+                 <Dropdown
+                   label={`Languages (${availableLanguages.length} available)`}
+                   icon={<Languages className="h-4 w-4" />}
+                   options={availableLanguages.map(l => ({ value: l, label: LANGUAGE_NAMES[l] || l }))}
+                   selected={formData.languages}
+                   onToggle={(v) => toggleArrayItem('languages', v)}
+                   placeholder="Select languages"
+                 />
+               )}
+ 
+               {/* AI Providers */}
+               <Dropdown
+                 label="AI Providers"
+                 icon={<Wand2 className="h-4 w-4" />}
+                 options={AI_PROVIDERS}
+                 selected={formData.providers}
+                 onToggle={(v) => toggleArrayItem('providers', v)}
+                 placeholder="Select providers"
+               />
+ 
+               {/* Description */}
+               <div className="space-y-2">
+                 <Label>Description (optional)</Label>
+                 <Textarea
+                   value={formData.description}
+                   onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                   placeholder="What is this template for..."
+                   className="min-h-[60px]"
+                 />
+               </div>
+             </TabsContent>
+           </Tabs>
+         </ScrollArea>
+ 
+         {/* Footer */}
+         <div className="flex justify-end gap-2 pt-4 border-t">
+           <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+           <Button
+             onClick={createTemplate}
+             disabled={creating || !formData.name.trim() || (activeTab === 'clone' && !selectedCloneTemplate)}
+             className="gap-2"
+           >
+             {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+             {creating ? 'Creating...' : 'Create Template'}
+           </Button>
+         </div>
+       </DialogContent>
+     </Dialog>
+   );
+ }
