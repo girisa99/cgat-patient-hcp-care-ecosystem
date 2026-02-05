@@ -59,7 +59,12 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
   
   // CRITICAL FIX: Derive activeTab directly from URL to prevent tab loss during re-renders
   // This ensures the Genie Cast tab persists even when auth state or lazy loading causes re-renders
-  const activeTab: AdminTab = (searchParams.get('tab') as AdminTab) || 'kanban';
+  // Also memoize to prevent unnecessary re-renders
+  const activeTab: AdminTab = React.useMemo(() => {
+    const tabFromUrl = searchParams.get('tab') as AdminTab;
+    console.log('[ProductionHubAdmin] Active tab from URL:', tabFromUrl || 'kanban (default)');
+    return tabFromUrl || 'kanban';
+  }, [searchParams]);
   
   const [activeCategory, setActiveCategory] = useState<EventCategory>('media_production');
   const [selectedShow, setSelectedShow] = useState<any>(null);

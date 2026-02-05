@@ -169,15 +169,33 @@ export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({
     );
   };
 
-  // Check if current path is in a category
-  const isPathInCategory = (category: string) => {
+  // Check if current path is in a category - FIXED to handle query params properly
+  const isPathInCategory = React.useCallback((category: string) => {
+    // For MANAGE category, check subcategories
+    if (category === 'manage') {
+      return Object.values(manageSubCategories).some(subItems =>
+        subItems.some(item => {
+          const itemUrl = new URL(item.url, window.location.origin);
+          return location.pathname === itemUrl.pathname &&
+            itemUrl.searchParams.get('tab') === new URLSearchParams(location.search).get('tab');
+        })
+      );
+    }
+    
     const items = navByCategory[category] || [];
     return items.some(item => {
-      const itemPath = item.url.split('?')[0];
-      const currentPath = location.pathname;
-      return currentPath === itemPath || currentPath.startsWith(itemPath);
+      const itemUrl = new URL(item.url, window.location.origin);
+      const currentTab = new URLSearchParams(location.search).get('tab');
+      const itemTab = itemUrl.searchParams.get('tab');
+      
+      // For items with tab params, check both pathname and tab
+      if (itemTab) {
+        return location.pathname === itemUrl.pathname && currentTab === itemTab;
+      }
+      // For items without tab params, just check pathname
+      return location.pathname === itemUrl.pathname || location.pathname.startsWith(itemUrl.pathname + '/');
     });
-  };
+  }, [navByCategory, manageSubCategories, location.pathname, location.search]);
 
   if (variant === 'topbar') {
     return (
@@ -344,24 +362,33 @@ export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({
                                 </button>
                               </CollapsibleTrigger>
                               <CollapsibleContent className="pl-2 space-y-0.5">
-                                {subItems.map(item => (
-                                  <NavLink
-                                    key={item.url}
-                                    to={item.url}
-                                    title={item.description}
-                                    className={({ isActive }) =>
-                                      cn(
+                                {subItems.map(item => {
+                                  // CRITICAL FIX: Proper active state detection for query-param-based tabs
+                                  // NavLink's isActive only checks pathname, not search params
+                                  // We need to manually check for ?tab= query params
+                                  const itemUrl = new URL(item.url, window.location.origin);
+                                  const currentUrl = new URL(window.location.href);
+                                  const isItemActive = 
+                                    itemUrl.pathname === currentUrl.pathname &&
+                                    itemUrl.searchParams.get('tab') === currentUrl.searchParams.get('tab');
+                                  
+                                  return (
+                                    <NavLink
+                                      key={item.url}
+                                      to={item.url}
+                                      title={item.description}
+                                      className={cn(
                                         "flex items-center gap-2 rounded px-2 py-1 text-xs transition-colors",
-                                        isActive
+                                        isItemActive
                                           ? "bg-primary/10 text-primary font-medium"
                                           : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                                      )
-                                    }
-                                  >
-                                    <item.icon className="h-3 w-3 flex-shrink-0" />
-                                    <span className="truncate">{item.title}</span>
-                                  </NavLink>
-                                ))}
+                                      )}
+                                    >
+                                      <item.icon className="h-3 w-3 flex-shrink-0" />
+                                      <span className="truncate">{item.title}</span>
+                                    </NavLink>
+                                  );
+                                })}
                               </CollapsibleContent>
                             </Collapsible>
                           ))}
