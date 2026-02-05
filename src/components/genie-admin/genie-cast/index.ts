@@ -32,3 +32,4 @@ export { useUnifiedAuthoring } from '@/hooks/useUnifiedAuthoring';
 export { AuthoringStageIndicator } from '@/components/shared/AuthoringStageIndicator';
 export { RegionalDialectSelector, REGIONAL_CONFIG } from '@/components/shared/RegionalDialectSelector';
 export { ScriptTemplateMapper } from '@/components/shared/ScriptTemplateMapper';
+export { AVSyncPreview, type SyncStatus, type AVSyncPreviewProps } from '@/components/shared/AVSyncPreview';

@@ -41,7 +41,7 @@
  |-----------|---------|----------|
 | **`style_intent` Field** | ✅ DONE - Added to video_blueprints | ~~P0~~ |
 | **ScriptTemplateMapper** | ✅ DONE - Created component | ~~P0~~ |
-| **AVSyncPreview** | Timeline with audio waveform sync preview | P1 (Next) |
+| **AVSyncPreview** | ✅ DONE - Timeline, waveform, playhead, sync indicators | ~~P1~~ |
  | **ApprovalDashboard** | Unified approval queue (Messaging → Script → A/V → Publish) | P1 |
  | **Regional Sub-Selector** | Granular dialect selection (India regions, Arabic dialects) | P1 |
 | **useUnifiedAuthoring** | ✅ DONE - Cross-product hook created | ~~P2~~ |

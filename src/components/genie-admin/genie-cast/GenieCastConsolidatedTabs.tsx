@@ -50,6 +50,7 @@ import { useUnifiedAuthoring } from '@/hooks/useUnifiedAuthoring';
 import { AuthoringStageIndicator } from '@/components/shared/AuthoringStageIndicator';
 import { RegionalDialectSelector } from '@/components/shared/RegionalDialectSelector';
 import { ScriptTemplateMapper } from '@/components/shared/ScriptTemplateMapper';
+import { AVSyncPreview } from '@/components/shared/AVSyncPreview';
 import type { StyleIntent, RegionZone } from '@/services/styleIntentResolver';
 
 // Import sub-components from parent panel
@@ -584,26 +585,40 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   </CardContent>
                 </Card>
 
-                {/* Timeline Editor Placeholder - Future AVSyncPreview integration */}
-                <Card className="border-dashed">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="flex items-center gap-2 text-muted-foreground">
-                      <Play className="w-5 h-5" />
-                      A/V Sync Preview
-                      <Badge variant="outline" className="ml-2 text-xs">Coming Next</Badge>
-                    </CardTitle>
-                    <CardDescription>
-                      Timeline with audio waveform sync preview - P1 priority
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="min-h-[200px] flex items-center justify-center">
-                    <div className="text-center text-muted-foreground">
-                      <Play className="w-12 h-12 mx-auto mb-4 opacity-30" />
-                      <p className="text-sm">AVSyncPreview component - waveform visualization</p>
-                      <p className="text-xs opacity-70">Timeline scrubbing, sync indicators, scene preview</p>
-                    </div>
-                  </CardContent>
-                </Card>
+                {/* A/V Sync Preview - Timeline with waveform visualization */}
+                <AVSyncPreview
+                  mapping={authoring.state.templateMapping || {
+                    templateId: 'demo-template',
+                    templateName: 'Product Demo Template',
+                    scenes: [
+                      { sceneId: 'scene-1', sceneKey: 'opening', title: 'Opening Hook', orderIndex: 0, scriptText: 'Discover the solution you\'ve been waiting for.', sourceType: 'template', durationSeconds: 15, minDuration: 10, maxDuration: 30, ttsConfig: { provider: 'Azure Neural', speed: 1.0, pitch: 1.0 }, approvalStatus: 'approved' },
+                      { sceneId: 'scene-2', sceneKey: 'problem', title: 'Problem Statement', orderIndex: 1, scriptText: 'Are you struggling with manual processes? You\'re not alone.', sourceType: 'template', durationSeconds: 20, minDuration: 15, maxDuration: 40, ttsConfig: { provider: 'Azure Neural', speed: 1.0, pitch: 1.0 }, approvalStatus: 'approved' },
+                      { sceneId: 'scene-3', sceneKey: 'solution', title: 'Solution Intro', orderIndex: 2, scriptText: 'Our platform uses AI-powered automation to transform your workflow.', sourceType: 'messaging', durationSeconds: 25, minDuration: 15, maxDuration: 45, ttsConfig: { provider: 'Azure Neural', speed: 1.0, pitch: 1.0 }, approvalStatus: 'approved' },
+                      { sceneId: 'scene-4', sceneKey: 'benefits', title: 'Key Benefits', orderIndex: 3, scriptText: 'Experience faster workflows, reduced errors, and cost savings.', sourceType: 'messaging', durationSeconds: 30, minDuration: 20, maxDuration: 50, ttsConfig: { provider: 'Azure Neural', speed: 1.0, pitch: 1.0 }, approvalStatus: 'approved' },
+                      { sceneId: 'scene-5', sceneKey: 'proof', title: 'Social Proof', orderIndex: 4, scriptText: 'Join thousands of satisfied customers who trust our platform.', sourceType: 'template', durationSeconds: 20, minDuration: 10, maxDuration: 35, ttsConfig: { provider: 'Azure Neural', speed: 1.0, pitch: 1.0 }, approvalStatus: 'approved' },
+                      { sceneId: 'scene-6', sceneKey: 'cta', title: 'Call to Action', orderIndex: 5, scriptText: 'Get started today! Visit our website for a free trial.', sourceType: 'custom', durationSeconds: 15, minDuration: 10, maxDuration: 25, ttsConfig: { provider: 'Azure Neural', speed: 1.0, pitch: 1.0 }, approvalStatus: 'approved' },
+                    ],
+                    totalDuration: 125,
+                    styleIntent: 'product-hero',
+                    resolvedProviders: {
+                      image: 'Gemini 3 Pro',
+                      video: 'Vertex Veo 3',
+                      tts: 'Azure Neural',
+                      llm: 'Gemini 3.0',
+                    },
+                  }}
+                  onPlayScene={(sceneId) => {
+                    console.log('[Studio] Play scene:', sceneId);
+                    toast.info(`Playing scene preview...`);
+                  }}
+                  onSeek={(time) => {
+                    console.log('[Studio] Seek to:', time);
+                  }}
+                  onSyncFix={(sceneId, action) => {
+                    console.log('[Studio] Sync fix:', sceneId, action);
+                    toast.info(`Applying ${action} to fix sync...`);
+                  }}
+                />
               </motion.div>
             )}
             
