@@ -251,6 +251,8 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   onNavigate={(tab) => {
                     if (tab === 'screenshots') {
                       setSubTab('create', 'screenshots');
+                    } else if (tab === 'messaging') {
+                      setSubTab('create', 'messaging');
                     } else if (tab === 'generate') {
                       setActiveMainTab('produce');
                       setSubTab('produce', 'generate');
