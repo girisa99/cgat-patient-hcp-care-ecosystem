@@ -510,22 +510,97 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.2 }}
+                className="space-y-4"
               >
+                {/* Authoring Stage Progress */}
+                <div className="mb-4">
+                  <AuthoringStageIndicator
+                    currentStage={authoring.state.currentStage}
+                    enabledStages={authoring.state.config.enabledStages}
+                    variant="compact"
+                    onStageClick={(stage) => authoring.goToStage(stage)}
+                    isStageComplete={(stage) => {
+                      const stageIndex = authoring.state.config.enabledStages.indexOf(stage);
+                      const currentIndex = authoring.state.config.enabledStages.indexOf(authoring.state.currentStage);
+                      return stageIndex < currentIndex;
+                    }}
+                    progress={{
+                      current: authoring.state.config.enabledStages.indexOf(authoring.state.currentStage) + 1,
+                      total: authoring.state.config.enabledStages.length,
+                      percentage: ((authoring.state.config.enabledStages.indexOf(authoring.state.currentStage) + 1) / authoring.state.config.enabledStages.length) * 100,
+                    }}
+                  />
+                </div>
+
+                {/* Script-to-Template Mapper */}
                 <Card>
-                  <CardHeader>
+                  <CardHeader className="pb-2">
                     <CardTitle className="flex items-center gap-2">
                       <Film className="w-5 h-5" />
-                      Composition Studio
+                      Scene-to-Script Mapping
                     </CardTitle>
                     <CardDescription>
-                      Timeline-based video editing and chapter management
+                      Align your scripts to template scenes with duration estimation and variable injection
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="min-h-[400px] flex items-center justify-center">
+                  <CardContent>
+                    <ScriptTemplateMapper
+                      mapping={authoring.state.templateMapping || {
+                        templateId: 'demo-template',
+                        templateName: 'Product Demo Template',
+                        scenes: [
+                          { sceneId: 'scene-1', sceneKey: 'opening', title: 'Opening Hook', orderIndex: 0, scriptText: 'Discover the solution you\'ve been waiting for.', sourceType: 'template', durationSeconds: 15, minDuration: 10, maxDuration: 30, ttsConfig: { provider: 'Azure Neural', speed: 1.0, pitch: 1.0 }, approvalStatus: 'pending' },
+                          { sceneId: 'scene-2', sceneKey: 'problem', title: 'Problem Statement', orderIndex: 1, scriptText: 'Are you struggling with manual processes? You\'re not alone.', sourceType: 'template', durationSeconds: 20, minDuration: 15, maxDuration: 40, ttsConfig: { provider: 'Azure Neural', speed: 1.0, pitch: 1.0 }, approvalStatus: 'pending' },
+                          { sceneId: 'scene-3', sceneKey: 'solution', title: 'Solution Intro', orderIndex: 2, scriptText: 'Our platform uses AI-powered automation to transform your workflow.', sourceType: 'messaging', durationSeconds: 25, minDuration: 15, maxDuration: 45, ttsConfig: { provider: 'Azure Neural', speed: 1.0, pitch: 1.0 }, approvalStatus: 'draft' },
+                          { sceneId: 'scene-4', sceneKey: 'benefits', title: 'Key Benefits', orderIndex: 3, scriptText: 'Experience faster workflows, reduced errors, and cost savings.', sourceType: 'messaging', durationSeconds: 30, minDuration: 20, maxDuration: 50, ttsConfig: { provider: 'Azure Neural', speed: 1.0, pitch: 1.0 }, approvalStatus: 'draft' },
+                          { sceneId: 'scene-5', sceneKey: 'proof', title: 'Social Proof', orderIndex: 4, scriptText: 'Join thousands of satisfied customers who trust our platform.', sourceType: 'template', durationSeconds: 20, minDuration: 10, maxDuration: 35, ttsConfig: { provider: 'Azure Neural', speed: 1.0, pitch: 1.0 }, approvalStatus: 'pending' },
+                          { sceneId: 'scene-6', sceneKey: 'cta', title: 'Call to Action', orderIndex: 5, scriptText: 'Get started today! Visit our website for a free trial.', sourceType: 'custom', durationSeconds: 15, minDuration: 10, maxDuration: 25, ttsConfig: { provider: 'Azure Neural', speed: 1.0, pitch: 1.0 }, approvalStatus: 'approved' },
+                        ],
+                        totalDuration: 125,
+                        styleIntent: 'product-hero',
+                        resolvedProviders: {
+                          image: 'Gemini 3 Pro',
+                          video: 'Vertex Veo 3',
+                          tts: 'Azure Neural',
+                          llm: 'Gemini 3.0',
+                        },
+                      }}
+                      onSceneUpdate={(sceneId, updates) => {
+                        console.log('[Studio] Scene updated:', sceneId, updates);
+                        authoring.updateSceneScript(sceneId, updates);
+                      }}
+                      onApproveAll={() => {
+                        console.log('[Studio] Approve all scenes');
+                        authoring.approveTemplateMapping();
+                        toast.success('All scenes approved');
+                      }}
+                      onGenerateTTS={async (sceneId) => {
+                        console.log('[Studio] TTS Preview requested:', sceneId);
+                        toast.info(`Generating TTS preview...`);
+                        return authoring.generateTTSForScene(sceneId);
+                      }}
+                      isProcessing={authoring.state.isProcessing}
+                    />
+                  </CardContent>
+                </Card>
+
+                {/* Timeline Editor Placeholder - Future AVSyncPreview integration */}
+                <Card className="border-dashed">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center gap-2 text-muted-foreground">
+                      <Play className="w-5 h-5" />
+                      A/V Sync Preview
+                      <Badge variant="outline" className="ml-2 text-xs">Coming Next</Badge>
+                    </CardTitle>
+                    <CardDescription>
+                      Timeline with audio waveform sync preview - P1 priority
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="min-h-[200px] flex items-center justify-center">
                     <div className="text-center text-muted-foreground">
-                      <Film className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p>Timeline editor consolidates from /composition-studio</p>
-                      <p className="text-sm">Chapter reordering, transitions, audio mixing</p>
+                      <Play className="w-12 h-12 mx-auto mb-4 opacity-30" />
+                      <p className="text-sm">AVSyncPreview component - waveform visualization</p>
+                      <p className="text-xs opacity-70">Timeline scrubbing, sync indicators, scene preview</p>
                     </div>
                   </CardContent>
                 </Card>
