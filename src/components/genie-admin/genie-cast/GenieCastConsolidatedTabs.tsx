@@ -45,6 +45,13 @@ import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
+// Import unified authoring system
+import { useUnifiedAuthoring } from '@/hooks/useUnifiedAuthoring';
+import { AuthoringStageIndicator } from '@/components/shared/AuthoringStageIndicator';
+import { RegionalDialectSelector } from '@/components/shared/RegionalDialectSelector';
+import { ScriptTemplateMapper } from '@/components/shared/ScriptTemplateMapper';
+import type { StyleIntent, RegionZone } from '@/services/styleIntentResolver';
+
 // Import sub-components from parent panel
 import { GenieCastOverview, VideoStyleCards, AIProviderShowcase, type VideoStyleType } from './index';
 import { MultiScreenshotGallery, type ProductGallery } from '../MultiScreenshotGallery';
@@ -81,6 +88,11 @@ interface GenieCastConsolidatedTabsProps {
   // Generation callbacks
   onGenerate: () => void;
   isGenerating: boolean;
+  
+  // Unified authoring callbacks (optional - for cross-product use)
+  onAuthoringStageChange?: (stage: string) => void;
+  onMessagingApproved?: (messaging: any) => void;
+  onScriptApproved?: (mapping: any) => void;
   
   // Optional: For navigation from other components
   defaultTab?: ConsolidatedTab;
@@ -152,6 +164,9 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
   isGenerating,
   defaultTab = 'create',
   defaultSubTab,
+  onAuthoringStageChange,
+  onMessagingApproved,
+  onScriptApproved,
 }) => {
   const [activeMainTab, setActiveMainTab] = useState<ConsolidatedTab>(defaultTab);
   const [subTabs, setSubTabs] = useState<Record<ConsolidatedTab, string>>({
@@ -161,11 +176,45 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
     publish: 'scheduler',
   });
 
+  // Initialize unified authoring hook for cross-functional workflow
+  const authoring = useUnifiedAuthoring({
+    productContext: 'cast',
+    initialStyleIntent: 'product-hero',
+    initialRegions: ['global'],
+    initialDialects: ['en-US'],
+    onStageChange: (stage) => {
+      onAuthoringStageChange?.(stage);
+      console.log('[GenieCastConsolidatedTabs] Authoring stage:', stage);
+    },
+    onMessagingApproved,
+    onScriptApproved,
+  });
+
+  // Regional dialect selection state
+  const [selectedDialectCodes, setSelectedDialectCodes] = useState<string[]>(['en-US']);
+
   const metrics = calculateEcosystemMetrics();
 
   const setSubTab = useCallback((mainTab: ConsolidatedTab, subTab: string) => {
     setSubTabs(prev => ({ ...prev, [mainTab]: subTab }));
   }, []);
+
+  // Handle dialect selection change
+  const handleDialectChange = useCallback((dialectCodes: string[]) => {
+    setSelectedDialectCodes(dialectCodes);
+    authoring.setSelectedDialects(dialectCodes);
+    
+    // Infer regions from dialects
+    const regions = new Set<RegionZone>();
+    dialectCodes.forEach(code => {
+      if (code.startsWith('ar-')) regions.add('mena');
+      else if (['zh-CN', 'ja-JP', 'ko-KR'].includes(code)) regions.add('cjk');
+      else if (['hi-IN', 'te-IN', 'ta-IN', 'kn-IN', 'bn-IN'].includes(code)) regions.add('india');
+      else if (['es-MX', 'pt-BR', 'es-ES'].includes(code)) regions.add('latam');
+      else regions.add('global');
+    });
+    authoring.setTargetRegions(Array.from(regions) as RegionZone[]);
+  }, [authoring]);
 
   const currentMainDef = TAB_DEFINITIONS[activeMainTab];
   const currentSubTab = subTabs[activeMainTab];
@@ -309,6 +358,45 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.2 }}
               >
+                {/* Cross-functional Authoring Stage Indicator */}
+                <div className="mb-4">
+                  <AuthoringStageIndicator
+                    currentStage={authoring.state.currentStage}
+                    enabledStages={authoring.state.config.enabledStages}
+                    variant="compact"
+                    onStageClick={(stage) => authoring.goToStage(stage)}
+                    isStageComplete={(stage) => {
+                      const stageIndex = authoring.state.config.enabledStages.indexOf(stage);
+                      const currentIndex = authoring.state.config.enabledStages.indexOf(authoring.state.currentStage);
+                      return stageIndex < currentIndex;
+                    }}
+                    progress={{
+                      current: authoring.state.config.enabledStages.indexOf(authoring.state.currentStage) + 1,
+                      total: authoring.state.config.enabledStages.length,
+                      percentage: ((authoring.state.config.enabledStages.indexOf(authoring.state.currentStage) + 1) / authoring.state.config.enabledStages.length) * 100,
+                    }}
+                  />
+                </div>
+                
+                {/* Regional Dialect Selector for multi-regional output */}
+                <Card className="mb-4">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Globe className="w-4 h-4 text-primary" />
+                      Regional Output Configuration
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      Select target regions and dialects for transcreation (One Template → Many Videos)
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <RegionalDialectSelector
+                      onDialectsChange={handleDialectChange}
+                      selectedDialects={selectedDialectCodes}
+                    />
+                  </CardContent>
+                </Card>
+                
                 <MessagingGeneratorPanel />
               </motion.div>
             )}
