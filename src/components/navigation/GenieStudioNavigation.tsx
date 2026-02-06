@@ -85,15 +85,30 @@ export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({
     return hookNavByCategory;
   }, [hookNavByCategory, userTier]);
   
-  // Persist navigation state to localStorage to prevent losing Genie Cast visibility
+  // CRITICAL FIX: Always default to expanded states for Genie Cast visibility
+  // DEV_MODE: Force expand 'manage' category and 'Create' subcategory to ensure Genie Cast is always visible
   const [openCategories, setOpenCategories] = useState<string[]>(() => {
+    // Always include 'manage' to ensure Genie Cast is visible
     const saved = localStorage.getItem('genie_nav_open_categories');
-    return saved ? JSON.parse(saved) : ['manage'];
+    const defaultOpen = ['manage', 'tools', 'production']; // Critical: manage must be open for Genie Cast
+    if (saved) {
+      const parsed = JSON.parse(saved) as string[];
+      // Merge saved with required defaults
+      return [...new Set([...defaultOpen, ...parsed])];
+    }
+    return defaultOpen;
   });
   
   const [openSubCategories, setOpenSubCategories] = useState<string[]>(() => {
+    // CRITICAL: 'Create' subcategory contains Genie Cast - must be open by default
     const saved = localStorage.getItem('genie_nav_open_subcategories');
-    return saved ? JSON.parse(saved) : ['Create', 'Plan'];
+    const defaultOpen = ['Create', 'Plan', 'Analyze']; // Create is critical for Genie Cast
+    if (saved) {
+      const parsed = JSON.parse(saved) as string[];
+      // Merge saved with required defaults
+      return [...new Set([...defaultOpen, ...parsed])];
+    }
+    return defaultOpen;
   });
 
   // Persist open categories state
