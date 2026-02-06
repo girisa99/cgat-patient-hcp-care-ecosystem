@@ -27,11 +27,25 @@ Token-in-URL (`?token=<key>`) is NOT accepted by DashScope (connection rejected)
 
 **Current Status**: 403 Access Denied — Sambert model needs to be **activated** in the Alibaba DashScope console at https://dashscope.console.aliyun.com/
 
+### Critical Discovery: DashScope International Unavailability
+
+**DashScope is NOT available on Alibabacloud.com (International)**. The console shows:
+"DashScope has not yet been released on Alibabacloud.com(international), please stay tuned for our updates!"
+
+This means Sambert activation requires a **Chinese Aliyun.com account** (not international).
+
 ### Action Required by User
 
-1. Go to DashScope Console → Model Management
-2. Activate/enable Sambert TTS models (sambert-zhichu-v1, sambert-zhide-v1)
-3. Verify the API key has TTS permissions enabled
+**Option A (If user has Aliyun.com China account):**
+1. Click "Switch to Aliyun.com account" on DashScope page
+2. Go to DashScope Console → Model Management
+3. Activate/enable Sambert TTS models (sambert-zhichu-v1, sambert-zhide-v1)
+4. Use ALIBABA_CHINA_API_KEY (routes to dashscope.aliyuncs.com)
+
+**Option B (If no Aliyun.com account):**
+1. Skip Alibaba TTS entirely
+2. Use Azure Neural TTS as primary for CJK (already configured)
+3. ElevenLabs as fallback for CJK
 
 ### Architecture After Fix
 
