@@ -223,7 +223,9 @@ export const genieStudioNavItems: GenieNavItem[] = [
     minTier: 'free',
     category: 'manage',
     subCategory: 'Create',
-    isInternal: true,
+    // PERMANENTLY VISIBLE: No isInternal flag - Genie Cast must NEVER be gated behind internal-only access
+    // This is the definitive fix for the recurring "Genie Cast tab disappearing" bug.
+    // Previous approaches used DEV_MODE flags which were fragile and kept breaking.
   },
   // ANALYZE - Performance metrics and business intelligence (Internal Only)
   {
