@@ -217,8 +217,39 @@ class AIMessagingGeneratorService {
 
     // Generate using AI
     try {
+      // Build comprehensive prompt for messaging generation
+      const messagingPrompt = `Generate comprehensive marketing messaging for ${product.name} (${product.tagline}).
+
+Target: ${feature?.name || product.name}
+Type: ${request.type}
+Audience Pain Points: ${audiencePainPoints.join(', ')}
+${competitorWeaknesses.length > 0 ? `Competitor Weaknesses to Address: ${competitorWeaknesses.join(', ')}` : ''}
+
+Generate the following in JSON format:
+{
+  "headline": "Compelling headline under 60 chars",
+  "hook": "Attention-grabbing opening hook",
+  "subHook": "Supporting sub-hook",
+  "cta": "Primary call to action",
+  "ctaSecondary": "Secondary call to action",
+  "valueProposition": "Core value proposition",
+  "painPoints": ["3 audience pain points addressed"],
+  "benefits": ["3 key benefits"],
+  "differentiators": ["3 competitive differentiators"],
+  "openingLine": "Video/script opening line",
+  "closingLine": "Memorable closing line",
+  "transitionPhrases": ["3 transition phrases for video scripts"],
+  "hashtags": ["5 relevant hashtags"],
+  "keywords": ["5 SEO keywords"],
+  "metaDescription": "SEO meta description under 160 chars",
+  "confidence": 0.85
+}`;
+
       const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
         body: {
+          provider: 'openai',
+          model: 'gpt-4o-mini',
+          prompt: messagingPrompt,
           action: 'generate_marketing_messaging',
           productName: product.name,
           productTagline: product.tagline,
@@ -228,6 +259,7 @@ class AIMessagingGeneratorService {
           competitorWeaknesses,
           frameworks: Object.keys(MESSAGING_FRAMEWORKS),
           templates: MESSAGING_TEMPLATES.map(t => t.template),
+          responseFormat: 'json',
         },
       });
 
