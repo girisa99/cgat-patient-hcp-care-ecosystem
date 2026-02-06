@@ -692,95 +692,135 @@ async function generateGoogleTTS(text: string, languageCode?: string, voice?: st
 }
 
 async function generateAlibabaTTS(text: string, languageCode?: string, voice?: string): Promise<ArrayBuffer> {
-  // CosyVoice requires API key - try both China and International
+  // Dual-path: CosyVoice WebSocket (primary) → Sambert REST (fallback)
   const ALIBABA_CHINA_KEY = Deno.env.get('ALIBABA_CHINA_API_KEY');
   const ALIBABA_INTL_KEY = Deno.env.get('ALIBABA_API_KEY');
   
   const apiKey = ALIBABA_CHINA_KEY || ALIBABA_INTL_KEY;
   if (!apiKey) throw new Error('Alibaba API key not configured');
   
-  // Use OpenAI-compatible endpoint for CosyVoice speech synthesis
-  // China key → Beijing endpoint, International key → Virginia endpoint
-  const baseUrl = ALIBABA_CHINA_KEY 
-    ? 'https://dashscope.aliyuncs.com'
-    : 'https://dashscope-intl.aliyuncs.com';
-  const endpoint = `${baseUrl}/compatible-mode/v1/audio/speech`;
-  
-  // Voice selection based on language - CosyVoice v2 voices
-  const voiceMap: Record<string, string> = {
-    'zh': 'longanyang',
-    'zh-CN': 'longanyang',
-    'zh-TW': 'longanyang',
-    'ja': 'longanyang',
-    'ja-JP': 'longanyang',
-    'ko': 'longanyang',
-    'ko-KR': 'longanyang',
-    'en': 'longanyang',
-    'en-US': 'longanyang',
-    'en-GB': 'longanyang',
-  };
-  
-  const langBase = (languageCode || 'zh').split('-')[0];
-  const selectedVoice = voice || voiceMap[languageCode || 'zh'] || voiceMap[langBase] || 'longanyang';
-  
-  console.log(`🌸 Alibaba CosyVoice: Using voice "${selectedVoice}" for language "${languageCode}", endpoint: ${baseUrl}, key type: ${ALIBABA_CHINA_KEY ? 'China' : 'International'}`);
+  const isChina = !!ALIBABA_CHINA_KEY;
+  const wsUrl = isChina 
+    ? 'wss://dashscope.aliyuncs.com/api-ws/v1/inference'
+    : 'wss://dashscope-intl.aliyuncs.com/api-ws/v1/inference';
+  const restBase = isChina
+    ? 'https://dashscope.aliyuncs.com/api/v1'
+    : 'https://dashscope-intl.aliyuncs.com/api/v1';
 
-  // Use OpenAI-compatible API format (returns audio binary directly)
-  const response = await fetch(endpoint, {
+  const selectedVoice = voice || 'longanyang';
+  
+  console.log(`🌸 Alibaba TTS: lang="${languageCode}", voice="${selectedVoice}", key=${isChina ? 'China' : 'International'}`);
+
+  // PATH 1: Try CosyVoice via WebSocket (best quality)
+  try {
+    console.log(`🎤 [Path 1] CosyVoice WebSocket: ${wsUrl}`);
+    const audioData = await cosyVoiceWebSocket(text, selectedVoice, apiKey, wsUrl);
+    console.log(`✅ CosyVoice WebSocket succeeded: ${audioData.byteLength} bytes`);
+    return audioData.buffer;
+  } catch (wsError) {
+    console.warn(`⚠️ CosyVoice WebSocket failed: ${(wsError as Error).message}`);
+  }
+
+  // PATH 2: Fallback to Sambert REST (reliable HTTP)
+  console.log(`🔊 [Path 2] Sambert REST fallback: ${restBase}`);
+  const sambertModel = 'sambert-zhichu-v1'; // Default Chinese female
+  const sambertEndpoint = `${restBase}/services/aigc/text2audio/generation`;
+
+  const response = await fetch(sambertEndpoint, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
       'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+      'X-DashScope-Async': 'disable',
     },
     body: JSON.stringify({
-      model: 'cosyvoice-v3-flash',
-      input: text,
-      voice: selectedVoice,
-      response_format: 'mp3',
+      model: sambertModel,
+      input: { text },
+      parameters: { format: 'mp3', sample_rate: 48000 },
     }),
   });
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error(`❌ Alibaba CosyVoice error (${response.status}):`, errorText);
-    
-    if (response.status === 401 || response.status === 403) {
-      throw new Error(`Alibaba CosyVoice authentication failed (${response.status}). Check API key and account status.`);
-    }
-    throw new Error(`Alibaba TTS error (${response.status}): ${errorText}`);
+    throw new Error(`Sambert REST error (${response.status}): ${errorText}`);
   }
 
-  // OpenAI-compatible endpoint returns audio binary directly
-  const contentType = response.headers.get('content-type') || '';
-  
-  if (contentType.includes('audio') || contentType.includes('octet-stream')) {
-    const audioBuffer = await response.arrayBuffer();
-    console.log(`✅ Alibaba CosyVoice: Generated ${audioBuffer.byteLength} bytes audio (binary response)`);
-    return audioBuffer;
-  }
-  
-  // Fallback: try parsing as JSON (legacy format)
   const result = await response.json();
-  
+
   if (result.output?.audio) {
     const binaryString = atob(result.output.audio);
     const bytes = new Uint8Array(binaryString.length);
     for (let i = 0; i < binaryString.length; i++) {
       bytes[i] = binaryString.charCodeAt(i);
     }
-    console.log(`✅ Alibaba CosyVoice: Generated ${bytes.length} bytes audio (JSON response)`);
+    console.log(`✅ Sambert REST succeeded: ${bytes.length} bytes`);
     return bytes.buffer;
   }
-  
+
   if (result.output?.audio_url) {
-    console.log(`⬇️ Alibaba CosyVoice: Downloading from ${result.output.audio_url}`);
     const audioResponse = await fetch(result.output.audio_url);
-    if (!audioResponse.ok) throw new Error('Failed to download Alibaba audio');
+    if (!audioResponse.ok) throw new Error('Failed to download Sambert audio');
     return await audioResponse.arrayBuffer();
   }
 
-  console.error('Alibaba response:', JSON.stringify(result));
   throw new Error('No audio returned from Alibaba TTS');
+}
+
+/**
+ * CosyVoice WebSocket helper for multi-provider-tts
+ * Uses DashScope WebSocket protocol with token-in-URL auth
+ */
+async function cosyVoiceWebSocket(text: string, voice: string, apiKey: string, wsUrl: string): Promise<Uint8Array> {
+  const taskId = crypto.randomUUID();
+  return new Promise<Uint8Array>((resolve, reject) => {
+    const audioChunks: Uint8Array[] = [];
+    let totalBytes = 0;
+    let resolved = false;
+
+    const authUrl = `${wsUrl}?token=${apiKey}`;
+    const ws = new WebSocket(authUrl);
+
+    const timeoutId = setTimeout(() => {
+      if (!resolved) { resolved = true; try { ws.close(); } catch(_){} reject(new Error('CosyVoice WS timeout')); }
+    }, 25000);
+
+    ws.onopen = () => {
+      ws.send(JSON.stringify({
+        header: { action: 'run-task', task_id: taskId, streaming: 'out' },
+        payload: {
+          task_group: 'audio', task: 'tts', function: 'SpeechSynthesizer',
+          model: 'cosyvoice-v3-flash',
+          parameters: { text_type: 'PlainText', voice, format: 'mp3', sample_rate: 22050, volume: 50, rate: 1.0 },
+          input: { text },
+        },
+      }));
+    };
+
+    ws.onmessage = (event: MessageEvent) => {
+      if (event.data instanceof ArrayBuffer) {
+        const chunk = new Uint8Array(event.data);
+        audioChunks.push(chunk);
+        totalBytes += chunk.length;
+      } else if (typeof event.data === 'string') {
+        try {
+          const msg = JSON.parse(event.data);
+          if (msg.header?.event === 'task-finished' && !resolved) {
+            resolved = true; clearTimeout(timeoutId); try { ws.close(); } catch(_){}
+            const combined = new Uint8Array(totalBytes);
+            let offset = 0;
+            for (const c of audioChunks) { combined.set(c, offset); offset += c.length; }
+            resolve(combined);
+          } else if (msg.header?.event === 'task-failed' && !resolved) {
+            resolved = true; clearTimeout(timeoutId); try { ws.close(); } catch(_){}
+            reject(new Error(msg.payload?.message || 'CosyVoice failed'));
+          }
+        } catch(_) { /* non-JSON */ }
+      }
+    };
+
+    ws.onerror = () => { if (!resolved) { resolved = true; clearTimeout(timeoutId); reject(new Error('CosyVoice WS error')); } };
+    ws.onclose = () => { if (!resolved) { resolved = true; clearTimeout(timeoutId); reject(new Error('CosyVoice WS closed')); } };
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

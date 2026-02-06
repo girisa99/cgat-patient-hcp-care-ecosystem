@@ -1,14 +1,28 @@
 /**
- * ALIBABA TTS EDGE FUNCTION - Complete Implementation
+ * ALIBABA TTS EDGE FUNCTION - Production Permanent Solution
  * 
- * Supports ALL Alibaba audio generation models:
- * - CosyVoice (High-fidelity multilingual TTS)
- * - Fun Audio (Music/SFX generation)
- * - Sambert (Chinese TTS)
+ * Dual-path architecture:
+ * 1. CosyVoice via WebSocket (Primary - highest quality multilingual)
+ *    - wss://dashscope.aliyuncs.com/api-ws/v1/inference
+ *    - Supports: cosyvoice-v3-flash, cosyvoice-v3-plus, cosyvoice-v2
+ *    - CosyVoice ONLY supports WebSocket/SDK, NOT HTTP REST
+ * 
+ * 2. Sambert via REST API (Fallback - reliable HTTP)
+ *    - POST /api/v1/services/aigc/text2audio/generation
+ *    - Synchronous HTTP response
+ *    - Chinese voice variants
+ * 
+ * 3. Fun Audio (Music/SFX generation) - Async REST
+ *    - POST /api/v1/services/aigc/audio-generation/*
  * 
  * Regional Routing:
- * - China (Beijing): dashscope.aliyuncs.com - CosyVoice, Sambert
- * - International: dashscope-intl.aliyuncs.com - Some newer models
+ * - China (Beijing): dashscope.aliyuncs.com (ALIBABA_CHINA_API_KEY)
+ * - International (Virginia): dashscope-intl.aliyuncs.com (ALIBABA_API_KEY)
+ * 
+ * WHY NOT OpenAI-compatible endpoint?
+ * The /compatible-mode/v1/audio/speech path does NOT exist for CosyVoice.
+ * DashScope's OpenAI-compatible mode only covers /chat/completions, /embeddings, /images.
+ * CosyVoice requires WebSocket protocol per official Alibaba docs.
  */
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
@@ -18,115 +32,102 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Regional endpoints - BASE domains (no /api/v1 suffix for OpenAI-compatible)
-const DASHSCOPE_CHINA_BASE = 'https://dashscope.aliyuncs.com';
-const DASHSCOPE_INTL_BASE = 'https://dashscope-intl.aliyuncs.com';
-// Legacy API prefix for non-OpenAI-compatible endpoints (music, sfx, clone, task polling)
-const DASHSCOPE_CHINA_API = `${DASHSCOPE_CHINA_BASE}/api/v1`;
-const DASHSCOPE_INTL_API = `${DASHSCOPE_INTL_BASE}/api/v1`;
-
 // ============================================================================
-// MODEL CONFIGURATIONS - All Available Alibaba TTS/Audio Models
+// ENDPOINT CONFIGURATION
 // ============================================================================
 
-const TTS_MODELS = {
-  // CosyVoice Series (Beijing region ONLY) - High-fidelity TTS
-  // Official models: cosyvoice-v3-plus, cosyvoice-v3-flash, cosyvoice-v2
-  'cosyvoice-v3-flash': { id: 'cosyvoice-v3-flash', region: 'china', type: 'tts', description: 'CosyVoice v3 Flash - fast, cost-effective, streaming' },
-  'cosyvoice-v3-plus': { id: 'cosyvoice-v3-plus', region: 'china', type: 'tts', description: 'CosyVoice v3 Plus - highest quality, voice cloning' },
-  'cosyvoice-v2': { id: 'cosyvoice-v2', region: 'china', type: 'tts', description: 'CosyVoice v2 - educational, SSML support' },
-  
-  // Sambert Series (China region) - Classic Chinese TTS (REST API)
-  'sambert-zhichu': { id: 'sambert-zhichu-v1', region: 'china', type: 'sambert', description: 'Chinese female voice' },
-  'sambert-zhide': { id: 'sambert-zhide-v1', region: 'china', type: 'sambert', description: 'Chinese male voice' },
-  'sambert-zhimiao': { id: 'sambert-zhimiao-v1', region: 'china', type: 'sambert', description: 'Chinese sweet female' },
-  'sambert-zhiyuan': { id: 'sambert-zhiyuan-v1', region: 'china', type: 'sambert', description: 'Chinese broadcasting male' },
-  
-  // Fun Audio Series (China region) - Music & SFX Generation
-  'fun-audio-music': { id: 'fun-audio-music-v1', region: 'china', type: 'music', description: 'Text-to-music generation' },
-  'fun-audio-sfx': { id: 'fun-audio-sfx-v1', region: 'china', type: 'sfx', description: 'Text-to-sound-effects' },
-  'fun-audio-ambient': { id: 'fun-audio-ambient-v1', region: 'china', type: 'ambient', description: 'Ambient/background audio' },
+const ENDPOINTS = {
+  china: {
+    base: 'https://dashscope.aliyuncs.com',
+    ws: 'wss://dashscope.aliyuncs.com/api-ws/v1/inference',
+    rest: 'https://dashscope.aliyuncs.com/api/v1',
+  },
+  international: {
+    base: 'https://dashscope-intl.aliyuncs.com',
+    ws: 'wss://dashscope-intl.aliyuncs.com/api-ws/v1/inference',
+    rest: 'https://dashscope-intl.aliyuncs.com/api/v1',
+  },
 } as const;
 
-type TTSModelKey = keyof typeof TTS_MODELS;
+// ============================================================================
+// MODEL CONFIGURATIONS
+// ============================================================================
 
-// Official CosyVoice voice presets per model version
-// v3-flash/v3-plus: longanyang, longlaotie, longshuo, longxiaobai, longxiaoxia, etc.
-// v2: longxiaochun_v2, longhua_v2, longcheng_v2, etc.
-const VOICE_PRESETS: Record<string, { voice: string; model: TTSModelKey }> = {
-  // Chinese voices (CosyVoice v3-flash)
-  'zh-CN-female': { voice: 'longxiaoxia', model: 'cosyvoice-v3-flash' },
-  'zh-CN-male': { voice: 'longanyang', model: 'cosyvoice-v3-flash' },
-  'zh-CN-child': { voice: 'longxiaobai', model: 'cosyvoice-v3-flash' },
-  'zh-CN-elder-female': { voice: 'longxiaoxia', model: 'cosyvoice-v3-flash' },
-  'zh-CN-elder-male': { voice: 'longlaotie', model: 'cosyvoice-v3-flash' },
-  
-  // Multilingual voices (CosyVoice v3-flash supports multilingual)
-  'en-US-female': { voice: 'longanyang', model: 'cosyvoice-v3-flash' },
-  'en-US-male': { voice: 'longanyang', model: 'cosyvoice-v3-flash' },
-  'en-GB-female': { voice: 'longanyang', model: 'cosyvoice-v3-flash' },
-  'en-GB-male': { voice: 'longanyang', model: 'cosyvoice-v3-flash' },
-  'ja-JP-female': { voice: 'longanyang', model: 'cosyvoice-v3-flash' },
-  'ja-JP-male': { voice: 'longanyang', model: 'cosyvoice-v3-flash' },
-  'ko-KR-female': { voice: 'longanyang', model: 'cosyvoice-v3-flash' },
-  'ko-KR-male': { voice: 'longanyang', model: 'cosyvoice-v3-flash' },
-  'es-ES-female': { voice: 'longanyang', model: 'cosyvoice-v3-flash' },
-  'fr-FR-female': { voice: 'longanyang', model: 'cosyvoice-v3-flash' },
-  'de-DE-female': { voice: 'longanyang', model: 'cosyvoice-v3-flash' },
-  'pt-BR-female': { voice: 'longanyang', model: 'cosyvoice-v3-flash' },
-  'ar-SA-male': { voice: 'longanyang', model: 'cosyvoice-v3-flash' },
-  'hi-IN-female': { voice: 'longanyang', model: 'cosyvoice-v3-flash' },
+const COSYVOICE_MODELS = {
+  'cosyvoice-v3-flash': { description: 'Fast, cost-effective, streaming ($0.14/10K chars)' },
+  'cosyvoice-v3-plus': { description: 'Highest quality, voice cloning ($0.29/10K chars)' },
+  'cosyvoice-v2': { description: 'Educational, SSML support' },
+} as const;
+
+const SAMBERT_MODELS = {
+  'sambert-zhichu-v1': { voice: 'zhichu', gender: 'female', lang: 'zh-CN', description: 'Chinese female' },
+  'sambert-zhide-v1': { voice: 'zhide', gender: 'male', lang: 'zh-CN', description: 'Chinese male' },
+  'sambert-zhimiao-v1': { voice: 'zhimiao', gender: 'female', lang: 'zh-CN', description: 'Chinese sweet female' },
+  'sambert-zhiyuan-v1': { voice: 'zhiyuan', gender: 'male', lang: 'zh-CN', description: 'Chinese broadcasting male' },
+  'sambert-zhixiao-v1': { voice: 'zhixiao', gender: 'female', lang: 'zh-CN', description: 'Chinese child voice' },
+} as const;
+
+// CosyVoice v3 voice presets (multilingual)
+const COSYVOICE_VOICES: Record<string, string> = {
+  // Chinese
+  'zh-CN-female': 'longxiaoxia',
+  'zh-CN-male': 'longanyang',
+  'zh-CN-child': 'longxiaobai',
+  'zh-CN-elder': 'longlaotie',
+  'zh-TW-female': 'longxiaoxia',
+  'zh-TW-male': 'longanyang',
+  // Japanese
+  'ja-JP-female': 'longanyang',
+  'ja-JP-male': 'longanyang',
+  // Korean
+  'ko-KR-female': 'longanyang',
+  'ko-KR-male': 'longanyang',
+  // English (CosyVoice supports English too)
+  'en-US-female': 'longxiaoxia',
+  'en-US-male': 'longanyang',
+  'en-GB-female': 'longxiaoxia',
+  'en-GB-male': 'longanyang',
+  // Other supported languages
+  'es-ES-female': 'longanyang',
+  'fr-FR-female': 'longanyang',
+  'de-DE-female': 'longanyang',
+  'pt-BR-female': 'longanyang',
+  'ar-SA-male': 'longanyang',
+  'hi-IN-female': 'longanyang',
 };
 
-// CosyVoice uses DashScope WebSocket SDK natively. For HTTP REST:
-// - Sambert models: /api/v1/services/aigc/text2audio/generation (synchronous REST)
-// - CosyVoice: /compatible-mode/v1/audio/speech (OpenAI-compatible HTTP)
-const API_ENDPOINTS = {
-  tts: '/compatible-mode/v1/audio/speech',  // CosyVoice OpenAI-compatible HTTP
-  sambert: '/api/v1/services/aigc/text2audio/generation',  // Sambert REST
-  music: '/api/v1/services/aigc/audio-generation/music',
-  sfx: '/api/v1/services/aigc/audio-generation/sound-effects',
-  ambient: '/api/v1/services/aigc/audio-generation/ambient',
-  clone: '/api/v1/services/audio/tts/customization',
-};
+// ============================================================================
+// TYPES
+// ============================================================================
 
 interface TTSRequest {
-  // Content
   text: string;
-  
-  // Model selection
-  model?: TTSModelKey;
+  model?: string;
   voice?: string;
-  language?: string;           // e.g., 'zh-CN-female', 'en-US-male'
-  
-  // Audio parameters
+  language?: string;
   format?: 'mp3' | 'wav' | 'pcm' | 'ogg';
-  sampleRate?: 8000 | 16000 | 24000 | 44100 | 48000;
-  
-  // Speech parameters
-  speed?: number;              // 0.5 - 2.0
-  pitch?: number;              // -12 to 12 semitones
-  volume?: number;             // 0-100
-  
-  // Advanced
-  emotion?: 'neutral' | 'happy' | 'sad' | 'angry' | 'surprised';
-  style?: 'narration' | 'conversation' | 'news' | 'story';
+  sampleRate?: number;
+  speed?: number;
+  pitch?: number;
+  volume?: number;
+  emotion?: string;
+  style?: string;
   enableSSML?: boolean;
-  
-  // Voice cloning (for cosyvoice-clone)
+  // Voice cloning
   referenceAudioUrl?: string;
-  referenceAudioBase64?: string;
-  
-  // Music/SFX generation (for fun-audio models)
+  // Music/SFX
   musicPrompt?: string;
-  duration?: number;           // seconds
+  duration?: number;
   genre?: string;
   mood?: string;
+  // Method override
+  method?: 'websocket' | 'rest' | 'auto';
 }
 
 interface TTSResult {
   success: boolean;
   provider: 'alibaba';
+  method: 'cosyvoice-websocket' | 'sambert-rest' | 'fun-audio';
   region: 'china-beijing' | 'international';
   model: string;
   voice?: string;
@@ -144,391 +145,548 @@ interface TTSResult {
   fallback?: boolean;
 }
 
-/**
- * Get API configuration based on model region
- */
-function getApiConfig(modelKey: TTSModelKey): { 
-  apiKey: string | null; 
-  baseDomain: string;
-  apiBase: string;
+// ============================================================================
+// API KEY & REGION RESOLUTION
+// ============================================================================
+
+function getApiConfig(): {
+  apiKey: string | null;
   region: 'china-beijing' | 'international';
+  endpoints: typeof ENDPOINTS.china;
 } {
-  const modelConfig = TTS_MODELS[modelKey];
-  
-  // CosyVoice is Beijing-only per Alibaba docs
   const chinaKey = Deno.env.get('ALIBABA_CHINA_API_KEY');
   const intlKey = Deno.env.get('ALIBABA_API_KEY');
-  
-  if (modelConfig.region === 'china') {
-    const apiKey = chinaKey || intlKey || null;
-    const baseDomain = chinaKey ? DASHSCOPE_CHINA_BASE : DASHSCOPE_INTL_BASE;
-    const apiBase = chinaKey ? DASHSCOPE_CHINA_API : DASHSCOPE_INTL_API;
-    return { apiKey, baseDomain, apiBase, region: chinaKey ? 'china-beijing' : 'international' };
-  } else {
-    const apiKey = intlKey || chinaKey || null;
-    const baseDomain = intlKey ? DASHSCOPE_INTL_BASE : DASHSCOPE_CHINA_BASE;
-    const apiBase = intlKey ? DASHSCOPE_INTL_API : DASHSCOPE_CHINA_API;
-    return { apiKey, baseDomain, apiBase, region: intlKey ? 'international' : 'china-beijing' };
+
+  if (chinaKey) {
+    return { apiKey: chinaKey, region: 'china-beijing', endpoints: ENDPOINTS.china };
   }
+  if (intlKey) {
+    return { apiKey: intlKey, region: 'international', endpoints: ENDPOINTS.international };
+  }
+  return { apiKey: null, region: 'china-beijing', endpoints: ENDPOINTS.china };
 }
 
+// ============================================================================
+// PATH 1: COSYVOICE VIA WEBSOCKET (Primary - Best Quality)
+// ============================================================================
+
 /**
- * Generate TTS audio with CosyVoice or Sambert
+ * Generate TTS using CosyVoice via DashScope WebSocket API.
+ * 
+ * Protocol:
+ * 1. Connect to wss://dashscope.aliyuncs.com/api-ws/v1/inference
+ * 2. Send run-task JSON with model, voice, text
+ * 3. Receive binary audio frames + JSON status messages
+ * 4. Collect audio chunks until task-finished event
+ * 
+ * Auth: API key passed as Bearer token in WebSocket handshake headers.
+ * Deno's WebSocket doesn't support custom headers directly, so we pass
+ * the token as a URL query parameter which DashScope accepts.
  */
+async function generateCosyVoiceWebSocket(
+  text: string,
+  voice: string,
+  model: string,
+  apiKey: string,
+  wsUrl: string,
+  format: string = 'mp3',
+  sampleRate: number = 22050,
+  speed: number = 1.0,
+): Promise<Uint8Array> {
+  const taskId = crypto.randomUUID();
+
+  console.log(`🎤 [CosyVoice WS] Connecting to ${wsUrl}`);
+  console.log(`🎤 [CosyVoice WS] Model: ${model}, Voice: ${voice}, Format: ${format}`);
+
+  return new Promise<Uint8Array>((resolve, reject) => {
+    let timeoutId: number;
+    const audioChunks: Uint8Array[] = [];
+    let totalBytes = 0;
+    let taskStarted = false;
+
+    // DashScope accepts API key as URL parameter for WebSocket
+    const authUrl = `${wsUrl}?token=${apiKey}`;
+    const ws = new WebSocket(authUrl);
+
+    // Set 30-second timeout
+    timeoutId = setTimeout(() => {
+      console.error(`❌ [CosyVoice WS] Timeout after 30s`);
+      try { ws.close(); } catch (_) { /* ignore */ }
+      reject(new Error('CosyVoice WebSocket timeout (30s)'));
+    }, 30000);
+
+    ws.onopen = () => {
+      console.log(`✅ [CosyVoice WS] Connected, sending run-task`);
+
+      // Send the synthesis request per DashScope WebSocket protocol
+      const runTask = {
+        header: {
+          action: 'run-task',
+          task_id: taskId,
+          streaming: 'out',
+        },
+        payload: {
+          task_group: 'audio',
+          task: 'tts',
+          function: 'SpeechSynthesizer',
+          model: model,
+          parameters: {
+            text_type: 'PlainText',
+            voice: voice,
+            format: format,
+            sample_rate: sampleRate,
+            volume: 50,
+            rate: speed,
+            pitch: 1.0,
+          },
+          input: {
+            text: text,
+          },
+        },
+      };
+
+      ws.send(JSON.stringify(runTask));
+    };
+
+    ws.onmessage = (event: MessageEvent) => {
+      if (event.data instanceof ArrayBuffer) {
+        // Binary frame = audio data
+        const chunk = new Uint8Array(event.data);
+        audioChunks.push(chunk);
+        totalBytes += chunk.length;
+      } else if (event.data instanceof Blob) {
+        // Blob frame = audio data (convert to ArrayBuffer)
+        event.data.arrayBuffer().then((buffer) => {
+          const chunk = new Uint8Array(buffer);
+          audioChunks.push(chunk);
+          totalBytes += chunk.length;
+        });
+      } else if (typeof event.data === 'string') {
+        // Text frame = JSON status message
+        try {
+          const msg = JSON.parse(event.data);
+          const headerEvent = msg.header?.event;
+
+          if (headerEvent === 'task-started') {
+            taskStarted = true;
+            console.log(`🎤 [CosyVoice WS] Task started: ${taskId}`);
+          } else if (headerEvent === 'task-finished') {
+            console.log(`✅ [CosyVoice WS] Task finished: ${totalBytes} bytes in ${audioChunks.length} chunks`);
+            clearTimeout(timeoutId);
+            try { ws.close(); } catch (_) { /* ignore */ }
+
+            // Combine all audio chunks
+            const combined = new Uint8Array(totalBytes);
+            let offset = 0;
+            for (const chunk of audioChunks) {
+              combined.set(chunk, offset);
+              offset += chunk.length;
+            }
+            resolve(combined);
+          } else if (headerEvent === 'task-failed') {
+            const errorMsg = msg.payload?.message || msg.header?.error_message || 'CosyVoice task failed';
+            const errorCode = msg.header?.error_code || 'UNKNOWN';
+            console.error(`❌ [CosyVoice WS] Task failed: ${errorCode} - ${errorMsg}`);
+            clearTimeout(timeoutId);
+            try { ws.close(); } catch (_) { /* ignore */ }
+            reject(new Error(`CosyVoice error (${errorCode}): ${errorMsg}`));
+          } else {
+            console.log(`📨 [CosyVoice WS] Event: ${headerEvent}`);
+          }
+        } catch (parseError) {
+          console.warn(`⚠️ [CosyVoice WS] Non-JSON text message:`, event.data);
+        }
+      }
+    };
+
+    ws.onerror = (error: Event) => {
+      console.error(`❌ [CosyVoice WS] WebSocket error:`, error);
+      clearTimeout(timeoutId);
+      reject(new Error(`CosyVoice WebSocket connection error`));
+    };
+
+    ws.onclose = (event: CloseEvent) => {
+      clearTimeout(timeoutId);
+      if (!taskStarted && audioChunks.length === 0) {
+        console.error(`❌ [CosyVoice WS] Connection closed before task started: ${event.code} ${event.reason}`);
+        reject(new Error(`CosyVoice WebSocket closed (${event.code}): ${event.reason || 'No reason'}`));
+      }
+      // If task was finished, resolve was already called
+    };
+  });
+}
+
+// ============================================================================
+// PATH 2: SAMBERT VIA REST API (Fallback - Reliable HTTP)
+// ============================================================================
+
+/**
+ * Generate TTS using Sambert via DashScope REST API.
+ * 
+ * Endpoint: POST /api/v1/services/aigc/text2audio/generation
+ * This is a synchronous HTTP call - returns audio directly.
+ * Sambert supports Chinese voices with good quality.
+ */
+async function generateSambertREST(
+  text: string,
+  voice: string,
+  apiKey: string,
+  restBase: string,
+  format: string = 'mp3',
+  sampleRate: number = 48000,
+): Promise<Uint8Array> {
+  const endpoint = `${restBase}/services/aigc/text2audio/generation`;
+
+  // Map voice shorthand to full Sambert model ID
+  const sambertModel = voice.startsWith('sambert-') ? voice : `sambert-${voice}-v1`;
+  const validModels = Object.keys(SAMBERT_MODELS);
+  const selectedModel = validModels.includes(sambertModel) ? sambertModel : 'sambert-zhichu-v1';
+
+  console.log(`🔊 [Sambert REST] Model: ${selectedModel}, Endpoint: ${endpoint}`);
+
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+      'X-DashScope-Async': 'disable', // Synchronous mode
+    },
+    body: JSON.stringify({
+      model: selectedModel,
+      input: { text: text },
+      parameters: {
+        format: format,
+        sample_rate: sampleRate,
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`❌ [Sambert REST] Error (${response.status}):`, errorText);
+    throw new Error(`Sambert API error (${response.status}): ${errorText}`);
+  }
+
+  const result = await response.json();
+
+  // Sambert returns audio as base64 in output.audio or as URL in output.audio_url
+  if (result.output?.audio) {
+    const binaryString = atob(result.output.audio);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    console.log(`✅ [Sambert REST] Generated ${bytes.length} bytes (base64 response)`);
+    return bytes;
+  }
+
+  if (result.output?.audio_url) {
+    console.log(`⬇️ [Sambert REST] Downloading from ${result.output.audio_url}`);
+    const audioResponse = await fetch(result.output.audio_url);
+    if (!audioResponse.ok) throw new Error('Failed to download Sambert audio');
+    const buffer = await audioResponse.arrayBuffer();
+    console.log(`✅ [Sambert REST] Downloaded ${buffer.byteLength} bytes`);
+    return new Uint8Array(buffer);
+  }
+
+  console.error(`❌ [Sambert REST] Unexpected response:`, JSON.stringify(result));
+  throw new Error('No audio in Sambert response');
+}
+
+// ============================================================================
+// MAIN TTS GENERATION (CosyVoice → Sambert fallback)
+// ============================================================================
+
 async function generateTTS(request: TTSRequest): Promise<TTSResult> {
   const startTime = Date.now();
-  
-  // Determine model and voice from language preset or explicit values
-  let modelKey: TTSModelKey = request.model || 'cosyvoice-v3-flash';
-  let voice = request.voice;
-  
-  // Apply language preset if specified
-  if (!voice && request.language && VOICE_PRESETS[request.language]) {
-    const preset = VOICE_PRESETS[request.language];
-    modelKey = preset.model;
-    voice = preset.voice;
+  const { apiKey, region, endpoints } = getApiConfig();
+
+  if (!apiKey) {
+    return {
+      success: false,
+      provider: 'alibaba',
+      method: 'cosyvoice-websocket',
+      region,
+      model: 'none',
+      error: 'No Alibaba API key configured (ALIBABA_CHINA_API_KEY or ALIBABA_API_KEY)',
+      fallback: true,
+    };
   }
-  
-  // Default voice based on model version
-  if (!voice) {
-    if (modelKey.startsWith('cosyvoice-v3')) {
-      voice = 'longanyang'; // Official v3 voice
-    } else if (modelKey === 'cosyvoice-v2') {
-      voice = 'longxiaochun_v2'; // Official v2 voice
-    } else {
-      voice = 'zhiyan'; // Sambert default
+
+  // Determine voice from language preset
+  const langKey = request.language || 'zh-CN-female';
+  const voice = request.voice || COSYVOICE_VOICES[langKey] || 'longanyang';
+  const model = request.model || 'cosyvoice-v3-flash';
+  const format = request.format || 'mp3';
+  const sampleRate = request.sampleRate || 22050;
+  const speed = request.speed || 1.0;
+  const method = request.method || 'auto';
+
+  console.log(`🎯 [Alibaba TTS] Language: ${langKey}, Voice: ${voice}, Model: ${model}, Method: ${method}`);
+
+  // Try CosyVoice WebSocket first (unless method=rest forced)
+  if (method !== 'rest' && model in COSYVOICE_MODELS) {
+    try {
+      console.log(`🎤 [Path 1] Attempting CosyVoice WebSocket...`);
+      const audioData = await generateCosyVoiceWebSocket(
+        request.text, voice, model, apiKey, endpoints.ws, format, sampleRate, speed
+      );
+
+      const processingTimeMs = Date.now() - startTime;
+      console.log(`✅ [Path 1] CosyVoice WebSocket succeeded in ${processingTimeMs}ms`);
+
+      // Convert to base64 for response
+      let binary = '';
+      for (let i = 0; i < audioData.length; i++) {
+        binary += String.fromCharCode(audioData[i]);
+      }
+      const audioBase64 = btoa(binary);
+
+      return {
+        success: true,
+        provider: 'alibaba',
+        method: 'cosyvoice-websocket',
+        region,
+        model,
+        voice,
+        audioUrl: `data:audio/${format};base64,${audioBase64}`,
+        audioBase64,
+        duration: estimateDuration(request.text),
+        metadata: {
+          characterCount: request.text.length,
+          format,
+          sampleRate,
+          processingTimeMs,
+          estimatedCost: model === 'cosyvoice-v3-plus' ? 0.029 * (request.text.length / 10000) : 0.014 * (request.text.length / 10000),
+        },
+      };
+    } catch (wsError) {
+      console.warn(`⚠️ [Path 1] CosyVoice WebSocket failed:`, (wsError as Error).message);
+      console.log(`🔄 Falling back to Sambert REST...`);
     }
   }
-  
-  const modelConfig = TTS_MODELS[modelKey];
+
+  // Fallback to Sambert REST
+  if (method !== 'websocket') {
+    try {
+      console.log(`🔊 [Path 2] Attempting Sambert REST...`);
+
+      // Map language to best Sambert voice
+      const sambertVoice = selectSambertVoice(langKey);
+      const audioData = await generateSambertREST(
+        request.text, sambertVoice, apiKey, endpoints.rest, format, 48000
+      );
+
+      const processingTimeMs = Date.now() - startTime;
+      console.log(`✅ [Path 2] Sambert REST succeeded in ${processingTimeMs}ms`);
+
+      let binary = '';
+      for (let i = 0; i < audioData.length; i++) {
+        binary += String.fromCharCode(audioData[i]);
+      }
+      const audioBase64 = btoa(binary);
+
+      return {
+        success: true,
+        provider: 'alibaba',
+        method: 'sambert-rest',
+        region,
+        model: sambertVoice,
+        voice: sambertVoice,
+        audioUrl: `data:audio/${format};base64,${audioBase64}`,
+        audioBase64,
+        duration: estimateDuration(request.text),
+        metadata: {
+          characterCount: request.text.length,
+          format,
+          sampleRate: 48000,
+          processingTimeMs,
+          estimatedCost: 0.01 * (request.text.length / 10000),
+        },
+        fallback: method === 'auto',
+      };
+    } catch (restError) {
+      console.error(`❌ [Path 2] Sambert REST also failed:`, (restError as Error).message);
+
+      return {
+        success: false,
+        provider: 'alibaba',
+        method: 'sambert-rest',
+        region,
+        model,
+        error: `Both CosyVoice WebSocket and Sambert REST failed. Last error: ${(restError as Error).message}`,
+        fallback: true,
+      };
+    }
+  }
+
+  return {
+    success: false,
+    provider: 'alibaba',
+    method: 'cosyvoice-websocket',
+    region,
+    model,
+    error: 'CosyVoice WebSocket failed and REST method was not allowed',
+    fallback: true,
+  };
+}
+
+// ============================================================================
+// MUSIC/SFX GENERATION (Fun Audio - Async REST)
+// ============================================================================
+
+async function generateAudio(request: TTSRequest): Promise<TTSResult> {
+  const startTime = Date.now();
+  const { apiKey, region, endpoints } = getApiConfig();
+
+  if (!apiKey) {
+    return {
+      success: false,
+      provider: 'alibaba',
+      method: 'fun-audio',
+      region,
+      model: request.model || 'fun-audio-music',
+      error: 'No Alibaba API key configured',
+      fallback: true,
+    };
+  }
+
+  const modelMap: Record<string, { id: string; endpoint: string }> = {
+    'fun-audio-music': { id: 'fun-audio-music-v1', endpoint: '/services/aigc/audio-generation/music' },
+    'fun-audio-sfx': { id: 'fun-audio-sfx-v1', endpoint: '/services/aigc/audio-generation/sound-effects' },
+    'fun-audio-ambient': { id: 'fun-audio-ambient-v1', endpoint: '/services/aigc/audio-generation/ambient' },
+  };
+
+  const modelKey = request.model || 'fun-audio-music';
+  const modelConfig = modelMap[modelKey];
+
   if (!modelConfig) {
     return {
       success: false,
       provider: 'alibaba',
-      region: 'china-beijing',
-      model: modelKey,
-      error: `Invalid model. Available: ${Object.keys(TTS_MODELS).join(', ')}`,
-    };
-  }
-  
-  const { apiKey, baseDomain, apiBase, region } = getApiConfig(modelKey);
-  
-  console.log(`🎤 [Alibaba TTS] Model: ${modelKey} (${modelConfig.id}), Voice: ${voice}, Region: ${region}`);
-  
-  if (!apiKey) {
-    return {
-      success: false,
-      provider: 'alibaba',
+      method: 'fun-audio',
       region,
       model: modelKey,
-      error: `API key not configured for ${region} region`,
-      fallback: true
+      error: `Invalid music model. Available: ${Object.keys(modelMap).join(', ')}`,
     };
   }
-  
-  // Build endpoint URL based on model type
-  // CosyVoice: uses OpenAI-compatible endpoint at BASE_DOMAIN/compatible-mode/v1/audio/speech
-  // Sambert: uses DashScope REST at BASE_DOMAIN/api/v1/services/aigc/text2audio/generation
-  const endpoint = API_ENDPOINTS[modelConfig.type as keyof typeof API_ENDPOINTS] || API_ENDPOINTS.tts;
-  // CosyVoice endpoint uses baseDomain (no /api/v1), Sambert/music use apiBase (with /api/v1)
-  const isCosyVoice = modelConfig.type === 'tts';
-  const apiUrl = isCosyVoice ? `${baseDomain}${endpoint}` : `${apiBase.replace('/api/v1', '')}${endpoint}`;
-  
-  console.log(`🇨🇳 Calling DashScope: ${apiUrl}`);
-  
-  try {
-    let response: Response;
-    
-    if (endpoint === API_ENDPOINTS.tts) {
-      // OpenAI-compatible format for CosyVoice
-      response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: modelConfig.id,
-          input: request.text,
-          voice: voice,
-          response_format: request.format || 'mp3',
-          speed: request.speed || 1.0,
-        }),
-      });
-    } else {
-      // Legacy DashScope format for music/sfx/clone
-      response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-          'X-DashScope-Async': 'disable',
-        },
-        body: JSON.stringify({
-          model: modelConfig.id,
-          input: { text: request.text },
-          parameters: {
-            voice,
-            format: request.format || 'mp3',
-            sample_rate: request.sampleRate || 24000,
-          },
-        }),
-      });
-    }
-    
-    if (!response.ok) {
-      const responseText = await response.text();
-      console.error(`DashScope TTS error (${response.status}):`, responseText);
-      
-      try {
-        const errorJson = JSON.parse(responseText);
-        return {
-          success: false,
-          provider: 'alibaba',
-          region,
-          model: modelKey,
-          voice,
-          error: errorJson.message || `API error: ${response.status}`,
-          fallback: true
-        };
-      } catch {
-        return {
-          success: false,
-          provider: 'alibaba',
-          region,
-          model: modelKey,
-          error: `API error: ${response.status}`,
-          fallback: true
-        };
-      }
-    }
-    
-    // OpenAI-compatible returns audio binary directly
-    const contentType = response.headers.get('content-type') || '';
-    let audioUrl: string | undefined;
-    let audioBase64: string | undefined;
-    
-    if (contentType.includes('audio') || contentType.includes('octet-stream')) {
-      const arrayBuffer = await response.arrayBuffer();
-      const uint8 = new Uint8Array(arrayBuffer);
-      // Convert to base64
-      let binary = '';
-      for (let i = 0; i < uint8.length; i++) {
-        binary += String.fromCharCode(uint8[i]);
-      }
-      audioBase64 = btoa(binary);
-      audioUrl = `data:audio/${request.format || 'mp3'};base64,${audioBase64}`;
-    } else {
-      // JSON response (legacy format)
-      const responseText = await response.text();
-      const result = JSON.parse(responseText);
-      audioUrl = result.output?.audio_url || result.output?.audio;
-      if (result.output?.audio && !result.output.audio.startsWith('http')) {
-        audioBase64 = result.output.audio;
-        audioUrl = `data:audio/${request.format || 'mp3'};base64,${audioBase64}`;
-      }
-    }
-    
-    // Estimate duration
-    const isChinese = /[\u4e00-\u9fa5]/.test(request.text);
-    const estimatedDuration = isChinese 
-      ? request.text.length / 4 
-      : request.text.split(/\s+/).length / 3;
-    
-    const processingTimeMs = Date.now() - startTime;
-    
-    console.log(`✅ [Alibaba TTS] Generated in ${processingTimeMs}ms`);
-    
-    return {
-      success: true,
-      provider: 'alibaba',
-      region,
-      model: modelKey,
-      voice,
-      audioUrl,
-      audioBase64,
-      duration: estimatedDuration,
-      metadata: {
-        characterCount: request.text.length,
-        format: request.format || 'mp3',
-        sampleRate: request.sampleRate || 24000,
-        processingTimeMs,
-        estimatedCost: 0.002 * (request.text.length / 1000), // ~$0.002/1K chars
-      }
-    };
-    
-  } catch (error) {
-    console.error('[Alibaba TTS] Error:', error);
-    return {
-      success: false,
-      provider: 'alibaba',
-      region,
-      model: modelKey,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      fallback: true
-    };
-  }
-}
 
-/**
- * Generate music or sound effects with Fun Audio
- */
-async function generateAudio(request: TTSRequest): Promise<TTSResult> {
-  const startTime = Date.now();
-  
-  const modelKey = request.model || 'fun-audio-music';
-  const modelConfig = TTS_MODELS[modelKey as TTSModelKey];
-  
-  if (!modelConfig || !['music', 'sfx', 'ambient'].includes(modelConfig.type)) {
-    return {
-      success: false,
-      provider: 'alibaba',
-      region: 'china-beijing',
-      model: modelKey,
-      error: `Invalid music model. Available: fun-audio-music, fun-audio-sfx, fun-audio-ambient`,
-    };
-  }
-  
-  const { apiKey, baseUrl, region } = getApiConfig(modelKey as TTSModelKey);
-  
-  console.log(`🎵 [Fun Audio] Model: ${modelKey}, Type: ${modelConfig.type}`);
-  
-  if (!apiKey) {
-    return {
-      success: false,
-      provider: 'alibaba',
-      region,
-      model: modelKey,
-      error: `API key not configured for ${region} region`,
-      fallback: true
-    };
-  }
-  
-  const payload = {
-    model: modelConfig.id,
-    input: {
-      prompt: request.musicPrompt || request.text,
-      ...(request.genre && { genre: request.genre }),
-      ...(request.mood && { mood: request.mood }),
-    },
-    parameters: {
-      duration: request.duration || 30,
-      format: request.format || 'mp3',
-      sample_rate: request.sampleRate || 44100,
-    }
-  };
-  
-  const endpoint = API_ENDPOINTS[modelConfig.type as keyof typeof API_ENDPOINTS];
-  const apiUrl = `${baseUrl}${endpoint}`;
-  
-  console.log(`🇨🇳 Calling DashScope: ${apiUrl}`);
-  
+  const apiUrl = `${endpoints.rest}${modelConfig.endpoint}`;
+  console.log(`🎵 [Fun Audio] Model: ${modelConfig.id}, Endpoint: ${apiUrl}`);
+
   try {
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
-        'X-DashScope-Async': 'enable', // Music generation is async
+        'X-DashScope-Async': 'enable',
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        model: modelConfig.id,
+        input: {
+          prompt: request.musicPrompt || request.text,
+          ...(request.genre && { genre: request.genre }),
+          ...(request.mood && { mood: request.mood }),
+        },
+        parameters: {
+          duration: request.duration || 30,
+          format: request.format || 'mp3',
+          sample_rate: request.sampleRate || 44100,
+        },
+      }),
     });
-    
-    const responseText = await response.text();
-    
+
     if (!response.ok) {
-      console.error(`DashScope Fun Audio error (${response.status}):`, responseText);
+      const errorText = await response.text();
+      console.error(`❌ [Fun Audio] Error (${response.status}):`, errorText);
       return {
-        success: false,
-        provider: 'alibaba',
-        region,
-        model: modelKey,
-        error: `API error: ${response.status}`,
-        fallback: true
+        success: false, provider: 'alibaba', method: 'fun-audio', region,
+        model: modelKey, error: `API error: ${response.status}`, fallback: true,
       };
     }
-    
-    const result = JSON.parse(responseText);
+
+    const result = await response.json();
     const taskId = result.output?.task_id;
-    
-    if (taskId) {
-      // Poll for completion
-      const statusUrl = `${baseUrl}/tasks/${taskId}`;
-      
-      for (let i = 0; i < 60; i++) {
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        const statusResponse = await fetch(statusUrl, {
-          headers: { 'Authorization': `Bearer ${apiKey}` },
-        });
-        
-        if (!statusResponse.ok) continue;
-        
-        const statusData = await statusResponse.json();
-        
-        if (statusData.output?.task_status === 'SUCCEEDED') {
-          const audioUrl = statusData.output?.audio_url;
-          const processingTimeMs = Date.now() - startTime;
-          
-          console.log(`✅ [Fun Audio] Generated in ${processingTimeMs}ms`);
-          
-          return {
-            success: true,
-            provider: 'alibaba',
-            region,
-            model: modelKey,
-            audioUrl,
-            duration: request.duration || 30,
-            metadata: {
-              format: request.format || 'mp3',
-              sampleRate: request.sampleRate || 44100,
-              processingTimeMs,
-              estimatedCost: 0.01 * (request.duration || 30), // ~$0.01/second
-            }
-          };
-        } else if (statusData.output?.task_status === 'FAILED') {
-          return {
-            success: false,
-            provider: 'alibaba',
-            region,
-            model: modelKey,
-            error: statusData.output?.message || 'Audio generation failed',
-            fallback: true
-          };
-        }
-      }
-      
+
+    if (!taskId) {
       return {
-        success: false,
-        provider: 'alibaba',
-        region,
-        model: modelKey,
-        error: 'Audio generation timed out',
-        fallback: true
+        success: false, provider: 'alibaba', method: 'fun-audio', region,
+        model: modelKey, error: 'No task ID returned', fallback: true,
       };
     }
-    
+
+    // Poll for completion (max 2 minutes)
+    const statusUrl = `${endpoints.rest}/tasks/${taskId}`;
+    for (let i = 0; i < 60; i++) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      const statusResponse = await fetch(statusUrl, {
+        headers: { 'Authorization': `Bearer ${apiKey}` },
+      });
+
+      if (!statusResponse.ok) continue;
+      const statusData = await statusResponse.json();
+
+      if (statusData.output?.task_status === 'SUCCEEDED') {
+        const audioUrl = statusData.output?.audio_url;
+        const processingTimeMs = Date.now() - startTime;
+        console.log(`✅ [Fun Audio] Generated in ${processingTimeMs}ms`);
+
+        return {
+          success: true, provider: 'alibaba', method: 'fun-audio', region,
+          model: modelKey, audioUrl,
+          duration: request.duration || 30,
+          metadata: {
+            format: request.format || 'mp3',
+            sampleRate: request.sampleRate || 44100,
+            processingTimeMs,
+            estimatedCost: 0.01 * (request.duration || 30),
+          },
+        };
+      } else if (statusData.output?.task_status === 'FAILED') {
+        return {
+          success: false, provider: 'alibaba', method: 'fun-audio', region,
+          model: modelKey, error: statusData.output?.message || 'Audio generation failed',
+          fallback: true,
+        };
+      }
+    }
+
     return {
-      success: false,
-      provider: 'alibaba',
-      region,
-      model: modelKey,
-      error: 'No task ID returned',
-      fallback: true
+      success: false, provider: 'alibaba', method: 'fun-audio', region,
+      model: modelKey, error: 'Audio generation timed out', fallback: true,
     };
-    
   } catch (error) {
     console.error('[Fun Audio] Error:', error);
     return {
-      success: false,
-      provider: 'alibaba',
-      region,
-      model: modelKey,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      fallback: true
+      success: false, provider: 'alibaba', method: 'fun-audio', region,
+      model: modelKey, error: error instanceof Error ? error.message : 'Unknown error',
+      fallback: true,
     };
   }
 }
+
+// ============================================================================
+// HELPERS
+// ============================================================================
+
+function estimateDuration(text: string): number {
+  const isChinese = /[\u4e00-\u9fa5]/.test(text);
+  return isChinese ? text.length / 4 : text.split(/\s+/).length / 3;
+}
+
+function selectSambertVoice(langKey: string): string {
+  // Sambert is Chinese-only, pick voice by gender hint
+  if (langKey.includes('male') || langKey.includes('Male')) return 'sambert-zhide-v1';
+  if (langKey.includes('child') || langKey.includes('Child')) return 'sambert-zhixiao-v1';
+  if (langKey.includes('elder') || langKey.includes('broadcast')) return 'sambert-zhiyuan-v1';
+  return 'sambert-zhichu-v1'; // Default: female
+}
+
+// ============================================================================
+// MAIN HANDLER
+// ============================================================================
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -537,49 +695,44 @@ serve(async (req) => {
 
   try {
     const request: TTSRequest = await req.json();
-    
+
     if (!request.text && !request.musicPrompt) {
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'Text or musicPrompt required',
-          availableModels: Object.entries(TTS_MODELS).map(([key, config]) => ({
-            id: key,
-            type: config.type,
-            description: config.description,
-            region: config.region,
-          })),
-          voicePresets: Object.keys(VOICE_PRESETS),
+        JSON.stringify({
+          success: false,
+          error: 'text or musicPrompt required',
+          availableModels: {
+            cosyvoice: Object.entries(COSYVOICE_MODELS).map(([id, info]) => ({ id, ...info })),
+            sambert: Object.entries(SAMBERT_MODELS).map(([id, info]) => ({ id, ...info })),
+            funAudio: ['fun-audio-music', 'fun-audio-sfx', 'fun-audio-ambient'],
+          },
+          voicePresets: Object.keys(COSYVOICE_VOICES),
+          architecture: {
+            primary: 'CosyVoice via WebSocket (wss://dashscope.aliyuncs.com/api-ws/v1/inference)',
+            fallback: 'Sambert via REST (/api/v1/services/aigc/text2audio/generation)',
+            note: 'CosyVoice does NOT support HTTP REST. Only WebSocket/SDK per Alibaba docs.',
+          },
         }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-    
-    // Route to appropriate generator
-    const modelKey = request.model as TTSModelKey;
-    const modelConfig = modelKey ? TTS_MODELS[modelKey] : null;
-    
-    let result: TTSResult;
-    
-    if (modelConfig && ['music', 'sfx', 'ambient'].includes(modelConfig.type)) {
-      result = await generateAudio(request);
-    } else {
-      result = await generateTTS(request);
-    }
-    
+
+    // Route to music/sfx or TTS
+    const isMusicModel = request.model && ['fun-audio-music', 'fun-audio-sfx', 'fun-audio-ambient'].includes(request.model);
+    const result = isMusicModel ? await generateAudio(request) : await generateTTS(request);
+
     return new Response(
       JSON.stringify(result),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
-    
   } catch (error) {
-    console.error('[Alibaba TTS] Error:', error);
+    console.error('[Alibaba TTS] Unhandled error:', error);
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         success: false,
         provider: 'alibaba',
         error: error instanceof Error ? error.message : 'Unknown error',
-        fallback: true
+        fallback: true,
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
