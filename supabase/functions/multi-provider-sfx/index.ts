@@ -154,11 +154,21 @@ async function generateElevenLabsSFX(prompt: string, duration: number, promptInf
 }
 
 async function generateAlibabaSFX(prompt: string, duration: number): Promise<ArrayBuffer> {
-  const ALIBABA_API_KEY = Deno.env.get('ALIBABA_API_KEY');
-  if (!ALIBABA_API_KEY) throw new Error('ALIBABA_API_KEY not configured');
+  // Try both API keys - China (Beijing) preferred for audio models, International (Virginia) as fallback
+  const chinaKey = Deno.env.get('ALIBABA_CHINA_API_KEY');
+  const intlKey = Deno.env.get('ALIBABA_API_KEY');
+  const ALIBABA_API_KEY = chinaKey || intlKey;
+  if (!ALIBABA_API_KEY) throw new Error('Neither ALIBABA_CHINA_API_KEY nor ALIBABA_API_KEY configured');
 
-  // Alibaba Audio API for sound effects
-  const response = await fetch('https://dashscope.aliyuncs.com/api/v1/services/audio/generate', {
+  // Route to correct endpoint based on which key is being used
+  const useChina = !!chinaKey;
+  const baseUrl = useChina
+    ? 'https://dashscope.aliyuncs.com/api/v1'
+    : 'https://dashscope-intl.aliyuncs.com/api/v1';
+
+  console.log(`🔊 Alibaba SFX via ${useChina ? 'China (Beijing)' : 'International (Virginia)'}`);
+
+  const response = await fetch(`${baseUrl}/services/audio/generate`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

@@ -347,13 +347,27 @@ async function callDeepSeek(prompt: string, apiKey: string): Promise<string | nu
 }
 
 // Call Alibaba Qwen API (Secondary - Full-stack CJK)
+// Supports both International (Virginia) and China (Beijing) endpoints
 async function callAlibaba(prompt: string, apiKey: string): Promise<string | null> {
+  // Try international endpoint first (Virginia), then China (Beijing)
+  const intlKey = Deno.env.get('ALIBABA_API_KEY');
+  const chinaKey = Deno.env.get('ALIBABA_CHINA_API_KEY');
+  const effectiveKey = apiKey || intlKey || chinaKey;
+  
+  if (!effectiveKey) return null;
+
+  // Route to correct endpoint: International key → intl endpoint, China key → China endpoint
+  const useIntl = effectiveKey === intlKey || effectiveKey === apiKey;
+  const baseUrl = useIntl
+    ? 'https://dashscope-intl.aliyuncs.com'
+    : 'https://dashscope.aliyuncs.com';
+
   try {
-    console.log('☁️ Calling Alibaba Qwen-Max...');
-    const response = await fetch('https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions', {
+    console.log(`☁️ Calling Alibaba Qwen-Max via ${useIntl ? 'International (Virginia)' : 'China (Beijing)'}...`);
+    const response = await fetch(`${baseUrl}/compatible-mode/v1/chat/completions`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
+        'Authorization': `Bearer ${effectiveKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -444,8 +458,8 @@ async function generateWithUniversalAIHub(prompt: string): Promise<{ content: st
     if (result) return { content: result, provider: 'claude', providersChecked };
   }
 
-  // 4. Try Alibaba Qwen (Secondary - CJK/Asia)
-  const alibabaKey = Deno.env.get('ALIBABA_API_KEY');
+  // 4. Try Alibaba Qwen (Secondary - CJK/Asia) - Check both International and China keys
+  const alibabaKey = Deno.env.get('ALIBABA_API_KEY') || Deno.env.get('ALIBABA_CHINA_API_KEY');
   if (alibabaKey) {
     providersChecked.push('alibaba_qwen');
     const result = await callAlibaba(prompt, alibabaKey);
@@ -488,7 +502,7 @@ function getAvailableProviders() {
   if (Deno.env.get('GEMINI_API_KEY') || Deno.env.get('GOOGLE_API_KEY')) available.llm.push('gemini');
   if (Deno.env.get('OPENAI_API_KEY')) available.llm.push('openai');
   if (Deno.env.get('ANTHROPIC_API_KEY')) available.llm.push('claude');
-  if (Deno.env.get('ALIBABA_API_KEY')) available.llm.push('alibaba_qwen');
+  if (Deno.env.get('ALIBABA_API_KEY') || Deno.env.get('ALIBABA_CHINA_API_KEY')) available.llm.push('alibaba_qwen');
   if (Deno.env.get('DEEPSEEK_API_KEY')) available.llm.push('deepseek');
   if (Deno.env.get('HUGGING_FACE_ACCESS_TOKEN')) available.llm.push('huggingface');
 
@@ -496,21 +510,21 @@ function getAvailableProviders() {
   if (Deno.env.get('MODELSLAB_API_KEY')) available.image.push('modelslab_flux', 'modelslab_sdxl');
   if (Deno.env.get('OPENAI_API_KEY')) available.image.push('dalle_3');
   if (Deno.env.get('GEMINI_API_KEY')) available.image.push('gemini_imagen');
-  if (Deno.env.get('ALIBABA_API_KEY')) available.image.push('alibaba_wanx');
+  if (Deno.env.get('ALIBABA_API_KEY') || Deno.env.get('ALIBABA_CHINA_API_KEY')) available.image.push('alibaba_wanx');
   if (Deno.env.get('REPLICATE_API_TOKEN')) available.image.push('replicate_flux');
   if (Deno.env.get('HUGGING_FACE_ACCESS_TOKEN')) available.image.push('huggingface_flux');
 
   // Check video providers
   if (Deno.env.get('SORA2_API_KEY')) available.video.push('sora2');
   if (Deno.env.get('GEMINI_API_KEY')) available.video.push('veo');
-  if (Deno.env.get('ALIBABA_API_KEY')) available.video.push('alibaba_wan');
+  if (Deno.env.get('ALIBABA_API_KEY') || Deno.env.get('ALIBABA_CHINA_API_KEY')) available.video.push('alibaba_wan');
   if (Deno.env.get('MODELSLAB_API_KEY')) available.video.push('modelslab_animatediff', 'modelslab_svd');
   if (Deno.env.get('REPLICATE_API_TOKEN')) available.video.push('replicate_svd');
 
   // Check TTS providers
   if (Deno.env.get('ELEVENLABS_API_KEY')) available.tts.push('elevenlabs');
   if (Deno.env.get('AZURE_SPEECH_KEY')) available.tts.push('azure_neural');
-  if (Deno.env.get('ALIBABA_API_KEY')) available.tts.push('alibaba_cosyvoice');
+  if (Deno.env.get('ALIBABA_API_KEY') || Deno.env.get('ALIBABA_CHINA_API_KEY')) available.tts.push('alibaba_cosyvoice');
   if (Deno.env.get('OPENAI_API_KEY')) available.tts.push('openai_tts');
   if (Deno.env.get('GOOGLE_API_KEY')) available.tts.push('google_tts');
 
@@ -518,7 +532,7 @@ function getAvailableProviders() {
   if (Deno.env.get('DEEPGRAM_API_KEY')) available.stt.push('deepgram');
   if (Deno.env.get('OPENAI_API_KEY')) available.stt.push('whisper');
   if (Deno.env.get('AZURE_SPEECH_KEY')) available.stt.push('azure_stt');
-  if (Deno.env.get('ALIBABA_API_KEY')) available.stt.push('alibaba_paraformer');
+  if (Deno.env.get('ALIBABA_API_KEY') || Deno.env.get('ALIBABA_CHINA_API_KEY')) available.stt.push('alibaba_paraformer');
 
   return available;
 }
