@@ -18,26 +18,29 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Regional endpoints
-const DASHSCOPE_CHINA_URL = 'https://dashscope.aliyuncs.com/api/v1';
-const DASHSCOPE_INTL_URL = 'https://dashscope-intl.aliyuncs.com/api/v1';
+// Regional endpoints - BASE domains (no /api/v1 suffix for OpenAI-compatible)
+const DASHSCOPE_CHINA_BASE = 'https://dashscope.aliyuncs.com';
+const DASHSCOPE_INTL_BASE = 'https://dashscope-intl.aliyuncs.com';
+// Legacy API prefix for non-OpenAI-compatible endpoints (music, sfx, clone, task polling)
+const DASHSCOPE_CHINA_API = `${DASHSCOPE_CHINA_BASE}/api/v1`;
+const DASHSCOPE_INTL_API = `${DASHSCOPE_INTL_BASE}/api/v1`;
 
 // ============================================================================
 // MODEL CONFIGURATIONS - All Available Alibaba TTS/Audio Models
 // ============================================================================
 
 const TTS_MODELS = {
-  // CosyVoice Series (China region) - High-fidelity TTS
-  'cosyvoice-v2': { id: 'cosyvoice-v2', region: 'china', type: 'tts', description: 'Latest CosyVoice with enhanced quality' },
-  'cosyvoice-v1': { id: 'cosyvoice-v1', region: 'china', type: 'tts', description: 'Standard CosyVoice' },
-  'cosyvoice-multilingual': { id: 'cosyvoice-multilingual-v1', region: 'china', type: 'tts', description: 'Multilingual support (EN, JA, KO, etc.)' },
-  'cosyvoice-clone': { id: 'cosyvoice-clone-v1', region: 'china', type: 'tts', description: 'Voice cloning from audio sample' },
+  // CosyVoice Series (Beijing region ONLY) - High-fidelity TTS
+  // Official models: cosyvoice-v3-plus, cosyvoice-v3-flash, cosyvoice-v2
+  'cosyvoice-v3-flash': { id: 'cosyvoice-v3-flash', region: 'china', type: 'tts', description: 'CosyVoice v3 Flash - fast, cost-effective, streaming' },
+  'cosyvoice-v3-plus': { id: 'cosyvoice-v3-plus', region: 'china', type: 'tts', description: 'CosyVoice v3 Plus - highest quality, voice cloning' },
+  'cosyvoice-v2': { id: 'cosyvoice-v2', region: 'china', type: 'tts', description: 'CosyVoice v2 - educational, SSML support' },
   
-  // Sambert Series (China region) - Classic Chinese TTS
-  'sambert-zhichu': { id: 'sambert-zhichu-v1', region: 'china', type: 'tts', description: 'Chinese female voice' },
-  'sambert-zhide': { id: 'sambert-zhide-v1', region: 'china', type: 'tts', description: 'Chinese male voice' },
-  'sambert-zhimiao': { id: 'sambert-zhimiao-v1', region: 'china', type: 'tts', description: 'Chinese sweet female' },
-  'sambert-zhiyuan': { id: 'sambert-zhiyuan-v1', region: 'china', type: 'tts', description: 'Chinese broadcasting male' },
+  // Sambert Series (China region) - Classic Chinese TTS (REST API)
+  'sambert-zhichu': { id: 'sambert-zhichu-v1', region: 'china', type: 'sambert', description: 'Chinese female voice' },
+  'sambert-zhide': { id: 'sambert-zhide-v1', region: 'china', type: 'sambert', description: 'Chinese male voice' },
+  'sambert-zhimiao': { id: 'sambert-zhimiao-v1', region: 'china', type: 'sambert', description: 'Chinese sweet female' },
+  'sambert-zhiyuan': { id: 'sambert-zhiyuan-v1', region: 'china', type: 'sambert', description: 'Chinese broadcasting male' },
   
   // Fun Audio Series (China region) - Music & SFX Generation
   'fun-audio-music': { id: 'fun-audio-music-v1', region: 'china', type: 'music', description: 'Text-to-music generation' },
@@ -47,36 +50,40 @@ const TTS_MODELS = {
 
 type TTSModelKey = keyof typeof TTS_MODELS;
 
-// Voice presets by language for CosyVoice
+// Official CosyVoice voice presets per model version
+// v3-flash/v3-plus: longanyang, longlaotie, longshuo, longxiaobai, longxiaoxia, etc.
+// v2: longxiaochun_v2, longhua_v2, longcheng_v2, etc.
 const VOICE_PRESETS: Record<string, { voice: string; model: TTSModelKey }> = {
-  // Chinese voices (native CosyVoice)
-  'zh-CN-female': { voice: 'zhiyan', model: 'cosyvoice-v2' },
-  'zh-CN-male': { voice: 'zhitian', model: 'cosyvoice-v2' },
-  'zh-CN-child': { voice: 'zhitong', model: 'cosyvoice-v2' },
-  'zh-CN-elder-female': { voice: 'zhimei', model: 'cosyvoice-v2' },
-  'zh-CN-elder-male': { voice: 'zhida', model: 'cosyvoice-v2' },
+  // Chinese voices (CosyVoice v3-flash)
+  'zh-CN-female': { voice: 'longxiaoxia', model: 'cosyvoice-v3-flash' },
+  'zh-CN-male': { voice: 'longanyang', model: 'cosyvoice-v3-flash' },
+  'zh-CN-child': { voice: 'longxiaobai', model: 'cosyvoice-v3-flash' },
+  'zh-CN-elder-female': { voice: 'longxiaoxia', model: 'cosyvoice-v3-flash' },
+  'zh-CN-elder-male': { voice: 'longlaotie', model: 'cosyvoice-v3-flash' },
   
-  // Multilingual voices
-  'en-US-female': { voice: 'jessica', model: 'cosyvoice-multilingual' },
-  'en-US-male': { voice: 'michael', model: 'cosyvoice-multilingual' },
-  'en-GB-female': { voice: 'emma', model: 'cosyvoice-multilingual' },
-  'en-GB-male': { voice: 'james', model: 'cosyvoice-multilingual' },
-  'ja-JP-female': { voice: 'yuki', model: 'cosyvoice-multilingual' },
-  'ja-JP-male': { voice: 'takeshi', model: 'cosyvoice-multilingual' },
-  'ko-KR-female': { voice: 'minji', model: 'cosyvoice-multilingual' },
-  'ko-KR-male': { voice: 'junwoo', model: 'cosyvoice-multilingual' },
-  'es-ES-female': { voice: 'carmen', model: 'cosyvoice-multilingual' },
-  'fr-FR-female': { voice: 'marie', model: 'cosyvoice-multilingual' },
-  'de-DE-female': { voice: 'anna', model: 'cosyvoice-multilingual' },
-  'pt-BR-female': { voice: 'julia', model: 'cosyvoice-multilingual' },
-  'ar-SA-male': { voice: 'ahmad', model: 'cosyvoice-multilingual' },
-  'hi-IN-female': { voice: 'priya', model: 'cosyvoice-multilingual' },
+  // Multilingual voices (CosyVoice v3-flash supports multilingual)
+  'en-US-female': { voice: 'longanyang', model: 'cosyvoice-v3-flash' },
+  'en-US-male': { voice: 'longanyang', model: 'cosyvoice-v3-flash' },
+  'en-GB-female': { voice: 'longanyang', model: 'cosyvoice-v3-flash' },
+  'en-GB-male': { voice: 'longanyang', model: 'cosyvoice-v3-flash' },
+  'ja-JP-female': { voice: 'longanyang', model: 'cosyvoice-v3-flash' },
+  'ja-JP-male': { voice: 'longanyang', model: 'cosyvoice-v3-flash' },
+  'ko-KR-female': { voice: 'longanyang', model: 'cosyvoice-v3-flash' },
+  'ko-KR-male': { voice: 'longanyang', model: 'cosyvoice-v3-flash' },
+  'es-ES-female': { voice: 'longanyang', model: 'cosyvoice-v3-flash' },
+  'fr-FR-female': { voice: 'longanyang', model: 'cosyvoice-v3-flash' },
+  'de-DE-female': { voice: 'longanyang', model: 'cosyvoice-v3-flash' },
+  'pt-BR-female': { voice: 'longanyang', model: 'cosyvoice-v3-flash' },
+  'ar-SA-male': { voice: 'longanyang', model: 'cosyvoice-v3-flash' },
+  'hi-IN-female': { voice: 'longanyang', model: 'cosyvoice-v3-flash' },
 };
 
-// API endpoints per model type
-// CosyVoice uses OpenAI-compatible endpoint for HTTP speech synthesis
+// CosyVoice uses DashScope WebSocket SDK natively. For HTTP REST:
+// - Sambert models: /api/v1/services/aigc/text2audio/generation (synchronous REST)
+// - CosyVoice: /compatible-mode/v1/audio/speech (OpenAI-compatible HTTP)
 const API_ENDPOINTS = {
-  tts: '/compatible-mode/v1/audio/speech',  // OpenAI-compatible for CosyVoice
+  tts: '/compatible-mode/v1/audio/speech',  // CosyVoice OpenAI-compatible HTTP
+  sambert: '/api/v1/services/aigc/text2audio/generation',  // Sambert REST
   music: '/api/v1/services/aigc/audio-generation/music',
   sfx: '/api/v1/services/aigc/audio-generation/sound-effects',
   ambient: '/api/v1/services/aigc/audio-generation/ambient',
@@ -142,23 +149,26 @@ interface TTSResult {
  */
 function getApiConfig(modelKey: TTSModelKey): { 
   apiKey: string | null; 
-  baseUrl: string; 
+  baseDomain: string;
+  apiBase: string;
   region: 'china-beijing' | 'international';
 } {
   const modelConfig = TTS_MODELS[modelKey];
   
+  // CosyVoice is Beijing-only per Alibaba docs
+  const chinaKey = Deno.env.get('ALIBABA_CHINA_API_KEY');
+  const intlKey = Deno.env.get('ALIBABA_API_KEY');
+  
   if (modelConfig.region === 'china') {
-    const chinaKey = Deno.env.get('ALIBABA_CHINA_API_KEY');
-    const intlKey = Deno.env.get('ALIBABA_API_KEY');
     const apiKey = chinaKey || intlKey || null;
-    const baseUrl = chinaKey ? DASHSCOPE_CHINA_URL : DASHSCOPE_INTL_URL;
-    return { apiKey, baseUrl, region: chinaKey ? 'china-beijing' : 'international' };
+    const baseDomain = chinaKey ? DASHSCOPE_CHINA_BASE : DASHSCOPE_INTL_BASE;
+    const apiBase = chinaKey ? DASHSCOPE_CHINA_API : DASHSCOPE_INTL_API;
+    return { apiKey, baseDomain, apiBase, region: chinaKey ? 'china-beijing' : 'international' };
   } else {
-    const intlKey = Deno.env.get('ALIBABA_API_KEY');
-    const chinaKey = Deno.env.get('ALIBABA_CHINA_API_KEY');
     const apiKey = intlKey || chinaKey || null;
-    const baseUrl = intlKey ? DASHSCOPE_INTL_URL : DASHSCOPE_CHINA_URL;
-    return { apiKey, baseUrl, region: intlKey ? 'international' : 'china-beijing' };
+    const baseDomain = intlKey ? DASHSCOPE_INTL_BASE : DASHSCOPE_CHINA_BASE;
+    const apiBase = intlKey ? DASHSCOPE_INTL_API : DASHSCOPE_CHINA_API;
+    return { apiKey, baseDomain, apiBase, region: intlKey ? 'international' : 'china-beijing' };
   }
 }
 
@@ -169,7 +179,7 @@ async function generateTTS(request: TTSRequest): Promise<TTSResult> {
   const startTime = Date.now();
   
   // Determine model and voice from language preset or explicit values
-  let modelKey: TTSModelKey = request.model || 'cosyvoice-v2';
+  let modelKey: TTSModelKey = request.model || 'cosyvoice-v3-flash';
   let voice = request.voice;
   
   // Apply language preset if specified
@@ -179,9 +189,15 @@ async function generateTTS(request: TTSRequest): Promise<TTSResult> {
     voice = preset.voice;
   }
   
-  // Default voice for Chinese
+  // Default voice based on model version
   if (!voice) {
-    voice = 'zhiyan';
+    if (modelKey.startsWith('cosyvoice-v3')) {
+      voice = 'longanyang'; // Official v3 voice
+    } else if (modelKey === 'cosyvoice-v2') {
+      voice = 'longxiaochun_v2'; // Official v2 voice
+    } else {
+      voice = 'zhiyan'; // Sambert default
+    }
   }
   
   const modelConfig = TTS_MODELS[modelKey];
@@ -195,9 +211,9 @@ async function generateTTS(request: TTSRequest): Promise<TTSResult> {
     };
   }
   
-  const { apiKey, baseUrl, region } = getApiConfig(modelKey);
+  const { apiKey, baseDomain, apiBase, region } = getApiConfig(modelKey);
   
-  console.log(`🎤 [Alibaba TTS] Model: ${modelKey}, Voice: ${voice}, Region: ${region}`);
+  console.log(`🎤 [Alibaba TTS] Model: ${modelKey} (${modelConfig.id}), Voice: ${voice}, Region: ${region}`);
   
   if (!apiKey) {
     return {
@@ -210,9 +226,13 @@ async function generateTTS(request: TTSRequest): Promise<TTSResult> {
     };
   }
   
-  // Build payload - use OpenAI-compatible format for CosyVoice TTS
+  // Build endpoint URL based on model type
+  // CosyVoice: uses OpenAI-compatible endpoint at BASE_DOMAIN/compatible-mode/v1/audio/speech
+  // Sambert: uses DashScope REST at BASE_DOMAIN/api/v1/services/aigc/text2audio/generation
   const endpoint = API_ENDPOINTS[modelConfig.type as keyof typeof API_ENDPOINTS] || API_ENDPOINTS.tts;
-  const apiUrl = `${baseUrl}${endpoint}`;
+  // CosyVoice endpoint uses baseDomain (no /api/v1), Sambert/music use apiBase (with /api/v1)
+  const isCosyVoice = modelConfig.type === 'tts';
+  const apiUrl = isCosyVoice ? `${baseDomain}${endpoint}` : `${apiBase.replace('/api/v1', '')}${endpoint}`;
   
   console.log(`🇨🇳 Calling DashScope: ${apiUrl}`);
   

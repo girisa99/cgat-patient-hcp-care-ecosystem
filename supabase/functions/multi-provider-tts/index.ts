@@ -708,20 +708,20 @@ async function generateAlibabaTTS(text: string, languageCode?: string, voice?: s
   
   // Voice selection based on language - CosyVoice v2 voices
   const voiceMap: Record<string, string> = {
-    'zh': 'longxiaochun',      // Chinese female
-    'zh-CN': 'longxiaochun',
-    'zh-TW': 'longxiaochun',
-    'ja': 'longyue',           // Japanese
-    'ja-JP': 'longyue',
-    'ko': 'longyue',           // Korean
-    'ko-KR': 'longyue',
-    'en': 'loongstella',       // English female
-    'en-US': 'loongstella',
-    'en-GB': 'loongstella',
+    'zh': 'longanyang',
+    'zh-CN': 'longanyang',
+    'zh-TW': 'longanyang',
+    'ja': 'longanyang',
+    'ja-JP': 'longanyang',
+    'ko': 'longanyang',
+    'ko-KR': 'longanyang',
+    'en': 'longanyang',
+    'en-US': 'longanyang',
+    'en-GB': 'longanyang',
   };
   
   const langBase = (languageCode || 'zh').split('-')[0];
-  const selectedVoice = voice || voiceMap[languageCode || 'zh'] || voiceMap[langBase] || 'loongstella';
+  const selectedVoice = voice || voiceMap[languageCode || 'zh'] || voiceMap[langBase] || 'longanyang';
   
   console.log(`🌸 Alibaba CosyVoice: Using voice "${selectedVoice}" for language "${languageCode}", endpoint: ${baseUrl}, key type: ${ALIBABA_CHINA_KEY ? 'China' : 'International'}`);
 
@@ -733,7 +733,7 @@ async function generateAlibabaTTS(text: string, languageCode?: string, voice?: s
       'Authorization': `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: 'cosyvoice-v1',
+      model: 'cosyvoice-v3-flash',
       input: text,
       voice: selectedVoice,
       response_format: 'mp3',
