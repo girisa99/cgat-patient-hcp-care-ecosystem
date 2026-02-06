@@ -692,52 +692,51 @@ async function generateGoogleTTS(text: string, languageCode?: string, voice?: st
 }
 
 async function generateAlibabaTTS(text: string, languageCode?: string, voice?: string): Promise<ArrayBuffer> {
-  // CosyVoice requires China region API key - try both
+  // CosyVoice requires API key - try both China and International
   const ALIBABA_CHINA_KEY = Deno.env.get('ALIBABA_CHINA_API_KEY');
   const ALIBABA_INTL_KEY = Deno.env.get('ALIBABA_API_KEY');
   
-  // CosyVoice is available on both China and International endpoints
   const apiKey = ALIBABA_CHINA_KEY || ALIBABA_INTL_KEY;
   if (!apiKey) throw new Error('Alibaba API key not configured');
   
-  // Determine endpoint based on which key we're using
+  // Use OpenAI-compatible endpoint for CosyVoice speech synthesis
   // China key → Beijing endpoint, International key → Virginia endpoint
-  const endpoint = ALIBABA_CHINA_KEY 
-    ? 'https://dashscope.aliyuncs.com/api/v1/services/aigc/text2audio/generation'
-    : 'https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/text2audio/generation';
+  const baseUrl = ALIBABA_CHINA_KEY 
+    ? 'https://dashscope.aliyuncs.com'
+    : 'https://dashscope-intl.aliyuncs.com';
+  const endpoint = `${baseUrl}/compatible-mode/v1/audio/speech`;
   
-  // Voice selection based on language
+  // Voice selection based on language - CosyVoice v2 voices
   const voiceMap: Record<string, string> = {
     'zh': 'longxiaochun',      // Chinese female
     'zh-CN': 'longxiaochun',
-    'ja': 'tomoka_emo',        // Japanese female
-    'ja-JP': 'tomoka_emo',
-    'ko': 'annie_emo',         // Korean female
-    'ko-KR': 'annie_emo',
-    'en': 'emma',              // English female
-    'en-US': 'emma',
+    'zh-TW': 'longxiaochun',
+    'ja': 'longyue',           // Japanese
+    'ja-JP': 'longyue',
+    'ko': 'longyue',           // Korean
+    'ko-KR': 'longyue',
+    'en': 'loongstella',       // English female
+    'en-US': 'loongstella',
+    'en-GB': 'loongstella',
   };
   
   const langBase = (languageCode || 'zh').split('-')[0];
-  const selectedVoice = voice || voiceMap[languageCode || 'zh'] || voiceMap[langBase] || 'longxiaochun';
+  const selectedVoice = voice || voiceMap[languageCode || 'zh'] || voiceMap[langBase] || 'loongstella';
   
-  console.log(`🌸 Alibaba CosyVoice: Using voice "${selectedVoice}" for language "${languageCode}", key type: ${ALIBABA_CHINA_KEY ? 'China' : 'International'}`);
+  console.log(`🌸 Alibaba CosyVoice: Using voice "${selectedVoice}" for language "${languageCode}", endpoint: ${baseUrl}, key type: ${ALIBABA_CHINA_KEY ? 'China' : 'International'}`);
 
+  // Use OpenAI-compatible API format (returns audio binary directly)
   const response = await fetch(endpoint, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${apiKey}`,
-      'X-DashScope-Async': 'disable', // Synchronous mode
     },
     body: JSON.stringify({
       model: 'cosyvoice-v1',
-      input: { text },
-      parameters: {
-        voice: selectedVoice,
-        format: 'mp3',
-        sample_rate: 22050,
-      },
+      input: text,
+      voice: selectedVoice,
+      response_format: 'mp3',
     }),
   });
 
@@ -745,21 +744,23 @@ async function generateAlibabaTTS(text: string, languageCode?: string, voice?: s
     const errorText = await response.text();
     console.error(`❌ Alibaba CosyVoice error (${response.status}):`, errorText);
     
-    // If China key fails with 401, it's likely account verification issue
     if (response.status === 401 || response.status === 403) {
-      throw new Error(`Alibaba CosyVoice authentication failed (${response.status}). Account may require identity verification.`);
+      throw new Error(`Alibaba CosyVoice authentication failed (${response.status}). Check API key and account status.`);
     }
-    throw new Error(`Alibaba TTS error: ${errorText}`);
+    throw new Error(`Alibaba TTS error (${response.status}): ${errorText}`);
   }
 
-  const result = await response.json();
+  // OpenAI-compatible endpoint returns audio binary directly
+  const contentType = response.headers.get('content-type') || '';
   
-  // Handle async task response (returns task_id)
-  if (result.output?.task_id) {
-    console.log(`⏳ Alibaba async task: ${result.output.task_id}`);
-    // For async tasks, we'd need to poll - but in sync mode this shouldn't happen
-    throw new Error('Alibaba returned async task - sync mode may not be supported');
+  if (contentType.includes('audio') || contentType.includes('octet-stream')) {
+    const audioBuffer = await response.arrayBuffer();
+    console.log(`✅ Alibaba CosyVoice: Generated ${audioBuffer.byteLength} bytes audio (binary response)`);
+    return audioBuffer;
   }
+  
+  // Fallback: try parsing as JSON (legacy format)
+  const result = await response.json();
   
   if (result.output?.audio) {
     const binaryString = atob(result.output.audio);
@@ -767,11 +768,10 @@ async function generateAlibabaTTS(text: string, languageCode?: string, voice?: s
     for (let i = 0; i < binaryString.length; i++) {
       bytes[i] = binaryString.charCodeAt(i);
     }
-    console.log(`✅ Alibaba CosyVoice: Generated ${bytes.length} bytes audio`);
+    console.log(`✅ Alibaba CosyVoice: Generated ${bytes.length} bytes audio (JSON response)`);
     return bytes.buffer;
   }
   
-  // Check for audio_url in response
   if (result.output?.audio_url) {
     console.log(`⬇️ Alibaba CosyVoice: Downloading from ${result.output.audio_url}`);
     const audioResponse = await fetch(result.output.audio_url);
@@ -963,7 +963,8 @@ serve(async (req) => {
     }
 
     const region = request.region || 'US';
-    const languageCode = request.languageCode || 'en-US';
+    // Support both 'languageCode' and 'language' field names for caller flexibility
+    const languageCode = request.languageCode || (request as any).language || 'en-US';
     const tier = request.tier || 'standard';
     const providers = getAvailableProviders();
 
