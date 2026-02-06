@@ -400,14 +400,25 @@ async function generateSunoMusic(prompt: string, duration: number, style?: strin
 }
 
 async function generateAlibabaMusic(prompt: string, duration: number): Promise<ArrayBuffer> {
-  const ALIBABA_API_KEY = Deno.env.get('ALIBABA_API_KEY');
+  // Try both API keys - China (Beijing) preferred for audio models, International (Virginia) as fallback
+  const chinaKey = Deno.env.get('ALIBABA_CHINA_API_KEY');
+  const intlKey = Deno.env.get('ALIBABA_API_KEY');
+  const ALIBABA_API_KEY = chinaKey || intlKey;
   
   if (!ALIBABA_API_KEY) {
-    console.warn('Alibaba not configured, falling back to ElevenLabs');
+    console.warn('Neither Alibaba key configured, falling back to ElevenLabs');
     return generateElevenLabsMusic(prompt, duration);
   }
 
-  const response = await fetch('https://dashscope.aliyuncs.com/api/v1/services/audio/music-generate', {
+  // Route to correct endpoint
+  const useChina = !!chinaKey;
+  const baseUrl = useChina
+    ? 'https://dashscope.aliyuncs.com/api/v1'
+    : 'https://dashscope-intl.aliyuncs.com/api/v1';
+
+  console.log(`🎵 Alibaba Music via ${useChina ? 'China (Beijing)' : 'International (Virginia)'}`);
+
+  const response = await fetch(`${baseUrl}/services/audio/music-generate`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

@@ -344,17 +344,27 @@ async function generateWithGemini(prompt: string): Promise<{ url: string | null;
   }
 }
 
-// Generate with Alibaba Wanx
+// Generate with Alibaba Wanx - Dual endpoint support (China + International)
 async function generateWithAlibaba(prompt: string): Promise<{ url: string | null; provider: string }> {
-  const ALIBABA_API_KEY = Deno.env.get('ALIBABA_API_KEY') || Deno.env.get('DASHSCOPE_API_KEY');
+  // Try both API keys - International (Virginia) preferred for image gen, China (Beijing) as fallback
+  const intlKey = Deno.env.get('ALIBABA_API_KEY');
+  const chinaKey = Deno.env.get('ALIBABA_CHINA_API_KEY');
+  const ALIBABA_API_KEY = intlKey || chinaKey;
+  
   if (!ALIBABA_API_KEY) {
-    console.log('⚠️ ALIBABA_API_KEY not configured');
+    console.log('⚠️ Neither ALIBABA_API_KEY nor ALIBABA_CHINA_API_KEY configured');
     return { url: null, provider: 'alibaba' };
   }
 
+  // Route to correct endpoint based on which key is being used
+  const useIntl = !!intlKey;
+  const baseUrl = useIntl
+    ? 'https://dashscope-intl.aliyuncs.com/api/v1'
+    : 'https://dashscope.aliyuncs.com/api/v1';
+
   try {
-    console.log('🎨 Generating with Alibaba Wanx');
-    const response = await fetch('https://dashscope.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis', {
+    console.log(`🎨 Generating with Alibaba Wanx via ${useIntl ? 'International (Virginia)' : 'China (Beijing)'}`);
+    const response = await fetch(`${baseUrl}/services/aigc/text2image/image-synthesis`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${ALIBABA_API_KEY}`,
@@ -383,10 +393,10 @@ async function generateWithAlibaba(prompt: string): Promise<{ url: string | null
       return { url: null, provider: 'alibaba' };
     }
 
-    // Poll for result
+    // Poll for result using the same endpoint base
     for (let i = 0; i < 30; i++) {
       await new Promise(r => setTimeout(r, 2000));
-      const statusRes = await fetch(`https://dashscope.aliyuncs.com/api/v1/tasks/${taskId}`, {
+      const statusRes = await fetch(`${baseUrl}/tasks/${taskId}`, {
         headers: { 'Authorization': `Bearer ${ALIBABA_API_KEY}` },
       });
       const statusData = await statusRes.json();

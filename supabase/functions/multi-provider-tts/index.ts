@@ -696,15 +696,15 @@ async function generateAlibabaTTS(text: string, languageCode?: string, voice?: s
   const ALIBABA_CHINA_KEY = Deno.env.get('ALIBABA_CHINA_API_KEY');
   const ALIBABA_INTL_KEY = Deno.env.get('ALIBABA_API_KEY');
   
-  // CosyVoice is only available on China endpoint
+  // CosyVoice is available on both China and International endpoints
   const apiKey = ALIBABA_CHINA_KEY || ALIBABA_INTL_KEY;
   if (!apiKey) throw new Error('Alibaba API key not configured');
   
   // Determine endpoint based on which key we're using
-  // CosyVoice: dashscope.aliyuncs.com (China), not dashscope-intl
+  // China key → Beijing endpoint, International key → Virginia endpoint
   const endpoint = ALIBABA_CHINA_KEY 
     ? 'https://dashscope.aliyuncs.com/api/v1/services/aigc/text2audio/generation'
-    : 'https://dashscope.aliyuncs.com/api/v1/services/aigc/text2audio/generation';
+    : 'https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/text2audio/generation';
   
   // Voice selection based on language
   const voiceMap: Record<string, string> = {

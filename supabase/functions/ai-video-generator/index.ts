@@ -920,17 +920,25 @@ async function generateWithAlibabaWAN(
   duration: number, 
   referenceImage?: string
 ): Promise<VideoResult> {
-  const apiKey = Deno.env.get('ALIBABA_API_KEY');
+  // Try both API keys - China (Beijing) preferred for video models, International (Virginia) as fallback
+  const chinaKey = Deno.env.get('ALIBABA_CHINA_API_KEY');
+  const intlKey = Deno.env.get('ALIBABA_API_KEY');
+  const apiKey = chinaKey || intlKey;
   
   if (!apiKey) {
-    throw new Error('ALIBABA_API_KEY is not configured');
+    throw new Error('Neither ALIBABA_CHINA_API_KEY nor ALIBABA_API_KEY is configured');
   }
 
-  console.log('🎥 Generating video with Alibaba WAN 2.2 Animate:', model);
+  // Route to correct endpoint based on which key is available
+  // China endpoint for WAN 2.2 (Beijing region models), International for WAN 2.6+
+  const useChina = !!chinaKey;
+  const baseUrl = useChina 
+    ? 'https://dashscope.aliyuncs.com/api/v1'
+    : 'https://dashscope-intl.aliyuncs.com/api/v1';
+  const endpoint = `${baseUrl}/services/aigc/video-generation/generation`;
 
-  // Alibaba DashScope WAN Video API
-  const endpoint = 'https://dashscope.aliyuncs.com/api/v1/services/aigc/video-generation/generation';
-  
+  console.log(`🎥 Generating video with Alibaba WAN, endpoint: ${useChina ? 'China (Beijing)' : 'International (Virginia)'}`);
+
   const requestBody: Record<string, unknown> = {
     model: 'wan-2.2',
     input: {
@@ -983,16 +991,20 @@ async function generateWithAlibabaWAN(
   };
 }
 
-async function pollAlibabaTask(taskId: string, apiKey: string): Promise<VideoResult> {
+async function pollAlibabaTask(taskId: string, apiKey: string, baseUrl?: string): Promise<VideoResult> {
   const maxAttempts = 60;
   let attempts = 0;
+  // Auto-detect endpoint: China key uses China endpoint, otherwise international
+  const pollBaseUrl = baseUrl || (Deno.env.get('ALIBABA_CHINA_API_KEY') 
+    ? 'https://dashscope.aliyuncs.com/api/v1'
+    : 'https://dashscope-intl.aliyuncs.com/api/v1');
 
   while (attempts < maxAttempts) {
     await new Promise(resolve => setTimeout(resolve, 5000));
     attempts++;
 
     const response = await fetch(
-      `https://dashscope.aliyuncs.com/api/v1/tasks/${taskId}`,
+      `${pollBaseUrl}/tasks/${taskId}`,
       {
         headers: { 
           'Authorization': `Bearer ${apiKey}`,
