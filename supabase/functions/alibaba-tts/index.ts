@@ -74,12 +74,13 @@ const VOICE_PRESETS: Record<string, { voice: string; model: TTSModelKey }> = {
 };
 
 // API endpoints per model type
+// CosyVoice uses OpenAI-compatible endpoint for HTTP speech synthesis
 const API_ENDPOINTS = {
-  tts: '/services/aigc/text2audio/generation',
-  music: '/services/aigc/audio-generation/music',
-  sfx: '/services/aigc/audio-generation/sound-effects',
-  ambient: '/services/aigc/audio-generation/ambient',
-  clone: '/services/aigc/voice-clone/synthesis',
+  tts: '/compatible-mode/v1/audio/speech',  // OpenAI-compatible for CosyVoice
+  music: '/api/v1/services/aigc/audio-generation/music',
+  sfx: '/api/v1/services/aigc/audio-generation/sound-effects',
+  ambient: '/api/v1/services/aigc/audio-generation/ambient',
+  clone: '/api/v1/services/audio/tts/customization',
 };
 
 interface TTSRequest {
@@ -147,11 +148,17 @@ function getApiConfig(modelKey: TTSModelKey): {
   const modelConfig = TTS_MODELS[modelKey];
   
   if (modelConfig.region === 'china') {
-    const apiKey = Deno.env.get('ALIBABA_CHINA_API_KEY') || Deno.env.get('ALIBABA_API_KEY') || null;
-    return { apiKey, baseUrl: DASHSCOPE_CHINA_URL, region: 'china-beijing' };
+    const chinaKey = Deno.env.get('ALIBABA_CHINA_API_KEY');
+    const intlKey = Deno.env.get('ALIBABA_API_KEY');
+    const apiKey = chinaKey || intlKey || null;
+    const baseUrl = chinaKey ? DASHSCOPE_CHINA_URL : DASHSCOPE_INTL_URL;
+    return { apiKey, baseUrl, region: chinaKey ? 'china-beijing' : 'international' };
   } else {
-    const apiKey = Deno.env.get('ALIBABA_API_KEY') || Deno.env.get('ALIBABA_CHINA_API_KEY') || null;
-    return { apiKey, baseUrl: DASHSCOPE_INTL_URL, region: 'international' };
+    const intlKey = Deno.env.get('ALIBABA_API_KEY');
+    const chinaKey = Deno.env.get('ALIBABA_CHINA_API_KEY');
+    const apiKey = intlKey || chinaKey || null;
+    const baseUrl = intlKey ? DASHSCOPE_INTL_URL : DASHSCOPE_CHINA_URL;
+    return { apiKey, baseUrl, region: intlKey ? 'international' : 'china-beijing' };
   }
 }
 
@@ -203,53 +210,54 @@ async function generateTTS(request: TTSRequest): Promise<TTSResult> {
     };
   }
   
-  // Build payload
-  const payload: Record<string, unknown> = {
-    model: modelConfig.id,
-    input: {
-      text: request.text,
-    },
-    parameters: {
-      voice,
-      format: request.format || 'mp3',
-      sample_rate: request.sampleRate || 24000,
-      speech_rate: request.speed ? Math.round((request.speed - 1) * 500) : 0,
-      pitch_rate: request.pitch ? Math.round(request.pitch * 42) : 0,
-      volume: request.volume || 50,
-      ...(request.emotion && { emotion: request.emotion }),
-      ...(request.style && { style: request.style }),
-      ...(request.enableSSML && { enable_ssml: true }),
-    }
-  };
-  
-  // Handle voice cloning
-  if (modelKey === 'cosyvoice-clone') {
-    if (request.referenceAudioUrl) {
-      payload.input = { ...payload.input as object, reference_audio_url: request.referenceAudioUrl };
-    } else if (request.referenceAudioBase64) {
-      payload.input = { ...payload.input as object, reference_audio: request.referenceAudioBase64 };
-    }
-  }
-  
+  // Build payload - use OpenAI-compatible format for CosyVoice TTS
   const endpoint = API_ENDPOINTS[modelConfig.type as keyof typeof API_ENDPOINTS] || API_ENDPOINTS.tts;
   const apiUrl = `${baseUrl}${endpoint}`;
   
   console.log(`🇨🇳 Calling DashScope: ${apiUrl}`);
   
   try {
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-        'X-DashScope-Async': 'disable',
-      },
-      body: JSON.stringify(payload),
-    });
+    let response: Response;
     
-    const responseText = await response.text();
+    if (endpoint === API_ENDPOINTS.tts) {
+      // OpenAI-compatible format for CosyVoice
+      response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: modelConfig.id,
+          input: request.text,
+          voice: voice,
+          response_format: request.format || 'mp3',
+          speed: request.speed || 1.0,
+        }),
+      });
+    } else {
+      // Legacy DashScope format for music/sfx/clone
+      response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'X-DashScope-Async': 'disable',
+        },
+        body: JSON.stringify({
+          model: modelConfig.id,
+          input: { text: request.text },
+          parameters: {
+            voice,
+            format: request.format || 'mp3',
+            sample_rate: request.sampleRate || 24000,
+          },
+        }),
+      });
+    }
     
     if (!response.ok) {
+      const responseText = await response.text();
       console.error(`DashScope TTS error (${response.status}):`, responseText);
       
       try {
@@ -275,15 +283,30 @@ async function generateTTS(request: TTSRequest): Promise<TTSResult> {
       }
     }
     
-    const result = JSON.parse(responseText);
-    
-    // Extract audio from response
-    let audioUrl = result.output?.audio_url || result.output?.audio;
+    // OpenAI-compatible returns audio binary directly
+    const contentType = response.headers.get('content-type') || '';
+    let audioUrl: string | undefined;
     let audioBase64: string | undefined;
     
-    if (result.output?.audio && !result.output.audio.startsWith('http')) {
-      audioBase64 = result.output.audio;
+    if (contentType.includes('audio') || contentType.includes('octet-stream')) {
+      const arrayBuffer = await response.arrayBuffer();
+      const uint8 = new Uint8Array(arrayBuffer);
+      // Convert to base64
+      let binary = '';
+      for (let i = 0; i < uint8.length; i++) {
+        binary += String.fromCharCode(uint8[i]);
+      }
+      audioBase64 = btoa(binary);
       audioUrl = `data:audio/${request.format || 'mp3'};base64,${audioBase64}`;
+    } else {
+      // JSON response (legacy format)
+      const responseText = await response.text();
+      const result = JSON.parse(responseText);
+      audioUrl = result.output?.audio_url || result.output?.audio;
+      if (result.output?.audio && !result.output.audio.startsWith('http')) {
+        audioBase64 = result.output.audio;
+        audioUrl = `data:audio/${request.format || 'mp3'};base64,${audioBase64}`;
+      }
     }
     
     // Estimate duration
