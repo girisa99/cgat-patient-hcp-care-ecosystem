@@ -87,6 +87,36 @@ import { StyleDrivenProductionConfig, deriveProductionRequirements, estimateGene
 import { ScriptPreviewPanel } from './ScriptPreviewPanel';
 import { TranslationTranscreationToggle } from './TranslationTranscreationToggle';
 
+/**
+ * Detect transcreation zone from dialect code.
+ * Aligned with master-provider-routing-registry.ts:
+ * - Claude Zone (Western/EU/LATAM) → claude
+ * - Alibaba Zone (CJK/MENA) → qwen-max
+ * - Gemini Zone (India/SEA/Africa) → gemini
+ * - GPT-4o → FALLBACK only
+ */
+function detectTranscreationZone(dialectCode: string): string {
+  if (!dialectCode) return 'global';
+  const prefix = dialectCode.split('-')[0]?.toLowerCase();
+  // MENA / RTL → Alibaba Zone
+  if (['ar', 'he', 'fa', 'tr'].includes(prefix) || dialectCode.startsWith('ar-')) return 'mena';
+  // CJK → Alibaba Zone
+  if (['zh', 'ja', 'ko'].includes(prefix)) return 'cjk';
+  // India / South Asia → Gemini Zone
+  if (['hi', 'te', 'ta', 'bn', 'ur', 'mr', 'gu', 'pa', 'ml', 'kn'].includes(prefix)) return 'india';
+  // SEA → Gemini Zone
+  if (['id', 'ms', 'th', 'vi', 'tl', 'my'].includes(prefix)) return 'sea';
+  // Africa → Gemini Zone
+  if (['sw', 'yo', 'am', 'ha', 'ig'].includes(prefix)) return 'africa';
+  // Europe → Claude Zone
+  if (['fr', 'de', 'it', 'nl', 'pl', 'ru', 'uk', 'sv', 'da', 'no', 'fi', 'el', 'ro', 'cs'].includes(prefix)) return 'europe';
+  // LATAM → Claude Zone
+  if (['es', 'pt'].includes(prefix)) return 'latam';
+  // Western English → Claude Zone
+  if (['en'].includes(prefix)) return 'western';
+  return 'global';
+}
+
 // Import master registry for metrics
 import { 
   MASTER_AI_PROVIDERS, 
@@ -880,9 +910,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 <TranslationTranscreationToggle
                   sourceText={castSession.session.approvedMessaging?.mediumScript || ''}
                   sourceLanguage="en"
-                  region={selectedDialectCodes[0]?.startsWith('ar-') ? 'mena' : 
-                          ['zh-CN', 'ja-JP', 'ko-KR'].includes(selectedDialectCodes[0] || '') ? 'cjk' : 
-                          ['hi-IN', 'te-IN'].includes(selectedDialectCodes[0] || '') ? 'india' : 'global'}
+                  region={detectTranscreationZone(selectedDialectCodes[0] || '')}
                   onResult={(result) => {
                     console.log('[Studio] Translation/Transcreation result:', result.mode, result.targetLanguage);
                     toast.success(`${result.mode === 'translate' ? 'Translation' : 'Transcreation'} complete: ${result.targetLanguage}`);

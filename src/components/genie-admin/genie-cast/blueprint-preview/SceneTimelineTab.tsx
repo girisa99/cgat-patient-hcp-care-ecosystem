@@ -23,6 +23,7 @@ import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import type { BlueprintScene } from '@/hooks/useVideoBlueprints';
 import { AISceneCustomizer } from './AISceneCustomizer';
+import { TranslationTranscreationToggle } from '../TranslationTranscreationToggle';
 
 interface SceneTimelineTabProps {
   scenes: BlueprintScene[];
@@ -31,6 +32,12 @@ interface SceneTimelineTabProps {
   formatDuration: (seconds: number) => string;
   isEditable?: boolean;
   onScenesModified?: (scenes: BlueprintScene[], description: string) => void;
+  /** Language code for AI routing context */
+  language?: string;
+  /** Regional zone for provider routing */
+  region?: string;
+  /** Show transcreation toggle in scene timeline */
+  showTranscreation?: boolean;
 }
 
 const sceneTypeColors: Record<string, string> = {
@@ -70,6 +77,9 @@ export function SceneTimelineTab({
   formatDuration,
   isEditable = true,
   onScenesModified,
+  language = 'en',
+  region = 'global',
+  showTranscreation = false,
 }: SceneTimelineTabProps) {
   const [durationOverrides, setDurationOverrides] = useState<Record<string, number>>({});
 
@@ -244,8 +254,24 @@ export function SceneTimelineTab({
         <AISceneCustomizer
           scenes={scenes}
           onScenesModified={onScenesModified}
-          language="en"
-          region="global"
+          language={language}
+          region={region}
+        />
+      )}
+
+      {/* Per-Scene Translation vs Transcreation (CREATE workflow) */}
+      {isEditable && showTranscreation && (
+        <TranslationTranscreationToggle
+          sourceText={expandedScene 
+            ? scenes.find(s => s.id === expandedScene)?.script_template || ''
+            : ''
+          }
+          sourceLanguage="en"
+          region={region}
+          onResult={(result) => {
+            console.log('[CREATE/SceneTimeline] Transcreation result:', result.mode, result.targetLanguage);
+          }}
+          compact
         />
       )}
 

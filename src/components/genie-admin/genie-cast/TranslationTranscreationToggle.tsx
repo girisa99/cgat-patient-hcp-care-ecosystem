@@ -72,38 +72,69 @@ interface TranslationTranscreationToggleProps {
 
 const TRANSLATION_PROVIDERS: Record<string, { name: string; type: 'literal' | 'cultural'; description: string }> = {
   deepl: { name: 'DeepL', type: 'literal', description: 'Fast literal translation, best for subtitles & metadata' },
-  gemini: { name: 'Gemini 3 Pro', type: 'cultural', description: 'Cultural transcreation for India/SEA/Global regions' },
-  claude: { name: 'Claude 4', type: 'cultural', description: 'Nuanced transcreation for Western markets' },
-  'gpt-4o': { name: 'GPT-4o', type: 'cultural', description: 'High-quality transcreation for MENA/RTL content' },
-  'qwen-max': { name: 'Qwen-Max', type: 'cultural', description: 'Native CJK transcreation with idiomatic accuracy' },
+  gemini: { name: 'Gemini 3 Pro', type: 'cultural', description: 'Cultural transcreation for India/SEA/Africa/Global regions' },
+  claude: { name: 'Claude 4', type: 'cultural', description: 'Nuanced transcreation for Western/European markets' },
+  'qwen-max': { name: 'Qwen-Max', type: 'cultural', description: 'Native CJK & MENA/RTL transcreation with idiomatic accuracy' },
+  'gpt-4o': { name: 'GPT-4o', type: 'cultural', description: 'Universal fallback — high-quality multilingual transcreation' },
+  'deepseek-v3': { name: 'DeepSeek V3', type: 'cultural', description: 'Technical/code transcreation specialist' },
 };
 
-// Zone → recommended LLM for transcreation
+/**
+ * Zone → recommended LLM for transcreation
+ * ALIGNED WITH master-provider-routing-registry.ts:
+ * - Claude Zone (Western/EU) → Claude 4
+ * - Alibaba Zone (CJK/MENA) → Qwen-Max
+ * - Gemini Zone (India/SEA/Africa) → Gemini 3 Pro
+ * - GPT-4o → FALLBACK ONLY (never primary)
+ */
 const ZONE_TO_TRANSCREATION_PROVIDER: Record<string, string> = {
-  'global': 'gemini',
-  'india': 'gemini',
-  'mena': 'gpt-4o',
-  'cjk': 'qwen-max',
-  'latam': 'claude',
+  'western': 'claude',
   'europe': 'claude',
+  'latam': 'claude',
+  'cjk': 'qwen-max',
+  'mena': 'qwen-max',
+  'india': 'gemini',
+  'sea': 'gemini',
   'africa': 'gemini',
+  'global': 'gemini',
 };
 
 const TARGET_LANGUAGES = [
+  // Western / Europe / LATAM (Claude Zone)
   { code: 'es', name: 'Spanish', region: 'latam' },
+  { code: 'pt', name: 'Portuguese (BR)', region: 'latam' },
   { code: 'fr', name: 'French', region: 'europe' },
   { code: 'de', name: 'German', region: 'europe' },
-  { code: 'ar', name: 'Arabic', region: 'mena' },
+  { code: 'it', name: 'Italian', region: 'europe' },
+  { code: 'ru', name: 'Russian', region: 'europe' },
+  // CJK (Alibaba Zone → Qwen-Max)
   { code: 'zh', name: 'Chinese (Simplified)', region: 'cjk' },
+  { code: 'zh-TW', name: 'Chinese (Traditional)', region: 'cjk' },
   { code: 'ja', name: 'Japanese', region: 'cjk' },
   { code: 'ko', name: 'Korean', region: 'cjk' },
+  // MENA / RTL (Alibaba Zone → Qwen-Max)
+  { code: 'ar', name: 'Arabic (7 dialects)', region: 'mena' },
+  { code: 'he', name: 'Hebrew (Israeli)', region: 'mena' },
+  { code: 'tr', name: 'Turkish', region: 'mena' },
+  { code: 'fa', name: 'Farsi/Persian', region: 'mena' },
+  // India / South Asia (Gemini Zone)
   { code: 'hi', name: 'Hindi', region: 'india' },
   { code: 'te', name: 'Telugu', region: 'india' },
   { code: 'ta', name: 'Tamil', region: 'india' },
-  { code: 'pt', name: 'Portuguese', region: 'latam' },
-  { code: 'tr', name: 'Turkish', region: 'mena' },
-  { code: 'ru', name: 'Russian', region: 'europe' },
-  { code: 'id', name: 'Indonesian', region: 'india' },
+  { code: 'bn', name: 'Bengali (Bangladesh)', region: 'india' },
+  { code: 'ur', name: 'Urdu (Pakistan)', region: 'india' },
+  { code: 'mr', name: 'Marathi', region: 'india' },
+  { code: 'gu', name: 'Gujarati', region: 'india' },
+  // SEA (Gemini Zone)
+  { code: 'id', name: 'Indonesian', region: 'sea' },
+  { code: 'ms', name: 'Malay', region: 'sea' },
+  { code: 'th', name: 'Thai', region: 'sea' },
+  { code: 'vi', name: 'Vietnamese', region: 'sea' },
+  { code: 'tl', name: 'Filipino/Tagalog', region: 'sea' },
+  // Africa (Gemini Zone)
+  { code: 'sw', name: 'Swahili', region: 'africa' },
+  { code: 'yo', name: 'Yoruba', region: 'africa' },
+  { code: 'am', name: 'Amharic', region: 'africa' },
 ];
 
 // ============================================
