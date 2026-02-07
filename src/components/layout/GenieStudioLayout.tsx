@@ -80,40 +80,44 @@ export const GenieStudioLayout: React.FC<GenieStudioLayoutProps> = ({
 
   useEffect(() => {
     if (!isLoading && requireAuth && !isAuthenticated) {
+      // CRITICAL FIX: Preserve full URL (pathname + search params) for redirect back
+      // This prevents losing ?tab=genie-cast when auth redirects
       navigate('/genie-studio-auth', { 
-        state: { from: location.pathname },
+        state: { from: location.pathname + location.search },
         replace: true,
       });
     }
-  }, [isAuthenticated, isLoading, requireAuth, navigate, location.pathname]);
+  }, [isAuthenticated, isLoading, requireAuth, navigate, location.pathname, location.search]);
 
-  if (isLoading && requireAuth) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <LoadingFallback />
-      </div>
-    );
-  }
-
-  if (requireAuth && !isAuthenticated) {
+  // CRITICAL FIX: Don't unmount the entire layout during auth loading
+  // Only block the content area, keep sidebar visible to prevent "tab disappearing" bug
+  const isAuthBlocked = requireAuth && !isLoading && !isAuthenticated;
+  
+  if (isAuthBlocked) {
     return null;
   }
 
-  const upgradePrompt = getUpgradePromptForPath(location.pathname);
+  const upgradePrompt = !isLoading ? getUpgradePromptForPath(location.pathname) : null;
   const showFAB = !location.pathname.includes('/genie-support');
+  const showContentLoading = isLoading && requireAuth;
+
+  // Content to render in main area - shows loading during auth, upgrade prompt, or actual children
+  const mainContent = showContentLoading ? (
+    <LoadingFallback />
+  ) : upgradePrompt ? (
+    <UpgradePrompt 
+      requiredTier={upgradePrompt.requiredTier} 
+      tierName={upgradePrompt.tierName} 
+    />
+  ) : (
+    children
+  );
 
   if (variant === 'none') {
     return (
       <div className="min-h-screen bg-background">
         <Suspense fallback={<LoadingFallback />}>
-          {upgradePrompt ? (
-            <UpgradePrompt 
-              requiredTier={upgradePrompt.requiredTier} 
-              tierName={upgradePrompt.tierName} 
-            />
-          ) : (
-            children
-          )}
+          {mainContent}
         </Suspense>
         {showFAB && <AskGenie position="floating" />}
       </div>
@@ -126,14 +130,7 @@ export const GenieStudioLayout: React.FC<GenieStudioLayoutProps> = ({
         <GenieStudioNavigation variant="topbar" />
         <main className="container py-6">
           <Suspense fallback={<LoadingFallback />}>
-            {upgradePrompt ? (
-              <UpgradePrompt 
-                requiredTier={upgradePrompt.requiredTier} 
-                tierName={upgradePrompt.tierName} 
-              />
-            ) : (
-              children
-            )}
+            {mainContent}
           </Suspense>
         </main>
         {showFAB && <AskGenie position="floating" />}
@@ -141,7 +138,8 @@ export const GenieStudioLayout: React.FC<GenieStudioLayoutProps> = ({
     );
   }
 
-  // Sidebar variant - main content adjusts based on sidebar state
+  // Sidebar variant - CRITICAL: sidebar ALWAYS renders, even during auth loading
+  // This prevents the "Genie Cast tab disappearing" bug
   return (
     <div className="min-h-screen bg-background flex w-full">
       <GenieStudioNavigation 
@@ -155,14 +153,7 @@ export const GenieStudioLayout: React.FC<GenieStudioLayoutProps> = ({
       >
         <div className="h-full w-full">
           <Suspense fallback={<LoadingFallback />}>
-            {upgradePrompt ? (
-              <UpgradePrompt 
-                requiredTier={upgradePrompt.requiredTier} 
-                tierName={upgradePrompt.tierName} 
-              />
-            ) : (
-              children
-            )}
+            {mainContent}
           </Suspense>
         </div>
       </main>
