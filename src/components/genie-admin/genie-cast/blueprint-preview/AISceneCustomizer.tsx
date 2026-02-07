@@ -1,7 +1,7 @@
 /**
  * AI Scene Customizer
- * Natural language prompt to modify scene sequences
- * Uses local intelligence to parse user intent and modify the scene list
+ * Routes prompts through ai-universal-processor for intelligent scene modification.
+ * Falls back to local regex parsing if edge function unavailable.
  */
 
 import React, { useState, useCallback } from 'react';
@@ -18,13 +18,21 @@ import {
   Plus,
   Trash2,
   ArrowUpDown,
+  Languages,
+  Globe,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import type { BlueprintScene } from '@/hooks/useVideoBlueprints';
 
 interface AISceneCustomizerProps {
   scenes: BlueprintScene[];
   onScenesModified?: (scenes: BlueprintScene[], changeDescription: string) => void;
+  /** Optional: current language for transcreation context */
+  language?: string;
+  /** Optional: regional zone for provider routing */
+  region?: string;
   className?: string;
 }
 
@@ -130,16 +138,90 @@ const PROMPT_SUGGESTIONS = [
   'Duplicate the feature scene for 3 features',
 ];
 
-// Parse user intent from natural language
+// ============================================
+// LLM-POWERED INTENT PARSING
+// ============================================
+
 interface ParsedIntent {
   action: 'add' | 'remove' | 'reorder' | 'modify' | 'duplicate';
   sceneType?: string;
   position?: 'before' | 'after' | 'start' | 'end';
   targetScene?: string;
   description: string;
+  modifiedScript?: string;
 }
 
-function parsePrompt(prompt: string, existingScenes: BlueprintScene[]): ParsedIntent[] {
+/**
+ * Route prompt through ai-universal-processor for intelligent parsing.
+ * Falls back to local regex if edge function fails.
+ */
+async function parsePromptWithAI(
+  prompt: string,
+  existingScenes: BlueprintScene[],
+  region?: string,
+): Promise<{ intents: ParsedIntent[]; usedAI: boolean }> {
+  try {
+    const sceneContext = existingScenes.map((s, i) => ({
+      index: i,
+      type: s.scene_type,
+      title: s.title,
+      optional: s.is_optional,
+      duration: s.duration_seconds,
+    }));
+
+    const systemPrompt = `You are a video production scene sequencing assistant. Given a user prompt and current scene list, return a JSON array of intents.
+
+Current scenes:
+${JSON.stringify(sceneContext, null, 2)}
+
+Available scene types: ${Object.keys(SCENE_TEMPLATES).join(', ')}
+
+Return JSON array of objects with these fields:
+- action: "add" | "remove" | "reorder" | "modify" | "duplicate"
+- sceneType: string (from available types, or null)
+- position: "before" | "after" | "start" | "end" (for add only)
+- targetScene: string (scene type or title to position relative to)
+- description: string (human-readable summary)
+
+ONLY return valid JSON array, no other text.`;
+
+    const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
+      body: {
+        action: 'generate',
+        provider: 'gemini',
+        prompt: prompt,
+        systemPrompt,
+        temperature: 0.3,
+        maxTokens: 500,
+        context: { 
+          sceneCount: existingScenes.length, 
+          region: region || 'global',
+          taskType: 'scene_customization' 
+        },
+      },
+    });
+
+    if (error) throw error;
+
+    const content = data?.content || data?.result || '';
+    // Extract JSON from response
+    const jsonMatch = content.match(/\[[\s\S]*\]/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]) as ParsedIntent[];
+      return { intents: parsed, usedAI: true };
+    }
+
+    throw new Error('No valid JSON in response');
+  } catch (err) {
+    console.warn('[AISceneCustomizer] LLM fallback to local parsing:', err);
+    return { intents: parsePromptLocal(prompt, existingScenes), usedAI: false };
+  }
+}
+
+/**
+ * Local regex fallback parser (original logic preserved)
+ */
+function parsePromptLocal(prompt: string, existingScenes: BlueprintScene[]): ParsedIntent[] {
   const lower = prompt.toLowerCase();
   const intents: ParsedIntent[] = [];
 
@@ -169,61 +251,38 @@ function parsePrompt(prompt: string, existingScenes: BlueprintScene[]): ParsedIn
         position = 'start';
       }
 
-      intents.push({
-        action: 'add',
-        sceneType,
-        position,
-        targetScene,
-        description: `Add ${sceneType} scene`,
-      });
+      intents.push({ action: 'add', sceneType, position, targetScene, description: `Add ${sceneType} scene` });
     }
   }
 
   // Detect REMOVE intent
   if (lower.includes('remove') || lower.includes('delete') || lower.includes('drop')) {
     if (lower.includes('optional')) {
-      intents.push({
-        action: 'remove',
-        description: 'Remove all optional scenes',
-      });
+      intents.push({ action: 'remove', description: 'Remove all optional scenes' });
     } else {
       const removeMatch = lower.match(/(?:remove|delete|drop) (?:the )?(\w+)/);
       if (removeMatch) {
-        intents.push({
-          action: 'remove',
-          sceneType: removeMatch[1],
-          description: `Remove ${removeMatch[1]} scene`,
-        });
+        intents.push({ action: 'remove', sceneType: removeMatch[1], description: `Remove ${removeMatch[1]} scene` });
       }
     }
   }
 
   // Detect SHORTER intent
   if (lower.includes('shorter') || lower.includes('make it short') || lower.includes('condense')) {
-    intents.push({
-      action: 'remove',
-      description: 'Remove optional scenes to shorten',
-    });
+    intents.push({ action: 'remove', description: 'Remove optional scenes to shorten' });
   }
 
   // Detect DUPLICATE intent
   if (lower.includes('duplicate') || lower.includes('repeat') || lower.includes('copy')) {
     const dupMatch = lower.match(/(?:duplicate|repeat|copy) (?:the )?(\w+)/);
     if (dupMatch) {
-      intents.push({
-        action: 'duplicate',
-        sceneType: dupMatch[1],
-        description: `Duplicate ${dupMatch[1]} scene`,
-      });
+      intents.push({ action: 'duplicate', sceneType: dupMatch[1], description: `Duplicate ${dupMatch[1]} scene` });
     }
   }
 
   // Detect SWAP/REORDER intent
   if (lower.includes('swap') || lower.includes('move') || lower.includes('reorder')) {
-    intents.push({
-      action: 'reorder',
-      description: 'Reorder scenes',
-    });
+    intents.push({ action: 'reorder', description: 'Reorder scenes' });
   }
 
   // Fallback: if no intent detected, try to add based on keywords
@@ -231,12 +290,7 @@ function parsePrompt(prompt: string, existingScenes: BlueprintScene[]): ParsedIn
     const sceneTypes = Object.keys(SCENE_TEMPLATES);
     for (const type of sceneTypes) {
       if (lower.includes(type)) {
-        intents.push({
-          action: 'add',
-          sceneType: type,
-          position: 'end',
-          description: `Add ${type} scene`,
-        });
+        intents.push({ action: 'add', sceneType: type, position: 'end', description: `Add ${type} scene` });
         break;
       }
     }
@@ -245,7 +299,10 @@ function parsePrompt(prompt: string, existingScenes: BlueprintScene[]): ParsedIn
   return intents;
 }
 
-// Apply parsed intents to scenes
+// ============================================
+// APPLY INTENTS TO SCENES
+// ============================================
+
 function applyIntents(
   scenes: BlueprintScene[],
   intents: ParsedIntent[],
@@ -280,7 +337,6 @@ function applyIntents(
             updated_at: new Date().toISOString(),
           };
 
-          // Determine insert position
           if (intent.position === 'start') {
             newScenes.unshift(newScene);
           } else if (intent.position === 'after' && intent.targetScene) {
@@ -288,31 +344,17 @@ function applyIntents(
               s.scene_type.includes(intent.targetScene!) ||
               s.title.toLowerCase().includes(intent.targetScene!)
             );
-            if (targetIdx >= 0) {
-              newScenes.splice(targetIdx + 1, 0, newScene);
-            } else {
-              newScenes.push(newScene);
-            }
+            newScenes.splice(targetIdx >= 0 ? targetIdx + 1 : newScenes.length, 0, newScene);
           } else if (intent.position === 'before' && intent.targetScene) {
             const targetIdx = newScenes.findIndex(s =>
               s.scene_type.includes(intent.targetScene!) ||
               s.title.toLowerCase().includes(intent.targetScene!)
             );
-            if (targetIdx >= 0) {
-              newScenes.splice(targetIdx, 0, newScene);
-            } else {
-              newScenes.push(newScene);
-            }
+            newScenes.splice(targetIdx >= 0 ? targetIdx : newScenes.length, 0, newScene);
           } else {
-            // Insert before CTA/outro if exists
             const ctaIdx = newScenes.findIndex(s => s.scene_type === 'cta' || s.scene_type === 'outro');
-            if (ctaIdx >= 0) {
-              newScenes.splice(ctaIdx, 0, newScene);
-            } else {
-              newScenes.push(newScene);
-            }
+            newScenes.splice(ctaIdx >= 0 ? ctaIdx : newScenes.length, 0, newScene);
           }
-
           changes.push(`✅ Added "${newScene.title}" scene`);
         } else {
           changes.push(`⚠️ Unknown scene type: "${intent.sceneType}"`);
@@ -376,26 +418,32 @@ function applyIntents(
   return { newScenes, changes };
 }
 
+// ============================================
+// COMPONENT
+// ============================================
+
 export function AISceneCustomizer({
   scenes,
   onScenesModified,
+  language,
+  region,
   className,
 }: AISceneCustomizerProps) {
   const [prompt, setPrompt] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [lastChanges, setLastChanges] = useState<string[]>([]);
   const [previousScenes, setPreviousScenes] = useState<BlueprintScene[] | null>(null);
+  const [usedAI, setUsedAI] = useState(false);
 
   const handleCustomize = useCallback(async () => {
     if (!prompt.trim()) return;
 
     setIsProcessing(true);
 
-    // Simulate brief processing delay for UX
-    await new Promise(r => setTimeout(r, 400));
-
     try {
-      const intents = parsePrompt(prompt, scenes);
+      // Route through LLM with local fallback
+      const { intents, usedAI: aiUsed } = await parsePromptWithAI(prompt, scenes, region);
+      setUsedAI(aiUsed);
 
       if (intents.length === 0) {
         setLastChanges(['⚠️ Could not understand the request. Try a suggestion below.']);
@@ -405,12 +453,16 @@ export function AISceneCustomizer({
 
       const { newScenes, changes } = applyIntents(scenes, intents);
 
+      if (aiUsed) {
+        changes.unshift('🤖 Parsed via AI (zone-routed LLM)');
+      }
+
       setPreviousScenes(scenes);
       setLastChanges(changes);
       setPrompt('');
 
-      if (onScenesModified && newScenes.length !== scenes.length || 
-          newScenes.some((s, i) => s.id !== scenes[i]?.id)) {
+      if (onScenesModified && (newScenes.length !== scenes.length || 
+          newScenes.some((s, i) => s.id !== scenes[i]?.id))) {
         onScenesModified(newScenes, changes.join('; '));
       }
     } catch (err) {
@@ -418,7 +470,7 @@ export function AISceneCustomizer({
     } finally {
       setIsProcessing(false);
     }
-  }, [prompt, scenes, onScenesModified]);
+  }, [prompt, scenes, region, onScenesModified]);
 
   const handleUndo = useCallback(() => {
     if (previousScenes && onScenesModified) {
@@ -435,6 +487,18 @@ export function AISceneCustomizer({
         <div className="flex items-center gap-2 mb-1">
           <Sparkles className="h-3.5 w-3.5 text-primary" />
           <span className="text-xs font-medium">AI Scene Customizer</span>
+          {usedAI && (
+            <Badge variant="outline" className="text-[9px] h-4 gap-1">
+              <Globe className="h-2.5 w-2.5" />
+              LLM-Routed
+            </Badge>
+          )}
+          {language && language !== 'en' && (
+            <Badge variant="outline" className="text-[9px] h-4 gap-1">
+              <Languages className="h-2.5 w-2.5" />
+              {language.toUpperCase()}
+            </Badge>
+          )}
           {previousScenes && (
             <Button
               variant="ghost"
@@ -503,10 +567,12 @@ export function AISceneCustomizer({
                 <Lightbulb className="h-3 w-3 text-yellow-500 flex-shrink-0" />
               ) : change.startsWith('❌') ? (
                 <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
+              ) : change.startsWith('🤖') ? (
+                <Sparkles className="h-3 w-3 text-primary flex-shrink-0" />
               ) : (
                 <ArrowUpDown className="h-3 w-3 text-muted-foreground flex-shrink-0" />
               )}
-              <span className="text-muted-foreground">{change.replace(/^[✅⚠️❌ℹ️↩️]\s?/, '')}</span>
+              <span className="text-muted-foreground">{change.replace(/^[✅⚠️❌ℹ️↩️🤖]\s?/, '')}</span>
             </div>
           ))}
         </div>

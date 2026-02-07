@@ -16,6 +16,7 @@ export { AIProviderShowcase } from './AIProviderShowcase';
 export { BrandAssetsPanel } from './BrandAssetsPanel';
 export { VirtualizedMessagingMatrix } from './VirtualizedMessagingMatrix';
 export { ScriptPreviewPanel } from './ScriptPreviewPanel';
+export { TranslationTranscreationToggle } from './TranslationTranscreationToggle';
 export { LiveGenerationPreview } from './LiveGenerationPreview';
 export { BlueprintPreviewModal } from './BlueprintPreviewModal';
 export { BlueprintTemplatesGrid } from './BlueprintTemplatesGrid';
