@@ -15,4 +15,7 @@ export { MultiModelComparisonPanel } from './MultiModelComparisonPanel';
 // Combined Hub (Phase 1 + 2)
 export { AIIntelligenceHub } from './AIIntelligenceHub';
 
+// Phase 2: Routing Decision Card (transparency UI)
+export { RoutingDecisionCard } from './RoutingDecisionCard';
+
 export type { SelectedModelConfig } from './CrossCategoryModelSelector';
