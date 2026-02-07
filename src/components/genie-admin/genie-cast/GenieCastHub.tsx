@@ -28,9 +28,8 @@ const defaultStyles: VideoStyleType[] = [
 ];
 
 export const GenieCastHub: React.FC = () => {
-  // STABILITY FIX: Track component mount state to prevent render issues
+  // Track component mount state
   const isMounted = useRef(true);
-  const [isReady, setIsReady] = useState(false);
   
   // Persist state to localStorage
   const [selectedVideoStyles, setSelectedVideoStyles] = useState<VideoStyleType[]>(() => {
@@ -64,18 +63,11 @@ export const GenieCastHub: React.FC = () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [selectedVideoStyles]);
 
-  // STABILITY FIX: Delay rendering to ensure component is properly mounted
+  // Track mount lifecycle
   useEffect(() => {
     isMounted.current = true;
-    const timer = setTimeout(() => {
-      if (isMounted.current) {
-        setIsReady(true);
-      }
-    }, 50); // Small delay to ensure stable mount
-    
     return () => {
       isMounted.current = false;
-      clearTimeout(timer);
     };
   }, []);
 
@@ -83,13 +75,11 @@ export const GenieCastHub: React.FC = () => {
   const handleStylesChange = useCallback((styles: VideoStyleType[]) => {
     if (!isMounted.current) return;
     setSelectedVideoStyles(styles);
-    console.log('[GenieCastHub] Styles updated:', styles);
   }, []);
 
   const handleGalleriesUpdated = useCallback((galleries: ProductGallery[]) => {
     if (!isMounted.current) return;
     setScreenshotGalleries(galleries);
-    console.log('[GenieCastHub] Galleries updated:', galleries.length);
   }, []);
 
   const handleGenerate = useCallback(async () => {
@@ -110,16 +100,6 @@ export const GenieCastHub: React.FC = () => {
       setIsGenerating(false);
     }
   }, [selectedVideoStyles]);
-
-  // Show loading state while component stabilizes
-  if (!isReady) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px] gap-3">
-        <Loader2 className="w-6 h-6 animate-spin text-primary" />
-        <span className="text-muted-foreground">Loading Genie Cast...</span>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-4">
