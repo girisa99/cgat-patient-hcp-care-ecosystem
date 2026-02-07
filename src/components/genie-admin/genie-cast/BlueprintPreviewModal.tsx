@@ -22,6 +22,7 @@ import {
   Globe2,
   Wand2,
   Image as ImageIcon,
+  Eye,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { VideoBlueprint, BlueprintScene } from '@/hooks/useVideoBlueprints';
@@ -29,6 +30,7 @@ import { OverviewTab } from './blueprint-preview/OverviewTab';
 import { SceneTimelineTab } from './blueprint-preview/SceneTimelineTab';
 import { AIModelsTab } from './blueprint-preview/AIModelsTab';
 import { ProductionConfigTab } from './blueprint-preview/ProductionConfigTab';
+import { QuickPreviewGenerator } from './blueprint-preview/QuickPreviewGenerator';
 
 interface BlueprintPreviewModalProps {
   blueprint: VideoBlueprint | null;
@@ -158,6 +160,10 @@ export function BlueprintPreviewModal({
                 <TabsTrigger value="timeline" className="data-[state=active]:bg-primary/10">
                   Scene Timeline
                 </TabsTrigger>
+                <TabsTrigger value="preview" className="data-[state=active]:bg-primary/10">
+                  <Eye className="h-3 w-3 mr-1" />
+                  Quick Preview
+                </TabsTrigger>
                 <TabsTrigger value="ai-models" className="data-[state=active]:bg-primary/10">
                   <Cpu className="h-3 w-3 mr-1" />
                   AI Models
@@ -189,6 +195,16 @@ export function BlueprintPreviewModal({
                 formatDuration={formatDuration}
                 isEditable={true}
               />
+            </TabsContent>
+
+            <TabsContent value="preview" className="mt-0">
+              <div className="p-6">
+                <QuickPreviewGenerator
+                  scenes={scenes}
+                  blueprintId={blueprint.id}
+                  blueprintName={blueprint.name}
+                />
+              </div>
             </TabsContent>
 
             <TabsContent value="ai-models" className="mt-0">

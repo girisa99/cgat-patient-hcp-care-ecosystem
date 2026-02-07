@@ -1,0 +1,4 @@
+# Memory: features/genie-cast/phase-c-quick-preview-generator-v1
+Updated: just now
+
+Phase C adds a 'Quick Preview' tab to the BlueprintPreviewModal with three integrated components: 1) **SceneAssetMapper** — auto-assigns brand assets (screenshots, logos) to blueprint scenes using a type-aware strategy (intro→logo, feature/demo→screenshots, cta/outro→logo) with drag-drop override; 2) **StoryboardPreview** — a free slideshow player with scene-by-scene auto-advance, TTS audio playback, fullscreen support, and a scene thumbnail strip; 3) **QuickPreviewGenerator** — orchestrator offering two modes: free Storyboard (static images + audio) and paid 480p Video Preview (~1 credit via genie-cast-assembler edge function). Assets are loaded from 'product-screenshots' and 'brand-assets' Supabase storage buckets. The preview tab sits between Scene Timeline and AI Models in the modal's tab order.
