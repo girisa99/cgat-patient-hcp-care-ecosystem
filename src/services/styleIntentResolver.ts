@@ -69,8 +69,10 @@
  });
  
  // Region → TTS Provider Mapping (4-zone routing)
+ // Azure Neural is PRIMARY for ALL zones (superior Viseme data for lip-sync)
+ // ElevenLabs is TERTIARY/PREMIUM clone only — NEVER primary for production TTS
  const REGION_TO_TTS_PROVIDER: Record<RegionZone, string> = Object.freeze({
-   'western': 'elevenlabs',
+   'western': 'azure-neural',
    'europe': 'azure-neural',
    'cjk': 'alibaba-cosyvoice',
    'india': 'azure-neural',
@@ -78,7 +80,7 @@
    'sea': 'azure-neural',
    'africa': 'azure-neural',
    'latam': 'azure-neural',
-   'global': 'elevenlabs',
+   'global': 'azure-neural',
  });
  
  // Region → LLM Provider Mapping
