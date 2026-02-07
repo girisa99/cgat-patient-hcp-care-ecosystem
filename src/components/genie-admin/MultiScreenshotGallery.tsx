@@ -274,14 +274,13 @@ export const MultiScreenshotGallery: React.FC<MultiScreenshotGalleryProps> = ({
       if (error) throw error;
 
       const updatedGalleries = [...galleries];
+      // Track seen filenames to prevent duplicates from timestamp variants
+      const seenByProduct: Record<string, Set<string>> = {};
       
       for (const file of files || []) {
-        // Parse product ID from filename - handle hyphenated IDs like "ask-genie"
-        // Filename format: productId-timestamp.png
         const fileNameWithoutExt = file.name.replace('.png', '');
-        const parts = fileNameWithoutExt.split('-');
         
-        // Try to match against known product IDs (longest match first)
+        // Match against known product IDs (longest match first)
         let productId = '';
         for (const product of GENIE_PRODUCTS) {
           if (fileNameWithoutExt.startsWith(`${product.id}-`)) {
@@ -289,30 +288,34 @@ export const MultiScreenshotGallery: React.FC<MultiScreenshotGalleryProps> = ({
             break;
           }
         }
-        
-        // Fallback to first segment if no match found
         if (!productId) {
+          const parts = fileNameWithoutExt.split('-');
           productId = parts[0];
         }
         
         const gallery = updatedGalleries.find(g => g.productId === productId);
         if (!gallery) continue;
 
+        if (!seenByProduct[productId]) seenByProduct[productId] = new Set();
+
         const { data: urlData } = supabase.storage
           .from('product-screenshots')
           .getPublicUrl(`screenshots/${file.name}`);
 
-        // Check if screenshot already exists
-        if (!gallery.screenshots.some(s => s.imageUrl === urlData.publicUrl)) {
-          gallery.screenshots.push({
-            id: fileNameWithoutExt,
-            productId,
-            imageUrl: urlData.publicUrl,
-            order: gallery.screenshots.length,
-            createdAt: new Date(file.created_at || Date.now()),
-            method: 'upload',
-          });
-        }
+        // Deduplicate: skip if same URL already loaded
+        if (gallery.screenshots.some(s => s.imageUrl === urlData.publicUrl)) continue;
+        // Also deduplicate by base filename (same screen, different timestamp)
+        if (seenByProduct[productId].has(urlData.publicUrl)) continue;
+        seenByProduct[productId].add(urlData.publicUrl);
+
+        gallery.screenshots.push({
+          id: fileNameWithoutExt,
+          productId,
+          imageUrl: urlData.publicUrl,
+          order: gallery.screenshots.length,
+          createdAt: new Date(file.created_at || Date.now()),
+          method: 'upload',
+        });
       }
 
       setGalleries(updatedGalleries);
@@ -322,17 +325,26 @@ export const MultiScreenshotGallery: React.FC<MultiScreenshotGalleryProps> = ({
     }
   };
 
-  // Upload screenshot to storage
-  const uploadScreenshot = async (file: File, productId: string): Promise<string | null> => {
+  // Upload screenshot to storage with duplicate prevention
+  // Uses deterministic naming: {productId}-{screenKey}.png to overwrite (upsert) on re-capture
+  const uploadScreenshot = async (
+    file: File, 
+    productId: string, 
+    screenKey?: string
+  ): Promise<string | null> => {
     try {
-      const fileName = `${productId}-${Date.now()}.png`;
+      // Deterministic filename: if screenKey provided, use it for upsert (replaces old file)
+      // Otherwise fallback to timestamp (manual uploads where screen is unknown)
+      const fileName = screenKey 
+        ? `${productId}-${screenKey}.png` 
+        : `${productId}-${Date.now()}.png`;
       const filePath = `screenshots/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('product-screenshots')
         .upload(filePath, file, {
           contentType: 'image/png',
-          upsert: true,
+          upsert: true, // Replace if exists — prevents duplicates
         });
 
       if (uploadError) throw uploadError;
@@ -341,6 +353,7 @@ export const MultiScreenshotGallery: React.FC<MultiScreenshotGalleryProps> = ({
         .from('product-screenshots')
         .getPublicUrl(filePath);
 
+      console.log(`📸 Uploaded ${fileName} (${screenKey ? 'deterministic/upsert' : 'timestamped'})`);
       return urlData.publicUrl;
     } catch (err) {
       console.error('Upload failed:', err);
@@ -641,7 +654,7 @@ export const MultiScreenshotGallery: React.FC<MultiScreenshotGalleryProps> = ({
         });
 
         // Upload to storage
-        const imageUrl = await uploadScreenshot(new File([blob], `cast-${screen.id}.png`, { type: 'image/png' }), 'cast');
+        const imageUrl = await uploadScreenshot(new File([blob], `cast-${screen.id}.png`, { type: 'image/png' }), 'cast', screen.id);
         
         if (imageUrl) {
           const newScreenshot: ProductScreenshot = {
@@ -780,7 +793,8 @@ export const MultiScreenshotGallery: React.FC<MultiScreenshotGalleryProps> = ({
         // Upload to storage
         const imageUrl = await uploadScreenshot(
           new File([blob], `${selectedProduct}-${screen.id}.png`, { type: 'image/png' }), 
-          selectedProduct
+          selectedProduct,
+          screen.id  // Pass screen key for deterministic upsert (prevents duplicates)
         );
         
         if (imageUrl) {

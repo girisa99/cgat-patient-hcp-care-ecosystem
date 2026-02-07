@@ -3455,6 +3455,48 @@ export type Database = {
           },
         ]
       }
+      blueprint_product_assignments: {
+        Row: {
+          assigned_by: string | null
+          blueprint_id: string
+          created_at: string
+          id: string
+          is_primary: boolean
+          product_id: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          blueprint_id: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          product_id: string
+        }
+        Update: {
+          assigned_by?: string | null
+          blueprint_id?: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blueprint_product_assignments_blueprint_id_fkey"
+            columns: ["blueprint_id"]
+            isOneToOne: false
+            referencedRelation: "video_blueprints"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blueprint_product_assignments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       blueprint_scenes: {
         Row: {
           audio_config: Json | null
@@ -17745,6 +17787,69 @@ export type Database = {
             columns: ["session_id"]
             isOneToOne: false
             referencedRelation: "pipeline_edit_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_asset_inventory: {
+        Row: {
+          capture_method: string
+          captured_at: string
+          created_at: string
+          file_hash: string | null
+          id: string
+          is_outdated: boolean
+          product_id: string
+          public_url: string | null
+          replaced_by: string | null
+          screen_key: string
+          screen_name: string
+          storage_path: string | null
+          updated_at: string
+        }
+        Insert: {
+          capture_method?: string
+          captured_at?: string
+          created_at?: string
+          file_hash?: string | null
+          id?: string
+          is_outdated?: boolean
+          product_id: string
+          public_url?: string | null
+          replaced_by?: string | null
+          screen_key: string
+          screen_name: string
+          storage_path?: string | null
+          updated_at?: string
+        }
+        Update: {
+          capture_method?: string
+          captured_at?: string
+          created_at?: string
+          file_hash?: string | null
+          id?: string
+          is_outdated?: boolean
+          product_id?: string
+          public_url?: string | null
+          replaced_by?: string | null
+          screen_key?: string
+          screen_name?: string
+          storage_path?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_asset_inventory_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_asset_inventory_replaced_by_fkey"
+            columns: ["replaced_by"]
+            isOneToOne: false
+            referencedRelation: "product_asset_inventory"
             referencedColumns: ["id"]
           },
         ]
