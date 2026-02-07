@@ -715,6 +715,7 @@ export function BlueprintTemplatesGrid({
         totalCount={blueprints.length}
         filteredCount={filteredBlueprints.length}
         onReset={handleResetFilters}
+        blueprints={blueprints}
       />
 
       {/* Loading State */}
