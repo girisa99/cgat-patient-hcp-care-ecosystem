@@ -11,7 +11,7 @@
  * Removes redundancy from separate Library/Studio/Review/Assets/Scheduler pages.
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles,
@@ -35,6 +35,7 @@ import {
   BarChart3,
   FileText,
   Globe,
+  LayoutTemplate,
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -78,6 +79,8 @@ import { ProductChangeAlertPanel } from '../ProductChangeAlertPanel';
 import { GenieCastFlowDiagram } from '../GenieCastFlowDiagram';
 import { GenieCastHubMockup } from './mockups';
 import { BrandAssetsPanel } from './BrandAssetsPanel';
+import { BlueprintTemplatesGrid } from './BlueprintTemplatesGrid';
+import { WorkflowContextBanner } from './WorkflowContextBanner';
 import { StyleDrivenProductionConfig, deriveProductionRequirements, estimateGenerationTime } from './StyleDrivenProductionConfig';
 
 // Import master registry for metrics
@@ -90,7 +93,7 @@ import {
 } from '@/config/master-ecosystem-registry';
 
 export type ConsolidatedTab = 'create' | 'produce' | 'manage' | 'publish';
-export type CreateSubTab = 'styles' | 'screenshots' | 'messaging' | 'assets';
+export type CreateSubTab = 'templates' | 'messaging' | 'styles' | 'assets';
 export type ProduceSubTab = 'generate' | 'matrix' | 'studio' | 'review';
 export type ManageSubTab = 'library' | 'analytics' | 'flow' | 'repurpose';
 export type PublishSubTab = 'scheduler' | 'distribution' | 'seo' | 'testing';
@@ -121,14 +124,14 @@ const TAB_DEFINITIONS = {
   create: {
     label: 'CREATE',
     icon: Sparkles,
-    description: 'Styles, Assets & Messaging',
-    // Separate active/inactive colors for proper contrast
+    description: 'Templates, Messaging & Assets',
     activeColor: 'bg-orange-600 text-white border-orange-600',
     inactiveColor: 'border-orange-300 text-orange-700 hover:bg-orange-50',
     subTabs: [
-      { id: 'styles', label: 'Styles', icon: Palette, description: 'Video style selection (43+ options)' },
-      { id: 'assets', label: 'Assets', icon: Upload, description: 'Logos, Screenshots, Colors, Templates' },
+      { id: 'templates', label: 'Templates', icon: LayoutTemplate, description: 'Select a video blueprint' },
       { id: 'messaging', label: 'Messaging', icon: TrendingUp, description: 'Marketing copy generation' },
+      { id: 'styles', label: 'Styles', icon: Palette, description: 'Video style selection (43+ options)' },
+      { id: 'assets', label: 'Assets', icon: Upload, description: 'Logos, Screenshots, Colors' },
     ],
   },
   produce: {
@@ -188,7 +191,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
 }) => {
   const [activeMainTab, setActiveMainTab] = useState<ConsolidatedTab>(defaultTab);
   const [subTabs, setSubTabs] = useState<Record<ConsolidatedTab, string>>({
-    create: defaultSubTab || 'styles',
+    create: defaultSubTab || 'templates',
     produce: 'generate',
     manage: 'library',
     publish: 'scheduler',
@@ -231,6 +234,12 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
   }, [authoring, castSession]);
 
   const setSubTab = useCallback((mainTab: ConsolidatedTab, subTab: string) => {
+    setSubTabs(prev => ({ ...prev, [mainTab]: subTab }));
+  }, []);
+
+  // Unified navigation for WorkflowContextBanner
+  const handleBannerNavigate = useCallback((mainTab: string, subTab: string) => {
+    setActiveMainTab(mainTab as ConsolidatedTab);
     setSubTabs(prev => ({ ...prev, [mainTab]: subTab }));
   }, []);
 
@@ -319,8 +328,146 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
         {/* ═══════════════════════════════════════════════════════════════ */}
         {/* CREATE TAB CONTENT */}
         {/* ═══════════════════════════════════════════════════════════════ */}
-        <TabsContent value="create" className="mt-4 space-y-6">
+        <TabsContent value="create" className="mt-4 space-y-4">
+          {/* Workflow Context Banner - persistent across all CREATE sub-tabs */}
+          <WorkflowContextBanner
+            session={castSession.session}
+            currentSubTab={currentSubTab}
+            onNavigate={handleBannerNavigate}
+            onResetSession={castSession.resetSession}
+          />
+
           <AnimatePresence mode="wait">
+            {/* TEMPLATES - First-class starting point */}
+            {currentSubTab === 'templates' && (
+              <motion.div
+                key="templates"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.2 }}
+              >
+                <BlueprintTemplatesGrid 
+                  onSelectBlueprint={(blueprint) => {
+                    console.log('[GenieCast] Template selected:', blueprint.name);
+                    castSession.selectTemplate({
+                      id: blueprint.id,
+                      name: blueprint.name,
+                      category: blueprint.category,
+                      thumbnailUrl: blueprint.thumbnail_url || undefined,
+                      sceneCount: blueprint.scenes?.length || 0,
+                      estimatedDuration: blueprint.estimated_duration_seconds,
+                      styleIntent: (blueprint.default_settings as any)?.style_intent || 'corporate' as StyleIntent,
+                    });
+                    // Navigate to Messaging after template selection
+                    setSubTab('create', 'messaging');
+                  }}
+                  selectedBlueprintId={castSession.session.selectedTemplate?.id}
+                />
+              </motion.div>
+            )}
+
+            {/* MESSAGING - Step 2 after template selection */}
+            {currentSubTab === 'messaging' && (
+              <motion.div
+                key="messaging"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.2 }}
+              >
+                {/* Prompt to select template first if not selected */}
+                {!castSession.session.selectedTemplate && (
+                  <Card className="mb-4 border-amber-300/50 bg-amber-50/30 dark:bg-amber-950/10">
+                    <CardContent className="py-4 flex items-center gap-3">
+                      <LayoutTemplate className="w-5 h-5 text-amber-600" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">No template selected yet</p>
+                        <p className="text-xs text-muted-foreground">Select a template first for better messaging alignment</p>
+                      </div>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => setSubTab('create', 'templates')}
+                        className="gap-1"
+                      >
+                        <LayoutTemplate className="w-3.5 h-3.5" />
+                        Select Template
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Cross-functional Authoring Stage Indicator */}
+                <div className="mb-4">
+                  <AuthoringStageIndicator
+                    currentStage={authoring.state.currentStage}
+                    enabledStages={authoring.state.config.enabledStages}
+                    variant="compact"
+                    onStageClick={(stage) => authoring.goToStage(stage)}
+                    isStageComplete={(stage) => {
+                      const stageIndex = authoring.state.config.enabledStages.indexOf(stage);
+                      const currentIndex = authoring.state.config.enabledStages.indexOf(authoring.state.currentStage);
+                      return stageIndex < currentIndex;
+                    }}
+                    progress={{
+                      current: authoring.state.config.enabledStages.indexOf(authoring.state.currentStage) + 1,
+                      total: authoring.state.config.enabledStages.length,
+                      percentage: ((authoring.state.config.enabledStages.indexOf(authoring.state.currentStage) + 1) / authoring.state.config.enabledStages.length) * 100,
+                    }}
+                  />
+                </div>
+                
+                {/* Regional Dialect Selector for multi-regional output */}
+                <Card className="mb-4">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Globe className="w-4 h-4 text-primary" />
+                      Regional Output Configuration
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      Select target regions and dialects for transcreation (One Template → Many Videos)
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <RegionalDialectSelector
+                      onDialectsChange={handleDialectChange}
+                      selectedDialects={selectedDialectCodes}
+                    />
+                  </CardContent>
+                </Card>
+                
+                <MessagingGeneratorPanel 
+                  onMessagingApproved={(productId, messaging) => {
+                    console.log('[GenieCast] Messaging approved for', productId);
+                    if (messaging) {
+                      castSession.approveMessaging({
+                        id: `messaging-${productId}-${Date.now()}`,
+                        productId: productId || 'cast',
+                        hook: messaging.hook || '',
+                        valueProposition: messaging.valueProposition || '',
+                        painPoints: messaging.painPoints || [],
+                        benefits: messaging.benefits || [],
+                        differentiators: messaging.differentiators || [],
+                        cta: messaging.cta || '',
+                        shortScript: messaging.shortScript || '',
+                        mediumScript: messaging.mediumScript || '',
+                        longScript: messaging.longScript || '',
+                        approvalStatus: 'approved',
+                        language: 'en',
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                      });
+                    }
+                    // Navigate to PRODUCE > Studio after approval
+                    setActiveMainTab('produce');
+                    setSubTab('produce', 'studio');
+                  }}
+                />
+              </motion.div>
+            )}
+
+            {/* STYLES - Video style selection */}
             {currentSubTab === 'styles' && (
               <motion.div
                 key="styles"
@@ -333,9 +480,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   selectedStyles={selectedVideoStyles}
                   onStylesChange={onStylesChange}
                   onNavigate={(tab) => {
-                    if (tab === 'screenshots') {
-                      setSubTab('create', 'screenshots');
-                    } else if (tab === 'messaging') {
+                    if (tab === 'messaging') {
                       setSubTab('create', 'messaging');
                     } else if (tab === 'generate') {
                       setActiveMainTab('produce');
@@ -383,86 +528,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
               </motion.div>
             )}
             
-            {/* Screenshots tab removed - now consolidated into Assets */}
-            
-            {currentSubTab === 'messaging' && (
-              <motion.div
-                key="messaging"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                transition={{ duration: 0.2 }}
-              >
-                {/* Cross-functional Authoring Stage Indicator */}
-                <div className="mb-4">
-                  <AuthoringStageIndicator
-                    currentStage={authoring.state.currentStage}
-                    enabledStages={authoring.state.config.enabledStages}
-                    variant="compact"
-                    onStageClick={(stage) => authoring.goToStage(stage)}
-                    isStageComplete={(stage) => {
-                      const stageIndex = authoring.state.config.enabledStages.indexOf(stage);
-                      const currentIndex = authoring.state.config.enabledStages.indexOf(authoring.state.currentStage);
-                      return stageIndex < currentIndex;
-                    }}
-                    progress={{
-                      current: authoring.state.config.enabledStages.indexOf(authoring.state.currentStage) + 1,
-                      total: authoring.state.config.enabledStages.length,
-                      percentage: ((authoring.state.config.enabledStages.indexOf(authoring.state.currentStage) + 1) / authoring.state.config.enabledStages.length) * 100,
-                    }}
-                  />
-                </div>
-                
-                {/* Regional Dialect Selector for multi-regional output */}
-                <Card className="mb-4">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Globe className="w-4 h-4 text-primary" />
-                      Regional Output Configuration
-                    </CardTitle>
-                    <CardDescription className="text-xs">
-                      Select target regions and dialects for transcreation (One Template → Many Videos)
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <RegionalDialectSelector
-                      onDialectsChange={handleDialectChange}
-                      selectedDialects={selectedDialectCodes}
-                    />
-                  </CardContent>
-                </Card>
-                
-                <MessagingGeneratorPanel 
-                  onMessagingApproved={(productId, messaging) => {
-                    console.log('[GenieCast] Messaging approved for', productId);
-                    // Wire to castSession
-                    if (messaging) {
-                      castSession.approveMessaging({
-                        id: `messaging-${productId}-${Date.now()}`,
-                        productId: productId || 'cast',
-                        hook: messaging.hook || '',
-                        valueProposition: messaging.valueProposition || '',
-                        painPoints: messaging.painPoints || [],
-                        benefits: messaging.benefits || [],
-                        differentiators: messaging.differentiators || [],
-                        cta: messaging.cta || '',
-                        shortScript: messaging.shortScript || '',
-                        mediumScript: messaging.mediumScript || '',
-                        longScript: messaging.longScript || '',
-                        approvalStatus: 'approved',
-                        language: 'en',
-                        createdAt: new Date(),
-                        updatedAt: new Date(),
-                      });
-                    }
-                    // Navigate to PRODUCE > Studio after approval
-                    setActiveMainTab('produce');
-                    setSubTab('produce', 'studio');
-                  }}
-                />
-              </motion.div>
-            )}
-            
+            {/* ASSETS - Logos, Screenshots, Colors (no templates - moved to own tab) */}
             {currentSubTab === 'assets' && (
               <motion.div
                 key="assets"
@@ -472,20 +538,6 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 transition={{ duration: 0.2 }}
               >
                 <BrandAssetsPanel 
-                  onTemplateSelected={(template) => {
-                    console.log('[GenieCast] Template selected:', template.name);
-                    castSession.selectTemplate({
-                      id: template.id,
-                      name: template.name,
-                      category: template.category,
-                      thumbnailUrl: template.thumbnailUrl,
-                      sceneCount: template.sceneCount,
-                      estimatedDuration: template.estimatedDuration,
-                      styleIntent: template.styleIntent as StyleIntent,
-                    });
-                    // Navigate to Messaging after template selection
-                    setSubTab('create', 'messaging');
-                  }}
                   selectedTemplateId={castSession.session.selectedTemplate?.id}
                 />
               </motion.div>
@@ -496,7 +548,15 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
         {/* ═══════════════════════════════════════════════════════════════ */}
         {/* PRODUCE TAB CONTENT */}
         {/* ═══════════════════════════════════════════════════════════════ */}
-        <TabsContent value="produce" className="mt-4 space-y-6">
+        <TabsContent value="produce" className="mt-4 space-y-4">
+          {/* Workflow Context Banner - shows session context in PRODUCE */}
+          <WorkflowContextBanner
+            session={castSession.session}
+            currentSubTab={currentSubTab}
+            onNavigate={handleBannerNavigate}
+            onResetSession={castSession.resetSession}
+          />
+          
           <AnimatePresence mode="wait">
             {currentSubTab === 'generate' && (
               <motion.div
