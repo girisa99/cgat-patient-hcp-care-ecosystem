@@ -271,7 +271,7 @@ export const MASTER_AI_PROVIDERS: AIProviderEntry[] = [
     status: 'active',
     capabilities: ['tts', 'stt', 'ocr', 'translation', 'visemes', 'nlp', 'vision'],
     secretKey: 'AZURE_SPEECH_KEY',
-    zones: ['gemini', 'claude', 'fallback'],
+    zones: ['claude', 'alibaba', 'gemini', 'fallback'],  // ALL zones — Azure Neural is PRIMARY TTS globally (Viseme lip-sync)
     costTier: 'medium',
     qualityScore: 92,
     speedScore: 80,
@@ -1429,10 +1429,10 @@ export const ZONE_ROUTING_CONFIG: Record<RoutingZone, {
   languages: string[];
 }> = {
   claude: {
-    name: 'Claude Zone (Western)',
-    regions: ['US', 'UK', 'EU', 'Brazil', 'Israel', 'South Africa'],
+    name: 'Claude Zone (Western/EU/LATAM)',
+    regions: ['US', 'UK', 'EU', 'Brazil', 'Israel', 'South Africa', 'LATAM'],
     primaryLLM: 'claude',
-    primaryTTS: 'elevenlabs',
+    primaryTTS: 'azure',        // Azure Neural PRIMARY — superior Viseme data for lip-sync
     primaryTranslation: 'deepl',
     languages: ['en', 'es', 'fr', 'de', 'pt', 'it', 'nl', 'pl'],
   },
@@ -1440,7 +1440,7 @@ export const ZONE_ROUTING_CONFIG: Record<RoutingZone, {
     name: 'Alibaba Zone (CJK/MENA)',
     regions: ['Japan', 'Korea', 'China', 'HK', 'Taiwan', 'MEA'],
     primaryLLM: 'alibaba',
-    primaryTTS: 'alibaba',
+    primaryTTS: 'azure',        // Azure Neural PRIMARY for MENA (7 Arabic dialects); Alibaba CosyVoice SECONDARY for CJK
     primaryTranslation: 'alibaba',
     languages: ['zh', 'ja', 'ko', 'ar', 'he', 'fa'],
   },
@@ -1448,7 +1448,7 @@ export const ZONE_ROUTING_CONFIG: Record<RoutingZone, {
     name: 'Gemini Zone (South Asia/SEA/Africa)',
     regions: ['India', 'Pakistan', 'SEA', 'Africa'],
     primaryLLM: 'gemini',
-    primaryTTS: 'azure',
+    primaryTTS: 'azure',        // Azure Neural PRIMARY — consistent Viseme data globally
     primaryTranslation: 'google',
     languages: ['hi', 'bn', 'ur', 'te', 'ta', 'th', 'vi', 'id', 'sw', 'yo'],
   },
@@ -1456,7 +1456,7 @@ export const ZONE_ROUTING_CONFIG: Record<RoutingZone, {
     name: 'Global Fallback',
     regions: ['Other'],
     primaryLLM: 'openai',
-    primaryTTS: 'elevenlabs',
+    primaryTTS: 'azure',        // Azure Neural PRIMARY — ElevenLabs is NEVER primary (premium clone only)
     primaryTranslation: 'google',
     languages: ['en'],
   },
