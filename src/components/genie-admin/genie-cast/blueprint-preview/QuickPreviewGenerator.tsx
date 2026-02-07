@@ -29,6 +29,8 @@ interface QuickPreviewGeneratorProps {
   scenes: BlueprintScene[];
   blueprintId: string;
   blueprintName: string;
+  /** If provided, filters available assets to only those belonging to this product */
+  productFilter?: string;
   className?: string;
 }
 
@@ -38,6 +40,7 @@ export function QuickPreviewGenerator({
   scenes,
   blueprintId,
   blueprintName,
+  productFilter,
   className,
 }: QuickPreviewGeneratorProps) {
   const { toast } = useToast();
@@ -72,9 +75,14 @@ export function QuickPreviewGenerator({
       const assets: AssetItem[] = [];
 
       // Map screenshots (stored under screenshots/ prefix)
+      // If productFilter is set, only include screenshots for that product
       if (screenshots) {
         for (const file of screenshots) {
           if (file.name && !file.name.startsWith('.') && file.id) {
+            // Product filter: check if filename starts with the product ID
+            if (productFilter && !file.name.startsWith(`${productFilter}-`)) {
+              continue; // Skip assets not belonging to the filtered product
+            }
             const { data: urlData } = supabase.storage
               .from('product-screenshots')
               .getPublicUrl(`screenshots/${file.name}`);
@@ -88,10 +96,14 @@ export function QuickPreviewGenerator({
         }
       }
 
-      // Map logos (stored at root of brand-assets bucket, filter for logo files)
+      // Map logos — filter by product if specified
       if (brandFiles) {
         for (const file of brandFiles) {
           if (file.name && !file.name.startsWith('.') && file.id && file.name.includes('logo')) {
+            // Product filter: only include logo for specific product
+            if (productFilter && !file.name.includes(`genie-${productFilter}`)) {
+              continue;
+            }
             const { data: urlData } = supabase.storage
               .from('brand-assets')
               .getPublicUrl(file.name);

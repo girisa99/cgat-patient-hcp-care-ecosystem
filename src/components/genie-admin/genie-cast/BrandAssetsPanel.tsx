@@ -24,7 +24,9 @@ import {
   Sparkles,
   Camera,
   Eye,
+  BarChart3,
 } from 'lucide-react';
+import { AssetInventoryTracker } from './AssetInventoryTracker';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -79,7 +81,7 @@ export const BrandAssetsPanel: React.FC<BrandAssetsPanelProps> = ({
   onScreenshotsUpdated,
   selectedProductId,
 }) => {
-  const [activeTab, setActiveTab] = useState<'logos' | 'screenshots' | 'colors'>('logos');
+  const [activeTab, setActiveTab] = useState<'logos' | 'screenshots' | 'colors' | 'inventory'>('logos');
   const [logos, setLogos] = useState<LogoAsset[]>([]);
   const [screenshots, setScreenshots] = useState<ScreenshotAsset[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -279,7 +281,7 @@ export const BrandAssetsPanel: React.FC<BrandAssetsPanelProps> = ({
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="logos" className="gap-1.5">
             <Image className="w-3.5 h-3.5" />
             Logos
@@ -289,6 +291,10 @@ export const BrandAssetsPanel: React.FC<BrandAssetsPanelProps> = ({
             <Camera className="w-3.5 h-3.5" />
             Screenshots
             <Badge variant="secondary" className="ml-1 text-[10px] px-1">{screenshots.length}</Badge>
+          </TabsTrigger>
+          <TabsTrigger value="inventory" className="gap-1.5">
+            <BarChart3 className="w-3.5 h-3.5" />
+            Inventory
           </TabsTrigger>
           <TabsTrigger value="colors" className="gap-1.5">
             <Palette className="w-3.5 h-3.5" />
@@ -507,6 +513,11 @@ export const BrandAssetsPanel: React.FC<BrandAssetsPanelProps> = ({
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        {/* Inventory Tab */}
+        <TabsContent value="inventory" className="mt-6">
+          <AssetInventoryTracker />
         </TabsContent>
 
         {/* Colors Tab */}
