@@ -77,12 +77,14 @@ This document provides a complete mapping of **14+ providers** across **7 region
 | Zone | P1 Provider | P2 Provider | FB Provider | Q | Notes |
 |------|-------------|-------------|-------------|---|-------|
 | Claude (US/EU) | ElevenLabs | Azure Neural | OpenAI TTS | 5 | Premium voices |
-| Alibaba (CJK) | CosyVoice | Azure Neural | Google TTS | 5 | MOS 4.5+ native prosody |
+| Alibaba (CJK) | Azure Neural (interim) | Google TTS | OpenAI TTS | 5 | ⚠️ CosyVoice WebSocket incompatible with Deno; Sambert pending activation |
 | Alibaba (Arabic) | Azure Neural | Google TTS | ElevenLabs | 5 | Gulf/Egyptian dialects |
 | Gemini (India) | Azure Neural | Google TTS | ElevenLabs | 5 | 22+ Indian languages |
 | Gemini (SEA) | Azure Neural | Google TTS | ElevenLabs | 4 | Thai/Vietnamese/Bahasa |
 | Gemini (Africa) | Azure Neural | Google TTS | ElevenLabs | 4 | Swahili/Yoruba/Hausa |
 | Fallback | OpenAI TTS | Azure Neural | Google TTS | 5 | Universal fallback |
+
+> **Note (Feb 2026):** CJK Zone uses Azure Neural as interim primary. Alibaba Sambert REST will become primary once activated by account rep. CosyVoice is architecturally incompatible with Supabase Edge Functions (requires WebSocket with custom auth headers, not supported by Deno).
 
 ---
 

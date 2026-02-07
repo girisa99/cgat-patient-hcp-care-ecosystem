@@ -255,6 +255,58 @@ curl -X POST https://YOUR_PROJECT.supabase.co/functions/v1/alibaba-3d-generator 
 
 ---
 
+## Account & Activation Status (February 2026)
+
+### Verification Status
+| Item | Status |
+|------|--------|
+| **International Account** | ✅ Verified |
+| **China Account** | ✅ Verified |
+| **API Keys** | ✅ Both configured in secrets |
+| **Dual-Key Edge Functions** | ✅ All updated with smart routing |
+| **Rep Approval** | ⏳ Pending — awaiting service activation |
+
+### DashScope Console Limitation
+**DashScope is NOT available on Alibabacloud.com (International)**. Model activation requires:
+- **Chinese Aliyun.com account** portal
+- Or account rep to activate services remotely
+
+### Models Pending Activation
+
+| Model | Type | Model ID | Priority |
+|-------|------|----------|----------|
+| Sambert TTS (Female) | TTS | `sambert-zhichu-v1` | HIGH |
+| Sambert TTS (Male) | TTS | `sambert-zhide-v1` | HIGH |
+| CosyVoice | TTS | `cosyvoice-v1` | MEDIUM (WebSocket limitation) |
+| Wan 2.2 S2V | Avatar | `wan2.2-s2v` | HIGH |
+| OmniAvatar | Avatar | `omninavatar` | MEDIUM |
+| TaoAvatar | AR Avatar | `taoavatar` | MEDIUM |
+| MACH | Photo-to-3D | `mach` | MEDIUM |
+| Richdreamer | 3D | `richdreamer` | MEDIUM |
+| FunAudio | Music/SFX | `funaudio` | LOW |
+
+### Models Working Now (No Activation Needed)
+
+| Model | Endpoint | Key |
+|-------|----------|-----|
+| Wan 2.6 Video | `dashscope-intl` | `ALIBABA_API_KEY` |
+| Qwen Max LLM | Both | Either |
+| Paraformer STT | Both | Either |
+| Wanx Image Gen | Both | Either |
+
+### CosyVoice WebSocket Constraint (Permanent)
+
+CosyVoice only supports WebSocket (`wss://`) connections requiring custom `Authorization` headers. Deno's `WebSocket` constructor does **not** support custom headers, making CosyVoice incompatible with Supabase Edge Functions.
+
+**Permanent solution:** Sambert REST API (once activated) + Azure Neural as interim CJK primary.
+
+**Future options:**
+1. Cloud Run container with Python SDK (WebSocket support)
+2. Deno adds custom header support for WebSocket
+3. Alibaba adds REST endpoint for CosyVoice
+
+---
+
 ## Troubleshooting
 
 ### "Account Abnormal" Status
@@ -271,8 +323,8 @@ curl -X POST https://YOUR_PROJECT.supabase.co/functions/v1/alibaba-3d-generator 
 
 ### "AccessDenied" Error
 - Account may not have access to the model
-- Some models require enterprise agreement
-- Check model availability in your region's console
+- Account rep may need to activate the service
+- DashScope console only available on aliyun.com (China), not alibabacloud.com (International)
 
 ---
 
@@ -285,5 +337,5 @@ curl -X POST https://YOUR_PROJECT.supabase.co/functions/v1/alibaba-3d-generator 
 
 ---
 
-**Last Updated**: 2026-02-01  
-**Status**: Production Ready
+**Last Updated**: 2026-02-07  
+**Status**: Partially Operational — Awaiting Rep Activation for Avatar/3D/TTS Models

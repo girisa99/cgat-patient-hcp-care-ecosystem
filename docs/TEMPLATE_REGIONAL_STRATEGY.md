@@ -43,15 +43,17 @@
  | Avatar | Alibaba Wan 2.2 | Global (not regional) |
  | 3D Elements | Meshy AI | Global (not regional) |
  
- ### TTS (Zone-Specific - Critical for Templates)
- 
- | Zone | Primary | Voice Clone | Dialects |
- |------|---------|-------------|----------|
- | **Western/EU** | Azure Neural | ElevenLabs | EN, ES, FR, DE, IT, PT |
- | **CJK** | Alibaba CosyVoice | CosyVoice | ZH (5 dialects), JA (keigo), KO |
- | **MENA/RTL** | Azure Neural | ElevenLabs | 7 Arabic dialects |
- | **India/SEA** | Azure Neural | ElevenLabs | HI, TA, TE, TH, VI, ID |
- | **Africa** | Azure Neural | — | SW, YO, AM (limited) |
+### TTS (Zone-Specific - Critical for Templates)
+
+| Zone | Primary | Voice Clone | Dialects | Status |
+|------|---------|-------------|----------|--------|
+| **Western/EU** | ElevenLabs | ElevenLabs | EN, ES, FR, DE, IT, PT | ✅ Production |
+| **CJK** | Azure Neural (interim) | — | ZH, JA (keigo), KO | ⚠️ Alibaba Sambert pending activation |
+| **MENA/RTL** | Azure Neural | ElevenLabs | 7 Arabic dialects | ✅ Production |
+| **India/SEA** | Azure Neural | ElevenLabs | HI, TA, TE, TH, VI, ID | ✅ Production |
+| **Africa** | Azure Neural | — | SW, YO, AM (limited) | ✅ Production |
+
+> **Note (Feb 2026):** CJK TTS uses Azure Neural as interim primary. Alibaba CosyVoice requires WebSocket (incompatible with Deno edge functions). Sambert REST is the permanent solution once activated by account rep. See `ALIBABA_DASHSCOPE_REGIONAL_ARCHITECTURE.md` for details.
  
  ## Recommended Strategy: Phased Regeneration
  

@@ -336,14 +336,46 @@
 
 ---
 
-## Known Issues
+## Known Issues & Activation Status
 
 | Provider | Issue | Status | Action |
 |----------|-------|--------|--------|
-| Alibaba China | Access Denied for CosyVoice/Paraformer | ⚠️ | Complete identity verification in DashScope |
+| Alibaba China (TTS) | CosyVoice requires WebSocket (incompatible with Deno edge functions) | ⚠️ Architectural | Sambert REST as permanent alternative; Azure Neural as interim CJK primary |
+| Alibaba China (TTS) | Sambert models need DashScope console activation | ⏳ Pending | Account rep activation in progress |
+| Alibaba China (Avatar) | Wan 2.2, OmniAvatar, TaoAvatar, MACH need activation | ⏳ Pending | Account rep activation in progress |
+| Alibaba China (3D) | Richdreamer needs activation | ⏳ Pending | Account rep activation in progress |
+| Alibaba China (Audio) | FunAudio needs activation | ⏳ Pending | Account rep activation in progress |
+| Alibaba International | DashScope console unavailable on alibabacloud.com | ℹ️ Known | Must use aliyun.com (China) portal for activation |
 | ModelsLab | Requires `type` parameter | ✅ Fixed | Working with proper format |
+
+### Alibaba Account Verification Status (February 2026)
+
+| Item | Status |
+|------|--------|
+| **Account Verification** | ✅ Complete (both International + China) |
+| **API Keys Configured** | ✅ `ALIBABA_API_KEY` (International) + `ALIBABA_CHINA_API_KEY` (China) |
+| **Dual-Key Routing** | ✅ All edge functions updated with smart endpoint routing |
+| **Rep Approval** | ⏳ Pending — verification done, awaiting service activation |
+| **Models Awaiting Activation** | Sambert TTS, CosyVoice, Wan 2.2, OmniAvatar, TaoAvatar, MACH, Richdreamer, FunAudio |
+| **Models Working Now** | Qwen LLM, Paraformer STT, Wanx Images, Wan 2.6 (International) |
+
+### CosyVoice WebSocket Limitation (Permanent)
+
+CosyVoice TTS requires WebSocket connections with custom `Authorization` headers. Deno's `WebSocket` constructor does not support custom headers, making CosyVoice **incompatible with Supabase Edge Functions**. Options:
+1. **Sambert REST API** — Permanent solution once activated (Chinese-only, synchronous HTTP)
+2. **Azure Neural TTS** — Interim primary for all CJK TTS (production-ready, Viseme support)
+3. **Future: Cloud Run** — Python SDK with WebSocket support for CosyVoice integration
+
+### Interim TTS Routing (Until Alibaba Activation)
+
+| Zone | Primary TTS | Secondary | Notes |
+|------|-------------|-----------|-------|
+| **CJK** | Azure Neural | Google TTS | Interim until Sambert activated |
+| **MENA/RTL** | Azure Neural | Google TTS | Production (7 Arabic dialects) |
+| **Western/EU** | ElevenLabs | Azure Neural | Production |
+| **India/SEA/Africa** | Azure Neural | Google TTS | Production |
 
 ---
 
-**Last Updated:** 2026-02-01  
-**Next Verification:** 2026-02-08
+**Last Updated:** 2026-02-07  
+**Next Verification:** 2026-02-14

@@ -279,4 +279,28 @@ These features were implemented based on user requests and are now part of the s
 
 ---
 
-**Next Steps:** Focus on Tier 1 testing (Critical Path) before proceeding with P5 commercialization.
+---
+
+## 🌐 Alibaba Integration Status (February 2026)
+
+### Account Status
+- ✅ **Both accounts verified** (International + China)
+- ✅ **Dual-key routing implemented** in all edge functions
+- ⏳ **Awaiting rep activation** for: Sambert TTS, Wan 2.2 Avatar, OmniAvatar, TaoAvatar, MACH, Richdreamer, FunAudio
+- ✅ **Working now**: Qwen LLM, Paraformer STT, Wanx Images, Wan 2.6 Video (International)
+
+### CosyVoice Architectural Finding
+CosyVoice requires WebSocket with custom auth headers — **incompatible with Deno/Supabase Edge Functions**. Sambert REST API is the permanent CJK TTS solution once activated. Azure Neural serves as interim CJK primary.
+
+### Fallback Chains (Active While Awaiting Activation)
+| Blocked Service | Active Fallback |
+|----------------|-----------------|
+| CosyVoice/Sambert TTS | Azure Neural → Google TTS |
+| Wan 2.2 Avatar | ModelsLab → Azure Video |
+| OmniAvatar/TaoAvatar | ModelsLab 3D |
+| Richdreamer 3D | Meshy AI → ModelsLab 3D |
+| FunAudio | ElevenLabs Music |
+
+---
+
+**Next Steps:** Focus on Tier 1 testing (Critical Path) and regional template generation using available providers while awaiting Alibaba activation. P5 commercialization continues in parallel.
