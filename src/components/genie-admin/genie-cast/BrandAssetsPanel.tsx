@@ -1,12 +1,12 @@
 /**
  * BRAND ASSETS PANEL (UNIFIED)
  * 
- * Single source of truth for all visual assets:
+ * Single source of truth for all visual/branding assets:
  * - Product logos (8 official logos)
- * - Brand colors (primary, secondary, accent)
- * - Video templates
  * - Screenshots (consolidated from Screenshots tab)
+ * - Brand colors (primary, secondary, accent)
  * 
+ * Templates are handled separately via the CREATE > Templates sub-tab.
  * Integrates with brand-assets and product-screenshots storage buckets
  */
 
@@ -15,18 +15,14 @@ import { motion } from 'framer-motion';
 import {
   Upload,
   Palette,
-  Globe,
   Image,
   Check,
   AlertCircle,
   RefreshCw,
   Trash2,
-  Download,
   Copy,
   Sparkles,
-  Film,
   Camera,
-  GripVertical,
   Eye,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -41,21 +37,11 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { type GenieProductId, GENIE_PRODUCTS } from '@/services/marketing/productVersionTrackingService';
-import { BlueprintTemplatesGrid } from './BlueprintTemplatesGrid';
+
 
 interface BrandAssetsPanelProps {
   className?: string;
   onScreenshotsUpdated?: (galleries: any[]) => void;
-  onTemplateSelected?: (template: {
-    id: string;
-    name: string;
-    category: string;
-    thumbnailUrl?: string;
-    sceneCount: number;
-    estimatedDuration: number;
-    styleIntent: string;
-  }) => void;
-  selectedTemplateId?: string;
 }
 
 // 8 Official Products with their brand colors
@@ -89,10 +75,8 @@ interface ScreenshotAsset {
 export const BrandAssetsPanel: React.FC<BrandAssetsPanelProps> = ({ 
   className, 
   onScreenshotsUpdated,
-  onTemplateSelected,
-  selectedTemplateId,
 }) => {
-  const [activeTab, setActiveTab] = useState<'logos' | 'screenshots' | 'colors' | 'templates'>('logos');
+  const [activeTab, setActiveTab] = useState<'logos' | 'screenshots' | 'colors'>('logos');
   const [logos, setLogos] = useState<LogoAsset[]>([]);
   const [screenshots, setScreenshots] = useState<ScreenshotAsset[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -292,7 +276,7 @@ export const BrandAssetsPanel: React.FC<BrandAssetsPanelProps> = ({
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="logos" className="gap-1.5">
             <Image className="w-3.5 h-3.5" />
             Logos
@@ -306,10 +290,6 @@ export const BrandAssetsPanel: React.FC<BrandAssetsPanelProps> = ({
           <TabsTrigger value="colors" className="gap-1.5">
             <Palette className="w-3.5 h-3.5" />
             Colors
-          </TabsTrigger>
-          <TabsTrigger value="templates" className="gap-1.5">
-            <Film className="w-3.5 h-3.5" />
-            Templates
           </TabsTrigger>
         </TabsList>
 
@@ -601,25 +581,6 @@ export const BrandAssetsPanel: React.FC<BrandAssetsPanelProps> = ({
           </div>
         </TabsContent>
 
-        {/* Templates Tab - Now using database-driven BlueprintTemplatesGrid */}
-        <TabsContent value="templates" className="mt-6">
-          <BlueprintTemplatesGrid 
-            onSelectBlueprint={(blueprint) => {
-              if (onTemplateSelected) {
-                onTemplateSelected({
-                  id: blueprint.id,
-                  name: blueprint.name,
-                  category: blueprint.category,
-                  thumbnailUrl: blueprint.thumbnail_url || undefined,
-                  sceneCount: blueprint.scenes?.length || 0,
-                  estimatedDuration: blueprint.estimated_duration_seconds,
-                  styleIntent: (blueprint.default_settings as any)?.style_intent || 'corporate',
-                });
-              }
-            }}
-            selectedBlueprintId={selectedTemplateId}
-          />
-        </TabsContent>
       </Tabs>
     </div>
   );

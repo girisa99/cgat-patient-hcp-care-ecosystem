@@ -537,9 +537,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.2 }}
               >
-                <BrandAssetsPanel 
-                  selectedTemplateId={castSession.session.selectedTemplate?.id}
-                />
+                <BrandAssetsPanel />
               </motion.div>
             )}
           </AnimatePresence>
