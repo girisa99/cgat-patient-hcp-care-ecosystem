@@ -56,10 +56,11 @@ export const SmartDefaultRoute: React.FC<SmartDefaultRouteProps> = ({ userRoles,
             .eq('auth_user_id', user.id)
             .maybeSingle();
 
-          // If user is Genie Studio internal user, route to /genie-admin
+          // If user is Genie Studio internal user, route to /genie-admin with Genie Cast tab
+          // PERMANENT FIX: Always include ?tab=genie-cast to prevent the tab from "disappearing"
           if (genieUser?.is_internal) {
-            console.log('🎯 SmartDefaultRoute: Genie Studio internal user detected, routing to /genie-admin');
-            setTargetRoute('/genie-admin');
+            console.log('🎯 SmartDefaultRoute: Genie Studio internal user detected, routing to /genie-admin?tab=genie-cast');
+            setTargetRoute('/genie-admin?tab=genie-cast');
             setIsCheckingGenieUser(false);
             return;
           }
