@@ -2,13 +2,12 @@
  * GENIE CAST CONSOLIDATED 4-TAB STRUCTURE
  * 
  * Consolidates 10+ scattered tabs into unified workflow:
- * - CREATE: Styles, Screenshots, Messaging, Assets
+ * - CREATE: Templates, Messaging, Production Setup (Styles + Assets + Regional)
  * - PRODUCE: Generate, Matrix, Studio Editor, Review
  * - MANAGE: Library, Analytics, Flow, Content Repurposing
  * - PUBLISH: Scheduler, Distribution, SEO, A/B Testing
  * 
  * This is the SINGLE interface for all Genie Cast functionality.
- * Removes redundancy from separate Library/Studio/Review/Assets/Scheduler pages.
  */
 
 import React, { useState, useCallback, useMemo } from 'react';
@@ -31,11 +30,14 @@ import {
   Wand2,
   Film,
   Settings,
+  Settings2,
   Play,
   BarChart3,
   FileText,
   Globe,
   LayoutTemplate,
+  MessageSquare,
+  Image,
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -93,7 +95,7 @@ import {
 } from '@/config/master-ecosystem-registry';
 
 export type ConsolidatedTab = 'create' | 'produce' | 'manage' | 'publish';
-export type CreateSubTab = 'templates' | 'messaging' | 'styles' | 'assets';
+export type CreateSubTab = 'templates' | 'messaging' | 'production';
 export type ProduceSubTab = 'generate' | 'matrix' | 'studio' | 'review';
 export type ManageSubTab = 'library' | 'analytics' | 'flow' | 'repurpose';
 export type PublishSubTab = 'scheduler' | 'distribution' | 'seo' | 'testing';
@@ -124,14 +126,13 @@ const TAB_DEFINITIONS = {
   create: {
     label: 'CREATE',
     icon: Sparkles,
-    description: 'Templates, Messaging & Assets',
+    description: 'Templates, Messaging & Setup',
     activeColor: 'bg-orange-600 text-white border-orange-600',
     inactiveColor: 'border-orange-300 text-orange-700 hover:bg-orange-50',
     subTabs: [
       { id: 'templates', label: 'Templates', icon: LayoutTemplate, description: 'Select a video blueprint' },
-      { id: 'messaging', label: 'Messaging', icon: TrendingUp, description: 'Marketing copy generation' },
-      { id: 'styles', label: 'Styles', icon: Palette, description: 'Video style selection (43+ options)' },
-      { id: 'assets', label: 'Assets', icon: Upload, description: 'Logos, Screenshots, Colors' },
+      { id: 'messaging', label: 'Messaging', icon: MessageSquare, description: 'AI marketing copy generation' },
+      { id: 'production', label: 'Production Setup', icon: Settings2, description: 'Styles, Assets & Regional config' },
     ],
   },
   produce: {
@@ -219,6 +220,9 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
   const [avatarGender, setAvatarGender] = useState<'male' | 'female'>('female');
   const [productionQuality, setProductionQuality] = useState<'preview' | 'production' | 'cinematic'>('production');
 
+  // Production Setup internal section state
+  const [productionSection, setProductionSection] = useState<'styles' | 'assets' | 'regional'>('styles');
+
   const metrics = calculateEcosystemMetrics();
 
   // Handle navigation from ApprovalDashboard
@@ -266,6 +270,10 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
   // Get active pipelines for current tab
   const activePipelines = getPipelinesByTab(activeMainTab.toUpperCase() as any).filter(p => p.isActive);
   const inactivePipelines = getPipelinesByTab(activeMainTab.toUpperCase() as any).filter(p => !p.isActive);
+
+  // Derive product context from session for auto-populating assets
+  const selectedProductId = castSession.session.approvedMessaging?.productId || 
+    castSession.session.selectedTemplate?.category || undefined;
 
   return (
     <div className="space-y-4">
@@ -338,7 +346,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
           />
 
           <AnimatePresence mode="wait">
-            {/* TEMPLATES - First-class starting point */}
+            {/* ── TEMPLATES ── First-class starting point */}
             {currentSubTab === 'templates' && (
               <motion.div
                 key="templates"
@@ -367,7 +375,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
               </motion.div>
             )}
 
-            {/* MESSAGING - Step 2 after template selection */}
+            {/* ── MESSAGING ── Step 2: Generate marketing copy ONLY */}
             {currentSubTab === 'messaging' && (
               <motion.div
                 key="messaging"
@@ -398,45 +406,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   </Card>
                 )}
 
-                {/* Cross-functional Authoring Stage Indicator */}
-                <div className="mb-4">
-                  <AuthoringStageIndicator
-                    currentStage={authoring.state.currentStage}
-                    enabledStages={authoring.state.config.enabledStages}
-                    variant="compact"
-                    onStageClick={(stage) => authoring.goToStage(stage)}
-                    isStageComplete={(stage) => {
-                      const stageIndex = authoring.state.config.enabledStages.indexOf(stage);
-                      const currentIndex = authoring.state.config.enabledStages.indexOf(authoring.state.currentStage);
-                      return stageIndex < currentIndex;
-                    }}
-                    progress={{
-                      current: authoring.state.config.enabledStages.indexOf(authoring.state.currentStage) + 1,
-                      total: authoring.state.config.enabledStages.length,
-                      percentage: ((authoring.state.config.enabledStages.indexOf(authoring.state.currentStage) + 1) / authoring.state.config.enabledStages.length) * 100,
-                    }}
-                  />
-                </div>
-                
-                {/* Regional Dialect Selector for multi-regional output */}
-                <Card className="mb-4">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Globe className="w-4 h-4 text-primary" />
-                      Regional Output Configuration
-                    </CardTitle>
-                    <CardDescription className="text-xs">
-                      Select target regions and dialects for transcreation (One Template → Many Videos)
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <RegionalDialectSelector
-                      onDialectsChange={handleDialectChange}
-                      selectedDialects={selectedDialectCodes}
-                    />
-                  </CardContent>
-                </Card>
-                
+                {/* MessagingGeneratorPanel ONLY - no AuthoringStageIndicator or RegionalDialectSelector here */}
                 <MessagingGeneratorPanel 
                   onMessagingApproved={(productId, messaging) => {
                     console.log('[GenieCast] Messaging approved for', productId);
@@ -459,85 +429,177 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                         updatedAt: new Date(),
                       });
                     }
-                    // Navigate to PRODUCE > Studio after approval
-                    setActiveMainTab('produce');
-                    setSubTab('produce', 'studio');
+                    // Navigate to Production Setup after messaging approval
+                    setSubTab('create', 'production');
+                    toast.success('Messaging approved! Configure production setup next.');
                   }}
                 />
               </motion.div>
             )}
 
-            {/* STYLES - Video style selection */}
-            {currentSubTab === 'styles' && (
+            {/* ── PRODUCTION SETUP ── Step 3: Styles + Assets + Regional (merged) */}
+            {currentSubTab === 'production' && (
               <motion.div
-                key="styles"
+                key="production"
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.2 }}
+                className="space-y-4"
               >
-                <GenieCastOverview
-                  selectedStyles={selectedVideoStyles}
-                  onStylesChange={onStylesChange}
-                  onNavigate={(tab) => {
-                    if (tab === 'messaging') {
-                      setSubTab('create', 'messaging');
-                    } else if (tab === 'generate') {
-                      setActiveMainTab('produce');
-                      setSubTab('produce', 'generate');
-                    } else if (tab === 'matrix') {
-                      setActiveMainTab('produce');
-                      setSubTab('produce', 'matrix');
-                    }
-                  }}
-                />
-                
-                {/* Ecosystem Metrics Card */}
-                <Card className="mt-6 border-primary/20">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-primary" />
-                      Ecosystem Status
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-4 gap-4 text-center">
-                      <div>
-                        <div className="text-2xl font-bold text-primary">{metrics.providers.total}</div>
-                        <div className="text-xs text-muted-foreground">AI Providers</div>
-                        <div className="text-[10px] text-green-600">{metrics.providers.wiredToGenieCast} wired</div>
+                {/* Prompt if earlier steps not done */}
+                {!castSession.session.selectedTemplate && (
+                  <Card className="border-amber-300/50 bg-amber-50/30 dark:bg-amber-950/10">
+                    <CardContent className="py-4 flex items-center gap-3">
+                      <AlertTriangle className="w-5 h-5 text-amber-600" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">Complete earlier steps first</p>
+                        <p className="text-xs text-muted-foreground">Select a template and generate messaging before configuring production</p>
                       </div>
-                      <div>
-                        <div className="text-2xl font-bold text-blue-600">{metrics.videoStyles.total}</div>
-                        <div className="text-xs text-muted-foreground">Video Styles</div>
-                        <div className="text-[10px] text-green-600">{metrics.videoStyles.popular} popular</div>
-                      </div>
-                      <div>
-                        <div className="text-2xl font-bold text-green-600">{metrics.pipelines.active}</div>
-                        <div className="text-xs text-muted-foreground">Active Pipelines</div>
-                        <div className="text-[10px] text-muted-foreground">of {metrics.pipelines.total}</div>
-                      </div>
-                      <div>
-                        <div className="text-2xl font-bold text-purple-600">{metrics.zones}</div>
-                        <div className="text-xs text-muted-foreground">Regional Zones</div>
-                        <div className="text-[10px] text-green-600">4-zone routing</div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            )}
-            
-            {/* ASSETS - Logos, Screenshots, Colors (no templates - moved to own tab) */}
-            {currentSubTab === 'assets' && (
-              <motion.div
-                key="assets"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                transition={{ duration: 0.2 }}
-              >
-                <BrandAssetsPanel />
+                      <Button size="sm" variant="outline" onClick={() => setSubTab('create', 'templates')} className="gap-1">
+                        <LayoutTemplate className="w-3.5 h-3.5" />
+                        Start with Templates
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Internal section navigation for Production Setup */}
+                <div className="flex items-center gap-2 border-b pb-2">
+                  <Button
+                    variant={productionSection === 'styles' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setProductionSection('styles')}
+                    className="gap-1.5 text-xs"
+                  >
+                    <Palette className="w-3.5 h-3.5" />
+                    Video Styles
+                    {selectedVideoStyles.length > 0 && (
+                      <Badge variant="secondary" className="text-[9px] px-1 h-4 ml-1">{selectedVideoStyles.length}</Badge>
+                    )}
+                  </Button>
+                  <Button
+                    variant={productionSection === 'assets' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setProductionSection('assets')}
+                    className="gap-1.5 text-xs"
+                  >
+                    <Image className="w-3.5 h-3.5" />
+                    Brand Assets
+                  </Button>
+                  <Button
+                    variant={productionSection === 'regional' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setProductionSection('regional')}
+                    className="gap-1.5 text-xs"
+                  >
+                    <Globe className="w-3.5 h-3.5" />
+                    Regional Config
+                    {selectedDialectCodes.length > 1 && (
+                      <Badge variant="secondary" className="text-[9px] px-1 h-4 ml-1">{selectedDialectCodes.length} lang</Badge>
+                    )}
+                  </Button>
+
+                  {/* Ready to produce indicator */}
+                  <div className="ml-auto">
+                    <Button
+                      size="sm"
+                      variant="default"
+                      onClick={() => {
+                        setActiveMainTab('produce');
+                        setSubTab('produce', 'generate');
+                      }}
+                      className="gap-1.5 text-xs"
+                      disabled={!castSession.session.selectedTemplate}
+                    >
+                      <Play className="w-3.5 h-3.5" />
+                      Go to Produce
+                    </Button>
+                  </div>
+                </div>
+
+                {/* ─── STYLES SECTION ─── */}
+                {productionSection === 'styles' && (
+                  <div className="space-y-4">
+                    <GenieCastOverview
+                      selectedStyles={selectedVideoStyles}
+                      onStylesChange={onStylesChange}
+                      onNavigate={(tab) => {
+                        if (tab === 'messaging') {
+                          setSubTab('create', 'messaging');
+                        } else if (tab === 'generate') {
+                          setActiveMainTab('produce');
+                          setSubTab('produce', 'generate');
+                        } else if (tab === 'matrix') {
+                          setActiveMainTab('produce');
+                          setSubTab('produce', 'matrix');
+                        }
+                      }}
+                    />
+                    
+                    {/* Ecosystem Metrics Card */}
+                    <Card className="border-primary/20">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm flex items-center gap-2">
+                          <Sparkles className="w-4 h-4 text-primary" />
+                          Ecosystem Status
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-4 gap-4 text-center">
+                          <div>
+                            <div className="text-2xl font-bold text-primary">{metrics.providers.total}</div>
+                            <div className="text-xs text-muted-foreground">AI Providers</div>
+                            <div className="text-[10px] text-green-600">{metrics.providers.wiredToGenieCast} wired</div>
+                          </div>
+                          <div>
+                            <div className="text-2xl font-bold text-blue-600">{metrics.videoStyles.total}</div>
+                            <div className="text-xs text-muted-foreground">Video Styles</div>
+                            <div className="text-[10px] text-green-600">{metrics.videoStyles.popular} popular</div>
+                          </div>
+                          <div>
+                            <div className="text-2xl font-bold text-green-600">{metrics.pipelines.active}</div>
+                            <div className="text-xs text-muted-foreground">Active Pipelines</div>
+                            <div className="text-[10px] text-muted-foreground">of {metrics.pipelines.total}</div>
+                          </div>
+                          <div>
+                            <div className="text-2xl font-bold text-purple-600">{metrics.zones}</div>
+                            <div className="text-xs text-muted-foreground">Regional Zones</div>
+                            <div className="text-[10px] text-green-600">4-zone routing</div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+
+                {/* ─── BRAND ASSETS SECTION ─── */}
+                {productionSection === 'assets' && (
+                  <BrandAssetsPanel 
+                    selectedProductId={selectedProductId}
+                  />
+                )}
+
+                {/* ─── REGIONAL CONFIG SECTION ─── */}
+                {productionSection === 'regional' && (
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <Globe className="w-4 h-4 text-primary" />
+                        Regional Output Configuration
+                      </CardTitle>
+                      <CardDescription className="text-xs">
+                        Select target regions and dialects for transcreation (One Template → Many Videos)
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <RegionalDialectSelector
+                        onDialectsChange={handleDialectChange}
+                        selectedDialects={selectedDialectCodes}
+                      />
+                    </CardContent>
+                  </Card>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
@@ -564,7 +626,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.2 }}
               >
-                {/* Quick Generate UI - imported from parent */}
+                {/* Quick Generate UI */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -637,7 +699,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                       selectedLanguage={selectedDialectCodes[0]?.split('-')[0] || 'en'}
                       onNavigateToOverview={() => {
                         setActiveMainTab('create');
-                        setSubTab('create', 'styles');
+                        setSubTab('create', 'production');
                       }}
                       avatarGender={avatarGender}
                       onAvatarGenderChange={setAvatarGender}
@@ -687,7 +749,8 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 <VideoGenerationMatrix 
                   onNavigateToScreenshots={() => {
                     setActiveMainTab('create');
-                    setSubTab('create', 'screenshots');
+                    setSubTab('create', 'production');
+                    setProductionSection('assets');
                   }}
                 />
               </motion.div>
@@ -702,7 +765,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 transition={{ duration: 0.2 }}
                 className="space-y-4"
               >
-                {/* Authoring Stage Progress */}
+                {/* Authoring Stage Progress - belongs here in Studio */}
                 <div className="mb-4">
                   <AuthoringStageIndicator
                     currentStage={authoring.state.currentStage}
@@ -774,7 +837,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   </CardContent>
                 </Card>
 
-                {/* A/V Sync Preview - Timeline with waveform visualization */}
+                {/* A/V Sync Preview */}
                 <AVSyncPreview
                   mapping={authoring.state.templateMapping || {
                     templateId: 'demo-template',
@@ -799,7 +862,6 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   onPlayScene={(sceneId) => {
                     console.log('[Studio] Play scene:', sceneId);
                     toast.info(`Playing scene preview for ${sceneId}...`);
-                    // The LiveGenerationPreview below handles TTS playback internally
                   }}
                   onSeek={(time) => {
                     console.log('[Studio] Seek to:', time);
@@ -810,7 +872,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   }}
                 />
 
-                {/* P2: Live Generation Preview - Real-time TTS & Video Generation */}
+                {/* P2: Live Generation Preview */}
                 <LiveGenerationPreview
                   mapping={authoring.state.templateMapping || {
                     templateId: 'demo-template',
@@ -865,7 +927,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 transition={{ duration: 0.2 }}
                 className="space-y-4"
               >
-                {/* Approval Dashboard - Unified workflow view */}
+                {/* Approval Dashboard */}
                 <ApprovalDashboard
                   session={castSession.session}
                   onNavigateToStage={handleNavigateToStage}
