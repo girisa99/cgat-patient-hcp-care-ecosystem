@@ -228,6 +228,8 @@ const AppContent = () => {
               {/* Genie Admin - internal users only (self-protected) */}
               <Route path="/genie-admin" element={<GenieAdminPage />} />
               <Route path="/internal/users" element={<GenieAdminPage />} />
+              {/* PERMANENT FIX: Dedicated /genie-cast route - always resolves to Genie Cast tab */}
+              <Route path="/genie-cast" element={<Navigate to="/genie-admin?tab=genie-cast" replace />} />
               
               {/* Root path - Dashboard redirect */}
               <Route path="/" element={

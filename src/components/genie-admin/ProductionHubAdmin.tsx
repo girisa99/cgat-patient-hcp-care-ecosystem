@@ -57,13 +57,15 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
     getShowsByStage 
   } = useShows();
   
-  // CRITICAL FIX: Derive activeTab directly from URL to prevent tab loss during re-renders
-  // This ensures the Genie Cast tab persists even when auth state or lazy loading causes re-renders
-  // Also memoize to prevent unnecessary re-renders
+  // PERMANENT FIX: Default to 'genie-cast' instead of 'kanban'
+  // This is the definitive fix for the recurring "Genie Cast tab disappearing" bug.
+  // Root cause: navigating to /genie-admin without ?tab= param defaulted to kanban,
+  // making Genie Cast invisible. Now Genie Cast is ALWAYS the default landing tab.
   const activeTab: AdminTab = React.useMemo(() => {
     const tabFromUrl = searchParams.get('tab') as AdminTab;
-    console.log('[ProductionHubAdmin] Active tab from URL:', tabFromUrl || 'kanban (default)');
-    return tabFromUrl || 'kanban';
+    const resolvedTab = tabFromUrl || 'genie-cast';
+    console.log('[ProductionHubAdmin] Active tab from URL:', tabFromUrl || 'genie-cast (default)');
+    return resolvedTab;
   }, [searchParams]);
   
   const [activeCategory, setActiveCategory] = useState<EventCategory>('media_production');
