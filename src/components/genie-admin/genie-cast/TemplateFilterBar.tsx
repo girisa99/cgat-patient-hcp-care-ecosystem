@@ -239,6 +239,7 @@
    totalCount: number;
    filteredCount: number;
    onReset: () => void;
+   blueprints?: any[];
  }
  
  export const TemplateFilterBar: React.FC<TemplateFilterBarProps> = ({
@@ -247,6 +248,7 @@
    totalCount,
    filteredCount,
    onReset,
+   blueprints = [],
  }) => {
    const activeFilterCount = useMemo(() => {
      let count = 0;
@@ -259,6 +261,36 @@
      if (filters.search.trim()) count++;
      return count;
    }, [filters]);
+
+   // Capability breakdown stats
+   const capabilityStats = useMemo(() => {
+     if (!blueprints.length) return null;
+     const settings = blueprints.map(bp => bp.default_settings || {});
+     return {
+       avatar: settings.filter((s: any) => s.avatarEnabled).length,
+       threeD: settings.filter((s: any) => s['3dEnabled']).length,
+       animation: settings.filter((s: any) => s.animationEnabled).length,
+       arVr: settings.filter((s: any) => s.arvrEnabled).length,
+       lipsync: settings.filter((s: any) => s.lipsyncEnabled).length,
+       tts: settings.filter((s: any) => s.ttsEnabled || s.ttsProvider).length,
+       video: settings.filter((s: any) => s.videoEnabled || s.videoProvider).length,
+     };
+   }, [blueprints]);
+
+   // Category breakdown
+   const categoryStats = useMemo(() => {
+     if (!blueprints.length) return [];
+     const counts: Record<string, number> = {};
+     blueprints.forEach(bp => {
+       const cat = bp.category || 'other';
+       counts[cat] = (counts[cat] || 0) + 1;
+     });
+     return Object.entries(counts)
+       .map(([key, count]) => ({ key, count }))
+       .sort((a, b) => b.count - a.count);
+   }, [blueprints]);
+
+   const [showBreakdown, setShowBreakdown] = useState(false);
  
    const updateFilter = (key: keyof FilterState, value: string) => {
      onFiltersChange({ ...filters, [key]: value });
@@ -271,7 +303,7 @@
          <div className="relative flex-1 max-w-sm">
            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
            <Input
-             placeholder="Search 407 templates..."
+             placeholder={`Search ${totalCount} templates...`}
              value={filters.search}
              onChange={(e) => updateFilter('search', e.target.value)}
              className="pl-9 h-9"
@@ -302,19 +334,29 @@
                {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''}
              </Badge>
            )}
-         </div>
+          </div>
  
-         {activeFilterCount > 0 && (
-           <Button
-             variant="ghost"
-             size="sm"
-             onClick={onReset}
-             className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-           >
-             <RotateCcw className="h-3 w-3" />
-             Reset
-           </Button>
-         )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowBreakdown(!showBreakdown)}
+            className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+          >
+            <Layers className="h-3 w-3" />
+            {showBreakdown ? 'Hide' : 'Show'} Breakdown
+          </Button>
+
+          {activeFilterCount > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onReset}
+              className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <RotateCcw className="h-3 w-3" />
+              Reset
+            </Button>
+          )}
        </div>
  
        {/* Filter Chips Row */}
@@ -450,8 +492,89 @@
              </Badge>
            )}
          </div>
-       )}
-     </div>
+        )}
+
+        {/* Capability & Category Breakdown */}
+        {showBreakdown && capabilityStats && (
+          <div className="rounded-lg border border-border bg-card p-4 space-y-4">
+            {/* Capability Stats */}
+            <div>
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                Capabilities Breakdown
+              </h4>
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+                {[
+                  { label: 'Avatar', count: capabilityStats.avatar, icon: '👤', color: 'bg-primary/10 text-primary border-primary/20' },
+                  { label: '3D', count: capabilityStats.threeD, icon: '🧊', color: 'bg-accent/50 text-accent-foreground border-accent/30' },
+                  { label: 'Animation', count: capabilityStats.animation, icon: '🎬', color: 'bg-secondary text-secondary-foreground border-secondary/50' },
+                  { label: 'AR/VR', count: capabilityStats.arVr, icon: '🥽', color: 'bg-muted text-muted-foreground border-border' },
+                  { label: 'Lip Sync', count: capabilityStats.lipsync, icon: '👄', color: 'bg-primary/10 text-primary border-primary/20' },
+                  { label: 'TTS Audio', count: capabilityStats.tts, icon: '🔊', color: 'bg-secondary text-secondary-foreground border-secondary/50' },
+                  { label: 'Video', count: capabilityStats.video, icon: '📹', color: 'bg-accent/50 text-accent-foreground border-accent/30' },
+                ].map(stat => (
+                  <div
+                    key={stat.label}
+                    className={cn(
+                      "rounded-md border px-3 py-2 text-center transition-colors",
+                      stat.color
+                    )}
+                  >
+                    <div className="text-lg font-bold">{stat.count}</div>
+                    <div className="text-[10px] font-medium flex items-center justify-center gap-1">
+                      <span>{stat.icon}</span>
+                      {stat.label}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Category Breakdown */}
+            <div>
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                By Category ({categoryStats.length} categories)
+              </h4>
+              <div className="flex flex-wrap gap-1.5">
+                {categoryStats.map(({ key, count }) => (
+                  <Badge
+                    key={key}
+                    variant="outline"
+                    className="text-xs cursor-pointer hover:bg-accent/50 transition-colors capitalize"
+                    onClick={() => updateFilter('category', key)}
+                  >
+                    {key.replace(/_/g, ' ')}
+                    <span className="ml-1 text-muted-foreground font-mono">{count}</span>
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            {/* Provider Routing Summary */}
+            <div>
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                Active Provider Routing
+              </h4>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 text-xs">
+                {[
+                  { provider: 'Vertex Veo 3', role: 'Video (Primary)', icon: '🎥' },
+                  { provider: 'Azure Neural', role: 'TTS + Viseme', icon: '🗣️' },
+                  { provider: 'Meshy AI', role: '3D Generation', icon: '🧊' },
+                  { provider: 'ModelsLab', role: 'Animation + Effects', icon: '✨' },
+                  { provider: 'Gemini 3 Pro', role: 'Image Generation', icon: '🖼️' },
+                ].map(p => (
+                  <div key={p.provider} className="flex items-start gap-2 rounded-md border border-border bg-background px-2.5 py-2">
+                    <span className="text-sm">{p.icon}</span>
+                    <div>
+                      <div className="font-medium text-foreground">{p.provider}</div>
+                      <div className="text-muted-foreground text-[10px]">{p.role}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
    );
  };
  
