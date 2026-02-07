@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import type { BlueprintScene } from '@/hooks/useVideoBlueprints';
+import { AISceneCustomizer } from './AISceneCustomizer';
 
 interface SceneTimelineTabProps {
   scenes: BlueprintScene[];
@@ -29,6 +30,7 @@ interface SceneTimelineTabProps {
   onExpandScene: (sceneId: string | null) => void;
   formatDuration: (seconds: number) => string;
   isEditable?: boolean;
+  onScenesModified?: (scenes: BlueprintScene[], description: string) => void;
 }
 
 const sceneTypeColors: Record<string, string> = {
@@ -67,6 +69,7 @@ export function SceneTimelineTab({
   onExpandScene,
   formatDuration,
   isEditable = true,
+  onScenesModified,
 }: SceneTimelineTabProps) {
   const [durationOverrides, setDurationOverrides] = useState<Record<string, number>>({});
 
@@ -234,6 +237,14 @@ export function SceneTimelineTab({
             Add Custom Scene
           </Button>
         </div>
+      )}
+
+      {/* AI Scene Customizer */}
+      {isEditable && (
+        <AISceneCustomizer
+          scenes={scenes}
+          onScenesModified={onScenesModified}
+        />
       )}
 
       {/* Info Note */}
