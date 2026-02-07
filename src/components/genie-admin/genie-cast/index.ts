@@ -19,6 +19,8 @@ export { ScriptPreviewPanel } from './ScriptPreviewPanel';
 export { LiveGenerationPreview } from './LiveGenerationPreview';
 export { BlueprintPreviewModal } from './BlueprintPreviewModal';
 export { BlueprintTemplatesGrid } from './BlueprintTemplatesGrid';
+export { SmartTemplateRecommender } from './SmartTemplateRecommender';
+export { TemplateComparisonView } from './TemplateComparisonView';
 export { ContentLibraryGrid } from './ContentLibraryGrid';
 
 // New fully-implemented tab components

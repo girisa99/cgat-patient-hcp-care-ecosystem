@@ -9,6 +9,7 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -57,6 +58,8 @@ import {
 import { cn } from '@/lib/utils';
 import { useVideoBlueprints, type VideoBlueprint } from '@/hooks/useVideoBlueprints';
 import { BlueprintPreviewModal } from './BlueprintPreviewModal';
+import { SmartTemplateRecommender } from './SmartTemplateRecommender';
+import { TemplateComparisonView } from './TemplateComparisonView';
 import { CreateTemplateDialog } from './CreateTemplateDialog';
 import { 
   TemplateFilterBar, 
@@ -333,6 +336,27 @@ export function BlueprintTemplatesGrid({
   const [isGeneratingThumbnails, setIsGeneratingThumbnails] = useState(false);
   const [generatingId, setGeneratingId] = useState<string | null>(null);
   const [isQueueing, setIsQueueing] = useState(false);
+  
+  // Comparison state
+  const [comparisonIds, setComparisonIds] = useState<string[]>([]);
+  const [showComparison, setShowComparison] = useState(false);
+
+  const toggleCompare = (blueprintId: string) => {
+    setComparisonIds(prev => {
+      if (prev.includes(blueprintId)) {
+        return prev.filter(id => id !== blueprintId);
+      }
+      if (prev.length >= 3) return prev; // Max 3
+      return [...prev, blueprintId];
+    });
+  };
+
+  const handleOpenComparison = (ids?: string[]) => {
+    if (ids) setComparisonIds(ids);
+    setShowComparison(true);
+  };
+
+  const comparisonBlueprints = blueprints.filter(bp => comparisonIds.includes(bp.id));
 
   // Unified filter state for TemplateFilterBar
   const filterState: FilterState = useMemo(() => ({
@@ -665,6 +689,41 @@ export function BlueprintTemplatesGrid({
 
   return (
     <div className="space-y-4">
+      {/* Smart Template Recommender */}
+      <SmartTemplateRecommender
+        blueprints={blueprints}
+        onSelectBlueprint={(bp) => setPreviewBlueprintId(bp.id)}
+        onCompare={handleOpenComparison}
+      />
+
+      {/* Comparison Bar */}
+      {comparisonIds.length > 0 && (
+        <div className="flex items-center gap-2 bg-primary/5 border border-primary/20 rounded-lg p-2">
+          <Badge variant="outline" className="text-xs">
+            {comparisonIds.length}/3 selected
+          </Badge>
+          <span className="text-xs text-muted-foreground flex-1">
+            Select up to 3 templates to compare side-by-side
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs"
+            onClick={() => setComparisonIds([])}
+          >
+            Clear
+          </Button>
+          <Button
+            size="sm"
+            className="h-7 text-xs gap-1"
+            onClick={() => setShowComparison(true)}
+            disabled={comparisonIds.length < 2}
+          >
+            <Layers className="h-3 w-3" />
+            Compare ({comparisonIds.length})
+          </Button>
+        </div>
+      )}
       {/* Header with Actions */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 flex-wrap">
@@ -754,11 +813,24 @@ export function BlueprintTemplatesGrid({
             <Card
               key={blueprint.id}
               className={cn(
-                "overflow-hidden transition-all cursor-pointer hover:border-primary/50 hover:shadow-lg group",
-                selectedBlueprintId === blueprint.id && "border-primary ring-2 ring-primary/20"
+                "overflow-hidden transition-all cursor-pointer hover:border-primary/50 hover:shadow-lg group relative",
+                selectedBlueprintId === blueprint.id && "border-primary ring-2 ring-primary/20",
+                comparisonIds.includes(blueprint.id) && "ring-2 ring-accent/50 border-accent/50"
               )}
               onClick={() => setPreviewBlueprintId(blueprint.id)}
             >
+              {/* Compare checkbox */}
+              <div
+                className="absolute top-2 left-2 z-10"
+                onClick={e => e.stopPropagation()}
+              >
+                <Checkbox
+                  checked={comparisonIds.includes(blueprint.id)}
+                  onCheckedChange={() => toggleCompare(blueprint.id)}
+                  className="h-4 w-4 bg-background/80 border-border"
+                  disabled={!comparisonIds.includes(blueprint.id) && comparisonIds.length >= 3}
+                />
+              </div>
               {/* Thumbnail Area - AI Generated, Placeholder, or Gradient Fallback */}
               <div className="h-36 flex items-center justify-center relative overflow-hidden">
                 {/* Always show an image - either actual thumbnail or category placeholder */}
@@ -928,6 +1000,15 @@ export function BlueprintTemplatesGrid({
         isOpen={!!previewBlueprintId && !!previewBlueprint}
         onClose={() => setPreviewBlueprintId(null)}
         onSelect={handleSelectBlueprint}
+      />
+
+      {/* Comparison Modal */}
+      <TemplateComparisonView
+        blueprints={comparisonBlueprints}
+        isOpen={showComparison && comparisonBlueprints.length >= 2}
+        onClose={() => setShowComparison(false)}
+        onSelect={handleSelectBlueprint}
+        onRemove={(id) => setComparisonIds(prev => prev.filter(i => i !== id))}
       />
     </div>
   );
