@@ -1,9 +1,9 @@
- /**
-  * TEMPLATE FILTER BAR
-  * Smart collapsible filter chips for navigating 407+ templates
-  * 
-  * Filters: Category, Combination, Device/Platform, Region, Capability, Industry
-  */
+/**
+ * TEMPLATE FILTER BAR
+ * Smart collapsible filter chips for navigating templates (count is dynamic from DB)
+ * 
+ * Filters: Category, Combination, Device/Platform, Region, Capability, Industry
+ */
  
  import React, { useState, useMemo } from 'react';
  import { Button } from '@/components/ui/button';

@@ -95,7 +95,7 @@ export const useVideoBlueprints = () => {
       console.log(`✅ Fetched ${data?.length || 0} blueprints`);
       return data as VideoBlueprint[];
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 30 * 1000, // 30 seconds - ensures fresh counts
   });
 
   // Fetch blueprint with scenes
