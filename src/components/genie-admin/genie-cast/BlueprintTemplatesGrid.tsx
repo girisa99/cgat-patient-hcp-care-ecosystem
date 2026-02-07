@@ -656,7 +656,7 @@ export function BlueprintTemplatesGrid({
             ) : (
               <Globe2 className="h-4 w-4" />
             )}
-            Seed Full Library (407)
+            Seed Full Library
           </Button>
         </div>
       </div>
@@ -703,7 +703,7 @@ export function BlueprintTemplatesGrid({
               className="gap-2 bg-gradient-to-r from-primary to-accent"
             >
               {isSeeding150 ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-              Sync All 407 Templates
+              Sync Full Library
             </Button>
           </div>
         </div>
