@@ -58,6 +58,10 @@ import { AVSyncPreview } from '@/components/shared/AVSyncPreview';
 import { ApprovalDashboard } from '@/components/shared/ApprovalDashboard';
 import type { StyleIntent, RegionZone } from '@/services/styleIntentResolver';
 
+// Import Phase 2 Routing Transparency
+import { RoutingDecisionCard } from '@/components/ai/RoutingDecisionCard';
+import { useAIRoutingIntelligence } from '@/hooks/useAIRoutingIntelligence';
+
 // Import P2 Live Generation Preview component (uses internal hooks)
 import { LiveGenerationPreview } from './LiveGenerationPreview';
 
@@ -251,6 +255,9 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
   const [selectedDialectCodes, setSelectedDialectCodes] = useState<string[]>(['en-US']);
   const [avatarGender, setAvatarGender] = useState<'male' | 'female'>('female');
   const [productionQuality, setProductionQuality] = useState<'preview' | 'production' | 'cinematic'>('production');
+
+  // Phase 2: AI Routing Intelligence for Studio transparency
+  const routing = useAIRoutingIntelligence();
 
   // Production Setup internal section state
   const [productionSection, setProductionSection] = useState<'styles' | 'assets' | 'regional'>('styles');
@@ -816,6 +823,32 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                     }}
                   />
                 </div>
+
+                {/* Phase 2: AI Routing Transparency Card */}
+                <RoutingDecisionCard
+                  decision={routing.routingDecision || (() => {
+                    // Auto-analyze based on current session context for immediate visibility
+                    const contextQuery = castSession.session.approvedMessaging?.hook 
+                      || castSession.session.selectedTemplate?.name 
+                      || 'Generate marketing video content';
+                    try {
+                      return routing.analyzeQuery(contextQuery);
+                    } catch {
+                      return null;
+                    }
+                  })()}
+                  selectedModel={routing.selectedModel}
+                  onModelSelect={routing.selectModel}
+                  onOptimizationSelect={(type) => {
+                    if (type === 'cost') routing.selectCostOptimized();
+                    else if (type === 'quality') routing.selectQualityOptimized();
+                    else routing.selectSpeedOptimized();
+                  }}
+                  taskType="video"
+                  zone={detectTranscreationZone(selectedDialectCodes[0] || 'en-US')}
+                  showFallbackChain={true}
+                  compact={false}
+                />
 
                 {/* Script-to-Template Mapper */}
                 <Card>
