@@ -84,6 +84,8 @@ import { BrandAssetsPanel } from './BrandAssetsPanel';
 import { BlueprintTemplatesGrid } from './BlueprintTemplatesGrid';
 import { WorkflowContextBanner } from './WorkflowContextBanner';
 import { StyleDrivenProductionConfig, deriveProductionRequirements, estimateGenerationTime } from './StyleDrivenProductionConfig';
+import { ScriptPreviewPanel } from './ScriptPreviewPanel';
+import { TranslationTranscreationToggle } from './TranslationTranscreationToggle';
 
 // Import master registry for metrics
 import { 
@@ -837,6 +839,57 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   </CardContent>
                 </Card>
 
+                {/* Script Preview Panel — connected to session */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="w-5 h-5" />
+                      Script Composition & TTS
+                    </CardTitle>
+                    <CardDescription>
+                      Generate scripts from approved messaging, preview with regional TTS
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ScriptPreviewPanel
+                      selectedProduct={selectedProductId as any}
+                      approvedMessaging={castSession.session.approvedMessaging ? {
+                        hook: castSession.session.approvedMessaging.hook,
+                        valueProposition: castSession.session.approvedMessaging.valueProposition,
+                        painPoints: castSession.session.approvedMessaging.painPoints,
+                        benefits: castSession.session.approvedMessaging.benefits,
+                        differentiators: castSession.session.approvedMessaging.differentiators,
+                        cta: castSession.session.approvedMessaging.cta,
+                        shortScript: castSession.session.approvedMessaging.shortScript,
+                        mediumScript: castSession.session.approvedMessaging.mediumScript,
+                        longScript: castSession.session.approvedMessaging.longScript,
+                        closingLine: (castSession.session.approvedMessaging as any)?.closingLine,
+                        openingLine: (castSession.session.approvedMessaging as any)?.openingLine,
+                      } : undefined}
+                      onScriptApproved={(script) => {
+                        console.log('[Studio] Script approved:', script.productId);
+                        castSession.goToStage('template_mapping');
+                        authoring.goToStage('template_mapping');
+                        toast.success('Scripts approved — proceed to scene mapping');
+                      }}
+                    />
+                  </CardContent>
+                </Card>
+
+                {/* Translation vs Transcreation Toggle */}
+                <TranslationTranscreationToggle
+                  sourceText={castSession.session.approvedMessaging?.mediumScript || ''}
+                  sourceLanguage="en"
+                  region={selectedDialectCodes[0]?.startsWith('ar-') ? 'mena' : 
+                          ['zh-CN', 'ja-JP', 'ko-KR'].includes(selectedDialectCodes[0] || '') ? 'cjk' : 
+                          ['hi-IN', 'te-IN'].includes(selectedDialectCodes[0] || '') ? 'india' : 'global'}
+                  onResult={(result) => {
+                    console.log('[Studio] Translation/Transcreation result:', result.mode, result.targetLanguage);
+                    toast.success(`${result.mode === 'translate' ? 'Translation' : 'Transcreation'} complete: ${result.targetLanguage}`);
+                  }}
+                  compact
+                />
+
                 {/* A/V Sync Preview */}
                 <AVSyncPreview
                   mapping={authoring.state.templateMapping || {
@@ -934,6 +987,86 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   onResetSession={castSession.resetSession}
                 />
 
+                {/* Session Handoff Summary — full state from CREATE */}
+                <Card className="border-primary/20 bg-primary/5">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Sparkles className="w-4 h-4" />
+                      Production State Handoff
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      Complete pipeline state from CREATE → PRODUCE
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="p-3 bg-background rounded-lg border text-center">
+                        <div className="text-lg font-bold text-primary">
+                          {castSession.session.completedStages.length}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground">Stages Complete</div>
+                      </div>
+                      <div className="p-3 bg-background rounded-lg border text-center">
+                        <div className="text-lg font-bold text-primary">
+                          {castSession.session.approvalItems.filter(i => i.status === 'approved').length}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground">Items Approved</div>
+                      </div>
+                      <div className="p-3 bg-background rounded-lg border text-center">
+                        <div className="text-lg font-bold text-primary">
+                          {castSession.session.selectedDialects.length}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground">Languages</div>
+                      </div>
+                    </div>
+                    
+                    {castSession.session.selectedTemplate && (
+                      <div className="p-2 bg-muted/50 rounded-md flex items-center justify-between">
+                        <div>
+                          <p className="text-xs font-medium">Template: {castSession.session.selectedTemplate.name}</p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {castSession.session.selectedTemplate.sceneCount} scenes • Style: {castSession.session.selectedTemplate.styleIntent}
+                          </p>
+                        </div>
+                        <Badge variant="outline" className="text-[9px]">Selected</Badge>
+                      </div>
+                    )}
+
+                    {castSession.session.approvedMessaging && (
+                      <div className="p-2 bg-muted/50 rounded-md flex items-center justify-between">
+                        <div>
+                          <p className="text-xs font-medium">Messaging: Approved</p>
+                          <p className="text-[10px] text-muted-foreground truncate max-w-[250px]">
+                            Hook: "{castSession.session.approvedMessaging.hook?.substring(0, 60)}..."
+                          </p>
+                        </div>
+                        <Badge variant="outline" className="text-[9px] bg-green-500/10 border-green-500/30 text-green-600">✓</Badge>
+                      </div>
+                    )}
+
+                    {castSession.session.templateMapping && (
+                      <div className="p-2 bg-muted/50 rounded-md flex items-center justify-between">
+                        <div>
+                          <p className="text-xs font-medium">Script Mapping</p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {castSession.session.templateMapping.scenes.length} scenes • {Math.round(castSession.session.templateMapping.totalDuration / 60)}min
+                          </p>
+                        </div>
+                        <Badge variant="outline" className="text-[9px] bg-green-500/10 border-green-500/30 text-green-600">✓</Badge>
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between text-xs pt-1">
+                      <span className="text-muted-foreground">Regional:</span>
+                      <div className="flex gap-1">
+                        {castSession.session.selectedDialects.map(d => (
+                          <Badge key={d} variant="outline" className="text-[9px]">{d}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
                 {/* Quality Check Card */}
                 <Card>
                   <CardHeader>
@@ -946,33 +1079,6 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-3 gap-4 mb-4">
-                      <Card className="bg-green-500/5 border-green-500/20">
-                        <CardContent className="p-4 text-center">
-                          <div className="text-2xl font-bold text-green-500">
-                            {castSession.session.completedStages.length}
-                          </div>
-                          <div className="text-xs text-muted-foreground">Stages Complete</div>
-                        </CardContent>
-                      </Card>
-                      <Card className="bg-blue-500/5 border-blue-500/20">
-                        <CardContent className="p-4 text-center">
-                          <div className="text-2xl font-bold text-blue-500">
-                            {castSession.session.approvalItems.filter(i => i.status === 'approved').length}
-                          </div>
-                          <div className="text-xs text-muted-foreground">Items Approved</div>
-                        </CardContent>
-                      </Card>
-                      <Card className="bg-purple-500/5 border-purple-500/20">
-                        <CardContent className="p-4 text-center">
-                          <div className="text-2xl font-bold text-purple-500">
-                            {castSession.session.selectedDialects.length}
-                          </div>
-                          <div className="text-xs text-muted-foreground">Languages</div>
-                        </CardContent>
-                      </Card>
-                    </div>
-                    
                     {castSession.session.selectedTemplate && (
                       <div className="p-3 bg-muted/50 rounded-lg">
                         <p className="text-sm font-medium">Selected Template</p>

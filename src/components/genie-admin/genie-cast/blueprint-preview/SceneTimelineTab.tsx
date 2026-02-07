@@ -239,11 +239,13 @@ export function SceneTimelineTab({
         </div>
       )}
 
-      {/* AI Scene Customizer */}
+      {/* AI Scene Customizer — now routes through LLM with local fallback */}
       {isEditable && (
         <AISceneCustomizer
           scenes={scenes}
           onScenesModified={onScenesModified}
+          language="en"
+          region="global"
         />
       )}
 
