@@ -166,11 +166,28 @@ export function BlueprintPreviewModal({
                   <Badge variant="outline" className="capitalize bg-background/80 text-xs">
                     {blueprint.category}
                   </Badge>
-                  {blueprint.is_system_default && (
+                  {blueprint.is_system_default ? (
                     <Badge className="bg-primary/20 text-primary border-primary/30 text-xs">
                       <Sparkles className="h-3 w-3 mr-1" />
-                      System
+                      Built-in Template
                     </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-xs">
+                      Custom Template
+                    </Badge>
+                  )}
+                  {/* Capability badges */}
+                  {(blueprint.default_settings as any)?.avatarEnabled && (
+                    <Badge className="bg-primary/80 text-primary-foreground text-xs border-0">Avatar</Badge>
+                  )}
+                  {(blueprint.default_settings as any)?.['3dEnabled'] && (
+                    <Badge className="bg-accent text-accent-foreground text-xs border-0">3D</Badge>
+                  )}
+                  {(blueprint.default_settings as any)?.animationEnabled && (
+                    <Badge className="bg-secondary text-secondary-foreground text-xs border-0">Animation</Badge>
+                  )}
+                  {(blueprint.default_settings as any)?.arvrEnabled && (
+                    <Badge className="bg-muted text-muted-foreground text-xs border-0">AR/VR</Badge>
                   )}
                 </div>
               </div>

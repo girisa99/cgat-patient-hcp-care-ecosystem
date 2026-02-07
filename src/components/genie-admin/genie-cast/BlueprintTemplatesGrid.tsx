@@ -804,12 +804,30 @@ export function BlueprintTemplatesGrid({
                   </Badge>
                 )}
 
-                {/* System badge - moved to bottom left when provider badge exists */}
-                {blueprint.is_system_default && !(blueprint.style_preset as any)?.thumbnail_provider && (
-                  <Badge variant="secondary" className="absolute top-2 right-2 text-xs">
-                    <Sparkles className="h-3 w-3 mr-1" />
-                    System
-                  </Badge>
+                {/* Capability badges - show what this template can do */}
+                {!(blueprint.style_preset as any)?.thumbnail_provider && (
+                  <div className="absolute top-2 right-2 flex flex-col gap-1">
+                    {(blueprint.default_settings as any)?.avatarEnabled && (
+                      <Badge className="bg-primary/90 text-primary-foreground text-[10px] px-1.5 py-0 border-0">
+                        Avatar
+                      </Badge>
+                    )}
+                    {(blueprint.default_settings as any)?.['3dEnabled'] && (
+                      <Badge className="bg-accent text-accent-foreground text-[10px] px-1.5 py-0 border-0">
+                        3D
+                      </Badge>
+                    )}
+                    {(blueprint.default_settings as any)?.animationEnabled && !(blueprint.default_settings as any)?.avatarEnabled && !(blueprint.default_settings as any)?.['3dEnabled'] && (
+                      <Badge className="bg-secondary text-secondary-foreground text-[10px] px-1.5 py-0 border-0">
+                        Animation
+                      </Badge>
+                    )}
+                    {(blueprint.default_settings as any)?.arvrEnabled && (
+                      <Badge className="bg-muted text-muted-foreground text-[10px] px-1.5 py-0 border-0">
+                        AR/VR
+                      </Badge>
+                    )}
+                  </div>
                 )}
 
                 {/* Preview/Generate Button on Hover */}
@@ -862,6 +880,16 @@ export function BlueprintTemplatesGrid({
                     <Layers className="h-3 w-3" />
                     {blueprint.target_platform?.length || 0} platforms
                   </div>
+                  {blueprint.is_system_default ? (
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 ml-auto border-primary/30 text-primary">
+                      <Sparkles className="h-2.5 w-2.5 mr-0.5" />
+                      Built-in
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 ml-auto border-muted-foreground/30">
+                      Custom
+                    </Badge>
+                  )}
                 </div>
 
                 <div className="flex flex-wrap gap-1">
