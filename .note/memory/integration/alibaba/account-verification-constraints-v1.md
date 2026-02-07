@@ -58,4 +58,18 @@ const baseUrl = chinaKey
 
 ~~Alibaba DashScope media models are region-locked and return 'Access Denied' due to account verification requirements.~~
 
-**All constraints resolved as of 2026-02-06.** Both accounts verified, billing active, all models accessible.
+**Account verification resolved as of 2026-02-06.** Both accounts verified, billing active. **Awaiting account rep approval** to activate: Sambert TTS, Wan 2.2 Avatar, OmniAvatar, TaoAvatar, MACH, Richdreamer, FunAudio.
+
+### CosyVoice Permanent Constraint
+
+CosyVoice TTS requires WebSocket with custom `Authorization` headers — **incompatible with Deno/Supabase Edge Functions**. Sambert REST is the permanent alternative for edge functions. Azure Neural is the interim CJK TTS primary until Sambert is activated.
+
+### Documentation Updated (2026-02-07)
+
+All governance docs updated with architecture findings:
+- `docs/PROVIDER_VERIFICATION_MATRIX_2026.md` — Full activation status, CosyVoice limitation, interim routing
+- `docs/ALIBABA_DASHSCOPE_REGIONAL_ARCHITECTURE.md` — Activation checklist, console limitation
+- `docs/COMPREHENSIVE_PROVIDER_ROUTING_MATRIX.md` — CJK TTS routing updated
+- `docs/GENIE_ECOSYSTEM_COMPLETE_MATRIX_2026.md` — Zone config, dual-key note
+- `docs/TEMPLATE_REGIONAL_STRATEGY.md` — TTS column updated with interim status
+- `docs/IMPLEMENTATION_STATUS_AND_TESTING_ROADMAP.md` — Alibaba status section added

@@ -149,7 +149,7 @@ CREATE (Spark, Mind, Deck) → PRODUCE (Vibe) → MANAGE (Arc, Hub) → PUBLISH 
 | 3 | **Gemini** | `GEMINI_API_KEY` | LLM, Translation, OCR, Image Gen, Vision, NLP | India/SEA, Africa |
 | 4 | **Deepgram** | `DEEPGRAM_API_KEY` | **PRIMARY STT** (<100ms real-time), 36+ languages | Global |
 | 5 | **DeepSeek** | `DEEPSEEK_API_KEY` | LLM (CJK), Translation, OCR, Vision (low cost) | CJK |
-| 6 | **Alibaba** | `ALIBABA_API_KEY` | LLM, TTS (CosyVoice), STT, **PRIMARY Avatar/Lip-Sync**, Video, Image | CJK |
+| 6 | **Alibaba** | `ALIBABA_API_KEY` + `ALIBABA_CHINA_API_KEY` | LLM, TTS (Sambert/CosyVoice), STT, **PRIMARY Avatar/Lip-Sync**, Video, Image | CJK (⚠️ Avatar/TTS/3D pending rep activation) |
 | 7 | **Azure** | `AZURE_SPEECH_KEY` | TTS (Neural, Visemes), STT, OCR, Translation | MENA, Enterprise |
 | 8 | **DeepL** | `DEEPL_API_KEY` | **PRIMARY Translation** (European) | Western/EU |
 | 9 | **ElevenLabs** | `ELEVENLABS_API_KEY` | **PRIMARY TTS**, Voice Clone, **PRIMARY Music**, SFX | Western/EU, LATAM |
@@ -260,15 +260,17 @@ CREATE (Spark, Mind, Deck) → PRODUCE (Vibe) → MANAGE (Arc, Hub) → PUBLISH 
 
 ### Zone Configuration
 
-| Zone | Primary LLM | Primary TTS | Primary STT | Primary Video | Primary 3D |
-|------|-------------|-------------|-------------|---------------|------------|
-| **1: Western/EU** | Claude | ElevenLabs | Deepgram | Sora2API | Meshy |
-| **2: CJK** | Alibaba Qwen | Alibaba CosyVoice | Alibaba Paraformer | Alibaba WAN | Meshy |
-| **3: India/SEA** | Gemini | Google WaveNet | Deepgram | Sora2API | Meshy |
-| **4: MENA** | Claude | Azure Neural | Deepgram | Sora2API | Meshy |
-| **5: LATAM** | OpenAI | ElevenLabs | Deepgram | Sora2API | Meshy |
-| **6: Africa** | Gemini | Google WaveNet | Deepgram | Gemini Veo | Meshy |
-| **7: Global English** | OpenAI | ElevenLabs | Deepgram | Sora2API | Meshy |
+| Zone | Primary LLM | Primary TTS | Primary STT | Primary Video | Primary 3D | Status |
+|------|-------------|-------------|-------------|---------------|------------|--------|
+| **1: Western/EU** | Claude | ElevenLabs | Deepgram | Sora2API | Meshy | ✅ |
+| **2: CJK** | Alibaba Qwen | Azure Neural (interim) | Deepgram | Wan 2.6 (Intl) | Meshy | ⚠️ TTS/Avatar pending |
+| **3: India/SEA** | Gemini | Azure Neural | Deepgram | Sora2API | Meshy | ✅ |
+| **4: MENA** | Claude | Azure Neural | Deepgram | Sora2API | Meshy | ✅ |
+| **5: LATAM** | OpenAI | ElevenLabs | Deepgram | Sora2API | Meshy | ✅ |
+| **6: Africa** | Gemini | Azure Neural | Deepgram | Gemini Veo | Meshy | ✅ |
+| **7: Global English** | OpenAI | ElevenLabs | Deepgram | Sora2API | Meshy | ✅ |
+
+> **Note (Feb 2026):** CJK Zone TTS uses Azure Neural as interim primary until Alibaba Sambert REST is activated by account rep. CosyVoice is architecturally incompatible with Supabase Edge Functions (WebSocket-only). Avatar models (Wan 2.2, OmniAvatar, TaoAvatar, MACH) also pending activation — ModelsLab/Azure serve as fallbacks.
 
 ### Regional Language Mappings
 
