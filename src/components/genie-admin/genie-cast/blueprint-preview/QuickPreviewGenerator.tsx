@@ -59,27 +59,27 @@ export function QuickPreviewGenerator({
   const loadBrandAssets = async () => {
     setIsLoadingAssets(true);
     try {
-      // Load from product-screenshots bucket
+      // Load from product-screenshots bucket — files are in 'screenshots/' subfolder
       const { data: screenshots } = await supabase.storage
         .from('product-screenshots')
-        .list('', { limit: 50 });
+        .list('screenshots', { limit: 50 });
 
-      // Load from brand-assets bucket
+      // Load from brand-assets bucket — logos are at the ROOT level (not in 'logos/' subfolder)
       const { data: brandFiles } = await supabase.storage
         .from('brand-assets')
-        .list('logos', { limit: 20 });
+        .list('', { limit: 50 });
 
       const assets: AssetItem[] = [];
 
-      // Map screenshots
+      // Map screenshots (stored under screenshots/ prefix)
       if (screenshots) {
         for (const file of screenshots) {
-          if (file.name && !file.name.startsWith('.')) {
+          if (file.name && !file.name.startsWith('.') && file.id) {
             const { data: urlData } = supabase.storage
               .from('product-screenshots')
-              .getPublicUrl(file.name);
+              .getPublicUrl(`screenshots/${file.name}`);
             assets.push({
-              id: `screenshot-${file.id || file.name}`,
+              id: `screenshot-${file.id}`,
               name: file.name,
               url: urlData.publicUrl,
               type: 'screenshot',
@@ -88,15 +88,15 @@ export function QuickPreviewGenerator({
         }
       }
 
-      // Map logos
+      // Map logos (stored at root of brand-assets bucket, filter for logo files)
       if (brandFiles) {
         for (const file of brandFiles) {
-          if (file.name && !file.name.startsWith('.')) {
+          if (file.name && !file.name.startsWith('.') && file.id && file.name.includes('logo')) {
             const { data: urlData } = supabase.storage
               .from('brand-assets')
-              .getPublicUrl(`logos/${file.name}`);
+              .getPublicUrl(file.name);
             assets.push({
-              id: `logo-${file.id || file.name}`,
+              id: `logo-${file.id}`,
               name: file.name,
               url: urlData.publicUrl,
               type: 'logo',
@@ -105,6 +105,24 @@ export function QuickPreviewGenerator({
         }
       }
 
+      // Also add demo images as additional assets
+      if (brandFiles) {
+        for (const file of brandFiles) {
+          if (file.name && !file.name.startsWith('.') && file.id && file.name.includes('demo')) {
+            const { data: urlData } = supabase.storage
+              .from('brand-assets')
+              .getPublicUrl(file.name);
+            assets.push({
+              id: `image-${file.id}`,
+              name: file.name,
+              url: urlData.publicUrl,
+              type: 'image',
+            });
+          }
+        }
+      }
+
+      console.log(`✅ Loaded ${assets.length} brand assets (${assets.filter(a => a.type === 'logo').length} logos, ${assets.filter(a => a.type === 'screenshot').length} screenshots, ${assets.filter(a => a.type === 'image').length} images)`);
       setAvailableAssets(assets);
     } catch (err) {
       console.error('Failed to load brand assets:', err);
