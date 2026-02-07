@@ -2,7 +2,7 @@
  * Genie Cast Components - Rich video production studio UI
  * 
  * Consolidated 4-Tab Structure:
- * - CREATE: Templates (first!), Messaging, Styles, Assets (Logos + Screenshots + Colors)
+ * - CREATE: Templates, Messaging, Production Setup (Styles + Assets + Regional)
  * - PRODUCE: Generate, Matrix (Video Batch), Studio, Review
  * - MANAGE: Library, Analytics, Flow, Repurpose
  * - PUBLISH: Scheduler, Distribution, SEO, A/B Testing
@@ -44,6 +44,8 @@ export {
   type ManageSubTab,
   type PublishSubTab,
 } from './GenieCastConsolidatedTabs';
+
+export { WorkflowContextBanner } from './WorkflowContextBanner';
 
 // Re-export shared authoring components for convenience
 export { useUnifiedAuthoring } from '@/hooks/useUnifiedAuthoring';

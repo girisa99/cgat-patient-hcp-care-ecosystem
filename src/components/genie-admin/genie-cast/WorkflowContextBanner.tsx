@@ -1,8 +1,10 @@
 /**
  * WorkflowContextBanner - Persistent workflow state indicator
  * 
- * Shows the current production session context (selected template,
- * messaging status, progress) and provides guided next-step CTAs.
+ * Shows the current production session context across the full CREATE pipeline:
+ * Template → Messaging → Production Setup → [PRODUCE]
+ * 
+ * Includes the 8-stage AuthoringStage indicator for cross-cutting progress tracking.
  * Appears at the top of CREATE and PRODUCE tabs.
  */
 
@@ -15,7 +17,7 @@ import {
   CheckCircle2,
   Circle,
   Film,
-  Sparkles,
+  Settings2,
   RotateCcw,
   ChevronRight,
 } from 'lucide-react';
@@ -31,6 +33,7 @@ interface WorkflowStep {
   icon: React.ElementType;
   status: 'complete' | 'current' | 'upcoming';
   detail?: string;
+  navigateTo?: { mainTab: string; subTab: string };
 }
 
 interface WorkflowContextBannerProps {
@@ -50,11 +53,19 @@ export const WorkflowContextBanner: React.FC<WorkflowContextBannerProps> = ({
 }) => {
   const hasTemplate = !!session.selectedTemplate;
   const hasMessaging = !!session.approvedMessaging;
+  const hasProductionSetup = session.selectedStyles.length > 0 || session.selectedDialects.length > 1;
   const completedStages = session.completedStages.length;
   const totalStages = 8;
   const progressPercent = Math.round((completedStages / totalStages) * 100);
 
-  // Build workflow steps
+  // Determine production setup status
+  const getProductionSetupStatus = (): 'complete' | 'current' | 'upcoming' => {
+    if (hasProductionSetup && hasMessaging) return 'complete';
+    if (hasMessaging && currentSubTab === 'production') return 'current';
+    return 'upcoming';
+  };
+
+  // Build workflow steps - maps to the 3 CREATE sub-tabs + Production handoff
   const steps: WorkflowStep[] = [
     {
       id: 'templates',
@@ -62,6 +73,7 @@ export const WorkflowContextBanner: React.FC<WorkflowContextBannerProps> = ({
       icon: LayoutTemplate,
       status: hasTemplate ? 'complete' : currentSubTab === 'templates' ? 'current' : 'upcoming',
       detail: hasTemplate ? session.selectedTemplate?.name : undefined,
+      navigateTo: { mainTab: 'create', subTab: 'templates' },
     },
     {
       id: 'messaging',
@@ -69,13 +81,25 @@ export const WorkflowContextBanner: React.FC<WorkflowContextBannerProps> = ({
       icon: MessageSquare,
       status: hasMessaging ? 'complete' : (hasTemplate && currentSubTab === 'messaging') ? 'current' : 'upcoming',
       detail: hasMessaging ? 'Approved' : undefined,
+      navigateTo: { mainTab: 'create', subTab: 'messaging' },
+    },
+    {
+      id: 'production',
+      label: 'Setup',
+      icon: Settings2,
+      status: getProductionSetupStatus(),
+      detail: hasProductionSetup 
+        ? `${session.selectedStyles.length} styles • ${session.selectedDialects.length} lang` 
+        : undefined,
+      navigateTo: { mainTab: 'create', subTab: 'production' },
     },
     {
       id: 'studio',
-      label: 'Production',
+      label: 'Studio',
       icon: Film,
-      status: session.completedStages.includes('template_mapping') ? 'complete' : (hasMessaging ? 'current' : 'upcoming'),
+      status: session.completedStages.includes('template_mapping') ? 'complete' : 'upcoming',
       detail: session.completedStages.includes('template_mapping') ? 'Mapped' : undefined,
+      navigateTo: { mainTab: 'produce', subTab: 'studio' },
     },
   ];
 
@@ -85,7 +109,6 @@ export const WorkflowContextBanner: React.FC<WorkflowContextBannerProps> = ({
       return {
         label: 'Select a Template to begin',
         action: () => onNavigate('create', 'templates'),
-        variant: 'default' as const,
         show: currentSubTab !== 'templates',
       };
     }
@@ -93,15 +116,20 @@ export const WorkflowContextBanner: React.FC<WorkflowContextBannerProps> = ({
       return {
         label: 'Next: Generate Messaging',
         action: () => onNavigate('create', 'messaging'),
-        variant: 'default' as const,
         show: currentSubTab !== 'messaging',
+      };
+    }
+    if (!hasProductionSetup) {
+      return {
+        label: 'Next: Production Setup',
+        action: () => onNavigate('create', 'production'),
+        show: currentSubTab !== 'production',
       };
     }
     if (!session.completedStages.includes('template_mapping')) {
       return {
         label: 'Next: Go to Studio',
         action: () => onNavigate('produce', 'studio'),
-        variant: 'default' as const,
         show: true,
       };
     }
@@ -123,7 +151,8 @@ export const WorkflowContextBanner: React.FC<WorkflowContextBannerProps> = ({
           className={cn(
             "rounded-lg border bg-card/80 backdrop-blur-sm p-3 mb-4",
             hasTemplate && !hasMessaging && "border-primary/30 bg-primary/5",
-            hasMessaging && "border-green-500/30 bg-green-500/5",
+            hasMessaging && !hasProductionSetup && "border-amber-500/30 bg-amber-500/5",
+            hasProductionSetup && "border-green-500/30 bg-green-500/5",
             className
           )}
         >
@@ -136,10 +165,8 @@ export const WorkflowContextBanner: React.FC<WorkflowContextBannerProps> = ({
                   <React.Fragment key={step.id}>
                     <button
                       onClick={() => {
-                        if (step.id === 'studio') {
-                          onNavigate('produce', 'studio');
-                        } else {
-                          onNavigate('create', step.id);
+                        if (step.navigateTo) {
+                          onNavigate(step.navigateTo.mainTab, step.navigateTo.subTab);
                         }
                       }}
                       className={cn(
@@ -165,7 +192,7 @@ export const WorkflowContextBanner: React.FC<WorkflowContextBannerProps> = ({
                             step.status === 'complete' && "bg-green-500/20 text-green-700 dark:text-green-400"
                           )}
                         >
-                          {step.detail.length > 20 ? step.detail.substring(0, 20) + '…' : step.detail}
+                          {step.detail.length > 25 ? step.detail.substring(0, 25) + '…' : step.detail}
                         </Badge>
                       )}
                     </button>
@@ -192,7 +219,7 @@ export const WorkflowContextBanner: React.FC<WorkflowContextBannerProps> = ({
               {nextAction?.show && (
                 <Button
                   size="sm"
-                  variant={nextAction.variant}
+                  variant="default"
                   onClick={nextAction.action}
                   className="gap-1 text-xs h-7"
                 >

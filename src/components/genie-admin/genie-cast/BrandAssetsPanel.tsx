@@ -42,6 +42,8 @@ import { type GenieProductId, GENIE_PRODUCTS } from '@/services/marketing/produc
 interface BrandAssetsPanelProps {
   className?: string;
   onScreenshotsUpdated?: (galleries: any[]) => void;
+  /** Auto-filter assets to this product (from session context) */
+  selectedProductId?: string;
 }
 
 // 8 Official Products with their brand colors
@@ -75,6 +77,7 @@ interface ScreenshotAsset {
 export const BrandAssetsPanel: React.FC<BrandAssetsPanelProps> = ({ 
   className, 
   onScreenshotsUpdated,
+  selectedProductId,
 }) => {
   const [activeTab, setActiveTab] = useState<'logos' | 'screenshots' | 'colors'>('logos');
   const [logos, setLogos] = useState<LogoAsset[]>([]);
