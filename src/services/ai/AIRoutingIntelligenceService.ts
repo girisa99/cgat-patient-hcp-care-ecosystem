@@ -55,7 +55,57 @@ export interface RoutingDecision {
   speedOptimizedOption: ModelRecommendation | null;
 }
 
-// Model capability registry - Full 12+ Provider Coverage
+/**
+ * ═══════════════════════════════════════════════════════════════
+ * FROZEN MODEL REGISTRY — DO NOT MODIFY WITHOUT GOVERNANCE APPROVAL
+ * All configs are Object.freeze() locked per master-provider-routing-registry.ts
+ * ═══════════════════════════════════════════════════════════════
+ */
+
+// 4-Zone LLM Routing (FROZEN)
+const ZONE_LLM_ROUTING = Object.freeze({
+  claude_zone: Object.freeze({ zones: ['western', 'europe', 'latam'], primary: 'anthropic/claude-3-sonnet', fallback: 'azure/gpt-4o' }),
+  alibaba_zone: Object.freeze({ zones: ['cjk', 'mena'], primary: 'alibaba/qwen-max', fallback: 'azure/gpt-4o' }),
+  gemini_zone: Object.freeze({ zones: ['india', 'sea', 'africa'], primary: 'google/gemini-2.5-pro', fallback: 'azure/gpt-4o' }),
+  fallback_zone: Object.freeze({ zones: ['global'], primary: 'google/gemini-2.5-flash', fallback: 'azure/gpt-4o' }),
+} as const);
+
+// Translation Provider Routing (FROZEN)
+const TRANSLATION_ROUTING = Object.freeze({
+  deepl_supported: Object.freeze(['ar', 'bg', 'cs', 'da', 'de', 'el', 'en', 'es', 'et', 'fi', 'fr', 'he', 'hu', 'id', 'it', 'ja', 'ko', 'lt', 'lv', 'nb', 'nl', 'pl', 'pt', 'ro', 'ru', 'sk', 'sl', 'sv', 'th', 'tr', 'uk', 'vi', 'zh']),
+  azure_translator_fallback: Object.freeze(['ur', 'fa', 'ps', 'hi', 'bn', 'te', 'ta', 'mr', 'gu', 'kn', 'ml', 'pa', 'or', 'as', 'sw', 'yo', 'am', 'ms', 'tl']),
+} as const);
+
+// RTL Languages (FROZEN)
+const RTL_LANGUAGES = Object.freeze(['ar', 'he', 'fa', 'ur', 'ps', 'sd', 'ku', 'yi'] as const);
+
+// TTS Provider Routing (FROZEN)
+const ZONE_TTS_ROUTING = Object.freeze({
+  western: 'azure-neural',
+  europe: 'azure-neural',
+  latam: 'azure-neural',
+  cjk: 'alibaba-cosyvoice',
+  mena: 'azure-neural',     // 7 Arabic dialects + Viseme data
+  india: 'azure-neural',    // Viseme support for 11+ languages
+  sea: 'azure-neural',
+  africa: 'azure-neural',
+  global: 'azure-neural',
+} as const);
+
+// STT Provider Routing (FROZEN)
+const ZONE_STT_ROUTING = Object.freeze({
+  western: 'deepgram-nova-2',
+  europe: 'deepgram-nova-2',
+  latam: 'deepgram-nova-2',
+  cjk: 'alibaba-paraformer',
+  mena: 'azure-stt',
+  india: 'deepgram-nova-2',
+  sea: 'deepgram-nova-2',
+  africa: 'deepgram-nova-2',
+  global: 'deepgram-nova-2',
+} as const);
+
+// Model capability registry - Full 30+ Provider Coverage (FROZEN)
 const MODEL_REGISTRY: Record<string, {
   provider: string;
   displayName: string;
@@ -66,14 +116,14 @@ const MODEL_REGISTRY: Record<string, {
   contextWindow: number;
   supportsVision: boolean;
   supportsReasoning: boolean;
-  qualityScore: number; // 1-100
+  qualityScore: number;
   tier: 'economy' | 'standard' | 'premium' | 'enterprise';
-}> = {
+}> = Object.freeze({
   // ============== GOOGLE GEMINI ==============
-  'google/gemini-3-flash-preview': {
+  'google/gemini-3-flash-preview': Object.freeze({
     provider: 'gemini',
     displayName: 'Gemini 3 Flash Preview',
-    strengths: ['creative_writing', 'conversational', 'summarization', 'classification'],
+    strengths: ['creative_writing', 'conversational', 'summarization', 'classification'] as QueryIntent[],
     costPerInputToken: 0.00001,
     costPerOutputToken: 0.00002,
     avgLatencyMs: 800,
@@ -81,12 +131,12 @@ const MODEL_REGISTRY: Record<string, {
     supportsVision: true,
     supportsReasoning: true,
     qualityScore: 88,
-    tier: 'standard'
-  },
-  'google/gemini-2.5-pro': {
+    tier: 'standard' as const
+  }),
+  'google/gemini-2.5-pro': Object.freeze({
     provider: 'gemini',
     displayName: 'Gemini 2.5 Pro',
-    strengths: ['reasoning', 'technical_analysis', 'multimodal', 'document_processing'],
+    strengths: ['reasoning', 'technical_analysis', 'multimodal', 'document_processing'] as QueryIntent[],
     costPerInputToken: 0.00003,
     costPerOutputToken: 0.00006,
     avgLatencyMs: 2000,
@@ -94,12 +144,12 @@ const MODEL_REGISTRY: Record<string, {
     supportsVision: true,
     supportsReasoning: true,
     qualityScore: 95,
-    tier: 'premium'
-  },
-  'google/gemini-2.5-flash': {
+    tier: 'premium' as const
+  }),
+  'google/gemini-2.5-flash': Object.freeze({
     provider: 'gemini',
     displayName: 'Gemini 2.5 Flash',
-    strengths: ['creative_writing', 'conversational', 'summarization'],
+    strengths: ['creative_writing', 'conversational', 'summarization'] as QueryIntent[],
     costPerInputToken: 0.000005,
     costPerOutputToken: 0.00001,
     avgLatencyMs: 600,
@@ -107,12 +157,12 @@ const MODEL_REGISTRY: Record<string, {
     supportsVision: true,
     supportsReasoning: false,
     qualityScore: 82,
-    tier: 'standard'
-  },
-  'google/gemini-2.5-flash-lite': {
+    tier: 'standard' as const
+  }),
+  'google/gemini-2.5-flash-lite': Object.freeze({
     provider: 'gemini',
     displayName: 'Gemini 2.5 Flash Lite',
-    strengths: ['classification', 'summarization', 'conversational'],
+    strengths: ['classification', 'summarization', 'conversational'] as QueryIntent[],
     costPerInputToken: 0.000002,
     costPerOutputToken: 0.000004,
     avgLatencyMs: 300,
@@ -120,14 +170,13 @@ const MODEL_REGISTRY: Record<string, {
     supportsVision: false,
     supportsReasoning: false,
     qualityScore: 72,
-    tier: 'economy'
-  },
-  
+    tier: 'economy' as const
+  }),
   // ============== OPENAI ==============
-  'openai/gpt-5': {
+  'openai/gpt-5': Object.freeze({
     provider: 'openai',
     displayName: 'GPT-5',
-    strengths: ['reasoning', 'creative_writing', 'technical_analysis', 'multimodal'],
+    strengths: ['reasoning', 'creative_writing', 'technical_analysis', 'multimodal'] as QueryIntent[],
     costPerInputToken: 0.00005,
     costPerOutputToken: 0.00015,
     avgLatencyMs: 2500,
@@ -135,12 +184,12 @@ const MODEL_REGISTRY: Record<string, {
     supportsVision: true,
     supportsReasoning: true,
     qualityScore: 98,
-    tier: 'enterprise'
-  },
-  'openai/gpt-5-mini': {
+    tier: 'enterprise' as const
+  }),
+  'openai/gpt-5-mini': Object.freeze({
     provider: 'openai',
     displayName: 'GPT-5 Mini',
-    strengths: ['conversational', 'summarization', 'classification'],
+    strengths: ['conversational', 'summarization', 'classification'] as QueryIntent[],
     costPerInputToken: 0.00001,
     costPerOutputToken: 0.00003,
     avgLatencyMs: 1000,
@@ -148,12 +197,12 @@ const MODEL_REGISTRY: Record<string, {
     supportsVision: true,
     supportsReasoning: true,
     qualityScore: 85,
-    tier: 'standard'
-  },
-  'openai/gpt-5-nano': {
+    tier: 'standard' as const
+  }),
+  'openai/gpt-5-nano': Object.freeze({
     provider: 'openai',
     displayName: 'GPT-5 Nano',
-    strengths: ['classification', 'conversational'],
+    strengths: ['classification', 'conversational'] as QueryIntent[],
     costPerInputToken: 0.000003,
     costPerOutputToken: 0.000006,
     avgLatencyMs: 400,
@@ -161,14 +210,13 @@ const MODEL_REGISTRY: Record<string, {
     supportsVision: false,
     supportsReasoning: false,
     qualityScore: 70,
-    tier: 'economy'
-  },
-  
+    tier: 'economy' as const
+  }),
   // ============== ANTHROPIC CLAUDE ==============
-  'anthropic/claude-3-opus': {
+  'anthropic/claude-3-opus': Object.freeze({
     provider: 'claude',
     displayName: 'Claude 3 Opus',
-    strengths: ['reasoning', 'creative_writing', 'technical_analysis'],
+    strengths: ['reasoning', 'creative_writing', 'technical_analysis'] as QueryIntent[],
     costPerInputToken: 0.00004,
     costPerOutputToken: 0.00012,
     avgLatencyMs: 3000,
@@ -176,12 +224,12 @@ const MODEL_REGISTRY: Record<string, {
     supportsVision: true,
     supportsReasoning: true,
     qualityScore: 96,
-    tier: 'enterprise'
-  },
-  'anthropic/claude-3-sonnet': {
+    tier: 'enterprise' as const
+  }),
+  'anthropic/claude-3-sonnet': Object.freeze({
     provider: 'claude',
     displayName: 'Claude 3 Sonnet',
-    strengths: ['creative_writing', 'conversational', 'summarization', 'technical_analysis'],
+    strengths: ['creative_writing', 'conversational', 'summarization', 'technical_analysis'] as QueryIntent[],
     costPerInputToken: 0.00001,
     costPerOutputToken: 0.00003,
     avgLatencyMs: 1500,
@@ -189,12 +237,12 @@ const MODEL_REGISTRY: Record<string, {
     supportsVision: true,
     supportsReasoning: true,
     qualityScore: 90,
-    tier: 'premium'
-  },
-  'anthropic/claude-3-haiku': {
+    tier: 'premium' as const
+  }),
+  'anthropic/claude-3-haiku': Object.freeze({
     provider: 'claude',
     displayName: 'Claude 3 Haiku',
-    strengths: ['classification', 'summarization', 'conversational'],
+    strengths: ['classification', 'summarization', 'conversational'] as QueryIntent[],
     costPerInputToken: 0.000003,
     costPerOutputToken: 0.000006,
     avgLatencyMs: 500,
@@ -202,14 +250,13 @@ const MODEL_REGISTRY: Record<string, {
     supportsVision: true,
     supportsReasoning: false,
     qualityScore: 78,
-    tier: 'economy'
-  },
-  
+    tier: 'economy' as const
+  }),
   // ============== DEEPSEEK ==============
-  'deepseek/deepseek-v3': {
+  'deepseek/deepseek-v3': Object.freeze({
     provider: 'deepseek',
     displayName: 'DeepSeek V3',
-    strengths: ['technical_analysis', 'reasoning', 'translation'],
+    strengths: ['technical_analysis', 'reasoning', 'translation'] as QueryIntent[],
     costPerInputToken: 0.000002,
     costPerOutputToken: 0.000004,
     avgLatencyMs: 1000,
@@ -217,12 +264,12 @@ const MODEL_REGISTRY: Record<string, {
     supportsVision: true,
     supportsReasoning: true,
     qualityScore: 85,
-    tier: 'economy'
-  },
-  'deepseek/deepseek-coder': {
+    tier: 'economy' as const
+  }),
+  'deepseek/deepseek-coder': Object.freeze({
     provider: 'deepseek',
     displayName: 'DeepSeek Coder',
-    strengths: ['technical_analysis', 'reasoning'],
+    strengths: ['technical_analysis', 'reasoning'] as QueryIntent[],
     costPerInputToken: 0.000002,
     costPerOutputToken: 0.000004,
     avgLatencyMs: 800,
@@ -230,14 +277,13 @@ const MODEL_REGISTRY: Record<string, {
     supportsVision: false,
     supportsReasoning: true,
     qualityScore: 88,
-    tier: 'economy'
-  },
-  
+    tier: 'economy' as const
+  }),
   // ============== ALIBABA QWEN ==============
-  'alibaba/qwen-max': {
+  'alibaba/qwen-max': Object.freeze({
     provider: 'alibaba',
     displayName: 'Qwen Max',
-    strengths: ['reasoning', 'translation', 'creative_writing', 'multimodal'],
+    strengths: ['reasoning', 'translation', 'creative_writing', 'multimodal'] as QueryIntent[],
     costPerInputToken: 0.00002,
     costPerOutputToken: 0.00004,
     avgLatencyMs: 1500,
@@ -245,12 +291,12 @@ const MODEL_REGISTRY: Record<string, {
     supportsVision: true,
     supportsReasoning: true,
     qualityScore: 92,
-    tier: 'premium'
-  },
-  'alibaba/qwen-turbo': {
+    tier: 'premium' as const
+  }),
+  'alibaba/qwen-turbo': Object.freeze({
     provider: 'alibaba',
     displayName: 'Qwen Turbo',
-    strengths: ['conversational', 'summarization', 'translation'],
+    strengths: ['conversational', 'summarization', 'translation'] as QueryIntent[],
     costPerInputToken: 0.000005,
     costPerOutputToken: 0.00001,
     avgLatencyMs: 600,
@@ -258,12 +304,12 @@ const MODEL_REGISTRY: Record<string, {
     supportsVision: false,
     supportsReasoning: false,
     qualityScore: 80,
-    tier: 'standard'
-  },
-  'alibaba/qwen-vl': {
+    tier: 'standard' as const
+  }),
+  'alibaba/qwen-vl': Object.freeze({
     provider: 'alibaba',
     displayName: 'Qwen VL (Vision)',
-    strengths: ['multimodal', 'document_processing'],
+    strengths: ['multimodal', 'document_processing'] as QueryIntent[],
     costPerInputToken: 0.00002,
     costPerOutputToken: 0.00004,
     avgLatencyMs: 2000,
@@ -271,14 +317,13 @@ const MODEL_REGISTRY: Record<string, {
     supportsVision: true,
     supportsReasoning: false,
     qualityScore: 85,
-    tier: 'standard'
-  },
-  
+    tier: 'standard' as const
+  }),
   // ============== AZURE OPENAI ==============
-  'azure/gpt-4o': {
+  'azure/gpt-4o': Object.freeze({
     provider: 'azure',
     displayName: 'Azure GPT-4o',
-    strengths: ['reasoning', 'creative_writing', 'multimodal', 'technical_analysis'],
+    strengths: ['reasoning', 'creative_writing', 'multimodal', 'technical_analysis'] as QueryIntent[],
     costPerInputToken: 0.00003,
     costPerOutputToken: 0.00009,
     avgLatencyMs: 2000,
@@ -286,12 +331,12 @@ const MODEL_REGISTRY: Record<string, {
     supportsVision: true,
     supportsReasoning: true,
     qualityScore: 94,
-    tier: 'premium'
-  },
-  'azure/gpt-4o-mini': {
+    tier: 'premium' as const
+  }),
+  'azure/gpt-4o-mini': Object.freeze({
     provider: 'azure',
     displayName: 'Azure GPT-4o Mini',
-    strengths: ['conversational', 'summarization', 'classification'],
+    strengths: ['conversational', 'summarization', 'classification'] as QueryIntent[],
     costPerInputToken: 0.000008,
     costPerOutputToken: 0.000024,
     avgLatencyMs: 800,
@@ -299,168 +344,65 @@ const MODEL_REGISTRY: Record<string, {
     supportsVision: true,
     supportsReasoning: false,
     qualityScore: 82,
-    tier: 'standard'
-  },
-  
-  // ============== MODELSLAB (Image/Video/3D) ==============
-  'modelslab/flux-pro': {
-    provider: 'modelslab',
-    displayName: 'FLUX Pro',
-    strengths: ['image_generation'],
-    costPerInputToken: 0.0001,
-    costPerOutputToken: 0,
-    avgLatencyMs: 15000,
-    contextWindow: 1000,
-    supportsVision: false,
-    supportsReasoning: false,
-    qualityScore: 95,
-    tier: 'premium'
-  },
-  'modelslab/flux-schnell': {
-    provider: 'modelslab',
-    displayName: 'FLUX Schnell',
-    strengths: ['image_generation'],
-    costPerInputToken: 0.00003,
-    costPerOutputToken: 0,
-    avgLatencyMs: 5000,
-    contextWindow: 1000,
-    supportsVision: false,
-    supportsReasoning: false,
-    qualityScore: 85,
-    tier: 'standard'
-  },
-  'modelslab/animatediff': {
-    provider: 'modelslab',
-    displayName: 'AnimateDiff',
-    strengths: ['video_generation'],
-    costPerInputToken: 0.0002,
-    costPerOutputToken: 0,
-    avgLatencyMs: 60000,
-    contextWindow: 500,
-    supportsVision: false,
-    supportsReasoning: false,
-    qualityScore: 88,
-    tier: 'premium'
-  },
-  
-  // ============== ELEVENLABS (Audio) ==============
-  'elevenlabs/multilingual-v2': {
-    provider: 'elevenlabs',
-    displayName: 'ElevenLabs Multilingual V2',
-    strengths: ['audio_generation'],
-    costPerInputToken: 0.0001,
-    costPerOutputToken: 0,
-    avgLatencyMs: 3000,
-    contextWindow: 10000,
-    supportsVision: false,
-    supportsReasoning: false,
-    qualityScore: 98,
-    tier: 'premium'
-  },
-  'elevenlabs/turbo-v2': {
-    provider: 'elevenlabs',
-    displayName: 'ElevenLabs Turbo V2',
-    strengths: ['audio_generation'],
-    costPerInputToken: 0.00005,
-    costPerOutputToken: 0,
-    avgLatencyMs: 1000,
-    contextWindow: 5000,
-    supportsVision: false,
-    supportsReasoning: false,
-    qualityScore: 90,
-    tier: 'standard'
-  },
-  
-  // ============== AZURE SPEECH (TTS/STT) ==============
-  'azure/neural-tts': {
-    provider: 'azure_speech',
-    displayName: 'Azure Neural TTS',
-    strengths: ['audio_generation'],
-    costPerInputToken: 0.00004,
-    costPerOutputToken: 0,
-    avgLatencyMs: 1500,
-    contextWindow: 10000,
-    supportsVision: false,
-    supportsReasoning: false,
-    qualityScore: 92,
-    tier: 'premium'
-  },
-  
-  // ============== ALIBABA COSYVOICE (Avatar TTS) ==============
-  'alibaba/cosyvoice': {
-    provider: 'alibaba',
-    displayName: 'CosyVoice',
-    strengths: ['audio_generation'],
-    costPerInputToken: 0.00003,
-    costPerOutputToken: 0,
-    avgLatencyMs: 2000,
-    contextWindow: 10000,
-    supportsVision: false,
-    supportsReasoning: false,
-    qualityScore: 90,
-    tier: 'premium'
-  },
-  
-  // ============== MESHY AI (3D) ==============
-  'meshy/text-to-3d': {
-    provider: 'meshy',
-    displayName: 'Meshy Text-to-3D',
-    strengths: ['image_generation'], // Using image_generation for 3D
-    costPerInputToken: 0.001,
-    costPerOutputToken: 0,
-    avgLatencyMs: 120000,
-    contextWindow: 500,
-    supportsVision: false,
-    supportsReasoning: false,
-    qualityScore: 85,
-    tier: 'premium'
-  },
-  
-  // ============== REPLICATE (Fallback) ==============
-  'replicate/llama-3-70b': {
-    provider: 'replicate',
-    displayName: 'Llama 3 70B',
-    strengths: ['conversational', 'summarization', 'creative_writing'],
-    costPerInputToken: 0.00001,
-    costPerOutputToken: 0.00002,
-    avgLatencyMs: 2000,
-    contextWindow: 8000,
-    supportsVision: false,
-    supportsReasoning: true,
-    qualityScore: 82,
-    tier: 'standard'
-  },
-  
-  // ============== DEEPL (Translation) ==============
-  'deepl/translator': {
-    provider: 'deepl',
-    displayName: 'DeepL Translator',
-    strengths: ['translation'],
-    costPerInputToken: 0.00005,
-    costPerOutputToken: 0,
-    avgLatencyMs: 500,
-    contextWindow: 50000,
-    supportsVision: false,
-    supportsReasoning: false,
-    qualityScore: 96,
-    tier: 'premium'
-  },
-  
-  // ============== AZURE DOC INTELLIGENCE (OCR) ==============
-  'azure/doc-intelligence': {
-    provider: 'azure_doc_intel',
-    displayName: 'Azure Document Intelligence',
-    strengths: ['document_processing'],
-    costPerInputToken: 0.0001,
-    costPerOutputToken: 0,
-    avgLatencyMs: 5000,
-    contextWindow: 100000,
-    supportsVision: true,
-    supportsReasoning: false,
-    qualityScore: 94,
-    tier: 'premium'
-  }
-};
+    tier: 'standard' as const
+  }),
+  // ============== MEDIA PROVIDERS (Image/Video/3D/Audio) ==============
+  'modelslab/flux-pro': Object.freeze({
+    provider: 'modelslab', displayName: 'FLUX Pro', strengths: ['image_generation'] as QueryIntent[],
+    costPerInputToken: 0.0001, costPerOutputToken: 0, avgLatencyMs: 15000, contextWindow: 1000,
+    supportsVision: false, supportsReasoning: false, qualityScore: 95, tier: 'premium' as const
+  }),
+  'modelslab/flux-schnell': Object.freeze({
+    provider: 'modelslab', displayName: 'FLUX Schnell', strengths: ['image_generation'] as QueryIntent[],
+    costPerInputToken: 0.00003, costPerOutputToken: 0, avgLatencyMs: 5000, contextWindow: 1000,
+    supportsVision: false, supportsReasoning: false, qualityScore: 85, tier: 'standard' as const
+  }),
+  'modelslab/animatediff': Object.freeze({
+    provider: 'modelslab', displayName: 'AnimateDiff', strengths: ['video_generation'] as QueryIntent[],
+    costPerInputToken: 0.0002, costPerOutputToken: 0, avgLatencyMs: 60000, contextWindow: 500,
+    supportsVision: false, supportsReasoning: false, qualityScore: 88, tier: 'premium' as const
+  }),
+  'elevenlabs/multilingual-v2': Object.freeze({
+    provider: 'elevenlabs', displayName: 'ElevenLabs Multilingual V2', strengths: ['audio_generation'] as QueryIntent[],
+    costPerInputToken: 0.0001, costPerOutputToken: 0, avgLatencyMs: 3000, contextWindow: 10000,
+    supportsVision: false, supportsReasoning: false, qualityScore: 98, tier: 'premium' as const
+  }),
+  'elevenlabs/turbo-v2': Object.freeze({
+    provider: 'elevenlabs', displayName: 'ElevenLabs Turbo V2', strengths: ['audio_generation'] as QueryIntent[],
+    costPerInputToken: 0.00005, costPerOutputToken: 0, avgLatencyMs: 1000, contextWindow: 5000,
+    supportsVision: false, supportsReasoning: false, qualityScore: 90, tier: 'standard' as const
+  }),
+  'azure/neural-tts': Object.freeze({
+    provider: 'azure_speech', displayName: 'Azure Neural TTS', strengths: ['audio_generation'] as QueryIntent[],
+    costPerInputToken: 0.00004, costPerOutputToken: 0, avgLatencyMs: 1500, contextWindow: 10000,
+    supportsVision: false, supportsReasoning: false, qualityScore: 92, tier: 'premium' as const
+  }),
+  'alibaba/cosyvoice': Object.freeze({
+    provider: 'alibaba', displayName: 'CosyVoice', strengths: ['audio_generation'] as QueryIntent[],
+    costPerInputToken: 0.00003, costPerOutputToken: 0, avgLatencyMs: 2000, contextWindow: 10000,
+    supportsVision: false, supportsReasoning: false, qualityScore: 90, tier: 'premium' as const
+  }),
+  'meshy/text-to-3d': Object.freeze({
+    provider: 'meshy', displayName: 'Meshy Text-to-3D', strengths: ['image_generation'] as QueryIntent[],
+    costPerInputToken: 0.001, costPerOutputToken: 0, avgLatencyMs: 120000, contextWindow: 500,
+    supportsVision: false, supportsReasoning: false, qualityScore: 85, tier: 'premium' as const
+  }),
+  'replicate/llama-3-70b': Object.freeze({
+    provider: 'replicate', displayName: 'Llama 3 70B', strengths: ['conversational', 'summarization', 'creative_writing'] as QueryIntent[],
+    costPerInputToken: 0.00001, costPerOutputToken: 0.00002, avgLatencyMs: 2000, contextWindow: 8000,
+    supportsVision: false, supportsReasoning: true, qualityScore: 82, tier: 'standard' as const
+  }),
+  'deepl/translator': Object.freeze({
+    provider: 'deepl', displayName: 'DeepL Translator', strengths: ['translation'] as QueryIntent[],
+    costPerInputToken: 0.00005, costPerOutputToken: 0, avgLatencyMs: 500, contextWindow: 50000,
+    supportsVision: false, supportsReasoning: false, qualityScore: 96, tier: 'premium' as const
+  }),
+  'azure/doc-intelligence': Object.freeze({
+    provider: 'azure_doc_intel', displayName: 'Azure Document Intelligence', strengths: ['document_processing'] as QueryIntent[],
+    costPerInputToken: 0.0001, costPerOutputToken: 0, avgLatencyMs: 5000, contextWindow: 100000,
+    supportsVision: true, supportsReasoning: false, qualityScore: 94, tier: 'premium' as const
+  }),
+});
 
 // Intent detection patterns
 const INTENT_PATTERNS: Record<QueryIntent, RegExp[]> = {

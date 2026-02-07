@@ -70,24 +70,32 @@ interface TranslationTranscreationToggleProps {
 // PROVIDER MAPPING
 // ============================================
 
-const TRANSLATION_PROVIDERS: Record<string, { name: string; type: 'literal' | 'cultural'; description: string }> = {
-  deepl: { name: 'DeepL', type: 'literal', description: 'Fast literal translation, best for subtitles & metadata' },
-  gemini: { name: 'Gemini 3 Pro', type: 'cultural', description: 'Cultural transcreation for India/SEA/Africa/Global regions' },
-  claude: { name: 'Claude 4', type: 'cultural', description: 'Nuanced transcreation for Western/European markets' },
-  'qwen-max': { name: 'Qwen-Max', type: 'cultural', description: 'Native CJK & MENA/RTL transcreation with idiomatic accuracy' },
-  'gpt-4o': { name: 'GPT-4o', type: 'cultural', description: 'Universal fallback — high-quality multilingual transcreation' },
-  'deepseek-v3': { name: 'DeepSeek V3', type: 'cultural', description: 'Technical/code transcreation specialist' },
-};
+/**
+ * ═══════════════════════════════════════════════════════════════
+ * FROZEN ROUTING CONFIGURATIONS — DO NOT MODIFY
+ * All provider mappings are Object.freeze() locked.
+ * Changes require governance approval + all 7 docs updated.
+ * ═══════════════════════════════════════════════════════════════
+ */
+
+const TRANSLATION_PROVIDERS = Object.freeze({
+  deepl: Object.freeze({ name: 'DeepL', type: 'literal' as const, description: 'Fast literal translation — supports Arabic, Hebrew, but NOT Urdu/Farsi', rtlSupport: ['ar', 'he'] }),
+  'azure-translator': Object.freeze({ name: 'Azure Translator', type: 'literal' as const, description: 'RTL fallback for Urdu, Farsi, and other DeepL-unsupported languages', rtlSupport: ['ar', 'he', 'ur', 'fa', 'ps'] }),
+  gemini: Object.freeze({ name: 'Gemini 3 Pro', type: 'cultural' as const, description: 'Cultural transcreation for India/SEA/Africa/Global (Gemini Zone)', rtlSupport: [] }),
+  claude: Object.freeze({ name: 'Claude 4', type: 'cultural' as const, description: 'Nuanced transcreation for Western/European markets (Claude Zone)', rtlSupport: [] }),
+  'qwen-max': Object.freeze({ name: 'Qwen-Max', type: 'cultural' as const, description: 'Native CJK & MENA/RTL transcreation with idiomatic accuracy (Alibaba Zone)', rtlSupport: ['ar', 'he', 'fa', 'ur'] }),
+  'gpt-4o': Object.freeze({ name: 'GPT-4o', type: 'cultural' as const, description: 'Universal FALLBACK ONLY — never primary for any zone', rtlSupport: ['ar', 'he', 'fa', 'ur'] }),
+  'deepseek-v3': Object.freeze({ name: 'DeepSeek V3', type: 'cultural' as const, description: 'Technical/code transcreation specialist', rtlSupport: [] }),
+});
 
 /**
- * Zone → recommended LLM for transcreation
- * ALIGNED WITH master-provider-routing-registry.ts:
- * - Claude Zone (Western/EU) → Claude 4
+ * Zone → recommended LLM for transcreation (FROZEN)
+ * - Claude Zone (Western/EU/LATAM) → Claude 4
  * - Alibaba Zone (CJK/MENA) → Qwen-Max
  * - Gemini Zone (India/SEA/Africa) → Gemini 3 Pro
  * - GPT-4o → FALLBACK ONLY (never primary)
  */
-const ZONE_TO_TRANSCREATION_PROVIDER: Record<string, string> = {
+const ZONE_TO_TRANSCREATION_PROVIDER = Object.freeze({
   'western': 'claude',
   'europe': 'claude',
   'latam': 'claude',
@@ -97,45 +105,67 @@ const ZONE_TO_TRANSCREATION_PROVIDER: Record<string, string> = {
   'sea': 'gemini',
   'africa': 'gemini',
   'global': 'gemini',
-};
+} as const);
 
-const TARGET_LANGUAGES = [
+/**
+ * RTL languages that require right-to-left layout (FROZEN)
+ */
+const RTL_LANGUAGE_CODES = Object.freeze(['ar', 'he', 'fa', 'ur', 'ps', 'sd', 'ku', 'yi'] as const);
+
+/**
+ * DeepL supported language codes (FROZEN — verified Feb 2026)
+ * NOTE: Urdu, Farsi, Pashto NOT supported by DeepL → Azure Translator fallback
+ */
+const DEEPL_SUPPORTED_CODES = Object.freeze([
+  'ar', 'bg', 'cs', 'da', 'de', 'el', 'en', 'es', 'et', 'fi', 'fr',
+  'he', 'hu', 'id', 'it', 'ja', 'ko', 'lt', 'lv', 'nb', 'nl', 'pl',
+  'pt', 'ro', 'ru', 'sk', 'sl', 'sv', 'th', 'tr', 'uk', 'vi', 'zh',
+] as const);
+
+const TARGET_LANGUAGES = Object.freeze([
   // Western / Europe / LATAM (Claude Zone)
-  { code: 'es', name: 'Spanish', region: 'latam' },
-  { code: 'pt', name: 'Portuguese (BR)', region: 'latam' },
-  { code: 'fr', name: 'French', region: 'europe' },
-  { code: 'de', name: 'German', region: 'europe' },
-  { code: 'it', name: 'Italian', region: 'europe' },
-  { code: 'ru', name: 'Russian', region: 'europe' },
+  { code: 'es', name: 'Spanish', region: 'latam', rtl: false, deeplSupported: true },
+  { code: 'pt', name: 'Portuguese (BR)', region: 'latam', rtl: false, deeplSupported: true },
+  { code: 'fr', name: 'French', region: 'europe', rtl: false, deeplSupported: true },
+  { code: 'de', name: 'German', region: 'europe', rtl: false, deeplSupported: true },
+  { code: 'it', name: 'Italian', region: 'europe', rtl: false, deeplSupported: true },
+  { code: 'ru', name: 'Russian', region: 'europe', rtl: false, deeplSupported: true },
+  { code: 'nl', name: 'Dutch', region: 'europe', rtl: false, deeplSupported: true },
+  { code: 'pl', name: 'Polish', region: 'europe', rtl: false, deeplSupported: true },
   // CJK (Alibaba Zone → Qwen-Max)
-  { code: 'zh', name: 'Chinese (Simplified)', region: 'cjk' },
-  { code: 'zh-TW', name: 'Chinese (Traditional)', region: 'cjk' },
-  { code: 'ja', name: 'Japanese', region: 'cjk' },
-  { code: 'ko', name: 'Korean', region: 'cjk' },
+  { code: 'zh', name: 'Chinese (Simplified)', region: 'cjk', rtl: false, deeplSupported: true },
+  { code: 'zh-TW', name: 'Chinese (Traditional)', region: 'cjk', rtl: false, deeplSupported: true },
+  { code: 'ja', name: 'Japanese', region: 'cjk', rtl: false, deeplSupported: true },
+  { code: 'ko', name: 'Korean', region: 'cjk', rtl: false, deeplSupported: true },
   // MENA / RTL (Alibaba Zone → Qwen-Max)
-  { code: 'ar', name: 'Arabic (7 dialects)', region: 'mena' },
-  { code: 'he', name: 'Hebrew (Israeli)', region: 'mena' },
-  { code: 'tr', name: 'Turkish', region: 'mena' },
-  { code: 'fa', name: 'Farsi/Persian', region: 'mena' },
-  // India / South Asia (Gemini Zone)
-  { code: 'hi', name: 'Hindi', region: 'india' },
-  { code: 'te', name: 'Telugu', region: 'india' },
-  { code: 'ta', name: 'Tamil', region: 'india' },
-  { code: 'bn', name: 'Bengali (Bangladesh)', region: 'india' },
-  { code: 'ur', name: 'Urdu (Pakistan)', region: 'india' },
-  { code: 'mr', name: 'Marathi', region: 'india' },
-  { code: 'gu', name: 'Gujarati', region: 'india' },
+  { code: 'ar', name: 'Arabic (7 dialects)', region: 'mena', rtl: true, deeplSupported: true },
+  { code: 'he', name: 'Hebrew (Israeli)', region: 'mena', rtl: true, deeplSupported: true },
+  { code: 'tr', name: 'Turkish', region: 'mena', rtl: false, deeplSupported: true },
+  { code: 'fa', name: 'Farsi/Persian', region: 'mena', rtl: true, deeplSupported: false },
+  // India / South Asia (Gemini Zone) — 11 official languages
+  { code: 'hi', name: 'Hindi', region: 'india', rtl: false, deeplSupported: false },
+  { code: 'bn', name: 'Bengali (Bangladesh)', region: 'india', rtl: false, deeplSupported: false },
+  { code: 'te', name: 'Telugu', region: 'india', rtl: false, deeplSupported: false },
+  { code: 'ta', name: 'Tamil', region: 'india', rtl: false, deeplSupported: false },
+  { code: 'mr', name: 'Marathi', region: 'india', rtl: false, deeplSupported: false },
+  { code: 'gu', name: 'Gujarati', region: 'india', rtl: false, deeplSupported: false },
+  { code: 'kn', name: 'Kannada', region: 'india', rtl: false, deeplSupported: false },
+  { code: 'ml', name: 'Malayalam', region: 'india', rtl: false, deeplSupported: false },
+  { code: 'pa', name: 'Punjabi', region: 'india', rtl: false, deeplSupported: false },
+  { code: 'or', name: 'Odia', region: 'india', rtl: false, deeplSupported: false },
+  { code: 'as', name: 'Assamese', region: 'india', rtl: false, deeplSupported: false },
+  { code: 'ur', name: 'Urdu (Pakistan)', region: 'india', rtl: true, deeplSupported: false },
   // SEA (Gemini Zone)
-  { code: 'id', name: 'Indonesian', region: 'sea' },
-  { code: 'ms', name: 'Malay', region: 'sea' },
-  { code: 'th', name: 'Thai', region: 'sea' },
-  { code: 'vi', name: 'Vietnamese', region: 'sea' },
-  { code: 'tl', name: 'Filipino/Tagalog', region: 'sea' },
+  { code: 'id', name: 'Indonesian', region: 'sea', rtl: false, deeplSupported: true },
+  { code: 'ms', name: 'Malay', region: 'sea', rtl: false, deeplSupported: false },
+  { code: 'th', name: 'Thai', region: 'sea', rtl: false, deeplSupported: true },
+  { code: 'vi', name: 'Vietnamese', region: 'sea', rtl: false, deeplSupported: true },
+  { code: 'tl', name: 'Filipino/Tagalog', region: 'sea', rtl: false, deeplSupported: false },
   // Africa (Gemini Zone)
-  { code: 'sw', name: 'Swahili', region: 'africa' },
-  { code: 'yo', name: 'Yoruba', region: 'africa' },
-  { code: 'am', name: 'Amharic', region: 'africa' },
-];
+  { code: 'sw', name: 'Swahili', region: 'africa', rtl: false, deeplSupported: false },
+  { code: 'yo', name: 'Yoruba', region: 'africa', rtl: false, deeplSupported: false },
+  { code: 'am', name: 'Amharic', region: 'africa', rtl: false, deeplSupported: false },
+]);
 
 // ============================================
 // COMPONENT
@@ -159,51 +189,68 @@ export function TranslationTranscreationToggle({
   const getRecommendedProvider = useCallback((targetLang: string): string => {
     const langConfig = TARGET_LANGUAGES.find(l => l.code === targetLang);
     const targetRegion = langConfig?.region || region;
-    return ZONE_TO_TRANSCREATION_PROVIDER[targetRegion] || 'gemini';
+    return ZONE_TO_TRANSCREATION_PROVIDER[targetRegion as keyof typeof ZONE_TO_TRANSCREATION_PROVIDER] || 'gemini';
   }, [region]);
 
-  // Perform translation (DeepL)
+  // Get translation provider: DeepL if supported, Azure Translator as fallback
+  const getTranslationProvider = useCallback((targetLang: string): 'deepl' | 'azure-translator' => {
+    const langConfig = TARGET_LANGUAGES.find(l => l.code === targetLang);
+    return langConfig?.deeplSupported ? 'deepl' : 'azure-translator';
+  }, []);
+
+  // Check if target language is RTL
+  const isRTL = useCallback((targetLang: string): boolean => {
+    const baseCode = targetLang.split('-')[0];
+    return RTL_LANGUAGE_CODES.includes(baseCode as any);
+  }, []);
+
+  // Perform translation (DeepL or Azure Translator)
   const handleTranslate = useCallback(async () => {
     if (!sourceText.trim()) return;
     setIsProcessing(true);
 
     try {
+      const translationProvider = getTranslationProvider(targetLanguage);
+      const rtlFlag = isRTL(targetLanguage);
+
       const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
         body: {
           action: 'translate',
-          provider: 'deepl',
+          provider: translationProvider,
           prompt: sourceText,
           context: {
             sourceLanguage,
             targetLanguage,
             mode: 'literal',
             taskType: 'translation',
+            rtl: rtlFlag,
           },
         },
       });
 
       if (error) throw error;
 
+      const providerName = translationProvider === 'deepl' ? 'DeepL' : 'Azure Translator';
       const result: TranslationResult = {
         mode: 'translate',
         sourceText,
         targetText: data?.content || data?.result || '',
         sourceLanguage,
         targetLanguage,
-        provider: 'DeepL',
+        provider: providerName,
         timestamp: new Date(),
       };
 
       setResults(prev => [result, ...prev]);
       onResult?.(result);
-      toast.success('Translation complete (DeepL)');
+      toast.success(`Translation complete (${providerName}${rtlFlag ? ' • RTL' : ''})`);
     } catch (err) {
       console.error('[Translation] Error:', err);
-      toast.error('Translation failed — check DeepL API key');
+      toast.error('Translation failed — check API configuration');
     } finally {
       setIsProcessing(false);
     }
-  }, [sourceText, sourceLanguage, targetLanguage, onResult]);
+  }, [sourceText, sourceLanguage, targetLanguage, onResult, getTranslationProvider, isRTL]);
 
   // Perform transcreation (zone-routed LLM)
   const handleTranscreate = useCallback(async () => {
@@ -279,6 +326,9 @@ Return ONLY the transcreated text, followed by a line break and "---CULTURAL NOT
   const handleProcess = mode === 'translate' ? handleTranslate : handleTranscreate;
 
   const recommendedProvider = getRecommendedProvider(targetLanguage);
+  const translationProvider = getTranslationProvider(targetLanguage);
+  const targetIsRTL = isRTL(targetLanguage);
+  const selectedLangConfig = TARGET_LANGUAGES.find(l => l.code === targetLanguage);
 
   return (
     <div className={cn("space-y-3", className)}>
@@ -289,9 +339,15 @@ Return ONLY the transcreated text, followed by a line break and "---CULTURAL NOT
               <ArrowRightLeft className="h-4 w-4" />
               Translate vs Transcreate
             </CardTitle>
-            <Badge variant="outline" className="text-[10px]">
-              {mode === 'translate' ? 'Literal' : 'Cultural'}
-            </Badge>
+            <div className="flex items-center gap-1">
+              {targetIsRTL && (
+                <Badge variant="outline" className="text-[9px] border-primary/30 text-primary">RTL</Badge>
+              )}
+              <Badge variant="outline" className="text-[10px]">
+                {mode === 'translate' ? 'Literal' : 'Cultural'}
+              </Badge>
+              <Badge variant="secondary" className="text-[9px]">🔒 Locked</Badge>
+            </div>
           </div>
           {!compact && (
             <CardDescription className="text-xs">
@@ -305,7 +361,7 @@ Return ONLY the transcreated text, followed by a line break and "---CULTURAL NOT
             <TabsList className="grid w-full grid-cols-2 h-8">
               <TabsTrigger value="translate" className="text-xs gap-1.5">
                 <Zap className="h-3 w-3" />
-                Translate (DeepL)
+                {translationProvider === 'deepl' ? 'Translate (DeepL)' : 'Translate (Azure)'}
               </TabsTrigger>
               <TabsTrigger value="transcreate" className="text-xs gap-1.5">
                 <Brain className="h-3 w-3" />
@@ -318,19 +374,25 @@ Return ONLY the transcreated text, followed by a line break and "---CULTURAL NOT
           <div className={cn(
             "p-2 rounded-md border text-xs mb-3",
             mode === 'translate' 
-              ? "bg-blue-500/5 border-blue-500/20" 
-              : "bg-purple-500/5 border-purple-500/20"
+              ? "bg-primary/5 border-primary/20" 
+              : "bg-accent/10 border-accent/20"
           )}>
             {mode === 'translate' ? (
               <div className="flex items-center gap-2">
-                <Zap className="h-3.5 w-3.5 text-blue-500" />
-                <span><strong>DeepL</strong> — Fast literal translation, ideal for subtitles & metadata</span>
+                <Zap className="h-3.5 w-3.5 text-primary" />
+                <span>
+                  <strong>{translationProvider === 'deepl' ? 'DeepL' : 'Azure Translator'}</strong>
+                  {translationProvider === 'azure-translator' 
+                    ? ' — RTL/Indic fallback (DeepL unsupported for this language)'
+                    : ' — Fast literal translation, ideal for subtitles & metadata'
+                  }
+                </span>
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <Brain className="h-3.5 w-3.5 text-purple-500" />
+                <Brain className="h-3.5 w-3.5 text-primary" />
                 <span>
-                  <strong>{TRANSLATION_PROVIDERS[recommendedProvider]?.name}</strong> — {TRANSLATION_PROVIDERS[recommendedProvider]?.description}
+                  <strong>{TRANSLATION_PROVIDERS[recommendedProvider as keyof typeof TRANSLATION_PROVIDERS]?.name}</strong> — {TRANSLATION_PROVIDERS[recommendedProvider as keyof typeof TRANSLATION_PROVIDERS]?.description}
                 </span>
               </div>
             )}
@@ -361,6 +423,10 @@ Return ONLY the transcreated text, followed by a line break and "---CULTURAL NOT
                       <div className="flex items-center gap-2">
                         {lang.name}
                         <Badge variant="outline" className="text-[9px] h-3.5">{lang.region}</Badge>
+                        {lang.rtl && <Badge variant="outline" className="text-[9px] h-3.5 border-primary/30 text-primary">RTL</Badge>}
+                        {!lang.deeplSupported && mode === 'translate' && (
+                          <Badge variant="secondary" className="text-[9px] h-3.5">Azure</Badge>
+                        )}
                       </div>
                     </SelectItem>
                   ))}
