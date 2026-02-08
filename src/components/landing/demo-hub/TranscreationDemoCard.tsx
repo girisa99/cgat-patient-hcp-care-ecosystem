@@ -15,6 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useTTSDemo } from '@/hooks/landing/useTTSDemo';
 import { useDynamicLanguageRegistry, LanguageEntry } from '@/hooks/landing/useDynamicLanguageRegistry';
+import { ProviderBadge, ProviderPanel } from './RegionalProviderInfo';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const RTL_GROUPS = ['arabic'];
@@ -116,15 +117,14 @@ export const TranscreationDemoCard: React.FC<TranscreationDemoCardProps> = ({ re
               Cultural adaptation beats literal translation — hear the difference
             </p>
           </div>
-          <Badge variant="default" className="hidden sm:flex bg-primary text-primary-foreground shrink-0">
-            Our Moat
-          </Badge>
+          <ProviderBadge capability="transcreation" region={region} />
         </CardTitle>
       </CardHeader>
 
       <CardContent className="p-0">
-        {/* Region group selector */}
-        <div className="px-4 pt-4 pb-3 border-b border-border bg-muted/20">
+        {/* Provider chain + Region group selector */}
+        <div className="px-4 pt-4 pb-3 border-b border-border bg-muted/20 space-y-3">
+          <ProviderPanel capability="transcreation" region={region} compact />
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
             {registry.tabs.map(tab => (
               <button
