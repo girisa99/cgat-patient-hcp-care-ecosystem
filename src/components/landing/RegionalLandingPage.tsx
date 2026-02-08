@@ -6,13 +6,13 @@
  * English is always present alongside native language content.
  */
 
-import React, { useEffect, useMemo } from 'react';
+import React from 'react';
 import { useParams, Navigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import { 
-  ArrowRight, Play, Sparkles, Check, Globe, Zap, Users, 
-  ChevronRight, Volume2, Shield, Cpu
+  ArrowRight, Play, Sparkles, Globe, Zap, 
+  Volume2, Cpu
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +24,8 @@ import {
   type RegionSlug, 
   type RegionalConfig 
 } from '@/config/regionalLandingConfig';
+import { RegionalPricingSection } from '@/components/landing/RegionalPricingSection';
+import { ExpandedLanguageDemo } from '@/components/landing/ExpandedLanguageDemo';
 import genieSuiteLogo from '@/assets/logos/genie-studio-suite-logo.png';
 
 // ============================================
@@ -466,6 +468,13 @@ export const RegionalLandingPage: React.FC = () => {
     return <Navigate to={`/genie-landing/${detected}`} replace />;
   }
 
+  // Map region slug to expanded demo initial tab
+  const demoTabMap: Record<RegionSlug, string> = {
+    nam: 'european', mena: 'arabic', india: 'indian', 
+    africa: 'african', apac: 'cjk', europe: 'european',
+    latam: 'latam', caribbean: 'latam',
+  };
+
   return (
     <main className={`min-h-screen bg-background text-foreground ${config.hero.isRTL ? 'rtl' : 'ltr'}`}>
       <RegionalSEOHead config={config} currentSlug={regionSlug} />
@@ -474,6 +483,26 @@ export const RegionalLandingPage: React.FC = () => {
       <RegionNavigator currentSlug={regionSlug} />
       <RegionalIndustries config={config} />
       <TranscreationShowcase config={config} />
+      
+      {/* Expanded Language Demo — shows relevant tab for region */}
+      <section className="py-20 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-background via-accent/5 to-background" />
+        <div className="relative max-w-7xl mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-3 text-foreground">
+              Transcreation Across All Markets
+            </h2>
+            <p className="text-lg text-muted-foreground">
+              Explore how we adapt content for every region — not just yours
+            </p>
+          </div>
+          <ExpandedLanguageDemo initialTab={demoTabMap[regionSlug] as any || 'arabic'} />
+        </div>
+      </section>
+
+      {/* Regional Pricing */}
+      <RegionalPricingSection regionSlug={regionSlug} />
+      
       <RegionalCTAFooter config={config} />
     </main>
   );
