@@ -174,7 +174,7 @@ export const GenieStudioOverallArchitectureDiagram: React.FC = () => {
         <CardHeader className="pb-2">
           <CardTitle className="text-lg text-purple-700 dark:text-purple-400 flex items-center gap-2">
             <Brain className="h-5 w-5" />
-            12 Core AI Providers (5-Zone Routing)
+            19 Core AI Providers (4-Zone Routing)
           </CardTitle>
         </CardHeader>
         <CardContent>

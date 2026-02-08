@@ -44,7 +44,7 @@ export interface ComparisonResult {
   timestamp: Date;
 }
 
-// Full 12+ Provider Model Registry
+// Full 19 Provider Model Registry
 const MODEL_DISPLAY_NAMES: Record<string, string> = {
   // Google Gemini
   'google/gemini-3-flash-preview': 'Gemini 3 Flash',
