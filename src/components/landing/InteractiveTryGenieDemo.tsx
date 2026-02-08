@@ -1,9 +1,10 @@
 /**
  * INTERACTIVE TRY GENIE DEMO — Landing Page Section
  * 
+ * Uses dynamic language registry instead of hardcoded data.
  * Allows visitors to try:
  * 1. TTS: Type text → hear it in any language (Azure Neural)
- * 2. Industry Use Cases: Pre-built showcases with video/audio demos
+ * 2. Industry Use Cases: Pre-built showcases with audio demos
  * 3. Transcreation comparison: Same text → different cultural adaptations
  */
 
@@ -26,30 +27,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useTTSDemo } from '@/hooks/landing/useTTSDemo';
+import { useDynamicLanguageRegistry } from '@/hooks/landing/useDynamicLanguageRegistry';
 
 // ============================================
-// SUPPORTED LANGUAGES FOR TRY-IT
-// ============================================
-const TRY_LANGUAGES = [
-  { code: 'ar-SA', name: 'Arabic (Saudi)', flag: '🇸🇦' },
-  { code: 'ar-EG', name: 'Arabic (Egyptian)', flag: '🇪🇬' },
-  { code: 'hi-IN', name: 'Hindi', flag: '🇮🇳' },
-  { code: 'ta-IN', name: 'Tamil', flag: '🇮🇳' },
-  { code: 'ja-JP', name: 'Japanese', flag: '🇯🇵' },
-  { code: 'zh-CN', name: 'Chinese', flag: '🇨🇳' },
-  { code: 'ko-KR', name: 'Korean', flag: '🇰🇷' },
-  { code: 'de-DE', name: 'German', flag: '🇩🇪' },
-  { code: 'fr-FR', name: 'French', flag: '🇫🇷' },
-  { code: 'es-MX', name: 'Spanish (Mexico)', flag: '🇲🇽' },
-  { code: 'pt-BR', name: 'Portuguese (Brazil)', flag: '🇧🇷' },
-  { code: 'sw-KE', name: 'Swahili', flag: '🇰🇪' },
-  { code: 'th-TH', name: 'Thai', flag: '🇹🇭' },
-  { code: 'vi-VN', name: 'Vietnamese', flag: '🇻🇳' },
-  { code: 'id-ID', name: 'Indonesian', flag: '🇮🇩' },
-];
-
-// ============================================
-// INDUSTRY USE CASES
+// INDUSTRY USE CASES (driven by icons, could be DB-driven later)
 // ============================================
 const INDUSTRY_USE_CASES = [
   {
@@ -65,7 +46,7 @@ const INDUSTRY_USE_CASES = [
     name: 'Education',
     description: 'E-learning courses with code-mixed narration for Indian markets',
     example: 'Course intro in Hindi: "AI course creator फ्री में ट्राई करो!"',
-    languages: ['hi-IN', 'bn-IN', 'te-IN', 'ta-IN'],
+    languages: ['hi-IN', 'ta-IN', 'te-IN', 'bn-IN'],
     color: 'text-blue-500',
   },
   {
@@ -110,37 +91,25 @@ interface InteractiveTryGenieDemoProps {
   region?: string;
 }
 
-// Map regions to their core languages (shown first)
-const REGION_CORE_LANGUAGES: Record<string, string[]> = {
-  mena: ['ar-SA', 'ar-EG', 'ar-AE'],
-  india: ['hi-IN', 'ta-IN', 'te-IN', 'bn-IN'],
-  africa: ['sw-KE'],
-  apac: ['ja-JP', 'zh-CN', 'ko-KR', 'th-TH', 'vi-VN', 'id-ID'],
-  latam: ['es-MX', 'pt-BR'],
-  europe: ['de-DE', 'fr-FR', 'es-MX'],
-  nam: ['es-MX', 'fr-FR'],
-  caribbean: ['es-MX', 'fr-FR'],
-};
-
 export const InteractiveTryGenieDemo: React.FC<InteractiveTryGenieDemoProps> = ({
   className = '',
   region,
 }) => {
-  const defaultLang = region && REGION_CORE_LANGUAGES[region]?.[0] 
-    ? REGION_CORE_LANGUAGES[region][0] 
-    : 'ar-SA';
+  const registry = useDynamicLanguageRegistry();
+  const tts = useTTSDemo();
+  
+  // Get region-sorted languages from registry
+  const sortedLanguages = region 
+    ? registry.getLanguagesForRegion(region)
+    : registry.ttsLanguages;
+  
+  const coreLanguages = region ? registry.getCoreLanguages(region) : [];
+  const coreCodes = coreLanguages.map(l => l.code);
+  
+  const defaultLang = coreCodes[0] || sortedLanguages[0]?.code || 'ar-SA';
   const [selectedLang, setSelectedLang] = useState(defaultLang);
   const [customText, setCustomText] = useState('');
   const [activeUseCase, setActiveUseCase] = useState<number | null>(null);
-  const tts = useTTSDemo();
-
-  // Sort languages: region core first, then rest
-  const coreCodes = region ? (REGION_CORE_LANGUAGES[region] || []) : [];
-  const sortedLanguages = [...TRY_LANGUAGES].sort((a, b) => {
-    const aCore = coreCodes.includes(a.code) ? -1 : 0;
-    const bCore = coreCodes.includes(b.code) ? -1 : 0;
-    return aCore - bCore;
-  });
 
   const handlePlayCustom = () => {
     if (!customText.trim()) return;
@@ -151,6 +120,9 @@ export const InteractiveTryGenieDemo: React.FC<InteractiveTryGenieDemoProps> = (
     setActiveUseCase(index);
     tts.playTranscreation(langCode);
   };
+
+  // Only show languages that have TTS support
+  const ttsLangs = sortedLanguages.filter(l => l.transcreation);
 
   return (
     <section className={`py-20 relative ${className}`}>
@@ -199,14 +171,14 @@ export const InteractiveTryGenieDemo: React.FC<InteractiveTryGenieDemoProps> = (
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-4">
-              {/* Language selector */}
+              {/* Language selector — dynamic from registry */}
               <div className="flex flex-col sm:flex-row gap-3">
                 <Select value={selectedLang} onValueChange={setSelectedLang}>
                   <SelectTrigger className="flex-1">
                     <SelectValue placeholder="Select language" />
                   </SelectTrigger>
                   <SelectContent>
-                    {sortedLanguages.map(lang => {
+                    {ttsLangs.map(lang => {
                       const isCore = coreCodes.includes(lang.code);
                       return (
                         <SelectItem key={lang.code} value={lang.code}>
@@ -325,10 +297,10 @@ export const InteractiveTryGenieDemo: React.FC<InteractiveTryGenieDemoProps> = (
                         <p className="text-sm text-foreground italic">{useCase.example}</p>
                       </div>
 
-                      {/* Language play buttons */}
+                      {/* Language play buttons — resolve names from registry */}
                       <div className="flex flex-wrap gap-2">
                         {useCase.languages.map(langCode => {
-                          const lang = TRY_LANGUAGES.find(l => l.code === langCode);
+                          const lang = registry.ttsLanguages.find(l => l.code === langCode);
                           const isPlayingThis = tts.currentCode === langCode && tts.isPlaying;
                           const isLoadingThis = tts.currentCode === langCode && tts.isLoading;
                           
@@ -346,7 +318,7 @@ export const InteractiveTryGenieDemo: React.FC<InteractiveTryGenieDemoProps> = (
                               ) : (
                                 <Volume2 className="h-3 w-3" />
                               )}
-                              {lang?.flag} {langCode.split('-')[0]}
+                              {lang?.flag || '🌐'} {langCode.split('-')[0]}
                             </Button>
                           );
                         })}
@@ -373,10 +345,10 @@ export const InteractiveTryGenieDemo: React.FC<InteractiveTryGenieDemoProps> = (
           </p>
           <div className="flex justify-center gap-3">
             <Badge variant="outline" className="px-3 py-1">
-              <Languages className="h-3 w-3 mr-1" /> 70+ Languages
+              <Languages className="h-3 w-3 mr-1" /> {registry.ttsLanguages.length || '70'}+ Languages
             </Badge>
             <Badge variant="outline" className="px-3 py-1">
-              <Mic className="h-3 w-3 mr-1" /> STT Coming Soon
+              <Mic className="h-3 w-3 mr-1" /> STT Available
             </Badge>
             <Badge variant="outline" className="px-3 py-1">
               <Play className="h-3 w-3 mr-1" /> Video Generation

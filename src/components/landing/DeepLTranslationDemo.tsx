@@ -1,8 +1,8 @@
 /**
  * DeepL Translation Demo — Landing Page
  * 
- * Allows visitors to type text and get real DeepL translations
- * for regional languages. Shows literal vs transcreation difference.
+ * Uses dynamic language registry instead of hardcoded data.
+ * Allows visitors to type text and get real DeepL translations.
  */
 
 import React, { useState } from 'react';
@@ -19,41 +19,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useDynamicLanguageRegistry } from '@/hooks/landing/useDynamicLanguageRegistry';
 
 const SUPABASE_URL = 'https://ithspbabhmdntioslfqe.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0aHNwYmFiaG1kbnRpb3NsZnFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY5MjU5OTMsImV4cCI6MjA2MjUwMTk5M30.yUZZHsz2wIHboVuWWfqXeAH5oHRxzJIz20NWSUmHPhw';
 
-// DeepL supported target languages
-const DEEPL_LANGUAGES = [
-  { code: 'AR', name: 'Arabic', flag: '🇸🇦', region: 'mena' },
-  { code: 'ZH', name: 'Chinese', flag: '🇨🇳', region: 'apac' },
-  { code: 'JA', name: 'Japanese', flag: '🇯🇵', region: 'apac' },
-  { code: 'KO', name: 'Korean', flag: '🇰🇷', region: 'apac' },
-  { code: 'DE', name: 'German', flag: '🇩🇪', region: 'europe' },
-  { code: 'FR', name: 'French', flag: '🇫🇷', region: 'europe' },
-  { code: 'ES', name: 'Spanish', flag: '🇪🇸', region: 'europe' },
-  { code: 'IT', name: 'Italian', flag: '🇮🇹', region: 'europe' },
-  { code: 'PT-BR', name: 'Portuguese (Brazil)', flag: '🇧🇷', region: 'latam' },
-  { code: 'PT-PT', name: 'Portuguese (Portugal)', flag: '🇵🇹', region: 'europe' },
-  { code: 'NL', name: 'Dutch', flag: '🇳🇱', region: 'europe' },
-  { code: 'PL', name: 'Polish', flag: '🇵🇱', region: 'europe' },
-  { code: 'SV', name: 'Swedish', flag: '🇸🇪', region: 'europe' },
-  { code: 'TR', name: 'Turkish', flag: '🇹🇷', region: 'mena' },
-  { code: 'ID', name: 'Indonesian', flag: '🇮🇩', region: 'apac' },
-  { code: 'RU', name: 'Russian', flag: '🇷🇺', region: 'europe' },
-  { code: 'UK', name: 'Ukrainian', flag: '🇺🇦', region: 'europe' },
-];
-
-// Region-specific default languages
-const REGION_DEFAULTS: Record<string, string> = {
-  mena: 'AR',
-  india: 'AR', // Hindi not in DeepL, show Arabic as closest supported
-  africa: 'FR', // French widely spoken in Africa
-  apac: 'JA',
-  latam: 'PT-BR',
-  europe: 'DE',
-  nam: 'ES',
-  caribbean: 'ES',
+// Region → default DeepL target
+const REGION_DEEPL_DEFAULTS: Record<string, string> = {
+  mena: 'AR', india: 'AR', africa: 'FR', apac: 'JA',
+  latam: 'PT-BR', europe: 'DE', nam: 'ES', caribbean: 'ES',
 };
 
 interface DeepLTranslationDemoProps {
@@ -65,7 +39,8 @@ export const DeepLTranslationDemo: React.FC<DeepLTranslationDemoProps> = ({
   className = '',
   region,
 }) => {
-  const defaultLang = region ? (REGION_DEFAULTS[region] || 'AR') : 'AR';
+  const registry = useDynamicLanguageRegistry();
+  const defaultLang = region ? (REGION_DEEPL_DEFAULTS[region] || 'AR') : 'AR';
   const [sourceLang, setSourceLang] = useState('EN');
   const [targetLang, setTargetLang] = useState(defaultLang);
   const [inputText, setInputText] = useState('');
@@ -74,14 +49,24 @@ export const DeepLTranslationDemo: React.FC<DeepLTranslationDemoProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  // Sort languages: region-specific first
-  const sortedLanguages = region
-    ? [...DEEPL_LANGUAGES].sort((a, b) => {
-        const aMatch = a.region === region ? -1 : 0;
-        const bMatch = b.region === region ? -1 : 0;
-        return aMatch - bMatch;
+  // Use DeepL-supported languages from registry, sorted by region relevance
+  const deeplLangs = region 
+    ? registry.getLanguagesForRegion(region).filter(l => {
+        const upperCode = l.code.toUpperCase().split('-')[0];
+        return ['AR','ZH','JA','KO','DE','FR','ES','IT','PT','NL','PL','SV','TR','ID','RU','UK'].includes(upperCode);
       })
-    : DEEPL_LANGUAGES;
+    : registry.deeplLanguages;
+
+  // Deduplicate by short code for DeepL (DeepL uses 2-letter codes)
+  const uniqueDeeplLangs = deeplLangs.reduce<Array<{ code: string; name: string; flag: string }>>((acc, lang) => {
+    const shortCode = lang.code.toUpperCase().split('-')[0];
+    // Special case for PT-BR vs PT-PT
+    const deeplCode = lang.code === 'pt-BR' ? 'PT-BR' : lang.code === 'pt-PT' ? 'PT-PT' : shortCode;
+    if (!acc.find(l => l.code === deeplCode)) {
+      acc.push({ code: deeplCode, name: lang.name, flag: lang.flag });
+    }
+    return acc;
+  }, []);
 
   const handleTranslate = async () => {
     if (!inputText.trim()) return;
@@ -158,7 +143,7 @@ export const DeepLTranslationDemo: React.FC<DeepLTranslationDemoProps> = ({
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6 space-y-4">
-          {/* Language selectors */}
+          {/* Language selectors — dynamic */}
           <div className="flex items-center gap-3">
             <Select value={sourceLang} onValueChange={setSourceLang}>
               <SelectTrigger className="flex-1">
@@ -167,7 +152,7 @@ export const DeepLTranslationDemo: React.FC<DeepLTranslationDemoProps> = ({
               <SelectContent>
                 <SelectItem value="EN">🇬🇧 English</SelectItem>
                 <SelectItem value="AUTO">🌐 Auto-detect</SelectItem>
-                {sortedLanguages.map(lang => (
+                {uniqueDeeplLangs.map(lang => (
                   <SelectItem key={lang.code} value={lang.code}>
                     {lang.flag} {lang.name}
                   </SelectItem>
@@ -182,7 +167,7 @@ export const DeepLTranslationDemo: React.FC<DeepLTranslationDemoProps> = ({
                 <SelectValue placeholder="Target" />
               </SelectTrigger>
               <SelectContent>
-                {sortedLanguages.map(lang => (
+                {uniqueDeeplLangs.map(lang => (
                   <SelectItem key={lang.code} value={lang.code}>
                     {lang.flag} {lang.name}
                   </SelectItem>
