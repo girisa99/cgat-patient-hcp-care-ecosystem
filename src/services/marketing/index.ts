@@ -137,3 +137,18 @@ export {
   type IndustrySegment,
   type ContentType,
 } from '../unifiedEcosystemPublishingService';
+
+// Framework-Aware Messaging Engine (Full Hybrid: STP + StoryBrand + 4Es + AIDA + JTBD + Blue Ocean)
+export {
+  frameworkMessagingEngine,
+  AUDIENCE_FRAMEWORK_MATRIX,
+  PRODUCT_MESSAGING,
+  DEFAULT_AUDIENCE_MESSAGING,
+  type MarketingFramework,
+  type AudienceSegment,
+  type MessagingTier,
+  type FrameworkConfig,
+  type AudienceMessaging,
+  type SceneFrameworkTag,
+  type FrameworkScriptComposition,
+} from './frameworkMessagingEngine';
