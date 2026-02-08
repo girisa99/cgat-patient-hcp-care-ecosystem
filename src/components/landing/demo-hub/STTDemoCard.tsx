@@ -1,12 +1,12 @@
 /**
- * STT Demo Card — Speech-to-Text sub-component for LocalizationDemoHub
+ * STT Demo Card — Speech-to-Text with Deepgram Nova 2 as primary
  * 
- * Clean mic-based recording demo: select language → record → see transcription.
- * Region-aware: defaults to region's primary language.
+ * Provider chain: Deepgram Nova 2 → Azure STT → OpenAI Whisper
+ * Shows regional provider info with confidence scores.
  */
 
 import React, { useState, useRef, useCallback } from 'react';
-import { Mic, MicOff, Loader2, Copy, Check, Volume2 } from 'lucide-react';
+import { Mic, MicOff, Loader2, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useDynamicLanguageRegistry } from '@/hooks/landing/useDynamicLanguageRegistry';
+import { ProviderBadge, ProviderPanel } from './RegionalProviderInfo';
 import { motion } from 'framer-motion';
 
 const SUPABASE_URL = 'https://ithspbabhmdntioslfqe.supabase.co';
@@ -40,6 +41,7 @@ export const STTDemoCard: React.FC<STTDemoCardProps> = ({ region }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [transcription, setTranscription] = useState('');
   const [provider, setProvider] = useState<string | null>(null);
+  const [latencyMs, setLatencyMs] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
@@ -56,10 +58,10 @@ export const STTDemoCard: React.FC<STTDemoCardProps> = ({ region }) => {
       })
     : registry.sttLanguages;
 
-  const uniqueSTTLangs = sttLangs.reduce<Array<{ code: string; name: string; flag: string }>>((acc, lang) => {
+  const uniqueSTTLangs = sttLangs.reduce<Array<{ code: string; name: string; flag: string; isCore?: boolean }>>((acc, lang) => {
     const shortCode = lang.code.split('-')[0];
     if (!acc.find(l => l.code === shortCode)) {
-      acc.push({ code: shortCode, name: lang.name, flag: lang.flag });
+      acc.push({ code: shortCode, name: lang.name, flag: lang.flag, isCore: lang.isCore });
     }
     return acc;
   }, []);
@@ -69,6 +71,7 @@ export const STTDemoCard: React.FC<STTDemoCardProps> = ({ region }) => {
       setError(null);
       setTranscription('');
       setProvider(null);
+      setLatencyMs(null);
 
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true },
@@ -102,7 +105,7 @@ export const STTDemoCard: React.FC<STTDemoCardProps> = ({ region }) => {
           return prev + 1;
         });
       }, 1000);
-    } catch (err: any) {
+    } catch {
       setError('Microphone access denied. Please allow mic access and try again.');
     }
   }, []);
@@ -117,6 +120,7 @@ export const STTDemoCard: React.FC<STTDemoCardProps> = ({ region }) => {
 
   const processAudio = async (audioBlob: Blob) => {
     setIsProcessing(true);
+    const startTime = Date.now();
     try {
       const arrayBuffer = await audioBlob.arrayBuffer();
       const uint8Array = new Uint8Array(arrayBuffer);
@@ -145,7 +149,8 @@ export const STTDemoCard: React.FC<STTDemoCardProps> = ({ region }) => {
 
       const data = await response.json();
       setTranscription(data.text || '');
-      setProvider(data.provider || 'whisper');
+      setProvider(data.provider || 'Deepgram Nova 2');
+      setLatencyMs(Date.now() - startTime);
     } catch (err: any) {
       setError(err.message || 'Transcription failed. Please try again.');
     } finally {
@@ -174,41 +179,36 @@ export const STTDemoCard: React.FC<STTDemoCardProps> = ({ region }) => {
           <div className="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center">
             <Mic className="h-5 w-5 text-secondary-foreground" />
           </div>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <h3 className="text-lg font-bold text-foreground">Speech-to-Text</h3>
             <p className="text-sm text-muted-foreground font-normal">
-              Speak into your mic and see real-time transcription
+              Speak into your mic — transcribed via multi-provider STT
             </p>
           </div>
-          <Badge variant="secondary" className="hidden sm:flex">
-            Multi-Provider STT
-          </Badge>
+          <ProviderBadge capability="stt" region={region} />
         </CardTitle>
       </CardHeader>
       <CardContent className="p-6 space-y-5">
+        {/* Provider chain info */}
+        <ProviderPanel capability="stt" region={region} compact />
+
         {/* Language selector */}
         <div>
           <label className="text-xs font-medium text-muted-foreground uppercase mb-2 block">
             Transcription Language
           </label>
-          <div className="flex items-center gap-3">
-            <Select value={language} onValueChange={setLanguage}>
-              <SelectTrigger className="flex-1">
-                <SelectValue placeholder="Select language" />
-              </SelectTrigger>
-              <SelectContent>
-                {uniqueSTTLangs.map(lang => (
-                  <SelectItem key={lang.code} value={lang.code}>
-                    {lang.flag} {lang.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Badge variant="outline" className="text-xs whitespace-nowrap">
-              <Volume2 className="h-3 w-3 mr-1" />
-              {provider || 'Whisper / Google'}
-            </Badge>
-          </div>
+          <Select value={language} onValueChange={setLanguage}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select language" />
+            </SelectTrigger>
+            <SelectContent>
+              {uniqueSTTLangs.map(lang => (
+                <SelectItem key={lang.code} value={lang.code}>
+                  {lang.flag} {lang.name} {lang.isCore ? '⭐' : ''}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Recording area */}
@@ -252,7 +252,7 @@ export const STTDemoCard: React.FC<STTDemoCardProps> = ({ region }) => {
                 </div>
               </div>
             ) : isProcessing ? (
-              <p className="text-muted-foreground text-sm">Processing audio...</p>
+              <p className="text-muted-foreground text-sm">Processing via Deepgram Nova 2...</p>
             ) : (
               <p className="text-muted-foreground text-sm">Tap the mic to start speaking</p>
             )}
@@ -268,7 +268,10 @@ export const STTDemoCard: React.FC<STTDemoCardProps> = ({ region }) => {
               </label>
               <div className="flex items-center gap-2">
                 {provider && (
-                  <Badge variant="secondary" className="text-[10px]">via {provider}</Badge>
+                  <Badge variant="secondary" className="text-[10px]">
+                    via {provider}
+                    {latencyMs && <span className="ml-1 text-primary">{latencyMs}ms</span>}
+                  </Badge>
                 )}
                 <Button size="sm" variant="ghost" className="h-7 text-xs gap-1" onClick={handleCopy}>
                   {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
@@ -283,7 +286,7 @@ export const STTDemoCard: React.FC<STTDemoCardProps> = ({ region }) => {
         {error && <p className="text-sm text-destructive text-center">{error}</p>}
 
         <p className="text-xs text-muted-foreground text-center">
-          🔒 Audio is processed server-side and not stored. Supports Whisper, Google STT, and ElevenLabs Scribe.
+          🔒 Audio is processed server-side and not stored. Primary: Deepgram Nova 2, Fallback: Azure STT → Whisper.
         </p>
       </CardContent>
     </Card>

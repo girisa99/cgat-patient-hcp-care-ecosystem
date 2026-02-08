@@ -14,7 +14,7 @@
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
-  Volume2, Mic, Languages, Sparkles, Globe, 
+  Volume2, Mic, Languages, Sparkles, Globe, Shield,
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { TTSDemoCard } from './demo-hub/TTSDemoCard';
@@ -126,6 +126,7 @@ export const LocalizationDemoHub: React.FC<LocalizationDemoHubProps> = ({
             { value: '30+', label: 'STT Languages', Icon: Mic },
             { value: '249+', label: 'Translation Pairs', Icon: Languages },
             { value: '7', label: 'Arabic Dialects', Icon: Sparkles },
+            { value: '15', label: 'AI Providers', Icon: Shield },
           ].map((stat) => (
             <div key={stat.label} className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-full">
               <stat.Icon className="h-4 w-4 text-primary" />

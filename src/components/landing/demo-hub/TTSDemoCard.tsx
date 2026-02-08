@@ -1,8 +1,7 @@
 /**
- * TTS Demo Card — Text-to-Speech sub-component for LocalizationDemoHub
+ * TTS Demo Card — Text-to-Speech with provider info and confidence scores
  * 
- * Clean, focused TTS demo: pick language → type/paste text → hear it.
- * Region-aware: defaults to region's core languages.
+ * Region-aware: defaults to region's core languages with provider chain visibility.
  */
 
 import React, { useState } from 'react';
@@ -20,6 +19,7 @@ import {
 } from '@/components/ui/select';
 import { useTTSDemo } from '@/hooks/landing/useTTSDemo';
 import { useDynamicLanguageRegistry } from '@/hooks/landing/useDynamicLanguageRegistry';
+import { ProviderBadge, ProviderPanel } from './RegionalProviderInfo';
 import { motion } from 'framer-motion';
 
 interface TTSDemoCardProps {
@@ -59,19 +59,19 @@ export const TTSDemoCard: React.FC<TTSDemoCardProps> = ({ region }) => {
           <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center">
             <Volume2 className="h-5 w-5 text-primary" />
           </div>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <h3 className="text-lg font-bold text-foreground">Text-to-Speech</h3>
             <p className="text-sm text-muted-foreground font-normal">
-              Type your text, pick a language, and hear it instantly via Azure Neural TTS
+              Type your text, pick a language, hear it via Azure Neural TTS
             </p>
           </div>
-          <Badge variant="secondary" className="hidden sm:flex items-center gap-1 px-3 py-1.5">
-            <Globe className="h-3 w-3" />
-            Azure Neural
-          </Badge>
+          <ProviderBadge capability="tts" region={region} />
         </CardTitle>
       </CardHeader>
       <CardContent className="p-6 space-y-5">
+        {/* Provider chain */}
+        <ProviderPanel capability="tts" region={region} compact />
+
         {/* Language selector */}
         <div>
           <label className="text-xs font-medium text-muted-foreground uppercase mb-2 block">
@@ -109,7 +109,6 @@ export const TTSDemoCard: React.FC<TTSDemoCardProps> = ({ region }) => {
           <div className="flex items-center justify-between mt-2">
             <span className="text-xs text-muted-foreground">{customText.length}/500</span>
             <div className="flex gap-2">
-              {/* Sample button */}
               <Button
                 size="sm"
                 variant="outline"
@@ -124,7 +123,6 @@ export const TTSDemoCard: React.FC<TTSDemoCardProps> = ({ region }) => {
                 )}
                 Play Sample
               </Button>
-              {/* Custom text button */}
               <Button
                 onClick={handlePlayCustom}
                 disabled={!customText.trim() || tts.isLoading}
@@ -167,7 +165,7 @@ export const TTSDemoCard: React.FC<TTSDemoCardProps> = ({ region }) => {
           <p className="text-sm text-destructive text-center">{tts.error}</p>
         )}
 
-        {/* Quick language chips — play sample in one click */}
+        {/* Quick language chips */}
         {coreCodes.length > 0 && (
           <div>
             <label className="text-xs font-medium text-muted-foreground uppercase mb-2 block">
