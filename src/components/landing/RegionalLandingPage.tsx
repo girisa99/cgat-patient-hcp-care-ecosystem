@@ -25,10 +25,7 @@ import {
   type RegionalConfig 
 } from '@/config/regionalLandingConfig';
 import { RegionalPricingSection } from '@/components/landing/RegionalPricingSection';
-import { ExpandedLanguageDemo } from '@/components/landing/ExpandedLanguageDemo';
-import { InteractiveTryGenieDemo } from '@/components/landing/InteractiveTryGenieDemo';
-import { DeepLTranslationDemo } from '@/components/landing/DeepLTranslationDemo';
-import { STTDemo } from '@/components/landing/STTDemo';
+import { LocalizationDemoHub } from '@/components/landing/LocalizationDemoHub';
 import genieSuiteLogo from '@/assets/logos/genie-studio-suite-logo.png';
 
 // ============================================
@@ -484,12 +481,6 @@ export const RegionalLandingPage: React.FC = () => {
     return <Navigate to={`/genie-landing/${detected}`} replace />;
   }
 
-  // Map region slug to expanded demo initial tab
-  const demoTabMap: Record<RegionSlug, string> = {
-    nam: 'european', mena: 'arabic', india: 'indian', 
-    africa: 'african', apac: 'cjk', europe: 'european',
-    latam: 'latam', caribbean: 'latam',
-  };
 
   return (
     <main className={`min-h-screen bg-background text-foreground ${config.hero.isRTL ? 'rtl' : 'ltr'}`}>
@@ -500,54 +491,8 @@ export const RegionalLandingPage: React.FC = () => {
       <RegionalIndustries config={config} />
       <TranscreationShowcase config={config} />
       
-      {/* Core Demo Section — TTS + STT + DeepL for this region */}
-      <section className="py-20 relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-background via-primary/5 to-background" />
-        <div className="relative max-w-7xl mx-auto px-4">
-          <motion.div
-            className="text-center mb-12"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full mb-4">
-              <Sparkles className="w-4 h-4 text-primary" />
-              <span className="text-primary text-sm font-medium">Try It Live — {config.hero.regionName}</span>
-            </div>
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
-              Experience Our AI Capabilities
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-              Core demos for {config.hero.regionName}: Text-to-Speech, Speech-to-Text, and DeepL Translation — all region-optimized.
-            </p>
-          </motion.div>
-
-          {/* Core: TTS Demo with region context */}
-          <InteractiveTryGenieDemo className="mb-12" region={regionSlug} />
-
-          {/* Core: STT + DeepL side by side on larger screens */}
-          <div className="grid lg:grid-cols-2 gap-8 mb-12">
-            <STTDemo region={regionSlug} />
-            <DeepLTranslationDemo region={regionSlug} />
-          </div>
-        </div>
-      </section>
-      
-      {/* Expanded Language Demo — shows relevant tab for region */}
-      <section className="py-20 relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-background via-accent/5 to-background" />
-        <div className="relative max-w-7xl mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-3 text-foreground">
-              Transcreation Across All Markets
-            </h2>
-            <p className="text-lg text-muted-foreground">
-              Explore how we adapt content for every region — not just yours
-            </p>
-          </div>
-          <ExpandedLanguageDemo initialTab={demoTabMap[regionSlug] as any || 'arabic'} />
-        </div>
-      </section>
+      {/* Unified Localization Demo Hub — region-aware TTS + STT + Translation + Transcreation */}
+      <LocalizationDemoHub region={regionSlug} />
 
       {/* Regional Pricing */}
       <RegionalPricingSection regionSlug={regionSlug} />
