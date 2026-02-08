@@ -3455,6 +3455,65 @@ export type Database = {
           },
         ]
       }
+      blueprint_customization_drafts: {
+        Row: {
+          blueprint_id: string
+          change_log: Json
+          committed_at: string | null
+          created_at: string
+          customized_scenes: Json
+          draft_name: string | null
+          duration_overrides: Json
+          id: string
+          script_overrides: Json
+          status: string
+          updated_at: string
+          user_id: string
+          version: number
+          visual_config_overrides: Json
+        }
+        Insert: {
+          blueprint_id: string
+          change_log?: Json
+          committed_at?: string | null
+          created_at?: string
+          customized_scenes?: Json
+          draft_name?: string | null
+          duration_overrides?: Json
+          id?: string
+          script_overrides?: Json
+          status?: string
+          updated_at?: string
+          user_id: string
+          version?: number
+          visual_config_overrides?: Json
+        }
+        Update: {
+          blueprint_id?: string
+          change_log?: Json
+          committed_at?: string | null
+          created_at?: string
+          customized_scenes?: Json
+          draft_name?: string | null
+          duration_overrides?: Json
+          id?: string
+          script_overrides?: Json
+          status?: string
+          updated_at?: string
+          user_id?: string
+          version?: number
+          visual_config_overrides?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blueprint_customization_drafts_blueprint_id_fkey"
+            columns: ["blueprint_id"]
+            isOneToOne: false
+            referencedRelation: "video_blueprints"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       blueprint_product_assignments: {
         Row: {
           assigned_by: string | null
