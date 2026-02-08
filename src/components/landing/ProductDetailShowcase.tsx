@@ -428,7 +428,7 @@ export const ProductDetailShowcase: React.FC<ProductDetailShowcaseProps> = ({
               </div>
 
               {/* ─── SECTION 5: Regional — How It Works Across Regions ─── */}
-              <div className="px-6 md:px-8 py-5 border-t border-border/40">
+              <div className="px-6 md:px-8 py-5 border-t border-border/40 overflow-hidden">
                 <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2 text-sm">
                   <Globe className="h-4 w-4 text-primary" />
                   How {productData.name} Works Across Regions
@@ -436,20 +436,7 @@ export const ProductDetailShowcase: React.FC<ProductDetailShowcaseProps> = ({
                     Transcreation — Not Translation
                   </Badge>
                 </h4>
-                <div className="flex gap-3 overflow-x-auto pb-3 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent snap-x snap-mandatory">
-                  {extendedData.regionalHighlights.map((ctx) => (
-                    <div
-                      key={ctx.region}
-                      className="min-w-[180px] max-w-[200px] flex-shrink-0 snap-start p-3 bg-muted/40 rounded-lg border border-border/50 hover:border-primary/30 transition-colors group"
-                    >
-                      <div className="flex items-center gap-1.5 mb-1.5">
-                        <span className="text-lg">{ctx.flag}</span>
-                        <span className="font-semibold text-foreground text-xs">{ctx.region}</span>
-                      </div>
-                      <p className="text-[11px] text-muted-foreground leading-snug group-hover:text-foreground transition-colors">{ctx.useCase}</p>
-                    </div>
-                  ))}
-                </div>
+                <RegionalMarquee regions={extendedData.regionalHighlights} />
               </div>
 
               {/* ─── SECTION 6: CTA Bar ─── */}
@@ -480,6 +467,53 @@ export const ProductDetailShowcase: React.FC<ProductDetailShowcaseProps> = ({
           </div>
         </motion.div>
       </AnimatePresence>
+    </div>
+  );
+};
+
+// ─── Regional Marquee Sub-Component ───
+interface RegionalMarqueeProps {
+  regions: { region: string; flag: string; useCase: string }[];
+}
+
+const RegionalMarquee: React.FC<RegionalMarqueeProps> = ({ regions }) => {
+  // Duplicate for seamless loop
+  const duplicated = [...regions, ...regions];
+
+  return (
+    <div className="relative overflow-hidden">
+      {/* Fade edges */}
+      <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-card to-transparent z-10 pointer-events-none" />
+      <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-card to-transparent z-10 pointer-events-none" />
+
+      <motion.div
+        className="flex gap-3"
+        animate={{ x: ['0%', '-50%'] }}
+        transition={{
+          x: {
+            duration: 30,
+            repeat: Infinity,
+            ease: 'linear',
+          },
+        }}
+        whileHover={{ animationPlayState: 'paused' }}
+        style={{ willChange: 'transform' }}
+      >
+        {duplicated.map((ctx, i) => (
+          <div
+            key={`${ctx.region}-${i}`}
+            className="min-w-[200px] max-w-[220px] flex-shrink-0 p-3 bg-muted/40 rounded-lg border border-border/50 hover:border-primary/30 transition-colors group cursor-default"
+          >
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <span className="text-lg">{ctx.flag}</span>
+              <span className="font-semibold text-foreground text-xs">{ctx.region}</span>
+            </div>
+            <p className="text-[11px] text-muted-foreground leading-snug group-hover:text-foreground transition-colors">
+              {ctx.useCase}
+            </p>
+          </div>
+        ))}
+      </motion.div>
     </div>
   );
 };
