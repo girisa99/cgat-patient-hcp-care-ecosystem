@@ -75,6 +75,8 @@ import { useToast } from '@/hooks/use-toast';
 interface BlueprintTemplatesGridProps {
   onSelectBlueprint?: (blueprint: VideoBlueprint) => void;
   selectedBlueprintId?: string;
+  /** Simple mode: shows only top 12 popular templates, no filters or admin tools */
+  simpleMode?: boolean;
 }
 
 // Extended category icons including new categories
@@ -311,6 +313,7 @@ const INDUSTRY_FILTERS = [
 export function BlueprintTemplatesGrid({
   onSelectBlueprint,
   selectedBlueprintId,
+  simpleMode = false,
 }: BlueprintTemplatesGridProps) {
   const { toast } = useToast();
   const {
@@ -529,6 +532,13 @@ export function BlueprintTemplatesGrid({
 
   // Filter blueprints - fully wired with all filters
   const filteredBlueprints = useMemo(() => {
+    // Simple mode: just return top 12 by popularity
+    if (simpleMode) {
+      return [...blueprints]
+        .sort((a, b) => (b.usage_count || 0) - (a.usage_count || 0))
+        .slice(0, 12);
+    }
+
     let filtered = blueprints;
 
     // Category filter
@@ -625,7 +635,7 @@ export function BlueprintTemplatesGrid({
     }
 
     return filtered;
-  }, [blueprints, activeCategory, searchQuery, capabilityFilter, regionFilter, industryFilter, combinationFilter, deviceFilter]);
+  }, [blueprints, activeCategory, searchQuery, capabilityFilter, regionFilter, industryFilter, combinationFilter, deviceFilter, simpleMode]);
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -689,15 +699,26 @@ export function BlueprintTemplatesGrid({
 
   return (
     <div className="space-y-4">
-      {/* Smart Template Recommender */}
-      <SmartTemplateRecommender
-        blueprints={blueprints}
-        onSelectBlueprint={(bp) => setPreviewBlueprintId(bp.id)}
-        onCompare={handleOpenComparison}
-      />
+      {/* Simple mode header */}
+      {simpleMode && (
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-primary" />
+          <span className="text-sm font-medium">Popular Templates</span>
+          <Badge variant="secondary" className="text-[10px]">Top {filteredBlueprints.length}</Badge>
+        </div>
+      )}
 
-      {/* Comparison Bar */}
-      {comparisonIds.length > 0 && (
+      {/* Smart Template Recommender - Advanced only */}
+      {!simpleMode && (
+        <SmartTemplateRecommender
+          blueprints={blueprints}
+          onSelectBlueprint={(bp) => setPreviewBlueprintId(bp.id)}
+          onCompare={handleOpenComparison}
+        />
+      )}
+
+      {/* Comparison Bar - Advanced only */}
+      {!simpleMode && comparisonIds.length > 0 && (
         <div className="flex items-center gap-2 bg-primary/5 border border-primary/20 rounded-lg p-2">
           <Badge variant="outline" className="text-xs">
             {comparisonIds.length}/3 selected
@@ -724,58 +745,63 @@ export function BlueprintTemplatesGrid({
           </Button>
         </div>
       )}
-      {/* Header with Actions */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2 flex-wrap">
-            {/* Create Template Button */}
-            <CreateTemplateDialog onCreated={refetch} />
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={queueAllThumbnails}
-              disabled={isQueueing}
-              className="gap-2"
-            >
-              {isQueueing ? (
-                <RefreshCw className="h-4 w-4 animate-spin" />
-              ) : (
-                <Wand2 className="h-4 w-4" />
-              )}
-              Generate Thumbnails
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={seedProviderTemplates}
-              disabled={isSeedingProviders}
-              className="gap-2 hidden sm:flex"
-              title="Add 100+ templates organized by AI provider capabilities (Vertex, Sora, Alibaba, etc.)"
-            >
-              {isSeedingProviders ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Cpu className="h-4 w-4" />}
-              + Provider Templates
-            </Button>
-            <Button
-              size="sm"
-              onClick={seedComprehensiveTemplates}
-              disabled={isSeeding150}
-              className="gap-2 bg-gradient-to-r from-primary to-accent"
-            >
-              {isSeeding150 ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-              Sync Full Library
-            </Button>
-          </div>
-        </div>
 
-      {/* Smart Filter Bar - 6 filter types with chips */}
-      <TemplateFilterBar
-        filters={filterState}
-        onFiltersChange={handleFiltersChange}
-        totalCount={blueprints.length}
-        filteredCount={filteredBlueprints.length}
-        onReset={handleResetFilters}
-        blueprints={blueprints}
-      />
+      {/* Header with Actions - Advanced only */}
+      {!simpleMode && (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2 flex-wrap">
+              {/* Create Template Button */}
+              <CreateTemplateDialog onCreated={refetch} />
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={queueAllThumbnails}
+                disabled={isQueueing}
+                className="gap-2"
+              >
+                {isQueueing ? (
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Wand2 className="h-4 w-4" />
+                )}
+                Generate Thumbnails
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={seedProviderTemplates}
+                disabled={isSeedingProviders}
+                className="gap-2 hidden sm:flex"
+                title="Add 100+ templates organized by AI provider capabilities (Vertex, Sora, Alibaba, etc.)"
+              >
+                {isSeedingProviders ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Cpu className="h-4 w-4" />}
+                + Provider Templates
+              </Button>
+              <Button
+                size="sm"
+                onClick={seedComprehensiveTemplates}
+                disabled={isSeeding150}
+                className="gap-2 bg-gradient-to-r from-primary to-accent"
+              >
+                {isSeeding150 ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                Sync Full Library
+              </Button>
+            </div>
+          </div>
+      )}
+
+      {/* Smart Filter Bar - Advanced only */}
+      {!simpleMode && (
+        <TemplateFilterBar
+          filters={filterState}
+          onFiltersChange={handleFiltersChange}
+          totalCount={blueprints.length}
+          filteredCount={filteredBlueprints.length}
+          onReset={handleResetFilters}
+          blueprints={blueprints}
+        />
+      )}
 
       {/* Loading State */}
       {isLoading && (
