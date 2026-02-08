@@ -1,7 +1,8 @@
 /**
  * TTS Demo Card — Text-to-Speech with pre-built examples + custom text
  * 
- * Users pick from curated examples or type their own text.
+ * ALWAYS plays the actual displayed text via playCustomText.
+ * No hardcoded samples — what you see is what you hear.
  * Region-aware: defaults to region's core languages with provider chain visibility.
  */
 
@@ -43,23 +44,17 @@ export const TTSDemoCard: React.FC<TTSDemoCardProps> = ({ region }) => {
 
   const defaultLang = coreCodes[0] || ttsLangs[0]?.code || 'ar-SA';
   const [selectedLang, setSelectedLang] = useState(defaultLang);
-  const [selectedExample, setSelectedExample] = useState<DemoExample | null>(examples[0] || null);
+  const [selectedExample, setSelectedExample] = useState<DemoExample>(examples[0]);
   const [customText, setCustomText] = useState('');
   const [useCustom, setUseCustom] = useState(false);
 
+  // The SINGLE source of truth for what text will be spoken
   const activeText = useCustom ? customText.trim() : (selectedExample?.text || '');
 
-  const handlePlay = () => {
+  // ALL playback goes through playCustomText — always speaks the displayed text
+  const handleSpeak = (langOverride?: string) => {
     if (!activeText) return;
-    if (useCustom) {
-      tts.playCustomText(activeText, selectedLang);
-    } else {
-      tts.playCustomText(activeText, selectedLang);
-    }
-  };
-
-  const handlePlaySample = () => {
-    tts.playTranscreation(selectedLang);
+    tts.playCustomText(activeText, langOverride || selectedLang);
   };
 
   return (
@@ -132,37 +127,35 @@ export const TTSDemoCard: React.FC<TTSDemoCardProps> = ({ region }) => {
 
           {!useCustom ? (
             /* Example chips */
-            <div className="space-y-2">
-              <div className="grid gap-2">
-                {examples.slice(0, 5).map(ex => (
-                  <button
-                    key={ex.id}
-                    onClick={() => setSelectedExample(ex)}
-                    className={`text-left p-3 rounded-xl border transition-all ${
-                      selectedExample?.id === ex.id
-                        ? 'border-primary/40 bg-primary/5 shadow-sm ring-1 ring-primary/20'
-                        : 'border-border bg-card hover:border-primary/20 hover:bg-muted/30'
-                    }`}
-                  >
-                    <div className="flex items-start gap-2.5">
-                      <span className="text-lg shrink-0 mt-0.5">{ex.emoji}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className={`text-xs font-semibold mb-0.5 ${
-                          selectedExample?.id === ex.id ? 'text-primary' : 'text-foreground'
-                        }`}>
-                          {ex.label}
-                        </p>
-                        <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
-                          {ex.text}
-                        </p>
-                      </div>
-                      {selectedExample?.id === ex.id && (
-                        <div className="w-2 h-2 rounded-full bg-primary shrink-0 mt-1.5" />
-                      )}
+            <div className="grid gap-2">
+              {examples.slice(0, 5).map(ex => (
+                <button
+                  key={ex.id}
+                  onClick={() => setSelectedExample(ex)}
+                  className={`text-left p-3 rounded-xl border transition-all ${
+                    selectedExample?.id === ex.id
+                      ? 'border-primary/40 bg-primary/5 shadow-sm ring-1 ring-primary/20'
+                      : 'border-border bg-card hover:border-primary/20 hover:bg-muted/30'
+                  }`}
+                >
+                  <div className="flex items-start gap-2.5">
+                    <span className="text-lg shrink-0 mt-0.5">{ex.emoji}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-xs font-semibold mb-0.5 ${
+                        selectedExample?.id === ex.id ? 'text-primary' : 'text-foreground'
+                      }`}>
+                        {ex.label}
+                      </p>
+                      <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+                        {ex.text}
+                      </p>
                     </div>
-                  </button>
-                ))}
-              </div>
+                    {selectedExample?.id === ex.id && (
+                      <div className="w-2 h-2 rounded-full bg-primary shrink-0 mt-1.5" />
+                    )}
+                  </div>
+                </button>
+              ))}
             </div>
           ) : (
             /* Custom text input */
@@ -179,33 +172,28 @@ export const TTSDemoCard: React.FC<TTSDemoCardProps> = ({ region }) => {
           )}
         </div>
 
-        {/* Action buttons */}
-        <div className="flex items-center gap-2 justify-end">
+        {/* Preview of what will be spoken */}
+        {activeText && (
+          <div className="p-3 bg-muted/30 rounded-lg border border-border">
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1">Will speak:</p>
+            <p className="text-sm text-foreground leading-relaxed italic">"{activeText}"</p>
+          </div>
+        )}
+
+        {/* Single clear action button */}
+        <div className="flex justify-end">
           <Button
-            size="sm"
-            variant="outline"
-            onClick={handlePlaySample}
-            disabled={tts.isLoading}
-            className="gap-1.5"
-          >
-            {tts.isLoading && tts.currentCode === selectedLang ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Volume2 className="h-3.5 w-3.5" />
-            )}
-            Play Native Sample
-          </Button>
-          <Button
-            onClick={handlePlay}
+            onClick={() => handleSpeak()}
             disabled={!activeText || tts.isLoading}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5"
+            size="lg"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
           >
-            {tts.isLoading && activeText ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            {tts.isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <Volume2 className="h-3.5 w-3.5" />
+              <Volume2 className="h-4 w-4" />
             )}
-            {useCustom ? 'Speak My Text' : 'Speak Example'}
+            Speak in {ttsLangs.find(l => l.code === selectedLang)?.name || selectedLang}
           </Button>
         </div>
 
@@ -235,11 +223,11 @@ export const TTSDemoCard: React.FC<TTSDemoCardProps> = ({ region }) => {
           <p className="text-sm text-destructive text-center">{tts.error}</p>
         )}
 
-        {/* Quick language chips */}
+        {/* Quick language chips — speak the SAME text in different languages */}
         {coreCodes.length > 0 && (
           <div>
             <label className="text-xs font-medium text-muted-foreground uppercase mb-2 block">
-              Quick Listen — Regional Languages
+              Hear Same Text in Other Languages
             </label>
             <div className="flex flex-wrap gap-2">
               {coreLanguages.slice(0, 6).map(lang => {
@@ -253,9 +241,9 @@ export const TTSDemoCard: React.FC<TTSDemoCardProps> = ({ region }) => {
                     className="h-8 text-xs gap-1.5"
                     onClick={() => {
                       setSelectedLang(lang.code);
-                      tts.playTranscreation(lang.code);
+                      handleSpeak(lang.code);
                     }}
-                    disabled={tts.isLoading && !isLoadingThis}
+                    disabled={!activeText || (tts.isLoading && !isLoadingThis)}
                   >
                     {isLoadingThis ? (
                       <Loader2 className="h-3 w-3 animate-spin" />

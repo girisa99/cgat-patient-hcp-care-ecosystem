@@ -1,8 +1,8 @@
 /**
  * Translation Demo Card — DeepL Translation + Live Transcreation comparison
  * 
+ * ALWAYS translates the actual displayed text — what you see is what gets translated.
  * Pre-built examples + custom text input for easy testing.
- * Shows literal DeepL translation AND AI transcreation side-by-side.
  * Region-aware: defaults target language based on region.
  */
 
@@ -43,7 +43,7 @@ export const TranslationDemoCard: React.FC<TranslationDemoCardProps> = ({ region
 
   const [sourceLang, setSourceLang] = useState('EN');
   const [targetLang, setTargetLang] = useState(defaultLang);
-  const [selectedExample, setSelectedExample] = useState<DemoExample | null>(examples[0] || null);
+  const [selectedExample, setSelectedExample] = useState<DemoExample>(examples[0]);
   const [customText, setCustomText] = useState('');
   const [useCustom, setUseCustom] = useState(false);
   const [translatedText, setTranslatedText] = useState('');
@@ -52,7 +52,9 @@ export const TranslationDemoCard: React.FC<TranslationDemoCardProps> = ({ region
   const [isTranscreating, setIsTranscreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [lastTranslatedSource, setLastTranslatedSource] = useState('');
 
+  // SINGLE source of truth — what you see is what gets translated
   const activeText = useCustom ? customText.trim() : (selectedExample?.text || '');
 
   // Use DeepL-supported languages from registry
@@ -76,9 +78,10 @@ export const TranslationDemoCard: React.FC<TranslationDemoCardProps> = ({ region
 
   const handleSelectExample = (ex: DemoExample) => {
     setSelectedExample(ex);
+    // Clear previous results when switching examples
     setTranslatedText('');
     setTranscreatedText('');
-    // Auto-set suggested target if available
+    setLastTranslatedSource('');
     if (ex.suggestedTarget) {
       setTargetLang(ex.suggestedTarget);
     }
@@ -89,6 +92,7 @@ export const TranslationDemoCard: React.FC<TranslationDemoCardProps> = ({ region
     setError(null);
     setTranslatedText('');
     setTranscreatedText('');
+    setLastTranslatedSource(activeText);
     setIsTranslating(true);
     setIsTranscreating(true);
 
@@ -246,7 +250,7 @@ export const TranslationDemoCard: React.FC<TranslationDemoCardProps> = ({ region
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <button
-              onClick={() => { setUseCustom(false); setTranslatedText(''); setTranscreatedText(''); }}
+              onClick={() => { setUseCustom(false); setTranslatedText(''); setTranscreatedText(''); setLastTranslatedSource(''); }}
               className={`text-xs font-semibold px-3 py-1.5 rounded-full transition-all ${
                 !useCustom 
                   ? 'bg-primary text-primary-foreground' 
@@ -256,7 +260,7 @@ export const TranslationDemoCard: React.FC<TranslationDemoCardProps> = ({ region
               📝 Pick an Example
             </button>
             <button
-              onClick={() => { setUseCustom(true); setTranslatedText(''); setTranscreatedText(''); }}
+              onClick={() => { setUseCustom(true); setTranslatedText(''); setTranscreatedText(''); setLastTranslatedSource(''); }}
               className={`text-xs font-semibold px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 ${
                 useCustom 
                   ? 'bg-primary text-primary-foreground' 
@@ -312,10 +316,19 @@ export const TranslationDemoCard: React.FC<TranslationDemoCardProps> = ({ region
             </div>
           )}
 
+          {/* Source text preview + action */}
+          {activeText && (
+            <div className="p-3 bg-muted/30 rounded-lg border border-border">
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1">Source text to translate:</p>
+              <p className="text-sm text-foreground leading-relaxed italic">"{activeText}"</p>
+            </div>
+          )}
+
           <div className="flex justify-end">
             <Button
               onClick={handleTranslateAndTranscreate}
               disabled={!activeText || isTranslating || isTranscreating}
+              size="lg"
               className="gap-2"
             >
               {(isTranslating || isTranscreating) ? (
@@ -335,70 +348,81 @@ export const TranslationDemoCard: React.FC<TranslationDemoCardProps> = ({ region
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="grid md:grid-cols-2 gap-4"
+              className="space-y-3"
             >
-              {/* Literal Translation */}
-              <div className="rounded-xl border-2 border-destructive/20 bg-destructive/5 p-4 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <XIcon className="h-3.5 w-3.5 text-destructive" />
-                    <span className="text-xs font-semibold text-destructive uppercase">Literal Translation</span>
-                  </div>
-                  <Badge variant="outline" className="text-[9px]">DeepL</Badge>
+              {/* Show what was translated */}
+              {lastTranslatedSource && (
+                <div className="p-2 bg-muted/20 rounded-lg border border-border">
+                  <p className="text-[10px] text-muted-foreground">
+                    <span className="font-semibold">Translating:</span> "{lastTranslatedSource.substring(0, 80)}{lastTranslatedSource.length > 80 ? '...' : ''}"
+                  </p>
                 </div>
-                <div
-                  className={`min-h-[80px] text-sm ${isRTL ? 'text-right' : ''}`}
-                  dir={isRTL ? 'rtl' : 'ltr'}
-                >
-                  {isTranslating ? (
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Translating via DeepL...
-                    </div>
-                  ) : translatedText ? (
-                    <p className="text-foreground">{translatedText}</p>
-                  ) : (
-                    <p className="text-muted-foreground italic">Translation will appear here...</p>
-                  )}
-                </div>
-                {translatedText && (
-                  <Button size="sm" variant="ghost" className="h-6 text-xs gap-1" onClick={() => handleCopy(translatedText, 'translation')}>
-                    {copiedField === 'translation' ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                    {copiedField === 'translation' ? 'Copied!' : 'Copy'}
-                  </Button>
-                )}
-              </div>
+              )}
 
-              {/* Transcreation */}
-              <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-4 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <Sparkles className="h-3.5 w-3.5 text-primary" />
-                    <span className="text-xs font-semibold text-primary uppercase">Genie Transcreation</span>
-                  </div>
-                  <Badge variant="outline" className="text-[9px]">{transcreationProvider.name}</Badge>
-                </div>
-                <div
-                  className={`min-h-[80px] text-sm ${isRTL ? 'text-right' : ''}`}
-                  dir={isRTL ? 'rtl' : 'ltr'}
-                >
-                  {isTranscreating ? (
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Transcreating via {transcreationProvider.name}...</span>
+              <div className="grid md:grid-cols-2 gap-4">
+                {/* Literal Translation */}
+                <div className="rounded-xl border-2 border-destructive/20 bg-destructive/5 p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <XIcon className="h-3.5 w-3.5 text-destructive" />
+                      <span className="text-xs font-semibold text-destructive uppercase">Literal Translation</span>
                     </div>
-                  ) : transcreatedText ? (
-                    <p className="text-foreground font-medium">{transcreatedText}</p>
-                  ) : (
-                    <p className="text-muted-foreground italic">Transcreation will appear here...</p>
+                    <Badge variant="outline" className="text-[9px]">DeepL</Badge>
+                  </div>
+                  <div
+                    className={`min-h-[80px] text-sm ${isRTL ? 'text-right' : ''}`}
+                    dir={isRTL ? 'rtl' : 'ltr'}
+                  >
+                    {isTranslating ? (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Translating via DeepL...
+                      </div>
+                    ) : translatedText ? (
+                      <p className="text-foreground">{translatedText}</p>
+                    ) : (
+                      <p className="text-muted-foreground italic">Translation will appear here...</p>
+                    )}
+                  </div>
+                  {translatedText && (
+                    <Button size="sm" variant="ghost" className="h-6 text-xs gap-1" onClick={() => handleCopy(translatedText, 'translation')}>
+                      {copiedField === 'translation' ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                      {copiedField === 'translation' ? 'Copied!' : 'Copy'}
+                    </Button>
                   )}
                 </div>
-                {transcreatedText && (
-                  <Button size="sm" variant="ghost" className="h-6 text-xs gap-1" onClick={() => handleCopy(transcreatedText, 'transcreation')}>
-                    {copiedField === 'transcreation' ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                    {copiedField === 'transcreation' ? 'Copied!' : 'Copy'}
-                  </Button>
-                )}
+
+                {/* Transcreation */}
+                <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <Sparkles className="h-3.5 w-3.5 text-primary" />
+                      <span className="text-xs font-semibold text-primary uppercase">Genie Transcreation</span>
+                    </div>
+                    <Badge variant="outline" className="text-[9px]">{transcreationProvider.name}</Badge>
+                  </div>
+                  <div
+                    className={`min-h-[80px] text-sm ${isRTL ? 'text-right' : ''}`}
+                    dir={isRTL ? 'rtl' : 'ltr'}
+                  >
+                    {isTranscreating ? (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>Transcreating via {transcreationProvider.name}...</span>
+                      </div>
+                    ) : transcreatedText ? (
+                      <p className="text-foreground font-medium">{transcreatedText}</p>
+                    ) : (
+                      <p className="text-muted-foreground italic">Transcreation will appear here...</p>
+                    )}
+                  </div>
+                  {transcreatedText && (
+                    <Button size="sm" variant="ghost" className="h-6 text-xs gap-1" onClick={() => handleCopy(transcreatedText, 'transcreation')}>
+                      {copiedField === 'transcreation' ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                      {copiedField === 'transcreation' ? 'Copied!' : 'Copy'}
+                    </Button>
+                  )}
+                </div>
               </div>
             </motion.div>
           )}
