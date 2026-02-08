@@ -375,7 +375,7 @@ export const LiveVideoShowcase: React.FC<LiveVideoShowcaseProps> = ({
           <div className="absolute top-4 left-4 right-4 flex items-center justify-between pointer-events-auto">
             <div className="flex items-center gap-2 px-3 py-1.5 bg-black/60 backdrop-blur-sm rounded-lg border border-white/10">
               <Wand2 className="w-4 h-4 text-amber-400" />
-              <span className="text-xs text-white/80">Powered by 19 AI Providers</span>
+              <span className="text-xs text-white/80">Powered by 15 AI Providers</span>
             </div>
             
             {/* TTS Provider badge */}

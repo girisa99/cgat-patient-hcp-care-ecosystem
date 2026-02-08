@@ -283,7 +283,7 @@ export const HeroInteractiveVideo: React.FC<HeroInteractiveVideoProps> = ({
             onClick={() => setShowProviderMatrix(!showProviderMatrix)}
           >
             <Sparkles className="w-4 h-4 mr-1" />
-            <span className="text-xs">19 AI Providers</span>
+            <span className="text-xs">15 AI Providers</span>
           </Button>
         </div>
         
