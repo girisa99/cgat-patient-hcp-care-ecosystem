@@ -1,56 +1,98 @@
 /**
  * DIALECT TTS DEMO - Landing Page Language Showcase
  * 
- * Provides TTS samples for Arabic dialects, Indian languages, and African languages
+ * Provides TTS samples for ALL regional language tabs:
+ * Arabic dialects, Indian languages, CJK, African, LATAM, European
  * using Azure Neural TTS (primary) with ElevenLabs fallback.
  * 
- * Supports the spec's "True Localization, Not Translation" philosophy
+ * Supports the "True Transcreation, Not Translation" philosophy
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// ============================================
+// VOICE REGISTRIES — ALL REGIONS
+// ============================================
+
 // Arabic dialect voice mappings (Azure Neural TTS)
-const ARABIC_VOICES: Record<string, { voice: string; region: string; sample: string }> = {
-  'ar-msa': { voice: 'ar-SA-HamedNeural', region: 'Standard/Formal', sample: 'ابدأ بإنشاء فيديوهات رائعة اليوم' },
-  'ar-SA': { voice: 'ar-SA-ZariyahNeural', region: 'Saudi Arabia', sample: 'ابدأ تسوّي فيديوهات حلوة اليوم' },
-  'ar-gulf': { voice: 'ar-AE-FatimaNeural', region: 'UAE/Gulf', sample: 'ابدا سوّي فيديوهات حلوة اليوم' },
-  'ar-EG': { voice: 'ar-EG-ShakirNeural', region: 'Egypt', sample: 'ابدأ اعمل فيديوهات جميلة النهارده' },
-  'ar-levantine': { voice: 'ar-JO-TaimNeural', region: 'Levantine', sample: 'ابدأ اعمل فيديوهات حلوة اليوم' },
-  'ar-maghrebi': { voice: 'ar-MA-MounaNeural', region: 'Morocco', sample: 'بدا دير فيديوهات زوينين اليوم' },
-  'ar-IQ': { voice: 'ar-IQ-BasselNeural', region: 'Iraq', sample: 'ابدي سوّي فيديوهات حلوة اليوم' },
+const ARABIC_VOICES: Record<string, { voice: string; region: string; transcreation: string; literal: string }> = {
+  'ar-SA': { voice: 'ar-SA-ZariyahNeural', region: 'Saudi Arabia', transcreation: 'ابدأ تسوي فيديوهات روعة — مجاناً!', literal: 'ابدأ بإنشاء مقاطع فيديو رائعة' },
+  'ar-EG': { voice: 'ar-EG-ShakirNeural', region: 'Egypt', transcreation: 'ابدأ اعمل فيديوهات جامدة — ببلاش!', literal: 'ابدأ بإنشاء مقاطع فيديو رائعة' },
+  'ar-AE': { voice: 'ar-AE-FatimaNeural', region: 'UAE/Gulf', transcreation: 'ابدا سوّي فيديوهات حلوة — مجان!', literal: 'ابدأ بإنشاء مقاطع فيديو رائعة' },
+  'ar-LB': { voice: 'ar-JO-TaimNeural', region: 'Lebanon/Syria', transcreation: 'بلّش اعمل فيديوهات كتير حلوة!', literal: 'ابدأ بإنشاء مقاطع فيديو رائعة' },
+  'ar-MA': { voice: 'ar-MA-MounaNeural', region: 'Morocco', transcreation: 'بدا دير فيديوهات زوينين!', literal: 'ابدأ بإنشاء مقاطع فيديو رائعة' },
+  'ar-IQ': { voice: 'ar-IQ-BasselNeural', region: 'Iraq', transcreation: 'ابدي سوّي فيديوهات روعة!', literal: 'ابدأ بإنشاء مقاطع فيديو رائعة' },
+  'ar-MSA': { voice: 'ar-SA-HamedNeural', region: 'Formal/News', transcreation: 'ابدأ بإنشاء مقاطع فيديو احترافية', literal: 'ابدأ بإنشاء مقاطع فيديو رائعة' },
 };
 
 // Indian language voice mappings with code-mixing samples
-const INDIAN_VOICES: Record<string, { voice: string; script: string; literal: string; transcreation: string }> = {
-  'hi': { voice: 'hi-IN-MadhurNeural', script: 'Devanagari', literal: 'कृपया हमारे AI-संचालित पाठ्यक्रम निर्माता को मुफ्त में आज़माएं', transcreation: 'AI course creator free में try करो! एकदम मस्त है!' },
-  'bn': { voice: 'bn-IN-BashkarNeural', script: 'Bengali', literal: 'অনুগ্রহ করে আমাদের AI চালিত কোর্স নির্মাতা বিনামূল্যে ব্যবহার করুন', transcreation: 'AI course creator free তে try করো! একদম ভালো!' },
-  'te': { voice: 'te-IN-MohanNeural', script: 'Telugu', literal: 'దయచేసి మా AI-ఆధారిత కోర్స్ క్రియేటర్‌ను ఉచితంగా ప్రయత్నించండి', transcreation: 'AI course creator ఫ్రీగా ట్రై చేయండి! చాలా బాగుంది!' },
-  'ta': { voice: 'ta-IN-PallaviNeural', script: 'Tamil', literal: 'எங்கள் AI இயக்கும் பாடநெறி உருவாக்கியை இலவசமாக முயற்சிக்கவும்', transcreation: 'AI course creator free-ல try பண்ணுங்க! மிகவும் நல்லது!' },
-  'mr': { voice: 'mr-IN-AarohiNeural', script: 'Devanagari', literal: 'कृपया आमचा AI-चालित कोर्स निर्माता विनामूल्य वापरून पहा', transcreation: 'AI course creator free मध्ये try करा! खूपच मस्त आहे!' },
-  'gu': { voice: 'gu-IN-DhwaniNeural', script: 'Gujarati', literal: 'કૃપા કરીને અમારા AI-સંચાલિત કોર્સ ક્રિએટરને મફતમાં અજમાવો', transcreation: 'AI course creator free માં try કરો! એકદમ સરસ છે!' },
-  'kn': { voice: 'kn-IN-SapnaNeural', script: 'Kannada', literal: 'ದಯವಿಟ್ಟು ನಮ್ಮ AI-ಚಾಲಿತ ಕೋರ್ಸ್ ಕ್ರಿಯೇಟರ್ ಅನ್ನು ಉಚಿತವಾಗಿ ಪ್ರಯತ್ನಿಸಿ', transcreation: 'AI course creator free ಯಲ್ಲಿ try ಮಾಡಿ! ತುಂಬಾ ಚೆನ್ನಾಗಿದೆ!' },
-  'ml': { voice: 'ml-IN-MidhunNeural', script: 'Malayalam', literal: 'ഞങ്ങളുടെ AI പ്രവർത്തിപ്പിക്കുന്ന കോഴ്സ് ക്രിയേറ്റർ സൗജന്യമായി പരീക്ഷിക്കുക', transcreation: 'AI course creator free ആയി try ചെയ്യൂ! വളരെ നല്ലതാണ്!' },
-  'pa': { voice: 'pa-IN-VaaniNeural', script: 'Gurmukhi', literal: 'ਕਿਰਪਾ ਕਰਕੇ ਸਾਡੇ AI-ਸੰਚਾਲਿਤ ਕੋਰਸ ਕਰੀਏਟਰ ਨੂੰ ਮੁਫ਼ਤ ਵਿੱਚ ਅਜ਼ਮਾਓ', transcreation: 'AI course creator free ਵਿੱਚ try ਕਰੋ! ਬਹੁਤ ਵਧੀਆ ਹੈ!' },
+const INDIAN_VOICES: Record<string, { voice: string; transcreation: string; literal: string }> = {
+  'hi-IN': { voice: 'hi-IN-MadhurNeural', transcreation: 'AI course creator फ्री में ट्राई करो! एकदम मस्त है!', literal: 'कृपया हमारे AI-संचालित पाठ्यक्रम निर्माता को मुफ्त में आज़माएं' },
+  'ta-IN': { voice: 'ta-IN-PallaviNeural', transcreation: 'AI course creator free-ஆ try பண்ணு! சூப்பரா இருக்கு!', literal: 'எங்கள் AI-இயக்கப்படும் பாடநெறி உருவாக்கியை இலவசமாக முயற்சிக்கவும்' },
+  'te-IN': { voice: 'te-IN-MohanNeural', transcreation: 'AI course creator free-గా try చెయ్యి! చాలా బాగుంది!', literal: 'దయచేసి మా AI-ఆధారిత కోర్సు సృష్టికర్తను ఉచితంగా ప్రయత్నించండి' },
+  'bn-IN': { voice: 'bn-IN-BashkarNeural', transcreation: 'AI course creator free-তে try করো! একদম ঝাক্কাস!', literal: 'অনুগ্রহ করে আমাদের AI-চালিত কোর্স নির্মাতা বিনামূল্যে চেষ্টা করুন' },
+  'mr-IN': { voice: 'mr-IN-AarohiNeural', transcreation: 'AI course creator free मध्ये try करा! एकदम भारी आहे!', literal: 'कृपया आमचे AI-संचालित कोर्स निर्माता विनामूल्य वापरून पहा' },
+  'gu-IN': { voice: 'gu-IN-DhwaniNeural', transcreation: 'AI course creator free માં try કરો! એકદમ મસ્ત છે!', literal: 'કૃપા કરીને અમારા AI-સંચાલિત કોર્સ નિર્માતાને મફતમાં અજમાવો' },
+  'kn-IN': { voice: 'kn-IN-SapnaNeural', transcreation: 'AI course creator free ಆಗಿ try ಮಾಡಿ! ಸೂಪರ್ ಇದೆ!', literal: 'ದಯವಿಟ್ಟು ನಮ್ಮ AI-ಚಾಲಿತ ಕೋರ್ಸ್ ಸೃಷ್ಟಿಕರ್ತವನ್ನು ಉಚಿತವಾಗಿ ಪ್ರಯತ್ನಿಸಿ' },
+  'ml-IN': { voice: 'ml-IN-MidhunNeural', transcreation: 'AI course creator free ആയി try ചെയ്യൂ! കിടുക്കാച്ചി!', literal: 'ദയവായി ഞങ്ങളുടെ AI-പവർഡ് കോഴ്സ് ക്രിയേറ്റർ സൗജന്യമായി പരീക്ഷിക്കുക' },
 };
 
-// African language voice mappings
-const AFRICAN_VOICES: Record<string, { voice: string; native: string; sample: string }> = {
-  'sw': { voice: 'sw-KE-ZuriNeural', native: 'Kiswahili', sample: 'Anza kuunda video nzuri leo!' },
-  'yo': { voice: 'yo-NG-EzeNeural', native: 'Yorùbá', sample: 'Bẹrẹ si da fidio lẹwa loni!' },
-  'ha': { voice: 'ha-NG-LamisNeural', native: 'Hausa', sample: 'Fara ƙirƙirar bidiyo masu kyau yau!' },
-  'zu': { voice: 'zu-ZA-ThandoNeural', native: 'isiZulu', sample: 'Qala ukwenza amavidiyo amahle namuhla!' },
-  'am': { voice: 'am-ET-AmehaNeural', native: 'አማርኛ', sample: 'ዛሬ ድንቅ ቪዲዮዎችን መፍጠር ይጀምሩ!' },
-  'af': { voice: 'af-ZA-AdriNeural', native: 'Afrikaans', sample: 'Begin vandag pragtige videos skep!' },
-  'xh': { voice: 'xh-ZA-ThembaNeural', native: 'isiXhosa', sample: 'Qala ukwenza iividiyo ezintle namhlanje!' },
-  'ig': { voice: 'en-NG-EzinneNeural', native: 'Igbo', sample: 'Bido imeputa vidio mara mma taa!' },
-  'rw': { voice: 'rw-RW-RehemaNeural', native: 'Ikinyarwanda', sample: 'Tangira gukora amavidewo meza uyu munsi!' },
-  'so': { voice: 'so-SO-UbaxNeural', native: 'Soomaali', sample: 'Bilow samaynta muuqaalo qurux badan maanta!' },
+// CJK + Southeast Asian voices
+const CJK_VOICES: Record<string, { voice: string; transcreation: string; literal: string }> = {
+  'ja-JP': { voice: 'ja-JP-NanamiNeural', transcreation: 'AIで動画制作を始めよう — 無料で、すぐに使えます！', literal: '当社のAI動画制作ツールを無料でお試しください' },
+  'zh-CN': { voice: 'zh-CN-XiaoxiaoNeural', transcreation: '用AI来创作精彩视频吧——完全免费，立即上手！', literal: '请免费试用我们的AI视频制作工具' },
+  'ko-KR': { voice: 'ko-KR-SunHiNeural', transcreation: 'AI로 멋진 영상 만들어 보세요 — 무료로 바로 시작!', literal: '당사의 AI 비디오 제작 도구를 무료로 사용해 보세요' },
+  'th-TH': { voice: 'th-TH-PremwadeeNeural', transcreation: 'เริ่มสร้างวิดีโอสุดเจ๋งด้วย AI — ฟรี ไม่มีข้อผูกมัด!', literal: 'กรุณาลองใช้เครื่องมือสร้างวิดีโอ AI ของเราฟรี' },
+  'vi-VN': { voice: 'vi-VN-HoaiMyNeural', transcreation: 'Bắt đầu tạo video tuyệt vời với AI — miễn phí hoàn toàn!', literal: 'Vui lòng dùng thử công cụ tạo video AI của chúng tôi miễn phí' },
+  'id-ID': { voice: 'id-ID-GadisNeural', transcreation: 'Mulai bikin video keren pakai AI — gratis, tanpa ribet!', literal: 'Silakan coba alat pembuat video AI kami secara gratis' },
 };
+
+// African language voices
+const AFRICAN_VOICES: Record<string, { voice: string; transcreation: string; literal: string }> = {
+  'sw-KE': { voice: 'sw-KE-ZuriNeural', transcreation: 'Anza kuunda video za kushangaza — bure kabisa!', literal: 'Begin creating excellent video content for free' },
+  'yo-NG': { voice: 'yo-NG-EzeNeural', transcreation: 'Bẹ̀rẹ̀ ṣíṣe fidio to dára — ọfẹ́ ni!', literal: 'Begin creating excellent video content for free' },
+  'ha-NG': { voice: 'ha-NG-LamisNeural', transcreation: 'Fara yin bidiyo mai kyau — ba tare da biyan kuɗi ba!', literal: 'Begin creating excellent video content for free' },
+  'zu-ZA': { voice: 'zu-ZA-ThandoNeural', transcreation: 'Qala ukwenza amavidiyo amahle — mahhala!', literal: 'Begin creating excellent video content for free' },
+  'am-ET': { voice: 'am-ET-AmehaNeural', transcreation: 'አስደናቂ ቪዲዮዎችን መፍጠር ጀምር — ነጻ!', literal: 'Begin creating excellent video content for free' },
+};
+
+// LATAM Spanish & Portuguese variants
+const LATAM_VOICES: Record<string, { voice: string; transcreation: string; literal: string }> = {
+  'es-MX': { voice: 'es-MX-DaliaNeural', transcreation: '¡Échale ganas y crea videos chidos con IA — es gratis, neta!', literal: 'Por favor pruebe nuestra herramienta de video con IA gratis' },
+  'pt-BR': { voice: 'pt-BR-FranciscaNeural', transcreation: 'Começa a criar vídeos incríveis com IA — de graça, sem pegadinha!', literal: 'Por favor, experimente nossa ferramenta de vídeo com IA gratuitamente' },
+  'es-CO': { voice: 'es-CO-SalomeNeural', transcreation: '¡Empieza a crear videos bacanos con IA — gratis, parce!', literal: 'Por favor pruebe nuestra herramienta de video con IA gratis' },
+  'es-AR': { voice: 'es-AR-ElenaNeural', transcreation: '¡Arrancá a crear videos re piolas con IA — es gratis, posta!', literal: 'Por favor pruebe nuestra herramienta de video con IA gratis' },
+  'es-CL': { voice: 'es-CL-CatalinaNeural', transcreation: '¡Empieza a crear videos bacanes con IA — gratis, al tiro!', literal: 'Por favor pruebe nuestra herramienta de video con IA gratis' },
+  'es-PE': { voice: 'es-PE-AlexNeural', transcreation: '¡Empieza a crear videos chéveres con IA — es gratis, causa!', literal: 'Por favor pruebe nuestra herramienta de video con IA gratis' },
+};
+
+// European voices
+const EUROPEAN_VOICES: Record<string, { voice: string; transcreation: string; literal: string }> = {
+  'de-DE': { voice: 'de-DE-KatjaNeural', transcreation: 'Leg los mit genialen Videos — kostenlos und ohne Haken!', literal: 'Beginnen Sie mit der Erstellung hervorragender Videoinhalte' },
+  'fr-FR': { voice: 'fr-FR-DeniseNeural', transcreation: 'Lancez-vous dans la création vidéo — c\'est gratuit et sans engagement !', literal: 'Commencez à créer d\'excellents contenus vidéo' },
+  'es-ES': { voice: 'es-ES-ElviraNeural', transcreation: '¡Empieza a crear vídeos increíbles — gratis y sin compromiso!', literal: 'Comience a crear contenido de video excelente' },
+  'it-IT': { voice: 'it-IT-ElsaNeural', transcreation: 'Inizia a creare video fantastici — è gratis, senza impegno!', literal: 'Inizia a creare contenuti video eccellenti' },
+  'nl-NL': { voice: 'nl-NL-ColetteNeural', transcreation: 'Begin met het maken van geweldige video\'s — gratis en vrijblijvend!', literal: 'Begin met het maken van uitstekende video-inhoud' },
+  'pl-PL': { voice: 'pl-PL-AgnieszkaNeural', transcreation: 'Zacznij tworzyć genialne filmy z AI — za darmo, bez zobowiązań!', literal: 'Proszę bezpłatnie wypróbować nasze narzędzie do tworzenia wideo AI' },
+  'sv-SE': { voice: 'sv-SE-SofieNeural', transcreation: 'Börja skapa fantastiska videor med AI — gratis, inga krångel!', literal: 'Vänligen prova vårt AI-videoverktyg gratis' },
+  'pt-PT': { voice: 'pt-PT-RaquelNeural', transcreation: 'Começa a criar vídeos espetaculares com IA — grátis e sem compromisso!', literal: 'Por favor, experimente a nossa ferramenta de criação de vídeo com IA gratuitamente' },
+};
+
+// Unified lookup — merges all registries
+function lookupVoice(code: string): { voice: string; transcreation: string; literal: string } | null {
+  return ARABIC_VOICES[code] || INDIAN_VOICES[code] || CJK_VOICES[code] 
+    || AFRICAN_VOICES[code] || LATAM_VOICES[code] || EUROPEAN_VOICES[code] || null;
+}
+
+// ============================================
+// TTS PROVIDERS
+// ============================================
 
 async function generateAzureTTS(text: string, voice: string): Promise<ArrayBuffer | null> {
   const azureKey = Deno.env.get('AZURE_SPEECH_KEY');
@@ -62,8 +104,11 @@ async function generateAzureTTS(text: string, voice: string): Promise<ArrayBuffe
   }
 
   try {
+    // Extract language from voice name (e.g., "ja-JP-NanamiNeural" -> "ja-JP")
+    const langCode = voice.split('-').slice(0, 2).join('-');
+    
     const ssml = `
-      <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="ar-SA">
+      <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${langCode}">
         <voice name="${voice}">
           ${text}
         </voice>
@@ -84,7 +129,7 @@ async function generateAzureTTS(text: string, voice: string): Promise<ArrayBuffe
     );
 
     if (!response.ok) {
-      console.error(`[dialect-tts-demo] Azure TTS error: ${response.status}`);
+      console.error(`[dialect-tts-demo] Azure TTS error: ${response.status} ${await response.text()}`);
       return null;
     }
 
@@ -135,73 +180,95 @@ async function generateElevenLabsTTS(text: string, voiceId: string = 'JBFqnCBsd6
   }
 }
 
+// ============================================
+// CUSTOM TEXT TTS — users type their own text
+// ============================================
+async function generateCustomTTS(text: string, languageCode: string): Promise<{ buffer: ArrayBuffer; provider: string } | null> {
+  const voiceEntry = lookupVoice(languageCode);
+  if (!voiceEntry) return null;
+  
+  // Try Azure first
+  const azureBuffer = await generateAzureTTS(text, voiceEntry.voice);
+  if (azureBuffer) return { buffer: azureBuffer, provider: 'azure' };
+  
+  // Fallback to ElevenLabs
+  const elBuffer = await generateElevenLabsTTS(text);
+  if (elBuffer) return { buffer: elBuffer, provider: 'elevenlabs' };
+  
+  return null;
+}
+
+// ============================================
+// MAIN HANDLER
+// ============================================
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { action, languageCode, mode } = await req.json();
+    const { action, languageCode, mode, text: customText } = await req.json();
 
-    // Action: Get available languages and samples (no audio generation)
+    // Action: Get all available languages grouped by tab
     if (action === 'get_languages') {
+      const mapEntries = (voices: Record<string, any>, tab: string) =>
+        Object.entries(voices).map(([code, data]) => ({
+          code,
+          tab,
+          transcreation: data.transcreation,
+          literal: data.literal,
+          region: data.region || undefined,
+        }));
+
       return new Response(
         JSON.stringify({
-          arabic: Object.entries(ARABIC_VOICES).map(([code, data]) => ({
-            code,
-            region: data.region,
-            sample: data.sample,
-          })),
-          indian: Object.entries(INDIAN_VOICES).map(([code, data]) => ({
-            code,
-            script: data.script,
-            literal: data.literal,
-            transcreation: data.transcreation,
-          })),
-          african: Object.entries(AFRICAN_VOICES).map(([code, data]) => ({
-            code,
-            native: data.native,
-            sample: data.sample,
-          })),
+          arabic: mapEntries(ARABIC_VOICES, 'arabic'),
+          indian: mapEntries(INDIAN_VOICES, 'indian'),
+          cjk: mapEntries(CJK_VOICES, 'cjk'),
+          african: mapEntries(AFRICAN_VOICES, 'african'),
+          latam: mapEntries(LATAM_VOICES, 'latam'),
+          european: mapEntries(EUROPEAN_VOICES, 'european'),
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Action: Generate TTS audio for specific dialect
-    if (action === 'generate_tts' && languageCode) {
-      let text = '';
-      let voice = '';
-      let provider = 'azure';
+    // Action: Generate TTS for custom user text
+    if (action === 'custom_tts' && customText && languageCode) {
+      const result = await generateCustomTTS(customText, languageCode);
+      if (!result) {
+        return new Response(
+          JSON.stringify({ error: 'TTS generation failed' }),
+          { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      // Return as base64 JSON for easy client consumption
+      const base64Audio = base64Encode(new Uint8Array(result.buffer));
+      return new Response(
+        JSON.stringify({ audioContent: base64Audio, provider: result.provider, languageCode }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
-      // Check Arabic dialects
-      if (ARABIC_VOICES[languageCode]) {
-        const dialect = ARABIC_VOICES[languageCode];
-        voice = dialect.voice;
-        text = dialect.sample;
-      }
-      // Check Indian languages
-      else if (INDIAN_VOICES[languageCode]) {
-        const lang = INDIAN_VOICES[languageCode];
-        voice = lang.voice;
-        // Use transcreation by default, literal if specified
-        text = mode === 'literal' ? lang.literal : lang.transcreation;
-      }
-      // Check African languages
-      else if (AFRICAN_VOICES[languageCode]) {
-        const lang = AFRICAN_VOICES[languageCode];
-        voice = lang.voice;
-        text = lang.sample;
-      }
-      else {
+    // Action: Generate TTS audio for pre-set transcreation sample
+    if (action === 'generate_tts' && languageCode) {
+      const voiceEntry = lookupVoice(languageCode);
+      
+      if (!voiceEntry) {
         return new Response(
           JSON.stringify({ error: 'Language code not supported', code: languageCode }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
+      // Use transcreation by default, literal if specified
+      const text = mode === 'literal' ? voiceEntry.literal : voiceEntry.transcreation;
+      let provider = 'azure';
+
       // Try Azure first
-      let audioBuffer = await generateAzureTTS(text, voice);
+      let audioBuffer = await generateAzureTTS(text, voiceEntry.voice);
 
       // Fallback to ElevenLabs
       if (!audioBuffer) {
@@ -216,19 +283,16 @@ serve(async (req) => {
         );
       }
 
-      // Return audio with metadata headers
-      return new Response(audioBuffer, {
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'audio/mpeg',
-          'X-TTS-Provider': provider,
-          'X-TTS-Language': languageCode,
-        },
-      });
+      // Return as base64 JSON for consistent client handling
+      const base64Audio = base64Encode(new Uint8Array(audioBuffer));
+      return new Response(
+        JSON.stringify({ audioContent: base64Audio, provider, languageCode }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     return new Response(
-      JSON.stringify({ error: 'Invalid action' }),
+      JSON.stringify({ error: 'Invalid action. Use: get_languages, generate_tts, custom_tts' }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

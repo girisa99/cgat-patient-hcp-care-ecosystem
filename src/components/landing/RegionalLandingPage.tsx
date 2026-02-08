@@ -26,6 +26,7 @@ import {
 } from '@/config/regionalLandingConfig';
 import { RegionalPricingSection } from '@/components/landing/RegionalPricingSection';
 import { ExpandedLanguageDemo } from '@/components/landing/ExpandedLanguageDemo';
+import { InteractiveTryGenieDemo } from '@/components/landing/InteractiveTryGenieDemo';
 import genieSuiteLogo from '@/assets/logos/genie-studio-suite-logo.png';
 
 // ============================================
@@ -483,6 +484,9 @@ export const RegionalLandingPage: React.FC = () => {
       <RegionNavigator currentSlug={regionSlug} />
       <RegionalIndustries config={config} />
       <TranscreationShowcase config={config} />
+      
+      {/* Interactive Try Genie Demo — TTS + Industry Use Cases */}
+      <InteractiveTryGenieDemo />
       
       {/* Expanded Language Demo — shows relevant tab for region */}
       <section className="py-20 relative">
