@@ -311,7 +311,7 @@ const TranscreationShowcase: React.FC<{ config: RegionalConfig }> = ({ config })
                 </div>
                 <div className="grid sm:grid-cols-2 gap-3">
                   <div>
-                    <p className="text-[10px] font-medium text-green-600 dark:text-green-400 uppercase mb-1">
+                    <p className="text-[10px] font-medium text-status-success uppercase mb-1">
                       ✓ Transcreated
                     </p>
                     <p className={`text-sm text-foreground ${config.hero.isRTL ? 'text-right' : ''}`}>
@@ -319,7 +319,7 @@ const TranscreationShowcase: React.FC<{ config: RegionalConfig }> = ({ config })
                     </p>
                   </div>
                   <div>
-                    <p className="text-[10px] font-medium text-red-500 uppercase mb-1">
+                    <p className="text-[10px] font-medium text-status-error uppercase mb-1">
                       ✗ Literal Translation
                     </p>
                     <p className={`text-sm text-muted-foreground line-through ${config.hero.isRTL ? 'text-right' : ''}`}>
@@ -389,7 +389,7 @@ const RegionalCTAFooter: React.FC<{ config: RegionalConfig }> = ({ config }) => 
       <p className="text-xl text-muted-foreground mb-4">
         {config.socialProof}
       </p>
-      <p className="text-lg text-green-600 dark:text-green-400 mb-8">
+      <p className="text-lg text-status-success mb-8">
         💰 {config.comparisonSavings}
       </p>
 

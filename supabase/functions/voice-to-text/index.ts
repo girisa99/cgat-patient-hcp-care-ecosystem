@@ -1,31 +1,21 @@
 /**
- * VOICE-TO-TEXT — Speech-to-Text Edge Function
+ * VOICE-TO-TEXT — Speech-to-Text Demo Edge Function
  * 
  * ROUTING ORDER (per master-provider-routing-registry):
- *   1. OpenAI Whisper (PRIMARY for demo — Deepgram Nova 2 reserved for production)
- *   2. Google Speech-to-Text (SECONDARY)
- *   3. ElevenLabs Scribe (TERTIARY)
+ *   DEMO (REST): Whisper → Google STT → ElevenLabs Scribe
+ *   PRODUCTION: Use deepgram-stt function instead (Deepgram Nova 2 primary)
  * 
- * NOTE: Deepgram Nova 2 is the master registry PRIMARY for production STT
- * but requires WebSocket streaming. For this REST-based landing page demo,
- * OpenAI Whisper serves as a practical primary with Google STT fallback.
- * 
- * SECURITY: Rate-limited per IP, input-validated, public endpoint (no JWT)
+ * SECURITY: Database-backed rate limiting, input-validated, public endpoint (no JWT)
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-// ============================================
-// RATE LIMITING — In-memory per IP
-// ============================================
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT_WINDOW_MS = 60_000;
-const RATE_LIMIT_MAX_REQUESTS = 10; // STT is expensive — stricter limit
 const MAX_AUDIO_SIZE_BYTES = 5 * 1024 * 1024; // 5MB max audio
 
 function getClientIP(req: Request): string {
@@ -34,31 +24,6 @@ function getClientIP(req: Request): string {
     || req.headers.get('x-real-ip')
     || 'unknown';
 }
-
-function checkRateLimit(ip: string): { allowed: boolean; remaining: number; resetIn: number } {
-  const now = Date.now();
-  const entry = rateLimitMap.get(ip);
-
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
-    return { allowed: true, remaining: RATE_LIMIT_MAX_REQUESTS - 1, resetIn: RATE_LIMIT_WINDOW_MS };
-  }
-
-  if (entry.count >= RATE_LIMIT_MAX_REQUESTS) {
-    return { allowed: false, remaining: 0, resetIn: entry.resetAt - now };
-  }
-
-  entry.count++;
-  return { allowed: true, remaining: RATE_LIMIT_MAX_REQUESTS - entry.count, resetIn: entry.resetAt - now };
-}
-
-// Cleanup expired entries periodically
-setInterval(() => {
-  const now = Date.now();
-  for (const [ip, entry] of rateLimitMap.entries()) {
-    if (now > entry.resetAt) rateLimitMap.delete(ip);
-  }
-}, 5 * 60_000);
 
 // Valid language codes for STT
 const VALID_STT_LANGUAGES = new Set([
@@ -74,14 +39,30 @@ serve(async (req) => {
 
   const clientIP = getClientIP(req);
 
-  // Rate limit check
-  const rateCheck = checkRateLimit(clientIP);
-  if (!rateCheck.allowed) {
-    console.warn(`[voice-to-text] Rate limited IP: ${clientIP}`);
-    return new Response(
-      JSON.stringify({ error: 'Too many requests. Please wait and try again.', retryAfter: Math.ceil(rateCheck.resetIn / 1000) }),
-      { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': String(Math.ceil(rateCheck.resetIn / 1000)) } }
-    );
+  // ============================================
+  // DATABASE-BACKED RATE LIMITING
+  // ============================================
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+  try {
+    const { data: rateResult } = await supabase.rpc('check_rate_limit', {
+      p_client_ip: clientIP,
+      p_endpoint: 'voice-to-text',
+      p_max_requests: 10,
+      p_window_seconds: 60,
+    });
+
+    if (rateResult && !rateResult.allowed) {
+      console.warn(`[voice-to-text] Rate limited IP: ${clientIP}`);
+      return new Response(
+        JSON.stringify({ error: 'Too many requests. Please wait and try again.', retryAfter: rateResult.reset_in_seconds }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': String(rateResult.reset_in_seconds) } }
+      );
+    }
+  } catch (rlError) {
+    console.warn('[voice-to-text] Rate limit check failed, proceeding:', rlError);
   }
 
   try {

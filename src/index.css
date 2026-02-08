@@ -118,6 +118,51 @@
 
     --tracking-normal: 0em;
     --spacing: 0.25rem;
+
+    /* ========== INDUSTRY DIFFERENTIATION TOKENS ========== */
+    --industry-healthcare: 0 84% 60%;
+    --industry-finance: 217 91% 60%;
+    --industry-education: 262 83% 58%;
+    --industry-retail: 24 95% 53%;
+    --industry-realestate: 173 58% 39%;
+    --industry-hospitality: 330 81% 60%;
+    --industry-automotive: 250 10% 40%;
+    --industry-media: 289 67% 55%;
+    --industry-legal: 210 40% 40%;
+    --industry-government: 220 30% 50%;
+    --industry-nonprofit: 142 76% 36%;
+    --industry-technology: 199 89% 48%;
+    --industry-pharma: 174 62% 47%;
+    --industry-energy: 45 93% 47%;
+    --industry-telecom: 262 47% 50%;
+    --industry-sports: 14 86% 52%;
+    --industry-food: 35 92% 50%;
+    --industry-construction: 30 70% 45%;
+    --industry-logistics: 200 45% 45%;
+    --industry-insurance: 220 60% 50%;
+    --industry-agriculture: 100 50% 40%;
+
+    /* ========== STATUS / SEMANTIC TOKENS ========== */
+    --status-success: 142 76% 36%;
+    --status-warning: 45 93% 47%;
+    --status-error: 0 84% 60%;
+    --status-info: 199 89% 48%;
+    --status-pending: 24 95% 53%;
+
+    /* ========== AI PROVIDER BRAND TOKENS ========== */
+    --provider-alibaba: 24 95% 53%;
+    --provider-azure: 217 91% 60%;
+    --provider-elevenlabs: 262 83% 58%;
+    --provider-openai: 142 76% 36%;
+    --provider-claude: 24 85% 55%;
+    --provider-deepseek: 189 80% 50%;
+    --provider-gemini: 217 70% 55%;
+    --provider-meshy: 330 81% 60%;
+    --provider-modelslab: 239 84% 67%;
+    --provider-deepl: 173 58% 39%;
+    --provider-replicate: 250 5% 45%;
+    --provider-gcp: 0 84% 60%;
+    --provider-deepgram: 165 70% 45%;
   }
 
   .dark {
@@ -181,6 +226,51 @@
     --shadow-lg: 0 10px 20px -3px hsl(262 83% 50% / 0.2);
     --shadow-xl: 0 15px 30px -5px hsl(262 83% 50% / 0.25);
     --shadow-2xl: 0 25px 50px -12px hsl(262 83% 50% / 0.35);
+
+    /* ========== INDUSTRY TOKENS — Brighter for Dark Mode ========== */
+    --industry-healthcare: 0 84% 65%;
+    --industry-finance: 217 91% 65%;
+    --industry-education: 262 83% 65%;
+    --industry-retail: 24 95% 58%;
+    --industry-realestate: 173 58% 45%;
+    --industry-hospitality: 330 81% 65%;
+    --industry-automotive: 250 10% 55%;
+    --industry-media: 289 67% 60%;
+    --industry-legal: 210 40% 55%;
+    --industry-government: 220 30% 60%;
+    --industry-nonprofit: 142 76% 45%;
+    --industry-technology: 199 89% 55%;
+    --industry-pharma: 174 62% 52%;
+    --industry-energy: 45 93% 52%;
+    --industry-telecom: 262 47% 60%;
+    --industry-sports: 14 86% 58%;
+    --industry-food: 35 92% 55%;
+    --industry-construction: 30 70% 50%;
+    --industry-logistics: 200 45% 55%;
+    --industry-insurance: 220 60% 58%;
+    --industry-agriculture: 100 50% 50%;
+
+    /* ========== STATUS TOKENS — Brighter for Dark Mode ========== */
+    --status-success: 142 76% 45%;
+    --status-warning: 45 93% 52%;
+    --status-error: 0 84% 65%;
+    --status-info: 199 89% 55%;
+    --status-pending: 24 95% 58%;
+
+    /* ========== PROVIDER TOKENS — Brighter for Dark Mode ========== */
+    --provider-alibaba: 24 95% 58%;
+    --provider-azure: 217 91% 65%;
+    --provider-elevenlabs: 262 83% 65%;
+    --provider-openai: 142 76% 45%;
+    --provider-claude: 24 85% 60%;
+    --provider-deepseek: 189 80% 55%;
+    --provider-gemini: 217 70% 60%;
+    --provider-meshy: 330 81% 65%;
+    --provider-modelslab: 239 84% 72%;
+    --provider-deepl: 173 58% 45%;
+    --provider-replicate: 250 5% 55%;
+    --provider-gcp: 0 84% 65%;
+    --provider-deepgram: 165 70% 50%;
   }
 }
 
