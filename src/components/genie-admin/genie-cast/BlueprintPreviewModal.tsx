@@ -55,6 +55,17 @@ export function BlueprintPreviewModal({
 }: BlueprintPreviewModalProps) {
   const [activeTab, setActiveTab] = useState('overview');
   const [expandedScene, setExpandedScene] = useState<string | null>(null);
+  const [localScenes, setLocalScenes] = useState<BlueprintScene[]>(scenes);
+
+  // Sync local scenes when props change (e.g., new blueprint selected)
+  React.useEffect(() => {
+    setLocalScenes(scenes);
+  }, [scenes]);
+
+  const handleScenesModified = (updatedScenes: BlueprintScene[], description: string) => {
+    setLocalScenes(updatedScenes);
+    console.log('[BlueprintPreviewModal] Scenes modified:', description);
+  };
 
   if (!blueprint) return null;
 
@@ -177,7 +188,7 @@ export function BlueprintPreviewModal({
 
             <TabsContent value="overview" className="mt-0">
               <OverviewTab
-                scenes={scenes}
+                scenes={localScenes}
                 targetPlatforms={blueprint.target_platform || []}
                 industryTags={blueprint.industry_tags || []}
                 expandedScene={expandedScene}
@@ -189,11 +200,12 @@ export function BlueprintPreviewModal({
 
             <TabsContent value="timeline" className="mt-0">
               <SceneTimelineTab
-                scenes={scenes}
+                scenes={localScenes}
                 expandedScene={expandedScene}
                 onExpandScene={setExpandedScene}
                 formatDuration={formatDuration}
                 isEditable={true}
+                onScenesModified={handleScenesModified}
               />
             </TabsContent>
 
