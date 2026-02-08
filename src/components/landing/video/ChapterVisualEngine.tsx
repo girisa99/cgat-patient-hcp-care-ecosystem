@@ -154,7 +154,7 @@ export const ChapterVisualEngine: React.FC<ChapterVisualEngineProps> = ({
           transition={{ delay: 0.3 }}
         >
           <Wand2 className="w-4 h-4 text-amber-400" />
-          <span className="text-xs text-white/80">Powered by 12 AI Providers</span>
+          <span className="text-xs text-white/80">Powered by 15 AI Providers</span>
         </motion.div>
       )}
     </div>

@@ -126,7 +126,7 @@ export const HeroProductShowcase: React.FC<HeroProductShowcaseProps> = ({
             {PIPELINE_STEPS[activeStep].label}: {PIPELINE_STEPS[activeStep].description}
           </p>
           <p className="text-sm text-muted-foreground mt-1">
-            Powered by 12 AI providers • 95% confidence guarantee
+            Powered by 15 AI providers • 95% confidence guarantee
           </p>
         </div>
 
