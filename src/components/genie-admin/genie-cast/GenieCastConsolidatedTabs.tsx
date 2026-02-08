@@ -39,6 +39,8 @@ import {
   MessageSquare,
   Image,
 } from 'lucide-react';
+import { useCreateMode } from '@/hooks/useCreateMode';
+import { QuickStartCard, CreateStepProgress, CreateModeToggle, type CreateStep } from './create';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -262,6 +264,9 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
   // Production Setup internal section state
   const [productionSection, setProductionSection] = useState<'styles' | 'assets' | 'regional'>('styles');
 
+  // Simple/Advanced mode for CREATE tab
+  const createMode = useCreateMode();
+
   const metrics = calculateEcosystemMetrics();
 
   // Handle navigation from ApprovalDashboard
@@ -338,51 +343,92 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
         </TabsList>
 
         {/* Sub-Tab Navigation for Active Main Tab */}
-        <div className="mt-4 flex items-center gap-2 overflow-x-auto pb-2">
-          {currentMainDef.subTabs.map((sub) => {
-            const isActive = currentSubTab === sub.id;
-            return (
-              <Button
-                key={sub.id}
-                variant="outline"
-                size="sm"
-                className={cn(
-                  "flex-shrink-0 gap-1.5 text-xs font-medium",
-                  isActive 
-                    ? currentMainDef.activeColor 
-                    : currentMainDef.inactiveColor
-                )}
-                onClick={() => setSubTab(activeMainTab, sub.id)}
-              >
-                <sub.icon className="w-3.5 h-3.5" />
-                {sub.label}
-              </Button>
-            );
-          })}
-          
-          {/* Pipeline indicator */}
-          <Separator orientation="vertical" className="h-6 mx-2" />
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="font-medium">{activePipelines.length} active</span>
-            {inactivePipelines.length > 0 && (
-              <Badge variant="outline" className="text-[10px]">
-                +{inactivePipelines.length} available
-              </Badge>
-            )}
+        {activeMainTab === 'create' ? (
+          /* CREATE uses step progress + mode toggle instead of generic sub-tabs */
+          <div className="mt-4 flex items-center gap-2 overflow-x-auto pb-2">
+            <CreateStepProgress
+              session={castSession.session}
+              currentStep={currentSubTab as CreateStep}
+              onStepClick={(step) => setSubTab('create', step)}
+              onGoToProduce={() => {
+                setActiveMainTab('produce');
+                setSubTab('produce', 'generate');
+              }}
+              canProduce={!!castSession.session.selectedTemplate}
+              className="flex-1"
+            />
+            <CreateModeToggle mode={createMode.mode} onToggle={createMode.toggleMode} />
           </div>
-        </div>
+        ) : (
+          <div className="mt-4 flex items-center gap-2 overflow-x-auto pb-2">
+            {currentMainDef.subTabs.map((sub) => {
+              const isActive = currentSubTab === sub.id;
+              return (
+                <Button
+                  key={sub.id}
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    "flex-shrink-0 gap-1.5 text-xs font-medium",
+                    isActive 
+                      ? currentMainDef.activeColor 
+                      : currentMainDef.inactiveColor
+                  )}
+                  onClick={() => setSubTab(activeMainTab, sub.id)}
+                >
+                  <sub.icon className="w-3.5 h-3.5" />
+                  {sub.label}
+                </Button>
+              );
+            })}
+            
+            {/* Pipeline indicator */}
+            <Separator orientation="vertical" className="h-6 mx-2" />
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span className="font-medium">{activePipelines.length} active</span>
+              {inactivePipelines.length > 0 && (
+                <Badge variant="outline" className="text-[10px]">
+                  +{inactivePipelines.length} available
+                </Badge>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* ═══════════════════════════════════════════════════════════════ */}
         {/* CREATE TAB CONTENT */}
         {/* ═══════════════════════════════════════════════════════════════ */}
         <TabsContent value="create" className="mt-4 space-y-4">
-          {/* Workflow Context Banner - persistent across all CREATE sub-tabs */}
-          <WorkflowContextBanner
-            session={castSession.session}
-            currentSubTab={currentSubTab}
-            onNavigate={handleBannerNavigate}
-            onResetSession={castSession.resetSession}
+          {/* Quick Start Card - only shows when no session is active */}
+          <QuickStartCard
+            hasActiveSession={!!castSession.session.selectedTemplate}
+            onQuickStart={(blueprint, styles) => {
+              castSession.selectTemplate({
+                id: blueprint.id,
+                name: blueprint.name,
+                category: blueprint.category,
+                thumbnailUrl: blueprint.thumbnail_url || undefined,
+                sceneCount: blueprint.scenes?.length || 0,
+                estimatedDuration: blueprint.estimated_duration_seconds,
+                styleIntent: (blueprint.default_settings as any)?.style_intent || 'corporate',
+              });
+              onStylesChange(styles);
+              // Jump straight to produce
+              setActiveMainTab('produce');
+              setSubTab('produce', 'generate');
+              toast.success('Quick start ready! Template & styles auto-selected.');
+            }}
           />
+
+          {/* Workflow Context Banner - persistent across all CREATE sub-tabs (Advanced only) */}
+          {createMode.isAdvanced && (
+            <WorkflowContextBanner
+              session={castSession.session}
+              currentSubTab={currentSubTab}
+              onNavigate={handleBannerNavigate}
+              onResetSession={castSession.resetSession}
+            />
+          )}
 
           <AnimatePresence mode="wait">
             {/* ── TEMPLATES ── First-class starting point */}
@@ -410,6 +456,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                     setSubTab('create', 'messaging');
                   }}
                   selectedBlueprintId={castSession.session.selectedTemplate?.id}
+                  simpleMode={createMode.isSimple}
                 />
               </motion.div>
             )}
@@ -503,141 +550,191 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   </Card>
                 )}
 
-                {/* Internal section navigation for Production Setup */}
-                <div className="flex items-center gap-2 border-b pb-2">
-                  <Button
-                    variant={productionSection === 'styles' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setProductionSection('styles')}
-                    className="gap-1.5 text-xs"
-                  >
-                    <Palette className="w-3.5 h-3.5" />
-                    Video Styles
-                    {selectedVideoStyles.length > 0 && (
-                      <Badge variant="secondary" className="text-[9px] px-1 h-4 ml-1">{selectedVideoStyles.length}</Badge>
-                    )}
-                  </Button>
-                  <Button
-                    variant={productionSection === 'assets' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setProductionSection('assets')}
-                    className="gap-1.5 text-xs"
-                  >
-                    <Image className="w-3.5 h-3.5" />
-                    Brand Assets
-                  </Button>
-                  <Button
-                    variant={productionSection === 'regional' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setProductionSection('regional')}
-                    className="gap-1.5 text-xs"
-                  >
-                    <Globe className="w-3.5 h-3.5" />
-                    Regional Config
-                    {selectedDialectCodes.length > 1 && (
-                      <Badge variant="secondary" className="text-[9px] px-1 h-4 ml-1">{selectedDialectCodes.length} lang</Badge>
-                    )}
-                  </Button>
-
-                  {/* Ready to produce indicator */}
-                  <div className="ml-auto">
-                    <Button
-                      size="sm"
-                      variant="default"
-                      onClick={() => {
-                        setActiveMainTab('produce');
-                        setSubTab('produce', 'generate');
-                      }}
-                      className="gap-1.5 text-xs"
-                      disabled={!castSession.session.selectedTemplate}
-                    >
-                      <Play className="w-3.5 h-3.5" />
-                      Go to Produce
-                    </Button>
-                  </div>
-                </div>
-
-                {/* ─── STYLES SECTION ─── */}
-                {productionSection === 'styles' && (
-                  <div className="space-y-4">
-                    <GenieCastOverview
-                      selectedStyles={selectedVideoStyles}
-                      onStylesChange={onStylesChange}
-                      onNavigate={(tab) => {
-                        if (tab === 'messaging') {
-                          setSubTab('create', 'messaging');
-                        } else if (tab === 'generate') {
-                          setActiveMainTab('produce');
-                          setSubTab('produce', 'generate');
-                        } else if (tab === 'matrix') {
-                          setActiveMainTab('produce');
-                          setSubTab('produce', 'matrix');
-                        }
-                      }}
-                    />
-                    
-                    {/* Ecosystem Metrics Card */}
-                    <Card className="border-primary/20">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm flex items-center gap-2">
-                          <Sparkles className="w-4 h-4 text-primary" />
-                          Ecosystem Status
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="grid grid-cols-4 gap-4 text-center">
-                          <div>
-                            <div className="text-2xl font-bold text-primary">{metrics.providers.total}</div>
-                            <div className="text-xs text-muted-foreground">AI Providers</div>
-                            <div className="text-[10px] text-green-600">{metrics.providers.wiredToGenieCast} wired</div>
-                          </div>
-                          <div>
-                            <div className="text-2xl font-bold text-blue-600">{metrics.videoStyles.total}</div>
-                            <div className="text-xs text-muted-foreground">Video Styles</div>
-                            <div className="text-[10px] text-green-600">{metrics.videoStyles.popular} popular</div>
-                          </div>
-                          <div>
-                            <div className="text-2xl font-bold text-green-600">{metrics.pipelines.active}</div>
-                            <div className="text-xs text-muted-foreground">Active Pipelines</div>
-                            <div className="text-[10px] text-muted-foreground">of {metrics.pipelines.total}</div>
-                          </div>
-                          <div>
-                            <div className="text-2xl font-bold text-purple-600">{metrics.zones}</div>
-                            <div className="text-xs text-muted-foreground">Regional Zones</div>
-                            <div className="text-[10px] text-green-600">4-zone routing</div>
-                          </div>
+                {/* ═══ SIMPLE MODE: Compact summary card ═══ */}
+                {createMode.isSimple && castSession.session.selectedTemplate && (
+                  <Card className="border-primary/20">
+                    <CardContent className="py-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-sm font-semibold flex items-center gap-2">
+                          <Settings2 className="w-4 h-4 text-primary" />
+                          Production Defaults Applied
+                        </h3>
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            setActiveMainTab('produce');
+                            setSubTab('produce', 'generate');
+                          }}
+                          className="gap-1.5 text-xs"
+                        >
+                          <Play className="w-3.5 h-3.5" />
+                          Go to Produce
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="rounded-lg bg-muted/50 p-2.5 text-center">
+                          <Palette className="w-4 h-4 mx-auto text-primary mb-1" />
+                          <div className="text-xs font-medium">{selectedVideoStyles.length || 5} Styles</div>
+                          <div className="text-[10px] text-muted-foreground">Auto-selected</div>
                         </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                )}
-
-                {/* ─── BRAND ASSETS SECTION ─── */}
-                {productionSection === 'assets' && (
-                  <BrandAssetsPanel 
-                    selectedProductId={selectedProductId}
-                  />
-                )}
-
-                {/* ─── REGIONAL CONFIG SECTION ─── */}
-                {productionSection === 'regional' && (
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm flex items-center gap-2">
-                        <Globe className="w-4 h-4 text-primary" />
-                        Regional Output Configuration
-                      </CardTitle>
-                      <CardDescription className="text-xs">
-                        Select target regions and dialects for transcreation (One Template → Many Videos)
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <RegionalDialectSelector
-                        onDialectsChange={handleDialectChange}
-                        selectedDialects={selectedDialectCodes}
-                      />
+                        <div className="rounded-lg bg-muted/50 p-2.5 text-center">
+                          <Image className="w-4 h-4 mx-auto text-primary mb-1" />
+                          <div className="text-xs font-medium">Brand Assets</div>
+                          <div className="text-[10px] text-muted-foreground">From product</div>
+                        </div>
+                        <div className="rounded-lg bg-muted/50 p-2.5 text-center">
+                          <Globe className="w-4 h-4 mx-auto text-primary mb-1" />
+                          <div className="text-xs font-medium">English (US)</div>
+                          <div className="text-[10px] text-muted-foreground">Default region</div>
+                        </div>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground text-center">
+                        Switch to <strong>Advanced</strong> mode to customize styles, assets, and regional config
+                      </p>
                     </CardContent>
                   </Card>
+                )}
+
+                {/* ═══ ADVANCED MODE: Full Production Setup ═══ */}
+                {createMode.isAdvanced && (
+                  <>
+                    {/* Internal section navigation for Production Setup */}
+                    <div className="flex items-center gap-2 border-b pb-2">
+                      <Button
+                        variant={productionSection === 'styles' ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => setProductionSection('styles')}
+                        className="gap-1.5 text-xs"
+                      >
+                        <Palette className="w-3.5 h-3.5" />
+                        Video Styles
+                        {selectedVideoStyles.length > 0 && (
+                          <Badge variant="secondary" className="text-[9px] px-1 h-4 ml-1">{selectedVideoStyles.length}</Badge>
+                        )}
+                      </Button>
+                      <Button
+                        variant={productionSection === 'assets' ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => setProductionSection('assets')}
+                        className="gap-1.5 text-xs"
+                      >
+                        <Image className="w-3.5 h-3.5" />
+                        Brand Assets
+                      </Button>
+                      <Button
+                        variant={productionSection === 'regional' ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => setProductionSection('regional')}
+                        className="gap-1.5 text-xs"
+                      >
+                        <Globe className="w-3.5 h-3.5" />
+                        Regional Config
+                        {selectedDialectCodes.length > 1 && (
+                          <Badge variant="secondary" className="text-[9px] px-1 h-4 ml-1">{selectedDialectCodes.length} lang</Badge>
+                        )}
+                      </Button>
+
+                      {/* Ready to produce indicator */}
+                      <div className="ml-auto">
+                        <Button
+                          size="sm"
+                          variant="default"
+                          onClick={() => {
+                            setActiveMainTab('produce');
+                            setSubTab('produce', 'generate');
+                          }}
+                          className="gap-1.5 text-xs"
+                          disabled={!castSession.session.selectedTemplate}
+                        >
+                          <Play className="w-3.5 h-3.5" />
+                          Go to Produce
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* ─── STYLES SECTION ─── */}
+                    {productionSection === 'styles' && (
+                      <div className="space-y-4">
+                        <GenieCastOverview
+                          selectedStyles={selectedVideoStyles}
+                          onStylesChange={onStylesChange}
+                          onNavigate={(tab) => {
+                            if (tab === 'messaging') {
+                              setSubTab('create', 'messaging');
+                            } else if (tab === 'generate') {
+                              setActiveMainTab('produce');
+                              setSubTab('produce', 'generate');
+                            } else if (tab === 'matrix') {
+                              setActiveMainTab('produce');
+                              setSubTab('produce', 'matrix');
+                            }
+                          }}
+                        />
+                        
+                        {/* Ecosystem Metrics Card */}
+                        <Card className="border-primary/20">
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-sm flex items-center gap-2">
+                              <Sparkles className="w-4 h-4 text-primary" />
+                              Ecosystem Status
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="grid grid-cols-4 gap-4 text-center">
+                              <div>
+                                <div className="text-2xl font-bold text-primary">{metrics.providers.total}</div>
+                                <div className="text-xs text-muted-foreground">AI Providers</div>
+                                <div className="text-[10px] text-muted-foreground">{metrics.providers.wiredToGenieCast} wired</div>
+                              </div>
+                              <div>
+                                <div className="text-2xl font-bold text-primary">{metrics.videoStyles.total}</div>
+                                <div className="text-xs text-muted-foreground">Video Styles</div>
+                                <div className="text-[10px] text-muted-foreground">{metrics.videoStyles.popular} popular</div>
+                              </div>
+                              <div>
+                                <div className="text-2xl font-bold text-primary">{metrics.pipelines.active}</div>
+                                <div className="text-xs text-muted-foreground">Active Pipelines</div>
+                                <div className="text-[10px] text-muted-foreground">of {metrics.pipelines.total}</div>
+                              </div>
+                              <div>
+                                <div className="text-2xl font-bold text-primary">{metrics.zones}</div>
+                                <div className="text-xs text-muted-foreground">Regional Zones</div>
+                                <div className="text-[10px] text-muted-foreground">4-zone routing</div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    )}
+
+                    {/* ─── BRAND ASSETS SECTION ─── */}
+                    {productionSection === 'assets' && (
+                      <BrandAssetsPanel 
+                        selectedProductId={selectedProductId}
+                      />
+                    )}
+
+                    {/* ─── REGIONAL CONFIG SECTION ─── */}
+                    {productionSection === 'regional' && (
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm flex items-center gap-2">
+                            <Globe className="w-4 h-4 text-primary" />
+                            Regional Output Configuration
+                          </CardTitle>
+                          <CardDescription className="text-xs">
+                            Select target regions and dialects for transcreation (One Template → Many Videos)
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <RegionalDialectSelector
+                            onDialectsChange={handleDialectChange}
+                            selectedDialects={selectedDialectCodes}
+                          />
+                        </CardContent>
+                      </Card>
+                    )}
+                  </>
                 )}
               </motion.div>
             )}
