@@ -18,6 +18,7 @@ import { Helmet } from 'react-helmet-async';
 // Session management via Supabase - no custom auth hook needed
 import { ProfessionalAvatarShowcase } from '@/components/landing/video/ProfessionalAvatarShowcase';
 import { ExpandedLanguageDemo } from '@/components/landing/ExpandedLanguageDemo';
+import { InteractiveTryGenieDemo } from '@/components/landing/InteractiveTryGenieDemo';
 import { IndustryShowcases } from '@/components/landing/IndustryShowcases';
 import { CrossFunctionalSection } from '@/components/landing/CrossFunctionalSection';
 import { GlobalInspirationSection } from '@/components/landing/GlobalInspirationSection';
@@ -650,7 +651,10 @@ const GenieStudioLanding: React.FC = () => {
         </div>
       </section>
 
-      {/* SECTION 5: INDUSTRY SHOWCASES */}
+      {/* SECTION 5: INTERACTIVE TRY GENIE DEMO — TTS + Industry */}
+      <InteractiveTryGenieDemo />
+
+      {/* SECTION 6: INDUSTRY SHOWCASES */}
       <IndustryShowcases />
 
       {/* SECTION 6: CROSS-FUNCTIONAL CAPABILITIES */}

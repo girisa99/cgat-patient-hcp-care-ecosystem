@@ -1,14 +1,15 @@
 /**
- * EXPANDED LANGUAGE DEMO
+ * EXPANDED LANGUAGE DEMO — with LIVE TTS Audio Playback
  * 
- * Extended version of InteractiveLanguageDemo with CJK, SEA, LATAM, Caribbean tabs.
+ * Extended transcreation demo with real Azure Neural TTS audio.
  * All content is TRANSCREATED — culturally adapted, not literally translated.
  */
 
 import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Check, X, Volume2 } from 'lucide-react';
+import { Check, X, Volume2, Loader2, Square } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useTTSDemo } from '@/hooks/landing/useTTSDemo';
 
 // ============================================
 // LANGUAGE DATA — TRANSCREATION EXAMPLES
@@ -120,6 +121,9 @@ const LANGUAGE_DATA: Record<TabId, { title: string; subtitle: string; moat: stri
   },
 };
 
+// RTL tabs
+const RTL_TABS: TabId[] = ['arabic'];
+
 // ============================================
 // COMPONENT
 // ============================================
@@ -135,8 +139,10 @@ export const ExpandedLanguageDemo: React.FC<ExpandedLanguageDemoProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<TabId>(initialTab);
   const [showTranscreation, setShowTranscreation] = useState(true);
+  const tts = useTTSDemo();
 
   const tabData = LANGUAGE_DATA[activeTab];
+  const isRTL = RTL_TABS.includes(activeTab);
 
   return (
     <div className={`space-y-8 ${className}`}>
@@ -158,7 +164,7 @@ export const ExpandedLanguageDemo: React.FC<ExpandedLanguageDemoProps> = ({
         </div>
       </div>
 
-      {/* Tab navigation — 2 rows on mobile */}
+      {/* Tab navigation */}
       <div className="flex flex-wrap justify-center gap-2">
         {LANGUAGE_TABS.map(tab => (
           <button
@@ -200,49 +206,104 @@ export const ExpandedLanguageDemo: React.FC<ExpandedLanguageDemoProps> = ({
         </div>
       </div>
 
+      {/* Audio status indicator */}
+      {(tts.isLoading || tts.isPlaying) && (
+        <div className="flex justify-center">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full text-sm">
+            {tts.isLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                <span className="text-primary">Generating audio via {tts.provider || 'Azure Neural'}...</span>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-0.5">
+                  {[1,2,3,4].map(i => (
+                    <div key={i} className="w-1 bg-primary rounded-full animate-pulse" style={{ height: `${8 + Math.random() * 12}px`, animationDelay: `${i * 0.1}s` }} />
+                  ))}
+                </div>
+                <span className="text-primary">Playing via {tts.provider || 'Azure Neural'}</span>
+                <button onClick={tts.stopAudio} className="ml-2 p-1 hover:bg-primary/20 rounded">
+                  <Square className="h-3 w-3 text-primary" />
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Content */}
       <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-md">
         {/* Header */}
         <div className="p-6 border-b border-border bg-muted/30">
           <h3 className="text-2xl font-bold text-foreground">{tabData.title}</h3>
           <p className="text-muted-foreground mt-1">{tabData.subtitle}</p>
+          <p className="text-xs text-primary mt-2 flex items-center gap-1">
+            <Volume2 className="h-3 w-3" /> Click any language to hear it spoken by Azure Neural TTS
+          </p>
         </div>
 
         {/* Language comparison grid */}
         <div className="divide-y divide-border">
-          {tabData.languages.map((lang) => (
-            <div key={lang.code} className="p-4 hover:bg-muted/30 transition-colors">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-foreground">{lang.nativeName}</span>
-                  <span className="text-muted-foreground text-sm">({lang.name})</span>
-                  <Badge variant="outline" className="text-[10px]">{lang.region}</Badge>
+          {tabData.languages.map((lang) => {
+            const isActive = tts.currentCode === lang.code;
+            const isLoadingThis = isActive && tts.isLoading;
+            const isPlayingThis = isActive && tts.isPlaying;
+
+            return (
+              <div key={lang.code} className={`p-4 transition-colors ${isPlayingThis ? 'bg-primary/5' : 'hover:bg-muted/30'}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-foreground">{lang.nativeName}</span>
+                    <span className="text-muted-foreground text-sm">({lang.name})</span>
+                    <Badge variant="outline" className="text-[10px]">{lang.region}</Badge>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="text-[10px]">
+                      {lang.provider}
+                    </Badge>
+                    {/* TTS Play Button */}
+                    <Button
+                      size="sm"
+                      variant={isPlayingThis ? 'default' : 'outline'}
+                      className="h-8 w-8 p-0 rounded-full"
+                      onClick={() => tts.playTranscreation(
+                        lang.code,
+                        showTranscreation ? 'transcreation' : 'literal'
+                      )}
+                      disabled={tts.isLoading && !isLoadingThis}
+                    >
+                      {isLoadingThis ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : isPlayingThis ? (
+                        <Square className="h-3 w-3" />
+                      ) : (
+                        <Volume2 className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
                 </div>
-                <Badge variant="secondary" className="text-[10px]">
-                  <Volume2 className="h-3 w-3 mr-1" />
-                  {lang.provider}
-                </Badge>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div className={`p-3 rounded-lg ${showTranscreation ? 'bg-green-500/10 border border-green-500/30' : 'bg-muted/50'}`}>
+                    <p className="text-[10px] font-medium text-green-600 dark:text-green-400 uppercase mb-1">
+                      ✓ Transcreated
+                    </p>
+                    <p className={`text-sm text-foreground ${isRTL ? 'text-right' : ''}`} dir={isRTL ? 'rtl' : 'ltr'}>
+                      {lang.transcreation}
+                    </p>
+                  </div>
+                  <div className={`p-3 rounded-lg ${!showTranscreation ? 'bg-destructive/10 border border-destructive/30' : 'bg-muted/50'}`}>
+                    <p className="text-[10px] font-medium text-red-500 uppercase mb-1">
+                      ✗ Literal Translation
+                    </p>
+                    <p className={`text-sm text-muted-foreground ${!showTranscreation ? '' : 'line-through'} ${isRTL ? 'text-right' : ''}`} dir={isRTL ? 'rtl' : 'ltr'}>
+                      {lang.literal}
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div className="grid sm:grid-cols-2 gap-3">
-                <div className={`p-3 rounded-lg ${showTranscreation ? 'bg-green-500/10 border border-green-500/30' : 'bg-muted/50'}`}>
-                  <p className="text-[10px] font-medium text-green-600 dark:text-green-400 uppercase mb-1">
-                    ✓ Transcreated
-                  </p>
-                  <p className={`text-sm text-foreground ${activeTab === 'arabic' ? 'text-right' : ''}`} dir={activeTab === 'arabic' ? 'rtl' : 'ltr'}>
-                    {lang.transcreation}
-                  </p>
-                </div>
-                <div className={`p-3 rounded-lg ${!showTranscreation ? 'bg-destructive/10 border border-destructive/30' : 'bg-muted/50'}`}>
-                  <p className="text-[10px] font-medium text-red-500 uppercase mb-1">
-                    ✗ Literal Translation
-                  </p>
-                  <p className={`text-sm text-muted-foreground ${!showTranscreation ? '' : 'line-through'} ${activeTab === 'arabic' ? 'text-right' : ''}`} dir={activeTab === 'arabic' ? 'rtl' : 'ltr'}>
-                    {lang.literal}
-                  </p>
-                </div>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Moat callout */}
@@ -250,6 +311,11 @@ export const ExpandedLanguageDemo: React.FC<ExpandedLanguageDemoProps> = ({
           <p className="text-primary font-semibold text-sm">{tabData.moat}</p>
         </div>
       </div>
+
+      {/* Error display */}
+      {tts.error && (
+        <p className="text-center text-destructive text-sm">{tts.error}</p>
+      )}
     </div>
   );
 };
