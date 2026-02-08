@@ -17,8 +17,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 // Session management via Supabase - no custom auth hook needed
 import { ProfessionalAvatarShowcase } from '@/components/landing/video/ProfessionalAvatarShowcase';
-import { ExpandedLanguageDemo } from '@/components/landing/ExpandedLanguageDemo';
-import { InteractiveTryGenieDemo } from '@/components/landing/InteractiveTryGenieDemo';
+import { LocalizationDemoHub } from '@/components/landing/LocalizationDemoHub';
 import { IndustryShowcases } from '@/components/landing/IndustryShowcases';
 import { ProductDetailShowcase } from '@/components/landing/ProductDetailShowcase';
 import { CrossFunctionalSection } from '@/components/landing/CrossFunctionalSection';
@@ -619,27 +618,8 @@ const GenieStudioLanding: React.FC = () => {
         </div>
       </section>
 
-      {/* SECTION 4: LANGUAGE POWER - Interactive Demo */}
-      <section id="languages" className="py-24 relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-background to-background" />
-        
-        <div className="relative max-w-7xl mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
-              True Localization. Not Translation.
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              We adapt meaning, culture, and context. This is <span className="text-primary font-bold">transcreation</span>.
-            </p>
-          </div>
-
-          {/* Expanded Language Demo — All Regions */}
-          <ExpandedLanguageDemo initialTab="arabic" />
-        </div>
-      </section>
-
-      {/* SECTION 5: INTERACTIVE TRY GENIE DEMO — TTS + Industry */}
-      <InteractiveTryGenieDemo />
+      {/* SECTION 4: UNIFIED LOCALIZATION DEMO HUB — TTS + STT + Translation + Transcreation */}
+      <LocalizationDemoHub />
 
       {/* SECTION 6: INDUSTRY SHOWCASES */}
       <IndustryShowcases />
