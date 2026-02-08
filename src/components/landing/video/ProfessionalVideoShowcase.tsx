@@ -303,7 +303,7 @@ export const ProfessionalVideoShowcase: React.FC<ProfessionalVideoShowcaseProps>
           <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
             <div className="flex items-center gap-2 px-3 py-1.5 bg-black/60 backdrop-blur-sm rounded-lg border border-white/10">
               <Film className="w-4 h-4 text-purple-400" />
-              <span className="text-xs text-white/80">Powered by 12 AI Providers</span>
+              <span className="text-xs text-white/80">Powered by 15 AI Providers</span>
             </div>
             
             <Badge 

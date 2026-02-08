@@ -161,7 +161,7 @@ const RegionalHero: React.FC<{ config: RegionalConfig }> = ({ config }) => {
               <span>•</span>
               <span className="px-2 py-1 bg-muted rounded">206 Pipelines</span>
               <span>•</span>
-              <span className="px-2 py-1 bg-muted rounded">12 AI Providers</span>
+              <span className="px-2 py-1 bg-muted rounded">15 AI Providers</span>
             </div>
 
             {/* CTA buttons */}
@@ -237,10 +237,12 @@ const RegionalIndustries: React.FC<{ config: RegionalConfig }> = ({ config }) =>
     <div className="relative max-w-7xl mx-auto px-4">
       <div className="text-center mb-12">
         <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
-          Built for {config.hero.regionName} Industries
+          Every Industry. Transcreated for {config.hero.regionName}.
         </h2>
-        <p className="text-lg text-muted-foreground">
-          Transcreated content for your specific market and compliance needs
+        <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+          50+ industries powered by <span className="text-primary font-semibold">15 AI providers</span> and{' '}
+          <span className="text-primary font-semibold">206 pipelines</span> — culturally adapted for your market, 
+          compliance requirements, and audience dialects.
         </p>
       </div>
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -264,6 +266,10 @@ const RegionalIndustries: React.FC<{ config: RegionalConfig }> = ({ config }) =>
           </motion.div>
         ))}
       </div>
+      <p className="text-center text-sm text-muted-foreground mt-6">
+        Featured industries for {config.hero.regionName} — plus Oil & Gas, Pharma, Legal, Consulting, 
+        Automotive, Telecom, Agriculture, Media, and 40+ more with the same transcreation quality.
+      </p>
     </div>
   </section>
 );
