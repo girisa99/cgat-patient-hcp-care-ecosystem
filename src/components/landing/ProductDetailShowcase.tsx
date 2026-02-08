@@ -1,24 +1,30 @@
 /**
  * PRODUCT DETAIL SHOWCASE
  * 
- * Shows full capabilities, features, pipelines, benefits, and regional context
- * for each selected Genie product. Uses data from genie-products.ts constants.
+ * Well-organized single-view product card that communicates:
+ * 1. What the product IS (positioning + tagline)
+ * 2. How it HELPS you (StoryBrand narrative + JTBD outcome)
+ * 3. Key CAPABILITIES & FEATURES (visual grid)
+ * 4. AI Providers powering it
+ * 5. Regional context (transcreation use-cases)
  * 
- * Integrates messaging framework: StoryBrand (narrative), JTBD (outcomes), AIDA (structure)
+ * Uses messaging framework: StoryBrand (narrative), JTBD (outcomes), AIDA (structure)
  */
-import React, { useState } from 'react';
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Check, Globe, Zap, Layers, Sparkles, ArrowRight, 
-  Play, Languages, Mic, Video, Brain, FileText, 
-  BarChart3, Users, Shield, Workflow
+  Check, Globe, Zap, Sparkles, ArrowRight, 
+  Play, Languages, Brain, Target, Rocket,
+  BarChart3, Shield, Workflow, ChevronRight,
+  Cpu, Mic, Video, FileText, Presentation,
+  Send, Layers
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
 import { GENIE_PRODUCTS, ASK_GENIE, type GenieProduct } from '@/constants/genie-products';
 
-// Product logos from landing page
+// Product logos
 import genieSparkLogo from '@/assets/logos/products/genie-spark.png';
 import genieMindLogo from '@/assets/logos/products/genie-mind.png';
 import genieVibeLogo from '@/assets/logos/products/genie-vibe.png';
@@ -37,122 +43,153 @@ const PRODUCT_LOGOS: Record<string, string> = {
   ask: askGenieLogo,
 };
 
-// Extended product data with messaging framework, benefits, and regional context
+// Product-specific icons for hero visual
+const PRODUCT_ICONS: Record<string, React.ReactNode> = {
+  spark: <FileText className="h-5 w-5" />,
+  mind: <Brain className="h-5 w-5" />,
+  vibe: <Video className="h-5 w-5" />,
+  deck: <Presentation className="h-5 w-5" />,
+  arc: <Workflow className="h-5 w-5" />,
+  cast: <Send className="h-5 w-5" />,
+};
+
+// Extended product data: messaging + benefits + capabilities + regional
 const PRODUCT_EXTENDED: Record<string, {
   pipelines: number;
-  benefits: string[];
-  regionalContext: { region: string; useCase: string }[];
+  positioning: string; // Clear "what it does" statement
+  storyBrand: string; // Transformation narrative
   jtbd: string; // Jobs-to-be-done outcome
-  storyBrand: string; // Customer transformation narrative
+  keyBenefits: { icon: React.ReactNode; title: string; detail: string }[];
+  coreCapabilities: string[];
   aiProviders: string[];
+  regionalHighlights: { region: string; flag: string; useCase: string }[];
+  idealFor: string[];
 }> = {
   spark: {
     pipelines: 28,
-    benefits: [
-      'Turn any document, URL, or media into a production-ready script in under 2 minutes',
-      'Auto-detect content structure and generate scene breakdowns',
-      'Multi-format input: PDF, PPTX, MP4, MP3, Images, URLs',
-      'AI-powered image generation when no visuals exist',
-    ],
-    regionalContext: [
-      { region: '🇺🇸 NAM', useCase: 'Research papers → training scripts' },
-      { region: '🇦🇪 MENA', useCase: 'Arabic PDFs → RTL video scripts' },
-      { region: '🇮🇳 India', useCase: 'Hindi documents → 22-language scripts' },
-      { region: '🌏 APAC', useCase: 'CJK presentations → localized scripts' },
-    ],
-    jtbd: 'When I have raw content, help me turn it into a structured, production-ready script — fast.',
+    positioning: 'Transforms any raw content — documents, presentations, audio, video, URLs, or images — into structured, production-ready scripts using AI.',
     storyBrand: 'You have brilliant ideas trapped in documents. Spark sets them free.',
+    jtbd: 'Help me turn raw content into a structured, production-ready script — fast.',
+    keyBenefits: [
+      { icon: <Zap className="h-4 w-4" />, title: 'Any Input → Script', detail: 'PDF, PPTX, MP4, MP3, URLs, Images — all converted into structured scripts automatically' },
+      { icon: <Target className="h-4 w-4" />, title: 'Smart Structure Detection', detail: 'AI analyzes your content and generates scene breakdowns, chapters, and visual cues' },
+      { icon: <Sparkles className="h-4 w-4" />, title: 'AI Image Generation', detail: 'When no visuals exist, AI generates context-aware images for each scene' },
+      { icon: <Rocket className="h-4 w-4" />, title: 'Under 2 Minutes', detail: 'From raw document to production-ready script in under 2 minutes' },
+    ],
+    coreCapabilities: ['Document to Script', 'PPT to Script', 'Video to Script', 'Audio to Script', 'URL to Script', 'Image to Script', 'Auto-structure Detection', 'Multi-format Processing'],
     aiProviders: ['Claude', 'GPT-4o', 'Gemini', 'Qwen'],
+    regionalHighlights: [
+      { region: 'NAM', flag: '🇺🇸', useCase: 'Research papers → training scripts in minutes' },
+      { region: 'MENA', flag: '🇦🇪', useCase: 'Arabic PDFs → RTL-aware video scripts' },
+      { region: 'India', flag: '🇮🇳', useCase: 'Hindi documents → 22-language scripts' },
+      { region: 'APAC', flag: '🌏', useCase: 'CJK presentations → localized content' },
+    ],
+    idealFor: ['Content Creators', 'L&D Teams', 'Marketing', 'Educators', 'Research Teams'],
   },
   mind: {
     pipelines: 30,
-    benefits: [
-      'AI script editing with tone, style, and audience-aware suggestions',
-      'Azure Neural TTS in 140+ languages with native prosody',
-      'Voice cloning with emotion control and regional dialect matching',
-      'Zone-routed transcreation — Claude for Western, Qwen for CJK, Gemini for India/SEA',
-    ],
-    regionalContext: [
-      { region: '🇪🇺 Europe', useCase: 'MiFID II compliant financial scripts in 25 EU languages' },
-      { region: '🇦🇪 MENA', useCase: '7 Arabic dialects with Sharia-compliant terminology' },
-      { region: '🌍 Africa', useCase: 'Swahili, Amharic, Yoruba TTS with local accents' },
-      { region: '🌎 LATAM', useCase: 'Brazilian Portuguese vs. European Portuguese nuances' },
-    ],
-    jtbd: 'When I need polished, culturally-aware content, enhance my scripts with the right voice and language.',
+    positioning: 'Enhances scripts with AI editing, Text-to-Speech voiceovers in 140+ languages, voice cloning with emotion control, and background music — the intelligent layer between script and production.',
     storyBrand: 'Your scripts deserve a voice that resonates. Mind makes every word count in every language.',
+    jtbd: 'Enhance my scripts with the right voice, tone, and language for any audience.',
+    keyBenefits: [
+      { icon: <Mic className="h-4 w-4" />, title: 'Neural TTS in 140+ Languages', detail: 'Azure Neural voices with native prosody and regional accent matching' },
+      { icon: <Brain className="h-4 w-4" />, title: 'AI Script Editing', detail: 'Tone, style, and audience-aware AI suggestions to refine your content' },
+      { icon: <Sparkles className="h-4 w-4" />, title: 'Voice Cloning + Emotion', detail: 'Clone any voice with emotion control and dialect-specific nuances' },
+      { icon: <Globe className="h-4 w-4" />, title: 'Zone-Routed AI', detail: 'Claude for Western, Qwen for CJK, Gemini for India/SEA — always the optimal provider' },
+    ],
+    coreCapabilities: ['AI Script Editing', 'Text-to-Speech', 'Voice Cloning', 'AI Music Generation', 'Tone Adjustment', 'Language Translation', 'Content Enhancement', 'Smart Suggestions'],
     aiProviders: ['Azure Neural', 'ElevenLabs', 'DeepL', 'Claude', 'Alibaba CosyVoice'],
+    regionalHighlights: [
+      { region: 'Europe', flag: '🇪🇺', useCase: 'Compliant financial scripts in 25 EU languages' },
+      { region: 'MENA', flag: '🇦🇪', useCase: '7 Arabic dialects with region-appropriate terminology' },
+      { region: 'Africa', flag: '🌍', useCase: 'Swahili, Amharic, Yoruba TTS with local accents' },
+      { region: 'LATAM', flag: '🌎', useCase: 'Brazilian vs. European Portuguese nuances' },
+    ],
+    idealFor: ['Voiceover Artists', 'Podcasters', 'Global Brands', 'Localization Teams', 'E-Learning'],
   },
   vibe: {
     pipelines: 74,
-    benefits: [
-      '4K video production with AI avatars, lip-sync, and dubbing',
-      'Record podcasts, trim, stitch, add TTS & background music',
-      'Multi-track editing with professional-grade output',
-      'Real-time voice-to-video with avatar lip synchronization',
-    ],
-    regionalContext: [
-      { region: '🇺🇸 NAM', useCase: 'HIPAA-compliant training videos with avatars' },
-      { region: '🇮🇳 India', useCase: 'Vernacular EdTech courses in 22 languages' },
-      { region: '🇦🇪 MENA', useCase: 'RTL video production with Arabic lip-sync' },
-      { region: '🌏 APAC', useCase: 'CJK-optimized e-commerce product demos' },
-    ],
-    jtbd: 'When I need professional video or audio, produce it without a studio — in any language.',
+    positioning: 'Full audio and video production studio — record podcasts, produce 4K video with AI avatars, lip-sync dubbing, trim, stitch, and multi-track edit — all without a physical studio.',
     storyBrand: 'Hollywood quality, startup speed. Vibe turns your script into screen-ready content.',
+    jtbd: 'Produce professional video and audio without a studio — in any language.',
+    keyBenefits: [
+      { icon: <Video className="h-4 w-4" />, title: '4K AI Video Production', detail: 'AI avatars, lip-sync, dubbing, and professional-grade video output' },
+      { icon: <Mic className="h-4 w-4" />, title: 'Podcast & Audio Studio', detail: 'Record, trim, stitch, add TTS & background music — complete audio workflow' },
+      { icon: <Layers className="h-4 w-4" />, title: 'Multi-Track Editing', detail: 'Professional timeline editor with audio/video layering and transitions' },
+      { icon: <Sparkles className="h-4 w-4" />, title: 'Avatar + Lip-Sync', detail: 'Real-time voice-to-video with AI avatar lip synchronization in any language' },
+    ],
+    coreCapabilities: ['Podcast Recording', 'Video Recording', 'Trim & Crop', 'Stitch Clips', 'Add Audio/TTS', 'Background Music', 'STT Transcription', 'Multi-track Editing', 'Dubbing', 'Lip-sync', 'Avatar Video'],
     aiProviders: ['Google Veo 3', 'Alibaba Wan', 'JSON2Video', 'Azure Neural', 'Deepgram'],
+    regionalHighlights: [
+      { region: 'NAM', flag: '🇺🇸', useCase: 'Compliant training videos with AI avatars' },
+      { region: 'India', flag: '🇮🇳', useCase: 'Vernacular EdTech courses in 22 languages' },
+      { region: 'MENA', flag: '🇦🇪', useCase: 'RTL video production with Arabic lip-sync' },
+      { region: 'APAC', flag: '🌏', useCase: 'CJK-optimized e-commerce product demos' },
+    ],
+    idealFor: ['Video Producers', 'Podcasters', 'EdTech', 'E-Commerce', 'Corporate Training'],
   },
   deck: {
     pipelines: 34,
-    benefits: [
-      'AI-generated presentations with smart layouts and brand compliance',
-      '3D visualizations, infographics, and interactive slides',
-      'Multi-language export with culturally-adapted visual design',
-      'Template library with industry-specific and region-aware designs',
-    ],
-    regionalContext: [
-      { region: '🇺🇸 NAM', useCase: 'Investor pitch decks with data visualizations' },
-      { region: '🇪🇺 Europe', useCase: 'EU regulatory presentations in 25 languages' },
-      { region: '🇦🇪 MENA', useCase: 'RTL Arabic presentations with Islamic design' },
-      { region: '🌍 Africa', useCase: 'NGO impact reports with regional infographics' },
-    ],
-    jtbd: 'When I need impactful visuals, create presentations that persuade — in any language.',
+    positioning: 'Creates stunning AI-powered presentations with smart layouts, brand compliance, 3D visualizations, infographics, and multi-language export — from script to stage-ready slides.',
     storyBrand: 'Your ideas deserve stunning visuals. Deck transforms words into visual impact.',
+    jtbd: 'Create presentations that persuade — beautifully designed, in any language.',
+    keyBenefits: [
+      { icon: <Presentation className="h-4 w-4" />, title: 'AI Slide Generation', detail: 'Smart layouts that adapt to your content type — data, narrative, or pitch' },
+      { icon: <BarChart3 className="h-4 w-4" />, title: '3D & Infographics', detail: 'Dynamic data visualizations, charts, diagrams, and 3D presentations' },
+      { icon: <Shield className="h-4 w-4" />, title: 'Brand Compliance', detail: 'Automatically apply your brand colors, fonts, logos, and guidelines' },
+      { icon: <Globe className="h-4 w-4" />, title: 'Multi-Language Export', detail: 'Culturally-adapted visual design for any language and region' },
+    ],
+    coreCapabilities: ['AI Slide Generation', 'Smart Visual Layouts', 'Brand Customization', 'Multi-language Export', 'Template Library', 'Infographics', 'Charts & Diagrams', '3D Presentations', 'Interactive Slides'],
     aiProviders: ['Meshy AI', 'ModelsLab', 'DALL-E', 'Claude', 'Gemini'],
+    regionalHighlights: [
+      { region: 'NAM', flag: '🇺🇸', useCase: 'Investor pitch decks with data visualizations' },
+      { region: 'Europe', flag: '🇪🇺', useCase: 'EU regulatory presentations in 25 languages' },
+      { region: 'MENA', flag: '🇦🇪', useCase: 'RTL Arabic presentations with Islamic design' },
+      { region: 'Africa', flag: '🌍', useCase: 'NGO impact reports with regional infographics' },
+    ],
+    idealFor: ['Sales Teams', 'Executives', 'Educators', 'Consultants', 'Startups'],
   },
   arc: {
     pipelines: 14,
-    benefits: [
-      'Enterprise production hub with Kanban, scheduling, and resource management',
-      'Multi-team collaboration with approval chains and review workflows',
-      'Production pipeline tracking from script to final delivery',
-      'Automated task assignment based on project complexity and deadlines',
-    ],
-    regionalContext: [
-      { region: '🇺🇸 NAM', useCase: 'Enterprise content ops with SSO/SAML' },
-      { region: '🇪🇺 Europe', useCase: 'GDPR-aware production workflows' },
-      { region: '🇦🇪 MENA', useCase: 'Multi-stakeholder approval for government content' },
-      { region: '🌏 APAC', useCase: 'Cross-border team coordination across timezones' },
-    ],
-    jtbd: 'When I manage complex productions, orchestrate teams and deadlines without chaos.',
+    positioning: 'Enterprise production management hub — project scheduling, Kanban workflows, multi-team collaboration, approval chains, and resource management for complex content operations.',
     storyBrand: 'From chaos to clarity. Arc gives your production the structure it deserves.',
+    jtbd: 'Orchestrate teams and deadlines for complex productions without the chaos.',
+    keyBenefits: [
+      { icon: <Workflow className="h-4 w-4" />, title: 'Production Pipeline', detail: 'End-to-end tracking from script to final delivery with stage gates' },
+      { icon: <BarChart3 className="h-4 w-4" />, title: 'Kanban & Scheduling', detail: 'Visual boards with drag-and-drop task management and deadline tracking' },
+      { icon: <Shield className="h-4 w-4" />, title: 'Approval Workflows', detail: 'Multi-stakeholder review chains with automated notifications' },
+      { icon: <Cpu className="h-4 w-4" />, title: 'Smart Task Assignment', detail: 'AI-powered task allocation based on project complexity and team capacity' },
+    ],
+    coreCapabilities: ['Project Scheduling', 'Kanban Boards', 'Team Collaboration', 'Production Pipeline', 'Resource Management', 'Task Assignment', 'Progress Tracking', 'Review Workflows', 'Approval Chains'],
     aiProviders: ['Supabase', 'Claude', 'GPT-4o'],
+    regionalHighlights: [
+      { region: 'NAM', flag: '🇺🇸', useCase: 'Enterprise content ops with SSO/SAML' },
+      { region: 'Europe', flag: '🇪🇺', useCase: 'GDPR-aware production workflows' },
+      { region: 'MENA', flag: '🇦🇪', useCase: 'Multi-stakeholder approval for government content' },
+      { region: 'APAC', flag: '🌏', useCase: 'Cross-border team coordination across timezones' },
+    ],
+    idealFor: ['Enterprise Teams', 'Agency Producers', 'Content Ops', 'Project Managers', 'Studios'],
   },
   cast: {
     pipelines: 26,
-    benefits: [
-      'One-click distribution to YouTube, LinkedIn, TikTok, Instagram, X, and Blogs',
-      '14-region localization with transcreated metadata and thumbnails',
-      'Automated scheduling with timezone-aware publishing',
-      'Analytics dashboard with cross-platform performance insights',
-    ],
-    regionalContext: [
-      { region: '🇺🇸 NAM', useCase: 'Multi-platform social media campaigns' },
-      { region: '🇮🇳 India', useCase: 'Vernacular content distribution across 22 states' },
-      { region: '🇦🇪 MENA', useCase: 'RTL social content with Arabic hashtags & SEO' },
-      { region: '🌎 LATAM', useCase: 'Spanish & Portuguese campaigns across 20+ markets' },
-    ],
-    jtbd: 'When I need global reach, publish everywhere — localized for every market — automatically.',
+    positioning: 'Global distribution and marketing engine — publish to YouTube, LinkedIn, TikTok, Instagram, X, and Blogs with 14-region localization, automated scheduling, and cross-platform analytics.',
     storyBrand: 'Create once, reach everywhere. Cast takes your content global without the grind.',
+    jtbd: 'Publish everywhere — localized for every market — automatically.',
+    keyBenefits: [
+      { icon: <Send className="h-4 w-4" />, title: 'One-Click Distribution', detail: 'Publish to YouTube, LinkedIn, TikTok, Instagram, X, and Blogs simultaneously' },
+      { icon: <Globe className="h-4 w-4" />, title: '14-Region Localization', detail: 'Transcreated metadata, thumbnails, and captions for every target market' },
+      { icon: <BarChart3 className="h-4 w-4" />, title: 'Cross-Platform Analytics', detail: 'Unified performance dashboard across all channels and regions' },
+      { icon: <Rocket className="h-4 w-4" />, title: 'Timezone-Aware Scheduling', detail: 'Automated publishing optimized for peak engagement in each region' },
+    ],
+    coreCapabilities: ['Multi-platform Publishing', '14-Region Localization', 'Automated Scheduling', 'YouTube Distribution', 'LinkedIn Publishing', 'TikTok Optimization', 'Instagram Reels', 'X/Twitter Posts', 'Blog Integration', 'Analytics Dashboard'],
     aiProviders: ['JSON2Video', 'Azure Neural', 'DeepL', 'Claude'],
+    regionalHighlights: [
+      { region: 'NAM', flag: '🇺🇸', useCase: 'Multi-platform social media campaigns' },
+      { region: 'India', flag: '🇮🇳', useCase: 'Vernacular distribution across 22 states' },
+      { region: 'MENA', flag: '🇦🇪', useCase: 'RTL social content with Arabic hashtags & SEO' },
+      { region: 'LATAM', flag: '🌎', useCase: 'Spanish & Portuguese campaigns across 20+ markets' },
+    ],
+    idealFor: ['Social Media Teams', 'Growth Marketers', 'Global Brands', 'Agencies', 'Publishers'],
   },
 };
 
@@ -161,25 +198,19 @@ interface ProductDetailShowcaseProps {
   onProductChange: (id: string) => void;
 }
 
-// Tab type for detail section
-type DetailTab = 'overview' | 'features' | 'regional';
-
 export const ProductDetailShowcase: React.FC<ProductDetailShowcaseProps> = ({
   activeProduct,
   onProductChange,
 }) => {
-  const [detailTab, setDetailTab] = useState<DetailTab>('overview');
-  
-  // Map product id to GenieProduct key
   const genieProductKey = activeProduct === 'ask' ? null : activeProduct as GenieProduct;
   const productData = genieProductKey ? GENIE_PRODUCTS[genieProductKey] : null;
   const extendedData = PRODUCT_EXTENDED[activeProduct];
   const logo = PRODUCT_LOGOS[activeProduct];
 
-  // For Ask Genie, show a simplified view
+  // Ask Genie — simplified view
   if (!productData || !extendedData) {
     return (
-      <div className="mt-8 max-w-4xl mx-auto">
+      <div className="mt-8 max-w-5xl mx-auto">
         <div className="bg-gradient-to-r from-violet-500 to-fuchsia-500 p-[1px] rounded-2xl">
           <div className="bg-card rounded-2xl p-8 text-center">
             <img src={PRODUCT_LOGOS.ask} alt="Ask Genie" className="w-24 h-24 object-contain mx-auto mb-4" />
@@ -195,218 +226,201 @@ export const ProductDetailShowcase: React.FC<ProductDetailShowcaseProps> = ({
     );
   }
 
-  const tabs: { id: DetailTab; label: string; icon: React.ReactNode }[] = [
-    { id: 'overview', label: 'Overview & Benefits', icon: <Sparkles className="h-3.5 w-3.5" /> },
-    { id: 'features', label: `Features & ${extendedData.pipelines} Pipelines`, icon: <Layers className="h-3.5 w-3.5" /> },
-    { id: 'regional', label: 'Regional How It Works', icon: <Globe className="h-3.5 w-3.5" /> },
-  ];
-
   return (
     <div className="mt-8 max-w-5xl mx-auto">
-      <div className={`bg-gradient-to-r ${productData.color} p-[1px] rounded-2xl`}>
-        <div className="bg-card rounded-2xl overflow-hidden">
-          {/* Product header */}
-          <div className="p-6 pb-4 flex items-center gap-6 border-b border-border/50">
-            <img src={logo} alt={productData.name} className="w-20 h-20 object-contain" />
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-3 flex-wrap">
-                <h3 className="text-2xl font-bold text-foreground">{productData.name}</h3>
-                <Badge variant="secondary" className="font-semibold">
-                  {extendedData.pipelines} Pipelines
-                </Badge>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeProduct}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -12 }}
+          transition={{ duration: 0.3 }}
+        >
+          <div className={`bg-gradient-to-r ${productData.color} p-[1px] rounded-2xl shadow-xl`}>
+            <div className="bg-card rounded-2xl overflow-hidden">
+
+              {/* ─── SECTION 1: Product Identity + Positioning ─── */}
+              <div className={`bg-gradient-to-r ${productData.color} bg-opacity-5 p-6 md:p-8`}>
+                <div className="flex items-start gap-5">
+                  <img 
+                    src={logo} 
+                    alt={productData.name} 
+                    className="w-20 h-20 md:w-24 md:h-24 object-contain rounded-xl bg-background/80 p-2 shadow-md flex-shrink-0" 
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 flex-wrap mb-1">
+                      <h3 className="text-2xl md:text-3xl font-bold text-white">{productData.name}</h3>
+                      <Badge className="bg-white/20 text-white border-white/30 font-semibold">
+                        {extendedData.pipelines} Pipelines
+                      </Badge>
+                    </div>
+                    <p className="text-white/90 font-medium text-lg mb-2">
+                      "{productData.tagline}"
+                    </p>
+                    <p className="text-white/75 text-sm md:text-base leading-relaxed">
+                      {extendedData.positioning}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Ideal For tags */}
+                <div className="flex flex-wrap gap-2 mt-4 ml-0 md:ml-[6.5rem]">
+                  <span className="text-xs text-white/60 font-medium uppercase tracking-wide mr-1 self-center">Ideal for:</span>
+                  {extendedData.idealFor.map(persona => (
+                    <Badge key={persona} className="bg-white/15 text-white border-white/20 text-xs">
+                      {persona}
+                    </Badge>
+                  ))}
+                </div>
               </div>
-              <p className={`bg-gradient-to-r ${productData.color} bg-clip-text text-transparent font-medium text-lg`}>
-                "{productData.tagline}"
-              </p>
-              {/* JTBD statement */}
-              <p className="text-sm text-muted-foreground mt-1 italic">
-                {extendedData.jtbd}
-              </p>
-            </div>
-          </div>
 
-          {/* Tab navigation */}
-          <div className="flex border-b border-border/50 px-6 gap-1">
-            {tabs.map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setDetailTab(tab.id)}
-                className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium transition-all border-b-2 -mb-[1px] ${
-                  detailTab === tab.id
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                {tab.icon}
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Tab content */}
-          <div className="p-6">
-            <AnimatePresence mode="wait">
-              {detailTab === 'overview' && (
-                <motion.div
-                  key="overview"
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <div className="grid md:grid-cols-2 gap-6">
-                    {/* Left: Benefits (AIDA — Interest/Desire) */}
-                    <div>
-                      <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-                        <Zap className="h-4 w-4 text-primary" />
-                        Why {productData.name}
-                      </h4>
-                      {/* StoryBrand narrative */}
-                      <p className="text-muted-foreground text-sm mb-4 bg-muted/40 rounded-lg p-3 border-l-2 border-primary">
-                        {extendedData.storyBrand}
-                      </p>
-                      <div className="space-y-3">
-                        {extendedData.benefits.map((benefit, i) => (
-                          <div key={i} className="flex items-start gap-2.5">
-                            <Check className="h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" />
-                            <span className="text-sm text-muted-foreground">{benefit}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Right: AI Providers + Pipeline categories */}
-                    <div className="space-y-5">
-                      <div>
-                        <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-                          <Brain className="h-4 w-4 text-primary" />
-                          Powered By
-                        </h4>
-                        <div className="flex flex-wrap gap-2">
-                          {extendedData.aiProviders.map(provider => (
-                            <Badge key={provider} variant="outline" className="text-xs">
-                              <Sparkles className="h-2.5 w-2.5 mr-1" />
-                              {provider}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div>
-                        <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-                          <Workflow className="h-4 w-4 text-primary" />
-                          Pipeline Categories
-                        </h4>
-                        <div className="flex flex-wrap gap-2">
-                          {productData.pipelineCategories.map(cat => (
-                            <Badge key={cat} variant="secondary" className="text-xs capitalize">
-                              {cat.replace(/-/g, ' ')}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div>
-                        <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-                          <Shield className="h-4 w-4 text-primary" />
-                          Cross-Functional Capabilities
-                        </h4>
-                        <div className="flex flex-wrap gap-2">
-                          {productData.capabilities.map(cap => (
-                            <Badge key={cap} variant="outline" className="text-xs capitalize border-primary/30 text-primary">
-                              {cap.replace(/-/g, ' ')}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
+              {/* ─── SECTION 2: StoryBrand Narrative + JTBD ─── */}
+              <div className="px-6 md:px-8 py-4 bg-muted/30 border-b border-border/50">
+                <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-8">
+                  <div className="flex items-start gap-2 flex-1">
+                    <Sparkles className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                    <p className="text-sm text-foreground font-medium italic">
+                      "{extendedData.storyBrand}"
+                    </p>
                   </div>
-                </motion.div>
-              )}
-
-              {detailTab === 'features' && (
-                <motion.div
-                  key="features"
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {productData.features.map((feature, i) => (
-                      <div
-                        key={feature}
-                        className="flex items-center gap-2.5 p-3 bg-muted/40 rounded-lg border border-border/50 hover:border-primary/30 transition-colors"
-                      >
-                        <div className={`w-7 h-7 rounded-full bg-gradient-to-br ${productData.color} flex items-center justify-center flex-shrink-0`}>
-                          <Check className="h-3.5 w-3.5 text-white" />
-                        </div>
-                        <span className="text-sm text-foreground">{feature}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-5 p-4 bg-muted/30 rounded-xl border border-border/50 text-center">
+                  <div className="flex items-start gap-2 flex-1">
+                    <Target className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
                     <p className="text-sm text-muted-foreground">
-                      <span className="text-foreground font-semibold">{extendedData.pipelines} pre-built pipelines</span> across{' '}
-                      <span className="text-foreground font-semibold">{productData.pipelineCategories.length} categories</span> —{' '}
-                      all powered by <span className="text-primary font-semibold">15 AI providers</span> with{' '}
-                      <span className="text-primary font-semibold">zone-based routing</span> for optimal results.
+                      <span className="font-medium text-foreground">Your goal:</span> {extendedData.jtbd}
                     </p>
                   </div>
-                </motion.div>
-              )}
+                </div>
+              </div>
 
-              {detailTab === 'regional' && (
-                <motion.div
-                  key="regional"
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    {extendedData.regionalContext.map((ctx, i) => (
-                      <div
-                        key={ctx.region}
-                        className="p-4 bg-muted/40 rounded-xl border border-border/50 hover:border-primary/30 transition-colors"
-                      >
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-lg">{ctx.region.split(' ')[0]}</span>
-                          <span className="font-semibold text-foreground text-sm">{ctx.region.split(' ').slice(1).join(' ')}</span>
-                        </div>
-                        <p className="text-sm text-muted-foreground">{ctx.useCase}</p>
+              {/* ─── SECTION 3: Key Benefits (How It Helps) ─── */}
+              <div className="px-6 md:px-8 py-6">
+                <h4 className="font-semibold text-foreground mb-4 flex items-center gap-2 text-base">
+                  <Zap className="h-4 w-4 text-primary" />
+                  How {productData.name} Helps You
+                </h4>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  {extendedData.keyBenefits.map((benefit, i) => (
+                    <div 
+                      key={i}
+                      className="flex items-start gap-3 p-4 rounded-xl bg-muted/40 border border-border/50 hover:border-primary/30 hover:bg-muted/60 transition-all"
+                    >
+                      <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${productData.color} flex items-center justify-center flex-shrink-0 text-white shadow-sm`}>
+                        {benefit.icon}
                       </div>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-foreground text-sm">{benefit.title}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{benefit.detail}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* ─── SECTION 4: Capabilities & AI Providers ─── */}
+              <div className="px-6 md:px-8 py-5 bg-muted/20 border-t border-border/40">
+                <div className="grid md:grid-cols-[1fr,auto] gap-6">
+                  {/* Capabilities */}
+                  <div>
+                    <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2 text-sm">
+                      <Layers className="h-4 w-4 text-primary" />
+                      Core Capabilities
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {extendedData.coreCapabilities.map(cap => (
+                        <span 
+                          key={cap}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full bg-background border border-border/60 text-foreground"
+                        >
+                          <Check className="h-3 w-3 text-green-500" />
+                          {cap}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* AI Providers */}
+                  <div className="md:min-w-[200px]">
+                    <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2 text-sm">
+                      <Cpu className="h-4 w-4 text-primary" />
+                      Powered By
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {extendedData.aiProviders.map(provider => (
+                        <Badge key={provider} variant="outline" className="text-xs font-medium">
+                          <Sparkles className="h-2.5 w-2.5 mr-1 text-primary" />
+                          {provider}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Pipeline categories */}
+                <div className="mt-4 pt-4 border-t border-border/30">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Pipeline Categories:</span>
+                    {productData.pipelineCategories.map(cat => (
+                      <Badge key={cat} variant="secondary" className="text-[11px] capitalize">
+                        {cat.replace(/-/g, ' ')}
+                      </Badge>
                     ))}
                   </div>
-                  <div className="mt-5 p-4 bg-primary/5 rounded-xl border border-primary/20">
-                    <h4 className="font-semibold text-foreground text-sm mb-1 flex items-center gap-2">
-                      <Languages className="h-4 w-4 text-primary" />
-                      Transcreation, Not Translation
-                    </h4>
-                    <p className="text-xs text-muted-foreground">
-                      {productData.name} adapts content culturally for each region — adjusting idioms, compliance terms, 
-                      and visual design. Zone-routed through the optimal AI provider for each language and dialect.
-                    </p>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                </div>
+              </div>
 
-            {/* CTA */}
-            <div className="flex items-center gap-4 mt-6 pt-4 border-t border-border/50">
-              <Link to="/explore">
-                <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                  <Play className="h-4 w-4 mr-2" />
-                  Try {productData.name}
-                </Button>
-              </Link>
-              <Link to="/products" className="text-primary hover:text-primary/80 transition font-medium text-sm flex items-center gap-1">
-                Explore all products <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
+              {/* ─── SECTION 5: Regional How It Works ─── */}
+              <div className="px-6 md:px-8 py-5 border-t border-border/40">
+                <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2 text-sm">
+                  <Globe className="h-4 w-4 text-primary" />
+                  How It Works Across Regions
+                  <Badge variant="outline" className="text-[10px] ml-1 border-primary/30 text-primary">
+                    Transcreation — Not Translation
+                  </Badge>
+                </h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {extendedData.regionalHighlights.map((ctx) => (
+                    <div
+                      key={ctx.region}
+                      className="p-3 bg-muted/40 rounded-lg border border-border/50 hover:border-primary/30 transition-colors"
+                    >
+                      <div className="flex items-center gap-1.5 mb-1.5">
+                        <span className="text-base">{ctx.flag}</span>
+                        <span className="font-semibold text-foreground text-xs">{ctx.region}</span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground leading-snug">{ctx.useCase}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* ─── SECTION 6: CTA ─── */}
+              <div className="px-6 md:px-8 py-5 bg-muted/20 border-t border-border/40 flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                  <span className="font-semibold text-foreground">{extendedData.pipelines} pipelines</span>
+                  <span>•</span>
+                  <span>{extendedData.coreCapabilities.length} capabilities</span>
+                  <span>•</span>
+                  <span>{extendedData.aiProviders.length} AI providers</span>
+                  <span>•</span>
+                  <span>140+ languages</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Link to="/explore">
+                    <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                      <Play className="h-3.5 w-3.5 mr-1.5" />
+                      Try {productData.name}
+                    </Button>
+                  </Link>
+                  <Link to="/products" className="text-primary hover:text-primary/80 transition font-medium text-xs flex items-center gap-1">
+                    All products <ArrowRight className="h-3 w-3" />
+                  </Link>
+                </div>
+              </div>
+
             </div>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 };
