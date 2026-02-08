@@ -192,10 +192,10 @@ export const STTDemo: React.FC<STTDemoProps> = ({
       viewport={{ once: true }}
     >
       <Card className="border-primary/20 shadow-xl overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-green-500/10 to-primary/10 border-b border-border">
+        <CardHeader className="bg-gradient-to-r from-secondary/30 to-primary/10 border-b border-border">
           <CardTitle className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-green-500/20 rounded-xl flex items-center justify-center">
-              <Mic className="h-5 w-5 text-green-500" />
+            <div className="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center">
+              <Mic className="h-5 w-5 text-secondary-foreground" />
             </div>
             <div>
               <h3 className="text-lg font-bold text-foreground">Speech-to-Text Demo</h3>

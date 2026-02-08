@@ -85,6 +85,7 @@ export const DeepLTranslationDemo: React.FC<DeepLTranslationDemoProps> = ({
             'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
           },
           body: JSON.stringify({
+            action: 'translate',
             text: inputText.trim(),
             targetLanguage: targetLang,
             sourceLanguage: sourceLang === 'AUTO' ? undefined : sourceLang,
@@ -126,10 +127,10 @@ export const DeepLTranslationDemo: React.FC<DeepLTranslationDemoProps> = ({
       viewport={{ once: true }}
     >
       <Card className="border-primary/20 shadow-xl overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-blue-500/10 to-primary/10 border-b border-border">
+        <CardHeader className="bg-gradient-to-r from-accent/10 to-primary/10 border-b border-border">
           <CardTitle className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-500/20 rounded-xl flex items-center justify-center">
-              <Languages className="h-5 w-5 text-blue-500" />
+            <div className="w-10 h-10 bg-accent/20 rounded-xl flex items-center justify-center">
+              <Languages className="h-5 w-5 text-accent-foreground" />
             </div>
             <div>
               <h3 className="text-lg font-bold text-foreground">DeepL Translation</h3>
