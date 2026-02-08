@@ -40,9 +40,21 @@ import { useToast } from '@/hooks/use-toast';
 import type { VideoBlueprint } from '@/hooks/useVideoBlueprints';
 import { useVideoBlueprints } from '@/hooks/useVideoBlueprints';
 
+export interface CreateTemplateInitialContext {
+  product?: string;
+  audience?: string;
+  platform?: string;
+  goal?: string;
+}
+
 interface CreateTemplateDialogProps {
   onCreated?: () => void;
   templateToClone?: VideoBlueprint | null;
+  /** Controlled open state from parent (e.g., SmartTemplateRecommender fallback CTA) */
+  externalOpen?: boolean;
+  onExternalOpenChange?: (open: boolean) => void;
+  /** Pre-fill context from SmartTemplateRecommender when no matches found */
+  initialContext?: CreateTemplateInitialContext | null;
 }
 
 // Categories
@@ -656,10 +668,17 @@ const PortalCloneDropdown: React.FC<PortalCloneDropdownProps> = ({
 // ============================================
 // Main Component
 // ============================================
-export function CreateTemplateDialog({ onCreated, templateToClone }: CreateTemplateDialogProps) {
+export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen, onExternalOpenChange, initialContext }: CreateTemplateDialogProps) {
   const { toast } = useToast();
   const { blueprints } = useVideoBlueprints();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  
+  // Use external open if provided, otherwise internal
+  const open = externalOpen !== undefined ? externalOpen : internalOpen;
+  const setOpen = (value: boolean) => {
+    if (onExternalOpenChange) onExternalOpenChange(value);
+    setInternalOpen(value);
+  };
   const [creating, setCreating] = useState(false);
   const [aiGenerating, setAiGenerating] = useState(false);
   const [activeTab, setActiveTab] = useState<string>(templateToClone ? 'clone' : 'ai');
@@ -686,6 +705,50 @@ export function CreateTemplateDialog({ onCreated, templateToClone }: CreateTempl
       providers: DEFAULT_LOCKED_PROVIDERS,
     }));
   }, []);
+
+  // Pre-fill from SmartTemplateRecommender context when dialog opens externally
+  useEffect(() => {
+    if (open && initialContext) {
+      const productToCategoryMap: Record<string, string> = {
+        saas: 'technology', healthcare: 'healthcare', education: 'educational',
+        ecommerce: 'retail', finance: 'finance', travel: 'travel',
+        food: 'hospitality', corporate: 'corporate', entertainment: 'entertainment',
+        smb: 'smb',
+      };
+      const platformMap: Record<string, string[]> = {
+        youtube: ['youtube'], tiktok: ['tiktok'], instagram: ['instagram'],
+        linkedin: ['linkedin'], facebook: ['facebook'], website: ['website'],
+        presentation: ['presentation'], email: ['email'],
+      };
+
+      const category = productToCategoryMap[initialContext.product || ''] || formData.category;
+      const platforms = platformMap[initialContext.platform || ''] || formData.platforms;
+
+      // Build a smart AI prompt from the context
+      const promptParts = [
+        initialContext.product && `for ${initialContext.product} industry`,
+        initialContext.audience && `targeting ${initialContext.audience.replace(/_/g, ' ')}`,
+        initialContext.platform && `optimized for ${initialContext.platform}`,
+        initialContext.goal && `focused on: ${initialContext.goal}`,
+      ].filter(Boolean);
+
+      const aiPrompt = promptParts.length > 0
+        ? `Create a video template ${promptParts.join(', ')}`
+        : '';
+
+      setFormData(prev => ({
+        ...prev,
+        category,
+        platforms,
+        aiPrompt,
+      }));
+
+      // Auto-switch to AI tab since we have context to generate from
+      if (aiPrompt) {
+        setActiveTab('ai');
+      }
+    }
+  }, [open, initialContext]);
 
   // Get all available languages based on selected regions
   const availableLanguages = [...new Set(
@@ -817,14 +880,19 @@ export function CreateTemplateDialog({ onCreated, templateToClone }: CreateTempl
     }
   };
 
+  const isExternallyControlled = externalOpen !== undefined;
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
-          <Plus className="h-4 w-4" />
-          {templateToClone ? 'Clone' : 'Create Template'}
-        </Button>
-      </DialogTrigger>
+      {/* Only show trigger button when NOT externally controlled */}
+      {!isExternallyControlled && (
+        <DialogTrigger asChild>
+          <Button variant="outline" size="sm" className="gap-2">
+            <Plus className="h-4 w-4" />
+            {templateToClone ? 'Clone' : 'Create Template'}
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col overflow-visible" style={{ zIndex: 99998 }}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">

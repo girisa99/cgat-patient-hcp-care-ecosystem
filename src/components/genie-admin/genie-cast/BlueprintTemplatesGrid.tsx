@@ -5,7 +5,7 @@
  * Now includes Create Template functionality
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -58,7 +58,8 @@ import {
 import { cn } from '@/lib/utils';
 import { useVideoBlueprints, type VideoBlueprint } from '@/hooks/useVideoBlueprints';
 import { BlueprintPreviewModal } from './BlueprintPreviewModal';
-import { SmartTemplateRecommender } from './SmartTemplateRecommender';
+import { SmartTemplateRecommender, type RecommenderContext } from './SmartTemplateRecommender';
+import type { CreateTemplateInitialContext } from './CreateTemplateDialog';
 import { TemplateComparisonView } from './TemplateComparisonView';
 import { CreateTemplateDialog } from './CreateTemplateDialog';
 import { 
@@ -343,6 +344,26 @@ export function BlueprintTemplatesGrid({
   // Comparison state
   const [comparisonIds, setComparisonIds] = useState<string[]>([]);
   const [showComparison, setShowComparison] = useState(false);
+
+  // Create Template from Recommender fallback state
+  const [createFromRecommender, setCreateFromRecommender] = useState(false);
+  const [recommenderContext, setRecommenderContext] = useState<CreateTemplateInitialContext | null>(null);
+
+  const handleCreateCustomFromRecommender = useCallback((context: RecommenderContext) => {
+    setRecommenderContext({
+      product: context.product,
+      audience: context.audience,
+      platform: context.platform,
+      goal: context.goal,
+    });
+    setCreateFromRecommender(true);
+  }, []);
+
+  const handleBrowseAllFromRecommender = useCallback(() => {
+    handleResetFilters();
+    // Scroll to grid
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
 
   const toggleCompare = (blueprintId: string) => {
     setComparisonIds(prev => {
@@ -714,6 +735,26 @@ export function BlueprintTemplatesGrid({
           blueprints={blueprints}
           onSelectBlueprint={(bp) => setPreviewBlueprintId(bp.id)}
           onCompare={handleOpenComparison}
+          onCreateCustom={handleCreateCustomFromRecommender}
+          onBrowseAll={handleBrowseAllFromRecommender}
+          selectedRegion={regionFilter !== 'all' ? regionFilter : undefined}
+        />
+      )}
+
+      {/* Hidden CreateTemplateDialog triggered by SmartTemplateRecommender fallback CTA */}
+      {!simpleMode && (
+        <CreateTemplateDialog
+          onCreated={() => {
+            refetch();
+            setCreateFromRecommender(false);
+            setRecommenderContext(null);
+          }}
+          externalOpen={createFromRecommender}
+          onExternalOpenChange={(open) => {
+            setCreateFromRecommender(open);
+            if (!open) setRecommenderContext(null);
+          }}
+          initialContext={recommenderContext}
         />
       )}
 
