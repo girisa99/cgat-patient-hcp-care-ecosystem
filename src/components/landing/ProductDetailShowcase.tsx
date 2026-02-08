@@ -76,9 +76,13 @@ const PRODUCT_EXTENDED: Record<string, {
     aiProviders: ['Claude', 'GPT-4o', 'Gemini', 'Qwen'],
     regionalHighlights: [
       { region: 'NAM', flag: '🇺🇸', useCase: 'Research papers → training scripts in minutes' },
-      { region: 'MENA', flag: '🇦🇪', useCase: 'Arabic PDFs → RTL-aware video scripts' },
-      { region: 'India', flag: '🇮🇳', useCase: 'Hindi documents → 22-language scripts' },
-      { region: 'APAC', flag: '🌏', useCase: 'CJK presentations → localized content' },
+      { region: 'Europe', flag: '🇪🇺', useCase: 'EU compliance docs → multilingual scripts in 25 languages' },
+      { region: 'MENA', flag: '🇦🇪', useCase: 'Arabic PDFs → RTL-aware video scripts across 7 dialects' },
+      { region: 'India', flag: '🇮🇳', useCase: 'Hindi documents → 22-language regional scripts' },
+      { region: 'Africa', flag: '🌍', useCase: 'NGO reports → Swahili & Amharic training scripts' },
+      { region: 'APAC', flag: '🌏', useCase: 'CJK presentations → localized content with tonal accuracy' },
+      { region: 'LATAM', flag: '🌎', useCase: 'Spanish & Portuguese docs → region-specific scripts' },
+      { region: 'Caribbean', flag: '🏝️', useCase: 'Tourism & hospitality docs → multilingual content' },
     ],
     idealFor: ['Content Creators', 'L&D Teams', 'Marketing', 'Educators', 'Research Teams'],
     screenshots: ['Script Editor', 'Input Processing', 'Scene Breakdown'],
@@ -98,10 +102,14 @@ const PRODUCT_EXTENDED: Record<string, {
     coreCapabilities: ['AI Script Editing', 'Text-to-Speech', 'Voice Cloning', 'AI Music Generation', 'Tone Adjustment', 'Language Translation', 'Content Enhancement', 'Smart Suggestions'],
     aiProviders: ['Azure Neural', 'ElevenLabs', 'DeepL', 'Claude', 'Alibaba CosyVoice'],
     regionalHighlights: [
+      { region: 'NAM', flag: '🇺🇸', useCase: 'English neural TTS with American accent precision' },
       { region: 'Europe', flag: '🇪🇺', useCase: 'Compliant financial scripts in 25 EU languages' },
-      { region: 'MENA', flag: '🇦🇪', useCase: '7 Arabic dialects with region-appropriate terminology' },
+      { region: 'MENA', flag: '🇦🇪', useCase: '7 Arabic dialects with Azure Neural viseme lip-sync' },
+      { region: 'India', flag: '🇮🇳', useCase: '22-language TTS with Hindi, Tamil & Bengali accents' },
       { region: 'Africa', flag: '🌍', useCase: 'Swahili, Amharic, Yoruba TTS with local accents' },
+      { region: 'APAC', flag: '🌏', useCase: 'CJK voice cloning via Alibaba CosyVoice with tonal fidelity' },
       { region: 'LATAM', flag: '🌎', useCase: 'Brazilian vs. European Portuguese nuances' },
+      { region: 'Caribbean', flag: '🏝️', useCase: 'Creole & regional English voiceovers for tourism' },
     ],
     idealFor: ['Voiceover Artists', 'Podcasters', 'Global Brands', 'Localization Teams', 'E-Learning'],
     screenshots: ['TTS Studio', 'Voice Cloning', 'Script Editor'],
@@ -122,9 +130,13 @@ const PRODUCT_EXTENDED: Record<string, {
     aiProviders: ['Google Veo 3', 'Alibaba Wan', 'JSON2Video', 'Azure Neural', 'Deepgram'],
     regionalHighlights: [
       { region: 'NAM', flag: '🇺🇸', useCase: 'Compliant training videos with AI avatars' },
-      { region: 'India', flag: '🇮🇳', useCase: 'Vernacular EdTech courses in 22 languages' },
-      { region: 'MENA', flag: '🇦🇪', useCase: 'RTL video production with Arabic lip-sync' },
+      { region: 'Europe', flag: '🇪🇺', useCase: 'GDPR-compliant video production in 25 EU languages' },
+      { region: 'MENA', flag: '🇦🇪', useCase: 'RTL video production with Arabic lip-sync dubbing' },
+      { region: 'India', flag: '🇮🇳', useCase: 'Vernacular EdTech courses in 22 regional languages' },
+      { region: 'Africa', flag: '🌍', useCase: 'Low-bandwidth optimized videos for mobile-first markets' },
       { region: 'APAC', flag: '🌏', useCase: 'CJK-optimized e-commerce product demos' },
+      { region: 'LATAM', flag: '🌎', useCase: 'Spanish & Portuguese video localization for 20+ markets' },
+      { region: 'Caribbean', flag: '🏝️', useCase: 'Tourism & hospitality promotional video content' },
     ],
     idealFor: ['Video Producers', 'Podcasters', 'EdTech', 'E-Commerce', 'Corporate Training'],
     screenshots: ['Video Editor', 'Podcast Studio', 'Avatar Generator'],
@@ -146,8 +158,12 @@ const PRODUCT_EXTENDED: Record<string, {
     regionalHighlights: [
       { region: 'NAM', flag: '🇺🇸', useCase: 'Investor pitch decks with data visualizations' },
       { region: 'Europe', flag: '🇪🇺', useCase: 'EU regulatory presentations in 25 languages' },
-      { region: 'MENA', flag: '🇦🇪', useCase: 'RTL Arabic presentations with Islamic design' },
+      { region: 'MENA', flag: '🇦🇪', useCase: 'RTL Arabic presentations with Islamic design patterns' },
+      { region: 'India', flag: '🇮🇳', useCase: 'Government & enterprise decks in Hindi, Tamil & more' },
       { region: 'Africa', flag: '🌍', useCase: 'NGO impact reports with regional infographics' },
+      { region: 'APAC', flag: '🌏', useCase: 'Corporate presentations for CJK markets with localized charts' },
+      { region: 'LATAM', flag: '🌎', useCase: 'Sales decks in Spanish & Portuguese for regional markets' },
+      { region: 'Caribbean', flag: '🏝️', useCase: 'Investment & tourism presentations with local context' },
     ],
     idealFor: ['Sales Teams', 'Executives', 'Educators', 'Consultants', 'Startups'],
     screenshots: ['Slide Editor', 'Brand Settings', 'Template Gallery'],
@@ -167,10 +183,14 @@ const PRODUCT_EXTENDED: Record<string, {
     coreCapabilities: ['Project Scheduling', 'Kanban Boards', 'Team Collaboration', 'Production Pipeline', 'Resource Management', 'Task Assignment', 'Progress Tracking', 'Review Workflows', 'Approval Chains'],
     aiProviders: ['Supabase', 'Claude', 'GPT-4o'],
     regionalHighlights: [
-      { region: 'NAM', flag: '🇺🇸', useCase: 'Enterprise content ops with SSO/SAML' },
-      { region: 'Europe', flag: '🇪🇺', useCase: 'GDPR-aware production workflows' },
+      { region: 'NAM', flag: '🇺🇸', useCase: 'Enterprise content ops with SSO/SAML integration' },
+      { region: 'Europe', flag: '🇪🇺', useCase: 'GDPR-aware production workflows with audit trails' },
       { region: 'MENA', flag: '🇦🇪', useCase: 'Multi-stakeholder approval for government content' },
+      { region: 'India', flag: '🇮🇳', useCase: 'Multi-language production tracking across 22 states' },
+      { region: 'Africa', flag: '🌍', useCase: 'NGO & development project coordination workflows' },
       { region: 'APAC', flag: '🌏', useCase: 'Cross-border team coordination across timezones' },
+      { region: 'LATAM', flag: '🌎', useCase: 'Agency production management for regional campaigns' },
+      { region: 'Caribbean', flag: '🏝️', useCase: 'Multi-island content production coordination' },
     ],
     idealFor: ['Enterprise Teams', 'Agency Producers', 'Content Ops', 'Project Managers', 'Studios'],
     screenshots: ['Kanban Board', 'Pipeline View', 'Approvals'],
@@ -190,10 +210,14 @@ const PRODUCT_EXTENDED: Record<string, {
     coreCapabilities: ['Multi-platform Publishing', '14-Region Localization', 'Automated Scheduling', 'YouTube Distribution', 'LinkedIn Publishing', 'TikTok Optimization', 'Instagram Reels', 'X/Twitter Posts', 'Blog Integration', 'Analytics Dashboard'],
     aiProviders: ['JSON2Video', 'Azure Neural', 'DeepL', 'Claude'],
     regionalHighlights: [
-      { region: 'NAM', flag: '🇺🇸', useCase: 'Multi-platform social media campaigns' },
-      { region: 'India', flag: '🇮🇳', useCase: 'Vernacular distribution across 22 states' },
+      { region: 'NAM', flag: '🇺🇸', useCase: 'Multi-platform social media campaigns at scale' },
+      { region: 'Europe', flag: '🇪🇺', useCase: 'EU-compliant distribution with GDPR metadata' },
       { region: 'MENA', flag: '🇦🇪', useCase: 'RTL social content with Arabic hashtags & SEO' },
+      { region: 'India', flag: '🇮🇳', useCase: 'Vernacular distribution across 22 states & platforms' },
+      { region: 'Africa', flag: '🌍', useCase: 'Mobile-first distribution optimized for low bandwidth' },
+      { region: 'APAC', flag: '🌏', useCase: 'WeChat, LINE & regional platform integration' },
       { region: 'LATAM', flag: '🌎', useCase: 'Spanish & Portuguese campaigns across 20+ markets' },
+      { region: 'Caribbean', flag: '🏝️', useCase: 'Tourism & hospitality cross-platform campaigns' },
     ],
     idealFor: ['Social Media Teams', 'Growth Marketers', 'Global Brands', 'Agencies', 'Publishers'],
     screenshots: ['Distribution Hub', 'Analytics', 'Scheduler'],
@@ -412,14 +436,14 @@ export const ProductDetailShowcase: React.FC<ProductDetailShowcaseProps> = ({
                     Transcreation — Not Translation
                   </Badge>
                 </h4>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                   {extendedData.regionalHighlights.map((ctx) => (
                     <div
                       key={ctx.region}
-                      className="p-3 bg-muted/40 rounded-lg border border-border/50 hover:border-primary/30 transition-colors group"
+                      className="p-2.5 bg-muted/40 rounded-lg border border-border/50 hover:border-primary/30 transition-colors group"
                     >
-                      <div className="flex items-center gap-1.5 mb-1.5">
-                        <span className="text-lg">{ctx.flag}</span>
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <span className="text-base">{ctx.flag}</span>
                         <span className="font-semibold text-foreground text-xs">{ctx.region}</span>
                       </div>
                       <p className="text-[11px] text-muted-foreground leading-snug group-hover:text-foreground transition-colors">{ctx.useCase}</p>
