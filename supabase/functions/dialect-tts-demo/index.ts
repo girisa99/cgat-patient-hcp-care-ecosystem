@@ -5,7 +5,8 @@
  * Arabic dialects, Indian languages, CJK, African, LATAM, European
  * using Azure Neural TTS (primary) with ElevenLabs fallback.
  * 
- * Supports the "True Transcreation, Not Translation" philosophy
+ * SECURITY: Rate-limited per IP, input-validated, public endpoint (no JWT)
+ * ROUTING: Azure Neural PRIMARY (per master-provider-routing-registry)
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -15,6 +16,62 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
+
+// ============================================
+// RATE LIMITING — In-memory per IP
+// ============================================
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
+const RATE_LIMIT_MAX_REQUESTS = 20; // 20 requests per minute per IP
+const CUSTOM_TTS_LIMIT = 10; // Stricter for custom text (costs more)
+
+function getClientIP(req: Request): string {
+  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() 
+    || req.headers.get('cf-connecting-ip') 
+    || req.headers.get('x-real-ip') 
+    || 'unknown';
+}
+
+function checkRateLimit(ip: string, limit: number = RATE_LIMIT_MAX_REQUESTS): { allowed: boolean; remaining: number; resetIn: number } {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return { allowed: true, remaining: limit - 1, resetIn: RATE_LIMIT_WINDOW_MS };
+  }
+
+  if (entry.count >= limit) {
+    return { allowed: false, remaining: 0, resetIn: entry.resetAt - now };
+  }
+
+  entry.count++;
+  return { allowed: true, remaining: limit - entry.count, resetIn: entry.resetAt - now };
+}
+
+// Periodic cleanup of expired entries (every 5 minutes)
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, entry] of rateLimitMap.entries()) {
+    if (now > entry.resetAt) rateLimitMap.delete(ip);
+  }
+}, 5 * 60_000);
+
+// ============================================
+// INPUT VALIDATION
+// ============================================
+const MAX_CUSTOM_TEXT_LENGTH = 500;
+const VALID_ACTIONS = ['get_languages', 'generate_tts', 'custom_tts'];
+const VALID_MODES = ['transcreation', 'literal', undefined];
+
+function sanitizeText(text: string): string {
+  // Remove potential script injection, limit length
+  return text
+    .replace(/<[^>]*>/g, '') // Strip HTML tags
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '') // Strip control chars
+    .trim()
+    .slice(0, MAX_CUSTOM_TEXT_LENGTH);
+}
 
 // ============================================
 // VOICE REGISTRIES — ALL REGIONS
@@ -91,7 +148,7 @@ function lookupVoice(code: string): { voice: string; transcreation: string; lite
 }
 
 // ============================================
-// TTS PROVIDERS
+// TTS PROVIDERS — Azure Neural PRIMARY (per master registry)
 // ============================================
 
 async function generateAzureTTS(text: string, voice: string): Promise<ArrayBuffer | null> {
@@ -104,7 +161,6 @@ async function generateAzureTTS(text: string, voice: string): Promise<ArrayBuffe
   }
 
   try {
-    // Extract language from voice name (e.g., "ja-JP-NanamiNeural" -> "ja-JP")
     const langCode = voice.split('-').slice(0, 2).join('-');
     
     const ssml = `
@@ -187,11 +243,11 @@ async function generateCustomTTS(text: string, languageCode: string): Promise<{ 
   const voiceEntry = lookupVoice(languageCode);
   if (!voiceEntry) return null;
   
-  // Try Azure first
+  // Azure Neural PRIMARY (per master-provider-routing-registry)
   const azureBuffer = await generateAzureTTS(text, voiceEntry.voice);
-  if (azureBuffer) return { buffer: azureBuffer, provider: 'azure' };
+  if (azureBuffer) return { buffer: azureBuffer, provider: 'azure_neural' };
   
-  // Fallback to ElevenLabs
+  // ElevenLabs FALLBACK (tertiary per registry)
   const elBuffer = await generateElevenLabsTTS(text);
   if (elBuffer) return { buffer: elBuffer, provider: 'elevenlabs' };
   
@@ -207,11 +263,31 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  try {
-    const { action, languageCode, mode, text: customText } = await req.json();
+  const clientIP = getClientIP(req);
 
-    // Action: Get all available languages grouped by tab
+  try {
+    const body = await req.json();
+    const { action, languageCode, mode, text: customText } = body;
+
+    // Validate action
+    if (!action || !VALID_ACTIONS.includes(action)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid action. Use: get_languages, generate_tts, custom_tts' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Action: Get all available languages grouped by tab (lightweight, generous limit)
     if (action === 'get_languages') {
+      const rateCheck = checkRateLimit(clientIP, 60); // generous for metadata
+      if (!rateCheck.allowed) {
+        console.warn(`[dialect-tts-demo] Rate limited IP: ${clientIP}`);
+        return new Response(
+          JSON.stringify({ error: 'Too many requests. Please wait and try again.', retryAfter: Math.ceil(rateCheck.resetIn / 1000) }),
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': String(Math.ceil(rateCheck.resetIn / 1000)) } }
+        );
+      }
+
       const mapEntries = (voices: Record<string, any>, tab: string) =>
         Object.entries(voices).map(([code, data]) => ({
           code,
@@ -234,9 +310,33 @@ serve(async (req) => {
       );
     }
 
-    // Action: Generate TTS for custom user text
-    if (action === 'custom_tts' && customText && languageCode) {
-      const result = await generateCustomTTS(customText, languageCode);
+    // Action: Generate TTS for custom user text (stricter rate limit)
+    if (action === 'custom_tts') {
+      const rateCheck = checkRateLimit(`${clientIP}:custom`, CUSTOM_TTS_LIMIT);
+      if (!rateCheck.allowed) {
+        console.warn(`[dialect-tts-demo] Custom TTS rate limited IP: ${clientIP}`);
+        return new Response(
+          JSON.stringify({ error: 'Too many custom TTS requests. Please wait.', retryAfter: Math.ceil(rateCheck.resetIn / 1000) }),
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': String(Math.ceil(rateCheck.resetIn / 1000)) } }
+        );
+      }
+
+      if (!customText || !languageCode) {
+        return new Response(
+          JSON.stringify({ error: 'Missing required fields: text, languageCode' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const sanitized = sanitizeText(customText);
+      if (sanitized.length < 2) {
+        return new Response(
+          JSON.stringify({ error: 'Text too short. Minimum 2 characters.' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const result = await generateCustomTTS(sanitized, languageCode);
       if (!result) {
         return new Response(
           JSON.stringify({ error: 'TTS generation failed' }),
@@ -244,7 +344,6 @@ serve(async (req) => {
         );
       }
       
-      // Return as base64 JSON for easy client consumption
       const base64Audio = base64Encode(new Uint8Array(result.buffer));
       return new Response(
         JSON.stringify({ audioContent: base64Audio, provider: result.provider, languageCode }),
@@ -254,6 +353,15 @@ serve(async (req) => {
 
     // Action: Generate TTS audio for pre-set transcreation sample
     if (action === 'generate_tts' && languageCode) {
+      const rateCheck = checkRateLimit(clientIP, RATE_LIMIT_MAX_REQUESTS);
+      if (!rateCheck.allowed) {
+        console.warn(`[dialect-tts-demo] TTS rate limited IP: ${clientIP}`);
+        return new Response(
+          JSON.stringify({ error: 'Too many requests. Please wait.', retryAfter: Math.ceil(rateCheck.resetIn / 1000) }),
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': String(Math.ceil(rateCheck.resetIn / 1000)) } }
+        );
+      }
+
       const voiceEntry = lookupVoice(languageCode);
       
       if (!voiceEntry) {
@@ -265,12 +373,12 @@ serve(async (req) => {
 
       // Use transcreation by default, literal if specified
       const text = mode === 'literal' ? voiceEntry.literal : voiceEntry.transcreation;
-      let provider = 'azure';
+      let provider = 'azure_neural';
 
-      // Try Azure first
+      // Azure Neural PRIMARY (per master-provider-routing-registry)
       let audioBuffer = await generateAzureTTS(text, voiceEntry.voice);
 
-      // Fallback to ElevenLabs
+      // ElevenLabs FALLBACK
       if (!audioBuffer) {
         provider = 'elevenlabs';
         audioBuffer = await generateElevenLabsTTS(text);
@@ -283,7 +391,6 @@ serve(async (req) => {
         );
       }
 
-      // Return as base64 JSON for consistent client handling
       const base64Audio = base64Encode(new Uint8Array(audioBuffer));
       return new Response(
         JSON.stringify({ audioContent: base64Audio, provider, languageCode }),

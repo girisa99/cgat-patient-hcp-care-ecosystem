@@ -26,14 +26,68 @@ interface TranslationResponse {
   error?: string;
 }
 
+// ============================================
+// RATE LIMITING — In-memory per IP
+// ============================================
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX = 15; // 15 translations per minute per IP
+const MAX_TEXT_LENGTH = 2000;
+
+function getClientIP(req: Request): string {
+  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+    || req.headers.get('cf-connecting-ip')
+    || req.headers.get('x-real-ip')
+    || 'unknown';
+}
+
+function checkRateLimit(ip: string): { allowed: boolean; resetIn: number } {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return { allowed: true, resetIn: RATE_LIMIT_WINDOW_MS };
+  }
+  if (entry.count >= RATE_LIMIT_MAX) {
+    return { allowed: false, resetIn: entry.resetAt - now };
+  }
+  entry.count++;
+  return { allowed: true, resetIn: entry.resetAt - now };
+}
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, entry] of rateLimitMap.entries()) {
+    if (now > entry.resetAt) rateLimitMap.delete(ip);
+  }
+}, 5 * 60_000);
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const clientIP = getClientIP(req);
+  const rateCheck = checkRateLimit(clientIP);
+  if (!rateCheck.allowed) {
+    console.warn(`[TranslationService] Rate limited IP: ${clientIP}`);
+    return new Response(
+      JSON.stringify({ error: 'Too many requests. Please wait.', retryAfter: Math.ceil(rateCheck.resetIn / 1000) }),
+      { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': String(Math.ceil(rateCheck.resetIn / 1000)) } }
+    );
+  }
+
   try {
     const request: TranslationRequest = await req.json();
+
+    // Input validation
+    if (request.text && request.text.length > MAX_TEXT_LENGTH) {
+      return new Response(
+        JSON.stringify({ error: `Text too long. Maximum ${MAX_TEXT_LENGTH} characters.` }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
     console.log('[TranslationService] Request:', {
       action: request.action,
       provider: request.provider,
