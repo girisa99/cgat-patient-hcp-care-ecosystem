@@ -12,8 +12,48 @@ import {
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
+
+// ============================================
+// RATE LIMITING — In-memory per IP (protects ALL 18+ AI providers)
+// ============================================
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
+const RATE_LIMIT_MAX = 30; // 30 requests/min per IP (universal processor handles many actions)
+const MAX_PROMPT_LENGTH = 10000; // Max chars for prompt input
+
+function getClientIP(req: Request): string {
+  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+    || req.headers.get('cf-connecting-ip')
+    || req.headers.get('x-real-ip')
+    || 'unknown';
+}
+
+function checkRateLimit(ip: string, limit: number = RATE_LIMIT_MAX): { allowed: boolean; remaining: number; resetIn: number } {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return { allowed: true, remaining: limit - 1, resetIn: RATE_LIMIT_WINDOW_MS };
+  }
+
+  if (entry.count >= limit) {
+    return { allowed: false, remaining: 0, resetIn: entry.resetAt - now };
+  }
+
+  entry.count++;
+  return { allowed: true, remaining: limit - entry.count, resetIn: entry.resetAt - now };
+}
+
+// Cleanup expired entries periodically
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, entry] of rateLimitMap.entries()) {
+    if (now > entry.resetAt) rateLimitMap.delete(ip);
+  }
+}, 5 * 60_000);
 
 interface AIRequest {
   provider: 'openai' | 'claude' | 'gemini';
@@ -78,10 +118,31 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  try {
-    const { provider, model, prompt, systemPrompt, temperature = 0.7, maxTokens = 4000, action, imageGeneration, aspectRatio, style, context } = await req.json() as AIRequest;
+  const clientIP = getClientIP(req);
 
-    console.log(`[UniversalAI] Processing request - Provider: ${provider}, Model: ${model}, Action: ${action}, ImageGen: ${imageGeneration}`);
+  // Rate limit check — protects ALL downstream AI provider API keys
+  const rateCheck = checkRateLimit(clientIP);
+  if (!rateCheck.allowed) {
+    console.warn(`[UniversalAI] Rate limited IP: ${clientIP}`);
+    return new Response(
+      JSON.stringify({ error: 'Too many requests. Please wait and try again.', retryAfter: Math.ceil(rateCheck.resetIn / 1000) }),
+      { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': String(Math.ceil(rateCheck.resetIn / 1000)) } }
+    );
+  }
+
+  try {
+    const requestBody = await req.json() as AIRequest;
+    const { provider, model, prompt, systemPrompt, temperature = 0.7, maxTokens = 4000, action, imageGeneration, aspectRatio, style, context } = requestBody;
+
+    // Input validation — prevent abuse with oversized prompts
+    if (prompt && typeof prompt === 'string' && prompt.length > MAX_PROMPT_LENGTH) {
+      return new Response(
+        JSON.stringify({ error: `Prompt too long. Maximum ${MAX_PROMPT_LENGTH} characters.` }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log(`[UniversalAI] Processing request from ${clientIP} - Provider: ${provider}, Model: ${model}, Action: ${action}, ImageGen: ${imageGeneration}`);
 
     // Lightweight actions that don't require full params
     if (action === 'health_check' || action === 'ping') {

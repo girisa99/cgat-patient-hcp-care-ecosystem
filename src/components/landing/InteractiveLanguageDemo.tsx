@@ -77,18 +77,18 @@ export const InteractiveLanguageDemo: React.FC<InteractiveLanguageDemoProps> = (
     setIsPlaying(true);
 
     try {
-      // Use the existing text-to-speech edge function
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      // Use the existing text-to-speech edge function (hardcoded, no VITE_ env vars in Lovable)
+      const SUPABASE_URL = 'https://ithspbabhmdntioslfqe.supabase.co';
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0aHNwYmFiaG1kbnRpb3NsZnFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY5MjU5OTMsImV4cCI6MjA2MjUwMTk5M30.yUZZHsz2wIHboVuWWfqXeAH5oHRxzJIz20NWSUmHPhw';
       
       const response = await fetch(
-        `${supabaseUrl}/functions/v1/text-to-speech`,
+        `${SUPABASE_URL}/functions/v1/text-to-speech`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'apikey': supabaseKey || '',
-            'Authorization': `Bearer ${supabaseKey || ''}`,
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
           },
           body: JSON.stringify({
             text,
