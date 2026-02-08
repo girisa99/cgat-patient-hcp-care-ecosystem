@@ -147,7 +147,7 @@ export const VideoProviderMatrix: React.FC<VideoProviderMatrixProps> = ({
       {/* Section header */}
       <div className="flex items-center gap-2 mb-3">
         <Zap className="w-4 h-4 text-yellow-400" />
-        <span className="text-sm font-medium text-white/80">Powered by 12+ AI Providers</span>
+        <span className="text-sm font-medium text-white/80">Powered by 19 AI Providers</span>
       </div>
       
       {/* Provider grid */}

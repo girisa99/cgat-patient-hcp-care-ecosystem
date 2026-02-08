@@ -34,7 +34,7 @@ import genieArcLogo from '@/assets/logos/products/genie-arc.png';
 import genieCastLogo from '@/assets/logos/products/genie-cast.png';
 import askGenieLogo from '@/assets/logos/products/ask-genie.png';
 
-// AI Provider logos - Core 12 Providers
+// AI Provider logos - Core 19 Providers
 import openaiLogo from '@/assets/logos/providers/openai.svg';
 import anthropicLogo from '@/assets/logos/providers/anthropic.png';
 import geminiLogo from '@/assets/logos/providers/gemini.svg';
@@ -48,6 +48,12 @@ import deepseekLogo from '@/assets/logos/providers/deepseek.png';
 import replicateLogo from '@/assets/logos/providers/replicate.png';
 import supabaseLogo from '@/assets/logos/providers/supabase.svg';
 import gcpLogo from '@/assets/logos/providers/gcp-official.png';
+import deepgramLogo from '@/assets/logos/providers/deepgram.png';
+import awsLogo from '@/assets/logos/providers/aws.png';
+import stabilityLogo from '@/assets/logos/providers/stability.png';
+import groqLogo from '@/assets/logos/providers/groq.png';
+import cohereLogo from '@/assets/logos/providers/cohere.png';
+import mistralLogo from '@/assets/logos/providers/mistral.png';
 
 // ============================================
 // CONSTANTS & DATA
@@ -163,21 +169,27 @@ const PRICING_TIERS = [
   { name: 'Enterprise', price: 299, pipelines: 206, languages: '140+', credits: '10K+', features: ['8K', 'White-label', 'SSO/SAML', 'VR/AR Labs'] },
 ];
 
-// Core 13 AI Providers - Accurate representation of implemented system
+// Core 19 AI Providers - Aligned with master-provider-routing-registry.ts
 const AI_PROVIDERS = [
-  { name: 'OpenAI', logo: openaiLogo, use: 'GPT-4o, Whisper STT, DALL-E 3', color: 'from-emerald-500 to-teal-500' },
-  { name: 'Claude', logo: anthropicLogo, use: 'Long Context, Narrative Writing', color: 'from-orange-400 to-amber-500' },
-  { name: 'Gemini', logo: geminiLogo, use: 'Vision, 1M Context, Indian/SEA Langs', color: 'from-blue-500 to-indigo-500' },
-  { name: 'GCP', logo: gcpLogo, use: 'OAuth, Calendar, Vision, STT/TTS', color: 'from-blue-500 to-green-500' },
-  { name: 'DeepSeek', logo: deepseekLogo, use: 'CJK Optimized LLM, Vision & STT', color: 'from-cyan-500 to-blue-500' },
-  { name: 'Alibaba', logo: alibabaLogo, use: 'Qwen LLM, CosyVoice, WAN 2.2 Avatar', color: 'from-orange-500 to-red-500' },
-  { name: 'Azure', logo: azureLogo, use: 'Neural TTS/STT, OCR, Visemes', color: 'from-sky-500 to-blue-500' },
-  { name: 'ModelsLab', logo: modelslabLogo, use: 'FLUX, AnimateDiff, Video, 3D Gen', color: 'from-violet-500 to-purple-500' },
-  { name: 'Replicate', logo: replicateLogo, use: 'Open-Source Models, 3D Fallback', color: 'from-gray-600 to-slate-700' },
-  { name: 'ElevenLabs', logo: elevenlabsLogo, use: 'Premium TTS, Voice Clone, SFX, Music', color: 'from-purple-500 to-pink-500' },
-  { name: 'DeepL', logo: deeplLogo, use: 'European Translation', color: 'from-blue-600 to-cyan-500' },
-  { name: 'Meshy', logo: meshyLogo, use: 'Text-to-3D, Image-to-3D', color: 'from-green-500 to-emerald-500' },
-  { name: 'Supabase', logo: supabaseLogo, use: 'Auth, Database, Edge Functions', color: 'from-green-600 to-teal-500' },
+  { name: 'Google Vertex', logo: gcpLogo, use: 'Veo 3 Video, Imagen 3, Gemini Pro LLM', color: 'from-blue-500 to-green-500' },
+  { name: 'Claude', logo: anthropicLogo, use: 'Primary LLM — Western/EU Transcreation', color: 'from-orange-400 to-amber-500' },
+  { name: 'OpenAI', logo: openaiLogo, use: 'GPT-4o Fallback, Whisper STT, DALL-E', color: 'from-emerald-500 to-teal-500' },
+  { name: 'Azure', logo: azureLogo, use: 'Primary TTS (140+ langs), Viseme Lip-Sync', color: 'from-sky-500 to-blue-500' },
+  { name: 'Alibaba', logo: alibabaLogo, use: 'CosyVoice CJK, Wan 2.6 Video, Qwen LLM', color: 'from-orange-500 to-red-500' },
+  { name: 'DeepSeek', logo: deepseekLogo, use: 'CJK Technical LLM, Cost-Effective Code', color: 'from-cyan-500 to-blue-500' },
+  { name: 'Deepgram', logo: deepgramLogo, use: 'Nova 2 — Primary STT (<100ms Latency)', color: 'from-teal-500 to-cyan-500' },
+  { name: 'ElevenLabs', logo: elevenlabsLogo, use: 'Premium Voice Clone, SFX, Music Gen', color: 'from-purple-500 to-pink-500' },
+  { name: 'DeepL', logo: deeplLogo, use: 'Primary European Translation Engine', color: 'from-blue-600 to-cyan-500' },
+  { name: 'Meshy AI', logo: meshyLogo, use: 'Primary 3D — Text/Image to 3D, VR/AR', color: 'from-green-500 to-emerald-500' },
+  { name: 'ModelsLab', logo: modelslabLogo, use: 'FLUX Images, AnimateDiff, 3D Fallback', color: 'from-violet-500 to-purple-500' },
+  { name: 'Replicate', logo: replicateLogo, use: 'Open-Source Models, Universal Fallback', color: 'from-gray-600 to-slate-700' },
+  { name: 'AWS', logo: awsLogo, use: 'Polly TTS, Translate, S3 Storage', color: 'from-amber-500 to-orange-500' },
+  { name: 'Stability AI', logo: stabilityLogo, use: 'SDXL Image Generation via ModelsLab', color: 'from-indigo-500 to-purple-500' },
+  { name: 'Mistral', logo: mistralLogo, use: 'EU Technical LLM, GDPR-Compliant', color: 'from-orange-600 to-red-500' },
+  { name: 'Groq', logo: groqLogo, use: 'Ultra-Fast LLM Inference (<50ms)', color: 'from-red-500 to-pink-500' },
+  { name: 'Cohere', logo: cohereLogo, use: 'Enterprise Embeddings & RAG Search', color: 'from-green-600 to-teal-500' },
+  { name: 'Supabase', logo: supabaseLogo, use: 'Auth, Database, 153+ Edge Functions', color: 'from-green-600 to-teal-500' },
+  { name: 'Gemini', logo: geminiLogo, use: 'India/SEA/Africa LLM, 1M Context', color: 'from-blue-500 to-indigo-500' },
 ];
 
 const socialLinks = [
@@ -361,7 +373,7 @@ const GenieStudioLanding: React.FC = () => {
                 <span>•</span>
                 <span className="px-2 py-1 bg-muted rounded">206 Pipelines</span>
                 <span>•</span>
-                <span className="px-2 py-1 bg-muted rounded">12 AI Providers</span>
+                <span className="px-2 py-1 bg-muted rounded">19 AI Providers</span>
                 <span>•</span>
                 <span className="px-2 py-1 bg-muted rounded">95% Confidence</span>
               </div>
@@ -554,10 +566,10 @@ const GenieStudioLanding: React.FC = () => {
         <div className="relative max-w-7xl mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
-              12 AI Providers. Best for Each Task.
+              19 AI Providers. Best for Each Task.
             </h2>
             <p className="text-xl text-muted-foreground">
-              We pick the right AI for YOUR context — automatically
+              Zone-routed across 4 regions — we pick the right AI for YOUR context automatically
             </p>
           </div>
 
