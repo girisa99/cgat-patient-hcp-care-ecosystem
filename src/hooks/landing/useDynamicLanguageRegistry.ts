@@ -384,15 +384,53 @@ function getLanguageName(code: string): string {
 }
 
 function getEmptyRegistry(): LanguageRegistryData {
+  // Provide minimal static fallback so components render immediately
+  const fallbackLanguages: LanguageEntry[] = [
+    { code: 'ar-SA', name: 'Saudi Arabic', flag: '🇸🇦', region: 'Saudi Arabia', regionGroup: 'arabic', transcreation: 'ابدأ تسوي فيديوهات روعة — مجاناً!', literal: 'ابدأ بإنشاء مقاطع فيديو رائعة', provider: 'azure', isRTL: true },
+    { code: 'ar-EG', name: 'Egyptian Arabic', flag: '🇪🇬', region: 'Egypt', regionGroup: 'arabic', transcreation: 'ابدأ اعمل فيديوهات جامدة — ببلاش!', literal: 'ابدأ بإنشاء مقاطع فيديو رائعة', provider: 'azure', isRTL: true },
+    { code: 'hi-IN', name: 'Hindi', flag: '🇮🇳', region: 'India', regionGroup: 'indian', transcreation: 'AI course creator फ्री में ट्राई करो!', literal: 'कृपया हमारे AI-संचालित पाठ्यक्रम निर्माता को मुफ्त में आज़माएं', provider: 'azure' },
+    { code: 'ja-JP', name: 'Japanese', flag: '🇯🇵', region: 'Japan', regionGroup: 'cjk', transcreation: 'AIで動画制作を始めよう — 無料で！', literal: '当社のAI動画制作ツールを無料でお試しください', provider: 'azure' },
+    { code: 'es-MX', name: 'Mexican Spanish', flag: '🇲🇽', region: 'Mexico', regionGroup: 'latam', transcreation: '¡Échale ganas — es gratis, neta!', literal: 'Por favor pruebe nuestra herramienta gratis', provider: 'azure' },
+    { code: 'de-DE', name: 'German', flag: '🇩🇪', region: 'Germany', regionGroup: 'european', transcreation: 'Leg los mit genialen Videos — kostenlos!', literal: 'Beginnen Sie mit der Erstellung von Videos', provider: 'azure' },
+    { code: 'sw-KE', name: 'Swahili', flag: '🇰🇪', region: 'Kenya', regionGroup: 'african', transcreation: 'Anza kuunda video za kushangaza — bure!', literal: 'Begin creating excellent video content for free', provider: 'azure' },
+    { code: 'pt-BR', name: 'Brazilian Portuguese', flag: '🇧🇷', region: 'Brazil', regionGroup: 'latam', transcreation: 'Começa a criar vídeos incríveis — de graça!', literal: 'Experimente nossa ferramenta de vídeo gratuitamente', provider: 'azure' },
+    { code: 'fr-FR', name: 'French', flag: '🇫🇷', region: 'France', regionGroup: 'european', transcreation: 'Lancez-vous — c\'est gratuit et sans engagement !', literal: 'Commencez à créer des contenus vidéo', provider: 'azure' },
+    { code: 'zh-CN', name: 'Chinese', flag: '🇨🇳', region: 'China', regionGroup: 'cjk', transcreation: '用AI来创作精彩视频吧——完全免费！', literal: '请免费试用我们的AI视频制作工具', provider: 'azure' },
+    { code: 'ko-KR', name: 'Korean', flag: '🇰🇷', region: 'South Korea', regionGroup: 'cjk', transcreation: 'AI로 멋진 영상 만들어 보세요 — 무료!', literal: '당사의 AI 비디오 제작 도구를 무료로 사용해 보세요', provider: 'azure' },
+  ];
+
+  const ttsLanguages = fallbackLanguages.filter(l => l.transcreation);
+  const sttLanguages = fallbackLanguages;
+  const deeplLanguages = fallbackLanguages.filter(l => ['ar','zh','ja','ko','de','fr','es','pt','sw'].includes(l.code.split('-')[0]));
+
   return {
-    tabs: [],
-    allLanguages: [],
-    ttsLanguages: [],
-    sttLanguages: [],
-    deeplLanguages: [],
+    tabs: Object.entries(TAB_META).map(([id, meta]) => ({
+      id,
+      label: meta.label,
+      badge: meta.badge,
+      count: fallbackLanguages.filter(l => l.regionGroup === id).length,
+      title: meta.title,
+      subtitle: meta.subtitle,
+      moat: meta.moat,
+      languages: fallbackLanguages.filter(l => l.regionGroup === id),
+    })),
+    allLanguages: fallbackLanguages,
+    ttsLanguages,
+    sttLanguages,
+    deeplLanguages,
     isLoading: true,
     error: null,
-    getLanguagesForRegion: () => [],
-    getCoreLanguages: () => [],
+    getLanguagesForRegion: (region: string) => {
+      const coreCodes = REGION_CORE_CODES[region] || [];
+      return [...fallbackLanguages].sort((a, b) => {
+        const aCore = coreCodes.includes(a.code) ? -1 : 0;
+        const bCore = coreCodes.includes(b.code) ? -1 : 0;
+        return aCore - bCore;
+      });
+    },
+    getCoreLanguages: (region: string) => {
+      const coreCodes = REGION_CORE_CODES[region] || [];
+      return fallbackLanguages.filter(l => coreCodes.includes(l.code));
+    },
   };
 }
