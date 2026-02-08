@@ -23,9 +23,15 @@ import {
   Wand2,
   Image as ImageIcon,
   Eye,
+  Save,
+  Loader2,
+  Undo2,
+  CheckCircle2,
+  Cloud,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { VideoBlueprint, BlueprintScene } from '@/hooks/useVideoBlueprints';
+import { useBlueprintDraft } from '@/hooks/useBlueprintDraft';
 import { OverviewTab } from './blueprint-preview/OverviewTab';
 import { SceneTimelineTab } from './blueprint-preview/SceneTimelineTab';
 import { AIModelsTab } from './blueprint-preview/AIModelsTab';
@@ -55,16 +61,24 @@ export function BlueprintPreviewModal({
 }: BlueprintPreviewModalProps) {
   const [activeTab, setActiveTab] = useState('overview');
   const [expandedScene, setExpandedScene] = useState<string | null>(null);
-  const [localScenes, setLocalScenes] = useState<BlueprintScene[]>(scenes);
 
-  // Sync local scenes when props change (e.g., new blueprint selected)
-  React.useEffect(() => {
-    setLocalScenes(scenes);
-  }, [scenes]);
+  // Database-backed draft persistence (replaces local state)
+  const {
+    scenes: draftScenes,
+    hasDraft,
+    isLoading: isDraftLoading,
+    isSaving,
+    lastSavedAt,
+    draftStatus,
+    updateScenes,
+    saveNow,
+    commitDraft,
+    discardDraft,
+    changeLog,
+  } = useBlueprintDraft(blueprint?.id ?? null, scenes);
 
   const handleScenesModified = (updatedScenes: BlueprintScene[], description: string) => {
-    setLocalScenes(updatedScenes);
-    console.log('[BlueprintPreviewModal] Scenes modified:', description);
+    updateScenes(updatedScenes, description);
   };
 
   if (!blueprint) return null;
@@ -188,7 +202,7 @@ export function BlueprintPreviewModal({
 
             <TabsContent value="overview" className="mt-0">
               <OverviewTab
-                scenes={localScenes}
+                scenes={draftScenes}
                 targetPlatforms={blueprint.target_platform || []}
                 industryTags={blueprint.industry_tags || []}
                 expandedScene={expandedScene}
@@ -200,7 +214,7 @@ export function BlueprintPreviewModal({
 
             <TabsContent value="timeline" className="mt-0">
               <SceneTimelineTab
-                scenes={localScenes}
+                scenes={draftScenes}
                 expandedScene={expandedScene}
                 onExpandScene={setExpandedScene}
                 formatDuration={formatDuration}
@@ -235,10 +249,57 @@ export function BlueprintPreviewModal({
 
         {/* Footer Actions - ALWAYS visible outside scroll area */}
         <div className="p-4 border-t border-border/50 flex justify-between items-center bg-background flex-shrink-0" style={{ flexShrink: 0 }}>
-          <div className="text-sm text-muted-foreground">
-            Used {blueprint.usage_count} times
+          <div className="flex items-center gap-3">
+            <div className="text-sm text-muted-foreground">
+              Used {blueprint.usage_count} times
+            </div>
+            {/* Draft status indicator */}
+            {hasDraft && (
+              <div className="flex items-center gap-2">
+                {isSaving ? (
+                  <Badge variant="outline" className="text-[10px] gap-1 text-muted-foreground">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Saving...
+                  </Badge>
+                ) : lastSavedAt ? (
+                  <Badge variant="outline" className="text-[10px] gap-1 text-primary border-primary/30">
+                    <Cloud className="h-3 w-3" />
+                    Saved
+                  </Badge>
+                ) : null}
+                {draftStatus === 'committed' && (
+                  <Badge className="text-[10px] gap-1 bg-primary text-primary-foreground border-0">
+                    <CheckCircle2 className="h-3 w-3" />
+                    Committed
+                  </Badge>
+                )}
+              </div>
+            )}
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-2">
+            {hasDraft && draftStatus === 'draft' && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 text-xs gap-1 text-destructive hover:text-destructive"
+                  onClick={discardDraft}
+                >
+                  <Undo2 className="h-3 w-3" />
+                  Discard Changes
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs gap-1"
+                  onClick={saveNow}
+                  disabled={isSaving}
+                >
+                  <Save className="h-3 w-3" />
+                  Save Draft
+                </Button>
+              </>
+            )}
             <Button variant="outline" onClick={onClose}>
               Cancel
             </Button>
