@@ -2815,6 +2815,36 @@ export type Database = {
           },
         ]
       }
+      api_rate_limits: {
+        Row: {
+          client_ip: string
+          created_at: string
+          endpoint: string
+          id: string
+          request_count: number
+          window_end: string
+          window_start: string
+        }
+        Insert: {
+          client_ip: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          request_count?: number
+          window_end: string
+          window_start?: string
+        }
+        Update: {
+          client_ip?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          request_count?: number
+          window_end?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       api_service_configurations: {
         Row: {
           agent_id: string | null
@@ -25976,6 +26006,15 @@ export type Database = {
         Args: { p_exclude_id?: string; p_name: string; p_user_id: string }
         Returns: boolean
       }
+      check_rate_limit: {
+        Args: {
+          p_client_ip: string
+          p_endpoint: string
+          p_max_requests?: number
+          p_window_seconds?: number
+        }
+        Returns: Json
+      }
       check_user_has_role:
         | {
             Args: {
@@ -25992,6 +26031,7 @@ export type Database = {
       classify_issue_type: { Args: { p_ticket_id: string }; Returns: string }
       cleanup_agent_sessions: { Args: never; Returns: Json }
       cleanup_duplicate_test_cases: { Args: never; Returns: Json }
+      cleanup_expired_rate_limits: { Args: never; Returns: undefined }
       cleanup_old_draft_agents: {
         Args: { p_confirm?: boolean; p_user_id?: string }
         Returns: Json

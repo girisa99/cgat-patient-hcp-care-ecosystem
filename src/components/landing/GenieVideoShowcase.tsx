@@ -41,20 +41,20 @@ import genieArcLogo from '@/assets/logos/genie-arc-presentation-6.png';
 import askGenieLogo from '@/assets/logos/ask-genie-combined-7.png';
 import genieCastLogo from '@/assets/logos/genie-cast-logo-2.png';
 
-// AI Provider configurations with colors and icons
+// AI Provider configurations with colors using design tokens
 const AI_PROVIDERS: Record<string, { name: string; color: string; shortName: string }> = {
-  alibaba: { name: 'Alibaba Cloud', color: 'bg-orange-500', shortName: 'Alibaba' },
-  azure: { name: 'Azure AI', color: 'bg-blue-500', shortName: 'Azure' },
-  elevenlabs: { name: 'ElevenLabs', color: 'bg-purple-500', shortName: 'ElevenLabs' },
-  openai: { name: 'OpenAI', color: 'bg-green-500', shortName: 'OpenAI' },
-  claude: { name: 'Claude', color: 'bg-orange-400', shortName: 'Claude' },
-  deepseek: { name: 'DeepSeek', color: 'bg-cyan-500', shortName: 'DeepSeek' },
-  gemini: { name: 'Google Gemini', color: 'bg-blue-400', shortName: 'Gemini' },
-  meshy: { name: 'Meshy AI', color: 'bg-pink-500', shortName: 'Meshy' },
-  modelslab: { name: 'ModelsLab', color: 'bg-indigo-500', shortName: 'ModelsLab' },
-  deepl: { name: 'DeepL', color: 'bg-teal-500', shortName: 'DeepL' },
-  replicate: { name: 'Replicate', color: 'bg-gray-500', shortName: 'Replicate' },
-  gcp: { name: 'Google Cloud', color: 'bg-red-500', shortName: 'GCP' }
+  alibaba: { name: 'Alibaba Cloud', color: 'bg-provider-alibaba', shortName: 'Alibaba' },
+  azure: { name: 'Azure AI', color: 'bg-provider-azure', shortName: 'Azure' },
+  elevenlabs: { name: 'ElevenLabs', color: 'bg-provider-elevenlabs', shortName: 'ElevenLabs' },
+  openai: { name: 'OpenAI', color: 'bg-provider-openai', shortName: 'OpenAI' },
+  claude: { name: 'Claude', color: 'bg-provider-claude', shortName: 'Claude' },
+  deepseek: { name: 'DeepSeek', color: 'bg-provider-deepseek', shortName: 'DeepSeek' },
+  gemini: { name: 'Google Gemini', color: 'bg-provider-gemini', shortName: 'Gemini' },
+  meshy: { name: 'Meshy AI', color: 'bg-provider-meshy', shortName: 'Meshy' },
+  modelslab: { name: 'ModelsLab', color: 'bg-provider-modelslab', shortName: 'ModelsLab' },
+  deepl: { name: 'DeepL', color: 'bg-provider-deepl', shortName: 'DeepL' },
+  replicate: { name: 'Replicate', color: 'bg-provider-replicate', shortName: 'Replicate' },
+  gcp: { name: 'Google Cloud', color: 'bg-provider-gcp', shortName: 'GCP' }
 };
 
 // Regional provider routing - which providers are used for which region
