@@ -60,6 +60,7 @@ import GenieSupportPage from '@/pages/GenieSupportPage';
 const GenieExplorePage = React.lazy(() => import('@/pages/GenieExplorePage'));
 const GenieProductsPage = React.lazy(() => import('@/pages/GenieProductsPage'));
 const GenieCastPage = React.lazy(() => import('@/pages/GenieCastPage'));
+const RegionalLandingPage = React.lazy(() => import('@/components/landing/RegionalLandingPage'));
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 import EmailConfirmation from '@/pages/EmailConfirmation';
@@ -187,8 +188,13 @@ const AppContent = () => {
                 </Suspense>
               } />
               
-              {/* Public landing page route */}
+              {/* Public landing page routes */}
               <Route path="/genie-landing" element={<GenieStudioLanding />} />
+              <Route path="/genie-landing/:region" element={
+                <Suspense fallback={<PageLoading message="Loading..." />}>
+                  <RegionalLandingPage />
+                </Suspense>
+              } />
               
               {/* Genie Explore - Interactive Journey */}
               <Route path="/explore" element={
