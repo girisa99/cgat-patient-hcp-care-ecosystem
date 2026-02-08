@@ -6,7 +6,7 @@ const corsHeaders = {
 };
 
 interface ThumbnailRequest {
-  action: 'generate' | 'analyze' | 'extract_frame';
+  action: 'generate' | 'analyze' | 'extract_frame' | 'framework_generate';
   videoUrl?: string;
   title?: string;
   description?: string;
@@ -19,6 +19,15 @@ interface ThumbnailRequest {
     fontFamily?: string;
     overlayText?: string;
   };
+  // Framework-aware generation fields
+  audienceSegment?: string;
+  productId?: string;
+  productName?: string;
+  hook?: string;
+  cta?: string;
+  frameworkType?: string;
+  messagingTier?: string;
+  sceneIndex?: number;
 }
 
 serve(async (req) => {
@@ -35,7 +44,10 @@ serve(async (req) => {
       action: request.action,
       style: request.style,
       hasVideo: !!request.videoUrl,
-      title: request.title?.substring(0, 50)
+      title: request.title?.substring(0, 50),
+      audience: request.audienceSegment,
+      product: request.productId,
+      framework: request.frameworkType,
     });
 
     const apiKey = GEMINI_API_KEY || LOVABLE_API_KEY;
@@ -53,12 +65,16 @@ serve(async (req) => {
         result = await generateThumbnail(apiKey, request);
         break;
 
+      case 'framework_generate':
+        result = await generateFrameworkThumbnail(apiKey, request);
+        break;
+
       case 'analyze':
         result = await analyzeForThumbnail(apiKey, request);
         break;
 
       case 'extract_frame':
-        result = await extractBestFrame(apiKey, request);
+        result = await extractBestFrame(request);
         break;
 
       default:
@@ -82,6 +98,10 @@ serve(async (req) => {
   }
 });
 
+// ============================================================================
+// Standard Thumbnail Generation
+// ============================================================================
+
 async function generateThumbnail(apiKey: string, request: ThumbnailRequest): Promise<{
   thumbnailUrl: string;
   prompt: string;
@@ -104,7 +124,6 @@ async function generateThumbnail(apiKey: string, request: ThumbnailRequest): Pro
   
   const fullPrompt = `${basePrompt}. ${contentPrompt}. High quality, professional design, attention-grabbing.`;
 
-  // Use Lovable AI Gateway for image generation
   const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -113,12 +132,8 @@ async function generateThumbnail(apiKey: string, request: ThumbnailRequest): Pro
     },
     body: JSON.stringify({
       model: 'google/gemini-2.5-flash-image',
-      messages: [
-        {
-          role: 'user',
-          content: fullPrompt
-        }
-      ]
+      messages: [{ role: 'user', content: fullPrompt }],
+      modalities: ['image', 'text'],
     }),
   });
 
@@ -128,35 +143,131 @@ async function generateThumbnail(apiKey: string, request: ThumbnailRequest): Pro
   }
 
   const data = await response.json();
-  const imageData = data.choices?.[0]?.message?.content;
+  const imageData = data.choices?.[0]?.message?.images?.[0]?.image_url?.url 
+    || data.choices?.[0]?.message?.content;
 
-  const dimensions = {
-    youtube: { width: 1280, height: 720 },
-    tiktok: { width: 1080, height: 1920 },
-    instagram: { width: 1080, height: 1080 },
-    podcast: { width: 1400, height: 1400 },
-    webinar: { width: 1920, height: 1080 },
-    custom: { width: 1280, height: 720 }
-  };
+  const dimensions = getDimensions(request.style);
 
   return {
     thumbnailUrl: imageData || `generated_thumbnail_${Date.now()}.png`,
     prompt: fullPrompt,
     style: request.style || 'youtube',
-    dimensions: dimensions[request.style || 'youtube']
+    dimensions,
   };
 }
 
+// ============================================================================
+// Framework-Aware Thumbnail Generation (NEW)
+// ============================================================================
+
+async function generateFrameworkThumbnail(apiKey: string, request: ThumbnailRequest): Promise<{
+  thumbnailUrl: string;
+  prompt: string;
+  style: string;
+  dimensions: { width: number; height: number };
+  frameworkContext: {
+    audience: string;
+    product: string;
+    framework: string;
+    messagingTier: string;
+  };
+}> {
+  // Build framework-aware prompt
+  const audienceStyles: Record<string, string> = {
+    healthcare: 'clean clinical aesthetic, trust badges, compliance indicators, blue/white palette, medical professional imagery',
+    enterprise_marketing: 'corporate premium, data visualization, team collaboration, dark professional theme, authority indicators',
+    solo_creators: 'vibrant creative energy, personal brand feel, authentic aesthetic, warm colors, approachable style',
+    content_agencies: 'sleek agency portfolio, multi-project grid, scalability visual, modern minimal, capability showcase',
+    education: 'engaging learning environment, knowledge growth visual, inclusive imagery, bright inviting colors',
+    finance: 'trust and security indicators, clean data presentation, premium professional, gold/navy palette',
+    real_estate: 'property showcase, virtual tour feel, luxury aesthetic, spatial composition, aspirational lifestyle',
+    travel: 'wanderlust inspiration, destination beauty, cultural richness, panoramic composition, adventure feel',
+    retail: 'product-focused, conversion-optimized, lifestyle context, vibrant commercial, shopping urgency',
+    saas_product: 'UI/UX showcase, product demo visual, tech-forward aesthetic, clean interface preview',
+    influencers: 'personal brand aesthetic, authentic social feel, trending visual style, engagement-optimized',
+    podcasters: 'audio-visual blend, waveform elements, speaker portrait, studio atmosphere, episodic branding',
+  };
+
+  const frameworkStyles: Record<string, string> = {
+    storybrand: 'hero transformation narrative, before/after visual, emotional connection, journey progression',
+    aida: 'attention-grabbing headline, vibrant action, clear CTA button, urgency elements, conversion-focused',
+    jtbd: 'outcome metrics display, results showcase, professional achievement, goal completion visual',
+    four_es: 'experiential immersive, interactive preview, modern aesthetic, engagement indicators',
+    blue_ocean: 'innovative differentiation, unique positioning, competitive advantage, futuristic clean',
+    stp: 'targeted personalization, segment-specific, trust indicators, professional authority',
+    race: 'funnel visualization, data-driven, performance metrics, digital marketing aesthetic',
+  };
+
+  const audience = request.audienceSegment || 'solo_creators';
+  const product = request.productName || request.productId || 'Genie Studio';
+  const framework = request.frameworkType || 'aida';
+  const hook = request.hook || request.title || product;
+  const cta = request.cta || 'Start Free';
+
+  const audienceStyle = audienceStyles[audience] || audienceStyles.solo_creators;
+  const frameworkStyle = frameworkStyles[framework] || frameworkStyles.aida;
+
+  const fullPrompt = [
+    `Professional marketing thumbnail for ${product}.`,
+    `Headline text overlay: "${hook}".`,
+    `CTA element: "${cta}".`,
+    `Target audience: ${audience.replace(/_/g, ' ')}.`,
+    `Visual style: ${audienceStyle}.`,
+    `Framework approach: ${frameworkStyle}.`,
+    `High quality, 1280x720, YouTube thumbnail format.`,
+    request.branding?.primaryColor ? `Brand color: ${request.branding.primaryColor}.` : '',
+    request.description ? `Context: ${request.description}.` : '',
+  ].filter(Boolean).join(' ');
+
+  console.log(`🎨 Framework thumbnail prompt (${audience}/${framework}):`, fullPrompt.substring(0, 200));
+
+  const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'google/gemini-2.5-flash-image',
+      messages: [{ role: 'user', content: fullPrompt }],
+      modalities: ['image', 'text'],
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Framework thumbnail generation error: ${error}`);
+  }
+
+  const data = await response.json();
+  const imageData = data.choices?.[0]?.message?.images?.[0]?.image_url?.url 
+    || data.choices?.[0]?.message?.content;
+
+  const dimensions = getDimensions(request.style);
+
+  return {
+    thumbnailUrl: imageData || `framework_thumbnail_${Date.now()}.png`,
+    prompt: fullPrompt,
+    style: request.style || 'youtube',
+    dimensions,
+    frameworkContext: {
+      audience,
+      product: request.productId || 'studio',
+      framework,
+      messagingTier: request.messagingTier || 'product',
+    },
+  };
+}
+
+// ============================================================================
+// Content Analysis
+// ============================================================================
+
 async function analyzeForThumbnail(apiKey: string, request: ThumbnailRequest): Promise<{
-  suggestions: Array<{
-    timestamp: number;
-    score: number;
-    reason: string;
-  }>;
+  suggestions: Array<{ timestamp: number; score: number; reason: string }>;
   recommendedStyle: string;
   colorPalette: string[];
 }> {
-  // Use AI to analyze video/content for best thumbnail opportunities
   const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -176,6 +287,7 @@ async function analyzeForThumbnail(apiKey: string, request: ThumbnailRequest): P
 Title: ${request.title || 'Untitled'}
 Description: ${request.description || 'No description'}
 Style: ${request.style || 'general'}
+Audience: ${request.audienceSegment || 'general'}
 
 Provide thumbnail suggestions in JSON format with: suggestions (array with timestamp, score 0-100, reason), recommendedStyle, colorPalette (array of hex colors).`
         }
@@ -184,7 +296,6 @@ Provide thumbnail suggestions in JSON format with: suggestions (array with times
   });
 
   if (!response.ok) {
-    // Return default suggestions if AI fails
     return {
       suggestions: [
         { timestamp: 0, score: 70, reason: 'Opening frame - establishes context' },
@@ -218,17 +329,34 @@ Provide thumbnail suggestions in JSON format with: suggestions (array with times
   }
 }
 
-async function extractBestFrame(apiKey: string, request: ThumbnailRequest): Promise<{
+// ============================================================================
+// Frame Extraction
+// ============================================================================
+
+async function extractBestFrame(request: ThumbnailRequest): Promise<{
   frameUrl: string;
   timestamp: number;
   quality: number;
 }> {
-  // In production, this would use video processing to extract frames
-  // For now, we return the structure for integration
-  
   return {
     frameUrl: request.videoUrl ? `${request.videoUrl}#t=${request.frameTimestamp || 0}` : '',
     timestamp: request.frameTimestamp || 0,
     quality: 95
   };
+}
+
+// ============================================================================
+// Helpers
+// ============================================================================
+
+function getDimensions(style?: string): { width: number; height: number } {
+  const dims: Record<string, { width: number; height: number }> = {
+    youtube: { width: 1280, height: 720 },
+    tiktok: { width: 1080, height: 1920 },
+    instagram: { width: 1080, height: 1080 },
+    podcast: { width: 1400, height: 1400 },
+    webinar: { width: 1920, height: 1080 },
+    custom: { width: 1280, height: 720 },
+  };
+  return dims[style || 'youtube'] || dims.youtube;
 }

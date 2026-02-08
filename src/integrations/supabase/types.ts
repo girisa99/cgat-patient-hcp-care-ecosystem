@@ -6311,6 +6311,117 @@ export type Database = {
           },
         ]
       }
+      ecosystem_messaging: {
+        Row: {
+          aida_action: string | null
+          aida_attention: string | null
+          aida_desire: string | null
+          aida_interest: string | null
+          approved_at: string | null
+          approved_by: string | null
+          audience_segment: string
+          created_at: string
+          ctas: string[] | null
+          differentiators: string[] | null
+          four_es_evangelism: string | null
+          four_es_everyplace: string | null
+          four_es_exchange: string | null
+          four_es_experience: string | null
+          framework_type: string
+          guide_positioning: string | null
+          hero_narrative: string | null
+          hooks: string[] | null
+          id: string
+          is_approved: boolean | null
+          jtbd_job_statement: string | null
+          jtbd_outcome_metrics: string[] | null
+          language_code: string | null
+          messaging_tier: string
+          pain_points: string[] | null
+          product_id: string | null
+          storybrand_character: string | null
+          storybrand_failure: string | null
+          storybrand_guide: string | null
+          storybrand_plan: string | null
+          storybrand_problem: string | null
+          storybrand_success: string | null
+          updated_at: string
+          value_propositions: string[] | null
+        }
+        Insert: {
+          aida_action?: string | null
+          aida_attention?: string | null
+          aida_desire?: string | null
+          aida_interest?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          audience_segment: string
+          created_at?: string
+          ctas?: string[] | null
+          differentiators?: string[] | null
+          four_es_evangelism?: string | null
+          four_es_everyplace?: string | null
+          four_es_exchange?: string | null
+          four_es_experience?: string | null
+          framework_type?: string
+          guide_positioning?: string | null
+          hero_narrative?: string | null
+          hooks?: string[] | null
+          id?: string
+          is_approved?: boolean | null
+          jtbd_job_statement?: string | null
+          jtbd_outcome_metrics?: string[] | null
+          language_code?: string | null
+          messaging_tier?: string
+          pain_points?: string[] | null
+          product_id?: string | null
+          storybrand_character?: string | null
+          storybrand_failure?: string | null
+          storybrand_guide?: string | null
+          storybrand_plan?: string | null
+          storybrand_problem?: string | null
+          storybrand_success?: string | null
+          updated_at?: string
+          value_propositions?: string[] | null
+        }
+        Update: {
+          aida_action?: string | null
+          aida_attention?: string | null
+          aida_desire?: string | null
+          aida_interest?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          audience_segment?: string
+          created_at?: string
+          ctas?: string[] | null
+          differentiators?: string[] | null
+          four_es_evangelism?: string | null
+          four_es_everyplace?: string | null
+          four_es_exchange?: string | null
+          four_es_experience?: string | null
+          framework_type?: string
+          guide_positioning?: string | null
+          hero_narrative?: string | null
+          hooks?: string[] | null
+          id?: string
+          is_approved?: boolean | null
+          jtbd_job_statement?: string | null
+          jtbd_outcome_metrics?: string[] | null
+          language_code?: string | null
+          messaging_tier?: string
+          pain_points?: string[] | null
+          product_id?: string | null
+          storybrand_character?: string | null
+          storybrand_failure?: string | null
+          storybrand_guide?: string | null
+          storybrand_plan?: string | null
+          storybrand_problem?: string | null
+          storybrand_success?: string | null
+          updated_at?: string
+          value_propositions?: string[] | null
+        }
+        Relationships: []
+      }
       editor_drafts: {
         Row: {
           checkpoints: Json | null
@@ -17854,6 +17965,74 @@ export type Database = {
           },
         ]
       }
+      product_chain_metadata: {
+        Row: {
+          ai_models_used: Json
+          assembly_provider: string | null
+          audience_segment: string | null
+          blueprint_id: string | null
+          created_at: string
+          framework_used: string | null
+          generation_time_seconds: number | null
+          id: string
+          image_provider: string | null
+          llm_provider: string | null
+          messaging_tier: string | null
+          powered_by_display: Json | null
+          products_used: string[]
+          total_credits_used: number | null
+          tts_provider: string | null
+          video_id: string | null
+          video_provider: string | null
+        }
+        Insert: {
+          ai_models_used?: Json
+          assembly_provider?: string | null
+          audience_segment?: string | null
+          blueprint_id?: string | null
+          created_at?: string
+          framework_used?: string | null
+          generation_time_seconds?: number | null
+          id?: string
+          image_provider?: string | null
+          llm_provider?: string | null
+          messaging_tier?: string | null
+          powered_by_display?: Json | null
+          products_used?: string[]
+          total_credits_used?: number | null
+          tts_provider?: string | null
+          video_id?: string | null
+          video_provider?: string | null
+        }
+        Update: {
+          ai_models_used?: Json
+          assembly_provider?: string | null
+          audience_segment?: string | null
+          blueprint_id?: string | null
+          created_at?: string
+          framework_used?: string | null
+          generation_time_seconds?: number | null
+          id?: string
+          image_provider?: string | null
+          llm_provider?: string | null
+          messaging_tier?: string | null
+          powered_by_display?: Json | null
+          products_used?: string[]
+          total_credits_used?: number | null
+          tts_provider?: string | null
+          video_id?: string | null
+          video_provider?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_chain_metadata_blueprint_id_fkey"
+            columns: ["blueprint_id"]
+            isOneToOne: false
+            referencedRelation: "video_blueprints"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           approval_date: string | null
@@ -23349,6 +23528,8 @@ export type Database = {
         Row: {
           aesthetic_keywords: string[] | null
           ai_capabilities: Json | null
+          aida_scene_mapping: Json | null
+          blue_ocean_differentiators: string[] | null
           capability_tags: string[] | null
           category: string
           created_at: string
@@ -23356,19 +23537,26 @@ export type Database = {
           default_settings: Json | null
           description: string | null
           estimated_duration_seconds: number | null
+          framework_primary: string | null
+          framework_secondary: string | null
           id: string
           industry_tags: string[] | null
           is_active: boolean | null
           is_public: boolean | null
           is_system_default: boolean | null
+          jtbd_outcomes: Json | null
+          messaging_tier: string | null
           name: string
+          powered_by_config: Json | null
           preview_video_url: string | null
           primary_model: string | null
           regional_variants: Json | null
           secondary_models: string[] | null
+          storybrand_mapping: Json | null
           style_intent: string | null
           style_preset: Json | null
           supported_dialects: Json | null
+          target_audience_segments: string[] | null
           target_platform: string[] | null
           target_regions: string[] | null
           thumbnail_provider: string | null
@@ -23381,6 +23569,8 @@ export type Database = {
         Insert: {
           aesthetic_keywords?: string[] | null
           ai_capabilities?: Json | null
+          aida_scene_mapping?: Json | null
+          blue_ocean_differentiators?: string[] | null
           capability_tags?: string[] | null
           category?: string
           created_at?: string
@@ -23388,19 +23578,26 @@ export type Database = {
           default_settings?: Json | null
           description?: string | null
           estimated_duration_seconds?: number | null
+          framework_primary?: string | null
+          framework_secondary?: string | null
           id?: string
           industry_tags?: string[] | null
           is_active?: boolean | null
           is_public?: boolean | null
           is_system_default?: boolean | null
+          jtbd_outcomes?: Json | null
+          messaging_tier?: string | null
           name: string
+          powered_by_config?: Json | null
           preview_video_url?: string | null
           primary_model?: string | null
           regional_variants?: Json | null
           secondary_models?: string[] | null
+          storybrand_mapping?: Json | null
           style_intent?: string | null
           style_preset?: Json | null
           supported_dialects?: Json | null
+          target_audience_segments?: string[] | null
           target_platform?: string[] | null
           target_regions?: string[] | null
           thumbnail_provider?: string | null
@@ -23413,6 +23610,8 @@ export type Database = {
         Update: {
           aesthetic_keywords?: string[] | null
           ai_capabilities?: Json | null
+          aida_scene_mapping?: Json | null
+          blue_ocean_differentiators?: string[] | null
           capability_tags?: string[] | null
           category?: string
           created_at?: string
@@ -23420,19 +23619,26 @@ export type Database = {
           default_settings?: Json | null
           description?: string | null
           estimated_duration_seconds?: number | null
+          framework_primary?: string | null
+          framework_secondary?: string | null
           id?: string
           industry_tags?: string[] | null
           is_active?: boolean | null
           is_public?: boolean | null
           is_system_default?: boolean | null
+          jtbd_outcomes?: Json | null
+          messaging_tier?: string | null
           name?: string
+          powered_by_config?: Json | null
           preview_video_url?: string | null
           primary_model?: string | null
           regional_variants?: Json | null
           secondary_models?: string[] | null
+          storybrand_mapping?: Json | null
           style_intent?: string | null
           style_preset?: Json | null
           supported_dialects?: Json | null
+          target_audience_segments?: string[] | null
           target_platform?: string[] | null
           target_regions?: string[] | null
           thumbnail_provider?: string | null

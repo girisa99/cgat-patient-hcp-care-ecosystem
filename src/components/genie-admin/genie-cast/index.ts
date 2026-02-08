@@ -31,6 +31,7 @@ export { ContentRepurposingPanel } from './ContentRepurposingPanel';
 export { DistributionPanel } from './DistributionPanel';
 export { SEOOptimizerPanel } from './SEOOptimizerPanel';
 export { ABTestingPanel } from './ABTestingPanel';
+export { PoweredByEndCard, type PoweredByData } from './PoweredByEndCard';
 
 // Premium SEO Features
 export { CompetitorAnalysisPanel } from './seo/CompetitorAnalysisPanel';

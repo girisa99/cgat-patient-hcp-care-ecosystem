@@ -50,3 +50,7 @@ export type { MediaJobConfig, MediaAsset, OutputConfig, MediaJobResult, MediaTyp
 
 // Proactive Editing
 export { proactivePipelineEditorService } from '@/services/proactivePipelineEditorService';
+
+// Framework-Aware Messaging Engine
+export { frameworkMessagingEngine, AUDIENCE_FRAMEWORK_MATRIX, PRODUCT_MESSAGING } from '@/services/marketing/frameworkMessagingEngine';
+export type { AudienceSegment, FrameworkConfig, AudienceMessaging, FrameworkScriptComposition } from '@/services/marketing/frameworkMessagingEngine';
