@@ -27,6 +27,8 @@ import {
 import { RegionalPricingSection } from '@/components/landing/RegionalPricingSection';
 import { ExpandedLanguageDemo } from '@/components/landing/ExpandedLanguageDemo';
 import { InteractiveTryGenieDemo } from '@/components/landing/InteractiveTryGenieDemo';
+import { DeepLTranslationDemo } from '@/components/landing/DeepLTranslationDemo';
+import { STTDemo } from '@/components/landing/STTDemo';
 import genieSuiteLogo from '@/assets/logos/genie-studio-suite-logo.png';
 
 // ============================================
@@ -485,8 +487,38 @@ export const RegionalLandingPage: React.FC = () => {
       <RegionalIndustries config={config} />
       <TranscreationShowcase config={config} />
       
-      {/* Interactive Try Genie Demo — TTS + Industry Use Cases */}
-      <InteractiveTryGenieDemo />
+      {/* Core Demo Section — TTS + STT + DeepL for this region */}
+      <section className="py-20 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-background via-primary/5 to-background" />
+        <div className="relative max-w-7xl mx-auto px-4">
+          <motion.div
+            className="text-center mb-12"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full mb-4">
+              <Sparkles className="w-4 h-4 text-primary" />
+              <span className="text-primary text-sm font-medium">Try It Live — {config.hero.regionName}</span>
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
+              Experience Our AI Capabilities
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+              Core demos for {config.hero.regionName}: Text-to-Speech, Speech-to-Text, and DeepL Translation — all region-optimized.
+            </p>
+          </motion.div>
+
+          {/* Core: TTS Demo with region context */}
+          <InteractiveTryGenieDemo className="mb-12" region={regionSlug} />
+
+          {/* Core: STT + DeepL side by side on larger screens */}
+          <div className="grid lg:grid-cols-2 gap-8 mb-12">
+            <STTDemo region={regionSlug} />
+            <DeepLTranslationDemo region={regionSlug} />
+          </div>
+        </div>
+      </section>
       
       {/* Expanded Language Demo — shows relevant tab for region */}
       <section className="py-20 relative">
