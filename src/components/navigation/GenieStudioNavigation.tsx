@@ -152,7 +152,49 @@ export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({
     }
   }, [isInternal, manageSubCategories]);
 
+  // CRITICAL FIX: Determine which category/subcategory contains the active tab
+  // This prevents collapsing sections that contain the currently active item
+  const activeTabFromUrl = new URLSearchParams(location.search).get('tab');
+  
+  const activeCategoryForCurrentTab = React.useMemo(() => {
+    // Check all manage subcategories for the current active item
+    for (const [subCat, subItems] of Object.entries(manageSubCategories)) {
+      for (const item of subItems) {
+        const itemUrl = new URL(item.url, window.location.origin);
+        if (itemUrl.pathname === location.pathname && 
+            itemUrl.searchParams.get('tab') === activeTabFromUrl) {
+          return { category: 'manage', subCategory: subCat };
+        }
+      }
+    }
+    return null;
+  }, [manageSubCategories, location.pathname, activeTabFromUrl]);
+
+  // Auto-expand sections containing the active tab on URL change
+  useEffect(() => {
+    if (activeCategoryForCurrentTab) {
+      setOpenCategories(prev => {
+        if (!prev.includes(activeCategoryForCurrentTab.category)) {
+          return [...prev, activeCategoryForCurrentTab.category];
+        }
+        return prev;
+      });
+      if (activeCategoryForCurrentTab.subCategory) {
+        setOpenSubCategories(prev => {
+          if (!prev.includes(activeCategoryForCurrentTab.subCategory)) {
+            return [...prev, activeCategoryForCurrentTab.subCategory];
+          }
+          return prev;
+        });
+      }
+    }
+  }, [activeCategoryForCurrentTab]);
+
   const toggleCategory = (category: string) => {
+    // GUARD: Don't collapse a category that contains the active tab
+    if (activeCategoryForCurrentTab?.category === category) {
+      return; // Prevent collapse
+    }
     setOpenCategories(prev => 
       prev.includes(category) 
         ? prev.filter(c => c !== category)
@@ -177,6 +219,10 @@ export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({
     .toUpperCase() || 'GU';
 
   const toggleSubCategory = (subCat: string) => {
+    // GUARD: Don't collapse a subcategory that contains the active tab
+    if (activeCategoryForCurrentTab?.subCategory === subCat) {
+      return; // Prevent collapse
+    }
     setOpenSubCategories(prev => 
       prev.includes(subCat) 
         ? prev.filter(c => c !== subCat)
