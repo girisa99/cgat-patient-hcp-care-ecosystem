@@ -215,17 +215,17 @@ export const genieStudioNavItems: GenieNavItem[] = [
   // CREATE - CONSOLIDATED into Genie Cast 4-tab structure
   // Library, Studio, Review, Assets, Scheduler all now live in Genie Cast
   // Genie Cast - SINGLE ENTRY POINT for all video production
+  // Genie Cast - STANDALONE PAGE at /genie-cast
+  // PERMANENT FIX: No longer a tab inside ProductionHubAdmin
+  // This is a first-class route that can NEVER disappear from navigation
   {
     title: "Genie Cast",
-    url: "/genie-admin?tab=genie-cast",
+    url: "/genie-cast",
     icon: Film,
     description: "Unified video production: CREATE → PRODUCE → MANAGE → PUBLISH",
     minTier: 'free',
     category: 'manage',
     subCategory: 'Create',
-    // PERMANENTLY VISIBLE: No isInternal flag - Genie Cast must NEVER be gated behind internal-only access
-    // This is the definitive fix for the recurring "Genie Cast tab disappearing" bug.
-    // Previous approaches used DEV_MODE flags which were fragile and kept breaking.
   },
   // ANALYZE - Performance metrics and business intelligence (Internal Only)
   {

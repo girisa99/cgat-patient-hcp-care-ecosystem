@@ -1083,7 +1083,7 @@ export const ContentLibrary: React.FC<ContentLibraryProps> = ({
                   setSelectedContent(null);
                   setIsPlaying(false);
                   // Use URL params to navigate to Genie Cast
-                  window.location.href = `/genie-admin?tab=genie-cast&edit=${selectedContent?.id}`;
+                  window.location.href = `/genie-cast?edit=${selectedContent?.id}`;
                 } else {
                   // For Studio content, call the onEdit handler
                   onEdit?.(selectedContent!.id);
