@@ -1,13 +1,13 @@
 /**
  * Translation Demo Card — DeepL Translation + Live Transcreation comparison
  * 
- * Shows both literal DeepL translation AND AI transcreation side-by-side
- * so users can see the difference in real-time.
+ * Pre-built examples + custom text input for easy testing.
+ * Shows literal DeepL translation AND AI transcreation side-by-side.
  * Region-aware: defaults target language based on region.
  */
 
 import React, { useState } from 'react';
-import { Languages, Loader2, ArrowRight, Copy, Check, Sparkles, X as XIcon } from 'lucide-react';
+import { Languages, Loader2, ArrowRight, Copy, Check, Sparkles, X as XIcon, PenLine } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/select';
 import { useDynamicLanguageRegistry } from '@/hooks/landing/useDynamicLanguageRegistry';
 import { ProviderBadge, ProviderPanel, getPrimaryProvider } from './RegionalProviderInfo';
+import { getExamplesForRegion, DemoExample } from './demoExamples';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const SUPABASE_URL = 'https://ithspbabhmdntioslfqe.supabase.co';
@@ -37,16 +38,22 @@ interface TranslationDemoCardProps {
 
 export const TranslationDemoCard: React.FC<TranslationDemoCardProps> = ({ region }) => {
   const registry = useDynamicLanguageRegistry();
+  const examples = getExamplesForRegion(region);
   const defaultLang = region ? (REGION_DEEPL_DEFAULTS[region] || 'AR') : 'AR';
+
   const [sourceLang, setSourceLang] = useState('EN');
   const [targetLang, setTargetLang] = useState(defaultLang);
-  const [inputText, setInputText] = useState('');
+  const [selectedExample, setSelectedExample] = useState<DemoExample | null>(examples[0] || null);
+  const [customText, setCustomText] = useState('');
+  const [useCustom, setUseCustom] = useState(false);
   const [translatedText, setTranslatedText] = useState('');
   const [transcreatedText, setTranscreatedText] = useState('');
   const [isTranslating, setIsTranslating] = useState(false);
   const [isTranscreating, setIsTranscreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  const activeText = useCustom ? customText.trim() : (selectedExample?.text || '');
 
   // Use DeepL-supported languages from registry
   const deeplLangs = region
@@ -67,13 +74,21 @@ export const TranslationDemoCard: React.FC<TranslationDemoCardProps> = ({ region
 
   const transcreationProvider = getPrimaryProvider('transcreation', region);
 
+  const handleSelectExample = (ex: DemoExample) => {
+    setSelectedExample(ex);
+    setTranslatedText('');
+    setTranscreatedText('');
+    // Auto-set suggested target if available
+    if (ex.suggestedTarget) {
+      setTargetLang(ex.suggestedTarget);
+    }
+  };
+
   const handleTranslateAndTranscreate = async () => {
-    if (!inputText.trim()) return;
+    if (!activeText) return;
     setError(null);
     setTranslatedText('');
     setTranscreatedText('');
-
-    // Run both in parallel
     setIsTranslating(true);
     setIsTranscreating(true);
 
@@ -89,7 +104,7 @@ export const TranslationDemoCard: React.FC<TranslationDemoCardProps> = ({ region
           },
           body: JSON.stringify({
             action: 'translate',
-            text: inputText.trim(),
+            text: activeText,
             targetLanguage: targetLang,
             sourceLanguage: sourceLang === 'AUTO' ? undefined : sourceLang,
             provider: 'deepl',
@@ -122,7 +137,7 @@ export const TranslationDemoCard: React.FC<TranslationDemoCardProps> = ({ region
           },
           body: JSON.stringify({
             action: 'transcreate',
-            text: inputText.trim(),
+            text: activeText,
             targetLanguage: targetLang,
             sourceLanguage: sourceLang === 'AUTO' ? undefined : sourceLang,
             region: region || 'global',
@@ -130,15 +145,13 @@ export const TranslationDemoCard: React.FC<TranslationDemoCardProps> = ({ region
         });
 
         if (!response.ok) {
-          // Fallback: show a note that transcreation needs the AI pipeline
-          setTranscreatedText(`[Transcreation preview] Cultural adaptation of "${inputText.trim().substring(0, 50)}..." for ${targetLang} region — uses ${transcreationProvider.name} for context-aware rewriting.`);
+          setTranscreatedText(`[Transcreation preview] Cultural adaptation of "${activeText.substring(0, 50)}..." for ${targetLang} region — uses ${transcreationProvider.name} for context-aware rewriting.`);
           return;
         }
 
         const data = await response.json();
         setTranscreatedText(data.transcreatedText || data.translatedText || data.text || '');
       } catch {
-        // Graceful fallback
         setTranscreatedText(`[Preview] Culturally adapted version would appear here via ${transcreationProvider.name} — adapting meaning, idioms, and context for ${targetLang}.`);
       } finally {
         setIsTranscreating(false);
@@ -169,7 +182,7 @@ export const TranslationDemoCard: React.FC<TranslationDemoCardProps> = ({ region
           <div className="flex-1 min-w-0">
             <h3 className="text-lg font-bold text-foreground">Translation → Transcreation</h3>
             <p className="text-sm text-muted-foreground font-normal">
-              See literal translation vs cultural adaptation side-by-side
+              Pick an example or type your own — see literal vs cultural adaptation
             </p>
           </div>
           <div className="hidden sm:flex items-center gap-1.5">
@@ -229,23 +242,80 @@ export const TranslationDemoCard: React.FC<TranslationDemoCardProps> = ({ region
           </div>
         </div>
 
-        {/* Input */}
-        <div>
-          <label className="text-xs font-medium text-muted-foreground uppercase mb-1 block">
-            Source Text
-          </label>
-          <Textarea
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            placeholder="Type or paste text to translate & transcreate — e.g., 'Start creating amazing videos for free!'"
-            className="min-h-[100px] resize-none"
-            maxLength={1000}
-          />
-          <div className="flex items-center justify-between mt-2">
-            <span className="text-xs text-muted-foreground">{inputText.length}/1000</span>
+        {/* Example / Custom toggle + content */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => { setUseCustom(false); setTranslatedText(''); setTranscreatedText(''); }}
+              className={`text-xs font-semibold px-3 py-1.5 rounded-full transition-all ${
+                !useCustom 
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+              }`}
+            >
+              📝 Pick an Example
+            </button>
+            <button
+              onClick={() => { setUseCustom(true); setTranslatedText(''); setTranscreatedText(''); }}
+              className={`text-xs font-semibold px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 ${
+                useCustom 
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+              }`}
+            >
+              <PenLine className="h-3 w-3" />
+              Type My Own
+            </button>
+          </div>
+
+          {!useCustom ? (
+            <div className="grid gap-2 max-h-[200px] overflow-y-auto pr-1">
+              {examples.slice(0, 5).map(ex => (
+                <button
+                  key={ex.id}
+                  onClick={() => handleSelectExample(ex)}
+                  className={`text-left p-3 rounded-xl border transition-all ${
+                    selectedExample?.id === ex.id
+                      ? 'border-primary/40 bg-primary/5 shadow-sm ring-1 ring-primary/20'
+                      : 'border-border bg-card hover:border-primary/20 hover:bg-muted/30'
+                  }`}
+                >
+                  <div className="flex items-start gap-2.5">
+                    <span className="text-lg shrink-0 mt-0.5">{ex.emoji}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-xs font-semibold mb-0.5 ${
+                        selectedExample?.id === ex.id ? 'text-primary' : 'text-foreground'
+                      }`}>
+                        {ex.label}
+                      </p>
+                      <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+                        {ex.text}
+                      </p>
+                    </div>
+                    {selectedExample?.id === ex.id && (
+                      <div className="w-2 h-2 rounded-full bg-primary shrink-0 mt-1.5" />
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div>
+              <Textarea
+                value={customText}
+                onChange={(e) => setCustomText(e.target.value)}
+                placeholder="Type or paste text to translate & transcreate — e.g., 'Start creating amazing videos for free!'"
+                className="min-h-[100px] resize-none"
+                maxLength={1000}
+              />
+              <span className="text-xs text-muted-foreground mt-1 block">{customText.length}/1000</span>
+            </div>
+          )}
+
+          <div className="flex justify-end">
             <Button
               onClick={handleTranslateAndTranscreate}
-              disabled={!inputText.trim() || isTranslating || isTranscreating}
+              disabled={!activeText || isTranslating || isTranscreating}
               className="gap-2"
             >
               {(isTranslating || isTranscreating) ? (
