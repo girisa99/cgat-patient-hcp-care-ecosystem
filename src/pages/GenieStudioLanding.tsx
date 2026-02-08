@@ -48,7 +48,7 @@ import deepseekLogo from '@/assets/logos/providers/deepseek.png';
 import replicateLogo from '@/assets/logos/providers/replicate.png';
 import supabaseLogo from '@/assets/logos/providers/supabase.svg';
 import gcpLogo from '@/assets/logos/providers/gcp-official.png';
-import deepgramLogo from '@/assets/logos/providers/deepgram.png';
+import deepgramLogo from '@/assets/logos/providers/deepgram.webp';
 import json2videoLogo from '@/assets/logos/providers/json2video.png';
 
 // ============================================
