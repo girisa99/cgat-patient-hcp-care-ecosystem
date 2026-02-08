@@ -8,7 +8,7 @@ import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useGenieStudioNavigation } from '@/hooks/useGenieStudioNavigation';
 import { useGenieStudioAuth } from '@/hooks/useGenieStudioAuth';
-import { getManageItemsBySubCategory, getGenieNavByCategory } from '@/config/genieStudioNavItems';
+import { getManageItemsBySubCategory, getGenieNavByCategory, genieStudioNavItems } from '@/config/genieStudioNavItems';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -126,8 +126,25 @@ export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({
   const manageSubCategories = React.useMemo(() => {
     // DEV_MODE: Always treat as internal to show all tabs
     const effectiveIsInternal = DEV_MODE_FORCE_INTERNAL || isInternal;
-    return getManageItemsBySubCategory(userTier, effectiveIsInternal);
+    const allItems = getManageItemsBySubCategory(userTier, effectiveIsInternal);
+    
+    // PERMANENT FIX: Remove Genie Cast from collapsible subcategories
+    // It will be rendered as a PINNED item outside all collapsibles
+    const filtered: Record<string, typeof allItems[string]> = {};
+    for (const [subCat, subItems] of Object.entries(allItems)) {
+      const withoutGenieCast = subItems.filter(item => item.url !== '/genie-admin?tab=genie-cast');
+      if (withoutGenieCast.length > 0) {
+        filtered[subCat] = withoutGenieCast;
+      }
+    }
+    return filtered;
   }, [userTier, isInternal]);
+
+  // PERMANENT FIX: Genie Cast as a standalone pinned nav item
+  // This is NEVER inside a collapsible - it can NEVER disappear
+  const genieCastItem = React.useMemo(() => {
+    return genieStudioNavItems.find(item => item.url === '/genie-admin?tab=genie-cast') || null;
+  }, []);
 
   // Auto-expand Create subcategory when internal user and it has items
   useEffect(() => {
@@ -358,6 +375,52 @@ export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({
 
           {/* Navigation */}
           <ScrollArea className="flex-1 px-2 py-3">
+            {/* ═══ PINNED: Genie Cast - ALWAYS visible, NEVER inside a collapsible ═══ */}
+            {genieCastItem && (
+              <div className="mb-3">
+                {!isCollapsed && (
+                  <span className="px-2 text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-wider">
+                    Production
+                  </span>
+                )}
+                <div className="mt-0.5">
+                  {isCollapsed ? (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <NavLink
+                          to={genieCastItem.url}
+                          className={cn(
+                            "flex justify-center py-1.5 rounded transition-colors",
+                            location.pathname === '/genie-admin' && new URLSearchParams(location.search).get('tab') === 'genie-cast'
+                              ? "bg-primary/10 text-primary"
+                              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                          )}
+                        >
+                          <genieCastItem.icon className="h-4 w-4" />
+                        </NavLink>
+                      </TooltipTrigger>
+                      <TooltipContent side="right">{genieCastItem.title}</TooltipContent>
+                    </Tooltip>
+                  ) : (
+                    <NavLink
+                      to={genieCastItem.url}
+                      title={genieCastItem.description}
+                      className={cn(
+                        "flex items-center gap-2 rounded px-2 py-1.5 text-sm font-medium transition-colors",
+                        location.pathname === '/genie-admin' && new URLSearchParams(location.search).get('tab') === 'genie-cast'
+                          ? "bg-primary/10 text-primary"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                      )}
+                    >
+                      <genieCastItem.icon className="h-4 w-4 flex-shrink-0" />
+                      <span>{genieCastItem.title}</span>
+                    </NavLink>
+                  )}
+                </div>
+              </div>
+            )}
+            {/* ═══ END PINNED ═══ */}
+
             {CATEGORY_ORDER
               .filter(category => {
                 // For MANAGE, check if there are any sub-items
