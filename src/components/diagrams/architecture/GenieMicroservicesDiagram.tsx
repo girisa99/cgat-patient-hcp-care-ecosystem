@@ -112,7 +112,7 @@ export const GenieMicroservicesDiagram: React.FC = () => {
             <div><div className="text-2xl font-bold text-emerald-600">{domainServices.reduce((a, d) => a + d.services.length, 0)}</div><div className="text-xs text-muted-foreground">Services</div></div>
             <div><div className="text-2xl font-bold text-blue-600">{sharedServices.length}</div><div className="text-xs text-muted-foreground">Shared</div></div>
             <div><div className="text-2xl font-bold text-orange-600">143+</div><div className="text-xs text-muted-foreground">Edge Functions</div></div>
-            <div><div className="text-2xl font-bold text-pink-600">19</div><div className="text-xs text-muted-foreground">AI Providers</div></div>
+            <div><div className="text-2xl font-bold text-pink-600">15</div><div className="text-xs text-muted-foreground">AI Providers</div></div>
             <div><div className="text-2xl font-bold text-cyan-600">95%</div><div className="text-xs text-muted-foreground">Active</div></div>
           </div>
         </CardContent>

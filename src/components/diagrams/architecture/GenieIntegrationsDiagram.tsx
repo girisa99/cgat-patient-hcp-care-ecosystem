@@ -12,7 +12,7 @@ import { Download, Maximize2, X, Plug, Globe, Cloud, Database, Shield, Zap, Radi
 import html2canvas from 'html2canvas';
 import { toast } from 'sonner';
 
-// Core 19 AI Providers
+// Core 15 AI Providers
 const coreProviders = [
   { name: 'OpenAI', services: ['GPT-4o', 'GPT-4o Mini', 'TTS', 'Whisper', 'DALL-E 3'], status: 'active', type: 'LLM + Media', zone: 'Global' },
   { name: 'Anthropic', services: ['Claude 3.5 Sonnet', 'Claude 3 Opus'], status: 'active', type: 'LLM', zone: 'Claude Zone' },
@@ -145,7 +145,7 @@ export const GenieIntegrationsDiagram: React.FC = () => {
         <CardHeader className="pb-2">
           <CardTitle className="text-lg text-purple-700 dark:text-purple-400 flex items-center gap-2">
             <Brain className="h-5 w-5" />
-            Core 19 AI Provider Ecosystem
+            Core 15 AI Provider Ecosystem
           </CardTitle>
         </CardHeader>
         <CardContent>

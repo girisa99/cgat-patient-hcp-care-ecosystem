@@ -403,7 +403,7 @@ interface MemoryEntry {
 
 - **60+** Edge Functions deployed
 - **12+** Specialized AI Agents
-- **19** AI Providers integrated (Google Vertex, Claude, OpenAI, Azure, Alibaba, DeepSeek, Deepgram, ElevenLabs, DeepL, Meshy, ModelsLab, Replicate, AWS, Stability, Mistral, Groq, Cohere, Supabase, Gemini)
+- **15** AI Providers integrated (Google Vertex, Claude, OpenAI, Azure, Alibaba, DeepSeek, Deepgram, ElevenLabs, DeepL, Meshy, ModelsLab, Replicate, JSON2Video, Gemini, Supabase)
 - **7** Document types supported with smart routing
 - **6** Healthcare MCP servers
 - **20+** Patient onboarding wizard steps
