@@ -17,11 +17,12 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 // Session management via Supabase - no custom auth hook needed
 import { ProfessionalAvatarShowcase } from '@/components/landing/video/ProfessionalAvatarShowcase';
-import { InteractiveLanguageDemo } from '@/components/landing/InteractiveLanguageDemo';
+import { ExpandedLanguageDemo } from '@/components/landing/ExpandedLanguageDemo';
 import { IndustryShowcases } from '@/components/landing/IndustryShowcases';
 import { CrossFunctionalSection } from '@/components/landing/CrossFunctionalSection';
 import { GlobalInspirationSection } from '@/components/landing/GlobalInspirationSection';
 import { DogfoodingProof } from '@/components/landing/DogfoodingProof';
+import { RegionSwitcherNav } from '@/components/landing/RegionSwitcherNav';
 
 // Product logos
 import genieSparkLogo from '@/assets/logos/products/genie-spark.png';
@@ -292,6 +293,7 @@ const GenieStudioLanding: React.FC = () => {
                 Explore
               </Button>
             </Link>
+            <RegionSwitcherNav variant="navbar" />
             <Link to="/genie-studio-auth">
               <Button className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg">
                 Start Free
@@ -643,8 +645,8 @@ const GenieStudioLanding: React.FC = () => {
             </p>
           </div>
 
-          {/* Interactive Language Demo Component */}
-          <InteractiveLanguageDemo initialTab="arabic" />
+          {/* Expanded Language Demo — All Regions */}
+          <ExpandedLanguageDemo initialTab="arabic" />
         </div>
       </section>
 
@@ -810,29 +812,8 @@ const GenieStudioLanding: React.FC = () => {
         </div>
       </section>
 
-      {/* REGION SWITCHER (DEV TOOL) */}
-      <div className="fixed bottom-4 right-4 z-50">
-        <details className="bg-card border border-border rounded-lg shadow-lg">
-          <summary className="px-4 py-2 cursor-pointer text-sm text-muted-foreground hover:text-foreground">
-            🌍 Switch Region
-          </summary>
-          <div className="p-2 space-y-1">
-            {(Object.keys(HERO_CONTENT) as RegionCode[]).map((code) => (
-              <button
-                key={code}
-                onClick={() => {
-                  window.location.href = `?simulate_region=${code}`;
-                }}
-                className={`block w-full text-left px-3 py-1 rounded text-sm transition ${
-                  region === code ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-muted'
-                }`}
-              >
-                {HERO_CONTENT[code].flag} {code}
-              </button>
-            ))}
-          </div>
-        </details>
-      </div>
+      {/* FLOATING REGION SWITCHER */}
+      <RegionSwitcherNav variant="floating" />
     </main>
   );
 };
