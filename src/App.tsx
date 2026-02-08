@@ -59,6 +59,7 @@ import GenieAdminPage from '@/pages/GenieAdminPage';
 import GenieSupportPage from '@/pages/GenieSupportPage';
 const GenieExplorePage = React.lazy(() => import('@/pages/GenieExplorePage'));
 const GenieProductsPage = React.lazy(() => import('@/pages/GenieProductsPage'));
+const GenieCastPage = React.lazy(() => import('@/pages/GenieCastPage'));
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 import EmailConfirmation from '@/pages/EmailConfirmation';
@@ -228,8 +229,12 @@ const AppContent = () => {
               {/* Genie Admin - internal users only (self-protected) */}
               <Route path="/genie-admin" element={<GenieAdminPage />} />
               <Route path="/internal/users" element={<GenieAdminPage />} />
-              {/* PERMANENT FIX: Dedicated /genie-cast route - always resolves to Genie Cast tab */}
-              <Route path="/genie-cast" element={<Navigate to="/genie-admin?tab=genie-cast" replace />} />
+              {/* PERMANENT FIX: Genie Cast is now a standalone page, not a tab */}
+              <Route path="/genie-cast" element={
+                <Suspense fallback={<PageLoading message="Loading Genie Cast..." />}>
+                  <GenieCastPage />
+                </Suspense>
+              } />
               
               {/* Root path - Dashboard redirect */}
               <Route path="/" element={

@@ -17,7 +17,8 @@ const GENIE_ROUTE_PREFIXES = [
   '/genie-spark',
   '/genie-mind',
   '/genie-arc',
-  '/genie-guided'
+  '/genie-guided',
+  '/genie-cast'
 ];
 
 // Check if route is a Genie Studio route

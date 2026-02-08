@@ -132,7 +132,7 @@ export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({
     // It will be rendered as a PINNED item outside all collapsibles
     const filtered: Record<string, typeof allItems[string]> = {};
     for (const [subCat, subItems] of Object.entries(allItems)) {
-      const withoutGenieCast = subItems.filter(item => item.url !== '/genie-admin?tab=genie-cast');
+      const withoutGenieCast = subItems.filter(item => item.url !== '/genie-cast');
       if (withoutGenieCast.length > 0) {
         filtered[subCat] = withoutGenieCast;
       }
@@ -143,7 +143,7 @@ export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({
   // PERMANENT FIX: Genie Cast as a standalone pinned nav item
   // This is NEVER inside a collapsible - it can NEVER disappear
   const genieCastItem = React.useMemo(() => {
-    return genieStudioNavItems.find(item => item.url === '/genie-admin?tab=genie-cast') || null;
+    return genieStudioNavItems.find(item => item.url === '/genie-cast') || null;
   }, []);
 
   // Auto-expand Create subcategory when internal user and it has items
@@ -391,7 +391,7 @@ export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({
                           to={genieCastItem.url}
                           className={cn(
                             "flex justify-center py-1.5 rounded transition-colors",
-                            location.pathname === '/genie-admin' && new URLSearchParams(location.search).get('tab') === 'genie-cast'
+                            location.pathname === '/genie-cast'
                               ? "bg-primary/10 text-primary"
                               : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                           )}
@@ -407,7 +407,7 @@ export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({
                       title={genieCastItem.description}
                       className={cn(
                         "flex items-center gap-2 rounded px-2 py-1.5 text-sm font-medium transition-colors",
-                        location.pathname === '/genie-admin' && new URLSearchParams(location.search).get('tab') === 'genie-cast'
+                        location.pathname === '/genie-cast'
                           ? "bg-primary/10 text-primary"
                           : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                       )}

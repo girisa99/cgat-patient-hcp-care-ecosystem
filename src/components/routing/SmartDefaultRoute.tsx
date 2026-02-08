@@ -22,6 +22,7 @@ const PERSISTENT_ROUTE_PREFIXES = [
   '/genie-mind',
   '/genie-arc',
   '/genie-guided',
+  '/genie-cast',
   '/genie-admin',
   '/admin',
   '/agents'
@@ -56,11 +57,11 @@ export const SmartDefaultRoute: React.FC<SmartDefaultRouteProps> = ({ userRoles,
             .eq('auth_user_id', user.id)
             .maybeSingle();
 
-          // If user is Genie Studio internal user, route to /genie-admin with Genie Cast tab
-          // PERMANENT FIX: Always include ?tab=genie-cast to prevent the tab from "disappearing"
+          // If user is Genie Studio internal user, route to /genie-cast
+          // PERMANENT FIX: Genie Cast is now a standalone route, no longer a tab
           if (genieUser?.is_internal) {
-            console.log('🎯 SmartDefaultRoute: Genie Studio internal user detected, routing to /genie-admin?tab=genie-cast');
-            setTargetRoute('/genie-admin?tab=genie-cast');
+            console.log('🎯 SmartDefaultRoute: Genie Studio internal user detected, routing to /genie-cast');
+            setTargetRoute('/genie-cast');
             setIsCheckingGenieUser(false);
             return;
           }
