@@ -1,0 +1,361 @@
+/**
+ * Sortable Scene Item
+ * Individual scene card with drag-and-drop, inline editing, visual config toggles
+ * Used within SceneTimelineTab with @dnd-kit/sortable
+ */
+
+import React, { useState, useCallback } from 'react';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import {
+  ChevronRight,
+  Sparkles,
+  Layers,
+  Target,
+  CheckCircle2,
+  Video,
+  FileText,
+  Trash2,
+  GripVertical,
+  Copy,
+  Save,
+  X,
+  User,
+  Box,
+  Wand2,
+  Glasses,
+  Mic,
+} from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Slider } from '@/components/ui/slider';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { cn } from '@/lib/utils';
+import type { BlueprintScene } from '@/hooks/useVideoBlueprints';
+
+interface SortableSceneItemProps {
+  scene: BlueprintScene;
+  index: number;
+  isExpanded: boolean;
+  isEditable: boolean;
+  effectiveDuration: number;
+  formatDuration: (seconds: number) => string;
+  onExpandScene: (sceneId: string | null) => void;
+  onDurationChange: (sceneId: string, duration: number) => void;
+  onRemoveScene: (sceneId: string) => void;
+  onDuplicateScene: (sceneId: string) => void;
+  onScriptChange: (sceneId: string, script: string) => void;
+  onVisualConfigChange: (sceneId: string, config: Record<string, any>) => void;
+}
+
+const sceneTypeColors: Record<string, string> = {
+  intro: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+  content: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+  feature: 'bg-green-500/20 text-green-400 border-green-500/30',
+  demo: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+  testimonial: 'bg-pink-500/20 text-pink-400 border-pink-500/30',
+  cta: 'bg-primary/20 text-primary border-primary/30',
+  outro: 'bg-slate-500/20 text-slate-400 border-slate-500/30',
+};
+
+const sceneTypeIcons: Record<string, React.ReactNode> = {
+  intro: <Sparkles className="h-3 w-3" />,
+  content: <FileText className="h-3 w-3" />,
+  feature: <Layers className="h-3 w-3" />,
+  demo: <Video className="h-3 w-3" />,
+  testimonial: <Target className="h-3 w-3" />,
+  cta: <ChevronRight className="h-3 w-3" />,
+  outro: <CheckCircle2 className="h-3 w-3" />,
+};
+
+// Visual capability toggles
+const VISUAL_CAPABILITIES = [
+  { key: 'avatarEnabled', label: 'Avatar', icon: <User className="h-3 w-3" /> },
+  { key: '3dEnabled', label: '3D', icon: <Box className="h-3 w-3" /> },
+  { key: 'animationEnabled', label: 'Animation', icon: <Wand2 className="h-3 w-3" /> },
+  { key: 'arvrEnabled', label: 'AR/VR', icon: <Glasses className="h-3 w-3" /> },
+  { key: 'lipsyncEnabled', label: 'Lipsync', icon: <Mic className="h-3 w-3" /> },
+];
+
+export function SortableSceneItem({
+  scene,
+  index,
+  isExpanded,
+  isEditable,
+  effectiveDuration,
+  formatDuration,
+  onExpandScene,
+  onDurationChange,
+  onRemoveScene,
+  onDuplicateScene,
+  onScriptChange,
+  onVisualConfigChange,
+}: SortableSceneItemProps) {
+  const [isEditingScript, setIsEditingScript] = useState(false);
+  const [editedScript, setEditedScript] = useState(scene.script_template || '');
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: scene.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 50 : 'auto' as any,
+  };
+
+  const handleSaveScript = useCallback(() => {
+    onScriptChange(scene.id, editedScript);
+    setIsEditingScript(false);
+  }, [scene.id, editedScript, onScriptChange]);
+
+  const handleCancelScript = useCallback(() => {
+    setEditedScript(scene.script_template || '');
+    setIsEditingScript(false);
+  }, [scene.script_template]);
+
+  const handleVisualToggle = useCallback((key: string, enabled: boolean) => {
+    const updatedConfig = { ...scene.visual_config, [key]: enabled };
+    onVisualConfigChange(scene.id, updatedConfig);
+  }, [scene.id, scene.visual_config, onVisualConfigChange]);
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "border rounded-lg overflow-hidden transition-all",
+        isExpanded ? "border-primary/50 shadow-sm" : "border-border/50",
+        isDragging && "shadow-lg ring-2 ring-primary/30"
+      )}
+    >
+      {/* Scene Header */}
+      <div
+        className={cn(
+          "flex items-center justify-between p-4 cursor-pointer hover:bg-accent/30 transition-colors",
+          sceneTypeColors[scene.scene_type] || sceneTypeColors.content
+        )}
+        onClick={() => onExpandScene(isExpanded ? null : scene.id)}
+      >
+        <div className="flex items-center gap-3">
+          {isEditable && (
+            <div
+              {...attributes}
+              {...listeners}
+              className="cursor-grab active:cursor-grabbing p-0.5 -ml-1 hover:bg-background/30 rounded"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <GripVertical className="h-4 w-4 text-muted-foreground/50" />
+            </div>
+          )}
+          <div className="w-8 h-8 rounded-full bg-background/50 flex items-center justify-center text-sm font-medium">
+            {index + 1}
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              {sceneTypeIcons[scene.scene_type]}
+              <span className="font-medium">{scene.title}</span>
+              {scene.is_optional && (
+                <Badge variant="outline" className="text-[10px] h-4">Optional</Badge>
+              )}
+              {scene.is_repeatable && (
+                <Badge variant="outline" className="text-[10px] h-4 border-primary/30 text-primary">Repeatable</Badge>
+              )}
+            </div>
+            <p className="text-xs opacity-70 capitalize">{scene.scene_type}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="text-right">
+            <span className="text-sm font-medium">{formatDuration(effectiveDuration)}</span>
+            <p className="text-[10px] text-muted-foreground">
+              {formatDuration(scene.min_duration_seconds)} – {formatDuration(scene.max_duration_seconds)}
+            </p>
+          </div>
+          <ChevronRight className={cn(
+            "h-4 w-4 transition-transform",
+            isExpanded && "rotate-90"
+          )} />
+        </div>
+      </div>
+
+      {/* Expanded Scene Details */}
+      {isExpanded && (
+        <div className="p-4 bg-card/50 border-t border-border/50 space-y-4">
+          {/* Duration Slider */}
+          {isEditable && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-medium text-muted-foreground">
+                  Duration: {formatDuration(effectiveDuration)}
+                </label>
+                <span className="text-[10px] text-muted-foreground">
+                  Min {formatDuration(scene.min_duration_seconds)} • Max {formatDuration(scene.max_duration_seconds)}
+                </span>
+              </div>
+              <Slider
+                value={[effectiveDuration]}
+                min={scene.min_duration_seconds}
+                max={scene.max_duration_seconds}
+                step={5}
+                onValueChange={([val]) => onDurationChange(scene.id, val)}
+                className="w-full"
+              />
+            </div>
+          )}
+
+          {/* Script Template — Editable */}
+          {scene.script_template && (
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <h4 className="text-xs font-medium text-muted-foreground">Script Template</h4>
+                {isEditable && !isEditingScript && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-5 text-[10px] gap-1 text-primary"
+                    onClick={() => {
+                      setEditedScript(scene.script_template || '');
+                      setIsEditingScript(true);
+                    }}
+                  >
+                    <FileText className="h-3 w-3" />
+                    Edit Script
+                  </Button>
+                )}
+              </div>
+              {isEditingScript ? (
+                <div className="space-y-2">
+                  <Textarea
+                    value={editedScript}
+                    onChange={(e) => setEditedScript(e.target.value)}
+                    className="text-sm font-mono min-h-[80px] bg-background/80"
+                    placeholder="Enter script template... Use {{variable_name}} for dynamic content"
+                  />
+                  <div className="flex items-center gap-2 justify-end">
+                    <Badge variant="outline" className="text-[9px] h-4">
+                      Variables: {'{{product_name}}'}, {'{{feature_name}}'}, etc.
+                    </Badge>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 text-xs gap-1"
+                      onClick={handleCancelScript}
+                    >
+                      <X className="h-3 w-3" />
+                      Cancel
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="h-6 text-xs gap-1"
+                      onClick={handleSaveScript}
+                    >
+                      <Save className="h-3 w-3" />
+                      Save
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm bg-background/50 p-3 rounded-md font-mono text-muted-foreground">
+                  {scene.script_template}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Scene Details Grid */}
+          <div className="grid grid-cols-3 gap-4 text-sm">
+            <div>
+              <span className="text-xs text-muted-foreground block">Scene Type</span>
+              <span className="capitalize">{scene.scene_type}</span>
+            </div>
+            <div>
+              <span className="text-xs text-muted-foreground block">Scene Key</span>
+              <code className="text-xs bg-muted px-1.5 py-0.5 rounded">{scene.scene_key}</code>
+            </div>
+            <div>
+              <span className="text-xs text-muted-foreground block">Repeatable</span>
+              <span>{scene.is_repeatable ? '✅ Yes' : '❌ No'}</span>
+            </div>
+          </div>
+
+          {/* Visual Config Toggles (P1) */}
+          {isEditable && (
+            <div className="space-y-2">
+              <h4 className="text-xs font-medium text-muted-foreground">Scene Capabilities</h4>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {VISUAL_CAPABILITIES.map(({ key, label, icon }) => {
+                  const isEnabled = !!(scene.visual_config as any)?.[key];
+                  return (
+                    <div
+                      key={key}
+                      className={cn(
+                        "flex items-center gap-2 p-2 rounded-md border transition-colors",
+                        isEnabled
+                          ? "border-primary/30 bg-primary/5"
+                          : "border-border/50 bg-muted/20"
+                      )}
+                    >
+                      <Switch
+                        checked={isEnabled}
+                        onCheckedChange={(checked) => handleVisualToggle(key, checked)}
+                        className="scale-75"
+                      />
+                      <div className="flex items-center gap-1.5 text-xs">
+                        {icon}
+                        <span className={isEnabled ? 'text-foreground' : 'text-muted-foreground'}>
+                          {label}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Actions Row */}
+          {isEditable && (
+            <div className="flex items-center gap-2 pt-2 border-t border-border/30">
+              {scene.is_repeatable && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs gap-1 text-primary hover:text-primary"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDuplicateScene(scene.id);
+                  }}
+                >
+                  <Copy className="h-3 w-3" />
+                  Duplicate Scene
+                </Button>
+              )}
+              {scene.is_optional && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs text-destructive hover:text-destructive gap-1 ml-auto"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRemoveScene(scene.id);
+                  }}
+                >
+                  <Trash2 className="h-3 w-3" />
+                  Remove Scene
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
