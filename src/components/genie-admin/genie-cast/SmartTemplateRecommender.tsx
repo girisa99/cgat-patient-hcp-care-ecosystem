@@ -2,6 +2,11 @@
  * Smart Template Recommender
  * AI-powered template suggestion based on product, audience, and platform context
  * Uses scoring algorithm against blueprint metadata for instant recommendations
+ * 
+ * Tiered Confidence Logic:
+ *  ≥50%  → "Recommended" (confident matches)
+ *  30-49% → "Partial Matches" (collapsible, explorable)
+ *  <30%  → Fallback CTAs (Create Custom / Browse All)
  */
 
 import React, { useState, useMemo, useCallback } from 'react';
@@ -17,6 +22,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import {
   Sparkles,
   Target,
   Users,
@@ -24,10 +34,14 @@ import {
   Clock,
   Layers,
   ChevronRight,
+  ChevronDown,
   Zap,
   TrendingUp,
-  RefreshCw,
   X,
+  Plus,
+  Search,
+  Globe,
+  AlertTriangle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { VideoBlueprint } from '@/hooks/useVideoBlueprints';
@@ -36,8 +50,22 @@ interface SmartTemplateRecommenderProps {
   blueprints: VideoBlueprint[];
   onSelectBlueprint: (blueprint: VideoBlueprint) => void;
   onCompare?: (blueprintIds: string[]) => void;
+  onCreateCustom?: (context: RecommenderContext) => void;
+  onBrowseAll?: () => void;
+  selectedRegion?: string;
   className?: string;
 }
+
+export interface RecommenderContext {
+  product: string;
+  audience: string;
+  platform: string;
+  goal: string;
+}
+
+// Confidence thresholds
+const CONFIDENCE_RECOMMENDED = 50;
+const CONFIDENCE_PARTIAL = 30;
 
 // Product context options (aligned with registry)
 const PRODUCT_CONTEXTS = [
@@ -77,11 +105,19 @@ const PLATFORM_TARGETS = [
   { value: 'email', label: 'Email Campaign' },
 ];
 
-interface RecommendationScore {
+export interface RecommendationScore {
   blueprint: VideoBlueprint;
   score: number;
   reasons: string[];
-  matchType: 'exact' | 'strong' | 'partial';
+  matchType: 'recommended' | 'partial' | 'low';
+  isRegionalGap?: boolean;
+  availableLanguage?: string;
+}
+
+interface TieredResults {
+  recommended: RecommendationScore[];
+  partial: RecommendationScore[];
+  hasAnyResults: boolean;
 }
 
 // Scoring engine: rank blueprints based on context
@@ -91,6 +127,7 @@ function scoreBlueprints(
   audience: string,
   platform: string,
   goal: string,
+  selectedRegion?: string,
 ): RecommendationScore[] {
   return blueprints
     .map(bp => {
@@ -102,6 +139,7 @@ function scoreBlueprints(
       const platforms = (bp.target_platform || []).map(p => p.toLowerCase());
       const category = bp.category.toLowerCase();
       const settings = bp.default_settings as any || {};
+      const regions = (bp.target_regions || []).map(r => r.toLowerCase());
 
       // Product match (0-35 points)
       if (product) {
@@ -186,37 +224,238 @@ function scoreBlueprints(
       if (settings.avatarEnabled) { score += 3; }
       if (settings['3dEnabled']) { score += 2; }
 
-      const matchType: 'exact' | 'strong' | 'partial' =
-        score >= 60 ? 'exact' : score >= 30 ? 'strong' : 'partial';
+      // Determine match type based on confidence thresholds
+      const matchType: 'recommended' | 'partial' | 'low' =
+        score >= CONFIDENCE_RECOMMENDED ? 'recommended' :
+        score >= CONFIDENCE_PARTIAL ? 'partial' : 'low';
 
-      return { blueprint: bp, score, reasons, matchType };
+      // Regional gap detection
+      let isRegionalGap = false;
+      let availableLanguage: string | undefined;
+      if (selectedRegion && selectedRegion !== 'en' && score >= CONFIDENCE_PARTIAL) {
+        const hasRegion = regions.some(r => r.includes(selectedRegion));
+        const hasEnglish = regions.length === 0 || regions.some(r => r.includes('en') || r.includes('western') || r.includes('global'));
+        if (!hasRegion && hasEnglish) {
+          isRegionalGap = true;
+          availableLanguage = 'English';
+        }
+      }
+
+      return { blueprint: bp, score, reasons, matchType, isRegionalGap, availableLanguage };
     })
     .filter(r => r.score > 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 6); // Top 6 recommendations
+    .sort((a, b) => b.score - a.score);
 }
 
+// Split results into tiers
+function tierResults(results: RecommendationScore[]): TieredResults {
+  const recommended = results.filter(r => r.matchType === 'recommended').slice(0, 6);
+  const partial = results.filter(r => r.matchType === 'partial').slice(0, 6);
+  
+  return {
+    recommended,
+    partial,
+    hasAnyResults: recommended.length > 0 || partial.length > 0,
+  };
+}
+
+// ─── Recommendation Card ───────────────────────────────────────────────
+function RecommendationCard({
+  rec,
+  rank,
+  isTopResult,
+  onSelect,
+}: {
+  rec: RecommendationScore;
+  rank?: number;
+  isTopResult?: boolean;
+  onSelect: (bp: VideoBlueprint) => void;
+}) {
+  const formatDuration = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+  };
+
+  return (
+    <div
+      className={cn(
+        "relative rounded-lg border p-3 cursor-pointer transition-all hover:shadow-md",
+        isTopResult ? "border-primary/50 bg-primary/5 shadow-sm" : "border-border/50 bg-card/50",
+        "hover:border-primary/40"
+      )}
+      onClick={() => onSelect(rec.blueprint)}
+    >
+      {/* Rank badge */}
+      {rank !== undefined && (
+        <div className={cn(
+          "absolute -top-2 -left-1 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shadow-sm",
+          isTopResult ? "bg-primary text-primary-foreground" :
+          rank === 1 ? "bg-secondary text-secondary-foreground" :
+          "bg-muted text-muted-foreground"
+        )}>
+          {rank}
+        </div>
+      )}
+
+      {/* Match indicator + Regional gap badge */}
+      <div className="flex items-center justify-between mb-2 gap-1 flex-wrap">
+        <Badge
+          variant="outline"
+          className={cn(
+            "text-[9px] h-4",
+            rec.matchType === 'recommended' ? 'border-green-500/50 text-green-500 bg-green-500/10' :
+            'border-amber-500/50 text-amber-500 bg-amber-500/10'
+          )}
+        >
+          <TrendingUp className="h-2.5 w-2.5 mr-0.5" />
+          {rec.score}% match
+        </Badge>
+        
+        {rec.isRegionalGap && (
+          <Badge variant="outline" className="text-[9px] h-4 border-blue-500/50 text-blue-500 bg-blue-500/10 gap-0.5">
+            <Globe className="h-2.5 w-2.5" />
+            {rec.availableLanguage} — Transcreate
+          </Badge>
+        )}
+
+        <Badge variant="outline" className="text-[9px] capitalize h-4">
+          {rec.blueprint.category}
+        </Badge>
+      </div>
+
+      <h4 className="text-sm font-medium line-clamp-1">{rec.blueprint.name}</h4>
+      <p className="text-[11px] text-muted-foreground line-clamp-2 mt-1">
+        {rec.blueprint.description}
+      </p>
+
+      {/* Meta */}
+      <div className="flex items-center gap-3 mt-2 text-[10px] text-muted-foreground">
+        <span className="flex items-center gap-0.5">
+          <Clock className="h-2.5 w-2.5" />
+          {formatDuration(rec.blueprint.estimated_duration_seconds)}
+        </span>
+        <span className="flex items-center gap-0.5">
+          <Layers className="h-2.5 w-2.5" />
+          {rec.blueprint.target_platform?.length || 0} platforms
+        </span>
+      </div>
+
+      {/* Match reasons */}
+      <div className="flex flex-wrap gap-1 mt-2">
+        {rec.reasons.slice(0, 3).map((reason, i) => (
+          <span key={i} className="text-[9px] bg-muted/50 text-muted-foreground px-1.5 py-0.5 rounded">
+            {reason}
+          </span>
+        ))}
+      </div>
+
+      {/* Action */}
+      <Button
+        variant="ghost"
+        size="sm"
+        className="w-full mt-2 h-7 text-xs gap-1"
+        onClick={e => { e.stopPropagation(); onSelect(rec.blueprint); }}
+      >
+        Preview Template
+        <ChevronRight className="h-3 w-3" />
+      </Button>
+    </div>
+  );
+}
+
+// ─── Fallback / No Results Panel ───────────────────────────────────────
+function NoResultsFallback({
+  context,
+  onCreateCustom,
+  onBrowseAll,
+}: {
+  context: RecommenderContext;
+  onCreateCustom?: (ctx: RecommenderContext) => void;
+  onBrowseAll?: () => void;
+}) {
+  const contextDescription = [
+    context.product && PRODUCT_CONTEXTS.find(p => p.value === context.product)?.label,
+    context.audience && AUDIENCE_SEGMENTS.find(a => a.value === context.audience)?.label,
+    context.platform && PLATFORM_TARGETS.find(p => p.value === context.platform)?.label,
+  ].filter(Boolean).join(' • ');
+
+  return (
+    <div className="rounded-lg border border-dashed border-amber-500/30 bg-amber-500/5 p-5 text-center space-y-3">
+      <div className="flex items-center justify-center gap-2 text-amber-600">
+        <AlertTriangle className="h-5 w-5" />
+        <span className="text-sm font-semibold">No templates match your criteria</span>
+      </div>
+      
+      {contextDescription && (
+        <p className="text-xs text-muted-foreground">
+          Looking for: <span className="font-medium text-foreground">{contextDescription}</span>
+          {context.goal && <> with keywords "<span className="font-medium text-foreground">{context.goal}</span>"</>}
+        </p>
+      )}
+
+      <div className="flex items-center justify-center gap-3 pt-1">
+        {onCreateCustom && (
+          <Button
+            size="sm"
+            className="h-8 gap-1.5 text-xs"
+            onClick={() => onCreateCustom(context)}
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Create Custom Template
+          </Button>
+        )}
+        {onBrowseAll && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1.5 text-xs"
+            onClick={onBrowseAll}
+          >
+            <Search className="h-3.5 w-3.5" />
+            Browse All Templates
+          </Button>
+        )}
+      </div>
+
+      <p className="text-[10px] text-muted-foreground">
+        The Blueprint Builder will pre-fill your selections so you can create a tailored template
+      </p>
+    </div>
+  );
+}
+
+// ─── Main Component ─────────────────────────────────────────────────────
 export function SmartTemplateRecommender({
   blueprints,
   onSelectBlueprint,
   onCompare,
+  onCreateCustom,
+  onBrowseAll,
+  selectedRegion,
   className,
 }: SmartTemplateRecommenderProps) {
   const [product, setProduct] = useState('');
   const [audience, setAudience] = useState('');
   const [platform, setPlatform] = useState('');
   const [goal, setGoal] = useState('');
-  const [isExpanded, setIsExpanded] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  const [showPartialMatches, setShowPartialMatches] = useState(false);
 
-  const recommendations = useMemo(() => {
+  const context: RecommenderContext = useMemo(() => ({
+    product, audience, platform, goal
+  }), [product, audience, platform, goal]);
+
+  const allScored = useMemo(() => {
     if (!product && !audience && !platform && !goal) return [];
-    return scoreBlueprints(blueprints, product, audience, platform, goal);
-  }, [blueprints, product, audience, platform, goal]);
+    return scoreBlueprints(blueprints, product, audience, platform, goal, selectedRegion);
+  }, [blueprints, product, audience, platform, goal, selectedRegion]);
+
+  const tiered = useMemo(() => tierResults(allScored), [allScored]);
 
   const handleRecommend = useCallback(() => {
     setShowResults(true);
-    setIsExpanded(true);
+    setShowPartialMatches(false);
   }, []);
 
   const handleReset = useCallback(() => {
@@ -225,13 +464,8 @@ export function SmartTemplateRecommender({
     setPlatform('');
     setGoal('');
     setShowResults(false);
+    setShowPartialMatches(false);
   }, []);
-
-  const formatDuration = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
-  };
 
   const hasContext = product || audience || platform || goal;
 
@@ -314,19 +548,23 @@ export function SmartTemplateRecommender({
           </div>
         </div>
 
-        {/* Results */}
-        {showResults && recommendations.length > 0 && (
+        {/* ─── TIER 1: Recommended (≥50%) ─── */}
+        {showResults && tiered.recommended.length > 0 && (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-muted-foreground">
-                Top {Math.min(recommendations.length, 3)} Recommendations
-              </span>
-              {onCompare && recommendations.length >= 2 && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium text-green-600 flex items-center gap-1">
+                  <TrendingUp className="h-3 w-3" />
+                  {tiered.recommended.length} Recommended
+                </span>
+                <span className="text-[10px] text-muted-foreground">≥{CONFIDENCE_RECOMMENDED}% confidence</span>
+              </div>
+              {onCompare && tiered.recommended.length >= 2 && (
                 <Button
                   variant="outline"
                   size="sm"
                   className="h-6 text-[10px] gap-1"
-                  onClick={() => onCompare(recommendations.slice(0, 3).map(r => r.blueprint.id))}
+                  onClick={() => onCompare(tiered.recommended.slice(0, 3).map(r => r.blueprint.id))}
                 >
                   <Layers className="h-3 w-3" />
                   Compare Top 3
@@ -335,90 +573,22 @@ export function SmartTemplateRecommender({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {recommendations.slice(0, 3).map((rec, idx) => (
-                <div
+              {tiered.recommended.slice(0, 3).map((rec, idx) => (
+                <RecommendationCard
                   key={rec.blueprint.id}
-                  className={cn(
-                    "relative rounded-lg border p-3 cursor-pointer transition-all hover:shadow-md",
-                    idx === 0 ? "border-primary/50 bg-primary/5 shadow-sm" : "border-border/50 bg-card/50",
-                    "hover:border-primary/40"
-                  )}
-                  onClick={() => onSelectBlueprint(rec.blueprint)}
-                >
-                  {/* Rank badge */}
-                  <div className={cn(
-                    "absolute -top-2 -left-1 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shadow-sm",
-                    idx === 0 ? "bg-primary text-primary-foreground" :
-                    idx === 1 ? "bg-secondary text-secondary-foreground" :
-                    "bg-muted text-muted-foreground"
-                  )}>
-                    {idx + 1}
-                  </div>
-
-                  {/* Match indicator */}
-                  <div className="flex items-center justify-between mb-2">
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        "text-[9px] h-4",
-                        rec.matchType === 'exact' ? 'border-green-500/50 text-green-500 bg-green-500/10' :
-                        rec.matchType === 'strong' ? 'border-primary/50 text-primary bg-primary/10' :
-                        'border-muted-foreground/50 text-muted-foreground'
-                      )}
-                    >
-                      <TrendingUp className="h-2.5 w-2.5 mr-0.5" />
-                      {rec.score}% match
-                    </Badge>
-                    <Badge variant="outline" className="text-[9px] capitalize h-4">
-                      {rec.blueprint.category}
-                    </Badge>
-                  </div>
-
-                  <h4 className="text-sm font-medium line-clamp-1">{rec.blueprint.name}</h4>
-                  <p className="text-[11px] text-muted-foreground line-clamp-2 mt-1">
-                    {rec.blueprint.description}
-                  </p>
-
-                  {/* Meta */}
-                  <div className="flex items-center gap-3 mt-2 text-[10px] text-muted-foreground">
-                    <span className="flex items-center gap-0.5">
-                      <Clock className="h-2.5 w-2.5" />
-                      {formatDuration(rec.blueprint.estimated_duration_seconds)}
-                    </span>
-                    <span className="flex items-center gap-0.5">
-                      <Layers className="h-2.5 w-2.5" />
-                      {rec.blueprint.target_platform?.length || 0} platforms
-                    </span>
-                  </div>
-
-                  {/* Match reasons */}
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {rec.reasons.slice(0, 3).map((reason, i) => (
-                      <span key={i} className="text-[9px] bg-muted/50 text-muted-foreground px-1.5 py-0.5 rounded">
-                        {reason}
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* Action */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full mt-2 h-7 text-xs gap-1"
-                    onClick={e => { e.stopPropagation(); onSelectBlueprint(rec.blueprint); }}
-                  >
-                    Preview Template
-                    <ChevronRight className="h-3 w-3" />
-                  </Button>
-                </div>
+                  rec={rec}
+                  rank={idx + 1}
+                  isTopResult={idx === 0}
+                  onSelect={onSelectBlueprint}
+                />
               ))}
             </div>
 
-            {/* Additional recommendations */}
-            {recommendations.length > 3 && (
+            {/* Additional recommended beyond top 3 */}
+            {tiered.recommended.length > 3 && (
               <div className="flex flex-wrap gap-2 pt-2 border-t border-border/30">
-                <span className="text-[10px] text-muted-foreground">Also relevant:</span>
-                {recommendations.slice(3, 6).map(rec => (
+                <span className="text-[10px] text-muted-foreground">Also recommended:</span>
+                {tiered.recommended.slice(3, 6).map(rec => (
                   <Button
                     key={rec.blueprint.id}
                     variant="ghost"
@@ -427,7 +597,7 @@ export function SmartTemplateRecommender({
                     onClick={() => onSelectBlueprint(rec.blueprint)}
                   >
                     {rec.blueprint.name}
-                    <Badge variant="outline" className="text-[8px] h-3 ml-1">{rec.score}%</Badge>
+                    <Badge variant="outline" className="text-[8px] h-3 ml-1 border-green-500/50 text-green-500">{rec.score}%</Badge>
                   </Button>
                 ))}
               </div>
@@ -435,11 +605,98 @@ export function SmartTemplateRecommender({
           </div>
         )}
 
-        {/* No results */}
-        {showResults && recommendations.length === 0 && hasContext && (
-          <div className="text-center py-4 text-muted-foreground">
-            <p className="text-sm">No strong matches found</p>
-            <p className="text-xs mt-1">Try adjusting your context or browse the full library below</p>
+        {/* ─── TIER 2: Partial Matches (30-49%) ─── */}
+        {showResults && tiered.partial.length > 0 && (
+          <Collapsible open={showPartialMatches} onOpenChange={setShowPartialMatches}>
+            <CollapsibleTrigger asChild>
+              <Button
+                variant="ghost"
+                className="w-full h-8 text-xs gap-2 justify-between border border-dashed border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10"
+              >
+                <span className="flex items-center gap-1.5 text-amber-600">
+                  <AlertTriangle className="h-3 w-3" />
+                  {tiered.partial.length} Partial Match{tiered.partial.length > 1 ? 'es' : ''} 
+                  <span className="text-muted-foreground font-normal">({CONFIDENCE_PARTIAL}-{CONFIDENCE_RECOMMENDED - 1}% confidence)</span>
+                </span>
+                <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", showPartialMatches && "rotate-180")} />
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {tiered.partial.slice(0, 3).map((rec) => (
+                  <RecommendationCard
+                    key={rec.blueprint.id}
+                    rec={rec}
+                    onSelect={onSelectBlueprint}
+                  />
+                ))}
+              </div>
+              {tiered.partial.length > 3 && (
+                <div className="flex flex-wrap gap-2 pt-2 mt-2 border-t border-border/30">
+                  <span className="text-[10px] text-muted-foreground">More partial matches:</span>
+                  {tiered.partial.slice(3, 6).map(rec => (
+                    <Button
+                      key={rec.blueprint.id}
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 text-[10px] gap-1"
+                      onClick={() => onSelectBlueprint(rec.blueprint)}
+                    >
+                      {rec.blueprint.name}
+                      <Badge variant="outline" className="text-[8px] h-3 ml-1 border-amber-500/50 text-amber-500">{rec.score}%</Badge>
+                    </Button>
+                  ))}
+                </div>
+              )}
+            </CollapsibleContent>
+          </Collapsible>
+        )}
+
+        {/* ─── TIER 3: No Results / Below Threshold ─── */}
+        {showResults && !tiered.hasAnyResults && hasContext && (
+          <NoResultsFallback
+            context={context}
+            onCreateCustom={onCreateCustom}
+            onBrowseAll={onBrowseAll}
+          />
+        )}
+
+        {/* Show Create Custom CTA even when we have only partial matches and no recommended */}
+        {showResults && tiered.recommended.length === 0 && tiered.partial.length > 0 && (
+          <div className="flex items-center justify-between rounded-lg border border-dashed border-muted-foreground/20 bg-muted/30 p-3">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-amber-500" />
+              <div>
+                <p className="text-xs font-medium">No high-confidence matches found</p>
+                <p className="text-[10px] text-muted-foreground">
+                  Partial matches above may need customization — or create your own
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              {onCreateCustom && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs gap-1"
+                  onClick={() => onCreateCustom(context)}
+                >
+                  <Plus className="h-3 w-3" />
+                  Create Custom
+                </Button>
+              )}
+              {onBrowseAll && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 text-xs gap-1"
+                  onClick={onBrowseAll}
+                >
+                  <Search className="h-3 w-3" />
+                  Browse All
+                </Button>
+              )}
+            </div>
           </div>
         )}
       </CardContent>
