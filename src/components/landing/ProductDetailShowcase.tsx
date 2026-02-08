@@ -436,14 +436,14 @@ export const ProductDetailShowcase: React.FC<ProductDetailShowcaseProps> = ({
                     Transcreation — Not Translation
                   </Badge>
                 </h4>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                <div className="flex gap-3 overflow-x-auto pb-3 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent snap-x snap-mandatory">
                   {extendedData.regionalHighlights.map((ctx) => (
                     <div
                       key={ctx.region}
-                      className="p-2.5 bg-muted/40 rounded-lg border border-border/50 hover:border-primary/30 transition-colors group"
+                      className="min-w-[180px] max-w-[200px] flex-shrink-0 snap-start p-3 bg-muted/40 rounded-lg border border-border/50 hover:border-primary/30 transition-colors group"
                     >
-                      <div className="flex items-center gap-1.5 mb-1">
-                        <span className="text-base">{ctx.flag}</span>
+                      <div className="flex items-center gap-1.5 mb-1.5">
+                        <span className="text-lg">{ctx.flag}</span>
                         <span className="font-semibold text-foreground text-xs">{ctx.region}</span>
                       </div>
                       <p className="text-[11px] text-muted-foreground leading-snug group-hover:text-foreground transition-colors">{ctx.useCase}</p>
