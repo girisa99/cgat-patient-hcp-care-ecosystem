@@ -107,7 +107,8 @@ const AppContent = () => {
   const { isAuthenticated, isLoading, userRoles } = useMasterAuth();
   const location = window.location.pathname;
   
-  // Check if this is a Genie Studio route (uses separate auth system)
+  // Check if this is a Genie Studio route or public landing route
+  // These routes bypass the healthcare role-loading gate
   const isGenieStudioRoute = location.startsWith('/genie-studio') || 
     location.startsWith('/genie-spark') || 
     location.startsWith('/genie-mind') || 
@@ -115,8 +116,13 @@ const AppContent = () => {
     location.startsWith('/genie-deck') ||
     location.startsWith('/genie-arc') ||
     location.startsWith('/genie-admin') ||
+    location.startsWith('/genie-landing') ||
+    location.startsWith('/genie-cast') ||
     location.startsWith('/subscription') ||
-    location.startsWith('/marketing-materials');
+    location.startsWith('/marketing-materials') ||
+    location.startsWith('/explore') ||
+    location.startsWith('/support') ||
+    location.startsWith('/pricing');
 
   // Also check if user is on root route - SmartDefaultRoute will handle Genie Studio detection
   const isRootRoute = location === '/' || location === '';
