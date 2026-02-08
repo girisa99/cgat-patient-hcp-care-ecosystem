@@ -107,15 +107,40 @@ const INDUSTRY_USE_CASES = [
 // ============================================
 interface InteractiveTryGenieDemoProps {
   className?: string;
+  region?: string;
 }
+
+// Map regions to their core languages (shown first)
+const REGION_CORE_LANGUAGES: Record<string, string[]> = {
+  mena: ['ar-SA', 'ar-EG', 'ar-AE'],
+  india: ['hi-IN', 'ta-IN', 'te-IN', 'bn-IN'],
+  africa: ['sw-KE'],
+  apac: ['ja-JP', 'zh-CN', 'ko-KR', 'th-TH', 'vi-VN', 'id-ID'],
+  latam: ['es-MX', 'pt-BR'],
+  europe: ['de-DE', 'fr-FR', 'es-MX'],
+  nam: ['es-MX', 'fr-FR'],
+  caribbean: ['es-MX', 'fr-FR'],
+};
 
 export const InteractiveTryGenieDemo: React.FC<InteractiveTryGenieDemoProps> = ({
   className = '',
+  region,
 }) => {
-  const [selectedLang, setSelectedLang] = useState('ar-SA');
+  const defaultLang = region && REGION_CORE_LANGUAGES[region]?.[0] 
+    ? REGION_CORE_LANGUAGES[region][0] 
+    : 'ar-SA';
+  const [selectedLang, setSelectedLang] = useState(defaultLang);
   const [customText, setCustomText] = useState('');
   const [activeUseCase, setActiveUseCase] = useState<number | null>(null);
   const tts = useTTSDemo();
+
+  // Sort languages: region core first, then rest
+  const coreCodes = region ? (REGION_CORE_LANGUAGES[region] || []) : [];
+  const sortedLanguages = [...TRY_LANGUAGES].sort((a, b) => {
+    const aCore = coreCodes.includes(a.code) ? -1 : 0;
+    const bCore = coreCodes.includes(b.code) ? -1 : 0;
+    return aCore - bCore;
+  });
 
   const handlePlayCustom = () => {
     if (!customText.trim()) return;
@@ -181,11 +206,14 @@ export const InteractiveTryGenieDemo: React.FC<InteractiveTryGenieDemoProps> = (
                     <SelectValue placeholder="Select language" />
                   </SelectTrigger>
                   <SelectContent>
-                    {TRY_LANGUAGES.map(lang => (
-                      <SelectItem key={lang.code} value={lang.code}>
-                        {lang.flag} {lang.name}
-                      </SelectItem>
-                    ))}
+                    {sortedLanguages.map(lang => {
+                      const isCore = coreCodes.includes(lang.code);
+                      return (
+                        <SelectItem key={lang.code} value={lang.code}>
+                          {lang.flag} {lang.name} {isCore ? '⭐' : ''}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
                 <Badge variant="secondary" className="flex items-center gap-1 self-center px-3 py-2">
