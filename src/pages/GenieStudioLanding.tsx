@@ -20,6 +20,7 @@ import { ProfessionalAvatarShowcase } from '@/components/landing/video/Professio
 import { ExpandedLanguageDemo } from '@/components/landing/ExpandedLanguageDemo';
 import { InteractiveTryGenieDemo } from '@/components/landing/InteractiveTryGenieDemo';
 import { IndustryShowcases } from '@/components/landing/IndustryShowcases';
+import { ProductDetailShowcase } from '@/components/landing/ProductDetailShowcase';
 import { CrossFunctionalSection } from '@/components/landing/CrossFunctionalSection';
 import { GlobalInspirationSection } from '@/components/landing/GlobalInspirationSection';
 import { DogfoodingProof } from '@/components/landing/DogfoodingProof';
@@ -83,75 +84,75 @@ const HERO_CONTENT: Record<RegionCode, HeroContent> = {
   NAM: {
     flag: '🇺🇸', region: 'North America',
     headline: 'Transform Your Content Strategy',
-    subheadline: 'AI-powered production for Healthcare, Finance & Tech leaders',
+    subheadline: 'From idea to multi-modal content in minutes — for any industry, any language, any market',
     theme: 'Digital Transformation',
     stats: { reach: '50M+', languages: '70+', savings: '80%' },
     video: 'https://images.unsplash.com/photo-1551434678-e076c223a692?w=800&h=450&fit=crop',
-    industries: ['Healthcare', 'Finance', 'Technology', 'Retail'],
+    industries: ['Healthcare', 'Finance', 'Technology', 'Retail', 'Legal', 'Pharma', '50+ more'],
   },
   EUR: {
     flag: '🇪🇺', region: 'Europe',
     headline: 'Scale Content Across Europe',
-    subheadline: 'Multilingual production for Manufacturing & Finance',
+    subheadline: 'Transcreated production in 25+ European languages — culturally adapted for every sector',
     theme: 'Industry 4.0',
     stats: { reach: '40M+', languages: '25+', savings: '75%' },
     video: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&h=450&fit=crop',
-    industries: ['Finance', 'Manufacturing', 'Professional Services'],
+    industries: ['Finance', 'Manufacturing', 'Professional Services', 'Automotive', 'Pharma', '50+ more'],
   },
   MENA: {
     flag: '🇦🇪', region: 'Middle East',
     headline: 'رؤية 2030 تبدأ هنا',
-    subheadline: 'AI content production in 7 Arabic dialects',
+    subheadline: 'إنتاج محتوى ذكي بـ 7 لهجات عربية — لكل قطاع ولكل سوق',
     theme: 'Vision 2030',
     stats: { reach: '100M+', dialects: '7', savings: '85%' },
     isRTL: true,
     video: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800&h=450&fit=crop',
-    industries: ['Government', 'Tourism', 'Real Estate', 'Finance'],
+    industries: ['Government', 'Tourism', 'Real Estate', 'Finance', 'Oil & Gas', '50+ more'],
   },
   IND: {
     flag: '🇮🇳', region: 'India',
-    headline: 'India का Education Revolution',
-    subheadline: 'Create once, reach 500M+ students in 22 Indian languages',
-    theme: 'EdTech Revolution',
+    headline: 'India का Content Revolution',
+    subheadline: 'Create once, reach 500M+ audiences in 22 Indian languages — every industry, every dialect',
+    theme: 'Digital India',
     stats: { reach: '500M+', languages: '22', savings: '90%' },
     video: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=800&h=450&fit=crop',
-    industries: ['EdTech', 'Fintech', 'Entertainment', 'E-commerce'],
+    industries: ['EdTech', 'Fintech', 'Entertainment', 'E-commerce', 'Healthcare', '50+ more'],
   },
   AFR: {
     flag: '🌍', region: 'Africa',
     headline: "Africa's Content Revolution",
-    subheadline: 'Fintech & AgriTech content in 10 African languages',
-    theme: 'Mobile Money Revolution',
+    subheadline: 'AI-powered production in 10+ African languages — transcreated for every market',
+    theme: 'Mobile-First Innovation',
     stats: { reach: '200M+', languages: '10', savings: '85%' },
     video: 'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?w=800&h=450&fit=crop',
-    industries: ['Fintech', 'AgriTech', 'NGO', 'Tourism'],
+    industries: ['Fintech', 'AgriTech', 'NGO', 'Tourism', 'Telecom', '50+ more'],
   },
   APAC: {
     flag: '🌏', region: 'Asia Pacific',
     headline: 'Smart Content for Smart Nations',
-    subheadline: 'E-commerce & Tech content across Asia Pacific',
+    subheadline: 'CJK-optimized production across 15+ languages — culturally adapted for every APAC market',
     theme: 'Smart Nation',
     stats: { reach: '300M+', languages: '15+', savings: '80%' },
     video: 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=450&fit=crop',
-    industries: ['Technology', 'E-commerce', 'Finance', 'Manufacturing'],
+    industries: ['Technology', 'E-commerce', 'Finance', 'Manufacturing', 'Gaming', '50+ more'],
   },
   LATAM: {
     flag: '🌎', region: 'Latin America',
     headline: 'Contenido que Conecta',
-    subheadline: 'Tourism & Fintech content in Spanish & Portuguese',
+    subheadline: 'Producción transcreada en español y portugués — para cada industria y cada mercado',
     theme: 'Creator Economy',
     stats: { reach: '150M+', languages: '3', savings: '75%' },
     video: 'https://images.unsplash.com/photo-1518105779142-d975f22f1b0a?w=800&h=450&fit=crop',
-    industries: ['Tourism', 'Entertainment', 'Fintech', 'Retail'],
+    industries: ['Tourism', 'Entertainment', 'Fintech', 'Retail', 'Agriculture', '50+ more'],
   },
   CARIB: {
     flag: '🏝️', region: 'Caribbean',
     headline: 'Paradise Meets Technology',
-    subheadline: 'Tourism & Hospitality content that captivates',
-    theme: 'Tourism Tech',
+    subheadline: 'Multi-lingual content production that captivates — every sector, every island market',
+    theme: 'Island Innovation',
     stats: { reach: '20M+', languages: '3', savings: '70%' },
     video: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&h=450&fit=crop',
-    industries: ['Tourism', 'Hospitality', 'Real Estate'],
+    industries: ['Tourism', 'Hospitality', 'Real Estate', 'Education', 'Finance', '50+ more'],
   },
 };
 
@@ -411,11 +412,15 @@ const GenieStudioLanding: React.FC = () => {
 
           {/* Industries for this region */}
           <div className="mt-16 text-center">
-            <p className="text-muted-foreground mb-4">Trusted by {hero.region} leaders in:</p>
-            <div className="flex flex-wrap justify-center gap-4">
+            <p className="text-muted-foreground mb-4">Powering content across every industry in {hero.region}:</p>
+            <div className="flex flex-wrap justify-center gap-3">
               {hero.industries.map((ind: string) => (
-                <span key={ind} className="px-4 py-2 bg-muted rounded-full text-foreground hover:bg-muted/80 transition cursor-pointer">
-                  {ind}
+                <span key={ind} className={`px-4 py-2 rounded-full transition cursor-pointer ${
+                  ind.includes('more') 
+                    ? 'bg-primary/10 text-primary font-medium border border-primary/30 hover:bg-primary/20' 
+                    : 'bg-muted text-foreground hover:bg-muted/80'
+                }`}>
+                  {ind.includes('more') ? `➕ ${ind}` : ind}
                 </span>
               ))}
             </div>
@@ -521,33 +526,11 @@ const GenieStudioLanding: React.FC = () => {
             </div>
           </div>
 
-          {/* Active product detail */}
-          <div className={`mt-8 bg-gradient-to-r ${activeProductData.color} p-[1px] rounded-2xl max-w-4xl mx-auto`}>
-            <div className="bg-card rounded-2xl p-8">
-              <div className="flex items-center gap-6 mb-4">
-                <img 
-                  src={activeProductData.logo} 
-                  alt={activeProductData.name}
-                  className="w-24 h-24 object-contain"
-                />
-                <div>
-                  <h3 className="text-2xl font-bold text-foreground">{activeProductData.name}</h3>
-                  <p className={`bg-gradient-to-r ${activeProductData.color} bg-clip-text text-transparent font-medium text-lg`}>
-                    "{activeProductData.tagline}"
-                  </p>
-                </div>
-              </div>
-              <p className="text-muted-foreground text-lg mb-4">{activeProductData.desc}</p>
-              <div className="flex items-center gap-4">
-                {activeProductData.pipelines > 0 && (
-                  <span className="px-4 py-2 bg-muted rounded-full text-foreground font-medium">{activeProductData.pipelines} Pipelines</span>
-                )}
-                <Link to="/products" className="text-primary hover:text-primary/80 transition font-medium">
-                  Explore {activeProductData.name} →
-                </Link>
-              </div>
-            </div>
-          </div>
+          {/* Active product detail — Rich showcase with features, capabilities, regional context */}
+          <ProductDetailShowcase 
+            activeProduct={activeProduct} 
+            onProductChange={setActiveProduct} 
+          />
         </div>
       </section>
 
