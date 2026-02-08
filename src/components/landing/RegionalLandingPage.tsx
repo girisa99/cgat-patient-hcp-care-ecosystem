@@ -7,7 +7,7 @@
  */
 
 import React from 'react';
-import { useParams, Navigate, Link } from 'react-router-dom';
+import { useParams, Navigate, Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import { 
@@ -91,7 +91,7 @@ const RegionalSEOHead: React.FC<{ config: RegionalConfig; currentSlug: string }>
 // ============================================
 // HERO SECTION
 // ============================================
-const RegionalHero: React.FC<{ config: RegionalConfig }> = ({ config }) => {
+const RegionalHero: React.FC<{ config: RegionalConfig; productContext?: string | null }> = ({ config, productContext }) => {
   const { hero, stats, cta } = config;
   
   return (
@@ -110,10 +110,15 @@ const RegionalHero: React.FC<{ config: RegionalConfig }> = ({ config }) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            {/* Region badge */}
+            {/* Region badge with optional product context */}
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-muted rounded-full">
               <span className="text-2xl">{hero.flag}</span>
-              <span className="text-muted-foreground text-sm">Content optimized for {hero.regionName}</span>
+              <span className="text-muted-foreground text-sm">
+                {productContext 
+                  ? `Genie ${productContext.charAt(0).toUpperCase() + productContext.slice(1)} for ${hero.regionName}`
+                  : `Content optimized for ${hero.regionName}`
+                }
+              </span>
             </div>
 
             {/* Native headline */}
@@ -466,6 +471,8 @@ const RegionalNavbar: React.FC<{ config: RegionalConfig }> = ({ config }) => (
 // ============================================
 export const RegionalLandingPage: React.FC = () => {
   const { region } = useParams<{ region: string }>();
+  const [searchParams] = useSearchParams();
+  const productContext = searchParams.get('product');
 
   // Validate region slug
   const regionSlug = region as RegionSlug;
@@ -488,7 +495,7 @@ export const RegionalLandingPage: React.FC = () => {
     <main className={`min-h-screen bg-background text-foreground ${config.hero.isRTL ? 'rtl' : 'ltr'}`}>
       <RegionalSEOHead config={config} currentSlug={regionSlug} />
       <RegionalNavbar config={config} />
-      <RegionalHero config={config} />
+      <RegionalHero config={config} productContext={productContext} />
       <RegionNavigator currentSlug={regionSlug} />
       <RegionalIndustries config={config} />
       <TranscreationShowcase config={config} />

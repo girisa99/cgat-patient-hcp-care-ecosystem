@@ -20,12 +20,25 @@ import {
   Play, Languages, Brain, Target, Rocket,
   BarChart3, Shield, Workflow, 
   Cpu, Mic, Video, FileText, Presentation,
-  Send, Layers, MonitorPlay, ImageIcon
+  Send, Layers, MonitorPlay, ImageIcon, ExternalLink
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { GENIE_PRODUCTS, ASK_GENIE, type GenieProduct } from '@/constants/genie-products';
+import type { RegionSlug } from '@/config/regionalLandingConfig';
+
+// Map display region names → route slugs
+const REGION_SLUG_MAP: Record<string, RegionSlug> = {
+  'NAM': 'nam',
+  'Europe': 'europe',
+  'MENA': 'mena',
+  'India': 'india',
+  'Africa': 'africa',
+  'APAC': 'apac',
+  'LATAM': 'latam',
+  'Caribbean': 'caribbean',
+};
 
 // Product logos
 import genieSparkLogo from '@/assets/logos/products/genie-spark.png';
@@ -436,7 +449,7 @@ export const ProductDetailShowcase: React.FC<ProductDetailShowcaseProps> = ({
                     Transcreation — Not Translation
                   </Badge>
                 </h4>
-                <RegionalMarquee regions={extendedData.regionalHighlights} />
+                <RegionalMarquee regions={extendedData.regionalHighlights} productId={productData.id} />
               </div>
 
               {/* ─── SECTION 6: CTA Bar ─── */}
@@ -474,11 +487,21 @@ export const ProductDetailShowcase: React.FC<ProductDetailShowcaseProps> = ({
 // ─── Regional Marquee Sub-Component ───
 interface RegionalMarqueeProps {
   regions: { region: string; flag: string; useCase: string }[];
+  productId: string;
 }
 
-const RegionalMarquee: React.FC<RegionalMarqueeProps> = ({ regions }) => {
+const RegionalMarquee: React.FC<RegionalMarqueeProps> = ({ regions, productId }) => {
+  const navigate = useNavigate();
   // Duplicate for seamless loop
   const duplicated = [...regions, ...regions];
+
+  const handleRegionClick = (regionName: string) => {
+    const slug = REGION_SLUG_MAP[regionName];
+    if (slug) {
+      // Navigate to regional landing with product context so the page can auto-focus the right video
+      navigate(`/genie-landing/${slug}?product=${productId}`);
+    }
+  };
 
   return (
     <div className="relative overflow-hidden">
@@ -502,11 +525,16 @@ const RegionalMarquee: React.FC<RegionalMarqueeProps> = ({ regions }) => {
         {duplicated.map((ctx, i) => (
           <div
             key={`${ctx.region}-${i}`}
-            className="min-w-[200px] max-w-[220px] flex-shrink-0 p-3 bg-muted/40 rounded-lg border border-border/50 hover:border-primary/30 transition-colors group cursor-default"
+            onClick={() => handleRegionClick(ctx.region)}
+            className="min-w-[200px] max-w-[220px] flex-shrink-0 p-3 bg-muted/40 rounded-lg border border-border/50 hover:border-primary/40 hover:bg-primary/5 transition-all group cursor-pointer"
+            title={`Explore ${ctx.region} regional demo →`}
           >
-            <div className="flex items-center gap-1.5 mb-1.5">
-              <span className="text-lg">{ctx.flag}</span>
-              <span className="font-semibold text-foreground text-xs">{ctx.region}</span>
+            <div className="flex items-center justify-between mb-1.5">
+              <div className="flex items-center gap-1.5">
+                <span className="text-lg">{ctx.flag}</span>
+                <span className="font-semibold text-foreground text-xs">{ctx.region}</span>
+              </div>
+              <ExternalLink className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
             <p className="text-[11px] text-muted-foreground leading-snug group-hover:text-foreground transition-colors">
               {ctx.useCase}
