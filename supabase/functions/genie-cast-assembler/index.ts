@@ -181,7 +181,7 @@ serve(async (req) => {
 
   try {
     const { 
-      language, 
+      language = 'en', 
       quality = 'production', 
       includeVisuals = true,
       fullProductionMode = false,

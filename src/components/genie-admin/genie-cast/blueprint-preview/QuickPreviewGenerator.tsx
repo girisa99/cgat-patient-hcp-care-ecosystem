@@ -184,6 +184,7 @@ export function QuickPreviewGenerator({
       const { data, error } = await supabase.functions.invoke('genie-cast-assembler', {
         body: {
           action: 'preview',
+          language: 'en',
           blueprint_id: blueprintId,
           quality: '480p',
           scene_assets: sceneAssets,
