@@ -2,11 +2,11 @@
  * STT Demo Card — Speech-to-Text with Deepgram Nova 2 as primary
  * 
  * Provider chain: Deepgram Nova 2 → Azure STT → OpenAI Whisper
- * Shows regional provider info with confidence scores.
+ * Includes suggested phrases so users know what to say in each language.
  */
 
 import React, { useState, useRef, useCallback } from 'react';
-import { Mic, MicOff, Loader2, Copy, Check } from 'lucide-react';
+import { Mic, MicOff, Loader2, Copy, Check, MessageSquareQuote } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select';
 import { useDynamicLanguageRegistry } from '@/hooks/landing/useDynamicLanguageRegistry';
 import { ProviderBadge, ProviderPanel } from './RegionalProviderInfo';
+import { getSTTSuggestions } from './demoExamples';
 import { motion } from 'framer-motion';
 
 const SUPABASE_URL = 'https://ithspbabhmdntioslfqe.supabase.co';
@@ -49,6 +50,8 @@ export const STTDemoCard: React.FC<STTDemoCardProps> = ({ region }) => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const suggestions = getSTTSuggestions(language);
 
   // Get STT-supported languages, dedup by short code
   const sttLangs = region
@@ -182,7 +185,7 @@ export const STTDemoCard: React.FC<STTDemoCardProps> = ({ region }) => {
           <div className="flex-1 min-w-0">
             <h3 className="text-lg font-bold text-foreground">Speech-to-Text</h3>
             <p className="text-sm text-muted-foreground font-normal">
-              Speak into your mic — transcribed via multi-provider STT
+              Pick a language, try a suggested phrase, and speak into your mic
             </p>
           </div>
           <ProviderBadge capability="stt" region={region} />
@@ -210,6 +213,30 @@ export const STTDemoCard: React.FC<STTDemoCardProps> = ({ region }) => {
             </SelectContent>
           </Select>
         </div>
+
+        {/* Suggested phrases */}
+        {suggestions.length > 0 && (
+          <div>
+            <label className="text-xs font-medium text-muted-foreground uppercase mb-2 flex items-center gap-1.5">
+              <MessageSquareQuote className="h-3.5 w-3.5" />
+              Try saying one of these
+            </label>
+            <div className="space-y-2">
+              {suggestions.map((s, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-start gap-2.5 p-3 rounded-xl border border-border bg-muted/20"
+                  dir={['ar', 'he', 'ur', 'fa'].includes(language) ? 'rtl' : 'ltr'}
+                >
+                  <span className="text-primary text-sm font-bold shrink-0 mt-0.5">💬</span>
+                  <p className="text-sm text-foreground leading-relaxed italic">
+                    "{s.phrase}"
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Recording area */}
         <div className="flex flex-col items-center gap-4 py-4">
