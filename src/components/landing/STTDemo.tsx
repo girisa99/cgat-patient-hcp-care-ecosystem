@@ -1,6 +1,7 @@
 /**
  * STT Demo — Speech-to-Text Landing Page Component
  * 
+ * Uses dynamic language registry instead of hardcoded data.
  * Allows visitors to speak into the mic and see real-time
  * transcription results using the voice-to-text edge function.
  */
@@ -18,42 +19,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useDynamicLanguageRegistry } from '@/hooks/landing/useDynamicLanguageRegistry';
 
 const SUPABASE_URL = 'https://ithspbabhmdntioslfqe.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0aHNwYmFiaG1kbnRpb3NsZnFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY5MjU5OTMsImV4cCI6MjA2MjUwMTk5M30.yUZZHsz2wIHboVuWWfqXeAH5oHRxzJIz20NWSUmHPhw';
 
-const STT_LANGUAGES = [
-  { code: 'en', name: 'English', flag: '🇬🇧', region: 'nam' },
-  { code: 'ar', name: 'Arabic', flag: '🇸🇦', region: 'mena' },
-  { code: 'hi', name: 'Hindi', flag: '🇮🇳', region: 'india' },
-  { code: 'ta', name: 'Tamil', flag: '🇮🇳', region: 'india' },
-  { code: 'te', name: 'Telugu', flag: '🇮🇳', region: 'india' },
-  { code: 'bn', name: 'Bengali', flag: '🇮🇳', region: 'india' },
-  { code: 'ja', name: 'Japanese', flag: '🇯🇵', region: 'apac' },
-  { code: 'zh', name: 'Chinese', flag: '🇨🇳', region: 'apac' },
-  { code: 'ko', name: 'Korean', flag: '🇰🇷', region: 'apac' },
-  { code: 'de', name: 'German', flag: '🇩🇪', region: 'europe' },
-  { code: 'fr', name: 'French', flag: '🇫🇷', region: 'europe' },
-  { code: 'es', name: 'Spanish', flag: '🇪🇸', region: 'europe' },
-  { code: 'pt', name: 'Portuguese', flag: '🇧🇷', region: 'latam' },
-  { code: 'sw', name: 'Swahili', flag: '🇰🇪', region: 'africa' },
-  { code: 'th', name: 'Thai', flag: '🇹🇭', region: 'apac' },
-  { code: 'vi', name: 'Vietnamese', flag: '🇻🇳', region: 'apac' },
-  { code: 'id', name: 'Indonesian', flag: '🇮🇩', region: 'apac' },
-  { code: 'tr', name: 'Turkish', flag: '🇹🇷', region: 'mena' },
-  { code: 'it', name: 'Italian', flag: '🇮🇹', region: 'europe' },
-  { code: 'nl', name: 'Dutch', flag: '🇳🇱', region: 'europe' },
-];
-
 const REGION_DEFAULT_LANG: Record<string, string> = {
-  mena: 'ar',
-  india: 'hi',
-  africa: 'sw',
-  apac: 'ja',
-  latam: 'pt',
-  europe: 'de',
-  nam: 'en',
-  caribbean: 'es',
+  mena: 'ar', india: 'hi', africa: 'sw', apac: 'ja',
+  latam: 'pt', europe: 'de', nam: 'en', caribbean: 'es',
 };
 
 interface STTDemoProps {
@@ -65,6 +38,7 @@ export const STTDemo: React.FC<STTDemoProps> = ({
   className = '',
   region,
 }) => {
+  const registry = useDynamicLanguageRegistry();
   const defaultLang = region ? (REGION_DEFAULT_LANG[region] || 'en') : 'en';
   const [language, setLanguage] = useState(defaultLang);
   const [isRecording, setIsRecording] = useState(false);
@@ -79,14 +53,22 @@ export const STTDemo: React.FC<STTDemoProps> = ({
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Sort languages: region-specific first
-  const sortedLanguages = region
-    ? [...STT_LANGUAGES].sort((a, b) => {
-        const aMatch = a.region === region ? -1 : 0;
-        const bMatch = b.region === region ? -1 : 0;
-        return aMatch - bMatch;
+  // Get STT-supported languages from registry, sorted by region
+  const sttLangs = region
+    ? registry.getLanguagesForRegion(region).filter(l => {
+        const short = l.code.split('-')[0];
+        return ['en','ar','hi','ta','te','bn','ja','zh','ko','de','fr','es','pt','sw','th','vi','id','tr','it','nl','ru'].includes(short);
       })
-    : STT_LANGUAGES;
+    : registry.sttLanguages;
+
+  // Deduplicate by short code for STT
+  const uniqueSTTLangs = sttLangs.reduce<Array<{ code: string; name: string; flag: string }>>((acc, lang) => {
+    const shortCode = lang.code.split('-')[0];
+    if (!acc.find(l => l.code === shortCode)) {
+      acc.push({ code: shortCode, name: lang.name, flag: lang.flag });
+    }
+    return acc;
+  }, []);
 
   const startRecording = useCallback(async () => {
     try {
@@ -118,7 +100,6 @@ export const STTDemo: React.FC<STTDemoProps> = ({
       setIsRecording(true);
       setRecordingTime(0);
       
-      // Timer
       timerRef.current = setInterval(() => {
         setRecordingTime(prev => {
           if (prev >= 30) {
@@ -147,7 +128,6 @@ export const STTDemo: React.FC<STTDemoProps> = ({
     setIsProcessing(true);
     
     try {
-      // Convert to base64
       const arrayBuffer = await audioBlob.arrayBuffer();
       const uint8Array = new Uint8Array(arrayBuffer);
       let binary = '';
@@ -229,14 +209,14 @@ export const STTDemo: React.FC<STTDemoProps> = ({
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6 space-y-4">
-          {/* Language selector */}
+          {/* Language selector — dynamic from registry */}
           <div className="flex items-center gap-3">
             <Select value={language} onValueChange={setLanguage}>
               <SelectTrigger className="flex-1">
                 <SelectValue placeholder="Select language" />
               </SelectTrigger>
               <SelectContent>
-                {sortedLanguages.map(lang => (
+                {uniqueSTTLangs.map(lang => (
                   <SelectItem key={lang.code} value={lang.code}>
                     {lang.flag} {lang.name}
                   </SelectItem>
@@ -251,7 +231,6 @@ export const STTDemo: React.FC<STTDemoProps> = ({
 
           {/* Recording area */}
           <div className="flex flex-col items-center gap-4 py-6">
-            {/* Mic button */}
             <button
               onClick={isRecording ? stopRecording : startRecording}
               disabled={isProcessing}
@@ -272,7 +251,6 @@ export const STTDemo: React.FC<STTDemoProps> = ({
               )}
             </button>
 
-            {/* Status text */}
             <div className="text-center">
               {isRecording ? (
                 <div className="space-y-1">
@@ -282,7 +260,6 @@ export const STTDemo: React.FC<STTDemoProps> = ({
                   <p className="text-xs text-muted-foreground">
                     Click to stop (max 30 seconds)
                   </p>
-                  {/* Audio waveform */}
                   <div className="flex items-center justify-center gap-1 mt-2">
                     {[1,2,3,4,5,6,7,8].map(i => (
                       <motion.div

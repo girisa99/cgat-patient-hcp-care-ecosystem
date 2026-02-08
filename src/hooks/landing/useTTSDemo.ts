@@ -2,6 +2,7 @@
  * useTTSDemo — Hook for landing page TTS audio playback
  * 
  * Calls the dialect-tts-demo edge function and plays audio via data URI.
+ * Includes client-side audio CACHING to prevent rate limiting.
  * Manages loading states, playback, and cleanup.
  */
 
@@ -10,6 +11,9 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 const SUPABASE_URL = 'https://ithspbabhmdntioslfqe.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0aHNwYmFiaG1kbnRpb3NsZnFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY5MjU5OTMsImV4cCI6MjA2MjUwMTk5M30.yUZZHsz2wIHboVuWWfqXeAH5oHRxzJIz20NWSUmHPhw';
 
+// Minimum ms between edge function calls (prevents rapid-fire requests)
+const THROTTLE_MS = 1500;
+
 interface TTSDemoState {
   isLoading: boolean;
   isPlaying: boolean;
@@ -17,6 +21,10 @@ interface TTSDemoState {
   provider: string | null;
   error: string | null;
 }
+
+// Module-level audio cache: cacheKey → base64 audio + provider
+const audioCache = new Map<string, { audioContent: string; provider: string }>();
+let lastCallTimestamp = 0;
 
 export function useTTSDemo() {
   const [state, setState] = useState<TTSDemoState>({
@@ -47,6 +55,92 @@ export function useTTSDemo() {
     setState(prev => ({ ...prev, isPlaying: false, currentCode: null }));
   }, []);
 
+  /** Play base64 audio and manage state */
+  const playBase64Audio = useCallback((base64: string, provider: string, languageCode: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      const audioUrl = `data:audio/mpeg;base64,${base64}`;
+      const audio = new Audio(audioUrl);
+
+      audio.addEventListener('ended', () => {
+        setState(prev => ({ ...prev, isPlaying: false, currentCode: null }));
+        audioRef.current = null;
+        resolve();
+      });
+
+      audio.addEventListener('error', () => {
+        setState(prev => ({ ...prev, isPlaying: false, currentCode: null, error: 'Playback error' }));
+        audioRef.current = null;
+        reject(new Error('Playback error'));
+      });
+
+      audioRef.current = audio;
+      audio.play().then(() => {
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
+          isPlaying: true,
+          provider: provider,
+        }));
+      }).catch(reject);
+    });
+  }, []);
+
+  /** Throttled fetch — checks cache first, then calls edge function */
+  const fetchTTSAudio = useCallback(async (
+    cacheKey: string,
+    body: Record<string, unknown>,
+    signal?: AbortSignal
+  ): Promise<{ audioContent: string; provider: string }> => {
+    // Check cache first
+    const cached = audioCache.get(cacheKey);
+    if (cached) {
+      console.log('[useTTSDemo] Cache HIT:', cacheKey);
+      return cached;
+    }
+
+    // Throttle: wait if too soon since last call
+    const now = Date.now();
+    const elapsed = now - lastCallTimestamp;
+    if (elapsed < THROTTLE_MS) {
+      const waitMs = THROTTLE_MS - elapsed;
+      console.log(`[useTTSDemo] Throttling ${waitMs}ms`);
+      await new Promise(r => setTimeout(r, waitMs));
+    }
+    lastCallTimestamp = Date.now();
+
+    const response = await fetch(
+      `${SUPABASE_URL}/functions/v1/dialect-tts-demo`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify(body),
+        signal,
+      }
+    );
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({ error: 'TTS failed' }));
+      throw new Error(err.error || err.message || 'TTS generation failed');
+    }
+
+    const data = await response.json();
+    if (!data.audioContent) {
+      throw new Error('No audio content returned');
+    }
+
+    const result = { audioContent: data.audioContent, provider: data.provider || 'azure' };
+    
+    // Store in cache
+    audioCache.set(cacheKey, result);
+    console.log('[useTTSDemo] Cache STORE:', cacheKey, `(${audioCache.size} cached)`);
+    
+    return result;
+  }, []);
+
   const playTranscreation = useCallback(async (
     languageCode: string,
     mode: 'transcreation' | 'literal' = 'transcreation'
@@ -70,58 +164,18 @@ export function useTTSDemo() {
     }));
 
     try {
-      const response = await fetch(
-        `${SUPABASE_URL}/functions/v1/dialect-tts-demo`,
+      const cacheKey = `tts:${languageCode}:${mode}`;
+      const result = await fetchTTSAudio(
+        cacheKey,
         {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          },
-          body: JSON.stringify({
-            action: 'generate_tts',
-            languageCode,
-            mode: mode === 'literal' ? 'literal' : undefined,
-          }),
-          signal: abortRef.current.signal,
-        }
+          action: 'generate_tts',
+          languageCode,
+          mode: mode === 'literal' ? 'literal' : undefined,
+        },
+        abortRef.current.signal
       );
 
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({ error: 'TTS failed' }));
-        throw new Error(err.error || 'TTS generation failed');
-      }
-
-      const data = await response.json();
-
-      if (!data.audioContent) {
-        throw new Error('No audio content returned');
-      }
-
-      // Play via data URI — browser natively decodes base64
-      const audioUrl = `data:audio/mpeg;base64,${data.audioContent}`;
-      const audio = new Audio(audioUrl);
-
-      audio.addEventListener('ended', () => {
-        setState(prev => ({ ...prev, isPlaying: false, currentCode: null }));
-        audioRef.current = null;
-      });
-
-      audio.addEventListener('error', () => {
-        setState(prev => ({ ...prev, isPlaying: false, currentCode: null, error: 'Playback error' }));
-        audioRef.current = null;
-      });
-
-      audioRef.current = audio;
-      await audio.play();
-
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        isPlaying: true,
-        provider: data.provider || 'azure',
-      }));
+      await playBase64Audio(result.audioContent, result.provider, languageCode);
     } catch (err: any) {
       if (err.name === 'AbortError') return;
       console.error('[useTTSDemo] Error:', err);
@@ -133,7 +187,7 @@ export function useTTSDemo() {
         error: err.message || 'Failed to generate audio',
       }));
     }
-  }, [state.currentCode, state.isPlaying, stopAudio]);
+  }, [state.currentCode, state.isPlaying, stopAudio, fetchTTSAudio, playBase64Audio]);
 
   const playCustomText = useCallback(async (text: string, languageCode: string) => {
     stopAudio();
@@ -148,47 +202,21 @@ export function useTTSDemo() {
     }));
 
     try {
-      const response = await fetch(
-        `${SUPABASE_URL}/functions/v1/dialect-tts-demo`,
+      // Cache key includes text hash for custom entries
+      const textHash = text.slice(0, 50).replace(/\s+/g, '_');
+      const cacheKey = `custom:${languageCode}:${textHash}`;
+      
+      const result = await fetchTTSAudio(
+        cacheKey,
         {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          },
-          body: JSON.stringify({
-            action: 'custom_tts',
-            languageCode,
-            text,
-          }),
-          signal: abortRef.current.signal,
-        }
+          action: 'custom_tts',
+          languageCode,
+          text,
+        },
+        abortRef.current.signal
       );
 
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({ error: 'TTS failed' }));
-        throw new Error(err.error || 'TTS generation failed');
-      }
-
-      const data = await response.json();
-      const audioUrl = `data:audio/mpeg;base64,${data.audioContent}`;
-      const audio = new Audio(audioUrl);
-
-      audio.addEventListener('ended', () => {
-        setState(prev => ({ ...prev, isPlaying: false, currentCode: null }));
-        audioRef.current = null;
-      });
-
-      audioRef.current = audio;
-      await audio.play();
-
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        isPlaying: true,
-        provider: data.provider || 'azure',
-      }));
+      await playBase64Audio(result.audioContent, result.provider, languageCode);
     } catch (err: any) {
       if (err.name === 'AbortError') return;
       setState(prev => ({
@@ -199,12 +227,13 @@ export function useTTSDemo() {
         error: err.message || 'Failed to generate audio',
       }));
     }
-  }, [stopAudio]);
+  }, [stopAudio, fetchTTSAudio, playBase64Audio]);
 
   return {
     ...state,
     playTranscreation,
     playCustomText,
     stopAudio,
+    cacheSize: audioCache.size,
   };
 }
