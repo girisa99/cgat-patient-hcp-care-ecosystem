@@ -11,7 +11,7 @@ import { useParams, Navigate, Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import { 
-  ArrowRight, Play, Sparkles, Globe, Trophy, Zap, CheckCircle2,
+  ArrowRight, Play, Sparkles, Globe,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,7 +29,7 @@ import { ProfessionalAvatarShowcase } from '@/components/landing/video/Professio
 import { ProductDetailShowcase } from '@/components/landing/ProductDetailShowcase';
 // CrossFunctionalSection removed — capabilities now integrated into IndustryShowcases
 import { DogfoodingProof } from '@/components/landing/DogfoodingProof';
-// IndustryShowcases removed — consolidated into product ecosystem hub
+import { IndustryShowcases } from '@/components/landing/IndustryShowcases';
 import { RegionSwitcherNav } from '@/components/landing/RegionSwitcherNav';
 import genieSuiteLogo from '@/assets/logos/genie-studio-suite-logo.png';
 
@@ -104,7 +104,51 @@ const RegionalHero: React.FC<{ config: RegionalConfig; productContext?: string |
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
       </div>
 
-      {/* Primary Hero — Mind to Media */}
+      {/* Banner 1: Mind to Media — rolling right */}
+      <div className="relative overflow-hidden py-4 bg-gradient-to-r from-primary/10 via-accent/5 to-primary/10 border-b border-primary/10">
+        <motion.div
+          className="whitespace-nowrap"
+          animate={{ x: ['-50%', '0%'] }}
+          transition={{ duration: 22, repeat: Infinity, ease: 'linear' }}
+        >
+          {[...Array(6)].map((_, i) => (
+            <span key={i} className="inline-flex items-center gap-6 mx-8 text-2xl md:text-3xl font-black tracking-tight">
+              <span className="bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent">
+                Mind to Media
+              </span>
+              <span className="text-primary/40">✦</span>
+              <span className="text-foreground">
+                For Every Industry
+              </span>
+              <span className="text-primary/40">✦</span>
+            </span>
+          ))}
+        </motion.div>
+      </div>
+
+      {/* Banner 2: We Speak Your Language — rolling right (slightly different speed) */}
+      <div className="relative overflow-hidden py-3 bg-gradient-to-r from-accent/10 via-primary/5 to-accent/10 border-b border-accent/10">
+        <motion.div
+          className="whitespace-nowrap"
+          animate={{ x: ['-50%', '0%'] }}
+          transition={{ duration: 28, repeat: Infinity, ease: 'linear' }}
+        >
+          {[...Array(6)].map((_, i) => (
+            <span key={i} className="inline-flex items-center gap-6 mx-8 text-lg md:text-xl font-bold">
+              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                We Speak Your Language.
+              </span>
+              <span className="text-muted-foreground">•</span>
+              <span className="bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
+                We Understand Your Market.
+              </span>
+              <span className="text-muted-foreground">•</span>
+            </span>
+          ))}
+        </motion.div>
+      </div>
+
+      {/* Primary Hero Content */}
       <div className="relative max-w-7xl mx-auto px-4 py-16">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <motion.div 
@@ -133,43 +177,30 @@ const RegionalHero: React.FC<{ config: RegionalConfig; productContext?: string |
               )}
             </div>
 
-            {/* Primary headline — Mind to Media */}
+            {/* Headline */}
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
               <span className="bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent">
-                Mind to Media
+                One Platform.
               </span>
               <br />
               <span className="text-3xl md:text-4xl lg:text-5xl text-foreground">
-                For Every Industry
+                Every Market. The Only One You Need.
               </span>
             </h1>
-
-            {/* Rolling tagline */}
-            <div className="overflow-hidden h-9 relative">
-              <motion.div
-                className="absolute whitespace-nowrap"
-                animate={{ x: ['0%', '-50%'] }}
-                transition={{ duration: 18, repeat: Infinity, ease: 'linear' }}
-              >
-                {[...Array(4)].map((_, i) => (
-                  <span key={i} className="inline-flex items-center gap-3 mx-4 text-base font-bold">
-                    <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                      We Speak Your Language.
-                    </span>
-                    <span className="text-muted-foreground">•</span>
-                    <span className="bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
-                      We Understand Your Market.
-                    </span>
-                    <span className="text-muted-foreground">•</span>
-                  </span>
-                ))}
-              </motion.div>
-            </div>
 
             {/* Native subheadline */}
             <p className="text-xl text-muted-foreground max-w-xl">
               {hero.nativeSubheadline}
             </p>
+
+            {/* Transcreation message */}
+            <div className="p-4 bg-gradient-to-r from-primary/10 via-accent/5 to-primary/10 rounded-xl border border-primary/20">
+              <p className="text-sm text-muted-foreground">
+                Your content deserves more than word-for-word translation. Genie adapts tone, idioms, cultural references,
+                and regional compliance — so your audience feels you were{' '}
+                <span className="text-primary font-semibold">built for them</span>.
+              </p>
+            </div>
 
             {/* Stats grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -232,56 +263,6 @@ const RegionalHero: React.FC<{ config: RegionalConfig; productContext?: string |
             </div>
           </motion.div>
         </div>
-      </div>
-
-      {/* Differentiators — integrated into hero */}
-      <div className="relative max-w-7xl mx-auto px-4 pb-16 w-full">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-        >
-          {/* Transcreation message */}
-          <div className="p-5 bg-gradient-to-r from-primary/10 via-accent/5 to-primary/10 rounded-2xl border border-primary/20 text-center mb-8">
-            <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
-              Your content deserves more than word-for-word translation. Genie adapts tone, idioms, cultural references,
-              and regional compliance — so your audience feels you were{' '}
-              <span className="text-primary font-semibold">built for them</span>.
-            </p>
-          </div>
-
-          {/* First to Market */}
-          <div className="space-y-2 mb-6">
-            <div className="flex items-center gap-2">
-              <Trophy className="h-4 w-4 text-yellow-500" />
-              <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">First to Market</h3>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              {config.differentiators.firstToMarket.map((claim, i) => (
-                <div key={i} className="flex items-start gap-2 px-3 py-2.5 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
-                  <Trophy className="h-3.5 w-3.5 text-yellow-500 mt-0.5 shrink-0" />
-                  <span className="text-xs text-foreground">{claim}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Only Here */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Zap className="h-4 w-4 text-primary" />
-              <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">Only Here</h3>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              {config.differentiators.capabilityDepth.map((claim, i) => (
-                <div key={i} className="flex items-start gap-2 px-3 py-2.5 bg-primary/10 border border-primary/20 rounded-xl">
-                  <CheckCircle2 className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
-                  <span className="text-xs text-foreground">{claim}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </motion.div>
       </div>
 
       {/* Scroll indicator */}
@@ -538,7 +519,8 @@ export const RegionalLandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* IndustryShowcases removed — content covered in product ecosystem hub */}
+      {/* Industry Showcases — See It In Action */}
+      <IndustryShowcases region={regionSlug} config={config} />
 
       {/* Regional Pricing */}
       <section id="pricing">
