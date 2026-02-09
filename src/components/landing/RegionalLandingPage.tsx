@@ -333,32 +333,54 @@ const TranscreationShowcase: React.FC<{ config: RegionalConfig }> = ({ config })
 );
 
 // ============================================
-// REGION NAVIGATOR
+// REGION NAVIGATOR — Compact globe strip
 // ============================================
 const RegionNavigator: React.FC<{ currentSlug: RegionSlug }> = ({ currentSlug }) => {
   const allSlugs = getAllRegionSlugs();
   return (
-    <section className="py-12 bg-muted/30 border-y border-border">
-      <div className="max-w-7xl mx-auto px-4">
-        <h3 className="text-center text-sm font-medium text-muted-foreground mb-4">
-          Explore Other Regions
-        </h3>
+    <section className="py-6 relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5" />
+      <div className="relative max-w-7xl mx-auto px-4">
+        <div className="flex items-center justify-center gap-3 mb-4">
+          <Globe className="w-4 h-4 text-primary" />
+          <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            8 Global Regions · 140+ Languages
+          </span>
+          <Globe className="w-4 h-4 text-primary" />
+        </div>
         <div className="flex flex-wrap justify-center gap-2">
-          {allSlugs.map(slug => {
+          {allSlugs.map((slug, i) => {
             const r = REGIONAL_CONFIGS[slug];
             const isActive = slug === currentSlug;
+            const langCount = r.languageShowcase?.languages?.length || 0;
             return (
-              <Link
+              <motion.div
                 key={slug}
-                to={`/genie-landing/${slug}`}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                  isActive
-                    ? 'bg-primary text-primary-foreground shadow-md'
-                    : 'bg-card border border-border text-muted-foreground hover:text-foreground hover:border-primary/50'
-                }`}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: i * 0.05 }}
               >
-                {r.hero.flag} {r.hero.regionName}
-              </Link>
+                <Link
+                  to={`/genie-landing/${slug}`}
+                  className={`group relative flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                    isActive
+                      ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25 ring-2 ring-primary/30'
+                      : 'bg-card/80 backdrop-blur-sm border border-border/60 text-muted-foreground hover:text-foreground hover:border-primary/40 hover:bg-card hover:shadow-md'
+                  }`}
+                >
+                  <span className="text-lg leading-none">{r.hero.flag}</span>
+                  <span>{r.hero.regionName}</span>
+                  {langCount > 0 && (
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                      isActive 
+                        ? 'bg-primary-foreground/20 text-primary-foreground' 
+                        : 'bg-primary/10 text-primary group-hover:bg-primary/20'
+                    }`}>
+                      {langCount}
+                    </span>
+                  )}
+                </Link>
+              </motion.div>
             );
           })}
         </div>
