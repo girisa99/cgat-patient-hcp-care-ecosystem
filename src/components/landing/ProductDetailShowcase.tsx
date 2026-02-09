@@ -62,16 +62,16 @@ const PRODUCT_LOGOS: Record<string, string> = {
   ask: askGenieLogo,
 };
 
-// Product display order for the tab selector
-const PRODUCT_TAB_ORDER: { key: string; label: string; emoji: string }[] = [
-  { key: 'spark', label: 'Spark', emoji: '✨' },
-  { key: 'mind', label: 'Mind', emoji: '🧠' },
-  { key: 'vibe', label: 'Vibe', emoji: '🎬' },
-  { key: 'deck', label: 'Deck', emoji: '📊' },
-  { key: 'arc', label: 'Arc', emoji: '🎯' },
-  { key: 'cast', label: 'Cast', emoji: '📡' },
-  { key: 'studio', label: 'Studio', emoji: '🎨' },
-  { key: 'ask', label: 'Ask Genie', emoji: '🧞' },
+// Product display order for the tab selector (uses PRODUCT_LOGOS for icons)
+const PRODUCT_TAB_ORDER: { key: string; label: string }[] = [
+  { key: 'spark', label: 'Spark' },
+  { key: 'mind', label: 'Mind' },
+  { key: 'vibe', label: 'Vibe' },
+  { key: 'deck', label: 'Deck' },
+  { key: 'arc', label: 'Arc' },
+  { key: 'cast', label: 'Cast' },
+  { key: 'studio', label: 'Studio' },
+  { key: 'ask', label: 'Ask Genie' },
 ];
 
 // Extended product data with full messaging, capabilities, and regional context
@@ -299,7 +299,7 @@ export const ProductDetailShowcase: React.FC<ProductDetailShowcaseProps> = ({
       <div className="flex flex-wrap justify-center gap-2 mb-8">
         {PRODUCT_TAB_ORDER.map((tab) => {
           const isActive = activeProduct === tab.key;
-          const product = tab.key !== 'ask' ? GENIE_PRODUCTS[tab.key as GenieProduct] : null;
+          const tabLogo = PRODUCT_LOGOS[tab.key];
           return (
             <button
               key={tab.key}
@@ -312,9 +312,13 @@ export const ProductDetailShowcase: React.FC<ProductDetailShowcaseProps> = ({
                 }
               `}
             >
-              <span className="text-base">{tab.emoji}</span>
+              <img 
+                src={tabLogo} 
+                alt={tab.label} 
+                className="w-5 h-5 object-contain flex-shrink-0" 
+              />
               <span>{tab.label}</span>
-              {product && isActive && (
+              {isActive && PRODUCT_EXTENDED[tab.key] && (
                 <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 bg-primary-foreground/20 text-primary-foreground border-0">
                   {PRODUCT_EXTENDED[tab.key]?.pipelines ?? '—'}
                 </Badge>
