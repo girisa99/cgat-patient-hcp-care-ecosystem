@@ -12,6 +12,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import { 
   ArrowRight, Play, Sparkles, Globe, Brain, Cpu, Zap, Eye, Mic, Languages, Layers, Wand2, Video, Image, FileText, AudioLines,
+  Box, Palette, Volume2, Subtitles, MonitorPlay,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,14 +25,16 @@ import {
   type RegionalConfig 
 } from '@/config/regionalLandingConfig';
 import { RegionalPricingSection } from '@/components/landing/RegionalPricingSection';
-// LocalizationDemoHub removed — consolidated into IndustryShowcases
 import { ProfessionalAvatarShowcase } from '@/components/landing/video/ProfessionalAvatarShowcase';
 import { ProductDetailShowcase } from '@/components/landing/ProductDetailShowcase';
-// CrossFunctionalSection removed — capabilities now integrated into IndustryShowcases
 import { DogfoodingProof } from '@/components/landing/DogfoodingProof';
 import { IndustryShowcases } from '@/components/landing/IndustryShowcases';
 import { RegionSwitcherNav } from '@/components/landing/RegionSwitcherNav';
 import genieSuiteLogo from '@/assets/logos/genie-studio-suite-logo.png';
+import heroPlatformImg from '@/assets/hero-platform.jpg';
+import heroPipelineImg from '@/assets/hero-pipeline.jpg';
+import heroLanguagesImg from '@/assets/hero-languages.jpg';
+import heroTranscreationImg from '@/assets/hero-transcreation.jpg';
 
 // ============================================
 // SEO HEAD COMPONENT
@@ -93,125 +96,154 @@ const RegionalSEOHead: React.FC<{ config: RegionalConfig; currentSlug: string }>
 // ============================================
 // FLOATING AI PROVIDER ORBS
 // ============================================
-const AI_ORBS = [
-  { icon: Brain, label: 'Claude', color: 'from-orange-400 to-amber-600', x: '8%', y: '18%', delay: 0, size: 44 },
-  { icon: Sparkles, label: 'GPT-4o', color: 'from-emerald-400 to-teal-600', x: '88%', y: '22%', delay: 0.5, size: 40 },
-  { icon: Zap, label: 'Gemini', color: 'from-blue-400 to-indigo-600', x: '12%', y: '72%', delay: 1, size: 38 },
-  { icon: Cpu, label: 'DeepSeek', color: 'from-violet-400 to-purple-600', x: '82%', y: '68%', delay: 1.5, size: 36 },
-  { icon: Eye, label: 'Vertex', color: 'from-sky-400 to-cyan-600', x: '5%', y: '45%', delay: 2, size: 34 },
-  { icon: Mic, label: 'ElevenLabs', color: 'from-pink-400 to-rose-600', x: '92%', y: '48%', delay: 2.5, size: 36 },
-  { icon: Languages, label: 'DeepL', color: 'from-teal-400 to-emerald-600', x: '18%', y: '88%', delay: 0.3, size: 32 },
-  { icon: Layers, label: 'Meshy', color: 'from-amber-400 to-orange-600', x: '78%', y: '85%', delay: 0.8, size: 32 },
+// ============================================
+// AI PROVIDER BADGES — Floating provider showcase
+// ============================================
+const PROVIDER_SHOWCASE = [
+  { label: 'Gemini 3 Pro', icon: Sparkles, gradient: 'from-blue-500 to-indigo-600', capability: 'Image & LLM' },
+  { label: 'Vertex Veo 3', icon: Video, gradient: 'from-sky-400 to-cyan-600', capability: 'Video Gen' },
+  { label: 'Claude 4', icon: Brain, gradient: 'from-orange-400 to-amber-600', capability: 'Transcreation' },
+  { label: 'GPT-4o', icon: Sparkles, gradient: 'from-emerald-400 to-teal-600', capability: 'Content AI' },
+  { label: 'Meshy AI', icon: Box, gradient: 'from-violet-400 to-purple-600', capability: '3D Models' },
+  { label: 'Azure Neural', icon: Volume2, gradient: 'from-blue-400 to-blue-700', capability: 'TTS & Lipsync' },
+  { label: 'ElevenLabs', icon: Mic, gradient: 'from-pink-400 to-rose-600', capability: 'Voice Clone' },
+  { label: 'DeepL', icon: Languages, gradient: 'from-teal-400 to-emerald-600', capability: 'Translation' },
+  { label: 'Alibaba Wan', icon: Eye, gradient: 'from-amber-400 to-orange-600', capability: 'Avatar Gen' },
+  { label: 'ModelsLab', icon: Palette, gradient: 'from-fuchsia-400 to-pink-600', capability: 'Animation' },
+  { label: 'Deepgram', icon: Subtitles, gradient: 'from-lime-400 to-green-600', capability: 'STT Nova 2' },
+  { label: 'DeepSeek', icon: Cpu, gradient: 'from-indigo-400 to-violet-600', capability: 'Reasoning' },
 ];
 
-const FloatingOrbs: React.FC<{ activeSlide: number }> = ({ activeSlide }) => (
-  <div className="absolute inset-0 pointer-events-none overflow-hidden">
-    {AI_ORBS.map((orb, i) => {
-      const Icon = orb.icon;
-      return (
-        <motion.div
-          key={orb.label}
-          className="absolute"
-          style={{ left: orb.x, top: orb.y }}
-          animate={{
-            y: [0, -12, 0, 8, 0],
-            x: [0, 6, -4, 2, 0],
-            opacity: [0.25, 0.5, 0.35, 0.5, 0.25],
-            scale: [1, 1.08, 0.96, 1.05, 1],
-          }}
-          transition={{
-            duration: 8 + i * 0.5,
-            repeat: Infinity,
-            ease: 'easeInOut',
-            delay: orb.delay,
-          }}
-        >
-          <div className={`relative bg-gradient-to-br ${orb.color} rounded-2xl p-2.5 shadow-lg shadow-black/10 backdrop-blur-sm`} style={{ width: orb.size, height: orb.size }}>
-            <Icon className="w-full h-full text-white/90" strokeWidth={1.5} />
-            <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[9px] font-bold text-muted-foreground/60 whitespace-nowrap">
-              {orb.label}
+const ProviderRibbon: React.FC = () => (
+  <div className="relative overflow-hidden py-3">
+    <motion.div
+      className="flex gap-4 whitespace-nowrap"
+      animate={{ x: ['0%', '-50%'] }}
+      transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
+    >
+      {[...PROVIDER_SHOWCASE, ...PROVIDER_SHOWCASE].map((p, i) => {
+        const Icon = p.icon;
+        return (
+          <div key={`${p.label}-${i}`} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-black/40 backdrop-blur-md border border-white/10">
+            <div className={`w-6 h-6 rounded-full bg-gradient-to-br ${p.gradient} flex items-center justify-center`}>
+              <Icon className="w-3 h-3 text-white" strokeWidth={2} />
             </div>
+            <span className="text-xs font-bold text-white/90">{p.label}</span>
+            <span className="text-[10px] text-white/40 font-medium">{p.capability}</span>
           </div>
-        </motion.div>
-      );
-    })}
-    {/* Animated particles */}
-    {[...Array(20)].map((_, i) => (
-      <motion.div
-        key={`particle-${i}`}
-        className="absolute w-1 h-1 rounded-full bg-primary/30"
-        style={{
-          left: `${10 + Math.random() * 80}%`,
-          top: `${10 + Math.random() * 80}%`,
-        }}
-        animate={{
-          opacity: [0, 0.6, 0],
-          scale: [0, 1.5, 0],
-          y: [0, -30 - Math.random() * 40],
-        }}
-        transition={{
-          duration: 3 + Math.random() * 3,
-          repeat: Infinity,
-          delay: Math.random() * 4 + activeSlide * 0.2,
-          ease: 'easeOut',
-        }}
-      />
-    ))}
+        );
+      })}
+    </motion.div>
   </div>
 );
 
 // ============================================
-// PIPELINE VISUAL — Animated production flow
+// TEMPLATE PREVIEW CARDS — Floating glassmorphic
 // ============================================
-const PIPELINE_STEPS = [
-  { icon: Wand2, label: 'Ideation', color: 'text-violet-500' },
-  { icon: FileText, label: 'Scripting', color: 'text-blue-500' },
-  { icon: Video, label: 'Production', color: 'text-emerald-500' },
-  { icon: Languages, label: 'Localization', color: 'text-amber-500' },
-  { icon: Globe, label: 'Distribution', color: 'text-rose-500' },
+const TEMPLATE_PREVIEWS = [
+  { title: 'Product Launch', style: 'Cinematic 4K', provider: 'Vertex Veo 3', badge: 'Video', color: 'border-sky-500/30' },
+  { title: '3D Explainer', style: 'Pixar Quality', provider: 'Meshy AI', badge: '3D', color: 'border-violet-500/30' },
+  { title: 'Avatar Presenter', style: 'Photorealistic', provider: 'Alibaba Wan', badge: 'Avatar', color: 'border-amber-500/30' },
+  { title: 'Social Reel', style: 'UGC Authentic', provider: 'ModelsLab', badge: 'Animation', color: 'border-pink-500/30' },
 ];
 
-const AnimatedPipeline: React.FC = () => (
-  <div className="flex items-center justify-center gap-1 sm:gap-2 pt-6 flex-wrap">
+const FloatingTemplateCards: React.FC<{ visible: boolean }> = ({ visible }) => {
+  if (!visible) return null;
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+      {TEMPLATE_PREVIEWS.map((tmpl, i) => (
+        <motion.div
+          key={tmpl.title}
+          className={`absolute w-52 bg-black/50 backdrop-blur-xl rounded-xl border ${tmpl.color} p-3 shadow-2xl`}
+          style={{
+            left: `${10 + i * 22}%`,
+            top: `${18 + (i % 2 === 0 ? 0 : 30)}%`,
+          }}
+          initial={{ opacity: 0, y: 40, scale: 0.8 }}
+          animate={{
+            opacity: [0, 0.85, 0.75],
+            y: [40, 0, -5, 0],
+            scale: [0.8, 1, 0.98, 1],
+            rotate: [0, (i % 2 === 0 ? 2 : -2), 0],
+          }}
+          transition={{ delay: 0.5 + i * 0.2, duration: 1.5, ease: 'easeOut' }}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] font-bold text-white/60 uppercase tracking-wider">{tmpl.badge}</span>
+            <span className="text-[9px] px-2 py-0.5 rounded-full bg-white/10 text-white/50 font-medium">{tmpl.provider}</span>
+          </div>
+          <p className="text-sm font-bold text-white/90 mb-1">{tmpl.title}</p>
+          <div className="flex items-center gap-1.5">
+            <div className="w-full h-1.5 rounded-full bg-white/10 overflow-hidden">
+              <motion.div
+                className="h-full rounded-full bg-gradient-to-r from-primary to-accent"
+                initial={{ width: '0%' }}
+                animate={{ width: '100%' }}
+                transition={{ delay: 1 + i * 0.3, duration: 2 }}
+              />
+            </div>
+            <span className="text-[9px] text-white/40 font-mono">{tmpl.style}</span>
+          </div>
+        </motion.div>
+      ))}
+    </div>
+  );
+};
+
+// ============================================
+// PIPELINE VISUAL — Cinematic production flow
+// ============================================
+const PIPELINE_STEPS = [
+  { icon: Wand2, label: 'Ideation', provider: 'Gemini 3', color: 'from-violet-500 to-purple-600' },
+  { icon: FileText, label: 'Script', provider: 'GPT-4o', color: 'from-emerald-500 to-teal-600' },
+  { icon: Mic, label: 'Voice', provider: 'Azure TTS', color: 'from-blue-500 to-indigo-600' },
+  { icon: Video, label: 'Video', provider: 'Vertex Veo', color: 'from-sky-500 to-cyan-600' },
+  { icon: Box, label: '3D/Avatar', provider: 'Meshy + Wan', color: 'from-amber-500 to-orange-600' },
+  { icon: Globe, label: 'Distribute', provider: '140+ Lang', color: 'from-rose-500 to-pink-600' },
+];
+
+const CinematicPipeline: React.FC = () => (
+  <div className="flex items-center justify-center gap-1 sm:gap-3 pt-8 flex-wrap">
     {PIPELINE_STEPS.map((step, i) => {
       const Icon = step.icon;
       return (
         <React.Fragment key={step.label}>
           <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.8 }}
+            initial={{ opacity: 0, y: 30, scale: 0.7 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ delay: 0.3 + i * 0.15, type: 'spring', stiffness: 200 }}
-            className="flex flex-col items-center gap-1.5"
+            transition={{ delay: 0.2 + i * 0.12, type: 'spring', stiffness: 180, damping: 20 }}
+            className="flex flex-col items-center gap-2"
           >
             <motion.div
-              className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-card border border-border flex items-center justify-center shadow-lg"
-              whileHover={{ scale: 1.12, rotate: 3 }}
+              className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br ${step.color} flex items-center justify-center shadow-2xl relative overflow-hidden`}
+              whileHover={{ scale: 1.15, rotate: 5 }}
               animate={{
                 boxShadow: [
-                  '0 4px 14px rgba(0,0,0,0.05)',
-                  '0 8px 25px rgba(0,0,0,0.12)',
-                  '0 4px 14px rgba(0,0,0,0.05)',
+                  '0 4px 20px rgba(0,0,0,0.3)',
+                  '0 12px 40px rgba(0,0,0,0.5)',
+                  '0 4px 20px rgba(0,0,0,0.3)',
                 ],
               }}
-              transition={{ duration: 3, repeat: Infinity, delay: i * 0.4 }}
+              transition={{ duration: 3, repeat: Infinity, delay: i * 0.3 }}
             >
-              <Icon className={`w-6 h-6 sm:w-7 sm:h-7 ${step.color}`} />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+              <Icon className="w-7 h-7 sm:w-8 sm:h-8 text-white relative z-10" strokeWidth={1.5} />
             </motion.div>
-            <span className="text-[11px] sm:text-xs font-semibold text-muted-foreground">{step.label}</span>
+            <span className="text-xs font-bold text-white/90">{step.label}</span>
+            <span className="text-[9px] text-white/40 font-medium">{step.provider}</span>
           </motion.div>
           {i < PIPELINE_STEPS.length - 1 && (
             <motion.div
-              initial={{ scaleX: 0 }}
-              animate={{ scaleX: 1 }}
-              transition={{ delay: 0.5 + i * 0.15, duration: 0.4 }}
-              className="hidden sm:flex items-center mb-5"
+              initial={{ scaleX: 0, opacity: 0 }}
+              animate={{ scaleX: 1, opacity: 1 }}
+              transition={{ delay: 0.4 + i * 0.12, duration: 0.5 }}
+              className="hidden sm:flex items-center mb-8"
             >
-              <div className="w-8 h-[2px] bg-gradient-to-r from-primary/40 to-primary/20 rounded-full" />
               <motion.div
-                animate={{ x: [0, 8, 0] }}
-                transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.3 }}
+                animate={{ x: [0, 10, 0] }}
+                transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.25 }}
               >
-                <ArrowRight className="w-4 h-4 text-primary/50" />
+                <ArrowRight className="w-5 h-5 text-white/30" />
               </motion.div>
             </motion.div>
           )}
@@ -222,12 +254,14 @@ const AnimatedPipeline: React.FC = () => (
 );
 
 // ============================================
-// UNIFIED HERO CAROUSEL — 4 heroes, left-to-right
+// UNIFIED HERO CAROUSEL — Cinematic Enterprise
 // ============================================
 const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string | null }> = ({ config, productContext }) => {
   const { hero, stats, cta } = config;
   const [current, setCurrent] = React.useState(0);
   const [direction, setDirection] = React.useState(1);
+
+  const heroImages = [heroPlatformImg, heroPipelineImg, heroLanguagesImg, heroTranscreationImg];
 
   const slides = [
     {
@@ -235,20 +269,20 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
       badge: `${hero.flag} ${productContext ? `Genie ${productContext.charAt(0).toUpperCase() + productContext.slice(1)} for ${hero.regionName}` : `Content optimized for ${hero.regionName}`}`,
       headline: ['One ', 'Platform.'],
       subtitle: 'Every Market. The Only One You Need.',
-      description: 'AI-powered content production across 50+ industries in 140+ languages — powered by 15 integrated AI providers.',
+      description: '15 AI providers. 206 pipelines. 50+ industries. 140+ languages. From mind to media — the world\'s first all-in-one AI content production suite.',
       type: 'platform' as const,
     },
     {
       id: 'mind-to-media',
-      badge: '✦ End-to-End Content Production',
-      headline: ['Mind to ', 'Media.'],
-      subtitle: 'For Every Industry.',
-      description: 'From the first spark of an idea to polished, market-ready content — across video, presentations, audio, and documents.',
+      badge: '✦ Mind to Media Production Engine',
+      headline: ['Idea to ', 'Global Content.'],
+      subtitle: 'In Minutes, Not Months.',
+      description: 'From a single prompt — AI generates scripts, voices, avatars, 3D models, videos, and culturally adapted content for every market.',
       type: 'pipeline' as const,
     },
     {
       id: 'language',
-      badge: '🌍 140+ Languages · 8 Global Regions',
+      badge: '🌍 140+ Languages · 30+ Dialects · 8 Regions',
       headline: ['We Speak Your ', 'Language.'],
       subtitle: 'We Understand Your Market.',
       description: 'Not just translation — we adapt tone, idioms, humor, cultural references, and regional compliance so your audience feels you were built for them.',
@@ -256,10 +290,10 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
     },
     {
       id: 'transcreation',
-      badge: '🚀 First to Market',
+      badge: '🚀 First & Only to Market',
       headline: ['Transcreation, ', 'Not Translation.'],
       subtitle: 'Cultural Adaptation at Scale.',
-      description: 'Translation converts words. Transcreation converts meaning — intent, emotion, and cultural context for every target market.',
+      description: 'Translation converts words. Transcreation converts meaning — intent, emotion, and cultural context powered by zone-routed AI models.',
       type: 'comparison' as const,
     },
   ];
@@ -268,7 +302,7 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
     const timer = setInterval(() => {
       setDirection(1);
       setCurrent((prev) => (prev + 1) % slides.length);
-    }, 6000);
+    }, 7000);
     return () => clearInterval(timer);
   }, [slides.length]);
 
@@ -279,99 +313,109 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
 
   const slide = slides[current];
 
-  const bgGradients = [
-    'from-primary/6 via-background to-accent/8',
-    'from-violet-500/8 via-background to-blue-500/6',
-    'from-emerald-500/6 via-background to-teal-500/8',
-    'from-amber-500/6 via-background to-rose-500/8',
-  ];
-
   return (
-    <section className={`relative min-h-[92vh] overflow-hidden pt-16 ${hero.isRTL ? 'rtl' : 'ltr'}`}>
-      {/* Multi-layer animated background */}
-      <motion.div
-        key={`bg-${current}`}
-        className={`absolute inset-0 bg-gradient-to-br ${bgGradients[current]}`}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.8 }}
-      />
+    <section className={`relative min-h-[100vh] overflow-hidden ${hero.isRTL ? 'rtl' : 'ltr'}`}>
+      {/* Full-bleed hero image background */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={`bg-img-${current}`}
+          className="absolute inset-0"
+          initial={{ opacity: 0, scale: 1.05 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 1.2, ease: 'easeOut' }}
+        >
+          <img
+            src={heroImages[current]}
+            alt=""
+            className="w-full h-full object-cover"
+          />
+          {/* Cinematic overlays */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-black/40" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/60" />
+          <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-background to-transparent" />
+        </motion.div>
+      </AnimatePresence>
 
-      {/* Animated mesh gradient orbs */}
-      <div className="absolute inset-0 overflow-hidden">
-        <motion.div
-          className="absolute w-[600px] h-[600px] rounded-full blur-[120px] opacity-20"
-          style={{ background: 'radial-gradient(circle, hsl(var(--primary)) 0%, transparent 70%)' }}
-          animate={{
-            x: ['-10%', '60%', '30%', '-10%'],
-            y: ['10%', '50%', '80%', '10%'],
-          }}
-          transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <motion.div
-          className="absolute w-[500px] h-[500px] rounded-full blur-[100px] opacity-15"
-          style={{ background: 'radial-gradient(circle, hsl(var(--accent)) 0%, transparent 70%)' }}
-          animate={{
-            x: ['80%', '20%', '50%', '80%'],
-            y: ['60%', '20%', '40%', '60%'],
-          }}
-          transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        {/* Grid pattern overlay */}
-        <div
-          className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage: 'linear-gradient(hsl(var(--foreground)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--foreground)) 1px, transparent 1px)',
-            backgroundSize: '60px 60px',
-          }}
-        />
+      {/* Ambient glow particles */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {[...Array(15)].map((_, i) => (
+          <motion.div
+            key={`glow-${i}`}
+            className="absolute w-1.5 h-1.5 rounded-full"
+            style={{
+              left: `${5 + Math.random() * 90}%`,
+              top: `${10 + Math.random() * 80}%`,
+              background: `hsl(${200 + Math.random() * 120}, 80%, 70%)`,
+            }}
+            animate={{
+              opacity: [0, 0.7, 0],
+              scale: [0, 2, 0],
+              y: [0, -50 - Math.random() * 60],
+            }}
+            transition={{
+              duration: 3 + Math.random() * 4,
+              repeat: Infinity,
+              delay: Math.random() * 5,
+              ease: 'easeOut',
+            }}
+          />
+        ))}
       </div>
 
-      {/* Floating AI Provider orbs */}
-      <FloatingOrbs activeSlide={current} />
+      {/* Floating template preview cards (on platform slide) */}
+      <FloatingTemplateCards visible={current === 0} />
 
       {/* Main content */}
-      <div className="relative max-w-7xl mx-auto px-4 py-16 flex flex-col items-center justify-center min-h-[75vh] z-10">
+      <div className="relative max-w-7xl mx-auto px-4 pt-28 pb-20 flex flex-col items-center justify-center min-h-[85vh] z-10">
         <AnimatePresence mode="wait">
           <motion.div
             key={slide.id}
-            initial={{ opacity: 0, x: direction * 120, scale: 0.95 }}
-            animate={{ opacity: 1, x: 0, scale: 1 }}
-            exit={{ opacity: 0, x: -direction * 80, scale: 0.97 }}
-            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-            className="text-center space-y-5 w-full"
+            initial={{ opacity: 0, x: direction * 100, y: 10 }}
+            animate={{ opacity: 1, x: 0, y: 0 }}
+            exit={{ opacity: 0, x: -direction * 60 }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            className="text-center space-y-6 w-full"
           >
             {/* Badge */}
-            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-              <Badge variant="outline" className="border-primary/30 bg-primary/5 text-primary text-sm px-5 py-2 backdrop-blur-sm">
+            <motion.div initial={{ opacity: 0, y: -15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+              <Badge className="bg-white/10 backdrop-blur-md border border-white/20 text-white text-sm px-5 py-2.5 shadow-lg">
                 {slide.badge}
               </Badge>
             </motion.div>
 
-            {/* Headline */}
+            {/* Headline — massive cinematic type */}
             <motion.h1
-              className="text-5xl md:text-6xl lg:text-8xl font-black leading-[0.95] tracking-tight"
-              initial={{ opacity: 0, y: 20 }}
+              className="text-5xl md:text-7xl lg:text-[5.5rem] font-black leading-[0.92] tracking-tight"
+              initial={{ opacity: 0, y: 25 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
+              transition={{ delay: 0.15, duration: 0.7 }}
             >
-              <span className="text-foreground">{slide.headline[0]}</span>
-              <span className="bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent">
+              <span className="text-white drop-shadow-2xl">{slide.headline[0]}</span>
+              <span className="bg-gradient-to-r from-primary via-blue-400 to-cyan-400 bg-clip-text text-transparent drop-shadow-2xl">
                 {slide.headline[1]}
               </span>
             </motion.h1>
 
-            <motion.p className="text-2xl md:text-3xl font-bold text-foreground/80" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
+            <motion.p
+              className="text-xl md:text-3xl font-bold text-white/80"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.25 }}
+            >
               {slide.subtitle}
             </motion.p>
 
-            <motion.p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.25 }}>
+            <motion.p
+              className="text-base md:text-lg text-white/55 max-w-2xl mx-auto leading-relaxed"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
+            >
               {slide.description}
             </motion.p>
 
-            {/* Platform slide */}
+            {/* === SLIDE-SPECIFIC CONTENT === */}
+
+            {/* Platform slide — Stats + CTAs */}
             {slide.type === 'platform' && (
-              <motion.div className="space-y-6 pt-2" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
+              <motion.div className="space-y-6 pt-4" initial={{ opacity: 0, y: 25 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-2xl mx-auto">
                   {[
                     { value: stats.audienceReach, label: 'Audience Reach' },
@@ -381,77 +425,64 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
                   ].map((stat, i) => (
                     <motion.div
                       key={stat.label}
-                      className="text-center p-4 bg-card/80 backdrop-blur-sm rounded-2xl border border-border/50 hover:border-primary/30 transition-all hover:shadow-lg hover:shadow-primary/5"
-                      whileHover={{ y: -3, scale: 1.03 }}
-                      initial={{ opacity: 0, y: 15 }}
+                      className="text-center p-4 bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 hover:border-primary/40 transition-all hover:shadow-lg hover:shadow-primary/10"
+                      whileHover={{ y: -4, scale: 1.04 }}
+                      initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.4 + i * 0.08 }}
+                      transition={{ delay: 0.45 + i * 0.08 }}
                     >
-                      <p className="text-2xl font-black text-primary">{stat.value}</p>
-                      <p className="text-[11px] text-muted-foreground font-medium">{stat.label}</p>
+                      <p className="text-2xl font-black bg-gradient-to-r from-primary to-cyan-400 bg-clip-text text-transparent">{stat.value}</p>
+                      <p className="text-[11px] text-white/50 font-medium">{stat.label}</p>
                     </motion.div>
-                  ))}
-                </div>
-                <div className="flex flex-wrap items-center justify-center gap-2">
-                  {['7 Products', '206 Pipelines', '15 AI Providers'].map((item, i) => (
-                    <motion.span
-                      key={item}
-                      className="px-3 py-1.5 bg-card/60 backdrop-blur-sm border border-border/40 rounded-full text-sm font-semibold text-muted-foreground"
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.6 + i * 0.1 }}
-                    >
-                      {item}
-                    </motion.span>
                   ))}
                 </div>
                 <div className="flex flex-wrap gap-4 justify-center pt-2">
                   <Link to="/genie-studio-auth?tab=signup">
-                    <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
-                      <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl shadow-primary/20 text-lg px-8 py-6 rounded-xl">
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}>
+                      <Button size="lg" className="bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-500 text-white shadow-2xl shadow-primary/30 text-lg px-8 py-6 rounded-xl border border-white/10">
                         {cta.primary}
                         <ArrowRight className="ml-2 h-5 w-5" />
                       </Button>
                     </motion.div>
                   </Link>
                   <Link to="/explore">
-                    <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
-                      <Button size="lg" variant="outline" className="border-border/60 text-muted-foreground hover:text-foreground hover:bg-card text-lg px-8 py-6 rounded-xl backdrop-blur-sm">
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}>
+                      <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10 text-lg px-8 py-6 rounded-xl backdrop-blur-sm">
                         <Play className="mr-2 h-4 w-4" />
                         {cta.secondary}
                       </Button>
                     </motion.div>
                   </Link>
                 </div>
-                <p className="text-muted-foreground text-xs">{cta.freeCredits}</p>
+                <p className="text-white/40 text-xs">{cta.freeCredits}</p>
               </motion.div>
             )}
 
-            {/* Pipeline slide */}
-            {slide.type === 'pipeline' && <AnimatedPipeline />}
+            {/* Pipeline slide — Cinematic flow */}
+            {slide.type === 'pipeline' && <CinematicPipeline />}
 
             {/* Stats / Language slide */}
             {slide.type === 'stats' && (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-2xl mx-auto pt-6">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-3xl mx-auto pt-6">
                 {[
-                  { value: '140+', label: 'Languages', icon: Languages },
-                  { value: '30+', label: 'Dialects', icon: Mic },
-                  { value: '8', label: 'Regions', icon: Globe },
-                  { value: 'RTL', label: 'Full Support', icon: Eye },
+                  { value: '140+', label: 'Languages', icon: Languages, glow: 'shadow-blue-500/20' },
+                  { value: '30+', label: 'Dialects', icon: Mic, glow: 'shadow-violet-500/20' },
+                  { value: '8', label: 'Regions', icon: Globe, glow: 'shadow-emerald-500/20' },
+                  { value: 'RTL', label: 'Full Support', icon: Eye, glow: 'shadow-amber-500/20' },
                 ].map((stat, i) => {
                   const Icon = stat.icon;
                   return (
                     <motion.div
                       key={stat.label}
-                      className="text-center p-5 bg-card/80 backdrop-blur-sm rounded-2xl border border-border/50 hover:border-primary/30 transition-all group"
-                      initial={{ opacity: 0, y: 20, rotateX: -15 }}
+                      className={`text-center p-6 bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 hover:border-primary/40 transition-all group shadow-xl ${stat.glow}`}
+                      initial={{ opacity: 0, y: 30, rotateX: -20 }}
                       animate={{ opacity: 1, y: 0, rotateX: 0 }}
-                      transition={{ delay: 0.3 + i * 0.12, type: 'spring' }}
-                      whileHover={{ y: -5, scale: 1.05 }}
+                      transition={{ delay: 0.25 + i * 0.12, type: 'spring', stiffness: 150 }}
+                      whileHover={{ y: -6, scale: 1.06 }}
                     >
-                      <Icon className="w-5 h-5 text-primary/60 mx-auto mb-2 group-hover:text-primary transition-colors" />
-                      <p className="text-3xl font-black text-primary">{stat.value}</p>
-                      <p className="text-xs text-muted-foreground font-medium">{stat.label}</p>
+                      <Icon className="w-6 h-6 text-white/30 mx-auto mb-3 group-hover:text-primary transition-colors" />
+                      <p className="text-4xl font-black text-white">{stat.value}</p>
+                      <p className="text-xs text-white/40 font-medium mt-1">{stat.label}</p>
                     </motion.div>
                   );
                 })}
@@ -462,33 +493,42 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
             {slide.type === 'comparison' && (
               <div className="grid sm:grid-cols-2 gap-6 max-w-3xl mx-auto pt-6">
                 <motion.div
-                  className="p-7 bg-card/60 backdrop-blur-sm rounded-2xl border border-destructive/20 text-left space-y-3 relative overflow-hidden"
-                  initial={{ opacity: 0, x: -30 }}
+                  className="p-7 bg-red-950/30 backdrop-blur-xl rounded-2xl border border-red-500/20 text-left space-y-3 relative overflow-hidden"
+                  initial={{ opacity: 0, x: -40 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.3, type: 'spring' }}
                 >
-                  <div className="absolute top-0 right-0 w-20 h-20 bg-destructive/5 rounded-full blur-2xl" />
-                  <p className="text-sm font-bold text-destructive uppercase tracking-wider">❌ Translation</p>
-                  <p className="text-foreground font-medium text-lg">"Our product helps you save time and money."</p>
-                  <p className="text-xs text-muted-foreground italic">Word-for-word. Literal. Generic.</p>
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-3xl" />
+                  <p className="text-sm font-bold text-red-400 uppercase tracking-wider">❌ Translation</p>
+                  <p className="text-white font-medium text-lg">"Our product helps you save time and money."</p>
+                  <p className="text-xs text-white/40 italic">Word-for-word. Literal. Generic. No cultural context.</p>
+                  <div className="flex gap-1.5 pt-2">
+                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400/70 border border-red-500/20">DeepL Only</span>
+                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400/70 border border-red-500/20">No Context</span>
+                  </div>
                 </motion.div>
                 <motion.div
-                  className="p-7 bg-primary/5 backdrop-blur-sm rounded-2xl border border-primary/30 text-left space-y-3 relative overflow-hidden ring-1 ring-primary/10"
-                  initial={{ opacity: 0, x: 30 }}
+                  className="p-7 bg-emerald-950/30 backdrop-blur-xl rounded-2xl border border-primary/30 text-left space-y-3 relative overflow-hidden ring-1 ring-primary/10"
+                  initial={{ opacity: 0, x: 40 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.45, type: 'spring' }}
                 >
-                  <div className="absolute top-0 right-0 w-20 h-20 bg-primary/10 rounded-full blur-2xl" />
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl" />
                   <motion.div
                     className="absolute -top-1 -right-1"
-                    animate={{ rotate: [0, 10, -10, 0] }}
+                    animate={{ rotate: [0, 15, -10, 0] }}
                     transition={{ duration: 3, repeat: Infinity }}
                   >
-                    <Sparkles className="w-5 h-5 text-primary/40" />
+                    <Sparkles className="w-6 h-6 text-primary/40" />
                   </motion.div>
                   <p className="text-sm font-bold text-primary uppercase tracking-wider">✅ Transcreation</p>
-                  <p className="text-foreground font-medium text-lg" dir="rtl">"لأن وقتك أغلى من أي استثمار"</p>
-                  <p className="text-xs text-muted-foreground italic" dir="ltr">Culturally adapted. Emotionally resonant.</p>
+                  <p className="text-white font-medium text-lg" dir="rtl">"لأن وقتك أغلى من أي استثمار"</p>
+                  <p className="text-xs text-white/40 italic" dir="ltr">Culturally adapted. Emotionally resonant. Market-ready.</p>
+                  <div className="flex gap-1.5 pt-2">
+                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-primary/10 text-primary/70 border border-primary/20">Gemini 3 Pro</span>
+                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-primary/10 text-primary/70 border border-primary/20">Zone-Routed</span>
+                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-primary/10 text-primary/70 border border-primary/20">MENA</span>
+                  </div>
                 </motion.div>
               </div>
             )}
@@ -496,55 +536,38 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
         </AnimatePresence>
       </div>
 
+      {/* Provider ribbon — continuously scrolling */}
+      <div className="absolute bottom-28 left-0 right-0 z-20">
+        <ProviderRibbon />
+      </div>
+
       {/* Navigation dots with labels */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-4 z-20">
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-5 z-20">
         {slides.map((s, i) => (
           <button
             key={s.id}
             onClick={() => goTo(i)}
             className="group flex flex-col items-center gap-1.5"
           >
-            <span className={`text-[10px] font-semibold transition-all duration-300 ${
-              i === current ? 'text-primary opacity-100' : 'text-muted-foreground/0 group-hover:text-muted-foreground/60 opacity-0 group-hover:opacity-100'
+            <span className={`text-[10px] font-bold transition-all duration-300 ${
+              i === current ? 'text-white opacity-100' : 'text-white/0 group-hover:text-white/50 opacity-0 group-hover:opacity-100'
             }`}>
               {['Platform', 'Pipeline', 'Languages', 'Transcreation'][i]}
             </span>
             <div className="relative">
               <div className={`h-2 rounded-full transition-all duration-500 ${
-                i === current ? 'w-10 bg-primary shadow-lg shadow-primary/30' : 'w-2 bg-muted-foreground/25 group-hover:bg-muted-foreground/40'
+                i === current ? 'w-12 bg-gradient-to-r from-primary to-cyan-400 shadow-lg shadow-primary/40' : 'w-2.5 bg-white/20 group-hover:bg-white/40'
               }`} />
               {i === current && (
                 <motion.div
-                  className="absolute inset-0 h-2 rounded-full bg-primary/40"
-                  animate={{ scale: [1, 1.8, 1], opacity: [0.5, 0, 0.5] }}
+                  className="absolute inset-0 h-2 rounded-full bg-primary/30"
+                  animate={{ scale: [1, 2, 1], opacity: [0.4, 0, 0.4] }}
                   transition={{ duration: 2, repeat: Infinity }}
                 />
               )}
             </div>
           </button>
         ))}
-      </div>
-
-      {/* Rolling marquee */}
-      <div className="absolute bottom-20 left-0 right-0 overflow-hidden z-10">
-        <motion.div
-          className="whitespace-nowrap"
-          animate={{ x: ['0%', '-50%'] }}
-          transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
-        >
-          {[...Array(10)].map((_, i) => (
-            <span key={i} className="inline-flex items-center gap-8 mx-10 text-sm font-semibold opacity-[0.08]">
-              <span className="text-primary">✦</span>
-              <span className="text-foreground">One Platform</span>
-              <span className="text-primary">◈</span>
-              <span className="text-foreground">Mind to Media</span>
-              <span className="text-primary">◆</span>
-              <span className="text-foreground">140+ Languages</span>
-              <span className="text-primary">✦</span>
-              <span className="text-foreground">Transcreation</span>
-            </span>
-          ))}
-        </motion.div>
       </div>
     </section>
   );
