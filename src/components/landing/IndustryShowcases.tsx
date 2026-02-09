@@ -1,10 +1,13 @@
 /**
- * INDUSTRY SHOWCASES — Unified "Try It" Demo Hub
+ * INDUSTRY SHOWCASES — Unified "Everything You Need" Hub
  * 
- * Consolidates ALL demo capabilities into one industry-aware section:
- * - Content generation: Deck, Video, Content
- * - Localization: TTS, STT, Translation, Transcreation
- * - Cross-functional: Avatar, 3D, Voice Clone, Animation (showcase only)
+ * THE SINGLE consolidated section for the landing page, merging:
+ * - Interactive "Try It Live" demos (Deck, Video, TTS, etc.)
+ * - Why Genie differentiators (First-to-Market + Only Here)
+ * - See It In Action showcase cards (Input → Pipeline → Output)
+ * - Transcreation vs Translation comparison
+ * - Global Inspiration stories
+ * - Cross-functional capabilities
  * 
  * Each industry gets curated examples across all pipelines.
  * Shows cross-pipeline capabilities with live edge function calls.
@@ -15,9 +18,13 @@ import {
   Factory, Landmark, Globe, Sparkles, ArrowRight, Layers,
   Mic, Languages, Video, Presentation, FileText, Zap,
   Volume2, Shield, User, Box, Music, Image, Wand2,
-  CheckCircle2, Star, Smartphone, Eye,
+  CheckCircle2, Star, Smartphone, Eye, Trophy, Quote,
+  TrendingUp, Users,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { DeckDemoCard } from './demo-hub/DeckDemoCard';
@@ -29,6 +36,7 @@ import { TranslationDemoCard } from './demo-hub/TranslationDemoCard';
 import { TranscreationDemoCard } from './demo-hub/TranscreationDemoCard';
 import { PipelineOutputGallery } from './demo-hub/PipelineOutputGallery';
 import { CombinationShowcase } from './demo-hub/CombinationShowcase';
+import type { RegionalConfig, RegionalShowcaseExample } from '@/config/regionalLandingConfig';
 
 // Featured industries with icons and metadata
 const FEATURED_INDUSTRIES = [
@@ -148,9 +156,58 @@ const ONLY_HERE = [
 
 interface IndustryShowcasesProps {
   region?: string;
+  config?: RegionalConfig;
 }
 
-export const IndustryShowcases: React.FC<IndustryShowcasesProps> = ({ region }) => {
+// ============================================
+// REGIONAL STORIES — previously GlobalInspirationSection
+// ============================================
+const REGIONAL_STORIES = [
+  {
+    region: 'MENA', flag: '🇸🇦', company: 'Government Education Initiative', industry: 'Government & Education',
+    useCase: 'Launched nationwide educational content across all 7 Arabic dialects — from Gulf to Levantine — with full RTL support.',
+    stats: { reach: '5M students', languages: '7 dialects', time: '3 weeks' },
+    quote: 'We went from months of agency work to weeks of self-service. Every dialect felt authentic.',
+    outcomes: ['80% faster delivery', 'Zero dialect complaints', 'Full MENA compliance'],
+  },
+  {
+    region: 'India', flag: '🇮🇳', company: 'EdTech Learning Platform', industry: 'EdTech & Training',
+    useCase: 'Course content transcreated into 22 Indian languages with Hinglish code-mixing for urban audiences.',
+    stats: { reach: '140M learners', languages: '22', time: '6 weeks' },
+    quote: 'Hinglish transcreation doubled our engagement in metro cities.',
+    outcomes: ['2x engagement uplift', '22 language variants', 'Native prosody'],
+  },
+  {
+    region: 'Africa', flag: '🌍', company: 'Mobile Financial Services', industry: 'Fintech & Banking',
+    useCase: 'Financial literacy videos in 10 African languages including Swahili, Yoruba, and Amharic.',
+    stats: { reach: '50M users', languages: '10', time: '4 weeks' },
+    quote: 'First time our customers heard financial advice in their mother tongue.',
+    outcomes: ['40% trust increase', '10 native languages', 'Mobile-first delivery'],
+  },
+  {
+    region: 'Europe', flag: '🇪🇺', company: 'Industrial Manufacturing Group', industry: 'Manufacturing & Safety',
+    useCase: 'Factory safety training across 15 European facilities — GDPR-compliant, culturally adapted.',
+    stats: { reach: '100K workers', languages: '12', time: '2 weeks' },
+    quote: 'We reduced training localization costs by 80% while comprehension scores went up.',
+    outcomes: ['80% cost reduction', 'GDPR compliant', '15 facilities covered'],
+  },
+  {
+    region: 'APAC', flag: '🌏', company: 'Cloud Technology Provider', industry: 'Technology & SaaS',
+    useCase: 'Technical docs and developer tutorials with CJK-optimized voices and proper honorific adaptation.',
+    stats: { reach: '10M developers', languages: '8', time: '1 week' },
+    quote: 'Natural Mandarin, proper Japanese keigo, contextual Korean — developers finally engage.',
+    outcomes: ['3x doc engagement', 'CJK-native voices', 'Honorific accuracy'],
+  },
+  {
+    region: 'LATAM', flag: '🌎', company: 'Digital Banking Platform', industry: 'Fintech & Consumer',
+    useCase: 'Customer onboarding videos transcreated between Brazilian Portuguese and 5 Spanish dialects.',
+    stats: { reach: '80M customers', languages: '6 variants', time: '2 weeks' },
+    quote: 'Our Mexican customers noticed we stopped sounding "Spanish" and started sounding local.',
+    outcomes: ['30% onboarding uplift', '6 dialect variants', 'Regional slang support'],
+  },
+];
+
+export const IndustryShowcases: React.FC<IndustryShowcasesProps> = ({ region, config }) => {
   const [selectedIndustry, setSelectedIndustry] = useState(FEATURED_INDUSTRIES[0]);
   const [activePipeline, setActivePipeline] = useState('deck');
   const [showExtended, setShowExtended] = useState(false);
@@ -530,8 +587,291 @@ export const IndustryShowcases: React.FC<IndustryShowcasesProps> = ({ region }) 
             customized for your market, compliance, and audience.
           </p>
         </div>
+
+        {/* ============================================ */}
+        {/* CONSOLIDATED: Why Genie + Showcase + Transcreation + Global Stories */}
+        {/* ============================================ */}
+        {config && (
+          <div className="mt-12 sm:mt-16 pt-12 border-t border-border/50">
+            <Tabs defaultValue="why-genie" className="w-full">
+              <div className="text-center mb-6">
+                <h3 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
+                  Why Teams Choose Genie
+                </h3>
+                <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
+                  Differentiators, real-world showcases, and proof — all in one place.
+                </p>
+              </div>
+
+              <TabsList className="w-full h-auto p-1 bg-card border border-border rounded-xl mb-8 grid grid-cols-2 sm:grid-cols-4 gap-1">
+                <TabsTrigger
+                  value="why-genie"
+                  className="flex items-center gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm font-semibold"
+                >
+                  <Trophy className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Why Genie</span>
+                  <span className="sm:hidden">Why</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="showcase"
+                  className="flex items-center gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm font-semibold"
+                >
+                  <Eye className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">See It In Action</span>
+                  <span className="sm:hidden">In Action</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="transcreation"
+                  className="flex items-center gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm font-semibold"
+                >
+                  <Languages className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Transcreation vs Translation</span>
+                  <span className="sm:hidden">Compare</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="stories"
+                  className="flex items-center gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm font-semibold"
+                >
+                  <Globe className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Real Results</span>
+                  <span className="sm:hidden">Results</span>
+                </TabsTrigger>
+              </TabsList>
+
+              {/* WHY GENIE TAB */}
+              <TabsContent value="why-genie" className="mt-0 space-y-6">
+                <div className="p-5 bg-gradient-to-r from-primary/10 via-accent/5 to-primary/10 rounded-2xl border border-primary/20 text-center">
+                  <h4 className="text-xl sm:text-2xl font-bold text-foreground mb-2">
+                    We Speak Your Language. We Understand Your Market.
+                  </h4>
+                  <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
+                    Your content deserves more than word-for-word translation. Genie adapts tone, idioms, cultural references,
+                    and regional compliance — so your audience feels you were{' '}
+                    <span className="text-primary font-semibold">built for them</span>.
+                  </p>
+                </div>
+                {/* First to Market */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Trophy className="h-4 w-4 text-yellow-500" />
+                    <h5 className="text-xs font-bold text-foreground uppercase tracking-wider">First to Market</h5>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {config.differentiators.firstToMarket.map((claim, i) => (
+                      <div key={i} className="flex items-start gap-2 px-3 py-2.5 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
+                        <Trophy className="h-3.5 w-3.5 text-yellow-500 mt-0.5 shrink-0" />
+                        <span className="text-xs text-foreground">{claim}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {/* Only Here */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-4 w-4 text-primary" />
+                    <h5 className="text-xs font-bold text-foreground uppercase tracking-wider">Only Here</h5>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {config.differentiators.capabilityDepth.map((claim, i) => (
+                      <div key={i} className="flex items-start gap-2 px-3 py-2.5 bg-primary/10 border border-primary/20 rounded-xl">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
+                        <span className="text-xs text-foreground">{claim}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* SEE IT IN ACTION TAB */}
+              <TabsContent value="showcase" className="mt-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {config.showcaseExamples.map((example, index) => (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, y: 16 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: index * 0.08 }}
+                    >
+                      <Card className="h-full border-border/60 bg-card/80 hover:border-primary/40 transition-all hover:shadow-lg">
+                        <CardContent className="p-5 space-y-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xl">{example.icon}</span>
+                            <h4 className="font-bold text-foreground text-sm">{example.industry}</h4>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className="w-14 shrink-0 text-[10px] font-semibold text-muted-foreground uppercase mt-1">Input</span>
+                            <div className="flex-1 px-3 py-1.5 bg-muted/50 rounded-lg text-xs text-foreground">{example.input}</div>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className="w-14 shrink-0 text-[10px] font-semibold text-muted-foreground uppercase mt-1">Pipeline</span>
+                            <div className="flex flex-wrap gap-1">
+                              {example.pipeline.split(' → ').map((step, i, arr) => (
+                                <React.Fragment key={i}>
+                                  <Badge variant="outline" className="text-[9px] bg-primary/5 border-primary/20 text-primary font-semibold px-1.5 py-0.5">
+                                    {step}
+                                  </Badge>
+                                  {i < arr.length - 1 && <ArrowRight className="h-2.5 w-2.5 text-muted-foreground self-center" />}
+                                </React.Fragment>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className="w-14 shrink-0 text-[10px] font-semibold text-green-600 dark:text-green-400 uppercase mt-1">Output</span>
+                            <div className="flex-1 px-3 py-1.5 bg-green-500/10 border border-green-500/20 rounded-lg text-xs text-foreground font-medium">
+                              {example.output}
+                            </div>
+                          </div>
+                          <div className="pt-2 border-t border-border/50 flex items-center justify-between text-[11px]">
+                            <span className="text-muted-foreground flex items-center gap-1">
+                              <Globe className="h-3 w-3" /> {example.languages}
+                            </span>
+                            <span className="text-yellow-600 dark:text-yellow-400 font-semibold flex items-center gap-1">
+                              <Sparkles className="h-3 w-3" /> {example.impact}
+                            </span>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  ))}
+                </div>
+              </TabsContent>
+
+              {/* TRANSCREATION vs TRANSLATION TAB */}
+              <TabsContent value="transcreation" className="mt-0">
+                <div className="max-w-4xl mx-auto">
+                  <p className="text-center text-sm text-muted-foreground mb-4">
+                    Real examples from <span className="text-primary font-semibold">{config.hero.regionName}</span> — 
+                    notice how Genie preserves intent, not just words.
+                  </p>
+                  <div className="bg-card border border-border rounded-2xl overflow-hidden">
+                    <div className="bg-muted/50 px-5 py-3 border-b border-border flex items-center justify-between">
+                      <h4 className="font-semibold text-foreground text-sm">{config.languageShowcase.tabLabel}</h4>
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                          <CheckCircle2 className="h-3 w-3" /> Transcreated
+                        </span>
+                        <span className="flex items-center gap-1 text-destructive">✗ Literal</span>
+                      </div>
+                    </div>
+                    <div className="divide-y divide-border">
+                      {config.languageShowcase.languages.map((lang, i) => (
+                        <div key={lang.code} className="p-4 hover:bg-muted/30 transition-colors">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-foreground text-sm">{lang.nativeName}</span>
+                              <Badge variant="outline" className="text-[10px]">{lang.region}</Badge>
+                            </div>
+                            <Badge variant="secondary" className="text-[10px]">
+                              <Volume2 className="h-3 w-3 mr-1" />
+                              {lang.azureVoice.split('-').slice(0, 2).join('-')}
+                            </Badge>
+                          </div>
+                          <div className="grid sm:grid-cols-2 gap-3">
+                            <div>
+                              <p className="text-[10px] font-medium text-green-600 dark:text-green-400 uppercase mb-1">✓ Transcreated</p>
+                              <p className={`text-sm text-foreground ${config.hero.isRTL ? 'text-right' : ''}`}>
+                                {lang.transcreation}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-[10px] font-medium text-destructive uppercase mb-1">✗ Literal Translation</p>
+                              <p className={`text-sm text-muted-foreground line-through ${config.hero.isRTL ? 'text-right' : ''}`}>
+                                {lang.literal}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* REAL RESULTS TAB — Global Inspiration Stories */}
+              <TabsContent value="stories" className="mt-0">
+                <RegionalStoriesPanel />
+              </TabsContent>
+            </Tabs>
+          </div>
+        )}
       </div>
     </section>
+  );
+};
+
+// ============================================
+// REGIONAL STORIES PANEL
+// ============================================
+const RegionalStoriesPanel: React.FC = () => {
+  const [selectedStory, setSelectedStory] = useState(REGIONAL_STORIES[0]);
+
+  return (
+    <div>
+      <div className="flex flex-wrap justify-center gap-2 mb-6">
+        {REGIONAL_STORIES.map((story) => (
+          <button
+            key={story.region}
+            onClick={() => setSelectedStory(story)}
+            className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm transition ${
+              selectedStory.region === story.region
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-card border border-border text-foreground hover:bg-muted'
+            }`}
+          >
+            <span>{story.flag}</span>
+            <span>{story.region}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="bg-card border border-border rounded-2xl overflow-hidden">
+        <div className="grid md:grid-cols-2">
+          <div className="p-6 sm:p-8">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-3xl">{selectedStory.flag}</span>
+              <div>
+                <h4 className="text-lg font-bold text-foreground">{selectedStory.company}</h4>
+                <Badge variant="secondary">{selectedStory.industry}</Badge>
+              </div>
+            </div>
+            <p className="text-muted-foreground mb-4">{selectedStory.useCase}</p>
+            <div className="bg-muted/50 rounded-xl p-4 mb-4">
+              <Quote className="h-5 w-5 text-primary mb-2" />
+              <p className="text-foreground italic text-sm">"{selectedStory.quote}"</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {selectedStory.outcomes.map((outcome) => (
+                <span key={outcome} className="flex items-center gap-1 px-2.5 py-1 bg-green-500/10 text-green-600 dark:text-green-400 rounded-full text-xs font-medium">
+                  <CheckCircle2 className="h-3 w-3" />
+                  {outcome}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div className="bg-gradient-to-br from-primary/10 to-accent/10 p-6 sm:p-8 flex flex-col justify-center">
+            <h4 className="text-sm font-semibold text-foreground mb-4">Results Achieved</h4>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="text-center">
+                <Users className="h-5 w-5 text-primary mx-auto mb-1" />
+                <p className="text-xl font-bold text-foreground">{selectedStory.stats.reach}</p>
+                <p className="text-xs text-muted-foreground">Reached</p>
+              </div>
+              <div className="text-center">
+                <Globe className="h-5 w-5 text-accent mx-auto mb-1" />
+                <p className="text-xl font-bold text-foreground">{selectedStory.stats.languages}</p>
+                <p className="text-xs text-muted-foreground">Languages</p>
+              </div>
+              <div className="text-center">
+                <TrendingUp className="h-5 w-5 text-green-500 mx-auto mb-1" />
+                <p className="text-xl font-bold text-foreground">{selectedStory.stats.time}</p>
+                <p className="text-xs text-muted-foreground">Time to Market</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 
