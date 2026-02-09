@@ -97,13 +97,14 @@ const RegionalHero: React.FC<{ config: RegionalConfig; productContext?: string |
   const { hero, stats, cta } = config;
   
   return (
-  <section className={`relative min-h-[85vh] flex items-center pt-16 ${hero.isRTL ? 'rtl' : 'ltr'}`}>
+    <section className={`relative flex flex-col pt-16 ${hero.isRTL ? 'rtl' : 'ltr'}`}>
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/5" />
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
       </div>
 
+      {/* Primary Hero — Mind to Media */}
       <div className="relative max-w-7xl mx-auto px-4 py-16">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <motion.div 
@@ -112,7 +113,7 @@ const RegionalHero: React.FC<{ config: RegionalConfig; productContext?: string |
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            {/* Region badge with optional product context */}
+            {/* Region badge */}
             <div className="flex flex-wrap items-center gap-2">
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-muted rounded-full">
                 <span className="text-2xl">{hero.flag}</span>
@@ -132,19 +133,38 @@ const RegionalHero: React.FC<{ config: RegionalConfig; productContext?: string |
               )}
             </div>
 
-            {/* Native headline */}
+            {/* Primary headline — Mind to Media */}
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
               <span className="bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent">
-                {hero.nativeHeadline}
+                Mind to Media
+              </span>
+              <br />
+              <span className="text-3xl md:text-4xl lg:text-5xl text-foreground">
+                For Every Industry
               </span>
             </h1>
 
-            {/* English subtitle if different from native */}
-            {hero.nativeHeadline !== hero.englishHeadline && (
-              <p className="text-lg text-muted-foreground/80 italic">
-                {hero.englishHeadline}
-              </p>
-            )}
+            {/* Rolling tagline */}
+            <div className="overflow-hidden h-9 relative">
+              <motion.div
+                className="absolute whitespace-nowrap"
+                animate={{ x: ['0%', '-50%'] }}
+                transition={{ duration: 18, repeat: Infinity, ease: 'linear' }}
+              >
+                {[...Array(4)].map((_, i) => (
+                  <span key={i} className="inline-flex items-center gap-3 mx-4 text-base font-bold">
+                    <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                      We Speak Your Language.
+                    </span>
+                    <span className="text-muted-foreground">•</span>
+                    <span className="bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
+                      We Understand Your Market.
+                    </span>
+                    <span className="text-muted-foreground">•</span>
+                  </span>
+                ))}
+              </motion.div>
+            </div>
 
             {/* Native subheadline */}
             <p className="text-xl text-muted-foreground max-w-xl">
@@ -180,28 +200,6 @@ const RegionalHero: React.FC<{ config: RegionalConfig; productContext?: string |
               <span className="px-2 py-1 bg-muted rounded">15 AI Providers</span>
             </div>
 
-            {/* Rolling tagline */}
-            <div className="overflow-hidden h-8 relative">
-              <motion.div
-                className="absolute whitespace-nowrap"
-                animate={{ x: ['0%', '-50%'] }}
-                transition={{ duration: 18, repeat: Infinity, ease: 'linear' }}
-              >
-                {[...Array(4)].map((_, i) => (
-                  <span key={i} className="inline-flex items-center gap-3 mx-4 text-sm font-semibold">
-                    <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                      We Speak Your Language.
-                    </span>
-                    <span className="text-muted-foreground">•</span>
-                    <span className="bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
-                      We Understand Your Market.
-                    </span>
-                    <span className="text-muted-foreground">•</span>
-                  </span>
-                ))}
-              </motion.div>
-            </div>
-
             {/* CTA buttons */}
             <div className="flex flex-wrap gap-4">
               <Link to="/genie-studio-auth?tab=signup">
@@ -229,12 +227,61 @@ const RegionalHero: React.FC<{ config: RegionalConfig; productContext?: string |
             transition={{ duration: 0.6, delay: 0.2 }}
           >
             <ProfessionalAvatarShowcase autoPlay={true} showControls={true} className="rounded-xl shadow-2xl" />
-            {/* Floating badges */}
             <div className="absolute -top-4 -right-4 px-4 py-2 bg-primary rounded-lg shadow-lg animate-bounce z-20" style={{ animationDuration: '3s' }}>
               <p className="text-sm font-medium text-primary-foreground">🌍 {stats.dialects || stats.languages} Languages</p>
             </div>
           </motion.div>
         </div>
+      </div>
+
+      {/* Differentiators — integrated into hero */}
+      <div className="relative max-w-7xl mx-auto px-4 pb-16 w-full">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+        >
+          {/* Transcreation message */}
+          <div className="p-5 bg-gradient-to-r from-primary/10 via-accent/5 to-primary/10 rounded-2xl border border-primary/20 text-center mb-8">
+            <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
+              Your content deserves more than word-for-word translation. Genie adapts tone, idioms, cultural references,
+              and regional compliance — so your audience feels you were{' '}
+              <span className="text-primary font-semibold">built for them</span>.
+            </p>
+          </div>
+
+          {/* First to Market */}
+          <div className="space-y-2 mb-6">
+            <div className="flex items-center gap-2">
+              <Trophy className="h-4 w-4 text-yellow-500" />
+              <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">First to Market</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {config.differentiators.firstToMarket.map((claim, i) => (
+                <div key={i} className="flex items-start gap-2 px-3 py-2.5 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
+                  <Trophy className="h-3.5 w-3.5 text-yellow-500 mt-0.5 shrink-0" />
+                  <span className="text-xs text-foreground">{claim}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Only Here */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Zap className="h-4 w-4 text-primary" />
+              <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">Only Here</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {config.differentiators.capabilityDepth.map((claim, i) => (
+                <div key={i} className="flex items-start gap-2 px-3 py-2.5 bg-primary/10 border border-primary/20 rounded-xl">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
+                  <span className="text-xs text-foreground">{claim}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </motion.div>
       </div>
 
       {/* Scroll indicator */}
@@ -487,48 +534,7 @@ export const RegionalLandingPage: React.FC = () => {
             onProductChange={setActiveProduct} 
           />
 
-          {/* Why Genie — differentiators integrated into Products hub */}
-          {config && (
-            <div className="mt-12 sm:mt-16 pt-10 border-t border-border/50">
-             <div className="p-5 bg-gradient-to-r from-primary/10 via-accent/5 to-primary/10 rounded-2xl border border-primary/20 text-center mb-8">
-                <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
-                  Your content deserves more than word-for-word translation. Genie adapts tone, idioms, cultural references,
-                  and regional compliance — so your audience feels you were{' '}
-                  <span className="text-primary font-semibold">built for them</span>.
-                </p>
-              </div>
-              {/* First to Market */}
-              <div className="space-y-2 mb-6">
-                <div className="flex items-center gap-2">
-                  <Trophy className="h-4 w-4 text-yellow-500" />
-                  <h5 className="text-xs font-bold text-foreground uppercase tracking-wider">First to Market</h5>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {config.differentiators.firstToMarket.map((claim, i) => (
-                    <div key={i} className="flex items-start gap-2 px-3 py-2.5 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
-                      <Trophy className="h-3.5 w-3.5 text-yellow-500 mt-0.5 shrink-0" />
-                      <span className="text-xs text-foreground">{claim}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              {/* Only Here */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Zap className="h-4 w-4 text-primary" />
-                  <h5 className="text-xs font-bold text-foreground uppercase tracking-wider">Only Here</h5>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {config.differentiators.capabilityDepth.map((claim, i) => (
-                    <div key={i} className="flex items-start gap-2 px-3 py-2.5 bg-primary/10 border border-primary/20 rounded-xl">
-                      <CheckCircle2 className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
-                      <span className="text-xs text-foreground">{claim}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Differentiators moved to hero banner */}
         </div>
       </section>
 
