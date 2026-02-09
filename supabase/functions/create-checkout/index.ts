@@ -14,40 +14,58 @@ const logStep = (step: string, details?: unknown) => {
 
 // Country code to region mapping (same as geo-detect)
 const COUNTRY_TO_REGION: Record<string, string> = {
-  // India
-  'IN': 'india',
+  // India & South Asia
+  'IN': 'india', 'BD': 'india', 'LK': 'india', 'NP': 'india', 'BT': 'india', 'MV': 'india',
   
   // Africa
   'NG': 'africa', 'KE': 'africa', 'ZA': 'africa', 'GH': 'africa', 'TZ': 'africa',
   'UG': 'africa', 'ET': 'africa', 'RW': 'africa', 'SN': 'africa', 'CI': 'africa',
+  'CM': 'africa', 'AO': 'africa', 'MZ': 'africa', 'MG': 'africa', 'ZW': 'africa',
+  'ZM': 'africa', 'BW': 'africa', 'NA': 'africa', 'ML': 'africa', 'BF': 'africa',
+  'NE': 'africa', 'TD': 'africa', 'SO': 'africa', 'CD': 'africa', 'CG': 'africa',
+  'GA': 'africa', 'GQ': 'africa', 'DJ': 'africa', 'ER': 'africa', 'SS': 'africa',
+  'MW': 'africa', 'LS': 'africa', 'SZ': 'africa', 'MU': 'africa', 'SC': 'africa',
+  'GM': 'africa', 'GN': 'africa', 'SL': 'africa', 'LR': 'africa', 'TG': 'africa', 'BJ': 'africa',
   
-  // MEA (Middle East)
+  // MEA (Middle East & Central Asia)
   'AE': 'mea', 'SA': 'mea', 'EG': 'mea', 'IL': 'mea', 'TR': 'mea',
   'QA': 'mea', 'KW': 'mea', 'BH': 'mea', 'OM': 'mea', 'JO': 'mea',
+  'LB': 'mea', 'IQ': 'mea', 'PK': 'mea', 'PS': 'mea', 'YE': 'mea',
+  'AF': 'mea', 'KZ': 'mea', 'UZ': 'mea', 'TM': 'mea', 'TJ': 'mea', 'KG': 'mea',
+  'AZ': 'mea', 'GE': 'mea', 'AM': 'mea',
   
-  // Southeast Asia (Indonesia, etc.)
+  // Southeast Asia
   'ID': 'sea', 'TH': 'sea', 'VN': 'sea', 'MY': 'sea', 'SG': 'sea',
-  'PH': 'sea', 'MM': 'sea', 'KH': 'sea', 'LA': 'sea', 'BN': 'sea',
+  'PH': 'sea', 'MM': 'sea', 'KH': 'sea', 'LA': 'sea', 'BN': 'sea', 'TL': 'sea',
   
   // Caribbean
   'JM': 'caribbean', 'TT': 'caribbean', 'BB': 'caribbean', 'BS': 'caribbean',
-  'HT': 'caribbean', 'DO': 'caribbean', 'CU': 'caribbean', 'PR': 'caribbean',
+  'HT': 'caribbean', 'DO': 'caribbean', 'PR': 'caribbean',
+  'AG': 'caribbean', 'DM': 'caribbean', 'GD': 'caribbean', 'KN': 'caribbean',
+  'LC': 'caribbean', 'VC': 'caribbean', 'BZ': 'caribbean', 'GY': 'caribbean', 'SR': 'caribbean',
   
   // Latin America
   'BR': 'latam', 'MX': 'latam', 'AR': 'latam', 'CO': 'latam', 'CL': 'latam',
   'PE': 'latam', 'VE': 'latam', 'EC': 'latam', 'BO': 'latam', 'PY': 'latam',
+  'UY': 'latam', 'CR': 'latam', 'PA': 'latam', 'GT': 'latam',
+  'HN': 'latam', 'SV': 'latam', 'NI': 'latam',
   
-  // Europe
+  // Europe (incl. Ukraine, Baltics, Balkans)
   'GB': 'europe', 'DE': 'europe', 'FR': 'europe', 'IT': 'europe', 'ES': 'europe',
   'NL': 'europe', 'BE': 'europe', 'CH': 'europe', 'AT': 'europe', 'PL': 'europe',
   'SE': 'europe', 'NO': 'europe', 'DK': 'europe', 'FI': 'europe', 'IE': 'europe',
   'PT': 'europe', 'GR': 'europe', 'CZ': 'europe', 'RO': 'europe', 'HU': 'europe',
+  'UA': 'europe', 'SK': 'europe', 'HR': 'europe', 'SI': 'europe', 'BG': 'europe',
+  'RS': 'europe', 'BA': 'europe', 'ME': 'europe', 'MK': 'europe', 'AL': 'europe',
+  'LT': 'europe', 'LV': 'europe', 'EE': 'europe', 'IS': 'europe',
+  'MT': 'europe', 'CY': 'europe', 'LU': 'europe', 'MD': 'europe', 'XK': 'europe',
   
-  // CJK (China, Japan, Korea)
-  'CN': 'cjk', 'JP': 'cjk', 'KR': 'cjk', 'TW': 'cjk', 'HK': 'cjk',
+  // CJK (East Asia)
+  'CN': 'cjk', 'JP': 'cjk', 'KR': 'cjk', 'TW': 'cjk', 'HK': 'cjk', 'MO': 'cjk', 'MN': 'cjk',
   
-  // Global/US/Canada/Australia
+  // Global/US/Canada/Australia/NZ/Pacific
   'US': 'global', 'CA': 'global', 'AU': 'global', 'NZ': 'global',
+  'FJ': 'global', 'PG': 'global', 'WS': 'global', 'TO': 'global',
 };
 
 // Regional payment methods - Stripe payment_method_types
