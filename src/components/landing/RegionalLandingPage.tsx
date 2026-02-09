@@ -28,7 +28,7 @@ import { RegionalPricingSection } from '@/components/landing/RegionalPricingSect
 // LocalizationDemoHub removed — consolidated into IndustryShowcases
 import { ProfessionalAvatarShowcase } from '@/components/landing/video/ProfessionalAvatarShowcase';
 import { ProductDetailShowcase } from '@/components/landing/ProductDetailShowcase';
-import { CrossFunctionalSection } from '@/components/landing/CrossFunctionalSection';
+// CrossFunctionalSection removed — capabilities now integrated into IndustryShowcases
 import { GlobalInspirationSection } from '@/components/landing/GlobalInspirationSection';
 import { DogfoodingProof } from '@/components/landing/DogfoodingProof';
 import { IndustryShowcases } from '@/components/landing/IndustryShowcases';
@@ -552,8 +552,7 @@ export const RegionalLandingPage: React.FC = () => {
       
       {/* LocalizationDemoHub removed — TTS/STT/Translation/Transcreation now consolidated into IndustryShowcases above */}
 
-      {/* Cross-Functional Capabilities */}
-      <CrossFunctionalSection />
+      {/* Cross-Functional Capabilities now integrated into IndustryShowcases above */}
 
       {/* Global Inspiration */}
       <GlobalInspirationSection />
