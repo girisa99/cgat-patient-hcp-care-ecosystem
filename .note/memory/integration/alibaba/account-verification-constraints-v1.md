@@ -3,73 +3,112 @@ Updated: just now
 
 ## Alibaba Account Status: VERIFIED ✅
 
-Both Alibaba Cloud accounts are now **fully verified and operational**:
+Three Alibaba Cloud API keys are now **fully verified and operational**:
 
-- **ALIBABA_API_KEY** (International / Virginia endpoint): `dashscope-intl.aliyuncs.com`  
-- **ALIBABA_CHINA_API_KEY** (China / Beijing endpoint): `dashscope.aliyuncs.com`
+- **ALIBABA_CHINA_API_KEY** (China / Beijing endpoint): `dashscope.aliyuncs.com` → CJK markets
+- **ALIBABA_SINGAPORE_API_KEY** (Singapore endpoint): `dashscope-intl.aliyuncs.com` → Asia, Europe, MEA, Africa, India
+- **ALIBABA_API_KEY** (International / Virginia endpoint): `dashscope-intl.aliyuncs.com` → US/Americas/Western
 
-### Endpoint Routing Strategy
+### Tri-Region Routing Strategy (Implemented 2026-02-09)
 
-| Service | China (Beijing) | International (Virginia) | Primary Key |
-|---------|----------------|-------------------------|-------------|
-| **Qwen LLM** | ✅ `dashscope.aliyuncs.com` | ✅ `dashscope-intl.aliyuncs.com` | Either |
-| **CosyVoice TTS** | ✅ `dashscope.aliyuncs.com` | ✅ `dashscope-intl.aliyuncs.com` | China preferred |
-| **Paraformer STT** | ✅ `dashscope.aliyuncs.com` | ✅ `dashscope-intl.aliyuncs.com` | China preferred |
-| **Wan 2.6 Video** | — | ✅ `dashscope-intl.aliyuncs.com` | International only |
-| **Wan 2.2/2.1 Video** | ✅ `dashscope.aliyuncs.com` | — | China only |
-| **Wanx Image Gen** | ✅ `dashscope.aliyuncs.com` | ✅ `dashscope-intl.aliyuncs.com` | Either |
-| **OmniAvatar** | ✅ `dashscope.aliyuncs.com` | — | China only |
-| **Richdreamer 3D** | ✅ `dashscope.aliyuncs.com` | — | China only |
-| **TaoAvatar** | ✅ `dashscope.aliyuncs.com` | — | China only |
-| **MACH** | ✅ `dashscope.aliyuncs.com` | — | China only |
-| **Audio/Music/SFX** | ✅ `dashscope.aliyuncs.com` | ✅ `dashscope-intl.aliyuncs.com` | Either |
+| User Region | API Key | Endpoint | Use Case |
+|-------------|---------|----------|----------|
+| **CJK** (China, Japan, Korea, HK, Taiwan) | `ALIBABA_CHINA_API_KEY` | `dashscope.aliyuncs.com` | China-only models + CJK linguistic |
+| **Asia/EU/MEA/Africa/India** (SEA, Europe, MENA, Africa, South Asia) | `ALIBABA_SINGAPORE_API_KEY` | `dashscope-intl.aliyuncs.com` | Regional proximity, lower latency |
+| **Western/Americas** (US, Canada, LATAM) | `ALIBABA_API_KEY` | `dashscope-intl.aliyuncs.com` | Virginia proximity |
+| **Fallback** (if regional key fails) | Next key in chain → Azure/Meshy/ModelsLab | — | Resilience |
 
-### Dual-Key Routing Pattern (Implemented 2026-02-06)
+### Fallback Chain
 
-All edge functions now implement the following pattern:
-
-```typescript
-// China key preferred for Beijing-region models, International as fallback
-const chinaKey = Deno.env.get('ALIBABA_CHINA_API_KEY');
-const intlKey = Deno.env.get('ALIBABA_API_KEY');
-const apiKey = chinaKey || intlKey;
-
-const baseUrl = chinaKey 
-  ? 'https://dashscope.aliyuncs.com/api/v1'
-  : 'https://dashscope-intl.aliyuncs.com/api/v1';
+```
+CJK Request:      ALIBABA_CHINA_API_KEY → ALIBABA_SINGAPORE_API_KEY → ALIBABA_API_KEY → Azure/Meshy fallback
+Asia/EU/MEA:       ALIBABA_SINGAPORE_API_KEY → ALIBABA_API_KEY → ALIBABA_CHINA_API_KEY* → Azure/Meshy fallback
+Western/Americas:  ALIBABA_API_KEY → ALIBABA_SINGAPORE_API_KEY → Azure/Meshy fallback
 ```
 
-### Edge Functions Updated
+*China key fallback only for China-exclusive models (Wan 2.1, MACH, etc.)
 
-| Function | Before | After |
-|----------|--------|-------|
-| `ai-video-generator` | Only `ALIBABA_API_KEY` + China endpoint | Both keys, smart endpoint routing |
-| `multi-provider-tts` | Broken conditional (both branches identical) | Correct China vs International routing |
-| `generate-template-ai` | Only `ALIBABA_API_KEY` | Both keys, correct endpoint per key |
-| `generate-template-thumbnails` | Only `ALIBABA_API_KEY` + China endpoint | Both keys, smart endpoint routing |
-| `multi-provider-sfx` | Only `ALIBABA_API_KEY` + China endpoint | Both keys, smart endpoint routing |
-| `multi-provider-music` | Only `ALIBABA_API_KEY` + China endpoint | Both keys, smart endpoint routing |
-| `alibaba-video-generator` | Already correct | ✅ No change needed |
-| `alibaba-3d-generator` | Already correct (China-only models) | ✅ No change needed |
-| `alibaba-tts` | Already correct | ✅ No change needed |
-| `alibaba-stt` | Already correct | ✅ No change needed |
+### Model-to-Endpoint Availability
 
-### Previous Constraints (RESOLVED)
+| Service | China (Beijing) | International (Singapore/Virginia) | Primary Key by Region |
+|---------|----------------|-------------------------------------|----------------------|
+| **Qwen LLM** | ✅ | ✅ | Regional key |
+| **CosyVoice TTS** | ✅ | ✅ | China for CJK, Singapore for rest |
+| **Paraformer STT** | ✅ | ✅ | Regional key |
+| **Wan 2.6 Video** | — | ✅ | Singapore/Virginia |
+| **Wan 2.2/2.1 Video** | ✅ | — | China only |
+| **Wanx Image Gen** | ✅ | ✅ | Regional key |
+| **OmniAvatar** | ✅ | — | China only |
+| **Richdreamer 3D** | ✅ | — | China only |
+| **TaoAvatar** | ✅ | — | China only |
+| **MACH** | ✅ | — | China only |
+| **Audio/Music/SFX** | ✅ | ✅ | Regional key |
 
-~~Alibaba DashScope media models are region-locked and return 'Access Denied' due to account verification requirements.~~
+### Tri-Key Routing Pattern (Replaces Dual-Key)
 
-**Account verification resolved as of 2026-02-06.** Both accounts verified, billing active. **Awaiting account rep approval** to activate: Sambert TTS, Wan 2.2 Avatar, OmniAvatar, TaoAvatar, MACH, Richdreamer, FunAudio.
+```typescript
+// Tri-region key selection based on user zone
+function getAlibabaConfig(userZone: string) {
+  const chinaKey = Deno.env.get('ALIBABA_CHINA_API_KEY');
+  const sgKey = Deno.env.get('ALIBABA_SINGAPORE_API_KEY');
+  const usKey = Deno.env.get('ALIBABA_API_KEY');
+
+  switch (userZone) {
+    case 'cjk':
+      return {
+        apiKey: chinaKey || sgKey || usKey,
+        baseUrl: chinaKey
+          ? 'https://dashscope.aliyuncs.com/api/v1'
+          : 'https://dashscope-intl.aliyuncs.com/api/v1',
+      };
+    case 'asia':
+    case 'europe':
+    case 'mea':
+    case 'africa':
+    case 'india':
+      return {
+        apiKey: sgKey || usKey || chinaKey,
+        baseUrl: 'https://dashscope-intl.aliyuncs.com/api/v1',
+      };
+    case 'western':
+    default:
+      return {
+        apiKey: usKey || sgKey,
+        baseUrl: 'https://dashscope-intl.aliyuncs.com/api/v1',
+      };
+  }
+}
+
+// For China-only models, always use China key regardless of zone
+function getChinaOnlyConfig() {
+  const chinaKey = Deno.env.get('ALIBABA_CHINA_API_KEY');
+  if (!chinaKey) return null; // Fall back to Azure/Meshy/ModelsLab
+  return {
+    apiKey: chinaKey,
+    baseUrl: 'https://dashscope.aliyuncs.com/api/v1',
+  };
+}
+```
+
+### Edge Functions to Update
+
+| Function | Current | New Pattern |
+|----------|---------|-------------|
+| `ai-video-generator` | Dual-key | Tri-key with zone param |
+| `multi-provider-tts` | Dual-key | Tri-key with zone param |
+| `generate-template-ai` | Dual-key | Tri-key with zone param |
+| `generate-template-thumbnails` | Dual-key | Tri-key with zone param |
+| `multi-provider-sfx` | Dual-key | Tri-key with zone param |
+| `multi-provider-music` | Dual-key | Tri-key with zone param |
+| `alibaba-video-generator` | China only | Tri-key with zone param |
+| `alibaba-3d-generator` | China only | China-only (unchanged) |
+| `alibaba-tts` | China only | Tri-key with zone param |
+| `alibaba-stt` | China only | Tri-key with zone param |
 
 ### CosyVoice Permanent Constraint
 
 CosyVoice TTS requires WebSocket with custom `Authorization` headers — **incompatible with Deno/Supabase Edge Functions**. Sambert REST is the permanent alternative for edge functions. Azure Neural is the interim CJK TTS primary until Sambert is activated.
 
-### Documentation Updated (2026-02-07)
+### Pending Activation (China Portal)
 
-All governance docs updated with architecture findings:
-- `docs/PROVIDER_VERIFICATION_MATRIX_2026.md` — Full activation status, CosyVoice limitation, interim routing
-- `docs/ALIBABA_DASHSCOPE_REGIONAL_ARCHITECTURE.md` — Activation checklist, console limitation
-- `docs/COMPREHENSIVE_PROVIDER_ROUTING_MATRIX.md` — CJK TTS routing updated
-- `docs/GENIE_ECOSYSTEM_COMPLETE_MATRIX_2026.md` — Zone config, dual-key note
-- `docs/TEMPLATE_REGIONAL_STRATEGY.md` — TTS column updated with interim status
-- `docs/IMPLEMENTATION_STATUS_AND_TESTING_ROADMAP.md` — Alibaba status section added
+Sambert TTS, Wan 2.2 Avatar, OmniAvatar, TaoAvatar, MACH, Richdreamer, FunAudio — awaiting account rep approval on Beijing portal.
