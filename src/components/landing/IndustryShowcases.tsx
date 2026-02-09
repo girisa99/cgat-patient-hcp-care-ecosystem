@@ -1,9 +1,9 @@
 /**
- * INDUSTRY SHOWCASES SECTION
+ * INDUSTRY SHOWCASES SECTION — Interactive "Try It" Demo Hub
  * 
- * Demonstrates AI content generation capabilities with expansive, 
- * non-restrictive industry positioning. Shows FEATURED industries
- * while emphasizing the platform works for ANY industry.
+ * Demonstrates AI content generation capabilities across industries.
+ * Each industry has real, rate-limited demos for Deck, Video, and Content generation.
+ * Shows cross-pipeline capabilities with live edge function calls.
  * 
  * Integrates regional messaging and transcreation positioning.
  */
@@ -17,30 +17,32 @@ import {
   ShoppingBag,
   Factory,
   Landmark,
-  Play,
-  Check,
   Globe,
   Sparkles,
   ArrowRight,
   Layers,
   Mic,
   Languages,
-  Video
+  Video,
+  Presentation,
+  FileText,
+  Zap,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { DeckDemoCard } from './demo-hub/DeckDemoCard';
+import { VideoDemoCard } from './demo-hub/VideoDemoCard';
+import { ContentDemoCard } from './demo-hub/ContentDemoCard';
 
-// Featured industries with regional relevance tags
+// Featured industries with icons and metadata
 const FEATURED_INDUSTRIES = [
   {
     id: 'healthcare',
     name: 'Healthcare',
     icon: Heart,
     color: 'from-red-500 to-pink-500',
-    useCase: 'Patient education, HCP training, clinical trial comms',
-    pipelines: ['HIPAA-compliant Videos', 'Multilingual Patient Guides', 'Clinical Training'],
+    pipelines: ['Patient Education Decks', 'HCP Training Videos', 'Multilingual Patient Guides'],
     stats: { time: '4 min', languages: 22, savings: '85%' },
     regions: ['NAM', 'India', 'Europe'],
     positioning: 'Transcreated patient education in 22+ languages with compliance-ready pipelines',
@@ -50,29 +52,26 @@ const FEATURED_INDUSTRIES = [
     name: 'EdTech',
     icon: GraduationCap,
     color: 'from-blue-500 to-cyan-500',
-    useCase: 'Course modules, AI tutors, vernacular learning',
-    pipelines: ['Course Videos', 'Interactive Quizzes', 'Avatar Instructors'],
+    pipelines: ['Course Videos', 'Interactive Modules', 'Avatar Instructors'],
     stats: { time: '6 min', languages: 35, savings: '90%' },
     regions: ['India', 'Africa', 'LATAM'],
     positioning: 'Vernacular course creation in 35+ languages — from Hindi to Swahili',
   },
   {
     id: 'finance',
-    name: 'Finance & Banking',
+    name: 'Finance',
     icon: Wallet,
     color: 'from-green-500 to-emerald-500',
-    useCase: 'Investor decks, compliance reports, Islamic banking',
-    pipelines: ['Pitch Decks', 'Compliance Training', 'Sharia-compliant Reports'],
+    pipelines: ['Pitch Decks', 'Compliance Training', 'Market Reports'],
     stats: { time: '5 min', languages: 15, savings: '75%' },
     regions: ['MENA', 'Europe', 'NAM'],
-    positioning: 'MiFID II / Sharia-compliant reporting transcreated across regional dialects',
+    positioning: 'Investor decks and compliance reporting transcreated across regional dialects',
   },
   {
     id: 'government',
-    name: 'Government & Public Sector',
+    name: 'Government',
     icon: Landmark,
     color: 'from-purple-500 to-indigo-500',
-    useCase: 'Vision 2030 comms, e-governance, citizen portals',
     pipelines: ['PSA Videos', 'Policy Explainers', 'Citizen Engagement'],
     stats: { time: '3 min', languages: 40, savings: '80%' },
     regions: ['MENA', 'India', 'Africa'],
@@ -80,10 +79,9 @@ const FEATURED_INDUSTRIES = [
   },
   {
     id: 'tourism',
-    name: 'Travel & Hospitality',
+    name: 'Travel',
     icon: Plane,
     color: 'from-orange-500 to-amber-500',
-    useCase: 'Destination marketing, virtual tours, traveler guides',
     pipelines: ['Promo Videos', 'Virtual Tours', 'Multilingual Guides'],
     stats: { time: '4 min', languages: 25, savings: '70%' },
     regions: ['Caribbean', 'APAC', 'MENA'],
@@ -91,32 +89,29 @@ const FEATURED_INDUSTRIES = [
   },
   {
     id: 'retail',
-    name: 'E-commerce & Retail',
+    name: 'Retail',
     icon: ShoppingBag,
     color: 'from-pink-500 to-rose-500',
-    useCase: 'Product demos, localized ads, UGC-style content',
-    pipelines: ['Product Videos', 'Social Ads', 'Influencer-style Demos'],
+    pipelines: ['Product Videos', 'Social Ads', 'Influencer Demos'],
     stats: { time: '2 min', languages: 20, savings: '85%' },
     regions: ['APAC', 'NAM', 'Europe'],
-    positioning: 'Localized product content with region-specific social media formats',
+    positioning: 'Localized product content with region-specific social formats',
   },
   {
     id: 'manufacturing',
-    name: 'Manufacturing & Industry 4.0',
+    name: 'Manufacturing',
     icon: Factory,
     color: 'from-slate-500 to-zinc-500',
-    useCase: 'Safety training, SOPs, equipment guides in worker languages',
-    pipelines: ['Safety Training', 'Multilingual SOPs', 'Maintenance Guides'],
+    pipelines: ['Safety Training', 'Multilingual SOPs', 'Equipment Guides'],
     stats: { time: '5 min', languages: 18, savings: '75%' },
     regions: ['Europe', 'APAC', 'India'],
-    positioning: 'Equipment training transcreated into worker languages with regional compliance',
+    positioning: 'Equipment training transcreated into worker languages with compliance',
   },
   {
     id: 'realestate',
-    name: 'Real Estate & Construction',
+    name: 'Real Estate',
     icon: Building2,
     color: 'from-teal-500 to-cyan-500',
-    useCase: 'Property tours, investor decks, mega-project marketing',
     pipelines: ['Virtual Tours', 'Listing Videos', 'Investor Presentations'],
     stats: { time: '3 min', languages: 12, savings: '80%' },
     regions: ['MENA', 'APAC', 'NAM'],
@@ -124,7 +119,7 @@ const FEATURED_INDUSTRIES = [
   },
 ];
 
-// Extended industries list (not shown as cards, just referenced for credibility)
+// Extended industries list
 const EXTENDED_INDUSTRIES = [
   'Oil & Gas', 'Pharma', 'Legal', 'Consulting', 'NGO & Non-Profit',
   'Automotive', 'Aerospace', 'Telecom', 'Agriculture', 'Media & Entertainment',
@@ -139,7 +134,14 @@ const EXTENDED_INDUSTRIES = [
   'Mental Health', 'Fertility & IVF',
 ];
 
-// Platform capabilities for the value bar
+// Pipeline demo tabs
+const PIPELINE_TABS = [
+  { id: 'deck', label: 'AI Deck', shortLabel: 'Deck', icon: Presentation, product: 'Genie Deck' },
+  { id: 'video', label: 'Video Script', shortLabel: 'Video', icon: Video, product: 'Genie Vibe' },
+  { id: 'content', label: 'Content Writer', shortLabel: 'Content', icon: FileText, product: 'Genie Spark' },
+];
+
+// Platform capabilities
 const PLATFORM_CAPABILITIES = [
   { icon: Video, label: '206 Pipelines' },
   { icon: Sparkles, label: '15 AI Providers' },
@@ -149,8 +151,13 @@ const PLATFORM_CAPABILITIES = [
   { icon: Layers, label: '7 Products' },
 ];
 
-export const IndustryShowcases: React.FC = () => {
+interface IndustryShowcasesProps {
+  region?: string;
+}
+
+export const IndustryShowcases: React.FC<IndustryShowcasesProps> = ({ region }) => {
   const [selectedIndustry, setSelectedIndustry] = useState(FEATURED_INDUSTRIES[0]);
+  const [activePipeline, setActivePipeline] = useState('deck');
   const [showExtended, setShowExtended] = useState(false);
 
   return (
@@ -158,23 +165,22 @@ export const IndustryShowcases: React.FC = () => {
       <div className="absolute inset-0 bg-gradient-to-b from-background via-primary/5 to-background" />
       
       <div className="relative max-w-7xl mx-auto px-4">
-        {/* Header — Expansive, not restrictive */}
+        {/* Header */}
         <div className="text-center mb-6">
           <Badge variant="outline" className="mb-4 gap-2">
-            <Globe className="w-3 h-3" />
-            Works for Every Industry, Every Region
+            <Zap className="w-3 h-3" />
+            Try It Live — Real AI Generation
           </Badge>
           <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
             Your Industry. Your Language.{' '}
             <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Your Market.
+              Try It Now.
             </span>
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Pre-configured AI pipelines transcreated for{' '}
-            <span className="text-primary font-bold">50+ industries</span> across{' '}
-            <span className="text-primary font-bold">8 global regions</span> — 
-            not translated, but culturally adapted to resonate with every audience.
+            Pick your industry, choose a pipeline, select your language — and watch{' '}
+            <span className="text-primary font-bold">real AI</span> generate content tailored to your market.
+            Not mockups. Not templates. <span className="text-primary font-bold">Real generation</span>.
           </p>
         </div>
 
@@ -188,8 +194,8 @@ export const IndustryShowcases: React.FC = () => {
           ))}
         </div>
 
-        {/* Industry selector grid */}
-        <div className="grid grid-cols-4 md:grid-cols-8 gap-3 mb-8">
+        {/* Industry selector — compact pills */}
+        <div className="flex flex-wrap justify-center gap-2 mb-8">
           {FEATURED_INDUSTRIES.map((industry) => {
             const Icon = industry.icon;
             const isSelected = selectedIndustry.id === industry.id;
@@ -198,115 +204,164 @@ export const IndustryShowcases: React.FC = () => {
               <button
                 key={industry.id}
                 onClick={() => setSelectedIndustry(industry)}
-                className={`flex flex-col items-center p-3 rounded-xl transition-all ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all ${
                   isSelected 
                     ? 'bg-primary text-primary-foreground scale-105 shadow-lg' 
-                    : 'bg-card border border-border hover:border-primary/50'
+                    : 'bg-card border border-border hover:border-primary/50 hover:shadow-md'
                 }`}
               >
-                <Icon className="h-6 w-6 mb-1" />
-                <span className="text-xs font-medium">{industry.name.split(' ')[0]}</span>
+                <Icon className="h-4 w-4" />
+                <span className="text-sm font-medium">{industry.name}</span>
               </button>
             );
           })}
         </div>
 
-        {/* Selected industry detail */}
-        <motion.div 
-          key={selectedIndustry.id}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className={`bg-gradient-to-r ${selectedIndustry.color} p-[1px] rounded-2xl`}
-        >
-          <div className="bg-card rounded-2xl p-8">
-            <div className="grid md:grid-cols-2 gap-8">
-              {/* Left: Info */}
-              <div>
-                <div className="flex items-center gap-3 mb-2">
-                  {React.createElement(selectedIndustry.icon, { className: 'h-8 w-8 text-primary' })}
-                  <h3 className="text-2xl font-bold text-foreground">{selectedIndustry.name}</h3>
-                </div>
-
-                {/* Regional relevance tags */}
-                <div className="flex flex-wrap gap-1.5 mb-4">
-                  {selectedIndustry.regions.map(region => (
-                    <Badge key={region} variant="outline" className="text-[10px] gap-1">
-                      <Globe className="w-2.5 h-2.5" />
-                      {region}
-                    </Badge>
-                  ))}
-                </div>
-                
-                {/* Positioning statement — transcreation-focused */}
-                <p className="text-base text-muted-foreground mb-5 leading-relaxed">
-                  {selectedIndustry.positioning}
-                </p>
-
-                <div className="space-y-3 mb-6">
-                  <h4 className="font-semibold text-foreground text-sm">Pre-built Pipelines:</h4>
-                  {selectedIndustry.pipelines.map((pipeline) => (
-                    <div key={pipeline} className="flex items-center gap-2">
-                      <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
-                      <span className="text-muted-foreground text-sm">{pipeline}</span>
+        {/* Selected industry header + stats */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={selectedIndustry.id}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            className="mb-6"
+          >
+            <div className={`bg-gradient-to-r ${selectedIndustry.color} p-[1px] rounded-2xl`}>
+              <div className="bg-card rounded-2xl p-5">
+                <div className="flex flex-wrap items-center gap-4">
+                  {/* Industry info */}
+                  <div className="flex items-center gap-3 flex-1 min-w-[200px]">
+                    {React.createElement(selectedIndustry.icon, { className: 'h-7 w-7 text-primary' })}
+                    <div>
+                      <h3 className="text-lg font-bold text-foreground">{selectedIndustry.name}</h3>
+                      <p className="text-xs text-muted-foreground">{selectedIndustry.positioning}</p>
                     </div>
-                  ))}
-                </div>
-
-                <Link to="/explore">
-                  <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                    <Play className="h-4 w-4 mr-2" />
-                    Try {selectedIndustry.name.split(' ')[0]} Demo
-                  </Button>
-                </Link>
-              </div>
-
-              {/* Right: Stats + value props */}
-              <div className="space-y-4">
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="bg-muted/50 rounded-xl p-4 text-center">
-                    <p className="text-3xl font-bold text-primary">{selectedIndustry.stats.time}</p>
-                    <p className="text-sm text-muted-foreground">Avg Generation</p>
                   </div>
-                  <div className="bg-muted/50 rounded-xl p-4 text-center">
-                    <p className="text-3xl font-bold text-accent">{selectedIndustry.stats.languages}</p>
-                    <p className="text-sm text-muted-foreground">Languages</p>
-                  </div>
-                  <div className="bg-muted/50 rounded-xl p-4 text-center">
-                    <p className="text-3xl font-bold text-green-500">{selectedIndustry.stats.savings}</p>
-                    <p className="text-sm text-muted-foreground">Cost Savings</p>
-                  </div>
-                </div>
 
-                {/* Transcreation value prop */}
-                <div className="bg-muted/30 rounded-xl p-4 border border-border/50">
-                  <h4 className="font-semibold text-foreground text-sm mb-2 flex items-center gap-2">
-                    <Languages className="h-4 w-4 text-primary" />
-                    Transcreation, Not Translation
-                  </h4>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Every pipeline adapts content culturally — adjusting idioms, dialects, and context 
-                    for each regional market. Zone-routed through Claude, Gemini, or Qwen based on your audience's language.
-                  </p>
-                </div>
+                  {/* Quick stats */}
+                  <div className="flex items-center gap-4">
+                    <div className="text-center">
+                      <p className="text-xl font-bold text-primary">{selectedIndustry.stats.time}</p>
+                      <p className="text-[10px] text-muted-foreground">Avg Gen</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xl font-bold text-accent">{selectedIndustry.stats.languages}</p>
+                      <p className="text-[10px] text-muted-foreground">Languages</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xl font-bold text-green-500">{selectedIndustry.stats.savings}</p>
+                      <p className="text-[10px] text-muted-foreground">Savings</p>
+                    </div>
+                  </div>
 
-                {/* Regional routing value prop */}
-                <div className="bg-muted/30 rounded-xl p-4 border border-border/50">
-                  <h4 className="font-semibold text-foreground text-sm mb-2 flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-primary" />
-                    Zone-Based AI Routing
-                  </h4>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Each region gets the best AI providers: Azure Neural for TTS, Gemini for India/SEA, 
-                    Qwen-Max for Arabic dialects, Claude for Western markets — all automatic.
-                  </p>
+                  {/* Regions */}
+                  <div className="flex items-center gap-1.5">
+                    {selectedIndustry.regions.map(r => (
+                      <Badge key={r} variant="outline" className="text-[10px] gap-1">
+                        <Globe className="w-2.5 h-2.5" />{r}
+                      </Badge>
+                    ))}
+                  </div>
+
+                  {/* Pipelines */}
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedIndustry.pipelines.map(p => (
+                      <Badge key={p} className="text-[10px] bg-primary/10 text-primary border-primary/20">
+                        {p}
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
               </div>
+            </div>
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Pipeline demo tabs */}
+        <Tabs value={activePipeline} onValueChange={setActivePipeline} className="w-full">
+          <TabsList className="w-full h-auto p-1.5 bg-card border border-border rounded-2xl mb-6 grid grid-cols-3 gap-1.5">
+            {PIPELINE_TABS.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activePipeline === tab.id;
+              return (
+                <TabsTrigger
+                  key={tab.id}
+                  value={tab.id}
+                  className={`relative flex flex-col items-center gap-1.5 py-3 px-3 rounded-xl transition-all data-[state=active]:shadow-md ${
+                    isActive 
+                      ? 'data-[state=active]:bg-primary data-[state=active]:text-primary-foreground' 
+                      : ''
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Icon className="h-4 w-4" />
+                    <span className="font-semibold text-sm hidden sm:inline">{tab.label}</span>
+                    <span className="font-semibold text-sm sm:hidden">{tab.shortLabel}</span>
+                  </div>
+                  <span className={`text-[10px] ${isActive ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
+                    {tab.product}
+                  </span>
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
+
+          {/* Demo cards per pipeline */}
+          <TabsContent value="deck" className="mt-0">
+            <DeckDemoCard industryId={selectedIndustry.id} region={region} />
+          </TabsContent>
+          
+          <TabsContent value="video" className="mt-0">
+            <VideoDemoCard industryId={selectedIndustry.id} region={region} />
+          </TabsContent>
+          
+          <TabsContent value="content" className="mt-0">
+            <ContentDemoCard industryId={selectedIndustry.id} region={region} />
+          </TabsContent>
+        </Tabs>
+
+        {/* Cross-pipeline value prop */}
+        <motion.div
+          className="mt-8 p-4 bg-muted/30 rounded-xl border border-border"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+        >
+          <div className="flex flex-wrap items-center justify-center gap-6 text-center">
+            <div>
+              <p className="text-sm font-semibold text-foreground mb-0.5">Same Industry</p>
+              <p className="text-xs text-muted-foreground">One context, multiple outputs</p>
+            </div>
+            <ArrowRight className="h-4 w-4 text-primary hidden md:block" />
+            <div>
+              <p className="text-sm font-semibold text-foreground mb-0.5">Multiple Pipelines</p>
+              <p className="text-xs text-muted-foreground">Deck + Video + Content + TTS</p>
+            </div>
+            <ArrowRight className="h-4 w-4 text-primary hidden md:block" />
+            <div>
+              <p className="text-sm font-semibold text-foreground mb-0.5">Every Language</p>
+              <p className="text-xs text-muted-foreground">Transcreated, not translated</p>
+            </div>
+            <ArrowRight className="h-4 w-4 text-primary hidden md:block" />
+            <div>
+              <p className="text-sm font-semibold text-foreground mb-0.5">All Regions</p>
+              <p className="text-xs text-muted-foreground">Zone-routed AI providers</p>
             </div>
           </div>
         </motion.div>
 
-        {/* Extended industries — proves it's NOT restricted */}
+        {/* Live indicator */}
+        <div className="text-center mt-6">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-500/10 rounded-full border border-green-500/30">
+            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            <span className="text-green-600 dark:text-green-400 text-sm">
+              All demos use <strong>real AI providers</strong> — Gemini, Azure Neural, DeepL
+            </span>
+          </div>
+        </div>
+
+        {/* Extended industries */}
         <div className="text-center mt-10">
           <button 
             onClick={() => setShowExtended(!showExtended)}
