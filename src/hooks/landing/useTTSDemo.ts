@@ -12,7 +12,9 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 const SUPABASE_URL = 'https://ithspbabhmdntioslfqe.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0aHNwYmFiaG1kbnRpb3NsZnFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY5MjU5OTMsImV4cCI6MjA2MjUwMTk5M30.yUZZHsz2wIHboVuWWfqXeAH5oHRxzJIz20NWSUmHPhw';
 
-const THROTTLE_MS = 1500;
+const THROTTLE_MS = 2500;
+const MAX_RETRIES = 3;
+const INITIAL_BACKOFF_MS = 3000;
 
 interface TTSDemoState {
   isLoading: boolean;
@@ -111,41 +113,59 @@ export function useTTSDemo() {
     }
     lastCallTimestamp = Date.now();
 
-    const response = await fetch(
-      `${SUPABASE_URL}/functions/v1/dialect-tts-demo`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        },
-        body: JSON.stringify(body),
-        signal,
+    // Retry loop with exponential backoff for rate limits
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      const response = await fetch(
+        `${SUPABASE_URL}/functions/v1/dialect-tts-demo`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify(body),
+          signal,
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        if (!data.audioContent) {
+          throw new Error('No audio content returned');
+        }
+        const result = { 
+          audioContent: data.audioContent, 
+          provider: data.provider || 'azure',
+          translatedText: data.translatedText,
+          wasTranslated: data.wasTranslated,
+        };
+        audioCache.set(cacheKey, result);
+        console.log('[useTTSDemo] Cache STORE:', cacheKey, `(${audioCache.size} cached)`);
+        return result;
       }
-    );
 
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({ error: 'TTS failed' }));
-      throw new Error(err.error || err.message || 'TTS generation failed');
+      // Check if rate limited
+      const errBody = await response.json().catch(() => ({ message: '' }));
+      const errMsg = errBody?.message || errBody?.error || '';
+      const isRateLimited = response.status === 429 ||
+        errMsg.toLowerCase().includes('throttler') ||
+        errMsg.toLowerCase().includes('too many');
+
+      if (isRateLimited && attempt < MAX_RETRIES) {
+        const backoff = INITIAL_BACKOFF_MS * Math.pow(2, attempt);
+        console.log(`[useTTSDemo] Rate limited, retrying in ${backoff}ms (attempt ${attempt + 1}/${MAX_RETRIES})`);
+        lastCallTimestamp = Date.now() + backoff;
+        await new Promise(r => setTimeout(r, backoff));
+        continue;
+      }
+
+      throw new Error(isRateLimited
+        ? 'Service is busy — please wait a few seconds and try again.'
+        : (errBody?.error || errBody?.message || 'TTS generation failed'));
     }
 
-    const data = await response.json();
-    if (!data.audioContent) {
-      throw new Error('No audio content returned');
-    }
-
-    const result = { 
-      audioContent: data.audioContent, 
-      provider: data.provider || 'azure',
-      translatedText: data.translatedText,
-      wasTranslated: data.wasTranslated,
-    };
-    
-    audioCache.set(cacheKey, result);
-    console.log('[useTTSDemo] Cache STORE:', cacheKey, `(${audioCache.size} cached)`);
-    
-    return result;
+    throw new Error('Service is busy — please wait a few seconds and try again.');
   }, []);
 
   const playTranscreation = useCallback(async (
