@@ -49,6 +49,8 @@ import genieArcLogo from '@/assets/logos/products/genie-arc.png';
 import genieCastLogo from '@/assets/logos/products/genie-cast.png';
 import askGenieLogo from '@/assets/logos/products/ask-genie.png';
 
+import genieStudioLogo from '@/assets/logos/genie-studio-banner.png';
+
 const PRODUCT_LOGOS: Record<string, string> = {
   spark: genieSparkLogo,
   mind: genieMindLogo,
@@ -56,8 +58,21 @@ const PRODUCT_LOGOS: Record<string, string> = {
   deck: genieDeckLogo,
   arc: genieArcLogo,
   cast: genieCastLogo,
+  studio: genieStudioLogo,
   ask: askGenieLogo,
 };
+
+// Product display order for the tab selector
+const PRODUCT_TAB_ORDER: { key: string; label: string; emoji: string }[] = [
+  { key: 'spark', label: 'Spark', emoji: '✨' },
+  { key: 'mind', label: 'Mind', emoji: '🧠' },
+  { key: 'vibe', label: 'Vibe', emoji: '🎬' },
+  { key: 'deck', label: 'Deck', emoji: '📊' },
+  { key: 'arc', label: 'Arc', emoji: '🎯' },
+  { key: 'cast', label: 'Cast', emoji: '📡' },
+  { key: 'studio', label: 'Studio', emoji: '🎨' },
+  { key: 'ask', label: 'Ask Genie', emoji: '🧞' },
+];
 
 // Extended product data with full messaging, capabilities, and regional context
 const PRODUCT_EXTENDED: Record<string, {
@@ -235,6 +250,33 @@ const PRODUCT_EXTENDED: Record<string, {
     idealFor: ['Social Media Teams', 'Growth Marketers', 'Global Brands', 'Agencies', 'Publishers'],
     screenshots: ['Distribution Hub', 'Analytics', 'Scheduler'],
   },
+  studio: {
+    pipelines: 206,
+    positioning: 'The master orchestrator that unifies all Genie products — Spark, Mind, Vibe, Deck, Arc, and Cast — into a single, seamless creative workflow. From idea to global distribution, every tool, every pipeline, one platform.',
+    storyBrand: 'You shouldn\'t need 10 tools. Studio gives you one platform for everything.',
+    jtbd: 'Orchestrate my entire content workflow — from ideation to global distribution — in one place.',
+    videoPlaceholderTitle: 'See how Genie Studio orchestrates all 7 products and 206 pipelines into one unified workflow',
+    keyBenefits: [
+      { icon: <Layers className="h-4 w-4" />, title: 'All Products, One Platform', detail: 'Spark + Mind + Vibe + Deck + Arc + Cast — unified under a single orchestrator' },
+      { icon: <Workflow className="h-4 w-4" />, title: 'Cross-Product Workflows', detail: 'Seamlessly chain pipelines across products — script → voice → video → slides → publish' },
+      { icon: <Globe className="h-4 w-4" />, title: '206 Pipelines, 140+ Languages', detail: 'Access every pipeline across all products with 5-zone AI routing for optimal performance' },
+      { icon: <Cpu className="h-4 w-4" />, title: 'A2A Agent Coordination', detail: 'AI agents from each product collaborate intelligently to deliver end-to-end results' },
+    ],
+    coreCapabilities: ['Master Orchestration', 'Cross-Product Workflows', 'Unified Asset Library', 'Project Organization', '206 Pipeline Access', 'A2A Agent Coordination', '5-Zone Regional Routing', 'Enterprise Integration', 'Team Collaboration', 'Analytics Dashboard'],
+    aiProviders: ['Claude', 'GPT-4o', 'Gemini', 'Qwen', 'Azure Neural', 'ElevenLabs', 'Google Veo 3', 'Alibaba', 'Meshy AI', 'DeepL', 'Deepgram'],
+    regionalHighlights: [
+      { region: 'NAM', flag: '🇺🇸', useCase: 'Enterprise content operations at scale with SSO/SAML' },
+      { region: 'Europe', flag: '🇪🇺', useCase: 'GDPR-compliant end-to-end production in 25 EU languages' },
+      { region: 'MENA', flag: '🇦🇪', useCase: 'Full RTL production pipeline across 7 Arabic dialects' },
+      { region: 'India', flag: '🇮🇳', useCase: 'Vernacular content factory for 22 regional languages' },
+      { region: 'Africa', flag: '🌍', useCase: 'Mobile-first content production optimized for low bandwidth' },
+      { region: 'APAC', flag: '🌏', useCase: 'CJK-optimized production with Alibaba & Qwen routing' },
+      { region: 'LATAM', flag: '🌎', useCase: 'Spanish & Portuguese end-to-end content operations' },
+      { region: 'Caribbean', flag: '🏝️', useCase: 'Tourism & hospitality full-stack content platform' },
+    ],
+    idealFor: ['Enterprise Teams', 'Content Studios', 'Global Brands', 'Media Companies', 'Agencies'],
+    screenshots: ['Orchestrator Dashboard', 'Pipeline Builder', 'Analytics'],
+  },
 };
 
 interface ProductDetailShowcaseProps {
@@ -251,235 +293,254 @@ export const ProductDetailShowcase: React.FC<ProductDetailShowcaseProps> = ({
   const extendedData = PRODUCT_EXTENDED[activeProduct];
   const logo = PRODUCT_LOGOS[activeProduct];
 
-  // Ask Genie — simplified view
-  if (!productData || !extendedData) {
-    return (
-      <div className="mt-8 max-w-5xl mx-auto">
-        <div className="bg-gradient-to-r from-violet-500 to-fuchsia-500 p-[1px] rounded-2xl">
-          <div className="bg-card rounded-2xl p-8 text-center">
-            <img src={PRODUCT_LOGOS.ask} alt="Ask Genie" className="w-24 h-24 object-contain mx-auto mb-4" />
-            <h3 className="text-2xl font-bold text-foreground">{ASK_GENIE.name}</h3>
-            <p className="text-primary font-medium text-lg mb-2">"{ASK_GENIE.tagline}"</p>
-            <p className="text-muted-foreground max-w-xl mx-auto">{ASK_GENIE.description}</p>
-            <Badge variant="outline" className="mt-4 border-amber-500 text-amber-600">
-              Available in every Genie product
-            </Badge>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="mt-8 max-w-5xl mx-auto">
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={activeProduct}
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -12 }}
-          transition={{ duration: 0.3 }}
-        >
-          <div className={`bg-gradient-to-r ${productData.color} p-[1px] rounded-2xl shadow-xl`}>
-            <div className="bg-card rounded-2xl overflow-hidden">
+    <div>
+      {/* ─── Product Selector Tabs ─── */}
+      <div className="flex flex-wrap justify-center gap-2 mb-8">
+        {PRODUCT_TAB_ORDER.map((tab) => {
+          const isActive = activeProduct === tab.key;
+          const product = tab.key !== 'ask' ? GENIE_PRODUCTS[tab.key as GenieProduct] : null;
+          return (
+            <button
+              key={tab.key}
+              onClick={() => onProductChange(tab.key)}
+              className={`
+                flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium transition-all duration-200
+                ${isActive
+                  ? 'bg-primary text-primary-foreground shadow-lg scale-105'
+                  : 'bg-card border border-border text-muted-foreground hover:text-foreground hover:border-primary/40 hover:bg-muted/50'
+                }
+              `}
+            >
+              <span className="text-base">{tab.emoji}</span>
+              <span>{tab.label}</span>
+              {product && isActive && (
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 bg-primary-foreground/20 text-primary-foreground border-0">
+                  {PRODUCT_EXTENDED[tab.key]?.pipelines ?? '—'}
+                </Badge>
+              )}
+            </button>
+          );
+        })}
+      </div>
 
-              {/* ─── SECTION 1: Video Player + Product Identity ─── */}
-              <div className="grid md:grid-cols-[1fr,1fr] gap-0">
-                {/* Video Player Area */}
-                <ProductVideoPlayer 
-                  productName={productData.name}
-                  color={productData.color}
-                  videoTitle={extendedData.videoPlaceholderTitle}
-                  screenshots={extendedData.screenshots}
-                />
-
-                {/* Product Identity */}
-                <div className={`bg-gradient-to-br ${productData.color} p-6 md:p-8 flex flex-col justify-between`}>
-                  <div>
-                    <div className="flex items-center gap-3 mb-3">
-                      <img 
-                        src={logo} 
-                        alt={productData.name} 
-                        className="w-14 h-14 object-contain rounded-xl bg-background/80 p-1.5 shadow-md flex-shrink-0" 
-                      />
-                      <div>
-                        <h3 className="text-xl md:text-2xl font-bold text-white">{productData.name}</h3>
-                        <p className="text-white/80 font-medium text-sm">"{productData.tagline}"</p>
-                      </div>
-                    </div>
-                    <p className="text-white/75 text-sm leading-relaxed mb-4">
-                      {extendedData.positioning}
-                    </p>
-                  </div>
-
-                  {/* Ideal For */}
-                  <div>
-                    <span className="text-[10px] text-white/50 font-semibold uppercase tracking-wider">Ideal for</span>
-                    <div className="flex flex-wrap gap-1.5 mt-1.5">
-                      {extendedData.idealFor.map(persona => (
-                        <Badge key={persona} className="bg-white/15 text-white border-white/20 text-[11px]">
-                          {persona}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* ─── SECTION 2: Messaging — StoryBrand + JTBD ─── */}
-              <div className="px-6 md:px-8 py-4 bg-muted/30 border-b border-border/50">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="flex items-start gap-2.5">
-                    <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Sparkles className="h-3.5 w-3.5 text-primary" />
-                    </div>
-                    <div>
-                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">The Story</span>
-                      <p className="text-sm text-foreground font-medium italic mt-0.5">
-                        "{extendedData.storyBrand}"
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2.5">
-                    <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Target className="h-3.5 w-3.5 text-primary" />
-                    </div>
-                    <div>
-                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Your Goal</span>
-                      <p className="text-sm text-muted-foreground mt-0.5">
-                        {extendedData.jtbd}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* ─── SECTION 3: Key Features & Benefits ─── */}
-              <div className="px-6 md:px-8 py-6">
-                <h4 className="font-semibold text-foreground mb-4 flex items-center gap-2 text-sm">
-                  <Zap className="h-4 w-4 text-primary" />
-                  What {productData.name} Does For You
-                </h4>
-                <div className="grid sm:grid-cols-2 gap-3">
-                  {extendedData.keyBenefits.map((benefit, i) => (
-                    <div 
-                      key={i}
-                      className="flex items-start gap-3 p-3.5 rounded-xl bg-muted/40 border border-border/50 hover:border-primary/30 hover:bg-muted/60 transition-all"
-                    >
-                      <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${productData.color} flex items-center justify-center flex-shrink-0 text-white shadow-sm`}>
-                        {benefit.icon}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-semibold text-foreground text-sm">{benefit.title}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{benefit.detail}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* ─── SECTION 4: Core Capabilities + AI Providers + Pipeline Categories ─── */}
-              <div className="px-6 md:px-8 py-5 bg-muted/20 border-t border-border/40">
-                <div className="grid md:grid-cols-3 gap-6">
-                  
-                  {/* Core Capabilities */}
-                  <div className="md:col-span-2">
-                    <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2 text-sm">
-                      <Layers className="h-4 w-4 text-primary" />
-                      Core Capabilities
-                    </h4>
-                    <div className="flex flex-wrap gap-1.5">
-                      {extendedData.coreCapabilities.map(cap => (
-                        <span 
-                          key={cap}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full bg-background border border-border/60 text-foreground"
-                        >
-                          <Check className="h-3 w-3 text-green-500" />
-                          {cap}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Powered By */}
-                  <div>
-                    <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2 text-sm">
-                      <Cpu className="h-4 w-4 text-primary" />
-                      Powered By
-                    </h4>
-                    <div className="flex flex-wrap gap-1.5">
-                      {extendedData.aiProviders.map(provider => (
-                        <Badge key={provider} variant="outline" className="text-xs font-medium">
-                          <Sparkles className="h-2.5 w-2.5 mr-1 text-primary" />
-                          {provider}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Pipeline Categories */}
-                <div className="mt-5 pt-4 border-t border-border/30">
-                  <h4 className="font-semibold text-foreground mb-2.5 flex items-center gap-2 text-sm">
-                    <Workflow className="h-4 w-4 text-primary" />
-                    Pipeline Categories
-                    <Badge variant="secondary" className="text-[10px] ml-1">
-                      {extendedData.pipelines} total
-                    </Badge>
-                  </h4>
-                  <div className="flex flex-wrap gap-2">
-                    {productData.pipelineCategories.map(cat => (
-                      <span 
-                        key={cat}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-gradient-to-r ${productData.color} bg-opacity-10 text-foreground border border-border/40`}
-                      >
-                        {cat.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* ─── SECTION 5: Regional — How It Works Across Regions ─── */}
-              <div className="px-6 md:px-8 py-5 border-t border-border/40 overflow-hidden">
-                <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2 text-sm">
-                  <Globe className="h-4 w-4 text-primary" />
-                  How {productData.name} Works Across Regions
-                  <Badge variant="outline" className="text-[10px] ml-1 border-primary/30 text-primary">
-                    Transcreation — Not Translation
-                  </Badge>
-                </h4>
-                <RegionalMarquee regions={extendedData.regionalHighlights} productId={productData.id} />
-              </div>
-
-              {/* ─── SECTION 6: CTA Bar ─── */}
-              <div className="px-6 md:px-8 py-4 bg-muted/20 border-t border-border/40 flex items-center justify-between flex-wrap gap-3">
-                <div className="flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
-                  <span className="font-semibold text-foreground">{extendedData.pipelines} pipelines</span>
-                  <span className="hidden sm:inline">•</span>
-                  <span>{extendedData.coreCapabilities.length} capabilities</span>
-                  <span className="hidden sm:inline">•</span>
-                  <span>{extendedData.aiProviders.length} AI providers</span>
-                  <span className="hidden sm:inline">•</span>
-                  <span>140+ languages</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Link to="/explore">
-                    <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                      <Play className="h-3.5 w-3.5 mr-1.5" />
-                      Try {productData.name}
-                    </Button>
-                  </Link>
-                  <Link to="/products" className="text-primary hover:text-primary/80 transition font-medium text-xs flex items-center gap-1">
-                    All products <ArrowRight className="h-3 w-3" />
-                  </Link>
-                </div>
-              </div>
-
+      {/* ─── Product Detail Content ─── */}
+      {activeProduct === 'ask' || !productData || !extendedData ? (
+        <div className="mt-8 max-w-5xl mx-auto">
+          <div className="bg-gradient-to-r from-violet-500 to-fuchsia-500 p-[1px] rounded-2xl">
+            <div className="bg-card rounded-2xl p-8 text-center">
+              <img src={PRODUCT_LOGOS.ask} alt="Ask Genie" className="w-24 h-24 object-contain mx-auto mb-4" />
+              <h3 className="text-2xl font-bold text-foreground">{ASK_GENIE.name}</h3>
+              <p className="text-primary font-medium text-lg mb-2">"{ASK_GENIE.tagline}"</p>
+              <p className="text-muted-foreground max-w-xl mx-auto">{ASK_GENIE.description}</p>
+              <Badge variant="outline" className="mt-4 border-amber-500 text-amber-600">
+                Available in every Genie product
+              </Badge>
             </div>
           </div>
-        </motion.div>
-      </AnimatePresence>
+        </div>
+      ) : (
+        <div className="mt-8 max-w-5xl mx-auto">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeProduct}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className={`bg-gradient-to-r ${productData.color} p-[1px] rounded-2xl shadow-xl`}>
+                <div className="bg-card rounded-2xl overflow-hidden">
+
+                  {/* ─── SECTION 1: Video Player + Product Identity ─── */}
+                  <div className="grid md:grid-cols-[1fr,1fr] gap-0">
+                    <ProductVideoPlayer 
+                      productName={productData.name}
+                      color={productData.color}
+                      videoTitle={extendedData.videoPlaceholderTitle}
+                      screenshots={extendedData.screenshots}
+                    />
+                    <div className={`bg-gradient-to-br ${productData.color} p-6 md:p-8 flex flex-col justify-between`}>
+                      <div>
+                        <div className="flex items-center gap-3 mb-3">
+                          <img 
+                            src={logo} 
+                            alt={productData.name} 
+                            className="w-14 h-14 object-contain rounded-xl bg-background/80 p-1.5 shadow-md flex-shrink-0" 
+                          />
+                          <div>
+                            <h3 className="text-xl md:text-2xl font-bold text-white">{productData.name}</h3>
+                            <p className="text-white/80 font-medium text-sm">"{productData.tagline}"</p>
+                          </div>
+                        </div>
+                        <p className="text-white/75 text-sm leading-relaxed mb-4">
+                          {extendedData.positioning}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-white/50 font-semibold uppercase tracking-wider">Ideal for</span>
+                        <div className="flex flex-wrap gap-1.5 mt-1.5">
+                          {extendedData.idealFor.map(persona => (
+                            <Badge key={persona} className="bg-white/15 text-white border-white/20 text-[11px]">
+                              {persona}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* ─── SECTION 2: Messaging — StoryBrand + JTBD ─── */}
+                  <div className="px-6 md:px-8 py-4 bg-muted/30 border-b border-border/50">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="flex items-start gap-2.5">
+                        <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <Sparkles className="h-3.5 w-3.5 text-primary" />
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">The Story</span>
+                          <p className="text-sm text-foreground font-medium italic mt-0.5">
+                            "{extendedData.storyBrand}"
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2.5">
+                        <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <Target className="h-3.5 w-3.5 text-primary" />
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Your Goal</span>
+                          <p className="text-sm text-muted-foreground mt-0.5">
+                            {extendedData.jtbd}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* ─── SECTION 3: Key Features & Benefits ─── */}
+                  <div className="px-6 md:px-8 py-6">
+                    <h4 className="font-semibold text-foreground mb-4 flex items-center gap-2 text-sm">
+                      <Zap className="h-4 w-4 text-primary" />
+                      What {productData.name} Does For You
+                    </h4>
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      {extendedData.keyBenefits.map((benefit, i) => (
+                        <div 
+                          key={i}
+                          className="flex items-start gap-3 p-3.5 rounded-xl bg-muted/40 border border-border/50 hover:border-primary/30 hover:bg-muted/60 transition-all"
+                        >
+                          <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${productData.color} flex items-center justify-center flex-shrink-0 text-white shadow-sm`}>
+                            {benefit.icon}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-foreground text-sm">{benefit.title}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{benefit.detail}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* ─── SECTION 4: Core Capabilities + AI Providers + Pipeline Categories ─── */}
+                  <div className="px-6 md:px-8 py-5 bg-muted/20 border-t border-border/40">
+                    <div className="grid md:grid-cols-3 gap-6">
+                      <div className="md:col-span-2">
+                        <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2 text-sm">
+                          <Layers className="h-4 w-4 text-primary" />
+                          Core Capabilities
+                        </h4>
+                        <div className="flex flex-wrap gap-1.5">
+                          {extendedData.coreCapabilities.map(cap => (
+                            <span 
+                              key={cap}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full bg-background border border-border/60 text-foreground"
+                            >
+                              <Check className="h-3 w-3 text-green-500" />
+                              {cap}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2 text-sm">
+                          <Cpu className="h-4 w-4 text-primary" />
+                          Powered By
+                        </h4>
+                        <div className="flex flex-wrap gap-1.5">
+                          {extendedData.aiProviders.map(provider => (
+                            <Badge key={provider} variant="outline" className="text-xs font-medium">
+                              <Sparkles className="h-2.5 w-2.5 mr-1 text-primary" />
+                              {provider}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-5 pt-4 border-t border-border/30">
+                      <h4 className="font-semibold text-foreground mb-2.5 flex items-center gap-2 text-sm">
+                        <Workflow className="h-4 w-4 text-primary" />
+                        Pipeline Categories
+                        <Badge variant="secondary" className="text-[10px] ml-1">
+                          {extendedData.pipelines} total
+                        </Badge>
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {productData.pipelineCategories.map(cat => (
+                          <span 
+                            key={cat}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-gradient-to-r ${productData.color} bg-opacity-10 text-foreground border border-border/40`}
+                          >
+                            {cat.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* ─── SECTION 5: Regional ─── */}
+                  <div className="px-6 md:px-8 py-5 border-t border-border/40 overflow-hidden">
+                    <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2 text-sm">
+                      <Globe className="h-4 w-4 text-primary" />
+                      How {productData.name} Works Across Regions
+                      <Badge variant="outline" className="text-[10px] ml-1 border-primary/30 text-primary">
+                        Transcreation — Not Translation
+                      </Badge>
+                    </h4>
+                    <RegionalMarquee regions={extendedData.regionalHighlights} productId={productData.id} />
+                  </div>
+
+                  {/* ─── SECTION 6: CTA Bar ─── */}
+                  <div className="px-6 md:px-8 py-4 bg-muted/20 border-t border-border/40 flex items-center justify-between flex-wrap gap-3">
+                    <div className="flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
+                      <span className="font-semibold text-foreground">{extendedData.pipelines} pipelines</span>
+                      <span className="hidden sm:inline">•</span>
+                      <span>{extendedData.coreCapabilities.length} capabilities</span>
+                      <span className="hidden sm:inline">•</span>
+                      <span>{extendedData.aiProviders.length} AI providers</span>
+                      <span className="hidden sm:inline">•</span>
+                      <span>140+ languages</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Link to="/explore">
+                        <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                          <Play className="h-3.5 w-3.5 mr-1.5" />
+                          Try {productData.name}
+                        </Button>
+                      </Link>
+                      <Link to="/products" className="text-primary hover:text-primary/80 transition font-medium text-xs flex items-center gap-1">
+                        All products <ArrowRight className="h-3 w-3" />
+                      </Link>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      )}
     </div>
   );
 };
