@@ -3,14 +3,15 @@
  * 
  * Calls ai-universal-processor with rate limiting.
  * Shows real AI-generated marketing copy (blogs, social, emails, ads) with watermark.
- * Demonstrates the content transcreation pipeline.
+ * Supports custom prompt input from user.
  */
 
-import React, { useState } from 'react';
-import { FileText, Loader2, Sparkles, Globe, Lock, ChevronRight, PenTool } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { FileText, Loader2, Globe, Lock, ChevronRight, PenTool } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -33,17 +34,11 @@ const LANGUAGE_OPTIONS = [
 ];
 
 const CONTENT_TYPE_ICONS: Record<string, string> = {
-  blog: '📝',
-  social: '📱',
-  email: '✉️',
-  ad: '📢',
+  blog: '📝', social: '📱', email: '✉️', ad: '📢',
 };
 
 const CONTENT_TYPE_LABELS: Record<string, string> = {
-  blog: 'Blog Post',
-  social: 'Social Media Post',
-  email: 'Email Campaign',
-  ad: 'Ad Copy',
+  blog: 'Blog Post', social: 'Social Media Post', email: 'Email Campaign', ad: 'Ad Copy',
 };
 
 interface GeneratedContent {
@@ -62,8 +57,21 @@ export const ContentDemoCard: React.FC<ContentDemoCardProps> = ({ industryId, re
   const [isGenerating, setIsGenerating] = useState(false);
   const [content, setContent] = useState<GeneratedContent | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [customPrompt, setCustomPrompt] = useState('');
+
+  // Reset when industry changes
+  useEffect(() => {
+    setCustomPrompt('');
+    setContent(null);
+    setError(null);
+  }, [industryId]);
 
   if (!contentExample) return null;
+
+  const effectivePrompt = customPrompt.trim() || contentExample.prompt;
+  const contentType = contentExample.type;
+  const typeIcon = CONTENT_TYPE_ICONS[contentType] || '📝';
+  const typeLabel = CONTENT_TYPE_LABELS[contentType] || 'Content';
 
   const handleGenerate = async () => {
     setIsGenerating(true);
@@ -71,12 +79,11 @@ export const ContentDemoCard: React.FC<ContentDemoCardProps> = ({ industryId, re
     setContent(null);
 
     const langName = LANGUAGE_OPTIONS.find(l => l.code === selectedLang)?.name || 'English';
-    const contentType = contentExample.type;
 
-    const prompt = `You are a professional marketing copywriter. Create a ${CONTENT_TYPE_LABELS[contentType]} for the ${example?.industryName} industry.
+    const prompt = `You are a professional marketing copywriter. Create a ${typeLabel} for the ${example?.industryName} industry.
 
-Brief: "${contentExample.prompt}"
-Content Type: ${CONTENT_TYPE_LABELS[contentType]}
+Brief: "${effectivePrompt}"
+Content Type: ${typeLabel}
 Tone: ${contentExample.tone}
 Language: ${langName}
 
@@ -125,15 +132,13 @@ Respond in valid JSON format: { "headline": "...", "body": "...", "cta": "..."${
   };
 
   const selectedLangName = LANGUAGE_OPTIONS.find(l => l.code === selectedLang)?.name || 'English';
-  const typeIcon = CONTENT_TYPE_ICONS[contentExample.type] || '📝';
-  const typeLabel = CONTENT_TYPE_LABELS[contentExample.type] || 'Content';
 
   return (
-    <Card className="border-green-500/20 shadow-lg overflow-hidden">
-      <CardHeader className="bg-gradient-to-r from-green-500/10 to-primary/10 border-b border-border py-4">
+    <Card className="border-primary/20 shadow-lg overflow-hidden">
+      <CardHeader className="bg-gradient-to-r from-primary/10 to-accent/10 border-b border-border py-4">
         <CardTitle className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-green-500/20 rounded-xl flex items-center justify-center">
-            <FileText className="h-5 w-5 text-green-600 dark:text-green-400" />
+          <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center">
+            <FileText className="h-5 w-5 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="text-lg font-bold text-foreground">AI Content Writer</h3>
@@ -147,15 +152,32 @@ Respond in valid JSON format: { "headline": "...", "body": "...", "cta": "..."${
         </CardTitle>
       </CardHeader>
       <CardContent className="p-6 space-y-5">
-        {/* Brief preview */}
-        <div className="p-3 bg-muted/30 rounded-lg border border-border">
-          <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1">
-            {typeIcon} Brief
-          </p>
-          <p className="text-sm text-foreground">{contentExample.prompt}</p>
-          <div className="flex items-center gap-3 mt-2">
+        {/* Editable prompt area */}
+        <div className="space-y-2">
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+            {typeIcon} Your Brief
+            <span className="text-[10px] font-normal normal-case text-muted-foreground/70">
+              (edit or use the example below)
+            </span>
+          </label>
+          <Textarea
+            value={customPrompt}
+            onChange={(e) => setCustomPrompt(e.target.value)}
+            placeholder={contentExample.prompt}
+            className="min-h-[80px] text-sm bg-muted/30 border-border resize-none"
+            rows={3}
+          />
+          <div className="flex items-center gap-2">
             <Badge variant="outline" className="text-[10px]">🎨 Tone: {contentExample.tone}</Badge>
             <Badge variant="outline" className="text-[10px]">{typeIcon} {typeLabel}</Badge>
+            {customPrompt.trim() && (
+              <button
+                onClick={() => setCustomPrompt('')}
+                className="text-[10px] text-primary hover:underline ml-auto"
+              >
+                Reset to example
+              </button>
+            )}
           </div>
         </div>
 
@@ -182,7 +204,7 @@ Respond in valid JSON format: { "headline": "...", "body": "...", "cta": "..."${
             <Button
               onClick={handleGenerate}
               disabled={isGenerating}
-              className="bg-green-600 hover:bg-green-600/90 text-white gap-2"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
             >
               {isGenerating ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -202,14 +224,14 @@ Respond in valid JSON format: { "headline": "...", "body": "...", "cta": "..."${
             {selectedLang !== 'en' ? 'Transcreation' : 'AI Copywriting'}
           </span>
           <ChevronRight className="h-3 w-3" />
-          <span className="px-2 py-0.5 bg-green-500/10 text-green-600 dark:text-green-400 rounded-full font-medium">{typeLabel}</span>
+          <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-full font-medium">{typeLabel}</span>
         </div>
 
         {/* Loading */}
         {isGenerating && (
-          <div className="flex items-center justify-center gap-3 py-6 bg-green-500/5 rounded-xl border border-green-500/20">
-            <Loader2 className="h-5 w-5 animate-spin text-green-600 dark:text-green-400" />
-            <span className="text-sm text-green-600 dark:text-green-400 font-medium">
+          <div className="flex items-center justify-center gap-3 py-6 bg-primary/5 rounded-xl border border-primary/20">
+            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+            <span className="text-sm text-primary font-medium">
               Writing {typeLabel.toLowerCase()} in {selectedLangName}...
             </span>
           </div>
@@ -234,7 +256,7 @@ Respond in valid JSON format: { "headline": "...", "body": "...", "cta": "..."${
 
                 <div className="relative z-0 space-y-3">
                   <div className="flex items-center justify-between">
-                    <Badge className="text-[10px] bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20">
+                    <Badge className="text-[10px] bg-primary/10 text-primary border-primary/20">
                       {typeIcon} {typeLabel}
                     </Badge>
                     <Badge variant="outline" className="text-[10px] gap-1">
@@ -270,8 +292,8 @@ Respond in valid JSON format: { "headline": "...", "body": "...", "cta": "..."${
               </div>
 
               {/* CTA */}
-              <div className="flex items-center gap-2 p-3 bg-green-500/5 rounded-lg border border-green-500/20">
-                <Lock className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0" />
+              <div className="flex items-center gap-2 p-3 bg-primary/5 rounded-lg border border-primary/20">
+                <Lock className="h-4 w-4 text-primary flex-shrink-0" />
                 <p className="text-xs text-muted-foreground flex-1">
                   <strong className="text-foreground">Want full campaigns?</strong> Sign up to generate complete multi-channel campaigns with A/B variants in 140+ languages.
                 </p>
