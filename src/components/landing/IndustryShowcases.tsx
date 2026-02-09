@@ -15,7 +15,7 @@ import {
   Factory, Landmark, Globe, Sparkles, ArrowRight, Layers,
   Mic, Languages, Video, Presentation, FileText, Zap,
   Volume2, Shield, User, Box, Music, Image, Wand2,
-  CheckCircle2, Star,
+  CheckCircle2, Star, Smartphone,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -52,7 +52,7 @@ const FEATURED_INDUSTRIES = [
     positioning: 'Investor decks and compliance reporting transcreated across regional dialects',
   },
   {
-    id: 'government', name: 'Government', icon: Landmark,
+    id: 'government', name: 'Govt', icon: Landmark,
     pipelines: ['PSA Videos', 'Policy Explainers', 'Citizen Engagement'],
     stats: { time: '3 min', languages: 40, savings: '80%' },
     regions: ['MENA', 'India', 'Africa'],
@@ -118,10 +118,10 @@ const PIPELINE_GROUPS = {
     label: 'Localize & Transcreate',
     emoji: '🌍',
     tabs: [
-      { id: 'tts', label: 'Text-to-Speech', shortLabel: 'TTS', icon: Volume2, product: '70+ Voices' },
-      { id: 'stt', label: 'Speech-to-Text', shortLabel: 'STT', icon: Mic, product: 'Multi-provider' },
-      { id: 'translation', label: 'Translation', shortLabel: 'Translate', icon: Languages, product: 'DeepL Powered' },
-      { id: 'transcreation', label: 'Transcreation', shortLabel: 'Transcreate', icon: Sparkles, product: 'Cultural AI' },
+      { id: 'tts', label: 'Text-to-Speech', shortLabel: 'TTS', icon: Volume2, product: 'Azure Neural' },
+      { id: 'stt', label: 'Speech-to-Text', shortLabel: 'STT', icon: Mic, product: 'Deepgram' },
+      { id: 'translation', label: 'Translation', shortLabel: 'Translate', icon: Languages, product: 'DeepL' },
+      { id: 'transcreation', label: 'Transcreation', shortLabel: 'Transcreate', icon: Sparkles, product: 'Zone-routed AI' },
     ],
   },
 };
@@ -155,23 +155,23 @@ export const IndustryShowcases: React.FC<IndustryShowcasesProps> = ({ region }) 
   const [showDifferentiators, setShowDifferentiators] = useState(false);
 
   return (
-    <section className="py-24 relative" id="languages">
+    <section className="py-16 sm:py-24 relative" id="languages">
       <div className="absolute inset-0 bg-gradient-to-b from-background via-primary/5 to-background" />
       
-      <div className="relative max-w-7xl mx-auto px-4">
+      <div className="relative max-w-7xl mx-auto px-3 sm:px-4">
         {/* Header */}
-        <div className="text-center mb-8">
-          <Badge variant="outline" className="mb-4 gap-2 border-primary/30 text-primary">
+        <div className="text-center mb-6 sm:mb-8">
+          <Badge variant="outline" className="mb-3 sm:mb-4 gap-2 border-primary/30 text-primary">
             <Zap className="w-3 h-3" />
             Try It Live — Real AI Generation
           </Badge>
-          <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 text-foreground">
             Everything You Need.{' '}
             <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               Nothing You Don't.
             </span>
           </h2>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+          <p className="text-base sm:text-xl text-muted-foreground max-w-3xl mx-auto">
             25+ production capabilities under one roof — pick your industry, choose a pipeline, 
             and <span className="text-primary font-bold">try it now</span>. 
             Not mockups. <span className="text-primary font-bold">Real AI generation</span>.
@@ -179,27 +179,27 @@ export const IndustryShowcases: React.FC<IndustryShowcasesProps> = ({ region }) 
         </div>
 
         {/* "Only Here" differentiators strip */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-8 sm:mb-10">
           {ONLY_HERE.map((item) => (
             <div 
               key={item.label}
-              className="flex items-start gap-3 p-4 bg-card border border-border rounded-xl hover:border-primary/40 transition-colors group"
+              className="flex items-start gap-2.5 p-3 sm:p-4 bg-card border border-border rounded-xl hover:border-primary/40 transition-colors group"
             >
-              <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+              <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-primary mt-0.5 shrink-0" />
               <div>
-                <p className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">{item.label}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
+                <p className="text-xs sm:text-sm font-bold text-foreground group-hover:text-primary transition-colors">{item.label}</p>
+                <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">{item.desc}</p>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Industry selector */}
-        <div className="mb-6">
+        {/* Industry selector — scrollable on mobile */}
+        <div className="mb-5 sm:mb-6">
           <p className="text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
             Select Your Industry
           </p>
-          <div className="flex flex-wrap justify-center gap-2">
+          <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-hide justify-start sm:justify-center sm:flex-wrap">
             {FEATURED_INDUSTRIES.map((industry) => {
               const Icon = industry.icon;
               const isSelected = selectedIndustry.id === industry.id;
@@ -208,13 +208,13 @@ export const IndustryShowcases: React.FC<IndustryShowcasesProps> = ({ region }) 
                 <button
                   key={industry.id}
                   onClick={() => setSelectedIndustry(industry)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                  className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap shrink-0 ${
                     isSelected 
                       ? 'bg-primary text-primary-foreground scale-105 shadow-lg shadow-primary/25' 
                       : 'bg-card border border-border text-foreground hover:border-primary/50 hover:shadow-md'
                   }`}
                 >
-                  <Icon className="h-4 w-4" />
+                  <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   <span>{industry.name}</span>
                 </button>
               );
@@ -230,49 +230,40 @@ export const IndustryShowcases: React.FC<IndustryShowcasesProps> = ({ region }) 
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
-            className="mb-6"
+            className="mb-5 sm:mb-6"
           >
-            <div className="bg-card border border-border rounded-2xl p-4 md:p-5">
-              <div className="flex flex-wrap items-center gap-4">
+            <div className="bg-card border border-border rounded-2xl p-3 sm:p-4 md:p-5">
+              <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 sm:gap-4">
                 {/* Industry info */}
                 <div className="flex items-center gap-3 flex-1 min-w-[200px]">
-                  {React.createElement(selectedIndustry.icon, { className: 'h-7 w-7 text-primary' })}
+                  {React.createElement(selectedIndustry.icon, { className: 'h-6 w-6 sm:h-7 sm:w-7 text-primary shrink-0' })}
                   <div>
-                    <h3 className="text-lg font-bold text-foreground">{selectedIndustry.name}</h3>
-                    <p className="text-xs text-muted-foreground">{selectedIndustry.positioning}</p>
+                    <h3 className="text-base sm:text-lg font-bold text-foreground">{selectedIndustry.name}</h3>
+                    <p className="text-[11px] sm:text-xs text-muted-foreground">{selectedIndustry.positioning}</p>
                   </div>
                 </div>
 
                 {/* Quick stats */}
                 <div className="flex items-center gap-4">
                   <div className="text-center">
-                    <p className="text-xl font-bold text-primary">{selectedIndustry.stats.time}</p>
+                    <p className="text-lg sm:text-xl font-bold text-primary">{selectedIndustry.stats.time}</p>
                     <p className="text-[10px] text-muted-foreground">Avg Gen</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-xl font-bold text-accent">{selectedIndustry.stats.languages}</p>
+                    <p className="text-lg sm:text-xl font-bold text-accent">{selectedIndustry.stats.languages}</p>
                     <p className="text-[10px] text-muted-foreground">Languages</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-xl font-bold text-primary">{selectedIndustry.stats.savings}</p>
+                    <p className="text-lg sm:text-xl font-bold text-primary">{selectedIndustry.stats.savings}</p>
                     <p className="text-[10px] text-muted-foreground">Savings</p>
                   </div>
                 </div>
 
-                {/* Regions */}
-                <div className="flex items-center gap-1.5">
+                {/* Regions + Pipelines */}
+                <div className="flex flex-wrap gap-1.5">
                   {selectedIndustry.regions.map(r => (
                     <Badge key={r} variant="outline" className="text-[10px] gap-1">
                       <Globe className="w-2.5 h-2.5" />{r}
-                    </Badge>
-                  ))}
-                </div>
-
-                {/* Pipelines */}
-                <div className="flex flex-wrap gap-1.5">
-                  {selectedIndustry.pipelines.map(p => (
-                    <Badge key={p} className="text-[10px] bg-primary/10 text-primary border-primary/20">
-                      {p}
                     </Badge>
                   ))}
                 </div>
@@ -281,24 +272,24 @@ export const IndustryShowcases: React.FC<IndustryShowcasesProps> = ({ region }) 
           </motion.div>
         </AnimatePresence>
 
-        {/* Pipeline demo tabs — FIXED STYLING */}
+        {/* Pipeline demo tabs — mobile-friendly */}
         <Tabs value={activePipeline} onValueChange={setActivePipeline} className="w-full">
-          <div className="bg-card border border-border rounded-2xl mb-6 overflow-hidden">
+          <div className="bg-card border border-border rounded-2xl mb-5 sm:mb-6 overflow-hidden">
             {/* Create Content row */}
             <div className="border-b border-border">
-              <div className="px-4 pt-3 pb-1">
-                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+              <div className="px-3 sm:px-4 pt-2.5 sm:pt-3 pb-1">
+                <p className="text-[10px] sm:text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
                   {PIPELINE_GROUPS.create.emoji} {PIPELINE_GROUPS.create.label}
                 </p>
               </div>
-              <TabsList className="bg-transparent h-auto w-full p-2 pt-0 gap-2 justify-start flex-wrap">
+              <TabsList className="bg-transparent h-auto w-full p-1.5 sm:p-2 pt-0 gap-1.5 sm:gap-2 justify-start flex-nowrap sm:flex-wrap overflow-x-auto scrollbar-hide">
                 {PIPELINE_GROUPS.create.tabs.map((tab) => {
                   const Icon = tab.icon;
                   return (
                     <TabsTrigger
                       key={tab.id}
                       value={tab.id}
-                      className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium
+                      className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium shrink-0
                         bg-muted text-foreground border border-border/50
                         data-[state=inactive]:text-foreground data-[state=inactive]:bg-muted
                         hover:bg-accent/10 hover:border-primary/30
@@ -306,10 +297,10 @@ export const IndustryShowcases: React.FC<IndustryShowcasesProps> = ({ region }) 
                         data-[state=active]:border-primary data-[state=active]:shadow-md
                         transition-all duration-200"
                     >
-                      <Icon className="h-4 w-4" />
+                      <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       <span className="hidden sm:inline">{tab.label}</span>
                       <span className="sm:hidden">{tab.shortLabel}</span>
-                      <span className="text-[10px] opacity-70 hidden md:inline">· {tab.product}</span>
+                      <span className="text-[9px] sm:text-[10px] opacity-70 hidden md:inline">· {tab.product}</span>
                     </TabsTrigger>
                   );
                 })}
@@ -318,19 +309,19 @@ export const IndustryShowcases: React.FC<IndustryShowcasesProps> = ({ region }) 
 
             {/* Localize & Transcreate row */}
             <div>
-              <div className="px-4 pt-3 pb-1">
-                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+              <div className="px-3 sm:px-4 pt-2.5 sm:pt-3 pb-1">
+                <p className="text-[10px] sm:text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
                   {PIPELINE_GROUPS.localize.emoji} {PIPELINE_GROUPS.localize.label}
                 </p>
               </div>
-              <TabsList className="bg-transparent h-auto w-full p-2 pt-0 gap-2 justify-start flex-wrap">
+              <TabsList className="bg-transparent h-auto w-full p-1.5 sm:p-2 pt-0 gap-1.5 sm:gap-2 justify-start flex-nowrap sm:flex-wrap overflow-x-auto scrollbar-hide">
                 {PIPELINE_GROUPS.localize.tabs.map((tab) => {
                   const Icon = tab.icon;
                   return (
                     <TabsTrigger
                       key={tab.id}
                       value={tab.id}
-                      className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium
+                      className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium shrink-0
                         bg-muted text-foreground border border-border/50
                         data-[state=inactive]:text-foreground data-[state=inactive]:bg-muted
                         hover:bg-accent/10 hover:border-primary/30
@@ -338,10 +329,10 @@ export const IndustryShowcases: React.FC<IndustryShowcasesProps> = ({ region }) 
                         data-[state=active]:border-primary data-[state=active]:shadow-md
                         transition-all duration-200"
                     >
-                      <Icon className="h-4 w-4" />
+                      <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       <span className="hidden sm:inline">{tab.label}</span>
                       <span className="sm:hidden">{tab.shortLabel}</span>
-                      <span className="text-[10px] opacity-70 hidden md:inline">· {tab.product}</span>
+                      <span className="text-[9px] sm:text-[10px] opacity-70 hidden md:inline">· {tab.product}</span>
                     </TabsTrigger>
                   );
                 })}
@@ -376,18 +367,18 @@ export const IndustryShowcases: React.FC<IndustryShowcasesProps> = ({ region }) 
         </Tabs>
 
         {/* Cross-functional capabilities — integrated from CrossFunctionalSection */}
-        <div className="mt-10">
+        <div className="mt-8 sm:mt-10">
           <button
             onClick={() => setShowDifferentiators(!showDifferentiators)}
-            className="w-full flex items-center justify-between p-4 bg-card border border-border rounded-xl hover:border-primary/40 transition-colors group"
+            className="w-full flex items-center justify-between p-3 sm:p-4 bg-card border border-border rounded-xl hover:border-primary/40 transition-colors group"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                <Star className="h-5 w-5 text-primary" />
+              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                <Star className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               </div>
               <div className="text-left">
-                <p className="font-bold text-foreground">25+ Cross-Functional Capabilities</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="font-bold text-sm sm:text-base text-foreground">25+ Cross-Functional Capabilities</p>
+                <p className="text-[11px] sm:text-xs text-muted-foreground">
                   AI Avatars · Voice Clone · Text-to-3D · Animation · AR/VR Export — all included
                 </p>
               </div>
@@ -404,31 +395,31 @@ export const IndustryShowcases: React.FC<IndustryShowcasesProps> = ({ region }) 
                 transition={{ duration: 0.3 }}
                 className="overflow-hidden"
               >
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 mt-3 sm:mt-4">
                   {DIFFERENTIATORS.map((item) => {
                     const Icon = item.icon;
                     return (
                       <div 
                         key={item.name}
-                        className="flex items-start gap-3 p-4 bg-card border border-border rounded-xl hover:border-primary/40 transition-colors"
+                        className="flex items-start gap-3 p-3 sm:p-4 bg-card border border-border rounded-xl hover:border-primary/40 transition-colors"
                       >
-                        <div className="w-9 h-9 bg-primary/10 rounded-lg flex items-center justify-center shrink-0">
-                          <Icon className="h-4 w-4 text-primary" />
+                        <div className="w-8 h-8 sm:w-9 sm:h-9 bg-primary/10 rounded-lg flex items-center justify-center shrink-0">
+                          <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <p className="font-semibold text-sm text-foreground">{item.name}</p>
+                            <p className="font-semibold text-xs sm:text-sm text-foreground">{item.name}</p>
                             <Badge variant={item.tier === 'Free' ? 'secondary' : 'outline'} className="text-[9px] px-1.5 py-0">
                               {item.tier}
                             </Badge>
                           </div>
-                          <p className="text-xs text-muted-foreground">{item.desc}</p>
+                          <p className="text-[11px] sm:text-xs text-muted-foreground">{item.desc}</p>
                         </div>
                       </div>
                     );
                   })}
                 </div>
-                <p className="text-center text-xs text-muted-foreground mt-4">
+                <p className="text-center text-[11px] sm:text-xs text-muted-foreground mt-3 sm:mt-4">
                   All capabilities included. No plugins. No third-party tools. No hidden costs.
                 </p>
               </motion.div>
@@ -437,7 +428,7 @@ export const IndustryShowcases: React.FC<IndustryShowcasesProps> = ({ region }) 
         </div>
 
         {/* Cross-pipeline value prop */}
-        <div className="mt-8 grid sm:grid-cols-4 gap-3">
+        <div className="mt-6 sm:mt-8 grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
           {[
             { title: 'Same Industry', desc: 'One context, multiple outputs', icon: Zap },
             { title: '7 Pipelines', desc: 'Deck + Video + Content + TTS + Translate', icon: Layers },
@@ -446,11 +437,11 @@ export const IndustryShowcases: React.FC<IndustryShowcasesProps> = ({ region }) 
           ].map((item) => {
             const Icon = item.icon;
             return (
-              <div key={item.title} className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl border border-border">
-                <Icon className="h-5 w-5 text-primary shrink-0" />
+              <div key={item.title} className="flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 bg-muted/30 rounded-xl border border-border">
+                <Icon className="h-4 w-4 sm:h-5 sm:w-5 text-primary shrink-0" />
                 <div>
-                  <p className="text-sm font-semibold text-foreground">{item.title}</p>
-                  <p className="text-[11px] text-muted-foreground">{item.desc}</p>
+                  <p className="text-xs sm:text-sm font-semibold text-foreground">{item.title}</p>
+                  <p className="text-[10px] sm:text-[11px] text-muted-foreground">{item.desc}</p>
                 </div>
               </div>
             );
@@ -458,17 +449,17 @@ export const IndustryShowcases: React.FC<IndustryShowcasesProps> = ({ region }) 
         </div>
 
         {/* Live indicator */}
-        <div className="text-center mt-6">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full border border-primary/30">
+        <div className="text-center mt-5 sm:mt-6">
+          <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-primary/10 rounded-full border border-primary/30">
             <span className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-            <span className="text-primary text-sm">
+            <span className="text-primary text-xs sm:text-sm">
               All demos use <strong>real AI providers</strong> — Azure Neural TTS, DeepL, Gemini, Whisper STT
             </span>
           </div>
         </div>
 
         {/* Extended industries */}
-        <div className="text-center mt-10">
+        <div className="text-center mt-8 sm:mt-10">
           <button 
             onClick={() => setShowExtended(!showExtended)}
             className="text-primary hover:text-primary/80 font-medium text-sm inline-flex items-center gap-1 transition-colors"
@@ -492,7 +483,7 @@ export const IndustryShowcases: React.FC<IndustryShowcasesProps> = ({ region }) 
             </motion.div>
           )}
 
-          <p className="text-muted-foreground text-sm mt-4">
+          <p className="text-muted-foreground text-xs sm:text-sm mt-4">
             Every industry gets the same{' '}
             <span className="text-foreground font-medium">15 AI providers</span>,{' '}
             <span className="text-foreground font-medium">206 pipelines</span>, and{' '}
