@@ -53,8 +53,7 @@ import Governance from '@/pages/Governance';
 import Agents from '@/pages/Agents';
 import Login from '@/pages/Login';
 import GenieStudioAuth from '@/pages/GenieStudioAuth';
-// GenieStudioPricing removed - pricing is now integrated into landing page
-import GenieStudioLanding from '@/pages/GenieStudioLanding';
+// GenieStudioLanding replaced by RegionalLandingPage with auto-detection
 import GenieAdminPage from '@/pages/GenieAdminPage';
 import GenieSupportPage from '@/pages/GenieSupportPage';
 const GenieExplorePage = React.lazy(() => import('@/pages/GenieExplorePage'));
@@ -194,8 +193,12 @@ const AppContent = () => {
                 </Suspense>
               } />
               
-              {/* Public landing page routes */}
-              <Route path="/genie-landing" element={<GenieStudioLanding />} />
+              {/* Public landing page routes - RegionalLandingPage handles auto-detection */}
+              <Route path="/genie-landing" element={
+                <Suspense fallback={<PageLoading message="Loading..." />}>
+                  <RegionalLandingPage />
+                </Suspense>
+              } />
               <Route path="/genie-landing/:region" element={
                 <Suspense fallback={<PageLoading message="Loading..." />}>
                   <RegionalLandingPage />
