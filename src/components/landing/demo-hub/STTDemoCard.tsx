@@ -57,9 +57,10 @@ const REGION_DEFAULT_LANG: Record<string, string> = {
 
 interface STTDemoCardProps {
   region?: string;
+  industryId?: string;
 }
 
-export const STTDemoCard: React.FC<STTDemoCardProps> = ({ region }) => {
+export const STTDemoCard: React.FC<STTDemoCardProps> = ({ region, industryId }) => {
   const registry = useDynamicLanguageRegistry();
   const defaultLang = region ? (REGION_DEFAULT_LANG[region] || 'en') : 'en';
   const [language, setLanguage] = useState(defaultLang);

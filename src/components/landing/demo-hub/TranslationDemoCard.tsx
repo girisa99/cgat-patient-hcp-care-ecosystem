@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/select';
 import { useDynamicLanguageRegistry } from '@/hooks/landing/useDynamicLanguageRegistry';
 import { ProviderBadge, ProviderPanel, getPrimaryProvider } from './RegionalProviderInfo';
-import { getExamplesForRegion, DemoExample } from './demoExamples';
+import { getExamplesForIndustry, DemoExample } from './demoExamples';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const SUPABASE_URL = 'https://ithspbabhmdntioslfqe.supabase.co';
@@ -34,11 +34,12 @@ const REGION_DEEPL_DEFAULTS: Record<string, string> = {
 
 interface TranslationDemoCardProps {
   region?: string;
+  industryId?: string;
 }
 
-export const TranslationDemoCard: React.FC<TranslationDemoCardProps> = ({ region }) => {
+export const TranslationDemoCard: React.FC<TranslationDemoCardProps> = ({ region, industryId }) => {
   const registry = useDynamicLanguageRegistry();
-  const examples = getExamplesForRegion(region);
+  const examples = getExamplesForIndustry(industryId, region);
   const defaultLang = region ? (REGION_DEEPL_DEFAULTS[region] || 'AR') : 'AR';
 
   const [sourceLang, setSourceLang] = useState('EN');

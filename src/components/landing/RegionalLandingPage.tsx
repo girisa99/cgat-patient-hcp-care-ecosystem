@@ -25,7 +25,7 @@ import {
   type RegionalConfig 
 } from '@/config/regionalLandingConfig';
 import { RegionalPricingSection } from '@/components/landing/RegionalPricingSection';
-import { LocalizationDemoHub } from '@/components/landing/LocalizationDemoHub';
+// LocalizationDemoHub removed — consolidated into IndustryShowcases
 import { ProfessionalAvatarShowcase } from '@/components/landing/video/ProfessionalAvatarShowcase';
 import { ProductDetailShowcase } from '@/components/landing/ProductDetailShowcase';
 import { CrossFunctionalSection } from '@/components/landing/CrossFunctionalSection';
@@ -550,10 +550,7 @@ export const RegionalLandingPage: React.FC = () => {
       {/* Transcreation Showcase — literal vs transcreated */}
       <TranscreationShowcase config={config} />
       
-      {/* Unified Localization Demo Hub — region-aware TTS + STT + Translation + Transcreation */}
-      <section id="languages">
-        <LocalizationDemoHub region={regionSlug} />
-      </section>
+      {/* LocalizationDemoHub removed — TTS/STT/Translation/Transcreation now consolidated into IndustryShowcases above */}
 
       {/* Cross-Functional Capabilities */}
       <CrossFunctionalSection />
