@@ -499,8 +499,7 @@ export const RegionalLandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Regional Industries — transcreated for this market */}
-      <RegionalIndustries config={config} />
+      {/* Regional Industries removed — redundant with "Your Industry, Your Language, Your Market" below */}
 
       {/* Industry Showcases — global view */}
       <IndustryShowcases />
