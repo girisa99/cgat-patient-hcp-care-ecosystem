@@ -8,7 +8,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { PageLoading } from '@/components/ui/LoadingStates';
 
 // Direct imports for critical pages
-import GenieStudioLanding from '@/pages/GenieStudioLanding';
+import { RegionalLandingPage } from '@/components/landing/RegionalLandingPage';
 import GenieStudioAuth from '@/pages/GenieStudioAuth';
 import GenieStudioPricing from '@/pages/GenieStudioPricing';
 import GenieSupportPage from '@/pages/GenieSupportPage';
@@ -36,8 +36,8 @@ export const GenieWebsiteRoutes: React.FC = () => {
   return (
     <Suspense fallback={<PageLoading message="Loading..." />}>
       <Routes>
-        {/* Landing */}
-        <Route path="/" element={<GenieStudioLanding />} />
+        {/* Landing - uses RegionalLandingPage with auto-detection */}
+        <Route path="/" element={<RegionalLandingPage />} />
         
         {/* Explore Journey */}
         <Route path="/explore" element={<GenieExplorePage />} />
