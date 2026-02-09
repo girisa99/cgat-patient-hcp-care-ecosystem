@@ -6,14 +6,15 @@
  * English is always present alongside native language content.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { useParams, Navigate, Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import { 
   ArrowRight, Play, Sparkles, Globe, Brain, Cpu, Zap, Eye, Mic, Languages, Layers, Wand2, Video, Image, FileText, AudioLines,
-  Box, Palette, Volume2, Subtitles, MonitorPlay,
+  Box, Palette, Volume2, Subtitles, MonitorPlay, VolumeX,
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -254,12 +255,77 @@ const CinematicPipeline: React.FC = () => (
 );
 
 // ============================================
+// TTS VOICEOVER HOOK
+// ============================================
+const useHeroVoiceover = () => {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+
+  const speak = useCallback(async (text: string) => {
+    // Stop any currently playing audio
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+
+    // Create Audio element immediately in user gesture context
+    const audio = new Audio();
+    audio.preload = 'auto';
+    audioRef.current = audio;
+    setIsSpeaking(true);
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL || (supabase as any).supabaseUrl}/functions/v1/ask-genie-voice`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || (supabase as any).supabaseKey,
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || (supabase as any).supabaseKey}`,
+          },
+          body: JSON.stringify({
+            action: 'speak',
+            text,
+            language: 'en',
+            provider: 'elevenlabs',
+            voice: 'Brian',
+          }),
+        }
+      );
+
+      if (!response.ok) throw new Error('TTS failed');
+
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      audio.src = audioUrl;
+      audio.onended = () => setIsSpeaking(false);
+      audio.onerror = () => setIsSpeaking(false);
+      await audio.play();
+    } catch {
+      setIsSpeaking(false);
+    }
+  }, []);
+
+  const stop = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    setIsSpeaking(false);
+  }, []);
+
+  return { speak, stop, isSpeaking };
+};
+
+// ============================================
 // UNIFIED HERO CAROUSEL — Cinematic Enterprise
 // ============================================
 const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string | null }> = ({ config, productContext }) => {
   const { hero, stats, cta } = config;
   const [current, setCurrent] = React.useState(0);
   const [direction, setDirection] = React.useState(1);
+  const { speak, stop, isSpeaking } = useHeroVoiceover();
 
   const heroImages = [heroPlatformImg, heroPipelineImg, heroLanguagesImg, heroTranscreationImg];
 
@@ -315,48 +381,68 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
 
   return (
     <section className={`relative min-h-[100vh] overflow-hidden ${hero.isRTL ? 'rtl' : 'ltr'}`}>
-      {/* Full-bleed hero image background */}
+      {/* Full-bleed hero image background with Ken Burns motion */}
       <AnimatePresence mode="wait">
         <motion.div
           key={`bg-img-${current}`}
           className="absolute inset-0"
-          initial={{ opacity: 0, scale: 1.05 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 1.2, ease: 'easeOut' }}
+          initial={{ opacity: 0, scale: 1.15 }}
+          animate={{ opacity: 1, scale: 1.0 }}
+          exit={{ opacity: 0, scale: 1.05 }}
+          transition={{ duration: 1.8, ease: 'easeOut' }}
         >
-          <img
+          <motion.img
             src={heroImages[current]}
             alt=""
             className="w-full h-full object-cover"
+            animate={{ scale: [1, 1.06] }}
+            transition={{ duration: 12, ease: 'linear', repeat: Infinity, repeatType: 'reverse' }}
           />
-          {/* Cinematic overlays */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-black/40" />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/60" />
-          <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-background to-transparent" />
+          {/* Deep cinematic overlays for text readability */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-black/50" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-transparent to-black/70" />
+          <div className="absolute inset-0 bg-black/20" />
+          <div className="absolute bottom-0 left-0 right-0 h-56 bg-gradient-to-t from-background to-transparent" />
+          {/* Cinematic vignette */}
+          <div className="absolute inset-0" style={{ boxShadow: 'inset 0 0 200px 60px rgba(0,0,0,0.6)' }} />
         </motion.div>
       </AnimatePresence>
 
-      {/* Ambient glow particles */}
+      {/* Animated mesh gradient orbs */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {[...Array(15)].map((_, i) => (
+        <motion.div
+          className="absolute w-96 h-96 rounded-full opacity-20 blur-3xl"
+          style={{ background: 'radial-gradient(circle, hsl(var(--primary)) 0%, transparent 70%)' }}
+          animate={{ x: ['-10%', '60%', '-10%'], y: ['10%', '50%', '10%'] }}
+          transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <motion.div
+          className="absolute w-80 h-80 rounded-full opacity-15 blur-3xl right-0 bottom-0"
+          style={{ background: 'radial-gradient(circle, hsl(200, 80%, 60%) 0%, transparent 70%)' }}
+          animate={{ x: ['10%', '-50%', '10%'], y: ['-10%', '-40%', '-10%'] }}
+          transition={{ duration: 25, repeat: Infinity, ease: 'easeInOut' }}
+        />
+      </div>
+
+      {/* Ambient rising particles */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {[...Array(20)].map((_, i) => (
           <motion.div
-            key={`glow-${i}`}
-            className="absolute w-1.5 h-1.5 rounded-full"
+            key={`particle-${i}`}
+            className="absolute w-1 h-1 rounded-full bg-white/40"
             style={{
               left: `${5 + Math.random() * 90}%`,
-              top: `${10 + Math.random() * 80}%`,
-              background: `hsl(${200 + Math.random() * 120}, 80%, 70%)`,
+              top: `${70 + Math.random() * 30}%`,
             }}
             animate={{
-              opacity: [0, 0.7, 0],
-              scale: [0, 2, 0],
-              y: [0, -50 - Math.random() * 60],
+              opacity: [0, 0.8, 0],
+              scale: [0, 1.5, 0],
+              y: [0, -200 - Math.random() * 300],
             }}
             transition={{
-              duration: 3 + Math.random() * 4,
+              duration: 4 + Math.random() * 6,
               repeat: Infinity,
-              delay: Math.random() * 5,
+              delay: Math.random() * 8,
               ease: 'easeOut',
             }}
           />
@@ -371,15 +457,15 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
         <AnimatePresence mode="wait">
           <motion.div
             key={slide.id}
-            initial={{ opacity: 0, x: direction * 100, y: 10 }}
-            animate={{ opacity: 1, x: 0, y: 0 }}
-            exit={{ opacity: 0, x: -direction * 60 }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            initial={{ opacity: 0, x: direction * 80, y: 15, scale: 0.97 }}
+            animate={{ opacity: 1, x: 0, y: 0, scale: 1 }}
+            exit={{ opacity: 0, x: -direction * 50, scale: 0.98 }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
             className="text-center space-y-6 w-full"
           >
             {/* Badge */}
-            <motion.div initial={{ opacity: 0, y: -15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-              <Badge className="bg-white/10 backdrop-blur-md border border-white/20 text-white text-sm px-5 py-2.5 shadow-lg">
+            <motion.div initial={{ opacity: 0, y: -15, scale: 0.9 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ delay: 0.1, type: 'spring', stiffness: 200 }}>
+              <Badge className="bg-white/10 backdrop-blur-md border border-white/20 text-white text-sm px-5 py-2.5 shadow-xl shadow-black/20">
                 {slide.badge}
               </Badge>
             </motion.div>
@@ -387,25 +473,25 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
             {/* Headline — massive cinematic type */}
             <motion.h1
               className="text-5xl md:text-7xl lg:text-[5.5rem] font-black leading-[0.92] tracking-tight"
-              initial={{ opacity: 0, y: 25 }}
+              initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15, duration: 0.7 }}
+              transition={{ delay: 0.15, duration: 0.8, type: 'spring', stiffness: 100 }}
             >
-              <span className="text-white drop-shadow-2xl">{slide.headline[0]}</span>
-              <span className="bg-gradient-to-r from-primary via-blue-400 to-cyan-400 bg-clip-text text-transparent drop-shadow-2xl">
+              <span className="text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]">{slide.headline[0]}</span>
+              <span className="bg-gradient-to-r from-primary via-blue-400 to-cyan-400 bg-clip-text text-transparent drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]">
                 {slide.headline[1]}
               </span>
             </motion.h1>
 
             <motion.p
-              className="text-xl md:text-3xl font-bold text-white/80"
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.25 }}
+              className="text-xl md:text-3xl font-bold text-white/90 drop-shadow-lg"
+              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
             >
               {slide.subtitle}
             </motion.p>
 
             <motion.p
-              className="text-base md:text-lg text-white/55 max-w-2xl mx-auto leading-relaxed"
+              className="text-base md:text-lg text-white/70 max-w-2xl mx-auto leading-relaxed drop-shadow-md"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
             >
               {slide.description}
@@ -425,36 +511,37 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
                   ].map((stat, i) => (
                     <motion.div
                       key={stat.label}
-                      className="text-center p-4 bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 hover:border-primary/40 transition-all hover:shadow-lg hover:shadow-primary/10"
+                      className="text-center p-4 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/15 hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/20"
                       whileHover={{ y: -4, scale: 1.04 }}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.45 + i * 0.08 }}
+                      initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      transition={{ delay: 0.45 + i * 0.08, type: 'spring', stiffness: 180 }}
                     >
                       <p className="text-2xl font-black bg-gradient-to-r from-primary to-cyan-400 bg-clip-text text-transparent">{stat.value}</p>
-                      <p className="text-[11px] text-white/50 font-medium">{stat.label}</p>
+                      <p className="text-[11px] text-white/60 font-semibold">{stat.label}</p>
                     </motion.div>
                   ))}
                 </div>
-                <div className="flex flex-wrap gap-4 justify-center pt-2">
+                {/* HIGH-VISIBILITY CTAs */}
+                <div className="flex flex-wrap gap-4 justify-center pt-3">
                   <Link to="/genie-studio-auth?tab=signup">
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}>
-                      <Button size="lg" className="bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-500 text-white shadow-2xl shadow-primary/30 text-lg px-8 py-6 rounded-xl border border-white/10">
+                    <motion.div whileHover={{ scale: 1.06, y: -2 }} whileTap={{ scale: 0.97 }}>
+                      <Button size="lg" className="bg-gradient-to-r from-primary via-blue-500 to-cyan-500 hover:from-primary/90 hover:via-blue-400 hover:to-cyan-400 text-white font-bold shadow-[0_8px_32px_rgba(59,130,246,0.5)] text-lg px-10 py-7 rounded-xl border border-white/20 tracking-wide">
                         {cta.primary}
                         <ArrowRight className="ml-2 h-5 w-5" />
                       </Button>
                     </motion.div>
                   </Link>
                   <Link to="/explore">
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}>
-                      <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10 text-lg px-8 py-6 rounded-xl backdrop-blur-sm">
-                        <Play className="mr-2 h-4 w-4" />
+                    <motion.div whileHover={{ scale: 1.06, y: -2 }} whileTap={{ scale: 0.97 }}>
+                      <Button size="lg" variant="outline" className="border-2 border-white/40 text-white font-bold hover:bg-white/15 hover:border-white/60 text-lg px-10 py-7 rounded-xl backdrop-blur-md shadow-[0_4px_16px_rgba(0,0,0,0.4)]">
+                        <Play className="mr-2 h-5 w-5" />
                         {cta.secondary}
                       </Button>
                     </motion.div>
                   </Link>
                 </div>
-                <p className="text-white/40 text-xs">{cta.freeCredits}</p>
+                <p className="text-white/50 text-xs font-medium">{cta.freeCredits}</p>
               </motion.div>
             )}
 
@@ -465,24 +552,24 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
             {slide.type === 'stats' && (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-3xl mx-auto pt-6">
                 {[
-                  { value: '140+', label: 'Languages', icon: Languages, glow: 'shadow-blue-500/20' },
-                  { value: '30+', label: 'Dialects', icon: Mic, glow: 'shadow-violet-500/20' },
-                  { value: '8', label: 'Regions', icon: Globe, glow: 'shadow-emerald-500/20' },
-                  { value: 'RTL', label: 'Full Support', icon: Eye, glow: 'shadow-amber-500/20' },
+                  { value: '140+', label: 'Languages', icon: Languages, glow: 'shadow-blue-500/30' },
+                  { value: '30+', label: 'Dialects', icon: Mic, glow: 'shadow-violet-500/30' },
+                  { value: '8', label: 'Regions', icon: Globe, glow: 'shadow-emerald-500/30' },
+                  { value: 'RTL', label: 'Full Support', icon: Eye, glow: 'shadow-amber-500/30' },
                 ].map((stat, i) => {
                   const Icon = stat.icon;
                   return (
                     <motion.div
                       key={stat.label}
-                      className={`text-center p-6 bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 hover:border-primary/40 transition-all group shadow-xl ${stat.glow}`}
+                      className={`text-center p-6 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/15 hover:border-primary/50 transition-all group shadow-xl ${stat.glow}`}
                       initial={{ opacity: 0, y: 30, rotateX: -20 }}
                       animate={{ opacity: 1, y: 0, rotateX: 0 }}
                       transition={{ delay: 0.25 + i * 0.12, type: 'spring', stiffness: 150 }}
                       whileHover={{ y: -6, scale: 1.06 }}
                     >
-                      <Icon className="w-6 h-6 text-white/30 mx-auto mb-3 group-hover:text-primary transition-colors" />
-                      <p className="text-4xl font-black text-white">{stat.value}</p>
-                      <p className="text-xs text-white/40 font-medium mt-1">{stat.label}</p>
+                      <Icon className="w-6 h-6 text-white/40 mx-auto mb-3 group-hover:text-primary transition-colors" />
+                      <p className="text-4xl font-black text-white drop-shadow-lg">{stat.value}</p>
+                      <p className="text-xs text-white/50 font-semibold mt-1">{stat.label}</p>
                     </motion.div>
                   );
                 })}
@@ -493,41 +580,41 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
             {slide.type === 'comparison' && (
               <div className="grid sm:grid-cols-2 gap-6 max-w-3xl mx-auto pt-6">
                 <motion.div
-                  className="p-7 bg-red-950/30 backdrop-blur-xl rounded-2xl border border-red-500/20 text-left space-y-3 relative overflow-hidden"
-                  initial={{ opacity: 0, x: -40 }}
-                  animate={{ opacity: 1, x: 0 }}
+                  className="p-7 bg-red-950/40 backdrop-blur-xl rounded-2xl border border-red-500/25 text-left space-y-3 relative overflow-hidden"
+                  initial={{ opacity: 0, x: -40, rotateY: -10 }}
+                  animate={{ opacity: 1, x: 0, rotateY: 0 }}
                   transition={{ delay: 0.3, type: 'spring' }}
                 >
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-3xl" />
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/15 rounded-full blur-3xl" />
                   <p className="text-sm font-bold text-red-400 uppercase tracking-wider">❌ Translation</p>
-                  <p className="text-white font-medium text-lg">"Our product helps you save time and money."</p>
-                  <p className="text-xs text-white/40 italic">Word-for-word. Literal. Generic. No cultural context.</p>
+                  <p className="text-white font-semibold text-lg drop-shadow-md">"Our product helps you save time and money."</p>
+                  <p className="text-xs text-white/50 italic">Word-for-word. Literal. Generic. No cultural context.</p>
                   <div className="flex gap-1.5 pt-2">
-                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400/70 border border-red-500/20">DeepL Only</span>
-                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400/70 border border-red-500/20">No Context</span>
+                    <span className="text-[9px] px-2.5 py-1 rounded-full bg-red-500/15 text-red-300/80 border border-red-500/25 font-semibold">DeepL Only</span>
+                    <span className="text-[9px] px-2.5 py-1 rounded-full bg-red-500/15 text-red-300/80 border border-red-500/25 font-semibold">No Context</span>
                   </div>
                 </motion.div>
                 <motion.div
-                  className="p-7 bg-emerald-950/30 backdrop-blur-xl rounded-2xl border border-primary/30 text-left space-y-3 relative overflow-hidden ring-1 ring-primary/10"
-                  initial={{ opacity: 0, x: 40 }}
-                  animate={{ opacity: 1, x: 0 }}
+                  className="p-7 bg-emerald-950/40 backdrop-blur-xl rounded-2xl border border-primary/35 text-left space-y-3 relative overflow-hidden ring-1 ring-primary/15"
+                  initial={{ opacity: 0, x: 40, rotateY: 10 }}
+                  animate={{ opacity: 1, x: 0, rotateY: 0 }}
                   transition={{ delay: 0.45, type: 'spring' }}
                 >
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl" />
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-primary/15 rounded-full blur-3xl" />
                   <motion.div
                     className="absolute -top-1 -right-1"
                     animate={{ rotate: [0, 15, -10, 0] }}
                     transition={{ duration: 3, repeat: Infinity }}
                   >
-                    <Sparkles className="w-6 h-6 text-primary/40" />
+                    <Sparkles className="w-6 h-6 text-primary/50" />
                   </motion.div>
                   <p className="text-sm font-bold text-primary uppercase tracking-wider">✅ Transcreation</p>
-                  <p className="text-white font-medium text-lg" dir="rtl">"لأن وقتك أغلى من أي استثمار"</p>
-                  <p className="text-xs text-white/40 italic" dir="ltr">Culturally adapted. Emotionally resonant. Market-ready.</p>
+                  <p className="text-white font-semibold text-lg drop-shadow-md" dir="rtl">"لأن وقتك أغلى من أي استثمار"</p>
+                  <p className="text-xs text-white/50 italic" dir="ltr">Culturally adapted. Emotionally resonant. Market-ready.</p>
                   <div className="flex gap-1.5 pt-2">
-                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-primary/10 text-primary/70 border border-primary/20">Gemini 3 Pro</span>
-                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-primary/10 text-primary/70 border border-primary/20">Zone-Routed</span>
-                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-primary/10 text-primary/70 border border-primary/20">MENA</span>
+                    <span className="text-[9px] px-2.5 py-1 rounded-full bg-primary/15 text-primary/80 border border-primary/25 font-semibold">Gemini 3 Pro</span>
+                    <span className="text-[9px] px-2.5 py-1 rounded-full bg-primary/15 text-primary/80 border border-primary/25 font-semibold">Zone-Routed</span>
+                    <span className="text-[9px] px-2.5 py-1 rounded-full bg-primary/15 text-primary/80 border border-primary/25 font-semibold">MENA</span>
                   </div>
                 </motion.div>
               </div>
@@ -535,6 +622,29 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
           </motion.div>
         </AnimatePresence>
       </div>
+
+      {/* TTS Voiceover Button — fixed bottom-right */}
+      <motion.button
+        className="fixed bottom-24 right-6 z-50 w-14 h-14 rounded-full bg-gradient-to-br from-primary to-blue-600 text-white flex items-center justify-center shadow-[0_4px_24px_rgba(59,130,246,0.5)] border-2 border-white/20 hover:shadow-[0_8px_40px_rgba(59,130,246,0.6)] transition-shadow"
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={() => {
+          if (isSpeaking) {
+            stop();
+          } else {
+            speak(`${slide.headline.join('')} ${slide.subtitle}. ${slide.description}`);
+          }
+        }}
+        title={isSpeaking ? 'Stop voiceover' : 'Listen to voiceover'}
+      >
+        {isSpeaking ? (
+          <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 1, repeat: Infinity }}>
+            <VolumeX className="w-6 h-6" />
+          </motion.div>
+        ) : (
+          <Volume2 className="w-6 h-6" />
+        )}
+      </motion.button>
 
       {/* Provider ribbon — continuously scrolling */}
       <div className="absolute bottom-28 left-0 right-0 z-20">
@@ -550,17 +660,17 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
             className="group flex flex-col items-center gap-1.5"
           >
             <span className={`text-[10px] font-bold transition-all duration-300 ${
-              i === current ? 'text-white opacity-100' : 'text-white/0 group-hover:text-white/50 opacity-0 group-hover:opacity-100'
+              i === current ? 'text-white opacity-100' : 'text-white/0 group-hover:text-white/60 opacity-0 group-hover:opacity-100'
             }`}>
               {['Platform', 'Pipeline', 'Languages', 'Transcreation'][i]}
             </span>
             <div className="relative">
-              <div className={`h-2 rounded-full transition-all duration-500 ${
-                i === current ? 'w-12 bg-gradient-to-r from-primary to-cyan-400 shadow-lg shadow-primary/40' : 'w-2.5 bg-white/20 group-hover:bg-white/40'
+              <div className={`h-2.5 rounded-full transition-all duration-500 ${
+                i === current ? 'w-14 bg-gradient-to-r from-primary to-cyan-400 shadow-lg shadow-primary/50' : 'w-3 bg-white/25 group-hover:bg-white/50'
               }`} />
               {i === current && (
                 <motion.div
-                  className="absolute inset-0 h-2 rounded-full bg-primary/30"
+                  className="absolute inset-0 h-2.5 rounded-full bg-primary/30"
                   animate={{ scale: [1, 2, 1], opacity: [0.4, 0, 0.4] }}
                   transition={{ duration: 2, repeat: Infinity }}
                 />
