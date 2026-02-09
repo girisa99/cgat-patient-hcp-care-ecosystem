@@ -32,6 +32,7 @@ import { ProductDetailShowcase } from '@/components/landing/ProductDetailShowcas
 import { GlobalInspirationSection } from '@/components/landing/GlobalInspirationSection';
 import { DogfoodingProof } from '@/components/landing/DogfoodingProof';
 import { IndustryShowcases } from '@/components/landing/IndustryShowcases';
+import { RegionalShowcaseSection } from '@/components/landing/RegionalShowcaseSection';
 import { RegionSwitcherNav } from '@/components/landing/RegionSwitcherNav';
 import genieSuiteLogo from '@/assets/logos/genie-studio-suite-logo.png';
 
@@ -115,14 +116,23 @@ const RegionalHero: React.FC<{ config: RegionalConfig; productContext?: string |
             transition={{ duration: 0.6 }}
           >
             {/* Region badge with optional product context */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-muted rounded-full">
-              <span className="text-2xl">{hero.flag}</span>
-              <span className="text-muted-foreground text-sm">
-                {productContext 
-                  ? `Genie ${productContext.charAt(0).toUpperCase() + productContext.slice(1)} for ${hero.regionName}`
-                  : `Content optimized for ${hero.regionName}`
-                }
-              </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-muted rounded-full">
+                <span className="text-2xl">{hero.flag}</span>
+                <span className="text-muted-foreground text-sm">
+                  {productContext 
+                    ? `Genie ${productContext.charAt(0).toUpperCase() + productContext.slice(1)} for ${hero.regionName}`
+                    : `Content optimized for ${hero.regionName}`
+                  }
+                </span>
+              </div>
+              {config.differentiators.heroBadge.includes('First') && (
+                <div className="inline-flex items-center gap-1.5 px-3 py-2 bg-yellow-500/15 border border-yellow-500/30 rounded-full">
+                  <span className="text-yellow-600 dark:text-yellow-400 text-xs font-bold">
+                    {config.differentiators.heroBadge}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Native headline */}
@@ -546,6 +556,9 @@ export const RegionalLandingPage: React.FC = () => {
 
       {/* Industry Showcases — interactive try-it demos, region-aware */}
       <IndustryShowcases region={regionSlug} />
+
+      {/* Regional Showcase — First-to-Market + See It In Action cards */}
+      <RegionalShowcaseSection config={config} />
 
       {/* Transcreation Showcase — literal vs transcreated */}
       <TranscreationShowcase config={config} />

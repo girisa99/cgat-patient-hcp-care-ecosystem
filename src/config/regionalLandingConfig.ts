@@ -61,6 +61,25 @@ export interface RegionalCTA {
   freeCredits: string;
 }
 
+export interface RegionalDifferentiator {
+  /** "First platform to..." claims */
+  firstToMarket: string[];
+  /** "Only platform with..." depth claims */
+  capabilityDepth: string[];
+  /** Badge text for hero, e.g. "First in Africa" */
+  heroBadge: string;
+}
+
+export interface RegionalShowcaseExample {
+  industry: string;
+  icon: string;
+  input: string;
+  pipeline: string;
+  output: string;
+  languages: string;
+  impact: string;
+}
+
 export interface RegionalLanguageShowcase {
   tabLabel: string;
   languages: Array<{
@@ -85,6 +104,8 @@ export interface RegionalConfig {
   languageShowcase: RegionalLanguageShowcase;
   socialProof: string;
   comparisonSavings: string;
+  differentiators: RegionalDifferentiator;
+  showcaseExamples: RegionalShowcaseExample[];
 }
 
 export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
@@ -141,6 +162,24 @@ export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
     },
     socialProof: 'Trusted by content teams across 50+ industries in North America',
     comparisonSavings: 'Save $121/month vs Synthesia + ElevenLabs + Descript + DeepL + InVideo',
+    differentiators: {
+      firstToMarket: [
+        'First platform to unify 15 AI providers into one production pipeline',
+        'First to offer end-to-end Mind-to-Media workflow — Idea → Script → Visual → Voice → Video → Translate → Publish',
+      ],
+      capabilityDepth: [
+        'Only platform with auto-routed AI across 15 providers per task',
+        'Only platform producing enterprise video in 140+ languages from a single prompt',
+        'Only platform combining AI avatars, lip-sync, 3D, and transcreation in one pipeline',
+      ],
+      heroBadge: '15 AI Providers. One Platform.',
+    },
+    showcaseExamples: [
+      { industry: 'Healthcare', icon: '🏥', input: 'HIPAA training document (12 pages)', pipeline: 'Mind → Spark → Vibe → Cast → Arc', output: '8-module video course with AI presenter + 3 language dubs', languages: 'English, Spanish, Mandarin', impact: '85% faster than traditional production' },
+      { industry: 'Finance', icon: '💰', input: 'Quarterly earnings summary', pipeline: 'Spark → Deck → Vibe → Cast', output: 'Investor update video + branded slide deck + audio summary', languages: 'English', impact: '4 hours vs 2 weeks traditional' },
+      { industry: 'Technology', icon: '💻', input: 'API documentation + changelog', pipeline: 'Mind → Spark → Vibe → Arc', output: 'Developer walkthrough video + localized release notes', languages: 'English, Japanese, German', impact: '90% cost reduction vs agency' },
+      { industry: 'Retail', icon: '🛍️', input: 'Product photos + feature list', pipeline: 'Spark → Vibe → Cast → Arc', output: 'Social media ad series (9:16 + 16:9) in 5 languages', languages: 'English, Spanish, French, Mandarin, Hindi', impact: '50 ads/day vs 5/week manual' },
+    ],
   },
 
   europe: {
@@ -198,6 +237,24 @@ export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
     },
     socialProof: 'Vertrauen von Teams aus allen Branchen in der gesamten EU',
     comparisonSavings: 'Sparen Sie 121€/Monat im Vergleich zu Synthesia + DeepL + Descript + InVideo',
+    differentiators: {
+      firstToMarket: [
+        'First platform with native transcreation across all 24 EU official languages',
+        'First to offer GDPR-compliant AI video production with EU data residency',
+      ],
+      capabilityDepth: [
+        'Only platform with DeepL-powered translation + cultural transcreation in one pipeline',
+        'Only platform supporting all 24 EU languages with native TTS lip-sync',
+        'Only platform combining Industry 4.0 training content with multilingual distribution',
+      ],
+      heroBadge: '24 EU Languages. GDPR-Compliant.',
+    },
+    showcaseExamples: [
+      { industry: 'Manufacturing', icon: '🏭', input: 'Safety compliance manual (German)', pipeline: 'Mind → Spark → Vibe → Arc → Cast', output: 'Interactive safety training in 8 EU languages with AI presenter', languages: 'DE, FR, ES, IT, PL, NL, PT, RO', impact: 'Single source → 8 markets in hours' },
+      { industry: 'Automotive', icon: '🚗', input: 'New model feature specs', pipeline: 'Spark → Deck → Vibe → Cast → Arc', output: 'Dealer training video + launch event deck in 6 languages', languages: 'DE, FR, IT, ES, NL, EN', impact: 'Pan-European launch in 48 hours' },
+      { industry: 'Pharma', icon: '💊', input: 'Clinical trial results summary', pipeline: 'Mind → Spark → Vibe → Cast', output: 'HCP education video with compliant disclaimers in 12 languages', languages: 'All 24 EU + English', impact: 'Regulatory-ready across EU markets' },
+      { industry: 'Professional Services', icon: '📊', input: 'ESG annual report', pipeline: 'Spark → Deck → Vibe → Arc', output: 'Stakeholder video report + multilingual executive summary', languages: 'EN, DE, FR', impact: '€50K saved vs external agency' },
+    ],
   },
 
   mena: {
@@ -259,6 +316,25 @@ export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
     },
     socialProof: 'موثوق به من قبل الجهات الحكومية والمؤسسات المالية في الخليج',
     comparisonSavings: 'وفر 121$/شهر مقارنة بـ Synthesia + ElevenLabs + DeepL + InVideo',
+    differentiators: {
+      firstToMarket: [
+        'First platform to support 7 Arabic dialects — Saudi, Egyptian, Gulf, Levantine, Maghrebi, Iraqi, MSA',
+        'First AI video platform with full RTL production pipeline',
+        'First to offer dialect-specific lip-sync for Arabic content',
+      ],
+      capabilityDepth: [
+        'Only platform with Qwen-Max for native Arabic transcreation — not just translation',
+        'Only platform distinguishing Saudi from Egyptian from Gulf Arabic in TTS',
+        'Only platform aligning content with Vision 2030 digital transformation standards',
+      ],
+      heroBadge: '🏆 First Ever: 7 Arabic Dialects',
+    },
+    showcaseExamples: [
+      { industry: 'Government', icon: '🏛️', input: 'Vision 2030 initiative brief', pipeline: 'Mind → Spark → Vibe → Cast → Arc', output: 'Citizen engagement video in 7 Arabic dialects + English + Urdu', languages: 'SA, EG, Gulf, Levantine, Maghrebi, Iraqi, MSA', impact: 'First-ever multi-dialect government communication' },
+      { industry: 'Finance', icon: '🏦', input: 'Islamic banking product terms', pipeline: 'Spark → Vibe → Cast', output: 'Sharia-compliant explainer video with dialect-aware narration', languages: 'MSA + Saudi + Egyptian', impact: 'Culturally authentic financial content' },
+      { industry: 'Real Estate', icon: '🏗️', input: 'NEOM mega-project overview', pipeline: 'Spark → Deck → Vibe → Cast → Arc', output: 'Investor pitch deck + showreel in Arabic + English + Mandarin', languages: 'AR-SA, EN, ZH', impact: 'Global investor reach from single brief' },
+      { industry: 'Tourism', icon: '✈️', input: 'Red Sea resort features', pipeline: 'Spark → Vibe → Cast → Arc', output: 'Destination marketing video in 5 dialects + 4 international languages', languages: '5 Arabic + EN, FR, DE, ZH', impact: 'No competitor can do this' },
+    ],
   },
 
   india: {
@@ -317,6 +393,25 @@ export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
     },
     socialProof: 'भारत के अग्रणी EdTech और FMCG ब्रांड्स द्वारा भरोसेमंद',
     comparisonSavings: '₹10,000/माह बचाएं — Synthesia + ElevenLabs + DeepL + InVideo की तुलना में',
+    differentiators: {
+      firstToMarket: [
+        'First AI video platform supporting 11 Indian languages with native TTS + lip-sync',
+        'First to offer Hindi-English code-switching in AI-generated video narration',
+        'First platform with Gemini 3 Pro transcreation for Indian vernacular content',
+      ],
+      capabilityDepth: [
+        'Only platform with native TTS for Telugu, Marathi, Kannada, Gujarati — not just Hindi',
+        'Only platform understanding Hinglish and regional code-mixing patterns',
+        'Only platform combining Bollywood-style video generation with 11-language distribution',
+      ],
+      heroBadge: '🏆 First: 11 Indian Languages + Lip-Sync',
+    },
+    showcaseExamples: [
+      { industry: 'EdTech', icon: '📱', input: 'NCERT Chapter 5 — Physics', pipeline: 'Mind → Spark → Vibe → Cast → Arc', output: 'Animated lesson video with AI teacher in 11 Indian languages', languages: 'HI, TA, TE, BN, MR, GU, KN, ML, PA, OR, AS', impact: 'First-ever 11-language course from single source' },
+      { industry: 'Healthcare', icon: '🏥', input: 'Ayushman Bharat scheme guidelines', pipeline: 'Spark → Vibe → Cast', output: 'Patient education video in local dialects with AI avatar', languages: 'Hindi, Tamil, Telugu, Bengali', impact: 'Reach 1B+ citizens in their language' },
+      { industry: 'FMCG', icon: '🧴', input: 'Product launch brief for shampoo', pipeline: 'Spark → Vibe → Cast → Arc', output: 'Regional ad campaign (30s) × 11 languages with local influencer style', languages: '11 Indian languages', impact: '₹5L saved vs dubbing studio per campaign' },
+      { industry: 'Government', icon: '🏛️', input: 'Digital India initiative update', pipeline: 'Mind → Spark → Deck → Vibe → Cast', output: 'Citizen awareness video + infographic deck in all scheduled languages', languages: 'Hindi + 10 regional', impact: 'Pan-India reach from single brief' },
+    ],
   },
 
   africa: {
@@ -374,6 +469,25 @@ export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
     },
     socialProof: 'Empowering African creators, educators, and development organizations',
     comparisonSavings: 'Save $121/month vs Synthesia + ElevenLabs + DeepL + InVideo',
+    differentiators: {
+      firstToMarket: [
+        'First AI video platform with native Swahili, Yoruba, and Amharic TTS + lip-sync',
+        'First platform to offer AI transcreation in Hausa, Zulu, and Igbo',
+        'First AI content platform designed for African mobile-first audiences',
+      ],
+      capabilityDepth: [
+        'Only platform with African language TTS where no competitor has any support',
+        'Only platform combining agricultural extension content with vernacular AI narration',
+        'Only platform supporting Afrobeat-style visuals with culturally appropriate avatar generation',
+      ],
+      heroBadge: '🏆 First Ever: AI Video in African Languages',
+    },
+    showcaseExamples: [
+      { industry: 'Agriculture', icon: '🌾', input: 'Crop rotation best practices guide', pipeline: 'Mind → Spark → Vibe → Cast', output: 'Farmer education video with AI presenter in Swahili + Yoruba + Hausa', languages: 'SW, YO, HA, EN', impact: 'Zero competitors offer this — first ever' },
+      { industry: 'Fintech', icon: '📱', input: 'M-Pesa onboarding flow', pipeline: 'Spark → Vibe → Cast → Arc', output: 'Mobile money tutorial in 5 African languages with local context', languages: 'SW, AM, ZU, HA, EN', impact: 'Reach 500M+ unbanked in their language' },
+      { industry: 'Healthcare', icon: '🏥', input: 'Malaria prevention guidelines (WHO)', pipeline: 'Mind → Spark → Vibe → Cast', output: 'Community health video with AI avatar in local languages', languages: 'Swahili, Yoruba, Amharic, Zulu', impact: 'First AI health content in these languages' },
+      { industry: 'NGO', icon: '🤝', input: 'Climate adaptation report', pipeline: 'Spark → Deck → Vibe → Cast → Arc', output: 'Impact video + donor deck in English + 4 African languages', languages: 'EN, SW, YO, AM, HA', impact: 'Donor engagement + community reach' },
+    ],
   },
 
   apac: {
@@ -432,6 +546,25 @@ export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
     },
     socialProof: 'アジア太平洋地域のテック企業とeコマースブランドに選ばれています',
     comparisonSavings: '月額¥18,000節約 — Synthesia + ElevenLabs + DeepL + InVideo対比',
+    differentiators: {
+      firstToMarket: [
+        'First platform with Qwen-Max for native CJK transcreation — not just translation',
+        'First to combine CosyVoice (Alibaba) + Azure Neural for dual Chinese TTS pipeline',
+        'First AI video platform supporting full CJK + 6 SEA languages in one workflow',
+      ],
+      capabilityDepth: [
+        'Only platform with proper tonal rendering for Mandarin, Cantonese, Japanese, Korean TTS',
+        'Only platform with culturally appropriate East Asian avatar generation via Alibaba Wan 2.2',
+        'Only platform supporting Indonesian, Thai, Vietnamese lip-sync alongside CJK',
+      ],
+      heroBadge: 'CJK + 6 SEA Languages. Native Quality.',
+    },
+    showcaseExamples: [
+      { industry: 'E-Commerce', icon: '🛒', input: 'Product listing (Shopee/Lazada format)', pipeline: 'Spark → Vibe → Cast → Arc', output: 'Product demo video for 6 SEA markets with local narration', languages: 'ZH, JA, KO, TH, VI, ID', impact: 'One listing → 6 markets instantly' },
+      { industry: 'Gaming', icon: '🎮', input: 'Game feature update notes', pipeline: 'Spark → Vibe → Cast → Arc', output: 'Community update video with AI presenter in CJK + English', languages: 'JA, ZH, KO, EN', impact: 'Global game community reach' },
+      { industry: 'Technology', icon: '💻', input: 'SaaS product announcement', pipeline: 'Mind → Spark → Deck → Vibe → Cast', output: 'Product launch video + investor deck in 5 APAC languages', languages: 'JA, ZH, KO, EN, TH', impact: 'Pan-APAC launch from single brief' },
+      { industry: 'Tourism', icon: '✈️', input: 'Destination highlights — Japan', pipeline: 'Spark → Vibe → Cast → Arc', output: 'Tourism promo video in 8 languages targeting inbound visitors', languages: 'EN, ZH, KO, TH, VI, ID, FR, DE', impact: 'Attract tourists in their native language' },
+    ],
   },
 
   latam: {
@@ -488,6 +621,25 @@ export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
     },
     socialProof: 'Confiado por equipos de contenido en toda América Latina',
     comparisonSavings: 'Ahorra $121/mes vs Synthesia + ElevenLabs + DeepL + InVideo',
+    differentiators: {
+      firstToMarket: [
+        'First platform with Mexican, Colombian, Argentine, and Brazilian Spanish/Portuguese variants',
+        'First AI video platform supporting indigenous language integration alongside Spanish',
+        'First to offer culturally transcreated LATAM content — not Spain-Spanish or Portugal-Portuguese',
+      ],
+      capabilityDepth: [
+        'Only platform distinguishing Mexican from Colombian from Argentine Spanish in TTS',
+        'Only platform with LATAM-specific visual styles — not generic Western templates',
+        'Only platform combining fintech onboarding with vernacular narration for LATAM markets',
+      ],
+      heroBadge: '🏆 First: LATAM-Native Spanish Variants',
+    },
+    showcaseExamples: [
+      { industry: 'Fintech', icon: '📱', input: 'Neobank onboarding flow', pipeline: 'Spark → Vibe → Cast → Arc', output: 'Onboarding tutorial in Mexican, Colombian, Argentine, Brazilian variants', languages: 'ES-MX, ES-CO, ES-AR, PT-BR', impact: 'Region-authentic financial content' },
+      { industry: 'E-Commerce', icon: '🛒', input: 'Product campaign brief (Mercado Libre)', pipeline: 'Spark → Vibe → Cast', output: 'Social ad series in 4 LATAM Spanish variants + Brazilian Portuguese', languages: 'ES-MX, ES-CO, ES-AR, PT-BR', impact: '5 markets from single brief' },
+      { industry: 'Agriculture', icon: '🌾', input: 'Sustainable farming guide', pipeline: 'Mind → Spark → Vibe → Cast', output: 'Farmer education video in regional Spanish + indigenous language overlay', languages: 'ES-MX + Nahuatl subtitles', impact: 'First indigenous language integration' },
+      { industry: 'Education', icon: '📚', input: 'University course module', pipeline: 'Mind → Spark → Vibe → Cast → Arc', output: 'Online course video with professor avatar in 3 Spanish variants', languages: 'ES-MX, ES-CO, ES-AR', impact: 'Pan-LATAM education from single source' },
+    ],
   },
 
   caribbean: {
@@ -543,6 +695,25 @@ export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
     },
     socialProof: 'Trusted by Caribbean tourism boards and financial institutions',
     comparisonSavings: 'Save $121/month vs Synthesia + ElevenLabs + DeepL + InVideo',
+    differentiators: {
+      firstToMarket: [
+        'First AI video platform supporting Haitian Creole and Papiamento',
+        'First platform with Caribbean English dialect awareness in TTS',
+        'First to offer trilingual (English + French + Spanish) video production for island markets',
+      ],
+      capabilityDepth: [
+        'Only platform with Creole-aware transcreation — not just French translation',
+        'Only platform covering 25+ island markets with culturally adapted content',
+        'Only platform combining tourism visual styles with multilingual Caribbean narration',
+      ],
+      heroBadge: '🏆 First: Creole + Papiamento AI Video',
+    },
+    showcaseExamples: [
+      { industry: 'Tourism', icon: '🏖️', input: 'Resort experience highlights', pipeline: 'Spark → Vibe → Cast → Arc', output: 'Destination marketing video in English + French Creole + Spanish', languages: 'EN, HT-Creole, ES, FR', impact: 'Trilingual reach across Caribbean' },
+      { industry: 'Finance', icon: '🏦', input: 'Offshore banking product overview', pipeline: 'Spark → Deck → Vibe → Cast', output: 'Investor pitch video + compliance deck in English + Spanish', languages: 'EN, ES, FR', impact: 'Professional multilingual finance content' },
+      { industry: 'Agriculture', icon: '🌿', input: 'Export crop marketing brief', pipeline: 'Spark → Vibe → Cast → Arc', output: 'Export marketing video targeting EU + North American buyers', languages: 'EN, FR, ES, DE', impact: 'Caribbean products to global markets' },
+      { industry: 'Government', icon: '🏛️', input: 'Hurricane preparedness guidelines', pipeline: 'Mind → Spark → Vibe → Cast', output: 'Public safety video in Creole + English + Spanish with AI avatar', languages: 'HT-Creole, EN, ES', impact: 'Life-saving content in local languages' },
+    ],
   },
 };
 
