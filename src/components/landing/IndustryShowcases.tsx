@@ -299,8 +299,9 @@ export const IndustryShowcases: React.FC<IndustryShowcasesProps> = ({ region }) 
                       key={tab.id}
                       value={tab.id}
                       className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium
-                        bg-muted/50 text-foreground border border-transparent
-                        hover:bg-muted hover:border-border
+                        bg-muted text-foreground border border-border/50
+                        data-[state=inactive]:text-foreground data-[state=inactive]:bg-muted
+                        hover:bg-accent/10 hover:border-primary/30
                         data-[state=active]:bg-primary data-[state=active]:text-primary-foreground 
                         data-[state=active]:border-primary data-[state=active]:shadow-md
                         transition-all duration-200"
@@ -330,8 +331,9 @@ export const IndustryShowcases: React.FC<IndustryShowcasesProps> = ({ region }) 
                       key={tab.id}
                       value={tab.id}
                       className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium
-                        bg-muted/50 text-foreground border border-transparent
-                        hover:bg-muted hover:border-border
+                        bg-muted text-foreground border border-border/50
+                        data-[state=inactive]:text-foreground data-[state=inactive]:bg-muted
+                        hover:bg-accent/10 hover:border-primary/30
                         data-[state=active]:bg-primary data-[state=active]:text-primary-foreground 
                         data-[state=active]:border-primary data-[state=active]:shadow-md
                         transition-all duration-200"

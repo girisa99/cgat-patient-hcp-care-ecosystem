@@ -3,14 +3,15 @@
  * 
  * Calls ai-universal-processor with rate limiting.
  * Shows real AI-generated video scripts with scene breakdowns and watermark.
- * Demonstrates the text-to-video pipeline concept.
+ * Supports custom prompt input from user.
  */
 
-import React, { useState } from 'react';
-import { Video, Loader2, Sparkles, Globe, Lock, ChevronRight, Film } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Video, Loader2, Globe, Lock, ChevronRight, Film } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -48,8 +49,18 @@ export const VideoDemoCard: React.FC<VideoDemoCardProps> = ({ industryId, region
   const [isGenerating, setIsGenerating] = useState(false);
   const [scenes, setScenes] = useState<VideoScene[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [customPrompt, setCustomPrompt] = useState('');
+
+  // Reset when industry changes
+  useEffect(() => {
+    setCustomPrompt('');
+    setScenes(null);
+    setError(null);
+  }, [industryId]);
 
   if (!videoExample) return null;
+
+  const effectivePrompt = customPrompt.trim() || videoExample.script;
 
   const handleGenerate = async () => {
     setIsGenerating(true);
@@ -59,7 +70,7 @@ export const VideoDemoCard: React.FC<VideoDemoCardProps> = ({ industryId, region
     const langName = LANGUAGE_OPTIONS.find(l => l.code === selectedLang)?.name || 'English';
     const prompt = `You are a professional video producer. Create a scene-by-scene breakdown for a ${videoExample.duration} ${videoExample.style} video.
 
-Script concept: "${videoExample.script}"
+Script concept: "${effectivePrompt}"
 Industry: ${example?.industryName}
 Style: ${videoExample.style}
 Language: ${langName}
@@ -130,13 +141,32 @@ Respond in valid JSON format: { "scenes": [{ "sceneNumber": 1, "visual": "...", 
         </CardTitle>
       </CardHeader>
       <CardContent className="p-6 space-y-5">
-        {/* Script preview */}
-        <div className="p-3 bg-muted/30 rounded-lg border border-border">
-          <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1">🎬 Script Concept</p>
-          <p className="text-sm text-foreground italic">"{videoExample.script}"</p>
-          <div className="flex items-center gap-3 mt-2">
+        {/* Editable prompt area */}
+        <div className="space-y-2">
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+            🎬 Your Script Concept
+            <span className="text-[10px] font-normal normal-case text-muted-foreground/70">
+              (edit or use the example below)
+            </span>
+          </label>
+          <Textarea
+            value={customPrompt}
+            onChange={(e) => setCustomPrompt(e.target.value)}
+            placeholder={videoExample.script}
+            className="min-h-[80px] text-sm bg-muted/30 border-border resize-none"
+            rows={3}
+          />
+          <div className="flex items-center gap-2">
             <Badge variant="outline" className="text-[10px]">⏱ {videoExample.duration}</Badge>
             <Badge variant="outline" className="text-[10px]">🎨 {videoExample.style}</Badge>
+            {customPrompt.trim() && (
+              <button
+                onClick={() => setCustomPrompt('')}
+                className="text-[10px] text-primary hover:underline ml-auto"
+              >
+                Reset to example
+              </button>
+            )}
           </div>
         </div>
 
@@ -183,7 +213,7 @@ Respond in valid JSON format: { "scenes": [{ "sceneNumber": 1, "visual": "...", 
             {selectedLang !== 'en' ? 'Transcreation' : 'Scene Breakdown'}
           </span>
           <ChevronRight className="h-3 w-3" />
-          <span className="px-2 py-0.5 bg-green-500/10 text-green-600 dark:text-green-400 rounded-full font-medium">Video Storyboard</span>
+          <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-full font-medium">Video Storyboard</span>
         </div>
 
         {/* Loading */}
@@ -214,15 +244,12 @@ Respond in valid JSON format: { "scenes": [{ "sceneNumber": 1, "visual": "...", 
                     transition={{ delay: idx * 0.1 }}
                     className="relative pl-8 pb-4 last:pb-0"
                   >
-                    {/* Timeline line */}
                     {idx < scenes.length - 1 && (
                       <div className="absolute left-3 top-6 bottom-0 w-0.5 bg-border" />
                     )}
-                    {/* Timeline dot */}
                     <div className="absolute left-1.5 top-1.5 w-3 h-3 rounded-full bg-accent border-2 border-background" />
 
                     <div className="relative bg-card rounded-lg border border-border p-4 overflow-hidden" dir={selectedLang === 'ar' ? 'rtl' : 'ltr'}>
-                      {/* Watermark */}
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                         <p className="text-2xl font-black text-foreground/5 rotate-[-20deg]">PREVIEW</p>
                       </div>

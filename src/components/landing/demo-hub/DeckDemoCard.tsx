@@ -4,17 +4,19 @@
  * Calls ai-universal-processor with rate limiting (5 tries/min per visitor).
  * Shows real AI-generated slide outlines with watermark overlay.
  * Region-aware: adapts language context based on detected region.
+ * Supports custom prompt input from user.
  */
 
-import React, { useState } from 'react';
-import { Presentation, Loader2, Sparkles, Globe, Lock, Languages, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Presentation, Loader2, Sparkles, Globe, Lock, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getIndustryExample, type DeckExample } from './industryDemoExamples';
+import { getIndustryExample } from './industryDemoExamples';
 
 interface DeckDemoCardProps {
   industryId: string;
@@ -50,8 +52,18 @@ export const DeckDemoCard: React.FC<DeckDemoCardProps> = ({ industryId, region }
   const [slides, setSlides] = useState<GeneratedSlide[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [activeSlide, setActiveSlide] = useState(0);
+  const [customPrompt, setCustomPrompt] = useState('');
+
+  // Reset custom prompt when industry changes
+  useEffect(() => {
+    setCustomPrompt('');
+    setSlides(null);
+    setError(null);
+  }, [industryId]);
 
   if (!deckExample) return null;
+
+  const effectivePrompt = customPrompt.trim() || deckExample.prompt;
 
   const handleGenerate = async () => {
     setIsGenerating(true);
@@ -59,15 +71,17 @@ export const DeckDemoCard: React.FC<DeckDemoCardProps> = ({ industryId, region }
     setSlides(null);
 
     const langName = LANGUAGE_OPTIONS.find(l => l.code === selectedLang)?.name || 'English';
-    const prompt = `You are a professional presentation designer. Create a ${deckExample.slideCount}-slide presentation outline.
+    const slideCount = deckExample.slideCount;
+    
+    const prompt = `You are a professional presentation designer. Create a ${slideCount}-slide presentation outline.
 
-Topic: "${deckExample.topic}"
+Topic/Brief: "${effectivePrompt}"
 Industry: ${example?.industryName}
 Target Audience: ${deckExample.audience}
 Language: ${langName}
 
 For each slide, provide:
-- slideNumber (1-${deckExample.slideCount})
+- slideNumber (1-${slideCount})
 - title (concise, impactful)
 - bullets (3-4 key points)
 - speakerNotes (1-2 sentences)
@@ -91,8 +105,6 @@ Respond in valid JSON format: { "slides": [{ "slideNumber": 1, "title": "...", "
       if (fnError) throw new Error(fnError.message || 'Generation failed');
 
       const responseText = data?.generatedText || data?.text || '';
-      
-      // Parse JSON from response
       const jsonMatch = responseText.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
@@ -104,7 +116,7 @@ Respond in valid JSON format: { "slides": [{ "slideNumber": 1, "title": "...", "
     } catch (err: any) {
       const msg = err?.message || 'Generation failed';
       if (msg.includes('429') || msg.includes('rate') || msg.toLowerCase().includes('limit')) {
-        setError('Demo limit reached — each visitor gets limited free tries per minute. Everyone has access to limited tries. Please wait a moment.');
+        setError('Demo limit reached — each visitor gets limited free tries per minute. Please wait a moment.');
       } else {
         setError(msg);
       }
@@ -134,18 +146,36 @@ Respond in valid JSON format: { "slides": [{ "slideNumber": 1, "title": "...", "
         </CardTitle>
       </CardHeader>
       <CardContent className="p-6 space-y-5">
-        {/* Prompt preview */}
-        <div className="p-3 bg-muted/30 rounded-lg border border-border">
-          <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1">
-            📋 Topic
-          </p>
-          <p className="text-sm text-foreground font-medium">{deckExample.topic}</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Audience: {deckExample.audience}
-          </p>
+        {/* Editable prompt area */}
+        <div className="space-y-2">
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+            📋 Your Prompt
+            <span className="text-[10px] font-normal normal-case text-muted-foreground/70">
+              (edit or use the example below)
+            </span>
+          </label>
+          <Textarea
+            value={customPrompt}
+            onChange={(e) => setCustomPrompt(e.target.value)}
+            placeholder={deckExample.prompt}
+            className="min-h-[80px] text-sm bg-muted/30 border-border resize-none"
+            rows={3}
+          />
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="text-[10px]">🎯 Audience: {deckExample.audience}</Badge>
+            <Badge variant="outline" className="text-[10px]">📊 {deckExample.slideCount} slides</Badge>
+            {customPrompt.trim() && (
+              <button
+                onClick={() => setCustomPrompt('')}
+                className="text-[10px] text-primary hover:underline ml-auto"
+              >
+                Reset to example
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* Language selector */}
+        {/* Language selector + generate */}
         <div className="flex items-center gap-3">
           <div className="flex-1">
             <label className="text-xs font-medium text-muted-foreground uppercase mb-1.5 block">
@@ -188,7 +218,7 @@ Respond in valid JSON format: { "slides": [{ "slideNumber": 1, "title": "...", "
             {selectedLang !== 'en' ? 'Transcreation' : 'AI Generation'}
           </span>
           <ChevronRight className="h-3 w-3" />
-          <span className="px-2 py-0.5 bg-green-500/10 text-green-600 dark:text-green-400 rounded-full font-medium">
+          <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-full font-medium">
             {deckExample.slideCount}-Slide Deck
           </span>
         </div>
@@ -220,7 +250,7 @@ Respond in valid JSON format: { "slides": [{ "slideNumber": 1, "title": "...", "
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
                       activeSlide === idx
                         ? 'bg-primary text-primary-foreground shadow-sm'
-                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                        : 'bg-muted text-foreground hover:bg-muted/80'
                     }`}
                   >
                     Slide {slide.slideNumber}
