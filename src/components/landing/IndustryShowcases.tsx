@@ -18,8 +18,7 @@ import {
   Factory, Landmark, Globe, Sparkles, ArrowRight, Layers,
   Mic, Languages, Video, Presentation, FileText, Zap,
   Volume2, Shield, User, Box, Music, Image, Wand2,
-  CheckCircle2, Star, Smartphone, Eye, Trophy, Quote,
-  TrendingUp, Users,
+  CheckCircle2, Star, Smartphone, Eye,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -159,54 +158,7 @@ interface IndustryShowcasesProps {
   config?: RegionalConfig;
 }
 
-// ============================================
-// REGIONAL STORIES — previously GlobalInspirationSection
-// ============================================
-const REGIONAL_STORIES = [
-  {
-    region: 'MENA', flag: '🇸🇦', company: 'Government Education Initiative', industry: 'Government & Education',
-    useCase: 'Launched nationwide educational content across all 7 Arabic dialects — from Gulf to Levantine — with full RTL support.',
-    stats: { reach: '5M students', languages: '7 dialects', time: '3 weeks' },
-    quote: 'We went from months of agency work to weeks of self-service. Every dialect felt authentic.',
-    outcomes: ['80% faster delivery', 'Zero dialect complaints', 'Full MENA compliance'],
-  },
-  {
-    region: 'India', flag: '🇮🇳', company: 'EdTech Learning Platform', industry: 'EdTech & Training',
-    useCase: 'Course content transcreated into 22 Indian languages with Hinglish code-mixing for urban audiences.',
-    stats: { reach: '140M learners', languages: '22', time: '6 weeks' },
-    quote: 'Hinglish transcreation doubled our engagement in metro cities.',
-    outcomes: ['2x engagement uplift', '22 language variants', 'Native prosody'],
-  },
-  {
-    region: 'Africa', flag: '🌍', company: 'Mobile Financial Services', industry: 'Fintech & Banking',
-    useCase: 'Financial literacy videos in 10 African languages including Swahili, Yoruba, and Amharic.',
-    stats: { reach: '50M users', languages: '10', time: '4 weeks' },
-    quote: 'First time our customers heard financial advice in their mother tongue.',
-    outcomes: ['40% trust increase', '10 native languages', 'Mobile-first delivery'],
-  },
-  {
-    region: 'Europe', flag: '🇪🇺', company: 'Industrial Manufacturing Group', industry: 'Manufacturing & Safety',
-    useCase: 'Factory safety training across 15 European facilities — GDPR-compliant, culturally adapted.',
-    stats: { reach: '100K workers', languages: '12', time: '2 weeks' },
-    quote: 'We reduced training localization costs by 80% while comprehension scores went up.',
-    outcomes: ['80% cost reduction', 'GDPR compliant', '15 facilities covered'],
-  },
-  {
-    region: 'APAC', flag: '🌏', company: 'Cloud Technology Provider', industry: 'Technology & SaaS',
-    useCase: 'Technical docs and developer tutorials with CJK-optimized voices and proper honorific adaptation.',
-    stats: { reach: '10M developers', languages: '8', time: '1 week' },
-    quote: 'Natural Mandarin, proper Japanese keigo, contextual Korean — developers finally engage.',
-    outcomes: ['3x doc engagement', 'CJK-native voices', 'Honorific accuracy'],
-  },
-  {
-    region: 'LATAM', flag: '🌎', company: 'Digital Banking Platform', industry: 'Fintech & Consumer',
-    useCase: 'Customer onboarding videos transcreated between Brazilian Portuguese and 5 Spanish dialects.',
-    stats: { reach: '80M customers', languages: '6 variants', time: '2 weeks' },
-    quote: 'Our Mexican customers noticed we stopped sounding "Spanish" and started sounding local.',
-    outcomes: ['30% onboarding uplift', '6 dialect variants', 'Regional slang support'],
-  },
-];
-
+// Regional stories data removed — Real Results tab eliminated per restructure
 export const IndustryShowcases: React.FC<IndustryShowcasesProps> = ({ region, config }) => {
   const [selectedIndustry, setSelectedIndustry] = useState(FEATURED_INDUSTRIES[0]);
   const [activePipeline, setActivePipeline] = useState('deck');
@@ -225,9 +177,9 @@ export const IndustryShowcases: React.FC<IndustryShowcasesProps> = ({ region, co
             Try It Live — Real AI Generation
           </Badge>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 text-foreground">
-            Everything You Need.{' '}
+            One Platform. Every Market.{' '}
             <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Nothing You Don't.
+              The Only One You Need.
             </span>
           </h2>
           <p className="text-base sm:text-xl text-muted-foreground max-w-3xl mx-auto">
@@ -593,25 +545,17 @@ export const IndustryShowcases: React.FC<IndustryShowcasesProps> = ({ region, co
         {/* ============================================ */}
         {config && (
           <div className="mt-12 sm:mt-16 pt-12 border-t border-border/50">
-            <Tabs defaultValue="why-genie" className="w-full">
+            <Tabs defaultValue="showcase" className="w-full">
               <div className="text-center mb-6">
                 <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-2">
-                  Explore What's Included
+                  See How It Works
                 </p>
                 <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
-                  Differentiators, live showcases, transcreation depth, and real results — all under one roof.
+                  Live showcases and transcreation depth — experience the difference.
                 </p>
               </div>
 
-              <TabsList className="w-full h-auto p-1 bg-card border border-border rounded-xl mb-8 grid grid-cols-2 sm:grid-cols-4 gap-1">
-                <TabsTrigger
-                  value="why-genie"
-                  className="flex items-center gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm font-semibold"
-                >
-                  <Trophy className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">Why Genie</span>
-                  <span className="sm:hidden">Why</span>
-                </TabsTrigger>
+              <TabsList className="w-full h-auto p-1 bg-card border border-border rounded-xl mb-8 grid grid-cols-2 gap-1">
                 <TabsTrigger
                   value="showcase"
                   className="flex items-center gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm font-semibold"
@@ -628,59 +572,7 @@ export const IndustryShowcases: React.FC<IndustryShowcasesProps> = ({ region, co
                   <span className="hidden sm:inline">Transcreation vs Translation</span>
                   <span className="sm:hidden">Compare</span>
                 </TabsTrigger>
-                <TabsTrigger
-                  value="stories"
-                  className="flex items-center gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm font-semibold"
-                >
-                  <Globe className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">Real Results</span>
-                  <span className="sm:hidden">Results</span>
-                </TabsTrigger>
               </TabsList>
-
-              {/* WHY GENIE TAB */}
-              <TabsContent value="why-genie" className="mt-0 space-y-6">
-                <div className="p-5 bg-gradient-to-r from-primary/10 via-accent/5 to-primary/10 rounded-2xl border border-primary/20 text-center">
-                  <h4 className="text-xl sm:text-2xl font-bold text-foreground mb-2">
-                    We Speak Your Language. We Understand Your Market.
-                  </h4>
-                  <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
-                    Your content deserves more than word-for-word translation. Genie adapts tone, idioms, cultural references,
-                    and regional compliance — so your audience feels you were{' '}
-                    <span className="text-primary font-semibold">built for them</span>.
-                  </p>
-                </div>
-                {/* First to Market */}
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Trophy className="h-4 w-4 text-yellow-500" />
-                    <h5 className="text-xs font-bold text-foreground uppercase tracking-wider">First to Market</h5>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {config.differentiators.firstToMarket.map((claim, i) => (
-                      <div key={i} className="flex items-start gap-2 px-3 py-2.5 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
-                        <Trophy className="h-3.5 w-3.5 text-yellow-500 mt-0.5 shrink-0" />
-                        <span className="text-xs text-foreground">{claim}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                {/* Only Here */}
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Zap className="h-4 w-4 text-primary" />
-                    <h5 className="text-xs font-bold text-foreground uppercase tracking-wider">Only Here</h5>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {config.differentiators.capabilityDepth.map((claim, i) => (
-                      <div key={i} className="flex items-start gap-2 px-3 py-2.5 bg-primary/10 border border-primary/20 rounded-xl">
-                        <CheckCircle2 className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
-                        <span className="text-xs text-foreground">{claim}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </TabsContent>
 
               {/* SEE IT IN ACTION TAB */}
               <TabsContent value="showcase" className="mt-0">
@@ -787,11 +679,6 @@ export const IndustryShowcases: React.FC<IndustryShowcasesProps> = ({ region, co
                   </div>
                 </div>
               </TabsContent>
-
-              {/* REAL RESULTS TAB — Global Inspiration Stories */}
-              <TabsContent value="stories" className="mt-0">
-                <RegionalStoriesPanel />
-              </TabsContent>
             </Tabs>
           </div>
         )}
@@ -800,79 +687,5 @@ export const IndustryShowcases: React.FC<IndustryShowcasesProps> = ({ region, co
   );
 };
 
-// ============================================
-// REGIONAL STORIES PANEL
-// ============================================
-const RegionalStoriesPanel: React.FC = () => {
-  const [selectedStory, setSelectedStory] = useState(REGIONAL_STORIES[0]);
-
-  return (
-    <div>
-      <div className="flex flex-wrap justify-center gap-2 mb-6">
-        {REGIONAL_STORIES.map((story) => (
-          <button
-            key={story.region}
-            onClick={() => setSelectedStory(story)}
-            className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm transition ${
-              selectedStory.region === story.region
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-card border border-border text-foreground hover:bg-muted'
-            }`}
-          >
-            <span>{story.flag}</span>
-            <span>{story.region}</span>
-          </button>
-        ))}
-      </div>
-
-      <div className="bg-card border border-border rounded-2xl overflow-hidden">
-        <div className="grid md:grid-cols-2">
-          <div className="p-6 sm:p-8">
-            <div className="flex items-center gap-3 mb-4">
-              <span className="text-3xl">{selectedStory.flag}</span>
-              <div>
-                <h4 className="text-lg font-bold text-foreground">{selectedStory.company}</h4>
-                <Badge variant="secondary">{selectedStory.industry}</Badge>
-              </div>
-            </div>
-            <p className="text-muted-foreground mb-4">{selectedStory.useCase}</p>
-            <div className="bg-muted/50 rounded-xl p-4 mb-4">
-              <Quote className="h-5 w-5 text-primary mb-2" />
-              <p className="text-foreground italic text-sm">"{selectedStory.quote}"</p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {selectedStory.outcomes.map((outcome) => (
-                <span key={outcome} className="flex items-center gap-1 px-2.5 py-1 bg-green-500/10 text-green-600 dark:text-green-400 rounded-full text-xs font-medium">
-                  <CheckCircle2 className="h-3 w-3" />
-                  {outcome}
-                </span>
-              ))}
-            </div>
-          </div>
-          <div className="bg-gradient-to-br from-primary/10 to-accent/10 p-6 sm:p-8 flex flex-col justify-center">
-            <h4 className="text-sm font-semibold text-foreground mb-4">Results Achieved</h4>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="text-center">
-                <Users className="h-5 w-5 text-primary mx-auto mb-1" />
-                <p className="text-xl font-bold text-foreground">{selectedStory.stats.reach}</p>
-                <p className="text-xs text-muted-foreground">Reached</p>
-              </div>
-              <div className="text-center">
-                <Globe className="h-5 w-5 text-accent mx-auto mb-1" />
-                <p className="text-xl font-bold text-foreground">{selectedStory.stats.languages}</p>
-                <p className="text-xs text-muted-foreground">Languages</p>
-              </div>
-              <div className="text-center">
-                <TrendingUp className="h-5 w-5 text-green-500 mx-auto mb-1" />
-                <p className="text-xl font-bold text-foreground">{selectedStory.stats.time}</p>
-                <p className="text-xs text-muted-foreground">Time to Market</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 export default IndustryShowcases;
