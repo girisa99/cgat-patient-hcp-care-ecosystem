@@ -2,12 +2,13 @@
  * TTS Demo Card — Text-to-Speech with pre-built examples + custom text
  * 
  * ALWAYS plays the actual displayed text via playCustomText.
- * No hardcoded samples — what you see is what you hear.
+ * Edge function translates text to target language before TTS.
+ * Shows translated text during playback for transparency.
  * Region-aware: defaults to region's core languages with provider chain visibility.
  */
 
 import React, { useState } from 'react';
-import { Volume2, Loader2, Square, PenLine } from 'lucide-react';
+import { Volume2, Loader2, Square, PenLine, Languages } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -33,7 +34,6 @@ export const TTSDemoCard: React.FC<TTSDemoCardProps> = ({ region }) => {
   const tts = useTTSDemo();
   const examples = getExamplesForRegion(region);
 
-  // Get region-sorted languages
   const sortedLanguages = region
     ? registry.getLanguagesForRegion(region)
     : registry.ttsLanguages;
@@ -48,10 +48,9 @@ export const TTSDemoCard: React.FC<TTSDemoCardProps> = ({ region }) => {
   const [customText, setCustomText] = useState('');
   const [useCustom, setUseCustom] = useState(false);
 
-  // The SINGLE source of truth for what text will be spoken
   const activeText = useCustom ? customText.trim() : (selectedExample?.text || '');
+  const selectedLangName = ttsLangs.find(l => l.code === selectedLang)?.name || selectedLang;
 
-  // ALL playback goes through playCustomText — always speaks the displayed text
   const handleSpeak = (langOverride?: string) => {
     if (!activeText) return;
     tts.playCustomText(activeText, langOverride || selectedLang);
@@ -126,7 +125,6 @@ export const TTSDemoCard: React.FC<TTSDemoCardProps> = ({ region }) => {
           </div>
 
           {!useCustom ? (
-            /* Example chips */
             <div className="grid gap-2">
               {examples.slice(0, 5).map(ex => (
                 <button
@@ -158,7 +156,6 @@ export const TTSDemoCard: React.FC<TTSDemoCardProps> = ({ region }) => {
               ))}
             </div>
           ) : (
-            /* Custom text input */
             <div>
               <Textarea
                 value={customText}
@@ -172,11 +169,16 @@ export const TTSDemoCard: React.FC<TTSDemoCardProps> = ({ region }) => {
           )}
         </div>
 
-        {/* Preview of what will be spoken */}
-        {activeText && (
+        {/* Source text preview */}
+        {activeText && !tts.isPlaying && !tts.isLoading && (
           <div className="p-3 bg-muted/30 rounded-lg border border-border">
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1">Will speak:</p>
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1">
+              Source text (English)
+            </p>
             <p className="text-sm text-foreground leading-relaxed italic">"{activeText}"</p>
+            <p className="text-[10px] text-muted-foreground mt-1.5">
+              → Will be translated to <strong>{selectedLangName}</strong> then spoken
+            </p>
           </div>
         )}
 
@@ -193,29 +195,56 @@ export const TTSDemoCard: React.FC<TTSDemoCardProps> = ({ region }) => {
             ) : (
               <Volume2 className="h-4 w-4" />
             )}
-            Speak in {ttsLangs.find(l => l.code === selectedLang)?.name || selectedLang}
+            {tts.isLoading ? `Translating & Speaking...` : `Speak in ${selectedLangName}`}
           </Button>
         </div>
 
-        {/* Playback indicator */}
-        {tts.isPlaying && (
-          <div className="flex items-center justify-center gap-3 py-3 bg-primary/5 rounded-xl border border-primary/20">
-            <div className="flex items-center gap-0.5">
-              {[1, 2, 3, 4, 5, 6].map(i => (
-                <motion.div
-                  key={i}
-                  className="w-1 bg-primary rounded-full"
-                  animate={{ height: [4, 16, 8, 20, 6, 14] }}
-                  transition={{ repeat: Infinity, duration: 0.8, delay: i * 0.1 }}
-                />
-              ))}
-            </div>
-            <span className="text-sm text-primary font-medium">
-              Playing via {tts.provider || 'Azure Neural'}
+        {/* Loading indicator with translation info */}
+        {tts.isLoading && (
+          <div className="flex items-center justify-center gap-3 py-3 bg-accent/5 rounded-xl border border-accent/20">
+            <Loader2 className="h-4 w-4 animate-spin text-accent" />
+            <span className="text-sm text-accent font-medium">
+              Translating to {selectedLangName} & generating speech...
             </span>
-            <Button size="sm" variant="ghost" onClick={tts.stopAudio} className="h-7 px-2">
-              <Square className="h-3 w-3" />
-            </Button>
+          </div>
+        )}
+
+        {/* Playback indicator with translated text */}
+        {tts.isPlaying && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-center gap-3 py-3 bg-primary/5 rounded-xl border border-primary/20">
+              <div className="flex items-center gap-0.5">
+                {[1, 2, 3, 4, 5, 6].map(i => (
+                  <motion.div
+                    key={i}
+                    className="w-1 bg-primary rounded-full"
+                    animate={{ height: [4, 16, 8, 20, 6, 14] }}
+                    transition={{ repeat: Infinity, duration: 0.8, delay: i * 0.1 }}
+                  />
+                ))}
+              </div>
+              <span className="text-sm text-primary font-medium">
+                Playing via {tts.provider || 'Azure Neural'}
+              </span>
+              <Button size="sm" variant="ghost" onClick={tts.stopAudio} className="h-7 px-2">
+                <Square className="h-3 w-3" />
+              </Button>
+            </div>
+
+            {/* Show what was actually spoken (translated text) */}
+            {tts.wasTranslated && tts.translatedText && (
+              <div className="p-3 bg-primary/5 rounded-lg border border-primary/20">
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <Languages className="h-3.5 w-3.5 text-primary" />
+                  <p className="text-[10px] font-semibold text-primary uppercase">
+                    Speaking in {selectedLangName}
+                  </p>
+                </div>
+                <p className="text-sm text-foreground leading-relaxed" dir={selectedLang.startsWith('ar') || selectedLang.startsWith('he') || selectedLang.startsWith('ur') ? 'rtl' : 'ltr'}>
+                  "{tts.translatedText}"
+                </p>
+              </div>
+            )}
           </div>
         )}
 
@@ -223,7 +252,7 @@ export const TTSDemoCard: React.FC<TTSDemoCardProps> = ({ region }) => {
           <p className="text-sm text-destructive text-center">{tts.error}</p>
         )}
 
-        {/* Quick language chips — speak the SAME text in different languages */}
+        {/* Quick language chips */}
         {coreCodes.length > 0 && (
           <div>
             <label className="text-xs font-medium text-muted-foreground uppercase mb-2 block">
