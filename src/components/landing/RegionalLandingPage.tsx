@@ -97,7 +97,7 @@ const RegionalHero: React.FC<{ config: RegionalConfig; productContext?: string |
   const { hero, stats, cta } = config;
   
   return (
-    <section className={`relative flex flex-col pt-16 ${hero.isRTL ? 'rtl' : 'ltr'}`}>
+    <section className={`relative ${hero.isRTL ? 'rtl' : 'ltr'}`}>
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/5" />
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse" />
@@ -105,7 +105,7 @@ const RegionalHero: React.FC<{ config: RegionalConfig; productContext?: string |
       </div>
 
       {/* Primary Hero Content */}
-      <div className="relative max-w-7xl mx-auto px-4 py-16">
+      <div className="relative max-w-7xl mx-auto px-4 pt-24 pb-10">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <motion.div 
             className="space-y-6"
@@ -135,44 +135,47 @@ const RegionalHero: React.FC<{ config: RegionalConfig; productContext?: string |
 
             {/* Headline */}
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-              <span className="bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent">
-                One Platform.
+              <span className="text-foreground">One </span>
+              <span className="text-primary">Platform.</span>
+              <br />
+              <span className="text-3xl md:text-4xl lg:text-5xl text-foreground">
+                Every Market. The Only
               </span>
               <br />
               <span className="text-3xl md:text-4xl lg:text-5xl text-foreground">
-                Every Market. The Only One You Need.
+                One You Need.
               </span>
             </h1>
 
-            {/* Native subheadline */}
-            <p className="text-xl text-muted-foreground max-w-xl">
-              {hero.nativeSubheadline}
+            {/* Subheadline */}
+            <p className="text-lg text-muted-foreground max-w-xl">
+              AI-powered content production across 50+ industries in 140+ languages
             </p>
 
             {/* Transcreation message */}
-            <div className="p-4 bg-gradient-to-r from-primary/10 via-accent/5 to-primary/10 rounded-xl border border-primary/20">
+            <div className="p-4 bg-muted/50 rounded-xl border border-border">
               <p className="text-sm text-muted-foreground">
-                Your content deserves more than word-for-word translation. Genie adapts tone, idioms, cultural references,
-                and regional compliance — so your audience feels you were{' '}
-                <span className="text-primary font-semibold">built for them</span>.
+                Your content deserves more than word-for-word translation. Genie adapts tone,
+                idioms, cultural references, and regional compliance — so your audience feels you were{' '}
+                <span className="text-primary font-semibold underline">built for them</span>.
               </p>
             </div>
 
             {/* Stats grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div className="text-center p-3 bg-muted/50 rounded-xl">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="text-center p-3 bg-card rounded-xl border border-border">
                 <p className="text-2xl font-bold text-foreground">{stats.audienceReach}</p>
                 <p className="text-xs text-muted-foreground">Audience Reach</p>
               </div>
-              <div className="text-center p-3 bg-muted/50 rounded-xl">
+              <div className="text-center p-3 bg-card rounded-xl border border-border">
                 <p className="text-2xl font-bold text-primary">{stats.dialects || stats.languages}</p>
                 <p className="text-xs text-muted-foreground">{stats.dialects ? 'Dialects' : 'Languages'}</p>
               </div>
-              <div className="text-center p-3 bg-muted/50 rounded-xl">
-                <p className="text-2xl font-bold text-accent">{stats.costSavings}</p>
+              <div className="text-center p-3 bg-card rounded-xl border border-border">
+                <p className="text-2xl font-bold text-primary">{stats.costSavings}</p>
                 <p className="text-xs text-muted-foreground">Cost Savings</p>
               </div>
-              <div className="text-center p-3 bg-muted/50 rounded-xl">
+              <div className="text-center p-3 bg-card rounded-xl border border-border">
                 <p className="text-2xl font-bold text-foreground">{stats.localMetric.value}</p>
                 <p className="text-xs text-muted-foreground">{stats.localMetric.label}</p>
               </div>
@@ -196,14 +199,14 @@ const RegionalHero: React.FC<{ config: RegionalConfig; productContext?: string |
                 </Button>
               </Link>
               <Link to="/explore">
-                <Button size="lg" variant="outline" className="border-primary text-primary hover:bg-primary/10 text-lg px-8 py-6">
+                <Button size="lg" variant="outline" className="border-border text-muted-foreground hover:text-foreground hover:bg-muted text-lg px-8 py-6">
                   <Play className="mr-2 h-4 w-4" />
                   {cta.secondary}
                 </Button>
               </Link>
             </div>
 
-            <p className="text-muted-foreground text-sm">{cta.freeCredits}</p>
+            <p className="text-muted-foreground text-xs">{cta.freeCredits}</p>
           </motion.div>
 
           {/* Right: Professional AI Video Showcase */}
@@ -221,48 +224,67 @@ const RegionalHero: React.FC<{ config: RegionalConfig; productContext?: string |
         </div>
       </div>
 
-      {/* Banner 1: Mind to Media — rolling left to right (AFTER hero content) */}
-      <div className="relative overflow-hidden py-4 bg-gradient-to-r from-primary/10 via-accent/5 to-primary/10 border-t border-primary/10">
-        <motion.div
-          className="whitespace-nowrap"
-          animate={{ x: ['-50%', '0%'] }}
-          transition={{ duration: 22, repeat: Infinity, ease: 'linear' }}
-        >
-          {[...Array(6)].map((_, i) => (
-            <span key={i} className="inline-flex items-center gap-6 mx-8 text-2xl md:text-3xl font-black tracking-tight">
-              <span className="bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent">
-                Mind to Media
+      {/* ── Embedded Marquee Banners ── */}
+      <div className="relative pb-2 space-y-0">
+        {/* Banner 1: For Every Industry ✦ Mind to Media */}
+        <div className="overflow-hidden py-3 border-t border-border/40 bg-muted/30">
+          <motion.div
+            className="whitespace-nowrap"
+            animate={{ x: ['0%', '-50%'] }}
+            transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+          >
+            {[...Array(8)].map((_, i) => (
+              <span key={`b1-${i}`} className="inline-flex items-center gap-5 mx-6 text-xl md:text-2xl font-black tracking-tight">
+                <span className="text-primary">✦</span>
+                <span className="text-foreground">For Every Industry</span>
+                <span className="text-primary">✦</span>
+                <span className="text-muted-foreground">Mind to</span>
+                <span className="text-primary">Media</span>
               </span>
-              <span className="text-primary/40">✦</span>
-              <span className="text-foreground">
-                For Every Industry
-              </span>
-              <span className="text-primary/40">✦</span>
-            </span>
-          ))}
-        </motion.div>
-      </div>
+            ))}
+          </motion.div>
+        </div>
 
-      {/* Banner 2: We Speak Your Language — rolling left to right */}
-      <div className="relative overflow-hidden py-3 bg-gradient-to-r from-accent/10 via-primary/5 to-accent/10 border-t border-accent/10">
-        <motion.div
-          className="whitespace-nowrap"
-          animate={{ x: ['-50%', '0%'] }}
-          transition={{ duration: 28, repeat: Infinity, ease: 'linear' }}
-        >
-          {[...Array(6)].map((_, i) => (
-            <span key={i} className="inline-flex items-center gap-6 mx-8 text-lg md:text-xl font-bold">
-              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                We Speak Your Language.
+        {/* Banner 2: We Speak Your Language • We Understand Your Market */}
+        <div className="overflow-hidden py-2 bg-muted/20">
+          <motion.div
+            className="whitespace-nowrap"
+            animate={{ x: ['-50%', '0%'] }}
+            transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
+          >
+            {[...Array(8)].map((_, i) => (
+              <span key={`b2-${i}`} className="inline-flex items-center gap-5 mx-6 text-base md:text-lg font-semibold">
+                <span className="text-primary">We Speak Your Language.</span>
+                <span className="text-muted-foreground/60">•</span>
+                <span className="text-muted-foreground">We Understand Your Market.</span>
               </span>
-              <span className="text-muted-foreground">•</span>
-              <span className="bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
-                We Understand Your Market.
+            ))}
+          </motion.div>
+        </div>
+
+        {/* Banner 3: Capability highlights */}
+        <div className="overflow-hidden py-2 border-b border-border/40 bg-muted/10">
+          <motion.div
+            className="whitespace-nowrap"
+            animate={{ x: ['0%', '-50%'] }}
+            transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
+          >
+            {[...Array(6)].map((_, i) => (
+              <span key={`b3-${i}`} className="inline-flex items-center gap-5 mx-6 text-sm font-medium">
+                <span className="text-primary/70">◆</span>
+                <span className="text-muted-foreground">Transcreation, Not Translation</span>
+                <span className="text-primary/70">◆</span>
+                <span className="text-muted-foreground">50+ Industries</span>
+                <span className="text-primary/70">◆</span>
+                <span className="text-muted-foreground">140+ Languages</span>
+                <span className="text-primary/70">◆</span>
+                <span className="text-muted-foreground">First to Market</span>
+                <span className="text-primary/70">◆</span>
+                <span className="text-muted-foreground">Cultural Adaptation</span>
               </span>
-              <span className="text-muted-foreground">•</span>
-            </span>
-          ))}
-        </motion.div>
+            ))}
+          </motion.div>
+        </div>
       </div>
     </section>
   );
