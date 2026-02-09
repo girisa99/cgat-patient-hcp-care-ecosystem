@@ -11,7 +11,7 @@ import { useParams, Navigate, Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import { 
-  ArrowRight, Play, Sparkles, Globe,
+  ArrowRight, Play, Sparkles, Globe, Trophy, Zap, CheckCircle2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -448,7 +448,7 @@ export const RegionalLandingPage: React.FC = () => {
       <RegionalHero config={config} productContext={productContext} />
       <RegionNavigator currentSlug={regionSlug} />
 
-      {/* Product Ecosystem — 7 Products, 206 Pipelines */}
+      {/* Product Ecosystem — 7 Products, 206 Pipelines + Why Genie */}
       <section id="products" className="py-24 relative">
         <div className="absolute inset-0 bg-gradient-to-b from-background via-primary/5 to-background" />
         <div className="relative max-w-7xl mx-auto px-4">
@@ -464,6 +464,52 @@ export const RegionalLandingPage: React.FC = () => {
             activeProduct={activeProduct} 
             onProductChange={setActiveProduct} 
           />
+
+          {/* Why Genie — differentiators integrated into Products hub */}
+          {config && (
+            <div className="mt-12 sm:mt-16 pt-10 border-t border-border/50">
+              <div className="p-5 bg-gradient-to-r from-primary/10 via-accent/5 to-primary/10 rounded-2xl border border-primary/20 text-center mb-8">
+                <h4 className="text-xl sm:text-2xl font-bold text-foreground mb-2">
+                  We Speak Your Language. We Understand Your Market.
+                </h4>
+                <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
+                  Your content deserves more than word-for-word translation. Genie adapts tone, idioms, cultural references,
+                  and regional compliance — so your audience feels you were{' '}
+                  <span className="text-primary font-semibold">built for them</span>.
+                </p>
+              </div>
+              {/* First to Market */}
+              <div className="space-y-2 mb-6">
+                <div className="flex items-center gap-2">
+                  <Trophy className="h-4 w-4 text-yellow-500" />
+                  <h5 className="text-xs font-bold text-foreground uppercase tracking-wider">First to Market</h5>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {config.differentiators.firstToMarket.map((claim, i) => (
+                    <div key={i} className="flex items-start gap-2 px-3 py-2.5 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
+                      <Trophy className="h-3.5 w-3.5 text-yellow-500 mt-0.5 shrink-0" />
+                      <span className="text-xs text-foreground">{claim}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {/* Only Here */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-primary" />
+                  <h5 className="text-xs font-bold text-foreground uppercase tracking-wider">Only Here</h5>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {config.differentiators.capabilityDepth.map((claim, i) => (
+                    <div key={i} className="flex items-start gap-2 px-3 py-2.5 bg-primary/10 border border-primary/20 rounded-xl">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
+                      <span className="text-xs text-foreground">{claim}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
