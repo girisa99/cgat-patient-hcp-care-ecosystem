@@ -85,7 +85,7 @@ const content = (id: string, industry: string, emoji: string, topic: string, out
 
 const tts = (id: string, industry: string, emoji: string, text: string, outputLabel: string, preview: string, details: string[], stats: Partial<PipelineOutput['stats']>, tags: string[], langs: string[]): PipelineOutput => ({
   id, pipeline: 'Text-to-Speech', pipelineIcon: Volume2, pipelineColor: 'text-orange-500',
-  product: 'Azure Neural TTS', industry, industryEmoji: emoji,
+  product: 'Genie Cast', industry, industryEmoji: emoji,
   input: { label: 'Text', preview: text },
   aiProviders: ['Azure Neural TTS', 'Alibaba CosyVoice (CJK)'],
   output: { label: outputLabel, preview, details, format: 'MP3 / WAV' },
@@ -94,7 +94,7 @@ const tts = (id: string, industry: string, emoji: string, text: string, outputLa
 
 const stt = (id: string, industry: string, emoji: string, audioInput: string, outputLabel: string, preview: string, details: string[], tags: string[], langs: string[]): PipelineOutput => ({
   id, pipeline: 'Speech-to-Text', pipelineIcon: Mic, pipelineColor: 'text-rose-500',
-  product: 'Deepgram Nova 2', industry, industryEmoji: emoji,
+  product: 'Genie Mind', industry, industryEmoji: emoji,
   input: { label: 'Audio Input', preview: audioInput },
   aiProviders: ['Deepgram Nova 2', 'Azure STT'],
   output: { label: outputLabel, preview, details, format: 'TXT / SRT / VTT' },
@@ -103,7 +103,7 @@ const stt = (id: string, industry: string, emoji: string, audioInput: string, ou
 
 const translation = (id: string, industry: string, emoji: string, source: string, outputLabel: string, preview: string, details: string[], stats: Partial<PipelineOutput['stats']>, tags: string[], langs: string[]): PipelineOutput => ({
   id, pipeline: 'Translation', pipelineIcon: Languages, pipelineColor: 'text-cyan-500',
-  product: 'DeepL / Azure Translator', industry, industryEmoji: emoji,
+  product: 'Genie Arc', industry, industryEmoji: emoji,
   input: { label: 'Source Text', preview: source },
   aiProviders: ['DeepL', 'Azure Translator'],
   output: { label: outputLabel, preview, details, format: 'JSON / CSV' },
@@ -112,7 +112,7 @@ const translation = (id: string, industry: string, emoji: string, source: string
 
 const transcreation = (id: string, industry: string, emoji: string, source: string, outputLabel: string, preview: string, details: string[], stats: Partial<PipelineOutput['stats']>, tags: string[], langs: string[]): PipelineOutput => ({
   id, pipeline: 'Transcreation', pipelineIcon: Sparkles, pipelineColor: 'text-yellow-500',
-  product: 'Zone-Routed LLM', industry, industryEmoji: emoji,
+  product: 'Genie Studio', industry, industryEmoji: emoji,
   input: { label: 'Source Copy', preview: source },
   aiProviders: ['Qwen-Max (CJK/MENA)', 'Claude 4 (Western/EU)', 'Gemini 3 Pro (India/SEA)'],
   output: { label: outputLabel, preview, details, format: 'Localized Copy' },
