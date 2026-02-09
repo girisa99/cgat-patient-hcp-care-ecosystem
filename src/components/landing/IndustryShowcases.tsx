@@ -166,48 +166,98 @@ export const IndustryShowcases: React.FC<IndustryShowcasesProps> = ({ region, co
   const [showDifferentiators, setShowDifferentiators] = useState(false);
 
   return (
-    <section className="py-16 sm:py-24 relative" id="languages">
-      <div className="absolute inset-0 bg-gradient-to-b from-background via-primary/5 to-background" />
+    <section className="py-20 sm:py-28 relative" id="languages">
+      {/* Layered background for depth */}
+      <div className="absolute inset-0 bg-gradient-to-b from-background via-primary/[0.03] to-background" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,hsl(var(--primary)/0.08),transparent)]" />
       
-      <div className="relative max-w-7xl mx-auto px-3 sm:px-4">
-        {/* Header */}
-        <div className="text-center mb-6 sm:mb-8">
-          <Badge variant="outline" className="mb-3 sm:mb-4 gap-2 border-primary/30 text-primary">
-            <Zap className="w-3 h-3" />
-            Try It Live — Real AI Generation
-          </Badge>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 text-foreground">
-            One Platform. Every Market.{' '}
-            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6">
+        
+        {/* ── Hero Header Block ── */}
+        <motion.div 
+          className="text-center mb-14 sm:mb-16"
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+        >
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 mb-6 rounded-full border border-primary/20 bg-primary/5 backdrop-blur-sm">
+            <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
+            <span className="text-xs font-semibold text-primary tracking-wide uppercase">Live AI — Not Mockups</span>
+          </div>
+          
+          <h2 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-foreground tracking-tight leading-[1.1] mb-5">
+            One Platform.{' '}
+            <span className="block sm:inline">Every Market.</span>
+            <br />
+            <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent bg-[length:200%_auto] animate-[gradient-shift_6s_ease_infinite]">
               The Only One You Need.
             </span>
           </h2>
-          <p className="text-base sm:text-xl text-muted-foreground max-w-3xl mx-auto">
-            25+ production capabilities under one roof — pick your industry, choose a pipeline, 
-            and <span className="text-primary font-bold">try it now</span>. 
-            Not mockups. <span className="text-primary font-bold">Real AI generation</span>.
+          
+          <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            Pick your industry. Choose a pipeline. Generate real content.
           </p>
-        </div>
 
-        {/* "Only Here" differentiators strip */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-8 sm:mb-10">
-          {ONLY_HERE.map((item) => (
+          {/* Stats ribbon */}
+          <div className="flex items-center justify-center gap-6 sm:gap-10 mt-8">
+            {[
+              { value: '15', label: 'AI Providers' },
+              { value: '206', label: 'Pipelines' },
+              { value: '140+', label: 'Languages' },
+              { value: '50+', label: 'Industries' },
+            ].map((stat, i) => (
+              <motion.div
+                key={stat.label}
+                className="text-center"
+                initial={{ opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.2 + i * 0.08 }}
+              >
+                <p className="text-2xl sm:text-3xl font-black text-foreground">{stat.value}</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground font-medium tracking-wide uppercase mt-0.5">{stat.label}</p>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* ── "Only Here" Differentiators ── */}
+        <motion.div
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-14"
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.15, duration: 0.5 }}
+        >
+          {ONLY_HERE.map((item, i) => (
             <div 
               key={item.label}
-              className="flex items-start gap-2.5 p-3 sm:p-4 bg-card border border-border rounded-xl hover:border-primary/40 transition-colors group"
+              className="relative group p-4 rounded-2xl border border-border bg-card/60 backdrop-blur-sm hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300"
             >
-              <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-primary mt-0.5 shrink-0" />
-              <div>
-                <p className="text-xs sm:text-sm font-bold text-foreground group-hover:text-primary transition-colors">{item.label}</p>
-                <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">{item.desc}</p>
+              <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-primary/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-t-2xl" />
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                  <CheckCircle2 className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">{item.label}</p>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{item.desc}</p>
+                </div>
               </div>
             </div>
           ))}
-        </div>
+        </motion.div>
 
-        {/* Industry selector — scrollable on mobile */}
-        <div className="mb-5 sm:mb-6">
-          <p className="text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
+        {/* ── Industry Selector ── */}
+        <motion.div 
+          className="mb-6"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.2 }}
+        >
+          <p className="text-center text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-4">
             Select Your Industry
           </p>
           <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-hide justify-start sm:justify-center sm:flex-wrap">
@@ -219,61 +269,61 @@ export const IndustryShowcases: React.FC<IndustryShowcasesProps> = ({ region, co
                 <button
                   key={industry.id}
                   onClick={() => setSelectedIndustry(industry)}
-                  className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap shrink-0 ${
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap shrink-0 ${
                     isSelected 
-                      ? 'bg-primary text-primary-foreground scale-105 shadow-lg shadow-primary/25' 
-                      : 'bg-card border border-border text-foreground hover:border-primary/50 hover:shadow-md'
+                      ? 'bg-primary text-primary-foreground scale-[1.03] shadow-lg shadow-primary/20 ring-2 ring-primary/30 ring-offset-2 ring-offset-background' 
+                      : 'bg-card border border-border text-foreground hover:border-primary/40 hover:bg-primary/5'
                   }`}
                 >
-                  <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <Icon className="h-4 w-4" />
                   <span>{industry.name}</span>
                 </button>
               );
             })}
           </div>
-        </div>
+        </motion.div>
 
-        {/* Selected industry context bar */}
+        {/* ── Selected Industry Context ── */}
         <AnimatePresence mode="wait">
           <motion.div
             key={selectedIndustry.id}
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-            className="mb-5 sm:mb-6"
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.25, ease: 'easeOut' }}
+            className="mb-6"
           >
-            <div className="bg-card border border-border rounded-2xl p-3 sm:p-4 md:p-5">
-              <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 sm:gap-4">
+            <div className="bg-card/80 backdrop-blur-sm border border-border rounded-2xl p-4 md:p-5 shadow-sm">
+              <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-4">
                 {/* Industry info */}
                 <div className="flex items-center gap-3 flex-1 min-w-[200px]">
-                  {React.createElement(selectedIndustry.icon, { className: 'h-6 w-6 sm:h-7 sm:w-7 text-primary shrink-0' })}
+                  <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                    {React.createElement(selectedIndustry.icon, { className: 'h-6 w-6 text-primary' })}
+                  </div>
                   <div>
                     <h3 className="text-base sm:text-lg font-bold text-foreground">{selectedIndustry.name}</h3>
-                    <p className="text-[11px] sm:text-xs text-muted-foreground">{selectedIndustry.positioning}</p>
+                    <p className="text-xs text-muted-foreground leading-snug">{selectedIndustry.positioning}</p>
                   </div>
                 </div>
 
                 {/* Quick stats */}
-                <div className="flex items-center gap-4">
-                  <div className="text-center">
-                    <p className="text-lg sm:text-xl font-bold text-primary">{selectedIndustry.stats.time}</p>
-                    <p className="text-[10px] text-muted-foreground">Avg Gen</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-lg sm:text-xl font-bold text-accent">{selectedIndustry.stats.languages}</p>
-                    <p className="text-[10px] text-muted-foreground">Languages</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-lg sm:text-xl font-bold text-primary">{selectedIndustry.stats.savings}</p>
-                    <p className="text-[10px] text-muted-foreground">Savings</p>
-                  </div>
+                <div className="flex items-center gap-5 sm:gap-6">
+                  {[
+                    { value: selectedIndustry.stats.time, label: 'Avg Gen', color: 'text-primary' },
+                    { value: selectedIndustry.stats.languages, label: 'Languages', color: 'text-accent' },
+                    { value: selectedIndustry.stats.savings, label: 'Savings', color: 'text-primary' },
+                  ].map((s) => (
+                    <div key={s.label} className="text-center">
+                      <p className={`text-xl font-bold ${s.color}`}>{s.value}</p>
+                      <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">{s.label}</p>
+                    </div>
+                  ))}
                 </div>
 
-                {/* Regions + Pipelines */}
+                {/* Regions */}
                 <div className="flex flex-wrap gap-1.5">
                   {selectedIndustry.regions.map(r => (
-                    <Badge key={r} variant="outline" className="text-[10px] gap-1">
+                    <Badge key={r} variant="outline" className="text-[10px] gap-1 border-border/60">
                       <Globe className="w-2.5 h-2.5" />{r}
                     </Badge>
                   ))}
