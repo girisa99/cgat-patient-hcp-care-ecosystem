@@ -228,217 +228,171 @@ const RegionalHero: React.FC<{ config: RegionalConfig; productContext?: string |
 };
 
 // ============================================
-// HERO 2 — Mind to Media · For Every Industry
+// HORIZONTAL SCROLLING HERO CAROUSEL
 // ============================================
-const HeroMindToMedia: React.FC = () => (
-  <section className="relative py-20 overflow-hidden">
-    <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-background to-accent/5" />
-    <div className="absolute inset-0 overflow-hidden">
-      <div className="absolute top-1/3 right-1/4 w-80 h-80 bg-primary/8 rounded-full blur-3xl" />
-    </div>
-    <div className="relative max-w-7xl mx-auto px-4">
-      <motion.div
-        className="text-center space-y-6"
-        initial={{ opacity: 0, y: 30 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.6 }}
-      >
-        <Badge variant="outline" className="border-primary/40 text-primary text-sm px-4 py-1">
-          <Sparkles className="w-3 h-3 mr-1.5" /> End-to-End Content Production
-        </Badge>
-        <h2 className="text-4xl md:text-5xl lg:text-6xl font-black leading-tight">
-          <span className="text-foreground">Mind to </span>
-          <span className="text-primary">Media</span>
-        </h2>
-        <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto">
-          For Every Industry
-        </p>
-        <p className="text-base text-muted-foreground max-w-2xl mx-auto">
-          From the first spark of an idea to polished, market-ready content — 
-          across video, presentations, audio, and documents. One platform handles
-          ideation, scripting, production, localization, and distribution.
-        </p>
-        <div className="flex flex-wrap justify-center gap-3 pt-4">
-          {['Ideation', 'Scripting', 'Production', 'Localization', 'Distribution'].map((step, i) => (
-            <motion.div
-              key={step}
-              initial={{ opacity: 0, scale: 0.8 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-              className="flex items-center gap-2"
-            >
-              <span className="px-4 py-2 bg-card border border-border rounded-full text-sm font-semibold text-foreground">
-                {step}
-              </span>
-              {i < 4 && <ArrowRight className="w-4 h-4 text-primary/50" />}
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
-    </div>
-    {/* Scrolling accent */}
-    <div className="mt-12 overflow-hidden">
-      <motion.div
-        className="whitespace-nowrap"
-        animate={{ x: ['0%', '-50%'] }}
-        transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-      >
-        {[...Array(10)].map((_, i) => (
-          <span key={`mtm-${i}`} className="inline-flex items-center gap-6 mx-8 text-lg font-bold opacity-40">
-            <span className="text-primary">✦</span>
-            <span className="text-foreground">Mind to Media</span>
-            <span className="text-primary">✦</span>
-            <span className="text-foreground">For Every Industry</span>
-          </span>
-        ))}
-      </motion.div>
-    </div>
-  </section>
-);
+const HERO_SLIDES = [
+  {
+    badge: '✦ End-to-End Content Production',
+    headline: ['Mind to ', 'Media'],
+    subtitle: 'For Every Industry',
+    description: 'From the first spark of an idea to polished, market-ready content — across video, presentations, audio, and documents.',
+    type: 'pills' as const,
+    pills: ['Ideation', 'Scripting', 'Production', 'Localization', 'Distribution'],
+    bg: 'from-primary/8 via-background to-accent/5',
+    accent: 'bg-primary/8',
+  },
+  {
+    badge: '🌍 140+ Languages · 8 Global Regions',
+    headline: ['We Speak Your ', 'Language.'],
+    subtitle: 'We Understand Your Market.',
+    description: 'Not just translation — we adapt tone, idioms, humor, cultural references, and regional compliance so your audience feels you were built for them.',
+    type: 'stats' as const,
+    stats: [
+      { value: '140+', label: 'Languages' },
+      { value: '30+', label: 'Dialects' },
+      { value: '8', label: 'Regions' },
+      { value: 'RTL', label: 'Full Support' },
+    ],
+    bg: 'from-accent/5 via-background to-primary/8',
+    accent: 'bg-accent/8',
+  },
+  {
+    badge: '🚀 First to Market',
+    headline: ['Transcreation, ', 'Not Translation.'],
+    subtitle: 'Cultural Adaptation at Scale',
+    description: 'Translation converts words. Transcreation converts meaning — intent, emotion, and cultural context for every target market.',
+    type: 'comparison' as const,
+    comparison: {
+      bad: { label: '❌ Translation', text: '"Our product helps you save time and money."', note: 'Word-for-word. Literal. Generic.' },
+      good: { label: '✅ Transcreation', text: '"لأن وقتك أغلى من أي استثمار"', note: 'Culturally adapted. Emotionally resonant.' },
+    },
+    bg: 'from-primary/5 via-background to-accent/8',
+    accent: 'bg-primary/6',
+  },
+];
 
-// ============================================
-// HERO 3 — We Speak Your Language · We Understand Your Market
-// ============================================
-const HeroLanguage: React.FC = () => (
-  <section className="relative py-20 overflow-hidden">
-    <div className="absolute inset-0 bg-gradient-to-bl from-accent/5 via-background to-primary/8" />
-    <div className="absolute inset-0 overflow-hidden">
-      <div className="absolute bottom-1/3 left-1/4 w-72 h-72 bg-accent/8 rounded-full blur-3xl" />
-    </div>
-    <div className="relative max-w-7xl mx-auto px-4">
-      <motion.div
-        className="text-center space-y-6"
-        initial={{ opacity: 0, y: 30 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.6 }}
-      >
-        <Badge variant="outline" className="border-accent/40 text-accent text-sm px-4 py-1">
-          <Globe className="w-3 h-3 mr-1.5" /> 140+ Languages · 8 Global Regions
-        </Badge>
-        <h2 className="text-4xl md:text-5xl lg:text-6xl font-black leading-tight">
-          <span className="text-primary">We Speak Your Language.</span>
-        </h2>
-        <p className="text-2xl md:text-3xl font-bold text-foreground">
-          We Understand Your Market.
-        </p>
-        <p className="text-base text-muted-foreground max-w-2xl mx-auto">
-          Not just translation — we adapt tone, idioms, humor, cultural references,
-          and regional compliance so your audience feels you were built for them.
-          Powered by zone-specific AI routing across 8 global regions.
-        </p>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-2xl mx-auto pt-4">
-          {[
-            { value: '140+', label: 'Languages' },
-            { value: '30+', label: 'Dialects' },
-            { value: '8', label: 'Regions' },
-            { value: 'RTL', label: 'Full Support' },
-          ].map((stat, i) => (
-            <motion.div
-              key={stat.label}
-              initial={{ opacity: 0, y: 15 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-              className="text-center p-3 bg-card rounded-xl border border-border"
-            >
-              <p className="text-2xl font-bold text-primary">{stat.value}</p>
-              <p className="text-xs text-muted-foreground">{stat.label}</p>
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
-    </div>
-    {/* Scrolling accent */}
-    <div className="mt-12 overflow-hidden">
-      <motion.div
-        className="whitespace-nowrap"
-        animate={{ x: ['-50%', '0%'] }}
-        transition={{ duration: 24, repeat: Infinity, ease: 'linear' }}
-      >
-        {[...Array(10)].map((_, i) => (
-          <span key={`lang-${i}`} className="inline-flex items-center gap-6 mx-8 text-lg font-bold opacity-40">
-            <span className="text-primary">We Speak Your Language.</span>
-            <span className="text-muted-foreground/50">•</span>
-            <span className="text-foreground">We Understand Your Market.</span>
-          </span>
-        ))}
-      </motion.div>
-    </div>
-  </section>
-);
+const HeroCarousel: React.FC = () => {
+  const [current, setCurrent] = React.useState(0);
+  const [direction, setDirection] = React.useState(1);
 
-// ============================================
-// HERO 4 — Transcreation, Not Translation
-// ============================================
-const HeroTranscreation: React.FC = () => (
-  <section className="relative py-20 overflow-hidden">
-    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/8" />
-    <div className="relative max-w-7xl mx-auto px-4">
-      <motion.div
-        className="text-center space-y-6"
-        initial={{ opacity: 0, y: 30 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.6 }}
-      >
-        <Badge variant="outline" className="border-primary/40 text-primary text-sm px-4 py-1">
-          First to Market
-        </Badge>
-        <h2 className="text-4xl md:text-5xl lg:text-6xl font-black leading-tight">
-          <span className="text-foreground">Transcreation,</span>
-          <br />
-          <span className="text-primary">Not Translation.</span>
-        </h2>
-        <p className="text-base text-muted-foreground max-w-2xl mx-auto">
-          Translation converts words. Transcreation converts meaning. We adapt your content's
-          intent, emotion, and cultural context — ensuring it resonates as if it were originally
-          created in every target market.
-        </p>
-        <div className="grid sm:grid-cols-2 gap-6 max-w-3xl mx-auto pt-6">
-          <div className="p-6 bg-card rounded-2xl border border-border text-left space-y-3">
-            <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider">❌ Translation</p>
-            <p className="text-foreground font-medium">"Our product helps you save time and money."</p>
-            <p className="text-xs text-muted-foreground">Word-for-word. Literal. Generic.</p>
-          </div>
-          <div className="p-6 bg-primary/5 rounded-2xl border border-primary/20 text-left space-y-3">
-            <p className="text-sm font-bold text-primary uppercase tracking-wider">✅ Transcreation</p>
-            <p className="text-foreground font-medium">"لأن وقتك أغلى من أي استثمار"</p>
-            <p className="text-xs text-muted-foreground">Culturally adapted. Emotionally resonant. Market-native.</p>
-          </div>
-        </div>
-        <div className="flex flex-wrap justify-center gap-3 pt-4">
-          {['Cultural Adaptation', '50+ Industries', '15 AI Providers', '206 Pipelines'].map((item) => (
-            <span key={item} className="px-3 py-1.5 bg-muted rounded-full text-xs font-semibold text-muted-foreground">
-              {item}
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      setDirection(1);
+      setCurrent((prev) => (prev + 1) % HERO_SLIDES.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const goTo = (index: number) => {
+    setDirection(index > current ? 1 : -1);
+    setCurrent(index);
+  };
+
+  const slide = HERO_SLIDES[current];
+
+  return (
+    <section className="relative min-h-[60vh] overflow-hidden">
+      <div className={`absolute inset-0 bg-gradient-to-br ${slide.bg} transition-all duration-700`} />
+      <div className="absolute inset-0 overflow-hidden">
+        <div className={`absolute top-1/3 right-1/4 w-80 h-80 ${slide.accent} rounded-full blur-3xl transition-all duration-700`} />
+      </div>
+
+      <div className="relative max-w-7xl mx-auto px-4 py-20">
+        <motion.div
+          key={current}
+          initial={{ opacity: 0, x: direction * 120 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+          className="text-center space-y-6"
+        >
+          <Badge variant="outline" className="border-primary/40 text-primary text-sm px-4 py-1">
+            {slide.badge}
+          </Badge>
+
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-black leading-tight">
+            <span className="text-foreground">{slide.headline[0]}</span>
+            <span className="text-primary">{slide.headline[1]}</span>
+          </h2>
+
+          <p className="text-2xl md:text-3xl font-bold text-foreground">{slide.subtitle}</p>
+          <p className="text-base text-muted-foreground max-w-2xl mx-auto">{slide.description}</p>
+
+          {slide.type === 'pills' && slide.pills && (
+            <div className="flex flex-wrap justify-center gap-3 pt-2">
+              {slide.pills.map((pill, i) => (
+                <span key={pill} className="inline-flex items-center gap-2">
+                  <span className="px-4 py-2 bg-card border border-border rounded-full text-sm font-semibold text-foreground">
+                    {pill}
+                  </span>
+                  {i < slide.pills.length - 1 && <ArrowRight className="w-4 h-4 text-primary/50" />}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {slide.type === 'stats' && slide.stats && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-2xl mx-auto pt-4">
+              {slide.stats.map((stat) => (
+                <div key={stat.label} className="text-center p-3 bg-card rounded-xl border border-border">
+                  <p className="text-2xl font-bold text-primary">{stat.value}</p>
+                  <p className="text-xs text-muted-foreground">{stat.label}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {slide.type === 'comparison' && slide.comparison && (
+            <div className="grid sm:grid-cols-2 gap-6 max-w-3xl mx-auto pt-4">
+              <div className="p-6 bg-card rounded-2xl border border-border text-left space-y-3">
+                <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider">{slide.comparison.bad.label}</p>
+                <p className="text-foreground font-medium">{slide.comparison.bad.text}</p>
+                <p className="text-xs text-muted-foreground">{slide.comparison.bad.note}</p>
+              </div>
+              <div className="p-6 bg-primary/5 rounded-2xl border border-primary/20 text-left space-y-3">
+                <p className="text-sm font-bold text-primary uppercase tracking-wider">{slide.comparison.good.label}</p>
+                <p className="text-foreground font-medium">{slide.comparison.good.text}</p>
+                <p className="text-xs text-muted-foreground">{slide.comparison.good.note}</p>
+              </div>
+            </div>
+          )}
+        </motion.div>
+      </div>
+
+      {/* Dots */}
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3">
+        {HERO_SLIDES.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => goTo(i)}
+            className={`h-2.5 rounded-full transition-all duration-300 ${
+              i === current ? 'w-8 bg-primary' : 'w-2.5 bg-muted-foreground/30 hover:bg-muted-foreground/50'
+            }`}
+          />
+        ))}
+      </div>
+
+      {/* Scrolling marquee */}
+      <div className="absolute bottom-14 left-0 right-0 overflow-hidden">
+        <motion.div
+          className="whitespace-nowrap"
+          animate={{ x: ['0%', '-50%'] }}
+          transition={{ duration: 22, repeat: Infinity, ease: 'linear' }}
+        >
+          {[...Array(10)].map((_, i) => (
+            <span key={i} className="inline-flex items-center gap-6 mx-8 text-sm font-semibold opacity-20">
+              <span className="text-primary">✦</span>
+              <span className="text-foreground">Mind to Media</span>
+              <span className="text-primary">•</span>
+              <span className="text-foreground">We Speak Your Language</span>
+              <span className="text-primary">◆</span>
+              <span className="text-foreground">Transcreation, Not Translation</span>
             </span>
           ))}
-        </div>
-      </motion.div>
-    </div>
-    {/* Scrolling accent */}
-    <div className="mt-12 overflow-hidden">
-      <motion.div
-        className="whitespace-nowrap"
-        animate={{ x: ['0%', '-50%'] }}
-        transition={{ duration: 28, repeat: Infinity, ease: 'linear' }}
-      >
-        {[...Array(8)].map((_, i) => (
-          <span key={`tc-${i}`} className="inline-flex items-center gap-5 mx-6 text-sm font-semibold opacity-40">
-            <span className="text-primary/60">◆</span>
-            <span className="text-foreground">Transcreation, Not Translation</span>
-            <span className="text-primary/60">◆</span>
-            <span className="text-muted-foreground">Cultural Adaptation</span>
-            <span className="text-primary/60">◆</span>
-            <span className="text-muted-foreground">First to Market</span>
-          </span>
-        ))}
-      </motion.div>
-    </div>
-  </section>
-);
+        </motion.div>
+      </div>
+    </section>
+  );
+};
 // ============================================
 const RegionalIndustries: React.FC<{ config: RegionalConfig }> = ({ config }) => (
   <section className="py-20 relative">
@@ -658,9 +612,7 @@ export const RegionalLandingPage: React.FC = () => {
       <RegionalSEOHead config={config} currentSlug={regionSlug} />
       <RegionalNavbar config={config} />
       <RegionalHero config={config} productContext={productContext} />
-      <HeroMindToMedia />
-      <HeroLanguage />
-      <HeroTranscreation />
+      <HeroCarousel />
       <RegionNavigator currentSlug={regionSlug} />
 
       {/* Product Ecosystem — 7 Products, 206 Pipelines + Why Genie */}
