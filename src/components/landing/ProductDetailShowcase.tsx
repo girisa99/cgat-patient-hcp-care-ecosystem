@@ -299,23 +299,26 @@ export const ProductDetailShowcase: React.FC<ProductDetailShowcaseProps> = ({
       <div className="flex flex-wrap justify-center gap-2 mb-8">
         {PRODUCT_TAB_ORDER.map((tab) => {
           const isActive = activeProduct === tab.key;
-          const tabLogo = PRODUCT_LOGOS[tab.key];
+          const productInfo = tab.key !== 'ask' ? GENIE_PRODUCTS[tab.key as GenieProduct] : null;
+          const combinedLogo = productInfo ? productInfo.logos.combined : PRODUCT_LOGOS.ask;
+          const tagline = productInfo ? productInfo.tagline : ASK_GENIE.tagline;
           return (
             <button
               key={tab.key}
               onClick={() => onProductChange(tab.key)}
               className={`
-                flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium transition-all duration-200
+                flex items-center gap-2.5 px-4 py-2.5 rounded-full text-sm font-medium transition-all duration-200
                 ${isActive
                   ? 'bg-primary text-primary-foreground shadow-lg scale-105'
                   : 'bg-card border border-border text-muted-foreground hover:text-foreground hover:border-primary/40 hover:bg-muted/50'
                 }
               `}
+              title={tagline}
             >
               <img 
-                src={tabLogo} 
+                src={combinedLogo} 
                 alt={tab.label} 
-                className="w-5 h-5 object-contain flex-shrink-0" 
+                className="h-6 w-auto object-contain flex-shrink-0" 
               />
               <span>{tab.label}</span>
               {isActive && PRODUCT_EXTENDED[tab.key] && (
