@@ -51,7 +51,7 @@ const COMBINATION_FLOWS: CombinationFlow[] = [
     subtitle: 'End-to-end content pipeline in one platform',
     differentiator: 'Create a deck, convert it to a narrated video, then transcreate into 5+ languages — all without leaving the platform.',
     steps: [
-      { icon: Presentation, label: 'AI Deck', provider: 'Gemini 2.0', output: '6-slide PPTX', color: 'bg-blue-500' },
+      { icon: Presentation, label: 'AI Deck', provider: 'Gemini 3 Pro', output: '6-slide PPTX', color: 'bg-blue-500' },
       { icon: Video, label: 'Deck-to-Video', provider: 'Vertex Veo 3', output: 'Narrated MP4', color: 'bg-purple-500' },
       { icon: Volume2, label: 'AI Voiceover', provider: 'Azure Neural', output: 'Native TTS', color: 'bg-orange-500' },
       { icon: Languages, label: 'Transcreation', provider: 'Zone-Routed LLM', output: '5 Languages', color: 'bg-cyan-500' },
@@ -94,9 +94,9 @@ const COMBINATION_FLOWS: CombinationFlow[] = [
     differentiator: 'A single topic generates a blog, video script, social captions, email copy, and a deck — all consistent and on-brand.',
     steps: [
       { icon: FileText, label: 'Blog Article', provider: 'Claude 4', output: '1,200 words', color: 'bg-emerald-500' },
-      { icon: Video, label: 'Video Script', provider: 'Gemini 2.0', output: '4-Scene Script', color: 'bg-purple-500' },
+      { icon: Video, label: 'Video Script', provider: 'Gemini 3 Pro', output: '4-Scene Script', color: 'bg-purple-500' },
       { icon: Image, label: 'Social Captions', provider: 'GPT-4o', output: '5 Platforms', color: 'bg-rose-500' },
-      { icon: Presentation, label: 'Slide Deck', provider: 'Gemini 2.0', output: '5-Slide PPTX', color: 'bg-blue-500' },
+      { icon: Presentation, label: 'Slide Deck', provider: 'Gemini 3 Pro', output: '5-Slide PPTX', color: 'bg-blue-500' },
     ],
     tags: ['Content Repurposing', 'Cross-Platform', 'Brand Consistent'],
     tier: 'Creator',
