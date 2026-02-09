@@ -24,6 +24,31 @@ import { motion } from 'framer-motion';
 
 const SUPABASE_URL = 'https://ithspbabhmdntioslfqe.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0aHNwYmFiaG1kbnRpb3NsZnFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY5MjU5OTMsImV4cCI6MjA2MjUwMTk5M30.yUZZHsz2wIHboVuWWfqXeAH5oHRxzJIz20NWSUmHPhw';
+const MAX_RETRIES = 3;
+const INITIAL_BACKOFF_MS = 3000;
+
+async function fetchWithRetry(url: string, options: RequestInit, retries = MAX_RETRIES): Promise<Response> {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const response = await fetch(url, options);
+    if (response.ok) return response;
+
+    const body = await response.json().catch(() => ({ message: '' }));
+    const isRateLimited = response.status === 429 ||
+      (body?.message || body?.error || '').toLowerCase().includes('throttler') ||
+      (body?.message || body?.error || '').toLowerCase().includes('too many');
+
+    if (isRateLimited && attempt < retries) {
+      const backoff = INITIAL_BACKOFF_MS * Math.pow(2, attempt);
+      console.log(`[STT] Rate limited, retrying in ${backoff}ms (attempt ${attempt + 1}/${retries})`);
+      await new Promise(r => setTimeout(r, backoff));
+      continue;
+    }
+    throw new Error(isRateLimited
+      ? 'Service is busy — please wait a few seconds and try again.'
+      : (body?.error || body?.message || 'Transcription failed'));
+  }
+  throw new Error('Service is busy — please wait a few seconds and try again.');
+}
 
 const REGION_DEFAULT_LANG: Record<string, string> = {
   mena: 'ar', india: 'hi', africa: 'sw', apac: 'ja',
@@ -135,7 +160,7 @@ export const STTDemoCard: React.FC<STTDemoCardProps> = ({ region }) => {
       }
       const base64Audio = btoa(binary);
 
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/voice-to-text`, {
+      const response = await fetchWithRetry(`${SUPABASE_URL}/functions/v1/voice-to-text`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -144,11 +169,6 @@ export const STTDemoCard: React.FC<STTDemoCardProps> = ({ region }) => {
         },
         body: JSON.stringify({ audio: base64Audio, language }),
       });
-
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({ error: 'STT failed' }));
-        throw new Error(err.error || 'Transcription failed');
-      }
 
       const data = await response.json();
       setTranscription(data.text || '');
