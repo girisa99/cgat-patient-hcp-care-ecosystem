@@ -36,6 +36,26 @@ import heroPlatformImg from '@/assets/hero-platform.jpg';
 import heroPipelineImg from '@/assets/hero-pipeline.jpg';
 import heroLanguagesImg from '@/assets/hero-languages.jpg';
 import heroTranscreationImg from '@/assets/hero-transcreation.jpg';
+// Region-specific hero backgrounds
+import heroRegionNam from '@/assets/hero-region-nam.jpg';
+import heroRegionEurope from '@/assets/hero-region-europe.jpg';
+import heroRegionMena from '@/assets/hero-region-mena.jpg';
+import heroRegionIndia from '@/assets/hero-region-india.jpg';
+import heroRegionAfrica from '@/assets/hero-region-africa.jpg';
+import heroRegionApac from '@/assets/hero-region-apac.jpg';
+import heroRegionLatam from '@/assets/hero-region-latam.jpg';
+import heroRegionCaribbean from '@/assets/hero-region-caribbean.jpg';
+
+const REGION_HERO_IMAGES: Record<RegionSlug, string[]> = {
+  nam: [heroRegionNam, heroPipelineImg, heroLanguagesImg, heroTranscreationImg],
+  europe: [heroRegionEurope, heroPipelineImg, heroLanguagesImg, heroTranscreationImg],
+  mena: [heroRegionMena, heroPipelineImg, heroLanguagesImg, heroTranscreationImg],
+  india: [heroRegionIndia, heroPipelineImg, heroLanguagesImg, heroTranscreationImg],
+  africa: [heroRegionAfrica, heroPipelineImg, heroLanguagesImg, heroTranscreationImg],
+  apac: [heroRegionApac, heroPipelineImg, heroLanguagesImg, heroTranscreationImg],
+  latam: [heroRegionLatam, heroPipelineImg, heroLanguagesImg, heroTranscreationImg],
+  caribbean: [heroRegionCaribbean, heroPipelineImg, heroLanguagesImg, heroTranscreationImg],
+};
 
 // ============================================
 // SEO HEAD COMPONENT
@@ -321,13 +341,13 @@ const useHeroVoiceover = () => {
 // ============================================
 // UNIFIED HERO CAROUSEL — Cinematic Enterprise
 // ============================================
-const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string | null }> = ({ config, productContext }) => {
+const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string | null; regionSlug?: RegionSlug }> = ({ config, productContext, regionSlug = 'nam' }) => {
   const { hero, stats, cta } = config;
   const [current, setCurrent] = React.useState(0);
   const [direction, setDirection] = React.useState(1);
   const { speak, stop, isSpeaking } = useHeroVoiceover();
 
-  const heroImages = [heroPlatformImg, heroPipelineImg, heroLanguagesImg, heroTranscreationImg];
+  const heroImages = REGION_HERO_IMAGES[regionSlug] || REGION_HERO_IMAGES.nam;
 
   const slides = [
     {
@@ -900,7 +920,7 @@ export const RegionalLandingPage: React.FC = () => {
     <main className={`min-h-screen bg-background text-foreground ${config.hero.isRTL ? 'rtl' : 'ltr'}`}>
       <RegionalSEOHead config={config} currentSlug={regionSlug} />
       <RegionalNavbar config={config} />
-      <HeroCarousel config={config} productContext={productContext} />
+      <HeroCarousel config={config} productContext={productContext} regionSlug={regionSlug} />
       <RegionNavigator currentSlug={regionSlug} />
 
       {/* Product Ecosystem — 7 Products, 206 Pipelines + Why Genie */}
