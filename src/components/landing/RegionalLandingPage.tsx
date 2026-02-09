@@ -6,13 +6,13 @@
  * English is always present alongside native language content.
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, Navigate, Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import { 
-  ArrowRight, Play, Sparkles, Globe, Zap, 
-  Volume2, Cpu
+  ArrowRight, Play, Sparkles, Globe,
+  Volume2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +26,13 @@ import {
 } from '@/config/regionalLandingConfig';
 import { RegionalPricingSection } from '@/components/landing/RegionalPricingSection';
 import { LocalizationDemoHub } from '@/components/landing/LocalizationDemoHub';
+import { ProfessionalAvatarShowcase } from '@/components/landing/video/ProfessionalAvatarShowcase';
+import { ProductDetailShowcase } from '@/components/landing/ProductDetailShowcase';
+import { CrossFunctionalSection } from '@/components/landing/CrossFunctionalSection';
+import { GlobalInspirationSection } from '@/components/landing/GlobalInspirationSection';
+import { DogfoodingProof } from '@/components/landing/DogfoodingProof';
+import { IndustryShowcases } from '@/components/landing/IndustryShowcases';
+import { RegionSwitcherNav } from '@/components/landing/RegionSwitcherNav';
 import genieSuiteLogo from '@/assets/logos/genie-studio-suite-logo.png';
 
 // ============================================
@@ -92,7 +99,7 @@ const RegionalHero: React.FC<{ config: RegionalConfig; productContext?: string |
   const { hero, stats, cta } = config;
   
   return (
-    <section className={`relative min-h-[85vh] flex items-center pt-16 ${hero.isRTL ? 'rtl' : 'ltr'}`}>
+  <section className={`relative min-h-[85vh] flex items-center pt-16 ${hero.isRTL ? 'rtl' : 'ltr'}`}>
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/5" />
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse" />
@@ -185,45 +192,26 @@ const RegionalHero: React.FC<{ config: RegionalConfig; productContext?: string |
             <p className="text-muted-foreground text-sm">{cta.freeCredits}</p>
           </motion.div>
 
-          {/* Right: Zone-based AI routing visualization */}
+          {/* Right: Professional AI Video Showcase */}
           <motion.div 
             className="relative"
             initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            <div className="bg-card border border-border rounded-2xl p-6 shadow-xl">
-              <div className="flex items-center gap-2 mb-4">
-                <Cpu className="h-5 w-5 text-primary" />
-                <h3 className="font-bold text-foreground">AI Routing for {hero.regionName}</h3>
-              </div>
-              <p className="text-sm text-muted-foreground mb-4">
-                We automatically select the best AI provider for your region and task
-              </p>
-              <div className="space-y-3">
-                {config.zoneProviders.map((provider, i) => (
-                  <motion.div
-                    key={provider.name}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.3 + i * 0.1 }}
-                    className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg border border-border/50"
-                  >
-                    <div className="flex-shrink-0 w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                      <Zap className="h-4 w-4 text-primary" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold text-sm text-foreground">{provider.name}</span>
-                        <Badge variant="secondary" className="text-[10px]">{provider.task}</Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-0.5">{provider.reason}</p>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+            <ProfessionalAvatarShowcase autoPlay={true} showControls={true} className="rounded-xl shadow-2xl" />
+            {/* Floating badges */}
+            <div className="absolute -top-4 -right-4 px-4 py-2 bg-primary rounded-lg shadow-lg animate-bounce z-20" style={{ animationDuration: '3s' }}>
+              <p className="text-sm font-medium text-primary-foreground">🌍 {stats.dialects || stats.languages} Languages</p>
             </div>
           </motion.div>
+        </div>
+      </div>
+
+      {/* Scroll indicator */}
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
+        <div className="w-6 h-10 border-2 border-border rounded-full flex justify-center">
+          <div className="w-1 h-3 bg-muted-foreground rounded-full mt-2" />
         </div>
       </div>
     </section>
@@ -447,12 +435,15 @@ const RegionalNavbar: React.FC<{ config: RegionalConfig }> = ({ config }) => (
         </span>
       </Link>
       <div className="hidden md:flex items-center gap-6">
-        <Link to="/genie-landing" className="text-muted-foreground hover:text-foreground transition flex items-center gap-1">
-          <Globe className="h-4 w-4" />
-          {config.hero.flag}
+        <a href="#products" className="text-muted-foreground hover:text-foreground transition">Products</a>
+        <a href="#pricing" className="text-muted-foreground hover:text-foreground transition">Pricing</a>
+        <a href="#languages" className="text-muted-foreground hover:text-foreground transition">Languages</a>
+        <Link to="/explore">
+          <Button variant="ghost" className="text-muted-foreground hover:text-foreground">
+            Explore
+          </Button>
         </Link>
-        <Link to="/products" className="text-muted-foreground hover:text-foreground transition">Products</Link>
-        <Link to="/explore" className="text-muted-foreground hover:text-foreground transition">Explore</Link>
+        <RegionSwitcherNav variant="navbar" />
         <Link to="/genie-studio-auth">
           <Button className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg">
             {config.cta.primary}
@@ -464,12 +455,13 @@ const RegionalNavbar: React.FC<{ config: RegionalConfig }> = ({ config }) => (
 );
 
 // ============================================
-// MAIN COMPONENT
+// MAIN COMPONENT — Unified Landing Page
 // ============================================
 export const RegionalLandingPage: React.FC = () => {
   const { region } = useParams<{ region: string }>();
   const [searchParams] = useSearchParams();
   const productContext = searchParams.get('product');
+  const [activeProduct, setActiveProduct] = useState('vibe');
 
   // Validate region slug
   const regionSlug = region as RegionSlug;
@@ -481,21 +473,59 @@ export const RegionalLandingPage: React.FC = () => {
     return <Navigate to={`/genie-landing/${detected}`} replace />;
   }
 
-
   return (
     <main className={`min-h-screen bg-background text-foreground ${config.hero.isRTL ? 'rtl' : 'ltr'}`}>
       <RegionalSEOHead config={config} currentSlug={regionSlug} />
       <RegionalNavbar config={config} />
       <RegionalHero config={config} productContext={productContext} />
       <RegionNavigator currentSlug={regionSlug} />
+
+      {/* Product Ecosystem — 7 Products, 206 Pipelines */}
+      <section id="products" className="py-24 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-background via-primary/5 to-background" />
+        <div className="relative max-w-7xl mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
+              7 Products. 206 Pipelines. One Platform.
+            </h2>
+            <p className="text-xl text-muted-foreground">
+              From idea to global distribution — every tool you need
+            </p>
+          </div>
+          <ProductDetailShowcase 
+            activeProduct={activeProduct} 
+            onProductChange={setActiveProduct} 
+          />
+        </div>
+      </section>
+
+      {/* Regional Industries — transcreated for this market */}
       <RegionalIndustries config={config} />
+
+      {/* Industry Showcases — global view */}
+      <IndustryShowcases />
+
+      {/* Transcreation Showcase — literal vs transcreated */}
       <TranscreationShowcase config={config} />
       
       {/* Unified Localization Demo Hub — region-aware TTS + STT + Translation + Transcreation */}
-      <LocalizationDemoHub region={regionSlug} />
+      <section id="languages">
+        <LocalizationDemoHub region={regionSlug} />
+      </section>
+
+      {/* Cross-Functional Capabilities */}
+      <CrossFunctionalSection />
+
+      {/* Global Inspiration */}
+      <GlobalInspirationSection />
 
       {/* Regional Pricing */}
-      <RegionalPricingSection regionSlug={regionSlug} />
+      <section id="pricing">
+        <RegionalPricingSection regionSlug={regionSlug} />
+      </section>
+
+      {/* Dogfooding Proof */}
+      <DogfoodingProof />
       
       <RegionalCTAFooter config={config} />
     </main>
