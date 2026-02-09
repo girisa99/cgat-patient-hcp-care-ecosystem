@@ -1,9 +1,8 @@
 /**
  * Content Demo Card — Generate AI marketing content per industry
  * 
+ * Supports "Create from Template" selection and custom prompts.
  * Calls ai-universal-processor with rate limiting.
- * Shows real AI-generated marketing copy (blogs, social, emails, ads) with watermark.
- * Supports custom prompt input from user.
  */
 
 import React, { useState, useEffect } from 'react';
@@ -16,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getIndustryExample } from './industryDemoExamples';
+import { DemoTemplatePicker, getDemoTemplates, type DemoTemplate } from './DemoTemplatePicker';
 
 interface ContentDemoCardProps {
   industryId: string;
@@ -52,18 +52,20 @@ interface GeneratedContent {
 export const ContentDemoCard: React.FC<ContentDemoCardProps> = ({ industryId, region }) => {
   const example = getIndustryExample(industryId);
   const contentExample = example?.pipelines.content;
+  const templates = getDemoTemplates(industryId, 'content');
 
   const [selectedLang, setSelectedLang] = useState('en');
   const [isGenerating, setIsGenerating] = useState(false);
   const [content, setContent] = useState<GeneratedContent | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [customPrompt, setCustomPrompt] = useState('');
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | undefined>();
 
-  // Reset when industry changes
   useEffect(() => {
     setCustomPrompt('');
     setContent(null);
     setError(null);
+    setSelectedTemplateId(undefined);
   }, [industryId]);
 
   if (!contentExample) return null;
@@ -72,6 +74,11 @@ export const ContentDemoCard: React.FC<ContentDemoCardProps> = ({ industryId, re
   const contentType = contentExample.type;
   const typeIcon = CONTENT_TYPE_ICONS[contentType] || '📝';
   const typeLabel = CONTENT_TYPE_LABELS[contentType] || 'Content';
+
+  const handleTemplateSelect = (tpl: DemoTemplate) => {
+    setSelectedTemplateId(tpl.id);
+    setCustomPrompt(tpl.prompt);
+  };
 
   const handleGenerate = async () => {
     setIsGenerating(true);
@@ -141,38 +148,46 @@ Respond in valid JSON format: { "headline": "...", "body": "...", "cta": "..."${
             <FileText className="h-5 w-5 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-bold text-foreground">AI Content Writer</h3>
-            <p className="text-sm text-muted-foreground font-normal">
+            <h3 className="text-base sm:text-lg font-bold text-foreground">AI Content Writer</h3>
+            <p className="text-xs sm:text-sm text-muted-foreground font-normal">
               {contentExample.title} — {typeLabel}
             </p>
           </div>
-          <Badge variant="outline" className="gap-1 text-xs">
+          <Badge variant="outline" className="gap-1 text-xs hidden sm:flex">
             <PenTool className="h-3 w-3" /> Genie Spark
           </Badge>
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-6 space-y-5">
+      <CardContent className="p-4 sm:p-6 space-y-4">
+        {/* Template Picker */}
+        <DemoTemplatePicker
+          templates={templates}
+          onSelect={handleTemplateSelect}
+          selectedId={selectedTemplateId}
+          pipelineLabel="Content"
+        />
+
         {/* Editable prompt area */}
         <div className="space-y-2">
           <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
             {typeIcon} Your Brief
             <span className="text-[10px] font-normal normal-case text-muted-foreground/70">
-              (edit or use the example below)
+              (select a template or write your own)
             </span>
           </label>
           <Textarea
             value={customPrompt}
-            onChange={(e) => setCustomPrompt(e.target.value)}
+            onChange={(e) => { setCustomPrompt(e.target.value); setSelectedTemplateId(undefined); }}
             placeholder={contentExample.prompt}
-            className="min-h-[80px] text-sm bg-muted/30 border-border resize-none"
+            className="min-h-[70px] text-sm bg-muted/30 border-border resize-none"
             rows={3}
           />
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Badge variant="outline" className="text-[10px]">🎨 Tone: {contentExample.tone}</Badge>
             <Badge variant="outline" className="text-[10px]">{typeIcon} {typeLabel}</Badge>
             {customPrompt.trim() && (
               <button
-                onClick={() => setCustomPrompt('')}
+                onClick={() => { setCustomPrompt(''); setSelectedTemplateId(undefined); }}
                 className="text-[10px] text-primary hover:underline ml-auto"
               >
                 Reset to example
@@ -182,7 +197,7 @@ Respond in valid JSON format: { "headline": "...", "body": "...", "cta": "..."${
         </div>
 
         {/* Language + generate */}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3">
           <div className="flex-1">
             <label className="text-xs font-medium text-muted-foreground uppercase mb-1.5 block">
               Generate in Language
@@ -200,31 +215,27 @@ Respond in valid JSON format: { "headline": "...", "body": "...", "cta": "..."${
               </SelectContent>
             </Select>
           </div>
-          <div className="pt-5">
-            <Button
-              onClick={handleGenerate}
-              disabled={isGenerating}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
-            >
-              {isGenerating ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <FileText className="h-4 w-4" />
-              )}
-              {isGenerating ? 'Writing...' : 'Generate Content'}
-            </Button>
-          </div>
+          <Button
+            onClick={handleGenerate}
+            disabled={isGenerating}
+            className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 w-full sm:w-auto"
+          >
+            {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+            {isGenerating ? 'Writing...' : 'Generate Content'}
+          </Button>
         </div>
 
         {/* Pipeline */}
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-full font-medium">Brief</span>
-          <ChevronRight className="h-3 w-3" />
-          <span className="px-2 py-0.5 bg-accent/10 text-accent rounded-full font-medium">
-            {selectedLang !== 'en' ? 'Transcreation' : 'AI Copywriting'}
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap">
+          <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-full font-medium text-[11px]">
+            {selectedTemplateId ? '📋 Template' : '✍️ Brief'}
           </span>
           <ChevronRight className="h-3 w-3" />
-          <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-full font-medium">{typeLabel}</span>
+          <span className="px-2 py-0.5 bg-accent/10 text-accent rounded-full font-medium text-[11px]">
+            {selectedLang !== 'en' ? '🌍 Transcreation' : '🤖 AI Copywriting'}
+          </span>
+          <ChevronRight className="h-3 w-3" />
+          <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-full font-medium text-[11px]">{typeIcon} {typeLabel}</span>
         </div>
 
         {/* Loading */}
@@ -245,7 +256,7 @@ Respond in valid JSON format: { "headline": "...", "body": "...", "cta": "..."${
               animate={{ opacity: 1, y: 0 }}
               className="space-y-3"
             >
-              <div className="relative bg-card rounded-xl border border-border p-6 overflow-hidden" dir={selectedLang === 'ar' ? 'rtl' : 'ltr'}>
+              <div className="relative bg-card rounded-xl border border-border p-4 sm:p-6 overflow-hidden" dir={selectedLang === 'ar' ? 'rtl' : 'ltr'}>
                 {/* Watermark */}
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
                   <div className="rotate-[-25deg] opacity-10">
@@ -260,8 +271,7 @@ Respond in valid JSON format: { "headline": "...", "body": "...", "cta": "..."${
                       {typeIcon} {typeLabel}
                     </Badge>
                     <Badge variant="outline" className="text-[10px] gap-1">
-                      <Globe className="h-2.5 w-2.5" />
-                      {selectedLangName}
+                      <Globe className="h-2.5 w-2.5" /> {selectedLangName}
                     </Badge>
                   </div>
 
@@ -271,7 +281,7 @@ Respond in valid JSON format: { "headline": "...", "body": "...", "cta": "..."${
                     </p>
                   )}
 
-                  <h4 className="text-xl font-bold text-foreground">{content.headline}</h4>
+                  <h4 className="text-lg sm:text-xl font-bold text-foreground">{content.headline}</h4>
 
                   <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
                     {content.body}
@@ -291,7 +301,6 @@ Respond in valid JSON format: { "headline": "...", "body": "...", "cta": "..."${
                 </div>
               </div>
 
-              {/* CTA */}
               <div className="flex items-center gap-2 p-3 bg-primary/5 rounded-lg border border-primary/20">
                 <Lock className="h-4 w-4 text-primary flex-shrink-0" />
                 <p className="text-xs text-muted-foreground flex-1">

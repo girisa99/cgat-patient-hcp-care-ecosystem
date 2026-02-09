@@ -1,15 +1,16 @@
 /**
- * Video Script Demo Card — Generate AI video scripts per industry
+ * Video Script Demo Card — Generate AI video storyboards per industry
  * 
- * Calls ai-universal-processor with rate limiting.
- * Shows real AI-generated video storyboard with visual scene cards, provider info,
- * and watermarked preview. Supports custom prompt input from user.
- * 
- * Provider routing: Vertex Veo 3 (primary), Sora 2 (secondary), Alibaba Wan 2.6 (fallback)
+ * Features:
+ * - "Create from Template" picker with curated video templates
+ * - Desktop/Mobile device preview toggle for storyboard output
+ * - Visual scene cards with gradient backgrounds and play overlay
+ * - Provider chain transparency (Vertex Veo 3 → Sora 2 → Alibaba Wan)
+ * - Custom prompt input with transcreation support
  */
 
 import React, { useState, useEffect } from 'react';
-import { Video, Loader2, Lock, ChevronRight, Film, Play, Monitor, Smartphone, Palette, Clock, Volume2, Shield, Zap, Image as ImageIcon } from 'lucide-react';
+import { Video, Loader2, Lock, ChevronRight, Film, Play, Monitor, Smartphone, Clock, Volume2, Shield, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getIndustryExample } from './industryDemoExamples';
+import { DemoTemplatePicker, getDemoTemplates, type DemoTemplate } from './DemoTemplatePicker';
 
 interface VideoDemoCardProps {
   industryId: string;
@@ -39,14 +41,12 @@ const LANGUAGE_OPTIONS = [
   { code: 'bn', name: 'Bengali', flag: '🇧🇩' },
 ];
 
-// Video pipeline provider chain
 const VIDEO_PROVIDERS = [
   { name: 'Vertex Veo 3', role: 'primary' as const, badge: 'Text-to-Video' },
   { name: 'Sora 2', role: 'secondary' as const, badge: 'High quality' },
   { name: 'Alibaba Wan 2.6', role: 'fallback' as const, badge: 'Motion control' },
 ];
 
-// Scene visual style hints for storyboard cards
 const SCENE_VISUALS = [
   { gradient: 'from-blue-500/20 to-purple-500/20', emoji: '🎬' },
   { gradient: 'from-emerald-500/20 to-teal-500/20', emoji: '📹' },
@@ -62,26 +62,36 @@ interface VideoScene {
   transition: string;
 }
 
+type DevicePreview = 'desktop' | 'mobile';
+
 export const VideoDemoCard: React.FC<VideoDemoCardProps> = ({ industryId, region }) => {
   const example = getIndustryExample(industryId);
   const videoExample = example?.pipelines.video;
+  const templates = getDemoTemplates(industryId, 'video');
 
   const [selectedLang, setSelectedLang] = useState('en');
   const [isGenerating, setIsGenerating] = useState(false);
   const [scenes, setScenes] = useState<VideoScene[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [customPrompt, setCustomPrompt] = useState('');
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | undefined>();
+  const [devicePreview, setDevicePreview] = useState<DevicePreview>('desktop');
 
-  // Reset when industry changes
   useEffect(() => {
     setCustomPrompt('');
     setScenes(null);
     setError(null);
+    setSelectedTemplateId(undefined);
   }, [industryId]);
 
   if (!videoExample) return null;
 
   const effectivePrompt = customPrompt.trim() || videoExample.script;
+
+  const handleTemplateSelect = (tpl: DemoTemplate) => {
+    setSelectedTemplateId(tpl.id);
+    setCustomPrompt(tpl.prompt);
+  };
 
   const handleGenerate = async () => {
     setIsGenerating(true);
@@ -163,7 +173,7 @@ Respond in valid JSON format: { "scenes": [{ "sceneNumber": 1, "visual": "...", 
       </CardHeader>
 
       <CardContent className="p-4 sm:p-6 space-y-4">
-        {/* Provider chain — shows which AI powers video generation */}
+        {/* Provider chain */}
         <div className="space-y-1.5">
           <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
             <Shield className="h-3 w-3" /> Video Generation Pipeline
@@ -184,9 +194,48 @@ Respond in valid JSON format: { "scenes": [{ "sceneNumber": 1, "visual": "...", 
           </div>
         </div>
 
+        {/* Template Picker */}
+        <DemoTemplatePicker
+          templates={templates}
+          onSelect={handleTemplateSelect}
+          selectedId={selectedTemplateId}
+          pipelineLabel="Video"
+        />
+
+        {/* Editable prompt area */}
+        <div className="space-y-2">
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+            🎬 Your Script Concept
+            <span className="text-[10px] font-normal normal-case text-muted-foreground/70">
+              (select a template or write your own)
+            </span>
+          </label>
+          <Textarea
+            value={customPrompt}
+            onChange={(e) => { setCustomPrompt(e.target.value); setSelectedTemplateId(undefined); }}
+            placeholder={videoExample.script}
+            className="min-h-[70px] text-sm bg-muted/30 border-border resize-none"
+            rows={3}
+          />
+          <div className="flex items-center gap-2 flex-wrap">
+            <Badge variant="outline" className="text-[10px]">⏱ {videoExample.duration}</Badge>
+            <Badge variant="outline" className="text-[10px]">🎨 {videoExample.style}</Badge>
+            {customPrompt.trim() && (
+              <button
+                onClick={() => { setCustomPrompt(''); setSelectedTemplateId(undefined); }}
+                className="text-[10px] text-primary hover:underline ml-auto"
+              >
+                Reset to example
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* Full pipeline visual */}
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap">
-          <span className="px-2 py-1 bg-primary/10 text-primary rounded-full font-medium text-[11px]">📝 Script</span>
+          <span className="px-2 py-1 bg-primary/10 text-primary rounded-full font-medium text-[11px]">
+            {selectedTemplateId ? '📋 Template' : '📝 Script'}
+          </span>
           <ChevronRight className="h-3 w-3" />
           <span className="px-2 py-1 bg-accent/10 text-accent rounded-full font-medium text-[11px]">
             {selectedLang !== 'en' ? '🌍 Transcreation' : '🎬 Scene Breakdown'}
@@ -197,38 +246,6 @@ Respond in valid JSON format: { "scenes": [{ "sceneNumber": 1, "visual": "...", 
           <span className="px-2 py-1 bg-muted text-muted-foreground rounded-full font-medium text-[11px]">🎬 Video Render</span>
           <ChevronRight className="h-3 w-3" />
           <span className="px-2 py-1 bg-muted text-muted-foreground rounded-full font-medium text-[11px]">🔊 TTS + Lip-sync</span>
-        </div>
-
-        {/* Editable prompt area */}
-        <div className="space-y-2">
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-            🎬 Your Script Concept
-            <span className="text-[10px] font-normal normal-case text-muted-foreground/70">
-              (edit or use the example)
-            </span>
-          </label>
-          <Textarea
-            value={customPrompt}
-            onChange={(e) => setCustomPrompt(e.target.value)}
-            placeholder={videoExample.script}
-            className="min-h-[70px] text-sm bg-muted/30 border-border resize-none"
-            rows={3}
-          />
-          <div className="flex items-center gap-2 flex-wrap">
-            <Badge variant="outline" className="text-[10px]">⏱ {videoExample.duration}</Badge>
-            <Badge variant="outline" className="text-[10px]">🎨 {videoExample.style}</Badge>
-            <Badge variant="outline" className="text-[10px]">
-              <Monitor className="h-2.5 w-2.5 mr-0.5" /> Desktop + Mobile
-            </Badge>
-            {customPrompt.trim() && (
-              <button
-                onClick={() => setCustomPrompt('')}
-                className="text-[10px] text-primary hover:underline ml-auto"
-              >
-                Reset to example
-              </button>
-            )}
-          </div>
         </div>
 
         {/* Language + generate */}
@@ -255,11 +272,7 @@ Respond in valid JSON format: { "scenes": [{ "sceneNumber": 1, "visual": "...", 
             disabled={isGenerating}
             className="bg-accent hover:bg-accent/90 text-accent-foreground gap-2 w-full sm:w-auto"
           >
-            {isGenerating ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Play className="h-4 w-4" />
-            )}
+            {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
             {isGenerating ? 'Creating Storyboard...' : 'Generate Storyboard'}
           </Button>
         </div>
@@ -286,7 +299,7 @@ Respond in valid JSON format: { "scenes": [{ "sceneNumber": 1, "visual": "...", 
           </div>
         )}
 
-        {/* Generated storyboard with visual scene cards */}
+        {/* Generated storyboard */}
         <AnimatePresence mode="wait">
           {scenes && scenes.length > 0 && (
             <motion.div
@@ -294,13 +307,36 @@ Respond in valid JSON format: { "scenes": [{ "sceneNumber": 1, "visual": "...", 
               animate={{ opacity: 1, y: 0 }}
               className="space-y-4"
             >
-              {/* Storyboard header */}
-              <div className="flex items-center justify-between">
+              {/* Storyboard header with device toggle */}
+              <div className="flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center gap-2">
                   <Film className="h-4 w-4 text-accent" />
                   <h4 className="text-sm font-bold text-foreground">AI Storyboard — {scenes.length} Scenes</h4>
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-2">
+                  {/* Device preview toggle */}
+                  <div className="flex items-center bg-muted rounded-lg p-0.5 border border-border">
+                    <button
+                      onClick={() => setDevicePreview('desktop')}
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-medium transition-all ${
+                        devicePreview === 'desktop'
+                          ? 'bg-primary text-primary-foreground shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      <Monitor className="h-3 w-3" /> Desktop
+                    </button>
+                    <button
+                      onClick={() => setDevicePreview('mobile')}
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-medium transition-all ${
+                        devicePreview === 'mobile'
+                          ? 'bg-primary text-primary-foreground shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      <Smartphone className="h-3 w-3" /> Mobile
+                    </button>
+                  </div>
                   <Badge variant="secondary" className="text-[9px] gap-1">
                     <Zap className="h-2.5 w-2.5" /> Gemini 2.0
                   </Badge>
@@ -312,68 +348,103 @@ Respond in valid JSON format: { "scenes": [{ "sceneNumber": 1, "visual": "...", 
                 </div>
               </div>
 
-              {/* Scene cards — visual storyboard layout */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {scenes.map((scene, idx) => {
-                  const visual = SCENE_VISUALS[idx % SCENE_VISUALS.length];
-                  return (
-                    <motion.div
-                      key={idx}
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: idx * 0.15 }}
-                      className="relative rounded-xl border border-border overflow-hidden bg-card group hover:border-accent/40 transition-colors"
-                    >
-                      {/* Visual frame — simulated video frame */}
-                      <div className={`relative bg-gradient-to-br ${visual.gradient} aspect-video flex items-center justify-center`}>
-                        {/* Watermark overlay */}
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <p className="text-3xl font-black text-foreground/[0.06] rotate-[-15deg] select-none">PREVIEW</p>
-                        </div>
-                        
-                        {/* Scene visual description */}
-                        <div className="relative z-10 text-center px-4">
-                          <span className="text-3xl mb-2 block">{visual.emoji}</span>
-                          <p className="text-xs text-foreground/70 leading-relaxed line-clamp-2">{scene.visual}</p>
+              {/* Scene cards — desktop vs mobile layout */}
+              <div className={`flex ${devicePreview === 'mobile' ? 'justify-center' : ''}`}>
+                <div className={
+                  devicePreview === 'mobile'
+                    ? 'w-[280px] space-y-3'
+                    : 'grid grid-cols-1 sm:grid-cols-2 gap-3 w-full'
+                }>
+                  {scenes.map((scene, idx) => {
+                    const visual = SCENE_VISUALS[idx % SCENE_VISUALS.length];
+                    const isMobile = devicePreview === 'mobile';
+                    return (
+                      <motion.div
+                        key={idx}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: idx * 0.15 }}
+                        className={`relative rounded-xl border border-border overflow-hidden bg-card group hover:border-accent/40 transition-colors ${
+                          isMobile ? 'shadow-lg' : ''
+                        }`}
+                      >
+                        {/* Mobile device frame */}
+                        {isMobile && (
+                          <div className="flex items-center justify-center gap-1 py-1 bg-muted/50 border-b border-border">
+                            <div className="w-8 h-1 bg-muted-foreground/20 rounded-full" />
+                          </div>
+                        )}
+
+                        {/* Visual frame */}
+                        <div className={`relative bg-gradient-to-br ${visual.gradient} ${
+                          isMobile ? 'aspect-[9/16]' : 'aspect-video'
+                        } flex items-center justify-center`}>
+                          {/* Watermark */}
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <p className={`font-black text-foreground/[0.06] rotate-[-15deg] select-none ${
+                              isMobile ? 'text-xl' : 'text-3xl'
+                            }`}>PREVIEW</p>
+                          </div>
+                          
+                          {/* Scene visual description */}
+                          <div className="relative z-10 text-center px-3">
+                            <span className={`block mb-1.5 ${isMobile ? 'text-2xl' : 'text-3xl'}`}>{visual.emoji}</span>
+                            <p className={`text-foreground/70 leading-relaxed ${
+                              isMobile ? 'text-[10px] line-clamp-4' : 'text-xs line-clamp-2'
+                            }`}>{scene.visual}</p>
+                          </div>
+
+                          {/* Play button overlay */}
+                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className={`bg-accent/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg ${
+                              isMobile ? 'w-10 h-10' : 'w-12 h-12'
+                            }`}>
+                              <Play className={`text-accent-foreground ml-0.5 ${isMobile ? 'h-4 w-4' : 'h-5 w-5'}`} />
+                            </div>
+                          </div>
+
+                          {/* Scene badge */}
+                          <div className="absolute top-2 left-2">
+                            <Badge className="text-[10px] bg-background/80 backdrop-blur-sm text-foreground border-0">
+                              Scene {scene.sceneNumber} · {scene.duration}
+                            </Badge>
+                          </div>
+
+                          {/* Transition badge */}
+                          <div className="absolute top-2 right-2">
+                            <Badge variant="outline" className="text-[9px] bg-background/60 backdrop-blur-sm border-0 text-muted-foreground">
+                              {scene.transition}
+                            </Badge>
+                          </div>
+
+                          {/* Mobile format badge */}
+                          {isMobile && (
+                            <div className="absolute bottom-2 left-2">
+                              <Badge className="text-[9px] bg-accent/80 text-accent-foreground border-0 gap-1">
+                                <Smartphone className="h-2.5 w-2.5" /> 9:16
+                              </Badge>
+                            </div>
+                          )}
                         </div>
 
-                        {/* Play button overlay */}
-                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                          <div className="w-12 h-12 bg-accent/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg">
-                            <Play className="h-5 w-5 text-accent-foreground ml-0.5" />
+                        {/* Narration */}
+                        <div className="p-3" dir={selectedLang === 'ar' ? 'rtl' : 'ltr'}>
+                          <div className="flex items-start gap-2">
+                            <Volume2 className="h-3.5 w-3.5 text-accent mt-0.5 shrink-0" />
+                            <p className={`text-foreground leading-relaxed ${
+                              isMobile ? 'text-[10px] line-clamp-2' : 'text-xs line-clamp-3'
+                            }`}>
+                              "{scene.narration}"
+                            </p>
                           </div>
                         </div>
-
-                        {/* Scene badge */}
-                        <div className="absolute top-2 left-2">
-                          <Badge className="text-[10px] bg-background/80 backdrop-blur-sm text-foreground border-0">
-                            Scene {scene.sceneNumber} · {scene.duration}
-                          </Badge>
-                        </div>
-
-                        {/* Transition badge */}
-                        <div className="absolute top-2 right-2">
-                          <Badge variant="outline" className="text-[9px] bg-background/60 backdrop-blur-sm border-0 text-muted-foreground">
-                            {scene.transition}
-                          </Badge>
-                        </div>
-                      </div>
-
-                      {/* Narration below the visual frame */}
-                      <div className="p-3" dir={selectedLang === 'ar' ? 'rtl' : 'ltr'}>
-                        <div className="flex items-start gap-2">
-                          <Volume2 className="h-3.5 w-3.5 text-accent mt-0.5 shrink-0" />
-                          <p className="text-xs text-foreground leading-relaxed line-clamp-3">
-                            "{scene.narration}"
-                          </p>
-                        </div>
-                      </div>
-                    </motion.div>
-                  );
-                })}
+                      </motion.div>
+                    );
+                  })}
+                </div>
               </div>
 
-              {/* What happens next — full pipeline CTA */}
+              {/* What happens next — CTA */}
               <div className="bg-gradient-to-r from-accent/5 to-primary/5 rounded-xl border border-accent/20 p-4 space-y-3">
                 <div className="flex items-start gap-3">
                   <Lock className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
