@@ -223,75 +223,78 @@ const RegionalHero: React.FC<{ config: RegionalConfig; productContext?: string |
           </motion.div>
         </div>
       </div>
-
-      {/* ── Embedded Marquee Banners ── */}
-      <div className="relative pb-2 space-y-0">
-        {/* Banner 1: For Every Industry ✦ Mind to Media */}
-        <div className="overflow-hidden py-3 border-t border-border/40 bg-muted/30">
-          <motion.div
-            className="whitespace-nowrap"
-            animate={{ x: ['0%', '-50%'] }}
-            transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-          >
-            {[...Array(8)].map((_, i) => (
-              <span key={`b1-${i}`} className="inline-flex items-center gap-5 mx-6 text-xl md:text-2xl font-black tracking-tight">
-                <span className="text-primary">✦</span>
-                <span className="text-foreground">For Every Industry</span>
-                <span className="text-primary">✦</span>
-                <span className="text-muted-foreground">Mind to</span>
-                <span className="text-primary">Media</span>
-              </span>
-            ))}
-          </motion.div>
-        </div>
-
-        {/* Banner 2: We Speak Your Language • We Understand Your Market */}
-        <div className="overflow-hidden py-2 bg-muted/20">
-          <motion.div
-            className="whitespace-nowrap"
-            animate={{ x: ['-50%', '0%'] }}
-            transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
-          >
-            {[...Array(8)].map((_, i) => (
-              <span key={`b2-${i}`} className="inline-flex items-center gap-5 mx-6 text-base md:text-lg font-semibold">
-                <span className="text-primary">We Speak Your Language.</span>
-                <span className="text-muted-foreground/60">•</span>
-                <span className="text-muted-foreground">We Understand Your Market.</span>
-              </span>
-            ))}
-          </motion.div>
-        </div>
-
-        {/* Banner 3: Capability highlights */}
-        <div className="overflow-hidden py-2 border-b border-border/40 bg-muted/10">
-          <motion.div
-            className="whitespace-nowrap"
-            animate={{ x: ['0%', '-50%'] }}
-            transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
-          >
-            {[...Array(6)].map((_, i) => (
-              <span key={`b3-${i}`} className="inline-flex items-center gap-5 mx-6 text-sm font-medium">
-                <span className="text-primary/70">◆</span>
-                <span className="text-muted-foreground">Transcreation, Not Translation</span>
-                <span className="text-primary/70">◆</span>
-                <span className="text-muted-foreground">50+ Industries</span>
-                <span className="text-primary/70">◆</span>
-                <span className="text-muted-foreground">140+ Languages</span>
-                <span className="text-primary/70">◆</span>
-                <span className="text-muted-foreground">First to Market</span>
-                <span className="text-primary/70">◆</span>
-                <span className="text-muted-foreground">Cultural Adaptation</span>
-              </span>
-            ))}
-          </motion.div>
-        </div>
-      </div>
     </section>
   );
 };
 
 // ============================================
-// INDUSTRIES SECTION
+// HERO MARQUEE BANNERS — Separate sections below primary hero
+// ============================================
+const HeroMarqueeBanners: React.FC = () => (
+  <>
+    {/* Banner Section 1: Mind to Media ✦ For Every Industry */}
+    <section className="relative overflow-hidden py-5 bg-muted/40 border-y border-border/30">
+      <motion.div
+        className="whitespace-nowrap"
+        animate={{ x: ['0%', '-50%'] }}
+        transition={{ duration: 18, repeat: Infinity, ease: 'linear' }}
+      >
+        {[...Array(10)].map((_, i) => (
+          <span key={`m1-${i}`} className="inline-flex items-center gap-6 mx-8 text-2xl md:text-3xl lg:text-4xl font-black tracking-tight">
+            <span className="text-primary">✦</span>
+            <span className="text-foreground">For Every Industry</span>
+            <span className="text-primary">✦</span>
+            <span className="text-muted-foreground">Mind to</span>{' '}
+            <span className="text-primary">Media</span>
+          </span>
+        ))}
+      </motion.div>
+    </section>
+
+    {/* Banner Section 2: We Speak Your Language • We Understand Your Market */}
+    <section className="relative overflow-hidden py-4 bg-primary/5">
+      <motion.div
+        className="whitespace-nowrap"
+        animate={{ x: ['-50%', '0%'] }}
+        transition={{ duration: 24, repeat: Infinity, ease: 'linear' }}
+      >
+        {[...Array(10)].map((_, i) => (
+          <span key={`m2-${i}`} className="inline-flex items-center gap-6 mx-8 text-lg md:text-xl lg:text-2xl font-bold">
+            <span className="text-primary">We Speak Your Language.</span>
+            <span className="text-muted-foreground/50">•</span>
+            <span className="text-muted-foreground">We Understand Your Market.</span>
+          </span>
+        ))}
+      </motion.div>
+    </section>
+
+    {/* Banner Section 3: Transcreation, Not Translation + capabilities */}
+    <section className="relative overflow-hidden py-3 bg-muted/20 border-b border-border/30">
+      <motion.div
+        className="whitespace-nowrap"
+        animate={{ x: ['0%', '-50%'] }}
+        transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
+      >
+        {[...Array(8)].map((_, i) => (
+          <span key={`m3-${i}`} className="inline-flex items-center gap-5 mx-6 text-sm md:text-base font-semibold">
+            <span className="text-primary/60">◆</span>
+            <span className="text-foreground">Transcreation, Not Translation</span>
+            <span className="text-primary/60">◆</span>
+            <span className="text-muted-foreground">50+ Industries</span>
+            <span className="text-primary/60">◆</span>
+            <span className="text-muted-foreground">140+ Languages</span>
+            <span className="text-primary/60">◆</span>
+            <span className="text-muted-foreground">First to Market</span>
+            <span className="text-primary/60">◆</span>
+            <span className="text-muted-foreground">Cultural Adaptation</span>
+            <span className="text-primary/60">◆</span>
+            <span className="text-muted-foreground">15 AI Providers</span>
+          </span>
+        ))}
+      </motion.div>
+    </section>
+  </>
+);
 // ============================================
 const RegionalIndustries: React.FC<{ config: RegionalConfig }> = ({ config }) => (
   <section className="py-20 relative">
@@ -511,6 +514,7 @@ export const RegionalLandingPage: React.FC = () => {
       <RegionalSEOHead config={config} currentSlug={regionSlug} />
       <RegionalNavbar config={config} />
       <RegionalHero config={config} productContext={productContext} />
+      <HeroMarqueeBanners />
       <RegionNavigator currentSlug={regionSlug} />
 
       {/* Product Ecosystem — 7 Products, 206 Pipelines + Why Genie */}
