@@ -29,7 +29,7 @@ import { ProfessionalAvatarShowcase } from '@/components/landing/video/Professio
 import { ProductDetailShowcase } from '@/components/landing/ProductDetailShowcase';
 // CrossFunctionalSection removed — capabilities now integrated into IndustryShowcases
 import { DogfoodingProof } from '@/components/landing/DogfoodingProof';
-import { IndustryShowcases } from '@/components/landing/IndustryShowcases';
+// IndustryShowcases removed — consolidated into product ecosystem hub
 import { RegionSwitcherNav } from '@/components/landing/RegionSwitcherNav';
 import genieSuiteLogo from '@/assets/logos/genie-studio-suite-logo.png';
 
@@ -178,6 +178,28 @@ const RegionalHero: React.FC<{ config: RegionalConfig; productContext?: string |
               <span className="px-2 py-1 bg-muted rounded">206 Pipelines</span>
               <span>•</span>
               <span className="px-2 py-1 bg-muted rounded">15 AI Providers</span>
+            </div>
+
+            {/* Rolling tagline */}
+            <div className="overflow-hidden h-8 relative">
+              <motion.div
+                className="absolute whitespace-nowrap"
+                animate={{ x: ['0%', '-50%'] }}
+                transition={{ duration: 18, repeat: Infinity, ease: 'linear' }}
+              >
+                {[...Array(4)].map((_, i) => (
+                  <span key={i} className="inline-flex items-center gap-3 mx-4 text-sm font-semibold">
+                    <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                      We Speak Your Language.
+                    </span>
+                    <span className="text-muted-foreground">•</span>
+                    <span className="bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
+                      We Understand Your Market.
+                    </span>
+                    <span className="text-muted-foreground">•</span>
+                  </span>
+                ))}
+              </motion.div>
             </div>
 
             {/* CTA buttons */}
@@ -468,10 +490,7 @@ export const RegionalLandingPage: React.FC = () => {
           {/* Why Genie — differentiators integrated into Products hub */}
           {config && (
             <div className="mt-12 sm:mt-16 pt-10 border-t border-border/50">
-              <div className="p-5 bg-gradient-to-r from-primary/10 via-accent/5 to-primary/10 rounded-2xl border border-primary/20 text-center mb-8">
-                <h4 className="text-xl sm:text-2xl font-bold text-foreground mb-2">
-                  We Speak Your Language. We Understand Your Market.
-                </h4>
+             <div className="p-5 bg-gradient-to-r from-primary/10 via-accent/5 to-primary/10 rounded-2xl border border-primary/20 text-center mb-8">
                 <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
                   Your content deserves more than word-for-word translation. Genie adapts tone, idioms, cultural references,
                   and regional compliance — so your audience feels you were{' '}
@@ -513,10 +532,7 @@ export const RegionalLandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Regional Industries removed — redundant with "Your Industry, Your Language, Your Market" below */}
-
-      {/* Industry Showcases — unified: demos + differentiators + transcreation + stories */}
-      <IndustryShowcases region={regionSlug} config={config} />
+      {/* IndustryShowcases removed — content covered in product ecosystem hub */}
 
       {/* Regional Pricing */}
       <section id="pricing">
