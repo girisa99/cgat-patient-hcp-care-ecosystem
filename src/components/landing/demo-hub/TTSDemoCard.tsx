@@ -249,7 +249,12 @@ export const TTSDemoCard: React.FC<TTSDemoCardProps> = ({ region }) => {
         )}
 
         {tts.error && (
-          <p className="text-sm text-destructive text-center">{tts.error}</p>
+          <div className="p-3 bg-accent/10 border border-accent/30 rounded-lg text-center">
+            <p className="text-sm text-foreground font-medium">{tts.error}</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Sign up for unlimited access to all AI features ✨
+            </p>
+          </div>
         )}
 
         {/* Quick language chips */}

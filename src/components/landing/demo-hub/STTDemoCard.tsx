@@ -44,10 +44,10 @@ async function fetchWithRetry(url: string, options: RequestInit, retries = MAX_R
       continue;
     }
     throw new Error(isRateLimited
-      ? 'Service is busy — please wait a few seconds and try again.'
+      ? 'Demo limit reached — each visitor gets 10 free tries per minute. Please wait a moment and try again!'
       : (body?.error || body?.message || 'Transcription failed'));
   }
-  throw new Error('Service is busy — please wait a few seconds and try again.');
+  throw new Error('Demo limit reached — each visitor gets 10 free tries per minute. Please wait a moment and try again!');
 }
 
 const REGION_DEFAULT_LANG: Record<string, string> = {
@@ -330,7 +330,14 @@ export const STTDemoCard: React.FC<STTDemoCardProps> = ({ region }) => {
           </div>
         )}
 
-        {error && <p className="text-sm text-destructive text-center">{error}</p>}
+        {error && (
+          <div className="p-3 bg-accent/10 border border-accent/30 rounded-lg text-center">
+            <p className="text-sm text-foreground font-medium">{error}</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Sign up for unlimited access to all AI features ✨
+            </p>
+          </div>
+        )}
 
         <p className="text-xs text-muted-foreground text-center">
           🔒 Audio is processed server-side and not stored. Primary: Deepgram Nova 2, Fallback: Azure STT → Whisper.
