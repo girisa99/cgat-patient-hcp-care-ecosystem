@@ -595,11 +595,11 @@ export const IndustryShowcases: React.FC<IndustryShowcasesProps> = ({ region, co
           <div className="mt-12 sm:mt-16 pt-12 border-t border-border/50">
             <Tabs defaultValue="why-genie" className="w-full">
               <div className="text-center mb-6">
-                <h3 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
-                  Why Teams Choose Genie
-                </h3>
+                <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-2">
+                  Explore What's Included
+                </p>
                 <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
-                  Differentiators, real-world showcases, and proof — all in one place.
+                  Differentiators, live showcases, transcreation depth, and real results — all under one roof.
                 </p>
               </div>
 
