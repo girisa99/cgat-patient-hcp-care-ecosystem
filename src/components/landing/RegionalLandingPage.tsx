@@ -93,246 +93,189 @@ const RegionalSEOHead: React.FC<{ config: RegionalConfig; currentSlug: string }>
 // ============================================
 // HERO SECTION
 // ============================================
-const RegionalHero: React.FC<{ config: RegionalConfig; productContext?: string | null }> = ({ config, productContext }) => {
+// ============================================
+// UNIFIED HERO CAROUSEL — All 4 heroes rolling left-to-right
+// ============================================
+const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string | null }> = ({ config, productContext }) => {
   const { hero, stats, cta } = config;
-  
-  return (
-    <section className={`relative ${hero.isRTL ? 'rtl' : 'ltr'}`}>
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/5" />
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-      </div>
-
-      {/* Primary Hero Content */}
-      <div className="relative max-w-7xl mx-auto px-4 pt-24 pb-10">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          <motion.div 
-            className="space-y-6"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            {/* Region badge */}
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-muted rounded-full">
-                <span className="text-2xl">{hero.flag}</span>
-                <span className="text-muted-foreground text-sm">
-                  {productContext 
-                    ? `Genie ${productContext.charAt(0).toUpperCase() + productContext.slice(1)} for ${hero.regionName}`
-                    : `Content optimized for ${hero.regionName}`
-                  }
-                </span>
-              </div>
-              {config.differentiators.heroBadge.includes('First') && (
-                <div className="inline-flex items-center gap-1.5 px-3 py-2 bg-yellow-500/15 border border-yellow-500/30 rounded-full">
-                  <span className="text-yellow-600 dark:text-yellow-400 text-xs font-bold">
-                    {config.differentiators.heroBadge}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* Headline */}
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-              <span className="text-foreground">One </span>
-              <span className="text-primary">Platform.</span>
-              <br />
-              <span className="text-3xl md:text-4xl lg:text-5xl text-foreground">
-                Every Market. The Only
-              </span>
-              <br />
-              <span className="text-3xl md:text-4xl lg:text-5xl text-foreground">
-                One You Need.
-              </span>
-            </h1>
-
-            {/* Subheadline */}
-            <p className="text-lg text-muted-foreground max-w-xl">
-              AI-powered content production across 50+ industries in 140+ languages
-            </p>
-
-            {/* Transcreation message */}
-            <div className="p-4 bg-muted/50 rounded-xl border border-border">
-              <p className="text-sm text-muted-foreground">
-                Your content deserves more than word-for-word translation. Genie adapts tone,
-                idioms, cultural references, and regional compliance — so your audience feels you were{' '}
-                <span className="text-primary font-semibold underline">built for them</span>.
-              </p>
-            </div>
-
-            {/* Stats grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="text-center p-3 bg-card rounded-xl border border-border">
-                <p className="text-2xl font-bold text-foreground">{stats.audienceReach}</p>
-                <p className="text-xs text-muted-foreground">Audience Reach</p>
-              </div>
-              <div className="text-center p-3 bg-card rounded-xl border border-border">
-                <p className="text-2xl font-bold text-primary">{stats.dialects || stats.languages}</p>
-                <p className="text-xs text-muted-foreground">{stats.dialects ? 'Dialects' : 'Languages'}</p>
-              </div>
-              <div className="text-center p-3 bg-card rounded-xl border border-border">
-                <p className="text-2xl font-bold text-primary">{stats.costSavings}</p>
-                <p className="text-xs text-muted-foreground">Cost Savings</p>
-              </div>
-              <div className="text-center p-3 bg-card rounded-xl border border-border">
-                <p className="text-2xl font-bold text-foreground">{stats.localMetric.value}</p>
-                <p className="text-xs text-muted-foreground">{stats.localMetric.label}</p>
-              </div>
-            </div>
-
-            {/* Platform stats */}
-            <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-              <span className="px-2 py-1 bg-muted rounded">7 Products</span>
-              <span>•</span>
-              <span className="px-2 py-1 bg-muted rounded">206 Pipelines</span>
-              <span>•</span>
-              <span className="px-2 py-1 bg-muted rounded">15 AI Providers</span>
-            </div>
-
-            {/* CTA buttons */}
-            <div className="flex flex-wrap gap-4">
-              <Link to="/genie-studio-auth?tab=signup">
-                <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg text-lg px-8 py-6">
-                  {cta.primary}
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </Link>
-              <Link to="/explore">
-                <Button size="lg" variant="outline" className="border-border text-muted-foreground hover:text-foreground hover:bg-muted text-lg px-8 py-6">
-                  <Play className="mr-2 h-4 w-4" />
-                  {cta.secondary}
-                </Button>
-              </Link>
-            </div>
-
-            <p className="text-muted-foreground text-xs">{cta.freeCredits}</p>
-          </motion.div>
-
-          {/* Right: Professional AI Video Showcase */}
-          <motion.div 
-            className="relative"
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-          >
-            <ProfessionalAvatarShowcase autoPlay={true} showControls={true} className="rounded-xl shadow-2xl" />
-            <div className="absolute -top-4 -right-4 px-4 py-2 bg-primary rounded-lg shadow-lg animate-bounce z-20" style={{ animationDuration: '3s' }}>
-              <p className="text-sm font-medium text-primary-foreground">🌍 {stats.dialects || stats.languages} Languages</p>
-            </div>
-          </motion.div>
-        </div>
-      </div>
-    </section>
-  );
-};
-
-// ============================================
-// HORIZONTAL SCROLLING HERO CAROUSEL
-// ============================================
-const HERO_SLIDES = [
-  {
-    badge: '✦ End-to-End Content Production',
-    headline: ['Mind to ', 'Media'],
-    subtitle: 'For Every Industry',
-    description: 'From the first spark of an idea to polished, market-ready content — across video, presentations, audio, and documents.',
-    type: 'pills' as const,
-    pills: ['Ideation', 'Scripting', 'Production', 'Localization', 'Distribution'],
-    bg: 'from-primary/8 via-background to-accent/5',
-    accent: 'bg-primary/8',
-  },
-  {
-    badge: '🌍 140+ Languages · 8 Global Regions',
-    headline: ['We Speak Your ', 'Language.'],
-    subtitle: 'We Understand Your Market.',
-    description: 'Not just translation — we adapt tone, idioms, humor, cultural references, and regional compliance so your audience feels you were built for them.',
-    type: 'stats' as const,
-    stats: [
-      { value: '140+', label: 'Languages' },
-      { value: '30+', label: 'Dialects' },
-      { value: '8', label: 'Regions' },
-      { value: 'RTL', label: 'Full Support' },
-    ],
-    bg: 'from-accent/5 via-background to-primary/8',
-    accent: 'bg-accent/8',
-  },
-  {
-    badge: '🚀 First to Market',
-    headline: ['Transcreation, ', 'Not Translation.'],
-    subtitle: 'Cultural Adaptation at Scale',
-    description: 'Translation converts words. Transcreation converts meaning — intent, emotion, and cultural context for every target market.',
-    type: 'comparison' as const,
-    comparison: {
-      bad: { label: '❌ Translation', text: '"Our product helps you save time and money."', note: 'Word-for-word. Literal. Generic.' },
-      good: { label: '✅ Transcreation', text: '"لأن وقتك أغلى من أي استثمار"', note: 'Culturally adapted. Emotionally resonant.' },
-    },
-    bg: 'from-primary/5 via-background to-accent/8',
-    accent: 'bg-primary/6',
-  },
-];
-
-const HeroCarousel: React.FC = () => {
   const [current, setCurrent] = React.useState(0);
   const [direction, setDirection] = React.useState(1);
+
+  const slides = [
+    // Slide 0 — One Platform. Every Market.
+    {
+      id: 'platform',
+      badge: `${hero.flag} ${productContext ? `Genie ${productContext.charAt(0).toUpperCase() + productContext.slice(1)} for ${hero.regionName}` : `Content optimized for ${hero.regionName}`}`,
+      headline: ['One ', 'Platform.'],
+      subtitle: 'Every Market. The Only One You Need.',
+      description: 'AI-powered content production across 50+ industries in 140+ languages',
+      type: 'platform' as const,
+      bg: 'from-primary/5 via-background to-accent/5',
+      accent: 'bg-primary/10',
+    },
+    // Slide 1 — Mind to Media
+    {
+      id: 'mind-to-media',
+      badge: '✦ End-to-End Content Production',
+      headline: ['Mind to ', 'Media'],
+      subtitle: 'For Every Industry',
+      description: 'From the first spark of an idea to polished, market-ready content — across video, presentations, audio, and documents.',
+      type: 'pills' as const,
+      pills: ['Ideation', 'Scripting', 'Production', 'Localization', 'Distribution'],
+      bg: 'from-primary/8 via-background to-accent/5',
+      accent: 'bg-primary/8',
+    },
+    // Slide 2 — We Speak Your Language
+    {
+      id: 'language',
+      badge: '🌍 140+ Languages · 8 Global Regions',
+      headline: ['We Speak Your ', 'Language.'],
+      subtitle: 'We Understand Your Market.',
+      description: 'Not just translation — we adapt tone, idioms, humor, cultural references, and regional compliance so your audience feels you were built for them.',
+      type: 'stats' as const,
+      stats: [
+        { value: '140+', label: 'Languages' },
+        { value: '30+', label: 'Dialects' },
+        { value: '8', label: 'Regions' },
+        { value: 'RTL', label: 'Full Support' },
+      ],
+      bg: 'from-accent/5 via-background to-primary/8',
+      accent: 'bg-accent/8',
+    },
+    // Slide 3 — Transcreation
+    {
+      id: 'transcreation',
+      badge: '🚀 First to Market',
+      headline: ['Transcreation, ', 'Not Translation.'],
+      subtitle: 'Cultural Adaptation at Scale',
+      description: 'Translation converts words. Transcreation converts meaning — intent, emotion, and cultural context for every target market.',
+      type: 'comparison' as const,
+      comparison: {
+        bad: { label: '❌ Translation', text: '"Our product helps you save time and money."', note: 'Word-for-word. Literal. Generic.' },
+        good: { label: '✅ Transcreation', text: '"لأن وقتك أغلى من أي استثمار"', note: 'Culturally adapted. Emotionally resonant.' },
+      },
+      bg: 'from-primary/5 via-background to-accent/8',
+      accent: 'bg-primary/6',
+    },
+  ];
 
   React.useEffect(() => {
     const timer = setInterval(() => {
       setDirection(1);
-      setCurrent((prev) => (prev + 1) % HERO_SLIDES.length);
-    }, 5000);
+      setCurrent((prev) => (prev + 1) % slides.length);
+    }, 6000);
     return () => clearInterval(timer);
-  }, []);
+  }, [slides.length]);
 
   const goTo = (index: number) => {
     setDirection(index > current ? 1 : -1);
     setCurrent(index);
   };
 
-  const slide = HERO_SLIDES[current];
+  const slide = slides[current];
 
   return (
-    <section className="relative min-h-[60vh] overflow-hidden">
+    <section className={`relative min-h-[85vh] overflow-hidden pt-16 ${hero.isRTL ? 'rtl' : 'ltr'}`}>
+      {/* Animated background */}
       <div className={`absolute inset-0 bg-gradient-to-br ${slide.bg} transition-all duration-700`} />
       <div className="absolute inset-0 overflow-hidden">
-        <div className={`absolute top-1/3 right-1/4 w-80 h-80 ${slide.accent} rounded-full blur-3xl transition-all duration-700`} />
+        <div className={`absolute top-1/4 left-1/4 w-96 h-96 ${slide.accent} rounded-full blur-3xl animate-pulse transition-all duration-700`} />
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-accent/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
       </div>
 
-      <div className="relative max-w-7xl mx-auto px-4 py-20">
+      <div className="relative max-w-7xl mx-auto px-4 py-20 flex flex-col items-center justify-center min-h-[70vh]">
         <motion.div
-          key={current}
-          initial={{ opacity: 0, x: direction * 120 }}
+          key={slide.id}
+          initial={{ opacity: 0, x: direction * 150 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, ease: 'easeOut' }}
-          className="text-center space-y-6"
+          className="text-center space-y-6 w-full"
         >
-          <Badge variant="outline" className="border-primary/40 text-primary text-sm px-4 py-1">
+          {/* Badge */}
+          <Badge variant="outline" className="border-primary/40 text-primary text-sm px-4 py-1.5">
             {slide.badge}
           </Badge>
 
-          <h2 className="text-4xl md:text-5xl lg:text-6xl font-black leading-tight">
+          {/* Headline */}
+          <h1 className="text-4xl md:text-5xl lg:text-7xl font-black leading-tight">
             <span className="text-foreground">{slide.headline[0]}</span>
             <span className="text-primary">{slide.headline[1]}</span>
-          </h2>
+          </h1>
 
           <p className="text-2xl md:text-3xl font-bold text-foreground">{slide.subtitle}</p>
-          <p className="text-base text-muted-foreground max-w-2xl mx-auto">{slide.description}</p>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">{slide.description}</p>
 
-          {slide.type === 'pills' && slide.pills && (
+          {/* Platform slide — region stats + CTA */}
+          {slide.type === 'platform' && (
+            <div className="space-y-6">
+              <div className="p-4 bg-muted/50 rounded-xl border border-border max-w-xl mx-auto">
+                <p className="text-sm text-muted-foreground">
+                  Your content deserves more than word-for-word translation. Genie adapts tone,
+                  idioms, cultural references, and regional compliance — so your audience feels you were{' '}
+                  <span className="text-primary font-semibold underline">built for them</span>.
+                </p>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-2xl mx-auto">
+                <div className="text-center p-3 bg-card rounded-xl border border-border">
+                  <p className="text-2xl font-bold text-foreground">{stats.audienceReach}</p>
+                  <p className="text-xs text-muted-foreground">Audience Reach</p>
+                </div>
+                <div className="text-center p-3 bg-card rounded-xl border border-border">
+                  <p className="text-2xl font-bold text-primary">{stats.dialects || stats.languages}</p>
+                  <p className="text-xs text-muted-foreground">{stats.dialects ? 'Dialects' : 'Languages'}</p>
+                </div>
+                <div className="text-center p-3 bg-card rounded-xl border border-border">
+                  <p className="text-2xl font-bold text-primary">{stats.costSavings}</p>
+                  <p className="text-xs text-muted-foreground">Cost Savings</p>
+                </div>
+                <div className="text-center p-3 bg-card rounded-xl border border-border">
+                  <p className="text-2xl font-bold text-foreground">{stats.localMetric.value}</p>
+                  <p className="text-xs text-muted-foreground">{stats.localMetric.label}</p>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center justify-center gap-2 text-sm text-muted-foreground">
+                <span className="px-2 py-1 bg-muted rounded">7 Products</span>
+                <span>•</span>
+                <span className="px-2 py-1 bg-muted rounded">206 Pipelines</span>
+                <span>•</span>
+                <span className="px-2 py-1 bg-muted rounded">15 AI Providers</span>
+              </div>
+              <div className="flex flex-wrap gap-4 justify-center">
+                <Link to="/genie-studio-auth?tab=signup">
+                  <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg text-lg px-8 py-6">
+                    {cta.primary}
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
+                <Link to="/explore">
+                  <Button size="lg" variant="outline" className="border-border text-muted-foreground hover:text-foreground hover:bg-muted text-lg px-8 py-6">
+                    <Play className="mr-2 h-4 w-4" />
+                    {cta.secondary}
+                  </Button>
+                </Link>
+              </div>
+              <p className="text-muted-foreground text-xs">{cta.freeCredits}</p>
+            </div>
+          )}
+
+          {/* Pills slide */}
+          {slide.type === 'pills' && 'pills' in slide && (
             <div className="flex flex-wrap justify-center gap-3 pt-2">
-              {slide.pills.map((pill, i) => (
+              {(slide as any).pills.map((pill: string, i: number) => (
                 <span key={pill} className="inline-flex items-center gap-2">
                   <span className="px-4 py-2 bg-card border border-border rounded-full text-sm font-semibold text-foreground">
                     {pill}
                   </span>
-                  {i < slide.pills.length - 1 && <ArrowRight className="w-4 h-4 text-primary/50" />}
+                  {i < (slide as any).pills.length - 1 && <ArrowRight className="w-4 h-4 text-primary/50" />}
                 </span>
               ))}
             </div>
           )}
 
-          {slide.type === 'stats' && slide.stats && (
+          {/* Stats slide */}
+          {slide.type === 'stats' && 'stats' in slide && (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-2xl mx-auto pt-4">
-              {slide.stats.map((stat) => (
+              {(slide as any).stats.map((stat: { value: string; label: string }) => (
                 <div key={stat.label} className="text-center p-3 bg-card rounded-xl border border-border">
                   <p className="text-2xl font-bold text-primary">{stat.value}</p>
                   <p className="text-xs text-muted-foreground">{stat.label}</p>
@@ -341,28 +284,29 @@ const HeroCarousel: React.FC = () => {
             </div>
           )}
 
-          {slide.type === 'comparison' && slide.comparison && (
+          {/* Comparison slide */}
+          {slide.type === 'comparison' && 'comparison' in slide && (
             <div className="grid sm:grid-cols-2 gap-6 max-w-3xl mx-auto pt-4">
               <div className="p-6 bg-card rounded-2xl border border-border text-left space-y-3">
-                <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider">{slide.comparison.bad.label}</p>
-                <p className="text-foreground font-medium">{slide.comparison.bad.text}</p>
-                <p className="text-xs text-muted-foreground">{slide.comparison.bad.note}</p>
+                <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider">{(slide as any).comparison.bad.label}</p>
+                <p className="text-foreground font-medium">{(slide as any).comparison.bad.text}</p>
+                <p className="text-xs text-muted-foreground">{(slide as any).comparison.bad.note}</p>
               </div>
               <div className="p-6 bg-primary/5 rounded-2xl border border-primary/20 text-left space-y-3">
-                <p className="text-sm font-bold text-primary uppercase tracking-wider">{slide.comparison.good.label}</p>
-                <p className="text-foreground font-medium">{slide.comparison.good.text}</p>
-                <p className="text-xs text-muted-foreground">{slide.comparison.good.note}</p>
+                <p className="text-sm font-bold text-primary uppercase tracking-wider">{(slide as any).comparison.good.label}</p>
+                <p className="text-foreground font-medium">{(slide as any).comparison.good.text}</p>
+                <p className="text-xs text-muted-foreground">{(slide as any).comparison.good.note}</p>
               </div>
             </div>
           )}
         </motion.div>
       </div>
 
-      {/* Dots */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3">
-        {HERO_SLIDES.map((_, i) => (
+      {/* Navigation dots */}
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 z-10">
+        {slides.map((s, i) => (
           <button
-            key={i}
+            key={s.id}
             onClick={() => goTo(i)}
             className={`h-2.5 rounded-full transition-all duration-300 ${
               i === current ? 'w-8 bg-primary' : 'w-2.5 bg-muted-foreground/30 hover:bg-muted-foreground/50'
@@ -381,6 +325,8 @@ const HeroCarousel: React.FC = () => {
           {[...Array(10)].map((_, i) => (
             <span key={i} className="inline-flex items-center gap-6 mx-8 text-sm font-semibold opacity-20">
               <span className="text-primary">✦</span>
+              <span className="text-foreground">One Platform</span>
+              <span className="text-primary">•</span>
               <span className="text-foreground">Mind to Media</span>
               <span className="text-primary">•</span>
               <span className="text-foreground">We Speak Your Language</span>
@@ -611,8 +557,7 @@ export const RegionalLandingPage: React.FC = () => {
     <main className={`min-h-screen bg-background text-foreground ${config.hero.isRTL ? 'rtl' : 'ltr'}`}>
       <RegionalSEOHead config={config} currentSlug={regionSlug} />
       <RegionalNavbar config={config} />
-      <RegionalHero config={config} productContext={productContext} />
-      <HeroCarousel />
+      <HeroCarousel config={config} productContext={productContext} />
       <RegionNavigator currentSlug={regionSlug} />
 
       {/* Product Ecosystem — 7 Products, 206 Pipelines + Why Genie */}
