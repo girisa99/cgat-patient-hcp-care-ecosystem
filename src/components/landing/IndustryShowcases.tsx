@@ -27,6 +27,8 @@ import { TTSDemoCard } from './demo-hub/TTSDemoCard';
 import { STTDemoCard } from './demo-hub/STTDemoCard';
 import { TranslationDemoCard } from './demo-hub/TranslationDemoCard';
 import { TranscreationDemoCard } from './demo-hub/TranscreationDemoCard';
+import { PipelineOutputGallery } from './demo-hub/PipelineOutputGallery';
+import { CombinationShowcase } from './demo-hub/CombinationShowcase';
 
 // Featured industries with icons and metadata
 const FEATURED_INDUSTRIES = [
@@ -365,6 +367,16 @@ export const IndustryShowcases: React.FC<IndustryShowcasesProps> = ({ region }) 
             </TabsContent>
           </div>
         </Tabs>
+
+        {/* Combination Showcase — differentiator workflows */}
+        <div className="mt-10 sm:mt-14">
+          <CombinationShowcase />
+        </div>
+
+        {/* Pipeline Output Gallery — case study cards */}
+        <div className="mt-10 sm:mt-14">
+          <PipelineOutputGallery />
+        </div>
 
         {/* Cross-functional capabilities — integrated from CrossFunctionalSection */}
         <div className="mt-8 sm:mt-10">
