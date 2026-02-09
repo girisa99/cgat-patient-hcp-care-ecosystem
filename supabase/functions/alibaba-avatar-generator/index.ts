@@ -19,8 +19,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// DashScope China (Beijing) endpoints
-const DASHSCOPE_BASE_URL = 'https://dashscope.aliyuncs.com/api/v1';
+// DashScope endpoints - tri-region with cross-region fallback
+const DASHSCOPE_CHINA_URL = 'https://dashscope.aliyuncs.com/api/v1';
+const DASHSCOPE_INTL_URL = 'https://dashscope-intl.aliyuncs.com/api/v1';
 
 // Model identifiers in DashScope
 const DASHSCOPE_MODELS = {
@@ -87,12 +88,26 @@ interface GenerationResult {
 }
 
 /**
- * Get the Alibaba China API key (required for all avatar models)
+ * Get the Alibaba API key with tri-region fallback: China → Singapore → Virginia
+ * Returns all available configs for cross-region attempts
  */
-function getApiKey(): string | null {
+function getAllApiKeys(): Array<{ key: string; region: string; baseUrl: string }> {
+  const configs: Array<{ key: string; region: string; baseUrl: string }> = [];
   const chinaKey = Deno.env.get('ALIBABA_CHINA_API_KEY');
-  const fallbackKey = Deno.env.get('ALIBABA_API_KEY');
-  return chinaKey || fallbackKey || null;
+  const sgKey = Deno.env.get('ALIBABA_SINGAPORE_API_KEY');
+  const vaKey = Deno.env.get('ALIBABA_API_KEY');
+
+  // China key gets priority for China-only models, but we try all
+  if (chinaKey) configs.push({ key: chinaKey, region: 'china-beijing', baseUrl: DASHSCOPE_CHINA_URL });
+  if (sgKey) configs.push({ key: sgKey, region: 'singapore', baseUrl: DASHSCOPE_INTL_URL });
+  if (vaKey) configs.push({ key: vaKey, region: 'virginia', baseUrl: DASHSCOPE_INTL_URL });
+
+  return configs;
+}
+
+function getApiKey(): string | null {
+  const configs = getAllApiKeys();
+  return configs.length > 0 ? configs[0].key : null;
 }
 
 /**
@@ -102,11 +117,12 @@ async function callDashScopeAPI(
   endpoint: string,
   payload: Record<string, unknown>,
   apiKey: string,
-  enableAsync: boolean = true
+  enableAsync: boolean = true,
+  baseUrl: string = DASHSCOPE_CHINA_URL,
 ): Promise<{ success: boolean; data?: any; taskId?: string; error?: string }> {
   
-  const url = `${DASHSCOPE_BASE_URL}${endpoint}`;
-  console.log(`🇨🇳 Calling DashScope China: ${url}`);
+  const url = `${baseUrl}${endpoint}`;
+  console.log(`🌐 Calling DashScope (${baseUrl === DASHSCOPE_CHINA_URL ? 'China' : 'International'}): ${url}`);
   
   try {
     const response = await fetch(url, {
