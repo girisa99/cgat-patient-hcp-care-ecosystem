@@ -360,7 +360,7 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
     },
     {
       id: 'mind-to-media',
-      badge: '✦ Mind to Media Production Engine',
+      badge: `${hero.flag} Mind to Media for ${hero.regionName}`,
       headline: ['Idea to ', 'Global Content.'],
       subtitle: 'In Minutes, Not Months.',
       description: 'From a single prompt — AI generates scripts, voices, avatars, 3D models, videos, and culturally adapted content for every market.',
@@ -368,7 +368,7 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
     },
     {
       id: 'language',
-      badge: '🌍 140+ Languages · 30+ Dialects · 8 Regions',
+      badge: `${hero.flag} ${stats.languages} Languages · ${stats.dialects || '30+'} Dialects · ${hero.regionName}`,
       headline: ['We Speak Your ', 'Language.'],
       subtitle: 'We Understand Your Market.',
       description: 'Not just translation — we adapt tone, idioms, humor, cultural references, and regional compliance so your audience feels you were built for them.',
@@ -376,7 +376,7 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
     },
     {
       id: 'transcreation',
-      badge: '🚀 First & Only to Market',
+      badge: `${hero.flag} Transcreation for ${hero.regionName}`,
       headline: ['Transcreation, ', 'Not Translation.'],
       subtitle: 'Cultural Adaptation at Scale.',
       description: 'Translation converts words. Transcreation converts meaning — intent, emotion, and cultural context powered by zone-routed AI models.',
