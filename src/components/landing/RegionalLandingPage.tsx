@@ -28,10 +28,8 @@ import { RegionalPricingSection } from '@/components/landing/RegionalPricingSect
 import { ProfessionalAvatarShowcase } from '@/components/landing/video/ProfessionalAvatarShowcase';
 import { ProductDetailShowcase } from '@/components/landing/ProductDetailShowcase';
 // CrossFunctionalSection removed — capabilities now integrated into IndustryShowcases
-import { GlobalInspirationSection } from '@/components/landing/GlobalInspirationSection';
 import { DogfoodingProof } from '@/components/landing/DogfoodingProof';
 import { IndustryShowcases } from '@/components/landing/IndustryShowcases';
-import { EverythingYouNeedSection } from '@/components/landing/EverythingYouNeedSection';
 import { RegionSwitcherNav } from '@/components/landing/RegionSwitcherNav';
 import genieSuiteLogo from '@/assets/logos/genie-studio-suite-logo.png';
 
@@ -471,13 +469,8 @@ export const RegionalLandingPage: React.FC = () => {
 
       {/* Regional Industries removed — redundant with "Your Industry, Your Language, Your Market" below */}
 
-      {/* Industry Showcases — interactive try-it demos, region-aware */}
-      <IndustryShowcases region={regionSlug} />
-
-      {/* Everything You Need — Unified: Why Genie + See It In Action + Transcreation */}
-      <EverythingYouNeedSection config={config} />
-      {/* Global Inspiration */}
-      <GlobalInspirationSection />
+      {/* Industry Showcases — unified: demos + differentiators + transcreation + stories */}
+      <IndustryShowcases region={regionSlug} config={config} />
 
       {/* Regional Pricing */}
       <section id="pricing">
