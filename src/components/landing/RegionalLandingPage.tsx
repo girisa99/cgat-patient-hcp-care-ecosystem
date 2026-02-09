@@ -104,50 +104,6 @@ const RegionalHero: React.FC<{ config: RegionalConfig; productContext?: string |
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
       </div>
 
-      {/* Banner 1: Mind to Media — rolling right */}
-      <div className="relative overflow-hidden py-4 bg-gradient-to-r from-primary/10 via-accent/5 to-primary/10 border-b border-primary/10">
-        <motion.div
-          className="whitespace-nowrap"
-          animate={{ x: ['-50%', '0%'] }}
-          transition={{ duration: 22, repeat: Infinity, ease: 'linear' }}
-        >
-          {[...Array(6)].map((_, i) => (
-            <span key={i} className="inline-flex items-center gap-6 mx-8 text-2xl md:text-3xl font-black tracking-tight">
-              <span className="bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent">
-                Mind to Media
-              </span>
-              <span className="text-primary/40">✦</span>
-              <span className="text-foreground">
-                For Every Industry
-              </span>
-              <span className="text-primary/40">✦</span>
-            </span>
-          ))}
-        </motion.div>
-      </div>
-
-      {/* Banner 2: We Speak Your Language — rolling right (slightly different speed) */}
-      <div className="relative overflow-hidden py-3 bg-gradient-to-r from-accent/10 via-primary/5 to-accent/10 border-b border-accent/10">
-        <motion.div
-          className="whitespace-nowrap"
-          animate={{ x: ['-50%', '0%'] }}
-          transition={{ duration: 28, repeat: Infinity, ease: 'linear' }}
-        >
-          {[...Array(6)].map((_, i) => (
-            <span key={i} className="inline-flex items-center gap-6 mx-8 text-lg md:text-xl font-bold">
-              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                We Speak Your Language.
-              </span>
-              <span className="text-muted-foreground">•</span>
-              <span className="bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
-                We Understand Your Market.
-              </span>
-              <span className="text-muted-foreground">•</span>
-            </span>
-          ))}
-        </motion.div>
-      </div>
-
       {/* Primary Hero Content */}
       <div className="relative max-w-7xl mx-auto px-4 py-16">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -265,11 +221,48 @@ const RegionalHero: React.FC<{ config: RegionalConfig; productContext?: string |
         </div>
       </div>
 
-      {/* Scroll indicator */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
-        <div className="w-6 h-10 border-2 border-border rounded-full flex justify-center">
-          <div className="w-1 h-3 bg-muted-foreground rounded-full mt-2" />
-        </div>
+      {/* Banner 1: Mind to Media — rolling left to right (AFTER hero content) */}
+      <div className="relative overflow-hidden py-4 bg-gradient-to-r from-primary/10 via-accent/5 to-primary/10 border-t border-primary/10">
+        <motion.div
+          className="whitespace-nowrap"
+          animate={{ x: ['-50%', '0%'] }}
+          transition={{ duration: 22, repeat: Infinity, ease: 'linear' }}
+        >
+          {[...Array(6)].map((_, i) => (
+            <span key={i} className="inline-flex items-center gap-6 mx-8 text-2xl md:text-3xl font-black tracking-tight">
+              <span className="bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent">
+                Mind to Media
+              </span>
+              <span className="text-primary/40">✦</span>
+              <span className="text-foreground">
+                For Every Industry
+              </span>
+              <span className="text-primary/40">✦</span>
+            </span>
+          ))}
+        </motion.div>
+      </div>
+
+      {/* Banner 2: We Speak Your Language — rolling left to right */}
+      <div className="relative overflow-hidden py-3 bg-gradient-to-r from-accent/10 via-primary/5 to-accent/10 border-t border-accent/10">
+        <motion.div
+          className="whitespace-nowrap"
+          animate={{ x: ['-50%', '0%'] }}
+          transition={{ duration: 28, repeat: Infinity, ease: 'linear' }}
+        >
+          {[...Array(6)].map((_, i) => (
+            <span key={i} className="inline-flex items-center gap-6 mx-8 text-lg md:text-xl font-bold">
+              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                We Speak Your Language.
+              </span>
+              <span className="text-muted-foreground">•</span>
+              <span className="bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
+                We Understand Your Market.
+              </span>
+              <span className="text-muted-foreground">•</span>
+            </span>
+          ))}
+        </motion.div>
       </div>
     </section>
   );
