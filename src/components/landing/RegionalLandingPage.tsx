@@ -12,7 +12,6 @@ import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import { 
   ArrowRight, Play, Sparkles, Globe,
-  Volume2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -32,7 +31,7 @@ import { ProductDetailShowcase } from '@/components/landing/ProductDetailShowcas
 import { GlobalInspirationSection } from '@/components/landing/GlobalInspirationSection';
 import { DogfoodingProof } from '@/components/landing/DogfoodingProof';
 import { IndustryShowcases } from '@/components/landing/IndustryShowcases';
-import { RegionalShowcaseSection } from '@/components/landing/RegionalShowcaseSection';
+import { EverythingYouNeedSection } from '@/components/landing/EverythingYouNeedSection';
 import { RegionSwitcherNav } from '@/components/landing/RegionSwitcherNav';
 import genieSuiteLogo from '@/assets/logos/genie-studio-suite-logo.png';
 
@@ -275,89 +274,7 @@ const RegionalIndustries: React.FC<{ config: RegionalConfig }> = ({ config }) =>
 );
 
 // ============================================
-// TRANSCREATION SHOWCASE
-// ============================================
-const TranscreationShowcase: React.FC<{ config: RegionalConfig }> = ({ config }) => (
-  <section className="py-20 relative">
-    <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-background to-background" />
-    <div className="relative max-w-7xl mx-auto px-4">
-      {/* Branded value banner */}
-      <div className="mb-12 p-6 bg-gradient-to-r from-primary/10 via-accent/5 to-primary/10 rounded-2xl border border-primary/20 text-center">
-        <p className="text-sm font-semibold uppercase tracking-widest text-primary mb-2">Why Genie Studio</p>
-        <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
-          We Speak Your Language. We Understand Your Market.
-        </h2>
-        <p className="text-lg text-muted-foreground max-w-3xl mx-auto mb-4">
-          Your content deserves more than word-for-word translation. Genie adapts tone, idioms, cultural references, 
-          and regional compliance — so your audience feels you were <span className="text-primary font-semibold">built for them</span>.
-        </p>
-        <div className="flex flex-wrap justify-center gap-3 text-sm">
-          <span className="px-3 py-1.5 bg-primary/10 text-primary rounded-full font-medium">🗣️ 140+ Languages & Dialects</span>
-          <span className="px-3 py-1.5 bg-primary/10 text-primary rounded-full font-medium">🌍 8 Regional Zones</span>
-          <span className="px-3 py-1.5 bg-primary/10 text-primary rounded-full font-medium">🎯 Cultural Context — Not Literal Words</span>
-          <span className="px-3 py-1.5 bg-primary/10 text-primary rounded-full font-medium">📋 Built-In Regional Compliance</span>
-        </div>
-      </div>
-      <div className="text-center mb-8">
-        <h3 className="text-2xl font-bold text-foreground mb-2">
-          See the Difference: Transcreation vs. Translation
-        </h3>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
-          Real examples from {config.hero.regionName} — notice how Genie preserves intent, not just words.
-        </p>
-      </div>
-
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-card border border-border rounded-2xl overflow-hidden">
-          <div className="bg-muted/50 px-6 py-3 border-b border-border">
-            <h3 className="font-semibold text-foreground">{config.languageShowcase.tabLabel}</h3>
-          </div>
-          <div className="divide-y divide-border">
-            {config.languageShowcase.languages.map((lang, i) => (
-              <motion.div
-                key={lang.code}
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.05 }}
-                className="p-4 hover:bg-muted/30 transition-colors"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-foreground">{lang.nativeName}</span>
-                    <Badge variant="outline" className="text-[10px]">{lang.region}</Badge>
-                  </div>
-                  <Badge variant="secondary" className="text-[10px]">
-                    <Volume2 className="h-3 w-3 mr-1" />
-                    {lang.azureVoice.split('-').slice(0, 2).join('-')}
-                  </Badge>
-                </div>
-                <div className="grid sm:grid-cols-2 gap-3">
-                  <div>
-                    <p className="text-[10px] font-medium text-status-success uppercase mb-1">
-                      ✓ Transcreated
-                    </p>
-                    <p className={`text-sm text-foreground ${config.hero.isRTL ? 'text-right' : ''}`}>
-                      {lang.transcreation}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-medium text-status-error uppercase mb-1">
-                      ✗ Literal Translation
-                    </p>
-                    <p className={`text-sm text-muted-foreground line-through ${config.hero.isRTL ? 'text-right' : ''}`}>
-                      {lang.literal}
-                    </p>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-);
+// TranscreationShowcase removed — consolidated into EverythingYouNeedSection
 
 // ============================================
 // REGION NAVIGATOR — Compact globe strip
@@ -557,16 +474,8 @@ export const RegionalLandingPage: React.FC = () => {
       {/* Industry Showcases — interactive try-it demos, region-aware */}
       <IndustryShowcases region={regionSlug} />
 
-      {/* Regional Showcase — First-to-Market + See It In Action cards */}
-      <RegionalShowcaseSection config={config} />
-
-      {/* Transcreation Showcase — literal vs transcreated */}
-      <TranscreationShowcase config={config} />
-      
-      {/* LocalizationDemoHub removed — TTS/STT/Translation/Transcreation now consolidated into IndustryShowcases above */}
-
-      {/* Cross-Functional Capabilities now integrated into IndustryShowcases above */}
-
+      {/* Everything You Need — Unified: Why Genie + See It In Action + Transcreation */}
+      <EverythingYouNeedSection config={config} />
       {/* Global Inspiration */}
       <GlobalInspirationSection />
 
