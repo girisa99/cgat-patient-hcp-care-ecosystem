@@ -271,12 +271,29 @@ const TranscreationShowcase: React.FC<{ config: RegionalConfig }> = ({ config })
   <section className="py-20 relative">
     <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-background to-background" />
     <div className="relative max-w-7xl mx-auto px-4">
-      <div className="text-center mb-12">
+      {/* Branded value banner */}
+      <div className="mb-12 p-6 bg-gradient-to-r from-primary/10 via-accent/5 to-primary/10 rounded-2xl border border-primary/20 text-center">
+        <p className="text-sm font-semibold uppercase tracking-widest text-primary mb-2">Why Genie Studio</p>
         <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
-          True Transcreation. Not Translation.
+          We Speak Your Language. We Understand Your Market.
         </h2>
-        <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-          We adapt meaning, culture, and context — making content feel native to each audience.
+        <p className="text-lg text-muted-foreground max-w-3xl mx-auto mb-4">
+          Your content deserves more than word-for-word translation. Genie adapts tone, idioms, cultural references, 
+          and regional compliance — so your audience feels you were <span className="text-primary font-semibold">built for them</span>.
+        </p>
+        <div className="flex flex-wrap justify-center gap-3 text-sm">
+          <span className="px-3 py-1.5 bg-primary/10 text-primary rounded-full font-medium">🗣️ 140+ Languages & Dialects</span>
+          <span className="px-3 py-1.5 bg-primary/10 text-primary rounded-full font-medium">🌍 8 Regional Zones</span>
+          <span className="px-3 py-1.5 bg-primary/10 text-primary rounded-full font-medium">🎯 Cultural Context — Not Literal Words</span>
+          <span className="px-3 py-1.5 bg-primary/10 text-primary rounded-full font-medium">📋 Built-In Regional Compliance</span>
+        </div>
+      </div>
+      <div className="text-center mb-8">
+        <h3 className="text-2xl font-bold text-foreground mb-2">
+          See the Difference: Transcreation vs. Translation
+        </h3>
+        <p className="text-muted-foreground max-w-2xl mx-auto">
+          Real examples from {config.hero.regionName} — notice how Genie preserves intent, not just words.
         </p>
       </div>
 
@@ -396,18 +413,22 @@ const RegionalCTAFooter: React.FC<{ config: RegionalConfig }> = ({ config }) => 
   <section className="py-20 relative">
     <div className="absolute inset-0 bg-gradient-to-t from-primary/10 to-background" />
     <div className="relative max-w-4xl mx-auto px-4 text-center">
-      <h2 className="text-4xl md:text-5xl font-bold mb-6 text-foreground">
-        Mind to Media.
+      <Badge variant="outline" className="mb-6 border-primary/40 text-primary">
+        <Globe className="h-3 w-3 mr-1" />
+        Ready for {config.hero.regionName}
+      </Badge>
+      <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
+        Your Audience Deserves Content
         <br />
         <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-          {config.hero.regionName}.
+          That Feels Like Home.
         </span>
       </h2>
       
-      <p className="text-xl text-muted-foreground mb-4">
-        {config.socialProof}
+      <p className="text-xl text-muted-foreground mb-2 max-w-2xl mx-auto">
+        We speak 140+ languages. We understand 50+ industries. We guide you from idea to global distribution.
       </p>
-      <p className="text-lg text-status-success mb-8">
+      <p className="text-lg text-primary font-semibold mb-8">
         💰 {config.comparisonSavings}
       </p>
 
@@ -420,7 +441,7 @@ const RegionalCTAFooter: React.FC<{ config: RegionalConfig }> = ({ config }) => 
         </Link>
         <Link to="/support">
           <Button size="lg" variant="outline" className="border-primary text-primary hover:bg-primary/10 text-lg px-8 py-6">
-            Schedule Demo
+            Schedule a Guided Demo
           </Button>
         </Link>
       </div>
