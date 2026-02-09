@@ -544,8 +544,8 @@ export const RegionalLandingPage: React.FC = () => {
 
       {/* Regional Industries removed — redundant with "Your Industry, Your Language, Your Market" below */}
 
-      {/* Industry Showcases — global view */}
-      <IndustryShowcases />
+      {/* Industry Showcases — interactive try-it demos, region-aware */}
+      <IndustryShowcases region={regionSlug} />
 
       {/* Transcreation Showcase — literal vs transcreated */}
       <TranscreationShowcase config={config} />
