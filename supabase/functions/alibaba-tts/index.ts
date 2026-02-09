@@ -26,6 +26,7 @@
  */
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import WebSocket from "npm:ws@8.18.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -41,11 +42,19 @@ const ENDPOINTS = {
     base: 'https://dashscope.aliyuncs.com',
     ws: 'wss://dashscope.aliyuncs.com/api-ws/v1/inference',
     rest: 'https://dashscope.aliyuncs.com/api/v1',
+    keyName: 'ALIBABA_CHINA_API_KEY',
   },
-  international: {
+  singapore: {
     base: 'https://dashscope-intl.aliyuncs.com',
     ws: 'wss://dashscope-intl.aliyuncs.com/api-ws/v1/inference',
     rest: 'https://dashscope-intl.aliyuncs.com/api/v1',
+    keyName: 'ALIBABA_SINGAPORE_API_KEY',
+  },
+  virginia: {
+    base: 'https://dashscope-intl.aliyuncs.com',
+    ws: 'wss://dashscope-intl.aliyuncs.com/api-ws/v1/inference',
+    rest: 'https://dashscope-intl.aliyuncs.com/api/v1',
+    keyName: 'ALIBABA_API_KEY',
   },
 } as const;
 
@@ -149,20 +158,38 @@ interface TTSResult {
 // API KEY & REGION RESOLUTION
 // ============================================================================
 
+type RegionName = 'china-beijing' | 'singapore' | 'virginia';
+
+interface ApiConfig {
+  apiKey: string;
+  region: RegionName;
+  endpoints: typeof ENDPOINTS.china;
+}
+
+/**
+ * Tri-region key resolution: China → Singapore → Virginia
+ * Returns ALL available configs for cross-region fallback
+ */
+function getAllApiConfigs(): ApiConfig[] {
+  const configs: ApiConfig[] = [];
+  const chinaKey = Deno.env.get('ALIBABA_CHINA_API_KEY');
+  const sgKey = Deno.env.get('ALIBABA_SINGAPORE_API_KEY');
+  const vaKey = Deno.env.get('ALIBABA_API_KEY');
+
+  if (chinaKey) configs.push({ apiKey: chinaKey, region: 'china-beijing', endpoints: ENDPOINTS.china });
+  if (sgKey) configs.push({ apiKey: sgKey, region: 'singapore', endpoints: ENDPOINTS.singapore });
+  if (vaKey) configs.push({ apiKey: vaKey, region: 'virginia', endpoints: ENDPOINTS.virginia });
+
+  return configs;
+}
+
 function getApiConfig(): {
   apiKey: string | null;
-  region: 'china-beijing' | 'international';
+  region: RegionName;
   endpoints: typeof ENDPOINTS.china;
 } {
-  const chinaKey = Deno.env.get('ALIBABA_CHINA_API_KEY');
-  const intlKey = Deno.env.get('ALIBABA_API_KEY');
-
-  if (chinaKey) {
-    return { apiKey: chinaKey, region: 'china-beijing', endpoints: ENDPOINTS.china };
-  }
-  if (intlKey) {
-    return { apiKey: intlKey, region: 'international', endpoints: ENDPOINTS.international };
-  }
+  const configs = getAllApiConfigs();
+  if (configs.length > 0) return configs[0];
   return { apiKey: null, region: 'china-beijing', endpoints: ENDPOINTS.china };
 }
 
@@ -195,18 +222,21 @@ async function generateCosyVoiceWebSocket(
 ): Promise<Uint8Array> {
   const taskId = crypto.randomUUID();
 
-  console.log(`🎤 [CosyVoice WS] Connecting to ${wsUrl}`);
+  console.log(`🎤 [CosyVoice WS] Connecting to ${wsUrl} via npm:ws (custom headers)`);
   console.log(`🎤 [CosyVoice WS] Model: ${model}, Voice: ${voice}, Format: ${format}`);
 
   return new Promise<Uint8Array>((resolve, reject) => {
-    let timeoutId: number;
+    let timeoutId: ReturnType<typeof setTimeout>;
     const audioChunks: Uint8Array[] = [];
     let totalBytes = 0;
     let taskStarted = false;
 
-    // DashScope accepts API key as URL parameter for WebSocket
-    const authUrl = `${wsUrl}?token=${apiKey}`;
-    const ws = new WebSocket(authUrl);
+    // Use npm:ws which supports custom headers for Authorization
+    const ws = new WebSocket(wsUrl, {
+      headers: {
+        'Authorization': `bearer ${apiKey}`,
+      },
+    });
 
     // Set 30-second timeout
     timeoutId = setTimeout(() => {
@@ -399,16 +429,16 @@ async function generateSambertREST(
 
 async function generateTTS(request: TTSRequest): Promise<TTSResult> {
   const startTime = Date.now();
-  const { apiKey, region, endpoints } = getApiConfig();
+  const allConfigs = getAllApiConfigs();
 
-  if (!apiKey) {
+  if (allConfigs.length === 0) {
     return {
       success: false,
       provider: 'alibaba',
       method: 'cosyvoice-websocket',
-      region,
+      region: 'china-beijing',
       model: 'none',
-      error: 'No Alibaba API key configured (ALIBABA_CHINA_API_KEY or ALIBABA_API_KEY)',
+      error: 'No Alibaba API key configured (ALIBABA_CHINA_API_KEY, ALIBABA_SINGAPORE_API_KEY, or ALIBABA_API_KEY)',
       fallback: true,
     };
   }
@@ -424,107 +454,110 @@ async function generateTTS(request: TTSRequest): Promise<TTSResult> {
 
   console.log(`🎯 [Alibaba TTS] Language: ${langKey}, Voice: ${voice}, Model: ${model}, Method: ${method}`);
 
-  // Try CosyVoice WebSocket first (unless method=rest forced)
+  // Try CosyVoice WebSocket on ALL regions (unless method=rest forced)
   if (method !== 'rest' && model in COSYVOICE_MODELS) {
-    try {
-      console.log(`🎤 [Path 1] Attempting CosyVoice WebSocket...`);
-      const audioData = await generateCosyVoiceWebSocket(
-        request.text, voice, model, apiKey, endpoints.ws, format, sampleRate, speed
-      );
+    for (const config of allConfigs) {
+      try {
+        console.log(`🎤 [Path 1] Attempting CosyVoice WebSocket on ${config.region}...`);
+        const audioData = await generateCosyVoiceWebSocket(
+          request.text, voice, model, config.apiKey, config.endpoints.ws, format, sampleRate, speed
+        );
 
-      const processingTimeMs = Date.now() - startTime;
-      console.log(`✅ [Path 1] CosyVoice WebSocket succeeded in ${processingTimeMs}ms`);
+        const processingTimeMs = Date.now() - startTime;
+        console.log(`✅ [Path 1] CosyVoice WebSocket succeeded on ${config.region} in ${processingTimeMs}ms`);
 
-      // Convert to base64 for response
-      let binary = '';
-      for (let i = 0; i < audioData.length; i++) {
-        binary += String.fromCharCode(audioData[i]);
+        let binary = '';
+        for (let i = 0; i < audioData.length; i++) {
+          binary += String.fromCharCode(audioData[i]);
+        }
+        const audioBase64 = btoa(binary);
+
+        return {
+          success: true,
+          provider: 'alibaba',
+          method: 'cosyvoice-websocket',
+          region: config.region,
+          model,
+          voice,
+          audioUrl: `data:audio/${format};base64,${audioBase64}`,
+          audioBase64,
+          duration: estimateDuration(request.text),
+          metadata: {
+            characterCount: request.text.length,
+            format,
+            sampleRate,
+            processingTimeMs,
+            estimatedCost: model === 'cosyvoice-v3-plus' ? 0.029 * (request.text.length / 10000) : 0.014 * (request.text.length / 10000),
+          },
+        };
+      } catch (wsError) {
+        console.warn(`⚠️ [Path 1] CosyVoice WebSocket failed on ${config.region}:`, (wsError as Error).message);
       }
-      const audioBase64 = btoa(binary);
-
-      return {
-        success: true,
-        provider: 'alibaba',
-        method: 'cosyvoice-websocket',
-        region,
-        model,
-        voice,
-        audioUrl: `data:audio/${format};base64,${audioBase64}`,
-        audioBase64,
-        duration: estimateDuration(request.text),
-        metadata: {
-          characterCount: request.text.length,
-          format,
-          sampleRate,
-          processingTimeMs,
-          estimatedCost: model === 'cosyvoice-v3-plus' ? 0.029 * (request.text.length / 10000) : 0.014 * (request.text.length / 10000),
-        },
-      };
-    } catch (wsError) {
-      console.warn(`⚠️ [Path 1] CosyVoice WebSocket failed:`, (wsError as Error).message);
-      console.log(`🔄 Falling back to Sambert REST...`);
     }
+    console.log(`🔄 All CosyVoice WebSocket attempts failed, falling back to Sambert REST...`);
   }
 
   // Fallback to Sambert REST
   if (method !== 'websocket') {
-    try {
-      console.log(`🔊 [Path 2] Attempting Sambert REST...`);
+    for (const config of allConfigs) {
+      try {
+        console.log(`🔊 [Path 2] Attempting Sambert REST on ${config.region}...`);
 
-      // Map language to best Sambert voice
-      const sambertVoice = selectSambertVoice(langKey);
-      const audioData = await generateSambertREST(
-        request.text, sambertVoice, apiKey, endpoints.rest, format, 48000
-      );
+        const sambertVoice = selectSambertVoice(langKey);
+        const audioData = await generateSambertREST(
+          request.text, sambertVoice, config.apiKey, config.endpoints.rest, format, 48000
+        );
 
-      const processingTimeMs = Date.now() - startTime;
-      console.log(`✅ [Path 2] Sambert REST succeeded in ${processingTimeMs}ms`);
+        const processingTimeMs = Date.now() - startTime;
+        console.log(`✅ [Path 2] Sambert REST succeeded on ${config.region} in ${processingTimeMs}ms`);
 
-      let binary = '';
-      for (let i = 0; i < audioData.length; i++) {
-        binary += String.fromCharCode(audioData[i]);
+        let binary = '';
+        for (let i = 0; i < audioData.length; i++) {
+          binary += String.fromCharCode(audioData[i]);
+        }
+        const audioBase64 = btoa(binary);
+
+        return {
+          success: true,
+          provider: 'alibaba',
+          method: 'sambert-rest',
+          region: config.region,
+          model: sambertVoice,
+          voice: sambertVoice,
+          audioUrl: `data:audio/${format};base64,${audioBase64}`,
+          audioBase64,
+          duration: estimateDuration(request.text),
+          metadata: {
+            characterCount: request.text.length,
+            format,
+            sampleRate: 48000,
+            processingTimeMs,
+            estimatedCost: 0.01 * (request.text.length / 10000),
+          },
+          fallback: method === 'auto',
+        };
+      } catch (restError) {
+        console.warn(`⚠️ [Path 2] Sambert REST failed on ${config.region}:`, (restError as Error).message);
       }
-      const audioBase64 = btoa(binary);
-
-      return {
-        success: true,
-        provider: 'alibaba',
-        method: 'sambert-rest',
-        region,
-        model: sambertVoice,
-        voice: sambertVoice,
-        audioUrl: `data:audio/${format};base64,${audioBase64}`,
-        audioBase64,
-        duration: estimateDuration(request.text),
-        metadata: {
-          characterCount: request.text.length,
-          format,
-          sampleRate: 48000,
-          processingTimeMs,
-          estimatedCost: 0.01 * (request.text.length / 10000),
-        },
-        fallback: method === 'auto',
-      };
-    } catch (restError) {
-      console.error(`❌ [Path 2] Sambert REST also failed:`, (restError as Error).message);
-
-      return {
-        success: false,
-        provider: 'alibaba',
-        method: 'sambert-rest',
-        region,
-        model,
-        error: `Both CosyVoice WebSocket and Sambert REST failed. Last error: ${(restError as Error).message}`,
-        fallback: true,
-      };
     }
+
+    // All Sambert REST attempts failed
+    return {
+      success: false,
+      provider: 'alibaba',
+      method: 'sambert-rest',
+      region: allConfigs[0].region,
+      model,
+      error: 'All Alibaba TTS attempts failed across all regions (CosyVoice WS + Sambert REST)',
+      fallback: true,
+    };
   }
 
   return {
     success: false,
     provider: 'alibaba',
     method: 'cosyvoice-websocket',
-    region,
+    region: allConfigs[0].region,
     model,
     error: 'CosyVoice WebSocket failed and REST method was not allowed',
     fallback: true,

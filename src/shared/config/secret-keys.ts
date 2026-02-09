@@ -32,8 +32,9 @@ export const AI_PROVIDER_KEYS = {
   GOOGLE: 'GOOGLE_API_KEY',           // Google services (TTS, OAuth, etc.)
   
   // Alibaba DashScope - UNIFIED key for ALL services (text, voice, video, image, OCR)
-  ALIBABA: 'ALIBABA_API_KEY',         // Qwen LLM (Singapore/Intl region)
-  ALIBABA_CHINA: 'ALIBABA_CHINA_API_KEY', // CosyVoice, Paraformer, Wan (China Beijing region ONLY)
+  ALIBABA: 'ALIBABA_API_KEY',         // Virginia (US/Americas)
+  ALIBABA_SINGAPORE: 'ALIBABA_SINGAPORE_API_KEY', // Singapore (Asia, EU, MEA, Africa, India)
+  ALIBABA_CHINA: 'ALIBABA_CHINA_API_KEY', // Beijing (CJK + China-only models)
   
   // DeepSeek - Technical/Chinese specialist
   DEEPSEEK: 'DEEPSEEK_API_KEY',       // DeepSeek Coder, DeepSeek Math, Translation

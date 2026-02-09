@@ -150,13 +150,19 @@ function getApiConfig(modelKey: VideoModelKey): {
   region: 'china-beijing' | 'international';
 } {
   const modelConfig = VIDEO_MODELS[modelKey];
+  const chinaKey = Deno.env.get('ALIBABA_CHINA_API_KEY');
+  const sgKey = Deno.env.get('ALIBABA_SINGAPORE_API_KEY');
+  const vaKey = Deno.env.get('ALIBABA_API_KEY');
   
   if (modelConfig.region === 'intl') {
-    const apiKey = Deno.env.get('ALIBABA_API_KEY') || Deno.env.get('ALIBABA_CHINA_API_KEY') || null;
+    // International models: prefer SG → VA → China cross-region
+    const apiKey = sgKey || vaKey || chinaKey || null;
     return { apiKey, baseUrl: DASHSCOPE_INTL_URL, region: 'international' };
   } else {
-    const apiKey = Deno.env.get('ALIBABA_CHINA_API_KEY') || Deno.env.get('ALIBABA_API_KEY') || null;
-    return { apiKey, baseUrl: DASHSCOPE_CHINA_URL, region: 'china-beijing' };
+    // China models: prefer China → try SG/VA cross-region
+    const apiKey = chinaKey || sgKey || vaKey || null;
+    const baseUrl = chinaKey ? DASHSCOPE_CHINA_URL : DASHSCOPE_INTL_URL;
+    return { apiKey, baseUrl, region: chinaKey ? 'china-beijing' : 'international' };
   }
 }
 
