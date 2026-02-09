@@ -8,10 +8,10 @@
 
 import React, { useState } from 'react';
 import { useParams, Navigate, Link, useSearchParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import { 
-  ArrowRight, Play, Sparkles, Globe,
+  ArrowRight, Play, Sparkles, Globe, Brain, Cpu, Zap, Eye, Mic, Languages, Layers, Wand2, Video, Image, FileText, AudioLines,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -91,10 +91,138 @@ const RegionalSEOHead: React.FC<{ config: RegionalConfig; currentSlug: string }>
 };
 
 // ============================================
-// HERO SECTION
+// FLOATING AI PROVIDER ORBS
 // ============================================
+const AI_ORBS = [
+  { icon: Brain, label: 'Claude', color: 'from-orange-400 to-amber-600', x: '8%', y: '18%', delay: 0, size: 44 },
+  { icon: Sparkles, label: 'GPT-4o', color: 'from-emerald-400 to-teal-600', x: '88%', y: '22%', delay: 0.5, size: 40 },
+  { icon: Zap, label: 'Gemini', color: 'from-blue-400 to-indigo-600', x: '12%', y: '72%', delay: 1, size: 38 },
+  { icon: Cpu, label: 'DeepSeek', color: 'from-violet-400 to-purple-600', x: '82%', y: '68%', delay: 1.5, size: 36 },
+  { icon: Eye, label: 'Vertex', color: 'from-sky-400 to-cyan-600', x: '5%', y: '45%', delay: 2, size: 34 },
+  { icon: Mic, label: 'ElevenLabs', color: 'from-pink-400 to-rose-600', x: '92%', y: '48%', delay: 2.5, size: 36 },
+  { icon: Languages, label: 'DeepL', color: 'from-teal-400 to-emerald-600', x: '18%', y: '88%', delay: 0.3, size: 32 },
+  { icon: Layers, label: 'Meshy', color: 'from-amber-400 to-orange-600', x: '78%', y: '85%', delay: 0.8, size: 32 },
+];
+
+const FloatingOrbs: React.FC<{ activeSlide: number }> = ({ activeSlide }) => (
+  <div className="absolute inset-0 pointer-events-none overflow-hidden">
+    {AI_ORBS.map((orb, i) => {
+      const Icon = orb.icon;
+      return (
+        <motion.div
+          key={orb.label}
+          className="absolute"
+          style={{ left: orb.x, top: orb.y }}
+          animate={{
+            y: [0, -12, 0, 8, 0],
+            x: [0, 6, -4, 2, 0],
+            opacity: [0.25, 0.5, 0.35, 0.5, 0.25],
+            scale: [1, 1.08, 0.96, 1.05, 1],
+          }}
+          transition={{
+            duration: 8 + i * 0.5,
+            repeat: Infinity,
+            ease: 'easeInOut',
+            delay: orb.delay,
+          }}
+        >
+          <div className={`relative bg-gradient-to-br ${orb.color} rounded-2xl p-2.5 shadow-lg shadow-black/10 backdrop-blur-sm`} style={{ width: orb.size, height: orb.size }}>
+            <Icon className="w-full h-full text-white/90" strokeWidth={1.5} />
+            <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[9px] font-bold text-muted-foreground/60 whitespace-nowrap">
+              {orb.label}
+            </div>
+          </div>
+        </motion.div>
+      );
+    })}
+    {/* Animated particles */}
+    {[...Array(20)].map((_, i) => (
+      <motion.div
+        key={`particle-${i}`}
+        className="absolute w-1 h-1 rounded-full bg-primary/30"
+        style={{
+          left: `${10 + Math.random() * 80}%`,
+          top: `${10 + Math.random() * 80}%`,
+        }}
+        animate={{
+          opacity: [0, 0.6, 0],
+          scale: [0, 1.5, 0],
+          y: [0, -30 - Math.random() * 40],
+        }}
+        transition={{
+          duration: 3 + Math.random() * 3,
+          repeat: Infinity,
+          delay: Math.random() * 4 + activeSlide * 0.2,
+          ease: 'easeOut',
+        }}
+      />
+    ))}
+  </div>
+);
+
 // ============================================
-// UNIFIED HERO CAROUSEL — All 4 heroes rolling left-to-right
+// PIPELINE VISUAL — Animated production flow
+// ============================================
+const PIPELINE_STEPS = [
+  { icon: Wand2, label: 'Ideation', color: 'text-violet-500' },
+  { icon: FileText, label: 'Scripting', color: 'text-blue-500' },
+  { icon: Video, label: 'Production', color: 'text-emerald-500' },
+  { icon: Languages, label: 'Localization', color: 'text-amber-500' },
+  { icon: Globe, label: 'Distribution', color: 'text-rose-500' },
+];
+
+const AnimatedPipeline: React.FC = () => (
+  <div className="flex items-center justify-center gap-1 sm:gap-2 pt-6 flex-wrap">
+    {PIPELINE_STEPS.map((step, i) => {
+      const Icon = step.icon;
+      return (
+        <React.Fragment key={step.label}>
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.8 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ delay: 0.3 + i * 0.15, type: 'spring', stiffness: 200 }}
+            className="flex flex-col items-center gap-1.5"
+          >
+            <motion.div
+              className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-card border border-border flex items-center justify-center shadow-lg"
+              whileHover={{ scale: 1.12, rotate: 3 }}
+              animate={{
+                boxShadow: [
+                  '0 4px 14px rgba(0,0,0,0.05)',
+                  '0 8px 25px rgba(0,0,0,0.12)',
+                  '0 4px 14px rgba(0,0,0,0.05)',
+                ],
+              }}
+              transition={{ duration: 3, repeat: Infinity, delay: i * 0.4 }}
+            >
+              <Icon className={`w-6 h-6 sm:w-7 sm:h-7 ${step.color}`} />
+            </motion.div>
+            <span className="text-[11px] sm:text-xs font-semibold text-muted-foreground">{step.label}</span>
+          </motion.div>
+          {i < PIPELINE_STEPS.length - 1 && (
+            <motion.div
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ delay: 0.5 + i * 0.15, duration: 0.4 }}
+              className="hidden sm:flex items-center mb-5"
+            >
+              <div className="w-8 h-[2px] bg-gradient-to-r from-primary/40 to-primary/20 rounded-full" />
+              <motion.div
+                animate={{ x: [0, 8, 0] }}
+                transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.3 }}
+              >
+                <ArrowRight className="w-4 h-4 text-primary/50" />
+              </motion.div>
+            </motion.div>
+          )}
+        </React.Fragment>
+      );
+    })}
+  </div>
+);
+
+// ============================================
+// UNIFIED HERO CAROUSEL — 4 heroes, left-to-right
 // ============================================
 const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string | null }> = ({ config, productContext }) => {
   const { hero, stats, cta } = config;
@@ -102,30 +230,22 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
   const [direction, setDirection] = React.useState(1);
 
   const slides = [
-    // Slide 0 — One Platform. Every Market.
     {
       id: 'platform',
       badge: `${hero.flag} ${productContext ? `Genie ${productContext.charAt(0).toUpperCase() + productContext.slice(1)} for ${hero.regionName}` : `Content optimized for ${hero.regionName}`}`,
       headline: ['One ', 'Platform.'],
       subtitle: 'Every Market. The Only One You Need.',
-      description: 'AI-powered content production across 50+ industries in 140+ languages',
+      description: 'AI-powered content production across 50+ industries in 140+ languages — powered by 15 integrated AI providers.',
       type: 'platform' as const,
-      bg: 'from-primary/5 via-background to-accent/5',
-      accent: 'bg-primary/10',
     },
-    // Slide 1 — Mind to Media
     {
       id: 'mind-to-media',
       badge: '✦ End-to-End Content Production',
-      headline: ['Mind to ', 'Media'],
-      subtitle: 'For Every Industry',
+      headline: ['Mind to ', 'Media.'],
+      subtitle: 'For Every Industry.',
       description: 'From the first spark of an idea to polished, market-ready content — across video, presentations, audio, and documents.',
-      type: 'pills' as const,
-      pills: ['Ideation', 'Scripting', 'Production', 'Localization', 'Distribution'],
-      bg: 'from-primary/8 via-background to-accent/5',
-      accent: 'bg-primary/8',
+      type: 'pipeline' as const,
     },
-    // Slide 2 — We Speak Your Language
     {
       id: 'language',
       badge: '🌍 140+ Languages · 8 Global Regions',
@@ -133,29 +253,14 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
       subtitle: 'We Understand Your Market.',
       description: 'Not just translation — we adapt tone, idioms, humor, cultural references, and regional compliance so your audience feels you were built for them.',
       type: 'stats' as const,
-      stats: [
-        { value: '140+', label: 'Languages' },
-        { value: '30+', label: 'Dialects' },
-        { value: '8', label: 'Regions' },
-        { value: 'RTL', label: 'Full Support' },
-      ],
-      bg: 'from-accent/5 via-background to-primary/8',
-      accent: 'bg-accent/8',
     },
-    // Slide 3 — Transcreation
     {
       id: 'transcreation',
       badge: '🚀 First to Market',
       headline: ['Transcreation, ', 'Not Translation.'],
-      subtitle: 'Cultural Adaptation at Scale',
+      subtitle: 'Cultural Adaptation at Scale.',
       description: 'Translation converts words. Transcreation converts meaning — intent, emotion, and cultural context for every target market.',
       type: 'comparison' as const,
-      comparison: {
-        bad: { label: '❌ Translation', text: '"Our product helps you save time and money."', note: 'Word-for-word. Literal. Generic.' },
-        good: { label: '✅ Transcreation', text: '"لأن وقتك أغلى من أي استثمار"', note: 'Culturally adapted. Emotionally resonant.' },
-      },
-      bg: 'from-primary/5 via-background to-accent/8',
-      accent: 'bg-primary/6',
     },
   ];
 
@@ -174,164 +279,269 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
 
   const slide = slides[current];
 
+  const bgGradients = [
+    'from-primary/6 via-background to-accent/8',
+    'from-violet-500/8 via-background to-blue-500/6',
+    'from-emerald-500/6 via-background to-teal-500/8',
+    'from-amber-500/6 via-background to-rose-500/8',
+  ];
+
   return (
-    <section className={`relative min-h-[85vh] overflow-hidden pt-16 ${hero.isRTL ? 'rtl' : 'ltr'}`}>
-      {/* Animated background */}
-      <div className={`absolute inset-0 bg-gradient-to-br ${slide.bg} transition-all duration-700`} />
+    <section className={`relative min-h-[92vh] overflow-hidden pt-16 ${hero.isRTL ? 'rtl' : 'ltr'}`}>
+      {/* Multi-layer animated background */}
+      <motion.div
+        key={`bg-${current}`}
+        className={`absolute inset-0 bg-gradient-to-br ${bgGradients[current]}`}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8 }}
+      />
+
+      {/* Animated mesh gradient orbs */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className={`absolute top-1/4 left-1/4 w-96 h-96 ${slide.accent} rounded-full blur-3xl animate-pulse transition-all duration-700`} />
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-accent/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-      </div>
-
-      <div className="relative max-w-7xl mx-auto px-4 py-20 flex flex-col items-center justify-center min-h-[70vh]">
         <motion.div
-          key={slide.id}
-          initial={{ opacity: 0, x: direction * 150 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, ease: 'easeOut' }}
-          className="text-center space-y-6 w-full"
-        >
-          {/* Badge */}
-          <Badge variant="outline" className="border-primary/40 text-primary text-sm px-4 py-1.5">
-            {slide.badge}
-          </Badge>
-
-          {/* Headline */}
-          <h1 className="text-4xl md:text-5xl lg:text-7xl font-black leading-tight">
-            <span className="text-foreground">{slide.headline[0]}</span>
-            <span className="text-primary">{slide.headline[1]}</span>
-          </h1>
-
-          <p className="text-2xl md:text-3xl font-bold text-foreground">{slide.subtitle}</p>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">{slide.description}</p>
-
-          {/* Platform slide — region stats + CTA */}
-          {slide.type === 'platform' && (
-            <div className="space-y-6">
-              <div className="p-4 bg-muted/50 rounded-xl border border-border max-w-xl mx-auto">
-                <p className="text-sm text-muted-foreground">
-                  Your content deserves more than word-for-word translation. Genie adapts tone,
-                  idioms, cultural references, and regional compliance — so your audience feels you were{' '}
-                  <span className="text-primary font-semibold underline">built for them</span>.
-                </p>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-2xl mx-auto">
-                <div className="text-center p-3 bg-card rounded-xl border border-border">
-                  <p className="text-2xl font-bold text-foreground">{stats.audienceReach}</p>
-                  <p className="text-xs text-muted-foreground">Audience Reach</p>
-                </div>
-                <div className="text-center p-3 bg-card rounded-xl border border-border">
-                  <p className="text-2xl font-bold text-primary">{stats.dialects || stats.languages}</p>
-                  <p className="text-xs text-muted-foreground">{stats.dialects ? 'Dialects' : 'Languages'}</p>
-                </div>
-                <div className="text-center p-3 bg-card rounded-xl border border-border">
-                  <p className="text-2xl font-bold text-primary">{stats.costSavings}</p>
-                  <p className="text-xs text-muted-foreground">Cost Savings</p>
-                </div>
-                <div className="text-center p-3 bg-card rounded-xl border border-border">
-                  <p className="text-2xl font-bold text-foreground">{stats.localMetric.value}</p>
-                  <p className="text-xs text-muted-foreground">{stats.localMetric.label}</p>
-                </div>
-              </div>
-              <div className="flex flex-wrap items-center justify-center gap-2 text-sm text-muted-foreground">
-                <span className="px-2 py-1 bg-muted rounded">7 Products</span>
-                <span>•</span>
-                <span className="px-2 py-1 bg-muted rounded">206 Pipelines</span>
-                <span>•</span>
-                <span className="px-2 py-1 bg-muted rounded">15 AI Providers</span>
-              </div>
-              <div className="flex flex-wrap gap-4 justify-center">
-                <Link to="/genie-studio-auth?tab=signup">
-                  <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg text-lg px-8 py-6">
-                    {cta.primary}
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                </Link>
-                <Link to="/explore">
-                  <Button size="lg" variant="outline" className="border-border text-muted-foreground hover:text-foreground hover:bg-muted text-lg px-8 py-6">
-                    <Play className="mr-2 h-4 w-4" />
-                    {cta.secondary}
-                  </Button>
-                </Link>
-              </div>
-              <p className="text-muted-foreground text-xs">{cta.freeCredits}</p>
-            </div>
-          )}
-
-          {/* Pills slide */}
-          {slide.type === 'pills' && 'pills' in slide && (
-            <div className="flex flex-wrap justify-center gap-3 pt-2">
-              {(slide as any).pills.map((pill: string, i: number) => (
-                <span key={pill} className="inline-flex items-center gap-2">
-                  <span className="px-4 py-2 bg-card border border-border rounded-full text-sm font-semibold text-foreground">
-                    {pill}
-                  </span>
-                  {i < (slide as any).pills.length - 1 && <ArrowRight className="w-4 h-4 text-primary/50" />}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* Stats slide */}
-          {slide.type === 'stats' && 'stats' in slide && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-2xl mx-auto pt-4">
-              {(slide as any).stats.map((stat: { value: string; label: string }) => (
-                <div key={stat.label} className="text-center p-3 bg-card rounded-xl border border-border">
-                  <p className="text-2xl font-bold text-primary">{stat.value}</p>
-                  <p className="text-xs text-muted-foreground">{stat.label}</p>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Comparison slide */}
-          {slide.type === 'comparison' && 'comparison' in slide && (
-            <div className="grid sm:grid-cols-2 gap-6 max-w-3xl mx-auto pt-4">
-              <div className="p-6 bg-card rounded-2xl border border-border text-left space-y-3">
-                <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider">{(slide as any).comparison.bad.label}</p>
-                <p className="text-foreground font-medium">{(slide as any).comparison.bad.text}</p>
-                <p className="text-xs text-muted-foreground">{(slide as any).comparison.bad.note}</p>
-              </div>
-              <div className="p-6 bg-primary/5 rounded-2xl border border-primary/20 text-left space-y-3">
-                <p className="text-sm font-bold text-primary uppercase tracking-wider">{(slide as any).comparison.good.label}</p>
-                <p className="text-foreground font-medium">{(slide as any).comparison.good.text}</p>
-                <p className="text-xs text-muted-foreground">{(slide as any).comparison.good.note}</p>
-              </div>
-            </div>
-          )}
-        </motion.div>
+          className="absolute w-[600px] h-[600px] rounded-full blur-[120px] opacity-20"
+          style={{ background: 'radial-gradient(circle, hsl(var(--primary)) 0%, transparent 70%)' }}
+          animate={{
+            x: ['-10%', '60%', '30%', '-10%'],
+            y: ['10%', '50%', '80%', '10%'],
+          }}
+          transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <motion.div
+          className="absolute w-[500px] h-[500px] rounded-full blur-[100px] opacity-15"
+          style={{ background: 'radial-gradient(circle, hsl(var(--accent)) 0%, transparent 70%)' }}
+          animate={{
+            x: ['80%', '20%', '50%', '80%'],
+            y: ['60%', '20%', '40%', '60%'],
+          }}
+          transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        {/* Grid pattern overlay */}
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage: 'linear-gradient(hsl(var(--foreground)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--foreground)) 1px, transparent 1px)',
+            backgroundSize: '60px 60px',
+          }}
+        />
       </div>
 
-      {/* Navigation dots */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 z-10">
+      {/* Floating AI Provider orbs */}
+      <FloatingOrbs activeSlide={current} />
+
+      {/* Main content */}
+      <div className="relative max-w-7xl mx-auto px-4 py-16 flex flex-col items-center justify-center min-h-[75vh] z-10">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={slide.id}
+            initial={{ opacity: 0, x: direction * 120, scale: 0.95 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: -direction * 80, scale: 0.97 }}
+            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+            className="text-center space-y-5 w-full"
+          >
+            {/* Badge */}
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+              <Badge variant="outline" className="border-primary/30 bg-primary/5 text-primary text-sm px-5 py-2 backdrop-blur-sm">
+                {slide.badge}
+              </Badge>
+            </motion.div>
+
+            {/* Headline */}
+            <motion.h1
+              className="text-5xl md:text-6xl lg:text-8xl font-black leading-[0.95] tracking-tight"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <span className="text-foreground">{slide.headline[0]}</span>
+              <span className="bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent">
+                {slide.headline[1]}
+              </span>
+            </motion.h1>
+
+            <motion.p className="text-2xl md:text-3xl font-bold text-foreground/80" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
+              {slide.subtitle}
+            </motion.p>
+
+            <motion.p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.25 }}>
+              {slide.description}
+            </motion.p>
+
+            {/* Platform slide */}
+            {slide.type === 'platform' && (
+              <motion.div className="space-y-6 pt-2" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-2xl mx-auto">
+                  {[
+                    { value: stats.audienceReach, label: 'Audience Reach' },
+                    { value: stats.dialects || stats.languages, label: stats.dialects ? 'Dialects' : 'Languages' },
+                    { value: stats.costSavings, label: 'Cost Savings' },
+                    { value: stats.localMetric.value, label: stats.localMetric.label },
+                  ].map((stat, i) => (
+                    <motion.div
+                      key={stat.label}
+                      className="text-center p-4 bg-card/80 backdrop-blur-sm rounded-2xl border border-border/50 hover:border-primary/30 transition-all hover:shadow-lg hover:shadow-primary/5"
+                      whileHover={{ y: -3, scale: 1.03 }}
+                      initial={{ opacity: 0, y: 15 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.4 + i * 0.08 }}
+                    >
+                      <p className="text-2xl font-black text-primary">{stat.value}</p>
+                      <p className="text-[11px] text-muted-foreground font-medium">{stat.label}</p>
+                    </motion.div>
+                  ))}
+                </div>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  {['7 Products', '206 Pipelines', '15 AI Providers'].map((item, i) => (
+                    <motion.span
+                      key={item}
+                      className="px-3 py-1.5 bg-card/60 backdrop-blur-sm border border-border/40 rounded-full text-sm font-semibold text-muted-foreground"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.6 + i * 0.1 }}
+                    >
+                      {item}
+                    </motion.span>
+                  ))}
+                </div>
+                <div className="flex flex-wrap gap-4 justify-center pt-2">
+                  <Link to="/genie-studio-auth?tab=signup">
+                    <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
+                      <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl shadow-primary/20 text-lg px-8 py-6 rounded-xl">
+                        {cta.primary}
+                        <ArrowRight className="ml-2 h-5 w-5" />
+                      </Button>
+                    </motion.div>
+                  </Link>
+                  <Link to="/explore">
+                    <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
+                      <Button size="lg" variant="outline" className="border-border/60 text-muted-foreground hover:text-foreground hover:bg-card text-lg px-8 py-6 rounded-xl backdrop-blur-sm">
+                        <Play className="mr-2 h-4 w-4" />
+                        {cta.secondary}
+                      </Button>
+                    </motion.div>
+                  </Link>
+                </div>
+                <p className="text-muted-foreground text-xs">{cta.freeCredits}</p>
+              </motion.div>
+            )}
+
+            {/* Pipeline slide */}
+            {slide.type === 'pipeline' && <AnimatedPipeline />}
+
+            {/* Stats / Language slide */}
+            {slide.type === 'stats' && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-2xl mx-auto pt-6">
+                {[
+                  { value: '140+', label: 'Languages', icon: Languages },
+                  { value: '30+', label: 'Dialects', icon: Mic },
+                  { value: '8', label: 'Regions', icon: Globe },
+                  { value: 'RTL', label: 'Full Support', icon: Eye },
+                ].map((stat, i) => {
+                  const Icon = stat.icon;
+                  return (
+                    <motion.div
+                      key={stat.label}
+                      className="text-center p-5 bg-card/80 backdrop-blur-sm rounded-2xl border border-border/50 hover:border-primary/30 transition-all group"
+                      initial={{ opacity: 0, y: 20, rotateX: -15 }}
+                      animate={{ opacity: 1, y: 0, rotateX: 0 }}
+                      transition={{ delay: 0.3 + i * 0.12, type: 'spring' }}
+                      whileHover={{ y: -5, scale: 1.05 }}
+                    >
+                      <Icon className="w-5 h-5 text-primary/60 mx-auto mb-2 group-hover:text-primary transition-colors" />
+                      <p className="text-3xl font-black text-primary">{stat.value}</p>
+                      <p className="text-xs text-muted-foreground font-medium">{stat.label}</p>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Comparison / Transcreation slide */}
+            {slide.type === 'comparison' && (
+              <div className="grid sm:grid-cols-2 gap-6 max-w-3xl mx-auto pt-6">
+                <motion.div
+                  className="p-7 bg-card/60 backdrop-blur-sm rounded-2xl border border-destructive/20 text-left space-y-3 relative overflow-hidden"
+                  initial={{ opacity: 0, x: -30 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3, type: 'spring' }}
+                >
+                  <div className="absolute top-0 right-0 w-20 h-20 bg-destructive/5 rounded-full blur-2xl" />
+                  <p className="text-sm font-bold text-destructive uppercase tracking-wider">❌ Translation</p>
+                  <p className="text-foreground font-medium text-lg">"Our product helps you save time and money."</p>
+                  <p className="text-xs text-muted-foreground italic">Word-for-word. Literal. Generic.</p>
+                </motion.div>
+                <motion.div
+                  className="p-7 bg-primary/5 backdrop-blur-sm rounded-2xl border border-primary/30 text-left space-y-3 relative overflow-hidden ring-1 ring-primary/10"
+                  initial={{ opacity: 0, x: 30 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.45, type: 'spring' }}
+                >
+                  <div className="absolute top-0 right-0 w-20 h-20 bg-primary/10 rounded-full blur-2xl" />
+                  <motion.div
+                    className="absolute -top-1 -right-1"
+                    animate={{ rotate: [0, 10, -10, 0] }}
+                    transition={{ duration: 3, repeat: Infinity }}
+                  >
+                    <Sparkles className="w-5 h-5 text-primary/40" />
+                  </motion.div>
+                  <p className="text-sm font-bold text-primary uppercase tracking-wider">✅ Transcreation</p>
+                  <p className="text-foreground font-medium text-lg" dir="rtl">"لأن وقتك أغلى من أي استثمار"</p>
+                  <p className="text-xs text-muted-foreground italic" dir="ltr">Culturally adapted. Emotionally resonant.</p>
+                </motion.div>
+              </div>
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      {/* Navigation dots with labels */}
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-4 z-20">
         {slides.map((s, i) => (
           <button
             key={s.id}
             onClick={() => goTo(i)}
-            className={`h-2.5 rounded-full transition-all duration-300 ${
-              i === current ? 'w-8 bg-primary' : 'w-2.5 bg-muted-foreground/30 hover:bg-muted-foreground/50'
-            }`}
-          />
+            className="group flex flex-col items-center gap-1.5"
+          >
+            <span className={`text-[10px] font-semibold transition-all duration-300 ${
+              i === current ? 'text-primary opacity-100' : 'text-muted-foreground/0 group-hover:text-muted-foreground/60 opacity-0 group-hover:opacity-100'
+            }`}>
+              {['Platform', 'Pipeline', 'Languages', 'Transcreation'][i]}
+            </span>
+            <div className="relative">
+              <div className={`h-2 rounded-full transition-all duration-500 ${
+                i === current ? 'w-10 bg-primary shadow-lg shadow-primary/30' : 'w-2 bg-muted-foreground/25 group-hover:bg-muted-foreground/40'
+              }`} />
+              {i === current && (
+                <motion.div
+                  className="absolute inset-0 h-2 rounded-full bg-primary/40"
+                  animate={{ scale: [1, 1.8, 1], opacity: [0.5, 0, 0.5] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                />
+              )}
+            </div>
+          </button>
         ))}
       </div>
 
-      {/* Scrolling marquee */}
-      <div className="absolute bottom-14 left-0 right-0 overflow-hidden">
+      {/* Rolling marquee */}
+      <div className="absolute bottom-20 left-0 right-0 overflow-hidden z-10">
         <motion.div
           className="whitespace-nowrap"
           animate={{ x: ['0%', '-50%'] }}
-          transition={{ duration: 22, repeat: Infinity, ease: 'linear' }}
+          transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
         >
           {[...Array(10)].map((_, i) => (
-            <span key={i} className="inline-flex items-center gap-6 mx-8 text-sm font-semibold opacity-20">
+            <span key={i} className="inline-flex items-center gap-8 mx-10 text-sm font-semibold opacity-[0.08]">
               <span className="text-primary">✦</span>
               <span className="text-foreground">One Platform</span>
-              <span className="text-primary">•</span>
+              <span className="text-primary">◈</span>
               <span className="text-foreground">Mind to Media</span>
-              <span className="text-primary">•</span>
-              <span className="text-foreground">We Speak Your Language</span>
               <span className="text-primary">◆</span>
-              <span className="text-foreground">Transcreation, Not Translation</span>
+              <span className="text-foreground">140+ Languages</span>
+              <span className="text-primary">✦</span>
+              <span className="text-foreground">Transcreation</span>
             </span>
           ))}
         </motion.div>
