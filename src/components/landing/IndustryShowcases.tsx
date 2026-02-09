@@ -1,11 +1,12 @@
 /**
- * INDUSTRY SHOWCASES SECTION — Interactive "Try It" Demo Hub
+ * INDUSTRY SHOWCASES SECTION — Unified "Try It" Demo Hub
  * 
- * Demonstrates AI content generation capabilities across industries.
- * Each industry has real, rate-limited demos for Deck, Video, and Content generation.
+ * Consolidates ALL demo capabilities into one industry-aware section:
+ * - Content generation: Deck, Video, Content
+ * - Localization: TTS, STT, Translation, Transcreation
+ * 
+ * Each industry gets curated examples across all pipelines.
  * Shows cross-pipeline capabilities with live edge function calls.
- * 
- * Integrates regional messaging and transcreation positioning.
  */
 import React, { useState } from 'react';
 import { 
@@ -27,6 +28,8 @@ import {
   Presentation,
   FileText,
   Zap,
+  Volume2,
+  Shield,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -34,6 +37,10 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { DeckDemoCard } from './demo-hub/DeckDemoCard';
 import { VideoDemoCard } from './demo-hub/VideoDemoCard';
 import { ContentDemoCard } from './demo-hub/ContentDemoCard';
+import { TTSDemoCard } from './demo-hub/TTSDemoCard';
+import { STTDemoCard } from './demo-hub/STTDemoCard';
+import { TranslationDemoCard } from './demo-hub/TranslationDemoCard';
+import { TranscreationDemoCard } from './demo-hub/TranscreationDemoCard';
 
 // Featured industries with icons and metadata
 const FEATURED_INDUSTRIES = [
@@ -134,11 +141,17 @@ const EXTENDED_INDUSTRIES = [
   'Mental Health', 'Fertility & IVF',
 ];
 
-// Pipeline demo tabs
+// Pipeline demo tabs — grouped by category
 const PIPELINE_TABS = [
-  { id: 'deck', label: 'AI Deck', shortLabel: 'Deck', icon: Presentation, product: 'Genie Deck' },
-  { id: 'video', label: 'Video Script', shortLabel: 'Video', icon: Video, product: 'Genie Vibe' },
-  { id: 'content', label: 'Content Writer', shortLabel: 'Content', icon: FileText, product: 'Genie Spark' },
+  // Content Generation
+  { id: 'deck', label: 'AI Deck', shortLabel: 'Deck', icon: Presentation, product: 'Genie Deck', group: 'create' },
+  { id: 'video', label: 'Video Script', shortLabel: 'Video', icon: Video, product: 'Genie Vibe', group: 'create' },
+  { id: 'content', label: 'Content Writer', shortLabel: 'Content', icon: FileText, product: 'Genie Spark', group: 'create' },
+  // Localization
+  { id: 'tts', label: 'Text-to-Speech', shortLabel: 'TTS', icon: Volume2, product: '70+ Voices', group: 'localize' },
+  { id: 'stt', label: 'Speech-to-Text', shortLabel: 'STT', icon: Mic, product: 'Multi-provider', group: 'localize' },
+  { id: 'translation', label: 'Translation', shortLabel: 'Translate', icon: Languages, product: 'DeepL Powered', group: 'localize' },
+  { id: 'transcreation', label: 'Transcreation', shortLabel: 'Transcreate', icon: Sparkles, product: 'Our Moat', group: 'localize' },
 ];
 
 // Platform capabilities
@@ -147,7 +160,8 @@ const PLATFORM_CAPABILITIES = [
   { icon: Sparkles, label: '15 AI Providers' },
   { icon: Languages, label: '140+ Languages' },
   { icon: Globe, label: '8 Regional Zones' },
-  { icon: Mic, label: '7 Arabic Dialects' },
+  { icon: Volume2, label: '70+ TTS Voices' },
+  { icon: Shield, label: '7 Arabic Dialects' },
   { icon: Layers, label: '7 Products' },
 ];
 
@@ -160,8 +174,11 @@ export const IndustryShowcases: React.FC<IndustryShowcasesProps> = ({ region }) 
   const [activePipeline, setActivePipeline] = useState('deck');
   const [showExtended, setShowExtended] = useState(false);
 
+  const createTabs = PIPELINE_TABS.filter(t => t.group === 'create');
+  const localizeTabs = PIPELINE_TABS.filter(t => t.group === 'localize');
+
   return (
-    <section className="py-24 relative">
+    <section className="py-24 relative" id="languages">
       <div className="absolute inset-0 bg-gradient-to-b from-background via-primary/5 to-background" />
       
       <div className="relative max-w-7xl mx-auto px-4">
@@ -178,9 +195,9 @@ export const IndustryShowcases: React.FC<IndustryShowcasesProps> = ({ region }) 
             </span>
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Pick your industry, choose a pipeline, select your language — and watch{' '}
-            <span className="text-primary font-bold">real AI</span> generate content tailored to your market.
-            Not mockups. Not templates. <span className="text-primary font-bold">Real generation</span>.
+            Pick your industry, choose a pipeline — <span className="text-primary font-bold">create decks, videos, content</span> or 
+            try <span className="text-primary font-bold">TTS, STT, translation & transcreation</span> — all from one place.
+            Not mockups. <span className="text-primary font-bold">Real AI generation</span>.
           </p>
         </div>
 
@@ -278,34 +295,77 @@ export const IndustryShowcases: React.FC<IndustryShowcasesProps> = ({ region }) 
           </motion.div>
         </AnimatePresence>
 
-        {/* Pipeline demo tabs */}
+        {/* Pipeline demo tabs — two groups */}
         <Tabs value={activePipeline} onValueChange={setActivePipeline} className="w-full">
-          <TabsList className="w-full h-auto p-1.5 bg-card border border-border rounded-2xl mb-6 grid grid-cols-3 gap-1.5">
-            {PIPELINE_TABS.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activePipeline === tab.id;
-              return (
-                <TabsTrigger
-                  key={tab.id}
-                  value={tab.id}
-                  className={`relative flex flex-col items-center gap-1.5 py-3 px-3 rounded-xl transition-all data-[state=active]:shadow-md ${
-                    isActive 
-                      ? 'data-[state=active]:bg-primary data-[state=active]:text-primary-foreground' 
-                      : ''
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <Icon className="h-4 w-4" />
-                    <span className="font-semibold text-sm hidden sm:inline">{tab.label}</span>
-                    <span className="font-semibold text-sm sm:hidden">{tab.shortLabel}</span>
-                  </div>
-                  <span className={`text-[10px] ${isActive ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
-                    {tab.product}
-                  </span>
-                </TabsTrigger>
-              );
-            })}
-          </TabsList>
+          <div className="bg-card border border-border rounded-2xl mb-6 p-2 space-y-2">
+            {/* Create row */}
+            <div className="space-y-1">
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2">
+                ✨ Create Content
+              </p>
+              <div className="grid grid-cols-3 gap-1.5">
+                {createTabs.map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activePipeline === tab.id;
+                  return (
+                    <TabsList key={tab.id} className="bg-transparent p-0 h-auto">
+                      <TabsTrigger
+                        value={tab.id}
+                        className={`w-full flex flex-col items-center gap-1 py-2.5 px-2 rounded-xl transition-all data-[state=active]:shadow-md ${
+                          isActive 
+                            ? 'data-[state=active]:bg-primary data-[state=active]:text-primary-foreground' 
+                            : ''
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <Icon className="h-3.5 w-3.5" />
+                          <span className="font-semibold text-xs hidden sm:inline">{tab.label}</span>
+                          <span className="font-semibold text-xs sm:hidden">{tab.shortLabel}</span>
+                        </div>
+                        <span className={`text-[9px] ${isActive ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
+                          {tab.product}
+                        </span>
+                      </TabsTrigger>
+                    </TabsList>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Localize row */}
+            <div className="space-y-1">
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2">
+                🌍 Localize & Transcreate
+              </p>
+              <div className="grid grid-cols-4 gap-1.5">
+                {localizeTabs.map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activePipeline === tab.id;
+                  return (
+                    <TabsList key={tab.id} className="bg-transparent p-0 h-auto">
+                      <TabsTrigger
+                        value={tab.id}
+                        className={`w-full flex flex-col items-center gap-1 py-2.5 px-2 rounded-xl transition-all data-[state=active]:shadow-md ${
+                          isActive 
+                            ? 'data-[state=active]:bg-primary data-[state=active]:text-primary-foreground' 
+                            : ''
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <Icon className="h-3.5 w-3.5" />
+                          <span className="font-semibold text-xs hidden sm:inline">{tab.label}</span>
+                          <span className="font-semibold text-xs sm:hidden">{tab.shortLabel}</span>
+                        </div>
+                        <span className={`text-[9px] ${isActive ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
+                          {tab.product}
+                        </span>
+                      </TabsTrigger>
+                    </TabsList>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
 
           {/* Demo cards per pipeline */}
           <TabsContent value="deck" className="mt-0">
@@ -318,6 +378,22 @@ export const IndustryShowcases: React.FC<IndustryShowcasesProps> = ({ region }) 
           
           <TabsContent value="content" className="mt-0">
             <ContentDemoCard industryId={selectedIndustry.id} region={region} />
+          </TabsContent>
+
+          <TabsContent value="tts" className="mt-0">
+            <TTSDemoCard region={region} industryId={selectedIndustry.id} />
+          </TabsContent>
+
+          <TabsContent value="stt" className="mt-0">
+            <STTDemoCard region={region} industryId={selectedIndustry.id} />
+          </TabsContent>
+
+          <TabsContent value="translation" className="mt-0">
+            <TranslationDemoCard region={region} industryId={selectedIndustry.id} />
+          </TabsContent>
+
+          <TabsContent value="transcreation" className="mt-0">
+            <TranscreationDemoCard region={region} industryId={selectedIndustry.id} />
           </TabsContent>
         </Tabs>
 
@@ -335,8 +411,8 @@ export const IndustryShowcases: React.FC<IndustryShowcasesProps> = ({ region }) 
             </div>
             <ArrowRight className="h-4 w-4 text-primary hidden md:block" />
             <div>
-              <p className="text-sm font-semibold text-foreground mb-0.5">Multiple Pipelines</p>
-              <p className="text-xs text-muted-foreground">Deck + Video + Content + TTS</p>
+              <p className="text-sm font-semibold text-foreground mb-0.5">7 Pipelines</p>
+              <p className="text-xs text-muted-foreground">Deck + Video + Content + TTS + STT + Translate</p>
             </div>
             <ArrowRight className="h-4 w-4 text-primary hidden md:block" />
             <div>
@@ -356,7 +432,7 @@ export const IndustryShowcases: React.FC<IndustryShowcasesProps> = ({ region }) 
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-500/10 rounded-full border border-green-500/30">
             <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
             <span className="text-green-600 dark:text-green-400 text-sm">
-              All demos use <strong>real AI providers</strong> — Gemini, Azure Neural, DeepL
+              All demos use <strong>real AI providers</strong> — Azure Neural TTS, DeepL, Gemini, Whisper STT
             </span>
           </div>
         </div>

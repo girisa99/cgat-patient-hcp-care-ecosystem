@@ -22,17 +22,18 @@ import {
 import { useTTSDemo } from '@/hooks/landing/useTTSDemo';
 import { useDynamicLanguageRegistry } from '@/hooks/landing/useDynamicLanguageRegistry';
 import { ProviderBadge, ProviderPanel } from './RegionalProviderInfo';
-import { getExamplesForRegion, DemoExample } from './demoExamples';
+import { getExamplesForIndustry, DemoExample } from './demoExamples';
 import { motion } from 'framer-motion';
 
 interface TTSDemoCardProps {
   region?: string;
+  industryId?: string;
 }
 
-export const TTSDemoCard: React.FC<TTSDemoCardProps> = ({ region }) => {
+export const TTSDemoCard: React.FC<TTSDemoCardProps> = ({ region, industryId }) => {
   const registry = useDynamicLanguageRegistry();
   const tts = useTTSDemo();
-  const examples = getExamplesForRegion(region);
+  const examples = getExamplesForIndustry(industryId, region);
 
   const sortedLanguages = region
     ? registry.getLanguagesForRegion(region)

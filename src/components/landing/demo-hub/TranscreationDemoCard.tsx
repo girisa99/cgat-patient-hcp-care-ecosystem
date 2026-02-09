@@ -44,9 +44,10 @@ const REGION_CORE_CODES: Record<string, string[]> = {
 
 interface TranscreationDemoCardProps {
   region?: string;
+  industryId?: string;
 }
 
-export const TranscreationDemoCard: React.FC<TranscreationDemoCardProps> = ({ region }) => {
+export const TranscreationDemoCard: React.FC<TranscreationDemoCardProps> = ({ region, industryId }) => {
   const registry = useDynamicLanguageRegistry();
   const tts = useTTSDemo();
 
