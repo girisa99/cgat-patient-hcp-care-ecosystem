@@ -581,7 +581,7 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
                   </Link>
                   <Link to="/explore">
                     <motion.div whileHover={{ scale: 1.06, y: -2 }} whileTap={{ scale: 0.97 }}>
-                      <Button size="lg" variant="outline" className="border-2 border-white/40 text-white font-bold hover:bg-white/15 hover:border-white/60 text-lg px-10 py-7 rounded-xl backdrop-blur-md shadow-[0_4px_16px_rgba(0,0,0,0.4)]">
+                      <Button size="lg" variant="outline" className="border-2 border-white/60 text-foreground bg-background/80 font-bold hover:bg-background hover:border-primary text-lg px-10 py-7 rounded-xl backdrop-blur-md shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
                         <Play className="mr-2 h-5 w-5" />
                         {cta.secondary}
                       </Button>
