@@ -6,7 +6,7 @@ const corsHeaders = {
 };
 
 interface TranslationRequest {
-  action: 'translate' | 'detect' | 'languages';
+  action: 'translate' | 'detect' | 'languages' | 'transcreate';
   provider: 'google' | 'deepl' | 'microsoft' | 'amazon' | 'alibaba' | 'gemini' | 'ai';
   text?: string;
   sourceLanguage?: string;
@@ -16,10 +16,12 @@ interface TranslationRequest {
   category?: string;
   context?: string;
   model?: string; // Specific model override
+  region?: string; // For transcreation cultural context
 }
 
 interface TranslationResponse {
   translatedText?: string;
+  transcreatedText?: string;
   detectedLanguage?: string;
   confidence?: number;
   alternatives?: string[];
@@ -101,6 +103,9 @@ serve(async (req) => {
     switch (request.action) {
       case 'translate':
         response = await handleTranslation(request);
+        break;
+      case 'transcreate':
+        response = await handleTranscreation(request);
         break;
       case 'detect':
         response = await handleLanguageDetection(request);
@@ -570,6 +575,104 @@ CRITICAL INSTRUCTIONS:
   } catch (error) {
     console.error('[TranslationService] Universal AI translation error:', error);
     throw error;
+  }
+}
+
+// ============================================
+// TRANSCREATION — Cultural adaptation via Gemini
+// ============================================
+async function handleTranscreation(request: TranslationRequest): Promise<TranslationResponse> {
+  const { text, sourceLanguage, targetLanguage, region, context } = request;
+
+  if (!text || !targetLanguage) {
+    throw new Error('Missing required fields: text and targetLanguage');
+  }
+
+  const geminiKey = Deno.env.get('GEMINI_API_KEY') || Deno.env.get('GOOGLE_API_KEY');
+  if (!geminiKey) {
+    console.log('[TranslationService] No Gemini key for transcreation, falling back to AI translation');
+    const translated = await translateWithAI(text, sourceLanguage || 'en', targetLanguage, context);
+    return { transcreatedText: translated.translatedText, confidence: 0.7 };
+  }
+
+  const languageNames: Record<string, string> = {
+    en: 'English', de: 'German', fr: 'French', es: 'Spanish',
+    it: 'Italian', pt: 'Portuguese', nl: 'Dutch', pl: 'Polish',
+    ru: 'Russian', ja: 'Japanese', zh: 'Chinese', ko: 'Korean',
+    ar: 'Arabic', hi: 'Hindi', tr: 'Turkish', vi: 'Vietnamese',
+    th: 'Thai', id: 'Indonesian', ms: 'Malay', sv: 'Swedish',
+    'PT-BR': 'Brazilian Portuguese', 'PT-PT': 'European Portuguese',
+    'EN-US': 'American English', 'EN-GB': 'British English',
+    'ZH': 'Chinese', 'JA': 'Japanese', 'KO': 'Korean',
+    'AR': 'Arabic', 'DE': 'German', 'FR': 'French', 'ES': 'Spanish',
+    'IT': 'Italian', 'NL': 'Dutch', 'PL': 'Polish', 'SV': 'Swedish',
+    'TR': 'Turkish', 'ID': 'Indonesian', 'RU': 'Russian', 'UK': 'Ukrainian',
+  };
+
+  const targetLangName = languageNames[targetLanguage] || languageNames[targetLanguage.toLowerCase()] || targetLanguage;
+  const regionContext = region && region !== 'global' ? ` The audience is from the ${region.toUpperCase()} region.` : '';
+
+  const prompt = `You are a world-class transcreation expert — NOT a translator. Your job is CULTURAL ADAPTATION.
+
+Transcreation is different from translation:
+- Translation: word-for-word or phrase-for-phrase conversion
+- Transcreation: recreating the MESSAGE, EMOTION, and INTENT for the target culture
+
+Adapt the following English text into ${targetLangName} using transcreation principles:${regionContext}
+
+RULES:
+1. Adapt idioms, metaphors, and cultural references to resonate with ${targetLangName}-speaking audiences
+2. Use colloquial, natural language — the way a native speaker would actually say it
+3. Maintain the original emotional impact and persuasive intent
+4. Adjust humor, tone, and formality to match cultural expectations
+5. Return ONLY the transcreated text — no explanations, no labels, no quotes
+${context ? `6. Additional context: ${context}` : ''}
+
+Source text:
+${text}`;
+
+  try {
+    console.log(`[TranslationService] Transcreating to ${targetLangName} (region: ${region || 'global'})`);
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.7, // Higher creativity for transcreation
+            maxOutputTokens: Math.max(1024, text.length * 3),
+          },
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      console.error(`[TranslationService] Gemini transcreation error: ${response.status}`);
+      const translated = await translateWithAI(text, sourceLanguage || 'en', targetLanguage, context);
+      return { transcreatedText: translated.translatedText, confidence: 0.7 };
+    }
+
+    const data = await response.json();
+    const transcreated = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+
+    if (transcreated && transcreated.length > 0) {
+      console.log(`[TranslationService] Transcreation success: "${text.slice(0, 30)}..." → "${transcreated.slice(0, 30)}..."`);
+      return {
+        transcreatedText: transcreated,
+        confidence: 0.92,
+      };
+    }
+
+    // Fallback
+    const translated = await translateWithAI(text, sourceLanguage || 'en', targetLanguage, context);
+    return { transcreatedText: translated.translatedText, confidence: 0.7 };
+  } catch (error) {
+    console.error('[TranslationService] Transcreation error:', error);
+    const translated = await translateWithAI(text, sourceLanguage || 'en', targetLanguage, context);
+    return { transcreatedText: translated.translatedText, confidence: 0.7 };
   }
 }
 
