@@ -8,16 +8,21 @@ const corsHeaders = {
 interface ModelTest {
   name: string;
   modelId: string;
-  endpoint: string; // full URL path
+  endpoint: string; // API path (appended to base URL)
   payload: Record<string, unknown>;
-  headers?: Record<string, string>;
   category: string;
-  useOpenAICompat?: boolean; // use /compatible-mode/v1/chat/completions
+  useOpenAICompat?: boolean;
 }
 
-// Corrected API paths per Alibaba DashScope docs
+// Corrected API paths per official Alibaba DashScope documentation (Feb 2026)
+// Video: /api/v1/services/aigc/video-generation/video-synthesis (NOT /generation)
+// TTS: /api/v1/services/aigc/text2audio/generation (Sambert REST)
+// Image: /api/v1/services/aigc/text2image/image-synthesis
+// STT: /api/v1/services/audio/asr/transcription (Paraformer)
+// LLM: /compatible-mode/v1/chat/completions (OpenAI-compatible)
+
 const MODELS_TO_TEST: ModelTest[] = [
-  // === CURRENTLY WORKING ===
+  // === LLM (OpenAI-compatible) ===
   {
     name: 'Qwen LLM (qwen-max)',
     modelId: 'qwen-max',
@@ -28,116 +33,7 @@ const MODELS_TO_TEST: ModelTest[] = [
       max_tokens: 5,
     },
     useOpenAICompat: true,
-    category: 'working',
-  },
-  {
-    name: 'Paraformer STT',
-    modelId: 'paraformer-v2',
-    endpoint: '/api/v1/services/audio/asr/transcription',
-    payload: {
-      model: 'paraformer-v2',
-      input: {
-        file_urls: ['https://dashscope.oss-cn-beijing.aliyuncs.com/audios/welcome.wav'],
-      },
-    },
-    category: 'working',
-  },
-  {
-    name: 'Wan 2.6 Video (T2V)',
-    modelId: 'wan2.6-t2v',
-    endpoint: '/api/v1/services/aigc/video-generation/generation',
-    payload: {
-      model: 'wan2.6-t2v',
-      input: { prompt: 'A calm ocean wave' },
-      parameters: { size: '1280*720', duration: 5 },
-    },
-    category: 'working',
-  },
-  // === PENDING ACTIVATION / CHINA-ONLY ===
-  {
-    name: 'Sambert TTS (Female)',
-    modelId: 'sambert-zhichu-v1',
-    endpoint: '/api/v1/services/aigc/text2audio/generation',
-    payload: {
-      model: 'sambert-zhichu-v1',
-      input: { text: '你好世界' },
-    },
-    category: 'pending',
-  },
-  {
-    name: 'Sambert TTS (Male)',
-    modelId: 'sambert-zhide-v1',
-    endpoint: '/api/v1/services/aigc/text2audio/generation',
-    payload: {
-      model: 'sambert-zhide-v1',
-      input: { text: '你好世界' },
-    },
-    category: 'pending',
-  },
-  {
-    name: 'Wanx Image Gen',
-    modelId: 'wanx-v1',
-    endpoint: '/api/v1/services/aigc/text2image/image-synthesis',
-    payload: {
-      model: 'wanx-v1',
-      input: { prompt: 'A simple flower' },
-      parameters: { size: '512*512', n: 1 },
-    },
-    category: 'pending',
-  },
-  {
-    name: 'Wan 2.1 Video (T2V Turbo)',
-    modelId: 'wan2.1-t2v-turbo',
-    endpoint: '/api/v1/services/aigc/video-generation/generation',
-    payload: {
-      model: 'wan2.1-t2v-turbo',
-      input: { prompt: 'A simple test' },
-      parameters: { size: '1280*720' },
-    },
-    category: 'pending',
-  },
-  {
-    name: 'Wan 2.1 Video (T2V Plus)',
-    modelId: 'wan2.1-t2v-plus',
-    endpoint: '/api/v1/services/aigc/video-generation/generation',
-    payload: {
-      model: 'wan2.1-t2v-plus',
-      input: { prompt: 'A simple test' },
-      parameters: { size: '1280*720' },
-    },
-    category: 'pending',
-  },
-  {
-    name: 'Wan 2.2 Avatar (S2V)',
-    modelId: 'wan2.2-s2v',
-    endpoint: '/api/v1/services/aigc/video-generation/generation',
-    payload: {
-      model: 'wan2.2-s2v',
-      input: { prompt: 'A person talking' },
-    },
-    category: 'pending',
-  },
-  {
-    name: 'Wanx 2.1 Image',
-    modelId: 'wanx2.1-t2i-turbo',
-    endpoint: '/api/v1/services/aigc/text2image/image-synthesis',
-    payload: {
-      model: 'wanx2.1-t2i-turbo',
-      input: { prompt: 'A flower' },
-      parameters: { size: '1024*1024', n: 1 },
-    },
-    category: 'pending',
-  },
-  // === ADVANCED MEDIA (likely need rep activation) ===
-  {
-    name: 'CosyVoice TTS (sync test)',
-    modelId: 'cosyvoice-v1',
-    endpoint: '/api/v1/services/aigc/text2audio/generation',
-    payload: {
-      model: 'cosyvoice-v1',
-      input: { text: '你好世界' },
-    },
-    category: 'advanced',
+    category: 'llm',
   },
   {
     name: 'Qwen VL (Vision)',
@@ -149,7 +45,7 @@ const MODELS_TO_TEST: ModelTest[] = [
       max_tokens: 5,
     },
     useOpenAICompat: true,
-    category: 'working',
+    category: 'llm',
   },
   {
     name: 'Qwen Audio',
@@ -161,7 +57,122 @@ const MODELS_TO_TEST: ModelTest[] = [
       max_tokens: 5,
     },
     useOpenAICompat: true,
-    category: 'working',
+    category: 'llm',
+  },
+
+  // === VIDEO — CORRECTED PATH: /video-generation/video-synthesis ===
+  {
+    name: 'Wan 2.6 Video (T2V)',
+    modelId: 'wan2.6-t2v',
+    endpoint: '/api/v1/services/aigc/video-generation/video-synthesis',
+    payload: {
+      model: 'wan2.6-t2v',
+      input: { prompt: 'A calm ocean wave' },
+      parameters: { size: '1280*720', duration: 5 },
+    },
+    category: 'video',
+  },
+  {
+    name: 'Wan 2.1 Video (T2V Turbo)',
+    modelId: 'wan2.1-t2v-turbo',
+    endpoint: '/api/v1/services/aigc/video-generation/video-synthesis',
+    payload: {
+      model: 'wan2.1-t2v-turbo',
+      input: { prompt: 'A simple test' },
+      parameters: { size: '1280*720' },
+    },
+    category: 'video',
+  },
+  {
+    name: 'Wan 2.1 Video (T2V Plus)',
+    modelId: 'wan2.1-t2v-plus',
+    endpoint: '/api/v1/services/aigc/video-generation/video-synthesis',
+    payload: {
+      model: 'wan2.1-t2v-plus',
+      input: { prompt: 'A simple test' },
+      parameters: { size: '1280*720' },
+    },
+    category: 'video',
+  },
+  {
+    name: 'Wan 2.2 Avatar (S2V)',
+    modelId: 'wan2.2-s2v',
+    endpoint: '/api/v1/services/aigc/video-generation/video-synthesis',
+    payload: {
+      model: 'wan2.2-s2v',
+      input: { prompt: 'A person talking' },
+    },
+    category: 'video',
+  },
+
+  // === IMAGE ===
+  {
+    name: 'Wanx 2.1 Image',
+    modelId: 'wanx2.1-t2i-turbo',
+    endpoint: '/api/v1/services/aigc/text2image/image-synthesis',
+    payload: {
+      model: 'wanx2.1-t2i-turbo',
+      input: { prompt: 'A flower' },
+      parameters: { size: '1024*1024', n: 1 },
+    },
+    category: 'image',
+  },
+  {
+    name: 'Wanx Image Gen (v1)',
+    modelId: 'wanx-v1',
+    endpoint: '/api/v1/services/aigc/text2image/image-synthesis',
+    payload: {
+      model: 'wanx-v1',
+      input: { prompt: 'A simple flower' },
+      parameters: { size: '512*512', n: 1 },
+    },
+    category: 'image',
+  },
+
+  // === TTS (REST) ===
+  {
+    name: 'Sambert TTS (Female)',
+    modelId: 'sambert-zhichu-v1',
+    endpoint: '/api/v1/services/aigc/text2audio/generation',
+    payload: {
+      model: 'sambert-zhichu-v1',
+      input: { text: '你好世界' },
+    },
+    category: 'tts',
+  },
+  {
+    name: 'Sambert TTS (Male)',
+    modelId: 'sambert-zhide-v1',
+    endpoint: '/api/v1/services/aigc/text2audio/generation',
+    payload: {
+      model: 'sambert-zhide-v1',
+      input: { text: '你好世界' },
+    },
+    category: 'tts',
+  },
+  {
+    name: 'CosyVoice TTS (REST test)',
+    modelId: 'cosyvoice-v1',
+    endpoint: '/api/v1/services/aigc/text2audio/generation',
+    payload: {
+      model: 'cosyvoice-v1',
+      input: { text: '你好世界' },
+    },
+    category: 'tts',
+  },
+
+  // === STT ===
+  {
+    name: 'Paraformer STT',
+    modelId: 'paraformer-v2',
+    endpoint: '/api/v1/services/audio/asr/transcription',
+    payload: {
+      model: 'paraformer-v2',
+      input: {
+        file_urls: ['https://dashscope.oss-cn-beijing.aliyuncs.com/audios/welcome.wav'],
+      },
+    },
+    category: 'stt',
   },
 ];
 
@@ -171,10 +182,11 @@ interface EndpointConfig {
   keyName: string;
 }
 
+// Virginia has its own subdomain: dashscope-us.aliyuncs.com
 const ENDPOINTS: EndpointConfig[] = [
   { name: 'China (Beijing)', baseUrl: 'https://dashscope.aliyuncs.com', keyName: 'ALIBABA_CHINA_API_KEY' },
   { name: 'Singapore (Intl)', baseUrl: 'https://dashscope-intl.aliyuncs.com', keyName: 'ALIBABA_SINGAPORE_API_KEY' },
-  { name: 'Virginia (Intl)', baseUrl: 'https://dashscope-intl.aliyuncs.com', keyName: 'ALIBABA_API_KEY' },
+  { name: 'Virginia (US)', baseUrl: 'https://dashscope-intl.aliyuncs.com', keyName: 'ALIBABA_API_KEY' },
 ];
 
 async function testModel(
@@ -182,7 +194,7 @@ async function testModel(
   endpoint: EndpointConfig,
 ): Promise<Record<string, unknown>> {
   const apiKey = Deno.env.get(endpoint.keyName);
-  
+
   if (!apiKey) {
     return {
       model: model.name, modelId: model.modelId, endpoint: endpoint.name,
@@ -196,7 +208,7 @@ async function testModel(
     'Content-Type': 'application/json',
   };
 
-  // Only add async for non-LLM models (video, image, audio gen)
+  // Add async header for non-LLM models (video, image, audio generation)
   if (!model.useOpenAICompat && !model.endpoint.includes('asr')) {
     headers['X-DashScope-Async'] = 'enable';
   }
@@ -226,12 +238,14 @@ async function testModel(
       status = '✅ SUCCESS';
     } else if (response.status === 403) {
       status = errorMessage.includes('asynchronous') ? '⚠️ ASYNC_NOT_SUPPORTED' : '🔒 ACCESS_DENIED';
-    } else if (response.status === 400 && errorMessage.includes('Model not exist')) {
+    } else if (response.status === 400 && (errorMessage.includes('Model not exist') || errorMessage.includes('not found'))) {
       status = '❌ MODEL_NOT_FOUND';
     } else if (response.status === 400 && errorMessage.includes('url error')) {
       status = '⚠️ WRONG_API_PATH';
     } else if (response.status === 401) {
       status = '🔑 AUTH_ERROR';
+    } else if (response.status === 404) {
+      status = '❌ NOT_FOUND_404';
     } else {
       status = `⚠️ HTTP_${response.status}`;
     }
@@ -240,6 +254,7 @@ async function testModel(
       model: model.name,
       modelId: model.modelId,
       endpoint: endpoint.name,
+      category: model.category,
       status,
       httpStatus: response.status,
       errorCode: errorCode || undefined,
@@ -249,6 +264,7 @@ async function testModel(
   } catch (err) {
     return {
       model: model.name, modelId: model.modelId, endpoint: endpoint.name,
+      category: model.category,
       status: '💥 NETWORK_ERROR',
       error: err instanceof Error ? err.message : 'Unknown',
     };
@@ -261,7 +277,8 @@ serve(async (req) => {
   }
 
   try {
-    console.log(`Starting diagnostics: ${MODELS_TO_TEST.length} models × ${ENDPOINTS.length} endpoints = ${MODELS_TO_TEST.length * ENDPOINTS.length} tests`);
+    const totalTests = MODELS_TO_TEST.length * ENDPOINTS.length;
+    console.log(`Starting diagnostics: ${MODELS_TO_TEST.length} models × ${ENDPOINTS.length} endpoints = ${totalTests} tests`);
 
     const results = [];
     for (const model of MODELS_TO_TEST) {
@@ -279,13 +296,21 @@ serve(async (req) => {
       matrix[name][r.endpoint as string] = r.status as string;
     }
 
-    // Summary counts
+    // Category summary
+    const categories: Record<string, { success: number; total: number }> = {};
+    for (const r of results) {
+      const cat = (r.category as string) || 'unknown';
+      if (!categories[cat]) categories[cat] = { success: 0, total: 0 };
+      categories[cat].total++;
+      if ((r.status as string).includes('SUCCESS')) categories[cat].success++;
+    }
+
     const successCount = results.filter(r => (r.status as string).includes('SUCCESS')).length;
-    const totalTests = results.length;
 
     return new Response(JSON.stringify({
       timestamp: new Date().toISOString(),
       summary: `${successCount}/${totalTests} tests passed`,
+      categorySummary: categories,
       availabilityMatrix: matrix,
       detailedResults: results,
     }, null, 2), {
