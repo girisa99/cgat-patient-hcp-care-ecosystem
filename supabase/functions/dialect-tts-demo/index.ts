@@ -5,6 +5,9 @@
  * Arabic dialects, Indian languages, CJK, African, LATAM, European
  * using Azure Neural TTS (primary) with ElevenLabs fallback.
  * 
+ * CRITICAL: custom_tts translates text into the target language FIRST,
+ * then passes the translated text to TTS — ensuring "what you hear matches the language."
+ * 
  * SECURITY: Rate-limited per IP, input-validated, public endpoint (no JWT)
  * ROUTING: Azure Neural PRIMARY (per master-provider-routing-registry)
  */
@@ -21,9 +24,9 @@ const corsHeaders = {
 // RATE LIMITING — In-memory per IP
 // ============================================
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
-const RATE_LIMIT_MAX_REQUESTS = 20; // 20 requests per minute per IP
-const CUSTOM_TTS_LIMIT = 10; // Stricter for custom text (costs more)
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX_REQUESTS = 20;
+const CUSTOM_TTS_LIMIT = 10;
 
 function getClientIP(req: Request): string {
   return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() 
@@ -49,7 +52,6 @@ function checkRateLimit(ip: string, limit: number = RATE_LIMIT_MAX_REQUESTS): { 
   return { allowed: true, remaining: limit - entry.count, resetIn: entry.resetAt - now };
 }
 
-// Periodic cleanup of expired entries (every 5 minutes)
 setInterval(() => {
   const now = Date.now();
   for (const [ip, entry] of rateLimitMap.entries()) {
@@ -65,19 +67,35 @@ const VALID_ACTIONS = ['get_languages', 'generate_tts', 'custom_tts'];
 const VALID_MODES = ['transcreation', 'literal', undefined];
 
 function sanitizeText(text: string): string {
-  // Remove potential script injection, limit length
   return text
-    .replace(/<[^>]*>/g, '') // Strip HTML tags
-    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '') // Strip control chars
+    .replace(/<[^>]*>/g, '')
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '')
     .trim()
     .slice(0, MAX_CUSTOM_TEXT_LENGTH);
 }
 
 // ============================================
+// LANGUAGE NAME MAP — for translation prompts
+// ============================================
+const LANGUAGE_NAMES: Record<string, string> = {
+  'ar-SA': 'Saudi Arabic', 'ar-EG': 'Egyptian Arabic', 'ar-AE': 'Gulf Arabic',
+  'ar-LB': 'Levantine Arabic', 'ar-MA': 'Moroccan Arabic', 'ar-IQ': 'Iraqi Arabic',
+  'ar-MSA': 'Modern Standard Arabic',
+  'hi-IN': 'Hindi', 'ta-IN': 'Tamil', 'te-IN': 'Telugu', 'bn-IN': 'Bengali',
+  'mr-IN': 'Marathi', 'gu-IN': 'Gujarati', 'kn-IN': 'Kannada', 'ml-IN': 'Malayalam',
+  'ja-JP': 'Japanese', 'zh-CN': 'Simplified Chinese', 'ko-KR': 'Korean',
+  'th-TH': 'Thai', 'vi-VN': 'Vietnamese', 'id-ID': 'Indonesian',
+  'sw-KE': 'Swahili', 'yo-NG': 'Yoruba', 'ha-NG': 'Hausa', 'zu-ZA': 'Zulu', 'am-ET': 'Amharic',
+  'es-MX': 'Mexican Spanish', 'pt-BR': 'Brazilian Portuguese', 'es-CO': 'Colombian Spanish',
+  'es-AR': 'Argentine Spanish', 'es-CL': 'Chilean Spanish', 'es-PE': 'Peruvian Spanish',
+  'de-DE': 'German', 'fr-FR': 'French', 'es-ES': 'Spanish', 'it-IT': 'Italian',
+  'nl-NL': 'Dutch', 'pl-PL': 'Polish', 'sv-SE': 'Swedish', 'pt-PT': 'European Portuguese',
+};
+
+// ============================================
 // VOICE REGISTRIES — ALL REGIONS
 // ============================================
 
-// Arabic dialect voice mappings (Azure Neural TTS)
 const ARABIC_VOICES: Record<string, { voice: string; region: string; transcreation: string; literal: string }> = {
   'ar-SA': { voice: 'ar-SA-ZariyahNeural', region: 'Saudi Arabia', transcreation: 'ابدأ تسوي فيديوهات روعة — مجاناً!', literal: 'ابدأ بإنشاء مقاطع فيديو رائعة' },
   'ar-EG': { voice: 'ar-EG-ShakirNeural', region: 'Egypt', transcreation: 'ابدأ اعمل فيديوهات جامدة — ببلاش!', literal: 'ابدأ بإنشاء مقاطع فيديو رائعة' },
@@ -88,7 +106,6 @@ const ARABIC_VOICES: Record<string, { voice: string; region: string; transcreati
   'ar-MSA': { voice: 'ar-SA-HamedNeural', region: 'Formal/News', transcreation: 'ابدأ بإنشاء مقاطع فيديو احترافية', literal: 'ابدأ بإنشاء مقاطع فيديو رائعة' },
 };
 
-// Indian language voice mappings with code-mixing samples
 const INDIAN_VOICES: Record<string, { voice: string; transcreation: string; literal: string }> = {
   'hi-IN': { voice: 'hi-IN-MadhurNeural', transcreation: 'AI course creator फ्री में ट्राई करो! एकदम मस्त है!', literal: 'कृपया हमारे AI-संचालित पाठ्यक्रम निर्माता को मुफ्त में आज़माएं' },
   'ta-IN': { voice: 'ta-IN-PallaviNeural', transcreation: 'AI course creator free-ஆ try பண்ணு! சூப்பரா இருக்கு!', literal: 'எங்கள் AI-இயக்கப்படும் பாடநெறி உருவாக்கியை இலவசமாக முயற்சிக்கவும்' },
@@ -100,7 +117,6 @@ const INDIAN_VOICES: Record<string, { voice: string; transcreation: string; lite
   'ml-IN': { voice: 'ml-IN-MidhunNeural', transcreation: 'AI course creator free ആയി try ചെയ്യൂ! കിടുക്കാച്ചി!', literal: 'ദയവായി ഞങ്ങളുടെ AI-പവർഡ് കോഴ്സ് ക്രിയേറ്റർ സൗജന്യമായി പരീക്ഷിക്കുക' },
 };
 
-// CJK + Southeast Asian voices
 const CJK_VOICES: Record<string, { voice: string; transcreation: string; literal: string }> = {
   'ja-JP': { voice: 'ja-JP-NanamiNeural', transcreation: 'AIで動画制作を始めよう — 無料で、すぐに使えます！', literal: '当社のAI動画制作ツールを無料でお試しください' },
   'zh-CN': { voice: 'zh-CN-XiaoxiaoNeural', transcreation: '用AI来创作精彩视频吧——完全免费，立即上手！', literal: '请免费试用我们的AI视频制作工具' },
@@ -110,7 +126,6 @@ const CJK_VOICES: Record<string, { voice: string; transcreation: string; literal
   'id-ID': { voice: 'id-ID-GadisNeural', transcreation: 'Mulai bikin video keren pakai AI — gratis, tanpa ribet!', literal: 'Silakan coba alat pembuat video AI kami secara gratis' },
 };
 
-// African language voices
 const AFRICAN_VOICES: Record<string, { voice: string; transcreation: string; literal: string }> = {
   'sw-KE': { voice: 'sw-KE-ZuriNeural', transcreation: 'Anza kuunda video za kushangaza — bure kabisa!', literal: 'Begin creating excellent video content for free' },
   'yo-NG': { voice: 'yo-NG-EzeNeural', transcreation: 'Bẹ̀rẹ̀ ṣíṣe fidio to dára — ọfẹ́ ni!', literal: 'Begin creating excellent video content for free' },
@@ -119,7 +134,6 @@ const AFRICAN_VOICES: Record<string, { voice: string; transcreation: string; lit
   'am-ET': { voice: 'am-ET-AmehaNeural', transcreation: 'አስደናቂ ቪዲዮዎችን መፍጠር ጀምር — ነጻ!', literal: 'Begin creating excellent video content for free' },
 };
 
-// LATAM Spanish & Portuguese variants
 const LATAM_VOICES: Record<string, { voice: string; transcreation: string; literal: string }> = {
   'es-MX': { voice: 'es-MX-DaliaNeural', transcreation: '¡Échale ganas y crea videos chidos con IA — es gratis, neta!', literal: 'Por favor pruebe nuestra herramienta de video con IA gratis' },
   'pt-BR': { voice: 'pt-BR-FranciscaNeural', transcreation: 'Começa a criar vídeos incríveis com IA — de graça, sem pegadinha!', literal: 'Por favor, experimente nossa ferramenta de vídeo com IA gratuitamente' },
@@ -129,7 +143,6 @@ const LATAM_VOICES: Record<string, { voice: string; transcreation: string; liter
   'es-PE': { voice: 'es-PE-AlexNeural', transcreation: '¡Empieza a crear videos chéveres con IA — es gratis, causa!', literal: 'Por favor pruebe nuestra herramienta de video con IA gratis' },
 };
 
-// European voices
 const EUROPEAN_VOICES: Record<string, { voice: string; transcreation: string; literal: string }> = {
   'de-DE': { voice: 'de-DE-KatjaNeural', transcreation: 'Leg los mit genialen Videos — kostenlos und ohne Haken!', literal: 'Beginnen Sie mit der Erstellung hervorragender Videoinhalte' },
   'fr-FR': { voice: 'fr-FR-DeniseNeural', transcreation: 'Lancez-vous dans la création vidéo — c\'est gratuit et sans engagement !', literal: 'Commencez à créer d\'excellents contenus vidéo' },
@@ -141,14 +154,82 @@ const EUROPEAN_VOICES: Record<string, { voice: string; transcreation: string; li
   'pt-PT': { voice: 'pt-PT-RaquelNeural', transcreation: 'Começa a criar vídeos espetaculares com IA — grátis e sem compromisso!', literal: 'Por favor, experimente a nossa ferramenta de criação de vídeo com IA gratuitamente' },
 };
 
-// Unified lookup — merges all registries
 function lookupVoice(code: string): { voice: string; transcreation: string; literal: string } | null {
   return ARABIC_VOICES[code] || INDIAN_VOICES[code] || CJK_VOICES[code] 
     || AFRICAN_VOICES[code] || LATAM_VOICES[code] || EUROPEAN_VOICES[code] || null;
 }
 
 // ============================================
-// TTS PROVIDERS — Azure Neural PRIMARY (per master registry)
+// TRANSLATION — Gemini Flash for pre-TTS translation
+// ============================================
+
+async function translateTextForTTS(text: string, targetLangCode: string): Promise<{ translatedText: string; wasTranslated: boolean }> {
+  const langName = LANGUAGE_NAMES[targetLangCode];
+  if (!langName) {
+    console.log(`[dialect-tts-demo] No language name for ${targetLangCode}, skipping translation`);
+    return { translatedText: text, wasTranslated: false };
+  }
+
+  // Skip translation if the target is English-based
+  const baseLang = targetLangCode.split('-')[0];
+  if (baseLang === 'en') {
+    return { translatedText: text, wasTranslated: false };
+  }
+
+  const geminiKey = Deno.env.get('GEMINI_API_KEY');
+  if (!geminiKey) {
+    console.log('[dialect-tts-demo] No GEMINI_API_KEY, skipping translation');
+    return { translatedText: text, wasTranslated: false };
+  }
+
+  try {
+    console.log(`[dialect-tts-demo] Translating to ${langName} (${targetLangCode})`);
+    
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: `Translate the following English text into ${langName}. 
+Use natural, culturally appropriate language — this is for text-to-speech so it should sound natural when spoken aloud.
+Return ONLY the translated text. No explanations, no quotes, no labels.
+
+Text: ${text}`
+            }]
+          }],
+          generationConfig: {
+            temperature: 0.3,
+            maxOutputTokens: 1024,
+          }
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      console.error(`[dialect-tts-demo] Gemini translation error: ${response.status}`);
+      return { translatedText: text, wasTranslated: false };
+    }
+
+    const data = await response.json();
+    const translated = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+
+    if (translated && translated.length > 0) {
+      console.log(`[dialect-tts-demo] Translated: "${text.slice(0, 40)}..." → "${translated.slice(0, 40)}..."`);
+      return { translatedText: translated, wasTranslated: true };
+    }
+
+    return { translatedText: text, wasTranslated: false };
+  } catch (error) {
+    console.error('[dialect-tts-demo] Translation failed:', error);
+    return { translatedText: text, wasTranslated: false };
+  }
+}
+
+// ============================================
+// TTS PROVIDERS — Azure Neural PRIMARY
 // ============================================
 
 async function generateAzureTTS(text: string, voice: string): Promise<ArrayBuffer | null> {
@@ -237,19 +318,26 @@ async function generateElevenLabsTTS(text: string, voiceId: string = 'JBFqnCBsd6
 }
 
 // ============================================
-// CUSTOM TEXT TTS — users type their own text
+// CUSTOM TTS — translate → then speak
 // ============================================
-async function generateCustomTTS(text: string, languageCode: string): Promise<{ buffer: ArrayBuffer; provider: string } | null> {
+async function generateCustomTTS(
+  text: string, 
+  languageCode: string
+): Promise<{ buffer: ArrayBuffer; provider: string; translatedText: string; wasTranslated: boolean } | null> {
   const voiceEntry = lookupVoice(languageCode);
   if (!voiceEntry) return null;
   
-  // Azure Neural PRIMARY (per master-provider-routing-registry)
-  const azureBuffer = await generateAzureTTS(text, voiceEntry.voice);
-  if (azureBuffer) return { buffer: azureBuffer, provider: 'azure_neural' };
+  // Step 1: Translate the text to the target language
+  const { translatedText, wasTranslated } = await translateTextForTTS(text, languageCode);
   
-  // ElevenLabs FALLBACK (tertiary per registry)
-  const elBuffer = await generateElevenLabsTTS(text);
-  if (elBuffer) return { buffer: elBuffer, provider: 'elevenlabs' };
+  // Step 2: TTS the translated text
+  // Azure Neural PRIMARY
+  const azureBuffer = await generateAzureTTS(translatedText, voiceEntry.voice);
+  if (azureBuffer) return { buffer: azureBuffer, provider: 'azure_neural', translatedText, wasTranslated };
+  
+  // ElevenLabs FALLBACK
+  const elBuffer = await generateElevenLabsTTS(translatedText);
+  if (elBuffer) return { buffer: elBuffer, provider: 'elevenlabs', translatedText, wasTranslated };
   
   return null;
 }
@@ -269,7 +357,6 @@ serve(async (req) => {
     const body = await req.json();
     const { action, languageCode, mode, text: customText } = body;
 
-    // Validate action
     if (!action || !VALID_ACTIONS.includes(action)) {
       return new Response(
         JSON.stringify({ error: 'Invalid action. Use: get_languages, generate_tts, custom_tts' }),
@@ -277,9 +364,9 @@ serve(async (req) => {
       );
     }
 
-    // Action: Get all available languages grouped by tab (lightweight, generous limit)
+    // Action: Get all available languages grouped by tab
     if (action === 'get_languages') {
-      const rateCheck = checkRateLimit(clientIP, 60); // generous for metadata
+      const rateCheck = checkRateLimit(clientIP, 60);
       if (!rateCheck.allowed) {
         console.warn(`[dialect-tts-demo] Rate limited IP: ${clientIP}`);
         return new Response(
@@ -310,7 +397,7 @@ serve(async (req) => {
       );
     }
 
-    // Action: Generate TTS for custom user text (stricter rate limit)
+    // Action: custom_tts — translate user text to target language, then TTS
     if (action === 'custom_tts') {
       const rateCheck = checkRateLimit(`${clientIP}:custom`, CUSTOM_TTS_LIMIT);
       if (!rateCheck.allowed) {
@@ -339,19 +426,26 @@ serve(async (req) => {
       const result = await generateCustomTTS(sanitized, languageCode);
       if (!result) {
         return new Response(
-          JSON.stringify({ error: 'TTS generation failed' }),
+          JSON.stringify({ error: 'TTS generation failed. Language may not be supported.' }),
           { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
       
       const base64Audio = base64Encode(new Uint8Array(result.buffer));
       return new Response(
-        JSON.stringify({ audioContent: base64Audio, provider: result.provider, languageCode }),
+        JSON.stringify({ 
+          audioContent: base64Audio, 
+          provider: result.provider, 
+          languageCode,
+          translatedText: result.translatedText,
+          wasTranslated: result.wasTranslated,
+          originalText: sanitized,
+        }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Action: Generate TTS audio for pre-set transcreation sample
+    // Action: generate_tts — pre-set transcreation sample
     if (action === 'generate_tts' && languageCode) {
       const rateCheck = checkRateLimit(clientIP, RATE_LIMIT_MAX_REQUESTS);
       if (!rateCheck.allowed) {
@@ -371,14 +465,11 @@ serve(async (req) => {
         );
       }
 
-      // Use transcreation by default, literal if specified
       const text = mode === 'literal' ? voiceEntry.literal : voiceEntry.transcreation;
       let provider = 'azure_neural';
 
-      // Azure Neural PRIMARY (per master-provider-routing-registry)
       let audioBuffer = await generateAzureTTS(text, voiceEntry.voice);
 
-      // ElevenLabs FALLBACK
       if (!audioBuffer) {
         provider = 'elevenlabs';
         audioBuffer = await generateElevenLabsTTS(text);
