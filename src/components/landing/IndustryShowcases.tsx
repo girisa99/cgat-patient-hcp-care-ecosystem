@@ -15,7 +15,7 @@ import {
   Factory, Landmark, Globe, Sparkles, ArrowRight, Layers,
   Mic, Languages, Video, Presentation, FileText, Zap,
   Volume2, Shield, User, Box, Music, Image, Wand2,
-  CheckCircle2, Star, Smartphone,
+  CheckCircle2, Star, Smartphone, Eye,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -368,14 +368,41 @@ export const IndustryShowcases: React.FC<IndustryShowcasesProps> = ({ region }) 
           </div>
         </Tabs>
 
-        {/* Combination Showcase — differentiator workflows */}
-        <div className="mt-10 sm:mt-14">
-          <CombinationShowcase />
-        </div>
+        {/* Integrated Industry Outputs — Two paths: See Outputs + Try Combinations */}
+        <div className="mt-8 sm:mt-10">
+          <Tabs defaultValue="outputs" className="w-full">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg sm:text-xl font-bold text-foreground">
+                  {selectedIndustry.name} — How It Works
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  See real outputs or explore multi-pipeline combinations → convert anything to 140+ languages
+                </p>
+              </div>
+              <TabsList level="child" className="shrink-0">
+                <TabsTrigger value="outputs" level="child" className="gap-1.5">
+                  <Eye className="h-3 w-3" /> Outputs
+                </TabsTrigger>
+                <TabsTrigger value="combinations" level="child" className="gap-1.5">
+                  <Layers className="h-3 w-3" /> Combinations
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
-        {/* Pipeline Output Gallery — case study cards */}
-        <div className="mt-10 sm:mt-14">
-          <PipelineOutputGallery />
+            <TabsContent value="outputs" className="mt-0">
+              <PipelineOutputGallery 
+                industryId={selectedIndustry.id} 
+                industryName={selectedIndustry.name} 
+              />
+            </TabsContent>
+            <TabsContent value="combinations" className="mt-0">
+              <CombinationShowcase 
+                industryId={selectedIndustry.id} 
+                industryName={selectedIndustry.name} 
+              />
+            </TabsContent>
+          </Tabs>
         </div>
 
         {/* Cross-functional capabilities — integrated from CrossFunctionalSection */}
