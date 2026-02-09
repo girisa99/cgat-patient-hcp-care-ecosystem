@@ -161,11 +161,11 @@ export function useTTSDemo() {
       }
 
       throw new Error(isRateLimited
-        ? 'Service is busy — please wait a few seconds and try again.'
+        ? 'Demo limit reached — each visitor gets 10 free tries per minute. Please wait a moment and try again!'
         : (errBody?.error || errBody?.message || 'TTS generation failed'));
     }
 
-    throw new Error('Service is busy — please wait a few seconds and try again.');
+    throw new Error('Demo limit reached — each visitor gets 10 free tries per minute. Please wait a moment and try again!');
   }, []);
 
   const playTranscreation = useCallback(async (
