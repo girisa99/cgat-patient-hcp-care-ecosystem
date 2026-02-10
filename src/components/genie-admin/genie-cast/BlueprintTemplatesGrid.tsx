@@ -416,18 +416,22 @@ export function BlueprintTemplatesGrid({
   // Fetch blueprint with scenes for preview
   const { data: previewBlueprint } = useBlueprintWithScenes(previewBlueprintId);
 
+  // Thumbnail AI provider selection
+  const [thumbnailProvider, setThumbnailProvider] = useState<'auto' | 'alibaba' | 'gemini'>('auto');
+
   // Queue thumbnail generation for a single blueprint (async pattern)
   const queueThumbnailGeneration = async (blueprintId: string, region: string = 'global') => {
     setGeneratingId(blueprintId);
     try {
-      // Insert into queue
+      // Insert into queue with provider preference
       const { error: queueError } = await supabase
         .from('thumbnail_generation_queue')
         .insert({
           blueprint_id: blueprintId,
           region,
           status: 'pending',
-        });
+          provider: thumbnailProvider !== 'auto' ? thumbnailProvider : undefined,
+        } as any);
       
       if (queueError) throw queueError;
       
@@ -474,17 +478,18 @@ export function BlueprintTemplatesGrid({
         blueprint_id: bp.id,
         region: 'global',
         status: 'pending',
+        provider: thumbnailProvider !== 'auto' ? thumbnailProvider : undefined,
       }));
 
       const { error: queueError } = await supabase
         .from('thumbnail_generation_queue')
-        .insert(queueItems);
+        .insert(queueItems as any);
 
       if (queueError) throw queueError;
 
-      // Trigger processor
+      // Trigger processor with provider preference
       const { error: processError } = await supabase.functions.invoke('process-thumbnail-queue', {
-        body: { limit: 5 },
+        body: { limit: 5, provider: thumbnailProvider !== 'auto' ? thumbnailProvider : undefined },
       });
 
       toast({
@@ -794,6 +799,18 @@ export function BlueprintTemplatesGrid({
               {/* Create Template Button */}
               <CreateTemplateDialog onCreated={refetch} />
               
+              {/* Thumbnail Provider Selector */}
+              <Select value={thumbnailProvider} onValueChange={(v) => setThumbnailProvider(v as any)}>
+                <SelectTrigger className="w-[140px] h-8 text-xs">
+                  <SelectValue placeholder="AI Provider" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="auto">🤖 Auto (Best)</SelectItem>
+                  <SelectItem value="alibaba">🌊 Alibaba Wan 2.6</SelectItem>
+                  <SelectItem value="gemini">💎 Gemini Imagen</SelectItem>
+                </SelectContent>
+              </Select>
+
               <Button
                 variant="outline"
                 size="sm"
@@ -806,7 +823,7 @@ export function BlueprintTemplatesGrid({
                 ) : (
                   <Wand2 className="h-4 w-4" />
                 )}
-                Generate Thumbnails
+                Generate Thumbnails{thumbnailProvider !== 'auto' ? ` (${thumbnailProvider === 'alibaba' ? 'Wan 2.6' : 'Imagen'})` : ''}
               </Button>
               <Button
                 variant="outline"

@@ -19,7 +19,8 @@ import { cn } from '@/lib/utils';
 
 interface AIProvider {
   name: string;
-  category: 'video' | 'llm' | 'tts' | '3d' | 'image';
+  category: 'video' | 'llm' | 'tts' | 'stt' | '3d' | 'image';
+  status?: 'active' | 'pending';
 }
 
 // Only actually integrated providers - 30 models
@@ -60,11 +61,16 @@ const AI_PROVIDERS: AIProvider[] = [
   { name: 'Richdreamer', category: '3d' },
   { name: 'ModelsLab 3D', category: '3d' },
   
-  // IMAGE (4)
+  // IMAGE (5 - added Wan 2.6)
   { name: 'FLUX Pro', category: 'image' },
   { name: 'SDXL', category: 'image' },
   { name: 'Imagen 3', category: 'image' },
+  { name: 'Wan 2.6 T2I', category: 'image', status: 'active' },
   { name: 'ModelsLab Image', category: 'image' },
+  
+  // STT (2)
+  { name: 'Paraformer', category: 'stt', status: 'active' },
+  { name: 'Deepgram Nova', category: 'stt' },
 ];
 
 const getCategoryColor = (category: AIProvider['category']) => {
@@ -72,6 +78,7 @@ const getCategoryColor = (category: AIProvider['category']) => {
     case 'video': return 'text-blue-600 bg-blue-500/10';
     case 'llm': return 'text-amber-600 bg-amber-500/10';
     case 'tts': return 'text-green-600 bg-green-500/10';
+    case 'stt': return 'text-emerald-600 bg-emerald-500/10';
     case '3d': return 'text-purple-600 bg-purple-500/10';
     case 'image': return 'text-pink-600 bg-pink-500/10';
     default: return 'text-muted-foreground bg-muted';
@@ -107,7 +114,10 @@ export const AIProviderShowcase: React.FC<AIProviderShowcaseProps> = ({ classNam
             <Box className="w-2.5 h-2.5" />4
           </Badge>
           <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 gap-1">
-            <Wand2 className="w-2.5 h-2.5" />4
+            <Wand2 className="w-2.5 h-2.5" />5
+          </Badge>
+          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 gap-1">
+            <Mic className="w-2.5 h-2.5 text-emerald-500" />2 STT
           </Badge>
         </div>
       </div>
