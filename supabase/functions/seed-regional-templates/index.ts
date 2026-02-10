@@ -144,17 +144,17 @@ const CHINESE_TEMPLATES: RegionalTemplate[] = [
     region_code: 'cjk',
     language_code: 'zh-CN',
     primary_model: 'alibaba_wan',
-    secondary_models: ['cosyvoice', 'alibaba_avatar'],
+    secondary_models: ['qwen3_tts', 'alibaba_avatar'],
     ai_capabilities: [
       { type: 'video', provider: 'Alibaba Wan 2.6', feature: 'Chinese Market Video' },
-      { type: 'tts', provider: 'CosyVoice', feature: 'Mandarin' }
+      { type: 'tts', provider: 'Qwen3-TTS', feature: 'Mandarin' }
     ],
     industry_tags: ['ecommerce', 'technology', 'china'],
     target_platform: ['douyin', 'weibo', 'wechat'],
     estimated_duration_seconds: 45,
     cultural_notes: 'Lucky red colors, auspicious numbers, WeChat-optimized format',
     design_style: 'modern_chinese',
-    tts_provider: 'cosyvoice',
+    tts_provider: 'qwen3_tts',
     style_preset: { lucky_colors: true, platform: 'wechat', aspect: '9:16' }
   },
   {
@@ -166,17 +166,17 @@ const CHINESE_TEMPLATES: RegionalTemplate[] = [
     region_code: 'cjk',
     language_code: 'zh-CN',
     primary_model: 'alibaba_avatar',
-    secondary_models: ['cosyvoice', 'alibaba_wan'],
+    secondary_models: ['qwen3_tts', 'alibaba_wan'],
     ai_capabilities: [
       { type: 'avatar', provider: 'Alibaba OmniAvatar', feature: 'Chinese Presenter' },
-      { type: 'tts', provider: 'CosyVoice', feature: 'Professional Mandarin' }
+      { type: 'tts', provider: 'Qwen3-TTS', feature: 'Professional Mandarin' }
     ],
     industry_tags: ['enterprise', 'training', 'hr'],
     target_platform: ['lms', 'dingtalk'],
     estimated_duration_seconds: 300,
     cultural_notes: 'Formal business style, hierarchical respect, group harmony focus',
     design_style: 'corporate_chinese',
-    tts_provider: 'cosyvoice',
+    tts_provider: 'qwen3_tts',
     style_preset: { formal: true, business: true }
   },
   {
@@ -188,7 +188,7 @@ const CHINESE_TEMPLATES: RegionalTemplate[] = [
     region_code: 'cjk',
     language_code: 'zh-CN',
     primary_model: 'alibaba_avatar',
-    secondary_models: ['cosyvoice', 'modelslab_effects'],
+    secondary_models: ['qwen3_tts', 'modelslab_effects'],
     ai_capabilities: [
       { type: 'avatar', provider: 'Alibaba', feature: 'Livestream Host' },
       { type: 'effects', provider: 'ModelsLab', feature: 'Engagement Overlays' }
@@ -198,7 +198,7 @@ const CHINESE_TEMPLATES: RegionalTemplate[] = [
     estimated_duration_seconds: 60,
     cultural_notes: 'Fast-paced, interactive, price reveals, countdown urgency',
     design_style: 'livestream_chinese',
-    tts_provider: 'cosyvoice',
+    tts_provider: 'qwen3_tts',
     style_preset: { livestream: true, urgency: true, interactive: true }
   },
 ];

@@ -22,24 +22,24 @@ const corsHeaders = {
 const TTS_ROUTING = {
   // Claude Zone (Western): Azure Neural PRIMARY (differentiator - NOT ElevenLabs!)
   western: { primary: 'azure_neural', fallback: 'elevenlabs', tertiary: 'google_tts' },
-  europe: { primary: 'azure_neural', fallback: 'alibaba_cosyvoice', tertiary: 'elevenlabs' },
-  latam: { primary: 'azure_neural', fallback: 'alibaba_cosyvoice', tertiary: 'elevenlabs' },
+  europe: { primary: 'azure_neural', fallback: 'alibaba_qwen3_tts', tertiary: 'elevenlabs' },
+  latam: { primary: 'azure_neural', fallback: 'alibaba_qwen3_tts', tertiary: 'elevenlabs' },
   
-  // Alibaba Zone (CJK, MENA): CosyVoice PRIMARY
-  cjk: { primary: 'alibaba_cosyvoice', fallback: 'azure_neural', tertiary: 'google_tts' },
-  china: { primary: 'alibaba_cosyvoice', fallback: 'azure_neural', tertiary: 'google_tts' },
-  japan: { primary: 'azure_neural', fallback: 'alibaba_cosyvoice', tertiary: 'google_tts' },
-  korea: { primary: 'azure_neural', fallback: 'alibaba_cosyvoice', tertiary: 'google_tts' },
-  mena: { primary: 'azure_neural', fallback: 'alibaba_cosyvoice', tertiary: 'google_tts' },
-  arabic: { primary: 'azure_neural', fallback: 'alibaba_cosyvoice', tertiary: 'google_tts' },
+  // Alibaba Zone (CJK, MENA): Qwen3-TTS PRIMARY
+  cjk: { primary: 'alibaba_qwen3_tts', fallback: 'azure_neural', tertiary: 'google_tts' },
+  china: { primary: 'alibaba_qwen3_tts', fallback: 'azure_neural', tertiary: 'google_tts' },
+  japan: { primary: 'azure_neural', fallback: 'alibaba_qwen3_tts', tertiary: 'google_tts' },
+  korea: { primary: 'azure_neural', fallback: 'alibaba_qwen3_tts', tertiary: 'google_tts' },
+  mena: { primary: 'azure_neural', fallback: 'alibaba_qwen3_tts', tertiary: 'google_tts' },
+  arabic: { primary: 'azure_neural', fallback: 'alibaba_qwen3_tts', tertiary: 'google_tts' },
   
   // Gemini Zone (South Asia, SEA, Africa): Azure Neural PRIMARY (Visemes/Lip-sync)
-  india: { primary: 'azure_neural', fallback: 'alibaba_cosyvoice', tertiary: 'google_tts' },
-  pakistan: { primary: 'azure_neural', fallback: 'alibaba_cosyvoice', tertiary: 'google_tts' },
-  bangladesh: { primary: 'azure_neural', fallback: 'alibaba_cosyvoice', tertiary: 'google_tts' },
-  sea: { primary: 'azure_neural', fallback: 'alibaba_cosyvoice', tertiary: 'google_tts' },
-  indonesia: { primary: 'azure_neural', fallback: 'alibaba_cosyvoice', tertiary: 'google_tts' },
-  africa: { primary: 'azure_neural', fallback: 'alibaba_cosyvoice', tertiary: 'google_tts' },
+  india: { primary: 'azure_neural', fallback: 'alibaba_qwen3_tts', tertiary: 'google_tts' },
+  pakistan: { primary: 'azure_neural', fallback: 'alibaba_qwen3_tts', tertiary: 'google_tts' },
+  bangladesh: { primary: 'azure_neural', fallback: 'alibaba_qwen3_tts', tertiary: 'google_tts' },
+  sea: { primary: 'azure_neural', fallback: 'alibaba_qwen3_tts', tertiary: 'google_tts' },
+  indonesia: { primary: 'azure_neural', fallback: 'alibaba_qwen3_tts', tertiary: 'google_tts' },
+  africa: { primary: 'azure_neural', fallback: 'alibaba_qwen3_tts', tertiary: 'google_tts' },
 };
 
 // ============================================
@@ -786,7 +786,7 @@ const CJK_MOBILE_TEMPLATES = [
     region_code: 'cjk',
     language_code: 'zh-CN',
     primary_model: 'alibaba_wan',
-    tts_provider: 'cosyvoice',
+    tts_provider: 'qwen3_tts',
     target_platform: ['douyin', 'kuaishou', 'xiaohongshu'],
     cultural_notes: '9:16 vertical, fast-paced, trending music, hashtag challenges',
     style_preset: { mobile_first: true, aspect: '9:16', social: true }
@@ -800,7 +800,7 @@ const CJK_MOBILE_TEMPLATES = [
     region_code: 'cjk',
     language_code: 'zh-CN',
     primary_model: 'alibaba_avatar',
-    tts_provider: 'cosyvoice',
+    tts_provider: 'qwen3_tts',
     target_platform: ['xiaohongshu'],
     cultural_notes: 'Lifestyle aesthetic, authentic reviews, beauty/fashion focus',
     style_preset: { mobile_first: true, lifestyle: true }
@@ -940,7 +940,7 @@ const PODCAST_WEBCAST_TEMPLATES = [
     region_code: 'cjk',
     language_code: 'zh-CN',
     primary_model: 'alibaba_avatar',
-    tts_provider: 'cosyvoice',
+    tts_provider: 'qwen3_tts',
     target_platform: ['bilibili', 'douyu', 'huya'],
     cultural_notes: 'Tech launches, live demos, interactive Q&A, danmaku-ready',
     style_preset: { webcast: true, tech: true }

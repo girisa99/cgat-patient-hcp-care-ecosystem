@@ -18,7 +18,7 @@
  * #2: Mobile One-Tap Record → Publish (0% competitor coverage)
  * 
  * REGIONAL CONVERSION DRIVERS:
- * - Asia (CJK): "Voice sounds HUMAN, not robot" → CosyVoice
+ * - Asia (CJK): "Voice sounds HUMAN, not robot" → Qwen3-TTS
  * - India: "My language (Telugu/Tamil/Bengali) actually works!" → 22 languages
  * - MEA: "My dialect, not news anchor Arabic" → 7 Arabic dialects
  * - LatAm: "Mobile-first + unlimited short-form" → One-tap publish
@@ -144,7 +144,7 @@ export const SUBSCRIPTION_TIERS: Record<SubscriptionTier, TierConfig> = {
       '✅ Never lose credits on failed generations',
     ],
     regionalValue: {
-      asia: 'CJK voice that sounds natural - Alibaba CosyVoice',
+      asia: 'CJK voice that sounds natural - Alibaba Qwen3-TTS',
       india: 'Telugu, Tamil, Bengali, Kannada actually work!',
       mea: 'Your Arabic dialect, not news anchor Arabic',
       latam: 'Create on your phone, anywhere, anytime',
@@ -377,7 +377,7 @@ export const SUBSCRIPTION_TIERS: Record<SubscriptionTier, TierConfig> = {
       '🎤 Voice cloning included (not $22/mo add-on)',
     ],
     regionalValue: {
-      asia: 'CJK voice cloning + lip-sync with Alibaba CosyVoice',
+      asia: 'CJK voice cloning + lip-sync with Alibaba Qwen3-TTS',
       india: '22 Indian languages + Dravidian dialects',
       mea: '7 Arabic dialects + RTL avatar videos',
       latam: 'Brazilian Portuguese distinction + unlimited dubbing',
@@ -642,7 +642,7 @@ export const REGIONAL_TIER_RECOMMENDATIONS: Record<string, {
 }> = {
   asia: {
     suggestedTier: 'pro',
-    hookFeature: 'CJK voice that sounds HUMAN via Alibaba CosyVoice',
+    hookFeature: 'CJK voice that sounds HUMAN via Alibaba Qwen3-TTS',
     conversionDriver: 'Numbers/dates handled correctly in dubbing',
   },
   india: {

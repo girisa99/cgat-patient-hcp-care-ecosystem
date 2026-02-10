@@ -247,7 +247,7 @@ const GEMINI_LANGUAGES = [
   'af', 'af-ZA', 'ha', 'ig', 'xh',
 ];
 
-// ALIBABA ZONE - CJK: Alibaba CosyVoice PRIMARY
+// ALIBABA ZONE - CJK: Alibaba Qwen3-TTS PRIMARY
 const CJK_LANGUAGES = ['ja', 'ja-JP', 'ko', 'ko-KR', 'zh', 'zh-CN', 'zh-TW', 'zh-HK', 'zh-SG'];
 
 // MENA ZONE - Arabic (7 dialects): Azure Neural PRIMARY
@@ -306,10 +306,10 @@ function selectTTSProvider(region: string, languageCode: string, tier: string = 
     }
   }
 
-  // ALIBABA ZONE (CJK): Alibaba CosyVoice PRIMARY
+  // ALIBABA ZONE (CJK): Alibaba Qwen3-TTS PRIMARY
   if (CJK_LANGUAGES.includes(languageCode) || CJK_LANGUAGES.includes(langBase)) {
     if (hasProvider('alibaba')) {
-      console.log(`🌸 Alibaba Zone (CJK): Routing to Alibaba CosyVoice [${languageCode}]`);
+      console.log(`🌸 Alibaba Zone (CJK): Routing to Alibaba Qwen3-TTS [${languageCode}]`);
       return { provider: 'alibaba', cost: 0.004, zone: 'alibaba', quality: 'premium' };
     }
     if (hasProvider('azure')) {
@@ -361,7 +361,7 @@ function selectTTSProvider(region: string, languageCode: string, tier: string = 
     return { provider: 'azure', cost: 0.016, zone: 'fallback', quality: 'premium' };
   }
   if (hasProvider('alibaba')) {
-    console.log(`🔊 Fallback: Routing to Alibaba CosyVoice (CJK)`);
+    console.log(`🔊 Fallback: Routing to Alibaba Qwen3-TTS (CJK)`);
     return { provider: 'alibaba', cost: 0.004, zone: 'fallback', quality: 'standard' };
   }
   if (hasProvider('google')) {

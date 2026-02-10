@@ -49,7 +49,7 @@ const PROVIDER_COLORS: Record<string, string> = {
   'ElevenLabs': 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
   'Azure Neural': 'bg-blue-500/20 text-blue-300 border-blue-500/30',
   'Azure': 'bg-blue-500/20 text-blue-300 border-blue-500/30',
-  'Alibaba CosyVoice': 'bg-orange-500/20 text-orange-300 border-orange-500/30',
+  'Alibaba Qwen3-TTS': 'bg-orange-500/20 text-orange-300 border-orange-500/30',
   'Alibaba': 'bg-orange-500/20 text-orange-300 border-orange-500/30',
   'Claude': 'bg-amber-500/20 text-amber-300 border-amber-500/30',
   'GPT-4o': 'bg-green-500/20 text-green-300 border-green-500/30',

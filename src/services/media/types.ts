@@ -25,7 +25,7 @@ export type TTSProvider =
   | 'elevenlabs'         // ElevenLabs
   | 'openai'             // OpenAI TTS
   | 'google'             // Google Cloud TTS
-  | 'alibaba_voice'      // Alibaba CosyVoice
+  | 'alibaba_voice'      // Alibaba Qwen3-TTS
   | 'deepseek_tts'       // DeepSeek TTS (CJK optimized)
   | 'amazon_polly';      // AWS Polly (future)
 
@@ -113,7 +113,7 @@ export type MediaCapability =
   | 'lipsync' 
   | 'character_animation'
   // Expanded capabilities for provider matching
-  | 'voice_clone'        // ElevenLabs, Alibaba CosyVoice
+  | 'voice_clone'        // ElevenLabs, Alibaba Qwen3-TTS
   | 'realtime_stt'       // Azure, Google real-time STT
   | 'music_gen'          // ModelsLab MusicGen
   | 'text_to_video'      // Text prompt to video

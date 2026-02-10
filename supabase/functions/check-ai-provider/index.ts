@@ -18,7 +18,7 @@ const PROVIDER_SECRETS: Record<string, string[]> = {
   claude: ['ANTHROPIC_API_KEY', 'CLAUDE_API_KEY'], // Claude 4 - Literary, West Zone
   gemini: ['GEMINI_API_KEY', 'GOOGLE_API_KEY', 'LOVABLE_API_KEY'], // Gemini 3 - India/SEA Zone
   deepseek: ['DEEPSEEK_API_KEY'],       // CJK optimized LLM & Vision (low cost)
-  alibaba: ['ALIBABA_API_KEY'],         // Qwen, CosyVoice, Paraformer, WAN 2.2 Avatar
+  alibaba: ['ALIBABA_API_KEY'],         // Qwen, Qwen3-TTS, Paraformer, WAN 2.2 Avatar
   
   // STT - Speech-to-Text
   deepgram: ['DEEPGRAM_API_KEY'],       // PRIMARY STT - <100ms real-time latency

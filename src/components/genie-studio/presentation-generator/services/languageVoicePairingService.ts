@@ -49,12 +49,12 @@ export const COMPREHENSIVE_LANGUAGE_VOICE_PAIRINGS: LanguageVoiceConfig[] = [
         { providerId: 'aws-polly', providerName: 'AWS Polly', voiceId: 'Zhiyu', voiceName: 'Zhiyu', quality: 'neural', gender: 'female' },
       ],
       tier2: [
-        { providerId: 'alibaba-cosyvoice', providerName: 'Alibaba CosyVoice', voiceId: 'longxiaochun', voiceName: 'Xiaochun', quality: 'neural', gender: 'female', isRecommended: true, specialization: 'business' },
+        { providerId: 'alibaba-qwen3-tts', providerName: 'Alibaba Qwen3-TTS', voiceId: 'longxiaochun', voiceName: 'Xiaochun', quality: 'neural', gender: 'female', isRecommended: true, specialization: 'business' },
         { providerId: 'azure-neural', providerName: 'Azure Neural', voiceId: 'zh-CN-XiaoxiaoNeural', voiceName: 'Xiaoxiao', quality: 'neural', gender: 'female', supportsSSML: true },
         { providerId: 'google-wavenet', providerName: 'Google WaveNet', voiceId: 'cmn-CN-Wavenet-A', voiceName: 'WaveNet Female', quality: 'neural', gender: 'female' },
       ],
       tier3: [
-        { providerId: 'alibaba-cosyvoice-pro', providerName: 'Alibaba CosyVoice Pro', voiceId: 'longxiaochun-pro', voiceName: 'Xiaochun Pro', quality: 'premium', gender: 'female', isRecommended: true, supportsCloning: true },
+        { providerId: 'alibaba-qwen3-tts-pro', providerName: 'Alibaba Qwen3-TTS Pro', voiceId: 'longxiaochun-pro', voiceName: 'Xiaochun Pro', quality: 'premium', gender: 'female', isRecommended: true, supportsCloning: true },
         { providerId: 'azure-neural-hd', providerName: 'Azure Neural HD', voiceId: 'zh-CN-XiaoxiaoMultilingualNeural', voiceName: 'Xiaoxiao HD', quality: 'premium', gender: 'female' },
         { providerId: 'elevenlabs', providerName: 'ElevenLabs', voiceId: 'chinese-female-1', voiceName: 'Chinese Female', quality: 'premium', gender: 'female', supportsCloning: true },
       ],

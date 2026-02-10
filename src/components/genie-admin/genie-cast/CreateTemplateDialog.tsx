@@ -219,9 +219,9 @@ const AI_PROVIDERS_REGISTRY: AIProviderEntry[] = [
   { value: 'modelslab', label: 'ModelsLab AnimateDiff', icon: '🎞️', category: 'video', priority: 4, isDefault: false },
   { value: 'replicate_svd', label: 'Replicate SVD', icon: '📹', category: 'video', priority: 5, isDefault: false },
   
-  // TTS - Azure Neural (Primary) → CosyVoice (CJK)
+  // TTS - Azure Neural (Primary) → Qwen3-TTS (CJK)
   { value: 'azure_neural', label: 'Azure Neural TTS (P1)', icon: '🔊', category: 'tts', priority: 1, isDefault: true, locked: true, zones: ['western', 'europe', 'mena', 'india', 'latam', 'africa'] },
-  { value: 'alibaba_cosyvoice', label: 'Alibaba CosyVoice (P1-CJK)', icon: '🗣️', category: 'tts', priority: 1, isDefault: true, zones: ['cjk'] },
+  { value: 'alibaba_qwen3_tts', label: 'Alibaba Qwen3-TTS (P1-CJK)', icon: '🗣️', category: 'tts', priority: 1, isDefault: true, zones: ['cjk'] },
   { value: 'elevenlabs', label: 'ElevenLabs (P3)', icon: '🎙️', category: 'tts', priority: 3, isDefault: false },
   { value: 'google_tts', label: 'Google Cloud TTS', icon: '📢', category: 'tts', priority: 4, isDefault: false },
   { value: 'amazon_polly', label: 'Amazon Polly', icon: '🔈', category: 'tts', priority: 5, isDefault: false },

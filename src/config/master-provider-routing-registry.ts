@@ -36,7 +36,7 @@
  * 
  * TTS (Text-to-Speech):
  *   - Azure Neural (PRIMARY - Western, MENA/RTL, South Asia, Africa - VISEME SUPPORT)
- *   - Alibaba CosyVoice (PRIMARY - CJK, SECONDARY - global fallback)
+ *   - Alibaba Qwen3-TTS (PRIMARY - CJK, SECONDARY - global fallback)
  *   - Google TTS (TERTIARY - fallback)
  *   - ElevenLabs (Premium voice cloning ONLY, NOT production primary)
  *   - OpenAI TTS (last resort)
@@ -58,7 +58,7 @@
  *   - ModelsLab 3D (fallback)
  * 
  * AUDIO:
- *   - Alibaba CosyVoice v2 (voice cloning)
+ *   - Alibaba Qwen3-TTS v2 (voice cloning)
  *   - ElevenLabs (SFX, premium clone)
  *   - Alibaba FunAudio (music generation)
  *   - Deepgram Enhance (noise removal)
@@ -78,12 +78,12 @@
  * - Azure Neural provides superior VISEME DATA for lip-sync animations
  * - 7 Arabic dialects supported: ar-SA, ar-AE, ar-EG, ar-MA, ar-JO, ar-IQ, ar-LB
  * - RTL text rendering integration
- * - Alibaba CosyVoice is SECONDARY for Arabic (better for CJK)
+ * - Alibaba Qwen3-TTS is SECONDARY for Arabic (better for CJK)
  * 
- * WHY ALIBABA COSYVOICE PRIMARY FOR CJK?
+ * WHY ALIBABA QWEN3-TTS PRIMARY FOR CJK?
  * - Native dialect handling (keigo for Japanese, tones for Chinese)
  * - Better number/date formatting for Asian scripts
- * - CosyVoice v2 supports voice cloning for CJK
+ * - Qwen3-TTS supports voice cloning for CJK
  * 
  * WHY ELEVENLABS IS TERTIARY (NOT PRIMARY)?
  * - Premium tier only (cost)
@@ -113,7 +113,7 @@ export const INTEGRATED_PROVIDERS = {
   llm: ['claude_35_sonnet', 'alibaba_qwen_max', 'google_gemini_pro', 'openai_gpt4o', 'deepseek_v3', 'mistral', 'cohere', 'groq'],
   
   // TTS
-  tts: ['azure_neural', 'alibaba_cosyvoice', 'google_tts', 'elevenlabs', 'openai_tts', 'amazon_polly'],
+  tts: ['azure_neural', 'alibaba_qwen3_tts', 'google_tts', 'elevenlabs', 'openai_tts', 'amazon_polly'],
   
   // STT
   stt: ['deepgram_nova2', 'alibaba_paraformer', 'azure_stt', 'openai_whisper'],
@@ -125,7 +125,7 @@ export const INTEGRATED_PROVIDERS = {
   threed_vr_ar: ['meshy', 'alibaba_richdreamer', 'alibaba_mach', 'alibaba_taoavatar', 'modelslab_3d', 'replicate_3d'],
   
   // Audio
-  audio: ['alibaba_cosyvoice', 'elevenlabs', 'alibaba_funaudio', 'deepgram'],
+  audio: ['alibaba_qwen3_tts', 'elevenlabs', 'alibaba_funaudio', 'deepgram'],
   
   // Translation
   translation: ['deepl', 'alibaba_qwen_mt', 'azure_translator', 'google_translate', 'aws_translate'],
@@ -226,29 +226,29 @@ export interface TTSRoutingConfig {
  * ZONE-BASED TTS ROUTING
  * 
  * Claude Zone (Western/EU): Azure Neural PRIMARY (Viseme support for lip-sync)
- * Alibaba Zone (CJK): Alibaba CosyVoice PRIMARY (native dialect handling)
+ * Alibaba Zone (CJK): Alibaba Qwen3-TTS PRIMARY (native dialect handling)
  * Alibaba Zone (MENA/RTL): Azure Neural PRIMARY (7 Arabic dialects + RTL)
  * Gemini Zone (India/SEA/Africa): Azure Neural PRIMARY (Viseme + regional voices)
  */
 export const TTS_MASTER_ROUTING: Record<RegionalZone, TTSRoutingConfig> = {
   claude_zone: {
     primary: 'azure_neural',      // Viseme support for lip-sync
-    secondary: 'alibaba_cosyvoice', // Better than ElevenLabs for production
+    secondary: 'alibaba_qwen3_tts', // Better than ElevenLabs for production
     tertiary: 'google_tts',
     voiceClone: 'elevenlabs',     // Premium feature only
     visemeSupport: true,
   },
   alibaba_zone: {
-    primary: 'alibaba_cosyvoice', // CJK native handling (keigo, tones)
+    primary: 'alibaba_qwen3_tts', // CJK native handling (keigo, tones)
     secondary: 'azure_neural',    // Arabic dialects (7 supported)
     tertiary: 'google_tts',
-    voiceClone: 'alibaba_cosyvoice', // CosyVoice v2 clone
+    voiceClone: 'alibaba_qwen3_tts', // Qwen3-TTS clone
     visemeSupport: true,
   },
   gemini_zone: {
     primary: 'azure_neural',      // South Asian + African voices
     secondary: 'google_tts',
-    tertiary: 'alibaba_cosyvoice',
+    tertiary: 'alibaba_qwen3_tts',
     voiceClone: 'elevenlabs',
     visemeSupport: true,
   },
@@ -269,63 +269,63 @@ export const TTS_LANGUAGE_ROUTING: Record<string, TTSRoutingConfig> = {
   'en-AU': { primary: 'azure_neural', secondary: 'elevenlabs', tertiary: 'google_tts', visemeSupport: true },
   
   // Spanish (LATAM + Spain) - Azure PRIMARY for Visemes
-  es: { primary: 'azure_neural', secondary: 'alibaba_cosyvoice', tertiary: 'google_tts', visemeSupport: true },
-  'es-MX': { primary: 'azure_neural', secondary: 'alibaba_cosyvoice', tertiary: 'google_tts', visemeSupport: true },
-  'es-ES': { primary: 'azure_neural', secondary: 'alibaba_cosyvoice', tertiary: 'google_tts', visemeSupport: true },
+  es: { primary: 'azure_neural', secondary: 'alibaba_qwen3_tts', tertiary: 'google_tts', visemeSupport: true },
+  'es-MX': { primary: 'azure_neural', secondary: 'alibaba_qwen3_tts', tertiary: 'google_tts', visemeSupport: true },
+  'es-ES': { primary: 'azure_neural', secondary: 'alibaba_qwen3_tts', tertiary: 'google_tts', visemeSupport: true },
   
   // Portuguese (Brazil + Portugal)
-  pt: { primary: 'azure_neural', secondary: 'alibaba_cosyvoice', tertiary: 'google_tts', visemeSupport: true },
-  'pt-BR': { primary: 'azure_neural', secondary: 'alibaba_cosyvoice', tertiary: 'google_tts', visemeSupport: true },
+  pt: { primary: 'azure_neural', secondary: 'alibaba_qwen3_tts', tertiary: 'google_tts', visemeSupport: true },
+  'pt-BR': { primary: 'azure_neural', secondary: 'alibaba_qwen3_tts', tertiary: 'google_tts', visemeSupport: true },
   
-  // CJK Languages - Alibaba CosyVoice PRIMARY
-  zh: { primary: 'alibaba_cosyvoice', secondary: 'azure_neural', tertiary: 'google_tts', voiceClone: 'alibaba_cosyvoice', visemeSupport: true },
-  'zh-CN': { primary: 'alibaba_cosyvoice', secondary: 'azure_neural', tertiary: 'google_tts', voiceClone: 'alibaba_cosyvoice', visemeSupport: true },
-  'zh-TW': { primary: 'alibaba_cosyvoice', secondary: 'azure_neural', tertiary: 'google_tts', voiceClone: 'alibaba_cosyvoice', visemeSupport: true },
-  ja: { primary: 'alibaba_cosyvoice', secondary: 'azure_neural', tertiary: 'google_tts', visemeSupport: true },
-  ko: { primary: 'alibaba_cosyvoice', secondary: 'azure_neural', tertiary: 'google_tts', visemeSupport: true },
+  // CJK Languages - Alibaba Qwen3-TTS PRIMARY
+  zh: { primary: 'alibaba_qwen3_tts', secondary: 'azure_neural', tertiary: 'google_tts', voiceClone: 'alibaba_qwen3_tts', visemeSupport: true },
+  'zh-CN': { primary: 'alibaba_qwen3_tts', secondary: 'azure_neural', tertiary: 'google_tts', voiceClone: 'alibaba_qwen3_tts', visemeSupport: true },
+  'zh-TW': { primary: 'alibaba_qwen3_tts', secondary: 'azure_neural', tertiary: 'google_tts', voiceClone: 'alibaba_qwen3_tts', visemeSupport: true },
+  ja: { primary: 'alibaba_qwen3_tts', secondary: 'azure_neural', tertiary: 'google_tts', visemeSupport: true },
+  ko: { primary: 'alibaba_qwen3_tts', secondary: 'azure_neural', tertiary: 'google_tts', visemeSupport: true },
   
   // Arabic dialects (7 dialects) - Azure Neural PRIMARY for RTL + Visemes
-  ar: { primary: 'azure_neural', secondary: 'alibaba_cosyvoice', tertiary: 'google_tts', visemeSupport: true },
-  'ar-SA': { primary: 'azure_neural', secondary: 'alibaba_cosyvoice', tertiary: 'google_tts', visemeSupport: true },
-  'ar-AE': { primary: 'azure_neural', secondary: 'alibaba_cosyvoice', tertiary: 'google_tts', visemeSupport: true },
-  'ar-EG': { primary: 'azure_neural', secondary: 'alibaba_cosyvoice', tertiary: 'google_tts', visemeSupport: true },
-  'ar-MA': { primary: 'azure_neural', secondary: 'alibaba_cosyvoice', tertiary: 'google_tts', visemeSupport: true },
-  'ar-JO': { primary: 'azure_neural', secondary: 'alibaba_cosyvoice', tertiary: 'google_tts', visemeSupport: true },
-  'ar-IQ': { primary: 'azure_neural', secondary: 'alibaba_cosyvoice', tertiary: 'google_tts', visemeSupport: true },
-  'ar-LB': { primary: 'azure_neural', secondary: 'alibaba_cosyvoice', tertiary: 'google_tts', visemeSupport: true },
+  ar: { primary: 'azure_neural', secondary: 'alibaba_qwen3_tts', tertiary: 'google_tts', visemeSupport: true },
+  'ar-SA': { primary: 'azure_neural', secondary: 'alibaba_qwen3_tts', tertiary: 'google_tts', visemeSupport: true },
+  'ar-AE': { primary: 'azure_neural', secondary: 'alibaba_qwen3_tts', tertiary: 'google_tts', visemeSupport: true },
+  'ar-EG': { primary: 'azure_neural', secondary: 'alibaba_qwen3_tts', tertiary: 'google_tts', visemeSupport: true },
+  'ar-MA': { primary: 'azure_neural', secondary: 'alibaba_qwen3_tts', tertiary: 'google_tts', visemeSupport: true },
+  'ar-JO': { primary: 'azure_neural', secondary: 'alibaba_qwen3_tts', tertiary: 'google_tts', visemeSupport: true },
+  'ar-IQ': { primary: 'azure_neural', secondary: 'alibaba_qwen3_tts', tertiary: 'google_tts', visemeSupport: true },
+  'ar-LB': { primary: 'azure_neural', secondary: 'alibaba_qwen3_tts', tertiary: 'google_tts', visemeSupport: true },
   
   // South Asian - Azure Neural PRIMARY for Visemes
-  hi: { primary: 'azure_neural', secondary: 'google_tts', tertiary: 'alibaba_cosyvoice', visemeSupport: true },
-  'hi-IN': { primary: 'azure_neural', secondary: 'google_tts', tertiary: 'alibaba_cosyvoice', visemeSupport: true },
-  bn: { primary: 'azure_neural', secondary: 'google_tts', tertiary: 'alibaba_cosyvoice', visemeSupport: true },
-  ur: { primary: 'azure_neural', secondary: 'google_tts', tertiary: 'alibaba_cosyvoice', visemeSupport: true },
-  ta: { primary: 'azure_neural', secondary: 'google_tts', tertiary: 'alibaba_cosyvoice', visemeSupport: true },
-  te: { primary: 'azure_neural', secondary: 'google_tts', tertiary: 'alibaba_cosyvoice', visemeSupport: true },
+  hi: { primary: 'azure_neural', secondary: 'google_tts', tertiary: 'alibaba_qwen3_tts', visemeSupport: true },
+  'hi-IN': { primary: 'azure_neural', secondary: 'google_tts', tertiary: 'alibaba_qwen3_tts', visemeSupport: true },
+  bn: { primary: 'azure_neural', secondary: 'google_tts', tertiary: 'alibaba_qwen3_tts', visemeSupport: true },
+  ur: { primary: 'azure_neural', secondary: 'google_tts', tertiary: 'alibaba_qwen3_tts', visemeSupport: true },
+  ta: { primary: 'azure_neural', secondary: 'google_tts', tertiary: 'alibaba_qwen3_tts', visemeSupport: true },
+  te: { primary: 'azure_neural', secondary: 'google_tts', tertiary: 'alibaba_qwen3_tts', visemeSupport: true },
   
   // SEA
-  id: { primary: 'azure_neural', secondary: 'google_tts', tertiary: 'alibaba_cosyvoice', visemeSupport: true },
-  vi: { primary: 'azure_neural', secondary: 'google_tts', tertiary: 'alibaba_cosyvoice', visemeSupport: true },
-  th: { primary: 'azure_neural', secondary: 'google_tts', tertiary: 'alibaba_cosyvoice', visemeSupport: true },
-  ms: { primary: 'azure_neural', secondary: 'google_tts', tertiary: 'alibaba_cosyvoice', visemeSupport: true },
+  id: { primary: 'azure_neural', secondary: 'google_tts', tertiary: 'alibaba_qwen3_tts', visemeSupport: true },
+  vi: { primary: 'azure_neural', secondary: 'google_tts', tertiary: 'alibaba_qwen3_tts', visemeSupport: true },
+  th: { primary: 'azure_neural', secondary: 'google_tts', tertiary: 'alibaba_qwen3_tts', visemeSupport: true },
+  ms: { primary: 'azure_neural', secondary: 'google_tts', tertiary: 'alibaba_qwen3_tts', visemeSupport: true },
   
   // African
-  sw: { primary: 'azure_neural', secondary: 'google_tts', tertiary: 'alibaba_cosyvoice', visemeSupport: false },
-  yo: { primary: 'google_tts', secondary: 'azure_neural', tertiary: 'alibaba_cosyvoice', visemeSupport: false },
-  am: { primary: 'google_tts', secondary: 'azure_neural', tertiary: 'alibaba_cosyvoice', visemeSupport: false },
+  sw: { primary: 'azure_neural', secondary: 'google_tts', tertiary: 'alibaba_qwen3_tts', visemeSupport: false },
+  yo: { primary: 'google_tts', secondary: 'azure_neural', tertiary: 'alibaba_qwen3_tts', visemeSupport: false },
+  am: { primary: 'google_tts', secondary: 'azure_neural', tertiary: 'alibaba_qwen3_tts', visemeSupport: false },
   
   // European
-  fr: { primary: 'azure_neural', secondary: 'alibaba_cosyvoice', tertiary: 'google_tts', visemeSupport: true },
-  de: { primary: 'azure_neural', secondary: 'alibaba_cosyvoice', tertiary: 'google_tts', visemeSupport: true },
-  it: { primary: 'azure_neural', secondary: 'alibaba_cosyvoice', tertiary: 'google_tts', visemeSupport: true },
-  nl: { primary: 'azure_neural', secondary: 'alibaba_cosyvoice', tertiary: 'google_tts', visemeSupport: true },
-  pl: { primary: 'azure_neural', secondary: 'alibaba_cosyvoice', tertiary: 'google_tts', visemeSupport: true },
-  ru: { primary: 'azure_neural', secondary: 'google_tts', tertiary: 'alibaba_cosyvoice', visemeSupport: true },
+  fr: { primary: 'azure_neural', secondary: 'alibaba_qwen3_tts', tertiary: 'google_tts', visemeSupport: true },
+  de: { primary: 'azure_neural', secondary: 'alibaba_qwen3_tts', tertiary: 'google_tts', visemeSupport: true },
+  it: { primary: 'azure_neural', secondary: 'alibaba_qwen3_tts', tertiary: 'google_tts', visemeSupport: true },
+  nl: { primary: 'azure_neural', secondary: 'alibaba_qwen3_tts', tertiary: 'google_tts', visemeSupport: true },
+  pl: { primary: 'azure_neural', secondary: 'alibaba_qwen3_tts', tertiary: 'google_tts', visemeSupport: true },
+  ru: { primary: 'azure_neural', secondary: 'google_tts', tertiary: 'alibaba_qwen3_tts', visemeSupport: true },
   
   // Hebrew (RTL) - Azure PRIMARY for RTL support
-  he: { primary: 'azure_neural', secondary: 'google_tts', tertiary: 'alibaba_cosyvoice', visemeSupport: true },
+  he: { primary: 'azure_neural', secondary: 'google_tts', tertiary: 'alibaba_qwen3_tts', visemeSupport: true },
   
   // Persian (RTL)
-  fa: { primary: 'azure_neural', secondary: 'google_tts', tertiary: 'alibaba_cosyvoice', visemeSupport: true },
+  fa: { primary: 'azure_neural', secondary: 'google_tts', tertiary: 'alibaba_qwen3_tts', visemeSupport: true },
 };
 
 // ============================================
@@ -508,11 +508,11 @@ export const THREED_MASTER_ROUTING = {
 // ============================================
 export const AUDIO_MASTER_ROUTING = {
   voice_clone: {
-    primary: 'alibaba_cosyvoice',
+    primary: 'alibaba_qwen3_tts',
     secondary: 'elevenlabs',
     tertiary: 'azure_custom',
     fallback: 'modelslab_voice',
-    models: ['cosyvoice-clone', 'elevenlabs-clone', 'azure-custom-neural'],
+    models: ['qwen3-tts-clone', 'elevenlabs-clone', 'azure-custom-neural'],
   },
   noise_removal: {
     primary: 'deepgram',
@@ -594,7 +594,7 @@ export const TEMPLATE_MASTER_ROUTING = {
     imageProvider: 'gemini_3_pro',
     ttsProvider: 'azure_neural',
     avatarProvider: 'alibaba_wan22',
-    fallbacks: ['sora2', 'vertex_imagen3', 'alibaba_cosyvoice', 'modelslab'],
+    fallbacks: ['sora2', 'vertex_imagen3', 'alibaba_qwen3_tts', 'modelslab'],
   },
   educational: {
     videoProvider: 'alibaba_wan26',
@@ -615,7 +615,7 @@ export const TEMPLATE_MASTER_ROUTING = {
     imageProvider: 'vertex_imagen3',
     ttsProvider: 'azure_neural',
     avatarProvider: 'azure_avatar',
-    fallbacks: ['alibaba_wan26', 'gemini_3_pro', 'alibaba_cosyvoice', 'alibaba_wan22'],
+    fallbacks: ['alibaba_wan26', 'gemini_3_pro', 'alibaba_qwen3_tts', 'alibaba_wan22'],
   },
 } as const;
 
@@ -682,11 +682,11 @@ export function getZoneForLanguage(languageCode: string): RegionalZone {
 // ============================================
 export const ROUTING_SUMMARY = {
   tts: {
-    western_europe_latam: 'Azure Neural (PRIMARY) → Alibaba CosyVoice → Google TTS',
-    cjk: 'Alibaba CosyVoice (PRIMARY) → Azure Neural → Google TTS',
-    mena_rtl: 'Azure Neural (PRIMARY) → Alibaba CosyVoice → Google TTS',
-    south_asia_africa: 'Azure Neural (PRIMARY) → Google TTS → Alibaba CosyVoice',
-    voice_clone: 'Alibaba CosyVoice (CJK) | ElevenLabs (Premium Western)',
+    western_europe_latam: 'Azure Neural (PRIMARY) → Alibaba Qwen3-TTS → Google TTS',
+    cjk: 'Alibaba Qwen3-TTS (PRIMARY) → Azure Neural → Google TTS',
+    mena_rtl: 'Azure Neural (PRIMARY) → Alibaba Qwen3-TTS → Google TTS',
+    south_asia_africa: 'Azure Neural (PRIMARY) → Google TTS → Alibaba Qwen3-TTS',
+    voice_clone: 'Alibaba Qwen3-TTS (CJK) | ElevenLabs (Premium Western)',
   },
   video: {
     text_to_video: 'Vertex Veo 3 → Sora 2 → Alibaba Wan 2.6 → ModelsLab',

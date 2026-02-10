@@ -445,7 +445,7 @@ async function generateElevenLabsTTS(text: string, voiceId: string = 'JBFqnCBsd6
 
 // ============================================
 // ALIBABA QWEN3-TTS-FLASH — Singapore endpoint for CJK zone
-// (Replaces legacy CosyVoice — Qwen3 is the current production TTS)
+// (Replaces legacy CosyVoice WebSocket — Qwen3-TTS-Flash is the current production TTS)
 // ============================================
 const CJK_LANG_CODES = ['ja-JP', 'zh-CN', 'ko-KR', 'th-TH', 'vi-VN', 'id-ID'];
 

@@ -2065,7 +2065,7 @@ export function PresentationWizard({
                                 </div>
                               </SelectItem>
                               <SelectItem value="azure">Azure Neural TTS {regionalVoiceConfig.ttsProvider === 'azure' ? '⭐' : ''}</SelectItem>
-                              <SelectItem value="alibaba_cosyvoice">CosyVoice {regionalVoiceConfig.ttsProvider === 'alibaba_cosyvoice' ? '⭐' : ''}</SelectItem>
+                              <SelectItem value="alibaba_qwen3_tts">Qwen3-TTS {regionalVoiceConfig.ttsProvider === 'alibaba_qwen3_tts' ? '⭐' : ''}</SelectItem>
                               <SelectItem value="google">Google WaveNet</SelectItem>
                               <SelectItem value="openai">OpenAI TTS</SelectItem>
                             </SelectContent>
@@ -2086,7 +2086,7 @@ export function PresentationWizard({
                                 const langConfig = getRegionalConfig(undefined, lang);
                                 return (
                                   <Badge key={lang} variant="outline" className="text-[9px]">
-                                    {lang.toUpperCase()}: {langConfig.ttsProvider === 'alibaba_cosyvoice' ? 'CosyVoice' : 'Azure Neural'}
+                                    {lang.toUpperCase()}: {langConfig.ttsProvider === 'alibaba_qwen3_tts' ? 'Qwen3-TTS' : 'Azure Neural'}
                                   </Badge>
                                 );
                               })}
