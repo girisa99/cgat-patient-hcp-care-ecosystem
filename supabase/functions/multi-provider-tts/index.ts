@@ -698,11 +698,11 @@ async function generateAlibabaTTS(text: string, languageCode?: string, voice?: s
   const ALIBABA_VA_KEY = Deno.env.get('ALIBABA_API_KEY');
   const ALIBABA_CHINA_KEY = Deno.env.get('ALIBABA_CHINA_API_KEY');
   
-  const configs: Array<{ key: string; region: string; compatBase: string; restBase: string }> = [];
+  const configs: Array<{ key: string; region: string; restBase: string }> = [];
   // Singapore first (primary for Qwen TTS)
-  if (ALIBABA_SG_KEY) configs.push({ key: ALIBABA_SG_KEY, region: 'Singapore', compatBase: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1', restBase: 'https://dashscope-intl.aliyuncs.com/api/v1' });
-  if (ALIBABA_VA_KEY) configs.push({ key: ALIBABA_VA_KEY, region: 'Virginia', compatBase: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1', restBase: 'https://dashscope-intl.aliyuncs.com/api/v1' });
-  if (ALIBABA_CHINA_KEY) configs.push({ key: ALIBABA_CHINA_KEY, region: 'China', compatBase: 'https://dashscope.aliyuncs.com/compatible-mode/v1', restBase: 'https://dashscope.aliyuncs.com/api/v1' });
+  if (ALIBABA_SG_KEY) configs.push({ key: ALIBABA_SG_KEY, region: 'Singapore', restBase: 'https://dashscope-intl.aliyuncs.com/api/v1' });
+  if (ALIBABA_VA_KEY) configs.push({ key: ALIBABA_VA_KEY, region: 'Virginia', restBase: 'https://dashscope-intl.aliyuncs.com/api/v1' });
+  if (ALIBABA_CHINA_KEY) configs.push({ key: ALIBABA_CHINA_KEY, region: 'China', restBase: 'https://dashscope.aliyuncs.com/api/v1' });
   
   if (configs.length === 0) throw new Error('No Alibaba API key configured');
   
@@ -715,20 +715,24 @@ async function generateAlibabaTTS(text: string, languageCode?: string, voice?: s
   for (const model of qwenModels) {
     for (const config of configs) {
       try {
-        console.log(`🎤 [Path 1] ${model} REST on ${config.region}: ${config.compatBase}`);
-        const endpoint = `${config.compatBase}/audio/speech`;
+        console.log(`🎤 [Path 1] ${model} REST on ${config.region}: ${config.restBase}`);
+        const endpoint = `${config.restBase}/services/aigc/multimodal-generation/generation`;
         const response = await fetch(endpoint, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${config.key}`,
             'Content-Type': 'application/json',
+            'X-DashScope-Async': 'disable',
           },
           body: JSON.stringify({
             model: model,
-            input: text,
-            voice: selectedVoice,
-            response_format: 'mp3',
-            speed: 1.0,
+            input: {
+              text: text,
+            },
+            parameters: {
+              voice: selectedVoice,
+              speed: 1.0,
+            },
           }),
         });
 
@@ -737,12 +741,37 @@ async function generateAlibabaTTS(text: string, languageCode?: string, voice?: s
           throw new Error(`${model} error on ${config.region} (${response.status}): ${errorText}`);
         }
 
-        const audioBuffer = await response.arrayBuffer();
-        if (audioBuffer.byteLength === 0) {
-          throw new Error(`${model} returned empty audio on ${config.region}`);
+        const result = await response.json();
+        
+        // Extract audio from response - Qwen TTS returns output.audio.url and output.audio.data
+        const audioData = result.output?.audio?.data;
+        const audioUrl = result.output?.audio?.url || result.output?.audio_url;
+        
+        if (audioData && audioData.length > 0) {
+          const binaryString = atob(audioData);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          if (bytes.length === 0) {
+            throw new Error(`${model} returned empty audio on ${config.region}`);
+          }
+          console.log(`✅ ${model} REST succeeded on ${config.region}: ${bytes.length} bytes`);
+          return bytes.buffer;
         }
-        console.log(`✅ ${model} REST succeeded on ${config.region}: ${audioBuffer.byteLength} bytes`);
-        return audioBuffer;
+        
+        if (audioUrl) {
+          const audioResponse = await fetch(audioUrl);
+          if (!audioResponse.ok) throw new Error('Failed to download Qwen TTS audio');
+          const buffer = await audioResponse.arrayBuffer();
+          if (buffer.byteLength === 0) {
+            throw new Error(`${model} audio download empty on ${config.region}`);
+          }
+          console.log(`✅ ${model} REST succeeded on ${config.region}: ${buffer.byteLength} bytes`);
+          return buffer;
+        }
+        
+        throw new Error(`${model} returned no audio data on ${config.region}`);
       } catch (err) {
         console.warn(`⚠️ ${model} REST failed on ${config.region}: ${(err as Error).message}`);
       }
