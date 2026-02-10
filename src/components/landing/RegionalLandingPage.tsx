@@ -529,20 +529,35 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
     },
   ];
 
-  // Pause auto-advance while voiceover is playing
+  // Auto-advance: wait for voiceover to finish, then hold 3s before advancing
+  const advanceTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const wasSpeakingRef = React.useRef(false);
+
   React.useEffect(() => {
-    if (isSpeaking) return; // Don't auto-advance during voiceover
-    const timer = setInterval(() => {
+    if (advanceTimerRef.current) {
+      clearTimeout(advanceTimerRef.current);
+      advanceTimerRef.current = null;
+    }
+
+    if (isSpeaking) {
+      // Track that voiceover started — we'll wait for it to end
+      wasSpeakingRef.current = true;
+      return;
+    }
+
+    // If voiceover just finished, give a short pause then advance
+    const delay = wasSpeakingRef.current ? 3000 : 10000;
+    wasSpeakingRef.current = false;
+
+    advanceTimerRef.current = setTimeout(() => {
       setDirection(1);
       setCurrent((prev) => (prev + 1) % slides.length);
-    }, 10000); // 10s per slide for comfortable reading
-    return () => clearInterval(timer);
-  }, [slides.length, isSpeaking]);
+    }, delay);
 
-  // Stop voiceover when slide changes
-  React.useEffect(() => {
-    stop();
-  }, [current, stop]);
+    return () => {
+      if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
+    };
+  }, [slides.length, isSpeaking]);
   
 
   const goTo = (index: number) => {
