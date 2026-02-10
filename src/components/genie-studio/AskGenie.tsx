@@ -236,7 +236,7 @@ const WORKFLOW_DIAGRAMS: Record<GenieProduct, { id: string; title: string; diagr
       id: 'create-show-flow',
       title: 'Create Your First Show',
       diagram: `graph TD
-    A[🎬 Start in Genie Arc] --> B[Choose Show Type]
+    A[🎬 Start in Genie Hub] --> B[Choose Show Type]
     B --> C[Podcast/Video/Webinar/Live]
     C --> D[Add Show Details]
     D --> E[Set Schedule]
@@ -442,13 +442,13 @@ const PRODUCT_CONTEXTS: Record<GenieProduct, {
   workflows: Array<{ id: string; title: string; description: string; steps: string[] }>;
 }> = {
   arc: {
-    name: 'Genie Arc',
+    name: 'Genie Hub',
     icon: <Film className="h-4 w-4" />,
     color: 'from-blue-500 to-cyan-500',
     tagline: ORIGINAL_TAGLINES.arc,
     description: PRODUCT_DESCRIPTIONS.arc,
     emoji: '🎬',
-    systemContext: `You are Ask Genie, a warm, emotionally intelligent, and genuinely caring AI assistant for Genie Arc - the Production Hub.
+    systemContext: `You are Ask Genie, a warm, emotionally intelligent, and genuinely caring AI assistant for Genie Hub - the Creative Command Center.
 
 TAGLINE: "${ORIGINAL_TAGLINES.arc}" - This is sacred, never change it!
 DESCRIPTION: ${PRODUCT_DESCRIPTIONS.arc}

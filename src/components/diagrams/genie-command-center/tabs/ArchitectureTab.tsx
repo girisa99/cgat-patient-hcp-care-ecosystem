@@ -35,7 +35,7 @@ const architectureDiagrams = [
   { id: 'mind', name: 'Genie Mind', icon: Brain, description: 'AI Intelligence Layer - Model Routing, Script Engine, TTS (30 pipelines)' },
   { id: 'vibe', name: 'Genie Vibe', icon: Film, description: 'Production Layer - Recording, Avatar, Dubbing (74 pipelines)' },
   { id: 'spark', name: 'Genie Spark', icon: Zap, description: 'Quick-Start Engine - Idea to Script (28 pipelines)' },
-  { id: 'arc', name: 'Genie Arc/Hub', icon: Users, description: 'Production Journey - Scheduling, Collaboration (14 pipelines)' },
+  { id: 'arc', name: 'Genie Hub', icon: Users, description: 'Creative Command Center - Scheduling, Collaboration (14 pipelines)' },
   { id: 'deck', name: 'Genie Deck', icon: Presentation, description: 'Presentation Generator - Ideas to Impact (34 pipelines)' },
   { id: 'cast', name: 'Genie Cast', icon: Globe, description: 'Distribution Engine - Make It. Show It. Scale It. (26 pipelines)' },
   { id: 'ask', name: 'Ask Genie', icon: Network, description: 'Conversational AI and context management' },

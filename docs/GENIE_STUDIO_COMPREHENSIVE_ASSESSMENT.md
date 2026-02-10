@@ -1,4 +1,4 @@
-# Genie Studio Comprehensive Assessment & Implementation Roadmap
+# Genie Suite Comprehensive Assessment & Implementation Roadmap
 
 > **Document Version:** 1.0.0  
 > **Last Updated:** 2026-01-06  
@@ -174,7 +174,7 @@ Components that could benefit from error boundaries:
 ### Recommended Architecture
 
 ```
-/genie-studio          → Main Genie Studio (included in Starter)
+/genie-studio          → Main Genie Suite (included in Starter)
 /genie-spark           → Genie Spark standalone (Pro+ only)
 ├── /genie-spark/spark       → Smart Content Pipeline
 ├── /genie-spark/full-pipeline → Multi-source orchestration

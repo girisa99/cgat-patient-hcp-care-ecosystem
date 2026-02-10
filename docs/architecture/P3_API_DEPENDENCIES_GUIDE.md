@@ -262,4 +262,4 @@ Set up alerts for:
 
 ---
 
-*Document maintained by Genie Studio DevOps Team*
+*Document maintained by Genie Suite DevOps Team*

@@ -224,12 +224,12 @@ const ComparisonTable = () => {
     {
       name: 'Genie Products',
       features: [
-        { name: 'Genie Studio', free: 'Basic', starter: 'Core', business: 'Full', pro: 'Enterprise' },
+        { name: 'Genie Suite', free: 'Basic', starter: 'Core', business: 'Full', pro: 'Enterprise' },
         { name: 'Genie Spark (Scripts)', free: '5', starter: '100', business: '500', pro: 'Unlimited' },
         { name: 'Genie Vibe (Recording)', free: '—', starter: '5 hrs', business: '25 hrs', pro: 'Unlimited' },
         { name: 'Genie Mind (RAG)', free: '—', starter: '1K docs', business: '10K docs', pro: 'Unlimited' },
         { name: 'Production Hub', free: '—', starter: '—', business: '5 shows', pro: 'Unlimited' },
-        { name: 'Genie Arc (Collaboration)', free: '—', starter: '—', business: '—', pro: '✓' },
+        { name: 'Genie Hub (Collaboration)', free: '—', starter: '—', business: '—', pro: '✓' },
       ]
     },
     {

@@ -63,11 +63,11 @@ const typeConfig: Record<FindingType, { color: string; icon: React.ReactNode; la
 
 // Page route display names
 const pageNames: Record<string, string> = {
-  '/genie-studio': 'Genie Studio',
+  '/genie-studio': 'Genie Suite',
   '/genie-vibe': 'Genie Vibe',
   '/genie-spark': 'Genie Spark',
   '/genie-mind': 'Genie Mind',
-  '/genie-arc': 'Genie Arc',
+  '/genie-arc': 'Genie Hub',
   '/production-hub': 'Production Hub',
   '/agents': 'Agents',
   '/admin': 'Admin',

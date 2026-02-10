@@ -1,5 +1,5 @@
 /**
- * GENIE STUDIO HIGH-LEVEL VIDEO SCRIPTS
+ * GENIE SUITE HIGH-LEVEL VIDEO SCRIPTS
  * 
  * Simplified, product-focused scripts for landing page showcase
  * Focus: What each product IS and its VALUE, not UI/feature details
@@ -22,7 +22,7 @@ export interface ChapterScript {
 }
 
 export const CHAPTERS: ChapterScript[] = [
-  { id: 'opening', product: 'Genie Studio', tagline: 'Mind to Media', durationSeconds: 25 },
+  { id: 'opening', product: 'Genie Suite', tagline: 'Mind to Media', durationSeconds: 25 },
   { id: 'spark', product: 'Genie Spark', tagline: 'Ignite Your Ideas', durationSeconds: 20 },
   { id: 'mind', product: 'Genie Mind', tagline: 'AI That Understands', durationSeconds: 20 },
   { id: 'vibe', product: 'Genie Vibe', tagline: 'Script to Screen', durationSeconds: 20 },
@@ -30,14 +30,14 @@ export const CHAPTERS: ChapterScript[] = [
   { id: 'arc', product: 'Production Hub', tagline: 'Infinite Possibilities', durationSeconds: 18 },
   { id: 'askGenie', product: 'Ask Genie', tagline: 'Your Wish is My Command', durationSeconds: 18 },
   { id: 'cast', product: 'Genie Cast', tagline: 'Make It. Show It. Scale It.', durationSeconds: 18 },
-  { id: 'closing', product: 'Genie Studio', tagline: 'Your Wish is Our Command', durationSeconds: 15 },
+  { id: 'closing', product: 'Genie Suite', tagline: 'Your Wish is Our Command', durationSeconds: 15 },
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // ENGLISH (en-US) - Professional, energetic, clear
 // ═══════════════════════════════════════════════════════════════════════════════
 export const ENGLISH_SCRIPTS: Record<string, string> = {
-  opening: `Welcome to Genie Studio – where your ideas become reality.
+  opening: `Welcome to Genie Suite – where your ideas become reality.
 
 Seven powerful products. 206 AI pipelines. 12 world-class providers. Over 70 languages with authentic regional voices.
 
@@ -89,9 +89,9 @@ Real-time analytics. A/B testing. 50+ countries. 70+ languages.
 
 Your story, everywhere.`,
 
-  closing: `This is Genie Studio. Seven products. 206 pipelines. Unlimited possibilities.
+  closing: `This is Genie Suite. Seven products. 206 pipelines. Unlimited possibilities.
 
-Spark ignites ideas. Mind understands. Vibe visualizes. Deck presents. Arc perfects. Ask Genie orchestrates. Cast amplifies.
+Spark ignites ideas. Mind understands. Vibe visualizes. Deck presents. Hub perfects. Ask Genie orchestrates. Cast amplifies.
 
 Your wish is our command.`
 };
@@ -237,7 +237,7 @@ AI اوتاروں کے ساتھ پیشہ ورانہ ویڈیو پروڈکشن۔ 
 // INDONESIAN (id-ID) - Azure Neural TTS (Gemini Zone)
 // ═══════════════════════════════════════════════════════════════════════════════
 export const INDONESIAN_SCRIPTS: Record<string, string> = {
-  opening: `Selamat datang di Genie Studio – tempat ide-idemu menjadi kenyataan.
+  opening: `Selamat datang di Genie Suite – tempat ide-idemu menjadi kenyataan.
 
 Tujuh produk andalan. 206 pipeline AI. 12 penyedia kelas dunia. Lebih dari 70 bahasa dengan suara regional asli.
 
@@ -269,7 +269,7 @@ Satu prompt. Satu klik. Presentasi profesional lengkap dengan elemen 3D dan graf
 
 101 framework. 25 industri. Dari ruang rapat ke media sosial.`,
 
-  closing: `Inilah Genie Studio. Tujuh produk. 206 pipeline. Kemungkinan tak terbatas.
+  closing: `Inilah Genie Suite. Tujuh produk. 206 pipeline. Kemungkinan tak terbatas.
 
 Keinginanmu adalah perintah kami.`
 };
@@ -278,7 +278,7 @@ Keinginanmu adalah perintah kami.`
 // SWAHILI (sw-KE) - Azure Neural TTS (Gemini Zone) - East Africa
 // ═══════════════════════════════════════════════════════════════════════════════
 export const SWAHILI_SCRIPTS: Record<string, string> = {
-  opening: `Karibu Genie Studio – mahali ambapo mawazo yako yanakuwa kweli.
+  opening: `Karibu Genie Suite – mahali ambapo mawazo yako yanakuwa kweli.
 
 Bidhaa saba zenye nguvu. Mabomba 206 ya AI. Watoa huduma 12 wa kiwango cha dunia. Zaidi ya lugha 70 na sauti za kweli za kikanda.
 
@@ -304,7 +304,7 @@ Uzalishaji wa video wa kitaalamu na avatars za AI zinazozungumza kwa kawaida kat
 
 Mabomba 74 ya video. Ubora wa 4K. Kutoka simu yako hadi dunia.`,
 
-  closing: `Hii ni Genie Studio. Bidhaa saba. Mabomba 206. Uwezekano usio na kikomo.
+  closing: `Hii ni Genie Suite. Bidhaa saba. Mabomba 206. Uwezekano usio na kikomo.
 
 Tamaa yako ni amri yetu.`
 };
@@ -348,7 +348,7 @@ export const ARABIC_SCRIPTS: Record<string, string> = {
 // GERMAN (de-DE) - Azure Neural TTS (Superior Prosody)
 // ═══════════════════════════════════════════════════════════════════════════════
 export const GERMAN_SCRIPTS: Record<string, string> = {
-  opening: `Willkommen bei Genie Studio – wo Ihre Ideen Wirklichkeit werden.
+  opening: `Willkommen bei Genie Suite – wo Ihre Ideen Wirklichkeit werden.
 
 Sieben leistungsstarke Produkte. 206 KI-Pipelines. 12 erstklassige Anbieter. Über 70 Sprachen mit authentischen regionalen Stimmen.
 
@@ -374,7 +374,7 @@ Professionelle Videoproduktion mit KI-Avataren, die in jeder Sprache natürlich 
 
 74 Video-Pipelines. 4K-Auflösung. Von Ihrem Handy in die Welt.`,
 
-  closing: `Das ist Genie Studio. Sieben Produkte. 206 Pipelines. Unbegrenzte Möglichkeiten.
+  closing: `Das ist Genie Suite. Sieben Produkte. 206 Pipelines. Unbegrenzte Möglichkeiten.
 
 Ihr Wunsch ist unser Befehl.`
 };
@@ -383,7 +383,7 @@ Ihr Wunsch ist unser Befehl.`
 // FRENCH (fr-FR) - ElevenLabs TTS (Claude Zone)
 // ═══════════════════════════════════════════════════════════════════════════════
 export const FRENCH_SCRIPTS: Record<string, string> = {
-  opening: `Bienvenue dans Genie Studio – où vos idées deviennent réalité.
+  opening: `Bienvenue dans Genie Suite – où vos idées deviennent réalité.
 
 Sept produits puissants. 206 pipelines IA. 12 fournisseurs de classe mondiale. Plus de 70 langues avec des voix régionales authentiques.
 
@@ -409,7 +409,7 @@ Production vidéo professionnelle avec des avatars IA qui parlent naturellement 
 
 74 pipelines vidéo. Résolution 4K. De votre téléphone au monde.`,
 
-  closing: `Voici Genie Studio. Sept produits. 206 pipelines. Des possibilités illimitées.
+  closing: `Voici Genie Suite. Sept produits. 206 pipelines. Des possibilités illimitées.
 
 Votre souhait est notre commande.`
 };
@@ -418,7 +418,7 @@ Votre souhait est notre commande.`
 // SPANISH (es-ES) - ElevenLabs TTS (Claude Zone)
 // ═══════════════════════════════════════════════════════════════════════════════
 export const SPANISH_SCRIPTS: Record<string, string> = {
-  opening: `Bienvenido a Genie Studio – donde tus ideas se hacen realidad.
+  opening: `Bienvenido a Genie Suite – donde tus ideas se hacen realidad.
 
 Siete productos potentes. 206 pipelines de IA. 12 proveedores de clase mundial. Más de 70 idiomas con voces regionales auténticas.
 
@@ -444,7 +444,7 @@ Producción de video profesional con avatares de IA que hablan naturalmente en c
 
 74 pipelines de video. Resolución 4K. De tu teléfono al mundo.`,
 
-  closing: `Esto es Genie Studio. Siete productos. 206 pipelines. Posibilidades ilimitadas.
+  closing: `Esto es Genie Suite. Siete productos. 206 pipelines. Posibilidades ilimitadas.
 
 Tu deseo es nuestra orden.`
 };
@@ -453,7 +453,7 @@ Tu deseo es nuestra orden.`
 // PORTUGUESE (pt-BR) - Azure Neural TTS (Superior Prosody)
 // ═══════════════════════════════════════════════════════════════════════════════
 export const PORTUGUESE_SCRIPTS: Record<string, string> = {
-  opening: `Bem-vindo ao Genie Studio – onde suas ideias se tornam realidade.
+  opening: `Bem-vindo ao Genie Suite – onde suas ideias se tornam realidade.
 
 Sete produtos poderosos. 206 pipelines de IA. 12 provedores de classe mundial. Mais de 70 idiomas com vozes regionais autênticas.
 
@@ -479,7 +479,7 @@ Produção de vídeo profissional com avatares de IA que falam naturalmente em q
 
 74 pipelines de vídeo. Resolução 4K. Do seu celular para o mundo.`,
 
-  closing: `Este é o Genie Studio. Sete produtos. 206 pipelines. Possibilidades ilimitadas.
+  closing: `Este é o Genie Suite. Sete produtos. 206 pipelines. Possibilidades ilimitadas.
 
 Seu desejo é nossa ordem.`
 };
@@ -488,7 +488,7 @@ Seu desejo é nossa ordem.`
 // CHINESE (zh-CN) - Alibaba Qwen3-TTS (Alibaba Zone)
 // ═══════════════════════════════════════════════════════════════════════════════
 export const CHINESE_SCRIPTS: Record<string, string> = {
-  opening: `欢迎来到 Genie Studio – 让您的想法变为现实。
+  opening: `欢迎来到 Genie Suite – 让您的想法变为现实。
 
 七款强大产品。206条AI管道。12家世界级供应商。70多种语言，配备真实的区域语音。
 

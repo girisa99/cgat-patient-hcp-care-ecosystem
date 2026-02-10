@@ -501,4 +501,4 @@ CREATE TABLE seo_trend_tracking (
 
 ---
 
-*Document maintained by Genie Studio Product Team*
+*Document maintained by Genie Suite Product Team*
