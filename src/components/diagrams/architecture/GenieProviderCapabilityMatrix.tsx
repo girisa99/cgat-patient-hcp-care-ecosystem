@@ -122,7 +122,7 @@ const providers: ProviderCapability[] = [
       translation: true, imageGen: true, videoGen: true, avatars: true,
       threeD: false, voiceClone: true, embeddings: true
     },
-    models: ['Qwen-Max', 'Qwen-MT', 'CosyVoice', 'Wan2.2', 'OmniAvatar'],
+    models: ['Qwen-Max', 'Qwen-MT', 'Qwen3-TTS', 'Wan2.2', 'OmniAvatar'],
     regions: ['CN', 'JP', 'KR', 'SEA'],
     tier: 'premium',
     costTier: 'low',

@@ -50,7 +50,7 @@ const AI_PROVIDERS: AIProvider[] = [
   // TTS (6)
   { name: 'ElevenLabs', category: 'tts' },
   { name: 'Azure Neural', category: 'tts' },
-  { name: 'CosyVoice', category: 'tts' },
+  { name: 'Qwen3-TTS', category: 'tts' },
   { name: 'Google TTS', category: 'tts' },
   { name: 'OpenAI TTS', category: 'tts' },
   { name: 'Amazon Polly', category: 'tts' },
@@ -183,7 +183,7 @@ export default AIProviderShowcase;
  * === TTS & VOICE (6) ===
  * 17. ElevenLabs - Premium voice synthesis
  * 18. Azure Neural TTS - Microsoft neural voices
- * 19. CosyVoice - Alibaba multilingual TTS
+ * 19. Qwen3-TTS - Alibaba multilingual TTS
  * 20. Google Cloud TTS - Google neural voices
  * 21. OpenAI TTS - OpenAI voice synthesis
  * 22. Amazon Polly - AWS neural voices

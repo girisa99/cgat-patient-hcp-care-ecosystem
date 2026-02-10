@@ -49,7 +49,7 @@ const AI_PROVIDERS = {
   // TTS & Audio
   elevenlabs: { name: 'ElevenLabs', capability: 'tts', tier: 1 },
   azure_neural: { name: 'Azure Neural TTS', capability: 'tts', tier: 1 },
-  cosyvoice: { name: 'CosyVoice', capability: 'tts', tier: 2 },
+  qwen3_tts: { name: 'Qwen3-TTS', capability: 'tts', tier: 2 },
   vertex_music: { name: 'Vertex AI Music', capability: 'music_gen', tier: 2 },
   
   // Effects & Transitions
@@ -199,11 +199,11 @@ const TEMPLATES: TemplateDefinition[] = [
     description: 'Corporate video localized for global markets with regional avatars',
     category: 'corporate',
     primary_model: 'wan_avatar',
-    secondary_models: ['cosyvoice', 'vertex_veo'],
+    secondary_models: ['qwen3_tts', 'vertex_veo'],
     capability_tags: ['avatar', 'full_body_avatar', 'tts', 'text_to_video'],
     ai_capabilities: [
       { type: 'avatar', provider: 'Wan 2.2 Avatar', feature: 'Regional Presenter' },
-      { type: 'audio', provider: 'CosyVoice', feature: 'Multi-Language TTS' },
+      { type: 'audio', provider: 'Qwen3-TTS', feature: 'Multi-Language TTS' },
     ],
     regions: ['western', 'cjk', 'mena', 'sea', 'india'],
     industry_tags: ['multinational', 'enterprise'],
@@ -398,11 +398,11 @@ const TEMPLATES: TemplateDefinition[] = [
     description: 'Japanese anime-style animated short',
     category: 'entertainment',
     primary_model: 'alibaba_wan',
-    secondary_models: ['modelslab_video', 'cosyvoice'],
+    secondary_models: ['modelslab_video', 'qwen3_tts'],
     capability_tags: ['text_to_video', 'anime_style', 'tts'],
     ai_capabilities: [
       { type: 'video', provider: 'Alibaba Wan 2.6', feature: 'Anime Generation' },
-      { type: 'audio', provider: 'CosyVoice', feature: 'Japanese Voice' },
+      { type: 'audio', provider: 'Qwen3-TTS', feature: 'Japanese Voice' },
     ],
     regions: ['cjk', 'western'],
     industry_tags: ['anime', 'gaming', 'content_creators'],
@@ -497,11 +497,11 @@ const TEMPLATES: TemplateDefinition[] = [
     description: 'Asian-styled avatar optimized for CJK markets',
     category: 'avatar',
     primary_model: 'wan_avatar',
-    secondary_models: ['cosyvoice', 'alibaba_avatar'],
+    secondary_models: ['qwen3_tts', 'alibaba_avatar'],
     capability_tags: ['avatar', 'talking_head', 'lipsync', 'tts'],
     ai_capabilities: [
       { type: 'avatar', provider: 'Wan 2.2 Avatar', feature: 'CJK-Optimized Avatar' },
-      { type: 'audio', provider: 'CosyVoice', feature: 'Native CJK Voice' },
+      { type: 'audio', provider: 'Qwen3-TTS', feature: 'Native CJK Voice' },
     ],
     regions: ['cjk'],
     industry_tags: ['localization', 'enterprise', 'education'],
@@ -648,11 +648,11 @@ const TEMPLATES: TemplateDefinition[] = [
     description: 'Lunar New Year celebration video for CJK markets',
     category: 'seasonal',
     primary_model: 'alibaba_wan',
-    secondary_models: ['cosyvoice', 'alibaba_wanx'],
+    secondary_models: ['qwen3_tts', 'alibaba_wanx'],
     capability_tags: ['text_to_video', 'tts', 'text_to_image'],
     ai_capabilities: [
       { type: 'video', provider: 'Alibaba Wan 2.6', feature: 'CNY Animation' },
-      { type: 'audio', provider: 'CosyVoice', feature: 'Mandarin Voice' },
+      { type: 'audio', provider: 'Qwen3-TTS', feature: 'Mandarin Voice' },
     ],
     regions: ['cjk', 'sea'],
     industry_tags: ['retail', 'luxury', 'brands'],
@@ -878,7 +878,7 @@ serve(async (req) => {
         for (const r of regionsToUse) {
           regional_variants[r] = {
             thumbnail_url: null, // Will be generated
-            primary_voice: r === 'cjk' ? 'cosyvoice' : r === 'mena' ? 'azure_neural' : 'elevenlabs',
+            primary_voice: r === 'cjk' ? 'qwen3_tts' : r === 'mena' ? 'azure_neural' : 'elevenlabs',
           };
         }
 

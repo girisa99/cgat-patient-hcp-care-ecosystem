@@ -428,7 +428,7 @@ export const A2A_AGENT_KNOWLEDGE = {
       id: 'voice-narrator',
       name: 'Voice Narrator',
       role: 'Generates voiceover scripts and TTS audio',
-      providers: ['ElevenLabs', 'Azure Neural', 'OpenAI TTS', 'Alibaba CosyVoice'],
+      providers: ['ElevenLabs', 'Azure Neural', 'OpenAI TTS', 'Alibaba Qwen3-TTS'],
       tasks: ['Script generation', 'Voice synthesis', 'Audio timing']
     },
     {

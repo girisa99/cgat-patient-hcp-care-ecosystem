@@ -278,7 +278,7 @@ export function getConfiguredFallbackChain(capability: AICapability): AIProvider
     // OCR: Azure Form Recognizer → Gemini → Google Vision → Alibaba Qwen-VL → DeepSeek-VL
     ocr: ['azure', 'gemini', 'google', 'alibaba', 'deepseek'],
     
-    // TTS: ElevenLabs → Azure Neural → OpenAI → Google WaveNet → Alibaba CosyVoice → ModelsLab
+    // TTS: ElevenLabs → Azure Neural → OpenAI → Google WaveNet → Alibaba Qwen3-TTS → ModelsLab
     tts: ['elevenlabs', 'azure', 'openai', 'google', 'alibaba', 'modelslab'],
     
     // STT: Deepgram (<100ms) → OpenAI Whisper → Azure Speech → Google STT → Alibaba Paraformer

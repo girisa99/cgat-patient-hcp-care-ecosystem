@@ -1158,7 +1158,7 @@ class FlexibleAgentConfigService {
       'elevenlabs': 'eleven-multilingual-v2',
       'azure-neural': 'azure-neural-tts',
       'google-tts': 'google-wavenet',
-      'alibaba-tts': 'cosyvoice',
+      'alibaba-tts': 'qwen3-tts-flash',
       'openai-tts': 'tts-1-hd',
       
       // Video

@@ -101,7 +101,7 @@ const PROVIDERS: Record<string, ProviderConfig> = {
   },
   'alibaba': {
     id: 'alibaba',
-    name: 'Alibaba CosyVoice',
+    name: 'Alibaba Qwen3-TTS',
     apiKeyEnv: 'ALIBABA_API_KEY',
     endpoint: 'https://nls-gateway.cn-shanghai.aliyuncs.com/stream/v1/tts',
     voiceIds: {
@@ -353,7 +353,7 @@ async function generateWithGoogle(
   return bytes.buffer;
 }
 
-// Generate voice with Alibaba CosyVoice
+// Generate voice with Alibaba Qwen3-TTS
 async function generateWithAlibaba(
   text: string,
   voiceId: string,

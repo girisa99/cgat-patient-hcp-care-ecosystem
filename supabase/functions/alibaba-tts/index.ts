@@ -20,7 +20,7 @@
  * - Virginia (Fallback): dashscope-intl.aliyuncs.com (ALIBABA_API_KEY)
  * - China (Beijing): dashscope.aliyuncs.com (ALIBABA_CHINA_API_KEY)
  * 
- * NOTE: CosyVoice WebSocket removed - replaced by Qwen3-TTS-Flash REST which
+ * NOTE: Legacy CosyVoice WebSocket removed - replaced by Qwen3-TTS-Flash REST which
  * provides superior multilingual quality without WebSocket complexity.
  */
 
@@ -665,7 +665,7 @@ serve(async (req) => {
             primary: 'Qwen3-TTS-Flash via REST (OpenAI-compatible /audio/speech endpoint)',
             secondary: 'Qwen2-TTS via REST (same endpoint)',
             fallback: 'Sambert via REST (/api/v1/services/aigc/text2audio/generation)',
-            note: 'CosyVoice WebSocket removed - Qwen TTS REST provides superior multilingual quality.',
+            note: 'Legacy CosyVoice WebSocket removed - Qwen3-TTS REST provides superior multilingual quality.',
           },
         }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

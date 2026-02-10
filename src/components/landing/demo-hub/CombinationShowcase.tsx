@@ -202,7 +202,7 @@ const COMBINATION_FLOWS: CombinationFlow[] = [
     steps: [
       { icon: Mic, label: 'Audio Extraction', provider: 'Deepgram Nova 2', output: 'Transcript + Timing', color: 'bg-rose-500' },
       { icon: Sparkles, label: 'Transcreation', provider: 'Zone-Routed LLM', output: 'Cultural Adapt', color: 'bg-yellow-500' },
-      { icon: Volume2, label: 'Voice Matching', provider: 'Azure Neural + CosyVoice', output: 'Dubbed Audio', color: 'bg-orange-500' },
+      { icon: Volume2, label: 'Voice Matching', provider: 'Azure Neural + Qwen3-TTS', output: 'Dubbed Audio', color: 'bg-orange-500' },
       { icon: User, label: 'Lip Re-Sync', provider: 'Alibaba Wan 2.2 S2V', output: 'Synced Video', color: 'bg-pink-500' },
     ],
     tags: ['Video Dubbing', 'Lip Re-Sync', 'Cultural Adaptation'],

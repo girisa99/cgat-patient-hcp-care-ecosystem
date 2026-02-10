@@ -1087,19 +1087,19 @@ async function generateAvatarWithAlibaba(request: AvatarRequest, fullBody = fals
   console.log(`🎭 Generating avatar with Alibaba ${fullBody ? 'OmniAvatar (full-body)' : 'WAN 2.2 Animate'}`);
   console.log(`   Using ${chinaApiKey ? 'China (Beijing)' : 'International'} API endpoint`);
 
-  // Step 1: Generate audio with Azure TTS as primary (more reliable), Alibaba CosyVoice as fallback
+  // Step 1: Generate audio with Azure TTS as primary (more reliable), Alibaba Qwen3-TTS as fallback
   let audioUrl = request.audioUrl;
   if (!audioUrl && request.script) {
     try {
       // Try Azure Neural TTS first (more reliable for lip-sync visemes)
       audioUrl = await generateAudioWithAzure(request.script, request.language || 'en-US');
     } catch (azureErr) {
-      console.warn('⚠️ Azure TTS failed, trying Alibaba CosyVoice:', azureErr);
+      console.warn('⚠️ Azure TTS failed, trying Alibaba Qwen3-TTS:', azureErr);
       if (chinaApiKey) {
         try {
           audioUrl = await generateAudioWithAlibabaCosyVoice(request.script, request.language || 'en-US', chinaApiKey);
         } catch (aliErr) {
-          console.warn('⚠️ Alibaba CosyVoice also failed:', aliErr);
+          console.warn('⚠️ Alibaba Qwen3-TTS also failed:', aliErr);
         }
       }
     }
@@ -1228,13 +1228,13 @@ async function generateAudioWithAzure(text: string, language: string): Promise<s
   return `data:audio/mp3;base64,${audioBase64}`;
 }
 
-// Alibaba CosyVoice TTS (China region fallback)
+// Alibaba Qwen3-TTS (China region fallback)
 async function generateAudioWithAlibabaCosyVoice(
   text: string, 
   language: string, 
   apiKey: string
 ): Promise<string> {
-  console.log('🎙️ Generating audio with Alibaba CosyVoice (China region)');
+  console.log('🎙️ Generating audio with Alibaba Qwen3-TTS (China region)');
   
   const voiceMap: Record<string, string> = {
     'en-US': 'cosyvoice-longxiaochun-en',
@@ -1263,7 +1263,7 @@ async function generateAudioWithAlibabaCosyVoice(
   );
 
   if (!response.ok) {
-    throw new Error(`Alibaba CosyVoice error: ${response.status}`);
+    throw new Error(`Alibaba Qwen3-TTS error: ${response.status}`);
   }
 
   const data = await response.json();

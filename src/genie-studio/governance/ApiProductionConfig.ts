@@ -235,7 +235,7 @@ export const API_CONFIGURATIONS: ApiConfig[] = [
     },
     lastUpdated: '2026-01-22',
     usedBy: ['ai-universal-processor', 'qwen-translation', 'alibaba-tts', 'wanx-image'],
-    notes: 'Qwen LLM, Qwen-MT, CosyVoice TTS, Paraformer STT, Wanx Image Gen',
+    notes: 'Qwen LLM, Qwen-MT, Qwen3-TTS, Paraformer STT, Wanx Image Gen',
   },
   {
     id: 'azure-openai',

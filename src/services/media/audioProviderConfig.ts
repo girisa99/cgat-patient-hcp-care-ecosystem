@@ -136,7 +136,7 @@ export const TTS_PROVIDERS: Record<TTSProvider, MediaProviderConfig> = {
   },
   alibaba_voice: {
     id: 'alibaba_voice',
-    name: 'Alibaba CosyVoice',
+    name: 'Alibaba Qwen3-TTS',
     capabilities: ['tts', 'voice_clone'],
     secretKey: 'ALIBABA_API_KEY',
     isConfigured: true,
