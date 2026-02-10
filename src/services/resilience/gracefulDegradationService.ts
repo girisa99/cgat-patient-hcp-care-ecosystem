@@ -55,7 +55,7 @@ const FALLBACK_CHAINS: Record<string, ProviderFallback[]> = {
   tts_voice: [
     { providerId: 'elevenlabs', providerName: 'ElevenLabs', tier: 'premium', capabilities: ['cloning', 'emotions', 'hifi'], costMultiplier: 1.0, qualityScore: 98 },
     { providerId: 'azure-tts', providerName: 'Azure Neural', tier: 'standard', capabilities: ['visemes', 'ssml'], costMultiplier: 0.5, qualityScore: 90 },
-    { providerId: 'alibaba-cosyvoice', providerName: 'CosyVoice', tier: 'standard', capabilities: ['cjk', 'emotions'], costMultiplier: 0.4, qualityScore: 88 },
+    { providerId: 'alibaba-qwen3-tts', providerName: 'Qwen3-TTS', tier: 'standard', capabilities: ['cjk', 'emotions'], costMultiplier: 0.4, qualityScore: 88 },
     { providerId: 'browser-tts', providerName: 'Browser TTS', tier: 'minimal', capabilities: ['basic'], costMultiplier: 0, qualityScore: 60 },
   ],
   

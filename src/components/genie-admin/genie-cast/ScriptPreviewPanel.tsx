@@ -78,7 +78,7 @@ const TTS_PROVIDERS = {
   'azure': { name: 'Azure Neural', region: 'global', quality: 'high' },
   'google': { name: 'Google TTS', region: 'global', quality: 'standard' },
   'alibaba': { name: 'Qwen TTS (Singapore)', region: 'cjk', quality: 'premium' },
-  'alibaba-cosyvoice': { name: 'CosyVoice (China)', region: 'china', quality: 'premium' },
+  'alibaba-qwen3-tts': { name: 'Qwen3-TTS (China)', region: 'china', quality: 'premium' },
 } as const;
 
 // Voice options per provider
@@ -103,9 +103,9 @@ const VOICE_OPTIONS = {
     { id: 'longyue', name: 'Yue (Japanese Female)' },
     { id: 'longfei', name: 'Fei (Korean Female)' },
   ],
-  'alibaba-cosyvoice': [
-    { id: 'cosyvoice-v3-plus', name: 'CosyVoice v3 Plus (Chinese)' },
-    { id: 'cosyvoice-v3-flash', name: 'CosyVoice v3 Flash (Fast)' },
+  'alibaba-qwen3-tts': [
+    { id: 'qwen3-tts-flash', name: 'Qwen3-TTS Flash (CJK)' },
+    { id: 'qwen3-tts-pro', name: 'Qwen3-TTS Pro (Premium)' },
   ],
 };
 
@@ -320,7 +320,7 @@ export function ScriptPreviewPanel({
         response = await supabase.functions.invoke('google-tts', {
           body: { text, voice: selectedVoice },
         });
-      } else if (selectedProvider === 'alibaba' || selectedProvider === 'alibaba-cosyvoice') {
+      } else if (selectedProvider === 'alibaba' || selectedProvider === 'alibaba-qwen3-tts') {
         // Route to ai-universal-processor for Alibaba TTS
         response = await supabase.functions.invoke('ai-universal-processor', {
           body: { 
@@ -329,7 +329,7 @@ export function ScriptPreviewPanel({
             text,
             voice: selectedVoice,
             language: selectedLanguage,
-            region: selectedProvider === 'alibaba-cosyvoice' ? 'china' : 'singapore',
+            region: selectedProvider === 'alibaba-qwen3-tts' ? 'china' : 'singapore',
           },
         });
       } else {

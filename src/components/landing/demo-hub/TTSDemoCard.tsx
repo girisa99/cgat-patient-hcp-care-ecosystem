@@ -228,7 +228,7 @@ export const TTSDemoCard: React.FC<TTSDemoCardProps> = ({ region, industryId }) 
                 ))}
               </div>
               <span className="text-sm text-primary font-medium">
-                Playing via {tts.provider || (regionalConfig.ttsProvider === 'alibaba_cosyvoice' ? 'CosyVoice' : 'Azure Neural')}
+                Playing via {tts.provider || (regionalConfig.ttsProvider === 'alibaba_qwen3_tts' ? 'Qwen3-TTS' : 'Azure Neural')}
               </span>
               <Button size="sm" variant="ghost" onClick={tts.stopAudio} className="h-7 px-2">
                 <Square className="h-3 w-3" />

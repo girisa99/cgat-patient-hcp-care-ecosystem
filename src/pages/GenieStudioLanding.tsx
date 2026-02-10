@@ -171,7 +171,7 @@ const AI_PROVIDERS = [
   { name: 'Claude', logo: anthropicLogo, use: 'Primary LLM — Western/EU Transcreation', color: 'from-orange-400 to-amber-500' },
   { name: 'OpenAI', logo: openaiLogo, use: 'GPT-4o Fallback, Whisper STT, DALL-E', color: 'from-emerald-500 to-teal-500' },
   { name: 'Azure', logo: azureLogo, use: 'Primary TTS (140+ langs), Viseme Lip-Sync', color: 'from-sky-500 to-blue-500' },
-  { name: 'Alibaba', logo: alibabaLogo, use: 'CosyVoice CJK, Wan 2.6 Video, Qwen LLM', color: 'from-orange-500 to-red-500' },
+  { name: 'Alibaba', logo: alibabaLogo, use: 'Qwen3-TTS CJK, Wan 2.6 Video, Qwen LLM', color: 'from-orange-500 to-red-500' },
   { name: 'DeepSeek', logo: deepseekLogo, use: 'CJK Technical LLM, Cost-Effective Code', color: 'from-cyan-500 to-blue-500' },
   { name: 'Deepgram', logo: deepgramLogo, use: 'Nova 2 — Primary STT (<100ms Latency)', color: 'from-teal-500 to-cyan-500' },
   { name: 'ElevenLabs', logo: elevenlabsLogo, use: 'Premium Voice Clone, SFX, Music Gen', color: 'from-purple-500 to-pink-500' },

@@ -25,14 +25,14 @@ const ttsProviders = [
   { name: 'ElevenLabs', voices: ['Rachel', 'Drew', 'Clyde', 'Paul', 'Domi', 'Bella'], status: 'active', specialty: 'Premium TTS + Voice Cloning' },
   { name: 'OpenAI TTS', voices: ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'], status: 'active', specialty: 'Fast, Cost-Effective' },
   { name: 'Azure Neural', voices: ['Jenny', 'Guy', 'Aria', 'Arabic', 'African'], status: 'active', specialty: 'RTL & African Languages' },
-  { name: 'Alibaba CosyVoice', voices: ['Chinese', 'Japanese', 'Korean'], status: 'active', specialty: 'CJK Native' },
+  { name: 'Alibaba Qwen3-TTS', voices: ['Chinese', 'Japanese', 'Korean'], status: 'active', specialty: 'CJK Native' },
   { name: 'Google Cloud TTS', voices: ['Wavenet', 'Neural2'], status: 'active', specialty: 'Indian & SEA Languages' },
   { name: 'Amazon Polly', voices: ['Neural Voices'], status: 'active', specialty: 'AWS Integration' },
 ];
 
 const routingZones = [
   { zone: 'Claude Zone', regions: 'Western Europe, Americas', provider: 'Claude 3.5 Sonnet', color: 'violet' },
-  { zone: 'Alibaba Zone', regions: 'China, Japan, Korea', provider: 'Qwen-Max + CosyVoice', color: 'orange' },
+  { zone: 'Alibaba Zone', regions: 'China, Japan, Korea', provider: 'Qwen-Max + Qwen3-TTS', color: 'orange' },
   { zone: 'Arabic Zone', regions: 'MENA, RTL Languages', provider: 'GPT-4o + Azure Neural', color: 'emerald' },
   { zone: 'Gemini Zone', regions: 'India, SEA, Africa', provider: 'Gemini 2.5 + Google TTS', color: 'blue' },
   { zone: 'Fallback Zone', regions: 'Global Fallback', provider: 'OpenAI GPT-4o', color: 'pink' },

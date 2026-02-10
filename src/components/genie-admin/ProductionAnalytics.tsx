@@ -44,7 +44,7 @@ export const ProductionAnalytics: React.FC = () => {
   const [providerUsage, setProviderUsage] = useState<ProviderUsage[]>([
     { provider: 'ElevenLabs', requests: 156, successRate: 98.5, avgLatency: 2.3 },
     { provider: 'Azure Neural', requests: 89, successRate: 99.1, avgLatency: 1.8 },
-    { provider: 'Alibaba CosyVoice', requests: 45, successRate: 97.2, avgLatency: 2.7 },
+    { provider: 'Alibaba Qwen3-TTS', requests: 45, successRate: 97.2, avgLatency: 2.7 },
     { provider: 'Meshy AI', requests: 34, successRate: 95.8, avgLatency: 8.5 },
     { provider: 'ModelsLab', requests: 28, successRate: 94.6, avgLatency: 12.3 },
   ]);

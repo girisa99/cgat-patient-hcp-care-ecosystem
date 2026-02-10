@@ -518,7 +518,7 @@ export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
       { name: 'Qwen-Max', task: 'LLM Transcreation', reason: 'Native CJK understanding with cultural nuance for Chinese, Japanese, Korean' },
       { name: 'Azure Neural', task: 'TTS & Lip-Sync', reason: 'Native CJK prosody with proper tonal rendering' },
       { name: 'Alibaba Wan 2.2', task: 'Avatar Generation', reason: 'Culturally appropriate East Asian avatar representations' },
-      { name: 'CosyVoice', task: 'Voice Synthesis', reason: 'Alibaba\'s native Chinese voice engine for authentic Mandarin' },
+      { name: 'Qwen3-TTS', task: 'Voice Synthesis', reason: 'Alibaba\'s Qwen3-TTS-Flash for authentic CJK speech' },
     ],
     industries: [
       { name: 'Technology', icon: '💻', useCase: 'Product launches for APAC markets, localized developer content' },
@@ -556,7 +556,7 @@ export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
     differentiators: {
       firstToMarket: [
         'First platform with Qwen-Max for native CJK transcreation — not just translation',
-        'First to combine CosyVoice (Alibaba) + Azure Neural for dual Chinese TTS pipeline',
+        'First to combine Qwen3-TTS (Alibaba) + Azure Neural for dual Chinese TTS pipeline',
         'First AI video platform supporting full CJK + 6 SEA languages in one workflow',
       ],
       capabilityDepth: [
@@ -726,6 +726,10 @@ export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
     welcomeScript: "From Kingston to Port-of-Spain, from Havana to Nassau — the Caribbean has a voice like nowhere else. Spark writes for island rhythm, tourism, and culture. Mind understands audiences across every shore. Vibe creates visuals as vibrant as the islands themselves. Arc handles Creole, Patois, French, Spanish, Dutch, and English — all in one flow. Deck pitches paradise. Cast publishes across every island. Ask Genie ties it together. Genie Studio. Caribbean-built. World-ready.",
   },
 };
+
+// Freeze all regional configs to prevent runtime mutation
+Object.freeze(REGIONAL_CONFIGS);
+Object.values(REGIONAL_CONFIGS).forEach(config => Object.freeze(config));
 
 /**
  * Auto-detect region from timezone

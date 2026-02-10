@@ -13,7 +13,7 @@
  * @example
  * const { routing, isLoading, countryCode, zone } = useEcosystemRouting();
  * // routing.llm = 'qwen-max' (if user in Japan)
- * // routing.tts = 'alibaba-cosyvoice'
+ * // routing.tts = 'alibaba-qwen3-tts'
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';

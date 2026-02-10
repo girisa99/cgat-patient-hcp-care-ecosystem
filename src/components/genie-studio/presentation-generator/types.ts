@@ -129,7 +129,7 @@ export const OUTPUT_TYPE_CONFIGS: OutputTypeConfig[] = [
     name: 'Full Video',
     description: 'Complete video presentations with voiceover',
     icon: 'Film',
-    providers: ['openai-sora', 'modelslab-animatediff', 'gemini-veo', 'elevenlabs-tts', 'azure-neural', 'alibaba-cosyvoice'],
+    providers: ['openai-sora', 'modelslab-animatediff', 'gemini-veo', 'elevenlabs-tts', 'azure-neural', 'alibaba-qwen3-tts'],
     capabilities: ['Full narration', 'Scene transitions', 'Background music', 'Multi-language', 'Voice cloning'],
     tier: 3
   },

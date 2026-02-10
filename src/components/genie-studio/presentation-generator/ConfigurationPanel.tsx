@@ -114,7 +114,7 @@ const VOICE_PROVIDERS = [
   { id: 'azure-neural', name: 'Azure Neural TTS', short: 'Azure TTS', tier: 1, description: 'Huge voice selection, SSML' },
   { id: 'google-wavenet', name: 'Google WaveNet', short: 'Google TTS', tier: 2, description: 'WaveNet voices, many languages' },
   { id: 'openai-tts-hd', name: 'OpenAI TTS HD', short: 'OpenAI TTS', tier: 2, description: 'Simple, good quality' },
-  { id: 'alibaba-cosyvoice', name: 'Alibaba CosyVoice', short: 'CosyVoice', tier: 3, description: 'Best Chinese voices' },
+  { id: 'alibaba-qwen3-tts', name: 'Alibaba Qwen3-TTS', short: 'Qwen3-TTS', tier: 3, description: 'Best CJK voices' },
   { id: 'amazon-polly', name: 'Amazon Polly', short: 'Polly', tier: 3, description: 'Neural voices, AWS' },
 ];
 

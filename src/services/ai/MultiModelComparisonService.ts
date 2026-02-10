@@ -78,8 +78,8 @@ const MODEL_DISPLAY_NAMES: Record<string, string> = {
   'elevenlabs/turbo-v2': 'ElevenLabs Turbo',
   // Azure Speech
   'azure/neural-tts': 'Azure Neural TTS',
-  // Alibaba CosyVoice
-  'alibaba/cosyvoice': 'CosyVoice',
+  // Alibaba Qwen3-TTS
+  'alibaba/qwen3-tts': 'Qwen3-TTS',
   // Meshy AI
   'meshy/text-to-3d': 'Meshy Text-to-3D',
   // Replicate
@@ -103,7 +103,7 @@ const PROVIDER_CATEGORIES: Record<string, string[]> = {
            'alibaba/qwen-vl', 'azure/gpt-4o'],
   image_gen: ['modelslab/flux-pro', 'modelslab/flux-schnell', 'meshy/text-to-3d'],
   video_gen: ['modelslab/animatediff'],
-  audio_tts: ['elevenlabs/multilingual-v2', 'elevenlabs/turbo-v2', 'azure/neural-tts', 'alibaba/cosyvoice'],
+  audio_tts: ['elevenlabs/multilingual-v2', 'elevenlabs/turbo-v2', 'azure/neural-tts', 'alibaba/qwen3-tts'],
   translation: ['deepl/translator', 'alibaba/qwen-turbo', 'deepseek/deepseek-v3'],
   document: ['azure/doc-intelligence', 'alibaba/qwen-vl'],
 };
@@ -142,8 +142,8 @@ const COST_PER_TOKEN: Record<string, { input: number; output: number }> = {
   'elevenlabs/turbo-v2': { input: 0.00005, output: 0 },
   // Azure Speech
   'azure/neural-tts': { input: 0.00004, output: 0 },
-  // Alibaba CosyVoice
-  'alibaba/cosyvoice': { input: 0.00003, output: 0 },
+  // Alibaba Qwen3-TTS
+  'alibaba/qwen3-tts': { input: 0.00003, output: 0 },
   // Meshy AI
   'meshy/text-to-3d': { input: 0.001, output: 0 },
   // Replicate

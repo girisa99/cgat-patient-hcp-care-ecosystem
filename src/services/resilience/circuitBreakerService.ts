@@ -386,7 +386,7 @@ export function registerProviders(): void {
   // TTS Providers
   circuitBreakerService.registerProvider('elevenlabs', 'ElevenLabs', 'tts');
   circuitBreakerService.registerProvider('azure-tts', 'Azure TTS', 'tts');
-  circuitBreakerService.registerProvider('alibaba-cosyvoice', 'Alibaba CosyVoice', 'tts');
+  circuitBreakerService.registerProvider('alibaba-qwen3-tts', 'Alibaba Qwen3-TTS', 'tts');
   
   // Image Providers
   circuitBreakerService.registerProvider('modelslab', 'ModelsLab', 'image');

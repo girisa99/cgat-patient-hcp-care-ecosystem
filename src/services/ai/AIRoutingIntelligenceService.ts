@@ -84,7 +84,7 @@ const ZONE_TTS_ROUTING = Object.freeze({
   western: 'azure-neural',
   europe: 'azure-neural',
   latam: 'azure-neural',
-  cjk: 'alibaba-cosyvoice',
+  cjk: 'alibaba-qwen3-tts',
   mena: 'azure-neural',     // 7 Arabic dialects + Viseme data
   india: 'azure-neural',    // Viseme support for 11+ languages
   sea: 'azure-neural',
@@ -377,8 +377,8 @@ const MODEL_REGISTRY: Record<string, {
     costPerInputToken: 0.00004, costPerOutputToken: 0, avgLatencyMs: 1500, contextWindow: 10000,
     supportsVision: false, supportsReasoning: false, qualityScore: 92, tier: 'premium' as const
   }),
-  'alibaba/cosyvoice': Object.freeze({
-    provider: 'alibaba', displayName: 'CosyVoice', strengths: ['audio_generation'] as QueryIntent[],
+  'alibaba/qwen3-tts': Object.freeze({
+    provider: 'alibaba', displayName: 'Qwen3-TTS', strengths: ['audio_generation'] as QueryIntent[],
     costPerInputToken: 0.00003, costPerOutputToken: 0, avgLatencyMs: 2000, contextWindow: 10000,
     supportsVision: false, supportsReasoning: false, qualityScore: 90, tier: 'premium' as const
   }),

@@ -6,7 +6,7 @@
  * - Deck: Gemini 3 Pro
  * - Video: Vertex Veo 3 + Azure Neural TTS
  * - Content: Claude 4 (Western) / Gemini 3 Pro
- * - TTS: Azure Neural (primary global) / Alibaba CosyVoice (CJK)
+ * - TTS: Azure Neural (primary global) / Alibaba Qwen3-TTS (CJK)
  * - STT: Deepgram Nova 2
  * - Translation: DeepL / Azure Translator
  * - Transcreation: Zone-Routed LLM (Qwen-Max / Claude 4 / Gemini 3 Pro)
@@ -87,7 +87,7 @@ const tts = (id: string, industry: string, emoji: string, text: string, outputLa
   id, pipeline: 'Text-to-Speech', pipelineIcon: Volume2, pipelineColor: 'text-orange-500',
   product: 'Genie Cast', industry, industryEmoji: emoji,
   input: { label: 'Text', preview: text },
-  aiProviders: ['Azure Neural TTS', 'Alibaba CosyVoice (CJK)'],
+  aiProviders: ['Azure Neural TTS', 'Alibaba Qwen3-TTS (CJK)'],
   output: { label: outputLabel, preview, details, format: 'MP3 / WAV' },
   stats: { time: '12s', ...stats }, tags, multiLangPreview: langs,
 });

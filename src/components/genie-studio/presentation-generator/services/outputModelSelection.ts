@@ -122,7 +122,7 @@ const VOICE_MODEL_OPTIONS: ModelOption[] = [
   
   // Tier 3 - Premium
   { id: 'elevenlabs-ultra', name: 'ElevenLabs Ultra', provider: 'ElevenLabs', tier: 3, costMultiplier: 4.0, qualityScore: 98, speedScore: 70, isAvailable: true, requiredSecretKey: 'ELEVENLABS_API_KEY', capabilities: ['voice-cloning', 'emotion-control', 'ultra-natural'] },
-  { id: 'alibaba-cosyvoice', name: 'Alibaba CosyVoice', provider: 'Alibaba', tier: 3, costMultiplier: 3.5, qualityScore: 95, speedScore: 65, isAvailable: true, requiredSecretKey: 'ALIBABA_API_KEY', capabilities: ['cjk-languages', 'emotion', 'voice-cloning'] },
+  { id: 'alibaba-qwen3-tts', name: 'Alibaba Qwen3-TTS', provider: 'Alibaba', tier: 3, costMultiplier: 3.5, qualityScore: 95, speedScore: 65, isAvailable: true, requiredSecretKey: 'ALIBABA_API_KEY', capabilities: ['cjk-languages', 'emotion', 'voice-cloning'] },
 ];
 
 // ==========================================

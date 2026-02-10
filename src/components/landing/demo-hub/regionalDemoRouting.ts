@@ -3,7 +3,7 @@
  * Source of truth: src/config/master-provider-routing-registry.ts
  * 
  * Claude Zone (Western/EU/LATAM): Claude 3.5 + Azure Neural + DeepL
- * Alibaba Zone (CJK): Qwen Max + CosyVoice + Qwen-MT
+ * Alibaba Zone (CJK): Qwen Max + Qwen3-TTS + Qwen-MT
  * Alibaba Zone (MENA/RTL): Qwen Max + Azure Neural + Azure Translator
  * Gemini Zone (India/SEA/Africa): Gemini Pro + Azure Neural + Google Translate
  * Fallback: GPT-4o
@@ -22,26 +22,26 @@ export interface RegionalProviderConfig {
   displayColors: string[];
 }
 
-const ZONES: Record<string, RegionalProviderConfig> = {
-  western: {
+const ZONES: Readonly<Record<string, RegionalProviderConfig>> = Object.freeze({
+  western: Object.freeze({
     zone: 'western',
-    llmProvider: 'claude', llmModel: 'claude-3.5-sonnet',
+    llmProvider: 'claude', llmModel: 'claude-4',
     ttsProvider: 'azure', imageProvider: 'gemini_3_pro',
     videoProvider: 'vertex_veo3', avatarProvider: 'alibaba_wan22',
     translationProvider: 'deepl',
-    displayProviders: ['Claude 3.5', 'Azure Neural', 'Vertex Veo 3', 'DeepL'],
+    displayProviders: ['Claude 4', 'Azure Neural', 'Vertex Veo 3', 'DeepL'],
     displayColors: ['from-amber-500/80 to-amber-600/80', 'from-sky-500/80 to-sky-600/80', 'from-blue-500/80 to-blue-600/80', 'from-cyan-500/80 to-cyan-600/80'],
-  },
-  cjk: {
+  }),
+  cjk: Object.freeze({
     zone: 'cjk',
     llmProvider: 'alibaba', llmModel: 'qwen-max',
-    ttsProvider: 'alibaba_cosyvoice', imageProvider: 'gemini_3_pro',
+    ttsProvider: 'alibaba_qwen3_tts', imageProvider: 'gemini_3_pro',
     videoProvider: 'vertex_veo3', avatarProvider: 'alibaba_wan22',
     translationProvider: 'qwen_mt',
-    displayProviders: ['Qwen Max', 'CosyVoice', 'Vertex Veo 3', 'Qwen-MT'],
+    displayProviders: ['Qwen Max', 'Qwen3-TTS', 'Vertex Veo 3', 'Qwen-MT'],
     displayColors: ['from-orange-500/80 to-orange-600/80', 'from-amber-500/80 to-amber-600/80', 'from-blue-500/80 to-blue-600/80', 'from-red-500/80 to-red-600/80'],
-  },
-  mena: {
+  }),
+  mena: Object.freeze({
     zone: 'mena',
     llmProvider: 'alibaba', llmModel: 'qwen-max',
     ttsProvider: 'azure', imageProvider: 'gemini_3_pro',
@@ -49,26 +49,26 @@ const ZONES: Record<string, RegionalProviderConfig> = {
     translationProvider: 'azure_translator',
     displayProviders: ['Qwen Max', 'Azure Neural (7 Arabic)', 'Vertex Veo 3', 'Azure Translator'],
     displayColors: ['from-orange-500/80 to-orange-600/80', 'from-sky-500/80 to-sky-600/80', 'from-blue-500/80 to-blue-600/80', 'from-emerald-500/80 to-emerald-600/80'],
-  },
-  india: {
+  }),
+  india: Object.freeze({
     zone: 'india',
-    llmProvider: 'gemini', llmModel: 'gemini-pro',
+    llmProvider: 'gemini', llmModel: 'gemini-3-pro',
     ttsProvider: 'azure', imageProvider: 'gemini_3_pro',
     videoProvider: 'vertex_veo3', avatarProvider: 'alibaba_wan22',
     translationProvider: 'google_translate',
-    displayProviders: ['Gemini Pro', 'Azure Neural', 'Vertex Veo 3', 'Google Translate'],
+    displayProviders: ['Gemini 3 Pro', 'Azure Neural', 'Vertex Veo 3', 'Google Translate'],
     displayColors: ['from-blue-500/80 to-blue-600/80', 'from-sky-500/80 to-sky-600/80', 'from-blue-500/80 to-blue-600/80', 'from-green-500/80 to-green-600/80'],
-  },
-  africa: {
+  }),
+  africa: Object.freeze({
     zone: 'africa',
-    llmProvider: 'gemini', llmModel: 'gemini-pro',
+    llmProvider: 'gemini', llmModel: 'gemini-3-pro',
     ttsProvider: 'azure', imageProvider: 'gemini_3_pro',
     videoProvider: 'vertex_veo3', avatarProvider: 'alibaba_wan22',
     translationProvider: 'google_translate',
-    displayProviders: ['Gemini Pro', 'Azure Neural', 'Vertex Veo 3', 'Google Translate'],
+    displayProviders: ['Gemini 3 Pro', 'Azure Neural', 'Vertex Veo 3', 'Google Translate'],
     displayColors: ['from-blue-500/80 to-blue-600/80', 'from-sky-500/80 to-sky-600/80', 'from-blue-500/80 to-blue-600/80', 'from-green-500/80 to-green-600/80'],
-  },
-  fallback: {
+  }),
+  fallback: Object.freeze({
     zone: 'fallback',
     llmProvider: 'openai', llmModel: 'gpt-4o',
     ttsProvider: 'azure', imageProvider: 'gemini_3_pro',
@@ -76,8 +76,8 @@ const ZONES: Record<string, RegionalProviderConfig> = {
     translationProvider: 'google_translate',
     displayProviders: ['GPT-4o (Fallback)', 'Azure Neural', 'Vertex Veo 3', 'Google Translate'],
     displayColors: ['from-emerald-500/80 to-emerald-600/80', 'from-sky-500/80 to-sky-600/80', 'from-blue-500/80 to-blue-600/80', 'from-green-500/80 to-green-600/80'],
-  },
-};
+  }),
+});
 
 // CJK languages
 const CJK_LANGS = ['zh', 'ja', 'ko'];
