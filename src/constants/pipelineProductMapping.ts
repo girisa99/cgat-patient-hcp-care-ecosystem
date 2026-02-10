@@ -292,6 +292,12 @@ export const PRODUCT_PIPELINE_SUMMARY: Record<GenieProduct, {
     totalAccess: 52,
     categories: ['presentation', 'visual-design', '3d-immersive'],
   },
+  hub: {
+    primaryPipelines: 14,
+    sharedPipelines: 10,
+    totalAccess: 24,
+    categories: ['scheduling', 'collaboration', 'asset-management'],
+  },
   arc: {
     primaryPipelines: 14,
     sharedPipelines: 10,
@@ -305,8 +311,8 @@ export const PRODUCT_PIPELINE_SUMMARY: Record<GenieProduct, {
     categories: ['distribution', 'marketing', 'analytics'],
   },
   studio: {
-    primaryPipelines: 0, // Orchestrator, not pipeline owner
-    sharedPipelines: 181, // Access to all
+    primaryPipelines: 0,
+    sharedPipelines: 181,
     totalAccess: 181,
     categories: ['all'],
   },

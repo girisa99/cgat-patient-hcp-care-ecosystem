@@ -47,6 +47,7 @@ const PRODUCT_AVATARS: Record<GenieProduct, React.ReactNode> = {
   mind: <Brain className="h-12 w-12" />,
   vibe: <Film className="h-12 w-12" />,
   deck: <Presentation className="h-12 w-12" />,
+  hub: <Target className="h-12 w-12" />,
   arc: <Target className="h-12 w-12" />,
   cast: <Radio className="h-12 w-12" />,
   studio: <Layers className="h-12 w-12" />,
@@ -58,6 +59,7 @@ const PRODUCT_FEATURES: Record<GenieProduct, React.ReactNode[]> = {
   mind: [<Music key="m" className="h-4 w-4" />, <Mic key="mic" className="h-4 w-4" />, <Wand2 key="w" className="h-4 w-4" />],
   vibe: [<Video key="v" className="h-4 w-4" />, <Music key="m" className="h-4 w-4" />, <Film key="f" className="h-4 w-4" />],
   deck: [<Presentation key="p" className="h-4 w-4" />, <BarChart3 key="b" className="h-4 w-4" />, <Layers key="l" className="h-4 w-4" />],
+  hub: [<Target key="t" className="h-4 w-4" />, <BarChart3 key="b" className="h-4 w-4" />, <Zap key="z" className="h-4 w-4" />],
   arc: [<Target key="t" className="h-4 w-4" />, <BarChart3 key="b" className="h-4 w-4" />, <Zap key="z" className="h-4 w-4" />],
   cast: [<Send key="s" className="h-4 w-4" />, <Globe key="g" className="h-4 w-4" />, <Radio key="r" className="h-4 w-4" />],
   studio: [<Layers key="l" className="h-4 w-4" />, <Wand2 key="w" className="h-4 w-4" />, <Sparkles key="s" className="h-4 w-4" />],
@@ -75,9 +77,10 @@ const TRANSLATIONS: Record<string, {
       mind: { name: 'Genie Mind', tagline: 'AI That Understands', description: 'Enhance scripts with voice and music.' },
       vibe: { name: 'Genie Vibe', tagline: 'Script to Screen', description: 'Full audio and video production.' },
       deck: { name: 'Genie Deck', tagline: 'Ideas to Impact', description: 'AI-powered presentations.' },
-      arc: { name: 'Genie Arc', tagline: 'Infinite Possibilities', description: 'Production management hub.' },
+      hub: { name: 'Genie Hub', tagline: 'Your Creative Command Center', description: 'Production & asset management hub.' },
+      arc: { name: 'Genie Hub', tagline: 'Your Creative Command Center', description: 'Production management hub.' },
       cast: { name: 'Genie Cast', tagline: 'Make It. Show It. Scale It.', description: 'Global distribution engine.' },
-      studio: { name: 'Genie Studio', tagline: 'Mind to Media', description: 'The complete creative suite.' },
+      studio: { name: 'Genie Suite', tagline: 'Mind to Media', description: 'The complete creative suite.' },
     }
   },
   ar: {
@@ -87,9 +90,10 @@ const TRANSLATIONS: Record<string, {
       mind: { name: 'جيني مايند', tagline: 'ذكاء اصطناعي يفهم', description: 'حسّن النصوص بالصوت والموسيقى.' },
       vibe: { name: 'جيني فايب', tagline: 'من النص إلى الشاشة', description: 'إنتاج صوتي ومرئي كامل.' },
       deck: { name: 'جيني ديك', tagline: 'من الأفكار إلى التأثير', description: 'عروض تقديمية بالذكاء الاصطناعي.' },
-      arc: { name: 'جيني آرك', tagline: 'إمكانيات لا نهائية', description: 'مركز إدارة الإنتاج.' },
+      hub: { name: 'جيني هَب', tagline: 'مركز قيادتك الإبداعي', description: 'مركز إدارة الإنتاج والأصول.' },
+      arc: { name: 'جيني هَب', tagline: 'مركز قيادتك الإبداعي', description: 'مركز إدارة الإنتاج.' },
       cast: { name: 'جيني كاست', tagline: 'اصنع. اعرض. وسّع.', description: 'محرك التوزيع العالمي.' },
-      studio: { name: 'جيني ستوديو', tagline: 'من الفكرة إلى الوسائط', description: 'الجناح الإبداعي الكامل.' },
+      studio: { name: 'جيني سويت', tagline: 'من الفكرة إلى الوسائط', description: 'الجناح الإبداعي الكامل.' },
     }
   },
   zh: {
@@ -99,9 +103,10 @@ const TRANSLATIONS: Record<string, {
       mind: { name: '精灵思维', tagline: 'AI理解一切', description: '用语音和音乐增强脚本。' },
       vibe: { name: '精灵韵律', tagline: '从脚本到屏幕', description: '完整的音视频制作。' },
       deck: { name: '精灵演示', tagline: '从想法到影响', description: 'AI驱动的演示文稿。' },
-      arc: { name: '精灵弧', tagline: '无限可能', description: '生产管理中心。' },
+      hub: { name: '精灵中枢', tagline: '您的创意指挥中心', description: '生产和资产管理中心。' },
+      arc: { name: '精灵中枢', tagline: '您的创意指挥中心', description: '生产管理中心。' },
       cast: { name: '精灵传播', tagline: '制作·展示·扩展', description: '全球分发引擎。' },
-      studio: { name: '精灵工作室', tagline: '从思维到媒体', description: '完整的创意套件。' },
+      studio: { name: '精灵套件', tagline: '从思维到媒体', description: '完整的创意套件。' },
     }
   },
   hi: {
@@ -111,9 +116,10 @@ const TRANSLATIONS: Record<string, {
       mind: { name: 'जीनी माइंड', tagline: 'AI जो समझता है', description: 'आवाज़ और संगीत से स्क्रिप्ट को बेहतर बनाएं।' },
       vibe: { name: 'जीनी वाइब', tagline: 'स्क्रिप्ट से स्क्रीन तक', description: 'पूर्ण ऑडियो और वीडियो प्रोडक्शन।' },
       deck: { name: 'जीनी डेक', tagline: 'विचारों से प्रभाव तक', description: 'AI-संचालित प्रेजेंटेशन।' },
-      arc: { name: 'जीनी आर्क', tagline: 'अनंत संभावनाएं', description: 'प्रोडक्शन मैनेजमेंट हब।' },
+      hub: { name: 'जीनी हब', tagline: 'आपका क्रिएटिव कमांड सेंटर', description: 'प्रोडक्शन और एसेट मैनेजमेंट हब।' },
+      arc: { name: 'जीनी हब', tagline: 'आपका क्रिएटिव कमांड सेंटर', description: 'प्रोडक्शन मैनेजमेंट हब।' },
       cast: { name: 'जीनी कास्ट', tagline: 'बनाओ. दिखाओ. बढ़ाओ.', description: 'वैश्विक वितरण इंजन।' },
-      studio: { name: 'जीनी स्टूडियो', tagline: 'मन से मीडिया', description: 'संपूर्ण क्रिएटिव सूट।' },
+      studio: { name: 'जीनी सुइट', tagline: 'मन से मीडिया', description: 'संपूर्ण क्रिएटिव सूट।' },
     }
   },
   es: {
@@ -123,9 +129,10 @@ const TRANSLATIONS: Record<string, {
       mind: { name: 'Genie Mind', tagline: 'IA que Entiende', description: 'Mejora guiones con voz y música.' },
       vibe: { name: 'Genie Vibe', tagline: 'Del Guión a la Pantalla', description: 'Producción completa de audio y video.' },
       deck: { name: 'Genie Deck', tagline: 'Ideas con Impacto', description: 'Presentaciones potenciadas por IA.' },
-      arc: { name: 'Genie Arc', tagline: 'Posibilidades Infinitas', description: 'Centro de gestión de producción.' },
+      hub: { name: 'Genie Hub', tagline: 'Tu Centro de Comando Creativo', description: 'Centro de gestión de producción y activos.' },
+      arc: { name: 'Genie Hub', tagline: 'Tu Centro de Comando Creativo', description: 'Centro de gestión de producción.' },
       cast: { name: 'Genie Cast', tagline: 'Crea. Muestra. Escala.', description: 'Motor de distribución global.' },
-      studio: { name: 'Genie Studio', tagline: 'De la Mente al Medio', description: 'La suite creativa completa.' },
+      studio: { name: 'Genie Suite', tagline: 'De la Mente al Medio', description: 'La suite creativa completa.' },
     }
   },
   fr: {
@@ -135,9 +142,10 @@ const TRANSLATIONS: Record<string, {
       mind: { name: 'Genie Mind', tagline: 'IA qui Comprend', description: 'Améliorez les scripts avec voix et musique.' },
       vibe: { name: 'Genie Vibe', tagline: 'Du Script à l\'Écran', description: 'Production audio et vidéo complète.' },
       deck: { name: 'Genie Deck', tagline: 'Des Idées à l\'Impact', description: 'Présentations propulsées par l\'IA.' },
-      arc: { name: 'Genie Arc', tagline: 'Possibilités Infinies', description: 'Hub de gestion de production.' },
+      hub: { name: 'Genie Hub', tagline: 'Votre Centre de Commande Créatif', description: 'Hub de gestion de production et d\'actifs.' },
+      arc: { name: 'Genie Hub', tagline: 'Votre Centre de Commande Créatif', description: 'Hub de gestion de production.' },
       cast: { name: 'Genie Cast', tagline: 'Créez. Montrez. Évoluez.', description: 'Moteur de distribution mondiale.' },
-      studio: { name: 'Genie Studio', tagline: 'De l\'Esprit au Média', description: 'La suite créative complète.' },
+      studio: { name: 'Genie Suite', tagline: 'De l\'Esprit au Média', description: 'La suite créative complète.' },
     }
   },
   ja: {
@@ -147,9 +155,10 @@ const TRANSLATIONS: Record<string, {
       mind: { name: 'Genie Mind', tagline: '理解するAI', description: '音声と音楽でスクリプトを強化。' },
       vibe: { name: 'Genie Vibe', tagline: 'スクリプトからスクリーンへ', description: '完全なオーディオ・ビデオ制作。' },
       deck: { name: 'Genie Deck', tagline: 'アイデアからインパクトへ', description: 'AI搭載のプレゼンテーション。' },
-      arc: { name: 'Genie Arc', tagline: '無限の可能性', description: '制作管理ハブ。' },
+      hub: { name: 'Genie Hub', tagline: 'クリエイティブコマンドセンター', description: '制作・資産管理ハブ。' },
+      arc: { name: 'Genie Hub', tagline: 'クリエイティブコマンドセンター', description: '制作管理ハブ。' },
       cast: { name: 'Genie Cast', tagline: '作る・見せる・広げる', description: 'グローバル配信エンジン。' },
-      studio: { name: 'Genie Studio', tagline: '心からメディアへ', description: '完全なクリエイティブスイート。' },
+      studio: { name: 'Genie Suite', tagline: '心からメディアへ', description: '完全なクリエイティブスイート。' },
     }
   },
   ko: {
@@ -159,9 +168,10 @@ const TRANSLATIONS: Record<string, {
       mind: { name: 'Genie Mind', tagline: '이해하는 AI', description: '음성과 음악으로 스크립트 향상.' },
       vibe: { name: 'Genie Vibe', tagline: '스크립트에서 스크린으로', description: '완벽한 오디오 및 비디오 제작.' },
       deck: { name: 'Genie Deck', tagline: '아이디어에서 임팩트로', description: 'AI 기반 프레젠테이션.' },
-      arc: { name: 'Genie Arc', tagline: '무한한 가능성', description: '프로덕션 관리 허브.' },
+      hub: { name: 'Genie Hub', tagline: '크리에이티브 커맨드 센터', description: '프로덕션 및 자산 관리 허브.' },
+      arc: { name: 'Genie Hub', tagline: '크리에이티브 커맨드 센터', description: '프로덕션 관리 허브.' },
       cast: { name: 'Genie Cast', tagline: '만들고. 보여주고. 확장하세요.', description: '글로벌 배포 엔진.' },
-      studio: { name: 'Genie Studio', tagline: '마음에서 미디어로', description: '완벽한 크리에이티브 스위트.' },
+      studio: { name: 'Genie Suite', tagline: '마음에서 미디어로', description: '완벽한 크리에이티브 스위트.' },
     }
   },
   pt: {
@@ -171,9 +181,10 @@ const TRANSLATIONS: Record<string, {
       mind: { name: 'Genie Mind', tagline: 'IA que Entende', description: 'Aprimore roteiros com voz e música.' },
       vibe: { name: 'Genie Vibe', tagline: 'Do Roteiro à Tela', description: 'Produção completa de áudio e vídeo.' },
       deck: { name: 'Genie Deck', tagline: 'Ideias com Impacto', description: 'Apresentações impulsionadas por IA.' },
-      arc: { name: 'Genie Arc', tagline: 'Possibilidades Infinitas', description: 'Hub de gestão de produção.' },
+      hub: { name: 'Genie Hub', tagline: 'Seu Centro de Comando Criativo', description: 'Hub de gestão de produção e ativos.' },
+      arc: { name: 'Genie Hub', tagline: 'Seu Centro de Comando Criativo', description: 'Hub de gestão de produção.' },
       cast: { name: 'Genie Cast', tagline: 'Crie. Mostre. Escale.', description: 'Motor de distribuição global.' },
-      studio: { name: 'Genie Studio', tagline: 'Da Mente à Mídia', description: 'A suíte criativa completa.' },
+      studio: { name: 'Genie Suite', tagline: 'Da Mente à Mídia', description: 'A suíte criativa completa.' },
     }
   },
 };

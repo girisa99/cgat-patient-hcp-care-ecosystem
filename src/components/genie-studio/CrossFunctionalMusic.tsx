@@ -86,6 +86,7 @@ export const CrossFunctionalMusic: React.FC<CrossFunctionalMusicProps> = ({
     vibe: 'from-purple-500 to-pink-500',
     deck: 'from-purple-500 to-violet-500',
     spark: 'from-amber-500 to-orange-500',
+    hub: 'from-emerald-500 to-teal-500',
     arc: 'from-emerald-500 to-teal-500',
     cast: 'from-pink-500 to-rose-500',
     studio: 'from-indigo-500 to-violet-500',

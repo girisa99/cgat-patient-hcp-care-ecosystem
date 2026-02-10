@@ -12,10 +12,11 @@ const productRoutes: Record<GenieProduct, string> = {
   mind: '/genie-mind',
   spark: '/genie-spark',
   vibe: '/genie-vibe',
+  hub: '/production-hub',
   studio: '/genie-studio',
-  arc: '/production-hub', // Arc maps to production hub
+  arc: '/production-hub',
   deck: '/genie-deck',
-  cast: '/genie-cast', // Cast is distribution/marketing engine
+  cast: '/genie-cast',
 };
 
 export const HorizontalProductShowcase = () => {
