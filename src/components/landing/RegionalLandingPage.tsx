@@ -435,7 +435,7 @@ const useHeroVoiceover = () => {
         });
 
         if (error) throw new Error(`TTS failed: ${error.message}`);
-        audioBase64 = data?.audio_base64 || data?.audioBase64;
+        audioBase64 = data?.audioContent || data?.audio_base64 || data?.audioBase64;
         if (!audioBase64) throw new Error('No audio returned');
 
         // Step 3: Save to cache (fire & forget — don't block playback)

@@ -143,6 +143,13 @@ const LATAM_VOICES: Record<string, { voice: string; transcreation: string; liter
   'es-PE': { voice: 'es-PE-AlexNeural', transcreation: '¡Empieza a crear videos chéveres con IA — es gratis, causa!', literal: 'Por favor pruebe nuestra herramienta de video con IA gratis' },
 };
 
+const ENGLISH_VOICES: Record<string, { voice: string; transcreation: string; literal: string }> = {
+  'en-US': { voice: 'en-US-JennyNeural', transcreation: 'Start creating amazing videos with AI — free, no strings attached!', literal: 'Start creating amazing videos with AI — free, no strings attached!' },
+  'en-GB': { voice: 'en-GB-SoniaNeural', transcreation: 'Start creating brilliant videos with AI — free, no catches!', literal: 'Start creating brilliant videos with AI — free, no catches!' },
+  'en-AU': { voice: 'en-AU-NatashaNeural', transcreation: 'Start creating ripper videos with AI — free, no worries!', literal: 'Start creating amazing videos with AI — free, no strings attached!' },
+  'en-KE': { voice: 'en-KE-AsiliaNeural', transcreation: 'Start creating amazing videos with AI — free, no strings attached!', literal: 'Start creating amazing videos with AI — free, no strings attached!' },
+};
+
 const EUROPEAN_VOICES: Record<string, { voice: string; transcreation: string; literal: string }> = {
   'de-DE': { voice: 'de-DE-KatjaNeural', transcreation: 'Leg los mit genialen Videos — kostenlos und ohne Haken!', literal: 'Beginnen Sie mit der Erstellung hervorragender Videoinhalte' },
   'fr-FR': { voice: 'fr-FR-DeniseNeural', transcreation: 'Lancez-vous dans la création vidéo — c\'est gratuit et sans engagement !', literal: 'Commencez à créer d\'excellents contenus vidéo' },
@@ -152,11 +159,16 @@ const EUROPEAN_VOICES: Record<string, { voice: string; transcreation: string; li
   'pl-PL': { voice: 'pl-PL-AgnieszkaNeural', transcreation: 'Zacznij tworzyć genialne filmy z AI — za darmo, bez zobowiązań!', literal: 'Proszę bezpłatnie wypróbować nasze narzędzie do tworzenia wideo AI' },
   'sv-SE': { voice: 'sv-SE-SofieNeural', transcreation: 'Börja skapa fantastiska videor med AI — gratis, inga krångel!', literal: 'Vänligen prova vårt AI-videoverktyg gratis' },
   'pt-PT': { voice: 'pt-PT-RaquelNeural', transcreation: 'Começa a criar vídeos espetaculares com IA — grátis e sem compromisso!', literal: 'Por favor, experimente a nossa ferramenta de criação de vídeo com IA gratuitamente' },
+  'fr-CA': { voice: 'fr-CA-SylvieNeural', transcreation: 'Commence à créer des vidéos incroyables avec l\'IA — gratuit!', literal: 'Commencez à créer d\'excellents contenus vidéo' },
+  'tr-TR': { voice: 'tr-TR-EmelNeural', transcreation: 'AI ile harika videolar oluşturmaya başlayın — ücretsiz!', literal: 'Lütfen AI video oluşturma aracımızı ücretsiz deneyin' },
+  'he-IL': { voice: 'he-IL-AvriNeural', transcreation: '!התחילו ליצור סרטונים מדהימים עם AI — בחינם', literal: 'אנא נסו את כלי יצירת הוידאו שלנו בחינם' },
+  'ur-PK': { voice: 'ur-PK-AsadNeural', transcreation: '!AI کے ساتھ شاندار ویڈیوز بنانا شروع کریں — مفت', literal: 'براہ کرم ہمارے AI ویڈیو ٹول کو مفت میں آزمائیں' },
+  'as-IN': { voice: 'as-IN-PriyomNeural', transcreation: 'AI ৰে ভিডিঅ বনাওক — ফ্ৰী!', literal: 'AI ভিডিঅ সঁজুলি বিনামূলীয়াকৈ চেষ্টা কৰক' },
 };
 
 function lookupVoice(code: string): { voice: string; transcreation: string; literal: string } | null {
   return ARABIC_VOICES[code] || INDIAN_VOICES[code] || CJK_VOICES[code] 
-    || AFRICAN_VOICES[code] || LATAM_VOICES[code] || EUROPEAN_VOICES[code] || null;
+    || AFRICAN_VOICES[code] || LATAM_VOICES[code] || EUROPEAN_VOICES[code] || ENGLISH_VOICES[code] || null;
 }
 
 // ============================================
