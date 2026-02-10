@@ -19349,6 +19349,120 @@ export type Database = {
         }
         Relationships: []
       }
+      regional_narration_scripts: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          audio_duration_seconds: number | null
+          audio_generated_at: string | null
+          background_music_url: string | null
+          background_music_volume: number | null
+          completion_rate: number | null
+          created_at: string
+          created_by: string | null
+          cta: string
+          emotional_tone: string | null
+          full_script: string | null
+          generated_audio_url: string | null
+          hook: string
+          id: string
+          impression_count: number | null
+          is_default: boolean | null
+          language_code: string
+          language_display_name: string
+          play_count: number | null
+          positioning_angle: string | null
+          problem_statement: string
+          region_code: string
+          region_display_name: string
+          solution: string
+          status: string
+          target_persona: string | null
+          tts_pitch: string | null
+          tts_provider: string | null
+          tts_speed: number | null
+          tts_voice_id: string | null
+          tts_voice_name: string | null
+          updated_at: string
+          variant_label: string | null
+          version: number
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_duration_seconds?: number | null
+          audio_generated_at?: string | null
+          background_music_url?: string | null
+          background_music_volume?: number | null
+          completion_rate?: number | null
+          created_at?: string
+          created_by?: string | null
+          cta: string
+          emotional_tone?: string | null
+          full_script?: string | null
+          generated_audio_url?: string | null
+          hook: string
+          id?: string
+          impression_count?: number | null
+          is_default?: boolean | null
+          language_code?: string
+          language_display_name?: string
+          play_count?: number | null
+          positioning_angle?: string | null
+          problem_statement: string
+          region_code: string
+          region_display_name: string
+          solution: string
+          status?: string
+          target_persona?: string | null
+          tts_pitch?: string | null
+          tts_provider?: string | null
+          tts_speed?: number | null
+          tts_voice_id?: string | null
+          tts_voice_name?: string | null
+          updated_at?: string
+          variant_label?: string | null
+          version?: number
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_duration_seconds?: number | null
+          audio_generated_at?: string | null
+          background_music_url?: string | null
+          background_music_volume?: number | null
+          completion_rate?: number | null
+          created_at?: string
+          created_by?: string | null
+          cta?: string
+          emotional_tone?: string | null
+          full_script?: string | null
+          generated_audio_url?: string | null
+          hook?: string
+          id?: string
+          impression_count?: number | null
+          is_default?: boolean | null
+          language_code?: string
+          language_display_name?: string
+          play_count?: number | null
+          positioning_angle?: string | null
+          problem_statement?: string
+          region_code?: string
+          region_display_name?: string
+          solution?: string
+          status?: string
+          target_persona?: string | null
+          tts_pitch?: string | null
+          tts_provider?: string | null
+          tts_speed?: number | null
+          tts_voice_id?: string | null
+          tts_voice_name?: string | null
+          updated_at?: string
+          variant_label?: string | null
+          version?: number
+        }
+        Relationships: []
+      }
       regional_success_stories: {
         Row: {
           applicable_regions: string[] | null
