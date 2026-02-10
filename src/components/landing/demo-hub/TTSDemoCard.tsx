@@ -23,6 +23,7 @@ import { useTTSDemo } from '@/hooks/landing/useTTSDemo';
 import { useDynamicLanguageRegistry } from '@/hooks/landing/useDynamicLanguageRegistry';
 import { ProviderBadge, ProviderPanel } from './RegionalProviderInfo';
 import { getExamplesForIndustry, DemoExample } from './demoExamples';
+import { getRegionalConfig, isRTLLanguage } from './regionalDemoRouting';
 import { motion } from 'framer-motion';
 
 interface TTSDemoCardProps {
@@ -51,6 +52,8 @@ export const TTSDemoCard: React.FC<TTSDemoCardProps> = ({ region, industryId }) 
 
   const activeText = useCustom ? customText.trim() : (selectedExample?.text || '');
   const selectedLangName = ttsLangs.find(l => l.code === selectedLang)?.name || selectedLang;
+
+  const regionalConfig = getRegionalConfig(region, selectedLang);
 
   const handleSpeak = (langOverride?: string) => {
     if (!activeText) return;
@@ -225,7 +228,7 @@ export const TTSDemoCard: React.FC<TTSDemoCardProps> = ({ region, industryId }) 
                 ))}
               </div>
               <span className="text-sm text-primary font-medium">
-                Playing via {tts.provider || 'Azure Neural'}
+                Playing via {tts.provider || (regionalConfig.ttsProvider === 'alibaba_cosyvoice' ? 'CosyVoice' : 'Azure Neural')}
               </span>
               <Button size="sm" variant="ghost" onClick={tts.stopAudio} className="h-7 px-2">
                 <Square className="h-3 w-3" />
@@ -241,7 +244,7 @@ export const TTSDemoCard: React.FC<TTSDemoCardProps> = ({ region, industryId }) 
                     Speaking in {selectedLangName}
                   </p>
                 </div>
-                <p className="text-sm text-foreground leading-relaxed" dir={selectedLang.startsWith('ar') || selectedLang.startsWith('he') || selectedLang.startsWith('ur') ? 'rtl' : 'ltr'}>
+                <p className="text-sm text-foreground leading-relaxed" dir={isRTLLanguage(selectedLang) ? 'rtl' : 'ltr'}>
                   "{tts.translatedText}"
                 </p>
               </div>
