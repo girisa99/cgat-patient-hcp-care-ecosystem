@@ -1161,11 +1161,14 @@ export const RegionalLandingPage: React.FC = () => {
         <div className="absolute inset-0 bg-gradient-to-b from-background via-primary/5 to-background" />
         <div className="relative max-w-7xl mx-auto px-4">
           <div className="text-center mb-12">
+            <Badge variant="secondary" className="mb-4 text-sm px-4 py-1">
+              7 Products • 206 Pipelines • 19 AI Providers • 140+ Languages
+            </Badge>
             <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
-              7 Products. 206 Pipelines. One Platform.
+              The Genie Suite — Mind to Media
             </h2>
-            <p className="text-xl text-muted-foreground">
-              From idea to global distribution — every tool you need
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              One platform. Every format. Every language. Every market.
             </p>
           </div>
           <ProductDetailShowcase 
