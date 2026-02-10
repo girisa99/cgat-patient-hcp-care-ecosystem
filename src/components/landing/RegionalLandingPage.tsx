@@ -445,13 +445,12 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
             animate={{ scale: [1, 1.06] }}
             transition={{ duration: 12, ease: 'linear', repeat: Infinity, repeatType: 'reverse' }}
           />
-          {/* Deep cinematic overlays for text readability */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-black/50" />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-transparent to-black/70" />
-          <div className="absolute inset-0 bg-black/20" />
-          <div className="absolute bottom-0 left-0 right-0 h-56 bg-gradient-to-t from-background to-transparent" />
-          {/* Cinematic vignette */}
-          <div className="absolute inset-0" style={{ boxShadow: 'inset 0 0 200px 60px rgba(0,0,0,0.6)' }} />
+          {/* Lighter cinematic overlays - preserving background image visibility */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/30 via-transparent to-black/30" />
+          <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-background to-transparent" />
+          {/* Subtle vignette */}
+          <div className="absolute inset-0" style={{ boxShadow: 'inset 0 0 150px 40px rgba(0,0,0,0.3)' }} />
         </motion.div>
       </AnimatePresence>
 
