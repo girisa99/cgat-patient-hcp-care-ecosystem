@@ -28,7 +28,7 @@ export const ProductsOverview = () => {
       <div className="text-center">
         <h2 className="text-3xl font-bold mb-2">The Complete Genie Suite</h2>
         <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-          Six powerful products designed to work together seamlessly for AI-powered content creation
+          Seven powerful products designed to work together seamlessly — Mind to Media
         </p>
       </div>
 

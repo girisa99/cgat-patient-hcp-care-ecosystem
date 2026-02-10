@@ -31,64 +31,64 @@ interface ProductInfo {
 
 const PRODUCTS: ProductInfo[] = [
   {
-    slug: 'mind',
-    name: 'Genie Mind',
-    tagline: 'AI Knowledge Base',
-    description: 'Build intelligent knowledge bases with semantic search, RAG, and AI-powered Q&A.',
-    icon: <Brain className="h-8 w-8" />,
-    color: 'from-purple-500 to-indigo-600',
-    features: ['Semantic Search', 'Document Q&A', 'Knowledge Graphs', 'Auto-categorization'],
-    pipelines: 12,
-  },
-  {
     slug: 'spark',
     name: 'Genie Spark',
-    tagline: 'AI Script Generation',
-    description: 'Generate scripts, outlines, and structured content with intelligent AI assistance.',
+    tagline: 'Ignite your Ideas',
+    description: 'Generate scripts from any input - Documents, PPT, Video, Audio, URL, Image.',
     icon: <Sparkles className="h-8 w-8" />,
     color: 'from-amber-500 to-orange-600',
     features: ['Script Writing', 'Content Outlines', 'Story Structures', 'Multi-format Export'],
     pipelines: 18,
   },
   {
+    slug: 'mind',
+    name: 'Genie Mind',
+    tagline: 'AI That Understands',
+    description: 'Edit and enhance scripts with AI. Add TTS voiceovers, voice cloning, and music.',
+    icon: <Brain className="h-8 w-8" />,
+    color: 'from-blue-500 to-cyan-600',
+    features: ['AI Script Editing', 'Text-to-Speech', 'Voice Cloning', 'AI Music'],
+    pipelines: 12,
+  },
+  {
     slug: 'vibe',
     name: 'Genie Vibe',
-    tagline: 'AI Recording Studio',
-    description: 'Record, transcribe, clone voices, and transform audio/video with AI enhancement.',
+    tagline: 'Script to Screen',
+    description: 'Full audio and video production hub. Record, trim, stitch, dub, and publish.',
     icon: <Mic className="h-8 w-8" />,
     color: 'from-green-500 to-emerald-600',
-    features: ['Voice Cloning', 'Transcription', 'Audio Enhancement', 'Podcast Production'],
+    features: ['Video Production', 'Podcast Recording', 'Dubbing & Lip-sync', 'Avatar Video'],
     pipelines: 22,
   },
   {
     slug: 'deck',
     name: 'Genie Deck',
-    tagline: 'AI Presentation Builder',
+    tagline: 'Ideas to Impact',
     description: 'Create stunning presentations with AI-generated slides, visuals, and animations.',
     icon: <Presentation className="h-8 w-8" />,
-    color: 'from-blue-500 to-cyan-600',
+    color: 'from-purple-500 to-violet-600',
     features: ['Slide Generation', 'Visual Design', 'Animations', 'Multi-language'],
     pipelines: 25,
   },
   {
-    slug: 'arc',
-    name: 'Genie Arc',
-    tagline: 'AI Production Hub',
-    description: 'Orchestrate complex multi-modal content production with 119+ pipelines.',
+    slug: 'hub',
+    name: 'Genie Hub',
+    tagline: 'Your Creative Command Center',
+    description: 'Enterprise production hub for scheduling, Kanban, team collaboration, and asset management.',
     icon: <Orbit className="h-8 w-8" />,
-    color: 'from-rose-500 to-pink-600',
-    features: ['Video Production', 'Avatar Generation', '3D Assets', 'Multi-modal Workflows'],
+    color: 'from-emerald-500 to-teal-600',
+    features: ['Project Scheduling', 'Kanban Boards', 'Asset Library', 'Review Workflows'],
     pipelines: 35,
   },
   {
-    slug: 'studio',
-    name: 'Genie Studio',
-    tagline: 'Complete Creative Suite',
-    description: 'The full Genie experience: all tools, all pipelines, unlimited possibilities.',
+    slug: 'cast',
+    name: 'Genie Cast',
+    tagline: 'Make It. Show It. Scale It.',
+    description: 'Global distribution and marketing engine. Multi-platform publishing and analytics.',
     icon: <Layers className="h-8 w-8" />,
-    color: 'from-violet-500 to-purple-600',
-    features: ['All Products', 'Priority Support', 'Team Collaboration', 'API Access'],
-    pipelines: 119,
+    color: 'from-pink-500 to-rose-600',
+    features: ['Multi-platform Publishing', '14-Region Localization', 'Automated Scheduling', 'Analytics'],
+    pipelines: 30,
   },
 ];
 
@@ -101,14 +101,14 @@ const GenieProductsPage: React.FC = () => {
       <div className="container max-w-6xl py-12">
         <div className="text-center mb-12">
           <Badge variant="secondary" className="mb-4">
-            6 Products • 119+ Pipelines • 70+ Languages
+            7 Products • 206+ Pipelines • 140+ Languages
           </Badge>
           <h1 className="text-4xl font-bold tracking-tight mb-4">
-            The Complete AI Creative Suite
+            The Complete Genie Suite
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            From idea to multi-modal content in minutes. Choose individual tools 
-            or get the full Studio experience.
+            From idea to multi-modal content in minutes. Mind to Media — 
+            choose individual tools or get the full suite.
           </p>
         </div>
 

@@ -1,15 +1,12 @@
 /**
- * Genie Studio - AI-Powered Media Production Hub
+ * Genie Suite - AI-Powered Creative Suite
  * "Mind to Media" - Complete production suite for content creation
  * 
- * REFACTORED: 4-Quadrant Architecture
+ * 4-Quadrant Architecture:
  * - CREATE: Spark, Mind, Deck (Ideation & Scripts)
  * - PRODUCE: Vibe (Audio/Video Production)
- * - MANAGE: Arc, Hub (Scheduling & Assets)
+ * - MANAGE: Hub (Scheduling & Assets)
  * - PUBLISH: Cast (Distribution & Analytics)
- * 
- * @see src/components/navigation/QuadrantNavigation.tsx
- * @see src/components/navigation/QuadrantDashboard.tsx
  */
 
 import React, { useState, useEffect } from 'react';
