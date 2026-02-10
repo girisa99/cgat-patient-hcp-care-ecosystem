@@ -1,7 +1,7 @@
 /**
- * Genie Studio Dogfooding Marketing Engine
+ * Genie Suite Dogfooding Marketing Engine
  * 
- * Uses Genie Studio's own capabilities to market itself across
+ * Uses Genie Suite's own capabilities to market itself across
  * all 14 regional bundles with AI avatars, voice, 3D, and auto-generated messaging.
  * 
  * "We eat our own dogfood" - generating daily showcases, demos, and campaigns

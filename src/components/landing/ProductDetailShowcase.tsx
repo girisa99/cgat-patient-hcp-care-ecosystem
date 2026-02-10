@@ -252,12 +252,12 @@ const PRODUCT_EXTENDED: Record<string, {
   },
   studio: {
     pipelines: 206,
-    positioning: 'The master orchestrator that unifies all Genie products — Spark, Mind, Vibe, Deck, Arc, and Cast — into a single, seamless creative workflow. From idea to global distribution, every tool, every pipeline, one platform.',
-    storyBrand: 'You shouldn\'t need 10 tools. Studio gives you one platform for everything.',
+    positioning: 'The master orchestrator that unifies all Genie products — Spark, Mind, Vibe, Deck, Hub, and Cast — into a single, seamless creative workflow. From idea to global distribution, every tool, every pipeline, one platform.',
+    storyBrand: 'You shouldn\'t need 10 tools. Genie Suite gives you one platform for everything.',
     jtbd: 'Orchestrate my entire content workflow — from ideation to global distribution — in one place.',
-    videoPlaceholderTitle: 'See how Genie Studio orchestrates all 7 products and 206 pipelines into one unified workflow',
+    videoPlaceholderTitle: 'See how Genie Suite orchestrates all 7 products and 206 pipelines into one unified workflow',
     keyBenefits: [
-      { icon: <Layers className="h-4 w-4" />, title: 'All Products, One Platform', detail: 'Spark + Mind + Vibe + Deck + Arc + Cast — unified under a single orchestrator' },
+      { icon: <Layers className="h-4 w-4" />, title: 'All Products, One Platform', detail: 'Spark + Mind + Vibe + Deck + Hub + Cast — unified under a single orchestrator' },
       { icon: <Workflow className="h-4 w-4" />, title: 'Cross-Product Workflows', detail: 'Seamlessly chain pipelines across products — script → voice → video → slides → publish' },
       { icon: <Globe className="h-4 w-4" />, title: '206 Pipelines, 140+ Languages', detail: 'Access every pipeline across all products with 5-zone AI routing for optimal performance' },
       { icon: <Cpu className="h-4 w-4" />, title: 'A2A Agent Coordination', detail: 'AI agents from each product collaborate intelligently to deliver end-to-end results' },

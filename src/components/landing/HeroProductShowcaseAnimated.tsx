@@ -669,7 +669,7 @@ export const HeroProductShowcaseAnimated: React.FC = () => {
                 ? 'bg-primary shadow-lg shadow-primary/30' 
                 : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
             }`}
-            title="Genie Studio"
+            title="Genie Suite"
           />
           {products.map((product, idx) => (
             <button

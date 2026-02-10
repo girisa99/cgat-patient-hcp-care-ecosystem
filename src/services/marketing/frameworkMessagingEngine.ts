@@ -168,7 +168,7 @@ const DEFAULT_AUDIENCE_MESSAGING: Record<string, Partial<AudienceMessaging>> = {
     storyBrand: {
       character: 'CMO struggling to scale content production without losing quality',
       problem: 'Growing content demands with flat budgets and inconsistent output',
-      guide: 'Genie Studio: Your AI-powered content operating system',
+      guide: 'Genie Suite: Your AI-powered content operating system',
       plan: '1. Connect your brand assets 2. Set governance rules 3. Generate at scale',
       success: 'Marketing team produces 10x content with consistent quality',
       failure: 'Competitors outpace you with faster, more personalized content',
@@ -235,8 +235,8 @@ const PRODUCT_MESSAGING: Record<string, { name: string; tagline: string; role: s
   mind: { name: 'Genie Mind', tagline: 'AI That Understands', role: 'Intelligence & Enhancement', icon: '🧠' },
   vibe: { name: 'Genie Vibe', tagline: 'Script to Screen', role: 'Video & Audio Production', icon: '🎵' },
   deck: { name: 'Genie Deck', tagline: 'Ideas to Impact', role: 'Presentation Generation', icon: '📊' },
-  arc: { name: 'Genie Arc', tagline: 'Infinite Possibilities', role: 'Production Hub & Timeline', icon: '🎬' },
-  studio: { name: 'Genie Studio', tagline: 'Mind to Media', role: 'Full Creative Suite', icon: '✨' },
+  hub: { name: 'Genie Hub', tagline: 'Your Creative Command Center', role: 'Production Hub & Timeline', icon: '🎯' },
+  studio: { name: 'Genie Suite', tagline: 'Mind to Media', role: 'Full Creative Suite', icon: '✨' },
   cast: { name: 'Genie Cast', tagline: 'Make It. Show It. Scale It.', role: 'Distribution & Marketing Engine', icon: '📡' },
   ask_genie: { name: 'Ask Genie', tagline: 'Your Wish Is My Command', role: 'Support & Navigation AI', icon: '🧞' },
 };
@@ -288,7 +288,7 @@ class FrameworkMessagingEngine {
       storyBrand: defaults.storyBrand || {
         character: 'Content creator seeking professional quality',
         problem: 'Content creation is slow, expensive, and inconsistent',
-        guide: 'Genie Studio ecosystem',
+        guide: 'Genie Suite ecosystem',
         plan: 'Select → Generate → Publish',
         success: 'Professional content at scale',
         failure: 'Falling behind competitors',

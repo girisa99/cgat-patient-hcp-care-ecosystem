@@ -154,7 +154,7 @@ const GenieStudioAuth: React.FC = () => {
           <Link to="/genie-landing" className="flex items-center gap-2">
             <img src={genieSuiteLogo} alt="Genie Suite" className="h-8 w-auto" />
             <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Genie Studio
+              Genie Suite
             </span>
           </Link>
           <Button 
@@ -175,7 +175,7 @@ const GenieStudioAuth: React.FC = () => {
           <div className="max-w-md text-center">
             <img src={genieSuiteLogo} alt="Genie Suite" className="h-20 w-auto mx-auto mb-8" />
             <h1 className="text-4xl font-bold text-foreground mb-4">
-              Welcome to Genie Studio
+              Welcome to Genie Suite
             </h1>
             <p className="text-lg text-muted-foreground mb-8">
               The complete AI-powered creative suite with 7 products and 206 pipelines.

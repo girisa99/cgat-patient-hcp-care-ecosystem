@@ -119,7 +119,7 @@ export const HIPAAComplianceFooter: React.FC<HIPAAComplianceFooterProps> = ({
       {isExpanded && (
         <div className="px-4 pb-4 space-y-4 animate-fade-in">
           <p className="text-xs text-muted-foreground">
-            Genie Studio is designed to handle Protected Health Information (PHI) in compliance 
+            Genie Suite is designed to handle Protected Health Information (PHI) in compliance 
             with HIPAA regulations. Your data security is our priority.
           </p>
           

@@ -255,7 +255,7 @@ Respond in valid JSON format: { "headline": "...", "body": "...", "cta": "..."${
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
                   <div className="rotate-[-25deg] opacity-10">
                     <p className="text-4xl font-black text-foreground tracking-widest">PREVIEW</p>
-                    <p className="text-base font-bold text-foreground text-center">Genie Studio</p>
+                    <p className="text-base font-bold text-foreground text-center">Genie Suite</p>
                   </div>
                 </div>
 

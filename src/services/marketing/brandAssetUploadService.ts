@@ -19,12 +19,12 @@ import genieCastLogo from '@/assets/logos/genie-cast-logo.png';
 
 // Map product IDs to logo imports (8 unique logos)
 const LOGO_ASSETS: Record<string, { logo: string; displayName: string }> = {
-  'studio': { logo: genieStudioBanner, displayName: 'Genie Studio' },
+  'studio': { logo: genieStudioBanner, displayName: 'Genie Suite' },
   'spark': { logo: genieSparkLogo, displayName: 'Genie Spark' },
   'mind': { logo: genieMindLogo, displayName: 'Genie Mind' },
   'vibe': { logo: genieVibeLogo, displayName: 'Genie Vibe' },
   'deck': { logo: genieDeckLogo, displayName: 'Genie Deck' },
-  'arc': { logo: genieArcLogo, displayName: 'Genie Arc' },
+  'hub': { logo: genieArcLogo, displayName: 'Genie Hub' },
   'ask-genie': { logo: askGenieLogo, displayName: 'Ask Genie' },
   'cast': { logo: genieCastLogo, displayName: 'Genie Cast' },
 };

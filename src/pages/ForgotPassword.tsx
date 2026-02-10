@@ -177,7 +177,7 @@ const ForgotPassword: React.FC = () => {
           <div className="mt-6 text-center">
             <div className="flex items-center justify-center space-x-2 text-xs text-muted-foreground">
               <Sparkles className="w-4 h-4 text-purple-500" />
-              <span>Genie Studio • Secure Password Reset</span>
+              <span>Genie Suite • Secure Password Reset</span>
             </div>
           </div>
         </CardContent>
