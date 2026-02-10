@@ -379,25 +379,25 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
   const slides = [
     {
       id: 'platform',
-      badge: `${hero.flag} ${productContext ? `Genie ${productContext.charAt(0).toUpperCase() + productContext.slice(1)} for ${hero.regionName}` : `Content optimized for ${hero.regionName}`}`,
-      headline: ['One ', 'Platform.'],
-      subtitle: 'Every Market. The Only One You Need.',
-      description: '15 AI providers. 206 pipelines. 50+ industries. 140+ languages. From mind to media — the world\'s first all-in-one AI content production suite.',
+      badge: `${hero.flag} ${productContext ? `Genie ${productContext.charAt(0).toUpperCase() + productContext.slice(1)} for ${hero.regionName}` : config.differentiators.heroBadge}`,
+      headline: [hero.englishHeadline.split('—')[0]?.trim() + ' — ', hero.regionName],
+      subtitle: hero.englishSubheadline,
+      description: `${hero.theme} · 15 AI providers · 206 pipelines · 50+ industries · ${stats.languages} languages. From mind to media — the world's first all-in-one AI content production suite.`,
       type: 'platform' as const,
     },
     {
       id: 'mind-to-media',
       badge: `${hero.flag} Mind to Media for ${hero.regionName}`,
-      headline: ['Idea to ', 'Global Content.'],
+      headline: ['Idea to ', `${hero.regionName} Content.`],
       subtitle: 'In Minutes, Not Months.',
-      description: 'From a single prompt — AI generates scripts, voices, avatars, 3D models, videos, and culturally adapted content for every market.',
+      description: `From a single prompt — AI generates scripts, voices, avatars, 3D models, videos, and culturally adapted content for ${hero.regionName}.`,
       type: 'pipeline' as const,
     },
     {
       id: 'language',
       badge: `${hero.flag} ${stats.languages} Languages · ${stats.dialects || '30+'} Dialects · ${hero.regionName}`,
-      headline: ['We Speak Your ', 'Language.'],
-      subtitle: 'We Understand Your Market.',
+      headline: [hero.nativeHeadline.length > 30 ? 'We Speak Your ' : hero.nativeHeadline.split(' ').slice(0, 3).join(' ') + ' ', hero.nativeHeadline.length > 30 ? 'Language.' : hero.nativeHeadline.split(' ').slice(3).join(' ')],
+      subtitle: hero.nativeSubheadline,
       description: 'Not just translation — we adapt tone, idioms, humor, cultural references, and regional compliance so your audience feels you were built for them.',
       type: 'stats' as const,
     },
@@ -406,7 +406,7 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
       badge: `${hero.flag} Transcreation for ${hero.regionName}`,
       headline: ['Transcreation, ', 'Not Translation.'],
       subtitle: 'Cultural Adaptation at Scale.',
-      description: 'Translation converts words. Transcreation converts meaning — intent, emotion, and cultural context powered by zone-routed AI models.',
+      description: `Translation converts words. Transcreation converts meaning — intent, emotion, and cultural context powered by zone-routed AI models optimized for ${hero.regionName}.`,
       type: 'comparison' as const,
     },
   ];
@@ -553,14 +553,14 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
                   ].map((stat, i) => (
                     <motion.div
                       key={stat.label}
-                      className="text-center p-4 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/15 hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/20"
+                      className="text-center p-4 bg-black/50 backdrop-blur-xl rounded-2xl border border-white/20 hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/20"
                       whileHover={{ y: -4, scale: 1.04 }}
                       initial={{ opacity: 0, y: 20, scale: 0.9 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       transition={{ delay: 0.45 + i * 0.08, type: 'spring', stiffness: 180 }}
                     >
-                      <p className="text-2xl font-black bg-gradient-to-r from-primary to-cyan-400 bg-clip-text text-transparent">{stat.value}</p>
-                      <p className="text-[11px] text-white/60 font-semibold">{stat.label}</p>
+                      <p className="text-2xl font-black text-white">{stat.value}</p>
+                      <p className="text-[11px] text-white/70 font-semibold">{stat.label}</p>
                     </motion.div>
                   ))}
                 </div>
@@ -603,15 +603,15 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
                   return (
                     <motion.div
                       key={stat.label}
-                      className={`text-center p-6 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/15 hover:border-primary/50 transition-all group shadow-xl ${stat.glow}`}
+                      className={`text-center p-6 bg-black/50 backdrop-blur-xl rounded-2xl border border-white/20 hover:border-primary/50 transition-all group shadow-xl ${stat.glow}`}
                       initial={{ opacity: 0, y: 30, rotateX: -20 }}
                       animate={{ opacity: 1, y: 0, rotateX: 0 }}
                       transition={{ delay: 0.25 + i * 0.12, type: 'spring', stiffness: 150 }}
                       whileHover={{ y: -6, scale: 1.06 }}
                     >
-                      <Icon className="w-6 h-6 text-white/40 mx-auto mb-3 group-hover:text-primary transition-colors" />
-                      <p className="text-4xl font-black text-white drop-shadow-lg">{stat.value}</p>
-                      <p className="text-xs text-white/50 font-semibold mt-1">{stat.label}</p>
+                      <Icon className="w-6 h-6 text-white/50 mx-auto mb-3 group-hover:text-primary transition-colors" />
+                      <p className="text-4xl font-black text-white">{stat.value}</p>
+                      <p className="text-xs text-white/60 font-semibold mt-1">{stat.label}</p>
                     </motion.div>
                   );
                 })}
