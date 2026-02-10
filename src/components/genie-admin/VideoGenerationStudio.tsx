@@ -44,7 +44,7 @@ const CHAPTERS = [
   { id: 'mind', title: 'Genie Mind', duration: 50 },
   { id: 'vibe', title: 'Genie Vibe', duration: 55 },
   { id: 'deck', title: 'Genie Deck', duration: 45 },
-  { id: 'arc', title: 'Genie Arc', duration: 50 },
+  { id: 'hub', title: 'Genie Hub', duration: 50 },
   { id: 'askGenie', title: 'Ask Genie', duration: 40 },
   { id: 'cast', title: 'Genie Cast', duration: 50 },
   { id: 'closing', title: 'Your Story Awaits', duration: 35 },

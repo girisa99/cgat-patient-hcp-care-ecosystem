@@ -26,7 +26,7 @@ const ONE_PAGER_CONFIG: Record<OnePagerType, { name: string; icon: string; compo
   spark: { name: 'Genie Spark', icon: '✨', component: SparkOnePager },
   mind: { name: 'Genie Mind', icon: '🧠', component: MindOnePager },
   vibe: { name: 'Genie Vibe', icon: '🎬', component: VibeOnePager },
-  arc: { name: 'Genie Arc', icon: '🎯', component: ArcOnePager },
+  arc: { name: 'Genie Hub', icon: '🎯', component: ArcOnePager },
   deck: { name: 'Genie Deck', icon: '📊', component: DeckOnePager },
   askGenie: { name: 'Ask Genie', icon: '🧞', component: AskGenieOnePager },
 };

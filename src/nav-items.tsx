@@ -39,7 +39,7 @@ export const navItems = [
     icon: HomeIcon,
   },
   {
-    title: "Genie Studio",
+    title: "Genie Suite",
     url: "/genie-studio",
     icon: Sparkles,
   },

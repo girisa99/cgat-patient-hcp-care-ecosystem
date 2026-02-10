@@ -161,7 +161,7 @@ const PRODUCT_DATA = {
     tagline: 'Your Wish Is My Command',
     icon: '🧞',
     accentColor: 'indigo',
-    description: 'Your intelligent AI companion that guides you through the entire Genie Studio experience with empathy, creativity, and a touch of magic.',
+    description: 'Your intelligent AI companion that guides you through the entire Genie Suite experience with empathy, creativity, and a touch of magic.',
     problemStatement: 'Complex software requires training. Users struggle to discover features and optimize workflows across multiple products.',
     solutionStatement: 'Ask Genie provides natural language access to the entire platform—describe what you want, and Genie executes across all products.',
     useCases: [
@@ -220,7 +220,7 @@ export const ProductOnePager: React.FC<ProductOnePagerProps> = ({ product }) => 
         </div>
         <div className="text-right">
           <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Product Brief</div>
-          <div className="text-xs text-slate-400">Genie Studio Suite</div>
+          <div className="text-xs text-slate-400">Genie Suite</div>
         </div>
       </header>
 
@@ -304,7 +304,7 @@ export const ProductOnePager: React.FC<ProductOnePagerProps> = ({ product }) => 
         <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
           <div className="flex items-center justify-between">
             <div>
-              <h4 className="text-xs font-semibold text-slate-900">Part of the Genie Studio Suite</h4>
+              <h4 className="text-xs font-semibold text-slate-900">Part of the Genie Suite</h4>
               <p className="text-[10px] text-slate-600">All products work together seamlessly through unified AI intelligence.</p>
             </div>
             <div className="flex gap-2">
@@ -321,16 +321,16 @@ export const ProductOnePager: React.FC<ProductOnePagerProps> = ({ product }) => 
       {/* Call to Action */}
       <section className={`${accent.dark} text-white rounded-lg p-4 text-center mb-4`}>
         <p className="text-sm font-semibold mb-1">Experience {data.name}</p>
-        <p className="text-xs opacity-90">Included in all Genie Studio plans starting at $9.99/mo</p>
+        <p className="text-xs opacity-90">Included in all Genie Suite plans starting at $9.99/mo</p>
         <div className="mt-2 flex items-center justify-center gap-6 text-xs opacity-90">
-          <span>🌐 geniestudio.ai</span>
-          <span>📧 hello@geniestudio.ai</span>
+          <span>🌐 genieaisuite.com</span>
+          <span>📧 hello@genieaisuite.com</span>
         </div>
       </section>
 
       {/* Footer */}
       <footer className="text-center text-[9px] text-slate-400 border-t border-slate-200 pt-2">
-        © 2026 Genie Studio Inc. | Confidential | Not for Distribution
+        © 2026 Genie Suite Inc. | Confidential | Not for Distribution
       </footer>
     </div>
   );

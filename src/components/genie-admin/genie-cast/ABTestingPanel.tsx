@@ -147,7 +147,7 @@ export const ABTestingPanel: React.FC = () => {
         id: v.id,
         title: v.title,
         thumbnail_url: v.thumbnail_url,
-        product_name: 'Genie Studio',
+        product_name: 'Genie Suite',
       })) as VideoForTest[];
     },
   });
@@ -186,7 +186,7 @@ export const ABTestingPanel: React.FC = () => {
           prompt: `Generate 4 A/B test variants for a ${testType} test.
             
             Original content: "${baseTitle}"
-            Product: ${product?.name || 'Genie Studio'}
+            Product: ${product?.name || 'Genie Suite'}
             Product tagline: ${product?.tagline || 'AI-powered content creation'}
             Test type: ${testType}
             

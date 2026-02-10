@@ -123,7 +123,7 @@ export const PRODUCT_KNOWLEDGE = {
   },
   studio: {
     id: 'studio',
-    name: 'Genie Studio',
+    name: 'Genie Suite',
     tagline: 'Mind to Media',
     description: 'The master orchestrator that coordinates all Genie products. Access to all 181 pipelines.',
     pipelineCount: PRODUCT_PIPELINE_SUMMARY.studio.totalAccess,

@@ -99,7 +99,7 @@ const GenieStudioAuthLayout: React.FC<GenieStudioAuthLayoutProps> = ({ children 
             <div className="flex flex-col items-center space-y-4 mb-4">
               <img 
                 src={genieStudioCombinedLogo} 
-                alt="Genie Studio" 
+                alt="Genie Suite" 
                 className="h-24 w-auto object-contain"
               />
             </div>

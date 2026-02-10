@@ -213,7 +213,7 @@ export function MarketingContentDashboard() {
             Marketing Content Engine
           </h1>
           <p className="text-muted-foreground">
-            Dogfooding: Genie Studio marketing itself with 119 pipelines × 14 categories × 14 languages
+            Dogfooding: Genie Suite marketing itself with 206 pipelines × 21 categories × 14 languages
           </p>
         </div>
         
@@ -615,7 +615,7 @@ export function MarketingContentDashboard() {
                 Creator Leaderboard & Incentives
               </CardTitle>
               <CardDescription>
-                Internal rewards program for Genie Studio team members
+                Internal rewards program for Genie Suite team members
               </CardDescription>
             </CardHeader>
             <CardContent>

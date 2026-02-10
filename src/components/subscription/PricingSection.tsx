@@ -46,7 +46,7 @@ export const PricingSection = () => {
         <h2 className="text-3xl font-bold mb-4">Choose Your Plan</h2>
         <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
           Scale your AI-powered solutions with the right plan for your needs. 
-          All plans include core Genie Studio features.
+          All plans include core Genie Suite features.
         </p>
       </div>
 

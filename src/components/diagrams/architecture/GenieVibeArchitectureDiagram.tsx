@@ -267,7 +267,7 @@ export const GenieVibeArchitectureDiagram: React.FC = () => {
               <div className="text-xs text-muted-foreground mt-1">Presentations</div>
             </div>
             <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-3 border-2 border-blue-200 dark:border-blue-800/40">
-              <div className="text-blue-600 dark:text-blue-400 font-semibold">→ Genie Arc</div>
+              <div className="text-blue-600 dark:text-blue-400 font-semibold">→ Genie Hub</div>
               <div className="text-xs text-muted-foreground mt-1">Team Review</div>
             </div>
             <div className="bg-violet-50 dark:bg-violet-950/20 rounded-lg p-3 border-2 border-violet-200 dark:border-violet-800/40">

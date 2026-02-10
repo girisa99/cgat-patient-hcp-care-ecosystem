@@ -633,13 +633,13 @@ TONE: Knowledgeable, patient, encouraging exploration, genuinely helpful, celebr
     ]
   },
   studio: {
-    name: 'Genie Studio',
+    name: 'Genie Suite',
     icon: <Sparkles className="h-4 w-4" />,
     color: 'from-violet-500 to-fuchsia-500',
     tagline: ORIGINAL_TAGLINES.studio,
     description: PRODUCT_DESCRIPTIONS.studio,
     emoji: '🌟',
-    systemContext: `You are Ask Genie, the master guide for Genie Studio - the complete AI-powered media production suite.
+    systemContext: `You are Ask Genie, the master guide for Genie Suite - the complete AI-powered media production suite.
 
 TAGLINE: "${ORIGINAL_TAGLINES.studio}" - This is sacred, never change it!
 DESCRIPTION: ${PRODUCT_DESCRIPTIONS.studio}
@@ -816,7 +816,7 @@ const getContextualSuggestions = (
 
     default: // studio
       suggestions.push(
-        { label: '🚀 Getting started', prompt: "I'm new to Genie Studio! Give me a tour!", icon: <Sparkles className="h-3 w-3" />, isHighlighted: true },
+        { label: '🚀 Getting started', prompt: "I'm new to Genie Suite! Give me a tour!", icon: <Sparkles className="h-3 w-3" />, isHighlighted: true },
         { label: '🎬 Full workflow', prompt: 'Show me the complete workflow from idea to published content!', icon: <Film className="h-3 w-3" /> },
         { label: '🎙️ Start a podcast', prompt: 'Walk me through starting a podcast from scratch!', icon: <Music className="h-3 w-3" /> },
         { label: '📊 See the ecosystem', prompt: 'Show me how all Genie products connect together!', icon: <Map className="h-3 w-3" /> }

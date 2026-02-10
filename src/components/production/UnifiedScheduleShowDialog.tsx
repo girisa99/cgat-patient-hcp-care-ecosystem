@@ -114,8 +114,8 @@ const GENIE_DEMO_PRODUCTS = {
   },
   genie_arc_demo: {
     logo: genieArcLogo,
-    name: 'Genie Arc',
-    tagline: 'Your Production Journey',
+    name: 'Genie Hub',
+    tagline: 'Your Creative Command Center',
     color: 'from-emerald-500 to-teal-500',
   },
   genie_mind_demo: {
@@ -412,9 +412,9 @@ export function UnifiedScheduleShowDialog({
     // Generate title based on type
     const titleTemplates: Record<string, string> = {
       // Genie Demo types
-      genie_studio_full: `Genie Studio Demo - ${demoProduct?.tagline || 'Mind to Media'}`,
+      genie_studio_full: `Genie Suite Demo - ${demoProduct?.tagline || 'Mind to Media'}`,
       genie_spark_demo: `Genie Spark Demo - ${demoProduct?.tagline || 'Ignite your Ideas'}`,
-      genie_arc_demo: `Genie Arc Demo - ${demoProduct?.tagline || 'Your Production Journey'}`,
+      genie_arc_demo: `Genie Hub Demo - ${demoProduct?.tagline || 'Your Creative Command Center'}`,
       genie_mind_demo: `Genie Mind Demo - ${demoProduct?.tagline || 'AI that understands'}`,
       genie_vibe_demo: `Genie Vibe Demo - ${demoProduct?.tagline || 'Script to Screen'}`,
       genie_suite_overview: 'Genie Studio Suite - Complete Platform Overview',

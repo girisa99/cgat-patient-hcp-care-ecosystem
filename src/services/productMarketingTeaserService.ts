@@ -293,10 +293,10 @@ export const PRODUCT_FEATURES: ProductFeatureTeaser[] = [
     useCaseExample: { from: 'English deck', to: 'Japanese version', time: '2 minutes' }
   },
 
-  // ========== GENIE ARC ==========
+  // ========== GENIE HUB (formerly Arc) ==========
   {
     id: 'arc_calendar',
-    product: 'arc',
+    product: 'hub',
     category: 'workflow',
     featureName: 'Content Calendar',
     title: 'Plan Your Content Empire',
@@ -311,7 +311,7 @@ export const PRODUCT_FEATURES: ProductFeatureTeaser[] = [
     thumbnailUrl: '/teasers/products/arc-calendar-thumb.jpg',
     demoVideoUrl: '/teasers/products/arc-calendar-demo.mp4',
     durationSeconds: 30,
-    watermarkText: 'Genie Arc • Production command center',
+    watermarkText: 'Genie Hub • Creative Command Center',
     tier: 'starter',
     matchingIndustries: ['media', 'marketing', 'agency', 'content_team'],
     matchingContentTypes: ['scheduled_content', 'campaigns'],
@@ -337,7 +337,7 @@ export const PRODUCT_FEATURES: ProductFeatureTeaser[] = [
     thumbnailUrl: '/teasers/products/arc-batch-thumb.jpg',
     demoVideoUrl: '/teasers/products/arc-batch-demo.mp4',
     durationSeconds: 40,
-    watermarkText: 'Genie Arc • Scale without limits',
+    watermarkText: 'Genie Hub • Scale without limits',
     tier: 'pro',
     matchingIndustries: ['ecommerce', 'real_estate', 'recruitment', 'sales'],
     matchingContentTypes: ['personalized_content', 'campaigns', 'catalogs'],
@@ -641,8 +641,8 @@ class ProductMarketingTeaserService {
       mind: { name: 'Genie Mind', icon: '🧠', tagline: 'AI That Understands' },
       vibe: { name: 'Genie Vibe', icon: '🎬', tagline: 'Script to Screen' },
       deck: { name: 'Genie Deck', icon: '📊', tagline: 'Ideas to Impact' },
-      arc: { name: 'Genie Arc', icon: '🎯', tagline: 'Infinite Possibilities' },
-      hub: { name: 'Genie Hub', icon: '🧞', tagline: 'Master Orchestrator' },
+      arc: { name: 'Genie Hub', icon: '🎯', tagline: 'Your Creative Command Center' },
+      hub: { name: 'Genie Hub', icon: '🧞', tagline: 'Your Creative Command Center' },
       askGenie: { name: 'Ask Genie', icon: '🧞', tagline: 'Your Wish Is My Command' }
     };
 

@@ -241,7 +241,7 @@ export const Teleprompter: React.FC<TeleprompterProps> = ({
             lineHeight: 1.8
           }}
         >
-          {script || 'No script loaded. Select a script from Genie Studio to begin.'}
+          {script || 'No script loaded. Select a script from Genie Suite to begin.'}
         </div>
         
         {/* Bottom padding for scroll completion */}

@@ -1,6 +1,6 @@
 /**
- * GENIE STUDIO NAVIGATION ITEMS
- * Isolated navigation for Genie Studio users
+ * GENIE SUITE NAVIGATION ITEMS
+ * Isolated navigation for Genie Suite users
  * Filtered by subscription tier
  * 
  * ═══════════════════════════════════════════════════════════════════════════════
@@ -121,13 +121,13 @@ export function meetsTierRequirement(userTier: SubscriptionTier, minTier: Subscr
 }
 
 /**
- * Genie Studio navigation items
+ * Genie Suite navigation items
  * MANAGE category now contains all Production Hub tabs directly
  */
 export const genieStudioNavItems: GenieNavItem[] = [
   // === WORKSPACE ===
   {
-    title: "Genie Studio",
+    title: "Genie Suite",
     url: "/genie-studio",
     icon: Sparkles,
     description: "Your creative workspace dashboard",
