@@ -720,7 +720,7 @@ class MarketingContentManager {
     // Generate messaging using template
     const headline = this.fillTemplate(
       this.rotateArray(template.headlineTemplates),
-      { feature: pipeline.name, product: 'Genie Studio' }
+      { feature: pipeline.name, product: 'Genie Suite' }
     );
     
     const hook = this.fillTemplate(
@@ -735,7 +735,7 @@ class MarketingContentManager {
     const body = this.fillTemplate(
       this.rotateArray(template.bodyTemplates),
       {
-        product: 'Genie Studio',
+        product: 'Genie Suite',
         feature: pipeline.name,
         capability: pipeline.hook,
         pain_point: 'hours of manual work',

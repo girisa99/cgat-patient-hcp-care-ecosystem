@@ -512,7 +512,7 @@ export const HeroUnifiedVideoPlayer: React.FC<HeroUnifiedVideoPlayerProps> = ({
             >
               <Sparkles className="w-12 h-12 md:w-16 md:h-16 text-purple-400 mx-auto mb-4" />
               <h3 className="text-xl md:text-2xl font-bold text-white mb-2">
-                Experience Genie Studio Live
+                Experience Genie Suite Live
               </h3>
               <p className="text-white/60 text-sm md:text-base mb-4 md:mb-6 max-w-md px-4">
                 Generate a personalized demo in {regionName} with AI voiceover and regional routing.

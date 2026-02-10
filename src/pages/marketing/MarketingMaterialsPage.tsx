@@ -22,7 +22,7 @@ import {
 type OnePagerType = 'overview' | 'spark' | 'mind' | 'vibe' | 'arc' | 'deck' | 'askGenie';
 
 const ONE_PAGER_CONFIG: Record<OnePagerType, { name: string; icon: string; component: React.FC }> = {
-  overview: { name: 'Genie Studio Overview', icon: '🧞', component: GenieStudioOnePager },
+  overview: { name: 'Genie Suite Overview', icon: '🧞', component: GenieStudioOnePager },
   spark: { name: 'Genie Spark', icon: '✨', component: SparkOnePager },
   mind: { name: 'Genie Mind', icon: '🧠', component: MindOnePager },
   vibe: { name: 'Genie Vibe', icon: '🎬', component: VibeOnePager },
@@ -73,7 +73,7 @@ const MarketingMaterialsPage: React.FC = () => {
           <div>
             <h1 className="text-2xl font-bold">Marketing Materials</h1>
             <p className="text-muted-foreground">
-              PDF-ready one-pagers and pitch deck for Genie Studio Suite
+              PDF-ready one-pagers and pitch deck for Genie Suite
             </p>
           </div>
           <Badge variant="secondary" className="text-sm">
@@ -170,7 +170,7 @@ const MarketingMaterialsPage: React.FC = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Presentation className="h-5 w-5" />
-                  Genie Studio Investor Pitch Deck
+                  Genie Suite Investor Pitch Deck
                 </CardTitle>
               </CardHeader>
               <CardContent>

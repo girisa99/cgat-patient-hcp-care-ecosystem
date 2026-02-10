@@ -276,7 +276,7 @@ export const CHAPTER_VISUAL_CONFIGS: ChapterVisualConfig[] = [
   {
     id: 'opening',
     title: 'The Genie Awakens',
-    product: 'Genie Studio',
+    product: 'Genie Suite',
     duration: 45,
     visualStyle: 'cinematic_3d',
     primaryColor: '#9333EA',
@@ -529,7 +529,7 @@ export const CHAPTER_VISUAL_CONFIGS: ChapterVisualConfig[] = [
   {
     id: 'closing',
     title: 'Your Wish is Our Command',
-    product: 'Genie Studio',
+    product: 'Genie Suite',
     duration: 30,
     visualStyle: 'cinematic_3d',
     primaryColor: '#9333EA',

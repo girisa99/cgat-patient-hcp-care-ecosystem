@@ -32,7 +32,7 @@ const DMCAPolicyPage: React.FC = () => {
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground space-y-4">
               <p>
-                Genie Studio respects the intellectual property rights of others and expects our users 
+                Genie Suite respects the intellectual property rights of others and expects our users 
                 to do the same. We comply with the Digital Millennium Copyright Act (DMCA) and similar 
                 international copyright laws.
               </p>
@@ -77,8 +77,8 @@ const DMCAPolicyPage: React.FC = () => {
               <p>Send DMCA notices to our designated copyright agent:</p>
               <div className="bg-muted p-4 rounded-lg">
                 <p><strong>DMCA Agent</strong></p>
-                <p>Genie Studio Legal Department</p>
-                <p>Email: dmca@geniestudio.com</p>
+                <p>Genie Suite Legal Department</p>
+                <p>Email: dmca@genieaisuite.com</p>
                 <p>Subject Line: DMCA Takedown Request</p>
               </div>
               <Alert>

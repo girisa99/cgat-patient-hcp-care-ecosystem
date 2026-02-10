@@ -109,13 +109,13 @@ export const GENIE_PRODUCTS = {
   },
   arc: {
     id: 'arc',
-    name: 'Genie Arc',
-    tagline: 'Your Production Journey With Infinite Possibilities',
+    name: 'Genie Hub',
+    tagline: 'Your Creative Command Center',
     category: 'MANAGE',
     features: [
-      { id: 'project_management', name: 'Project Dashboard', screens: ['arc-dashboard'] },
-      { id: 'version_control', name: 'Version Control', screens: ['arc-versions'] },
-      { id: 'collaboration', name: 'Team Collaboration', screens: ['arc-collab'] },
+      { id: 'project_management', name: 'Project Dashboard', screens: ['hub-dashboard'] },
+      { id: 'version_control', name: 'Version Control', screens: ['hub-versions'] },
+      { id: 'collaboration', name: 'Team Collaboration', screens: ['hub-collab'] },
     ],
   },
   cast: {
@@ -142,8 +142,8 @@ export const GENIE_PRODUCTS = {
   },
   studio: {
     id: 'studio',
-    name: 'Genie Studio',
-    tagline: 'The Complete Creation Suite',
+    name: 'Genie Suite',
+    tagline: 'Mind to Media',
     category: 'HUB',
     features: [
       { id: 'wizard', name: 'Generation Wizard', screens: ['studio-wizard'] },

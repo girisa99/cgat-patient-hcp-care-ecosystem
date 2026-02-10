@@ -57,7 +57,7 @@ export const SERPPreviewPanel: React.FC<SERPPreviewPanelProps> = ({
   initialTitle = '',
   initialDescription = '',
   thumbnailUrl = '',
-  channelName = 'Genie Studio',
+  channelName = 'Genie Suite',
   isPremium = true,
   onUpgrade,
 }) => {

@@ -165,7 +165,7 @@ const PRICING_TIERS = [
   { name: 'Enterprise', price: 299, pipelines: 206, languages: '140+', credits: '10K+', features: ['8K', 'White-label', 'SSO/SAML', 'VR/AR Labs'] },
 ];
 
-// Only actually integrated providers within Genie Studio — 15 providers
+// Only actually integrated providers within Genie Suite — 15 providers
 const AI_PROVIDERS = [
   { name: 'Google Vertex', logo: gcpLogo, use: 'Veo 3 Video, Imagen 3, Gemini LLM', color: 'from-blue-500 to-green-500' },
   { name: 'Claude', logo: anthropicLogo, use: 'Primary LLM — Western/EU Transcreation', color: 'from-orange-400 to-amber-500' },
@@ -286,7 +286,7 @@ const GenieStudioLanding: React.FC = () => {
           <div className="flex items-center gap-2">
             <Sparkles className="w-8 h-8 text-primary" />
             <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Genie Studio
+              Genie Suite
             </span>
           </div>
           <div className="hidden md:flex items-center gap-6">
@@ -776,7 +776,7 @@ const GenieStudioLanding: React.FC = () => {
             
             <div className="flex justify-center items-center gap-2">
               <Sparkles className="w-6 h-6 text-primary" />
-              <span className="font-bold text-foreground">Genie Studio</span>
+              <span className="font-bold text-foreground">Genie Suite</span>
               <span className="text-muted-foreground">© 2026</span>
             </div>
           </div>

@@ -50,12 +50,12 @@ interface BrandAssetsPanelProps {
 
 // 8 Official Products with their brand colors
 const PRODUCT_BRAND_CONFIG: Record<GenieProductId, { name: string; primary: string; secondary: string; accent: string }> = {
-  studio: { name: 'Genie Studio', primary: '#9333EA', secondary: '#A855F7', accent: '#C084FC' },
+  studio: { name: 'Genie Suite', primary: '#9333EA', secondary: '#A855F7', accent: '#C084FC' },
   spark: { name: 'Genie Spark', primary: '#F97316', secondary: '#FB923C', accent: '#FDBA74' },
   mind: { name: 'Genie Mind', primary: '#3B82F6', secondary: '#60A5FA', accent: '#93C5FD' },
   vibe: { name: 'Genie Vibe', primary: '#22C55E', secondary: '#4ADE80', accent: '#86EFAC' },
   deck: { name: 'Genie Deck', primary: '#EAB308', secondary: '#FACC15', accent: '#FDE047' },
-  arc: { name: 'Genie Arc', primary: '#EC4899', secondary: '#F472B6', accent: '#F9A8D4' },
+  arc: { name: 'Genie Hub', primary: '#10B981', secondary: '#34D399', accent: '#6EE7B7' },
   cast: { name: 'Genie Cast', primary: '#EF4444', secondary: '#F87171', accent: '#FCA5A5' },
   ask_genie: { name: 'Ask Genie', primary: '#06B6D4', secondary: '#22D3EE', accent: '#67E8F9' },
 };

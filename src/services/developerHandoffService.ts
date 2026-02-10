@@ -84,7 +84,7 @@ export const AI_TOOL_TEMPLATES = {
     icon: '💜',
     promptPrefix: `# 🔧 Genie Support Issue - Fix Request
 
-This issue was escalated from the Genie Studio support system.
+This issue was escalated from the Genie Suite support system.
 Please analyze and implement the fix.
 
 **IMPORTANT:** When the fix is complete, include this tracking ID in your commit message:
@@ -112,7 +112,7 @@ When you've implemented the fix, the Genie support system will automatically tra
     icon: '⚡',
     promptPrefix: `# Genie Support Fix Request
 
-Issue from Genie Studio support system.
+Issue from Genie Suite support system.
 Track with ID: {{HANDOFF_ID}}
 
 ---
@@ -145,7 +145,7 @@ Include "GENIE-{{HANDOFF_ID}}" in fix reference.
   claude: {
     name: 'Claude',
     icon: '🧠',
-    promptPrefix: `# Technical Issue from Genie Studio
+    promptPrefix: `# Technical Issue from Genie Suite
 
 I'm sharing a technical issue that needs debugging and a fix suggestion.
 Reference ID: {{HANDOFF_ID}}

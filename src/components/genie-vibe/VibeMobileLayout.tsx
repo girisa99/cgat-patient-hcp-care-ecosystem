@@ -285,7 +285,7 @@ export const VibeMobileLayout: React.FC<VibeMobileLayoutProps> = ({
               size="icon" 
               className="h-8 w-8 flex-shrink-0" 
               onClick={onSwitchToDesktop}
-              title="Back to Genie Studio"
+              title="Back to Genie Suite"
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>

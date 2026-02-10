@@ -35,15 +35,15 @@ interface HeroInteractiveVideoProps {
 
 // Chapter to product mapping
 const CHAPTER_PRODUCTS: Record<string, string> = {
-  opening: 'Genie Studio',
+  opening: 'Genie Suite',
   spark: 'Genie Spark',
   mind: 'Genie Mind',
   vibe: 'Genie Vibe',
   deck: 'Genie Deck',
-  arc: 'Genie Arc',
+  hub: 'Genie Hub',
   askGenie: 'Ask Genie',
   cast: 'Genie Cast',
-  closing: 'Genie Studio',
+  closing: 'Genie Suite',
 };
 
 // Visual content types with animations

@@ -84,7 +84,7 @@ const PROVIDER_ATTRIBUTION: Record<string, { name: string; logo: string; role: s
 const FALLBACK_VIDEO = {
   src: 'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
   poster: 'https://images.unsplash.com/photo-1551434678-e076c223a692?w=800&h=450&fit=crop',
-  title: 'Genie Studio Demo',
+  title: 'Genie Suite Demo',
 };
 
 interface HeroLandingVideoProps {

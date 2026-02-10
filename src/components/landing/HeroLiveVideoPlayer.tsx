@@ -334,7 +334,7 @@ export const HeroLiveVideoPlayer: React.FC<HeroLiveVideoPlayerProps> = ({
             >
               <Sparkles className="w-16 h-16 text-purple-400 mx-auto mb-4" />
               <h3 className="text-2xl font-bold text-white mb-2">
-                Experience Genie Studio Live
+                Experience Genie Suite Live
               </h3>
               <p className="text-white/60 mb-6 max-w-md">
                 Generate a personalized demo video in {regionName} with 

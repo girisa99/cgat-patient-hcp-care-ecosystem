@@ -903,7 +903,7 @@ export const GenieVideoShowcase: React.FC<GenieVideoShowcaseProps> = ({
             transition={{ delay: 0.5 }}
           >
             <div className="text-center">
-              <img src={genieStudioLogo} alt="Genie Studio" className="w-32 h-32 mx-auto mb-4" />
+              <img src={genieStudioLogo} alt="Genie Suite" className="w-32 h-32 mx-auto mb-4" />
               <h3 className="text-2xl font-bold text-white">Your Wish is Our Command</h3>
               <p className="text-purple-200 mt-2">7 Products • 206 Pipelines • 14 Providers</p>
             </div>

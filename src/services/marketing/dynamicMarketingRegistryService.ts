@@ -93,11 +93,11 @@ export interface LegacyAudience {
 // ============================================================================
 
 const FALLBACK_PRODUCTS: LegacyProduct[] = [
-  { id: 'studio', name: 'Genie Studio', tagline: 'The Production Hub', category: 'HUB', features: [] },
+  { id: 'studio', name: 'Genie Suite', tagline: 'Mind to Media', category: 'HUB', features: [] },
   { id: 'spark', name: 'Genie Spark', tagline: 'Ignite Your Ideas', category: 'CREATE', features: [] },
   { id: 'mind', name: 'Genie Mind', tagline: 'AI That Understands', category: 'CREATE', features: [] },
   { id: 'vibe', name: 'Genie Vibe', tagline: 'Script to Screen', category: 'PRODUCE', features: [] },
-  { id: 'arc', name: 'Genie Arc', tagline: 'Your Production Journey', category: 'MANAGE', features: [] },
+  { id: 'hub', name: 'Genie Hub', tagline: 'Your Creative Command Center', category: 'MANAGE', features: [] },
   { id: 'deck', name: 'Genie Deck', tagline: 'Ideas to Impact', category: 'PRODUCE', features: [] },
   { id: 'cast', name: 'Genie Cast', tagline: 'Make It. Show It. Scale It.', category: 'PUBLISH', features: [] },
   { id: 'ask_genie', name: 'Ask Genie', tagline: 'Your Wish is My Command', category: 'SUPPORT', features: [] },

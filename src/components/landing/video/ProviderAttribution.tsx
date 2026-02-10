@@ -25,15 +25,15 @@ const CHAPTER_TO_PRODUCT: Record<string, {
   name: string;
   description: string;
 }> = {
-  opening: { name: 'Genie Studio', description: 'Your Complete AI Suite' },
+  opening: { name: 'Genie Suite', description: 'Your Complete AI Suite' },
   spark: { name: 'Genie Spark', description: 'Ignite Your Ideas' },
   mind: { name: 'Genie Mind', description: 'AI That Understands' },
   vibe: { name: 'Genie Vibe', description: 'Script to Screen' },
   deck: { name: 'Genie Deck', description: 'Ideas to Impact' },
-  arc: { name: 'Genie Arc', description: 'Your Production Journey' },
+  hub: { name: 'Genie Hub', description: 'Your Creative Command Center' },
   askGenie: { name: 'Ask Genie', description: 'Your Wish is My Command' },
   cast: { name: 'Genie Cast', description: 'Make It. Show It. Scale It.' },
-  closing: { name: 'Genie Studio', description: 'Your Story Awaits' },
+  closing: { name: 'Genie Suite', description: 'Your Story Awaits' },
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════

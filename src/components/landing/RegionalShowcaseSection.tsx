@@ -190,7 +190,7 @@ export const RegionalShowcaseSection: React.FC<RegionalShowcaseSectionProps> = (
             See It In Action — {config.hero.regionName}
           </h2>
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-            Real-world examples of how Genie Studio transforms content for{' '}
+            Real-world examples of how Genie Suite transforms content for{' '}
             <span className="text-primary font-semibold">{config.hero.regionName}</span> industries
           </p>
         </motion.div>
@@ -222,7 +222,7 @@ export const RegionalShowcaseSection: React.FC<RegionalShowcaseSectionProps> = (
           transition={{ delay: 0.4 }}
         >
           <p className="text-sm text-muted-foreground">
-            These are just examples — Genie Studio supports <strong>50+ industries</strong> across{' '}
+            These are just examples — Genie Suite supports <strong>50+ industries</strong> across{' '}
             <strong>140+ languages</strong>. Your content, your market, your language.
           </p>
         </motion.div>

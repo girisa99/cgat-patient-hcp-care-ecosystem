@@ -228,7 +228,7 @@ const GenieExploreDemoPage: React.FC = () => {
           <Link to="/genie-landing" className="flex items-center gap-2">
             <img src={genieSuiteLogo} alt="Genie Suite" className="h-8 w-auto" />
             <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Genie Studio
+              Genie Suite
             </span>
           </Link>
           <div className="flex items-center gap-4">

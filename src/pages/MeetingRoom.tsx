@@ -334,7 +334,7 @@ export default function MeetingRoom() {
           {/* Footer */}
           <div className="text-center pt-4 border-t border-purple-500/20">
             <p className="text-white/40 text-xs">
-              Powered by Genie Studio • genieaiexperimentationhub.tech
+              Powered by Genie Suite • genieaisuite.com
             </p>
           </div>
         </CardContent>

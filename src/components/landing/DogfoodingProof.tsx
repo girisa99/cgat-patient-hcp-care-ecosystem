@@ -69,7 +69,7 @@ export const DogfoodingProof: React.FC = () => {
         <div className="text-center mb-12">
           <Badge variant="outline" className="mb-4 border-primary/40 text-primary">
             <Sparkles className="h-3 w-3 mr-1" />
-            Built With Genie Studio
+            Built With Genie Suite
           </Badge>
           <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
             We Don't Just Build the Platform. We Use It.
@@ -122,7 +122,7 @@ export const DogfoodingProof: React.FC = () => {
             </div>
 
             <p className="text-muted-foreground mb-6">
-              Genie Studio is your complete production partner — from ideation to global distribution. 
+              Genie Suite is your complete production partner — from ideation to global distribution. 
               Here's what you get on day one:
             </p>
 
