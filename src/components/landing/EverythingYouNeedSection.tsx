@@ -323,7 +323,7 @@ export const EverythingYouNeedSection: React.FC<EverythingYouNeedSectionProps> =
           viewport={{ once: true }}
           transition={{ delay: 0.3 }}
         >
-          <strong>50+ industries</strong> · <strong>140+ languages</strong> · <strong>15 AI providers</strong> · 
+          <strong>50+ industries</strong> · <strong>140+ languages</strong> · <strong>19 AI providers</strong> · 
           <strong> 206 pipelines</strong> — Your content, your market, your language.
         </motion.p>
       </div>

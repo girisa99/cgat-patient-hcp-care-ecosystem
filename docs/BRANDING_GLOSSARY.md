@@ -36,6 +36,9 @@
 
 **Parent Brand:** Genie AI Suite (`genieaisuite.com`)
 **Tagline:** Mind to Media
+**Provider Count:** **19 AI Providers** (verified from `src/config/master-provider-routing-registry.ts` → `TOTAL_PROVIDER_COUNT = 19`)
+
+> ⚠️ **NEVER** use "15 AI Providers" or "18 AI Providers" — the correct count is **19**.
 
 ---
 

@@ -80,7 +80,7 @@ export const DocumentDownloadButton: React.FC<DocumentDownloadButtonProps> = ({
           <div className="flex flex-col">
             <span className="font-medium">Complete Ecosystem Matrix</span>
             <span className="text-xs text-muted-foreground">
-              21 Categories, 206 Pipelines, 15 Providers
+              21 Categories, 206 Pipelines, 19 Providers
             </span>
           </div>
         </DropdownMenuItem>
@@ -94,7 +94,7 @@ export const DocumentDownloadButton: React.FC<DocumentDownloadButtonProps> = ({
           <div className="flex flex-col">
             <span className="font-medium">AI Provider Matrix</span>
             <span className="text-xs text-muted-foreground">
-              15 Providers, 7 Zones, Fallback Chains
+              19 Providers, 7 Zones, Fallback Chains
             </span>
           </div>
         </DropdownMenuItem>

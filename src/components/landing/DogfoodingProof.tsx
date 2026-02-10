@@ -24,7 +24,7 @@ const PLATFORM_HIGHLIGHTS = [
     type: 'AI Video Production',
     icon: Video,
     what: 'Every product demo and regional showcase — produced by Genie Vibe & Cast',
-    provider: '15 AI Providers Orchestrated',
+    provider: '19 AI Providers Orchestrated',
     confidence: 96,
   },
   {
@@ -149,7 +149,7 @@ export const DogfoodingProof: React.FC = () => {
         {/* Bottom branded strip */}
         <div className="mt-8 p-6 bg-gradient-to-r from-primary/10 via-primary/5 to-accent/10 rounded-2xl border border-primary/20 text-center">
           <p className="text-lg text-foreground">
-            🎯 <strong>7 Products · 206 Pipelines · 15 AI Providers · 140+ Languages</strong>
+            🎯 <strong>7 Products · 206 Pipelines · 19 AI Providers · 140+ Languages</strong>
           </p>
           <p className="text-muted-foreground mt-2">
             One platform that speaks your language, understands your market, and scales with your ambition.

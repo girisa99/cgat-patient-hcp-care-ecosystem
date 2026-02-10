@@ -41,7 +41,7 @@ const agentIntegrations = [
 
 const pipelineIntegrations = [
   { name: '119 Pipelines', description: 'Full transformation workflow support', status: 'complete' },
-  { name: '15 AI Providers', description: 'Multi-provider orchestration', status: 'complete' },
+  { name: '19 AI Providers', description: 'Multi-provider orchestration', status: 'complete' },
   { name: '35+ Output Formats', description: 'Comprehensive export options', status: 'complete' },
   { name: '5-Zone Routing', description: 'Regional cost optimization', status: 'complete' },
   { name: '143+ Edge Functions', description: 'Serverless processing layer', status: 'complete' },

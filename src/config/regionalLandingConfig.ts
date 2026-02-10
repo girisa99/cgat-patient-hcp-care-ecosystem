@@ -166,15 +166,15 @@ export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
     comparisonSavings: 'Save $121/month vs Synthesia + ElevenLabs + Descript + DeepL + InVideo',
     differentiators: {
       firstToMarket: [
-        'First platform to unify 15 AI providers into one production pipeline',
+        'First platform to unify 19 AI providers into one production pipeline',
         'First to offer end-to-end Mind-to-Media workflow — Idea → Script → Visual → Voice → Video → Translate → Publish',
       ],
       capabilityDepth: [
-        'Only platform with auto-routed AI across 15 providers per task',
+        'Only platform with auto-routed AI across 19 providers per task',
         'Only platform producing enterprise video in 140+ languages from a single prompt',
         'Only platform combining AI avatars, lip-sync, 3D, and transcreation in one pipeline',
       ],
-      heroBadge: '15 AI Providers. One Platform.',
+      heroBadge: '19 AI Providers. One Platform.',
     },
     showcaseExamples: [
       { industry: 'Healthcare', icon: '🏥', input: 'HIPAA training document (12 pages)', pipeline: 'Mind → Spark → Vibe → Cast → Hub', output: '8-module video course with AI presenter + 3 language dubs', languages: 'English, Spanish, Mandarin', impact: '85% faster than traditional production' },
@@ -182,7 +182,7 @@ export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
       { industry: 'Technology', icon: '💻', input: 'API documentation + changelog', pipeline: 'Mind → Spark → Vibe → Hub', output: 'Developer walkthrough video + localized release notes', languages: 'English, Japanese, German', impact: '90% cost reduction vs agency' },
       { industry: 'Retail', icon: '🛍️', input: 'Product photos + feature list', pipeline: 'Spark → Vibe → Cast → Hub', output: 'Social media ad series (9:16 + 16:9) in 5 languages', languages: 'English, Spanish, French, Mandarin, Hindi', impact: '50 ads/day vs 5/week manual' },
     ],
-    welcomeScript: "One idea. That's all it takes. Spark turns it into a story. Mind knows exactly who needs to hear it. Vibe makes it cinematic. Hub carries it across 140 languages — not translated, transcreated. Deck makes boardrooms believe. Cast takes it everywhere. And Ask Genie? Always one step ahead. This is Genie Suite. Seven products. 206 pipelines. 15 AI engines. One platform — and the only one you'll ever need.",
+    welcomeScript: "One idea. That's all it takes. Spark turns it into a story. Mind knows exactly who needs to hear it. Vibe makes it cinematic. Hub carries it across 140 languages — not translated, transcreated. Deck makes boardrooms believe. Cast takes it everywhere. And Ask Genie? Always one step ahead. This is Genie Suite. Seven products. 206 pipelines. 19 AI engines. One platform — and the only one you'll ever need.",
   },
 
   europe: {

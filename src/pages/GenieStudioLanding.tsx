@@ -165,7 +165,7 @@ const PRICING_TIERS = [
   { name: 'Enterprise', price: 299, pipelines: 206, languages: '140+', credits: '10K+', features: ['8K', 'White-label', 'SSO/SAML', 'VR/AR Labs'] },
 ];
 
-// Only actually integrated providers within Genie Suite — 15 providers
+// Only actually integrated providers within Genie Suite — 19 providers
 const AI_PROVIDERS = [
   { name: 'Google Vertex', logo: gcpLogo, use: 'Veo 3 Video, Imagen 3, Gemini LLM', color: 'from-blue-500 to-green-500' },
   { name: 'Claude', logo: anthropicLogo, use: 'Primary LLM — Western/EU Transcreation', color: 'from-orange-400 to-amber-500' },
@@ -365,7 +365,7 @@ const GenieStudioLanding: React.FC = () => {
                 <span>•</span>
                 <span className="px-2 py-1 bg-muted rounded">206 Pipelines</span>
                 <span>•</span>
-                <span className="px-2 py-1 bg-muted rounded">15 AI Providers</span>
+                <span className="px-2 py-1 bg-muted rounded">19 AI Providers</span>
                 <span>•</span>
                 <span className="px-2 py-1 bg-muted rounded">95% Confidence</span>
               </div>
@@ -540,7 +540,7 @@ const GenieStudioLanding: React.FC = () => {
         <div className="relative max-w-7xl mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
-              15 AI Providers. Best for Each Task.
+              19 AI Providers. Best for Each Task.
             </h2>
             <p className="text-xl text-muted-foreground">
               Zone-routed across 4 regions — we pick the right AI for YOUR context automatically

@@ -333,7 +333,7 @@ const DIFFERENTIATORS = [
 const ONLY_HERE = [
   { label: 'End-to-End in One Platform', desc: 'Idea → Script → Visual → Voice → Video → Translate → Publish. No plugins needed.' },
   { label: 'Transcreation, Not Translation', desc: 'AI adapts cultural context, idioms, and tone — not just words.' },
-  { label: '15 AI Providers, Auto-Routed', desc: 'Gemini, Azure, DeepL, Claude — the best model picked per task automatically.' },
+  { label: '19 AI Providers, Auto-Routed', desc: 'Gemini, Azure, DeepL, Claude, Alibaba — the best model picked per task automatically.' },
   { label: '7 Arabic Dialects', desc: 'Gulf, Egyptian, Levantine, Maghrebi — true dialect support, not just MSA.' },
 ];
 
@@ -841,7 +841,7 @@ export const IndustryShowcases: React.FC<IndustryShowcasesProps> = ({ region, co
 
           <p className="text-muted-foreground text-xs sm:text-sm mt-4">
             Every industry gets the same{' '}
-            <span className="text-foreground font-medium">15 AI providers</span>,{' '}
+            <span className="text-foreground font-medium">19 AI providers</span>,{' '}
             <span className="text-foreground font-medium">206 pipelines</span>, and{' '}
             <span className="text-foreground font-medium">140+ language</span> transcreation — 
             customized for your market, compliance, and audience.

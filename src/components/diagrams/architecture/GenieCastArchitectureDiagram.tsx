@@ -156,7 +156,7 @@ export const GenieCastArchitectureDiagram: React.FC = () => {
                     <ChevronRight className="h-4 w-4" /> Content Generation
                   </h4>
                   <div className="space-y-2">
-                    {['119 Pipelines', '15 AI Providers', '35+ Output Formats', '50+ Templates'].map((item, i) => (
+                    {['119 Pipelines', '19 AI Providers', '35+ Output Formats', '50+ Templates'].map((item, i) => (
                       <div key={i} className="flex items-center gap-2 p-2 bg-slate-700/50 rounded-lg">
                         <CheckCircle className="h-4 w-4 text-green-400" />
                         <span className="text-sm text-slate-300">{item}</span>
