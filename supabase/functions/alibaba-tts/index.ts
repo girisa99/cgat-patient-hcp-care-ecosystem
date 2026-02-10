@@ -191,22 +191,22 @@ function getApiConfig(): {
 // ============================================================================
 
 /**
- * Generate TTS using Qwen3-TTS-Flash or Qwen2-TTS via OpenAI-compatible REST API.
+ * Generate TTS using Qwen3-TTS-Flash or Qwen2-TTS via DashScope native REST API.
  * 
- * Endpoint: POST /compatible-mode/v1/audio/speech
- * This uses the OpenAI-compatible endpoint which IS available for Qwen TTS models.
- * Returns audio bytes directly.
+ * Endpoint: POST /api/v1/services/aigc/multimodal-generation/generation
+ * Uses DashScope's multimodal generation endpoint (the official Qwen TTS API).
+ * Returns base64 audio in response JSON.
  */
 async function generateQwenTTSRest(
   text: string,
   voice: string,
   model: string,
   apiKey: string,
-  compatibleBase: string,
+  restBase: string,
   format: string = 'mp3',
   speed: number = 1.0,
 ): Promise<Uint8Array> {
-  const endpoint = `${compatibleBase}/audio/speech`;
+  const endpoint = `${restBase}/services/aigc/multimodal-generation/generation`;
 
   console.log(`🎤 [Qwen TTS REST] Model: ${model}, Voice: ${voice}, Endpoint: ${endpoint}`);
 
@@ -215,13 +215,17 @@ async function generateQwenTTSRest(
     headers: {
       'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
+      'X-DashScope-Async': 'disable',
     },
     body: JSON.stringify({
       model: model,
-      input: text,
-      voice: voice,
-      response_format: format,
-      speed: speed,
+      input: {
+        text: text,
+      },
+      parameters: {
+        voice: voice,
+        speed: speed,
+      },
     }),
   });
 
@@ -231,16 +235,48 @@ async function generateQwenTTSRest(
     throw new Error(`Qwen TTS API error (${response.status}): ${errorText}`);
   }
 
-  // Response is raw audio bytes
-  const arrayBuffer = await response.arrayBuffer();
-  const audioData = new Uint8Array(arrayBuffer);
+  const result = await response.json();
   
-  if (audioData.length === 0) {
-    throw new Error('Qwen TTS returned empty audio');
+  console.log(`📦 [Qwen TTS REST] Response keys:`, JSON.stringify(Object.keys(result)));
+  if (result.output) console.log(`📦 [Qwen TTS REST] Output keys:`, JSON.stringify(Object.keys(result.output)));
+  
+  // Qwen TTS can return audio in multiple locations depending on streaming mode:
+  // Non-streaming: output.audio.audio_url (URL to wav file)
+  // Streaming: output.choices[].message.audio_content (base64 PCM chunks)
+  const audioData = result.output?.audio?.data;
+  const audioUrl = result.output?.audio?.url 
+    || result.output?.audio_url 
+    || result.output?.results?.[0]?.url;
+
+  if (audioData && audioData.length > 0) {
+    // Decode base64
+    const binaryString = atob(audioData);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    if (bytes.length === 0) {
+      throw new Error('Qwen TTS returned empty audio data');
+    }
+    console.log(`✅ [Qwen TTS REST] Generated ${bytes.length} bytes (base64 response)`);
+    return bytes;
   }
 
-  console.log(`✅ [Qwen TTS REST] Generated ${audioData.length} bytes`);
-  return audioData;
+  if (audioUrl) {
+    console.log(`⬇️ [Qwen TTS REST] Downloading from ${audioUrl}`);
+    const audioResponse = await fetch(audioUrl);
+    if (!audioResponse.ok) throw new Error('Failed to download Qwen TTS audio');
+    const buffer = await audioResponse.arrayBuffer();
+    const bytes = new Uint8Array(buffer);
+    if (bytes.length === 0) {
+      throw new Error('Qwen TTS audio download empty');
+    }
+    console.log(`✅ [Qwen TTS REST] Downloaded ${bytes.length} bytes`);
+    return bytes;
+  }
+
+  console.error(`❌ [Qwen TTS REST] Unexpected response:`, JSON.stringify(result));
+  throw new Error('No audio in Qwen TTS response');
 }
 
 // ============================================================================
@@ -354,7 +390,7 @@ async function generateTTS(request: TTSRequest): Promise<TTSResult> {
         try {
           console.log(`🎤 [Path 1] Attempting ${model} REST on ${config.region}...`);
           const audioData = await generateQwenTTSRest(
-            request.text, voice, model, config.apiKey, config.endpoints.compatible, format, speed
+            request.text, voice, model, config.apiKey, config.endpoints.rest, format, speed
           );
 
           const processingTimeMs = Date.now() - startTime;
