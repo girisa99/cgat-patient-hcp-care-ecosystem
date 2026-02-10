@@ -31,7 +31,7 @@ interface HeroScriptVideoProps {
 
 // Chapter titles from script
 const CHAPTER_TITLES: Record<string, { title: string; subtitle: string }> = {
-  opening: { title: 'The Genie Awakens', subtitle: '7 Products • 206 Pipelines • 15 AI Providers' },
+  opening: { title: 'The Genie Awakens', subtitle: '7 Products • 206 Pipelines • 19 AI Providers' },
   spark: { title: 'Genie Spark', subtitle: 'Ignite Your Ideas' },
   mind: { title: 'Genie Mind', subtitle: 'AI That Understands' },
   vibe: { title: 'Genie Vibe', subtitle: 'Script to Screen' },
@@ -44,7 +44,7 @@ const CHAPTER_TITLES: Record<string, { title: string; subtitle: string }> = {
 
 // Technical highlights per chapter
 const CHAPTER_HIGHLIGHTS: Record<string, string[]> = {
-  opening: ['7 Products', '206 Pipelines', '15 AI Providers'],
+  opening: ['7 Products', '206 Pipelines', '19 AI Providers'],
   spark: ['28 Pipelines', 'Multi-modal Input', '6-zone LLM Routing'],
   mind: ['30 Pipelines', 'Multi-provider TTS', '7 Arabic Dialects'],
   vibe: ['74 Pipelines', 'AI Teleprompter', '3D Avatars'],

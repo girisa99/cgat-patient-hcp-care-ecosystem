@@ -126,7 +126,7 @@ export const HeroProductShowcase: React.FC<HeroProductShowcaseProps> = ({
             {PIPELINE_STEPS[activeStep].label}: {PIPELINE_STEPS[activeStep].description}
           </p>
           <p className="text-sm text-muted-foreground mt-1">
-            Powered by 15 AI providers • Genie Suite — Mind to Media
+            Powered by 19 AI providers • Genie Suite — Mind to Media
           </p>
         </div>
 
