@@ -490,7 +490,7 @@ Seu desejo é nossa ordem.`
 export const CHINESE_SCRIPTS: Record<string, string> = {
   opening: `欢迎来到 Genie Suite – 让您的想法变为现实。
 
-七款强大产品。206条AI管道。12家世界级供应商。70多种语言，配备真实的区域语音。
+七款强大产品。206条AI管道。19家世界级供应商。140多种语言，配备真实的区域语音。
 
 从东京到迪拜，从圣保罗到孟买 – 您的创意愿景，即刻实现。
 
@@ -514,7 +514,7 @@ AI增强功能提升您的信息。您语言中的真实声音，听起来自然
 
 74条视频管道。4K分辨率。从您的手机到全世界。`,
 
-  closing: `这就是 Genie Studio。七款产品。206条管道。无限可能。
+  closing: `这就是 Genie Suite。七款产品。206条管道。无限可能。
 
 您的愿望就是我们的使命。`
 };
@@ -523,9 +523,9 @@ AI增强功能提升您的信息。您语言中的真实声音，听起来自然
 // JAPANESE (ja-JP) - Alibaba Qwen3-TTS (Alibaba Zone)
 // ═══════════════════════════════════════════════════════════════════════════════
 export const JAPANESE_SCRIPTS: Record<string, string> = {
-  opening: `Genie Studioへようこそ – あなたのアイデアが現実になる場所。
+  opening: `Genie Suiteへようこそ – あなたのアイデアが現実になる場所。
 
-7つの強力な製品。206のAIパイプライン。12の世界クラスのプロバイダー。70以上の言語で本物の地域音声。
+7つの強力な製品。206のAIパイプライン。19の世界クラスのプロバイダー。140以上の言語で本物の地域音声。
 
 東京からドバイ、サンパウロからムンバイまで – あなたのクリエイティブなビジョンを即座に実現。
 
@@ -549,7 +549,7 @@ export const JAPANESE_SCRIPTS: Record<string, string> = {
 
 74のビデオパイプライン。4K解像度。スマートフォンから世界へ。`,
 
-  closing: `これがGenie Studioです。7つの製品。206のパイプライン。無限の可能性。
+  closing: `これがGenie Suiteです。7つの製品。206のパイプライン。無限の可能性。
 
 あなたの願いは私たちの命令です。`
 };
@@ -558,9 +558,9 @@ export const JAPANESE_SCRIPTS: Record<string, string> = {
 // KOREAN (ko-KR) - Azure Neural TTS
 // ═══════════════════════════════════════════════════════════════════════════════
 export const KOREAN_SCRIPTS: Record<string, string> = {
-  opening: `Genie Studio에 오신 것을 환영합니다 – 아이디어가 현실이 되는 곳.
+  opening: `Genie Suite에 오신 것을 환영합니다 – 아이디어가 현실이 되는 곳.
 
-7가지 강력한 제품. 206개의 AI 파이프라인. 12개의 세계적 수준의 제공업체. 70개 이상의 언어로 진정한 지역 음성.
+7가지 강력한 제품. 206개의 AI 파이프라인. 19개의 세계적 수준의 제공업체. 140개 이상의 언어로 진정한 지역 음성.
 
 도쿄에서 두바이, 상파울루에서 뭄바이까지 – 여러분의 창의적 비전이 즉시 실현됩니다.
 
@@ -584,7 +584,7 @@ export const KOREAN_SCRIPTS: Record<string, string> = {
 
 74개의 비디오 파이프라인. 4K 해상도. 휴대폰에서 세계로.`,
 
-  closing: `이것이 Genie Studio입니다. 7가지 제품. 206개 파이프라인. 무한한 가능성.
+  closing: `이것이 Genie Suite입니다. 7가지 제품. 206개 파이프라인. 무한한 가능성.
 
 여러분의 소원이 우리의 명령입니다.`
 };

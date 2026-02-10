@@ -202,11 +202,11 @@ export const GERMAN_SCRIPTS: Record<string, string> = {
 
 *streckt sich dramatisch*
 
-Ich bin der Geist von Genie Studio, und im Gegensatz zu meinem Cousin, der nur DREI Wünsche erfüllt... ich gewähre UNBEGRENZTE kreative Kräfte!
+Ich bin der Geist von Genie Suite, und im Gegensatz zu meinem Cousin, der nur DREI Wünsche erfüllt... ich gewähre UNBEGRENZTE kreative Kräfte!
 
 *zeigt grandios auf die erscheinenden Logos*
 
-Seht her! Sieben magische Produkte. 206 Transformations-Pipelines. 12 erstklassige KI-Anbieter. Unterstützung für über 70 Sprachen in ihren ECHTEN Dialekten – nicht diese roboterhafte Übersetzung.
+Seht her! Sieben magische Produkte. 206 Transformations-Pipelines. 19 erstklassige KI-Anbieter. Unterstützung für über 140 Sprachen in ihren ECHTEN Dialekten – nicht diese roboterhafte Übersetzung.
 
 Ob Sie in Tokio, Dubai, São Paulo oder sonstwo sind... Ihr Wunsch ist mein Befehl.
 
@@ -325,7 +325,7 @@ export const SPANISH_SCRIPTS: Record<string, string> = {
 
 *se estira dramáticamente*
 
-¡Soy el Genio de Genie Studio, y a diferencia de mi primo que concede solo TRES deseos... yo concedo poderes creativos ILIMITADOS!
+¡Soy el Genio de Genie Suite, y a diferencia de mi primo que concede solo TRES deseos... yo concedo poderes creativos ILIMITADOS!
 
 *gesticula grandiosamente mientras aparecen los logos*
 
@@ -400,7 +400,7 @@ export const FRENCH_SCRIPTS: Record<string, string> = {
 
 *s'étire dramatiquement*
 
-Je suis le Génie de Genie Studio, et contrairement à mon cousin qui n'accorde que TROIS vœux... moi, j'accorde des pouvoirs créatifs ILLIMITÉS!
+Je suis le Génie de Genie Suite, et contrairement à mon cousin qui n'accorde que TROIS vœux... moi, j'accorde des pouvoirs créatifs ILLIMITÉS!
 
 *fait un geste grandiloquent alors que les logos apparaissent*
 
@@ -475,7 +475,7 @@ export const PORTUGUESE_SCRIPTS: Record<string, string> = {
 
 *se estica dramaticamente*
 
-Eu sou o Gênio do Genie Studio, e diferente do meu primo que concede apenas TRÊS desejos... eu concedo poderes criativos ILIMITADOS!
+Eu sou o Gênio do Genie Suite, e diferente do meu primo que concede apenas TRÊS desejos... eu concedo poderes criativos ILIMITADOS!
 
 *gesticula grandiosamente enquanto os logos aparecem*
 
@@ -528,11 +528,11 @@ export const TURKISH_SCRIPTS: Record<string, string> = {
 
 *dramatik bir şekilde gerinir*
 
-Ben Genie Studio'nun Cin'iyim ve sadece ÜÇ dilek gerçekleştiren kuzenimin aksine... ben SINIRSIZ yaratıcı güçler bahşediyorum!
+Ben Genie Suite'nin Cin'iyim ve sadece ÜÇ dilek gerçekleştiren kuzenimin aksine... ben SINIRSIZ yaratıcı güçler bahşediyorum!
 
 *logolar belirirken görkemli bir şekilde el kol hareketleri yapar*
 
-Bakın! Yedi sihirli ürün. 206 dönüşüm hattı. 12 dünya standartlarında yapay zeka sağlayıcısı. 70'den fazla dilde destek – robotik çeviri değil, GERÇEK lehçeleriyle.
+Bakın! Yedi sihirli ürün. 206 dönüşüm hattı. 19 dünya standartlarında yapay zeka sağlayıcısı. 140'dan fazla dilde destek – robotik çeviri değil, GERÇEK lehçeleriyle.
 
 İster Tokyo'da, ister Dubai'de, ister São Paulo'da ya da başka bir yerde olun... dileğiniz benim emrimdir.
 
@@ -540,11 +540,11 @@ Size sihri göstereyim..."`,
 
   closing: `*Cin lambaya doğru süzülür*
 
-"İşte bu Genie Studio. Yedi ürün. 206 hat. Sınırsız olasılıklar.
+"İşte bu Genie Suite. Yedi ürün. 206 hat. Sınırsız olasılıklar.
 
 *ürün logoları yörüngede döner*
 
-Spark fikirleri ateşler. Mind onları anlar. Vibe ekrana taşır. Deck etki katar. Arc mükemmelleştirir. Ask Genie her şeyi orkestra eder. Cast dünyaya gösterir.
+Spark fikirleri ateşler. Mind onları anlar. Vibe ekrana taşır. Deck etki katar. Hub mükemmelleştirir. Ask Genie her şeyi orkestra eder. Cast dünyaya gösterir.
 
 *lamba parlar*
 
