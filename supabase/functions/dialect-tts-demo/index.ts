@@ -318,6 +318,87 @@ async function generateElevenLabsTTS(text: string, voiceId: string = 'JBFqnCBsd6
 }
 
 // ============================================
+// ALIBABA QWEN3 TTS — Singapore endpoint for CJK zone
+// ============================================
+const CJK_LANG_CODES = ['ja-JP', 'zh-CN', 'ko-KR', 'th-TH', 'vi-VN', 'id-ID'];
+
+async function generateAlibabaTTS(text: string, languageCode: string): Promise<ArrayBuffer | null> {
+  const alibabaKey = Deno.env.get('ALIBABA_SINGAPORE_API_KEY') || Deno.env.get('ALIBABA_API_KEY');
+  if (!alibabaKey) {
+    console.log('[dialect-tts-demo] No Alibaba key configured');
+    return null;
+  }
+
+  // Use qwen3-tts-flash (confirmed available in Singapore workspace)
+  const model = 'qwen3-tts-flash';
+  console.log(`[dialect-tts-demo] 🌸 Alibaba TTS: model=${model}, lang=${languageCode}`);
+
+  try {
+    // DashScope multimodal-generation endpoint for Qwen3-TTS
+    const response = await fetch('https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${alibabaKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        input: { text },
+        parameters: { voice: 'Cherry' },
+      }),
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error(`[dialect-tts-demo] Alibaba TTS error ${response.status}:`, errText);
+      return null;
+    }
+
+    // Check content type - DashScope returns audio directly or JSON with base64
+    const contentType = response.headers.get('content-type') || '';
+    
+    if (contentType.includes('audio')) {
+      // Direct audio binary response
+      const buffer = await response.arrayBuffer();
+      console.log(`[dialect-tts-demo] ✅ Alibaba TTS success (binary): ${buffer.byteLength} bytes`);
+      return buffer;
+    }
+    
+    // JSON response - may contain URL or base64
+    const data = await response.json();
+    console.log(`[dialect-tts-demo] Alibaba TTS response keys:`, JSON.stringify(data).slice(0, 300));
+    
+    // Check for audio URL in output
+    const audioUrl = data.output?.audio?.url || data.output?.audio;
+    if (audioUrl && typeof audioUrl === 'string' && audioUrl.startsWith('http')) {
+      // Fetch the audio file from the URL
+      const audioRes = await fetch(audioUrl);
+      if (audioRes.ok) {
+        const buffer = await audioRes.arrayBuffer();
+        console.log(`[dialect-tts-demo] ✅ Alibaba TTS success (URL fetch): ${buffer.byteLength} bytes`);
+        return buffer;
+      }
+    }
+    
+    // Check for base64 audio data
+    const audioBase64 = data.output?.audio?.data;
+    if (audioBase64 && typeof audioBase64 === 'string') {
+      const binaryStr = atob(audioBase64);
+      const bytes = new Uint8Array(binaryStr.length);
+      for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
+      console.log(`[dialect-tts-demo] ✅ Alibaba TTS success (base64): ${bytes.length} bytes`);
+      return bytes.buffer;
+    }
+    
+    console.error('[dialect-tts-demo] Alibaba TTS: no audio in response', JSON.stringify(data).slice(0, 300));
+    return null;
+  } catch (error) {
+    console.error('[dialect-tts-demo] Alibaba TTS exception:', error);
+    return null;
+  }
+}
+
+// ============================================
 // CUSTOM TTS — translate → then speak
 // ============================================
 async function generateCustomTTS(
@@ -331,7 +412,13 @@ async function generateCustomTTS(
   const { translatedText, wasTranslated } = await translateTextForTTS(text, languageCode);
   
   // Step 2: TTS the translated text
-  // Azure Neural PRIMARY
+  // For CJK languages: Alibaba Qwen3 TTS PRIMARY (Singapore)
+  if (CJK_LANG_CODES.includes(languageCode)) {
+    const alibabaBuffer = await generateAlibabaTTS(translatedText, languageCode);
+    if (alibabaBuffer) return { buffer: alibabaBuffer, provider: 'alibaba_qwen3_tts', translatedText, wasTranslated };
+  }
+
+  // Azure Neural PRIMARY (all languages) / FALLBACK (CJK)
   const azureBuffer = await generateAzureTTS(translatedText, voiceEntry.voice);
   if (azureBuffer) return { buffer: azureBuffer, provider: 'azure_neural', translatedText, wasTranslated };
   
@@ -467,9 +554,21 @@ serve(async (req) => {
 
       const text = mode === 'literal' ? voiceEntry.literal : voiceEntry.transcreation;
       let provider = 'azure_neural';
+      let audioBuffer: ArrayBuffer | null = null;
 
-      let audioBuffer = await generateAzureTTS(text, voiceEntry.voice);
+      // CJK languages: Try Alibaba Qwen3 TTS first (Singapore)
+      if (CJK_LANG_CODES.includes(languageCode)) {
+        audioBuffer = await generateAlibabaTTS(text, languageCode);
+        if (audioBuffer) provider = 'alibaba_qwen3_tts';
+      }
 
+      // Azure Neural (primary for non-CJK, fallback for CJK)
+      if (!audioBuffer) {
+        audioBuffer = await generateAzureTTS(text, voiceEntry.voice);
+        provider = 'azure_neural';
+      }
+
+      // ElevenLabs final fallback
       if (!audioBuffer) {
         provider = 'elevenlabs';
         audioBuffer = await generateElevenLabsTTS(text);

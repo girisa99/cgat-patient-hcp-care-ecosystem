@@ -102,12 +102,12 @@ const UNIVERSAL_AI_REGISTRY = {
     alibaba: ['wan2.6-t2v', 'wan2.1-t2v-plus'],
   },
   tts: {
-    alibaba: ['qwen3-tts'],
+    alibaba: ['qwen3-tts-flash', 'qwen3-tts-instruct-flash-realtime', 'qwen3-tts-flash-realtime'],
     elevenlabs: ['eleven_multilingual_v2'],
     openai: ['tts-1'],
   },
   stt: {
-    alibaba: ['paraformer-v2'],
+    alibaba: ['qwen3-asr-flash-realtime', 'qwen3-asr-flash', 'fun-asr'],
     openai: ['whisper-1'],
   },
   vision: {
@@ -1803,88 +1803,79 @@ async function ttsWithAlibaba(text: string, voice: string, language: string) {
   const apiKey = getAlibabaKey();
   const voiceName = voice !== 'default' ? voice : 'Cherry';
   
-  console.log(`[Alibaba-TTS] Generating speech, voice=${voiceName}, lang=${language}`);
+  // Use qwen3-tts-flash (confirmed available in Singapore workspace)
+  const model = 'qwen3-tts-flash';
+  console.log(`[Alibaba-TTS] Generating speech via ${model}, voice=${voiceName}, lang=${language}`);
   
-  // Use DashScope native speech synthesis API
-  const response = await fetch(`${ALIBABA_INTL_ENDPOINT}/api/v1/services/aigc/text-to-speech/speech-synthesis`, {
-    method: 'POST',
-    headers: { 
-      'Authorization': `Bearer ${apiKey}`, 
-      'Content-Type': 'application/json',
-      'X-DashScope-Async': 'enable',
-    },
-    body: JSON.stringify({
-      model: 'qwen-tts',
-      input: { text },
-      parameters: { voice: voiceName, format: 'mp3' },
-    }),
-  });
-
-  if (!response.ok) {
-    const err = await response.text();
-    console.error(`[Alibaba-TTS] Native API error: ${response.status} - ${err}`);
-    
-    // Fallback: try compatible-mode with qwen3-tts-flash
-    console.log('[Alibaba-TTS] Trying compatible-mode with qwen3-tts-flash...');
-    const fallbackRes = await fetch(`${ALIBABA_INTL_ENDPOINT}/compatible-mode/v1/chat/completions`, {
+  try {
+    // DashScope multimodal-generation endpoint for Qwen3-TTS
+    const response = await fetch(`${ALIBABA_INTL_ENDPOINT}/api/v1/services/aigc/multimodal-generation/generation`, {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      headers: { 
+        'Authorization': `Bearer ${apiKey}`, 
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({
-        model: 'qwen3-tts-flash',
-        messages: [{ role: 'user', content: text }],
-        stream: false,
-        modalities: ['audio', 'text'],
-        audio: { voice: voiceName, format: 'mp3' },
+        model,
+        input: { text },
+        parameters: { voice: voiceName },
       }),
     });
+
+    if (!response.ok) {
+      const err = await response.text();
+      console.error(`[Alibaba-TTS] ${model} error: ${response.status} - ${err}`);
+      console.log('[Alibaba-TTS] Falling back to ElevenLabs');
+      return await ttsWithElevenLabs(text, voice);
+    }
+
+    // Check content type
+    const contentType = response.headers.get('content-type') || '';
     
-    if (fallbackRes.ok) {
-      const data = await fallbackRes.json();
-      const audioData = data.choices?.[0]?.message?.audio?.data;
-      if (audioData) {
-        return {
-          audioUrl: `data:audio/mpeg;base64,${audioData}`,
-          duration: text.length / 15,
-          voice: voiceName,
-          provider: 'alibaba_qwen3_tts_flash',
-          timestamp: new Date().toISOString(),
-        };
-      }
+    if (contentType.includes('audio')) {
+      const buffer = await response.arrayBuffer();
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+      return {
+        audioUrl: `data:audio/mpeg;base64,${base64}`,
+        duration: text.length / 15,
+        voice: voiceName,
+        provider: 'alibaba_qwen3_tts_flash',
+        timestamp: new Date().toISOString(),
+      };
     }
     
-    // Final fallback to ElevenLabs
-    console.log('[Alibaba-TTS] Falling back to ElevenLabs');
+    const data = await response.json();
+    
+    // Check for audio URL
+    const audioUrl = data.output?.audio?.url || data.output?.audio;
+    if (audioUrl && typeof audioUrl === 'string' && audioUrl.startsWith('http')) {
+      return {
+        audioUrl,
+        duration: text.length / 15,
+        voice: voiceName,
+        provider: 'alibaba_qwen3_tts_flash',
+        timestamp: new Date().toISOString(),
+      };
+    }
+    
+    // Check for base64 audio
+    const audioBase64 = data.output?.audio?.data;
+    if (audioBase64) {
+      return {
+        audioUrl: `data:audio/mpeg;base64,${audioBase64}`,
+        duration: text.length / 15,
+        voice: voiceName,
+        provider: 'alibaba_qwen3_tts_flash',
+        timestamp: new Date().toISOString(),
+      };
+    }
+    
+    console.log('[Alibaba-TTS] No audio data, falling back to ElevenLabs');
+    return await ttsWithElevenLabs(text, voice);
+  } catch (error) {
+    console.error('[Alibaba-TTS] Exception:', error);
     return await ttsWithElevenLabs(text, voice);
   }
-
-  const data = await response.json();
-  const taskId = data.output?.task_id;
-  
-  if (taskId) {
-    // Poll for result
-    for (let i = 0; i < 15; i++) {
-      await new Promise(r => setTimeout(r, 2000));
-      const statusRes = await fetch(`${ALIBABA_INTL_ENDPOINT}/api/v1/tasks/${taskId}`, {
-        headers: { 'Authorization': `Bearer ${apiKey}` },
-      });
-      const statusData = await statusRes.json();
-      if (statusData.output?.task_status === 'SUCCEEDED') {
-        const audioUrl = statusData.output?.results?.[0]?.url;
-        return {
-          audioUrl: audioUrl || '',
-          duration: text.length / 15,
-          voice: voiceName,
-          provider: 'alibaba_qwen_tts',
-          timestamp: new Date().toISOString(),
-        };
-      }
-      if (statusData.output?.task_status === 'FAILED') break;
-    }
-  }
-
-  // Fallback to ElevenLabs
-  console.log('[Alibaba-TTS] Task failed, falling back to ElevenLabs');
-  return await ttsWithElevenLabs(text, voice);
 }
 
 /**
@@ -1894,37 +1885,72 @@ async function sttWithAlibaba(audio: string, language?: string) {
   const apiKey = getAlibabaKey();
   const audioContent = audio.replace(/^data:audio\/\w+;base64,/, '');
 
-  console.log(`[Alibaba-STT] Submitting Paraformer transcription task`);
-  const response = await fetch(`${ALIBABA_INTL_ENDPOINT}/api/v1/services/audio/asr/transcription`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-      'X-DashScope-Async': 'enable',
-    },
-    body: JSON.stringify({
-      model: 'paraformer-v2',
-      input: { file_urls: [] }, // For base64, we'd need to upload first
-      parameters: { language_hints: [language || 'en'] },
-    }),
-  });
+  // Use qwen3-asr-flash-realtime (confirmed available in Singapore)
+  const model = 'qwen3-asr-flash-realtime';
+  console.log(`[Alibaba-STT] Submitting ${model} transcription task`);
+  
+  try {
+    const response = await fetch(`${ALIBABA_INTL_ENDPOINT}/api/v1/services/audio/asr/transcription`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        'X-DashScope-Async': 'enable',
+      },
+      body: JSON.stringify({
+        model,
+        input: { file_urls: [] },
+        parameters: { language_hints: [language || 'en'] },
+      }),
+    });
 
-  if (!response.ok) {
-    const err = await response.text();
-    console.error(`[Alibaba-STT] Error: ${err}`);
-    // Fallback to OpenAI Whisper
-    console.log('[Alibaba-STT] Falling back to OpenAI Whisper');
+    if (!response.ok) {
+      const err = await response.text();
+      console.error(`[Alibaba-STT] ${model} error: ${err}`);
+      
+      // Try fun-asr as fallback
+      console.log('[Alibaba-STT] Trying fun-asr...');
+      const fallbackRes = await fetch(`${ALIBABA_INTL_ENDPOINT}/api/v1/services/audio/asr/transcription`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'X-DashScope-Async': 'enable',
+        },
+        body: JSON.stringify({
+          model: 'fun-asr',
+          input: { file_urls: [] },
+          parameters: { language_hints: [language || 'en'] },
+        }),
+      });
+      
+      if (!fallbackRes.ok) {
+        console.log('[Alibaba-STT] Falling back to OpenAI Whisper');
+        return await sttWithOpenAI(audio, language);
+      }
+      
+      const fbData = await fallbackRes.json();
+      return {
+        text: fbData.output?.text || '',
+        confidence: 0.9,
+        language: language || 'en',
+        provider: 'alibaba_fun_asr',
+        timestamp: new Date().toISOString(),
+      };
+    }
+
+    const data = await response.json();
+    return {
+      text: data.output?.text || '',
+      confidence: 0.9,
+      language: language || 'en',
+      provider: 'alibaba_qwen3_asr',
+      timestamp: new Date().toISOString(),
+    };
+  } catch (error) {
+    console.error('[Alibaba-STT] Exception:', error);
     return await sttWithOpenAI(audio, language);
   }
-
-  const data = await response.json();
-  return {
-    text: data.output?.text || '',
-    confidence: 0.9,
-    language: language || 'en',
-    provider: 'alibaba_paraformer',
-    timestamp: new Date().toISOString(),
-  };
 }
 
 /**
