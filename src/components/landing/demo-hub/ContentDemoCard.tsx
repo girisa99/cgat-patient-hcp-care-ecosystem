@@ -16,22 +16,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getIndustryExample } from './industryDemoExamples';
 import { DemoTemplatePicker, getDemoTemplates, type DemoTemplate } from './DemoTemplatePicker';
+import { getRegionalConfig, DEMO_LANGUAGE_OPTIONS, isRTLLanguage } from './regionalDemoRouting';
 
 interface ContentDemoCardProps {
   industryId: string;
   region?: string;
 }
 
-const LANGUAGE_OPTIONS = [
-  { code: 'en', name: 'English', flag: '🇺🇸' },
-  { code: 'ar', name: 'Arabic', flag: '🇸🇦' },
-  { code: 'hi', name: 'Hindi', flag: '🇮🇳' },
-  { code: 'es', name: 'Spanish', flag: '🇪🇸' },
-  { code: 'fr', name: 'French', flag: '🇫🇷' },
-  { code: 'zh', name: 'Chinese', flag: '🇨🇳' },
-  { code: 'ja', name: 'Japanese', flag: '🇯🇵' },
-  { code: 'pt', name: 'Portuguese', flag: '🇧🇷' },
-];
+const LANGUAGE_OPTIONS = DEMO_LANGUAGE_OPTIONS;
 
 const CONTENT_TYPE_ICONS: Record<string, string> = {
   blog: '📝', social: '📱', email: '✉️', ad: '📢',
@@ -105,11 +97,13 @@ ${selectedLang !== 'en' ? `IMPORTANT: Generate ALL content in ${langName}. Trans
 
 Respond in valid JSON format: { "headline": "...", "body": "...", "cta": "..."${contentType === 'email' ? ', "subjectLine": "..."' : ''}${contentType === 'social' ? ', "hashtags": ["..."]' : ''} }`;
 
+    const regionalConfig = getRegionalConfig(region, selectedLang);
+
     try {
       const { data, error: fnError } = await supabase.functions.invoke('ai-universal-processor', {
         body: {
-          provider: 'gemini',
-          model: 'gemini-2.0-flash',
+          provider: regionalConfig.llmProvider,
+          model: regionalConfig.llmModel,
           prompt,
           systemPrompt: 'You are a professional marketing copywriter. Always respond with valid JSON only, no markdown code fences.',
           temperature: 0.8,
@@ -256,7 +250,7 @@ Respond in valid JSON format: { "headline": "...", "body": "...", "cta": "..."${
               animate={{ opacity: 1, y: 0 }}
               className="space-y-3"
             >
-              <div className="relative bg-card rounded-xl border border-border p-4 sm:p-6 overflow-hidden" dir={selectedLang === 'ar' ? 'rtl' : 'ltr'}>
+              <div className="relative bg-card rounded-xl border border-border p-4 sm:p-6 overflow-hidden" dir={isRTLLanguage(selectedLang) ? 'rtl' : 'ltr'}>
                 {/* Watermark */}
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
                   <div className="rotate-[-25deg] opacity-10">

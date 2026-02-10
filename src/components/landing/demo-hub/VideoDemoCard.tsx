@@ -20,26 +20,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getIndustryExample } from './industryDemoExamples';
 import { DemoTemplatePicker, getDemoTemplates, type DemoTemplate } from './DemoTemplatePicker';
+import { getRegionalConfig, DEMO_LANGUAGE_OPTIONS, isRTLLanguage } from './regionalDemoRouting';
 
 interface VideoDemoCardProps {
   industryId: string;
   region?: string;
 }
 
-const LANGUAGE_OPTIONS = [
-  { code: 'en', name: 'English', flag: '🇺🇸' },
-  { code: 'ar', name: 'Arabic', flag: '🇸🇦' },
-  { code: 'hi', name: 'Hindi', flag: '🇮🇳' },
-  { code: 'es', name: 'Spanish', flag: '🇪🇸' },
-  { code: 'fr', name: 'French', flag: '🇫🇷' },
-  { code: 'zh', name: 'Chinese', flag: '🇨🇳' },
-  { code: 'ja', name: 'Japanese', flag: '🇯🇵' },
-  { code: 'pt', name: 'Portuguese', flag: '🇧🇷' },
-  { code: 'ko', name: 'Korean', flag: '🇰🇷' },
-  { code: 'de', name: 'German', flag: '🇩🇪' },
-  { code: 'sw', name: 'Swahili', flag: '🇰🇪' },
-  { code: 'bn', name: 'Bengali', flag: '🇧🇩' },
-];
+const LANGUAGE_OPTIONS = DEMO_LANGUAGE_OPTIONS;
 
 const VIDEO_PROVIDERS = [
   { name: 'Vertex Veo 3', role: 'primary' as const, badge: 'Text-to-Video' },
@@ -117,11 +105,13 @@ ${selectedLang !== 'en' ? `IMPORTANT: Generate narration in ${langName}. Transcr
 
 Respond in valid JSON format: { "scenes": [{ "sceneNumber": 1, "visual": "...", "narration": "...", "duration": "...", "transition": "..." }] }`;
 
+    const regionalConfig = getRegionalConfig(region, selectedLang);
+
     try {
       const { data, error: fnError } = await supabase.functions.invoke('ai-universal-processor', {
         body: {
-          provider: 'gemini',
-          model: 'gemini-2.0-flash',
+          provider: regionalConfig.llmProvider,
+          model: regionalConfig.llmModel,
           prompt,
           systemPrompt: 'You are a professional video producer. Always respond with valid JSON only, no markdown code fences.',
           temperature: 0.7,
@@ -338,7 +328,7 @@ Respond in valid JSON format: { "scenes": [{ "sceneNumber": 1, "visual": "...", 
                     </button>
                   </div>
                   <Badge variant="secondary" className="text-[9px] gap-1">
-                    <Zap className="h-2.5 w-2.5" /> Gemini 2.0
+                    <Zap className="h-2.5 w-2.5" /> {getRegionalConfig(region, selectedLang).displayProviders[0]}
                   </Badge>
                   {selectedLang !== 'en' && (
                     <Badge variant="outline" className="text-[9px] gap-1">
