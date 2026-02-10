@@ -119,7 +119,7 @@ Respond in valid JSON format: { "headline": "...", "body": "...", "cta": "..."${
 
       if (fnError) throw new Error(fnError.message || 'Generation failed');
 
-      const responseText = data?.generatedText || data?.text || '';
+      const responseText = data?.generatedText || data?.content || data?.text || '';
       const jsonMatch = responseText.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         setContent(JSON.parse(jsonMatch[0]));

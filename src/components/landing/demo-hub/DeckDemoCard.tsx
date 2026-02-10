@@ -110,7 +110,7 @@ Respond in valid JSON format: { "slides": [{ "slideNumber": 1, "title": "...", "
 
       if (fnError) throw new Error(fnError.message || 'Generation failed');
 
-      const responseText = data?.generatedText || data?.text || '';
+      const responseText = data?.generatedText || data?.content || data?.text || '';
       const jsonMatch = responseText.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);

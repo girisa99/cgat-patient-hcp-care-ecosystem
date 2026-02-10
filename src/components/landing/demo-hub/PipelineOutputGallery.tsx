@@ -486,16 +486,29 @@ const PIPELINE_FILTERS = [
 
 // ── Component ──
 
+// Map tab IDs to pipeline names to avoid showing duplicates with the active demo tab
+const TAB_TO_PIPELINE: Record<string, string> = {
+  deck: 'AI Deck',
+  video: 'Video Script',
+  content: 'Content Writer',
+  tts: 'Text-to-Speech',
+  stt: 'Speech-to-Text',
+  translation: 'Translation',
+  transcreation: 'Transcreation',
+};
+
 interface PipelineOutputGalleryProps {
   industryId: string;
   industryName: string;
+  excludePipeline?: string;
 }
 
-export const PipelineOutputGallery: React.FC<PipelineOutputGalleryProps> = ({ industryId, industryName }) => {
+export const PipelineOutputGallery: React.FC<PipelineOutputGalleryProps> = ({ industryId, industryName, excludePipeline }) => {
   const [filterPipeline, setFilterPipeline] = useState<string | null>(null);
   const [blogViewId, setBlogViewId] = useState<string | null>(null);
 
-  const outputs = getOutputsForIndustry(industryId);
+  const excludeName = excludePipeline ? TAB_TO_PIPELINE[excludePipeline] : undefined;
+  const outputs = getOutputsForIndustry(industryId).filter(o => !excludeName || o.pipeline !== excludeName);
   const filtered = filterPipeline ? outputs.filter(o => o.pipeline === filterPipeline) : outputs;
   const blogItem = blogViewId ? outputs.find(o => o.id === blogViewId) : null;
 
