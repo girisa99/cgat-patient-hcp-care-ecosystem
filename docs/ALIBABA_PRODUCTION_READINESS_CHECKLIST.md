@@ -112,19 +112,61 @@
 
 > **Note:** Qwen-Image supports **synchronous** calls (instant response). Wan models require **asynchronous** calls (submit task → poll result). Generated image URLs expire after **24 hours** — download promptly.
 
-### Video Models (Wan 2.6)
-| Model | Price |
-|-------|-------|
-| wan2.6-t2v | ~$0.10 per video (5s) |
-| wan2.6-i2v | ~$0.10 per video (5s) |
+### Video Generation Models (All Async)
+
+#### Available Globally (Virginia + Singapore + Beijing)
+| Model | Features | Output Specs |
+|-------|----------|-------------|
+| `wan2.6-t2v` ⭐ | Text+audio→video, multi-shot narrative | 720P/1080P, 5/10/15s, 30fps |
+| `wan2.6-i2v` ⭐ | Image+text+audio→video, multi-shot | 720P/1080P, 5/10/15s, 30fps |
+| `wan2.6-r2v` ⭐ | Reference video→new video, multi-role | 720P/1080P, 5/10s, 30fps |
+
+#### Available International (Singapore + Beijing)
+| Model | Features | Output Specs |
+|-------|----------|-------------|
+| `wan2.2-kf2v-flash` ⭐ | First+last frame→video | 480P/720P/1080P, 5s, 30fps |
+| `wan2.1-kf2v-plus` | First+last frame→video | 720P, 5s, 30fps |
+| `wan2.1-vace-plus` | General editing (redraw, inpaint, extend, expand, multi-ref) | 720P, up to 5s, 30fps |
+| `wan2.2-animate-move` | Image+ref video→motion transfer (std/pro) | 720P, 2-30s |
+| `wan2.2-animate-mix` | Video+image→character swap (std/pro) | 720P, 2-30s |
+
+#### Beijing Only (China)
+| Model | Features | Output Specs |
+|-------|----------|-------------|
+| `wan2.2-s2v` | Digital human lip-sync | 480P/720P, up to 20s |
+| `AnimateAnyone` | Dance replacement (cost-effective) | 720P, 2-60s, 15fps |
+| `EMO` | Singing lip-sync | 512×512 or 512×704, up to 60s, 15fps |
+| `LivePortrait` | Narration lip-sync (best for >20s) | Up to 4K, up to 180s |
+| `Emoji` | Emoji from templates | 512×512, up to 5s, 15fps |
+| `VideoRetalk` | Video lip replacement | Up to 2K, 2-120s, 30fps |
+| `Video Style Transfer` | Fixed-style video redraw | Up to 4K, up to 30s |
+
+#### Video Model Selection Guide
+| Scenario | Recommended | Region |
+|----------|-------------|--------|
+| Text→video | `wan2.6-t2v` | All |
+| Image→cinematic video | `wan2.6-i2v` | All |
+| First+last frame transition | `wan2.2-kf2v-flash` | Singapore/Beijing |
+| Character from reference | `wan2.6-r2v` | Global/Singapore/Beijing |
+| Video editing/extend/expand | `wan2.1-vace-plus` | Singapore/Beijing |
+| Digital human (<20s) | `wan2.2-s2v` | Beijing only |
+| Digital human (>20s) | `LivePortrait` | Beijing only |
+| Motion transfer | `wan2.2-animate-move` | Singapore/Beijing |
+| Character swap | `wan2.2-animate-mix` | Singapore/Beijing |
+| Dance replacement (budget) | `AnimateAnyone` | Beijing only |
+| Video lip replacement | `VideoRetalk` | Beijing only |
+| Video style (templates) | `Video Style Transfer` | Beijing only |
+| Video style (custom prompts) | `wan2.1-vace-plus` | Singapore/Beijing |
+
+> **Note:** All video models are **async only** (submit task → poll result). wan2.6 models support **audio input** for A/V sync. Generated URLs expire after **24 hours**.
 
 ### Embedding Models
 | Model | Price |
 |-------|-------|
 | text-embedding-v3 | $0.0007 / 1K tokens |
 
-> Note: Prices are approximate. Check https://www.alibabacloud.com/help/en/model-studio/models for current pricing.
-> Image model details: https://bailian.console.alibabacloud.com/cn-beijing?tab=doc#/doc/?type=model&url=2873061
+> Prices are approximate. Check https://www.alibabacloud.com/help/en/model-studio/models for current pricing.
+> Image details: https://bailian.console.alibabacloud.com/cn-beijing?tab=doc#/doc/?type=model&url=2873061
 
 ---
 
