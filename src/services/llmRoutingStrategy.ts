@@ -341,13 +341,13 @@ export function selectLLM(region: string): { llm: string; fallback: string } {
  */
 export function selectTTS(region: string): string {
   const elevenLabsRegions = ['US', 'UK', 'AU', 'DE', 'FR', 'ES', 'IT', 'NL', 'PT', 'PL', 'BR', 'MX', 'AR', 'RU', 'GB', 'IE', 'CA', 'NZ', 'BE', 'AT', 'CH', 'CO', 'CL', 'PE'];
-  const cosyVoiceRegions = ['JP', 'KR', 'CN', 'HK', 'TW'];
+  const qwen3TTSRegions = ['JP', 'KR', 'CN', 'HK', 'TW'];
   
   if (elevenLabsRegions.includes(region)) {
     return 'elevenlabs';
   }
-  if (cosyVoiceRegions.includes(region)) {
-    return 'alibaba-cosyvoice';
+  if (qwen3TTSRegions.includes(region)) {
+    return 'alibaba-qwen3-tts';
   }
   
   return 'azure-neural';

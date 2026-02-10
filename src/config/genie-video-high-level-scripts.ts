@@ -6,7 +6,7 @@
  * 
  * 4-Zone TTS Routing:
  * - CLAUDE ZONE (Western): ElevenLabs → en, es, fr
- * - ALIBABA ZONE (CJK): Alibaba CosyVoice → zh, ja
+ * - ALIBABA ZONE (CJK): Alibaba Qwen3-TTS → zh, ja
  * - MENA ZONE: Azure Neural → ar (7 dialects)
  * - GEMINI ZONE (India/SEA/Africa): Azure Neural → hi, bn, te, ta, ur, sw, id
  */
@@ -485,7 +485,7 @@ Seu desejo é nossa ordem.`
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// CHINESE (zh-CN) - Alibaba CosyVoice TTS (Alibaba Zone)
+// CHINESE (zh-CN) - Alibaba Qwen3-TTS (Alibaba Zone)
 // ═══════════════════════════════════════════════════════════════════════════════
 export const CHINESE_SCRIPTS: Record<string, string> = {
   opening: `欢迎来到 Genie Studio – 让您的想法变为现实。
@@ -520,7 +520,7 @@ AI增强功能提升您的信息。您语言中的真实声音，听起来自然
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// JAPANESE (ja-JP) - Alibaba CosyVoice TTS (Alibaba Zone)
+// JAPANESE (ja-JP) - Alibaba Qwen3-TTS (Alibaba Zone)
 // ═══════════════════════════════════════════════════════════════════════════════
 export const JAPANESE_SCRIPTS: Record<string, string> = {
   opening: `Genie Studioへようこそ – あなたのアイデアが現実になる場所。
@@ -606,9 +606,9 @@ export const TTS_ROUTING: Record<string, TTSConfig> = {
   es: { provider: 'elevenlabs', displayName: 'ElevenLabs', zone: 'Claude Zone' },
   fr: { provider: 'elevenlabs', displayName: 'ElevenLabs', zone: 'Claude Zone' },
   
-  // ALIBABA ZONE (CJK) - Alibaba CosyVoice primary
-  zh: { provider: 'alibaba', displayName: 'Alibaba CosyVoice', zone: 'Alibaba Zone' },
-  ja: { provider: 'alibaba', displayName: 'Alibaba CosyVoice', zone: 'Alibaba Zone' },
+  // ALIBABA ZONE (CJK) - Alibaba Qwen3-TTS primary
+  zh: { provider: 'alibaba', displayName: 'Alibaba Qwen3-TTS', zone: 'Alibaba Zone' },
+  ja: { provider: 'alibaba', displayName: 'Alibaba Qwen3-TTS', zone: 'Alibaba Zone' },
   
   // MENA ZONE (Arabic) - Azure Neural primary (7 dialects)
   ar: { provider: 'azure', displayName: 'Azure Neural', zone: 'MENA Zone' },

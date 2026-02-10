@@ -216,7 +216,7 @@ export const MIND_CHAPTER: ChapterScript = {
       'PPT-style slide layout with animated bullet points',
       'Side panel showing script editor with tracked changes',
       'TTS waveform visualization',
-      'Regional provider badges: ElevenLabs, Azure Neural, Alibaba CosyVoice',
+      'Regional provider badges: ElevenLabs, Azure Neural, Alibaba Qwen3-TTS',
       'Before/After comparison: Original text → Enhanced text'
     ],
     transitions: [
@@ -245,7 +245,7 @@ And the voice? Listen to this...
 
 *plays Arabic sample*
 
-That's not a 'translated robot.' That's CosyVoice for Arabic, ElevenLabs for English, Azure Neural for Hindi – each region gets its BEST voice.
+That's not a 'translated robot.' That's Qwen3-TTS for Arabic, ElevenLabs for English, Azure Neural for Hindi – each region gets its BEST voice.
 
 *dialect comparison appears*
 
@@ -267,7 +267,7 @@ That's Mind – it doesn't just hear you... it GETS you."`,
   technicalHighlights: [
     '30 Mind-specific pipelines',
     'Script enhancement with AI suggestions',
-    'Multi-provider TTS: ElevenLabs, Azure Neural, Alibaba CosyVoice, Google TTS',
+    'Multi-provider TTS: ElevenLabs, Azure Neural, Alibaba Qwen3-TTS, Google TTS',
     'STT: Whisper, Azure Speech, Google Speech',
     'Voice cloning capabilities',
     'Dialect-aware transcreation (not translation)',
@@ -276,7 +276,7 @@ That's Mind – it doesn't just hear you... it GETS you."`,
   modelsShowcased: [
     'ElevenLabs (Premium TTS, Voice Cloning)',
     'Azure Neural TTS (Hindi, Arabic Neural voices)',
-    'Alibaba CosyVoice (CJK native voices)',
+    'Alibaba Qwen3-TTS (CJK native voices)',
     'OpenAI Whisper (STT)',
     'DeepL (Translation context)',
     'Claude (Enhancement suggestions)'

@@ -3,7 +3,7 @@
  * 
  * Shows the COMPLETE 4-Zone AI provider routing:
  * - LLM: Claude (Western/EU), Gemini (India/SEA), Qwen (CJK/Arabic)
- * - TTS: ElevenLabs (Western), Azure (India/EU), CosyVoice (CJK)
+ * - TTS: ElevenLabs (Western), Azure (India/EU), Qwen3-TTS (CJK)
  * - Video: Vertex AI Veo, ModelsLab, Sora2API
  * - Translation: DeepL (Western), Google (India), Qwen-MT (CJK)
  */
@@ -77,7 +77,7 @@ const ZONE_CONFIGS: Record<ZoneType, ZoneConfig> = {
     name: 'Alibaba Zone (CJK/MENA)',
     regions: ['China', 'Japan', 'Korea', 'Taiwan', 'Hong Kong', 'Saudi Arabia', 'UAE', 'Egypt', 'Morocco', 'Iraq', 'Jordan', 'Lebanon', 'Qatar', 'Kuwait', 'Bahrain', 'Oman'],
     llm: { provider: 'qwen', displayName: 'Qwen-Max', fullForm: 'Large Language Model by Alibaba Cloud' },
-    tts: { provider: 'cosyvoice', displayName: 'CosyVoice', fullForm: 'Text-to-Speech by Alibaba DashScope' },
+    tts: { provider: 'qwen3-tts', displayName: 'Qwen3-TTS', fullForm: 'Text-to-Speech by Alibaba DashScope' },
     video: { provider: 'alibaba', displayName: 'Alibaba WAN', fullForm: 'Video Generation by Alibaba Wan 2.6' },
     translation: { provider: 'qwen-mt', displayName: 'Qwen-MT', fullForm: 'Neural Translation supporting 7 Arabic dialects' },
   },
@@ -202,13 +202,13 @@ export const LANGUAGE_TTS_PROVIDERS: Record<string, string> = {
   en: 'elevenlabs',
   es: 'elevenlabs',
   fr: 'elevenlabs',
-  ar: 'cosyvoice',
+  ar: 'qwen3-tts',
   hi: 'azure',
   te: 'azure',
   ta: 'azure',
   bn: 'azure',
-  zh: 'cosyvoice',
-  ja: 'cosyvoice',
+  zh: 'qwen3-tts',
+  ja: 'qwen3-tts',
   ko: 'azure',
   pt: 'azure',
   de: 'azure',

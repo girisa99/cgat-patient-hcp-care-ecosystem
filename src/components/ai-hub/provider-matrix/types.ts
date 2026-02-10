@@ -52,7 +52,7 @@ export type ProviderId =
   | 'claude'      // Claude 3.5 Sonnet - Claude Zone (West)
   | 'gemini'      // Gemini 2.5 Pro - Gemini Zone (India/SEA/Africa)
   | 'deepseek'    // DeepSeek V3 - Cost-efficient fallback
-  | 'alibaba'     // Qwen-Max, CosyVoice, WAN 2.2 - Alibaba Zone (CJK)
+  | 'alibaba'     // Qwen-Max, Qwen3-TTS, WAN 2.2 - Alibaba Zone (CJK)
   | 'azure'       // Azure Neural TTS, Visemes, Form Recognizer
   // Media Providers (Global Routing)
   | 'modelslab'   // FLUX Pro, AnimateDiff, 3D Mesh

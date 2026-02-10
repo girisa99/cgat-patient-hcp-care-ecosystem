@@ -264,7 +264,7 @@ export const P3_SCENARIO_BREAKDOWN = {
     elevenLabsIntegration: { id: 'P4-API-05', name: 'ElevenLabs Integration', status: 'complete', priority: 1, note: 'TTS, Voice Clone, Music, SFX' },
     deepLTranslation: { id: 'P4-API-06', name: 'DeepL Translation API', status: 'complete', priority: 1, note: 'European language translation' },
     azureIntegration: { id: 'P4-API-07', name: 'Azure AI Integration', status: 'complete', priority: 1, note: 'Neural TTS, Form Recognizer, OCR' },
-    alibabaIntegration: { id: 'P4-API-08', name: 'Alibaba Qwen Integration', status: 'complete', priority: 1, note: 'CJK routing, CosyVoice, WAN 2.2' },
+    alibabaIntegration: { id: 'P4-API-08', name: 'Alibaba Qwen Integration', status: 'complete', priority: 1, note: 'CJK routing, Qwen3-TTS, WAN 2.2' },
     modelsLabIntegration: { id: 'P4-API-09', name: 'ModelsLab Integration', status: 'complete', priority: 1, note: 'FLUX, AnimateDiff, 3D Mesh' },
     replicateIntegration: { id: 'P4-API-10', name: 'Replicate Integration', status: 'complete', priority: 1, note: 'Fallback video/image generation' },
     socialOAuthIntegration: { id: 'P4-API-11', name: 'Social OAuth (YouTube/TikTok/LinkedIn)', status: 'complete', priority: 2, note: 'OAuth flows for social publishing' },

@@ -880,7 +880,7 @@ export class ContextualRecommendationService {
       'elevenlabs': 'ElevenLabs',
       'azure-neural': 'Azure Neural TTS',
       'azure-speech': 'Azure Speech',
-      'alibaba-cosyvoice': 'Alibaba CosyVoice',
+      'alibaba-qwen3-tts': 'Alibaba Qwen3-TTS',
       'alibaba-paraformer': 'Alibaba Paraformer',
       'alibaba-qwen-mt': 'Alibaba Qwen-MT',
       'alibaba-wan2': 'Alibaba Wan 2.2',

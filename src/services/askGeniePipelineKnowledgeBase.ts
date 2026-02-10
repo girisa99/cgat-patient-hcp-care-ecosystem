@@ -242,7 +242,7 @@ export const WIZARD_STEPS_KNOWLEDGE = {
       description: 'Multi-agent configuration and voice/audio settings',
       capabilities: ['Agent selection', 'Voice provider', 'TTS/STT', 'Music', 'Sound effects'],
       agents: ['Content Analyst', 'Visual Designer', 'Image Generator', 'Translator', 'Voice Narrator', 'Video Producer', '3D Artist'],
-      voiceProviders: ['ElevenLabs', 'Azure Neural', 'OpenAI TTS', 'Google TTS', 'Alibaba CosyVoice'],
+      voiceProviders: ['ElevenLabs', 'Azure Neural', 'OpenAI TTS', 'Google TTS', 'Alibaba Qwen3-TTS'],
       commonIssues: [
         'Voice not matching language',
         'Agent task failed'

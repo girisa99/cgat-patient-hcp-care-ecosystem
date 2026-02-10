@@ -32,7 +32,7 @@ export type AIProviderKey =
   | 'gemini'      // Gemini 3 Pro - Gemini Zone (India/SEA/Africa)
   | 'deepgram'    // Real-time STT (<100ms) - Primary STT across all zones
   | 'deepseek'    // DeepSeek V3 - Cost-efficient fallback
-  | 'alibaba'     // Qwen-Max, CosyVoice, WAN 2.2 - Alibaba Zone (CJK)
+  | 'alibaba'     // Qwen-Max, Qwen3-TTS, WAN 2.2 - Alibaba Zone (CJK)
   | 'azure'       // Azure Neural TTS, Visemes, Form Recognizer, Translator
   | 'modelslab'   // FLUX Pro, AnimateDiff, 3D Mesh
   | 'meshy'       // High-fidelity 3D, PBR textures, Rigging
@@ -350,7 +350,7 @@ export const AI_PROVIDER_REGISTRY: Record<AIProviderKey, AIProviderDefinition> =
         costPerUnit: 0.00001,
       },
       tts: {
-        models: ['cosyvoice', 'sambert'],
+        models: ['qwen3-tts-flash', 'sambert'],
         strengths: ['Excellent Chinese voices', 'Voice cloning', 'Low cost'],
         weaknesses: ['Fewer English voices'],
         priority: 4,

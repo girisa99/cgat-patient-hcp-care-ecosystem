@@ -58,7 +58,7 @@ export interface QualityFeedback {
 // 6-Zone routing quality baselines
 const ZONE_QUALITY_BASELINES: Record<string, number> = {
   claude_zone: 95,      // West/EU - Claude
-  alibaba_zone: 92,     // CJK - Alibaba/CosyVoice
+  alibaba_zone: 92,     // CJK - Alibaba/Qwen3-TTS
   arabic_zone: 90,      // MENA - Azure Neural
   gemini_zone: 88,      // India/SEA - Gemini
   africa_zone: 82,      // Africa - Specialized

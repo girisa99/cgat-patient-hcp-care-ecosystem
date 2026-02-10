@@ -18,7 +18,7 @@ const coreProviders = [
   { name: 'Anthropic', services: ['Claude 3.5 Sonnet', 'Claude 3 Opus'], status: 'active', type: 'LLM', zone: 'Claude Zone' },
   { name: 'Google', services: ['Gemini 2.5 Pro', 'Gemini Flash', 'Vision', 'TTS'], status: 'active', type: 'LLM + TTS', zone: 'Gemini Zone' },
   { name: 'DeepSeek', services: ['DeepSeek-V3', 'DeepSeek Coder'], status: 'active', type: 'LLM', zone: 'Fallback' },
-  { name: 'Alibaba', services: ['Qwen-Max', 'Qwen-MT', 'CosyVoice', 'Wan2.2'], status: 'active', type: 'CJK Specialist', zone: 'Alibaba Zone' },
+  { name: 'Alibaba', services: ['Qwen-Max', 'Qwen-MT', 'Qwen3-TTS', 'Wan2.2'], status: 'active', type: 'CJK Specialist', zone: 'Alibaba Zone' },
   { name: 'Azure', services: ['Neural TTS', 'Visemes', 'OCR', 'Form Recognizer'], status: 'active', type: 'Enterprise', zone: 'Arabic Zone' },
   { name: 'ModelsLab', services: ['FLUX', 'AnimateDiff', '3D Mesh', 'Realtime'], status: 'active', type: 'Media Gen', zone: 'Global' },
   { name: 'ElevenLabs', services: ['TTS', 'Voice Clone', 'SFX'], status: 'active', type: 'Voice', zone: 'Global' },

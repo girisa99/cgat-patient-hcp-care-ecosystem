@@ -228,18 +228,18 @@ export const REGIONAL_PROVIDER_CONFIG: Record<RegionalCluster, RegionalProviderC
   },
   
   cjk: {
-    // Premium Quality - Alibaba CosyVoice for native handling
+    // Premium Quality - Alibaba Qwen3-TTS for native handling
     textProvider: 'qwen-max',
     textFallback: 'gemini-2.5-pro',
     translationProvider: 'qwen-mt',
     translationFallback: 'deepl',
-    voiceProvider: 'alibaba-cosyvoice', // Better keigo/number handling
+    voiceProvider: 'alibaba-qwen3-tts', // Better keigo/number handling
     voiceFallback: 'azure-neural',
     sttProvider: 'alibaba-paraformer',
     sttFallback: 'google-stt',
     rtlSupport: false,
     qualityScore: 5.0,
-    reason: 'Premium: Alibaba CosyVoice for native CJK with better keigo handling (Japanese) and number formatting',
+    reason: 'Premium: Alibaba Qwen3-TTS for native CJK with better keigo handling (Japanese) and number formatting',
   },
   
   latam: {

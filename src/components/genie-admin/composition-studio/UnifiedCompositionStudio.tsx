@@ -1362,7 +1362,7 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
                         <SelectContent>
                           <SelectItem value="elevenlabs">ElevenLabs</SelectItem>
                           <SelectItem value="azure">Azure TTS</SelectItem>
-                          <SelectItem value="alibaba">Alibaba CosyVoice</SelectItem>
+                          <SelectItem value="alibaba">Alibaba Qwen3-TTS</SelectItem>
                           <SelectItem value="google">Google TTS</SelectItem>
                         </SelectContent>
                       </Select>

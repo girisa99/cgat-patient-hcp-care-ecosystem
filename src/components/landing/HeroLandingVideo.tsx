@@ -71,7 +71,7 @@ const PROVIDER_ATTRIBUTION: Record<string, { name: string; logo: string; role: s
   ],
   localized: [
     { name: 'DeepL', logo: deeplLogo, role: 'Translation' },
-    { name: 'Alibaba', logo: alibabaLogo, role: 'CosyVoice' },
+    { name: 'Alibaba', logo: alibabaLogo, role: 'Qwen3-TTS' },
   ],
   default: [
     { name: 'Alibaba', logo: alibabaLogo, role: 'Avatar' },

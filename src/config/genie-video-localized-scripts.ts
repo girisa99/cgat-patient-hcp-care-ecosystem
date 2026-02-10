@@ -614,7 +614,7 @@ export const ARABIC_SCRIPTS: Record<string, string> = {
 // IMPORTANT: This is display-only. Actual routing happens in multi-provider-tts edge function!
 // The edge function uses languageCode to auto-route:
 // - CLAUDE ZONE (Western): ElevenLabs PRIMARY → en, es, fr
-// - ALIBABA ZONE (CJK): Alibaba CosyVoice PRIMARY → zh, ja
+// - ALIBABA ZONE (CJK): Alibaba Qwen3-TTS PRIMARY → zh, ja
 // - MENA ZONE (Arabic): Azure Neural PRIMARY → ar (7 dialects)
 // - GEMINI ZONE (India/Africa): Azure Neural PRIMARY → hi, sw, te, ta, bn
 // - German/Portuguese: Azure Neural (superior prosody)
@@ -625,9 +625,9 @@ export const TTS_PROVIDER_MAP: Record<string, { provider: 'elevenlabs' | 'azure'
   es: { provider: 'elevenlabs', displayName: 'ElevenLabs' },
   fr: { provider: 'elevenlabs', displayName: 'ElevenLabs' },
   
-  // ALIBABA ZONE (CJK) - Alibaba CosyVoice primary
-  zh: { provider: 'alibaba', displayName: 'Alibaba CosyVoice' },
-  ja: { provider: 'alibaba', displayName: 'Alibaba CosyVoice' },
+  // ALIBABA ZONE (CJK) - Alibaba Qwen3-TTS primary
+  zh: { provider: 'alibaba', displayName: 'Alibaba Qwen3-TTS' },
+  ja: { provider: 'alibaba', displayName: 'Alibaba Qwen3-TTS' },
   
   // MENA ZONE (Arabic) - Azure Neural primary (7 dialects)
   ar: { provider: 'azure', displayName: 'Azure Neural' },
