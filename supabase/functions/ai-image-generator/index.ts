@@ -3,9 +3,10 @@ import { corsHeaders } from '../_shared/cors.ts';
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 const HUGGING_FACE_TOKEN = Deno.env.get('HUGGING_FACE_ACCESS_TOKEN');
 const REPLICATE_API_KEY = Deno.env.get('REPLICATE_API_KEY');
+const ALIBABA_SG_KEY = Deno.env.get('ALIBABA_SINGAPORE_API_KEY');
+const ALIBABA_VA_KEY = Deno.env.get('ALIBABA_API_KEY');
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -17,7 +18,11 @@ Deno.serve(async (req) => {
       model,
       size = '1024x1024',
       quality = 'high',
-      output_format = 'png'
+      output_format = 'png',
+      // Alibaba-specific params
+      negative_prompt,
+      style,
+      ref_image_url,
     } = await req.json();
 
     console.log('AI Image Generator:', { provider, model, promptLength: prompt?.length });
@@ -50,13 +55,36 @@ Deno.serve(async (req) => {
         imageUrl = await generateWithReplicate(prompt, model || 'black-forest-labs/flux-schnell');
         break;
 
+      case 'alibaba':
+      case 'alibaba-wan': {
+        const alibabaKey = ALIBABA_SG_KEY || ALIBABA_VA_KEY;
+        if (!alibabaKey) {
+          throw new Error('Alibaba API key not configured (ALIBABA_SINGAPORE_API_KEY or ALIBABA_API_KEY)');
+        }
+        const alibabaModel = model || 'wan2.1-t2i-turbo';
+        imageUrl = await generateWithAlibaba(prompt, alibabaModel, alibabaKey, {
+          size, negative_prompt, style, ref_image_url
+        });
+        break;
+      }
+
+      case 'alibaba-qwen':
+      case 'qwen-image': {
+        const qwenKey = ALIBABA_SG_KEY || ALIBABA_VA_KEY;
+        if (!qwenKey) {
+          throw new Error('Alibaba API key not configured for Qwen Image');
+        }
+        imageUrl = await generateWithQwenImage(prompt, qwenKey, { ref_image_url });
+        break;
+      }
+
       default:
         throw new Error(`Unsupported provider: ${provider}`);
     }
 
     return new Response(JSON.stringify({ 
       imageUrl,
-      mediaUrl: imageUrl, // For compatibility with universalMediaService
+      mediaUrl: imageUrl,
       success: true,
       provider,
       model: model || getDefaultModel(provider),
@@ -68,10 +96,7 @@ Deno.serve(async (req) => {
         timestamp: new Date().toISOString()
       }
     }), {
-      headers: { 
-        ...corsHeaders, 
-        'Content-Type': 'application/json' 
-      }
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 
   } catch (error) {
@@ -82,13 +107,7 @@ Deno.serve(async (req) => {
         error: (error instanceof Error ? error.message : 'Image generation failed'),
         details: String(error)
       }),
-      { 
-        status: 500, 
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
-        } 
-      }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
@@ -226,15 +245,169 @@ function getDefaultModel(provider: string): string {
     case 'openai': return 'gpt-image-1';
     case 'huggingface': return 'black-forest-labs/FLUX.1-schnell';
     case 'replicate': return 'black-forest-labs/flux-schnell';
+    case 'alibaba': case 'alibaba-wan': return 'wan2.1-t2i-turbo';
+    case 'alibaba-qwen': case 'qwen-image': return 'qwen-image-edit';
     default: return 'gpt-image-1';
   }
 }
 
 function getReplicateVersion(model: string): string {
-  // Map model names to their Replicate versions
   const versionMap: Record<string, string> = {
     'black-forest-labs/flux-schnell': 'f2ab8a5569070ad23ec7c3df5b2e7b5a56f81b0afe2c3a1bb6bbf44eef2ab95e'
   };
-  
   return versionMap[model] || versionMap['black-forest-labs/flux-schnell'];
+}
+
+// ============================================================================
+// ALIBABA WAN T2I (Text-to-Image) - Singapore/Virginia
+// ============================================================================
+
+async function generateWithAlibaba(
+  prompt: string,
+  model: string,
+  apiKey: string,
+  options: { size?: string; negative_prompt?: string; style?: string; ref_image_url?: string }
+): Promise<string> {
+  const baseUrl = 'https://dashscope-intl.aliyuncs.com/api/v1';
+  const endpoint = `${baseUrl}/services/aigc/text2image/image-synthesis`;
+
+  console.log(`🌸 [Alibaba T2I] Model: ${model}, Endpoint: ${endpoint}`);
+
+  // Parse size to width/height
+  const [width, height] = (options.size || '1024x1024').split('x').map(Number);
+
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+      'X-DashScope-Async': 'enable',
+    },
+    body: JSON.stringify({
+      model: model,
+      input: {
+        prompt: prompt,
+        ...(options.negative_prompt && { negative_prompt: options.negative_prompt }),
+        ...(options.ref_image_url && { ref_img: options.ref_image_url }),
+      },
+      parameters: {
+        size: `${width}*${height}`,
+        n: 1,
+        ...(options.style && { style: options.style }),
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.text();
+    throw new Error(`Alibaba T2I Error: ${response.status} - ${errorData}`);
+  }
+
+  const result = await response.json();
+  const taskId = result.output?.task_id;
+
+  if (!taskId) {
+    throw new Error('No task ID returned from Alibaba T2I');
+  }
+
+  // Poll for completion
+  const statusUrl = `${baseUrl}/tasks/${taskId}`;
+  for (let i = 0; i < 60; i++) {
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    const pollResponse = await fetch(statusUrl, {
+      headers: { 'Authorization': `Bearer ${apiKey}` },
+    });
+
+    if (!pollResponse.ok) continue;
+    const statusData = await pollResponse.json();
+
+    if (statusData.output?.task_status === 'SUCCEEDED') {
+      const results = statusData.output?.results;
+      if (results && results.length > 0) {
+        return results[0].url || results[0].b64_image;
+      }
+      throw new Error('No image in Alibaba T2I response');
+    } else if (statusData.output?.task_status === 'FAILED') {
+      throw new Error(`Alibaba T2I failed: ${statusData.output?.message || 'Unknown error'}`);
+    }
+  }
+
+  throw new Error('Alibaba T2I generation timed out');
+}
+
+// ============================================================================
+// ALIBABA QWEN IMAGE EDIT - Singapore/Virginia
+// ============================================================================
+
+async function generateWithQwenImage(
+  prompt: string,
+  apiKey: string,
+  options: { ref_image_url?: string }
+): Promise<string> {
+  const baseUrl = 'https://dashscope-intl.aliyuncs.com/api/v1';
+  const endpoint = `${baseUrl}/services/aigc/image2image/image-synthesis`;
+
+  console.log(`🎨 [Qwen Image Edit] Endpoint: ${endpoint}`);
+
+  const payload: any = {
+    model: 'wanx2.1-imageedit',
+    input: {
+      prompt: prompt,
+    },
+    parameters: {
+      n: 1,
+    },
+  };
+
+  if (options.ref_image_url) {
+    payload.input.base_image_url = options.ref_image_url;
+  }
+
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+      'X-DashScope-Async': 'enable',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.text();
+    throw new Error(`Qwen Image Error: ${response.status} - ${errorData}`);
+  }
+
+  const result = await response.json();
+  const taskId = result.output?.task_id;
+
+  if (!taskId) {
+    throw new Error('No task ID returned from Qwen Image');
+  }
+
+  // Poll for completion
+  const statusUrl = `${baseUrl}/tasks/${taskId}`;
+  for (let i = 0; i < 60; i++) {
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    const pollResponse = await fetch(statusUrl, {
+      headers: { 'Authorization': `Bearer ${apiKey}` },
+    });
+
+    if (!pollResponse.ok) continue;
+    const statusData = await pollResponse.json();
+
+    if (statusData.output?.task_status === 'SUCCEEDED') {
+      const results = statusData.output?.results;
+      if (results && results.length > 0) {
+        return results[0].url || results[0].b64_image;
+      }
+      throw new Error('No image in Qwen Image response');
+    } else if (statusData.output?.task_status === 'FAILED') {
+      throw new Error(`Qwen Image failed: ${statusData.output?.message || 'Unknown error'}`);
+    }
+  }
+
+  throw new Error('Qwen Image generation timed out');
 }
