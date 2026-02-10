@@ -525,12 +525,17 @@ export function SlideCard({
           )}
 
           {/* Image */}
-          {slide.image && (
+          {slide.image && (slide.image.url || slide.image.base64) && (
             <div className="relative group">
               <img 
-                src={slide.image.url} 
-                alt={slide.image.alt}
-                className="w-full h-32 object-cover rounded-lg"
+                src={slide.image.base64 || slide.image.url} 
+                alt={slide.image.alt || slide.title}
+                className="w-full h-32 object-cover rounded-lg bg-muted"
+                onError={(e) => {
+                  // Fallback to a gradient placeholder if image fails to load
+                  (e.target as HTMLImageElement).style.display = 'none';
+                  (e.target as HTMLImageElement).parentElement?.classList.add('bg-gradient-to-br', 'from-primary/20', 'to-accent/20', 'h-32', 'rounded-lg', 'flex', 'items-center', 'justify-center');
+                }}
               />
               <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2">
                 <Button

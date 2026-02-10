@@ -163,6 +163,7 @@ import {
   PresentationTone,
   ContentEnhancement,
 } from '@/services/universalPresentationService';
+import { getRegionalConfig, isRTLLanguage, toLangBCP47 } from '@/components/landing/demo-hub/regionalDemoRouting';
 import { 
   PresentationSlide, 
   SlideEnhancementType, 
@@ -960,11 +961,21 @@ export function PresentationWizard({
       vf.featureId === 'journey-maps'
     );
 
-    // Merge with explicit toggles (if either is true, include it)
+      // Merge with explicit toggles (if either is true, include it)
     const finalIncludeCharts = includeCharts || hasChartsFromFeatures;
     const finalIncludeTables = includeTables || hasTablesFromFeatures;
     const finalIncludeInfographics = includeInfographics || hasInfographicsFromFeatures;
     const finalIncludeJourneyMaps = includeJourneyMaps || hasJourneyMapsFromFeatures;
+
+    // Regional routing - zone-aware provider selection
+    const regionalConfig = getRegionalConfig(undefined, primaryLanguage);
+    console.log('[Generation] Regional routing:', {
+      zone: regionalConfig.zone,
+      llm: `${regionalConfig.llmProvider}/${regionalConfig.llmModel}`,
+      tts: regionalConfig.ttsProvider,
+      translation: regionalConfig.translationProvider,
+      isRTL: isRTLLanguage(primaryLanguage),
+    });
 
     // Add translation instructions if needed
     if (inputLanguage === 'en' && primaryLanguage !== 'en' && autoTranslateFromEnglish) {
@@ -1022,6 +1033,19 @@ export function PresentationWizard({
         step2Mode,
         // NEW: Model selections from OutputModelSelector (Many-to-Many with guardrails)
         modelSelections,
+        // Regional routing context
+        regionalRouting: {
+          zone: regionalConfig.zone,
+          llmProvider: regionalConfig.llmProvider,
+          llmModel: regionalConfig.llmModel,
+          ttsProvider: regionalConfig.ttsProvider,
+          translationProvider: regionalConfig.translationProvider,
+          imageProvider: regionalConfig.imageProvider,
+          videoProvider: regionalConfig.videoProvider,
+          avatarProvider: regionalConfig.avatarProvider,
+          isRTL: isRTLLanguage(primaryLanguage),
+          bcp47: toLangBCP47(primaryLanguage),
+        },
       },
       
       templateContext: {
@@ -1986,6 +2010,12 @@ export function PresentationWizard({
                 </div>
 
                 {/* Voice Configuration */}
+                {(() => {
+                  const regionalVoiceConfig = getRegionalConfig(undefined, primaryLanguage);
+                  const recommendedTTS = regionalVoiceConfig.ttsProvider === 'alibaba_cosyvoice' 
+                    ? 'CosyVoice' 
+                    : 'Azure Neural';
+                  return (
                 <Card className="border border-border/50">
                   <CardContent className="p-4 space-y-4">
                     <div className="flex items-center justify-between">
@@ -2006,6 +2036,19 @@ export function PresentationWizard({
                       />
                     </div>
 
+                    {/* Regional TTS Recommendation */}
+                    <div className="p-2.5 rounded-lg bg-primary/5 border border-primary/10">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-[9px]">{regionalVoiceConfig.zone.toUpperCase()} Zone</Badge>
+                        <span className="text-xs text-muted-foreground">
+                          Recommended: <span className="font-medium text-foreground">{recommendedTTS}</span>
+                        </span>
+                      </div>
+                      {isRTLLanguage(primaryLanguage) && (
+                        <p className="text-[10px] text-muted-foreground mt-1">RTL layout will be applied</p>
+                      )}
+                    </div>
+
                     {includeVoiceover && (
                       <div className="space-y-4 pt-4 border-t">
                         <div className="space-y-2">
@@ -2021,7 +2064,8 @@ export function PresentationWizard({
                                   <Badge variant="outline" className="text-[9px]">Premium</Badge>
                                 </div>
                               </SelectItem>
-                              <SelectItem value="azure">Azure Neural TTS</SelectItem>
+                              <SelectItem value="azure">Azure Neural TTS {regionalVoiceConfig.ttsProvider === 'azure' ? '⭐' : ''}</SelectItem>
+                              <SelectItem value="alibaba_cosyvoice">CosyVoice {regionalVoiceConfig.ttsProvider === 'alibaba_cosyvoice' ? '⭐' : ''}</SelectItem>
                               <SelectItem value="google">Google WaveNet</SelectItem>
                               <SelectItem value="openai">OpenAI TTS</SelectItem>
                             </SelectContent>
@@ -2035,14 +2079,26 @@ export function PresentationWizard({
                               Multi-Language Voice
                             </p>
                             <p className="text-xs text-muted-foreground mt-1">
-                              Voices will be auto-selected for each of your {selectedLanguages.length} languages
+                              Voices will be auto-selected per zone for each of your {selectedLanguages.length} languages
                             </p>
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {selectedLanguages.map(lang => {
+                                const langConfig = getRegionalConfig(undefined, lang);
+                                return (
+                                  <Badge key={lang} variant="outline" className="text-[9px]">
+                                    {lang.toUpperCase()}: {langConfig.ttsProvider === 'alibaba_cosyvoice' ? 'CosyVoice' : 'Azure Neural'}
+                                  </Badge>
+                                );
+                              })}
+                            </div>
                           </div>
                         )}
                       </div>
                     )}
                   </CardContent>
                 </Card>
+                  );
+                })()}
 
                 {/* Background Music */}
                 <Card className="border border-border/50">
