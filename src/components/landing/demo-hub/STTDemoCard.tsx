@@ -20,6 +20,7 @@ import {
 import { useDynamicLanguageRegistry } from '@/hooks/landing/useDynamicLanguageRegistry';
 import { ProviderBadge, ProviderPanel } from './RegionalProviderInfo';
 import { getSTTSuggestions } from './demoExamples';
+import { getRegionalConfig, isRTLLanguage } from './regionalDemoRouting';
 import { motion } from 'framer-motion';
 
 const SUPABASE_URL = 'https://ithspbabhmdntioslfqe.supabase.co';
@@ -63,6 +64,7 @@ interface STTDemoCardProps {
 export const STTDemoCard: React.FC<STTDemoCardProps> = ({ region, industryId }) => {
   const registry = useDynamicLanguageRegistry();
   const defaultLang = region ? (REGION_DEFAULT_LANG[region] || 'en') : 'en';
+  const regionalConfig = getRegionalConfig(region, defaultLang);
   const [language, setLanguage] = useState(defaultLang);
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -247,7 +249,7 @@ export const STTDemoCard: React.FC<STTDemoCardProps> = ({ region, industryId }) 
                 <div
                   key={idx}
                   className="flex items-start gap-2.5 p-3 rounded-xl border border-border bg-muted/20"
-                  dir={['ar', 'he', 'ur', 'fa'].includes(language) ? 'rtl' : 'ltr'}
+                  dir={isRTLLanguage(language) ? 'rtl' : 'ltr'}
                 >
                   <span className="text-primary text-sm font-bold shrink-0 mt-0.5">💬</span>
                   <p className="text-sm text-foreground leading-relaxed italic">
@@ -300,7 +302,7 @@ export const STTDemoCard: React.FC<STTDemoCardProps> = ({ region, industryId }) 
                 </div>
               </div>
             ) : isProcessing ? (
-              <p className="text-muted-foreground text-sm">Processing via Deepgram Nova 2...</p>
+              <p className="text-muted-foreground text-sm">Processing via {regionalConfig.zone === 'cjk' ? 'Alibaba Paraformer' : 'Deepgram Nova 2'}...</p>
             ) : (
               <p className="text-muted-foreground text-sm">Tap the mic to start speaking</p>
             )}
