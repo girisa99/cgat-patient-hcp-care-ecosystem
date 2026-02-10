@@ -32,15 +32,15 @@ const PRODUCT_LOGOS: Record<string, string> = {
 
 // Product names for alt text
 const PRODUCT_NAMES: Record<string, string> = {
-  opening: 'Genie Studio',
+  opening: 'Genie Suite',
   spark: 'Genie Spark',
   mind: 'Genie Mind',
   vibe: 'Genie Vibe',
   deck: 'Genie Deck',
-  arc: 'Genie Arc',
+  arc: 'Genie Hub',
   askGenie: 'Ask Genie',
   cast: 'Genie Cast',
-  closing: 'Genie Studio',
+  closing: 'Genie Suite',
 };
 
 interface ProductLogoDisplayProps {
@@ -57,7 +57,7 @@ export const ProductLogoDisplay: React.FC<ProductLogoDisplayProps> = ({
   showLabel = false,
 }) => {
   const logo = PRODUCT_LOGOS[chapterId] || genieStudioLogo;
-  const productName = PRODUCT_NAMES[chapterId] || 'Genie Studio';
+  const productName = PRODUCT_NAMES[chapterId] || 'Genie Suite';
   
   const sizeClasses = {
     sm: 'w-24 h-24',

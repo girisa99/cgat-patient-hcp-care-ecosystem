@@ -103,7 +103,7 @@ const stt = (id: string, industry: string, emoji: string, audioInput: string, ou
 
 const translation = (id: string, industry: string, emoji: string, source: string, outputLabel: string, preview: string, details: string[], stats: Partial<PipelineOutput['stats']>, tags: string[], langs: string[]): PipelineOutput => ({
   id, pipeline: 'Translation', pipelineIcon: Languages, pipelineColor: 'text-cyan-500',
-  product: 'Genie Arc', industry, industryEmoji: emoji,
+  product: 'Genie Hub', industry, industryEmoji: emoji,
   input: { label: 'Source Text', preview: source },
   aiProviders: ['DeepL', 'Azure Translator'],
   output: { label: outputLabel, preview, details, format: 'JSON / CSV' },
@@ -112,7 +112,7 @@ const translation = (id: string, industry: string, emoji: string, source: string
 
 const transcreation = (id: string, industry: string, emoji: string, source: string, outputLabel: string, preview: string, details: string[], stats: Partial<PipelineOutput['stats']>, tags: string[], langs: string[]): PipelineOutput => ({
   id, pipeline: 'Transcreation', pipelineIcon: Sparkles, pipelineColor: 'text-yellow-500',
-  product: 'Genie Studio', industry, industryEmoji: emoji,
+  product: 'Genie Suite', industry, industryEmoji: emoji,
   input: { label: 'Source Copy', preview: source },
   aiProviders: ['Qwen-Max (CJK/MENA)', 'Claude 4 (Western/EU)', 'Gemini 3 Pro (India/SEA)'],
   output: { label: outputLabel, preview, details, format: 'Localized Copy' },

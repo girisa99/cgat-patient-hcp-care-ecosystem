@@ -95,7 +95,7 @@ const EmailConfirmation: React.FC = () => {
             </div>
             <CardTitle className="text-2xl font-bold text-green-600">Email Confirmed! 🎉</CardTitle>
             <CardDescription className="text-base">
-              Your email has been successfully verified. Welcome to Genie Studio!
+              Your email has been successfully verified. Welcome to Genie Suite!
             </CardDescription>
           </CardHeader>
           
@@ -107,7 +107,7 @@ const EmailConfirmation: React.FC = () => {
             <Link to="/genie-studio" className="block">
               <Button className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
                 <Sparkles className="mr-2 h-4 w-4" />
-                Go to Genie Studio Now
+                Go to Genie Suite Now
               </Button>
             </Link>
           </CardContent>

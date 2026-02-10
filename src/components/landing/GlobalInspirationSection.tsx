@@ -1,6 +1,6 @@
 /**
  * GLOBAL INSPIRATION SECTION
- * Commercially-driven use cases — what teams achieve with Genie Studio
+ * Commercially-driven use cases — what teams achieve with Genie Suite
  */
 import React, { useState } from 'react';
 import { 
@@ -100,7 +100,7 @@ export const GlobalInspirationSection: React.FC = () => {
             Your Market. Your Language. Your Growth.
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Teams across <span className="text-primary font-bold">6 continents</span> use Genie Studio to create content 
+            Teams across <span className="text-primary font-bold">6 continents</span> use Genie Suite to create content 
             that doesn't just translate — it <span className="text-primary font-bold">converts</span>.
           </p>
         </div>

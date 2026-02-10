@@ -135,7 +135,7 @@ const GenieExplorePage: React.FC = () => {
           <Link to="/genie-landing" className="flex items-center gap-2">
             <img src={genieSuiteLogo} alt="Genie Suite" className="h-8 w-auto" />
             <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Genie Studio
+              Genie Suite
             </span>
           </Link>
           <div className="flex items-center gap-4">
@@ -338,7 +338,7 @@ const GenieExplorePage: React.FC = () => {
         <div className="max-w-6xl mx-auto px-4 text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
             <img src={genieSuiteLogo} alt="Genie Suite" className="h-6 w-auto" />
-            <span className="font-semibold text-foreground">Genie Studio</span>
+            <span className="font-semibold text-foreground">Genie Suite</span>
           </div>
           <p className="text-sm text-muted-foreground">
             7 Products • 206 Pipelines • One Platform

@@ -142,7 +142,7 @@ export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
       { name: 'Education', icon: '📚', useCase: 'Course creation, LMS content, certification prep' },
     ],
     seo: {
-      title: 'Genie Studio — AI Video Production Platform | Mind to Media',
+      title: 'Genie Suite — AI Video Production Platform | Mind to Media',
       description: 'Transform ideas into professional videos with 206 AI pipelines, 12 providers, and 70+ languages. Start free with 50 credits.',
       keywords: ['AI video production', 'content creation platform', 'video marketing', 'AI-powered videos', 'enterprise video'],
       hreflang: 'en-US',
@@ -177,12 +177,12 @@ export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
       heroBadge: '15 AI Providers. One Platform.',
     },
     showcaseExamples: [
-      { industry: 'Healthcare', icon: '🏥', input: 'HIPAA training document (12 pages)', pipeline: 'Mind → Spark → Vibe → Cast → Arc', output: '8-module video course with AI presenter + 3 language dubs', languages: 'English, Spanish, Mandarin', impact: '85% faster than traditional production' },
+      { industry: 'Healthcare', icon: '🏥', input: 'HIPAA training document (12 pages)', pipeline: 'Mind → Spark → Vibe → Cast → Hub', output: '8-module video course with AI presenter + 3 language dubs', languages: 'English, Spanish, Mandarin', impact: '85% faster than traditional production' },
       { industry: 'Finance', icon: '💰', input: 'Quarterly earnings summary', pipeline: 'Spark → Deck → Vibe → Cast', output: 'Investor update video + branded slide deck + audio summary', languages: 'English', impact: '4 hours vs 2 weeks traditional' },
-      { industry: 'Technology', icon: '💻', input: 'API documentation + changelog', pipeline: 'Mind → Spark → Vibe → Arc', output: 'Developer walkthrough video + localized release notes', languages: 'English, Japanese, German', impact: '90% cost reduction vs agency' },
-      { industry: 'Retail', icon: '🛍️', input: 'Product photos + feature list', pipeline: 'Spark → Vibe → Cast → Arc', output: 'Social media ad series (9:16 + 16:9) in 5 languages', languages: 'English, Spanish, French, Mandarin, Hindi', impact: '50 ads/day vs 5/week manual' },
+      { industry: 'Technology', icon: '💻', input: 'API documentation + changelog', pipeline: 'Mind → Spark → Vibe → Hub', output: 'Developer walkthrough video + localized release notes', languages: 'English, Japanese, German', impact: '90% cost reduction vs agency' },
+      { industry: 'Retail', icon: '🛍️', input: 'Product photos + feature list', pipeline: 'Spark → Vibe → Cast → Hub', output: 'Social media ad series (9:16 + 16:9) in 5 languages', languages: 'English, Spanish, French, Mandarin, Hindi', impact: '50 ads/day vs 5/week manual' },
     ],
-    welcomeScript: "One idea. That's all it takes. Spark turns it into a story. Mind knows exactly who needs to hear it. Vibe makes it cinematic. Arc carries it across 140 languages — not translated, transcreated. Deck makes boardrooms believe. Cast takes it everywhere. And Ask Genie? Always one step ahead. This is Genie Studio. Seven products. 206 pipelines. 15 AI engines. One platform — and the only one you'll ever need.",
+    welcomeScript: "One idea. That's all it takes. Spark turns it into a story. Mind knows exactly who needs to hear it. Vibe makes it cinematic. Hub carries it across 140 languages — not translated, transcreated. Deck makes boardrooms believe. Cast takes it everywhere. And Ask Genie? Always one step ahead. This is Genie Suite. Seven products. 206 pipelines. 15 AI engines. One platform — and the only one you'll ever need.",
   },
 
   europe: {
@@ -216,7 +216,7 @@ export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
       { name: 'Professional Services', icon: '📊', useCase: 'Thought leadership, client presentations, ESG reporting' },
     ],
     seo: {
-      title: 'Genie Studio — KI-Videoproduktion für Europa | 25+ Sprachen',
+      title: 'Genie Suite — KI-Videoproduktion für Europa | 25+ Sprachen',
       description: 'Erstellen Sie professionelle Videos in 25+ europäischen Sprachen mit KI-gestützter Transkreation. DSGVO-konform.',
       keywords: ['KI Video Produktion', 'multilingual video', 'European content', 'GDPR compliant', 'Industry 4.0'],
       hreflang: 'de',
@@ -253,12 +253,12 @@ export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
       heroBadge: '24 EU Languages. GDPR-Compliant.',
     },
     showcaseExamples: [
-      { industry: 'Manufacturing', icon: '🏭', input: 'Safety compliance manual (German)', pipeline: 'Mind → Spark → Vibe → Arc → Cast', output: 'Interactive safety training in 8 EU languages with AI presenter', languages: 'DE, FR, ES, IT, PL, NL, PT, RO', impact: 'Single source → 8 markets in hours' },
-      { industry: 'Automotive', icon: '🚗', input: 'New model feature specs', pipeline: 'Spark → Deck → Vibe → Cast → Arc', output: 'Dealer training video + launch event deck in 6 languages', languages: 'DE, FR, IT, ES, NL, EN', impact: 'Pan-European launch in 48 hours' },
+      { industry: 'Manufacturing', icon: '🏭', input: 'Safety compliance manual (German)', pipeline: 'Mind → Spark → Vibe → Hub → Cast', output: 'Interactive safety training in 8 EU languages with AI presenter', languages: 'DE, FR, ES, IT, PL, NL, PT, RO', impact: 'Single source → 8 markets in hours' },
+      { industry: 'Automotive', icon: '🚗', input: 'New model feature specs', pipeline: 'Spark → Deck → Vibe → Cast → Hub', output: 'Dealer training video + launch event deck in 6 languages', languages: 'DE, FR, IT, ES, NL, EN', impact: 'Pan-European launch in 48 hours' },
       { industry: 'Pharma', icon: '💊', input: 'Clinical trial results summary', pipeline: 'Mind → Spark → Vibe → Cast', output: 'HCP education video with compliant disclaimers in 12 languages', languages: 'All 24 EU + English', impact: 'Regulatory-ready across EU markets' },
-      { industry: 'Professional Services', icon: '📊', input: 'ESG annual report', pipeline: 'Spark → Deck → Vibe → Arc', output: 'Stakeholder video report + multilingual executive summary', languages: 'EN, DE, FR', impact: '€50K saved vs external agency' },
+      { industry: 'Professional Services', icon: '📊', input: 'ESG annual report', pipeline: 'Spark → Deck → Vibe → Hub', output: 'Stakeholder video report + multilingual executive summary', languages: 'EN, DE, FR', impact: '€50K saved vs external agency' },
     ],
-    welcomeScript: "Every great brand has a European story to tell — in French, German, Spanish, and thirty more. Spark finds your words. Mind reads the room. Vibe makes it unforgettable. Arc doesn't translate — it transcreates, preserving every nuance from Lisbon to Helsinki. Deck wins the pitch. Cast fills the feed. Ask Genie keeps it effortless. Genie Studio. One platform. Every European market. No one else even comes close.",
+    welcomeScript: "Every great brand has a European story to tell — in French, German, Spanish, and thirty more. Spark finds your words. Mind reads the room. Vibe makes it unforgettable. Hub doesn't translate — it transcreates, preserving every nuance from Lisbon to Helsinki. Deck wins the pitch. Cast fills the feed. Ask Genie keeps it effortless. Genie Suite. One platform. Every European market. No one else even comes close.",
   },
 
   mena: {
@@ -294,7 +294,7 @@ export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
       { name: 'Tourism', icon: '✈️', useCase: 'Destination marketing, cultural heritage content, hotel showcases' },
     ],
     seo: {
-      title: 'جيني ستوديو — منصة إنتاج الفيديو بالذكاء الاصطناعي | 7 لهجات عربية',
+      title: 'جيني سويت — منصة إنتاج الفيديو بالذكاء الاصطناعي | 7 لهجات عربية',
       description: 'إنشاء فيديوهات احترافية بـ 7 لهجات عربية مع تحويل ثقافي ذكي. دعم كامل للعربية من اليمين لليسار.',
       keywords: ['إنتاج فيديو', 'ذكاء اصطناعي', 'لهجات عربية', 'رؤية 2030', 'محتوى عربي'],
       hreflang: 'ar',
@@ -334,12 +334,12 @@ export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
       heroBadge: '🏆 First Ever: 7 Arabic Dialects',
     },
     showcaseExamples: [
-      { industry: 'Government', icon: '🏛️', input: 'Vision 2030 initiative brief', pipeline: 'Mind → Spark → Vibe → Cast → Arc', output: 'Citizen engagement video in 7 Arabic dialects + English + Urdu', languages: 'SA, EG, Gulf, Levantine, Maghrebi, Iraqi, MSA', impact: 'First-ever multi-dialect government communication' },
+      { industry: 'Government', icon: '🏛️', input: 'Vision 2030 initiative brief', pipeline: 'Mind → Spark → Vibe → Cast → Hub', output: 'Citizen engagement video in 7 Arabic dialects + English + Urdu', languages: 'SA, EG, Gulf, Levantine, Maghrebi, Iraqi, MSA', impact: 'First-ever multi-dialect government communication' },
       { industry: 'Finance', icon: '🏦', input: 'Islamic banking product terms', pipeline: 'Spark → Vibe → Cast', output: 'Sharia-compliant explainer video with dialect-aware narration', languages: 'MSA + Saudi + Egyptian', impact: 'Culturally authentic financial content' },
-      { industry: 'Real Estate', icon: '🏗️', input: 'NEOM mega-project overview', pipeline: 'Spark → Deck → Vibe → Cast → Arc', output: 'Investor pitch deck + showreel in Arabic + English + Mandarin', languages: 'AR-SA, EN, ZH', impact: 'Global investor reach from single brief' },
-      { industry: 'Tourism', icon: '✈️', input: 'Red Sea resort features', pipeline: 'Spark → Vibe → Cast → Arc', output: 'Destination marketing video in 5 dialects + 4 international languages', languages: '5 Arabic + EN, FR, DE, ZH', impact: 'No competitor can do this' },
+      { industry: 'Real Estate', icon: '🏗️', input: 'NEOM mega-project overview', pipeline: 'Spark → Deck → Vibe → Cast → Hub', output: 'Investor pitch deck + showreel in Arabic + English + Mandarin', languages: 'AR-SA, EN, ZH', impact: 'Global investor reach from single brief' },
+      { industry: 'Tourism', icon: '✈️', input: 'Red Sea resort features', pipeline: 'Spark → Vibe → Cast → Hub', output: 'Destination marketing video in 5 dialects + 4 international languages', languages: '5 Arabic + EN, FR, DE, ZH', impact: 'No competitor can do this' },
     ],
-    welcomeScript: "Your story deserves to be heard in every dialect — Gulf, Levantine, Egyptian, Maghrebi, and beyond. Spark writes with cultural intelligence. Mind understands your audience from Riyadh to Casablanca. Vibe produces world-class visuals. Arc transcreates across seven Arabic dialects with precision no other platform can match. Deck commands the room. Cast scales your voice. Ask Genie never sleeps. Genie Studio — we don't just speak Arabic. We think in it.",
+    welcomeScript: "Your story deserves to be heard in every dialect — Gulf, Levantine, Egyptian, Maghrebi, and beyond. Spark writes with cultural intelligence. Mind understands your audience from Riyadh to Casablanca. Vibe produces world-class visuals. Hub transcreates across seven Arabic dialects with precision no other platform can match. Deck commands the room. Cast scales your voice. Ask Genie never sleeps. Genie Suite — we don't just speak Arabic. We think in it.",
   },
 
   india: {
@@ -373,7 +373,7 @@ export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
       { name: 'Government', icon: '🏛️', useCase: 'Digital India communications, scheme explainers in all languages' },
     ],
     seo: {
-      title: 'Genie Studio — AI वीडियो प्रोडक्शन प्लेटफॉर्म | 11 भारतीय भाषाएं',
+      title: 'Genie Suite — AI वीडियो प्रोडक्शन प्लेटफॉर्म | 11 भारतीय भाषाएं',
       description: '11 भारतीय भाषाओं में प्रोफेशनल वीडियो बनाएं — हिंदी, तमिल, तेलुगु, बंगाली, मराठी और बहुत कुछ। AI-पावर्ड ट्रांसक्रिएशन।',
       keywords: ['AI video India', 'Hindi video production', 'Indian languages', 'Digital India', 'regional content'],
       hreflang: 'hi',
@@ -412,12 +412,12 @@ export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
       heroBadge: '🏆 First: 11 Indian Languages + Lip-Sync',
     },
     showcaseExamples: [
-      { industry: 'EdTech', icon: '📱', input: 'NCERT Chapter 5 — Physics', pipeline: 'Mind → Spark → Vibe → Cast → Arc', output: 'Animated lesson video with AI teacher in 11 Indian languages', languages: 'HI, TA, TE, BN, MR, GU, KN, ML, PA, OR, AS', impact: 'First-ever 11-language course from single source' },
+      { industry: 'EdTech', icon: '📱', input: 'NCERT Chapter 5 — Physics', pipeline: 'Mind → Spark → Vibe → Cast → Hub', output: 'Animated lesson video with AI teacher in 11 Indian languages', languages: 'HI, TA, TE, BN, MR, GU, KN, ML, PA, OR, AS', impact: 'First-ever 11-language course from single source' },
       { industry: 'Healthcare', icon: '🏥', input: 'Ayushman Bharat scheme guidelines', pipeline: 'Spark → Vibe → Cast', output: 'Patient education video in local dialects with AI avatar', languages: 'Hindi, Tamil, Telugu, Bengali', impact: 'Reach 1B+ citizens in their language' },
-      { industry: 'FMCG', icon: '🧴', input: 'Product launch brief for shampoo', pipeline: 'Spark → Vibe → Cast → Arc', output: 'Regional ad campaign (30s) × 11 languages with local influencer style', languages: '11 Indian languages', impact: '₹5L saved vs dubbing studio per campaign' },
+      { industry: 'FMCG', icon: '🧴', input: 'Product launch brief for shampoo', pipeline: 'Spark → Vibe → Cast → Hub', output: 'Regional ad campaign (30s) × 11 languages with local influencer style', languages: '11 Indian languages', impact: '₹5L saved vs dubbing studio per campaign' },
       { industry: 'Government', icon: '🏛️', input: 'Digital India initiative update', pipeline: 'Mind → Spark → Deck → Vibe → Cast', output: 'Citizen awareness video + infographic deck in all scheduled languages', languages: 'Hindi + 10 regional', impact: 'Pan-India reach from single brief' },
     ],
-    welcomeScript: "A billion stories. Twenty-two languages. One platform that gets it. Spark writes in Hindi, Tamil, Telugu, Bengali — natively, not as an afterthought. Mind knows the difference between Mumbai and Chennai. Vibe produces at Bollywood scale. Arc transcreates — because translation isn't enough for India. Deck owns the boardroom. Cast fills every screen. Ask Genie connects it all. Genie Studio. Made for India's ambition.",
+    welcomeScript: "A billion stories. Twenty-two languages. One platform that gets it. Spark writes in Hindi, Tamil, Telugu, Bengali — natively, not as an afterthought. Mind knows the difference between Mumbai and Chennai. Vibe produces at Bollywood scale. Hub transcreates — because translation isn't enough for India. Deck owns the boardroom. Cast fills every screen. Ask Genie connects it all. Genie Suite. Made for India's ambition.",
   },
 
   africa: {
@@ -451,7 +451,7 @@ export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
       { name: 'NGO', icon: '🤝', useCase: 'Impact reports, donor communications, community engagement' },
     ],
     seo: {
-      title: 'Genie Studio — AI Video Production for Africa | 10+ Languages',
+      title: 'Genie Suite — AI Video Production for Africa | 10+ Languages',
       description: 'Create professional videos in Swahili, Yoruba, Hausa, Zulu, Amharic and more. AI-powered transcreation for authentic African content.',
       keywords: ['AI video Africa', 'Swahili content', 'African languages', 'Africa Rising', 'vernacular video'],
       hreflang: 'sw',
@@ -490,11 +490,11 @@ export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
     },
     showcaseExamples: [
       { industry: 'Agriculture', icon: '🌾', input: 'Crop rotation best practices guide', pipeline: 'Mind → Spark → Vibe → Cast', output: 'Farmer education video with AI presenter in Swahili + Yoruba + Hausa', languages: 'SW, YO, HA, EN', impact: 'Zero competitors offer this — first ever' },
-      { industry: 'Fintech', icon: '📱', input: 'M-Pesa onboarding flow', pipeline: 'Spark → Vibe → Cast → Arc', output: 'Mobile money tutorial in 5 African languages with local context', languages: 'SW, AM, ZU, HA, EN', impact: 'Reach 500M+ unbanked in their language' },
+      { industry: 'Fintech', icon: '📱', input: 'M-Pesa onboarding flow', pipeline: 'Spark → Vibe → Cast → Hub', output: 'Mobile money tutorial in 5 African languages with local context', languages: 'SW, AM, ZU, HA, EN', impact: 'Reach 500M+ unbanked in their language' },
       { industry: 'Healthcare', icon: '🏥', input: 'Malaria prevention guidelines (WHO)', pipeline: 'Mind → Spark → Vibe → Cast', output: 'Community health video with AI avatar in local languages', languages: 'Swahili, Yoruba, Amharic, Zulu', impact: 'First AI health content in these languages' },
-      { industry: 'NGO', icon: '🤝', input: 'Climate adaptation report', pipeline: 'Spark → Deck → Vibe → Cast → Arc', output: 'Impact video + donor deck in English + 4 African languages', languages: 'EN, SW, YO, AM, HA', impact: 'Donor engagement + community reach' },
+      { industry: 'NGO', icon: '🤝', input: 'Climate adaptation report', pipeline: 'Spark → Deck → Vibe → Cast → Hub', output: 'Impact video + donor deck in English + 4 African languages', languages: 'EN, SW, YO, AM, HA', impact: 'Donor engagement + community reach' },
     ],
-    welcomeScript: "Fifty-four nations. Two thousand languages. Infinite stories waiting to be told. Spark captures your narrative — in Swahili, Yoruba, Zulu, Amharic, and beyond. Mind understands audiences from Lagos to Nairobi to Johannesburg. Vibe produces at world-class standard. Arc transcreates with cultural depth, not surface-level translation. Deck powers your pitch. Cast broadcasts to the continent. Ask Genie never misses a beat. Genie Studio. Africa's stories deserve Africa's platform.",
+    welcomeScript: "Fifty-four nations. Two thousand languages. Infinite stories waiting to be told. Spark captures your narrative — in Swahili, Yoruba, Zulu, Amharic, and beyond. Mind understands audiences from Lagos to Nairobi to Johannesburg. Vibe produces at world-class standard. Hub transcreates with cultural depth, not surface-level translation. Deck powers your pitch. Cast broadcasts to the continent. Ask Genie never misses a beat. Genie Suite. Africa's stories deserve Africa's platform.",
   },
 
   apac: {
@@ -528,7 +528,7 @@ export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
       { name: 'Tourism', icon: '✈️', useCase: 'Destination marketing for Japan, Thailand, Indonesia' },
     ],
     seo: {
-      title: 'Genie Studio — AI動画制作プラットフォーム | CJK完全対応',
+      title: 'Genie Suite — AI動画制作プラットフォーム | CJK完全対応',
       description: '中国語、日本語、韓国語、東南アジア言語でプロ品質の動画を制作。AIトランスクリエーション対応。',
       keywords: ['AI video APAC', 'CJK content', 'Japanese video', 'Chinese content', 'Korean video production'],
       hreflang: 'ja',
@@ -567,12 +567,12 @@ export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
       heroBadge: 'CJK + 6 SEA Languages. Native Quality.',
     },
     showcaseExamples: [
-      { industry: 'E-Commerce', icon: '🛒', input: 'Product listing (Shopee/Lazada format)', pipeline: 'Spark → Vibe → Cast → Arc', output: 'Product demo video for 6 SEA markets with local narration', languages: 'ZH, JA, KO, TH, VI, ID', impact: 'One listing → 6 markets instantly' },
-      { industry: 'Gaming', icon: '🎮', input: 'Game feature update notes', pipeline: 'Spark → Vibe → Cast → Arc', output: 'Community update video with AI presenter in CJK + English', languages: 'JA, ZH, KO, EN', impact: 'Global game community reach' },
+      { industry: 'E-Commerce', icon: '🛒', input: 'Product listing (Shopee/Lazada format)', pipeline: 'Spark → Vibe → Cast → Hub', output: 'Product demo video for 6 SEA markets with local narration', languages: 'ZH, JA, KO, TH, VI, ID', impact: 'One listing → 6 markets instantly' },
+      { industry: 'Gaming', icon: '🎮', input: 'Game feature update notes', pipeline: 'Spark → Vibe → Cast → Hub', output: 'Community update video with AI presenter in CJK + English', languages: 'JA, ZH, KO, EN', impact: 'Global game community reach' },
       { industry: 'Technology', icon: '💻', input: 'SaaS product announcement', pipeline: 'Mind → Spark → Deck → Vibe → Cast', output: 'Product launch video + investor deck in 5 APAC languages', languages: 'JA, ZH, KO, EN, TH', impact: 'Pan-APAC launch from single brief' },
-      { industry: 'Tourism', icon: '✈️', input: 'Destination highlights — Japan', pipeline: 'Spark → Vibe → Cast → Arc', output: 'Tourism promo video in 8 languages targeting inbound visitors', languages: 'EN, ZH, KO, TH, VI, ID, FR, DE', impact: 'Attract tourists in their native language' },
+      { industry: 'Tourism', icon: '✈️', input: 'Destination highlights — Japan', pipeline: 'Spark → Vibe → Cast → Hub', output: 'Tourism promo video in 8 languages targeting inbound visitors', languages: 'EN, ZH, KO, TH, VI, ID, FR, DE', impact: 'Attract tourists in their native language' },
     ],
-    welcomeScript: "Three greetings. Three writing systems. One platform built for all of them. Spark creates with tonal precision. Mind reads audiences from Tokyo to Sydney to Seoul. Vibe delivers cinema-grade production. Arc transcreates across CJK and Southeast Asia with native fluency — powered by region-optimized AI. Deck wins deals. Cast scales globally. Ask Genie anticipates your next move. Genie Studio. Precision-engineered for Asia Pacific.",
+    welcomeScript: "Three greetings. Three writing systems. One platform built for all of them. Spark creates with tonal precision. Mind reads audiences from Tokyo to Sydney to Seoul. Vibe delivers cinema-grade production. Hub transcreates across CJK and Southeast Asia with native fluency — powered by region-optimized AI. Deck wins deals. Cast scales globally. Ask Genie anticipates your next move. Genie Suite. Precision-engineered for Asia Pacific.",
   },
 
   latam: {
@@ -606,7 +606,7 @@ export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
       { name: 'Healthcare', icon: '🏥', useCase: 'Public health campaigns in indigenous + Spanish' },
     ],
     seo: {
-      title: 'Genie Studio — Plataforma de Video con IA | Español & Portugués',
+      title: 'Genie Suite — Plataforma de Video con IA | Español & Portugués',
       description: 'Crea videos profesionales en español, portugués y lenguas indígenas. Transkreación con IA para contenido auténtico de LATAM.',
       keywords: ['video AI LATAM', 'contenido en español', 'produção de vídeo', 'América Latina', 'transkreación'],
       hreflang: 'es-419',
@@ -643,12 +643,12 @@ export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
       heroBadge: '🏆 First: LATAM-Native Spanish Variants',
     },
     showcaseExamples: [
-      { industry: 'Fintech', icon: '📱', input: 'Neobank onboarding flow', pipeline: 'Spark → Vibe → Cast → Arc', output: 'Onboarding tutorial in Mexican, Colombian, Argentine, Brazilian variants', languages: 'ES-MX, ES-CO, ES-AR, PT-BR', impact: 'Region-authentic financial content' },
+      { industry: 'Fintech', icon: '📱', input: 'Neobank onboarding flow', pipeline: 'Spark → Vibe → Cast → Hub', output: 'Onboarding tutorial in Mexican, Colombian, Argentine, Brazilian variants', languages: 'ES-MX, ES-CO, ES-AR, PT-BR', impact: 'Region-authentic financial content' },
       { industry: 'E-Commerce', icon: '🛒', input: 'Product campaign brief (Mercado Libre)', pipeline: 'Spark → Vibe → Cast', output: 'Social ad series in 4 LATAM Spanish variants + Brazilian Portuguese', languages: 'ES-MX, ES-CO, ES-AR, PT-BR', impact: '5 markets from single brief' },
       { industry: 'Agriculture', icon: '🌾', input: 'Sustainable farming guide', pipeline: 'Mind → Spark → Vibe → Cast', output: 'Farmer education video in regional Spanish + indigenous language overlay', languages: 'ES-MX + Nahuatl subtitles', impact: 'First indigenous language integration' },
-      { industry: 'Education', icon: '📚', input: 'University course module', pipeline: 'Mind → Spark → Vibe → Cast → Arc', output: 'Online course video with professor avatar in 3 Spanish variants', languages: 'ES-MX, ES-CO, ES-AR', impact: 'Pan-LATAM education from single source' },
+      { industry: 'Education', icon: '📚', input: 'University course module', pipeline: 'Mind → Spark → Vibe → Cast → Hub', output: 'Online course video with professor avatar in 3 Spanish variants', languages: 'ES-MX, ES-CO, ES-AR', impact: 'Pan-LATAM education from single source' },
     ],
-    welcomeScript: "Latin America doesn't need another tool that thinks in English. Spark writes with sabor — Brazilian, Mexican, Argentine, Colombian, each with its own soul. Mind feels the pulse of your mercado. Vibe turns scripts into productions your audience can't scroll past. Arc transcreates — porque traducir no es suficiente. Deck conquers the sala de juntas. Cast fills every pantalla. Ask Genie keeps the magic flowing. Genie Studio. Hecho para quienes piensan en grande.",
+    welcomeScript: "Latin America doesn't need another tool that thinks in English. Spark writes with sabor — Brazilian, Mexican, Argentine, Colombian, each with its own soul. Mind feels the pulse of your mercado. Vibe turns scripts into productions your audience can't scroll past. Hub transcreates — porque traducir no es suficiente. Deck conquers the sala de juntas. Cast fills every pantalla. Ask Genie keeps the magic flowing. Genie Suite. Hecho para quienes piensan en grande.",
   },
 
   caribbean: {
@@ -682,7 +682,7 @@ export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
       { name: 'Government', icon: '🏛️', useCase: 'Public service announcements, citizen engagement' },
     ],
     seo: {
-      title: 'Genie Studio — AI Video Production for the Caribbean',
+      title: 'Genie Suite — AI Video Production for the Caribbean',
       description: 'Create professional videos for the Caribbean market in English, French Creole, Spanish, and Papiamento. AI-powered transcreation.',
       keywords: ['Caribbean video', 'AI content Caribbean', 'Creole video', 'tourism marketing', 'island content'],
       hreflang: 'en-029',
@@ -718,12 +718,12 @@ export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
       heroBadge: '🏆 First: Creole + Papiamento AI Video',
     },
     showcaseExamples: [
-      { industry: 'Tourism', icon: '🏖️', input: 'Resort experience highlights', pipeline: 'Spark → Vibe → Cast → Arc', output: 'Destination marketing video in English + French Creole + Spanish', languages: 'EN, HT-Creole, ES, FR', impact: 'Trilingual reach across Caribbean' },
+      { industry: 'Tourism', icon: '🏖️', input: 'Resort experience highlights', pipeline: 'Spark → Vibe → Cast → Hub', output: 'Destination marketing video in English + French Creole + Spanish', languages: 'EN, HT-Creole, ES, FR', impact: 'Trilingual reach across Caribbean' },
       { industry: 'Finance', icon: '🏦', input: 'Offshore banking product overview', pipeline: 'Spark → Deck → Vibe → Cast', output: 'Investor pitch video + compliance deck in English + Spanish', languages: 'EN, ES, FR', impact: 'Professional multilingual finance content' },
-      { industry: 'Agriculture', icon: '🌿', input: 'Export crop marketing brief', pipeline: 'Spark → Vibe → Cast → Arc', output: 'Export marketing video targeting EU + North American buyers', languages: 'EN, FR, ES, DE', impact: 'Caribbean products to global markets' },
+      { industry: 'Agriculture', icon: '🌿', input: 'Export crop marketing brief', pipeline: 'Spark → Vibe → Cast → Hub', output: 'Export marketing video targeting EU + North American buyers', languages: 'EN, FR, ES, DE', impact: 'Caribbean products to global markets' },
       { industry: 'Government', icon: '🏛️', input: 'Hurricane preparedness guidelines', pipeline: 'Mind → Spark → Vibe → Cast', output: 'Public safety video in Creole + English + Spanish with AI avatar', languages: 'HT-Creole, EN, ES', impact: 'Life-saving content in local languages' },
     ],
-    welcomeScript: "From Kingston to Port-of-Spain, from Havana to Nassau — the Caribbean has a voice like nowhere else. Spark writes for island rhythm, tourism, and culture. Mind understands audiences across every shore. Vibe creates visuals as vibrant as the islands themselves. Arc handles Creole, Patois, French, Spanish, Dutch, and English — all in one flow. Deck pitches paradise. Cast publishes across every island. Ask Genie ties it together. Genie Studio. Caribbean-built. World-ready.",
+    welcomeScript: "From Kingston to Port-of-Spain, from Havana to Nassau — the Caribbean has a voice like nowhere else. Spark writes for island rhythm, tourism, and culture. Mind understands audiences across every shore. Vibe creates visuals as vibrant as the islands themselves. Hub handles Creole, Patois, French, Spanish, Dutch, and English — all in one flow. Deck pitches paradise. Cast publishes across every island. Ask Genie ties it together. Genie Suite. Caribbean-built. World-ready.",
   },
 };
 

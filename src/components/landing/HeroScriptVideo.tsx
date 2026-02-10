@@ -36,7 +36,7 @@ const CHAPTER_TITLES: Record<string, { title: string; subtitle: string }> = {
   mind: { title: 'Genie Mind', subtitle: 'AI That Understands' },
   vibe: { title: 'Genie Vibe', subtitle: 'Script to Screen' },
   deck: { title: 'Genie Deck', subtitle: 'Ideas to Impact' },
-  arc: { title: 'Genie Arc', subtitle: 'Your Production Journey' },
+  arc: { title: 'Genie Hub', subtitle: 'Your Creative Command Center' },
   askGenie: { title: 'Ask Genie', subtitle: 'Your Wish is My Command' },
   cast: { title: 'Genie Cast', subtitle: 'Make It. Show It. Scale It.' },
   closing: { title: 'Your Story Awaits', subtitle: 'Start Creating Today' },

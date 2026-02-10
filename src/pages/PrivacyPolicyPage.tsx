@@ -39,7 +39,7 @@ const PrivacyPolicyPage: React.FC = () => {
               <p>
                 Genie AI Suite, Inc. ("we", "our", or "us") is committed to protecting your privacy. 
                 This Privacy Policy explains how we collect, use, disclose, and safeguard your information 
-                when you use our Genie Studio platform ("Service").
+                when you use our Genie Suite platform ("Service").
               </p>
               <p>
                 Please read this privacy policy carefully. If you do not agree with the terms of this 

@@ -199,9 +199,9 @@ const PRODUCT_EXTENDED: Record<string, {
   arc: {
     pipelines: 14,
     positioning: 'Enterprise production management hub — project scheduling, Kanban workflows, multi-team collaboration, approval chains, and resource management for complex content operations.',
-    storyBrand: 'From chaos to clarity. Arc gives your production the structure it deserves.',
+    storyBrand: 'From chaos to clarity. Hub gives your production the structure it deserves.',
     jtbd: 'Orchestrate teams and deadlines for complex productions without the chaos.',
-    videoPlaceholderTitle: 'Discover how Genie Arc manages complex multi-team production workflows end-to-end',
+    videoPlaceholderTitle: 'Discover how Genie Hub manages complex multi-team production workflows end-to-end',
     keyBenefits: [
       { icon: <Workflow className="h-4 w-4" />, title: 'Production Pipeline', detail: 'End-to-end tracking from script to final delivery with stage gates' },
       { icon: <BarChart3 className="h-4 w-4" />, title: 'Kanban & Scheduling', detail: 'Visual boards with drag-and-drop task management and deadline tracking' },

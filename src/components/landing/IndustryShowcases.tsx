@@ -129,8 +129,8 @@ const PIPELINE_GROUPS = {
     tabs: [
       { id: 'tts', label: 'Text-to-Speech', shortLabel: 'TTS', icon: Volume2, product: 'Genie Cast' },
       { id: 'stt', label: 'Speech-to-Text', shortLabel: 'STT', icon: Mic, product: 'Genie Mind' },
-      { id: 'translation', label: 'Translation', shortLabel: 'Translate', icon: Languages, product: 'Genie Arc' },
-      { id: 'transcreation', label: 'Transcreation', shortLabel: 'Transcreate', icon: Sparkles, product: 'Genie Studio' },
+      { id: 'translation', label: 'Translation', shortLabel: 'Translate', icon: Languages, product: 'Genie Hub' },
+      { id: 'transcreation', label: 'Transcreation', shortLabel: 'Transcreate', icon: Sparkles, product: 'Genie Suite' },
     ],
   },
 };
