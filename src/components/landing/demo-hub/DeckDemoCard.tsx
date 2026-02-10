@@ -68,226 +68,363 @@ const LAYOUT_LABELS: Record<SlideLayout, string> = {
   avatar: 'Avatar',
 };
 
+// ── Provider Ribbon ──
+const SLIDE_PROVIDERS: Record<SlideLayout, { providers: string[]; colors: string[] }> = {
+  title: { providers: ['Gemini 2.0', 'GPT-4o'], colors: ['from-blue-500/80 to-blue-600/80', 'from-emerald-500/80 to-emerald-600/80'] },
+  avatar: { providers: ['Azure Neural', 'Alibaba Wan 2.2', 'ElevenLabs'], colors: ['from-sky-500/80 to-sky-600/80', 'from-orange-500/80 to-orange-600/80', 'from-violet-500/80 to-violet-600/80'] },
+  chart: { providers: ['Gemini 2.0', 'Recharts'], colors: ['from-blue-500/80 to-blue-600/80', 'from-teal-500/80 to-teal-600/80'] },
+  timeline: { providers: ['Gemini 2.0', 'Claude 4'], colors: ['from-blue-500/80 to-blue-600/80', 'from-amber-500/80 to-amber-600/80'] },
+  '3d': { providers: ['Meshy AI', 'Tripo3D'], colors: ['from-purple-500/80 to-purple-600/80', 'from-pink-500/80 to-pink-600/80'] },
+  bullets: { providers: ['Gemini 2.0', 'DeepL'], colors: ['from-blue-500/80 to-blue-600/80', 'from-cyan-500/80 to-cyan-600/80'] },
+};
+
+const ProviderRibbon: React.FC<{ layout: SlideLayout }> = ({ layout }) => {
+  const config = SLIDE_PROVIDERS[layout];
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.6 }}
+      className="flex items-center gap-1.5 flex-wrap"
+    >
+      <span className="text-[7px] font-bold text-muted-foreground/50 uppercase tracking-widest">Powered by</span>
+      {config.providers.map((p, i) => (
+        <span key={p} className={`text-[7px] font-bold text-white/90 px-1.5 py-0.5 rounded-md bg-gradient-to-r ${config.colors[i] || 'from-muted to-muted'} shadow-sm`}>
+          {p}
+        </span>
+      ))}
+    </motion.div>
+  );
+};
+
+// ── Audio Waveform Animation ──
+const AudioWaveform: React.FC<{ active?: boolean }> = ({ active = true }) => (
+  <div className="flex items-end gap-[2px] h-5">
+    {[0.6, 1, 0.4, 0.8, 0.5, 0.9, 0.3, 0.7, 0.5, 1, 0.6, 0.4].map((h, i) => (
+      <motion.div
+        key={i}
+        animate={active ? { height: [`${h * 100}%`, `${(1 - h) * 80 + 20}%`, `${h * 100}%`] } : {}}
+        transition={{ repeat: Infinity, duration: 0.8 + i * 0.1, ease: 'easeInOut' }}
+        className="w-[2px] rounded-full bg-gradient-to-t from-accent to-primary"
+        style={{ height: `${h * 100}%` }}
+      />
+    ))}
+  </div>
+);
+
 // ── Slide Layout Renderers ──
 
 const TitleSlideLayout: React.FC<{ slide: GeneratedSlide; lang: string }> = ({ slide, lang }) => (
-  <div className="h-full flex flex-col items-center justify-center text-center px-6" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-    {/* Decorative rings */}
-    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] rounded-full border border-primary/10 pointer-events-none" />
-    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200px] h-[200px] rounded-full border border-accent/10 pointer-events-none" />
-    
-    <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.6 }}>
-      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center mb-4 mx-auto shadow-lg shadow-primary/20">
-        <Presentation className="h-7 w-7 text-primary-foreground" />
-      </div>
-      <h4 className="text-2xl sm:text-3xl lg:text-4xl font-black text-foreground leading-tight mb-3">
+  <div className="h-full flex flex-col items-center justify-center text-center px-6 relative" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+    {/* Animated concentric rings */}
+    <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 30, ease: 'linear' }}
+      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] h-[320px] rounded-full border border-dashed border-primary/10 pointer-events-none" />
+    <motion.div animate={{ rotate: -360 }} transition={{ repeat: Infinity, duration: 20, ease: 'linear' }}
+      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[220px] h-[220px] rounded-full border border-dashed border-accent/15 pointer-events-none" />
+    {/* Glow orbs */}
+    <motion.div animate={{ scale: [1, 1.3, 1], opacity: [0.15, 0.25, 0.15] }} transition={{ repeat: Infinity, duration: 4 }}
+      className="absolute top-1/4 right-1/4 w-32 h-32 rounded-full bg-primary/20 blur-3xl pointer-events-none" />
+    <motion.div animate={{ scale: [1.2, 1, 1.2], opacity: [0.1, 0.2, 0.1] }} transition={{ repeat: Infinity, duration: 5 }}
+      className="absolute bottom-1/4 left-1/4 w-24 h-24 rounded-full bg-accent/20 blur-3xl pointer-events-none" />
+
+    <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+      className="relative z-10">
+      <motion.div
+        animate={{ y: [-2, 2, -2] }}
+        transition={{ repeat: Infinity, duration: 3 }}
+        className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary via-accent to-primary flex items-center justify-center mb-5 mx-auto shadow-xl shadow-primary/30 border border-white/10"
+      >
+        <Presentation className="h-8 w-8 text-primary-foreground" />
+      </motion.div>
+      <h4 className="text-2xl sm:text-3xl lg:text-4xl font-black text-foreground leading-tight mb-3 bg-gradient-to-r from-foreground via-foreground to-primary bg-clip-text">
         {slide.title}
       </h4>
-      <p className="text-sm text-muted-foreground max-w-md mx-auto">{slide.bullets[0]}</p>
+      <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
+        className="text-sm text-muted-foreground max-w-md mx-auto mb-4">{slide.bullets[0]}</motion.p>
+      <ProviderRibbon layout="title" />
     </motion.div>
   </div>
 );
 
 const AvatarSlideLayout: React.FC<{ slide: GeneratedSlide; lang: string }> = ({ slide, lang }) => (
-  <div className="h-full flex gap-4 p-5 sm:p-8" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-    {/* Avatar column */}
+  <div className="h-full flex gap-4 p-5 sm:p-7" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+    {/* Avatar column with glassmorphic frame */}
     <motion.div
-      initial={{ x: -20, opacity: 0 }}
+      initial={{ x: -30, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
-      transition={{ delay: 0.2, duration: 0.5 }}
-      className="w-1/3 flex flex-col items-center justify-center"
+      transition={{ delay: 0.2, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+      className="w-[35%] flex flex-col items-center justify-center relative"
     >
-      <div className="relative">
-        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-primary/20 via-accent/20 to-primary/10 border-2 border-primary/30 flex items-center justify-center">
-          <User className="h-10 w-10 sm:h-12 sm:w-12 text-primary/60" />
+      {/* Glassmorphic card */}
+      <div className="absolute inset-2 rounded-2xl bg-gradient-to-br from-primary/5 to-accent/5 backdrop-blur-md border border-white/10 shadow-inner" />
+      <div className="relative z-10 flex flex-col items-center">
+        {/* Avatar circle with animated ring */}
+        <div className="relative mb-3">
+          <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 8, ease: 'linear' }}
+            className="absolute -inset-2 rounded-full border-2 border-dashed border-primary/20" />
+          <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-primary/30 via-accent/20 to-primary/10 border-2 border-primary/40 flex items-center justify-center shadow-xl shadow-primary/20">
+            <User className="h-10 w-10 sm:h-12 sm:w-12 text-primary/50" />
+          </div>
+          {/* Lip-sync pulse */}
+          <motion.div
+            animate={{ scale: [1, 1.3, 1], boxShadow: ['0 0 0 0 hsl(var(--accent) / 0.4)', '0 0 0 8px hsl(var(--accent) / 0)', '0 0 0 0 hsl(var(--accent) / 0)'] }}
+            transition={{ repeat: Infinity, duration: 1.5 }}
+            className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow-lg"
+          >
+            <Mic className="h-3.5 w-3.5 text-accent-foreground" />
+          </motion.div>
         </div>
-        {/* Lip-sync indicator */}
-        <motion.div
-          animate={{ scale: [1, 1.15, 1] }}
-          transition={{ repeat: Infinity, duration: 1.5 }}
-          className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-accent flex items-center justify-center shadow-md"
-        >
-          <Mic className="h-3.5 w-3.5 text-accent-foreground" />
-        </motion.div>
+        {/* Audio waveform */}
+        <AudioWaveform />
+        {/* Provider badges */}
+        <div className="flex flex-col items-center gap-1 mt-2">
+          <Badge variant="outline" className="text-[8px] gap-1 border-primary/30 bg-primary/10">
+            <Play className="h-2 w-2" /> AI Avatar Presenter
+          </Badge>
+          <span className="text-[7px] text-muted-foreground/60 font-medium">Azure Neural TTS • Lip-Sync</span>
+        </div>
       </div>
-      <Badge variant="outline" className="mt-3 text-[9px] gap-1 border-primary/30">
-        <Play className="h-2.5 w-2.5" /> AI Avatar
-      </Badge>
-      <p className="text-[9px] text-muted-foreground mt-1">Azure Neural TTS</p>
     </motion.div>
-    
+
     {/* Content column */}
     <div className="flex-1 flex flex-col justify-center space-y-3">
-      <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-        <div className="w-10 h-0.5 bg-gradient-to-r from-primary to-accent rounded-full mb-2" />
-        <h4 className="text-lg sm:text-xl font-bold text-foreground">{slide.title}</h4>
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
+        <div className="w-14 h-1 bg-gradient-to-r from-primary via-accent to-primary rounded-full mb-2" />
+        <h4 className="text-lg sm:text-xl font-bold text-foreground leading-tight">{slide.title}</h4>
       </motion.div>
       <ul className="space-y-2">
         {slide.bullets.map((b, i) => (
-          <motion.li key={i} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 + i * 0.1 }}
-            className="flex items-start gap-2 text-xs sm:text-sm text-muted-foreground">
-            <span className="mt-1 w-1.5 h-1.5 rounded-full bg-accent flex-shrink-0" />
-            <span>{b}</span>
+          <motion.li key={i} initial={{ opacity: 0, x: 15 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.45 + i * 0.1, ease: [0.22, 1, 0.36, 1] }}
+            className="flex items-start gap-2.5 text-xs sm:text-sm text-muted-foreground">
+            <motion.span
+              animate={{ scale: [1, 1.2, 1] }}
+              transition={{ repeat: Infinity, duration: 2, delay: i * 0.3 }}
+              className="mt-1.5 w-2 h-2 rounded-full bg-gradient-to-br from-accent to-primary flex-shrink-0 shadow-sm shadow-accent/30"
+            />
+            <span className="leading-relaxed">{b}</span>
           </motion.li>
         ))}
       </ul>
+      <ProviderRibbon layout="avatar" />
     </div>
   </div>
 );
 
 const ChartSlideLayout: React.FC<{ slide: GeneratedSlide; lang: string }> = ({ slide, lang }) => {
-  const chartData = slide.chartData || slide.bullets.map((b, i) => ({ label: b.slice(0, 20), value: 40 + Math.round(Math.random() * 50) }));
+  const chartData = slide.chartData || slide.bullets.map((b) => ({ label: b.slice(0, 18), value: 30 + Math.round(Math.random() * 60) }));
   const maxVal = Math.max(...chartData.map(d => d.value));
+  const CHART_COLORS = [
+    'from-blue-500 to-blue-400',
+    'from-emerald-500 to-emerald-400',
+    'from-amber-500 to-amber-400',
+    'from-rose-500 to-rose-400',
+    'from-violet-500 to-violet-400',
+  ];
 
   return (
-    <div className="h-full flex flex-col p-5 sm:p-8" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-      <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="mb-4">
-        <Badge variant="outline" className="text-[9px] gap-1 mb-2 border-primary/30">
-          <BarChart3 className="h-2.5 w-2.5" /> Data Visualization
+    <div className="h-full flex flex-col p-5 sm:p-7" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mb-3 flex items-start justify-between">
+        <div>
+          <h4 className="text-lg sm:text-xl font-bold text-foreground">{slide.title}</h4>
+          <p className="text-[9px] text-muted-foreground mt-0.5">AI-generated data visualization</p>
+        </div>
+        <Badge variant="outline" className="text-[8px] gap-1 border-primary/30 bg-primary/5">
+          <BarChart3 className="h-2.5 w-2.5" /> Smart Chart
         </Badge>
-        <h4 className="text-lg sm:text-xl font-bold text-foreground">{slide.title}</h4>
       </motion.div>
-      
-      {/* Animated bar chart */}
-      <div className="flex-1 flex items-end gap-3 sm:gap-4 pb-6">
-        {chartData.slice(0, 5).map((d, i) => (
-          <div key={i} className="flex-1 flex flex-col items-center gap-1">
-            <motion.div
-              initial={{ height: 0 }}
-              animate={{ height: `${(d.value / maxVal) * 100}%` }}
-              transition={{ delay: 0.3 + i * 0.12, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-              className="w-full rounded-t-lg bg-gradient-to-t from-primary to-accent relative min-h-[8px] shadow-sm shadow-primary/20"
-            >
-              <motion.span
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.6 + i * 0.12 }}
-                className="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] font-bold text-primary"
-              >
-                {d.value}%
-              </motion.span>
-            </motion.div>
-            <span className="text-[8px] sm:text-[9px] text-muted-foreground text-center leading-tight line-clamp-2">
-              {d.label}
-            </span>
+
+      {/* Animated bar chart with glassmorphic backdrop */}
+      <div className="flex-1 relative rounded-xl bg-muted/20 border border-border/50 p-3 pt-6">
+        {/* Grid lines */}
+        {[25, 50, 75, 100].map(v => (
+          <div key={v} className="absolute left-3 right-3 border-t border-dashed border-border/30"
+            style={{ bottom: `${(v / 100) * 80 + 10}%` }}>
+            <span className="absolute -left-1 -top-2 text-[7px] text-muted-foreground/40">{v}</span>
           </div>
         ))}
+
+        <div className="flex items-end gap-2 sm:gap-3 h-full pb-5 relative z-10">
+          {chartData.slice(0, 5).map((d, i) => (
+            <div key={i} className="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: `${(d.value / maxVal) * 85}%`, opacity: 1 }}
+                transition={{ delay: 0.3 + i * 0.15, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                className={`w-full rounded-t-xl bg-gradient-to-t ${CHART_COLORS[i]} relative shadow-lg min-h-[12px]`}
+              >
+                {/* Glow effect on top */}
+                <div className={`absolute top-0 left-0 right-0 h-2 rounded-t-xl bg-gradient-to-t from-transparent to-white/20`} />
+                <motion.div
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.8 + i * 0.15 }}
+                  className="absolute -top-6 left-1/2 -translate-x-1/2"
+                >
+                  <span className="text-[10px] font-black text-foreground bg-card/80 backdrop-blur-sm px-1.5 py-0.5 rounded-md border border-border/50 shadow-sm">
+                    {d.value}%
+                  </span>
+                </motion.div>
+              </motion.div>
+              <span className="text-[7px] sm:text-[8px] text-muted-foreground text-center leading-tight line-clamp-2 font-medium mt-1">
+                {d.label}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
+      <div className="mt-2"><ProviderRibbon layout="chart" /></div>
     </div>
   );
 };
 
 const TimelineSlideLayout: React.FC<{ slide: GeneratedSlide; lang: string }> = ({ slide, lang }) => {
   const steps = slide.timelineSteps || slide.bullets.map((b, i) => ({ step: `Step ${i + 1}`, description: b }));
+  const STEP_COLORS = ['from-blue-500 to-blue-600', 'from-emerald-500 to-emerald-600', 'from-amber-500 to-amber-600', 'from-rose-500 to-rose-600'];
 
   return (
-    <div className="h-full flex flex-col p-5 sm:p-8" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-      <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="mb-4">
-        <Badge variant="outline" className="text-[9px] gap-1 mb-2 border-accent/30">
+    <div className="h-full flex flex-col p-5 sm:p-7" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mb-4 flex items-start justify-between">
+        <div>
+          <h4 className="text-lg sm:text-xl font-bold text-foreground">{slide.title}</h4>
+          <p className="text-[9px] text-muted-foreground mt-0.5">Patient journey workflow</p>
+        </div>
+        <Badge variant="outline" className="text-[8px] gap-1 border-accent/30 bg-accent/5">
           <Footprints className="h-2.5 w-2.5" /> Journey Map
         </Badge>
-        <h4 className="text-lg sm:text-xl font-bold text-foreground">{slide.title}</h4>
       </motion.div>
 
-      {/* Horizontal timeline */}
-      <div className="flex-1 flex items-center">
-        <div className="w-full flex items-start gap-1">
+      {/* Rich horizontal timeline */}
+      <div className="flex-1 flex items-center relative">
+        {/* Background connector line */}
+        <motion.div
+          initial={{ scaleX: 0 }}
+          animate={{ scaleX: 1 }}
+          transition={{ delay: 0.3, duration: 0.8 }}
+          className="absolute top-[40px] left-[10%] right-[10%] h-1 bg-gradient-to-r from-primary/20 via-accent/30 to-primary/20 rounded-full origin-left"
+        />
+
+        <div className="w-full flex items-start gap-1 relative z-10">
           {steps.slice(0, 4).map((s, i) => (
             <motion.div
               key={i}
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 + i * 0.15, duration: 0.4 }}
-              className="flex-1 relative"
+              initial={{ opacity: 0, y: 20, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ delay: 0.3 + i * 0.18, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              className="flex-1"
             >
-              {/* Connector line */}
-              {i < steps.length - 1 && i < 3 && (
-                <motion.div
-                  initial={{ scaleX: 0 }}
-                  animate={{ scaleX: 1 }}
-                  transition={{ delay: 0.4 + i * 0.15, duration: 0.3 }}
-                  className="absolute top-4 left-1/2 w-full h-0.5 bg-gradient-to-r from-primary/40 to-accent/40 origin-left"
-                />
-              )}
-              <div className="flex flex-col items-center text-center relative z-10">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shadow-md ${
-                  i === 0 ? 'bg-gradient-to-br from-primary to-accent text-primary-foreground' : 'bg-card border-2 border-primary/30 text-primary'
-                }`}>
-                  {i + 1}
+              <div className="flex flex-col items-center text-center">
+                {/* Step circle with pulse */}
+                <div className="relative mb-2">
+                  <motion.div
+                    animate={{ scale: [1, 1.4, 1], opacity: [0.3, 0, 0.3] }}
+                    transition={{ repeat: Infinity, duration: 2, delay: i * 0.5 }}
+                    className={`absolute inset-0 rounded-full bg-gradient-to-br ${STEP_COLORS[i]}`}
+                  />
+                  <div className={`relative w-10 h-10 rounded-full bg-gradient-to-br ${STEP_COLORS[i]} flex items-center justify-center text-sm font-black text-white shadow-xl`}>
+                    {i + 1}
+                  </div>
                 </div>
-                <p className="text-[9px] sm:text-[10px] font-bold text-foreground mt-2 leading-tight">{s.step}</p>
-                <p className="text-[8px] sm:text-[9px] text-muted-foreground mt-0.5 leading-snug line-clamp-3 max-w-[100px]">{s.description}</p>
+                {/* Glassmorphic card */}
+                <div className="bg-card/60 backdrop-blur-sm border border-border/50 rounded-lg p-2 w-full max-w-[110px] shadow-sm">
+                  <p className="text-[9px] sm:text-[10px] font-bold text-foreground leading-tight">{s.step}</p>
+                  <p className="text-[7px] sm:text-[8px] text-muted-foreground mt-0.5 leading-snug line-clamp-3">{s.description}</p>
+                </div>
               </div>
             </motion.div>
           ))}
         </div>
       </div>
+      <div className="mt-1"><ProviderRibbon layout="timeline" /></div>
     </div>
   );
 };
 
 const ThreeDSlideLayout: React.FC<{ slide: GeneratedSlide; lang: string }> = ({ slide, lang }) => (
-  <div className="h-full flex flex-col p-5 sm:p-8" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-    <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="mb-3">
-      <Badge variant="outline" className="text-[9px] gap-1 mb-2 border-primary/30">
-        <Box className="h-2.5 w-2.5" /> 3D Interactive
-      </Badge>
-      <h4 className="text-lg sm:text-xl font-bold text-foreground">{slide.title}</h4>
-    </motion.div>
+  <div className="h-full flex gap-4 p-5 sm:p-7" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+    {/* 3D scene area */}
+    <div className="w-[45%] flex items-center justify-center relative">
+      {/* Glow backdrop */}
+      <div className="absolute inset-4 bg-gradient-to-br from-purple-500/10 via-primary/5 to-pink-500/10 rounded-2xl blur-xl" />
 
-    {/* 3D scene placeholder */}
-    <div className="flex-1 flex items-center justify-center">
       <motion.div
-        animate={{ rotateY: [0, 8, -8, 0] }}
-        transition={{ repeat: Infinity, duration: 6, ease: 'easeInOut' }}
-        className="relative w-40 h-40 sm:w-52 sm:h-52"
-        style={{ perspective: 800 }}
+        animate={{ rotateY: [0, 12, -12, 0], rotateX: [0, 5, -5, 0] }}
+        transition={{ repeat: Infinity, duration: 8, ease: 'easeInOut' }}
+        className="relative w-36 h-36 sm:w-44 sm:h-44"
+        style={{ perspective: 1000, transformStyle: 'preserve-3d' }}
       >
-        {/* Floating 3D cube faces */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/15 to-accent/15 rounded-2xl border border-primary/20 backdrop-blur-sm" />
+        {/* Outer shell */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-accent/10 rounded-2xl border border-primary/20 backdrop-blur-md shadow-2xl shadow-primary/10" />
+        {/* Inner floating element */}
         <motion.div
-          animate={{ y: [-4, 4, -4] }}
-          transition={{ repeat: Infinity, duration: 3 }}
-          className="absolute inset-4 bg-gradient-to-br from-primary/10 to-accent/10 rounded-xl border border-accent/20 flex items-center justify-center"
+          animate={{ y: [-6, 6, -6], rotate: [0, 5, -5, 0] }}
+          transition={{ repeat: Infinity, duration: 4 }}
+          className="absolute inset-6 bg-gradient-to-br from-primary/15 via-accent/10 to-primary/5 rounded-xl border border-accent/30 flex flex-col items-center justify-center backdrop-blur-sm"
         >
-          <Box className="h-12 w-12 text-primary/40" />
+          <motion.div animate={{ scale: [0.95, 1.05, 0.95] }} transition={{ repeat: Infinity, duration: 3 }}>
+            <Box className="h-10 w-10 text-primary/50 mb-1" />
+          </motion.div>
+          <span className="text-[8px] font-bold text-primary/60">3D Model</span>
         </motion.div>
-        <div className="absolute bottom-2 left-0 right-0 text-center">
-          <p className="text-[9px] text-muted-foreground">Meshy AI • Interactive</p>
-        </div>
+        {/* Provider badge */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="absolute -bottom-2 left-0 right-0 text-center"
+        >
+          <Badge variant="outline" className="text-[7px] gap-0.5 border-purple-500/30 bg-purple-500/10 text-purple-400">
+            <Box className="h-2 w-2" /> Meshy AI • Interactive 3D
+          </Badge>
+        </motion.div>
       </motion.div>
     </div>
 
-    <ul className="space-y-1.5 mt-2">
-      {slide.bullets.slice(0, 2).map((b, i) => (
-        <motion.li key={i} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 + i * 0.1 }}
-          className="flex items-start gap-2 text-xs text-muted-foreground">
-          <span className="mt-1 w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
-          <span className="line-clamp-1">{b}</span>
-        </motion.li>
-      ))}
-    </ul>
+    {/* Content */}
+    <div className="flex-1 flex flex-col justify-center space-y-3">
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+        <h4 className="text-lg sm:text-xl font-bold text-foreground">{slide.title}</h4>
+      </motion.div>
+      <ul className="space-y-2">
+        {slide.bullets.map((b, i) => (
+          <motion.li key={i} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 + i * 0.1 }}
+            className="flex items-start gap-2 text-xs sm:text-sm text-muted-foreground">
+            <span className="mt-1.5 w-2 h-2 rounded-sm bg-gradient-to-br from-purple-500 to-pink-500 flex-shrink-0" />
+            <span className="leading-relaxed">{b}</span>
+          </motion.li>
+        ))}
+      </ul>
+      <ProviderRibbon layout="3d" />
+    </div>
   </div>
 );
 
 const BulletsSlideLayout: React.FC<{ slide: GeneratedSlide; lang: string }> = ({ slide, lang }) => (
-  <div className="h-full flex flex-col p-5 sm:p-8" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+  <div className="h-full flex flex-col p-5 sm:p-7" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
     <div className="my-auto space-y-4">
-      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.4 }}>
-        <div className="w-12 h-1 bg-gradient-to-r from-primary to-accent rounded-full mb-3" />
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.5 }}>
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-14 h-1.5 bg-gradient-to-r from-primary via-accent to-primary rounded-full" />
+          <div className="w-4 h-1.5 bg-primary/30 rounded-full" />
+        </div>
         <h4 className="text-xl sm:text-2xl font-bold text-foreground leading-tight">{slide.title}</h4>
       </motion.div>
-      <ul className="space-y-2.5 max-w-lg">
+      <ul className="space-y-3 max-w-lg">
         {slide.bullets.map((bullet, i) => (
-          <motion.li key={i} initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 + i * 0.08, duration: 0.35 }}
-            className="flex items-start gap-3 text-sm text-muted-foreground">
-            <span className="mt-1.5 flex-shrink-0">
-              <span className="block w-2 h-2 rounded-full bg-gradient-to-br from-primary to-accent shadow-sm shadow-primary/30" />
+          <motion.li key={i}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 + i * 0.1, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            className="flex items-start gap-3 text-sm text-muted-foreground group"
+          >
+            <span className="mt-1 flex-shrink-0 relative">
+              <span className="block w-3 h-3 rounded-md bg-gradient-to-br from-primary to-accent shadow-sm shadow-primary/30 group-hover:scale-110 transition-transform" />
+              <span className="absolute inset-0 w-3 h-3 rounded-md bg-primary/20 animate-ping" style={{ animationDuration: `${3 + i}s` }} />
             </span>
             <span className="leading-relaxed">{bullet}</span>
           </motion.li>
         ))}
       </ul>
+      <div className="mt-3"><ProviderRibbon layout="bullets" /></div>
     </div>
   </div>
 );
@@ -549,13 +686,27 @@ Respond in valid JSON: { "slides": [{ "slideNumber": 1, "layoutType": "title", "
                 <Loader2 className="h-3.5 w-3.5 text-accent-foreground" />
               </motion.div>
             </div>
-            <div className="text-center">
+            <div className="text-center space-y-2">
               <p className="text-sm font-semibold text-foreground">
                 Generating rich deck in {selectedLangName}...
               </p>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-xs text-muted-foreground">
                 Avatar • Charts • 3D • Timeline • {deckExample.slideCount} slides
               </p>
+              {/* Provider chain animation */}
+              <div className="flex items-center justify-center gap-1 pt-1">
+                {['Gemini 2.0', 'Azure Neural', 'Meshy AI', 'DeepL'].map((p, i) => (
+                  <motion.span
+                    key={p}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: [0.4, 1, 0.4], scale: 1 }}
+                    transition={{ delay: i * 0.3, duration: 1.5, repeat: Infinity }}
+                    className="text-[8px] font-bold text-primary/70 bg-primary/10 px-1.5 py-0.5 rounded"
+                  >
+                    {p}
+                  </motion.span>
+                ))}
+              </div>
             </div>
           </motion.div>
         )}
@@ -597,16 +748,32 @@ Respond in valid JSON: { "slides": [{ "slideNumber": 1, "layoutType": "title", "
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -30 }}
                   transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                  className="relative rounded-2xl overflow-hidden border border-border shadow-2xl shadow-primary/10"
+                  className="relative rounded-2xl overflow-hidden border border-border/80 shadow-2xl shadow-primary/15"
                   style={{ aspectRatio: '16/9' }}
                 >
-                  {/* Slide background */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-background via-card to-muted/60" />
-                  <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-primary/5 to-transparent" />
-                  <div className="absolute bottom-0 left-0 w-full h-1/3 bg-gradient-to-t from-primary/[0.03] to-transparent" />
+                  {/* Rich slide background with animated mesh */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-background via-card to-background" />
+                  <motion.div
+                    animate={{ x: [0, 20, 0], y: [0, -10, 0] }}
+                    transition={{ repeat: Infinity, duration: 15, ease: 'easeInOut' }}
+                    className="absolute top-0 right-0 w-2/3 h-2/3 bg-gradient-to-bl from-primary/8 via-accent/5 to-transparent rounded-full blur-3xl pointer-events-none"
+                  />
+                  <motion.div
+                    animate={{ x: [0, -15, 0], y: [0, 10, 0] }}
+                    transition={{ repeat: Infinity, duration: 12, ease: 'easeInOut' }}
+                    className="absolute bottom-0 left-0 w-1/2 h-1/2 bg-gradient-to-tr from-accent/6 to-transparent rounded-full blur-3xl pointer-events-none"
+                  />
+                  {/* Subtle dot pattern */}
+                  <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, hsl(var(--foreground)) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
 
-                  {/* Accent bar */}
-                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-accent to-primary" />
+                  {/* Accent bar with shimmer */}
+                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-accent to-primary overflow-hidden">
+                    <motion.div
+                      animate={{ x: ['-100%', '200%'] }}
+                      transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
+                      className="absolute inset-0 w-1/3 bg-gradient-to-r from-transparent via-white/40 to-transparent"
+                    />
+                  </div>
 
                   {/* Watermark */}
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
