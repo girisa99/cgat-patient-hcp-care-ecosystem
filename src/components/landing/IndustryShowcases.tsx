@@ -706,7 +706,8 @@ export const IndustryShowcases: React.FC<IndustryShowcasesProps> = ({ region, co
                   <TabsContent value="outputs" className="mt-0">
                     <PipelineOutputGallery 
                       industryId={selectedIndustry.id} 
-                      industryName={selectedIndustry.name} 
+                      industryName={selectedIndustry.name}
+                      excludePipeline={activePipeline}
                     />
                   </TabsContent>
                   <TabsContent value="combinations" className="mt-0">
