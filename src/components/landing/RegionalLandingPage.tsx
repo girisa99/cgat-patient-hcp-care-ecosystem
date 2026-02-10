@@ -445,12 +445,9 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
             animate={{ scale: [1, 1.06] }}
             transition={{ duration: 12, ease: 'linear', repeat: Infinity, repeatType: 'reverse' }}
           />
-          {/* Lighter cinematic overlays - preserving background image visibility */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/30 via-transparent to-black/30" />
-          <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-background to-transparent" />
-          {/* Subtle vignette */}
-          <div className="absolute inset-0" style={{ boxShadow: 'inset 0 0 150px 40px rgba(0,0,0,0.3)' }} />
+          {/* Netflix/Apple-style clean gradient — image visible, text legible */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/20" />
+          <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-background via-background/80 to-transparent" />
         </motion.div>
       </AnimatePresence>
 
@@ -517,29 +514,27 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
 
             {/* Headline — massive cinematic type */}
             <motion.h1
-              className="text-6xl md:text-8xl lg:text-[6.5rem] font-black leading-[0.90] tracking-tight"
+              className="text-5xl md:text-7xl lg:text-8xl font-black leading-[0.92] tracking-tight"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15, duration: 0.8, type: 'spring', stiffness: 100 }}
-              style={{ textShadow: '0 6px 20px rgba(0,0,0,0.9), 0 2px 8px rgba(0,0,0,0.7)' }}
             >
               <span className="text-white">{slide.headline[0]}</span>
-              <span className="bg-gradient-to-r from-primary via-blue-400 to-cyan-400 bg-clip-text text-transparent" style={{ WebkitTextStroke: '0.5px rgba(255,255,255,0.1)' }}>
+              <span className="bg-gradient-to-r from-primary via-blue-400 to-cyan-400 bg-clip-text text-transparent">
                 {slide.headline[1]}
               </span>
             </motion.h1>
 
             <motion.p
-              className="text-2xl md:text-4xl font-extrabold text-white drop-shadow-[0_4px_16px_rgba(0,0,0,0.8)]"
+              className="text-xl md:text-3xl font-bold text-white/95"
               initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
             >
               {slide.subtitle}
             </motion.p>
 
             <motion.p
-              className="text-lg md:text-xl text-white/90 max-w-3xl mx-auto leading-relaxed font-medium"
+              className="text-base md:text-lg text-white/75 max-w-3xl mx-auto leading-relaxed font-medium"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
-              style={{ textShadow: '0 2px 10px rgba(0,0,0,0.8)' }}
             >
               {slide.description}
             </motion.p>
