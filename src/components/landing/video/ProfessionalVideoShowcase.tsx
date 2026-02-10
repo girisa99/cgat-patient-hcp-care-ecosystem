@@ -42,15 +42,15 @@ import genieCastLogo from '@/assets/logos/genie-cast-logo-2.png';
 
 // Chapter configurations with premium styling
 const CHAPTERS = [
-  { id: 'opening', product: 'Genie Studio', tagline: 'Mind to Media', logo: genieStudioLogo, color: '#8B5CF6' },
+  { id: 'opening', product: 'Genie Suite', tagline: 'Mind to Media', logo: genieStudioLogo, color: '#8B5CF6' },
   { id: 'spark', product: 'Genie Spark', tagline: 'Ignite Your Ideas', logo: genieSparkLogo, color: '#F97316' },
   { id: 'mind', product: 'Genie Mind', tagline: 'AI That Understands', logo: genieMindLogo, color: '#3B82F6' },
   { id: 'vibe', product: 'Genie Vibe', tagline: 'Script to Screen', logo: genieVibeLogo, color: '#10B981' },
   { id: 'deck', product: 'Genie Deck', tagline: 'Ideas to Impact', logo: genieDeckLogo, color: '#EAB308' },
-  { id: 'arc', product: 'Production Hub', tagline: 'Infinite Possibilities', logo: genieArcLogo, color: '#EC4899' },
+  { id: 'arc', product: 'Genie Hub', tagline: 'Your Creative Command Center', logo: genieArcLogo, color: '#EC4899' },
   { id: 'askGenie', product: 'Ask Genie', tagline: 'Your Wish is My Command', logo: askGenieLogo, color: '#06B6D4' },
   { id: 'cast', product: 'Genie Cast', tagline: 'Make It. Show It. Scale It.', logo: genieCastLogo, color: '#EF4444' },
-  { id: 'closing', product: 'Genie Studio', tagline: 'Your Wish is Our Command', logo: genieStudioLogo, color: '#8B5CF6' },
+  { id: 'closing', product: 'Genie Suite', tagline: 'Your Wish is Our Command', logo: genieStudioLogo, color: '#8B5CF6' },
 ];
 
 // Language options

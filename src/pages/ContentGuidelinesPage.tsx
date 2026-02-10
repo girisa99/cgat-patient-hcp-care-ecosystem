@@ -110,7 +110,7 @@ const ContentGuidelinesPage: React.FC = () => {
         <Alert className="mb-8">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            All content uploaded or generated on Genie Studio must comply with these guidelines. 
+            All content uploaded or generated on Genie Suite must comply with these guidelines. 
             Violations may result in content removal and account suspension.
           </AlertDescription>
         </Alert>

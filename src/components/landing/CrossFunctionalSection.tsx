@@ -94,7 +94,7 @@ export const CrossFunctionalSection: React.FC = () => {
         <div className="text-center mb-4">
           <Badge variant="outline" className="mb-4 border-primary/40 text-primary">
             <Sparkles className="h-3 w-3 mr-1" />
-            Genie Studio Platform
+            Genie Suite Platform
           </Badge>
           <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
             Everything You Need. Nothing You Don't.

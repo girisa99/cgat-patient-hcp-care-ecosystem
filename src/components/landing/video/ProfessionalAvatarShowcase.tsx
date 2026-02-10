@@ -60,12 +60,12 @@ import genieCastLogo from '@/assets/logos/genie-cast-logo-2.png';
 
 // Logo mapping
 const PRODUCT_LOGOS: Record<string, string> = {
-  'Genie Studio': genieStudioLogo,
+  'Genie Suite': genieStudioLogo,
   'Genie Spark': genieSparkLogo,
   'Genie Mind': genieMindLogo,
   'Genie Vibe': genieVibeLogo,
   'Genie Deck': genieDeckLogo,
-  'Production Hub': genieArcLogo,
+  'Genie Hub': genieArcLogo,
   'Ask Genie': askGenieLogo,
   'Genie Cast': genieCastLogo,
 };

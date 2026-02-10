@@ -118,7 +118,7 @@ const RegionalSEOHead: React.FC<{ config: RegionalConfig; currentSlug: string }>
         {JSON.stringify({
           '@context': 'https://schema.org',
           '@type': 'SoftwareApplication',
-          name: 'Genie Studio',
+          name: 'Genie Suite',
           applicationCategory: 'MultimediaApplication',
           operatingSystem: 'Web',
           description: config.seo.description,
@@ -1055,7 +1055,7 @@ const RegionalCTAFooter: React.FC<{ config: RegionalConfig }> = ({ config }) => 
       <div className="mt-16 pt-8 border-t border-border">
         <div className="flex justify-center items-center gap-2">
           <Sparkles className="w-6 h-6 text-primary" />
-          <span className="font-bold text-foreground">Genie Studio</span>
+          <span className="font-bold text-foreground">Genie Suite</span>
           <span className="text-muted-foreground">© 2026</span>
         </div>
       </div>
@@ -1074,7 +1074,7 @@ const RegionalNavbar: React.FC<{ config: RegionalConfig }> = ({ config }) => {
         <Link to="/genie-landing" className="flex items-center gap-2">
           <Sparkles className="w-8 h-8 text-primary" />
           <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            Genie Studio
+            Genie Suite
           </span>
         </Link>
         {/* Desktop nav */}

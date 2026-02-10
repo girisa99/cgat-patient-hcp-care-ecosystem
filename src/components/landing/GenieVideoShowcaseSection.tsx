@@ -37,7 +37,7 @@ export const GenieVideoShowcaseSection: React.FC<GenieVideoShowcaseSectionProps>
           </div>
           
           <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-            See Genie Studio in Action
+            See Genie Suite in Action
           </h2>
           
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
@@ -115,7 +115,7 @@ export const GenieVideoShowcaseSection: React.FC<GenieVideoShowcaseSectionProps>
               className="bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 text-white px-8 py-6 text-lg"
             >
               <Play className="w-5 h-5 mr-2" />
-              Try Genie Studio Free
+              Try Genie Suite Free
             </Button>
             
             <Button
@@ -150,7 +150,7 @@ export const GenieVideoShowcaseSection: React.FC<GenieVideoShowcaseSectionProps>
               { name: 'Genie Mind', tagline: 'AI That Understands' },
               { name: 'Genie Vibe', tagline: 'Script to Screen' },
               { name: 'Genie Deck', tagline: 'Ideas to Impact' },
-              { name: 'Genie Arc', tagline: 'Infinite Possibilities' },
+              { name: 'Genie Hub', tagline: 'Your Creative Command Center' },
               { name: 'Ask Genie', tagline: 'Your Wish is My Command' },
               { name: 'Genie Cast', tagline: 'Make It. Show It. Scale It.' },
             ].map((product, idx) => (
