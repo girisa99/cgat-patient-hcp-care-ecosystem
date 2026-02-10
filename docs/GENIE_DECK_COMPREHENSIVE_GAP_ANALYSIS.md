@@ -178,7 +178,7 @@ const filteredFrameworks = useMemo(() =>
 **Impact**: High - Wrong voice for language
 
 **Problem**: 
-`VoiceAudioConfigPanel` allows any voice provider selection, but language-specific pairing (e.g., Alibaba CosyVoice for CJK) isn't enforced.
+`VoiceAudioConfigPanel` allows any voice provider selection, but language-specific pairing (e.g., Alibaba Qwen3-TTS for CJK) isn't enforced.
 
 **Required Implementation**:
 ```typescript
@@ -191,8 +191,8 @@ interface LanguageVoicePairing {
 }
 
 const LANGUAGE_VOICE_PAIRINGS: LanguageVoicePairing[] = [
-  { languageCode: 'zh', primaryProvider: 'alibaba', fallbackProviders: ['azure', 'google'], nativeVoiceIds: ['cosyvoice-zh'] },
-  { languageCode: 'ja', primaryProvider: 'alibaba', fallbackProviders: ['azure', 'google'], nativeVoiceIds: ['cosyvoice-ja'] },
+  { languageCode: 'zh', primaryProvider: 'alibaba', fallbackProviders: ['azure', 'google'], nativeVoiceIds: ['qwen3-tts-zh'] },
+  { languageCode: 'ja', primaryProvider: 'alibaba', fallbackProviders: ['azure', 'google'], nativeVoiceIds: ['qwen3-tts-ja'] },
   { languageCode: 'en', primaryProvider: 'elevenlabs', fallbackProviders: ['openai', 'azure'], nativeVoiceIds: ['rachel', 'josh'] },
   // ... etc
 ];

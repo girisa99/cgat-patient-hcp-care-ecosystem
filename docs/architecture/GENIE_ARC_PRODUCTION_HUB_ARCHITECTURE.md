@@ -1,22 +1,21 @@
-# Genie Arc & Production Hub: Module Architecture
+# Genie Hub & Production Hub: Module Architecture
 
-> **Version:** 2.1  
-> **Last Updated:** 2026-01-13  
-> **Arc Tagline:** "Build & Deploy"  
-> **Hub Tagline:** "Orchestrate Excellence"  
+> **Version:** 3.0  
+> **Last Updated:** 2026-02-10  
+> **Hub Tagline:** "Your Creative Command Center"  
 > **Status:** ✅ P0-P2 Complete | Comprehensive Feature Set
 
 ---
 
 ## Overview
 
-**Genie Arc** is the agent builder for creating custom AI workflows. **Production Hub** is the team coordination layer for multi-person productions.
+**Genie Hub** (formerly Genie Arc) is the creative command center for building custom AI workflows and orchestrating team productions.
 
 ---
 
 ## P0-P2 Implementation Status ✅ COMPLETE
 
-### Genie Arc
+### Genie Hub
 
 | Feature | Status | Details |
 |---------|--------|---------|
@@ -134,7 +133,7 @@ These features were implemented during P0-P2 development but were not part of th
 | **Show Cards** | Rich card display with metadata | ✅ |
 | **Quick Actions** | Edit, delete, move actions | ✅ |
 
-### 8. Arc ↔ Hub Sync ✅
+### 8. Hub ↔ Production Sync ✅
 
 | Feature | Description | Status |
 |---------|-------------|--------|
@@ -150,13 +149,13 @@ These features were implemented during P0-P2 development but were not part of th
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────────────────┐
-│                          GENIE ARC & PRODUCTION HUB                                           │
+│                          GENIE HUB & PRODUCTION HUB                                           │
 │                              ✅ P0-P2 COMPLETE                                                │
 └─────────────────────────────────────────────────────────────────────────────────────────────┘
 
                     ┌────────────────────────────────────────────────────┐
-                    │                   GENIE ARC                         │
-                    │                "Build & Deploy"                     │
+                    │                   GENIE HUB                         │
+                    │          "Your Creative Command Center"             │
                     ├────────────────────────────────────────────────────┤
                     │  ┌──────────────┐  ┌──────────────┐  ┌──────────┐  │
                     │  │ Agent Builder│  │  Workflow    │  │ Deploy   │  │
@@ -254,11 +253,11 @@ These features were implemented during P0-P2 development but were not part of th
 
 | Module | Feature | Description | Status |
 |--------|---------|-------------|--------|
-| **Arc** | Agent Builder | Visual agent creation | ✅ |
-| **Arc** | Workflow Designer | Node-based workflows | ✅ |
-| **Arc** | Deploy Manager | Test & deploy | ✅ |
-| **Arc** | MCP Integration | Tool connectivity | 🔶 |
-| **Arc** | Show Scheduling | Schedule from Arc | ✅ |
+| **Hub** | Agent Builder | Visual agent creation | ✅ |
+| **Hub** | Workflow Designer | Node-based workflows | ✅ |
+| **Hub** | Deploy Manager | Test & deploy | ✅ |
+| **Hub** | MCP Integration | Tool connectivity | 🔶 |
+| **Hub** | Show Scheduling | Schedule from Hub | ✅ |
 | **Hub** | Session Management | Schedule & invite | ✅ |
 | **Hub** | Kanban Board | Task tracking | ✅ |
 | **Hub** | Production Calendar | Visual calendar | ✅ |
@@ -271,7 +270,7 @@ These features were implemented during P0-P2 development but were not part of th
 | **Shared** | Timezone Support | 15 timezones, conversion | ✅ |
 | **Shared** | Category System | Media/Meeting/Event | ✅ |
 | **Shared** | Stage Pipelines | Category-specific stages | ✅ |
-| **Shared** | Arc ↔ Hub Sync | Real-time data sync | ✅ |
+| **Shared** | Hub ↔ Production Sync | Real-time data sync | ✅ |
 
 ---
 
@@ -281,10 +280,10 @@ Based on P3 planning re-verification (2026-01-13):
 
 | Module | Enhancement | Component | Priority | Value Assessment | Recommendation |
 |--------|-------------|-----------|----------|------------------|----------------|
-| **Arc** | Audio mixing in agents | `AudioMixer` | **High** | ✅ **Valuable** - Audio workflow agents | **Implement P3** |
-| **Arc** | Scene analysis in agents | `SceneAnalyzerPanel` | **High** | ✅ **Valuable** - Video QA automation | **Implement P3** |
-| **Arc** | Voice coaching | `VoiceDirectorPanel` | Low | ❌ Low value - Arc is workflow-focused | Skip |
-| **Arc** | Guided Experience | — | Not Recommended | ❌ No value - Power user tool | Skip |
+| **Hub** | Audio mixing in agents | `AudioMixer` | **High** | ✅ **Valuable** - Audio workflow agents | **Implement P3** |
+| **Hub** | Scene analysis in agents | `SceneAnalyzerPanel` | **High** | ✅ **Valuable** - Video QA automation | **Implement P3** |
+| **Hub** | Voice coaching | `VoiceDirectorPanel` | Low | ❌ Low value - Hub is workflow-focused | Skip |
+| **Hub** | Guided Experience | — | Not Recommended | ❌ No value - Power user tool | Skip |
 | **Hub** | Recurring schedules | — | **High** | ✅ **Valuable** - Weekly/monthly shows | **Implement P3** |
 | **Hub** | External calendar sync | — | **Medium** | ✅ **Valuable** - Two-way Google/Outlook | **Implement P3** |
 
@@ -310,7 +309,7 @@ See: `docs/P3_IMPLEMENTATION_PLAN.md` for full implementation details.
 
 ## Related Scenarios (P0-P2) ✅ ALL COMPLETE
 
-### Arc Scenarios
+### Hub Scenarios
 
 | # | Scenario | Status |
 |---|----------|--------|
@@ -319,8 +318,8 @@ See: `docs/P3_IMPLEMENTATION_PLAN.md` for full implementation details.
 | 3 | Connect MCP tools | 🔶 |
 | 4 | Test agent | ✅ |
 | 5 | Deploy agent | ✅ |
-| 6 | Schedule show from Arc | ✅ |
-| 7 | Add calendar invite from Arc | ✅ |
+| 6 | Schedule show from Hub | ✅ |
+| 7 | Add calendar invite from Hub | ✅ |
 
 ### Hub Scenarios
 
@@ -354,6 +353,6 @@ See: `docs/P3_IMPLEMENTATION_PLAN.md` for full implementation details.
 
 ---
 
-*Part of Genie Studio Architecture Documentation*  
+*Part of Genie Suite Architecture Documentation*  
 *P0-P2 Closeout: 2026-01-13*  
 *Features Beyond Roadmap: Documented*

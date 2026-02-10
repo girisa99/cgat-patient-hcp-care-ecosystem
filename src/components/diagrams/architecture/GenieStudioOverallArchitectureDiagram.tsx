@@ -17,7 +17,7 @@ const modules = [
   { id: 'mind', name: 'Genie Mind', icon: '🧠', color: 'violet', description: 'AI Intelligence Layer', status: 'active', completion: 92 },
   { id: 'vibe', name: 'Genie Vibe', icon: '🎬', color: 'emerald', description: 'Production Layer', status: 'active', completion: 78 },
   { id: 'spark', name: 'Genie Spark', icon: '⚡', color: 'orange', description: 'Quick-Start Engine', status: 'active', completion: 85 },
-  { id: 'arc', name: 'Genie Arc', icon: '🌈', color: 'blue', description: 'Team Collaboration', status: 'partial', completion: 45 },
+  { id: 'arc', name: 'Genie Hub', icon: '🌈', color: 'blue', description: 'Creative Command Center', status: 'partial', completion: 45 },
   { id: 'hub', name: 'Production Hub', icon: '🎥', color: 'purple', description: 'Enterprise Center', status: 'partial', completion: 40 },
   { id: 'cast', name: 'Genie Cast', icon: '📡', color: 'rose', description: 'Marketing Engine', status: 'active', completion: 75 },
 ];

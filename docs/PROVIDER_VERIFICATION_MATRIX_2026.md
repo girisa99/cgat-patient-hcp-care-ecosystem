@@ -14,7 +14,7 @@
 | ZONE | REGIONS/COUNTRIES | PRIMARY LLM | PRIMARY TTS | PRIMARY TRANSLATION |
 |------|-------------------|-------------|-------------|---------------------|
 | **CLAUDE ZONE** | US, UK, EU, Brazil, Israel, South Africa, Russia | Claude 3.5 Sonnet | ElevenLabs | DeepL |
-| **ALIBABA ZONE** | Japan, Korea, China, HK, Taiwan, MEA (Arabic) | Qwen-Max | CosyVoice | Qwen-MT |
+| **ALIBABA ZONE** | Japan, Korea, China, HK, Taiwan, MEA (Arabic) | Qwen-Max | Qwen3-TTS | Qwen-MT |
 | **GEMINI ZONE** | India, Pakistan, SEA, Africa | Gemini Pro | Azure Neural | Google Translate |
 | **FALLBACK ZONE** | When primary fails globally | GPT-4o | OpenAI TTS | Azure Translator |
 
@@ -103,9 +103,9 @@
 
 | Language | Primary TTS | Fallback | Quality | Provider Notes |
 |----------|-------------|----------|---------|----------------|
-| Japanese | alibaba-cosyvoice | azure-neural | ⭐⭐⭐⭐⭐ | Native CJK prosody |
-| Korean | alibaba-cosyvoice | azure-neural | ⭐⭐⭐⭐⭐ | Native CJK prosody |
-| Chinese (CN/TW) | alibaba-cosyvoice | azure-neural | ⭐⭐⭐⭐⭐ | Native Mandarin |
+| Japanese | alibaba-qwen3-tts | azure-neural | ⭐⭐⭐⭐⭐ | Native CJK prosody |
+| Korean | alibaba-qwen3-tts | azure-neural | ⭐⭐⭐⭐⭐ | Native CJK prosody |
+| Chinese (CN/TW) | alibaba-qwen3-tts | azure-neural | ⭐⭐⭐⭐⭐ | Native Mandarin |
 | Chinese (HK) | azure-neural | google-tts | ⭐⭐⭐⭐ | Cantonese support |
 | Arabic (all 7 dialects) | azure-neural | google-tts | ⭐⭐⭐⭐⭐ | **MOAT: 7 dialects** |
 
@@ -262,7 +262,7 @@
 |------------|-------------|--------------|-------------|----------|
 | **Music Gen** | ElevenLabs | ElevenLabs | ElevenLabs | ModelsLab |
 | **SFX Gen** | ElevenLabs | ElevenLabs | ElevenLabs | ModelsLab |
-| **Voice Clone** | ElevenLabs | CosyVoice | ElevenLabs | - |
+| **Voice Clone** | ElevenLabs | Qwen3-TTS | ElevenLabs | - |
 
 ---
 
@@ -340,7 +340,7 @@
 
 | Provider | Issue | Status | Action |
 |----------|-------|--------|--------|
-| Alibaba China (TTS) | CosyVoice requires WebSocket (incompatible with Deno edge functions) | ⚠️ Architectural | Sambert REST as permanent alternative; Azure Neural as interim CJK primary |
+| Alibaba China (TTS) | Legacy CosyVoice required WebSocket (incompatible with Deno); replaced by Qwen3-TTS | ✅ Resolved | Qwen3-TTS (qwen3-tts-flash) via DashScope REST API; Azure Neural as fallback |
 | Alibaba China (TTS) | Sambert models need DashScope console activation | ⏳ Pending | Account rep activation in progress |
 | Alibaba China (Avatar) | Wan 2.2, OmniAvatar, TaoAvatar, MACH need activation | ⏳ Pending | Account rep activation in progress |
 | Alibaba China (3D) | Richdreamer needs activation | ⏳ Pending | Account rep activation in progress |
@@ -356,15 +356,12 @@
 | **API Keys Configured** | ✅ `ALIBABA_API_KEY` (International) + `ALIBABA_CHINA_API_KEY` (China) |
 | **Dual-Key Routing** | ✅ All edge functions updated with smart endpoint routing |
 | **Rep Approval** | ⏳ Pending — verification done, awaiting service activation |
-| **Models Awaiting Activation** | Sambert TTS, CosyVoice, Wan 2.2, OmniAvatar, TaoAvatar, MACH, Richdreamer, FunAudio |
+| **Models Awaiting Activation** | Sambert TTS, Wan 2.2, OmniAvatar, TaoAvatar, MACH, Richdreamer, FunAudio |
 | **Models Working Now** | Qwen LLM, Paraformer STT, Wanx Images, Wan 2.6 (International) |
 
-### CosyVoice WebSocket Limitation (Permanent)
+### Qwen3-TTS Migration (Complete)
 
-CosyVoice TTS requires WebSocket connections with custom `Authorization` headers. Deno's `WebSocket` constructor does not support custom headers, making CosyVoice **incompatible with Supabase Edge Functions**. Options:
-1. **Sambert REST API** — Permanent solution once activated (Chinese-only, synchronous HTTP)
-2. **Azure Neural TTS** — Interim primary for all CJK TTS (production-ready, Viseme support)
-3. **Future: Cloud Run** — Python SDK with WebSocket support for CosyVoice integration
+Legacy CosyVoice TTS has been fully replaced by **Qwen3-TTS** (model: `qwen3-tts-flash`) which uses the native DashScope REST API, resolving all WebSocket incompatibilities with Supabase Edge Functions. Qwen3-TTS is the primary CJK TTS provider via the Singapore endpoint, with Azure Neural as the global fallback.
 
 ### Interim TTS Routing (Until Alibaba Activation)
 

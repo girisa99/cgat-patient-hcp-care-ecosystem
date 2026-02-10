@@ -544,7 +544,7 @@ interface TTSGeneration {
          │                              │                              │
          ▼                              ▼                              ▼
 ┌─────────────────┐          ┌─────────────────┐          ┌─────────────────┐
-│  GENIE STUDIO   │◄────────►│  SYNC ENGINE    │◄────────►│RECORDING STUDIO │
+│  GENIE SUITE    │◄────────►│  SYNC ENGINE    │◄────────►│RECORDING STUDIO │
 │                 │          │                 │          │                 │
 │ • Edit script   │          │ • Real-time     │          │ • Record        │
 │ • Generate TTS  │          │   updates       │          │ • Review        │
@@ -1003,7 +1003,7 @@ interface RecordingStudioDB {
 │                         INTEGRATION POINTS                                    │
 └──────────────────────────────────────────────────────────────────────────────┘
 
-  Document Processing ◄────────────────────► Genie Studio
+  Document Processing ◄────────────────────► Genie Suite
         │                                         │
         │  • PDF/DOCX parsed content             │
         │  • Extracted text for scripts          │
@@ -1057,4 +1057,4 @@ interface RecordingStudioDB {
 
 ---
 
-*Document maintained by Genie Studio Architecture Team*
+*Document maintained by Genie Suite Architecture Team*

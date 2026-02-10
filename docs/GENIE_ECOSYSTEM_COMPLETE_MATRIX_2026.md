@@ -149,7 +149,7 @@ CREATE (Spark, Mind, Deck) → PRODUCE (Vibe) → MANAGE (Arc, Hub) → PUBLISH 
 | 3 | **Gemini** | `GEMINI_API_KEY` | LLM, Translation, OCR, Image Gen, Vision, NLP | India/SEA, Africa |
 | 4 | **Deepgram** | `DEEPGRAM_API_KEY` | **PRIMARY STT** (<100ms real-time), 36+ languages | Global |
 | 5 | **DeepSeek** | `DEEPSEEK_API_KEY` | LLM (CJK), Translation, OCR, Vision (low cost) | CJK |
-| 6 | **Alibaba** | `ALIBABA_API_KEY` + `ALIBABA_CHINA_API_KEY` | LLM, TTS (Sambert/CosyVoice), STT, **PRIMARY Avatar/Lip-Sync**, Video, Image | CJK (⚠️ Avatar/TTS/3D pending rep activation) |
+| 6 | **Alibaba** | `ALIBABA_API_KEY` + `ALIBABA_CHINA_API_KEY` | LLM, TTS (Qwen3-TTS), STT, **PRIMARY Avatar/Lip-Sync**, Video, Image | CJK (⚠️ Avatar/3D pending rep activation) |
 | 7 | **Azure** | `AZURE_SPEECH_KEY` | TTS (Neural, Visemes), STT, OCR, Translation | MENA, Enterprise |
 | 8 | **DeepL** | `DEEPL_API_KEY` | **PRIMARY Translation** (European) | Western/EU |
 | 9 | **ElevenLabs** | `ELEVENLABS_API_KEY` | **PRIMARY TTS**, Voice Clone, **PRIMARY Music**, SFX | Western/EU, LATAM |
@@ -270,7 +270,7 @@ CREATE (Spark, Mind, Deck) → PRODUCE (Vibe) → MANAGE (Arc, Hub) → PUBLISH 
 | **6: Africa** | Gemini | Azure Neural | Deepgram | Gemini Veo | Meshy | ✅ |
 | **7: Global English** | OpenAI | ElevenLabs | Deepgram | Sora2API | Meshy | ✅ |
 
-> **Note (Feb 2026):** CJK Zone TTS uses Azure Neural as interim primary until Alibaba Sambert REST is activated by account rep. CosyVoice is architecturally incompatible with Supabase Edge Functions (WebSocket-only). Avatar models (Wan 2.2, OmniAvatar, TaoAvatar, MACH) also pending activation — ModelsLab/Azure serve as fallbacks.
+> **Note (Feb 2026):** CJK Zone TTS now uses Qwen3-TTS (qwen3-tts-flash) as primary via Singapore DashScope REST API, with Azure Neural as fallback. Avatar models (Wan 2.2, OmniAvatar, TaoAvatar, MACH) pending activation — ModelsLab/Azure serve as fallbacks.
 
 ### Regional Language Mappings
 
@@ -319,8 +319,8 @@ CREATE (Spark, Mind, Deck) → PRODUCE (Vibe) → MANAGE (Arc, Hub) → PUBLISH 
 |-------------|------------|----------|
 | **Document** | input-processing, script-generation, content-extraction, script-enhancement, translation | Spark, Mind |
 | **Timeline** | tts-generation, music-generation, video-generation, video-editing, audio-production, podcast-webcast, avatar-lipsync, dubbing | Mind, Vibe |
-| **Canvas** | presentation, visual-design, 3d-immersive, scheduling, collaboration, distribution, marketing, analytics | Deck, Arc, Cast |
-| **Hybrid** | Full production workflows | Studio |
+| **Canvas** | presentation, visual-design, 3d-immersive, scheduling, collaboration, distribution, marketing, analytics | Deck, Hub, Cast |
+| **Hybrid** | Full production workflows | Suite |
 
 ---
 

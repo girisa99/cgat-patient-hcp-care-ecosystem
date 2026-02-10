@@ -171,7 +171,7 @@ src/components/
 | `BulkOperationsManager` | Admin dashboard, Production Hub | `@/components/bulk/BulkOperationsManager` |
 | `WorkspaceCollaboration` | Settings, Team management | `@/components/collaboration/WorkspaceCollaboration` |
 | `AdvancedAnalyticsDashboard` | Analytics page, Admin dashboard | `@/components/analytics/AdvancedAnalyticsDashboard` |
-| `TemplateMarketplace` | Genie Arc, Agent creation | `@/components/marketplace/TemplateMarketplace` |
+| `TemplateMarketplace` | Genie Hub, Agent creation | `@/components/marketplace/TemplateMarketplace` |
 
 ---
 
