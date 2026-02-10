@@ -413,16 +413,23 @@ const useHeroVoiceover = () => {
             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || (supabase as any).supabaseKey}`,
           },
           body: JSON.stringify({
+            action: 'custom_tts',
             text,
             language: langCode || 'en-US',
           }),
         }
       );
 
-      if (!response.ok) throw new Error('TTS failed');
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`TTS failed: ${response.status} ${errText}`);
+      }
 
-      const audioBlob = await response.blob();
-      const audioUrl = URL.createObjectURL(audioBlob);
+      const data = await response.json();
+      const audioBase64 = data?.audio_base64 || data?.audioBase64;
+      if (!audioBase64) throw new Error('No audio returned');
+
+      const audioUrl = `data:audio/mp3;base64,${audioBase64}`;
       audio.src = audioUrl;
       audio.onended = () => setIsSpeaking(false);
       audio.onerror = () => setIsSpeaking(false);
