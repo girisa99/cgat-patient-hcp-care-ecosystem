@@ -101,13 +101,13 @@ export const SHOW_TYPE_EMAIL_CONFIG: Partial<Record<ShowType, { name: string; ic
   webinar: { name: 'Webinar', icon: '🖥️', description: 'You are invited to an informative webinar' },
   conference: { name: 'Conference', icon: '🏢', description: 'Join us at this exciting conference' },
   training_session: { name: 'Training Session', icon: '📖', description: 'Join us for a training session' },
-  // Genie Studio Demos
-  genie_studio_full: { name: 'Full Genie Studio Demo', icon: '✨', description: 'Experience the complete Genie Studio suite' },
+  // Genie Suite Demos
+  genie_studio_full: { name: 'Full Genie Suite Demo', icon: '✨', description: 'Experience the complete Genie Suite' },
   genie_spark_demo: { name: 'Genie Spark Demo', icon: '⚡', description: 'Ignite your ideas with Genie Spark' },
-  genie_arc_demo: { name: 'Genie Arc Demo', icon: '🎬', description: 'Discover your production journey with Genie Arc' },
+  genie_arc_demo: { name: 'Genie Hub Demo', icon: '🎬', description: 'Discover your creative command center with Genie Hub' },
   genie_mind_demo: { name: 'Genie Mind Demo', icon: '🧠', description: 'Experience AI that truly understands with Genie Mind' },
   genie_vibe_demo: { name: 'Genie Vibe Demo', icon: '🎵', description: 'Go from script to screen with Genie Vibe' },
-  genie_suite_overview: { name: 'Genie Suite Overview', icon: '🌟', description: 'Get a complete overview of the Genie Studio ecosystem' },
+  genie_suite_overview: { name: 'Genie Suite Overview', icon: '🌟', description: 'Get a complete overview of the Genie Suite ecosystem' },
 };
 
 // Stage-specific email messages
@@ -319,7 +319,7 @@ export function getDemoTypesWithBranding() {
     },
     { 
       id: 'genie_arc_demo', 
-      label: 'Genie Arc Demo', 
+      label: 'Genie Hub Demo', 
       ...getProductBranding('arc'),
       icon: '🎬' 
     },

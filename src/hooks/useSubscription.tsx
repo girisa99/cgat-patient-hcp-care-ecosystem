@@ -96,7 +96,7 @@ export const GENIE_PRODUCTS = {
   },
   studio: {
     id: 'studio',
-    name: 'Genie Studio',
+    name: 'Genie Suite',
     tagline: CENTRAL_PRODUCTS.studio.tagline, // 'Mind to Media' - from centralized file
     description: 'Complete AI-powered media production suite. Unified platform integrating Mind, Spark, Vibe, and Production Hub.',
     color: 'from-blue-500 to-cyan-500',
@@ -180,7 +180,7 @@ export const GENIE_PRODUCTS = {
 
 export type GenieProduct = keyof typeof GENIE_PRODUCTS;
 
-// Stripe product/price mappings for Genie Studio tiers
+// Stripe product/price mappings for Genie Suite tiers
 // Synced with database subscription_tiers table
 export const SUBSCRIPTION_TIERS = {
   free: {
@@ -202,7 +202,7 @@ export const SUBSCRIPTION_TIERS = {
     features: [
       '10 AI Credits (one-time)',
       '1 AI Agent',
-      'Genie Studio Basic',
+      'Genie Suite Basic',
       'Genie Spark (5 prototypes)',
       '100 API calls/month',
       '500 MB Storage',
@@ -235,7 +235,7 @@ export const SUBSCRIPTION_TIERS = {
     features: [
       '100 AI Credits/month',
       '5 AI Agents',
-      'Genie Studio Core',
+      'Genie Suite Core',
       'Genie Spark (100 scripts)',
       'Basic RAG (1,000 docs)',
       'Community Support',
@@ -264,7 +264,7 @@ export const SUBSCRIPTION_TIERS = {
     features: [
       '500 AI Credits/month',
       '25 AI Agents',
-      'Genie Studio Full',
+      'Genie Suite Full',
       'Genie Spark Pro (500 scripts)',
       'Genie Vibe Recording Studio',
       'Genie Mind Knowledge Base',
@@ -297,7 +297,7 @@ export const SUBSCRIPTION_TIERS = {
       '2,000 AI Credits/month',
       'Unlimited AI Agents',
       'Full Genie Suite Access',
-      'Genie Arc Team Collaboration',
+      'Genie Hub Team Collaboration',
       'Production Hub',
       'Enterprise RAG (Unlimited)',
       '24/7 Priority Support',

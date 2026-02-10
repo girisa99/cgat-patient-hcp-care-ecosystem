@@ -96,7 +96,7 @@ const QuadrantHeader: React.FC<{ showDebugTools: boolean }> = ({ showDebugTools 
           onClick={() => navigate('/genie-studio')}
           className="flex items-center gap-2 hover:opacity-80 transition-opacity"
         >
-          <img src={genieStudioLogo} alt="Genie Studio" className="h-8 w-auto" />
+          <img src={genieStudioLogo} alt="Genie Suite" className="h-8 w-auto" />
         </button>
 
         {/* Quadrant Navigation */}

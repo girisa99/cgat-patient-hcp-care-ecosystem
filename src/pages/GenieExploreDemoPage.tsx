@@ -98,7 +98,7 @@ const USE_CASE_DEMOS: Record<string, UseCaseDemo> = {
       preview: '60s video • 1080p • AI Avatar presenter',
       description: 'Export in MP4, WebM, or publish directly to social platforms',
     },
-    products: ['Genie Vibe', 'Genie Arc'],
+    products: ['Genie Vibe', 'Genie Hub'],
   },
   'voice-audio': {
     title: 'AI Voice Studio',
@@ -170,7 +170,7 @@ const USE_CASE_DEMOS: Record<string, UseCaseDemo> = {
       preview: '12 videos • 48 tasks • 4-week timeline',
       description: 'Gantt chart, Kanban board, and automated status updates',
     },
-    products: ['Genie Arc', 'Genie Vibe', 'Genie Deck'],
+    products: ['Genie Hub', 'Genie Vibe', 'Genie Deck'],
   },
 };
 

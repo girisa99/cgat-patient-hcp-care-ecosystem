@@ -1,6 +1,6 @@
 /**
- * Genie Studio Info Banner
- * Addresses Ralph Wiggum finding: "What *is* Genie Studio?"
+ * Genie Suite Info Banner
+ * Addresses Ralph Wiggum finding: "What *is* Genie Suite?"
  * Provides clear, persistent context about what users can accomplish
  */
 
@@ -60,7 +60,7 @@ export const GenieStudioInfoBanner: React.FC<GenieStudioInfoBannerProps> = ({
         className="gap-2 text-muted-foreground hover:text-foreground"
       >
         <HelpCircle className="h-4 w-4" />
-        <span className="text-xs">What is Genie Studio?</span>
+        <span className="text-xs">What is Genie Suite?</span>
       </Button>
     );
   }

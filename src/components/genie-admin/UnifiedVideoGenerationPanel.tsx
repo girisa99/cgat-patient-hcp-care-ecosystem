@@ -93,15 +93,15 @@ const LANGUAGES = [
 
 // 9 chapters that get stitched into one video
 const CHAPTERS = [
-  { id: 'opening', product: 'Genie Studio', duration: 45, color: '#9333EA' },
+  { id: 'opening', product: 'Genie Suite', duration: 45, color: '#9333EA' },
   { id: 'spark', product: 'Genie Spark', duration: 50, color: '#F97316' },
   { id: 'mind', product: 'Genie Mind', duration: 50, color: '#3B82F6' },
   { id: 'vibe', product: 'Genie Vibe', duration: 55, color: '#22C55E' },
   { id: 'deck', product: 'Genie Deck', duration: 45, color: '#EAB308' },
-  { id: 'arc', product: 'Genie Arc', duration: 50, color: '#EC4899' },
+  { id: 'hub', product: 'Genie Hub', duration: 50, color: '#EC4899' },
   { id: 'ask-genie', product: 'Ask Genie', duration: 40, color: '#06B6D4' },
   { id: 'cast', product: 'Genie Cast', duration: 50, color: '#EF4444' },
-  { id: 'closing', product: 'Genie Studio', duration: 30, color: '#9333EA' },
+  { id: 'closing', product: 'Genie Suite', duration: 30, color: '#9333EA' },
 ];
 
 interface GeneratedVideo {

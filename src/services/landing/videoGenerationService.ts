@@ -431,9 +431,9 @@ export const CHAPTER_VISUAL_CONFIGS: ChapterVisualConfig[] = [
     ],
   },
   {
-    id: 'arc',
-    title: 'Genie Arc - Your Production Journey',
-    product: 'Genie Arc',
+    id: 'hub',
+    title: 'Genie Hub - Your Creative Command Center',
+    product: 'Genie Hub',
     duration: 50,
     visualStyle: 'product_demo',
     primaryColor: '#EC4899',

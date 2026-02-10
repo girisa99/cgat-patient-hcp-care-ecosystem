@@ -24,11 +24,11 @@
 // PRODUCT METADATA
 // =============================================================================
 export const GENIE_STUDIO_PRODUCT = {
-  id: 'genie-studio',
-  name: 'Genie Studio',
+  id: 'genie-suite',
+  name: 'Genie Suite',
   version: '2.0.0',
   tagline: 'Mind to Media',
-  products: ['Genie Mind', 'Genie Vibe', 'Genie Spark', 'Genie Arc', 'Genie Hub'],
+  products: ['Genie Mind', 'Genie Vibe', 'Genie Spark', 'Genie Hub'],
   description: 'AI-Powered Media Production Suite',
   commercialLaunch: true,
   
@@ -39,8 +39,7 @@ export const GENIE_STUDIO_PRODUCT = {
     { id: 'mind', name: 'Genie Mind', description: 'Script Writing & AI Intelligence' },
     { id: 'vibe', name: 'Genie Vibe', description: 'Recording Studio & Production' },
     { id: 'spark', name: 'Genie Spark', description: 'Quick-Start Content Creation' },
-    { id: 'arc', name: 'Genie Arc', description: 'Advanced Production Workflows' },
-    { id: 'hub', name: 'Genie Hub', description: 'Production Management & Collaboration' },
+    { id: 'hub', name: 'Genie Hub', description: 'Creative Command Center & Collaboration' },
   ],
   
   agents: [

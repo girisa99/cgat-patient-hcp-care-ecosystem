@@ -1,8 +1,8 @@
 /**
  * GENIE UNIVERSAL CONTEXT SERVICE
  * 
- * Cross-product context guidance system for ALL Genie Studio products:
- * - Deck, Spark, Mind, Vibe, Arc, Ask Genie
+ * Cross-product context guidance system for ALL Genie Suite products:
+ * - Deck, Spark, Mind, Vibe, Hub, Ask Genie
  * 
  * Features:
  * - Product-specific knowledge bases and flows
@@ -247,11 +247,11 @@ export const PRODUCT_KNOWLEDGE: Record<GenieProductId, ProductKnowledge> = {
   },
   arc: {
     id: 'arc',
-    name: 'Genie Arc',
-    tagline: 'Stories Come Alive',
+    name: 'Genie Hub',
+    tagline: 'Your Creative Command Center',
     emoji: '🎬',
-    description: 'Production hub for podcasts, webcasts, webinars, and live streams.',
-    overview: `Genie Arc is your production command center - plan, produce, and publish podcasts, videos, webinars, and live streams!`,
+    description: 'Creative command center for scheduling, assets, and team collaboration.',
+    overview: `Genie Hub is your creative command center - plan, schedule, manage assets, and coordinate your content production!`,
     capabilities: [
       { name: 'Show Creation', description: 'Create podcast, webcast, webinar, or live stream shows', timeEstimate: '5-10 min' },
       { name: 'Episode Planning', description: 'Plan and schedule episodes with your team', timeEstimate: '2-5 min' },
@@ -276,11 +276,11 @@ export const PRODUCT_KNOWLEDGE: Record<GenieProductId, ProductKnowledge> = {
   },
   studio: {
     id: 'studio',
-    name: 'Genie Studio',
-    tagline: 'Create Without Limits',
+    name: 'Genie Suite',
+    tagline: 'Mind to Media',
     emoji: '🌟',
     description: 'The complete AI creative suite - presentations, scripts, recordings, and productions.',
-    overview: `Genie Studio is your complete AI creative suite - combining all Genie products into one powerful workflow!`,
+    overview: `Genie Suite is your complete AI creative suite - combining all Genie products into one powerful workflow!`,
     capabilities: [
       { name: 'Full Production Workflow', description: 'From idea to published content', timeEstimate: 'Variable' },
       { name: 'Cross-Product Integration', description: 'Seamlessly move between Genie products', timeEstimate: 'Real-time' },
@@ -308,7 +308,7 @@ export const PRODUCT_KNOWLEDGE: Record<GenieProductId, ProductKnowledge> = {
     tagline: 'Your Creative Guide',
     emoji: '💜',
     description: 'Your AI assistant that guides you through all Genie products with contextual help.',
-    overview: `I'm Ask Genie - your friendly guide through the entire Genie Studio suite! I can help you navigate, create, and get the most out of every product!`,
+    overview: `I'm Ask Genie - your friendly guide through the entire Genie Suite! I can help you navigate, create, and get the most out of every product!`,
     capabilities: [
       { name: 'Contextual Guidance', description: 'Get help specific to what you\'re working on', timeEstimate: 'Real-time' },
       { name: 'Voice Interaction', description: 'Talk to me in 20+ languages', timeEstimate: 'Real-time' },

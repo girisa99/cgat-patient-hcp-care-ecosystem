@@ -45,7 +45,7 @@ const genieSuiteProducts = [
   },
   {
     id: 'arc',
-    name: 'Genie Arc',
+    name: 'Genie Hub',
     icon: '🌈',
     color: colors.arc,
     description: 'Team Collaboration Hub',
@@ -594,7 +594,7 @@ export const GenieRecordingStudioArchitectureDiagram = () => {
         </g>
       </g>
 
-      {/* GENIE ARC (Top Right) */}
+      {/* GENIE HUB (Top Right) */}
       <g transform="translate(1390, 130)">
         <rect x="0" y="0" width="180" height="120" rx="12" fill="#1e3a5f" stroke="#3b82f6" strokeWidth="2" filter="url(#dropShadow)" />
         <rect x="0" y="0" width="180" height="35" rx="12" fill="url(#arcGrad)" />

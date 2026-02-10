@@ -280,7 +280,7 @@ export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({
       <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-14 items-center justify-between">
           <NavLink to="/genie-studio" className="flex items-center gap-2">
-            <img src={genieSuiteLogo} alt="Genie Studio" className="h-8" />
+            <img src={genieSuiteLogo} alt="Genie Suite" className="h-8" />
           </NavLink>
 
           <div className="flex items-center gap-4">
@@ -341,7 +341,7 @@ export const GenieStudioNavigation: React.FC<GenieStudioNavigationProps> = ({
             <NavLink to="/genie-studio" className="flex items-center gap-2 min-w-0">
               <img 
                 src={genieSuiteLogo} 
-                alt="Genie Studio" 
+                alt="Genie Suite" 
                 className={cn("transition-all flex-shrink-0", isCollapsed ? "h-6 w-6" : "h-6")} 
               />
             </NavLink>

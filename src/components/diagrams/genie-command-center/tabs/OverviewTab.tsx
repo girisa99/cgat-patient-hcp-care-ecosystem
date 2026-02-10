@@ -31,7 +31,7 @@ import { masterScenarioCounts, masterInfrastructureCounts } from '../data/govern
 // - Genie Spark: "Ignite your Ideas" - AI script generation, story development, content ideation
 // - Genie Mind: "AI that understands" - Contextual AI, script editing, TTS, templates
 // - Genie Vibe: "Script to Screen" - Audio/video recording, editing, production
-// - Genie Arc: "Your Production Journey With Infinite Possibilities" - Production workflow, team collaboration
+// - Genie Hub: "Your Creative Command Center" - Scheduling, assets, team collaboration
 // - Ask Genie: "Your wish is my command" - Universal AI assistant throughout
 
 // Segment data with metrics - VoC is now nested within each segment
@@ -486,8 +486,8 @@ const journeySteps = [
     title: "Production Pipeline & Collaboration",
     icon: Users,
     product: {
-      name: "Genie Arc",
-      tagline: "Your Production Journey With Infinite Possibilities",
+      name: "Genie Hub",
+      tagline: "Your Creative Command Center",
       emoji: "🎯",
       color: "text-emerald-600",
       bgColor: "bg-emerald-500/10",
@@ -502,7 +502,7 @@ const journeySteps = [
     },
     after: { 
       time: "15 min", 
-      tools: "Genie Arc", 
+      tools: "Genie Hub", 
       wow: "Team collaboration, resource management & live coordination",
       output: "Streamlined approval workflow"
     },
@@ -572,7 +572,7 @@ const journeySteps = [
     title: "Distribution & Publishing",
     icon: Globe,
     product: {
-      name: "Genie Arc + Vibe",
+      name: "Genie Hub + Vibe",
       tagline: "Multi-platform publishing",
       emoji: "🎯🎬",
       color: "text-emerald-600",
@@ -588,7 +588,7 @@ const journeySteps = [
     },
     after: { 
       time: "2 min", 
-      tools: "Genie Arc + Vibe", 
+      tools: "Genie Hub + Vibe", 
       wow: "Show scheduling, resource management & multi-platform publish",
       output: "6+ platforms"
     },

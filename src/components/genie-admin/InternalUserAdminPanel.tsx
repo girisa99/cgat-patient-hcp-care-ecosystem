@@ -1,6 +1,6 @@
 /**
  * INTERNAL USER ADMIN PANEL
- * Admin interface for managing internal Genie Studio users
+ * Admin interface for managing internal Genie Suite users
  * Only accessible to super_admin and marketing_lead roles
  */
 import React, { useState, useEffect } from 'react';

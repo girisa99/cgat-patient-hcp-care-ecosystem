@@ -59,7 +59,7 @@ export const GlobalComplianceFooter: React.FC<GlobalComplianceFooterProps> = ({
             </div>
             {showCopyright && (
               <p className="text-xs text-muted-foreground">
-                © {new Date().getFullYear()} Genie Studio. All rights reserved.
+                © {new Date().getFullYear()} Genie Suite. All rights reserved.
               </p>
             )}
           </div>
@@ -135,7 +135,7 @@ export const GlobalComplianceFooter: React.FC<GlobalComplianceFooterProps> = ({
 
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} Genie Studio. All rights reserved.
+            © {new Date().getFullYear()} Genie Suite. All rights reserved.
           </p>
           <div className="flex items-center gap-4 text-xs text-muted-foreground">
             <span>Do Not Sell My Personal Information</span>

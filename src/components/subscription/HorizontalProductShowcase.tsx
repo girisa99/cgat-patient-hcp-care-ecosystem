@@ -33,10 +33,10 @@ export const HorizontalProductShowcase = () => {
     }
   };
 
-  // Auto-scroll to center (Genie Studio) on mount
+  // Auto-scroll to center (Genie Suite) on mount
   React.useEffect(() => {
     if (scrollRef.current) {
-      // Scroll to center where Genie Studio is (position 2)
+      // Scroll to center where Genie Suite is (position 2)
       const cardWidth = 280;
       const gap = 16;
       const centerOffset = (cardWidth + gap) * 2;
@@ -136,7 +136,7 @@ export const HorizontalProductShowcase = () => {
                     </div>
                   )}
                 </div>
-                {/* Genie Studio title below logo */}
+                {/* Genie Suite title below logo */}
                 {isStudio && (
                   <div className="mb-2">
                     <h3 className="text-lg font-semibold text-foreground">{product.name}</h3>

@@ -34,7 +34,7 @@ const integrationPoints = [
   { product: 'Genie Mind', actions: ['Analyze content', 'Summarize', 'Extract insights'] },
   { product: 'Genie Vibe', actions: ['Add voiceover', 'Generate video', 'Create avatar'] },
   { product: 'Genie Deck', actions: ['Create slides', 'Apply branding', 'Localize'] },
-  { product: 'Genie Arc', actions: ['Review content', 'Assign tasks', 'Track progress'] },
+  { product: 'Genie Hub', actions: ['Review content', 'Assign tasks', 'Track progress'] },
   { product: 'Genie Cast', actions: ['Schedule post', 'Distribute content', 'Analytics'] },
 ];
 

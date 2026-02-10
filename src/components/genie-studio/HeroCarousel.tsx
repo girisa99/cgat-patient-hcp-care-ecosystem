@@ -92,7 +92,7 @@ export function HeroCarousel({ onOpenCreateShowDialog, onNavigateToVibe }: HeroC
           className="flex transition-transform duration-500 ease-out"
           style={{ transform: `translateX(-${currentSlide * 100}%)` }}
         >
-          {/* Slide 1: Genie Studio - The Complete Suite */}
+          {/* Slide 1: Genie Suite - The Complete Suite */}
           <div className="min-w-full relative h-[480px] md:h-[520px]">
             <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-purple-700 to-pink-800" />
             <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiPjxjaXJjbGUgY3g9IjUwIiBjeT0iNTAiIHI9IjEuNSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-50" />
@@ -136,7 +136,7 @@ export function HeroCarousel({ onOpenCreateShowDialog, onNavigateToVibe }: HeroC
                   <div className="relative">
                     <div className="absolute -inset-4 bg-gradient-to-r from-purple-500/30 to-pink-500/30 rounded-3xl blur-2xl" />
                     <div className="relative h-64 w-80 md:h-72 md:w-96 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center p-6 shadow-2xl">
-                      <img src={genieStudioLogo} alt="Genie Studio" className="h-full w-full object-contain drop-shadow-2xl" />
+                      <img src={genieStudioLogo} alt="Genie Suite" className="h-full w-full object-contain drop-shadow-2xl" />
                     </div>
                   </div>
                 </div>
@@ -144,7 +144,7 @@ export function HeroCarousel({ onOpenCreateShowDialog, onNavigateToVibe }: HeroC
             </div>
           </div>
 
-          {/* Slide 2: Genie Arc - Team Coordination */}
+          {/* Slide 2: Genie Hub - Team Coordination */}
           <div className="min-w-full relative h-[480px] md:h-[520px]">
             <div className="absolute inset-0 bg-gradient-to-br from-indigo-900 via-purple-800 to-indigo-900" />
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(129,140,248,0.3),transparent_60%)]" />
@@ -157,13 +157,13 @@ export function HeroCarousel({ onOpenCreateShowDialog, onNavigateToVibe }: HeroC
                     <Badge className="bg-indigo-400/20 text-indigo-200 border-indigo-300/30 text-xs">Optional</Badge>
                   </div>
                   <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white tracking-tight leading-tight">
-                    Genie <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 to-purple-300">Arc</span>
+                    Genie <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 to-purple-300">Hub</span>
                   </h1>
                   <p className="text-2xl md:text-3xl text-white/90 font-light">
-                    Production Hub for Teams — Plan, Coordinate, Execute
+                    Your Creative Command Center — Plan, Coordinate, Execute
                   </p>
                   <p className="text-lg text-white/70 max-w-lg leading-relaxed">
-                    <strong className="text-white/90">Optional for solo creators.</strong> The Arc is your command center for multi-person productions.
+                    <strong className="text-white/90">Optional for solo creators.</strong> The Hub is your command center for multi-person productions.
                   </p>
                   <div className="flex flex-wrap gap-3 pt-4">
                     <div className="flex items-center gap-2 px-4 py-2.5 bg-white/15 backdrop-blur rounded-xl border border-white/20">
@@ -185,7 +185,7 @@ export function HeroCarousel({ onOpenCreateShowDialog, onNavigateToVibe }: HeroC
                     className="mt-4 bg-white text-indigo-700 hover:bg-white/90 shadow-xl font-semibold px-8"
                   >
                     <Calendar className="h-5 w-5 mr-2" />
-                    Open Genie Arc
+                    Open Genie Hub
                   </Button>
                 </div>
                 <div className="flex justify-center lg:justify-end">
@@ -195,7 +195,7 @@ export function HeroCarousel({ onOpenCreateShowDialog, onNavigateToVibe }: HeroC
                       className="relative h-64 w-80 md:h-72 md:w-96 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center p-6 shadow-2xl cursor-pointer hover:scale-105 transition-transform"
                       onClick={onOpenCreateShowDialog}
                     >
-                      <img src={genieArcLogo} alt="Genie Arc" className="h-full w-full object-contain drop-shadow-2xl" />
+                      <img src={genieArcLogo} alt="Genie Hub" className="h-full w-full object-contain drop-shadow-2xl" />
                     </div>
                   </div>
                 </div>

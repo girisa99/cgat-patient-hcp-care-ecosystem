@@ -1,8 +1,8 @@
 /**
- * GENIE STUDIO GOVERNANCE REGISTRY
- * Dynamic registry that tracks ALL Genie Studio assets
+ * GENIE SUITE GOVERNANCE REGISTRY
+ * Dynamic registry that tracks ALL Genie Suite assets
  * 
- * This file serves as the SINGLE SOURCE OF TRUTH for what belongs to Genie Studio.
+ * This file serves as the SINGLE SOURCE OF TRUTH for what belongs to Genie Suite.
  * Update this registry whenever you add/remove Genie-related code.
  * 
  * VERIFIED COUNTS (2026-01-30):
@@ -363,7 +363,7 @@ export const calculateGenieMetrics = () => {
 };
 
 // =============================================================================
-// VALIDATION: Check if an asset belongs to Genie Studio
+// VALIDATION: Check if an asset belongs to Genie Suite
 // =============================================================================
 export const isGenieAsset = {
   edgeFunction: (name: string) => 

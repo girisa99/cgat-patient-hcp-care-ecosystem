@@ -1183,10 +1183,10 @@ export const MarketAnalysisDashboard: React.FC = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Crown className="h-5 w-5 text-amber-500" />
-                  Genie Studio Competitive Advantages
+                  Genie Suite Competitive Advantages
                 </CardTitle>
                 <CardDescription>
-                  Key differentiators that set Genie Studio apart from the competition
+                  Key differentiators that set Genie Suite apart from the competition
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -1282,7 +1282,7 @@ export const MarketAnalysisDashboard: React.FC = () => {
                         <TableHead className="text-center bg-primary/10">
                           <div className="flex items-center justify-center gap-1">
                             <Sparkles className="h-4 w-4" />
-                            Genie Studio
+                            Genie Suite
                           </div>
                         </TableHead>
                         <TableHead className="text-center">Descript</TableHead>

@@ -7,7 +7,7 @@
  * - Proactive editing suggestions from proactivePipelineEditorService
  * - Confidence loop integration for quality assurance
  * - Ask Genie support awareness
- * - Works across all Genie Studio products (Spark, Mind, Vibe, Deck, Arc, Cast)
+ * - Works across all Genie Suite products (Spark, Mind, Vibe, Deck, Hub, Cast)
  * 
  * PRODUCT-AWARE MODE SWITCHING:
  * - Vibe: Timeline mode (video/audio production)
@@ -327,7 +327,7 @@ function EditorContent({
         <div className="flex items-center gap-2">
           <Badge variant="outline" className={cn("flex items-center gap-1", productInfo?.bgColor)}>
             {PRODUCT_ICONS[productContext]}
-            <span>{productInfo?.name || 'Genie Studio'}</span>
+            <span>{productInfo?.name || 'Genie Suite'}</span>
           </Badge>
           <span className="text-xs text-muted-foreground">{productInfo?.tagline}</span>
         </div>

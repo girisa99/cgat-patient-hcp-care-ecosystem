@@ -105,9 +105,9 @@ export const GenieStudioOverallArchitectureDiagram: React.FC = () => {
       <div className="text-center border-b border-border pb-4">
         <h2 className="text-2xl font-bold text-foreground flex items-center justify-center gap-3">
           <Layers className="h-8 w-8 text-violet-500" />
-          Genie Studio - Complete Architecture
+          Genie Suite - Complete Architecture
         </h2>
-        <p className="text-muted-foreground mt-2">Mind to Media • 119 Pipelines • 12 Core Providers • 5-Zone Routing • 7 Products (incl. Genie Cast)</p>
+        <p className="text-muted-foreground mt-2">Mind to Media • 206 Pipelines • 15 Core Providers • 7-Zone Routing • 7 Products (incl. Genie Cast)</p>
       </div>
 
       {/* Implementation Summary */}
@@ -384,7 +384,7 @@ export const GenieStudioOverallArchitectureDiagram: React.FC = () => {
     return (
       <div className="fixed inset-0 z-50 bg-background overflow-auto">
         <div className="sticky top-0 z-10 bg-background border-b border-border px-4 py-3 flex items-center justify-between shadow-sm">
-          <h2 className="text-foreground font-semibold text-lg">Genie Studio - Complete Architecture</h2>
+          <h2 className="text-foreground font-semibold text-lg">Genie Suite - Complete Architecture</h2>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={handleDownloadPNG}>
               <Download className="h-4 w-4 mr-2" />
@@ -408,7 +408,7 @@ export const GenieStudioOverallArchitectureDiagram: React.FC = () => {
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-foreground text-lg flex items-center gap-2">
           <Layers className="h-5 w-5 text-violet-500" />
-          Genie Studio - Complete Architecture
+          Genie Suite - Complete Architecture
         </CardTitle>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => setIsFullscreen(true)} className="gap-2">
