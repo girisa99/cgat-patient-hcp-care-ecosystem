@@ -99,7 +99,7 @@ const GENIE_PRODUCTS = {
   'Mind': { color: 'text-purple-400', capabilities: ['enhancement', 'tts'] },
   'Vibe': { color: 'text-pink-400', capabilities: ['video', 'audio', 'animation'] },
   'Deck': { color: 'text-blue-400', capabilities: ['slides', 'charts'] },
-  'Arc': { color: 'text-green-400', capabilities: ['scheduling', 'workflow'] },
+  'Hub': { color: 'text-green-400', capabilities: ['scheduling', 'workflow'] },
   'Cast': { color: 'text-violet-400', capabilities: ['distribution', 'localization'] },
 };
 

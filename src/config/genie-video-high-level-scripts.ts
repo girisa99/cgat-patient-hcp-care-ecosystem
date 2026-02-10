@@ -39,7 +39,7 @@ export const CHAPTERS: ChapterScript[] = [
 export const ENGLISH_SCRIPTS: Record<string, string> = {
   opening: `Welcome to Genie Suite – where your ideas become reality.
 
-Seven powerful products. 206 AI pipelines. 12 world-class providers. Over 70 languages with authentic regional voices.
+Seven powerful products. 206 AI pipelines. 19 world-class providers. Over 140 languages with authentic regional voices.
 
 From Tokyo to Dubai, São Paulo to Mumbai – your creative vision, instantly realized.
 
@@ -350,7 +350,7 @@ export const ARABIC_SCRIPTS: Record<string, string> = {
 export const GERMAN_SCRIPTS: Record<string, string> = {
   opening: `Willkommen bei Genie Suite – wo Ihre Ideen Wirklichkeit werden.
 
-Sieben leistungsstarke Produkte. 206 KI-Pipelines. 12 erstklassige Anbieter. Über 70 Sprachen mit authentischen regionalen Stimmen.
+Sieben leistungsstarke Produkte. 206 KI-Pipelines. 19 erstklassige Anbieter. Über 70 Sprachen mit authentischen regionalen Stimmen.
 
 Von Tokio bis Dubai, von São Paulo bis Mumbai – Ihre kreative Vision, sofort verwirklicht.
 
@@ -385,7 +385,7 @@ Ihr Wunsch ist unser Befehl.`
 export const FRENCH_SCRIPTS: Record<string, string> = {
   opening: `Bienvenue dans Genie Suite – où vos idées deviennent réalité.
 
-Sept produits puissants. 206 pipelines IA. 12 fournisseurs de classe mondiale. Plus de 70 langues avec des voix régionales authentiques.
+Sept produits puissants. 206 pipelines IA. 19 fournisseurs de classe mondiale. Plus de 70 langues avec des voix régionales authentiques.
 
 De Tokyo à Dubaï, de São Paulo à Mumbai – votre vision créative, instantanément réalisée.
 
@@ -420,7 +420,7 @@ Votre souhait est notre commande.`
 export const SPANISH_SCRIPTS: Record<string, string> = {
   opening: `Bienvenido a Genie Suite – donde tus ideas se hacen realidad.
 
-Siete productos potentes. 206 pipelines de IA. 12 proveedores de clase mundial. Más de 70 idiomas con voces regionales auténticas.
+Siete productos potentes. 206 pipelines de IA. 19 proveedores de clase mundial. Más de 70 idiomas con voces regionales auténticas.
 
 De Tokio a Dubái, de São Paulo a Mumbai – tu visión creativa, realizada al instante.
 
@@ -455,7 +455,7 @@ Tu deseo es nuestra orden.`
 export const PORTUGUESE_SCRIPTS: Record<string, string> = {
   opening: `Bem-vindo ao Genie Suite – onde suas ideias se tornam realidade.
 
-Sete produtos poderosos. 206 pipelines de IA. 12 provedores de classe mundial. Mais de 70 idiomas com vozes regionais autênticas.
+Sete produtos poderosos. 206 pipelines de IA. 19 provedores de classe mundial. Mais de 70 idiomas com vozes regionais autênticas.
 
 De Tóquio a Dubai, de São Paulo a Mumbai – sua visão criativa, instantaneamente realizada.
 

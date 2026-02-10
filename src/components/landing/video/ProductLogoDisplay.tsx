@@ -148,7 +148,7 @@ export const OrbitingProductLogos: React.FC<{
     { id: 'spark', logo: genieSparkLogo, name: 'Spark' },
     { id: 'mind', logo: genieMindLogo, name: 'Mind' },
     { id: 'vibe', logo: genieVibeLogo, name: 'Vibe' },
-    { id: 'arc', logo: genieArcLogo, name: 'Arc' },
+    { id: 'arc', logo: genieArcLogo, name: 'Hub' },
     { id: 'askGenie', logo: askGenieLogo, name: 'Ask Genie' },
     { id: 'cast', logo: genieCastLogo, name: 'Cast' },
   ];
