@@ -243,71 +243,176 @@ Respond in valid JSON format: { "slides": [{ "slideNumber": 1, "title": "...", "
           </div>
         )}
 
-        {/* Generated slides with watermark */}
+        {/* Generated slides — cinematic branded preview */}
         <AnimatePresence mode="wait">
           {slides && slides.length > 0 && (
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="space-y-3"
+              initial={{ opacity: 0, scale: 0.97 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              className="space-y-4"
             >
-              <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
+              {/* Slide navigation thumbnails */}
+              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
                 {slides.map((slide, idx) => (
-                  <button
+                  <motion.button
                     key={idx}
                     onClick={() => setActiveSlide(idx)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all shrink-0 ${
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.97 }}
+                    className={`relative px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all shrink-0 border ${
                       activeSlide === idx
-                        ? 'bg-primary text-primary-foreground shadow-sm'
-                        : 'bg-muted text-foreground hover:bg-muted/80'
+                        ? 'bg-gradient-to-r from-primary to-accent text-primary-foreground border-primary shadow-lg shadow-primary/25'
+                        : 'bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-foreground'
                     }`}
                   >
+                    {activeSlide === idx && (
+                      <motion.div
+                        layoutId="activeSlideIndicator"
+                        className="absolute inset-0 bg-gradient-to-r from-primary to-accent rounded-xl"
+                        style={{ zIndex: -1 }}
+                        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                      />
+                    )}
                     Slide {slide.slideNumber}
-                  </button>
+                  </motion.button>
                 ))}
               </div>
 
-              <div className="relative bg-gradient-to-br from-card via-card to-muted/30 rounded-xl border border-border p-4 sm:p-6 min-h-[200px] overflow-hidden">
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-                  <div className="rotate-[-25deg] opacity-10">
-                    <p className="text-4xl sm:text-5xl font-black text-foreground tracking-widest">PREVIEW</p>
-                    <p className="text-sm sm:text-lg font-bold text-foreground text-center">Genie Studio</p>
-                  </div>
-                </div>
+              {/* Main slide canvas */}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeSlide}
+                  initial={{ opacity: 0, x: 30 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -30 }}
+                  transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                  className="relative rounded-2xl overflow-hidden border border-border shadow-2xl shadow-primary/10"
+                  style={{ aspectRatio: '16/9' }}
+                >
+                  {/* Slide background gradient */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-background via-card to-muted/60" />
+                  <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-primary/5 to-transparent" />
+                  <div className="absolute bottom-0 left-0 w-full h-1/3 bg-gradient-to-t from-primary/[0.03] to-transparent" />
 
-                <div className="relative z-0" dir={selectedLang === 'ar' ? 'rtl' : 'ltr'}>
-                  <div className="flex items-center justify-between mb-3">
-                    <Badge variant="outline" className="text-[10px]">
-                      Slide {slides[activeSlide].slideNumber} / {slides.length}
-                    </Badge>
-                    <Badge variant="outline" className="text-[10px] gap-1">
-                      <Globe className="h-2.5 w-2.5" /> {selectedLangName}
-                    </Badge>
+                  {/* Decorative accent bar */}
+                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-accent to-primary" />
+
+                  {/* Watermark */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                    <div className="rotate-[-20deg] opacity-[0.06]">
+                      <p className="text-5xl sm:text-7xl font-black text-foreground tracking-[0.3em]">PREVIEW</p>
+                    </div>
                   </div>
-                  <h4 className="text-lg sm:text-xl font-bold text-foreground mb-3">
-                    {slides[activeSlide].title}
-                  </h4>
-                  <ul className="space-y-2 mb-4">
-                    {slides[activeSlide].bullets.map((bullet, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                        <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 flex-shrink-0" />
-                        {bullet}
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="pt-3 border-t border-border">
-                    <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-0.5">Speaker Notes</p>
-                    <p className="text-xs text-muted-foreground italic">{slides[activeSlide].speakerNotes}</p>
+
+                  {/* Slide content */}
+                  <div className="relative z-[5] h-full flex flex-col p-5 sm:p-8" dir={selectedLang === 'ar' ? 'rtl' : 'ltr'}>
+                    {/* Top bar */}
+                    <div className="flex items-center justify-between mb-auto">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                          <Presentation className="h-3.5 w-3.5 text-primary-foreground" />
+                        </div>
+                        <span className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Genie Deck</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-[9px] gap-1 border-primary/30 bg-primary/5">
+                          <Globe className="h-2.5 w-2.5" /> {selectedLangName}
+                        </Badge>
+                        <Badge variant="outline" className="text-[9px] border-border">
+                          {slides[activeSlide].slideNumber} / {slides.length}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    {/* Title area */}
+                    <div className="my-auto space-y-4">
+                      <motion.div
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1, duration: 0.4 }}
+                      >
+                        <div className="w-12 h-1 bg-gradient-to-r from-primary to-accent rounded-full mb-3" />
+                        <h4 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground leading-tight">
+                          {slides[activeSlide].title}
+                        </h4>
+                      </motion.div>
+
+                      {/* Bullet points */}
+                      <ul className="space-y-2.5 max-w-lg">
+                        {slides[activeSlide].bullets.map((bullet, i) => (
+                          <motion.li
+                            key={i}
+                            initial={{ opacity: 0, x: 12 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.2 + i * 0.08, duration: 0.35 }}
+                            className="flex items-start gap-3 text-sm text-muted-foreground"
+                          >
+                            <span className="mt-1.5 flex-shrink-0">
+                              <span className="block w-2 h-2 rounded-full bg-gradient-to-br from-primary to-accent shadow-sm shadow-primary/30" />
+                            </span>
+                            <span className="leading-relaxed">{bullet}</span>
+                          </motion.li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Speaker notes footer */}
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.5 }}
+                      className="mt-auto pt-3 border-t border-border/50"
+                    >
+                      <p className="text-[9px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-0.5">Speaker Notes</p>
+                      <p className="text-[11px] text-muted-foreground/70 italic line-clamp-2">{slides[activeSlide].speakerNotes}</p>
+                    </motion.div>
                   </div>
-                </div>
+                </motion.div>
+              </AnimatePresence>
+
+              {/* Slide navigation arrows */}
+              <div className="flex items-center justify-center gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={activeSlide === 0}
+                  onClick={() => setActiveSlide(Math.max(0, activeSlide - 1))}
+                  className="rounded-full h-8 w-8 p-0"
+                >
+                  <ChevronRight className="h-4 w-4 rotate-180" />
+                </Button>
+                <span className="text-xs text-muted-foreground font-medium">
+                  {activeSlide + 1} of {slides.length}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={activeSlide === slides.length - 1}
+                  onClick={() => setActiveSlide(Math.min(slides.length - 1, activeSlide + 1))}
+                  className="rounded-full h-8 w-8 p-0"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
               </div>
 
-              <div className="flex items-center gap-2 p-3 bg-primary/5 rounded-lg border border-primary/20">
-                <Lock className="h-4 w-4 text-primary flex-shrink-0" />
+              {/* CTA */}
+              <motion.div
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="flex items-center gap-3 p-4 bg-gradient-to-r from-primary/10 via-accent/5 to-primary/10 rounded-xl border border-primary/20"
+              >
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center flex-shrink-0">
+                  <Lock className="h-4 w-4 text-primary-foreground" />
+                </div>
                 <p className="text-xs text-muted-foreground flex-1">
-                  <strong className="text-foreground">Want the full deck?</strong> Sign up to generate complete presentations with custom branding, animations, and PowerPoint export.
+                  <strong className="text-foreground">Unlock the full experience.</strong> Custom branding, animations, charts, PPTX/PDF export & 140+ languages.
                 </p>
-              </div>
+                <Button size="sm" variant="outline" className="border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground text-xs shrink-0">
+                  Sign Up
+                </Button>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
