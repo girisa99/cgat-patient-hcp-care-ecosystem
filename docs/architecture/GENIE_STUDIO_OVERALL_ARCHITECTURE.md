@@ -1,4 +1,4 @@
-# Genie Studio: Overall System Architecture
+# Genie Suite: Overall System Architecture
 
 > **Version:** 2.1  
 > **Last Updated:** 2026-01-15  
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-Genie Studio is a comprehensive AI-powered media production suite that transforms ideas into polished video content through an integrated pipeline of intelligent modules.
+Genie Suite is a comprehensive AI-powered media production suite that transforms ideas into polished video content through an integrated pipeline of intelligent modules.
 
 **P0-P2 CLOSEOUT STATUS: ✅ COMPLETE**
 
@@ -19,7 +19,7 @@ Genie Studio is a comprehensive AI-powered media production suite that transform
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────────────────┐
-│                              GENIE STUDIO - COMPLETE SYSTEM                                   │
+│                              GENIE SUITE - COMPLETE SYSTEM                                    │
 │                          "From Imagination to Publication"                                    │
 └─────────────────────────────────────────────────────────────────────────────────────────────┘
 
@@ -44,8 +44,8 @@ Genie Studio is a comprehensive AI-powered media production suite that transform
                    │              ┌──────────┴──────────┐              │
                    │              ▼                     ▼              │
                    │    ┌─────────────────┐   ┌─────────────────┐      │
-                   │    │   GENIE ARC     │   │ PRODUCTION HUB  │      │
-                   │    │  "Build Agents" │   │ "Orchestrate"   │      │
+                   │    │   GENIE HUB     │   │ PRODUCTION HUB  │      │
+                   │    │  "Command Ctr"  │   │ "Orchestrate"   │      │
                    │    │                 │   │                 │      │
                    │    │ • Agent Builder │   │ • Team Collab   │      │
                    │    │ • Workflows     │   │ • Approvals     │      │

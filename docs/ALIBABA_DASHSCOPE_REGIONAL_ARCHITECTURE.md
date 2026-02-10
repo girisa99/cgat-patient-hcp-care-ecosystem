@@ -2,14 +2,14 @@
 
 ## Overview
 
-This document covers **ALL Alibaba DashScope AI models** available for the Genie Studio, with complete regional routing, API configurations, and implementation details.
+This document covers **ALL Alibaba DashScope AI models** available for the Genie Suite, with complete regional routing, API configurations, and implementation details.
 
 ## API Keys Configuration
 
 | Key Name | Region | Endpoint | Required For |
 |----------|--------|----------|--------------|
 | `ALIBABA_API_KEY` | International (Singapore/Virginia) | `dashscope-intl.aliyuncs.com` | Wan 2.6, Qwen LLM |
-| `ALIBABA_CHINA_API_KEY` | China (Beijing) | `dashscope.aliyuncs.com` | CosyVoice, Paraformer, Fun Audio, Wan 2.1, Avatar, 3D |
+| `ALIBABA_CHINA_API_KEY` | China (Beijing) | `dashscope.aliyuncs.com` | Qwen3-TTS, Paraformer, Fun Audio, Wan 2.1, Avatar, 3D |
 
 > **Note**: Both keys are optional but recommended for full model coverage. The edge functions auto-fallback between keys when one is not configured.
 
@@ -21,10 +21,10 @@ This document covers **ALL Alibaba DashScope AI models** available for the Genie
 
 | Model ID | Type | Description | Languages | Region |
 |----------|------|-------------|-----------|--------|
-| `cosyvoice-v2` | TTS | Latest CosyVoice with enhanced quality | ZH, EN, JA, KO | China |
-| `cosyvoice-v1` | TTS | Standard CosyVoice | ZH, EN | China |
-| `cosyvoice-multilingual` | TTS | Multilingual (15+ languages) | Multi | China |
-| `cosyvoice-clone` | TTS | Voice cloning from audio sample | ZH, EN | China |
+| `qwen3-tts-flash` | TTS | Latest Qwen3-TTS with enhanced quality | ZH, EN, JA, KO | China |
+| `qwen3-tts-v1` | TTS | Standard Qwen3-TTS | ZH, EN | China |
+| `qwen3-tts-multilingual` | TTS | Multilingual (15+ languages) | Multi | China |
+| `qwen3-tts-clone` | TTS | Voice cloning from audio sample | ZH, EN | China |
 | `sambert-zhichu` | TTS | Chinese female voice | ZH | China |
 | `sambert-zhide` | TTS | Chinese male voice | ZH | China |
 | `sambert-zhimiao` | TTS | Chinese sweet female | ZH | China |
@@ -101,7 +101,7 @@ This document covers **ALL Alibaba DashScope AI models** available for the Genie
 │  ┌─────────────────┐   ┌─────────────────┐   ┌─────────────────┐       │
 │  │  alibaba-tts    │   │  alibaba-stt    │   │ alibaba-video-  │       │
 │  │                 │   │                 │   │ generator       │       │
-│  │ • CosyVoice     │   │ • Paraformer    │   │                 │       │
+│  │ • Qwen3-TTS    │   │ • Paraformer    │   │                 │       │
 │  │ • Fun Audio     │   │ • SenseVoice    │   │ • Wan 2.6 (Intl)│       │
 │  │ • Sambert       │   │ • Multilingual  │   │ • Wan 2.1 (CN)  │       │
 │  └────────┬────────┘   └────────┬────────┘   └────────┬────────┘       │
@@ -128,7 +128,7 @@ This document covers **ALL Alibaba DashScope AI models** available for the Genie
 │  │                             │    │                             │    │
 │  │  ALIBABA_CHINA_API_KEY      │    │  ALIBABA_API_KEY            │    │
 │  │                             │    │                             │    │
-│  │  • CosyVoice (TTS)          │    │  • Wan 2.6 T2V/I2V/FLF2V    │    │
+│  │  • Qwen3-TTS (TTS)           │    │  • Wan 2.6 T2V/I2V/FLF2V    │    │
 │  │  • Paraformer (STT)         │    │  • Qwen LLM (Max/Plus/Turbo)│    │
 │  │  • Fun Audio (Music/SFX)    │    │  • Qwen-VL (Vision)         │    │
 │  │  • Wan 2.1 Video            │    │  • Qwen-MT (Translation)    │    │
@@ -143,13 +143,13 @@ This document covers **ALL Alibaba DashScope AI models** available for the Genie
 
 ## API Usage Examples
 
-### TTS - CosyVoice
+### TTS - Qwen3-TTS
 
 ```bash
 curl -X POST https://YOUR_PROJECT.supabase.co/functions/v1/alibaba-tts \
   -H "Content-Type: application/json" \
   -d '{
-    "text": "Hello, welcome to Genie Studio!",
+    "text": "Hello, welcome to Genie Suite!",
     "language": "en-US-female",
     "format": "mp3",
     "speed": 1.0
@@ -242,7 +242,7 @@ curl -X POST https://YOUR_PROJECT.supabase.co/functions/v1/alibaba-3d-generator 
 
 | Service | Model | Pricing |
 |---------|-------|---------|
-| TTS | CosyVoice | ~$0.002/1K characters |
+| TTS | Qwen3-TTS | ~$0.002/1K characters |
 | TTS | Fun Audio | ~$0.01/second of audio |
 | STT | Paraformer | ~$0.001/minute |
 | STT | SenseVoice | ~$0.002/minute |
@@ -277,7 +277,7 @@ curl -X POST https://YOUR_PROJECT.supabase.co/functions/v1/alibaba-3d-generator 
 |-------|------|----------|----------|
 | Sambert TTS (Female) | TTS | `sambert-zhichu-v1` | HIGH |
 | Sambert TTS (Male) | TTS | `sambert-zhide-v1` | HIGH |
-| CosyVoice | TTS | `cosyvoice-v1` | MEDIUM (WebSocket limitation) |
+| Qwen3-TTS | TTS | `qwen3-tts-flash` | MEDIUM (WebSocket limitation) |
 | Wan 2.2 S2V | Avatar | `wan2.2-s2v` | HIGH |
 | OmniAvatar | Avatar | `omninavatar` | MEDIUM |
 | TaoAvatar | AR Avatar | `taoavatar` | MEDIUM |
@@ -294,16 +294,16 @@ curl -X POST https://YOUR_PROJECT.supabase.co/functions/v1/alibaba-3d-generator 
 | Paraformer STT | Both | Either |
 | Wanx Image Gen | Both | Either |
 
-### CosyVoice WebSocket Constraint (Permanent)
+### Qwen3-TTS WebSocket Constraint (Permanent)
 
-CosyVoice only supports WebSocket (`wss://`) connections requiring custom `Authorization` headers. Deno's `WebSocket` constructor does **not** support custom headers, making CosyVoice incompatible with Supabase Edge Functions.
+Qwen3-TTS (formerly CosyVoice) only supports WebSocket (`wss://`) connections requiring custom `Authorization` headers. Deno's `WebSocket` constructor does **not** support custom headers natively, but `npm:ws@8.18.0` has been confirmed working from Supabase Edge Functions.
 
-**Permanent solution:** Sambert REST API (once activated) + Azure Neural as interim CJK primary.
+**Current solution:** Using `npm:ws` for WebSocket connections + Sambert REST API (once activated) + Azure Neural as interim CJK primary.
 
 **Future options:**
 1. Cloud Run container with Python SDK (WebSocket support)
-2. Deno adds custom header support for WebSocket
-3. Alibaba adds REST endpoint for CosyVoice
+2. Alibaba activating Qwen3-TTS on all 3 regional portals
+3. Alibaba adding REST endpoint for Qwen3-TTS
 
 ---
 
@@ -332,7 +332,7 @@ CosyVoice only supports WebSocket (`wss://`) connections requiring custom `Autho
 
 - [DashScope Official Docs](https://help.aliyun.com/zh/dashscope/)
 - [Wan Video Models](https://help.aliyun.com/zh/dashscope/developer-reference/wan)
-- [CosyVoice TTS](https://help.aliyun.com/zh/dashscope/developer-reference/cosyvoice)
+- [Qwen3-TTS](https://help.aliyun.com/zh/dashscope/developer-reference/cosyvoice)
 - [Paraformer STT](https://help.aliyun.com/zh/dashscope/developer-reference/paraformer)
 
 ---

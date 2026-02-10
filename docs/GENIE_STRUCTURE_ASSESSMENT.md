@@ -151,7 +151,7 @@ All 181 pipelines are integrated across:
 - ✅ **Genie Spark** (Ideation/Scripts)
 - ✅ **Genie Mind** (Enhancement)
 - ✅ **Genie Vibe** (Video/Dubbing)
-- ✅ **Genie Arc** (Production Hub)
+- ✅ **Genie Hub** (Creative Command Center)
 - ✅ **Genie Hub** (Dashboard)
 - ✅ **Genie Cast** (Distribution)
 - ✅ **Ask Genie** (Support/Troubleshooting)
