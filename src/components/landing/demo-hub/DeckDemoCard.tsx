@@ -25,69 +25,99 @@ interface DeckDemoCardProps {
   region?: string;
 }
 
-// ── 5-Zone Regional Routing ──
+// ── 4-Zone Regional Routing (from master-provider-routing-registry.ts) ──
+// Source of truth: src/config/master-provider-routing-registry.ts
+// Claude Zone (Western/EU): Claude 3.5 + Azure Neural + DeepL
+// Alibaba Zone (CJK): Qwen Max + CosyVoice + Qwen-MT
+// Alibaba Zone (MENA/RTL): Qwen Max + Azure Neural + Azure Translator
+// Gemini Zone (India/SEA/Africa): Gemini Pro + Azure Neural + Google Translate
+
 interface RegionalProviderConfig {
   llmProvider: string;
   llmModel: string;
   ttsProvider: string;
   imageProvider: string;
+  videoProvider: string;
+  avatarProvider: string;
+  translationProvider: string;
   displayProviders: string[];
   displayColors: string[];
 }
 
 const REGIONAL_PROVIDER_MAP: Record<string, RegionalProviderConfig> = {
-  // CJK Zone — Alibaba primary
+  // Claude Zone (Western/EU/LATAM) — Claude 3.5 PRIMARY, Azure Neural TTS, DeepL Translation
+  western: {
+    llmProvider: 'claude', llmModel: 'claude-3.5-sonnet',
+    ttsProvider: 'azure', imageProvider: 'gemini_3_pro',
+    videoProvider: 'vertex_veo3', avatarProvider: 'alibaba_wan22',
+    translationProvider: 'deepl',
+    displayProviders: ['Claude 3.5', 'Azure Neural', 'Vertex Veo 3', 'DeepL'],
+    displayColors: ['from-amber-500/80 to-amber-600/80', 'from-sky-500/80 to-sky-600/80', 'from-blue-500/80 to-blue-600/80', 'from-cyan-500/80 to-cyan-600/80'],
+  },
+  // Alibaba Zone — CJK: Qwen Max PRIMARY, CosyVoice TTS, Qwen-MT Translation
   cjk: {
     llmProvider: 'alibaba', llmModel: 'qwen-max',
-    ttsProvider: 'alibaba', imageProvider: 'alibaba',
-    displayProviders: ['Alibaba Qwen', 'Wan 2.6', 'Qwen3 TTS', 'DeepL'],
-    displayColors: ['from-orange-500/80 to-orange-600/80', 'from-amber-500/80 to-amber-600/80', 'from-red-500/80 to-red-600/80', 'from-cyan-500/80 to-cyan-600/80'],
+    ttsProvider: 'alibaba_cosyvoice', imageProvider: 'gemini_3_pro',
+    videoProvider: 'vertex_veo3', avatarProvider: 'alibaba_wan22',
+    translationProvider: 'qwen_mt',
+    displayProviders: ['Qwen Max', 'CosyVoice', 'Vertex Veo 3', 'Qwen-MT'],
+    displayColors: ['from-orange-500/80 to-orange-600/80', 'from-amber-500/80 to-amber-600/80', 'from-blue-500/80 to-blue-600/80', 'from-red-500/80 to-red-600/80'],
   },
-  // MENA Zone — GPT-4o + Azure
+  // Alibaba Zone — MENA/RTL: Qwen Max PRIMARY, Azure Neural TTS (7 Arabic dialects + Viseme), Azure Translator
   mena: {
-    llmProvider: 'openai', llmModel: 'gpt-4o',
-    ttsProvider: 'azure', imageProvider: 'gemini',
-    displayProviders: ['GPT-4o', 'Azure Neural', 'Gemini Imagen', 'DeepL'],
-    displayColors: ['from-emerald-500/80 to-emerald-600/80', 'from-sky-500/80 to-sky-600/80', 'from-blue-500/80 to-blue-600/80', 'from-cyan-500/80 to-cyan-600/80'],
+    llmProvider: 'alibaba', llmModel: 'qwen-max',
+    ttsProvider: 'azure', imageProvider: 'gemini_3_pro',
+    videoProvider: 'vertex_veo3', avatarProvider: 'alibaba_wan22',
+    translationProvider: 'azure_translator',
+    displayProviders: ['Qwen Max', 'Azure Neural (7 Arabic)', 'Vertex Veo 3', 'Azure Translator'],
+    displayColors: ['from-orange-500/80 to-orange-600/80', 'from-sky-500/80 to-sky-600/80', 'from-blue-500/80 to-blue-600/80', 'from-emerald-500/80 to-emerald-600/80'],
   },
-  // India/SEA Zone — Gemini primary
+  // Gemini Zone — India/SEA: Gemini Pro PRIMARY, Azure Neural TTS, Google Translate
   india: {
-    llmProvider: 'gemini', llmModel: 'gemini-2.5-flash',
-    ttsProvider: 'azure', imageProvider: 'gemini',
-    displayProviders: ['Gemini 3 Pro', 'Azure Neural', 'Meshy AI', 'DeepL'],
-    displayColors: ['from-blue-500/80 to-blue-600/80', 'from-sky-500/80 to-sky-600/80', 'from-purple-500/80 to-purple-600/80', 'from-cyan-500/80 to-cyan-600/80'],
+    llmProvider: 'gemini', llmModel: 'gemini-pro',
+    ttsProvider: 'azure', imageProvider: 'gemini_3_pro',
+    videoProvider: 'vertex_veo3', avatarProvider: 'alibaba_wan22',
+    translationProvider: 'google_translate',
+    displayProviders: ['Gemini Pro', 'Azure Neural', 'Vertex Veo 3', 'Google Translate'],
+    displayColors: ['from-blue-500/80 to-blue-600/80', 'from-sky-500/80 to-sky-600/80', 'from-blue-500/80 to-blue-600/80', 'from-green-500/80 to-green-600/80'],
   },
-  // Western/EU/LATAM — Claude + Gemini
-  western: {
-    llmProvider: 'gemini', llmModel: 'gemini-2.5-flash',
-    ttsProvider: 'elevenlabs', imageProvider: 'gemini',
-    displayProviders: ['Gemini 3 Pro', 'ElevenLabs', 'Meshy AI', 'DeepL'],
-    displayColors: ['from-blue-500/80 to-blue-600/80', 'from-violet-500/80 to-violet-600/80', 'from-purple-500/80 to-purple-600/80', 'from-cyan-500/80 to-cyan-600/80'],
-  },
-  // Africa Zone
+  // Gemini Zone — Africa: Gemini Pro PRIMARY, Azure Neural TTS, Google Translate
   africa: {
-    llmProvider: 'gemini', llmModel: 'gemini-2.5-flash',
-    ttsProvider: 'azure', imageProvider: 'gemini',
-    displayProviders: ['Gemini 3 Pro', 'Azure Neural', 'ModelsLab', 'DeepL'],
-    displayColors: ['from-blue-500/80 to-blue-600/80', 'from-sky-500/80 to-sky-600/80', 'from-pink-500/80 to-pink-600/80', 'from-cyan-500/80 to-cyan-600/80'],
+    llmProvider: 'gemini', llmModel: 'gemini-pro',
+    ttsProvider: 'azure', imageProvider: 'gemini_3_pro',
+    videoProvider: 'vertex_veo3', avatarProvider: 'alibaba_wan22',
+    translationProvider: 'google_translate',
+    displayProviders: ['Gemini Pro', 'Azure Neural', 'Vertex Veo 3', 'Google Translate'],
+    displayColors: ['from-blue-500/80 to-blue-600/80', 'from-sky-500/80 to-sky-600/80', 'from-blue-500/80 to-blue-600/80', 'from-green-500/80 to-green-600/80'],
+  },
+  // GPT-4o Fallback Zone — when primary fails
+  fallback: {
+    llmProvider: 'openai', llmModel: 'gpt-4o',
+    ttsProvider: 'azure', imageProvider: 'gemini_3_pro',
+    videoProvider: 'vertex_veo3', avatarProvider: 'alibaba_wan22',
+    translationProvider: 'google_translate',
+    displayProviders: ['GPT-4o (Fallback)', 'Azure Neural', 'Vertex Veo 3', 'Google Translate'],
+    displayColors: ['from-emerald-500/80 to-emerald-600/80', 'from-sky-500/80 to-sky-600/80', 'from-blue-500/80 to-blue-600/80', 'from-green-500/80 to-green-600/80'],
   },
 };
 
-// Map region prop to zone
+// Map region prop to zone — aligned with master-provider-routing-registry.ts 4-zone architecture
 function getRegionalConfig(region?: string, lang?: string): RegionalProviderConfig {
-  // Language-based detection
+  // Language-based detection (matches LANGUAGE_TO_ZONE in registry)
   if (lang && ['zh', 'ja', 'ko'].includes(lang)) return REGIONAL_PROVIDER_MAP.cjk;
-  if (lang === 'ar') return REGIONAL_PROVIDER_MAP.mena;
-  if (lang && ['hi', 'ta', 'te', 'bn', 'mr', 'gu', 'kn', 'ml', 'pa', 'id', 'vi', 'th'].includes(lang)) return REGIONAL_PROVIDER_MAP.india;
+  if (lang && ['ar', 'he', 'fa'].includes(lang)) return REGIONAL_PROVIDER_MAP.mena;
+  if (lang && ['hi', 'ta', 'te', 'bn', 'mr', 'gu', 'kn', 'ml', 'pa', 'ur', 'id', 'vi', 'th', 'ms', 'sw', 'yo', 'am'].includes(lang)) return REGIONAL_PROVIDER_MAP.india;
+  if (lang && ['en', 'es', 'fr', 'de', 'it', 'pt', 'nl', 'pl', 'ru'].includes(lang)) return REGIONAL_PROVIDER_MAP.western;
 
-  // Region-based detection
-  if (!region) return REGIONAL_PROVIDER_MAP.western;
+  // Region-based detection (matches ZONE_COUNTRIES in registry)
+  if (!region) return REGIONAL_PROVIDER_MAP.western; // Claude Zone default
   const r = region.toLowerCase();
   if (['apac', 'cjk', 'china', 'japan', 'korea'].some(z => r.includes(z))) return REGIONAL_PROVIDER_MAP.cjk;
   if (['mena', 'arab', 'middle-east'].some(z => r.includes(z))) return REGIONAL_PROVIDER_MAP.mena;
   if (['india', 'south-asia', 'sea', 'southeast'].some(z => r.includes(z))) return REGIONAL_PROVIDER_MAP.india;
   if (['africa'].some(z => r.includes(z))) return REGIONAL_PROVIDER_MAP.africa;
-  return REGIONAL_PROVIDER_MAP.western;
+  if (['nam', 'europe', 'latam', 'caribbean'].some(z => r.includes(z))) return REGIONAL_PROVIDER_MAP.western;
+  return REGIONAL_PROVIDER_MAP.western; // Claude Zone fallback
 }
 
 const LANGUAGE_OPTIONS = [
