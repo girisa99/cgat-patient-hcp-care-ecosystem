@@ -143,7 +143,7 @@ export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
     ],
     seo: {
       title: 'Genie Suite — AI Video Production Platform | Mind to Media',
-      description: 'Transform ideas into professional videos with 206 AI pipelines, 12 providers, and 70+ languages. Start free with 50 credits.',
+      description: 'Transform ideas into professional videos with 206 AI pipelines, 19 providers, and 140+ languages. Start free with 50 credits.',
       keywords: ['AI video production', 'content creation platform', 'video marketing', 'AI-powered videos', 'enterprise video'],
       hreflang: 'en-US',
       ogLocale: 'en_US',

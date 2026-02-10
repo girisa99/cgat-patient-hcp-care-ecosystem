@@ -300,11 +300,11 @@ Keine langweiligen flachen Folien – LEBENDIGE Folien! 3D-Diagramme, die sich d
 
   closing: `*Geist schwebt zurück zur Lampe*
 
-"Das also ist Genie Studio. Sieben Produkte. 206 Pipelines. Unbegrenzte Möglichkeiten.
+"Das also ist Genie Suite. Sieben Produkte. 206 Pipelines. Unbegrenzte Möglichkeiten.
 
 *Produkt-Logos kreisen*
 
-Spark entzündet Ideen. Mind versteht sie. Vibe bringt sie auf den Bildschirm. Deck gibt ihnen Wirkung. Arc perfektioniert sie. Ask Genie orchestriert alles. Cast zeigt sie der Welt.
+Spark entzündet Ideen. Mind versteht sie. Vibe bringt sie auf den Bildschirm. Deck gibt ihnen Wirkung. Hub perfektioniert sie. Ask Genie orchestriert alles. Cast zeigt sie der Welt.
 
 *Lampe leuchtet*
 
@@ -329,7 +329,7 @@ export const SPANISH_SCRIPTS: Record<string, string> = {
 
 *gesticula grandiosamente mientras aparecen los logos*
 
-¡Contemplen! Siete productos mágicos. 206 pipelines de transformación. 12 proveedores de IA de clase mundial. Soporte para más de 70 idiomas en sus dialectos VERDADEROS – no esa traducción robótica.
+¡Contemplen! Siete productos mágicos. 206 pipelines de transformación. 19 proveedores de IA de clase mundial. Soporte para más de 70 idiomas en sus dialectos VERDADEROS – no esa traducción robótica.
 
 Ya sea que estés en Tokio, Dubai, São Paulo o en cualquier lugar... tu deseo es LITERALMENTE mi comando.
 
@@ -375,11 +375,11 @@ No traducimos. TRANSCREAMOS. El español suena como español."`,
 
   closing: `*el Genio flota de vuelta a la lámpara*
 
-"Así que eso es Genie Studio. Siete productos. 206 pipelines. Posibilidades ilimitadas.
+"Así que eso es Genie Suite. Siete productos. 206 pipelines. Posibilidades ilimitadas.
 
 *los logos de productos orbitan*
 
-Spark enciende ideas. Mind las entiende. Vibe las lleva a la pantalla. Deck les da impacto. Arc las perfecciona. Ask Genie orquesta todo. Cast las muestra al mundo.
+Spark enciende ideas. Mind las entiende. Vibe las lleva a la pantalla. Deck les da impacto. Hub las perfecciona. Ask Genie orquesta todo. Cast las muestra al mundo.
 
 *la lámpara brilla*
 
@@ -404,7 +404,7 @@ Je suis le Génie de Genie Studio, et contrairement à mon cousin qui n'accorde 
 
 *fait un geste grandiloquent alors que les logos apparaissent*
 
-Contemplez! Sept produits magiques. 206 pipelines de transformation. 12 fournisseurs d'IA de classe mondiale. Prise en charge de plus de 70 langues dans leurs VRAIS dialectes – pas cette traduction robotique.
+Contemplez! Sept produits magiques. 206 pipelines de transformation. 19 fournisseurs d'IA de classe mondiale. Prise en charge de plus de 70 langues dans leurs VRAIS dialectes – pas cette traduction robotique.
 
 Que vous soyez à Tokyo, Dubaï, São Paulo ou ailleurs... votre souhait est LITTÉRALEMENT mon ordre.
 
@@ -450,11 +450,11 @@ Nous ne traduisons pas. Nous TRANSCRÉONS. Le français sonne comme du français
 
   closing: `*le Génie flotte vers la lampe*
 
-"Voilà donc Genie Studio. Sept produits. 206 pipelines. Des possibilités illimitées.
+"Voilà donc Genie Suite. Sept produits. 206 pipelines. Des possibilités illimitées.
 
 *les logos des produits orbitent*
 
-Spark allume les idées. Mind les comprend. Vibe les porte à l'écran. Deck leur donne de l'impact. Arc les perfectionne. Ask Genie orchestre tout. Cast les montre au monde.
+Spark allume les idées. Mind les comprend. Vibe les porte à l'écran. Deck leur donne de l'impact. Hub les perfectionne. Ask Genie orchestre tout. Cast les montre au monde.
 
 *la lampe brille*
 
@@ -479,7 +479,7 @@ Eu sou o Gênio do Genie Studio, e diferente do meu primo que concede apenas TR�
 
 *gesticula grandiosamente enquanto os logos aparecem*
 
-Contemplem! Sete produtos mágicos. 206 pipelines de transformação. 12 provedores de IA de classe mundial. Suporte para mais de 70 idiomas nos seus dialectos VERDADEIROS – nada daquela tradução robótica.
+Contemplem! Sete produtos mágicos. 206 pipelines de transformação. 19 provedores de IA de classe mundial. Suporte para mais de 70 idiomas nos seus dialectos VERDADEIROS – nada daquela tradução robótica.
 
 Seja em Tóquio, Dubai, São Paulo ou qualquer lugar... seu desejo é LITERALMENTE minha ordem.
 
@@ -503,11 +503,11 @@ Do caos à clareza... essa é a mágica do Spark!"`,
 
   closing: `*o Gênio flutua de volta para a lâmpada*
 
-"Então é isso o Genie Studio. Sete produtos. 206 pipelines. Possibilidades ilimitadas.
+"Então é isso o Genie Suite. Sete produtos. 206 pipelines. Possibilidades ilimitadas.
 
 *logos dos produtos orbitam*
 
-Spark acende ideias. Mind as entende. Vibe as leva para a tela. Deck dá impacto. Arc as aperfeiçoa. Ask Genie orquestra tudo. Cast mostra ao mundo.
+Spark acende ideias. Mind as entende. Vibe as leva para a tela. Deck dá impacto. Hub as aperfeiçoa. Ask Genie orquestra tudo. Cast mostra ao mundo.
 
 *a lâmpada brilha*
 

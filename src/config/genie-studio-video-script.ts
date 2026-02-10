@@ -80,7 +80,7 @@ I am the Genie of Genie Studio, and unlike my cousin who grants only THREE wishe
 
 *gestures grandly as logos appear*
 
-Behold! Seven magical products. 206 transformation pipelines. 12 world-class AI providers. Support for 70+ languages in their TRUE dialects – not that robotic translation nonsense.
+Behold! Seven magical products. 206 transformation pipelines. 19 world-class AI providers. Support for 140+ languages in their TRUE dialects – not that robotic translation nonsense.
 
 Whether you're in Tokyo, Dubai, São Paulo, or anywhere in between... your wish is LITERALLY my command.
 
@@ -485,18 +485,18 @@ Your ideas. Maximum impact. Zero PowerPoint pain."`,
 };
 
 // ============================================================================
-// CHAPTER 5: GENIE ARC - "Your Production Journey"
+// CHAPTER 5: GENIE HUB - "Your Creative Command Center"
 // ============================================================================
 
 export const ARC_CHAPTER: ChapterScript = {
   id: 'arc',
-  title: 'Genie Arc - Your Production Journey',
+  title: 'Genie Hub - Your Creative Command Center',
   duration: '50 seconds',
   visual: {
     type: 'full_body_avatar',
     background: 'Production studio with multiple screens and calendar views',
     elements: [
-      'Genie Arc logo (orbital rings)',
+      'Genie Hub logo (orbital rings)',
       'Full-body AI avatar (project manager style)',
       'Floating Kanban board',
       'Calendar with scheduled content',
