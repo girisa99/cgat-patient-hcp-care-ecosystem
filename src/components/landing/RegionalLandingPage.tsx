@@ -390,7 +390,7 @@ const useHeroVoiceover = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
 
-  const speak = useCallback(async (text: string, langCode?: string) => {
+  const speak = useCallback(async (text: string, langCode?: string, regionSlug?: string, slideId?: string) => {
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
@@ -401,33 +401,77 @@ const useHeroVoiceover = () => {
     audioRef.current = audio;
     setIsSpeaking(true);
 
-    try {
-      // Use dialect-tts-demo which handles translation + Azure Neural TTS
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL || (supabase as any).supabaseUrl}/functions/v1/dialect-tts-demo`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || (supabase as any).supabaseKey,
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || (supabase as any).supabaseKey}`,
-          },
-          body: JSON.stringify({
-            action: 'custom_tts',
-            text,
-            language: langCode || 'en-US',
-          }),
-        }
-      );
+    const effectiveLang = langCode || 'en-US';
+    const cacheKey = `${regionSlug || 'unknown'}_${slideId || 'slide'}_${effectiveLang}`;
 
-      if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(`TTS failed: ${response.status} ${errText}`);
+    try {
+      // Step 1: Check DB cache first
+      let audioBase64: string | null = null;
+
+      try {
+        const { data: cached } = await supabase
+          .from('tts_audio_cache')
+          .select('audio_base64')
+          .eq('cache_key', cacheKey)
+          .maybeSingle();
+
+        if (cached?.audio_base64) {
+          console.log(`[Hero TTS] Cache HIT: ${cacheKey}`);
+          audioBase64 = cached.audio_base64;
+        }
+      } catch {
+        // Cache miss or error — proceed to live API
       }
 
-      const data = await response.json();
-      const audioBase64 = data?.audio_base64 || data?.audioBase64;
-      if (!audioBase64) throw new Error('No audio returned');
+      // Step 2: If no cache, call live API
+      if (!audioBase64) {
+        console.log(`[Hero TTS] Cache MISS: ${cacheKey}, calling API...`);
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL || (supabase as any).supabaseUrl}/functions/v1/dialect-tts-demo`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || (supabase as any).supabaseKey,
+              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || (supabase as any).supabaseKey}`,
+            },
+            body: JSON.stringify({
+              action: 'custom_tts',
+              text,
+              language: effectiveLang,
+            }),
+          }
+        );
+
+        if (!response.ok) {
+          const errText = await response.text();
+          throw new Error(`TTS failed: ${response.status} ${errText}`);
+        }
+
+        const data = await response.json();
+        audioBase64 = data?.audio_base64 || data?.audioBase64;
+        if (!audioBase64) throw new Error('No audio returned');
+
+        // Step 3: Save to cache (fire & forget — don't block playback)
+        if (regionSlug && slideId) {
+          // Fire & forget cache write — don't block playback
+          (async () => {
+            try {
+              await supabase
+                .from('tts_audio_cache')
+                .upsert({
+                  cache_key: cacheKey,
+                  region_slug: regionSlug,
+                  slide_id: slideId,
+                  lang_code: effectiveLang,
+                  audio_base64: audioBase64!,
+                  text_hash: btoa(text.slice(0, 100)),
+                }, { onConflict: 'cache_key' });
+              console.log(`[Hero TTS] Cached: ${cacheKey}`);
+            } catch { /* cache write failed — non-critical */ }
+          })();
+        }
+      }
 
       const audioUrl = `data:audio/mp3;base64,${audioBase64}`;
       audio.src = audioUrl;
@@ -826,7 +870,7 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
               if (isSpeaking) {
                 stop();
               } else {
-                speak(`${slide.headline.join('')}. ${slide.subtitle}. ${slide.description}`, selectedVoice.code);
+                speak(`${slide.headline.join('')}. ${slide.subtitle}. ${slide.description}`, selectedVoice.code, regionSlug, slide.id);
               }
             }}
             title={isSpeaking ? 'Stop voiceover' : `Listen in ${selectedVoice.label}`}

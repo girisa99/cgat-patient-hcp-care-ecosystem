@@ -22298,6 +22298,42 @@ export type Database = {
           },
         ]
       }
+      tts_audio_cache: {
+        Row: {
+          audio_base64: string
+          cache_key: string
+          created_at: string
+          expires_at: string
+          id: string
+          lang_code: string
+          region_slug: string
+          slide_id: string
+          text_hash: string
+        }
+        Insert: {
+          audio_base64: string
+          cache_key: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          lang_code: string
+          region_slug: string
+          slide_id: string
+          text_hash: string
+        }
+        Update: {
+          audio_base64?: string
+          cache_key?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          lang_code?: string
+          region_slug?: string
+          slide_id?: string
+          text_hash?: string
+        }
+        Relationships: []
+      }
       tts_jobs: {
         Row: {
           audio_content: string | null
