@@ -422,13 +422,21 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
     },
   ];
 
+  // Pause auto-advance while voiceover is playing
   React.useEffect(() => {
+    if (isSpeaking) return; // Don't auto-advance during voiceover
     const timer = setInterval(() => {
       setDirection(1);
       setCurrent((prev) => (prev + 1) % slides.length);
-    }, 7000);
+    }, 10000); // 10s per slide for comfortable reading
     return () => clearInterval(timer);
-  }, [slides.length]);
+  }, [slides.length, isSpeaking]);
+
+  // Stop voiceover when slide changes
+  React.useEffect(() => {
+    stop();
+  }, [current, stop]);
+  
 
   const goTo = (index: number) => {
     setDirection(index > current ? 1 : -1);
