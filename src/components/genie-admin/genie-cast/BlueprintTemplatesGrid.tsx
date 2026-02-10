@@ -67,6 +67,7 @@ import {
   type FilterState,
   matchesCombinationFilter,
   matchesDeviceFilter,
+  matchesProviderFilter,
   REGION_FILTERS as NEW_REGION_FILTERS,
   CAPABILITY_FILTERS as NEW_CAPABILITY_FILTERS,
 } from './TemplateFilterBar';
@@ -337,6 +338,7 @@ export function BlueprintTemplatesGrid({
   const [deviceFilter, setDeviceFilter] = useState<string>('all');
   const [previewBlueprintId, setPreviewBlueprintId] = useState<string | null>(null);
   const [industryFilter, setIndustryFilter] = useState<string>('all');
+  const [aiProviderFilter, setAiProviderFilter] = useState<string>('all');
   const [isGeneratingThumbnails, setIsGeneratingThumbnails] = useState(false);
   const [generatingId, setGeneratingId] = useState<string | null>(null);
   const [isQueueing, setIsQueueing] = useState(false);
@@ -391,7 +393,8 @@ export function BlueprintTemplatesGrid({
     region: regionFilter,
     capability: capabilityFilter,
     industry: industryFilter,
-  }), [searchQuery, activeCategory, combinationFilter, deviceFilter, regionFilter, capabilityFilter, industryFilter]);
+    aiProvider: aiProviderFilter,
+  }), [searchQuery, activeCategory, combinationFilter, deviceFilter, regionFilter, capabilityFilter, industryFilter, aiProviderFilter]);
 
   const handleFiltersChange = (newFilters: FilterState) => {
     setSearchQuery(newFilters.search);
@@ -401,6 +404,7 @@ export function BlueprintTemplatesGrid({
     setRegionFilter(newFilters.region);
     setCapabilityFilter(newFilters.capability);
     setIndustryFilter(newFilters.industry);
+    setAiProviderFilter(newFilters.aiProvider);
   };
 
   const handleResetFilters = () => {
@@ -411,6 +415,7 @@ export function BlueprintTemplatesGrid({
     setRegionFilter('all');
     setCapabilityFilter('all');
     setIndustryFilter('all');
+    setAiProviderFilter('all');
   };
 
   // Fetch blueprint with scenes for preview
@@ -660,8 +665,13 @@ export function BlueprintTemplatesGrid({
       );
     }
 
+    // AI Provider filter - match against ai_capabilities provider names and primary_model
+    if (aiProviderFilter !== 'all') {
+      filtered = filtered.filter(bp => matchesProviderFilter(bp, aiProviderFilter));
+    }
+
     return filtered;
-  }, [blueprints, activeCategory, searchQuery, capabilityFilter, regionFilter, industryFilter, combinationFilter, deviceFilter, simpleMode]);
+  }, [blueprints, activeCategory, searchQuery, capabilityFilter, regionFilter, industryFilter, combinationFilter, deviceFilter, aiProviderFilter, simpleMode]);
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);

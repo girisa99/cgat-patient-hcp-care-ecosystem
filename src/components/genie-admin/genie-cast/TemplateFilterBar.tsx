@@ -102,22 +102,41 @@
    { value: 'pakistan', label: 'Pakistan', icon: '🇵🇰', keywords: ['pakistan', 'urdu', 'pakistani'] },
  ];
  
- // Capability filters
- export const CAPABILITY_FILTERS = [
-   { value: 'all', label: 'All Capabilities', icon: '⚡' },
-   { value: 'text_to_video', label: 'Text-to-Video', icon: '📹', keywords: ['video', 'text-to-video'] },
-   { value: 'image_to_video', label: 'Image-to-Video', icon: '🎞️', keywords: ['image-to-video', 'i2v'] },
-   { value: '3d_generation', label: '3D Generation', icon: '🧊', keywords: ['3d', 'mesh', 'model'] },
-   { value: 'avatar', label: 'Avatar', icon: '👤', keywords: ['avatar', 'talking head'] },
-   { value: 'full_body_avatar', label: 'Full Body Avatar', icon: '🧍', keywords: ['full body', 'presenter'] },
-   { value: 'lipsync', label: 'Lipsync', icon: '👄', keywords: ['lipsync', 'lip sync'] },
-   { value: 'tts', label: 'TTS Voiceover', icon: '🎙️', keywords: ['tts', 'voiceover', 'speech'] },
-   { value: 'music_gen', label: 'Music Generation', icon: '🎵', keywords: ['music', 'audio'] },
-   { value: 'video_effects', label: 'Video Effects', icon: '✨', keywords: ['effects', 'transitions'] },
-   { value: 'pixar_style', label: 'Pixar Style', icon: '🎨', keywords: ['pixar', '3d animation'] },
-   { value: 'anime_style', label: 'Anime Style', icon: '🎌', keywords: ['anime', 'japanese'] },
-   { value: 'motion_control', label: 'Motion Control', icon: '🎯', keywords: ['motion', 'camera'] },
- ];
+// Capability filters
+export const CAPABILITY_FILTERS = [
+  { value: 'all', label: 'All Capabilities', icon: '⚡' },
+  { value: 'text_to_video', label: 'Text-to-Video', icon: '📹', keywords: ['video', 'text-to-video'] },
+  { value: 'image_to_video', label: 'Image-to-Video', icon: '🎞️', keywords: ['image-to-video', 'i2v'] },
+  { value: '3d_generation', label: '3D Generation', icon: '🧊', keywords: ['3d', 'mesh', 'model'] },
+  { value: 'avatar', label: 'Avatar', icon: '👤', keywords: ['avatar', 'talking head'] },
+  { value: 'full_body_avatar', label: 'Full Body Avatar', icon: '🧍', keywords: ['full body', 'presenter'] },
+  { value: 'lipsync', label: 'Lipsync', icon: '👄', keywords: ['lipsync', 'lip sync'] },
+  { value: 'tts', label: 'TTS Voiceover', icon: '🎙️', keywords: ['tts', 'voiceover', 'speech'] },
+  { value: 'music_gen', label: 'Music Generation', icon: '🎵', keywords: ['music', 'audio'] },
+  { value: 'video_effects', label: 'Video Effects', icon: '✨', keywords: ['effects', 'transitions'] },
+  { value: 'pixar_style', label: 'Pixar Style', icon: '🎨', keywords: ['pixar', '3d animation'] },
+  { value: 'anime_style', label: 'Anime Style', icon: '🎌', keywords: ['anime', 'japanese'] },
+  { value: 'motion_control', label: 'Motion Control', icon: '🎯', keywords: ['motion', 'camera'] },
+];
+
+// AI Provider filters - allows filtering templates by which AI provider powers them
+export const AI_PROVIDER_FILTERS = [
+  { value: 'all', label: 'All Providers', icon: '🤖' },
+  { value: 'vertex_veo', label: 'Vertex AI Veo', icon: '🎬', keywords: ['vertex', 'veo', 'google'] },
+  { value: 'sora2', label: 'Sora 2', icon: '🌟', keywords: ['sora', 'openai sora'] },
+  { value: 'alibaba_wan', label: 'Alibaba Wan 2.6', icon: '🌊', keywords: ['alibaba', 'wan', 'alibaba wan'] },
+  { value: 'meshy_3d', label: 'Meshy AI (3D)', icon: '🧊', keywords: ['meshy', '3d'] },
+  { value: 'modelslab', label: 'ModelsLab', icon: '⚡', keywords: ['modelslab', 'flux', 'animatediff'] },
+  { value: 'replicate', label: 'Replicate SVD', icon: '🔄', keywords: ['replicate', 'svd'] },
+  { value: 'deepseek', label: 'DeepSeek', icon: '🔍', keywords: ['deepseek'] },
+  { value: 'elevenlabs', label: 'ElevenLabs', icon: '🎙️', keywords: ['elevenlabs', 'eleven'] },
+  { value: 'azure_neural', label: 'Azure Neural TTS', icon: '🗣️', keywords: ['azure', 'neural'] },
+  { value: 'alibaba_avatar', label: 'Alibaba Avatar', icon: '👤', keywords: ['omnivatar', 'alibaba avatar', 'wan 2.2'] },
+  { value: 'alibaba_3d', label: 'Alibaba 3D Suite', icon: '🧱', keywords: ['alibaba 3d', 'alibaba 3d suite'] },
+  { value: 'cosyvoice', label: 'CosyVoice', icon: '🎤', keywords: ['cosyvoice', 'cosy'] },
+  { value: 'gemini_imagen', label: 'Gemini Imagen', icon: '💎', keywords: ['gemini', 'imagen'] },
+  { value: 'openai_dalle', label: 'DALL-E 3', icon: '🖼️', keywords: ['dall-e', 'dalle', 'openai'] },
+];
  
  // Industry filters
  export const INDUSTRY_FILTERS = [
@@ -140,15 +159,16 @@
  // TYPES
  // ============================================
  
- export interface FilterState {
-   search: string;
-   category: string;
-   combination: string;
-   device: string;
-   region: string;
-   capability: string;
-   industry: string;
- }
+export interface FilterState {
+  search: string;
+  category: string;
+  combination: string;
+  device: string;
+  region: string;
+  capability: string;
+  industry: string;
+  aiProvider: string;
+}
  
  interface FilterChipProps {
    label: string;
@@ -250,17 +270,18 @@
    onReset,
    blueprints = [],
  }) => {
-   const activeFilterCount = useMemo(() => {
-     let count = 0;
-     if (filters.category !== 'all') count++;
-     if (filters.combination !== 'all') count++;
-     if (filters.device !== 'all') count++;
-     if (filters.region !== 'all') count++;
-     if (filters.capability !== 'all') count++;
-     if (filters.industry !== 'all') count++;
-     if (filters.search.trim()) count++;
-     return count;
-   }, [filters]);
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (filters.category !== 'all') count++;
+    if (filters.combination !== 'all') count++;
+    if (filters.device !== 'all') count++;
+    if (filters.region !== 'all') count++;
+    if (filters.capability !== 'all') count++;
+    if (filters.industry !== 'all') count++;
+    if (filters.aiProvider !== 'all') count++;
+    if (filters.search.trim()) count++;
+    return count;
+  }, [filters]);
 
    // Capability breakdown stats
    const capabilityStats = useMemo(() => {
@@ -408,14 +429,25 @@
            onChange={(v) => updateFilter('capability', v)}
          />
  
-         {/* Industry */}
-         <FilterChip
-           label="Industry"
-           icon={<Building2 className="h-3.5 w-3.5" />}
-           options={INDUSTRY_FILTERS}
-           value={filters.industry}
-           onChange={(v) => updateFilter('industry', v)}
-         />
+        {/* Industry */}
+          <FilterChip
+            label="Industry"
+            icon={<Building2 className="h-3.5 w-3.5" />}
+            options={INDUSTRY_FILTERS}
+            value={filters.industry}
+            onChange={(v) => updateFilter('industry', v)}
+          />
+
+          <Separator orientation="vertical" className="h-5 hidden sm:block" />
+
+          {/* AI Provider - NEW */}
+          <FilterChip
+            label="AI Provider"
+            icon={<Cpu className="h-3.5 w-3.5" />}
+            options={AI_PROVIDER_FILTERS}
+            value={filters.aiProvider}
+            onChange={(v) => updateFilter('aiProvider', v)}
+          />
        </div>
  
        {/* Active Filters Display */}
@@ -479,6 +511,16 @@
                <X
                  className="h-3 w-3 cursor-pointer hover:text-destructive"
                  onClick={() => updateFilter('industry', 'all')}
+               />
+             </Badge>
+           )}
+           {filters.aiProvider !== 'all' && (
+             <Badge variant="outline" className="gap-1 text-xs">
+               {AI_PROVIDER_FILTERS.find(f => f.value === filters.aiProvider)?.icon}
+               {AI_PROVIDER_FILTERS.find(f => f.value === filters.aiProvider)?.label}
+               <X
+                 className="h-3 w-3 cursor-pointer hover:text-destructive"
+                 onClick={() => updateFilter('aiProvider', 'all')}
                />
              </Badge>
            )}
@@ -616,6 +658,33 @@
    
    const searchText = `${nameLC} ${descLC} ${platforms}`;
    
+    return filter.keywords.some(kw => searchText.includes(kw));
+ };
+
+ // AI Provider filter matching
+ export const matchesProviderFilter = (
+   blueprint: any,
+   providerValue: string
+ ): boolean => {
+   if (providerValue === 'all') return true;
+
+   const filter = AI_PROVIDER_FILTERS.find(f => f.value === providerValue);
+   if (!filter || !filter.keywords) return true;
+
+   const settings = blueprint.default_settings as any;
+   const capabilities = settings?.ai_capabilities || [];
+   // Check provider names in ai_capabilities
+   const providerNames = capabilities.map((c: any) => (c.provider || '').toLowerCase()).join(' ');
+   // Check primary_model in settings
+   const primaryModel = (settings?.primary_model || '').toLowerCase();
+   // Check secondary_models
+   const secondaryModels = (settings?.secondary_models || []).join(' ').toLowerCase();
+   // Also check the name and description
+   const nameLC = blueprint.name?.toLowerCase() || '';
+   const descLC = blueprint.description?.toLowerCase() || '';
+
+   const searchText = `${providerNames} ${primaryModel} ${secondaryModels} ${nameLC} ${descLC}`;
+
    return filter.keywords.some(kw => searchText.includes(kw));
  };
  
