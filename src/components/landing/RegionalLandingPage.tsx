@@ -430,7 +430,7 @@ const useHeroVoiceover = () => {
           body: {
             action: 'custom_tts',
             text,
-            language: effectiveLang,
+            languageCode: effectiveLang,
           },
         });
 
