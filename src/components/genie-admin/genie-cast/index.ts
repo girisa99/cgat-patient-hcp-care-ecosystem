@@ -47,7 +47,10 @@ export {
   type ProduceSubTab,
   type ManageSubTab,
   type PublishSubTab,
+  type LandingSubTab,
 } from './GenieCastConsolidatedTabs';
+
+export { LandingPageScriptsPanel } from './LandingPageScriptsPanel';
 
 export { WorkflowContextBanner } from './WorkflowContextBanner';
 

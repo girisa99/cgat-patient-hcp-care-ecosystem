@@ -38,6 +38,7 @@ import {
   LayoutTemplate,
   MessageSquare,
   Image,
+  Volume2,
 } from 'lucide-react';
 import { useCreateMode } from '@/hooks/useCreateMode';
 import { QuickStartCard, CreateStepProgress, CreateModeToggle, type CreateStep } from './create';
@@ -77,6 +78,9 @@ import { ContentRepurposingPanel } from './ContentRepurposingPanel';
 import { DistributionPanel } from './DistributionPanel';
 import { SEOOptimizerPanel } from './SEOOptimizerPanel';
 import { ABTestingPanel } from './ABTestingPanel';
+
+// Import Landing Page Scripts
+import { LandingPageScriptsPanel } from './LandingPageScriptsPanel';
 
 // Import sub-components from parent panel
 import { GenieCastOverview, VideoStyleCards, AIProviderShowcase, type VideoStyleType } from './index';
@@ -132,11 +136,12 @@ import {
   calculateEcosystemMetrics,
 } from '@/config/master-ecosystem-registry';
 
-export type ConsolidatedTab = 'create' | 'produce' | 'manage' | 'publish';
+export type ConsolidatedTab = 'create' | 'produce' | 'manage' | 'publish' | 'landing';
 export type CreateSubTab = 'templates' | 'messaging' | 'production';
 export type ProduceSubTab = 'generate' | 'matrix' | 'studio' | 'review';
 export type ManageSubTab = 'library' | 'analytics' | 'flow' | 'repurpose';
 export type PublishSubTab = 'scheduler' | 'distribution' | 'seo' | 'testing';
+export type LandingSubTab = 'scripts' | 'tts-preview' | 'versions';
 
 interface GenieCastConsolidatedTabsProps {
   // State from parent
@@ -212,6 +217,18 @@ const TAB_DEFINITIONS = {
       { id: 'testing', label: 'A/B Test', icon: Wand2, description: 'Variation testing' },
     ],
   },
+  landing: {
+    label: 'LANDING PAGE',
+    icon: Globe,
+    description: 'Hero Scripts & Narration',
+    activeColor: 'bg-teal-600 text-white border-teal-600',
+    inactiveColor: 'border-teal-300 text-teal-700 hover:bg-teal-50',
+    subTabs: [
+      { id: 'scripts', label: 'Regional Scripts', icon: FileText, description: 'Hero narration scripts' },
+      { id: 'tts-preview', label: 'TTS Preview', icon: Volume2, description: 'Audio preview & approval' },
+      { id: 'versions', label: 'Versions', icon: GitBranch, description: 'Version history & variants' },
+    ],
+  },
 };
 
 export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps> = ({
@@ -234,6 +251,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
     produce: 'generate',
     manage: 'library',
     publish: 'scheduler',
+    landing: 'scripts',
   });
 
   // Initialize unified authoring hook for cross-functional workflow
@@ -323,7 +341,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
     <div className="space-y-4">
       {/* Main 4-Tab Navigation */}
       <Tabs value={activeMainTab} onValueChange={(v) => setActiveMainTab(v as ConsolidatedTab)}>
-        <TabsList className="grid w-full grid-cols-4 h-auto p-1.5 bg-card border rounded-lg shadow-sm">
+        <TabsList className="grid w-full grid-cols-5 h-auto p-1.5 bg-card border rounded-lg shadow-sm">
           {(Object.entries(TAB_DEFINITIONS) as [ConsolidatedTab, typeof TAB_DEFINITIONS.create][]).map(([key, def]) => (
             <TabsTrigger 
               key={key}
@@ -1371,6 +1389,13 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
               </motion.div>
             )}
           </AnimatePresence>
+        </TabsContent>
+
+        {/* ═══════════════════════════════════════════════════════════════ */}
+        {/* LANDING PAGE TAB CONTENT */}
+        {/* ═══════════════════════════════════════════════════════════════ */}
+        <TabsContent value="landing" className="mt-4 space-y-6">
+          <LandingPageScriptsPanel />
         </TabsContent>
       </Tabs>
     </div>
