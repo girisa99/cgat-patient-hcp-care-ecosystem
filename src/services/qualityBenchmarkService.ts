@@ -115,10 +115,10 @@ export const TTS_QUALITY_BENCHMARKS: TTSQualityBenchmark[] = [
   { language: 'Spanish', languageCode: 'es', bestProvider: 'elevenlabs', mosScore: 4.2, naturalness: '★★★★☆', notes: 'Good', supportsCloning: true, supportsEmotion: true },
   { language: 'Portuguese (BR)', languageCode: 'pt-BR', bestProvider: 'elevenlabs', mosScore: 4.2, naturalness: '★★★★☆', notes: 'Good', supportsCloning: true, supportsEmotion: true },
   
-  // Alibaba CosyVoice (CJK - Best native prosody)
-  { language: 'Chinese (Mandarin)', languageCode: 'zh-CN', bestProvider: 'alibaba-cosyvoice', mosScore: 4.6, naturalness: '★★★★★', notes: 'Native prosody best', supportsCloning: true, supportsEmotion: true },
-  { language: 'Japanese', languageCode: 'ja', bestProvider: 'alibaba-cosyvoice', mosScore: 4.5, naturalness: '★★★★★', notes: 'Excellent pitch accent', supportsCloning: true, supportsEmotion: true },
-  { language: 'Korean', languageCode: 'ko', bestProvider: 'alibaba-cosyvoice', mosScore: 4.4, naturalness: '★★★★★', notes: 'Natural intonation', supportsCloning: true, supportsEmotion: true },
+  // Alibaba Qwen3-TTS (CJK - Best native prosody)
+  { language: 'Chinese (Mandarin)', languageCode: 'zh-CN', bestProvider: 'alibaba-qwen3-tts', mosScore: 4.6, naturalness: '★★★★★', notes: 'Native prosody best', supportsCloning: true, supportsEmotion: true },
+  { language: 'Japanese', languageCode: 'ja', bestProvider: 'alibaba-qwen3-tts', mosScore: 4.5, naturalness: '★★★★★', notes: 'Excellent pitch accent', supportsCloning: true, supportsEmotion: true },
+  { language: 'Korean', languageCode: 'ko', bestProvider: 'alibaba-qwen3-tts', mosScore: 4.4, naturalness: '★★★★★', notes: 'Natural intonation', supportsCloning: true, supportsEmotion: true },
   
   // Azure Neural (Arabic, Indian, SEA, African)
   { language: 'Arabic (Gulf)', languageCode: 'ar-SA', bestProvider: 'azure-neural', mosScore: 4.0, naturalness: '★★★★☆', notes: 'Good dialect support', supportsCloning: false, supportsEmotion: true },
@@ -164,7 +164,7 @@ export const AB_TEST_CONFIGS: ABTestConfig[] = [
   { testName: 'GPT-4 vs Qwen for Arabic', hypothesis: 'GPT-4 quality > Qwen for Arabic business content', sampleSize: 100, duration: '2 weeks', providerA: 'gpt-4o', providerB: 'qwen-max', targetLanguage: 'ar', status: 'planned' },
   { testName: 'Gemini vs Claude for Hindi', hypothesis: 'Gemini better for Hindi formal content', sampleSize: 100, duration: '2 weeks', providerA: 'gemini-1.5-pro', providerB: 'claude-3.5-sonnet', targetLanguage: 'hi', status: 'planned' },
   { testName: 'ElevenLabs vs Azure for Spanish', hypothesis: 'ElevenLabs premium justified for Spanish', sampleSize: 50, duration: '1 week', providerA: 'elevenlabs', providerB: 'azure-neural', targetLanguage: 'es', status: 'planned' },
-  { testName: 'CosyVoice vs Azure for Japanese', hypothesis: 'CosyVoice native prosody preferred', sampleSize: 50, duration: '1 week', providerA: 'alibaba-cosyvoice', providerB: 'azure-neural', targetLanguage: 'ja', status: 'planned' }
+  { testName: 'Qwen3-TTS vs Azure for Japanese', hypothesis: 'Qwen3-TTS native prosody preferred', sampleSize: 50, duration: '1 week', providerA: 'alibaba-qwen3-tts', providerB: 'azure-neural', targetLanguage: 'ja', status: 'planned' }
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -336,7 +336,7 @@ export function getProviderRecommendation(
     'gpt-4o': 60,
     'claude-3.5-sonnet': 60,
     'elevenlabs': 40,
-    'alibaba-cosyvoice': 70
+    'alibaba-qwen3-tts': 70
   };
   costScore = costMap[provider] || 50;
 
@@ -386,7 +386,7 @@ export function getQualityDashboardData(): QualityDashboardData {
     keyFindings: [
       '⚠️ Qwen struggles with Arabic - use GPT-4o instead',
       'CJK/India/Africa routes are 90% cheaper than US/EU',
-      'Alibaba CosyVoice has best native prosody for CJK',
+      'Alibaba Qwen3-TTS has best native prosody for CJK',
       'Azure TTS has best global latency coverage',
       'Gemini is fastest for India, SEA, and Africa regions'
     ]

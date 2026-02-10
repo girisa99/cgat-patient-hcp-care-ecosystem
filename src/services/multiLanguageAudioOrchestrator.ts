@@ -217,7 +217,7 @@ class MultiLanguageAudioOrchestrator {
       'nl-NL': 'NL', 'pl-PL': 'PL', 'ru-RU': 'RU',
       'he-IL': 'IL', 'en-ZA': 'ZA',
       
-      // CJK Zone (Alibaba CosyVoice primary)
+      // CJK Zone (Alibaba Qwen3-TTS primary)
       'zh-CN': 'CN', 'zh-TW': 'TW', 'zh-HK': 'HK',
       'ja-JP': 'JP', 'ko-KR': 'KR', 'zh-SG': 'SG',
       

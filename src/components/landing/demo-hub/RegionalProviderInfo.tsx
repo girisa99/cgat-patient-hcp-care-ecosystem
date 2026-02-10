@@ -33,7 +33,7 @@ const GLOBAL_PROVIDERS: CapabilityProviders = {
   tts: [
     { name: 'Azure Neural', confidence: 97, role: 'primary', badge: 'Viseme + Lip-sync' },
     { name: 'ElevenLabs', confidence: 92, role: 'secondary' },
-    { name: 'CosyVoice', confidence: 88, role: 'fallback' },
+    { name: 'Qwen3-TTS', confidence: 88, role: 'fallback' },
   ],
   stt: [
     { name: 'Deepgram Nova 2', confidence: 96, role: 'primary', badge: '<100ms latency' },
@@ -72,7 +72,7 @@ const REGIONAL_OVERRIDES: Record<string, Partial<CapabilityProviders>> = {
     ],
     tts: [
       { name: 'Azure Neural', confidence: 97, role: 'primary', badge: 'Code-mixing support' },
-      { name: 'CosyVoice', confidence: 85, role: 'fallback' },
+      { name: 'Qwen3-TTS', confidence: 85, role: 'fallback' },
     ],
   },
   apac: {

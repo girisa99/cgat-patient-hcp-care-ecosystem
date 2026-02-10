@@ -257,9 +257,9 @@ export const LANGUAGE_VOICE_PAIRINGS: LanguageVoicePairing[] = [
   // CJK Languages - Alibaba/Azure preferred
   { 
     languageCode: 'zh', 
-    recommendedVoiceProviders: ['alibaba-cosyvoice', 'azure-neural'],
+    recommendedVoiceProviders: ['alibaba-qwen3-tts', 'azure-neural'],
     fallbackProviders: ['google-wavenet', 'elevenlabs'],
-    nativeVoiceIds: { 'alibaba-cosyvoice': 'longxiaochun', 'azure-neural': 'zh-CN-XiaoxiaoNeural' }
+    nativeVoiceIds: { 'alibaba-qwen3-tts': 'longxiaochun', 'azure-neural': 'zh-CN-XiaoxiaoNeural' }
   },
   { 
     languageCode: 'ja', 

@@ -164,9 +164,9 @@
          name: 'China',
          tone: 'Pragmatic, aspirational',
          dialects: [
-           { code: 'zh-CN', name: 'Mandarin (Simplified)', nativeName: '普通话', ttsProvider: 'alibaba-cosyvoice' },
-           { code: 'zh-TW', name: 'Mandarin (Traditional)', nativeName: '國語', ttsProvider: 'alibaba-cosyvoice' },
-           { code: 'yue-CN', name: 'Cantonese', nativeName: '粵語', ttsProvider: 'alibaba-cosyvoice' },
+            { code: 'zh-CN', name: 'Mandarin (Simplified)', nativeName: '普通话', ttsProvider: 'alibaba-qwen3-tts' },
+            { code: 'zh-TW', name: 'Mandarin (Traditional)', nativeName: '國語', ttsProvider: 'alibaba-qwen3-tts' },
+            { code: 'yue-CN', name: 'Cantonese', nativeName: '粵語', ttsProvider: 'alibaba-qwen3-tts' },
          ],
        },
        {
@@ -174,7 +174,7 @@
          name: 'Japan',
          tone: 'Polite, minimalist (Muji aesthetic)',
          dialects: [
-           { code: 'ja-JP', name: 'Japanese', nativeName: '日本語', ttsProvider: 'alibaba-cosyvoice' },
+           { code: 'ja-JP', name: 'Japanese', nativeName: '日本語', ttsProvider: 'alibaba-qwen3-tts' },
          ],
        },
        {
@@ -182,7 +182,7 @@
          name: 'Korea',
          tone: 'Trend-forward, K-culture',
          dialects: [
-           { code: 'ko-KR', name: 'Korean', nativeName: '한국어', ttsProvider: 'alibaba-cosyvoice' },
+           { code: 'ko-KR', name: 'Korean', nativeName: '한국어', ttsProvider: 'alibaba-qwen3-tts' },
          ],
        },
      ],

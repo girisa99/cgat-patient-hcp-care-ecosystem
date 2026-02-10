@@ -75,7 +75,7 @@ export const PROVIDER_TIERS: Record<string, GlobalTier> = {
   'openai-tts': 'advanced',
   'azure-neural': 'advanced',
   'elevenlabs': 'premium',
-  'alibaba-cosyvoice': 'advanced',
+  'alibaba-qwen3-tts': 'advanced',
   
   // Avatar (Phase 2 - Cloud Run)
   'avatar-preset': 'standard',

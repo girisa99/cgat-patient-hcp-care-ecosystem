@@ -205,7 +205,7 @@ export const PROVIDER_VERTICAL_MATRIX: Record<ProviderId, {
       enterprise: 'full',
     },
     pricingTier: 'pro',
-    strengths: ['Qwen-MT translation', 'CosyVoice TTS', 'WAN 2.2 video', 'Paraformer STT'],
+    strengths: ['Qwen-MT translation', 'Qwen3-TTS', 'WAN 2.2 video', 'Paraformer STT'],
   },
   azure: {
     name: 'Microsoft Azure',

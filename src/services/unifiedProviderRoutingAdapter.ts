@@ -5,7 +5,7 @@
  * through the 4-Zone LLM Routing Strategy from Excel:
  * 
  * 1. CLAUDE ZONE: US, UK, EU, Brazil, Israel, South Africa (Claude + ElevenLabs + DeepL)
- * 2. ALIBABA ZONE: Japan, Korea, China, HK, Taiwan, MEA/Arabic (Qwen + CosyVoice + Qwen-MT)
+ * 2. ALIBABA ZONE: Japan, Korea, China, HK, Taiwan, MEA/Arabic (Qwen + Qwen3-TTS + Qwen-MT)
  * 3. GEMINI ZONE: India, Pakistan, SEA, Africa (Gemini + Azure + Google Translate)
  * 4. FALLBACK: GPT-4o (When primary fails)
  * 
@@ -178,11 +178,11 @@ const TTS_PROVIDER_MAP: Record<string, { primary: string; fallback: string; qual
   'pl': { primary: 'elevenlabs', fallback: 'azure-neural', quality: 5 },
   'ru': { primary: 'elevenlabs', fallback: 'azure-neural', quality: 5 },
   
-  // ALIBABA ZONE - CosyVoice for CJK, Azure for Arabic
-  'ja': { primary: 'alibaba-cosyvoice', fallback: 'azure-neural', quality: 5 },
-  'ko': { primary: 'alibaba-cosyvoice', fallback: 'azure-neural', quality: 5 },
-  'zh-CN': { primary: 'alibaba-cosyvoice', fallback: 'azure-neural', quality: 5 },
-  'zh-TW': { primary: 'alibaba-cosyvoice', fallback: 'azure-neural', quality: 5 },
+  // ALIBABA ZONE - Qwen3-TTS for CJK, Azure for Arabic
+  'ja': { primary: 'alibaba-qwen3-tts', fallback: 'azure-neural', quality: 5 },
+  'ko': { primary: 'alibaba-qwen3-tts', fallback: 'azure-neural', quality: 5 },
+  'zh-CN': { primary: 'alibaba-qwen3-tts', fallback: 'azure-neural', quality: 5 },
+  'zh-TW': { primary: 'alibaba-qwen3-tts', fallback: 'azure-neural', quality: 5 },
   'zh-HK': { primary: 'azure-neural', fallback: 'google-tts', quality: 4 },
   'ar': { primary: 'azure-neural', fallback: 'google-tts', quality: 5 },
   'ar-EG': { primary: 'azure-neural', fallback: 'google-tts', quality: 5 },
@@ -410,7 +410,7 @@ export function getUnifiedProviderRouting(languageCode: string): UnifiedProvider
       if (moat === 'african_languages') return 'FIRST MOVER: African languages - NO competitors';
     }
     if (baseCode === 'ja' || baseCode === 'ko' || baseCode.startsWith('zh')) {
-      return 'Premium: Alibaba CosyVoice for native CJK handling';
+      return 'Premium: Alibaba Qwen3-TTS for native CJK handling';
     }
     if (['de', 'fr', 'es', 'it', 'pt', 'nl', 'pl', 'ru'].includes(baseCode)) {
       return 'You WIN: ElevenLabs for natural European voices';
@@ -665,7 +665,7 @@ export function getCompetitiveAdvantageSummary() {
     providerCoverage: {
       elevenlabs: Object.entries(TTS_PROVIDER_MAP).filter(([_, v]) => v.primary === 'elevenlabs').length,
       azure: Object.entries(TTS_PROVIDER_MAP).filter(([_, v]) => v.primary === 'azure-neural').length,
-      alibaba: Object.entries(TTS_PROVIDER_MAP).filter(([_, v]) => v.primary === 'alibaba-cosyvoice').length,
+      alibaba: Object.entries(TTS_PROVIDER_MAP).filter(([_, v]) => v.primary === 'alibaba-qwen3-tts').length,
       deepl: Object.entries(TRANSLATION_PROVIDER_MAP).filter(([_, v]) => v.primary === 'deepl').length,
       google: Object.entries(TRANSLATION_PROVIDER_MAP).filter(([_, v]) => v.primary === 'google-translate').length,
     },

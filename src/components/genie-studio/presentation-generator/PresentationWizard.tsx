@@ -522,7 +522,7 @@ export function PresentationWizard({
     { id: 'openai-tts-hd', name: 'OpenAI TTS HD', quality: 'neural', languages: 9, cloning: false, tier: 2 },
     { id: 'google-wavenet', name: 'Google WaveNet', quality: 'neural', languages: 200, cloning: false, tier: 2 },
     // Tier 3 - Budget/Regional
-    { id: 'alibaba-cosyvoice', name: 'Alibaba CosyVoice', quality: 'neural', languages: 50, cloning: true, tier: 3 },
+    { id: 'alibaba-qwen3-tts', name: 'Alibaba Qwen3-TTS', quality: 'neural', languages: 50, cloning: true, tier: 3 },
     { id: 'alibaba-tts', name: 'Alibaba DashScope TTS', quality: 'neural', languages: 50, cloning: false, tier: 3 },
     { id: 'aws-polly', name: 'AWS Polly', quality: 'neural', languages: 60, cloning: false, tier: 3 },
   ];
@@ -2012,8 +2012,8 @@ export function PresentationWizard({
                 {/* Voice Configuration */}
                 {(() => {
                   const regionalVoiceConfig = getRegionalConfig(undefined, primaryLanguage);
-                  const recommendedTTS = regionalVoiceConfig.ttsProvider === 'alibaba_cosyvoice' 
-                    ? 'CosyVoice' 
+                  const recommendedTTS = regionalVoiceConfig.ttsProvider === 'alibaba_qwen3_tts' 
+                    ? 'Qwen3-TTS' 
                     : 'Azure Neural';
                   return (
                 <Card className="border border-border/50">

@@ -100,7 +100,7 @@ export const OUTPUT_FORMAT_CONFIGS: OutputFormatConfig[] = [
     estimatedDuration: { min: 60, max: 300 },
     providers: {
       visual: ['Alibaba Wan2.2-S2V', 'Alibaba OmniAvatar'],
-      voice: ['ElevenLabs', 'Azure Neural', 'CosyVoice'],
+      voice: ['ElevenLabs', 'Azure Neural', 'Qwen3-TTS'],
     },
   },
   {
@@ -128,7 +128,7 @@ export const OUTPUT_FORMAT_CONFIGS: OutputFormatConfig[] = [
     estimatedDuration: { min: 120, max: 600 },
     providers: {
       visual: ['Alibaba Wan2.2', 'Meshy AI', 'ModelsLab'],
-      voice: ['ElevenLabs', 'CosyVoice', 'Azure Neural'],
+      voice: ['ElevenLabs', 'Qwen3-TTS', 'Azure Neural'],
       music: ['ElevenLabs Music', 'Suno'],
     },
   },
@@ -185,7 +185,7 @@ export const OUTPUT_FORMAT_CONFIGS: OutputFormatConfig[] = [
     estimatedDuration: { min: 30, max: 180 },
     providers: {
       visual: ['Alibaba Wan2.2-S2V', 'Alibaba OmniAvatar'],
-      voice: ['ElevenLabs', 'CosyVoice', 'Azure Neural'],
+      voice: ['ElevenLabs', 'Qwen3-TTS', 'Azure Neural'],
     },
   },
 ];

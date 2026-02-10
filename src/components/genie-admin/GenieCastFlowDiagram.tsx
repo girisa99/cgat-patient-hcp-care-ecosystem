@@ -171,7 +171,7 @@ export const GenieCastFlowDiagram: React.FC = () => {
                 <CardDescription>ZH, JA, KO</CardDescription>
               </CardHeader>
               <CardContent>
-                <Badge className="bg-orange-500/20 text-orange-700">CosyVoice TTS</Badge>
+                <Badge className="bg-orange-500/20 text-orange-700">Qwen3-TTS</Badge>
               </CardContent>
             </Card>
             <Card className="border-emerald-500/30 bg-emerald-500/5">

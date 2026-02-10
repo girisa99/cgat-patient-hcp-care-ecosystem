@@ -144,11 +144,11 @@ export const COMPLETE_LANGUAGE_MATRIX: LanguageProviderEntry[] = [
   { code: 'af', name: 'Afrikaans', nativeName: 'Afrikaans', speakers: '7M', speakersNumber: 7000000, primaryProvider: 'Azure Neural', fallbackProvider: 'Google TTS', quality: 4, competitorGap: 'no_one_has_this', region: 'South Africa', direction: 'ltr', moat: 'african_languages' },
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // CJK (Premium Quality) - Alibaba CosyVoice
+  // CJK (Premium Quality) - Alibaba Qwen3-TTS
   // ═══════════════════════════════════════════════════════════════════════════
-  { code: 'ja', name: 'Japanese', nativeName: '日本語', speakers: '125M', speakersNumber: 125000000, primaryProvider: 'Alibaba CosyVoice', fallbackProvider: 'Azure Neural', quality: 5, competitorGap: 'match', region: 'Japan', direction: 'ltr', moat: null, notes: 'Better keigo handling' },
-  { code: 'ko', name: 'Korean', nativeName: '한국어', speakers: '80M', speakersNumber: 80000000, primaryProvider: 'Alibaba CosyVoice', fallbackProvider: 'Azure Neural', quality: 5, competitorGap: 'match', region: 'Korea', direction: 'ltr', moat: null, notes: 'Better number handling' },
-  { code: 'zh-CN', name: 'Chinese (Mandarin)', nativeName: '普通话', speakers: '1.1B', speakersNumber: 1100000000, primaryProvider: 'Alibaba CosyVoice', fallbackProvider: 'Azure Neural', quality: 5, competitorGap: 'match', region: 'China', direction: 'ltr', moat: null, notes: 'Restricted market' },
+  { code: 'ja', name: 'Japanese', nativeName: '日本語', speakers: '125M', speakersNumber: 125000000, primaryProvider: 'Alibaba Qwen3-TTS', fallbackProvider: 'Azure Neural', quality: 5, competitorGap: 'match', region: 'Japan', direction: 'ltr', moat: null, notes: 'Better keigo handling' },
+  { code: 'ko', name: 'Korean', nativeName: '한국어', speakers: '80M', speakersNumber: 80000000, primaryProvider: 'Alibaba Qwen3-TTS', fallbackProvider: 'Azure Neural', quality: 5, competitorGap: 'match', region: 'Korea', direction: 'ltr', moat: null, notes: 'Better number handling' },
+  { code: 'zh-CN', name: 'Chinese (Mandarin)', nativeName: '普通话', speakers: '1.1B', speakersNumber: 1100000000, primaryProvider: 'Alibaba Qwen3-TTS', fallbackProvider: 'Azure Neural', quality: 5, competitorGap: 'match', region: 'China', direction: 'ltr', moat: null, notes: 'Restricted market' },
   { code: 'zh-HK', name: 'Cantonese', nativeName: '粵語', speakers: '85M', speakersNumber: 85000000, primaryProvider: 'Azure Neural', fallbackProvider: 'Google TTS', quality: 4, competitorGap: 'rare_support', region: 'HK/Guangdong', direction: 'ltr', moat: null },
 
   // ═══════════════════════════════════════════════════════════════════════════

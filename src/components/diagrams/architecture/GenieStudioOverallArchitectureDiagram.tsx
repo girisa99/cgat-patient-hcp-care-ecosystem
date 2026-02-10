@@ -27,7 +27,7 @@ const coreProviders = [
   { name: 'Claude', services: ['Claude 3.5 Sonnet', 'Vision'], zone: 'Claude Zone (West/EU)' },
   { name: 'Gemini', services: ['2.5 Pro', 'Flash', 'Vision'], zone: 'Gemini Zone (India/SEA)' },
   { name: 'DeepSeek', services: ['V3', 'Coder'], zone: 'Code Zone' },
-  { name: 'Alibaba', services: ['Qwen-Max', 'CosyVoice', 'WAN 2.2'], zone: 'Alibaba Zone (CJK)' },
+  { name: 'Alibaba', services: ['Qwen-Max', 'Qwen3-TTS', 'WAN 2.2'], zone: 'Alibaba Zone (CJK)' },
   { name: 'Azure', services: ['Neural TTS', 'OCR', 'Visemes'], zone: 'Arabic/RTL' },
   { name: 'ElevenLabs', services: ['TTS', 'Voice Clone', 'SFX'], zone: 'Global' },
   { name: 'ModelsLab', services: ['FLUX', 'AnimateDiff', '3D'], zone: 'Global' },

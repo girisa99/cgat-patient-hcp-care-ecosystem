@@ -74,7 +74,7 @@
  const REGION_TO_TTS_PROVIDER: Record<RegionZone, string> = Object.freeze({
    'western': 'azure-neural',
    'europe': 'azure-neural',
-   'cjk': 'alibaba-cosyvoice',
+   'cjk': 'alibaba-qwen3-tts',
    'india': 'azure-neural',
    'mena': 'azure-neural',
    'sea': 'azure-neural',

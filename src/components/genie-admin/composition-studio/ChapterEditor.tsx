@@ -389,7 +389,7 @@ export const ChapterEditor: React.FC<ChapterEditorProps> = ({
                           <SelectContent>
                             <SelectItem value="elevenlabs">ElevenLabs (Premium)</SelectItem>
                             <SelectItem value="azure">Azure Neural TTS</SelectItem>
-                            <SelectItem value="alibaba">Alibaba CosyVoice (CJK)</SelectItem>
+                            <SelectItem value="alibaba">Alibaba Qwen3-TTS (CJK)</SelectItem>
                             <SelectItem value="google">Google Cloud TTS</SelectItem>
                           </SelectContent>
                         </Select>

@@ -1167,7 +1167,7 @@ export const PROVIDER_SUMMARIES: ProviderSummary[] = [
     partialFeatures: 12,
     missingFeatures: 8,
     capabilities: ['SCRIPT', 'VOICE', 'IMAGE', 'VIDEO', 'TRANSLATION'],
-    strengths: ['CJK native', 'Qwen 2.5', 'WAN 2.2 video', 'CosyVoice', 'Paraformer'],
+    strengths: ['CJK native', 'Qwen 2.5', 'WAN 2.2 video', 'Qwen3-TTS', 'Paraformer'],
     weaknesses: ['Newer models need testing', 'Regional focus'],
     costTier: 'budget',
   },
@@ -1419,7 +1419,7 @@ export const FEATURE_IMPLEMENTATION_MATRIX: Record<string, Partial<Record<Provid
   tts: {
     elevenlabs: { status: 'configured', implementation: 'implemented', confidence: 98, edgeFunctionUsed: 'ai-tts-unified' },
     openai: { status: 'configured', implementation: 'implemented', confidence: 90, edgeFunctionUsed: 'ai-tts-unified' },
-    alibaba: { status: 'configured', implementation: 'implemented', confidence: 85, edgeFunctionUsed: 'alibaba-tts', notes: 'CosyVoice' },
+    alibaba: { status: 'configured', implementation: 'implemented', confidence: 85, edgeFunctionUsed: 'alibaba-tts', notes: 'Qwen3-TTS' },
   },
   voice_cloning: {
     elevenlabs: { status: 'configured', implementation: 'implemented', confidence: 98 },
@@ -1733,7 +1733,7 @@ export const FEATURE_IMPLEMENTATION_MATRIX: Record<string, Partial<Record<Provid
   },
   video_dubbing: {
     elevenlabs: { status: 'configured', implementation: 'implemented', confidence: 90, notes: 'Voice clone + TTS' },
-    alibaba: { status: 'configured', implementation: 'partial', confidence: 70, notes: 'CosyVoice' },
+    alibaba: { status: 'configured', implementation: 'partial', confidence: 70, notes: 'Qwen3-TTS' },
   },
   
   // EXPANDED ANIMATION
@@ -1992,7 +1992,7 @@ export const FEATURE_IMPLEMENTATION_MATRIX: Record<string, Partial<Record<Provid
   },
   multilingual_dub: {
     elevenlabs: { status: 'configured', implementation: 'implemented', confidence: 90, notes: 'Multi-language TTS' },
-    alibaba: { status: 'configured', implementation: 'implemented', confidence: 88, notes: 'CosyVoice for CJK' },
+    alibaba: { status: 'configured', implementation: 'implemented', confidence: 88, notes: 'Qwen3-TTS for CJK' },
     deepl: { status: 'configured', implementation: 'implemented', confidence: 95, notes: 'Script translation' },
   },
   avatar_lip_sync: {
@@ -2021,7 +2021,7 @@ export const FEATURE_IMPLEMENTATION_MATRIX: Record<string, Partial<Record<Provid
   // SFX FEATURES (Sound Effects Generation)
   ai_sfx_generation: {
     elevenlabs: { status: 'configured', implementation: 'implemented', confidence: 92, edgeFunctionUsed: 'elevenlabs-sfx', notes: 'AI Sound Effects API' },
-    alibaba: { status: 'configured', implementation: 'partial', confidence: 65, notes: 'Audio generation via CosyVoice' },
+    alibaba: { status: 'configured', implementation: 'partial', confidence: 65, notes: 'Audio generation via Qwen3-TTS' },
   },
   elevenlabs_sfx: {
     elevenlabs: { status: 'configured', implementation: 'implemented', confidence: 95, edgeFunctionUsed: 'elevenlabs-sfx' },

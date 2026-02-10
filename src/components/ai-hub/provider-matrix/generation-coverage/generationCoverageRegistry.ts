@@ -342,7 +342,7 @@ function generateVisualMapping(visual: ExpandedVisualFeature): ContextToCapabili
       { type: 'image', modelIds: ['flux-pro', 'dall-e-3', 'modelslab-flux', 'stable-diffusion-xl'], reason: visual.description, tier: visual.tier },
       ...(is3D ? [{ type: '3d' as ModelType, modelIds: ['meshy-ai', 'rodin-gen1', 'triposr', 'luma-genie'], reason: '3D models', tier: visual.tier }] : []),
       ...(isMedia && visual.id.includes('video') ? [{ type: 'video' as ModelType, modelIds: ['runway-gen3', 'openai-sora', 'pika-labs', 'luma-dream-machine'], reason: 'Video gen', tier: visual.tier }] : []),
-      ...(isMedia && visual.id === 'audio' ? [{ type: 'voice' as ModelType, modelIds: ['elevenlabs', 'azure-neural', 'openai-tts', 'alibaba-cosyvoice'], reason: 'Audio gen', tier: visual.tier }] : [])
+      ...(isMedia && visual.id === 'audio' ? [{ type: 'voice' as ModelType, modelIds: ['elevenlabs', 'azure-neural', 'openai-tts', 'alibaba-qwen3-tts'], reason: 'Audio gen', tier: visual.tier }] : [])
     ],
     compatibleWith: {
       outputs: compatibleOutputs
@@ -424,7 +424,7 @@ function generateOutputMapping(output: ExpandedOutputConfig): ContextToCapabilit
       { type: 'text', modelIds: ['gpt-4o', 'claude-3.5-sonnet', 'gemini-2.0-flash'], reason: 'Script quality', tier: output.tier },
       { type: 'image', modelIds: ['flux-pro', 'dall-e-3', 'modelslab-flux', 'stable-diffusion-xl'], reason: output.description, tier: output.tier },
       ...(output.requiresVideo ? [{ type: 'video' as ModelType, modelIds: ['runway-gen3', 'openai-sora', 'pika-labs', 'alibaba-wan'], reason: 'Video quality', tier: output.tier }] : []),
-      ...(output.requiresVoice ? [{ type: 'voice' as ModelType, modelIds: ['elevenlabs', 'openai-tts', 'azure-neural', 'alibaba-cosyvoice'], reason: 'Voice quality', tier: output.tier }] : []),
+      ...(output.requiresVoice ? [{ type: 'voice' as ModelType, modelIds: ['elevenlabs', 'openai-tts', 'azure-neural', 'alibaba-qwen3-tts'], reason: 'Voice quality', tier: output.tier }] : []),
       ...(output.requires3D ? [{ type: '3d' as ModelType, modelIds: ['meshy-ai', 'rodin-gen1', 'triposr', 'luma-genie'], reason: '3D quality', tier: output.tier }] : [])
     ],
     compatibleWith: {

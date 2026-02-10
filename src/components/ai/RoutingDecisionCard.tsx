@@ -90,7 +90,7 @@ const TASK_TYPE_ICONS: Record<string, React.ReactNode> = {
 function detectZone(provider: string): keyof typeof ZONE_META {
   const p = provider.toLowerCase();
   if (p.includes('claude') || p.includes('anthropic')) return 'claude';
-  if (p.includes('qwen') || p.includes('alibaba') || p.includes('cosyvoice') || p.includes('wan')) return 'alibaba';
+  if (p.includes('qwen') || p.includes('alibaba') || p.includes('qwen3-tts') || p.includes('wan')) return 'alibaba';
   if (p.includes('gemini') || p.includes('google') || p.includes('vertex')) return 'gemini';
   return 'fallback';
 }

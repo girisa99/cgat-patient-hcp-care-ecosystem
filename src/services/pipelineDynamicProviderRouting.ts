@@ -11,7 +11,7 @@
  * 2. Claude (Anthropic)
  * 3. Gemini (Google)
  * 4. DeepSeek (CJK optimized)
- * 5. Alibaba (Qwen, CosyVoice, WAN 2.2)
+ * 5. Alibaba (Qwen, Qwen3-TTS, WAN 2.2)
  * 6. Azure (Neural TTS, Form Recognizer, Visemes)
  * 7. ModelsLab (FLUX, AnimateDiff, 3D)
  * 8. Replicate (Open-source models, 3D)
@@ -119,7 +119,7 @@ const CAPABILITY_ZONE_ROUTING: Record<LLMZone, Record<PipelineCapability, Dynami
     script_gen: { primary: 'alibaba', fallback: 'openai', zone: 'alibaba', quality: 5, reason: 'Native CJK generation' },
     summarization: { primary: 'alibaba', fallback: 'deepseek', zone: 'alibaba', quality: 5, reason: 'CJK summarization' },
     translation: { primary: 'alibaba', fallback: 'deepseek', zone: 'alibaba', quality: 5, reason: 'Qwen-MT for CJK pairs' },
-    tts: { primary: 'alibaba', fallback: 'azure', zone: 'alibaba', quality: 5, reason: 'CosyVoice native prosody (MOS 4.5+)' },
+    tts: { primary: 'alibaba', fallback: 'azure', zone: 'alibaba', quality: 5, reason: 'Qwen3-TTS native prosody (MOS 4.5+)' },
     stt: { primary: 'alibaba', fallback: 'openai', zone: 'alibaba', quality: 5, reason: 'Paraformer for CJK audio' },
     voice_clone: { primary: 'alibaba', fallback: 'elevenlabs', zone: 'alibaba', quality: 4, reason: 'Alibaba voice clone for CJK' },
     music_gen: { primary: 'elevenlabs', fallback: 'alibaba', zone: 'alibaba', quality: 4, reason: 'ElevenLabs music' },

@@ -22,7 +22,7 @@ export interface LLMRoutingResult {
 }
 
 export interface TTSRoutingResult {
-  provider: 'elevenlabs' | 'alibaba-cosyvoice' | 'azure-neural' | 'google-tts' | 'openai-tts';
+  provider: 'elevenlabs' | 'alibaba-qwen3-tts' | 'azure-neural' | 'google-tts' | 'openai-tts';
   cost: number;
   quality: QualityTier;
   voiceOptions: string[];
@@ -186,10 +186,10 @@ export function selectTTS(
     };
   }
 
-  // ALIBABA COSYVOICE: CJK native prosody - Best for Chinese/Japanese/Korean
+  // ALIBABA QWEN3-TTS: CJK native prosody - Best for Chinese/Japanese/Korean
   if (CJK_REGIONS.includes(region)) {
     return {
-      provider: 'alibaba-cosyvoice',
+      provider: 'alibaba-qwen3-tts',
       cost: 0.02,
       quality: 'premium',
       voiceOptions: ['zhiyan', 'zhiyu', 'zhimi', 'zhida', 'tomoka', 'nanami', 'seoyeon', 'sumi'],

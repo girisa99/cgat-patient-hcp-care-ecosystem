@@ -485,7 +485,7 @@ export const ChapterRegenerationPanel: React.FC<ChapterRegenerationPanelProps> =
                   <SelectContent>
                     <SelectItem value="elevenlabs">ElevenLabs (Premium)</SelectItem>
                     <SelectItem value="azure">Azure Neural TTS</SelectItem>
-                    <SelectItem value="alibaba">Alibaba CosyVoice (CJK)</SelectItem>
+                    <SelectItem value="alibaba">Alibaba Qwen3-TTS (CJK)</SelectItem>
                     <SelectItem value="google">Google Cloud TTS</SelectItem>
                     <SelectItem value="aws">Amazon Polly</SelectItem>
                   </SelectContent>
