@@ -4,17 +4,19 @@
  * IMPORTANT: These are the official taglines and should NOT be changed.
  * All components should import from this file to maintain consistency.
  * 
- * Last Updated: 2026-01-26
+ * Last Updated: 2026-02-10
  * 
- * OFFICIAL PRODUCTS (7 Core + 1 Master):
- * - Genie Spark: "Ignite your Ideas" - Script generation from any input
- * - Genie Mind: "AI That Understands" - Script editing, TTS, voice, music
- * - Genie Vibe: "Script to Screen" - Audio/Video production, podcast, trim, stitch
- * - Genie Deck: "Ideas to Impact" - AI presentation/slide generation
- * - Genie Arc: "Your Production Journey With Infinite Possibilities" - Scheduling, Kanban
- * - Genie Cast: "Make It. Show It. Scale It." - Global distribution, marketing engine
- * - Ask Genie: "Your wish is my command" - Universal AI assistant
- * - Genie Studio: "Mind to Media" - Master orchestrator
+ * BRAND HIERARCHY:
+ * - GenieAISuite.com = Domain
+ * - Genie Suite = Umbrella brand ("Mind to Media")
+ * - 7 Products under Genie Suite:
+ *   - Genie Spark: "Ignite your Ideas" - Script generation from any input
+ *   - Genie Mind: "AI That Understands" - Script editing, TTS, voice, music
+ *   - Genie Vibe: "Script to Screen" - Audio/Video production, podcast, trim, stitch
+ *   - Genie Deck: "Ideas to Impact" - AI presentation/slide generation
+ *   - Genie Hub: "Your Creative Command Center" - Scheduling, Kanban, Assets
+ *   - Genie Cast: "Make It. Show It. Scale It." - Global distribution, marketing engine
+ *   - Ask Genie: "Your wish is my command" - Universal AI assistant
  */
 
 // Import finalized logos
@@ -29,8 +31,25 @@ import genieDeckLogo from '@/assets/logos/genie-deck-combined.png';
 
 // Cast logo - uses studio banner as placeholder until dedicated logo is created
 const genieCastLogo = genieStudioBanner;
+// Hub logo - uses Arc logo until dedicated Hub logo is created
+const genieHubLogo = genieArcLogo;
 
-export type GenieProduct = 'mind' | 'spark' | 'vibe' | 'studio' | 'arc' | 'deck' | 'cast';
+/**
+ * GenieProduct type - includes legacy aliases for backward compatibility.
+ * 'arc' is deprecated → use 'hub'
+ * 'studio' is deprecated → Genie Suite is now the umbrella brand, not a product
+ */
+export type GenieProduct = 'mind' | 'spark' | 'vibe' | 'hub' | 'deck' | 'cast' | 'arc' | 'studio';
+
+/** Core products only (no legacy aliases) */
+export type GenieProductCore = 'mind' | 'spark' | 'vibe' | 'hub' | 'deck' | 'cast';
+
+/** Resolve legacy product IDs to current ones */
+export const resolveProduct = (id: string): GenieProductCore => {
+  if (id === 'arc') return 'hub';
+  if (id === 'studio') return 'hub';
+  return id as GenieProductCore;
+};
 
 export interface GenieProductInfo {
   id: GenieProduct;
@@ -59,7 +78,7 @@ export const ASK_GENIE = {
   id: 'ask-genie',
   name: 'Ask Genie',
   tagline: 'Your wish is my command',
-  description: 'Your intelligent AI companion that guides you through the entire Genie Studio experience with empathy, creativity, and a touch of magic.',
+  description: 'Your intelligent AI companion that guides you through the entire Genie Suite experience with empathy, creativity, and a touch of magic.',
   emoji: '🧞',
   color: 'from-violet-500 to-fuchsia-500',
   bgColor: 'bg-violet-50 dark:bg-violet-950/20',
@@ -79,9 +98,9 @@ export const ASK_GENIE = {
  * - Genie Mind: "AI That Understands"
  * - Genie Vibe: "Script to Screen"
  * - Genie Deck: "Ideas to Impact"
- * - Genie Arc: "Your Production Journey With Infinite Possibilities"
+ * - Genie Hub: "Your Creative Command Center"
  * - Genie Cast: "Make It. Show It. Scale It."
- * - Genie Studio: "Mind to Media"
+ * - Genie Suite (umbrella): "Mind to Media"
  */
 export const GENIE_PRODUCTS: Record<GenieProduct, GenieProductInfo> = {
   spark: {
@@ -218,11 +237,11 @@ export const GENIE_PRODUCTS: Record<GenieProduct, GenieProductInfo> = {
       combined: genieDeckLogo
     }
   },
-  arc: {
-    id: 'arc',
-    name: 'Genie Arc',
-    tagline: 'Your Production Journey With Infinite Possibilities',
-    description: 'Enterprise production hub for project scheduling, Kanban workflows, team collaboration, and production pipeline management.',
+  hub: {
+    id: 'hub',
+    name: 'Genie Hub',
+    tagline: 'Your Creative Command Center',
+    description: 'Enterprise production hub for project scheduling, Kanban workflows, team collaboration, asset management, and production pipeline management.',
     emoji: '🎯',
     color: 'from-emerald-500 to-teal-500',
     bgColor: 'bg-emerald-50 dark:bg-emerald-950/20',
@@ -231,6 +250,7 @@ export const GENIE_PRODUCTS: Record<GenieProduct, GenieProductInfo> = {
       'Project scheduling',
       'Kanban boards',
       'Team collaboration',
+      'Asset library',
       'Production pipeline',
       'Resource management',
       'Task assignment',
@@ -243,11 +263,12 @@ export const GENIE_PRODUCTS: Record<GenieProduct, GenieProductInfo> = {
       'project-management',
       'collaboration',
       'workflow',
-      'review'
+      'review',
+      'asset-management'
     ],
-    capabilities: ['scheduling', 'kanban', 'collaboration', 'review', 'approval'],
+    capabilities: ['scheduling', 'kanban', 'collaboration', 'review', 'approval', 'assets'],
     logos: {
-      combined: genieArcLogo
+      combined: genieHubLogo
     }
   },
   cast: {
@@ -286,34 +307,34 @@ export const GENIE_PRODUCTS: Record<GenieProduct, GenieProductInfo> = {
       combined: genieCastLogo
     }
   },
+  // Legacy aliases - point to hub data for backward compatibility
+  arc: {
+    id: 'arc',
+    name: 'Genie Hub',
+    tagline: 'Your Creative Command Center',
+    description: 'Enterprise production hub for project scheduling, Kanban workflows, team collaboration, asset management, and production pipeline management.',
+    emoji: '🎯',
+    color: 'from-emerald-500 to-teal-500',
+    bgColor: 'bg-emerald-50 dark:bg-emerald-950/20',
+    borderColor: 'border-emerald-200 dark:border-emerald-800',
+    features: ['Project scheduling', 'Kanban boards', 'Team collaboration', 'Asset library'],
+    pipelineCategories: ['scheduling', 'project-management', 'collaboration', 'workflow', 'review', 'asset-management'],
+    capabilities: ['scheduling', 'kanban', 'collaboration', 'review', 'approval', 'assets'],
+    logos: { combined: genieHubLogo }
+  },
   studio: {
     id: 'studio',
-    name: 'Genie Studio',
+    name: 'Genie Suite',
     tagline: 'Mind to Media',
-    description: 'The master orchestrator that coordinates all Genie products. From idea to global distribution, the complete creative suite.',
+    description: 'The complete AI creative suite. 7 products, 206 pipelines, 140+ languages.',
     emoji: '🎨',
     color: 'from-indigo-500 to-violet-500',
     bgColor: 'bg-indigo-50 dark:bg-indigo-950/20',
     borderColor: 'border-indigo-200 dark:border-indigo-800',
-    features: [
-      'Master orchestration',
-      'Cross-product workflows',
-      'Unified asset library',
-      'Project organization',
-      '181 pipeline access',
-      'A2A agent coordination',
-      '5-zone regional routing',
-      'Enterprise integration'
-    ],
-    pipelineCategories: [
-      'orchestration',
-      'all-categories'
-    ],
+    features: ['All 7 products', 'Cross-product workflows', 'Unified asset library', '206 pipeline access'],
+    pipelineCategories: ['orchestration', 'all-categories'],
     capabilities: ['orchestration', 'all'],
-    logos: {
-      combined: genieStudioBanner,
-      horizontal: genieStudioHorizontal
-    }
+    logos: { combined: genieStudioBanner, horizontal: genieStudioHorizontal }
   }
 };
 
@@ -359,17 +380,17 @@ export const getProductsByPipelineCategory = (category: string): GenieProduct[] 
 /**
  * All product keys (including Cast)
  */
-export const PRODUCT_KEYS: GenieProduct[] = ['spark', 'mind', 'vibe', 'deck', 'arc', 'cast', 'studio'];
+export const PRODUCT_KEYS: GenieProduct[] = ['spark', 'mind', 'vibe', 'deck', 'hub', 'cast'];
 
 /**
- * Display order for UI: Spark → Mind → Vibe → Deck → Arc → Cast → Studio (center)
+ * Display order for UI: Spark → Mind → Vibe → Deck → Hub → Cast
  */
-export const PRODUCT_DISPLAY_ORDER: GenieProduct[] = ['spark', 'mind', 'vibe', 'deck', 'arc', 'cast', 'studio'];
+export const PRODUCT_DISPLAY_ORDER: GenieProduct[] = ['spark', 'mind', 'vibe', 'deck', 'hub', 'cast'];
 
 /**
  * Production flow order (typical user journey)
  */
-export const PRODUCT_FLOW_ORDER: GenieProduct[] = ['spark', 'mind', 'vibe', 'deck', 'arc', 'cast'];
+export const PRODUCT_FLOW_ORDER: GenieProduct[] = ['spark', 'mind', 'vibe', 'deck', 'hub', 'cast'];
 
 /**
  * Supported Languages for Voice/TTS Features
@@ -396,38 +417,52 @@ export const SUPPORTED_LANGUAGES = {
  */
 export const SUBSCRIPTION_FEATURE_ACCESS = {
   free: {
-    products: ['studio', 'spark'],
+    products: ['spark'],
     limitations: {
       spark: '5 scripts/month',
-      studio: 'Watermarked exports',
       vibe: 'Not available',
-      arc: 'Not available',
+      hub: 'Not available',
       cast: 'Not available',
       mind: 'Basic only'
     }
   },
   starter: {
-    products: ['studio', 'spark', 'mind'],
+    products: ['spark', 'mind'],
     limitations: {
       spark: '25 scripts/month',
       vibe: '5 hours recording/month',
-      arc: 'Not available',
+      hub: 'Not available',
       cast: 'Not available',
       mind: '1K documents'
     }
   },
   business: {
-    products: ['studio', 'spark', 'vibe', 'mind', 'deck'],
+    products: ['spark', 'vibe', 'mind', 'deck'],
     limitations: {
       spark: '150 scripts/month',
       vibe: '25 hours recording/month',
-      arc: '5 shows',
+      hub: '5 shows',
       cast: '3 platforms',
       mind: '10K documents'
     }
   },
   pro: {
-    products: ['studio', 'spark', 'vibe', 'mind', 'deck', 'arc', 'cast'],
+    products: ['spark', 'vibe', 'mind', 'deck', 'hub', 'cast'],
     limitations: {}
+  }
+} as const;
+
+/**
+ * Genie Suite brand constants
+ * The umbrella brand for the entire ecosystem
+ */
+export const GENIE_SUITE = {
+  name: 'Genie Suite',
+  domain: 'GenieAISuite.com',
+  tagline: 'Mind to Media',
+  description: 'The complete AI creative suite. 7 products, 206 pipelines, 140+ languages.',
+  logos: {
+    banner: genieStudioBanner,
+    horizontal: genieStudioHorizontal
   }
 } as const;
