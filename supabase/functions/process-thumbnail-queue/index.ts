@@ -485,14 +485,15 @@ async function generateWithGemini(prompt: string): Promise<{ url: string | null;
 // Per architecture requirement: all thumbnail generation uses the 18 internal AI providers
 
 async function generateWithAlibaba(prompt: string): Promise<{ url: string | null; provider: string; isBase64: boolean }> {
-  const ALIBABA_API_KEY = Deno.env.get('ALIBABA_API_KEY') || Deno.env.get('DASHSCOPE_API_KEY');
+  const ALIBABA_API_KEY = Deno.env.get('ALIBABA_SINGAPORE_API_KEY') || Deno.env.get('ALIBABA_API_KEY') || Deno.env.get('DASHSCOPE_API_KEY');
   if (!ALIBABA_API_KEY) {
     console.log('❌ Alibaba API key not configured');
     return { url: null, provider: 'alibaba', isBase64: false };
   }
 
   try {
-    console.log('🔄 Trying Alibaba Wanx...');
+    // PRIMARY: Try Wan 2.6 T2I (latest, best quality)
+    console.log('🔄 Trying Alibaba Wan 2.6 T2I (Singapore)...');
     const response = await fetch('https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis', {
       method: 'POST',
       headers: {
@@ -501,14 +502,40 @@ async function generateWithAlibaba(prompt: string): Promise<{ url: string | null
         'X-DashScope-Async': 'enable',
       },
       body: JSON.stringify({
-        model: 'wanx-v1',
+        model: 'wan2.6-t2i',
         input: { prompt },
         parameters: { size: '1280*720', n: 1 },
       }),
     });
 
     if (!response.ok) {
-      console.log(`❌ Alibaba error: ${response.status}`);
+      const errText = await response.text();
+      console.log(`❌ Wan 2.6 T2I error: ${response.status} - ${errText.substring(0, 100)}`);
+      
+      // FALLBACK: Try legacy wanx-v1
+      console.log('🔄 Falling back to Wanx v1...');
+      const fallbackRes = await fetch('https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${ALIBABA_API_KEY}`,
+          'Content-Type': 'application/json',
+          'X-DashScope-Async': 'enable',
+        },
+        body: JSON.stringify({
+          model: 'wanx-v1',
+          input: { prompt },
+          parameters: { size: '1280*720', n: 1 },
+        }),
+      });
+      if (!fallbackRes.ok) {
+        console.log(`❌ Wanx v1 also failed: ${fallbackRes.status}`);
+        return { url: null, provider: 'alibaba', isBase64: false };
+      }
+      const fallbackData = await fallbackRes.json();
+      const fallbackTaskId = fallbackData.output?.task_id;
+      if (fallbackTaskId) {
+        return await pollAlibabaTask(ALIBABA_API_KEY, fallbackTaskId, 'alibaba_wanx_v1');
+      }
       return { url: null, provider: 'alibaba', isBase64: false };
     }
 
@@ -516,25 +543,36 @@ async function generateWithAlibaba(prompt: string): Promise<{ url: string | null
     const taskId = data.output?.task_id;
     if (!taskId) return { url: null, provider: 'alibaba', isBase64: false };
 
-    console.log('⏳ Alibaba processing, polling...');
-    for (let i = 0; i < 30; i++) {
-      await new Promise(r => setTimeout(r, 2000));
-      const statusRes = await fetch(`https://dashscope-intl.aliyuncs.com/api/v1/tasks/${taskId}`, {
-        headers: { 'Authorization': `Bearer ${ALIBABA_API_KEY}` },
-      });
-      const statusData = await statusRes.json();
-      
-      if (statusData.output?.task_status === 'SUCCEEDED') {
-        return { url: statusData.output?.results?.[0]?.url || null, provider: 'alibaba_wanx', isBase64: false };
-      }
-      if (statusData.output?.task_status === 'FAILED') break;
-    }
-    
-    return { url: null, provider: 'alibaba', isBase64: false };
+    return await pollAlibabaTask(ALIBABA_API_KEY, taskId, 'alibaba_wan26_t2i');
   } catch (error) {
     console.error('Alibaba error:', error);
     return { url: null, provider: 'alibaba', isBase64: false };
   }
+}
+
+async function pollAlibabaTask(apiKey: string, taskId: string, providerName: string): Promise<{ url: string | null; provider: string; isBase64: boolean }> {
+  console.log(`⏳ Alibaba processing task ${taskId}, polling...`);
+  for (let i = 0; i < 30; i++) {
+    await new Promise(r => setTimeout(r, 2000));
+    const statusRes = await fetch(`https://dashscope-intl.aliyuncs.com/api/v1/tasks/${taskId}`, {
+      headers: { 'Authorization': `Bearer ${apiKey}` },
+    });
+    const statusData = await statusRes.json();
+    const status = statusData.output?.task_status;
+    
+    if (status === 'SUCCEEDED') {
+      const imageUrl = statusData.output?.results?.[0]?.url;
+      if (imageUrl) {
+        console.log(`✅ ${providerName} image ready`);
+        return { url: imageUrl, provider: providerName, isBase64: false };
+      }
+    }
+    if (status === 'FAILED') {
+      console.log(`❌ ${providerName} task failed: ${JSON.stringify(statusData.output)}`);
+      break;
+    }
+  }
+  return { url: null, provider: providerName, isBase64: false };
 }
 
 // ============================================

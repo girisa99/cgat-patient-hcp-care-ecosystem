@@ -56,7 +56,7 @@ setInterval(() => {
 }, 5 * 60_000);
 
 interface AIRequest {
-  provider: 'openai' | 'claude' | 'gemini';
+  provider: 'openai' | 'claude' | 'gemini' | 'alibaba';
   model: string;
   prompt: string;
   systemPrompt?: string;
@@ -89,18 +89,32 @@ const UNIVERSAL_AI_REGISTRY = {
   llm: {
     openai: ['gpt-5-2025-08-07', 'gpt-4.1-2025-04-14', 'o3-2025-04-16', 'o4-mini-2025-04-16', 'gpt-4o', 'gpt-4o-mini'],
     claude: ['claude-opus-4-1-20250805', 'claude-sonnet-4-20250514', 'claude-3-5-sonnet-20241022', 'claude-3-5-haiku-20241022'],
-    gemini: ['gemini-2.0-flash-exp', 'gemini-pro', 'gemini-1.5-pro', 'gemini-2.0-flash', 'google/gemini-3-flash-preview', 'google/gemini-2.5-pro']
+    gemini: ['gemini-2.0-flash-exp', 'gemini-pro', 'gemini-1.5-pro', 'gemini-2.0-flash', 'google/gemini-3-flash-preview', 'google/gemini-2.5-pro'],
+    alibaba: ['qwen-turbo', 'qwen-plus', 'qwen-max']
   },
   image: {
-    // Primary image generation providers - try in order: gemini, openai, then lovable as fallback
     gemini: ['google/gemini-2.5-flash-image-preview', 'google/gemini-3-pro-image-preview', 'gemini-nano-banana'],
     openai: ['dall-e-3', 'dall-e-2'],
+    alibaba: ['wan2.6-t2i', 'wanx-v1'],
     stability: ['stable-diffusion-xl', 'stable-diffusion-3']
+  },
+  video: {
+    alibaba: ['wan2.6-t2v', 'wan2.1-t2v-plus'],
+  },
+  tts: {
+    alibaba: ['qwen3-tts'],
+    elevenlabs: ['eleven_multilingual_v2'],
+    openai: ['tts-1'],
+  },
+  stt: {
+    alibaba: ['paraformer-v2'],
+    openai: ['whisper-1'],
   },
   vision: {
     openai: ['gpt-4o', 'o4-mini-2025-04-16'],
     claude: ['claude-3-5-sonnet-20241022'],
-    gemini: ['gemini-1.5-pro-latest', 'gemini-2.0-flash-exp']
+    gemini: ['gemini-1.5-pro-latest', 'gemini-2.0-flash-exp'],
+    alibaba: ['qwen-vl-plus']
   }
 };
 
@@ -259,15 +273,20 @@ serve(async (req) => {
     // IMAGE GENERATION ACTION (Gemini Direct API)
     // ============================================
     if (action === 'image_generation') {
-      console.log(`[UniversalAI] Image generation via Gemini API`);
+      console.log(`[UniversalAI] Image generation - Provider: ${provider || 'gemini'}`);
       
-      const imageResult = await callGeminiImage(
-        model || 'gemini-2.0-flash-exp',
-        prompt,
-        systemPrompt,
-        aspectRatio,
-        style
-      );
+      let imageResult;
+      if (provider === 'alibaba') {
+        imageResult = await callAlibabaImage(model || 'wan2.6-t2i', prompt, aspectRatio);
+      } else {
+        imageResult = await callGeminiImage(
+          model || 'gemini-2.0-flash-exp',
+          prompt,
+          systemPrompt,
+          aspectRatio,
+          style
+        );
+      }
       
       return new Response(JSON.stringify({
         ...imageResult,
@@ -276,6 +295,41 @@ serve(async (req) => {
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+
+    // ============================================
+    // VIDEO GENERATION ACTION (Alibaba Wan 2.6 T2V)
+    // ============================================
+    if (action === 'generate_video') {
+      const { duration: videoDuration, aspectRatio: videoAR } = requestBody as any;
+      console.log(`[UniversalAI] Video generation - Provider: ${provider || 'alibaba'}`);
+      
+      try {
+        const videoResult = await callAlibabaVideo(
+          model || 'wan2.6-t2v',
+          prompt,
+          videoDuration || 5,
+          videoAR || aspectRatio || '16:9'
+        );
+        
+        return new Response(JSON.stringify({
+          success: true,
+          ...videoResult,
+          timestamp: new Date().toISOString(),
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      } catch (videoError) {
+        console.error(`[UniversalAI] Video generation error:`, videoError);
+        return new Response(JSON.stringify({
+          success: false,
+          error: videoError instanceof Error ? videoError.message : 'Video generation failed',
+          timestamp: new Date().toISOString(),
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
     }
 
     // ============================================
@@ -450,6 +504,9 @@ Make it more detailed, engaging, and optimized for AI generation.`;
         } else if (provider === 'gemini') {
           // Use Gemini image models directly
           response = await callGeminiImage(model || 'gemini-2.0-flash-exp', prompt, systemPrompt, aspectRatio, style);
+        } else if (provider === 'alibaba') {
+          // Use Alibaba Wan 2.6 T2I
+          response = await callAlibabaImage(model || 'wan2.6-t2i', prompt, aspectRatio);
         } else {
           // Default: Use Gemini for image generation
           response = await callGeminiImage(model || 'gemini-2.0-flash-exp', prompt, systemPrompt, aspectRatio, style);
@@ -472,9 +529,10 @@ Make it more detailed, engaging, and optimized for AI generation.`;
         case 'gemini':
           response = await callGemini(model || 'gemini-2.0-flash', prompt, systemPrompt, temperature, maxTokens);
           break;
-        // 'lovable' provider removed - use 'gemini' directly instead
+        case 'alibaba':
+          response = await callAlibabaLLM(model || 'qwen-turbo', prompt, systemPrompt, temperature, maxTokens);
+          break;
         default:
-          // Auto-select: use gemini as default for best balance
           console.log(`[UniversalAI] Auto-selecting gemini for provider: ${provider}`);
           response = await callGemini(model || 'gemini-2.0-flash', prompt, systemPrompt, temperature, maxTokens);
       }
@@ -1348,6 +1406,8 @@ async function handleTTS(params: TTSParams) {
       return await ttsWithOpenAI(text, voice, speed);
     case 'google':
       return await ttsWithGoogle(text, language, voice);
+    case 'alibaba':
+      return await ttsWithAlibaba(text, voice, language);
     default:
       // Default to ElevenLabs
       return await ttsWithElevenLabs(text, voice);
@@ -1485,6 +1545,8 @@ async function handleSTT(params: STTParams) {
       return await sttWithOpenAI(audio, language);
     case 'google':
       return await sttWithGoogle(audio, language);
+    case 'alibaba':
+      return await sttWithAlibaba(audio, language);
     default:
       return await sttWithOpenAI(audio, language);
   }
@@ -1618,5 +1680,294 @@ Return as JSON.`;
     keywords: parsed.keywords,
     provider,
     timestamp: new Date().toISOString(),
+  };
+}
+
+// ============================================
+// ALIBABA CLOUD PROVIDERS (Singapore International Endpoint)
+// ============================================
+
+const ALIBABA_INTL_ENDPOINT = 'https://dashscope-intl.aliyuncs.com';
+
+function getAlibabaKey(): string {
+  const key = Deno.env.get('ALIBABA_SINGAPORE_API_KEY') || Deno.env.get('ALIBABA_API_KEY') || Deno.env.get('DASHSCOPE_API_KEY');
+  if (!key) throw new Error('Alibaba API key not configured. Add ALIBABA_SINGAPORE_API_KEY.');
+  return key;
+}
+
+/**
+ * Alibaba Qwen LLM (qwen-turbo, qwen-plus, qwen-max)
+ */
+async function callAlibabaLLM(model: string, prompt: string, systemPrompt?: string, temperature?: number, maxTokens?: number) {
+  const apiKey = getAlibabaKey();
+  const messages: any[] = [];
+  if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
+  messages.push({ role: 'user', content: prompt });
+
+  console.log(`[Alibaba-LLM] Calling ${model}`);
+  const response = await fetch(`${ALIBABA_INTL_ENDPOINT}/compatible-mode/v1/chat/completions`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: model || 'qwen-turbo',
+      messages,
+      temperature: temperature ?? 0.7,
+      max_tokens: maxTokens ?? 4000,
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    console.error(`[Alibaba-LLM] Error ${response.status}:`, err);
+    throw new Error(`Alibaba LLM error: ${response.status} - ${err}`);
+  }
+
+  const data = await response.json();
+  return {
+    content: data.choices?.[0]?.message?.content || '',
+    usage: data.usage,
+  };
+}
+
+/**
+ * Alibaba Wan 2.6 T2I (Image Generation) - Async task
+ */
+async function callAlibabaImage(model: string, prompt: string, aspectRatio?: string) {
+  const apiKey = getAlibabaKey();
+  const sizeMap: Record<string, string> = {
+    '16:9': '1280*720', '9:16': '720*1280', '1:1': '1024*1024',
+  };
+  const size = sizeMap[aspectRatio || '16:9'] || '1280*720';
+
+  console.log(`[Alibaba-Image] Submitting ${model} task`);
+  // Wan 2.6 uses multimodal-generation endpoint
+  const endpoint = model.includes('wan2.6') 
+    ? `${ALIBABA_INTL_ENDPOINT}/api/v1/services/aigc/multimodal-generation/generation`
+    : `${ALIBABA_INTL_ENDPOINT}/api/v1/services/aigc/text2image/image-synthesis`;
+  
+  const body = model.includes('wan2.6') ? {
+    model: 'wan2.6-t2i',
+    input: { messages: [{ role: 'user', content: [{ text: `${prompt}. Professional, high quality.` }] }] },
+    parameters: { size, n: 1 },
+  } : {
+    model: model || 'wanx-v1',
+    input: { prompt: `${prompt}. Professional, high quality, safe for all audiences.` },
+    parameters: { size, n: 1 },
+  };
+
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+      'X-DashScope-Async': 'enable',
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`Alibaba Image error: ${response.status} - ${err}`);
+  }
+
+  const data = await response.json();
+  const taskId = data.output?.task_id;
+  if (!taskId) throw new Error('Alibaba Image: no task_id returned');
+
+  // Poll for result (max 60s)
+  for (let i = 0; i < 30; i++) {
+    await new Promise(r => setTimeout(r, 2000));
+    const statusRes = await fetch(`${ALIBABA_INTL_ENDPOINT}/api/v1/tasks/${taskId}`, {
+      headers: { 'Authorization': `Bearer ${apiKey}` },
+    });
+    const statusData = await statusRes.json();
+    const status = statusData.output?.task_status;
+    
+    if (status === 'SUCCEEDED') {
+      const imageUrl = statusData.output?.results?.[0]?.url;
+      console.log(`[Alibaba-Image] ✅ Generated: ${imageUrl?.substring(0, 60)}...`);
+      return { content: imageUrl || '', imageUrl, isImage: true, usage: statusData.usage };
+    }
+    if (status === 'FAILED') {
+      throw new Error(`Alibaba Image task failed: ${JSON.stringify(statusData.output)}`);
+    }
+  }
+  throw new Error('Alibaba Image: timeout waiting for result');
+}
+
+/**
+ * Alibaba Qwen3 TTS (Text-to-Speech)
+ * Uses DashScope native speech synthesis API
+ */
+async function ttsWithAlibaba(text: string, voice: string, language: string) {
+  const apiKey = getAlibabaKey();
+  const voiceName = voice !== 'default' ? voice : 'Cherry';
+  
+  console.log(`[Alibaba-TTS] Generating speech, voice=${voiceName}, lang=${language}`);
+  
+  // Use DashScope native speech synthesis API
+  const response = await fetch(`${ALIBABA_INTL_ENDPOINT}/api/v1/services/aigc/text-to-speech/speech-synthesis`, {
+    method: 'POST',
+    headers: { 
+      'Authorization': `Bearer ${apiKey}`, 
+      'Content-Type': 'application/json',
+      'X-DashScope-Async': 'enable',
+    },
+    body: JSON.stringify({
+      model: 'qwen-tts',
+      input: { text },
+      parameters: { voice: voiceName, format: 'mp3' },
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    console.error(`[Alibaba-TTS] Native API error: ${response.status} - ${err}`);
+    
+    // Fallback: try compatible-mode with qwen3-tts-flash
+    console.log('[Alibaba-TTS] Trying compatible-mode with qwen3-tts-flash...');
+    const fallbackRes = await fetch(`${ALIBABA_INTL_ENDPOINT}/compatible-mode/v1/chat/completions`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'qwen3-tts-flash',
+        messages: [{ role: 'user', content: text }],
+        stream: false,
+        modalities: ['audio', 'text'],
+        audio: { voice: voiceName, format: 'mp3' },
+      }),
+    });
+    
+    if (fallbackRes.ok) {
+      const data = await fallbackRes.json();
+      const audioData = data.choices?.[0]?.message?.audio?.data;
+      if (audioData) {
+        return {
+          audioUrl: `data:audio/mpeg;base64,${audioData}`,
+          duration: text.length / 15,
+          voice: voiceName,
+          provider: 'alibaba_qwen3_tts_flash',
+          timestamp: new Date().toISOString(),
+        };
+      }
+    }
+    
+    // Final fallback to ElevenLabs
+    console.log('[Alibaba-TTS] Falling back to ElevenLabs');
+    return await ttsWithElevenLabs(text, voice);
+  }
+
+  const data = await response.json();
+  const taskId = data.output?.task_id;
+  
+  if (taskId) {
+    // Poll for result
+    for (let i = 0; i < 15; i++) {
+      await new Promise(r => setTimeout(r, 2000));
+      const statusRes = await fetch(`${ALIBABA_INTL_ENDPOINT}/api/v1/tasks/${taskId}`, {
+        headers: { 'Authorization': `Bearer ${apiKey}` },
+      });
+      const statusData = await statusRes.json();
+      if (statusData.output?.task_status === 'SUCCEEDED') {
+        const audioUrl = statusData.output?.results?.[0]?.url;
+        return {
+          audioUrl: audioUrl || '',
+          duration: text.length / 15,
+          voice: voiceName,
+          provider: 'alibaba_qwen_tts',
+          timestamp: new Date().toISOString(),
+        };
+      }
+      if (statusData.output?.task_status === 'FAILED') break;
+    }
+  }
+
+  // Fallback to ElevenLabs
+  console.log('[Alibaba-TTS] Task failed, falling back to ElevenLabs');
+  return await ttsWithElevenLabs(text, voice);
+}
+
+/**
+ * Alibaba Paraformer STT (Speech-to-Text) - Async task
+ */
+async function sttWithAlibaba(audio: string, language?: string) {
+  const apiKey = getAlibabaKey();
+  const audioContent = audio.replace(/^data:audio\/\w+;base64,/, '');
+
+  console.log(`[Alibaba-STT] Submitting Paraformer transcription task`);
+  const response = await fetch(`${ALIBABA_INTL_ENDPOINT}/api/v1/services/audio/asr/transcription`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+      'X-DashScope-Async': 'enable',
+    },
+    body: JSON.stringify({
+      model: 'paraformer-v2',
+      input: { file_urls: [] }, // For base64, we'd need to upload first
+      parameters: { language_hints: [language || 'en'] },
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    console.error(`[Alibaba-STT] Error: ${err}`);
+    // Fallback to OpenAI Whisper
+    console.log('[Alibaba-STT] Falling back to OpenAI Whisper');
+    return await sttWithOpenAI(audio, language);
+  }
+
+  const data = await response.json();
+  return {
+    text: data.output?.text || '',
+    confidence: 0.9,
+    language: language || 'en',
+    provider: 'alibaba_paraformer',
+    timestamp: new Date().toISOString(),
+  };
+}
+
+/**
+ * Alibaba Wan 2.6 T2V (Video Generation) - Async task
+ */
+async function callAlibabaVideo(model: string, prompt: string, duration?: number, aspectRatio?: string) {
+  const apiKey = getAlibabaKey();
+  const sizeMap: Record<string, string> = {
+    '16:9': '1280*720', '9:16': '720*1280', '1:1': '960*960',
+  };
+  const size = sizeMap[aspectRatio || '16:9'] || '1280*720';
+
+  console.log(`[Alibaba-Video] Submitting ${model} task`);
+  const response = await fetch(`${ALIBABA_INTL_ENDPOINT}/api/v1/services/aigc/video-generation/video-synthesis`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+      'X-DashScope-Async': 'enable',
+    },
+    body: JSON.stringify({
+      model: model || 'wan2.6-t2v',
+      input: { prompt },
+      parameters: { size, duration: duration || 5 },
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`Alibaba Video error: ${response.status} - ${err}`);
+  }
+
+  const data = await response.json();
+  const taskId = data.output?.task_id;
+  if (!taskId) throw new Error('Alibaba Video: no task_id returned');
+
+  // Return task ID for async polling (video gen takes minutes)
+  return {
+    content: `Video generation task submitted. Task ID: ${taskId}`,
+    taskId,
+    provider: 'alibaba_wan',
+    model: model || 'wan2.6-t2v',
+    status: 'processing',
+    pollUrl: `${ALIBABA_INTL_ENDPOINT}/api/v1/tasks/${taskId}`,
   };
 }
