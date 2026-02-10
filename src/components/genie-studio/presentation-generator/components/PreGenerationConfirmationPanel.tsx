@@ -175,7 +175,7 @@ export const MODEL_TIERS: Record<string, ModelTierInfo> = {
   'google-wavenet': { tier: 2, tierName: 'Tier 2 - Standard', description: 'WaveNet, 200+ languages', costMultiplier: 0.6, qualityScore: 88, speedScore: 90 },
   'openai-tts-hd': { tier: 2, tierName: 'Tier 2 - Standard', description: 'Simple API, good quality', costMultiplier: 0.8, qualityScore: 88, speedScore: 92 },
   // Tier 3 - Budget/Regional
-  'alibaba-cosyvoice': { tier: 3, tierName: 'Tier 3 - Regional', description: 'Best Chinese voices, cloning', costMultiplier: 0.3, qualityScore: 88, speedScore: 88 },
+  'alibaba-qwen3-tts': { tier: 3, tierName: 'Tier 3 - Regional', description: 'Best CJK voices, Qwen3-TTS-Flash', costMultiplier: 0.3, qualityScore: 88, speedScore: 88 },
   'alibaba-tts': { tier: 3, tierName: 'Tier 3 - Regional', description: 'DashScope, Asian optimized', costMultiplier: 0.3, qualityScore: 82, speedScore: 90 },
   'amazon-polly': { tier: 3, tierName: 'Tier 3 - Budget', description: 'Neural voices, AWS', costMultiplier: 0.5, qualityScore: 82, speedScore: 92 },
   'aws-polly': { tier: 3, tierName: 'Tier 3 - Budget', description: 'Neural voices, AWS', costMultiplier: 0.5, qualityScore: 82, speedScore: 92 },

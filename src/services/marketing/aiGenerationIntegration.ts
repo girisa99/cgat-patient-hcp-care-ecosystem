@@ -5,7 +5,7 @@
  * - AI Avatars (HeyGen, Synthesia, Alibaba OmniAvatar)
  * - Video Generation (ModelsLab, Gemini Veo)
  * - 3D Generation (ModelsLab 3D)
- * - TTS (ElevenLabs, Azure, Google, Alibaba CosyVoice)
+ * - TTS (ElevenLabs, Azure, Google, Alibaba Qwen3-TTS)
  * - PPT Generation (Genie Deck)
  * - Immersive Content (VR/AR)
  * - Journey Steps & Frameworks

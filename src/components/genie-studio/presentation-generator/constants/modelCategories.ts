@@ -564,8 +564,8 @@ export const VOICE_MODELS: ModelConfig[] = [
     speed: 8
   },
   {
-    id: 'alibaba-cosyvoice',
-    name: 'CosyVoice',
+    id: 'alibaba-qwen3-tts',
+    name: 'Qwen3-TTS',
     provider: 'Alibaba',
     tier: 2,
     description: 'CJK-optimized voice synthesis',

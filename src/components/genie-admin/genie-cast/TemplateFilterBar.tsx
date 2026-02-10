@@ -133,7 +133,7 @@ export const AI_PROVIDER_FILTERS = [
   { value: 'azure_neural', label: 'Azure Neural TTS', icon: '🗣️', keywords: ['azure', 'neural'] },
   { value: 'alibaba_avatar', label: 'Alibaba Avatar', icon: '👤', keywords: ['omnivatar', 'alibaba avatar', 'wan 2.2'] },
   { value: 'alibaba_3d', label: 'Alibaba 3D Suite', icon: '🧱', keywords: ['alibaba 3d', 'alibaba 3d suite'] },
-  { value: 'cosyvoice', label: 'CosyVoice', icon: '🎤', keywords: ['cosyvoice', 'cosy'] },
+  { value: 'qwen3_tts', label: 'Qwen3-TTS', icon: '🎤', keywords: ['qwen3-tts', 'qwen3', 'qwen tts'] },
   { value: 'gemini_imagen', label: 'Gemini Imagen', icon: '💎', keywords: ['gemini', 'imagen'] },
   { value: 'openai_dalle', label: 'DALL-E 3', icon: '🖼️', keywords: ['dall-e', 'dalle', 'openai'] },
 ];

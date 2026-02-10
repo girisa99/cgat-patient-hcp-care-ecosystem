@@ -8,7 +8,7 @@
  * 
  * 5 ROUTING ZONES:
  * 1. CLAUDE ZONE: US, UK, EU, Brazil, Israel, South Africa (Claude + ElevenLabs + DeepL)
- * 2. ALIBABA ZONE: Japan, Korea, China, HK, Taiwan, Singapore (Qwen + CosyVoice + Qwen-MT) - CJK ONLY
+ * 2. ALIBABA ZONE: Japan, Korea, China, HK, Taiwan, Singapore (Qwen + Qwen3-TTS + Qwen-MT) - CJK ONLY
  * 3. ARABIC ZONE: Saudi Arabia, UAE, Egypt, Morocco, Jordan, etc. (GPT-4o + Azure TTS + Azure Translator)
  * 4. GEMINI ZONE: India, Pakistan, SEA, Africa (Gemini + Azure + Google Translate)
  * 5. FALLBACK: GPT-4o (When primary fails)
@@ -69,7 +69,7 @@ export const PROVIDER_COSTS = {
   tts: {
     'elevenlabs': { cost: 0.30, unit: '1k chars', tier: 'premium' },
     'azure-neural': { cost: 0.016, unit: '1k chars', tier: 'advanced' },
-    'alibaba-cosyvoice': { cost: 0.02, unit: '1k chars', tier: 'advanced' },
+    'alibaba-qwen3-tts': { cost: 0.02, unit: '1k chars', tier: 'advanced' },
     'google-tts': { cost: 0.016, unit: '1k chars', tier: 'standard' },
   },
   stt: {
@@ -137,11 +137,11 @@ export const COMPLETE_ROUTING_TABLE: RegionRoute[] = [
   // ═══════════════════════════════════════════════════════════════════════════
   
   // CJK Countries (⭐ = Regional specialist with MOAT)
-  { region: 'Japan', countryCode: 'JP', zone: 'alibaba', config: { llm: 'qwen-max', llmFallback: 'gpt-4o', tts: 'alibaba-cosyvoice', stt: 'alibaba-paraformer', translation: 'qwen-mt', rtl: false, moat: '⭐ Keigo handling', reason: 'Native CJK stack, keigo handling' } },
-  { region: 'Korea', countryCode: 'KR', zone: 'alibaba', config: { llm: 'qwen-max', llmFallback: 'gpt-4o', tts: 'alibaba-cosyvoice', stt: 'alibaba-paraformer', translation: 'qwen-mt', rtl: false, moat: '⭐ Honorifics', reason: 'Korean honorifics, number format' } },
-  { region: 'China', countryCode: 'CN', zone: 'alibaba', config: { llm: 'qwen-max', llmFallback: 'gpt-4o', tts: 'alibaba-cosyvoice', stt: 'alibaba-paraformer', translation: 'qwen-mt', rtl: false, moat: '⭐ Native Chinese', reason: 'Native Chinese, best quality' } },
-  { region: 'Hong Kong', countryCode: 'HK', zone: 'alibaba', config: { llm: 'qwen-max', llmFallback: 'gpt-4o', tts: 'alibaba-cosyvoice', stt: 'alibaba-paraformer', translation: 'qwen-mt', rtl: false, moat: 'Cantonese', reason: 'Cantonese support' } },
-  { region: 'Taiwan', countryCode: 'TW', zone: 'alibaba', config: { llm: 'qwen-max', llmFallback: 'gpt-4o', tts: 'alibaba-cosyvoice', stt: 'alibaba-paraformer', translation: 'qwen-mt', rtl: false, moat: 'Traditional ZH', reason: 'Traditional Chinese' } },
+  { region: 'Japan', countryCode: 'JP', zone: 'alibaba', config: { llm: 'qwen-max', llmFallback: 'gpt-4o', tts: 'alibaba-qwen3-tts', stt: 'alibaba-paraformer', translation: 'qwen-mt', rtl: false, moat: '⭐ Keigo handling', reason: 'Native CJK stack, keigo handling' } },
+  { region: 'Korea', countryCode: 'KR', zone: 'alibaba', config: { llm: 'qwen-max', llmFallback: 'gpt-4o', tts: 'alibaba-qwen3-tts', stt: 'alibaba-paraformer', translation: 'qwen-mt', rtl: false, moat: '⭐ Honorifics', reason: 'Korean honorifics, number format' } },
+  { region: 'China', countryCode: 'CN', zone: 'alibaba', config: { llm: 'qwen-max', llmFallback: 'gpt-4o', tts: 'alibaba-qwen3-tts', stt: 'alibaba-paraformer', translation: 'qwen-mt', rtl: false, moat: '⭐ Native Chinese', reason: 'Native Chinese, best quality' } },
+  { region: 'Hong Kong', countryCode: 'HK', zone: 'alibaba', config: { llm: 'qwen-max', llmFallback: 'gpt-4o', tts: 'alibaba-qwen3-tts', stt: 'alibaba-paraformer', translation: 'qwen-mt', rtl: false, moat: 'Cantonese', reason: 'Cantonese support' } },
+  { region: 'Taiwan', countryCode: 'TW', zone: 'alibaba', config: { llm: 'qwen-max', llmFallback: 'gpt-4o', tts: 'alibaba-qwen3-tts', stt: 'alibaba-paraformer', translation: 'qwen-mt', rtl: false, moat: 'Traditional ZH', reason: 'Traditional Chinese' } },
   
   // MEA Arabic Countries (⭐ = Regional specialist with MOAT)
   { region: 'Saudi Arabia', countryCode: 'SA', zone: 'alibaba', config: { llm: 'qwen-max', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'azure-translator', rtl: true, moat: '⭐ Najdi dialect', reason: 'Qwen strong Arabic + Najdi dialect' } },
@@ -206,7 +206,7 @@ export const ZONE_SUMMARY = {
     name: 'Alibaba Zone',
     llm: 'qwen-max',
     regions: ['Japan', 'Korea', 'China', 'HK', 'Taiwan', 'MEA (Arabic)'],
-    providers: 'Qwen + CosyVoice + Qwen-MT',
+    providers: 'Qwen + Qwen3-TTS + Qwen-MT',
     color: 'bg-orange-500',
     costPer1M: 8,
   },

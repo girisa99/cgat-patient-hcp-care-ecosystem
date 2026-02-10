@@ -211,7 +211,7 @@ export const P3_SCENARIO_BREAKDOWN = {
     sixZoneRouting: { id: 'P4-LANG-01', name: '6-Zone Regional Routing', status: 'complete', priority: 1, note: 'Claude/Alibaba/Arabic/Gemini/Africa/Fallback zones' },
     dialectSupport: { id: 'P4-LANG-02', name: '7 Arabic Dialect Support', status: 'complete', priority: 1, note: 'Azure Neural TTS with dialect selection' },
     indianLanguages: { id: 'P4-LANG-03', name: '22 Indian Language Support', status: 'complete', priority: 1, note: 'Gemini Zone routing + Azure Neural' },
-    cjkOptimization: { id: 'P4-LANG-04', name: 'CJK Language Optimization', status: 'complete', priority: 1, note: 'Alibaba CosyVoice for Japanese/Korean/Chinese' },
+    cjkOptimization: { id: 'P4-LANG-04', name: 'CJK Language Optimization', status: 'complete', priority: 1, note: 'Alibaba Qwen3-TTS for Japanese/Korean/Chinese' },
     transcreationEngine: { id: 'P4-LANG-05', name: 'AI Transcreation Engine', status: 'complete', priority: 1, note: 'Cultural adaptation in regionalLanguageService' },
     rtlLayoutSupport: { id: 'P4-LANG-06', name: 'RTL Layout Support', status: 'complete', priority: 1, note: 'Arabic/Hebrew UI mirroring' },
     dialectTtsDemo: { id: 'P4-LANG-07', name: 'Dialect TTS Demo Edge Function', status: 'complete', priority: 1, note: 'dialect-tts-demo deployed' },

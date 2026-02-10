@@ -182,7 +182,7 @@ const PROVIDER_CAPABILITY_SCORES: Record<string, { quality: number; speed: numbe
   // TTS
   // ═══════════════════════════════════════════════════════════════════════════
   'elevenlabs': { quality: 98, speed: 85, cost: 50, tier: 'premium' },
-  'alibaba-cosyvoice': { quality: 94, speed: 90, cost: 85, tier: 'advanced' },
+  'alibaba-qwen3-tts': { quality: 94, speed: 90, cost: 85, tier: 'advanced' },
   'azure-neural': { quality: 92, speed: 92, cost: 80, tier: 'advanced' },
   'google-tts': { quality: 88, speed: 95, cost: 90, tier: 'standard' },
   
@@ -226,7 +226,7 @@ const INDUSTRY_PROVIDER_SCORES: Record<string, { llm: string; confidence: number
  */
 const LANGUAGE_PROVIDER_OPTIMIZATION: Record<string, { translation: string; tts: string; stt: string; confidence: number; reasoning: string }> = {
   // CJK Languages
-  zh: { translation: 'alibaba-qwen-mt', tts: 'alibaba-cosyvoice', stt: 'alibaba-paraformer', confidence: 95, reasoning: 'Native CJK optimization' },
+  zh: { translation: 'alibaba-qwen-mt', tts: 'alibaba-qwen3-tts', stt: 'alibaba-paraformer', confidence: 95, reasoning: 'Native CJK optimization' },
   ja: { translation: 'alibaba-qwen-mt', tts: 'azure-neural', stt: 'azure-speech', confidence: 93, reasoning: 'Japanese-optimized pipeline' },
   ko: { translation: 'alibaba-qwen-mt', tts: 'azure-neural', stt: 'azure-speech', confidence: 92, reasoning: 'Korean-optimized pipeline' },
   

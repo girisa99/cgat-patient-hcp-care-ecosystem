@@ -36,7 +36,7 @@ export const PROVIDER_COSTS = {
   tts: {
     elevenlabs: { name: 'ElevenLabs', cost: 0.30, unit: '1K chars', icon: '🎙️' },
     azure: { name: 'Azure Neural', cost: 0.016, unit: '1K chars', icon: '☁️' },
-    alibaba: { name: 'Alibaba CosyVoice', cost: 0.008, unit: '1K chars', icon: '🔊' },
+    alibaba: { name: 'Alibaba Qwen3-TTS', cost: 0.008, unit: '1K chars', icon: '🔊' },
     google: { name: 'Google TTS', cost: 0.016, unit: '1K chars', icon: '🔈' },
   },
   // Video Providers (per minute)
