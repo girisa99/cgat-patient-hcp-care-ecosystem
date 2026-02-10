@@ -1,55 +1,55 @@
 # Memory: integration/alibaba/model-regional-availability-confirmed
 Updated: 2026-02-10
 
-## Confirmed Model Availability (from Alibaba Rep + Official Docs)
+## Confirmed Model Availability (from Official Docs + Console)
 
-**Source**: Alibaba Cloud rep confirmation + https://www.alibabacloud.com/help/en/model-studio/models
+### TTS: Dual-Region Strategy
 
-### Key Guidance from Rep
-- Singapore region can be used **globally** as fallback when US models unavailable
-- Authorize all models in Singapore "Default Workspace" via permission management
-- API key guide: https://www.alibabacloud.com/help/en/model-studio/get-api-key
+**Singapore (International) — `ALIBABA_SINGAPORE_API_KEY`**
+- `qwen3-tts-flash` (stable) — $0.10/10K chars, 49 voices, 600 char max input
+- `qwen3-tts-flash-realtime` — Streaming, customer service, multilingual
+- `qwen3-tts-instruct-flash-realtime` — Emotional control, audiobooks, broadcasting
+- `qwen3-tts-vd-realtime-2026-01-15` — Voice Design from text descriptions
+- `qwen3-tts-vc-realtime-2026-01-15` — Voice Cloning from audio samples
+- Languages: zh (Mandarin + 8 dialects), en, es, ru, it, fr, ko, ja, de, pt
 
-### Model Availability Matrix
+**Beijing (China-Only) — `ALIBABA_CHINA_API_KEY`**
+- `cosyvoice-v3-plus` — $0.286706/10K chars, 48kHz, strongest voice cloning
+- `cosyvoice-v3-flash` — $0.14335/10K chars, lowest cost, streaming
+- `cosyvoice-v2` — $0.286706/10K chars, LaTeX support
+- Features: SSML, Instruct, Timestamp, voice cloning, Chinese dialects
+- Voice list: https://www.alibabacloud.com/help/en/model-studio/cosyvoice-voice-list
+- Connection: WebSocket via `npm:ws` with custom Authorization headers
 
-| Category | Model | International (Singapore) | China Only (Beijing) |
-|----------|-------|:---:|:---:|
-| **TTS** | Qwen Speech Synthesis | ✅ | ✅ |
-| **TTS** | Qwen Real-time Speech | ✅ | ✅ |
-| **TTS** | Qwen Voice Design | ✅ ($0.20/voice, 10 free) | ✅ |
-| **TTS** | CosyVoice (v3-plus, v3-flash, v2) | ❌ **CHINA ONLY** | ✅ |
-| **STT** | Paraformer | ✅ | ✅ |
-| **STT** | Fun-ASR | ✅ | ✅ |
-| **LLM** | Qwen-Max, Qwen-Plus, Qwen-Turbo | ✅ | ✅ |
+### Other Models Availability
+
+| Category | Model | Singapore | Beijing |
+|----------|-------|:---------:|:-------:|
+| **LLM** | Qwen-Max/Plus/Turbo, Qwen3-Max | ✅ | ✅ |
 | **Vision** | Qwen-VL | ✅ | ✅ |
 | **Video** | Wan 2.6 | ✅ | ✅ |
 | **Video** | Wan 2.1 | ✅ | ✅ |
-| **Video** | Wan 2.2 S2V (Avatar) | ❌ **CHINA ONLY** | ✅ |
-| **Image** | Wanx 2.1 | ❌ **CHINA ONLY** | ✅ |
-| **Image** | Wan - animate image | ✅ | ✅ |
-| **Avatar** | Wan - digital human | ❌ **CHINA ONLY** | ✅ |
-| **Avatar** | LivePortrait, EMO | ❌ **CHINA ONLY** | ✅ |
+| **Video** | Wan 2.2 S2V (Avatar) | ❌ | ✅ |
+| **Image** | Wanx 2.1 | ❌ | ✅ |
+| **STT** | Paraformer, Fun-ASR | ✅ | ✅ |
 
-### Pricing (CosyVoice - China endpoint)
-- cosyvoice-v3-plus: $0.286706 / 10K chars
-- cosyvoice-v3-flash: $0.14335 / 10K chars  
-- cosyvoice-v2: $0.286706 / 10K chars
+### Character Billing Rules
+- CJK character = 2 characters
+- English letter/punctuation/space = 1 character
+- SSML tag characters = NOT billed
 
-### TTS Fallback Strategy (Updated)
-For international users (non-China):
-1. **Qwen Speech Synthesis** (Singapore) — Alibaba's international TTS
-2. **Azure Neural** — Primary global TTS with viseme data
-3. **ElevenLabs** — Premium voice quality
-4. **Google Cloud TTS** — Fallback
-
-For China/CJK users:
-1. **CosyVoice v3-plus** (Beijing) — Best quality generative TTS
-2. **Sambert** (Beijing) — Legacy but reliable
-3. **Qwen Speech Synthesis** — Fallback
+### TTS Model Selection Guide
+| Scenario | Recommended |
+|----------|-------------|
+| Voice design (text description) | qwen3-tts-vd-realtime (Singapore) |
+| Voice cloning (audio samples) | qwen3-tts-vc-realtime (Singapore) OR cosyvoice-v3-plus (Beijing) |
+| Emotional content / audiobooks | qwen3-tts-instruct-flash-realtime (Singapore) |
+| Customer service / bots | qwen3-tts-flash-realtime (Singapore) OR cosyvoice-v3-flash (Beijing) |
+| Dialect broadcasting | cosyvoice-v3-flash / cosyvoice-v3-plus (Beijing) |
+| Multilingual global | qwen3-tts-flash (Singapore) |
 
 ### Implementation Notes
 - CosyVoice requires `ALIBABA_CHINA_API_KEY` + Beijing endpoint (`dashscope.aliyuncs.com`)
 - CosyVoice uses WebSocket (`npm:ws`) for streaming, not REST
-- Singapore key (`ALIBABA_SINGAPORE_API_KEY`) works globally for all non-China-only models
-- Characters in SSML tags are not billed
-- CJK characters count as 2 characters for billing
+- Singapore key works globally for all non-China-only models
+- Qwen3-TTS-Flash uses RESTful API (not WebSocket), outputs wav at 24kHz

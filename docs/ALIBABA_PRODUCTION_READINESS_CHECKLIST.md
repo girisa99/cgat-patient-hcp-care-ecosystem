@@ -133,20 +133,88 @@ Qwen3-TTS (Singapore) → Azure Neural → ElevenLabs → Google TTS
 
 ---
 
-## 6. Models NOT Available in Singapore (China-Only)
+## 6. TTS Model Availability — Dual Region Strategy
 
-These models require the `ALIBABA_CHINA_API_KEY` and Beijing endpoint:
+### Region A: Singapore (International) — `ALIBABA_SINGAPORE_API_KEY`
+**Endpoint:** `dashscope-intl.aliyuncs.com`
+
+| Model | Version | Price | Max Input | Languages |
+|-------|---------|-------|-----------|-----------|
+| `qwen3-tts-flash` | Stable (= 2025-09-18) | $0.10 / 10K chars | 600 chars | zh (Mandarin + 8 dialects), en, es, ru, it, fr, ko, ja, de, pt |
+| `qwen3-tts-flash-2025-11-27` | Snapshot | $0.10 / 10K chars | 600 chars | Same |
+| `qwen3-tts-flash-2025-09-18` | Snapshot | $0.10 / 10K chars | 600 chars | Same |
+
+**Realtime Models (WebSocket, Singapore):**
+| Model | Use Case |
+|-------|----------|
+| `qwen3-tts-flash-realtime` | Streaming TTS, customer service, multilingual |
+| `qwen3-tts-instruct-flash-realtime` | Emotional content, audiobooks, broadcasting — supports instruction control |
+| `qwen3-tts-vd-realtime-2026-01-15` | Voice Design — create voices from text descriptions (no audio samples) |
+| `qwen3-tts-vc-realtime-2026-01-15` | Voice Cloning — replicate voices from audio samples |
+
+**Qwen3-TTS-Flash features:** 49 voices, RESTful API + SDK, wav output, 24 kHz, no SSML, no timestamps.
+
+### Region B: Beijing (China-Only) — `ALIBABA_CHINA_API_KEY`
+**Endpoint:** `dashscope.aliyuncs.com` (WebSocket via `npm:ws`)
+
+| Model | Price | Use Case | Notes |
+|-------|-------|----------|-------|
+| `cosyvoice-v3-plus` | $0.286706 / 10K chars | Brand voice cloning, 48 kHz high-quality | Strongest cloning, highest cost |
+| `cosyvoice-v3-flash` | $0.14335 / 10K chars | Customer service, streaming, cost-effective | Lowest cost, fast response |
+| `cosyvoice-v2` | $0.286706 / 10K chars | Education, LaTeX formulas | Legacy but feature-rich |
+
+**CosyVoice features:** SSML support, Instruct mode, Timestamp output, voice cloning, Chinese dialects (Cantonese, Northeastern, Shaanxi, etc.)
+
+**CosyVoice Voice List:** https://www.alibabacloud.com/help/en/model-studio/cosyvoice-voice-list
+
+**CosyVoice Scenario Guide:**
+| Scenario | Recommended Model |
+|----------|-------------------|
+| Brand voice customization (text description) | Use Qwen3-TTS-VD (Singapore) |
+| Brand voice cloning (audio samples) | Use Qwen3-TTS-VC (Singapore) OR cosyvoice-v3-plus (Beijing) |
+| Smart customer service / Voice assistant | cosyvoice-v3-flash |
+| Dialect broadcasting (Cantonese, Northeastern, etc.) | cosyvoice-v3-flash / cosyvoice-v3-plus |
+| Educational (LaTeX formulas) | cosyvoice-v2 / cosyvoice-v3-flash |
+| Structured voice (SSML control) | cosyvoice-v3-plus / cosyvoice-v3-flash / cosyvoice-v2 |
+| Audio-text alignment / timestamps | cosyvoice-v3-flash / cosyvoice-v3-plus / cosyvoice-v2 |
+| Multilingual global markets | cosyvoice-v3-flash / cosyvoice-v3-plus |
+
+### Character Billing Rules (Both Regions)
+- Each CJK character (Chinese, Japanese Kanji, Korean Hanja) = **2 characters**
+- Each English letter, punctuation, or space = **1 character**
+- SSML tag characters are **NOT billed**
+
+---
+
+## 7. Other China-Only Models
+
+These models require `ALIBABA_CHINA_API_KEY` and Beijing endpoint:
 
 | Model | Category | Fallback Provider |
 |-------|----------|-------------------|
-| CosyVoice (v2, v3-plus, v3-flash) | TTS | Qwen3-TTS-Flash (Singapore) |
+| CosyVoice (v2, v3-plus, v3-flash) | TTS (WebSocket) | Qwen3-TTS-Flash (Singapore) |
 | Wanx 2.1 | Image Generation | Wan 2.6 T2I (Singapore) |
 | Wan 2.2 S2V | Avatar | ModelsLab (International) |
 | LivePortrait / EMO | Avatar | ModelsLab (International) |
 
 ---
 
-## 7. Monitoring & Alerts
+## 8. TTS Fallback Chain (Production)
+
+```
+International Users:
+  Qwen3-TTS-Flash (Singapore) → Azure Neural → ElevenLabs → Google TTS
+
+CJK/China Users:
+  CosyVoice v3-flash (Beijing) → Qwen3-TTS-Flash (Singapore) → Azure Neural
+
+Voice Design/Cloning:
+  Qwen3-TTS-VD/VC (Singapore) → CosyVoice v3-plus (Beijing) → ElevenLabs
+```
+
+---
+
+## 9. Monitoring & Alerts
 
 ### Console Monitoring
 - **Model Usage**: Track quota consumption per model
@@ -160,10 +228,12 @@ These models require the `ALIBABA_CHINA_API_KEY` and Beijing endpoint:
 
 ---
 
-## 8. Production Go-Live Checklist
+## 10. Production Go-Live Checklist
 
-- [ ] Payment method added to Alibaba Cloud account
-- [ ] "Free Quota Only" toggle disabled for all production models
+- [ ] Payment method added to Alibaba Cloud account (International)
+- [ ] Payment method added to Alibaba Cloud account (China/Aliyun)
+- [ ] "Free Quota Only" toggle disabled for all production models (Singapore)
+- [ ] CosyVoice models activated on Beijing DashScope portal
 - [ ] Batch Operations enabled for async models (Wan 2.6 T2I/T2V)
 - [ ] Rate limits reviewed and increased if needed
 - [ ] Billing alerts configured
@@ -174,10 +244,12 @@ These models require the `ALIBABA_CHINA_API_KEY` and Beijing endpoint:
 
 ---
 
-## 9. Quick Reference Links
+## 11. Quick Reference Links
 
-- **Console**: https://modelstudio.console.alibabacloud.com/ap-southeast-1/
+- **Console (Singapore)**: https://modelstudio.console.alibabacloud.com/ap-southeast-1/
+- **Console (Beijing)**: https://bailian.console.alibabacloud.com/cn-beijing
 - **Billing**: https://usercenter2-intl.aliyun.com/billing/payment-method
 - **Model Docs**: https://www.alibabacloud.com/help/en/model-studio/models
+- **CosyVoice Voice List**: https://www.alibabacloud.com/help/en/model-studio/cosyvoice-voice-list
 - **API Key Guide**: https://www.alibabacloud.com/help/en/model-studio/get-api-key
 - **Pricing**: https://www.alibabacloud.com/help/en/model-studio/billing
