@@ -484,8 +484,8 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
     {
       id: 'language',
       badge: `${hero.flag} ${stats.languages} Languages · ${stats.dialects || '30+'} Dialects · ${hero.regionName}`,
-      headline: [hero.nativeHeadline.length > 30 ? 'We Speak Your ' : hero.nativeHeadline.split(' ').slice(0, 3).join(' ') + ' ', hero.nativeHeadline.length > 30 ? 'Language.' : hero.nativeHeadline.split(' ').slice(3).join(' ')],
-      subtitle: hero.nativeSubheadline,
+      headline: ['We Speak Your ', 'Language.'],
+      subtitle: hero.nativeHeadline,
       description: 'Not just translation — we adapt tone, idioms, humor, cultural references, and regional compliance so your audience feels you were built for them.',
       type: 'stats' as const,
     },
@@ -670,14 +670,14 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
                       </Button>
                     </motion.div>
                   </Link>
-                  <Link to="/explore">
+                  <a href="#products" onClick={(e) => { e.preventDefault(); document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' }); }}>
                     <motion.div whileHover={{ scale: 1.06, y: -2 }} whileTap={{ scale: 0.97 }}>
                       <Button size="lg" variant="outline" className="border-2 border-white/60 text-foreground bg-background/80 font-bold hover:bg-background hover:border-primary text-lg px-10 py-7 rounded-xl backdrop-blur-md shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
                         <Play className="mr-2 h-5 w-5" />
                         {cta.secondary}
                       </Button>
                     </motion.div>
-                  </Link>
+                  </a>
                 </div>
                 <p className="text-white/50 text-xs font-medium">{cta.freeCredits}</p>
               </motion.div>
