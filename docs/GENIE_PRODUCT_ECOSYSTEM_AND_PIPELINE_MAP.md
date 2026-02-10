@@ -1,6 +1,6 @@
 # Genie Product Ecosystem & Pipeline Mapping
 
-> **Last Updated:** 2026-01-26  
+> **Last Updated:** 2026-02-10  
 > **Status:** AUTHORITATIVE REFERENCE  
 > **Total Pipelines:** 181 across 18 categories  
 > **Products:** 7 Core + 1 AI Support
@@ -11,12 +11,12 @@
 
 | Product | Official Tagline | Primary Function |
 |---------|------------------|------------------|
-| **Genie Studio** | Mind to Media — AI-Powered Production Suite | Master Orchestrator |
+| **Genie Suite** | Mind to Media — AI-Powered Production Suite | Master Orchestrator |
 | **Genie Spark** | Ignite your Ideas | Script Generation (from any input) |
 | **Genie Mind** | AI That Understands | Script Editing, TTS, Voice, Music |
 | **Genie Vibe** | Script to Screen | Audio/Video Recording & Production |
 | **Genie Deck** | Ideas to Impact | Presentation Generation |
-| **Genie Arc** | Your Production Journey With Infinite Possibilities | Scheduling, Kanban, Project Management |
+| **Genie Hub** | Your Creative Command Center | Scheduling, Kanban, Project Management |
 | **Genie Cast** | Make It. Show It. Scale It. | Distribution & Publishing |
 | **Ask Genie** | Your wish is my command | AI Support Layer |
 
@@ -26,7 +26,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                    GENIE STUDIO (Master Orchestrator)                    │
+│                    GENIE SUITE (Master Orchestrator)                     │
 │                   "Mind to Media — AI-Powered Production Suite"          │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                          │
@@ -59,10 +59,10 @@
 │          │                                                               │
 │          ▼                                                               │
 │   ┌──────────────┐                                                       │
-│   │      ARC     │   INPUT: All production assets                        │
-│   │"Your Journey │ → OUTPUT: Scheduled, tracked, managed projects        │
-│   │With Infinite │   (Kanban, Timeline, Team)                            │
-│   │Possibilities"│                                                       │
+│   │      HUB     │   INPUT: All production assets                        │
+│   │"Your Creative│ → OUTPUT: Scheduled, tracked, managed projects        │
+│   │Command       │   (Kanban, Timeline, Team)                            │
+│   │   Center"    │                                                       │
 │   └──────┬───────┘                                                       │
 │          │                                                               │
 │          ▼                                                               │
@@ -88,7 +88,7 @@ These advanced capabilities are **shared across products** and can be used in co
 
 ### Cross-Functional Matrix
 
-| Capability | Spark | Mind | Vibe | Deck | Arc | Cast | Primary Providers |
+| Capability | Spark | Mind | Vibe | Deck | Hub | Cast | Primary Providers |
 |------------|:-----:|:----:|:----:|:----:|:---:|:----:|-------------------|
 | **Avatars (Talking Head)** | ✅ | ✅ | ✅ | ✅ | - | ✅ | Alibaba Wan2.2, HeyGen |
 | **Full-Body Avatars** | ✅ | ✅ | ✅ | ✅ | - | ✅ | Alibaba OmniAvatar |
@@ -200,7 +200,7 @@ These advanced capabilities are **shared across products** and can be used in co
 ### Category 8: Complex Multi-modal Pipelines (7)
 | Pipeline | Description | Products | Tier |
 |----------|-------------|----------|------|
-| `full-production` | End-to-end production | Studio | Business |
+| `full-production` | End-to-end production | Suite | Business |
 | `auto-record-to-avatar` | Recording → avatar video | Vibe, Deck | Business |
 | `data-to-dashboard` | Data → visual dashboard | Deck | Pro |
 | `research-to-presentation` | Research → presentation | Spark, Deck | Pro |
@@ -340,7 +340,7 @@ These advanced capabilities are **shared across products** and can be used in co
 | `webcast-captions` | Live captions | Vibe | Pro |
 | `webcast-qa` | Live Q&A | Vibe | Pro |
 | `webcast-replay` | Replay generation | Vibe, Cast | Pro |
-| `webcast-analytics` | Stream analytics | Arc, Cast | Pro |
+| `webcast-analytics` | Stream analytics | Hub, Cast | Pro |
 
 ### Category 17: Editing Pipelines (15)
 | Pipeline | Description | Products | Tier |
@@ -367,8 +367,8 @@ These advanced capabilities are **shared across products** and can be used in co
 | `mobile-capture` | Mobile recording | Vibe | Creator |
 | `mobile-edit` | Mobile editing | Vibe | Creator |
 | `mobile-publish` | Mobile publishing | Cast | Creator |
-| `mobile-review` | Mobile review | Arc | Creator |
-| `mobile-collaborate` | Mobile collab | Arc | Pro |
+| `mobile-review` | Mobile review | Hub | Creator |
+| `mobile-collaborate` | Mobile collab | Hub | Pro |
 
 ---
 
@@ -434,12 +434,12 @@ These advanced capabilities are **shared across products** and can be used in co
 
 | Product | Tagline | Core Pipelines | Advanced Access | Total |
 |---------|---------|----------------|-----------------|-------|
-| **Studio** | Mind to Media | 181 (all) | All | 181 |
+| **Suite** | Mind to Media | 181 (all) | All | 181 |
 | **Spark** | Ignite your Ideas | 28 | Avatar, Image Gen | 35 |
 | **Mind** | AI That Understands | 24 | TTS, Voice Clone, Music | 30 |
 | **Vibe** | Script to Screen | 45 | Avatar, Lip-sync, 3D, Podcast | 65 |
 | **Deck** | Ideas to Impact | 35 | Avatar, 3D, Animation, AR/VR | 55 |
-| **Arc** | Infinite Possibilities | 30 | Analytics, Team | 32 |
+| **Hub** | Infinite Possibilities | 30 | Analytics, Team | 32 |
 | **Cast** | Make It. Show It. Scale It. | 25 | Dubbing, Regional | 35 |
 | **Ask Genie** | Your wish is my command | 181 (knowledge) | All | 181 |
 
@@ -451,12 +451,12 @@ These advanced capabilities are **shared across products** and can be used in co
 
 | Product | Emoji | Color Gradient | Border |
 |---------|-------|----------------|--------|
-| Studio | 🎨 | Indigo → Violet | `border-indigo-200` |
+| Suite | 🎨 | Indigo → Violet | `border-indigo-200` |
 | Spark | ✨ | Amber → Orange | `border-amber-200` |
 | Mind | 🧠 | Blue → Cyan | `border-blue-200` |
 | Vibe | 🎬 | Purple → Pink | `border-purple-200` |
 | Deck | 📊 | Purple → Violet | `border-purple-200` |
-| Arc | 🎯 | Emerald → Teal | `border-emerald-200` |
+| Hub | 🎯 | Emerald → Teal | `border-emerald-200` |
 | Cast | 📢 | Rose → Pink | `border-rose-200` |
 | Ask Genie | 🧞 | Violet → Fuchsia | `border-violet-200` |
 

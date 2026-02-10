@@ -687,7 +687,7 @@ Every video ends with a metadata card:
 │                                                         │
 │  Script:      Genie Spark (Script Generator)            │
 │  Voice:       Genie Vibe (Azure Neural TTS)             │
-│  Visuals:     Genie Arc (AI Avatar + Screenshots)       │
+│  Visuals:     Genie Hub (AI Avatar + Screenshots)       │
 │  Slides:      Genie Deck (Auto-generated)               │
 │  Knowledge:   Genie Mind (RAG-powered accuracy)         │
 │  Published:   Genie Cast → YouTube, LinkedIn, TikTok    │

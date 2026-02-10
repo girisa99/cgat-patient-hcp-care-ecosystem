@@ -4,7 +4,7 @@
 
 ## Overview
 
-The Healthcare Platform is an internal system for managing patient enrollment, treatment center onboarding, and healthcare workflows. This product is **NOT part of the commercial Genie Studio launch**.
+The Healthcare Platform is an internal system for managing patient enrollment, treatment center onboarding, and healthcare workflows. This product is **NOT part of the commercial Genie Suite launch**.
 
 ## Folder Structure
 
@@ -121,7 +121,7 @@ src/healthcare/
 
 ## Separation from Other Products
 
-This codebase is kept separate from Genie Studio and Document Processing to:
+This codebase is kept separate from Genie Suite and Document Processing to:
 1. Enable independent deployment cycles
 2. Maintain compliance isolation
 3. Simplify acquisition scenarios
@@ -131,5 +131,5 @@ This codebase is kept separate from Genie Studio and Document Processing to:
 
 - [Shared Infrastructure](../shared/README.md)
 - [Product Config](../shared/config/product-config.ts)
-- [Genie Studio](../genie-studio/README.md)
+- [Genie Suite](../genie-studio/README.md)
 - [Document Processing](../document-processing/README.md)

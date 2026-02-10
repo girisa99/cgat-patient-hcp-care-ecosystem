@@ -285,7 +285,7 @@ const ZONE_MEDIA_ROUTING = {
     regions: ['CN', 'JP', 'KR', 'MENA'],
     video: ['alibaba-wan', 'json2video'],
     avatar: ['wan-2.2-s2v', 'omniavatar'],
-    tts: ['cosyvoice', 'azure-neural'],
+    tts: ['qwen3-tts', 'azure-neural'],
   },
   gemini_zone: {
     regions: ['IN', 'PK', 'BD', 'SEA', 'Africa'],
@@ -328,7 +328,7 @@ const ZONE_MEDIA_ROUTING = {
 |--------|---------|--------|
 | `JSON2VIDEO_API_KEY` | Video assembly API | ✅ Configured |
 | `ELEVENLABS_API_KEY` | TTS + Avatar | ✅ Existing |
-| `ALIBABA_API_KEY` | Qwen, Wan, CosyVoice | ✅ Existing |
+| `ALIBABA_API_KEY` | Qwen, Wan, Qwen3-TTS | ✅ Existing |
 
 ### Future (Phase 2 - Cloud Run)
 

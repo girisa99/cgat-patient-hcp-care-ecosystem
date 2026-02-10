@@ -1,10 +1,10 @@
-# 🎬 Genie Studio
+# 🎬 Genie Suite
 
 > **Mind to Media** - AI-Powered Media Production Suite
 
 ## Overview
 
-Genie Studio is a commercial-ready AI platform for content creation, video production, and media automation. This folder contains all Genie Studio-specific code, isolated from other products in the repository.
+Genie Suite is a commercial-ready AI platform for content creation, video production, and media automation. This folder contains all Genie Suite-specific code, isolated from other products in the repository.
 
 ## Products
 
@@ -13,8 +13,9 @@ Genie Studio is a commercial-ready AI platform for content creation, video produ
 | **Genie Mind** | Script writing & enhancement | ✅ Production |
 | **Genie Vibe** | Recording studio with teleprompter | ✅ Production |
 | **Genie Spark** | AI-assisted ideation | ✅ Production |
-| **Genie Arc** | Story arc development | ✅ Production |
-| **Genie Hub** | Production management dashboard | ✅ Production |
+| **Genie Hub** | Your Creative Command Center | ✅ Production |
+| **Genie Deck** | Presentation generation | ✅ Production |
+| **Genie Cast** | Distribution & publishing | ✅ Production |
 
 ## Folder Structure
 

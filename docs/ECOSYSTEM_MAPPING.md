@@ -1,12 +1,12 @@
-# Genie Studio Ecosystem Mapping
+# Genie Suite Ecosystem Mapping
 
-> **Last Updated:** 2026-01-26  
-> **Version:** v1.0.0  
+> **Last Updated:** 2026-02-10  
+> **Version:** v1.1.0  
 > **Status:** Production Ready
 
 ## Executive Summary
 
-The Genie Studio ecosystem comprises **7 Products**, **21 Pipeline Categories**, **206 Pipelines**, and **25 Cross-Functional Capabilities** working in concert to deliver an end-to-end content creation and distribution platform.
+The Genie Suite ecosystem comprises **7 Products**, **21 Pipeline Categories**, **206 Pipelines**, and **25 Cross-Functional Capabilities** working in concert to deliver an end-to-end content creation and distribution platform.
 
 ---
 
@@ -18,9 +18,9 @@ The Genie Studio ecosystem comprises **7 Products**, **21 Pipeline Categories**,
 | 2 | **Genie Mind** | *AI That Understands* | Script enhancement, TTS, translation | 30 |
 | 3 | **Genie Vibe** | *Script to Screen* | Audio/video production, avatar, dubbing | 74 |
 | 4 | **Genie Deck** | *Ideas to Impact* | Presentations, visual design, 3D/immersive | 34 |
-| 5 | **Genie Arc** | *Your Production Journey* | Scheduling, collaboration, project mgmt | 14 |
+| 5 | **Genie Hub** | *Your Creative Command Center* | Scheduling, collaboration, project mgmt | 14 |
 | 6 | **Genie Cast** | *Make It. Show It. Scale It.* | Distribution, marketing, analytics | 26 |
-| 7 | **Genie Studio** | *Mind to Media* | Master orchestrator (all 206 pipelines) | ALL |
+| 7 | **Genie Suite** | *Mind to Media* | Master orchestrator (all 206 pipelines) | ALL |
 
 **Support Products:**
 - **Ask Genie** (*Your wish is my command*) - Universal AI assistant
@@ -130,7 +130,7 @@ The Genie Studio ecosystem comprises **7 Products**, **21 Pipeline Categories**,
 ## 4. Product-to-Category Mapping Matrix
 
 ```
-                    Spark  Mind  Vibe  Deck  Arc  Cast  Studio
+                    Spark  Mind  Vibe  Deck  Hub  Cast  Suite
 ─────────────────────────────────────────────────────────────
 input-processing      ●                              ●
 script-generation     ●     ○                        ●
@@ -168,7 +168,7 @@ analytics                                   ○    ●   ●
 
 | Step | Name | Primary Product | Shared Products |
 |------|------|-----------------|-----------------|
-| 0 | Universal Input Gateway | Spark | Studio |
+| 0 | Universal Input Gateway | Spark | Suite |
 | 1 | Language & Localization | Mind | Cast |
 | 2 | Industry Context | Mind | Spark |
 | 3 | Framework Selection | Mind | Deck |
@@ -176,7 +176,7 @@ analytics                                   ○    ●   ●
 | 5 | Audio Configuration | Mind | Vibe |
 | 6 | Video/Avatar Setup | Vibe | Deck, Cast |
 | 7 | Generation & Editor | *Dynamic* | Based on output type |
-| 8 | Publishing | Cast | Arc |
+| 8 | Publishing | Cast | Hub |
 
 ---
 
@@ -188,7 +188,7 @@ analytics                                   ○    ●   ●
 | **Claude** | LLM | Claude 3.5 Sonnet |
 | **Gemini** | LLM, Vision | Gemini 2.0 Flash |
 | **DeepSeek** | LLM | DeepSeek-V3 |
-| **Alibaba** | LLM, TTS, Avatar | Qwen-Max, CosyVoice, Wan2.2 |
+| **Alibaba** | LLM, TTS, Avatar | Qwen-Max, Qwen3-TTS, Wan2.2 |
 | **Azure** | STT, TTS, Translation | Visemes, Custom Voice |
 | **ElevenLabs** | TTS, Voice Clone | High-fidelity TTS |
 | **DeepL** | Translation | European languages |

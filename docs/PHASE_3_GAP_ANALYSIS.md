@@ -165,7 +165,7 @@
 | Genie Spark | ✅ | ✅ | ✅ |
 | Genie Vibe | ⚠️ Limited | ✅ | ✅ |
 | Genie Mind | ❌ | ✅ | ✅ |
-| Genie Arc | ❌ | ✅ | ✅ |
+| Genie Hub | ❌ | ✅ | ✅ |
 | Auto-Publish | ⚠️ 1 platform | ✅ 5 platforms | ✅ Unlimited |
 | Batch Generation | ❌ | ✅ 10/batch | ✅ Unlimited |
 | Team Collaboration | ❌ | ✅ 3 members | ✅ Unlimited |

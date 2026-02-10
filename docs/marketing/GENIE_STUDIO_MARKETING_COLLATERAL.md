@@ -1,4 +1,4 @@
-# 🎬 Genie Studio Suite - Complete Marketing Collateral
+# 🎬 Genie Suite - Complete Marketing Collateral
 
 > **Last Updated:** January 2026 | **Version:** 1.0
 
@@ -32,7 +32,7 @@
 5. **"Professional Video Without the Pro Budget"**
 
 ### Elevator Pitch (30 seconds)
-> "Genie Studio is the first AI-native media production platform that takes you from idea to published content in minutes, not hours. While competitors make you juggle 5-6 different tools, we consolidate everything—scripting, recording, dubbing in 70+ languages, and multi-platform publishing—into one unified workspace. It's 80% faster, 50-70% cheaper, and works in your language."
+> "Genie Suite is the first AI-native media production platform that takes you from idea to published content in minutes, not hours. While competitors make you juggle 5-6 different tools, we consolidate everything—scripting, recording, dubbing in 70+ languages, and multi-platform publishing—into one unified workspace. It's 80% faster, 50-70% cheaper, and works in your language."
 
 ### Value Proposition Statement
 > "The only platform where you can record on your phone, dub in 70 languages, and publish everywhere—without losing a single credit to glitches."
@@ -49,15 +49,15 @@
 | **Genie Spark** | "Ignite your Ideas" | AI ideation & script generation | ✨ |
 | **Genie Mind** | "AI That Understands" | Intelligence, RAG, context memory | 🧠 |
 | **Genie Vibe** | "Script to Screen" | Recording, audio/video production | 🎬 |
-| **Genie Arc** | "Infinite Possibilities" | Production orchestration & planning | 🎯 |
+| **Genie Hub** | "Your Creative Command Center" | Production orchestration & planning | 🎯 |
 | **Genie Deck** | "Ideas to Impact" | AI presentation generation | 📊 |
-| **Genie Studio** | "Mind to Media" | Master suite & asset management | 🎨 |
+| **Genie Suite** | "Mind to Media" | Master suite & asset management | 🎨 |
 
 ### Product Descriptions (Marketing Copy)
 
 #### Ask Genie 🧞
 **Tagline:** "Your wish is my command"
-**Description:** Your intelligent AI companion that guides you through the entire Genie Studio experience with empathy, creativity, and a touch of magic. Ask anything, get instant help, and navigate the suite effortlessly.
+**Description:** Your intelligent AI companion that guides you through the entire Genie Suite experience with empathy, creativity, and a touch of magic. Ask anything, get instant help, and navigate the suite effortlessly.
 **Key Features:**
 - Natural language commands
 - Cross-product navigation
@@ -96,8 +96,8 @@
 - Multi-track editing
 - Teleprompter integration
 
-#### Genie Arc 🎯
-**Tagline:** "Your Production Journey With Infinite Possibilities"
+#### Genie Hub 🎯
+**Tagline:** "Your Creative Command Center"
 **Description:** Orchestrate your production workflow with powerful scheduling, team collaboration, and show management tools built for creative teams.
 **Key Features:**
 - Show scheduling
@@ -159,7 +159,7 @@ There's a better way.
 HEADLINE: One Platform. Unlimited Possibilities.
 
 BODY:
-Genie Studio consolidates your entire content workflow:
+Genie Suite consolidates your entire content workflow:
 
 ✅ Write scripts with AI that understands your brand
 ✅ Record with professional teleprompter & studio tools
@@ -205,7 +205,7 @@ STATS:
 • 50-70% cost savings vs. tool stacks
 
 TESTIMONIAL PLACEHOLDER:
-"Genie Studio replaced 5 tools for us. Our production time dropped 
+"Genie Suite replaced 5 tools for us. Our production time dropped 
 from 8 hours to 45 minutes." — [Creator Name]
 ```
 
@@ -324,7 +324,7 @@ ENTERPRISE (Custom):
 | Zone | Regions | LLM | TTS | Translation |
 |------|---------|-----|-----|-------------|
 | **Claude Zone** | US, UK, EU, Brazil, Israel | Claude 3.5 | ElevenLabs | DeepL |
-| **Alibaba Zone** | Japan, Korea, China, MEA | Qwen-Max | CosyVoice | Qwen-MT |
+| **Alibaba Zone** | Japan, Korea, China, MEA | Qwen-Max | Qwen3-TTS | Qwen-MT |
 | **Gemini Zone** | India, SEA, Africa | Gemini Pro | Azure Neural | Google |
 | **Fallback** | When primary fails | GPT-4o | ElevenLabs | Google |
 
@@ -379,7 +379,7 @@ ENTERPRISE (Custom):
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    GENIE STUDIO WORKFLOW                        │
+│                    GENIE SUITE WORKFLOW                          │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │   💡 IDEA                                                       │
@@ -391,7 +391,7 @@ ENTERPRISE (Custom):
 │   🧠 MIND ───────► Optimize with RAG, Brand Context             │
 │      │                                                          │
 │      ▼                                                          │
-│   🎯 ARC ────────► Plan Production, Assign Tasks                │
+│   🎯 HUB ─────────► Plan Production, Assign Tasks                │
 │      │                                                          │
 │      ▼                                                          │
 │   🎬 VIBE ───────► Record, Edit, Add Effects                    │

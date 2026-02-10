@@ -1,4 +1,4 @@
-# Genie Studio Architecture Hub
+# Genie Suite Architecture Hub
 
 > **Version:** 2.0  
 > **Updated:** 2026-01-13  
@@ -24,8 +24,8 @@
 | **Genie Mind** | 🧠 | [Mind Architecture](./GENIE_MIND_ARCHITECTURE.md) | ✅ Complete |
 | **Genie Vibe** | 🎙️ | [Vibe Architecture](./GENIE_VIBE_ARCHITECTURE.md) | ✅ Complete |
 | **Genie Spark** | ✨ | [Spark Architecture](./GENIE_SPARK_ARCHITECTURE.md) | ✅ Complete |
-| **Genie Arc** | 🌈 | [Arc/Hub Architecture](./GENIE_ARC_PRODUCTION_HUB_ARCHITECTURE.md) | ✅ Complete |
-| **Production Hub** | 📺 | [Arc/Hub Architecture](./GENIE_ARC_PRODUCTION_HUB_ARCHITECTURE.md) | ✅ Complete |
+| **Genie Hub** | 🌈 | [Hub Architecture](./GENIE_ARC_PRODUCTION_HUB_ARCHITECTURE.md) | ✅ Complete |
+| **Production Hub** | 📺 | [Hub Architecture](./GENIE_ARC_PRODUCTION_HUB_ARCHITECTURE.md) | ✅ Complete |
 
 ### Technical Guides
 
@@ -44,13 +44,13 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                        GENIE STUDIO PLATFORM                         │
+│                        GENIE SUITE PLATFORM                          │
 ├─────────────────────────────────────────────────────────────────────┤
 │                                                                       │
 │  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐│
-│  │ Genie Mind   │ │ Genie Vibe   │ │ Genie Spark  │ │ Genie Arc    ││
+│  │ Genie Mind   │ │ Genie Vibe   │ │ Genie Spark  │ │ Genie Hub    ││
 │  │ 🧠 Scripts   │ │ 🎙️ Recording │ │ ✨ Content   │ │ 🌈 Workflows ││
-│  │ AI Writing   │ │ Voice/Audio  │ │ Generation   │ │ Agent Canvas ││
+│  │ AI Writing   │ │ Voice/Audio  │ │ Generation   │ │ Command Ctr  ││
 │  └──────┬───────┘ └──────┬───────┘ └──────┬───────┘ └──────┬───────┘│
 │         │                │                │                │        │
 │         └────────────────┴────────────────┴────────────────┘        │
@@ -210,4 +210,4 @@ docs/
 
 ---
 
-*Genie Studio Architecture Hub | Maintained by Development Team*
+*Genie Suite Architecture Hub | Maintained by Development Team*

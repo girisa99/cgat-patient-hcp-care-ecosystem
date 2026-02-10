@@ -48,9 +48,9 @@
 | **English→Spanish** | ElevenLabs + DeepL | $0.85 | 50 | $3.95 | **78%** |
 | **English→French** | Azure Neural + DeepL | $0.72 | 50 | $3.95 | **82%** |
 | **English→German** | Azure Neural + DeepL | $0.72 | 50 | $3.95 | **82%** |
-| **English→Japanese** | Alibaba CosyVoice + Qwen-MT | $0.45 | 50 | $3.95 | **89%** |
-| **English→Korean** | Alibaba CosyVoice + Qwen-MT | $0.45 | 50 | $3.95 | **89%** |
-| **English→Chinese** | Alibaba CosyVoice + Qwen-MT | $0.38 | 50 | $3.95 | **90%** |
+| **English→Japanese** | Alibaba Qwen3-TTS + Qwen-MT | $0.45 | 50 | $3.95 | **89%** |
+| **English→Korean** | Alibaba Qwen3-TTS + Qwen-MT | $0.45 | 50 | $3.95 | **89%** |
+| **English→Chinese** | Alibaba Qwen3-TTS + Qwen-MT | $0.38 | 50 | $3.95 | **90%** |
 | **English→Hindi** | Azure Neural + Google | $0.65 | 50 | $3.95 | **84%** |
 | **English→Arabic** | Azure Neural + Google | $0.78 | 50 | $3.95 | **80%** |
 
@@ -162,7 +162,7 @@
 |--------|------------------|----------|----------|
 | **Americas (EN/ES/PT)** | ElevenLabs | Azure | Natural prosody |
 | **Europe (DE/FR/IT/NL)** | DeepL + Azure | ElevenLabs | Grammar accuracy |
-| **CJK (ZH/JA/KO)** | Alibaba Qwen-MT + CosyVoice | DeepSeek | Native number handling |
+| **CJK (ZH/JA/KO)** | Alibaba Qwen-MT + Qwen3-TTS | DeepSeek | Native number handling |
 | **Indian Subcontinent** | Azure + Google | Alibaba | 12 languages |
 | **MENA (AR/HE/FA)** | Azure (RTL specialist) | Google | Script direction |
 | **Southeast Asia** | Alibaba | Azure | CJK hybrid |
