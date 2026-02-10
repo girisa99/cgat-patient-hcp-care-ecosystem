@@ -491,6 +491,9 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
   const [showVoicePicker, setShowVoicePicker] = React.useState(false);
   const voiceOptions = REGION_VOICES[regionSlug] || REGION_VOICES.nam;
   const [selectedVoice, setSelectedVoice] = React.useState(voiceOptions[0]);
+  // Track whether we're playing the welcome overview vs per-slide audio
+  const [isWelcomePlaying, setIsWelcomePlaying] = React.useState(false);
+  const [isSlideAudioPlaying, setIsSlideAudioPlaying] = React.useState(false);
 
   const heroImages = REGION_HERO_IMAGES[regionSlug] || REGION_HERO_IMAGES.nam;
 
@@ -529,35 +532,47 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
     },
   ];
 
-  // Auto-advance: wait for voiceover to finish, then hold 3s before advancing
-  const advanceTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-  const wasSpeakingRef = React.useRef(false);
-
+  // ── Welcome voiceover: auto-play on first visit (decoupled from carousel) ──
+  const welcomePlayedRef = React.useRef(false);
   React.useEffect(() => {
-    if (advanceTimerRef.current) {
-      clearTimeout(advanceTimerRef.current);
-      advanceTimerRef.current = null;
+    if (welcomePlayedRef.current) return;
+    const storageKey = `genie_welcome_played_${regionSlug}`;
+    if (localStorage.getItem(storageKey)) return;
+    
+    // Delay slightly so page renders first
+    const timer = setTimeout(() => {
+      welcomePlayedRef.current = true;
+      setIsWelcomePlaying(true);
+      speak(config.welcomeScript, selectedVoice.code, regionSlug, 'welcome');
+      localStorage.setItem(storageKey, Date.now().toString());
+    }, 2000);
+    
+    return () => clearTimeout(timer);
+  }, [regionSlug]);
+
+  // Track when welcome audio finishes
+  React.useEffect(() => {
+    if (isWelcomePlaying && !isSpeaking) {
+      setIsWelcomePlaying(false);
     }
+  }, [isSpeaking, isWelcomePlaying]);
 
-    if (isSpeaking) {
-      // Track that voiceover started — we'll wait for it to end
-      wasSpeakingRef.current = true;
-      return;
+  // Track when per-slide audio finishes
+  React.useEffect(() => {
+    if (isSlideAudioPlaying && !isSpeaking) {
+      setIsSlideAudioPlaying(false);
     }
+  }, [isSpeaking, isSlideAudioPlaying]);
 
-    // If voiceover just finished, give a short pause then advance
-    const delay = wasSpeakingRef.current ? 3000 : 10000;
-    wasSpeakingRef.current = false;
-
-    advanceTimerRef.current = setTimeout(() => {
+  // Carousel auto-advance: pause only during per-slide audio, NOT during welcome
+  React.useEffect(() => {
+    if (isSlideAudioPlaying) return; // Pause carousel only for per-slide audio
+    const timer = setInterval(() => {
       setDirection(1);
       setCurrent((prev) => (prev + 1) % slides.length);
-    }, delay);
-
-    return () => {
-      if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
-    };
-  }, [slides.length, isSpeaking]);
+    }, 10000);
+    return () => clearInterval(timer);
+  }, [slides.length, isSlideAudioPlaying]);
   
 
   const goTo = (index: number) => {
@@ -871,7 +886,10 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
               setShowVoicePicker(false);
               if (isSpeaking) {
                 stop();
+                setIsWelcomePlaying(false);
+                setIsSlideAudioPlaying(false);
               } else {
+                setIsSlideAudioPlaying(true);
                 speak(`${slide.headline.join('')}. ${slide.subtitle}. ${slide.description}`, selectedVoice.code, regionSlug, slide.id);
               }
             }}

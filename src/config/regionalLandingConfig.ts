@@ -106,6 +106,8 @@ export interface RegionalConfig {
   comparisonSavings: string;
   differentiators: RegionalDifferentiator;
   showcaseExamples: RegionalShowcaseExample[];
+  /** Cinematic welcome voiceover script — plays once on first visit */
+  welcomeScript: string;
 }
 
 export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
@@ -180,6 +182,7 @@ export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
       { industry: 'Technology', icon: '💻', input: 'API documentation + changelog', pipeline: 'Mind → Spark → Vibe → Arc', output: 'Developer walkthrough video + localized release notes', languages: 'English, Japanese, German', impact: '90% cost reduction vs agency' },
       { industry: 'Retail', icon: '🛍️', input: 'Product photos + feature list', pipeline: 'Spark → Vibe → Cast → Arc', output: 'Social media ad series (9:16 + 16:9) in 5 languages', languages: 'English, Spanish, French, Mandarin, Hindi', impact: '50 ads/day vs 5/week manual' },
     ],
+    welcomeScript: "One idea. That's all it takes. Spark turns it into a story. Mind knows exactly who needs to hear it. Vibe makes it cinematic. Arc carries it across 140 languages — not translated, transcreated. Deck makes boardrooms believe. Cast takes it everywhere. And Ask Genie? Always one step ahead. This is Genie Studio. Seven products. 206 pipelines. 15 AI engines. One platform — and the only one you'll ever need.",
   },
 
   europe: {
@@ -255,6 +258,7 @@ export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
       { industry: 'Pharma', icon: '💊', input: 'Clinical trial results summary', pipeline: 'Mind → Spark → Vibe → Cast', output: 'HCP education video with compliant disclaimers in 12 languages', languages: 'All 24 EU + English', impact: 'Regulatory-ready across EU markets' },
       { industry: 'Professional Services', icon: '📊', input: 'ESG annual report', pipeline: 'Spark → Deck → Vibe → Arc', output: 'Stakeholder video report + multilingual executive summary', languages: 'EN, DE, FR', impact: '€50K saved vs external agency' },
     ],
+    welcomeScript: "Every great brand has a European story to tell — in French, German, Spanish, and thirty more. Spark finds your words. Mind reads the room. Vibe makes it unforgettable. Arc doesn't translate — it transcreates, preserving every nuance from Lisbon to Helsinki. Deck wins the pitch. Cast fills the feed. Ask Genie keeps it effortless. Genie Studio. One platform. Every European market. No one else even comes close.",
   },
 
   mena: {
@@ -335,6 +339,7 @@ export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
       { industry: 'Real Estate', icon: '🏗️', input: 'NEOM mega-project overview', pipeline: 'Spark → Deck → Vibe → Cast → Arc', output: 'Investor pitch deck + showreel in Arabic + English + Mandarin', languages: 'AR-SA, EN, ZH', impact: 'Global investor reach from single brief' },
       { industry: 'Tourism', icon: '✈️', input: 'Red Sea resort features', pipeline: 'Spark → Vibe → Cast → Arc', output: 'Destination marketing video in 5 dialects + 4 international languages', languages: '5 Arabic + EN, FR, DE, ZH', impact: 'No competitor can do this' },
     ],
+    welcomeScript: "Your story deserves to be heard in every dialect — Gulf, Levantine, Egyptian, Maghrebi, and beyond. Spark writes with cultural intelligence. Mind understands your audience from Riyadh to Casablanca. Vibe produces world-class visuals. Arc transcreates across seven Arabic dialects with precision no other platform can match. Deck commands the room. Cast scales your voice. Ask Genie never sleeps. Genie Studio — we don't just speak Arabic. We think in it.",
   },
 
   india: {
@@ -412,6 +417,7 @@ export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
       { industry: 'FMCG', icon: '🧴', input: 'Product launch brief for shampoo', pipeline: 'Spark → Vibe → Cast → Arc', output: 'Regional ad campaign (30s) × 11 languages with local influencer style', languages: '11 Indian languages', impact: '₹5L saved vs dubbing studio per campaign' },
       { industry: 'Government', icon: '🏛️', input: 'Digital India initiative update', pipeline: 'Mind → Spark → Deck → Vibe → Cast', output: 'Citizen awareness video + infographic deck in all scheduled languages', languages: 'Hindi + 10 regional', impact: 'Pan-India reach from single brief' },
     ],
+    welcomeScript: "A billion stories. Twenty-two languages. One platform that gets it. Spark writes in Hindi, Tamil, Telugu, Bengali — natively, not as an afterthought. Mind knows the difference between Mumbai and Chennai. Vibe produces at Bollywood scale. Arc transcreates — because translation isn't enough for India. Deck owns the boardroom. Cast fills every screen. Ask Genie connects it all. Genie Studio. Made for India's ambition.",
   },
 
   africa: {
@@ -488,6 +494,7 @@ export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
       { industry: 'Healthcare', icon: '🏥', input: 'Malaria prevention guidelines (WHO)', pipeline: 'Mind → Spark → Vibe → Cast', output: 'Community health video with AI avatar in local languages', languages: 'Swahili, Yoruba, Amharic, Zulu', impact: 'First AI health content in these languages' },
       { industry: 'NGO', icon: '🤝', input: 'Climate adaptation report', pipeline: 'Spark → Deck → Vibe → Cast → Arc', output: 'Impact video + donor deck in English + 4 African languages', languages: 'EN, SW, YO, AM, HA', impact: 'Donor engagement + community reach' },
     ],
+    welcomeScript: "Fifty-four nations. Two thousand languages. Infinite stories waiting to be told. Spark captures your narrative — in Swahili, Yoruba, Zulu, Amharic, and beyond. Mind understands audiences from Lagos to Nairobi to Johannesburg. Vibe produces at world-class standard. Arc transcreates with cultural depth, not surface-level translation. Deck powers your pitch. Cast broadcasts to the continent. Ask Genie never misses a beat. Genie Studio. Africa's stories deserve Africa's platform.",
   },
 
   apac: {
@@ -565,6 +572,7 @@ export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
       { industry: 'Technology', icon: '💻', input: 'SaaS product announcement', pipeline: 'Mind → Spark → Deck → Vibe → Cast', output: 'Product launch video + investor deck in 5 APAC languages', languages: 'JA, ZH, KO, EN, TH', impact: 'Pan-APAC launch from single brief' },
       { industry: 'Tourism', icon: '✈️', input: 'Destination highlights — Japan', pipeline: 'Spark → Vibe → Cast → Arc', output: 'Tourism promo video in 8 languages targeting inbound visitors', languages: 'EN, ZH, KO, TH, VI, ID, FR, DE', impact: 'Attract tourists in their native language' },
     ],
+    welcomeScript: "Three greetings. Three writing systems. One platform built for all of them. Spark creates with tonal precision. Mind reads audiences from Tokyo to Sydney to Seoul. Vibe delivers cinema-grade production. Arc transcreates across CJK and Southeast Asia with native fluency — powered by region-optimized AI. Deck wins deals. Cast scales globally. Ask Genie anticipates your next move. Genie Studio. Precision-engineered for Asia Pacific.",
   },
 
   latam: {
@@ -640,6 +648,7 @@ export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
       { industry: 'Agriculture', icon: '🌾', input: 'Sustainable farming guide', pipeline: 'Mind → Spark → Vibe → Cast', output: 'Farmer education video in regional Spanish + indigenous language overlay', languages: 'ES-MX + Nahuatl subtitles', impact: 'First indigenous language integration' },
       { industry: 'Education', icon: '📚', input: 'University course module', pipeline: 'Mind → Spark → Vibe → Cast → Arc', output: 'Online course video with professor avatar in 3 Spanish variants', languages: 'ES-MX, ES-CO, ES-AR', impact: 'Pan-LATAM education from single source' },
     ],
+    welcomeScript: "Latin America doesn't need another tool that thinks in English. Spark writes with sabor — Brazilian, Mexican, Argentine, Colombian, each with its own soul. Mind feels the pulse of your mercado. Vibe turns scripts into productions your audience can't scroll past. Arc transcreates — porque traducir no es suficiente. Deck conquers the sala de juntas. Cast fills every pantalla. Ask Genie keeps the magic flowing. Genie Studio. Hecho para quienes piensan en grande.",
   },
 
   caribbean: {
@@ -714,6 +723,7 @@ export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
       { industry: 'Agriculture', icon: '🌿', input: 'Export crop marketing brief', pipeline: 'Spark → Vibe → Cast → Arc', output: 'Export marketing video targeting EU + North American buyers', languages: 'EN, FR, ES, DE', impact: 'Caribbean products to global markets' },
       { industry: 'Government', icon: '🏛️', input: 'Hurricane preparedness guidelines', pipeline: 'Mind → Spark → Vibe → Cast', output: 'Public safety video in Creole + English + Spanish with AI avatar', languages: 'HT-Creole, EN, ES', impact: 'Life-saving content in local languages' },
     ],
+    welcomeScript: "From Kingston to Port-of-Spain, from Havana to Nassau — the Caribbean has a voice like nowhere else. Spark writes for island rhythm, tourism, and culture. Mind understands audiences across every shore. Vibe creates visuals as vibrant as the islands themselves. Arc handles Creole, Patois, French, Spanish, Dutch, and English — all in one flow. Deck pitches paradise. Cast publishes across every island. Ask Genie ties it together. Genie Studio. Caribbean-built. World-ready.",
   },
 };
 
