@@ -76,7 +76,7 @@ export const OPENING_SCENE: ChapterScript = {
 
 *stretches dramatically*
 
-I am the Genie of Genie Studio, and unlike my cousin who grants only THREE wishes... I grant UNLIMITED creative powers!
+I am the Genie of Genie Suite, and unlike my cousin who grants only THREE wishes... I grant UNLIMITED creative powers!
 
 *gestures grandly as logos appear*
 
@@ -814,7 +814,7 @@ Click here. Try it FREE. Create something amazing.
 
 *final flourish*
 
-Whether you're a solo creator, a startup founder, or an enterprise team – Genie Studio is ready to serve.
+Whether you're a solo creator, a startup founder, or an enterprise team – Genie Suite is ready to serve.
 
 *winks and bows*
 

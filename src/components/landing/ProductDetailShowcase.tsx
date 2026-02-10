@@ -64,12 +64,11 @@ const PRODUCT_LOGOS: Record<string, string> = {
 
 // Product display order for the tab selector (uses PRODUCT_LOGOS for icons)
 const PRODUCT_TAB_ORDER: { key: string; label: string }[] = [
-  { key: 'studio', label: 'Studio' },
-  { key: 'arc', label: 'Hub' },
   { key: 'spark', label: 'Spark' },
   { key: 'mind', label: 'Mind' },
-  { key: 'deck', label: 'Deck' },
   { key: 'vibe', label: 'Vibe' },
+  { key: 'deck', label: 'Deck' },
+  { key: 'arc', label: 'Hub' },
   { key: 'cast', label: 'Cast' },
   { key: 'ask', label: 'Ask Genie' },
 ];
