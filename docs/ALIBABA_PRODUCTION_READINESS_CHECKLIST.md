@@ -79,10 +79,42 @@
 | qwen3-tts-flash | ~$0.15 / 10K characters |
 | qwen3-tts-flash-realtime | ~$0.15 / 10K characters |
 
-### Visual Models (Wan 2.6)
+### Image Generation Models
+| Model | Region | Price | Call Type | Resolution |
+|-------|--------|-------|-----------|------------|
+| `qwen-image-max` | Singapore + Beijing | Check console | Sync | 5 fixed: 1664×928, 928×1664, 1328×1328, 1472×1104, 1104×1472 |
+| `qwen-image-plus` | Singapore + Beijing | Check console | Sync + Async | Same 5 fixed |
+| `qwen-image` | Singapore + Beijing | Check console | Sync + Async | Same 5 fixed |
+| `wan2.6-t2i` | Singapore + Beijing | ~$0.02/image | **Async only** | Variable |
+| `wan2.5-t2i-preview` | Singapore + Beijing | Check console | **Async only** | Variable |
+| `wan2.2-t2i-flash` | Singapore + Beijing | Check console | **Async only** | Custom 512–1440px |
+
+### Image Editing Models
+| Model | Region | Price | Capabilities |
+|-------|--------|-------|-------------|
+| `qwen-image-edit-max` | Singapore + Beijing | Check console | 1–3 input images → 1–6 outputs, text modification, style transfer, object manipulation |
+| `qwen-image-edit-plus` | Singapore + Beijing | Check console | 1–3 input images → 1–6 outputs |
+| `qwen-image-edit` | Singapore + Beijing | Check console | 1–3 input images → 1 output |
+| `wanx2.1-imageedit` | ❌ **Beijing ONLY** | $0.020070/image | Outpainting, watermark removal, style transfer, inpainting, restoration |
+| `wan2.5` (editing) | Singapore + Beijing | Check console | 1–3 inputs → 1–4 outputs, multi-image fusion, subject consistency |
+
+#### Image Model Selection Guide
+| Scenario | Recommended Model |
+|----------|-------------------|
+| Complex text rendering (posters, couplets, signs) | `qwen-image-max` or `wan2.6-t2i` |
+| Realistic scenes / photographic styles | `wan2.6-t2i` or `wan2.5-t2i-preview` |
+| Custom output resolution (512–1440px) | `wan2.2-t2i-flash` |
+| Text modification in existing images | `qwen-image-edit-max` |
+| Multi-image fusion / subject consistency | `wan2.5` (editing) or `qwen-image-edit-max` |
+| Local inpainting / watermark removal | `wanx2.1-imageedit` (Beijing only) |
+| Poster design with complex layouts | `qwen-image-max` |
+| Illustration / artistic styles | `wan2.6-t2i` |
+
+> **Note:** Qwen-Image supports **synchronous** calls (instant response). Wan models require **asynchronous** calls (submit task → poll result). Generated image URLs expire after **24 hours** — download promptly.
+
+### Video Models (Wan 2.6)
 | Model | Price |
 |-------|-------|
-| wan2.6-t2i | ~$0.02 per image |
 | wan2.6-t2v | ~$0.10 per video (5s) |
 | wan2.6-i2v | ~$0.10 per video (5s) |
 
@@ -92,6 +124,7 @@
 | text-embedding-v3 | $0.0007 / 1K tokens |
 
 > Note: Prices are approximate. Check https://www.alibabacloud.com/help/en/model-studio/models for current pricing.
+> Image model details: https://bailian.console.alibabacloud.com/cn-beijing?tab=doc#/doc/?type=model&url=2873061
 
 ---
 
