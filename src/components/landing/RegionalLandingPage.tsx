@@ -142,24 +142,40 @@ const RegionalSEOHead: React.FC<{ config: RegionalConfig; currentSlug: string }>
 };
 
 // ============================================
-// FLOATING AI PROVIDER ORBS
+// AI PROVIDER LOGOS — Real brand logos ribbon
 // ============================================
-// ============================================
-// AI PROVIDER BADGES — Floating provider showcase
-// ============================================
+import geminiLogo from '@/assets/logos/providers/gemini.svg';
+import openaiLogo from '@/assets/logos/providers/openai.svg';
+import anthropicLogo from '@/assets/logos/providers/anthropic.png';
+import azureLogo from '@/assets/logos/providers/azure.svg';
+import meshyLogo from '@/assets/logos/providers/meshy-official.png';
+import elevenlabsLogo from '@/assets/logos/providers/elevenlabs-official.png';
+import deeplLogo from '@/assets/logos/providers/deepl.svg';
+import alibabaLogo from '@/assets/logos/providers/alibaba.jpg';
+import modelslabLogo from '@/assets/logos/providers/modelslab.jpg';
+import deepgramLogo from '@/assets/logos/providers/deepgram.png';
+import deepseekLogo from '@/assets/logos/providers/deepseek.png';
+import gcpLogo from '@/assets/logos/providers/gcp-official.png';
+import replicateLogo from '@/assets/logos/providers/replicate.png';
+import json2videoLogo from '@/assets/logos/providers/json2video.png';
+import supabaseLogo from '@/assets/logos/providers/supabase.svg';
+
 const PROVIDER_SHOWCASE = [
-  { label: 'Gemini 3 Pro', icon: Sparkles, gradient: 'from-blue-500 to-indigo-600', capability: 'Image & LLM' },
-  { label: 'Vertex Veo 3', icon: Video, gradient: 'from-sky-400 to-cyan-600', capability: 'Video Gen' },
-  { label: 'Claude 4', icon: Brain, gradient: 'from-orange-400 to-amber-600', capability: 'Transcreation' },
-  { label: 'GPT-4o', icon: Sparkles, gradient: 'from-emerald-400 to-teal-600', capability: 'Content AI' },
-  { label: 'Meshy AI', icon: Box, gradient: 'from-violet-400 to-purple-600', capability: '3D Models' },
-  { label: 'Azure Neural', icon: Volume2, gradient: 'from-blue-400 to-blue-700', capability: 'TTS & Lipsync' },
-  { label: 'ElevenLabs', icon: Mic, gradient: 'from-pink-400 to-rose-600', capability: 'Voice Clone' },
-  { label: 'DeepL', icon: Languages, gradient: 'from-teal-400 to-emerald-600', capability: 'Translation' },
-  { label: 'Alibaba Wan', icon: Eye, gradient: 'from-amber-400 to-orange-600', capability: 'Avatar Gen' },
-  { label: 'ModelsLab', icon: Palette, gradient: 'from-fuchsia-400 to-pink-600', capability: 'Animation' },
-  { label: 'Deepgram', icon: Subtitles, gradient: 'from-lime-400 to-green-600', capability: 'STT Nova 2' },
-  { label: 'DeepSeek', icon: Cpu, gradient: 'from-indigo-400 to-violet-600', capability: 'Reasoning' },
+  { label: 'Gemini 3 Pro', logo: geminiLogo, capability: 'Image & LLM' },
+  { label: 'Vertex / GCP', logo: gcpLogo, capability: 'Video Gen' },
+  { label: 'Claude 4', logo: anthropicLogo, capability: 'Transcreation' },
+  { label: 'GPT-4o', logo: openaiLogo, capability: 'Content AI' },
+  { label: 'Meshy AI', logo: meshyLogo, capability: '3D Models' },
+  { label: 'Azure Neural', logo: azureLogo, capability: 'TTS & Lipsync' },
+  { label: 'ElevenLabs', logo: elevenlabsLogo, capability: 'Voice Clone' },
+  { label: 'DeepL', logo: deeplLogo, capability: 'Translation' },
+  { label: 'Alibaba Wan', logo: alibabaLogo, capability: 'Avatar Gen' },
+  { label: 'ModelsLab', logo: modelslabLogo, capability: 'Animation' },
+  { label: 'Deepgram', logo: deepgramLogo, capability: 'STT Nova 2' },
+  { label: 'DeepSeek', logo: deepseekLogo, capability: 'Reasoning' },
+  { label: 'Replicate', logo: replicateLogo, capability: 'Open Models' },
+  { label: 'JSON2Video', logo: json2videoLogo, capability: 'Assembly' },
+  { label: 'Supabase', logo: supabaseLogo, capability: 'Backend AI' },
 ];
 
 const ProviderRibbon: React.FC = () => (
@@ -167,20 +183,15 @@ const ProviderRibbon: React.FC = () => (
     <motion.div
       className="flex gap-4 whitespace-nowrap"
       animate={{ x: ['0%', '-50%'] }}
-      transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
+      transition={{ duration: 35, repeat: Infinity, ease: 'linear' }}
     >
-      {[...PROVIDER_SHOWCASE, ...PROVIDER_SHOWCASE].map((p, i) => {
-        const Icon = p.icon;
-        return (
-          <div key={`${p.label}-${i}`} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-black/40 backdrop-blur-md border border-white/10">
-            <div className={`w-6 h-6 rounded-full bg-gradient-to-br ${p.gradient} flex items-center justify-center`}>
-              <Icon className="w-3 h-3 text-white" strokeWidth={2} />
-            </div>
-            <span className="text-xs font-bold text-white/90">{p.label}</span>
-            <span className="text-[10px] text-white/40 font-medium">{p.capability}</span>
-          </div>
-        );
-      })}
+      {[...PROVIDER_SHOWCASE, ...PROVIDER_SHOWCASE].map((p, i) => (
+        <div key={`${p.label}-${i}`} className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-black/50 backdrop-blur-md border border-white/15">
+          <img src={p.logo} alt={p.label} className="w-5 h-5 rounded-sm object-contain" />
+          <span className="text-xs font-bold text-white/90">{p.label}</span>
+          <span className="text-[10px] text-white/40 font-medium">{p.capability}</span>
+        </div>
+      ))}
     </motion.div>
   </div>
 );
