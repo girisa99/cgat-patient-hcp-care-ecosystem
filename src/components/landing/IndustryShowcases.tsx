@@ -135,6 +135,190 @@ const PIPELINE_GROUPS = {
   },
 };
 
+// Industry-specific content context for pipeline groups and How It Works
+const INDUSTRY_CONTEXT: Record<string, {
+  create: { headline: string; subtitle: string; examples: string[] };
+  localize: { headline: string; subtitle: string; examples: string[] };
+  howItWorks: { title: string; subtitle: string; steps: { step: string; title: string; desc: string }[] };
+}> = {
+  healthcare: {
+    create: {
+      headline: 'Create Patient & HCP Content',
+      subtitle: 'Generate compliant patient education decks, training videos, and clinical content in minutes',
+      examples: ['Patient Onboarding Guide', 'HCP Training Module', 'Clinical Trial Summary'],
+    },
+    localize: {
+      headline: 'Localize for Global Patient Populations',
+      subtitle: 'Transcreate medical content with cultural sensitivity — from consent forms to discharge instructions',
+      examples: ['Multilingual Consent Forms', 'Patient Portal in 22 Languages', 'Provider Notes Transcription'],
+    },
+    howItWorks: {
+      title: 'Healthcare Content Pipeline',
+      subtitle: 'From clinical input to compliant, multilingual patient-ready materials',
+      steps: [
+        { step: '01', title: 'Clinical Input', desc: 'Upload protocols, guidelines, or drug info — AI extracts key messaging' },
+        { step: '02', title: 'Compliance Check', desc: 'Auto-validates against HIPAA, FDA labeling, and regional health authority standards' },
+        { step: '03', title: 'Content Generation', desc: 'AI creates patient-friendly decks, explainer videos, and education guides' },
+        { step: '04', title: 'Medical Transcreation', desc: 'Adapts to 22+ languages with culturally appropriate medical terminology' },
+      ],
+    },
+  },
+  education: {
+    create: {
+      headline: 'Create Course & Learning Content',
+      subtitle: 'Build interactive course modules, avatar-led lectures, and assessment materials at scale',
+      examples: ['Interactive Lesson Plan', 'Avatar Instructor Video', 'Student Assessment Deck'],
+    },
+    localize: {
+      headline: 'Localize for Vernacular Learning',
+      subtitle: 'Deliver education in mother tongues — from Hindi to Swahili — with dialect-perfect audio',
+      examples: ['Vernacular Course Audio', 'Exam Transcription', 'Multilingual Textbook Translation'],
+    },
+    howItWorks: {
+      title: 'EdTech Content Pipeline',
+      subtitle: 'From curriculum to vernacular-ready, engaging course materials',
+      steps: [
+        { step: '01', title: 'Curriculum Input', desc: 'Upload syllabus, lesson plans, or raw lecture notes for AI structuring' },
+        { step: '02', title: 'Adaptive Generation', desc: 'Creates slide decks, video scripts, and quizzes matched to learning levels' },
+        { step: '03', title: 'Avatar & Voice', desc: 'AI instructor avatars deliver content with native-language lip-sync' },
+        { step: '04', title: 'Vernacular Reach', desc: 'Transcreated into 35+ languages with regional dialect accuracy' },
+      ],
+    },
+  },
+  finance: {
+    create: {
+      headline: 'Create Investor & Compliance Content',
+      subtitle: 'Generate pitch decks, regulatory reports, and market analysis with AI precision',
+      examples: ['Investor Pitch Deck', 'Quarterly Compliance Report', 'Market Analysis Brief'],
+    },
+    localize: {
+      headline: 'Localize for Global Markets',
+      subtitle: 'Transcreate financial content with regional compliance and cultural context for every market',
+      examples: ['Multilingual Annual Report', 'Regional Compliance Audio', 'Cross-Border Prospectus'],
+    },
+    howItWorks: {
+      title: 'Finance Content Pipeline',
+      subtitle: 'From data to investor-ready, compliant, multilingual financial content',
+      steps: [
+        { step: '01', title: 'Data Ingestion', desc: 'Feed financial data, earnings reports, or market research for AI analysis' },
+        { step: '02', title: 'Smart Formatting', desc: 'Auto-generates charts, executive summaries, and regulatory-compliant layouts' },
+        { step: '03', title: 'Compliance Layer', desc: 'Validates against SEC, MiFID II, and regional financial disclosure rules' },
+        { step: '04', title: 'Market Adaptation', desc: 'Transcreated for 15+ markets with currency, dialect, and format localization' },
+      ],
+    },
+  },
+  government: {
+    create: {
+      headline: 'Create Citizen & Policy Content',
+      subtitle: 'Generate public service announcements, policy explainers, and civic engagement materials',
+      examples: ['Public Health PSA', 'Policy Explainer Video', 'Citizen Service Guide'],
+    },
+    localize: {
+      headline: 'Reach Every Citizen in Their Language',
+      subtitle: 'Deliver government communications in 40+ local languages and dialects — including 7 Arabic dialects',
+      examples: ['Multilingual PSA Broadcast', 'Citizen Feedback Transcription', 'Regional Policy Translation'],
+    },
+    howItWorks: {
+      title: 'Government Content Pipeline',
+      subtitle: 'From policy documents to citizen-ready, multilingual public communications',
+      steps: [
+        { step: '01', title: 'Policy Input', desc: 'Upload legislation, guidelines, or briefings for AI simplification' },
+        { step: '02', title: 'Citizen-Friendly Output', desc: 'Transforms complex policy into clear PSAs, infographics, and video explainers' },
+        { step: '03', title: 'Accessibility Check', desc: 'Ensures plain language, ADA compliance, and readability standards' },
+        { step: '04', title: 'Dialect-Level Reach', desc: 'Transcreated into 40+ languages including regional dialects and RTL formats' },
+      ],
+    },
+  },
+  tourism: {
+    create: {
+      headline: 'Create Destination & Travel Content',
+      subtitle: 'Build stunning promo videos, virtual tours, and multilingual travel guides with AI',
+      examples: ['Destination Promo Video', 'Virtual Hotel Tour', 'Travel Itinerary Guide'],
+    },
+    localize: {
+      headline: 'Speak Every Traveler\'s Language',
+      subtitle: 'Transcreate travel content with cultural nuance — from Arabic to Japanese to Portuguese',
+      examples: ['Multilingual Audio Guide', 'Guest Review Transcription', 'Localized Booking Portal'],
+    },
+    howItWorks: {
+      title: 'Travel Content Pipeline',
+      subtitle: 'From destination assets to traveler-ready, globally localized content',
+      steps: [
+        { step: '01', title: 'Asset Upload', desc: 'Upload photos, property specs, or destination highlights for AI enhancement' },
+        { step: '02', title: 'Visual Storytelling', desc: 'AI creates promo reels, virtual tours, and branded travel decks' },
+        { step: '03', title: 'Cultural Adaptation', desc: 'Adjusts messaging for cultural preferences, holidays, and travel norms' },
+        { step: '04', title: 'Global Distribution', desc: 'Transcreated into 25+ languages with native voiceovers for every market' },
+      ],
+    },
+  },
+  retail: {
+    create: {
+      headline: 'Create Product & Campaign Content',
+      subtitle: 'Generate product videos, social ads, and influencer-ready content at campaign speed',
+      examples: ['Product Launch Video', 'Social Media Ad Set', 'Influencer Brief Deck'],
+    },
+    localize: {
+      headline: 'Localize for Every Shopper',
+      subtitle: 'Adapt product content to local markets — tone, format, and cultural references included',
+      examples: ['Regional Product Descriptions', 'Customer Review Audio', 'Marketplace Listing Translation'],
+    },
+    howItWorks: {
+      title: 'Retail Content Pipeline',
+      subtitle: 'From product catalog to market-ready, localized shopping experiences',
+      steps: [
+        { step: '01', title: 'Product Feed', desc: 'Import product data, images, and specs from your catalog or PIM system' },
+        { step: '02', title: 'Creative Generation', desc: 'AI creates product videos, social ads, and listing content automatically' },
+        { step: '03', title: 'Format Optimization', desc: 'Auto-resizes for Instagram, TikTok, Amazon, and marketplace standards' },
+        { step: '04', title: 'Market Localization', desc: 'Transcreated for 20+ markets with local pricing, sizing, and cultural tone' },
+      ],
+    },
+  },
+  manufacturing: {
+    create: {
+      headline: 'Create Training & Safety Content',
+      subtitle: 'Build safety training videos, multilingual SOPs, and equipment guides with AI',
+      examples: ['Safety Protocol Video', 'Equipment Operation SOP', 'Compliance Training Deck'],
+    },
+    localize: {
+      headline: 'Train Workers in Their Language',
+      subtitle: 'Deliver safety-critical content in every worker\'s native language — no misunderstanding allowed',
+      examples: ['Multilingual Safety Briefing', 'Floor Inspection Audio', 'Regional SOP Translation'],
+    },
+    howItWorks: {
+      title: 'Manufacturing Content Pipeline',
+      subtitle: 'From technical docs to worker-ready, safety-compliant multilingual materials',
+      steps: [
+        { step: '01', title: 'Technical Input', desc: 'Upload equipment manuals, safety protocols, or engineering specs' },
+        { step: '02', title: 'Worker-Ready Output', desc: 'AI simplifies into visual SOPs, training videos, and quick-reference cards' },
+        { step: '03', title: 'Safety Validation', desc: 'Cross-checks against OSHA, ISO, and regional safety standards' },
+        { step: '04', title: 'Workforce Languages', desc: 'Transcreated into 18+ worker languages with clear, simple terminology' },
+      ],
+    },
+  },
+  realestate: {
+    create: {
+      headline: 'Create Property & Investor Content',
+      subtitle: 'Generate virtual tours, listing videos, and investor presentations with AI precision',
+      examples: ['Property Virtual Tour', 'Investor Pitch Deck', 'Luxury Listing Video'],
+    },
+    localize: {
+      headline: 'Reach Global Investors & Buyers',
+      subtitle: 'Transcreate property content for international buyers — from Gulf Arabic to Mandarin',
+      examples: ['Multilingual Listing Portal', 'Investor Call Transcription', 'Regional Market Report'],
+    },
+    howItWorks: {
+      title: 'Real Estate Content Pipeline',
+      subtitle: 'From property assets to investor-ready, globally marketed content',
+      steps: [
+        { step: '01', title: 'Property Data', desc: 'Upload floor plans, photos, specs, and market comps for AI processing' },
+        { step: '02', title: 'Visual Showcase', desc: 'AI creates virtual tours, drone-style videos, and branded listing decks' },
+        { step: '03', title: 'Market Positioning', desc: 'Adapts pricing format, measurement units, and investment terminology per region' },
+        { step: '04', title: 'Investor Reach', desc: 'Transcreated for 12+ markets with dialect-specific voiceovers and cultural tone' },
+      ],
+    },
+  },
+};
+
 // Unique capabilities that set the platform apart
 const DIFFERENTIATORS = [
   { icon: User, name: 'AI Avatars', desc: 'Photorealistic digital presenters in 140+ languages — lip-synced natively', tier: 'Pro' },
@@ -333,136 +517,209 @@ export const IndustryShowcases: React.FC<IndustryShowcasesProps> = ({ region, co
           </motion.div>
         </AnimatePresence>
 
-        {/* Pipeline demo tabs — mobile-friendly */}
-        <Tabs value={activePipeline} onValueChange={setActivePipeline} className="w-full">
-          <div className="bg-card border border-border rounded-2xl mb-5 sm:mb-6 overflow-hidden">
-            {/* Create Content row */}
-            <div className="border-b border-border">
-              <div className="px-3 sm:px-4 pt-2.5 sm:pt-3 pb-1">
-                <p className="text-[10px] sm:text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  {PIPELINE_GROUPS.create.emoji} {PIPELINE_GROUPS.create.label}
-                </p>
+        {/* Pipeline demo tabs — mobile-friendly, industry-contextualized */}
+        {(() => {
+          const ctx = INDUSTRY_CONTEXT[selectedIndustry.id] || INDUSTRY_CONTEXT.healthcare;
+          return (
+            <>
+              <Tabs value={activePipeline} onValueChange={setActivePipeline} className="w-full">
+                <div className="bg-card border border-border rounded-2xl mb-5 sm:mb-6 overflow-hidden">
+                  {/* Create Content row — industry-specific */}
+                  <div className="border-b border-border">
+                    <div className="px-3 sm:px-4 pt-3 sm:pt-4 pb-1">
+                      <p className="text-[10px] sm:text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                        {PIPELINE_GROUPS.create.emoji} {ctx.create.headline}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground/70 mt-0.5 max-w-xl">{ctx.create.subtitle}</p>
+                      <div className="flex gap-1.5 mt-1.5 mb-1">
+                        {ctx.create.examples.map((ex) => (
+                          <Badge key={ex} variant="outline" className="text-[9px] border-primary/20 text-primary/70 bg-primary/5">
+                            {ex}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <TabsList className="bg-transparent h-auto w-full p-1.5 sm:p-2 pt-0 gap-1.5 sm:gap-2 justify-start flex-nowrap sm:flex-wrap overflow-x-auto scrollbar-hide">
+                      {PIPELINE_GROUPS.create.tabs.map((tab) => {
+                        const Icon = tab.icon;
+                        return (
+                          <TabsTrigger
+                            key={tab.id}
+                            value={tab.id}
+                            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium shrink-0
+                              bg-muted text-foreground border border-border/50
+                              data-[state=inactive]:text-foreground data-[state=inactive]:bg-muted
+                              hover:bg-accent/10 hover:border-primary/30
+                              data-[state=active]:bg-primary data-[state=active]:text-primary-foreground 
+                              data-[state=active]:border-primary data-[state=active]:shadow-md
+                              transition-all duration-200"
+                          >
+                            <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                            <span className="hidden sm:inline">{tab.label}</span>
+                            <span className="sm:hidden">{tab.shortLabel}</span>
+                            <span className="text-[9px] sm:text-[10px] opacity-70 hidden md:inline">· {tab.product}</span>
+                          </TabsTrigger>
+                        );
+                      })}
+                    </TabsList>
+                  </div>
+
+                  {/* Localize & Transcreate row — industry-specific */}
+                  <div>
+                    <div className="px-3 sm:px-4 pt-3 sm:pt-4 pb-1">
+                      <p className="text-[10px] sm:text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                        {PIPELINE_GROUPS.localize.emoji} {ctx.localize.headline}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground/70 mt-0.5 max-w-xl">{ctx.localize.subtitle}</p>
+                      <div className="flex gap-1.5 mt-1.5 mb-1">
+                        {ctx.localize.examples.map((ex) => (
+                          <Badge key={ex} variant="outline" className="text-[9px] border-accent/20 text-accent/70 bg-accent/5">
+                            {ex}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <TabsList className="bg-transparent h-auto w-full p-1.5 sm:p-2 pt-0 gap-1.5 sm:gap-2 justify-start flex-nowrap sm:flex-wrap overflow-x-auto scrollbar-hide">
+                      {PIPELINE_GROUPS.localize.tabs.map((tab) => {
+                        const Icon = tab.icon;
+                        return (
+                          <TabsTrigger
+                            key={tab.id}
+                            value={tab.id}
+                            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium shrink-0
+                              bg-muted text-foreground border border-border/50
+                              data-[state=inactive]:text-foreground data-[state=inactive]:bg-muted
+                              hover:bg-accent/10 hover:border-primary/30
+                              data-[state=active]:bg-primary data-[state=active]:text-primary-foreground 
+                              data-[state=active]:border-primary data-[state=active]:shadow-md
+                              transition-all duration-200"
+                          >
+                            <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                            <span className="hidden sm:inline">{tab.label}</span>
+                            <span className="sm:hidden">{tab.shortLabel}</span>
+                            <span className="text-[9px] sm:text-[10px] opacity-70 hidden md:inline">· {tab.product}</span>
+                          </TabsTrigger>
+                        );
+                      })}
+                    </TabsList>
+                  </div>
+                </div>
+
+                {/* Demo cards per pipeline */}
+                <div className="min-h-[300px]">
+                  <TabsContent value="deck" className="mt-0">
+                    <DeckDemoCard industryId={selectedIndustry.id} region={region} />
+                  </TabsContent>
+                  <TabsContent value="video" className="mt-0">
+                    <VideoDemoCard industryId={selectedIndustry.id} region={region} />
+                  </TabsContent>
+                  <TabsContent value="content" className="mt-0">
+                    <ContentDemoCard industryId={selectedIndustry.id} region={region} />
+                  </TabsContent>
+                  <TabsContent value="tts" className="mt-0">
+                    <TTSDemoCard region={region} industryId={selectedIndustry.id} />
+                  </TabsContent>
+                  <TabsContent value="stt" className="mt-0">
+                    <STTDemoCard region={region} industryId={selectedIndustry.id} />
+                  </TabsContent>
+                  <TabsContent value="translation" className="mt-0">
+                    <TranslationDemoCard region={region} industryId={selectedIndustry.id} />
+                  </TabsContent>
+                  <TabsContent value="transcreation" className="mt-0">
+                    <TranscreationDemoCard region={region} industryId={selectedIndustry.id} />
+                  </TabsContent>
+                </div>
+              </Tabs>
+
+              {/* Industry-Specific "How It Works" Pipeline Steps */}
+              <div className="mt-8 sm:mt-10">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={`how-${selectedIndustry.id}`}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <div className="flex items-center justify-between mb-5">
+                      <div>
+                        <h3 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2">
+                          <Zap className="h-5 w-5 text-primary" />
+                          {ctx.howItWorks.title}
+                        </h3>
+                        <p className="text-xs text-muted-foreground mt-0.5">{ctx.howItWorks.subtitle}</p>
+                      </div>
+                      <Badge variant="outline" className="text-[10px] border-primary/30 text-primary shrink-0">
+                        {selectedIndustry.name}
+                      </Badge>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                      {ctx.howItWorks.steps.map((step, i) => (
+                        <motion.div
+                          key={step.step}
+                          initial={{ opacity: 0, y: 16 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: i * 0.08 }}
+                          className="relative group"
+                        >
+                          <div className="p-4 rounded-2xl border border-border bg-card/60 backdrop-blur-sm hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 h-full">
+                            <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-primary/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-t-2xl" />
+                            <div className="flex items-center gap-2 mb-2.5">
+                              <span className="text-2xl font-black text-primary/20">{step.step}</span>
+                              {i < ctx.howItWorks.steps.length - 1 && (
+                                <ArrowRight className="h-3 w-3 text-muted-foreground/40 hidden lg:block absolute -right-3 top-1/2 -translate-y-1/2 z-10" />
+                              )}
+                            </div>
+                            <p className="text-sm font-bold text-foreground mb-1">{step.title}</p>
+                            <p className="text-xs text-muted-foreground leading-relaxed">{step.desc}</p>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </motion.div>
+                </AnimatePresence>
               </div>
-              <TabsList className="bg-transparent h-auto w-full p-1.5 sm:p-2 pt-0 gap-1.5 sm:gap-2 justify-start flex-nowrap sm:flex-wrap overflow-x-auto scrollbar-hide">
-                {PIPELINE_GROUPS.create.tabs.map((tab) => {
-                  const Icon = tab.icon;
-                  return (
-                    <TabsTrigger
-                      key={tab.id}
-                      value={tab.id}
-                      className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium shrink-0
-                        bg-muted text-foreground border border-border/50
-                        data-[state=inactive]:text-foreground data-[state=inactive]:bg-muted
-                        hover:bg-accent/10 hover:border-primary/30
-                        data-[state=active]:bg-primary data-[state=active]:text-primary-foreground 
-                        data-[state=active]:border-primary data-[state=active]:shadow-md
-                        transition-all duration-200"
-                    >
-                      <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                      <span className="hidden sm:inline">{tab.label}</span>
-                      <span className="sm:hidden">{tab.shortLabel}</span>
-                      <span className="text-[9px] sm:text-[10px] opacity-70 hidden md:inline">· {tab.product}</span>
-                    </TabsTrigger>
-                  );
-                })}
-              </TabsList>
-            </div>
 
-            {/* Localize & Transcreate row */}
-            <div>
-              <div className="px-3 sm:px-4 pt-2.5 sm:pt-3 pb-1">
-                <p className="text-[10px] sm:text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  {PIPELINE_GROUPS.localize.emoji} {PIPELINE_GROUPS.localize.label}
-                </p>
+              {/* Outputs & Combinations */}
+              <div className="mt-8 sm:mt-10">
+                <Tabs defaultValue="outputs" className="w-full">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="text-lg sm:text-xl font-bold text-foreground">
+                        {selectedIndustry.name} — Output Gallery
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        Real outputs and multi-pipeline combinations for {selectedIndustry.name.toLowerCase()}
+                      </p>
+                    </div>
+                    <TabsList level="child" className="shrink-0">
+                      <TabsTrigger value="outputs" level="child" className="gap-1.5">
+                        <Eye className="h-3 w-3" /> Outputs
+                      </TabsTrigger>
+                      <TabsTrigger value="combinations" level="child" className="gap-1.5">
+                        <Layers className="h-3 w-3" /> Combinations
+                      </TabsTrigger>
+                    </TabsList>
+                  </div>
+
+                  <TabsContent value="outputs" className="mt-0">
+                    <PipelineOutputGallery 
+                      industryId={selectedIndustry.id} 
+                      industryName={selectedIndustry.name} 
+                    />
+                  </TabsContent>
+                  <TabsContent value="combinations" className="mt-0">
+                    <CombinationShowcase 
+                      industryId={selectedIndustry.id} 
+                      industryName={selectedIndustry.name} 
+                    />
+                  </TabsContent>
+                </Tabs>
               </div>
-              <TabsList className="bg-transparent h-auto w-full p-1.5 sm:p-2 pt-0 gap-1.5 sm:gap-2 justify-start flex-nowrap sm:flex-wrap overflow-x-auto scrollbar-hide">
-                {PIPELINE_GROUPS.localize.tabs.map((tab) => {
-                  const Icon = tab.icon;
-                  return (
-                    <TabsTrigger
-                      key={tab.id}
-                      value={tab.id}
-                      className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium shrink-0
-                        bg-muted text-foreground border border-border/50
-                        data-[state=inactive]:text-foreground data-[state=inactive]:bg-muted
-                        hover:bg-accent/10 hover:border-primary/30
-                        data-[state=active]:bg-primary data-[state=active]:text-primary-foreground 
-                        data-[state=active]:border-primary data-[state=active]:shadow-md
-                        transition-all duration-200"
-                    >
-                      <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                      <span className="hidden sm:inline">{tab.label}</span>
-                      <span className="sm:hidden">{tab.shortLabel}</span>
-                      <span className="text-[9px] sm:text-[10px] opacity-70 hidden md:inline">· {tab.product}</span>
-                    </TabsTrigger>
-                  );
-                })}
-              </TabsList>
-            </div>
-          </div>
-
-          {/* Demo cards per pipeline */}
-          <div className="min-h-[300px]">
-            <TabsContent value="deck" className="mt-0">
-              <DeckDemoCard industryId={selectedIndustry.id} region={region} />
-            </TabsContent>
-            <TabsContent value="video" className="mt-0">
-              <VideoDemoCard industryId={selectedIndustry.id} region={region} />
-            </TabsContent>
-            <TabsContent value="content" className="mt-0">
-              <ContentDemoCard industryId={selectedIndustry.id} region={region} />
-            </TabsContent>
-            <TabsContent value="tts" className="mt-0">
-              <TTSDemoCard region={region} industryId={selectedIndustry.id} />
-            </TabsContent>
-            <TabsContent value="stt" className="mt-0">
-              <STTDemoCard region={region} industryId={selectedIndustry.id} />
-            </TabsContent>
-            <TabsContent value="translation" className="mt-0">
-              <TranslationDemoCard region={region} industryId={selectedIndustry.id} />
-            </TabsContent>
-            <TabsContent value="transcreation" className="mt-0">
-              <TranscreationDemoCard region={region} industryId={selectedIndustry.id} />
-            </TabsContent>
-          </div>
-        </Tabs>
-
-        {/* Integrated Industry Outputs — Two paths: See Outputs + Try Combinations */}
-        <div className="mt-8 sm:mt-10">
-          <Tabs defaultValue="outputs" className="w-full">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-lg sm:text-xl font-bold text-foreground">
-                  {selectedIndustry.name} — How It Works
-                </h3>
-                <p className="text-xs text-muted-foreground">
-                  See real outputs or explore multi-pipeline combinations → convert anything to 140+ languages
-                </p>
-              </div>
-              <TabsList level="child" className="shrink-0">
-                <TabsTrigger value="outputs" level="child" className="gap-1.5">
-                  <Eye className="h-3 w-3" /> Outputs
-                </TabsTrigger>
-                <TabsTrigger value="combinations" level="child" className="gap-1.5">
-                  <Layers className="h-3 w-3" /> Combinations
-                </TabsTrigger>
-              </TabsList>
-            </div>
-
-            <TabsContent value="outputs" className="mt-0">
-              <PipelineOutputGallery 
-                industryId={selectedIndustry.id} 
-                industryName={selectedIndustry.name} 
-              />
-            </TabsContent>
-            <TabsContent value="combinations" className="mt-0">
-              <CombinationShowcase 
-                industryId={selectedIndustry.id} 
-                industryName={selectedIndustry.name} 
-              />
-            </TabsContent>
-          </Tabs>
-        </div>
+            </>
+          );
+        })()}
 
         {/* Cross-functional capabilities — integrated from CrossFunctionalSection */}
         <div className="mt-8 sm:mt-10">
