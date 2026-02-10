@@ -197,40 +197,40 @@ const TEMPLATE_PREVIEWS = [
 
 const FloatingTemplateCards: React.FC<{ visible: boolean }> = ({ visible }) => {
   if (!visible) return null;
+  // Only show on large screens to avoid hero text overlap
   return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+    <div className="absolute inset-0 pointer-events-none overflow-hidden hidden xl:block">
       {TEMPLATE_PREVIEWS.map((tmpl, i) => (
         <motion.div
           key={tmpl.title}
-          className={`absolute w-52 bg-black/50 backdrop-blur-xl rounded-xl border ${tmpl.color} p-3 shadow-2xl`}
+          className={`absolute w-44 bg-black/40 backdrop-blur-lg rounded-xl border ${tmpl.color} p-2.5 shadow-xl`}
           style={{
-            left: `${10 + i * 22}%`,
-            top: `${18 + (i % 2 === 0 ? 0 : 30)}%`,
+            right: `${3 + (i % 2) * 8}%`,
+            top: `${20 + i * 18}%`,
           }}
-          initial={{ opacity: 0, y: 40, scale: 0.8 }}
+          initial={{ opacity: 0, x: 60, scale: 0.8 }}
           animate={{
-            opacity: [0, 0.85, 0.75],
-            y: [40, 0, -5, 0],
+            opacity: [0, 0.7, 0.6],
+            x: [60, 0, 5, 0],
             scale: [0.8, 1, 0.98, 1],
-            rotate: [0, (i % 2 === 0 ? 2 : -2), 0],
           }}
-          transition={{ delay: 0.5 + i * 0.2, duration: 1.5, ease: 'easeOut' }}
+          transition={{ delay: 1 + i * 0.3, duration: 1.5, ease: 'easeOut' }}
         >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] font-bold text-white/60 uppercase tracking-wider">{tmpl.badge}</span>
-            <span className="text-[9px] px-2 py-0.5 rounded-full bg-white/10 text-white/50 font-medium">{tmpl.provider}</span>
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[9px] font-bold text-white/50 uppercase tracking-wider">{tmpl.badge}</span>
+            <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-white/10 text-white/40 font-medium">{tmpl.provider}</span>
           </div>
-          <p className="text-sm font-bold text-white/90 mb-1">{tmpl.title}</p>
-          <div className="flex items-center gap-1.5">
-            <div className="w-full h-1.5 rounded-full bg-white/10 overflow-hidden">
+          <p className="text-xs font-bold text-white/80 mb-1">{tmpl.title}</p>
+          <div className="flex items-center gap-1">
+            <div className="w-full h-1 rounded-full bg-white/10 overflow-hidden">
               <motion.div
                 className="h-full rounded-full bg-gradient-to-r from-primary to-accent"
                 initial={{ width: '0%' }}
                 animate={{ width: '100%' }}
-                transition={{ delay: 1 + i * 0.3, duration: 2 }}
+                transition={{ delay: 1.5 + i * 0.3, duration: 2 }}
               />
             </div>
-            <span className="text-[9px] text-white/40 font-mono">{tmpl.style}</span>
+            <span className="text-[8px] text-white/30 font-mono">{tmpl.style}</span>
           </div>
         </motion.div>
       ))}
@@ -471,25 +471,24 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
         />
       </div>
 
-      {/* Ambient rising particles */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {[...Array(20)].map((_, i) => (
+      {/* Ambient rising particles — reduced for performance */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden hidden md:block">
+        {[...Array(8)].map((_, i) => (
           <motion.div
             key={`particle-${i}`}
-            className="absolute w-1 h-1 rounded-full bg-white/40"
+            className="absolute w-1 h-1 rounded-full bg-white/30"
             style={{
-              left: `${5 + Math.random() * 90}%`,
-              top: `${70 + Math.random() * 30}%`,
+              left: `${10 + i * 11}%`,
+              top: `${75 + (i % 3) * 8}%`,
             }}
             animate={{
-              opacity: [0, 0.8, 0],
-              scale: [0, 1.5, 0],
-              y: [0, -200 - Math.random() * 300],
+              opacity: [0, 0.6, 0],
+              y: [0, -250],
             }}
             transition={{
-              duration: 4 + Math.random() * 6,
+              duration: 5 + i * 0.8,
               repeat: Infinity,
-              delay: Math.random() * 8,
+              delay: i * 1.2,
               ease: 'easeOut',
             }}
           />
@@ -510,36 +509,38 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
             className="text-center space-y-6 w-full"
           >
-            {/* Badge */}
+            {/* Badge — Large & High Visibility */}
             <motion.div initial={{ opacity: 0, y: -15, scale: 0.9 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ delay: 0.1, type: 'spring', stiffness: 200 }}>
-              <Badge className="bg-white/10 backdrop-blur-md border border-white/20 text-white text-sm px-5 py-2.5 shadow-xl shadow-black/20">
+              <Badge className="bg-primary/20 backdrop-blur-xl border-2 border-primary/40 text-white text-base md:text-lg px-6 py-3 shadow-2xl shadow-primary/30 font-bold tracking-wide">
                 {slide.badge}
               </Badge>
             </motion.div>
 
             {/* Headline — massive cinematic type */}
             <motion.h1
-              className="text-5xl md:text-7xl lg:text-[5.5rem] font-black leading-[0.92] tracking-tight"
+              className="text-6xl md:text-8xl lg:text-[6.5rem] font-black leading-[0.90] tracking-tight"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15, duration: 0.8, type: 'spring', stiffness: 100 }}
+              style={{ textShadow: '0 6px 20px rgba(0,0,0,0.9), 0 2px 8px rgba(0,0,0,0.7)' }}
             >
-              <span className="text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]">{slide.headline[0]}</span>
-              <span className="bg-gradient-to-r from-primary via-blue-400 to-cyan-400 bg-clip-text text-transparent drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]">
+              <span className="text-white">{slide.headline[0]}</span>
+              <span className="bg-gradient-to-r from-primary via-blue-400 to-cyan-400 bg-clip-text text-transparent" style={{ WebkitTextStroke: '0.5px rgba(255,255,255,0.1)' }}>
                 {slide.headline[1]}
               </span>
             </motion.h1>
 
             <motion.p
-              className="text-xl md:text-3xl font-bold text-white/90 drop-shadow-lg"
+              className="text-2xl md:text-4xl font-extrabold text-white drop-shadow-[0_4px_16px_rgba(0,0,0,0.8)]"
               initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
             >
               {slide.subtitle}
             </motion.p>
 
             <motion.p
-              className="text-base md:text-lg text-white/70 max-w-2xl mx-auto leading-relaxed drop-shadow-md"
+              className="text-lg md:text-xl text-white/90 max-w-3xl mx-auto leading-relaxed font-medium"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
+              style={{ textShadow: '0 2px 10px rgba(0,0,0,0.8)' }}
             >
               {slide.description}
             </motion.p>
@@ -729,49 +730,7 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
     </section>
   );
 };
-// ============================================
-const RegionalIndustries: React.FC<{ config: RegionalConfig }> = ({ config }) => (
-  <section className="py-20 relative">
-    <div className="absolute inset-0 bg-gradient-to-b from-background via-primary/5 to-background" />
-    <div className="relative max-w-7xl mx-auto px-4">
-      <div className="text-center mb-12">
-        <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
-          Every Industry. Transcreated for {config.hero.regionName}.
-        </h2>
-        <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-          50+ industries powered by <span className="text-primary font-semibold">15 AI providers</span> and{' '}
-          <span className="text-primary font-semibold">206 pipelines</span> — culturally adapted for your market, 
-          compliance requirements, and audience dialects.
-        </p>
-      </div>
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {config.industries.map((industry, i) => (
-          <motion.div
-            key={industry.name}
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: i * 0.1 }}
-          >
-            <Card className="h-full hover:shadow-lg transition-shadow border-border hover:border-primary/30">
-              <CardContent className="p-5">
-                <div className="flex items-center gap-3 mb-2">
-                  <span className="text-2xl">{industry.icon}</span>
-                  <h3 className="font-bold text-foreground">{industry.name}</h3>
-                </div>
-                <p className="text-sm text-muted-foreground">{industry.useCase}</p>
-              </CardContent>
-            </Card>
-          </motion.div>
-        ))}
-      </div>
-      <p className="text-center text-sm text-muted-foreground mt-6">
-        Featured industries for {config.hero.regionName} — plus Oil & Gas, Pharma, Legal, Consulting, 
-        Automotive, Telecom, Agriculture, Media, and 40+ more with the same transcreation quality.
-      </p>
-    </div>
-  </section>
-);
+// RegionalIndustries removed — consolidated into IndustryShowcases component
 
 // ============================================
 // TranscreationShowcase removed — consolidated into EverythingYouNeedSection
@@ -895,34 +854,69 @@ const RegionalCTAFooter: React.FC<{ config: RegionalConfig }> = ({ config }) => 
 // ============================================
 // NAVBAR
 // ============================================
-const RegionalNavbar: React.FC<{ config: RegionalConfig }> = ({ config }) => (
-  <nav className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border shadow-md">
-    <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-      <Link to="/genie-landing" className="flex items-center gap-2">
-        <Sparkles className="w-8 h-8 text-primary" />
-        <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-          Genie Studio
-        </span>
-      </Link>
-      <div className="hidden md:flex items-center gap-6">
-        <a href="#products" className="text-muted-foreground hover:text-foreground transition">Products</a>
-        <a href="#pricing" className="text-muted-foreground hover:text-foreground transition">Pricing</a>
-        <a href="#languages" className="text-muted-foreground hover:text-foreground transition">Languages</a>
-        <Link to="/explore">
-          <Button variant="ghost" className="text-muted-foreground hover:text-foreground">
-            Explore
-          </Button>
+const RegionalNavbar: React.FC<{ config: RegionalConfig }> = ({ config }) => {
+  const [mobileOpen, setMobileOpen] = React.useState(false);
+  return (
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border shadow-md">
+      <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+        <Link to="/genie-landing" className="flex items-center gap-2">
+          <Sparkles className="w-8 h-8 text-primary" />
+          <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            Genie Studio
+          </span>
         </Link>
-        <RegionSwitcherNav variant="navbar" />
-        <Link to="/genie-studio-auth">
-          <Button className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg">
-            {config.cta.primary}
-          </Button>
-        </Link>
+        {/* Desktop nav */}
+        <div className="hidden md:flex items-center gap-6">
+          <a href="#products" className="text-muted-foreground hover:text-foreground transition">Products</a>
+          <a href="#pricing" className="text-muted-foreground hover:text-foreground transition">Pricing</a>
+          <Link to="/explore">
+            <Button variant="ghost" className="text-muted-foreground hover:text-foreground">
+              Explore
+            </Button>
+          </Link>
+          <RegionSwitcherNav variant="navbar" />
+          <Link to="/genie-studio-auth">
+            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg">
+              {config.cta.primary}
+            </Button>
+          </Link>
+        </div>
+        {/* Mobile hamburger */}
+        <button
+          className="md:hidden flex flex-col gap-1.5 p-2"
+          onClick={() => setMobileOpen(!mobileOpen)}
+          aria-label="Toggle menu"
+        >
+          <span className={`block w-6 h-0.5 bg-foreground transition-transform ${mobileOpen ? 'rotate-45 translate-y-2' : ''}`} />
+          <span className={`block w-6 h-0.5 bg-foreground transition-opacity ${mobileOpen ? 'opacity-0' : ''}`} />
+          <span className={`block w-6 h-0.5 bg-foreground transition-transform ${mobileOpen ? '-rotate-45 -translate-y-2' : ''}`} />
+        </button>
       </div>
-    </div>
-  </nav>
-);
+      {/* Mobile menu */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="md:hidden bg-background/98 backdrop-blur-xl border-t border-border overflow-hidden"
+          >
+            <div className="flex flex-col gap-2 p-4">
+              <a href="#products" onClick={() => setMobileOpen(false)} className="text-foreground font-medium py-2">Products</a>
+              <a href="#pricing" onClick={() => setMobileOpen(false)} className="text-foreground font-medium py-2">Pricing</a>
+              <Link to="/explore" onClick={() => setMobileOpen(false)} className="text-foreground font-medium py-2">Explore</Link>
+              <Link to="/genie-studio-auth" onClick={() => setMobileOpen(false)}>
+                <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground mt-2">
+                  {config.cta.primary}
+                </Button>
+              </Link>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </nav>
+  );
+};
 
 // ============================================
 // MAIN COMPONENT — Unified Landing Page
