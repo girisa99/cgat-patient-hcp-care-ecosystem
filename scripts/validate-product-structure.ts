@@ -60,6 +60,50 @@ const HEALTHCARE_ALLOWED_PATHS = [
 ];
 
 // Files/folders to ignore
+// =============================================================================
+// BANNED BRANDING TERMS (Auto-enforced)
+// See docs/BRANDING_GLOSSARY.md for full context
+// =============================================================================
+
+interface BannedTerm {
+  pattern: RegExp;
+  label: string;
+  replacement: string;
+  /** Paths where this term is allowed (e.g., folder names, DB table refs) */
+  allowedContexts?: RegExp[];
+}
+
+const BANNED_TERMS: BannedTerm[] = [
+  {
+    pattern: /\bGenie\s+Arc\b/gi,
+    label: 'Genie Arc',
+    replacement: 'Genie Hub',
+    allowedContexts: [
+      /BRANDING_GLOSSARY\.md/,         // The glossary itself documents old names
+      /validate-product-structure\.ts/, // This script
+    ],
+  },
+  {
+    pattern: /\bCosyVoice\b/gi,
+    label: 'CosyVoice',
+    replacement: 'Qwen3-TTS',
+    allowedContexts: [
+      /BRANDING_GLOSSARY\.md/,
+      /validate-product-structure\.ts/,
+    ],
+  },
+  {
+    pattern: /\bcosyvoice\b/gi,
+    label: 'cosyvoice (lowercase)',
+    replacement: 'qwen3-tts',
+    allowedContexts: [
+      /BRANDING_GLOSSARY\.md/,
+      /validate-product-structure\.ts/,
+    ],
+  },
+];
+
+// Files/folders to ignore
 const IGNORE_PATTERNS = [
   'node_modules',
   '.git',
@@ -82,9 +126,18 @@ interface ValidationError {
   product: 'genie-studio' | 'healthcare';
 }
 
+interface BrandingViolation {
+  file: string;
+  line: number;
+  term: string;
+  replacement: string;
+  context: string;
+}
+
 interface ValidationResult {
   valid: boolean;
   errors: ValidationError[];
+  brandingViolations: BrandingViolation[];
   warnings: string[];
   stats: {
     filesScanned: number;
@@ -112,7 +165,7 @@ function isInAllowedPath(filePath: string, allowedPaths: string[]): boolean {
   return allowedPaths.some(allowed => filePath.includes(allowed));
 }
 
-function getAllFiles(dir: string, files: string[] = []): string[] {
+function getAllFiles(dir: string, files: string[] = [], extensions = ['.ts', '.tsx']): string[] {
   if (shouldIgnore(dir)) return files;
   
   try {
@@ -123,8 +176,8 @@ function getAllFiles(dir: string, files: string[] = []): string[] {
       
       const stat = fs.statSync(fullPath);
       if (stat.isDirectory()) {
-        getAllFiles(fullPath, files);
-      } else if (stat.isFile() && (item.endsWith('.ts') || item.endsWith('.tsx'))) {
+        getAllFiles(fullPath, files, extensions);
+      } else if (stat.isFile() && extensions.some(ext => item.endsWith(ext))) {
         files.push(fullPath);
       }
     }
@@ -133,6 +186,43 @@ function getAllFiles(dir: string, files: string[] = []): string[] {
   }
   
   return files;
+}
+
+// =============================================================================
+// BRANDING TERM VALIDATION
+// =============================================================================
+
+function validateBrandingTerms(filePath: string): BrandingViolation[] {
+  const violations: BrandingViolation[] = [];
+  
+  try {
+    const content = fs.readFileSync(filePath, 'utf-8');
+    const lines = content.split('\n');
+    
+    for (const banned of BANNED_TERMS) {
+      // Skip if this file is in allowed contexts
+      if (banned.allowedContexts?.some(ctx => ctx.test(filePath))) continue;
+      
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (banned.pattern.test(line)) {
+          // Reset regex lastIndex since we use /g flag
+          banned.pattern.lastIndex = 0;
+          violations.push({
+            file: filePath,
+            line: i + 1,
+            term: banned.label,
+            replacement: banned.replacement,
+            context: line.trim().substring(0, 120),
+          });
+        }
+      }
+    }
+  } catch (error) {
+    // Ignore read errors
+  }
+  
+  return violations;
 }
 
 function validateFile(filePath: string): ValidationError | null {
@@ -172,20 +262,25 @@ function validateFile(filePath: string): ValidationError | null {
 
 function validateStructure(): ValidationResult {
   const errors: ValidationError[] = [];
+  const brandingViolations: BrandingViolation[] = [];
   const warnings: string[] = [];
   let genieFiles = 0;
   let healthcareFiles = 0;
   let sharedFiles = 0;
   
-  // Scan src directory
+  // Scan src directory (ts/tsx)
   const srcFiles = getAllFiles('./src');
   
-  // Scan supabase functions
+  // Scan supabase functions (ts/tsx)
   const supabaseFiles = getAllFiles('./supabase/functions');
   
-  const allFiles = [...srcFiles, ...supabaseFiles];
+  // Scan docs (md files) for branding violations
+  const docFiles = getAllFiles('./docs', [], ['.md']);
   
-  for (const file of allFiles) {
+  const codeFiles = [...srcFiles, ...supabaseFiles];
+  const allFilesForBranding = [...codeFiles, ...docFiles];
+  
+  for (const file of codeFiles) {
     // Count file types
     const fileName = path.basename(file).toLowerCase();
     if (matchesPatterns(fileName, GENIE_PATTERNS)) {
@@ -203,12 +298,19 @@ function validateStructure(): ValidationResult {
     }
   }
   
+  // Validate branding terms across ALL files (code + docs)
+  for (const file of allFilesForBranding) {
+    const violations = validateBrandingTerms(file);
+    brandingViolations.push(...violations);
+  }
+  
   return {
-    valid: errors.length === 0,
+    valid: errors.length === 0 && brandingViolations.length === 0,
     errors,
+    brandingViolations,
     warnings,
     stats: {
-      filesScanned: allFiles.length,
+      filesScanned: allFilesForBranding.length,
       genieFiles,
       healthcareFiles,
       sharedFiles,
@@ -221,7 +323,7 @@ function validateStructure(): ValidationResult {
 // =============================================================================
 
 function main() {
-  console.log('🔍 Validating product structure...\n');
+  console.log('🔍 Validating product structure & branding...\n');
   
   const result = validateStructure();
   
@@ -232,8 +334,11 @@ function main() {
   console.log(`   Shared files: ${result.stats.sharedFiles}`);
   console.log('');
   
+  let hasFailure = false;
+  
   if (result.errors.length > 0) {
-    console.log('❌ Validation FAILED\n');
+    hasFailure = true;
+    console.log('❌ Structure Validation FAILED\n');
     console.log('Misplaced files:');
     for (const error of result.errors) {
       console.log(`\n  📁 ${error.file}`);
@@ -241,10 +346,28 @@ function main() {
       console.log(`     Product: ${error.product}`);
       console.log(`     Expected: ${error.expectedLocation}`);
     }
-    process.exit(1);
   } else {
-    console.log('✅ Validation PASSED');
-    console.log('   All files are in correct product folders.');
+    console.log('✅ Structure Validation PASSED');
+  }
+  
+  console.log('');
+  
+  if (result.brandingViolations.length > 0) {
+    hasFailure = true;
+    console.log(`❌ Branding Validation FAILED — ${result.brandingViolations.length} violation(s)\n`);
+    console.log('   See docs/BRANDING_GLOSSARY.md for correct terms.\n');
+    for (const v of result.brandingViolations) {
+      console.log(`  📛 ${v.file}:${v.line}`);
+      console.log(`     Banned: "${v.term}" → Use: "${v.replacement}"`);
+      console.log(`     Context: ${v.context}`);
+      console.log('');
+    }
+  } else {
+    console.log('✅ Branding Validation PASSED — No banned terms found');
+  }
+  
+  if (hasFailure) {
+    process.exit(1);
   }
 }
 
@@ -253,4 +376,4 @@ if (require.main === module) {
   main();
 }
 
-export { validateStructure, ValidationResult, ValidationError };
+export { validateStructure, ValidationResult, ValidationError, BrandingViolation };
