@@ -71,7 +71,7 @@ const TRANSLATIONS: Record<string, {
   products: Record<GenieProduct, { name: string; tagline: string; description: string }>;
 }> = {
   en: {
-    intro: "Welcome to Genie Studio - Your complete AI-powered creative suite. Let me show you our 7 powerful products.",
+    intro: "Welcome to Genie Suite - Your complete AI-powered creative suite. Let me show you our 7 powerful products.",
     products: {
       spark: { name: 'Genie Spark', tagline: 'Ignite your Ideas', description: 'Transform any input into polished scripts.' },
       mind: { name: 'Genie Mind', tagline: 'AI That Understands', description: 'Enhance scripts with voice and music.' },
@@ -84,7 +84,7 @@ const TRANSLATIONS: Record<string, {
     }
   },
   ar: {
-    intro: "مرحباً بكم في جيني ستوديو - جناحكم الإبداعي الكامل المدعوم بالذكاء الاصطناعي. دعوني أعرض عليكم منتجاتنا السبعة القوية.",
+    intro: "مرحباً بكم في جيني سويت - جناحكم الإبداعي الكامل المدعوم بالذكاء الاصطناعي. دعوني أعرض عليكم منتجاتنا السبعة القوية.",
     products: {
       spark: { name: 'جيني سبارك', tagline: 'أشعل أفكارك', description: 'حوّل أي مدخلات إلى نصوص مصقولة.' },
       mind: { name: 'جيني مايند', tagline: 'ذكاء اصطناعي يفهم', description: 'حسّن النصوص بالصوت والموسيقى.' },
@@ -97,7 +97,7 @@ const TRANSLATIONS: Record<string, {
     }
   },
   zh: {
-    intro: "欢迎来到精灵工作室 - 您的完整AI创意套件。让我向您展示我们7个强大的产品。",
+    intro: "欢迎来到精灵套件 - 您的完整AI创意套件。让我向您展示我们7个强大的产品。",
     products: {
       spark: { name: '精灵火花', tagline: '点燃您的想法', description: '将任何输入转化为精美脚本。' },
       mind: { name: '精灵思维', tagline: 'AI理解一切', description: '用语音和音乐增强脚本。' },
@@ -110,7 +110,7 @@ const TRANSLATIONS: Record<string, {
     }
   },
   hi: {
-    intro: "जीनी स्टूडियो में आपका स्वागत है - आपका संपूर्ण AI-संचालित क्रिएटिव सूट। मुझे आपको हमारे 7 शक्तिशाली उत्पाद दिखाने दें।",
+    intro: "जीनी सुइट में आपका स्वागत है - आपका संपूर्ण AI-संचालित क्रिएटिव सूट। मुझे आपको हमारे 7 शक्तिशाली उत्पाद दिखाने दें।",
     products: {
       spark: { name: 'जीनी स्पार्क', tagline: 'अपने विचारों को जगाएं', description: 'किसी भी इनपुट को पॉलिश्ड स्क्रिप्ट में बदलें।' },
       mind: { name: 'जीनी माइंड', tagline: 'AI जो समझता है', description: 'आवाज़ और संगीत से स्क्रिप्ट को बेहतर बनाएं।' },
@@ -123,7 +123,7 @@ const TRANSLATIONS: Record<string, {
     }
   },
   es: {
-    intro: "Bienvenido a Genie Studio - Tu suite creativa completa impulsada por IA. Déjame mostrarte nuestros 7 potentes productos.",
+    intro: "Bienvenido a Genie Suite - Tu suite creativa completa impulsada por IA. Déjame mostrarte nuestros 7 potentes productos.",
     products: {
       spark: { name: 'Genie Spark', tagline: 'Enciende tus Ideas', description: 'Transforma cualquier entrada en guiones pulidos.' },
       mind: { name: 'Genie Mind', tagline: 'IA que Entiende', description: 'Mejora guiones con voz y música.' },
@@ -136,7 +136,7 @@ const TRANSLATIONS: Record<string, {
     }
   },
   fr: {
-    intro: "Bienvenue dans Genie Studio - Votre suite créative complète alimentée par l'IA. Laissez-moi vous présenter nos 7 produits puissants.",
+    intro: "Bienvenue dans Genie Suite - Votre suite créative complète alimentée par l'IA. Laissez-moi vous présenter nos 7 produits puissants.",
     products: {
       spark: { name: 'Genie Spark', tagline: 'Allumez vos Idées', description: 'Transformez toute entrée en scripts soignés.' },
       mind: { name: 'Genie Mind', tagline: 'IA qui Comprend', description: 'Améliorez les scripts avec voix et musique.' },
@@ -149,7 +149,7 @@ const TRANSLATIONS: Record<string, {
     }
   },
   ja: {
-    intro: "Genie Studioへようこそ - AI搭載の完全なクリエイティブスイート。7つの強力な製品をご紹介します。",
+    intro: "Genie Suiteへようこそ - AI搭載の完全なクリエイティブスイート。7つの強力な製品をご紹介します。",
     products: {
       spark: { name: 'Genie Spark', tagline: 'アイデアに火をつける', description: 'あらゆる入力を洗練されたスクリプトに変換。' },
       mind: { name: 'Genie Mind', tagline: '理解するAI', description: '音声と音楽でスクリプトを強化。' },
@@ -162,7 +162,7 @@ const TRANSLATIONS: Record<string, {
     }
   },
   ko: {
-    intro: "Genie Studio에 오신 것을 환영합니다 - AI 기반 완벽한 크리에이티브 스위트. 7가지 강력한 제품을 소개해 드리겠습니다.",
+    intro: "Genie Suite에 오신 것을 환영합니다 - AI 기반 완벽한 크리에이티브 스위트. 7가지 강력한 제품을 소개해 드리겠습니다.",
     products: {
       spark: { name: 'Genie Spark', tagline: '아이디어에 불을 붙이세요', description: '모든 입력을 세련된 스크립트로 변환.' },
       mind: { name: 'Genie Mind', tagline: '이해하는 AI', description: '음성과 음악으로 스크립트 향상.' },
@@ -175,7 +175,7 @@ const TRANSLATIONS: Record<string, {
     }
   },
   pt: {
-    intro: "Bem-vindo ao Genie Studio - Sua suíte criativa completa com IA. Deixe-me mostrar nossos 7 produtos poderosos.",
+    intro: "Bem-vindo ao Genie Suite - Sua suíte criativa completa com IA. Deixe-me mostrar nossos 7 produtos poderosos.",
     products: {
       spark: { name: 'Genie Spark', tagline: 'Acenda suas Ideias', description: 'Transforme qualquer entrada em roteiros polidos.' },
       mind: { name: 'Genie Mind', tagline: 'IA que Entende', description: 'Aprimore roteiros com voz e música.' },
@@ -230,7 +230,7 @@ export const HeroProductShowcaseAnimated: React.FC = () => {
   const getCurrentContent = useCallback(() => {
     if (currentProductIndex === -1) {
       return {
-        title: 'Genie Studio',
+        title: 'Genie Suite',
         tagline: 'Mind to Media',
         description: translations.intro,
         product: null,

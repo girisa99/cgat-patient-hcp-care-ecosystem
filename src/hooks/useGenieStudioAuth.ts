@@ -387,7 +387,7 @@ export function useGenieStudioAuth() {
       if (error) throw error;
 
       toast({
-        title: 'Welcome to Genie Studio! 🎉',
+        title: 'Welcome to Genie Suite! 🎉',
         description: 'Redirecting to your creative workspace...',
       });
 
@@ -429,7 +429,7 @@ export function useGenieStudioAuth() {
       if (data.user?.email_confirmed_at) {
         toast({
           title: 'Account Created! 🎉',
-          description: 'Welcome to Genie Studio!',
+          description: 'Welcome to Genie Suite!',
         });
       } else {
         toast({

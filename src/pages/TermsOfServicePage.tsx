@@ -49,7 +49,7 @@ const TermsOfServicePage: React.FC = () => {
             </CardHeader>
             <CardContent className="prose prose-sm dark:prose-invert max-w-none">
               <p>
-                By accessing or using Genie Studio ("Service"), you agree to be bound by these Terms of Service ("Terms"). 
+                By accessing or using Genie Suite ("Service"), you agree to be bound by these Terms of Service ("Terms"). 
                 If you disagree with any part of these terms, you may not access the Service.
               </p>
               <p>
@@ -65,7 +65,7 @@ const TermsOfServicePage: React.FC = () => {
             </CardHeader>
             <CardContent className="prose prose-sm dark:prose-invert max-w-none">
               <p>
-                Genie Studio is an AI-powered content creation platform that provides tools for:
+                Genie Suite is an AI-powered content creation platform that provides tools for:
               </p>
               <ul>
                 <li>Presentation generation and editing</li>
