@@ -3,13 +3,20 @@
  * 
  * Provides TTS samples for ALL regional language tabs:
  * Arabic dialects, Indian languages, CJK, African, LATAM, European
- * using Azure Neural TTS (primary) with ElevenLabs fallback.
  * 
- * CRITICAL: custom_tts translates text into the target language FIRST,
- * then passes the translated text to TTS — ensuring "what you hear matches the language."
+ * TTS ROUTING (per master-provider-routing-registry):
+ *   CJK: Alibaba Qwen3-TTS-Flash (Singapore) PRIMARY → Azure Neural → ElevenLabs
+ *   All other zones: Azure Neural PRIMARY → ElevenLabs
+ * 
+ * TRANSCREATION LLM ROUTING (zone-routed):
+ *   Western/EU/LATAM: Claude 4 → GPT-4o → Gemini Pro → DeepSeek
+ *   CJK/MENA: Qwen-Max → GPT-4o → Claude → DeepSeek
+ *   India/SEA/Africa: Gemini 3 Pro → GPT-4o → Claude → DeepSeek
+ * 
+ * CRITICAL: custom_tts transcreates text into the target language FIRST,
+ * then passes the transcreated text to TTS — ensuring cultural + linguistic accuracy.
  * 
  * SECURITY: Rate-limited per IP, input-validated, public endpoint (no JWT)
- * ROUTING: Azure Neural PRIMARY (per master-provider-routing-registry)
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -172,72 +179,179 @@ function lookupVoice(code: string): { voice: string; transcreation: string; lite
 }
 
 // ============================================
-// TRANSLATION — Gemini Flash for pre-TTS translation
+// ZONE-ROUTED LLM TRANSCREATION
+// Claude 4 (Western/EU/LATAM) | Qwen-Max (CJK/MENA) | Gemini 3 Pro (India/SEA/Africa)
+// Fallback: GPT-4o → DeepSeek → Gemini Flash
 // ============================================
 
-async function translateTextForTTS(text: string, targetLangCode: string): Promise<{ translatedText: string; wasTranslated: boolean }> {
+const MENA_LANG_CODES = ['ar-SA', 'ar-EG', 'ar-AE', 'ar-LB', 'ar-MA', 'ar-IQ', 'ar-MSA', 'he-IL', 'ur-PK', 'fa-IR'];
+const INDIA_SEA_AFRICA_CODES = ['hi-IN', 'ta-IN', 'te-IN', 'bn-IN', 'mr-IN', 'gu-IN', 'kn-IN', 'ml-IN', 'as-IN',
+  'th-TH', 'vi-VN', 'id-ID', 'ms-MY', 'sw-KE', 'yo-NG', 'ha-NG', 'zu-ZA', 'am-ET'];
+const WESTERN_EU_LATAM_CODES = ['en-US', 'en-GB', 'en-AU', 'en-KE', 'de-DE', 'fr-FR', 'fr-CA', 'es-ES', 'it-IT',
+  'nl-NL', 'pl-PL', 'sv-SE', 'pt-PT', 'tr-TR', 'es-MX', 'pt-BR', 'es-CO', 'es-AR', 'es-CL', 'es-PE'];
+
+type TranscreationZone = 'claude' | 'qwen' | 'gemini';
+
+function detectTranscreationZone(langCode: string): TranscreationZone {
+  if (CJK_LANG_CODES.includes(langCode)) return 'qwen';
+  if (MENA_LANG_CODES.includes(langCode)) return 'qwen';
+  if (INDIA_SEA_AFRICA_CODES.includes(langCode)) return 'gemini';
+  if (WESTERN_EU_LATAM_CODES.includes(langCode)) return 'claude';
+  return 'gemini'; // default fallback zone
+}
+
+async function transcreateWithClaude(text: string, langName: string): Promise<string | null> {
+  const key = Deno.env.get('ANTHROPIC_API_KEY');
+  if (!key) return null;
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1024,
+        messages: [{ role: 'user', content: `Transcreate the following English text into ${langName}. Use natural, culturally appropriate language — this is for TTS so it must sound natural when spoken aloud. Adapt idioms, references, and tone for the target culture. Return ONLY the transcreated text.\n\nText: ${text}` }],
+      }),
+    });
+    if (!res.ok) { console.error(`[dialect-tts-demo] Claude error: ${res.status}`); return null; }
+    const data = await res.json();
+    return data.content?.[0]?.text?.trim() || null;
+  } catch (e) { console.error('[dialect-tts-demo] Claude failed:', e); return null; }
+}
+
+async function transcreateWithQwen(text: string, langName: string): Promise<string | null> {
+  const key = Deno.env.get('ALIBABA_SINGAPORE_API_KEY') || Deno.env.get('ALIBABA_API_KEY');
+  if (!key) return null;
+  try {
+    const res = await fetch('https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'qwen-max',
+        messages: [
+          { role: 'system', content: 'You are a professional transcreation specialist. Adapt text culturally, not just translate literally. Output ONLY the transcreated text.' },
+          { role: 'user', content: `Transcreate into ${langName} for TTS (must sound natural spoken aloud). Adapt idioms, cultural references, and tone.\n\nText: ${text}` },
+        ],
+        temperature: 0.3,
+      }),
+    });
+    if (!res.ok) { console.error(`[dialect-tts-demo] Qwen error: ${res.status}`); return null; }
+    const data = await res.json();
+    return data.choices?.[0]?.message?.content?.trim() || null;
+  } catch (e) { console.error('[dialect-tts-demo] Qwen failed:', e); return null; }
+}
+
+async function transcreateWithGemini(text: string, langName: string): Promise<string | null> {
+  const key = Deno.env.get('GEMINI_API_KEY');
+  if (!key) return null;
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro-preview-06-05:generateContent?key=${key}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: `Transcreate the following English text into ${langName}. Use natural, culturally appropriate language — this is for TTS so it must sound natural when spoken aloud. Adapt idioms, references, and tone for the target culture. Return ONLY the transcreated text.\n\nText: ${text}` }] }],
+        generationConfig: { temperature: 0.3, maxOutputTokens: 1024 },
+      }),
+    });
+    if (!res.ok) { console.error(`[dialect-tts-demo] Gemini error: ${res.status}`); return null; }
+    const data = await res.json();
+    return data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || null;
+  } catch (e) { console.error('[dialect-tts-demo] Gemini failed:', e); return null; }
+}
+
+async function transcreateWithGPT4o(text: string, langName: string): Promise<string | null> {
+  const key = Deno.env.get('OPENAI_API_KEY');
+  if (!key) return null;
+  try {
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages: [
+          { role: 'system', content: 'You are a professional transcreation specialist. Adapt text culturally for TTS. Output ONLY the transcreated text.' },
+          { role: 'user', content: `Transcreate into ${langName}:\n\n${text}` },
+        ],
+        temperature: 0.3,
+      }),
+    });
+    if (!res.ok) { console.error(`[dialect-tts-demo] GPT-4o error: ${res.status}`); return null; }
+    const data = await res.json();
+    return data.choices?.[0]?.message?.content?.trim() || null;
+  } catch (e) { console.error('[dialect-tts-demo] GPT-4o failed:', e); return null; }
+}
+
+async function transcreateWithDeepSeek(text: string, langName: string): Promise<string | null> {
+  const key = Deno.env.get('DEEPSEEK_API_KEY');
+  if (!key) return null;
+  try {
+    const res = await fetch('https://api.deepseek.com/chat/completions', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        messages: [
+          { role: 'system', content: 'You are a transcreation specialist. Adapt text culturally for TTS. Output ONLY the transcreated text.' },
+          { role: 'user', content: `Transcreate into ${langName}:\n\n${text}` },
+        ],
+        temperature: 0.3,
+      }),
+    });
+    if (!res.ok) { console.error(`[dialect-tts-demo] DeepSeek error: ${res.status}`); return null; }
+    const data = await res.json();
+    return data.choices?.[0]?.message?.content?.trim() || null;
+  } catch (e) { console.error('[dialect-tts-demo] DeepSeek failed:', e); return null; }
+}
+
+async function translateTextForTTS(text: string, targetLangCode: string): Promise<{ translatedText: string; wasTranslated: boolean; transcreationProvider?: string }> {
   const langName = LANGUAGE_NAMES[targetLangCode];
   if (!langName) {
-    console.log(`[dialect-tts-demo] No language name for ${targetLangCode}, skipping translation`);
+    console.log(`[dialect-tts-demo] No language name for ${targetLangCode}, skipping transcreation`);
     return { translatedText: text, wasTranslated: false };
   }
 
-  // Skip translation if the target is English-based
   const baseLang = targetLangCode.split('-')[0];
   if (baseLang === 'en') {
     return { translatedText: text, wasTranslated: false };
   }
 
-  const geminiKey = Deno.env.get('GEMINI_API_KEY');
-  if (!geminiKey) {
-    console.log('[dialect-tts-demo] No GEMINI_API_KEY, skipping translation');
-    return { translatedText: text, wasTranslated: false };
+  const zone = detectTranscreationZone(targetLangCode);
+  console.log(`[dialect-tts-demo] 🌐 Transcreation zone: ${zone} for ${langName} (${targetLangCode})`);
+
+  // Zone-routed primary → fallback chain
+  let result: string | null = null;
+  let provider = '';
+
+  if (zone === 'claude') {
+    // Western/EU/LATAM: Claude → GPT-4o → Gemini → DeepSeek
+    result = await transcreateWithClaude(text, langName);
+    if (result) provider = 'claude-4';
+    if (!result) { result = await transcreateWithGPT4o(text, langName); if (result) provider = 'gpt-4o'; }
+    if (!result) { result = await transcreateWithGemini(text, langName); if (result) provider = 'gemini-pro'; }
+    if (!result) { result = await transcreateWithDeepSeek(text, langName); if (result) provider = 'deepseek'; }
+  } else if (zone === 'qwen') {
+    // CJK/MENA: Qwen-Max → GPT-4o → Claude → DeepSeek
+    result = await transcreateWithQwen(text, langName);
+    if (result) provider = 'qwen-max';
+    if (!result) { result = await transcreateWithGPT4o(text, langName); if (result) provider = 'gpt-4o'; }
+    if (!result) { result = await transcreateWithClaude(text, langName); if (result) provider = 'claude-4'; }
+    if (!result) { result = await transcreateWithDeepSeek(text, langName); if (result) provider = 'deepseek'; }
+  } else {
+    // India/SEA/Africa: Gemini Pro → GPT-4o → Claude → DeepSeek
+    result = await transcreateWithGemini(text, langName);
+    if (result) provider = 'gemini-pro';
+    if (!result) { result = await transcreateWithGPT4o(text, langName); if (result) provider = 'gpt-4o'; }
+    if (!result) { result = await transcreateWithClaude(text, langName); if (result) provider = 'claude-4'; }
+    if (!result) { result = await transcreateWithDeepSeek(text, langName); if (result) provider = 'deepseek'; }
   }
 
-  try {
-    console.log(`[dialect-tts-demo] Translating to ${langName} (${targetLangCode})`);
-    
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: `Translate the following English text into ${langName}. 
-Use natural, culturally appropriate language — this is for text-to-speech so it should sound natural when spoken aloud.
-Return ONLY the translated text. No explanations, no quotes, no labels.
-
-Text: ${text}`
-            }]
-          }],
-          generationConfig: {
-            temperature: 0.3,
-            maxOutputTokens: 1024,
-          }
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      console.error(`[dialect-tts-demo] Gemini translation error: ${response.status}`);
-      return { translatedText: text, wasTranslated: false };
-    }
-
-    const data = await response.json();
-    const translated = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-
-    if (translated && translated.length > 0) {
-      console.log(`[dialect-tts-demo] Translated: "${text.slice(0, 40)}..." → "${translated.slice(0, 40)}..."`);
-      return { translatedText: translated, wasTranslated: true };
-    }
-
-    return { translatedText: text, wasTranslated: false };
-  } catch (error) {
-    console.error('[dialect-tts-demo] Translation failed:', error);
-    return { translatedText: text, wasTranslated: false };
+  if (result && result.length > 0) {
+    console.log(`[dialect-tts-demo] ✅ Transcreated via ${provider}: "${text.slice(0, 40)}..." → "${result.slice(0, 40)}..."`);
+    return { translatedText: result, wasTranslated: true, transcreationProvider: provider };
   }
+
+  console.warn(`[dialect-tts-demo] ⚠️ All transcreation providers failed for ${langName}, using original text`);
+  return { translatedText: text, wasTranslated: false };
 }
 
 // ============================================
@@ -330,7 +444,8 @@ async function generateElevenLabsTTS(text: string, voiceId: string = 'JBFqnCBsd6
 }
 
 // ============================================
-// ALIBABA QWEN3 TTS — Singapore endpoint for CJK zone
+// ALIBABA QWEN3-TTS-FLASH — Singapore endpoint for CJK zone
+// (Replaces legacy CosyVoice — Qwen3 is the current production TTS)
 // ============================================
 const CJK_LANG_CODES = ['ja-JP', 'zh-CN', 'ko-KR', 'th-TH', 'vi-VN', 'id-ID'];
 
@@ -411,32 +526,32 @@ async function generateAlibabaTTS(text: string, languageCode: string): Promise<A
 }
 
 // ============================================
-// CUSTOM TTS — translate → then speak
+// CUSTOM TTS — transcreate → then speak
 // ============================================
 async function generateCustomTTS(
   text: string, 
   languageCode: string
-): Promise<{ buffer: ArrayBuffer; provider: string; translatedText: string; wasTranslated: boolean } | null> {
+): Promise<{ buffer: ArrayBuffer; provider: string; translatedText: string; wasTranslated: boolean; transcreationProvider?: string } | null> {
   const voiceEntry = lookupVoice(languageCode);
   if (!voiceEntry) return null;
   
-  // Step 1: Translate the text to the target language
-  const { translatedText, wasTranslated } = await translateTextForTTS(text, languageCode);
+  // Step 1: Transcreate text via zone-routed LLM
+  const { translatedText, wasTranslated, transcreationProvider } = await translateTextForTTS(text, languageCode);
   
-  // Step 2: TTS the translated text
-  // For CJK languages: Alibaba Qwen3 TTS PRIMARY (Singapore)
+  // Step 2: TTS the transcreated text
+  // For CJK languages: Alibaba Qwen3-TTS-Flash PRIMARY (Singapore)
   if (CJK_LANG_CODES.includes(languageCode)) {
     const alibabaBuffer = await generateAlibabaTTS(translatedText, languageCode);
-    if (alibabaBuffer) return { buffer: alibabaBuffer, provider: 'alibaba_qwen3_tts', translatedText, wasTranslated };
+    if (alibabaBuffer) return { buffer: alibabaBuffer, provider: 'alibaba_qwen3_tts', translatedText, wasTranslated, transcreationProvider };
   }
 
   // Azure Neural PRIMARY (all languages) / FALLBACK (CJK)
   const azureBuffer = await generateAzureTTS(translatedText, voiceEntry.voice);
-  if (azureBuffer) return { buffer: azureBuffer, provider: 'azure_neural', translatedText, wasTranslated };
+  if (azureBuffer) return { buffer: azureBuffer, provider: 'azure_neural', translatedText, wasTranslated, transcreationProvider };
   
   // ElevenLabs FALLBACK
   const elBuffer = await generateElevenLabsTTS(translatedText);
-  if (elBuffer) return { buffer: elBuffer, provider: 'elevenlabs', translatedText, wasTranslated };
+  if (elBuffer) return { buffer: elBuffer, provider: 'elevenlabs', translatedText, wasTranslated, transcreationProvider };
   
   return null;
 }
@@ -538,6 +653,7 @@ serve(async (req) => {
           languageCode,
           translatedText: result.translatedText,
           wasTranslated: result.wasTranslated,
+          transcreationProvider: result.transcreationProvider,
           originalText: sanitized,
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
