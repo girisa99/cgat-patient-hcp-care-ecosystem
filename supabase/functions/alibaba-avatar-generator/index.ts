@@ -190,7 +190,8 @@ async function pollTaskStatus(
   intervalMs: number = 2000
 ): Promise<{ success: boolean; data?: any; error?: string }> {
   
-  const statusUrl = `${DASHSCOPE_BASE_URL}/tasks/${taskId}`;
+  // Use China URL as default for avatar models (China-only)
+  const statusUrl = `${DASHSCOPE_CHINA_URL}/tasks/${taskId}`;
   
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     await new Promise(resolve => setTimeout(resolve, intervalMs));

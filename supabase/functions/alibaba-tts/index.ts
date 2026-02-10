@@ -1,13 +1,13 @@
 /**
  * ALIBABA TTS EDGE FUNCTION - Production Permanent Solution
  * 
- * Dual-path architecture:
- * 1. CosyVoice via WebSocket (Primary - highest quality multilingual)
- *    - wss://dashscope.aliyuncs.com/api-ws/v1/inference
- *    - Supports: cosyvoice-v3-flash, cosyvoice-v3-plus, cosyvoice-v2
- *    - CosyVoice ONLY supports WebSocket/SDK, NOT HTTP REST
+ * Tri-path architecture:
+ * 1. Qwen3-TTS-Flash via REST API (Primary - Singapore, best multilingual)
+ *    - POST /compatible-mode/v1/audio/speech (OpenAI-compatible)
+ *    - Models: qwen3-tts-flash, qwen2-tts
+ *    - Available in Singapore & Virginia (international endpoints)
  * 
- * 2. Sambert via REST API (Fallback - reliable HTTP)
+ * 2. Sambert via REST API (Fallback - reliable HTTP, Chinese voices)
  *    - POST /api/v1/services/aigc/text2audio/generation
  *    - Synchronous HTTP response
  *    - Chinese voice variants
@@ -16,17 +16,15 @@
  *    - POST /api/v1/services/aigc/audio-generation/*
  * 
  * Regional Routing:
+ * - Singapore (Primary): dashscope-intl.aliyuncs.com (ALIBABA_SINGAPORE_API_KEY)
+ * - Virginia (Fallback): dashscope-intl.aliyuncs.com (ALIBABA_API_KEY)
  * - China (Beijing): dashscope.aliyuncs.com (ALIBABA_CHINA_API_KEY)
- * - International (Virginia): dashscope-intl.aliyuncs.com (ALIBABA_API_KEY)
  * 
- * WHY NOT OpenAI-compatible endpoint?
- * The /compatible-mode/v1/audio/speech path does NOT exist for CosyVoice.
- * DashScope's OpenAI-compatible mode only covers /chat/completions, /embeddings, /images.
- * CosyVoice requires WebSocket protocol per official Alibaba docs.
+ * NOTE: CosyVoice WebSocket removed - replaced by Qwen3-TTS-Flash REST which
+ * provides superior multilingual quality without WebSocket complexity.
  */
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import WebSocket from "npm:ws@8.18.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -40,20 +38,20 @@ const corsHeaders = {
 const ENDPOINTS = {
   china: {
     base: 'https://dashscope.aliyuncs.com',
-    ws: 'wss://dashscope.aliyuncs.com/api-ws/v1/inference',
     rest: 'https://dashscope.aliyuncs.com/api/v1',
+    compatible: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
     keyName: 'ALIBABA_CHINA_API_KEY',
   },
   singapore: {
     base: 'https://dashscope-intl.aliyuncs.com',
-    ws: 'wss://dashscope-intl.aliyuncs.com/api-ws/v1/inference',
     rest: 'https://dashscope-intl.aliyuncs.com/api/v1',
+    compatible: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1',
     keyName: 'ALIBABA_SINGAPORE_API_KEY',
   },
   virginia: {
     base: 'https://dashscope-intl.aliyuncs.com',
-    ws: 'wss://dashscope-intl.aliyuncs.com/api-ws/v1/inference',
     rest: 'https://dashscope-intl.aliyuncs.com/api/v1',
+    compatible: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1',
     keyName: 'ALIBABA_API_KEY',
   },
 } as const;
@@ -62,10 +60,9 @@ const ENDPOINTS = {
 // MODEL CONFIGURATIONS
 // ============================================================================
 
-const COSYVOICE_MODELS = {
-  'cosyvoice-v3-flash': { description: 'Fast, cost-effective, streaming ($0.14/10K chars)' },
-  'cosyvoice-v3-plus': { description: 'Highest quality, voice cloning ($0.29/10K chars)' },
-  'cosyvoice-v2': { description: 'Educational, SSML support' },
+const QWEN_TTS_MODELS = {
+  'qwen3-tts-flash': { description: 'Latest Qwen3 TTS - fast, multilingual, Singapore available' },
+  'qwen2-tts': { description: 'Qwen2 TTS - stable, multilingual' },
 } as const;
 
 const SAMBERT_MODELS = {
@@ -76,33 +73,30 @@ const SAMBERT_MODELS = {
   'sambert-zhixiao-v1': { voice: 'zhixiao', gender: 'female', lang: 'zh-CN', description: 'Chinese child voice' },
 } as const;
 
-// CosyVoice v3 voice presets (multilingual)
-const COSYVOICE_VOICES: Record<string, string> = {
+// Qwen TTS voice presets (multilingual) 
+const QWEN_TTS_VOICES: Record<string, string> = {
   // Chinese
-  'zh-CN-female': 'longxiaoxia',
-  'zh-CN-male': 'longanyang',
-  'zh-CN-child': 'longxiaobai',
-  'zh-CN-elder': 'longlaotie',
-  'zh-TW-female': 'longxiaoxia',
-  'zh-TW-male': 'longanyang',
+  'zh-CN-female': 'FunAudioLLM/CosyVoice2-0.5B:alex',
+  'zh-CN-male': 'FunAudioLLM/CosyVoice2-0.5B:benjamin',
+  'zh-TW-female': 'FunAudioLLM/CosyVoice2-0.5B:alex',
   // Japanese
-  'ja-JP-female': 'longanyang',
-  'ja-JP-male': 'longanyang',
+  'ja-JP-female': 'FunAudioLLM/CosyVoice2-0.5B:alex',
+  'ja-JP-male': 'FunAudioLLM/CosyVoice2-0.5B:benjamin',
   // Korean
-  'ko-KR-female': 'longanyang',
-  'ko-KR-male': 'longanyang',
-  // English (CosyVoice supports English too)
-  'en-US-female': 'longxiaoxia',
-  'en-US-male': 'longanyang',
-  'en-GB-female': 'longxiaoxia',
-  'en-GB-male': 'longanyang',
+  'ko-KR-female': 'FunAudioLLM/CosyVoice2-0.5B:alex',
+  'ko-KR-male': 'FunAudioLLM/CosyVoice2-0.5B:benjamin',
+  // English
+  'en-US-female': 'FunAudioLLM/CosyVoice2-0.5B:alex',
+  'en-US-male': 'FunAudioLLM/CosyVoice2-0.5B:benjamin',
+  'en-GB-female': 'FunAudioLLM/CosyVoice2-0.5B:alex',
+  'en-GB-male': 'FunAudioLLM/CosyVoice2-0.5B:benjamin',
   // Other supported languages
-  'es-ES-female': 'longanyang',
-  'fr-FR-female': 'longanyang',
-  'de-DE-female': 'longanyang',
-  'pt-BR-female': 'longanyang',
-  'ar-SA-male': 'longanyang',
-  'hi-IN-female': 'longanyang',
+  'es-ES-female': 'FunAudioLLM/CosyVoice2-0.5B:alex',
+  'fr-FR-female': 'FunAudioLLM/CosyVoice2-0.5B:alex',
+  'de-DE-female': 'FunAudioLLM/CosyVoice2-0.5B:alex',
+  'pt-BR-female': 'FunAudioLLM/CosyVoice2-0.5B:alex',
+  'ar-SA-male': 'FunAudioLLM/CosyVoice2-0.5B:benjamin',
+  'hi-IN-female': 'FunAudioLLM/CosyVoice2-0.5B:alex',
 };
 
 // ============================================================================
@@ -122,22 +116,20 @@ interface TTSRequest {
   emotion?: string;
   style?: string;
   enableSSML?: boolean;
-  // Voice cloning
-  referenceAudioUrl?: string;
   // Music/SFX
   musicPrompt?: string;
   duration?: number;
   genre?: string;
   mood?: string;
   // Method override
-  method?: 'websocket' | 'rest' | 'auto';
+  method?: 'qwen-tts' | 'sambert' | 'auto';
 }
 
 interface TTSResult {
   success: boolean;
   provider: 'alibaba';
-  method: 'cosyvoice-websocket' | 'sambert-rest' | 'fun-audio';
-  region: 'china-beijing' | 'international';
+  method: 'qwen3-tts-rest' | 'qwen2-tts-rest' | 'sambert-rest' | 'fun-audio';
+  region: string;
   model: string;
   voice?: string;
   audioUrl?: string;
@@ -167,18 +159,19 @@ interface ApiConfig {
 }
 
 /**
- * Tri-region key resolution: China → Singapore → Virginia
- * Returns ALL available configs for cross-region fallback
+ * Tri-region key resolution: Singapore → Virginia → China
+ * Singapore is primary for international Qwen TTS models
  */
 function getAllApiConfigs(): ApiConfig[] {
   const configs: ApiConfig[] = [];
-  const chinaKey = Deno.env.get('ALIBABA_CHINA_API_KEY');
   const sgKey = Deno.env.get('ALIBABA_SINGAPORE_API_KEY');
   const vaKey = Deno.env.get('ALIBABA_API_KEY');
+  const chinaKey = Deno.env.get('ALIBABA_CHINA_API_KEY');
 
-  if (chinaKey) configs.push({ apiKey: chinaKey, region: 'china-beijing', endpoints: ENDPOINTS.china });
+  // Singapore first (primary for Qwen TTS)
   if (sgKey) configs.push({ apiKey: sgKey, region: 'singapore', endpoints: ENDPOINTS.singapore });
   if (vaKey) configs.push({ apiKey: vaKey, region: 'virginia', endpoints: ENDPOINTS.virginia });
+  if (chinaKey) configs.push({ apiKey: chinaKey, region: 'china-beijing', endpoints: ENDPOINTS.china });
 
   return configs;
 }
@@ -190,173 +183,70 @@ function getApiConfig(): {
 } {
   const configs = getAllApiConfigs();
   if (configs.length > 0) return configs[0];
-  return { apiKey: null, region: 'china-beijing', endpoints: ENDPOINTS.china };
+  return { apiKey: null, region: 'singapore', endpoints: ENDPOINTS.singapore };
 }
 
 // ============================================================================
-// PATH 1: COSYVOICE VIA WEBSOCKET (Primary - Best Quality)
+// PATH 1: QWEN TTS VIA REST API (Primary - Singapore)
 // ============================================================================
 
 /**
- * Generate TTS using CosyVoice via DashScope WebSocket API.
+ * Generate TTS using Qwen3-TTS-Flash or Qwen2-TTS via OpenAI-compatible REST API.
  * 
- * Protocol:
- * 1. Connect to wss://dashscope.aliyuncs.com/api-ws/v1/inference
- * 2. Send run-task JSON with model, voice, text
- * 3. Receive binary audio frames + JSON status messages
- * 4. Collect audio chunks until task-finished event
- * 
- * Auth: API key passed as Bearer token in WebSocket handshake headers.
- * Deno's WebSocket doesn't support custom headers directly, so we pass
- * the token as a URL query parameter which DashScope accepts.
+ * Endpoint: POST /compatible-mode/v1/audio/speech
+ * This uses the OpenAI-compatible endpoint which IS available for Qwen TTS models.
+ * Returns audio bytes directly.
  */
-async function generateCosyVoiceWebSocket(
+async function generateQwenTTSRest(
   text: string,
   voice: string,
   model: string,
   apiKey: string,
-  wsUrl: string,
+  compatibleBase: string,
   format: string = 'mp3',
-  sampleRate: number = 22050,
   speed: number = 1.0,
 ): Promise<Uint8Array> {
-  const taskId = crypto.randomUUID();
+  const endpoint = `${compatibleBase}/audio/speech`;
 
-  console.log(`🎤 [CosyVoice WS] Connecting to ${wsUrl} via npm:ws (custom headers)`);
-  console.log(`🎤 [CosyVoice WS] Model: ${model}, Voice: ${voice}, Format: ${format}`);
+  console.log(`🎤 [Qwen TTS REST] Model: ${model}, Voice: ${voice}, Endpoint: ${endpoint}`);
 
-  return new Promise<Uint8Array>((resolve, reject) => {
-    let timeoutId: ReturnType<typeof setTimeout>;
-    const audioChunks: Uint8Array[] = [];
-    let totalBytes = 0;
-    let taskStarted = false;
-
-    // Use npm:ws which supports custom headers for Authorization
-    const ws = new WebSocket(wsUrl, {
-      headers: {
-        'Authorization': `bearer ${apiKey}`,
-      },
-    });
-
-    // Set 30-second timeout
-    timeoutId = setTimeout(() => {
-      console.error(`❌ [CosyVoice WS] Timeout after 30s`);
-      try { ws.close(); } catch (_) { /* ignore */ }
-      reject(new Error('CosyVoice WebSocket timeout (30s)'));
-    }, 30000);
-
-    ws.onopen = () => {
-      console.log(`✅ [CosyVoice WS] Connected, sending run-task`);
-
-      // Send the synthesis request per DashScope WebSocket protocol
-      const runTask = {
-        header: {
-          action: 'run-task',
-          task_id: taskId,
-          streaming: 'out',
-        },
-        payload: {
-          task_group: 'audio',
-          task: 'tts',
-          function: 'SpeechSynthesizer',
-          model: model,
-          parameters: {
-            text_type: 'PlainText',
-            voice: voice,
-            format: format,
-            sample_rate: sampleRate,
-            volume: 50,
-            rate: speed,
-            pitch: 1.0,
-          },
-          input: {
-            text: text,
-          },
-        },
-      };
-
-      ws.send(JSON.stringify(runTask));
-    };
-
-    ws.onmessage = (event: MessageEvent) => {
-      if (event.data instanceof ArrayBuffer) {
-        // Binary frame = audio data
-        const chunk = new Uint8Array(event.data);
-        audioChunks.push(chunk);
-        totalBytes += chunk.length;
-      } else if (event.data instanceof Blob) {
-        // Blob frame = audio data (convert to ArrayBuffer)
-        event.data.arrayBuffer().then((buffer) => {
-          const chunk = new Uint8Array(buffer);
-          audioChunks.push(chunk);
-          totalBytes += chunk.length;
-        });
-      } else if (typeof event.data === 'string') {
-        // Text frame = JSON status message
-        try {
-          const msg = JSON.parse(event.data);
-          const headerEvent = msg.header?.event;
-
-          if (headerEvent === 'task-started') {
-            taskStarted = true;
-            console.log(`🎤 [CosyVoice WS] Task started: ${taskId}`);
-          } else if (headerEvent === 'task-finished') {
-            console.log(`✅ [CosyVoice WS] Task finished: ${totalBytes} bytes in ${audioChunks.length} chunks`);
-            clearTimeout(timeoutId);
-            try { ws.close(); } catch (_) { /* ignore */ }
-
-            // Combine all audio chunks
-            const combined = new Uint8Array(totalBytes);
-            let offset = 0;
-            for (const chunk of audioChunks) {
-              combined.set(chunk, offset);
-              offset += chunk.length;
-            }
-            resolve(combined);
-          } else if (headerEvent === 'task-failed') {
-            const errorMsg = msg.payload?.message || msg.header?.error_message || 'CosyVoice task failed';
-            const errorCode = msg.header?.error_code || 'UNKNOWN';
-            console.error(`❌ [CosyVoice WS] Task failed: ${errorCode} - ${errorMsg}`);
-            clearTimeout(timeoutId);
-            try { ws.close(); } catch (_) { /* ignore */ }
-            reject(new Error(`CosyVoice error (${errorCode}): ${errorMsg}`));
-          } else {
-            console.log(`📨 [CosyVoice WS] Event: ${headerEvent}`);
-          }
-        } catch (parseError) {
-          console.warn(`⚠️ [CosyVoice WS] Non-JSON text message:`, event.data);
-        }
-      }
-    };
-
-    ws.onerror = (error: Event) => {
-      console.error(`❌ [CosyVoice WS] WebSocket error:`, error);
-      clearTimeout(timeoutId);
-      reject(new Error(`CosyVoice WebSocket connection error`));
-    };
-
-    ws.onclose = (event: CloseEvent) => {
-      clearTimeout(timeoutId);
-      if (!taskStarted && audioChunks.length === 0) {
-        console.error(`❌ [CosyVoice WS] Connection closed before task started: ${event.code} ${event.reason}`);
-        reject(new Error(`CosyVoice WebSocket closed (${event.code}): ${event.reason || 'No reason'}`));
-      }
-      // If task was finished, resolve was already called
-    };
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: model,
+      input: text,
+      voice: voice,
+      response_format: format,
+      speed: speed,
+    }),
   });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`❌ [Qwen TTS REST] Error (${response.status}):`, errorText);
+    throw new Error(`Qwen TTS API error (${response.status}): ${errorText}`);
+  }
+
+  // Response is raw audio bytes
+  const arrayBuffer = await response.arrayBuffer();
+  const audioData = new Uint8Array(arrayBuffer);
+  
+  if (audioData.length === 0) {
+    throw new Error('Qwen TTS returned empty audio');
+  }
+
+  console.log(`✅ [Qwen TTS REST] Generated ${audioData.length} bytes`);
+  return audioData;
 }
 
 // ============================================================================
-// PATH 2: SAMBERT VIA REST API (Fallback - Reliable HTTP)
+// PATH 2: SAMBERT VIA REST API (Fallback - Chinese voices)
 // ============================================================================
 
-/**
- * Generate TTS using Sambert via DashScope REST API.
- * 
- * Endpoint: POST /api/v1/services/aigc/text2audio/generation
- * This is a synchronous HTTP call - returns audio directly.
- * Sambert supports Chinese voices with good quality.
- */
 async function generateSambertREST(
   text: string,
   voice: string,
@@ -367,7 +257,6 @@ async function generateSambertREST(
 ): Promise<Uint8Array> {
   const endpoint = `${restBase}/services/aigc/text2audio/generation`;
 
-  // Map voice shorthand to full Sambert model ID
   const sambertModel = voice.startsWith('sambert-') ? voice : `sambert-${voice}-v1`;
   const validModels = Object.keys(SAMBERT_MODELS);
   const selectedModel = validModels.includes(sambertModel) ? sambertModel : 'sambert-zhichu-v1';
@@ -379,7 +268,7 @@ async function generateSambertREST(
     headers: {
       'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
-      'X-DashScope-Async': 'disable', // Synchronous mode
+      'X-DashScope-Async': 'disable',
     },
     body: JSON.stringify({
       model: selectedModel,
@@ -399,7 +288,6 @@ async function generateSambertREST(
 
   const result = await response.json();
 
-  // Sambert returns audio as base64 in output.audio or as URL in output.audio_url
   if (result.output?.audio) {
     const binaryString = atob(result.output.audio);
     const bytes = new Uint8Array(binaryString.length);
@@ -424,7 +312,7 @@ async function generateSambertREST(
 }
 
 // ============================================================================
-// MAIN TTS GENERATION (CosyVoice → Sambert fallback)
+// MAIN TTS GENERATION (Qwen TTS → Sambert fallback)
 // ============================================================================
 
 async function generateTTS(request: TTSRequest): Promise<TTSResult> {
@@ -435,70 +323,79 @@ async function generateTTS(request: TTSRequest): Promise<TTSResult> {
     return {
       success: false,
       provider: 'alibaba',
-      method: 'cosyvoice-websocket',
-      region: 'china-beijing',
+      method: 'qwen3-tts-rest',
+      region: 'singapore',
       model: 'none',
-      error: 'No Alibaba API key configured (ALIBABA_CHINA_API_KEY, ALIBABA_SINGAPORE_API_KEY, or ALIBABA_API_KEY)',
+      error: 'No Alibaba API key configured (ALIBABA_SINGAPORE_API_KEY, ALIBABA_API_KEY, or ALIBABA_CHINA_API_KEY)',
       fallback: true,
     };
   }
 
   // Determine voice from language preset
-  const langKey = request.language || 'zh-CN-female';
-  const voice = request.voice || COSYVOICE_VOICES[langKey] || 'longanyang';
-  const model = request.model || 'cosyvoice-v3-flash';
+  const langKey = request.language || 'en-US-female';
+  const voice = request.voice || QWEN_TTS_VOICES[langKey] || 'FunAudioLLM/CosyVoice2-0.5B:alex';
   const format = request.format || 'mp3';
-  const sampleRate = request.sampleRate || 22050;
   const speed = request.speed || 1.0;
   const method = request.method || 'auto';
 
-  console.log(`🎯 [Alibaba TTS] Language: ${langKey}, Voice: ${voice}, Model: ${model}, Method: ${method}`);
+  // Determine model: prefer qwen3-tts-flash, fallback to qwen2-tts
+  const requestedModel = request.model;
+  const qwenModels = ['qwen3-tts-flash', 'qwen2-tts'];
+  
+  console.log(`🎯 [Alibaba TTS] Language: ${langKey}, Voice: ${voice}, Method: ${method}`);
 
-  // Try CosyVoice WebSocket on ALL regions (unless method=rest forced)
-  if (method !== 'rest' && model in COSYVOICE_MODELS) {
-    for (const config of allConfigs) {
-      try {
-        console.log(`🎤 [Path 1] Attempting CosyVoice WebSocket on ${config.region}...`);
-        const audioData = await generateCosyVoiceWebSocket(
-          request.text, voice, model, config.apiKey, config.endpoints.ws, format, sampleRate, speed
-        );
+  // Try Qwen TTS REST on ALL regions (unless method=sambert forced)
+  if (method !== 'sambert') {
+    for (const model of qwenModels) {
+      // If a specific model is requested, only try that one
+      if (requestedModel && requestedModel in QWEN_TTS_MODELS && requestedModel !== model) continue;
+      
+      for (const config of allConfigs) {
+        try {
+          console.log(`🎤 [Path 1] Attempting ${model} REST on ${config.region}...`);
+          const audioData = await generateQwenTTSRest(
+            request.text, voice, model, config.apiKey, config.endpoints.compatible, format, speed
+          );
 
-        const processingTimeMs = Date.now() - startTime;
-        console.log(`✅ [Path 1] CosyVoice WebSocket succeeded on ${config.region} in ${processingTimeMs}ms`);
+          const processingTimeMs = Date.now() - startTime;
+          console.log(`✅ [Path 1] ${model} REST succeeded on ${config.region} in ${processingTimeMs}ms`);
 
-        let binary = '';
-        for (let i = 0; i < audioData.length; i++) {
-          binary += String.fromCharCode(audioData[i]);
+          let binary = '';
+          for (let i = 0; i < audioData.length; i++) {
+            binary += String.fromCharCode(audioData[i]);
+          }
+          const audioBase64 = btoa(binary);
+
+          const methodName = model === 'qwen3-tts-flash' ? 'qwen3-tts-rest' : 'qwen2-tts-rest';
+
+          return {
+            success: true,
+            provider: 'alibaba',
+            method: methodName as TTSResult['method'],
+            region: config.region,
+            model,
+            voice,
+            audioUrl: `data:audio/${format};base64,${audioBase64}`,
+            audioBase64,
+            duration: estimateDuration(request.text),
+            metadata: {
+              characterCount: request.text.length,
+              format,
+              sampleRate: request.sampleRate || 22050,
+              processingTimeMs,
+              estimatedCost: 0.014 * (request.text.length / 10000),
+            },
+          };
+        } catch (restError) {
+          console.warn(`⚠️ [Path 1] ${model} REST failed on ${config.region}:`, (restError as Error).message);
         }
-        const audioBase64 = btoa(binary);
-
-        return {
-          success: true,
-          provider: 'alibaba',
-          method: 'cosyvoice-websocket',
-          region: config.region,
-          model,
-          voice,
-          audioUrl: `data:audio/${format};base64,${audioBase64}`,
-          audioBase64,
-          duration: estimateDuration(request.text),
-          metadata: {
-            characterCount: request.text.length,
-            format,
-            sampleRate,
-            processingTimeMs,
-            estimatedCost: model === 'cosyvoice-v3-plus' ? 0.029 * (request.text.length / 10000) : 0.014 * (request.text.length / 10000),
-          },
-        };
-      } catch (wsError) {
-        console.warn(`⚠️ [Path 1] CosyVoice WebSocket failed on ${config.region}:`, (wsError as Error).message);
       }
     }
-    console.log(`🔄 All CosyVoice WebSocket attempts failed, falling back to Sambert REST...`);
+    console.log(`🔄 All Qwen TTS REST attempts failed, falling back to Sambert REST...`);
   }
 
-  // Fallback to Sambert REST
-  if (method !== 'websocket') {
+  // Fallback to Sambert REST (Chinese voices only)
+  if (method !== 'qwen-tts') {
     for (const config of allConfigs) {
       try {
         console.log(`🔊 [Path 2] Attempting Sambert REST on ${config.region}...`);
@@ -540,26 +437,15 @@ async function generateTTS(request: TTSRequest): Promise<TTSResult> {
         console.warn(`⚠️ [Path 2] Sambert REST failed on ${config.region}:`, (restError as Error).message);
       }
     }
-
-    // All Sambert REST attempts failed
-    return {
-      success: false,
-      provider: 'alibaba',
-      method: 'sambert-rest',
-      region: allConfigs[0].region,
-      model,
-      error: 'All Alibaba TTS attempts failed across all regions (CosyVoice WS + Sambert REST)',
-      fallback: true,
-    };
   }
 
   return {
     success: false,
     provider: 'alibaba',
-    method: 'cosyvoice-websocket',
+    method: 'qwen3-tts-rest',
     region: allConfigs[0].region,
-    model,
-    error: 'CosyVoice WebSocket failed and REST method was not allowed',
+    model: 'qwen3-tts-flash',
+    error: 'All Alibaba TTS attempts failed across all regions (Qwen TTS REST + Sambert REST)',
     fallback: true,
   };
 }
@@ -710,11 +596,10 @@ function estimateDuration(text: string): number {
 }
 
 function selectSambertVoice(langKey: string): string {
-  // Sambert is Chinese-only, pick voice by gender hint
   if (langKey.includes('male') || langKey.includes('Male')) return 'sambert-zhide-v1';
   if (langKey.includes('child') || langKey.includes('Child')) return 'sambert-zhixiao-v1';
   if (langKey.includes('elder') || langKey.includes('broadcast')) return 'sambert-zhiyuan-v1';
-  return 'sambert-zhichu-v1'; // Default: female
+  return 'sambert-zhichu-v1';
 }
 
 // ============================================================================
@@ -735,15 +620,16 @@ serve(async (req) => {
           success: false,
           error: 'text or musicPrompt required',
           availableModels: {
-            cosyvoice: Object.entries(COSYVOICE_MODELS).map(([id, info]) => ({ id, ...info })),
+            qwenTTS: Object.entries(QWEN_TTS_MODELS).map(([id, info]) => ({ id, ...info })),
             sambert: Object.entries(SAMBERT_MODELS).map(([id, info]) => ({ id, ...info })),
             funAudio: ['fun-audio-music', 'fun-audio-sfx', 'fun-audio-ambient'],
           },
-          voicePresets: Object.keys(COSYVOICE_VOICES),
+          voicePresets: Object.keys(QWEN_TTS_VOICES),
           architecture: {
-            primary: 'CosyVoice via WebSocket (wss://dashscope.aliyuncs.com/api-ws/v1/inference)',
+            primary: 'Qwen3-TTS-Flash via REST (OpenAI-compatible /audio/speech endpoint)',
+            secondary: 'Qwen2-TTS via REST (same endpoint)',
             fallback: 'Sambert via REST (/api/v1/services/aigc/text2audio/generation)',
-            note: 'CosyVoice does NOT support HTTP REST. Only WebSocket/SDK per Alibaba docs.',
+            note: 'CosyVoice WebSocket removed - Qwen TTS REST provides superior multilingual quality.',
           },
         }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
