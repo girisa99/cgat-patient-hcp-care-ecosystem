@@ -19,119 +19,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getIndustryExample } from './industryDemoExamples';
 import { DemoTemplatePicker, getDemoTemplates, type DemoTemplate } from './DemoTemplatePicker';
+import { getRegionalConfig, DEMO_LANGUAGE_OPTIONS, isRTLLanguage, toLangBCP47, type RegionalProviderConfig } from './regionalDemoRouting';
 
 interface DeckDemoCardProps {
   industryId: string;
   region?: string;
 }
 
-// ── 4-Zone Regional Routing (from master-provider-routing-registry.ts) ──
-// Source of truth: src/config/master-provider-routing-registry.ts
-// Claude Zone (Western/EU): Claude 3.5 + Azure Neural + DeepL
-// Alibaba Zone (CJK): Qwen Max + CosyVoice + Qwen-MT
-// Alibaba Zone (MENA/RTL): Qwen Max + Azure Neural + Azure Translator
-// Gemini Zone (India/SEA/Africa): Gemini Pro + Azure Neural + Google Translate
-
-interface RegionalProviderConfig {
-  llmProvider: string;
-  llmModel: string;
-  ttsProvider: string;
-  imageProvider: string;
-  videoProvider: string;
-  avatarProvider: string;
-  translationProvider: string;
-  displayProviders: string[];
-  displayColors: string[];
-}
-
-const REGIONAL_PROVIDER_MAP: Record<string, RegionalProviderConfig> = {
-  // Claude Zone (Western/EU/LATAM) — Claude 3.5 PRIMARY, Azure Neural TTS, DeepL Translation
-  western: {
-    llmProvider: 'claude', llmModel: 'claude-3.5-sonnet',
-    ttsProvider: 'azure', imageProvider: 'gemini_3_pro',
-    videoProvider: 'vertex_veo3', avatarProvider: 'alibaba_wan22',
-    translationProvider: 'deepl',
-    displayProviders: ['Claude 3.5', 'Azure Neural', 'Vertex Veo 3', 'DeepL'],
-    displayColors: ['from-amber-500/80 to-amber-600/80', 'from-sky-500/80 to-sky-600/80', 'from-blue-500/80 to-blue-600/80', 'from-cyan-500/80 to-cyan-600/80'],
-  },
-  // Alibaba Zone — CJK: Qwen Max PRIMARY, CosyVoice TTS, Qwen-MT Translation
-  cjk: {
-    llmProvider: 'alibaba', llmModel: 'qwen-max',
-    ttsProvider: 'alibaba_cosyvoice', imageProvider: 'gemini_3_pro',
-    videoProvider: 'vertex_veo3', avatarProvider: 'alibaba_wan22',
-    translationProvider: 'qwen_mt',
-    displayProviders: ['Qwen Max', 'CosyVoice', 'Vertex Veo 3', 'Qwen-MT'],
-    displayColors: ['from-orange-500/80 to-orange-600/80', 'from-amber-500/80 to-amber-600/80', 'from-blue-500/80 to-blue-600/80', 'from-red-500/80 to-red-600/80'],
-  },
-  // Alibaba Zone — MENA/RTL: Qwen Max PRIMARY, Azure Neural TTS (7 Arabic dialects + Viseme), Azure Translator
-  mena: {
-    llmProvider: 'alibaba', llmModel: 'qwen-max',
-    ttsProvider: 'azure', imageProvider: 'gemini_3_pro',
-    videoProvider: 'vertex_veo3', avatarProvider: 'alibaba_wan22',
-    translationProvider: 'azure_translator',
-    displayProviders: ['Qwen Max', 'Azure Neural (7 Arabic)', 'Vertex Veo 3', 'Azure Translator'],
-    displayColors: ['from-orange-500/80 to-orange-600/80', 'from-sky-500/80 to-sky-600/80', 'from-blue-500/80 to-blue-600/80', 'from-emerald-500/80 to-emerald-600/80'],
-  },
-  // Gemini Zone — India/SEA: Gemini Pro PRIMARY, Azure Neural TTS, Google Translate
-  india: {
-    llmProvider: 'gemini', llmModel: 'gemini-pro',
-    ttsProvider: 'azure', imageProvider: 'gemini_3_pro',
-    videoProvider: 'vertex_veo3', avatarProvider: 'alibaba_wan22',
-    translationProvider: 'google_translate',
-    displayProviders: ['Gemini Pro', 'Azure Neural', 'Vertex Veo 3', 'Google Translate'],
-    displayColors: ['from-blue-500/80 to-blue-600/80', 'from-sky-500/80 to-sky-600/80', 'from-blue-500/80 to-blue-600/80', 'from-green-500/80 to-green-600/80'],
-  },
-  // Gemini Zone — Africa: Gemini Pro PRIMARY, Azure Neural TTS, Google Translate
-  africa: {
-    llmProvider: 'gemini', llmModel: 'gemini-pro',
-    ttsProvider: 'azure', imageProvider: 'gemini_3_pro',
-    videoProvider: 'vertex_veo3', avatarProvider: 'alibaba_wan22',
-    translationProvider: 'google_translate',
-    displayProviders: ['Gemini Pro', 'Azure Neural', 'Vertex Veo 3', 'Google Translate'],
-    displayColors: ['from-blue-500/80 to-blue-600/80', 'from-sky-500/80 to-sky-600/80', 'from-blue-500/80 to-blue-600/80', 'from-green-500/80 to-green-600/80'],
-  },
-  // GPT-4o Fallback Zone — when primary fails
-  fallback: {
-    llmProvider: 'openai', llmModel: 'gpt-4o',
-    ttsProvider: 'azure', imageProvider: 'gemini_3_pro',
-    videoProvider: 'vertex_veo3', avatarProvider: 'alibaba_wan22',
-    translationProvider: 'google_translate',
-    displayProviders: ['GPT-4o (Fallback)', 'Azure Neural', 'Vertex Veo 3', 'Google Translate'],
-    displayColors: ['from-emerald-500/80 to-emerald-600/80', 'from-sky-500/80 to-sky-600/80', 'from-blue-500/80 to-blue-600/80', 'from-green-500/80 to-green-600/80'],
-  },
-};
-
-// Map region prop to zone — aligned with master-provider-routing-registry.ts 4-zone architecture
-function getRegionalConfig(region?: string, lang?: string): RegionalProviderConfig {
-  // Language-based detection (matches LANGUAGE_TO_ZONE in registry)
-  if (lang && ['zh', 'ja', 'ko'].includes(lang)) return REGIONAL_PROVIDER_MAP.cjk;
-  if (lang && ['ar', 'he', 'fa'].includes(lang)) return REGIONAL_PROVIDER_MAP.mena;
-  if (lang && ['hi', 'ta', 'te', 'bn', 'mr', 'gu', 'kn', 'ml', 'pa', 'ur', 'id', 'vi', 'th', 'ms', 'sw', 'yo', 'am'].includes(lang)) return REGIONAL_PROVIDER_MAP.india;
-  if (lang && ['en', 'es', 'fr', 'de', 'it', 'pt', 'nl', 'pl', 'ru'].includes(lang)) return REGIONAL_PROVIDER_MAP.western;
-
-  // Region-based detection (matches ZONE_COUNTRIES in registry)
-  if (!region) return REGIONAL_PROVIDER_MAP.western; // Claude Zone default
-  const r = region.toLowerCase();
-  if (['apac', 'cjk', 'china', 'japan', 'korea'].some(z => r.includes(z))) return REGIONAL_PROVIDER_MAP.cjk;
-  if (['mena', 'arab', 'middle-east'].some(z => r.includes(z))) return REGIONAL_PROVIDER_MAP.mena;
-  if (['india', 'south-asia', 'sea', 'southeast'].some(z => r.includes(z))) return REGIONAL_PROVIDER_MAP.india;
-  if (['africa'].some(z => r.includes(z))) return REGIONAL_PROVIDER_MAP.africa;
-  if (['nam', 'europe', 'latam', 'caribbean'].some(z => r.includes(z))) return REGIONAL_PROVIDER_MAP.western;
-  return REGIONAL_PROVIDER_MAP.western; // Claude Zone fallback
-}
-
-const LANGUAGE_OPTIONS = [
-  { code: 'en', name: 'English', flag: '🇺🇸' },
-  { code: 'ar', name: 'Arabic', flag: '🇸🇦' },
-  { code: 'hi', name: 'Hindi', flag: '🇮🇳' },
-  { code: 'es', name: 'Spanish', flag: '🇪🇸' },
-  { code: 'fr', name: 'French', flag: '🇫🇷' },
-  { code: 'de', name: 'German', flag: '🇩🇪' },
-  { code: 'zh', name: 'Chinese', flag: '🇨🇳' },
-  { code: 'ja', name: 'Japanese', flag: '🇯🇵' },
-  { code: 'pt', name: 'Portuguese', flag: '🇧🇷' },
-  { code: 'ko', name: 'Korean', flag: '🇰🇷' },
-];
+const LANGUAGE_OPTIONS = DEMO_LANGUAGE_OPTIONS;
 
 type SlideLayout = 'title' | 'bullets' | 'chart' | 'timeline' | '3d' | 'avatar';
 
@@ -310,13 +205,26 @@ const GlowOrb: React.FC<{ color: string; size: string; position: string; delay?:
   />
 );
 
-interface SlideLayoutProps { slide: GeneratedSlide; lang: string; palette: IndustryPalette; }
+interface SlideLayoutProps { slide: GeneratedSlide; lang: string; palette: IndustryPalette; imageUrl?: string; }
 
-const TitleSlideLayout: React.FC<SlideLayoutProps> = ({ slide, lang, palette }) => (
-  <div className="h-full flex flex-col items-center justify-center text-center px-6 relative" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+const TitleSlideLayout: React.FC<SlideLayoutProps> = ({ slide, lang, palette, imageUrl }) => (
+  <div className="h-full flex flex-col items-center justify-center text-center px-6 relative" dir={isRTLLanguage(lang) ? 'rtl' : 'ltr'}>
     <CinematicBG bg={palette.titleBg} />
-    <GlowOrb color={palette.glow1} size="w-48 h-48" position="top-1/4 right-1/4" />
-    <GlowOrb color={palette.glow2} size="w-36 h-36" position="bottom-1/3 left-1/4" delay={2} />
+    
+    {/* AI-generated background image */}
+    {imageUrl && (
+      <div className="absolute inset-0 z-[1]">
+        <img src={imageUrl} alt="AI generated visual" className="w-full h-full object-cover opacity-30" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/60" />
+      </div>
+    )}
+    
+    {!imageUrl && (
+      <>
+        <GlowOrb color={palette.glow1} size="w-48 h-48" position="top-1/4 right-1/4" />
+        <GlowOrb color={palette.glow2} size="w-36 h-36" position="bottom-1/3 left-1/4" delay={2} />
+      </>
+    )}
 
     <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 30, ease: 'linear' }}
       className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] h-[320px] rounded-full border border-white/[0.06] pointer-events-none" />
@@ -514,45 +422,53 @@ const TimelineSlideLayout: React.FC<SlideLayoutProps> = ({ slide, lang, palette 
   );
 };
 
-const ThreeDSlideLayout: React.FC<SlideLayoutProps> = ({ slide, lang, palette }) => (
-  <div className="h-full flex gap-4 p-5 sm:p-7 relative" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+const ThreeDSlideLayout: React.FC<SlideLayoutProps> = ({ slide, lang, palette, imageUrl }) => (
+  <div className="h-full flex gap-4 p-5 sm:p-7 relative" dir={isRTLLanguage(lang) ? 'rtl' : 'ltr'}>
     <CinematicBG bg={palette.titleBg} />
     <GlowOrb color={palette.glow1} size="w-44 h-44" position="top-0 left-1/4" />
     <GlowOrb color={palette.glow2} size="w-36 h-36" position="bottom-1/4 right-1/4" delay={2} />
 
     <div className="w-[45%] flex items-center justify-center relative z-10">
-      <div className={`absolute bottom-4 left-4 right-4 h-16 bg-gradient-to-t ${palette.primary} opacity-10 rounded-b-2xl blur-sm`} />
-      <motion.div
-        animate={{ rotateY: [0, 15, -15, 0], rotateX: [0, 8, -8, 0] }}
-        transition={{ repeat: Infinity, duration: 8, ease: 'easeInOut' }}
-        className="relative w-36 h-36 sm:w-44 sm:h-44"
-        style={{ perspective: 1200, transformStyle: 'preserve-3d' }}
-      >
-        <motion.div animate={{ scale: [1, 1.1, 1], opacity: [0.15, 0.3, 0.15] }} transition={{ repeat: Infinity, duration: 3 }}
-          className={`absolute -inset-4 bg-gradient-to-br ${palette.primary} opacity-20 rounded-3xl blur-xl`} />
-        <div className="absolute inset-0 bg-white/[0.06] rounded-2xl border border-white/[0.1] backdrop-blur-md shadow-2xl" />
-        <motion.div animate={{ y: [-8, 8, -8], rotate: [0, 5, -5, 0] }} transition={{ repeat: Infinity, duration: 4 }}
-          className={`absolute inset-6 bg-gradient-to-br ${palette.primary} opacity-20 rounded-xl border border-white/10 flex flex-col items-center justify-center backdrop-blur-sm`}>
-          <motion.div animate={{ scale: [0.9, 1.1, 0.9], rotateZ: [0, 10, -10, 0] }} transition={{ repeat: Infinity, duration: 4, delay: 0.5 }}>
-            <Box className="h-12 w-12 text-white/40 mb-1" />
+      {imageUrl ? (
+        <motion.div
+          animate={{ rotateY: [0, 8, -8, 0] }}
+          transition={{ repeat: Infinity, duration: 8, ease: 'easeInOut' }}
+          className="relative w-36 h-36 sm:w-44 sm:h-44 rounded-2xl overflow-hidden border border-white/10 shadow-2xl"
+          style={{ perspective: 1200 }}
+        >
+          <img src={imageUrl} alt="AI generated 3D visual" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
+            className="absolute bottom-2 left-0 right-0 text-center">
+            <Badge variant="outline" className="text-[7px] gap-0.5 border-white/10 bg-black/50 text-white/80">
+              <Box className="h-2 w-2" /> AI Generated • Meshy AI
+            </Badge>
           </motion.div>
-          <span className="text-[8px] font-bold text-white/50">3D Model</span>
-          {[...Array(4)].map((_, i) => (
-            <motion.div key={i}
-              animate={{ y: [-20, -40], opacity: [0, 1, 0], scale: [0.5, 1, 0.5] }}
-              transition={{ repeat: Infinity, duration: 2 + i * 0.5, delay: i * 0.4 }}
-              className={`absolute w-1 h-1 rounded-full bg-gradient-to-br ${palette.accent}`}
-              style={{ top: '40%', left: `${30 + i * 12}%` }}
-            />
-          ))}
         </motion.div>
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
-          className="absolute -bottom-3 left-0 right-0 text-center">
-          <Badge variant="outline" className="text-[7px] gap-0.5 border-white/10 bg-white/5 text-white/60">
-            <Box className="h-2 w-2" /> Meshy AI • Interactive 3D
-          </Badge>
-        </motion.div>
-      </motion.div>
+      ) : (
+        <>
+          <div className={`absolute bottom-4 left-4 right-4 h-16 bg-gradient-to-t ${palette.primary} opacity-10 rounded-b-2xl blur-sm`} />
+          <motion.div
+            animate={{ rotateY: [0, 15, -15, 0], rotateX: [0, 8, -8, 0] }}
+            transition={{ repeat: Infinity, duration: 8, ease: 'easeInOut' }}
+            className="relative w-36 h-36 sm:w-44 sm:h-44"
+            style={{ perspective: 1200, transformStyle: 'preserve-3d' }}
+          >
+            <div className="absolute inset-0 bg-white/[0.06] rounded-2xl border border-white/[0.1] backdrop-blur-md shadow-2xl" />
+            <motion.div animate={{ y: [-8, 8, -8] }} transition={{ repeat: Infinity, duration: 4 }}
+              className={`absolute inset-6 bg-gradient-to-br ${palette.primary} opacity-20 rounded-xl border border-white/10 flex flex-col items-center justify-center`}>
+              <Box className="h-12 w-12 text-white/40 mb-1" />
+              <span className="text-[8px] font-bold text-white/50">3D Model</span>
+            </motion.div>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
+              className="absolute -bottom-3 left-0 right-0 text-center">
+              <Badge variant="outline" className="text-[7px] gap-0.5 border-white/10 bg-white/5 text-white/60">
+                <Box className="h-2 w-2" /> Meshy AI • Interactive 3D
+              </Badge>
+            </motion.div>
+          </motion.div>
+        </>
+      )}
     </div>
 
     <div className="flex-1 flex flex-col justify-center space-y-3 relative z-10">
@@ -573,8 +489,8 @@ const ThreeDSlideLayout: React.FC<SlideLayoutProps> = ({ slide, lang, palette })
   </div>
 );
 
-const BulletsSlideLayout: React.FC<SlideLayoutProps> = ({ slide, lang, palette }) => (
-  <div className="h-full flex flex-col p-5 sm:p-7 relative" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+const BulletsSlideLayout: React.FC<SlideLayoutProps> = ({ slide, lang, palette, imageUrl }) => (
+  <div className="h-full flex flex-col p-5 sm:p-7 relative" dir={isRTLLanguage(lang) ? 'rtl' : 'ltr'}>
     <CinematicBG bg={palette.bulletBg} />
     <GlowOrb color={palette.glow1} size="w-36 h-36" position="top-1/4 right-1/4" delay={1} />
 
@@ -765,17 +681,7 @@ Respond ONLY in valid JSON (no markdown): { "slides": [{ "slideNumber": 1, "layo
         body: {
           action: 'custom_tts',
           text: text.slice(0, 500),
-          language: selectedLang === 'en' ? 'en-US' : 
-                    selectedLang === 'ar' ? 'ar-SA' :
-                    selectedLang === 'hi' ? 'hi-IN' :
-                    selectedLang === 'zh' ? 'zh-CN' :
-                    selectedLang === 'ja' ? 'ja-JP' :
-                    selectedLang === 'ko' ? 'ko-KR' :
-                    selectedLang === 'es' ? 'es-ES' :
-                    selectedLang === 'fr' ? 'fr-FR' :
-                    selectedLang === 'de' ? 'de-DE' :
-                    selectedLang === 'pt' ? 'pt-BR' :
-                    `${selectedLang}-${selectedLang.toUpperCase()}`,
+          language: toLangBCP47(selectedLang),
           mode: selectedLang !== 'en' ? 'transcreation' : 'literal',
         },
       });
@@ -807,14 +713,15 @@ Respond ONLY in valid JSON (no markdown): { "slides": [{ "slideNumber": 1, "layo
   const selectedLangName = LANGUAGE_OPTIONS.find(l => l.code === selectedLang)?.name || 'English';
   const palette = getIndustryPalette(industryId);
 
-  const renderSlideContent = (slide: GeneratedSlide) => {
+  const renderSlideContent = (slide: GeneratedSlide, slideIdx: number) => {
+    const imgUrl = slideImages[slideIdx];
     switch (slide.layoutType) {
-      case 'title': return <TitleSlideLayout slide={slide} lang={selectedLang} palette={palette} />;
-      case 'avatar': return <AvatarSlideLayout slide={slide} lang={selectedLang} palette={palette} />;
+      case 'title': return <TitleSlideLayout slide={slide} lang={selectedLang} palette={palette} imageUrl={imgUrl} />;
+      case 'avatar': return <AvatarSlideLayout slide={slide} lang={selectedLang} palette={palette} imageUrl={imgUrl} />;
       case 'chart': return <ChartSlideLayout slide={slide} lang={selectedLang} palette={palette} />;
       case 'timeline': return <TimelineSlideLayout slide={slide} lang={selectedLang} palette={palette} />;
-      case '3d': return <ThreeDSlideLayout slide={slide} lang={selectedLang} palette={palette} />;
-      default: return <BulletsSlideLayout slide={slide} lang={selectedLang} palette={palette} />;
+      case '3d': return <ThreeDSlideLayout slide={slide} lang={selectedLang} palette={palette} imageUrl={imgUrl} />;
+      default: return <BulletsSlideLayout slide={slide} lang={selectedLang} palette={palette} imageUrl={imgUrl} />;
     }
   };
 
@@ -1058,7 +965,7 @@ Respond ONLY in valid JSON (no markdown): { "slides": [{ "slideNumber": 1, "layo
 
                   {/* Slide content — layout-specific */}
                   <div className="relative z-[5] h-full pt-10">
-                    {renderSlideContent(slides[activeSlide])}
+                    {renderSlideContent(slides[activeSlide], activeSlide)}
                   </div>
 
                   {/* Speaker notes + TTS footer */}
