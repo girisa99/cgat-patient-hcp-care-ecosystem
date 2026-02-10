@@ -858,7 +858,7 @@ Now go make some magic."`,
 
 export const GENIE_STUDIO_FULL_SCRIPT = {
   metadata: {
-    title: 'Genie Studio - The Complete Creative Ecosystem',
+    title: 'Genie Suite - The Complete Creative Ecosystem',
     version: '2.0',
     totalDuration: '5:30 - 6:00 minutes',
     targetAudience: 'Creators, Marketers, Enterprises, Educators',
@@ -942,7 +942,7 @@ export function getLocalizedVoiceovers(languageCode: string): Array<{
  * Get production-ready script with timing
  */
 export function getProductionScript(): string {
-  let script = '# GENIE STUDIO - PRODUCTION SCRIPT\n';
+  let script = '# GENIE SUITE - PRODUCTION SCRIPT\n';
   script += `# Version: ${GENIE_STUDIO_FULL_SCRIPT.metadata.version}\n`;
   script += `# Total Duration: ${GENIE_STUDIO_FULL_SCRIPT.metadata.totalDuration}\n\n`;
   
