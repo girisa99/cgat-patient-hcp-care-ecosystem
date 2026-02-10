@@ -25,6 +25,71 @@ interface DeckDemoCardProps {
   region?: string;
 }
 
+// ── 5-Zone Regional Routing ──
+interface RegionalProviderConfig {
+  llmProvider: string;
+  llmModel: string;
+  ttsProvider: string;
+  imageProvider: string;
+  displayProviders: string[];
+  displayColors: string[];
+}
+
+const REGIONAL_PROVIDER_MAP: Record<string, RegionalProviderConfig> = {
+  // CJK Zone — Alibaba primary
+  cjk: {
+    llmProvider: 'alibaba', llmModel: 'qwen-max',
+    ttsProvider: 'alibaba', imageProvider: 'alibaba',
+    displayProviders: ['Alibaba Qwen', 'Wan 2.6', 'Qwen3 TTS', 'DeepL'],
+    displayColors: ['from-orange-500/80 to-orange-600/80', 'from-amber-500/80 to-amber-600/80', 'from-red-500/80 to-red-600/80', 'from-cyan-500/80 to-cyan-600/80'],
+  },
+  // MENA Zone — GPT-4o + Azure
+  mena: {
+    llmProvider: 'openai', llmModel: 'gpt-4o',
+    ttsProvider: 'azure', imageProvider: 'gemini',
+    displayProviders: ['GPT-4o', 'Azure Neural', 'Gemini Imagen', 'DeepL'],
+    displayColors: ['from-emerald-500/80 to-emerald-600/80', 'from-sky-500/80 to-sky-600/80', 'from-blue-500/80 to-blue-600/80', 'from-cyan-500/80 to-cyan-600/80'],
+  },
+  // India/SEA Zone — Gemini primary
+  india: {
+    llmProvider: 'gemini', llmModel: 'gemini-2.5-flash',
+    ttsProvider: 'azure', imageProvider: 'gemini',
+    displayProviders: ['Gemini 3 Pro', 'Azure Neural', 'Meshy AI', 'DeepL'],
+    displayColors: ['from-blue-500/80 to-blue-600/80', 'from-sky-500/80 to-sky-600/80', 'from-purple-500/80 to-purple-600/80', 'from-cyan-500/80 to-cyan-600/80'],
+  },
+  // Western/EU/LATAM — Claude + Gemini
+  western: {
+    llmProvider: 'gemini', llmModel: 'gemini-2.5-flash',
+    ttsProvider: 'elevenlabs', imageProvider: 'gemini',
+    displayProviders: ['Gemini 3 Pro', 'ElevenLabs', 'Meshy AI', 'DeepL'],
+    displayColors: ['from-blue-500/80 to-blue-600/80', 'from-violet-500/80 to-violet-600/80', 'from-purple-500/80 to-purple-600/80', 'from-cyan-500/80 to-cyan-600/80'],
+  },
+  // Africa Zone
+  africa: {
+    llmProvider: 'gemini', llmModel: 'gemini-2.5-flash',
+    ttsProvider: 'azure', imageProvider: 'gemini',
+    displayProviders: ['Gemini 3 Pro', 'Azure Neural', 'ModelsLab', 'DeepL'],
+    displayColors: ['from-blue-500/80 to-blue-600/80', 'from-sky-500/80 to-sky-600/80', 'from-pink-500/80 to-pink-600/80', 'from-cyan-500/80 to-cyan-600/80'],
+  },
+};
+
+// Map region prop to zone
+function getRegionalConfig(region?: string, lang?: string): RegionalProviderConfig {
+  // Language-based detection
+  if (lang && ['zh', 'ja', 'ko'].includes(lang)) return REGIONAL_PROVIDER_MAP.cjk;
+  if (lang === 'ar') return REGIONAL_PROVIDER_MAP.mena;
+  if (lang && ['hi', 'ta', 'te', 'bn', 'mr', 'gu', 'kn', 'ml', 'pa', 'id', 'vi', 'th'].includes(lang)) return REGIONAL_PROVIDER_MAP.india;
+
+  // Region-based detection
+  if (!region) return REGIONAL_PROVIDER_MAP.western;
+  const r = region.toLowerCase();
+  if (['apac', 'cjk', 'china', 'japan', 'korea'].some(z => r.includes(z))) return REGIONAL_PROVIDER_MAP.cjk;
+  if (['mena', 'arab', 'middle-east'].some(z => r.includes(z))) return REGIONAL_PROVIDER_MAP.mena;
+  if (['india', 'south-asia', 'sea', 'southeast'].some(z => r.includes(z))) return REGIONAL_PROVIDER_MAP.india;
+  if (['africa'].some(z => r.includes(z))) return REGIONAL_PROVIDER_MAP.africa;
+  return REGIONAL_PROVIDER_MAP.western;
+}
+
 const LANGUAGE_OPTIONS = [
   { code: 'en', name: 'English', flag: '🇺🇸' },
   { code: 'ar', name: 'Arabic', flag: '🇸🇦' },
@@ -47,6 +112,7 @@ interface GeneratedSlide {
   speakerNotes: string;
   narration: string;
   layoutType: SlideLayout;
+  imagePrompt?: string;
   chartData?: { label: string; value: number }[];
   timelineSteps?: { step: string; description: string }[];
 }
@@ -140,12 +206,12 @@ const LAYOUT_LABELS: Record<SlideLayout, string> = {
 
 // ── Provider Ribbon ──
 const SLIDE_PROVIDERS: Record<SlideLayout, { providers: string[]; colors: string[] }> = {
-  title: { providers: ['Gemini 2.0', 'GPT-4o'], colors: ['from-blue-500/80 to-blue-600/80', 'from-emerald-500/80 to-emerald-600/80'] },
+  title: { providers: ['Gemini 3 Pro', 'Alibaba Qwen'], colors: ['from-blue-500/80 to-blue-600/80', 'from-orange-500/80 to-orange-600/80'] },
   avatar: { providers: ['Azure Neural', 'Alibaba Wan 2.2', 'ElevenLabs'], colors: ['from-sky-500/80 to-sky-600/80', 'from-orange-500/80 to-orange-600/80', 'from-violet-500/80 to-violet-600/80'] },
-  chart: { providers: ['Gemini 2.0', 'Recharts'], colors: ['from-blue-500/80 to-blue-600/80', 'from-teal-500/80 to-teal-600/80'] },
-  timeline: { providers: ['Gemini 2.0', 'Claude 4'], colors: ['from-blue-500/80 to-blue-600/80', 'from-amber-500/80 to-amber-600/80'] },
-  '3d': { providers: ['Meshy AI', 'Tripo3D'], colors: ['from-purple-500/80 to-purple-600/80', 'from-pink-500/80 to-pink-600/80'] },
-  bullets: { providers: ['Gemini 2.0', 'DeepL'], colors: ['from-blue-500/80 to-blue-600/80', 'from-cyan-500/80 to-cyan-600/80'] },
+  chart: { providers: ['Gemini 3 Pro', 'Recharts'], colors: ['from-blue-500/80 to-blue-600/80', 'from-teal-500/80 to-teal-600/80'] },
+  timeline: { providers: ['Claude 4', 'DeepSeek'], colors: ['from-amber-500/80 to-amber-600/80', 'from-green-500/80 to-green-600/80'] },
+  '3d': { providers: ['Meshy AI', 'ModelsLab'], colors: ['from-purple-500/80 to-purple-600/80', 'from-pink-500/80 to-pink-600/80'] },
+  bullets: { providers: ['Gemini 3 Pro', 'DeepL'], colors: ['from-blue-500/80 to-blue-600/80', 'from-cyan-500/80 to-cyan-600/80'] },
 };
 
 const ProviderRibbon: React.FC<{ layout: SlideLayout }> = ({ layout }) => {
@@ -525,6 +591,7 @@ export const DeckDemoCard: React.FC<DeckDemoCardProps> = ({ industryId, region }
   const [customPrompt, setCustomPrompt] = useState('');
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | undefined>();
   const [isPlayingTTS, setIsPlayingTTS] = useState(false);
+  const [slideImages, setSlideImages] = useState<Record<number, string>>({});
 
   useEffect(() => {
     setCustomPrompt('');
@@ -549,7 +616,8 @@ export const DeckDemoCard: React.FC<DeckDemoCardProps> = ({ industryId, region }
 
     const langName = LANGUAGE_OPTIONS.find(l => l.code === selectedLang)?.name || 'English';
     const slideCount = deckExample.slideCount;
-    
+    const regionalConfig = getRegionalConfig(region, selectedLang);
+
     const prompt = `You are a world-class ${example?.industryName || ''} industry presentation designer. Create content that is deeply relevant, data-driven, and uses real-world metrics for this industry.
 
 CONTEXT:
@@ -558,6 +626,7 @@ CONTEXT:
 - Audience: ${deckExample.audience}
 - Language: ${langName}
 - Slides: ${slideCount}
+- AI Provider Zone: ${regionalConfig.llmProvider} (${regionalConfig.llmModel})
 
 CRITICAL CONTENT RULES:
 1. Every slide MUST be deeply relevant to "${effectivePrompt}" — no generic filler
@@ -566,26 +635,27 @@ CRITICAL CONTENT RULES:
 4. Timeline steps must reflect actual ${example?.industryName} workflows and processes
 5. Speaker notes should be full narration scripts (2-3 sentences), not just headings
 6. The "narration" field must contain a complete voiceover script for TTS (3-4 sentences covering all slide content)
+7. For each slide, provide an "imagePrompt" field with a vivid, Pixar-quality visual description for AI image generation
 
-LAYOUT VARIETY (use these layoutTypes — at least 3 different ones):
-- "title" — Cinematic opening (slide 1)
-- "avatar" — AI avatar narrator presenting key insights
+LAYOUT VARIETY (use these layoutTypes — at least 4 different ones):
+- "title" — Cinematic opening with hero image (slide 1). imagePrompt: describe a stunning, Pixar-quality hero visual
+- "avatar" — AI avatar narrator presenting key insights. imagePrompt: describe the avatar scene
 - "chart" — Data visualization with chartData: [{ "label": "specific metric name", "value": 10-100 }] (4-5 items with REAL labels)
 - "timeline" — Process/journey with timelineSteps: [{ "step": "Phase Name", "description": "specific detail" }] (3-4 steps)
-- "3d" — 3D product/concept showcase
-- "bullets" — Rich content with actionable insights
+- "3d" — 3D product/concept showcase. imagePrompt: describe the 3D scene composition
+- "bullets" — Rich content with actionable insights. imagePrompt: describe an illustration for this content
 
 ${selectedLang !== 'en' ? `TRANSCREATION: Generate ALL content natively in ${langName}. Adapt culturally — use local idioms, references, metrics standards, and cultural context. Do NOT translate English content.` : ''}
 
-Respond ONLY in valid JSON (no markdown): { "slides": [{ "slideNumber": 1, "layoutType": "title", "title": "...", "bullets": ["..."], "speakerNotes": "full narration...", "narration": "Complete TTS voiceover script covering all slide content...", "chartData": [...], "timelineSteps": [...] }] }`;
+Respond ONLY in valid JSON (no markdown): { "slides": [{ "slideNumber": 1, "layoutType": "title", "title": "...", "bullets": ["..."], "speakerNotes": "full narration...", "narration": "Complete TTS voiceover script covering all slide content...", "imagePrompt": "Pixar-quality visual description...", "chartData": [...], "timelineSteps": [...] }] }`;
 
     try {
       const { data, error: fnError } = await supabase.functions.invoke('ai-universal-processor', {
         body: {
-          provider: 'gemini',
-          model: 'gemini-2.0-flash',
+          provider: regionalConfig.llmProvider,
+          model: regionalConfig.llmModel,
           prompt,
-          systemPrompt: `You are a ${example?.industryName || 'professional'} presentation expert. Generate deeply contextual, data-rich slides with full narration scripts. Always respond with valid JSON only. Every data point must be realistic and industry-specific.`,
+          systemPrompt: `You are a ${example?.industryName || 'professional'} presentation expert. Generate deeply contextual, data-rich slides with full narration scripts and vivid image prompts. Always respond with valid JSON only. Every data point must be realistic and industry-specific.`,
           temperature: 0.7,
           maxTokens: 4000,
         },
@@ -609,9 +679,16 @@ Respond ONLY in valid JSON (no markdown): { "slides": [{ "slideNumber": 1, "layo
         setSlides(sanitized);
         setActiveSlide(0);
 
-        // Auto-generate TTS for first slide
+        // Generate AI images for title and 3D slides
+        sanitized.forEach((slide, idx) => {
+          if (slide.imagePrompt && ['title', '3d', 'avatar'].includes(slide.layoutType)) {
+            generateSlideImage(idx, slide.imagePrompt);
+          }
+        });
+
+        // Auto-generate TTS for first slide with regional routing
         if (sanitized[0]?.narration) {
-          generateVoiceover(sanitized[0].narration);
+          generateVoiceover(sanitized[0].narration, regionalConfig);
         }
       } else {
         throw new Error('Could not parse slide data');
@@ -628,21 +705,61 @@ Respond ONLY in valid JSON (no markdown): { "slides": [{ "slideNumber": 1, "layo
     }
   };
 
-  // ── TTS Voiceover ──
-  const generateVoiceover = async (text: string) => {
+  // ── AI Image Generation for slides ──
+  const generateSlideImage = async (slideIdx: number, imagePrompt: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
+        body: {
+          provider: 'gemini',
+          model: 'gemini-2.5-flash-image',
+          action: 'generate_image',
+          prompt: `Ultra high quality, Pixar-grade 3D rendered illustration, cinematic lighting: ${imagePrompt}. Professional presentation visual, clean composition, vibrant colors.`,
+          maxTokens: 1000,
+        },
+      });
+      if (!error && data?.imageUrl) {
+        setSlideImages(prev => ({ ...prev, [slideIdx]: data.imageUrl }));
+      }
+    } catch {
+      // Image generation is optional — gracefully degrade
+    }
+  };
+
+  // ── TTS Voiceover with regional routing ──
+  const generateVoiceover = async (text: string, config?: RegionalProviderConfig) => {
     if (!text || text.length < 10) return;
     setIsPlayingTTS(true);
     try {
-      const { data, error } = await supabase.functions.invoke('ask-genie-voice', {
+      // Use dialect-tts-demo for proper regional routing
+      const { data, error } = await supabase.functions.invoke('dialect-tts-demo', {
         body: {
-          action: 'speak',
+          action: 'custom_tts',
           text: text.slice(0, 500),
-          language: selectedLang,
-          provider: 'elevenlabs',
+          language: selectedLang === 'en' ? 'en-US' : 
+                    selectedLang === 'ar' ? 'ar-SA' :
+                    selectedLang === 'hi' ? 'hi-IN' :
+                    selectedLang === 'zh' ? 'zh-CN' :
+                    selectedLang === 'ja' ? 'ja-JP' :
+                    selectedLang === 'ko' ? 'ko-KR' :
+                    selectedLang === 'es' ? 'es-ES' :
+                    selectedLang === 'fr' ? 'fr-FR' :
+                    selectedLang === 'de' ? 'de-DE' :
+                    selectedLang === 'pt' ? 'pt-BR' :
+                    `${selectedLang}-${selectedLang.toUpperCase()}`,
+          mode: selectedLang !== 'en' ? 'transcreation' : 'literal',
         },
       });
       if (error) throw error;
-      if (data instanceof ArrayBuffer || data instanceof Blob) {
+      
+      // dialect-tts-demo returns base64 audio
+      const audioBase64 = data?.audio_base64 || data?.audioBase64;
+      if (audioBase64) {
+        const audioUrl = `data:audio/mp3;base64,${audioBase64}`;
+        const audio = new Audio(audioUrl);
+        audio.onended = () => setIsPlayingTTS(false);
+        audio.onerror = () => setIsPlayingTTS(false);
+        await audio.play();
+      } else if (data instanceof ArrayBuffer || data instanceof Blob) {
         const blob = data instanceof Blob ? data : new Blob([data], { type: 'audio/mpeg' });
         const url = URL.createObjectURL(blob);
         const audio = new Audio(url);
@@ -812,7 +929,7 @@ Respond ONLY in valid JSON (no markdown): { "slides": [{ "slideNumber": 1, "layo
               </p>
               {/* Provider chain animation */}
               <div className="flex items-center justify-center gap-1 pt-1">
-                {['Gemini 2.0', 'Azure Neural', 'Meshy AI', 'DeepL'].map((p, i) => (
+                {getRegionalConfig(region, selectedLang).displayProviders.map((p, i) => (
                   <motion.span
                     key={p}
                     initial={{ opacity: 0, scale: 0.8 }}
@@ -924,7 +1041,7 @@ Respond ONLY in valid JSON (no markdown): { "slides": [{ "slideNumber": 1, "layo
                     <button
                       onClick={() => {
                         const narr = slides[activeSlide].narration || slides[activeSlide].speakerNotes;
-                        if (narr) generateVoiceover(narr);
+                        if (narr) generateVoiceover(narr, getRegionalConfig(region, selectedLang));
                       }}
                       disabled={isPlayingTTS}
                       className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-all ${
