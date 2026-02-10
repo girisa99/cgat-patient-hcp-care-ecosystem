@@ -423,32 +423,18 @@ const useHeroVoiceover = () => {
         // Cache miss or error — proceed to live API
       }
 
-      // Step 2: If no cache, call live API
+      // Step 2: If no cache, call live API via Supabase client
       if (!audioBase64) {
         console.log(`[Hero TTS] Cache MISS: ${cacheKey}, calling API...`);
-        const response = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL || (supabase as any).supabaseUrl}/functions/v1/dialect-tts-demo`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || (supabase as any).supabaseKey,
-              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || (supabase as any).supabaseKey}`,
-            },
-            body: JSON.stringify({
-              action: 'custom_tts',
-              text,
-              language: effectiveLang,
-            }),
-          }
-        );
+        const { data, error } = await supabase.functions.invoke('dialect-tts-demo', {
+          body: {
+            action: 'custom_tts',
+            text,
+            language: effectiveLang,
+          },
+        });
 
-        if (!response.ok) {
-          const errText = await response.text();
-          throw new Error(`TTS failed: ${response.status} ${errText}`);
-        }
-
-        const data = await response.json();
+        if (error) throw new Error(`TTS failed: ${error.message}`);
         audioBase64 = data?.audio_base64 || data?.audioBase64;
         if (!audioBase64) throw new Error('No audio returned');
 
@@ -585,8 +571,9 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
             animate={{ scale: [1, 1.06] }}
             transition={{ duration: 12, ease: 'linear', repeat: Infinity, repeatType: 'reverse' }}
           />
-          {/* Netflix/Apple-style clean gradient — image visible, text legible */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/20" />
+          {/* Netflix/Apple-style gradient — strong center overlay for text legibility */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/70 to-black/50" />
+          <div className="absolute inset-0 bg-black/25" />
           <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-background via-background/80 to-transparent" />
         </motion.div>
       </AnimatePresence>
@@ -652,9 +639,9 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
               </Badge>
             </motion.div>
 
-            {/* Headline — massive cinematic type */}
+            {/* Headline — massive cinematic type with strong drop-shadow */}
             <motion.h1
-              className="text-5xl md:text-7xl lg:text-8xl font-black leading-[0.92] tracking-tight"
+              className="text-5xl md:text-7xl lg:text-8xl font-black leading-[0.92] tracking-tight drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15, duration: 0.8, type: 'spring', stiffness: 100 }}
@@ -666,14 +653,14 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
             </motion.h1>
 
             <motion.p
-              className="text-xl md:text-3xl font-bold text-white/95"
+              className="text-xl md:text-3xl font-bold text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)]"
               initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
             >
               {slide.subtitle}
             </motion.p>
 
             <motion.p
-              className="text-base md:text-lg text-white/75 max-w-3xl mx-auto leading-relaxed font-medium"
+              className="text-base md:text-lg text-white/80 max-w-3xl mx-auto leading-relaxed font-medium drop-shadow-[0_1px_4px_rgba(0,0,0,0.6)]"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
             >
               {slide.description}
