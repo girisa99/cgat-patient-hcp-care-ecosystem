@@ -12,7 +12,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import { 
   ArrowRight, Play, Sparkles, Globe, Brain, Cpu, Zap, Eye, Mic, Languages, Layers, Wand2, Video, Image, FileText, AudioLines,
-  Box, Palette, Volume2, Subtitles, MonitorPlay, VolumeX,
+  Box, Palette, Volume2, Subtitles, MonitorPlay, VolumeX, ChevronDown,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -313,28 +313,98 @@ const CinematicPipeline: React.FC = () => (
 );
 
 // ============================================
-// TTS VOICEOVER HOOK
+// TTS VOICEOVER HOOK — Region-aware
 // ============================================
+interface VoiceOption {
+  code: string;
+  label: string;
+  nativeLabel: string;
+  azureVoice: string;
+  flag: string;
+}
+
+// Regional voice options — sourced from regionalLandingConfig languageShowcase
+const REGION_VOICES: Record<string, VoiceOption[]> = {
+  nam: [
+    { code: 'en-US', label: 'US English', nativeLabel: 'English', azureVoice: 'en-US-JennyNeural', flag: '🇺🇸' },
+    { code: 'en-GB', label: 'British English', nativeLabel: 'English', azureVoice: 'en-GB-SoniaNeural', flag: '🇬🇧' },
+    { code: 'es-MX', label: 'Mexican Spanish', nativeLabel: 'Español', azureVoice: 'es-MX-DaliaNeural', flag: '🇲🇽' },
+    { code: 'fr-CA', label: 'Canadian French', nativeLabel: 'Français', azureVoice: 'fr-CA-SylvieNeural', flag: '🇨🇦' },
+  ],
+  europe: [
+    { code: 'en-GB', label: 'English', nativeLabel: 'English', azureVoice: 'en-GB-SoniaNeural', flag: '🇬🇧' },
+    { code: 'de-DE', label: 'German', nativeLabel: 'Deutsch', azureVoice: 'de-DE-KatjaNeural', flag: '🇩🇪' },
+    { code: 'fr-FR', label: 'French', nativeLabel: 'Français', azureVoice: 'fr-FR-DeniseNeural', flag: '🇫🇷' },
+    { code: 'es-ES', label: 'Spanish', nativeLabel: 'Español', azureVoice: 'es-ES-ElviraNeural', flag: '🇪🇸' },
+    { code: 'it-IT', label: 'Italian', nativeLabel: 'Italiano', azureVoice: 'it-IT-ElsaNeural', flag: '🇮🇹' },
+  ],
+  mena: [
+    { code: 'ar-MSA', label: 'MSA (Formal)', nativeLabel: 'فصحى', azureVoice: 'ar-SA-ZariyahNeural', flag: '📖' },
+    { code: 'ar-SA', label: 'Saudi', nativeLabel: 'سعودي', azureVoice: 'ar-SA-HamedNeural', flag: '🇸🇦' },
+    { code: 'ar-AE', label: 'Gulf/UAE', nativeLabel: 'خليجي', azureVoice: 'ar-AE-HamdanNeural', flag: '🇦🇪' },
+    { code: 'ar-EG', label: 'Egyptian', nativeLabel: 'مصري', azureVoice: 'ar-EG-ShakirNeural', flag: '🇪🇬' },
+    { code: 'ar-LB', label: 'Levantine', nativeLabel: 'لبناني', azureVoice: 'ar-LB-LaylaNeural', flag: '🇱🇧' },
+    { code: 'ar-IQ', label: 'Iraqi', nativeLabel: 'عراقي', azureVoice: 'ar-IQ-BasselNeural', flag: '🇮🇶' },
+    { code: 'ar-MA', label: 'Maghrebi', nativeLabel: 'مغربي', azureVoice: 'ar-MA-JamalNeural', flag: '🇲🇦' },
+    { code: 'tr-TR', label: 'Turkish', nativeLabel: 'Türkçe', azureVoice: 'tr-TR-EmelNeural', flag: '🇹🇷' },
+    { code: 'he-IL', label: 'Hebrew', nativeLabel: 'עברית', azureVoice: 'he-IL-AvriNeural', flag: '🇮🇱' },
+    { code: 'ur-PK', label: 'Urdu', nativeLabel: 'اردو', azureVoice: 'ur-PK-AsadNeural', flag: '🇵🇰' },
+  ],
+  india: [
+    { code: 'hi-IN', label: 'Hindi', nativeLabel: 'हिंदी', azureVoice: 'hi-IN-MadhurNeural', flag: '🇮🇳' },
+    { code: 'ta-IN', label: 'Tamil', nativeLabel: 'தமிழ்', azureVoice: 'ta-IN-ValluvarNeural', flag: '🇮🇳' },
+    { code: 'te-IN', label: 'Telugu', nativeLabel: 'తెలుగు', azureVoice: 'te-IN-ShrutiNeural', flag: '🇮🇳' },
+    { code: 'bn-IN', label: 'Bengali', nativeLabel: 'বাংলা', azureVoice: 'bn-IN-BashkarNeural', flag: '🇮🇳' },
+    { code: 'mr-IN', label: 'Marathi', nativeLabel: 'मराठी', azureVoice: 'mr-IN-AarohiNeural', flag: '🇮🇳' },
+    { code: 'kn-IN', label: 'Kannada', nativeLabel: 'ಕನ್ನಡ', azureVoice: 'kn-IN-SapnaNeural', flag: '🇮🇳' },
+    { code: 'ml-IN', label: 'Malayalam', nativeLabel: 'മലയാളം', azureVoice: 'ml-IN-SobhanaNeural', flag: '🇮🇳' },
+    { code: 'gu-IN', label: 'Gujarati', nativeLabel: 'ગુજરાતી', azureVoice: 'gu-IN-DhwaniNeural', flag: '🇮🇳' },
+    { code: 'as-IN', label: 'Assamese', nativeLabel: 'অসমীয়া', azureVoice: 'as-IN-PriyomNeural', flag: '🇮🇳' },
+  ],
+  africa: [
+    { code: 'en-KE', label: 'English', nativeLabel: 'English', azureVoice: 'en-KE-AsiliaNeural', flag: '🇰🇪' },
+    { code: 'sw-KE', label: 'Swahili', nativeLabel: 'Kiswahili', azureVoice: 'sw-KE-ZuriNeural', flag: '🇰🇪' },
+    { code: 'fr-FR', label: 'French', nativeLabel: 'Français', azureVoice: 'fr-FR-DeniseNeural', flag: '🇫🇷' },
+    { code: 'am-ET', label: 'Amharic', nativeLabel: 'አማርኛ', azureVoice: 'am-ET-MekdesNeural', flag: '🇪🇹' },
+  ],
+  apac: [
+    { code: 'ja-JP', label: 'Japanese', nativeLabel: '日本語', azureVoice: 'ja-JP-NanamiNeural', flag: '🇯🇵' },
+    { code: 'zh-CN', label: 'Chinese', nativeLabel: '中文', azureVoice: 'zh-CN-XiaoxiaoNeural', flag: '🇨🇳' },
+    { code: 'ko-KR', label: 'Korean', nativeLabel: '한국어', azureVoice: 'ko-KR-SunHiNeural', flag: '🇰🇷' },
+    { code: 'id-ID', label: 'Indonesian', nativeLabel: 'Bahasa', azureVoice: 'id-ID-GadisNeural', flag: '🇮🇩' },
+    { code: 'th-TH', label: 'Thai', nativeLabel: 'ไทย', azureVoice: 'th-TH-PremwadeeNeural', flag: '🇹🇭' },
+  ],
+  latam: [
+    { code: 'es-MX', label: 'Spanish', nativeLabel: 'Español', azureVoice: 'es-MX-DaliaNeural', flag: '🇲🇽' },
+    { code: 'pt-BR', label: 'Portuguese', nativeLabel: 'Português', azureVoice: 'pt-BR-FranciscaNeural', flag: '🇧🇷' },
+    { code: 'en-US', label: 'English', nativeLabel: 'English', azureVoice: 'en-US-JennyNeural', flag: '🇺🇸' },
+  ],
+  caribbean: [
+    { code: 'en-US', label: 'English', nativeLabel: 'English', azureVoice: 'en-US-JennyNeural', flag: '🇺🇸' },
+    { code: 'es-MX', label: 'Spanish', nativeLabel: 'Español', azureVoice: 'es-MX-DaliaNeural', flag: '🇲🇽' },
+    { code: 'fr-FR', label: 'French', nativeLabel: 'Français', azureVoice: 'fr-FR-DeniseNeural', flag: '🇫🇷' },
+  ],
+};
+
 const useHeroVoiceover = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
 
-  const speak = useCallback(async (text: string) => {
-    // Stop any currently playing audio
+  const speak = useCallback(async (text: string, langCode?: string) => {
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
     }
 
-    // Create Audio element immediately in user gesture context
     const audio = new Audio();
     audio.preload = 'auto';
     audioRef.current = audio;
     setIsSpeaking(true);
 
     try {
+      // Use dialect-tts-demo which handles translation + Azure Neural TTS
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL || (supabase as any).supabaseUrl}/functions/v1/ask-genie-voice`,
+        `${import.meta.env.VITE_SUPABASE_URL || (supabase as any).supabaseUrl}/functions/v1/dialect-tts-demo`,
         {
           method: 'POST',
           headers: {
@@ -343,11 +413,8 @@ const useHeroVoiceover = () => {
             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || (supabase as any).supabaseKey}`,
           },
           body: JSON.stringify({
-            action: 'speak',
             text,
-            language: 'en',
-            provider: 'elevenlabs',
-            voice: 'Brian',
+            language: langCode || 'en-US',
           }),
         }
       );
@@ -384,6 +451,9 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
   const [current, setCurrent] = React.useState(0);
   const [direction, setDirection] = React.useState(1);
   const { speak, stop, isSpeaking } = useHeroVoiceover();
+  const [showVoicePicker, setShowVoicePicker] = React.useState(false);
+  const voiceOptions = REGION_VOICES[regionSlug] || REGION_VOICES.nam;
+  const [selectedVoice, setSelectedVoice] = React.useState(voiceOptions[0]);
 
   const heroImages = REGION_HERO_IMAGES[regionSlug] || REGION_HERO_IMAGES.nam;
 
@@ -684,28 +754,86 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
         </AnimatePresence>
       </div>
 
-      {/* TTS Voiceover Button — fixed bottom-right */}
-      <motion.button
-        className="fixed bottom-24 right-6 z-50 w-14 h-14 rounded-full bg-gradient-to-br from-primary to-blue-600 text-white flex items-center justify-center shadow-[0_4px_24px_rgba(59,130,246,0.5)] border-2 border-white/20 hover:shadow-[0_8px_40px_rgba(59,130,246,0.6)] transition-shadow"
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={() => {
-          if (isSpeaking) {
-            stop();
-          } else {
-            speak(`${slide.headline.join('')} ${slide.subtitle}. ${slide.description}`);
-          }
-        }}
-        title={isSpeaking ? 'Stop voiceover' : 'Listen to voiceover'}
-      >
-        {isSpeaking ? (
-          <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 1, repeat: Infinity }}>
-            <VolumeX className="w-6 h-6" />
-          </motion.div>
-        ) : (
-          <Volume2 className="w-6 h-6" />
-        )}
-      </motion.button>
+      {/* TTS Voiceover Widget — fixed bottom-right with dialect picker */}
+      <div className="fixed bottom-24 right-6 z-50 flex flex-col items-end gap-2">
+        {/* Dialect picker dropdown */}
+        <AnimatePresence>
+          {showVoicePicker && (
+            <motion.div
+              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.95 }}
+              className="bg-black/80 backdrop-blur-xl rounded-2xl border border-white/20 p-2 shadow-2xl max-h-64 overflow-y-auto min-w-[200px]"
+            >
+              <p className="text-[10px] text-white/40 font-bold uppercase tracking-wider px-3 py-1.5">
+                {hero.regionName} — Select Language
+              </p>
+              {voiceOptions.map((voice) => (
+                <button
+                  key={voice.code}
+                  onClick={() => {
+                    setSelectedVoice(voice);
+                    setShowVoicePicker(false);
+                  }}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left transition-all ${
+                    selectedVoice.code === voice.code
+                      ? 'bg-primary/20 border border-primary/40'
+                      : 'hover:bg-white/10'
+                  }`}
+                >
+                  <span className="text-base">{voice.flag}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-white truncate">{voice.label}</p>
+                    <p className="text-[10px] text-white/50">{voice.nativeLabel}</p>
+                  </div>
+                  {selectedVoice.code === voice.code && (
+                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/30 text-primary font-bold">✓</span>
+                  )}
+                </button>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Voice controls row */}
+        <div className="flex items-center gap-2">
+          {/* Language selector chip */}
+          <motion.button
+            className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white text-xs font-bold hover:bg-black/80 transition-colors"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setShowVoicePicker(!showVoicePicker)}
+          >
+            <span>{selectedVoice.flag}</span>
+            <span>{selectedVoice.nativeLabel}</span>
+            <ChevronDown className={`w-3 h-3 transition-transform ${showVoicePicker ? 'rotate-180' : ''}`} />
+          </motion.button>
+
+          {/* Play/Stop button */}
+          <motion.button
+            className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-blue-600 text-white flex items-center justify-center shadow-[0_4px_24px_rgba(59,130,246,0.5)] border-2 border-white/20 hover:shadow-[0_8px_40px_rgba(59,130,246,0.6)] transition-shadow"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => {
+              setShowVoicePicker(false);
+              if (isSpeaking) {
+                stop();
+              } else {
+                speak(`${slide.headline.join('')}. ${slide.subtitle}. ${slide.description}`, selectedVoice.code);
+              }
+            }}
+            title={isSpeaking ? 'Stop voiceover' : `Listen in ${selectedVoice.label}`}
+          >
+            {isSpeaking ? (
+              <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 1, repeat: Infinity }}>
+                <VolumeX className="w-6 h-6" />
+              </motion.div>
+            ) : (
+              <Volume2 className="w-6 h-6" />
+            )}
+          </motion.button>
+        </div>
+      </div>
 
       {/* Provider ribbon — continuously scrolling */}
       <div className="absolute bottom-28 left-0 right-0 z-20">
