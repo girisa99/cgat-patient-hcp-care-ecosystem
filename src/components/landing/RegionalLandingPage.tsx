@@ -1137,7 +1137,7 @@ export const RegionalLandingPage: React.FC = () => {
   const { region } = useParams<{ region: string }>();
   const [searchParams] = useSearchParams();
   const productContext = searchParams.get('product');
-  const [activeProduct, setActiveProduct] = useState('spark');
+  const [activeProduct, setActiveProduct] = useState('studio');
 
   // Validate region slug
   const regionSlug = region as RegionSlug;

@@ -135,7 +135,7 @@ ${statsText}
 🔗 View the interactive presentation:
 ${publicUrl}
 
-Built with Genie Studio!
+Built with Genie Suite!
 
 ${hashtags}`;
 };

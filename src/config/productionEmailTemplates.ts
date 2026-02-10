@@ -71,9 +71,9 @@ export const CATEGORY_EMAIL_CONFIG: Record<EventCategory, CategoryEmailConfig> =
     product: 'studio',
   },
   genie_demo: {
-    name: 'Genie Studio Demo',
+    name: 'Genie Suite Demo',
     tagline: 'Experience the magic',
-    description: 'Join us for an exclusive Genie Studio product demonstration',
+    description: 'Join us for an exclusive Genie Suite product demonstration',
     primaryColor: '#D946EF', // fuchsia
     icon: '✨',
     logo: genieStudioBanner,
@@ -278,7 +278,7 @@ export function generateEmailBody(params: {
   }
   
   body += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-  body += `Powered by Genie Studio - Mind to Media ✨\n`;
+  body += `Powered by Genie Suite - Mind to Media ✨\n`;
   
   return body;
 }
