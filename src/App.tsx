@@ -193,12 +193,8 @@ const AppContent = () => {
                 </Suspense>
               } />
               
-              {/* Public landing page routes - RegionalLandingPage handles auto-detection */}
-              <Route path="/genie-landing" element={
-                <Suspense fallback={<PageLoading message="Loading..." />}>
-                  <RegionalLandingPage />
-                </Suspense>
-              } />
+              {/* Auto-redirect bare /genie-landing to default regional page */}
+              <Route path="/genie-landing" element={<Navigate to="/genie-landing/nam" replace />} />
               <Route path="/genie-landing/:region" element={
                 <Suspense fallback={<PageLoading message="Loading..." />}>
                   <RegionalLandingPage />
