@@ -105,7 +105,7 @@ const AudioWaveform: React.FC<{ active?: boolean }> = ({ active = true }) => (
         key={i}
         animate={active ? { height: [`${h * 100}%`, `${(1 - h) * 80 + 20}%`, `${h * 100}%`] } : {}}
         transition={{ repeat: Infinity, duration: 0.8 + i * 0.1, ease: 'easeInOut' }}
-        className="w-[2px] rounded-full bg-gradient-to-t from-accent to-primary"
+        className="w-[2px] rounded-full bg-gradient-to-t from-cyan-500 to-purple-400"
         style={{ height: `${h * 100}%` }}
       />
     ))}
@@ -114,92 +114,132 @@ const AudioWaveform: React.FC<{ active?: boolean }> = ({ active = true }) => (
 
 // ── Slide Layout Renderers ──
 
+// ── Cinematic Slide Backgrounds ──
+const CinematicBG: React.FC<{ variant?: 'hero' | 'cool' | 'warm' | 'neon' | 'deep' | 'aurora' }> = ({ variant = 'hero' }) => {
+  const bgs: Record<string, string> = {
+    hero: 'from-[#0a0118] via-[#1a0a2e] to-[#0d001a]',
+    cool: 'from-[#020617] via-[#0c1629] to-[#030712]',
+    warm: 'from-[#1a0a00] via-[#1c0f05] to-[#0a0500]',
+    neon: 'from-[#000a1a] via-[#0a0025] to-[#001020]',
+    deep: 'from-[#0f0720] via-[#150a30] to-[#050210]',
+    aurora: 'from-[#001a1a] via-[#0a1025] to-[#000d1a]',
+  };
+  return (
+    <div className="absolute inset-0">
+      <div className={`absolute inset-0 bg-gradient-to-br ${bgs[variant]}`} />
+      {/* Noise texture */}
+      <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\' opacity=\'0.5\'/%3E%3C/svg%3E")' }} />
+      {/* Cinematic light beams */}
+      <motion.div
+        animate={{ opacity: [0.03, 0.08, 0.03], rotate: [0, 2, 0] }}
+        transition={{ repeat: Infinity, duration: 8, ease: 'easeInOut' }}
+        className="absolute -top-1/4 -right-1/4 w-full h-full"
+        style={{ background: 'conic-gradient(from 220deg at 70% 30%, rgba(139,92,246,0.12), transparent 40%, rgba(59,130,246,0.08), transparent 70%)' }}
+      />
+    </div>
+  );
+};
+
+// ── Glowing Orb component ──
+const GlowOrb: React.FC<{ color: string; size: string; position: string; delay?: number }> = ({ color, size, position, delay = 0 }) => (
+  <motion.div
+    animate={{ scale: [1, 1.4, 1], opacity: [0.15, 0.3, 0.15] }}
+    transition={{ repeat: Infinity, duration: 5 + delay, delay, ease: 'easeInOut' }}
+    className={`absolute ${position} ${size} rounded-full ${color} blur-3xl pointer-events-none`}
+  />
+);
+
 const TitleSlideLayout: React.FC<{ slide: GeneratedSlide; lang: string }> = ({ slide, lang }) => (
   <div className="h-full flex flex-col items-center justify-center text-center px-6 relative" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-    {/* Animated concentric rings */}
-    <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 30, ease: 'linear' }}
-      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] h-[320px] rounded-full border border-dashed border-primary/10 pointer-events-none" />
-    <motion.div animate={{ rotate: -360 }} transition={{ repeat: Infinity, duration: 20, ease: 'linear' }}
-      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[220px] h-[220px] rounded-full border border-dashed border-accent/15 pointer-events-none" />
-    {/* Glow orbs */}
-    <motion.div animate={{ scale: [1, 1.3, 1], opacity: [0.15, 0.25, 0.15] }} transition={{ repeat: Infinity, duration: 4 }}
-      className="absolute top-1/4 right-1/4 w-32 h-32 rounded-full bg-primary/20 blur-3xl pointer-events-none" />
-    <motion.div animate={{ scale: [1.2, 1, 1.2], opacity: [0.1, 0.2, 0.1] }} transition={{ repeat: Infinity, duration: 5 }}
-      className="absolute bottom-1/4 left-1/4 w-24 h-24 rounded-full bg-accent/20 blur-3xl pointer-events-none" />
+    <CinematicBG variant="hero" />
+    <GlowOrb color="bg-purple-500/20" size="w-48 h-48" position="top-1/4 right-1/4" />
+    <GlowOrb color="bg-blue-500/15" size="w-36 h-36" position="bottom-1/3 left-1/4" delay={2} />
+    <GlowOrb color="bg-pink-500/10" size="w-28 h-28" position="top-1/3 left-1/3" delay={4} />
 
-    <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+    {/* Animated rings */}
+    <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 30, ease: 'linear' }}
+      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] h-[320px] rounded-full border border-purple-500/10 pointer-events-none" />
+    <motion.div animate={{ rotate: -360 }} transition={{ repeat: Infinity, duration: 20, ease: 'linear' }}
+      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[220px] h-[220px] rounded-full border border-blue-400/10 pointer-events-none" />
+
+    <motion.div initial={{ scale: 0.7, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
       className="relative z-10">
       <motion.div
-        animate={{ y: [-2, 2, -2] }}
-        transition={{ repeat: Infinity, duration: 3 }}
-        className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary via-accent to-primary flex items-center justify-center mb-5 mx-auto shadow-xl shadow-primary/30 border border-white/10"
+        animate={{ y: [-4, 4, -4] }}
+        transition={{ repeat: Infinity, duration: 3.5 }}
+        className="w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-500 via-violet-500 to-blue-500 flex items-center justify-center mb-6 mx-auto shadow-2xl shadow-purple-500/40 border border-white/10"
       >
-        <Presentation className="h-8 w-8 text-primary-foreground" />
+        <Presentation className="h-10 w-10 text-white" />
       </motion.div>
-      <h4 className="text-2xl sm:text-3xl lg:text-4xl font-black text-foreground leading-tight mb-3 bg-gradient-to-r from-foreground via-foreground to-primary bg-clip-text">
+      <h4 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white leading-tight mb-3 drop-shadow-lg">
         {slide.title}
       </h4>
-      <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
-        className="text-sm text-muted-foreground max-w-md mx-auto mb-4">{slide.bullets[0]}</motion.p>
+      <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
+        className="text-sm text-purple-200/70 max-w-md mx-auto mb-5">{slide.bullets[0]}</motion.p>
       <ProviderRibbon layout="title" />
     </motion.div>
   </div>
 );
 
 const AvatarSlideLayout: React.FC<{ slide: GeneratedSlide; lang: string }> = ({ slide, lang }) => (
-  <div className="h-full flex gap-4 p-5 sm:p-7" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-    {/* Avatar column with glassmorphic frame */}
+  <div className="h-full flex gap-4 p-5 sm:p-7 relative" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+    <CinematicBG variant="deep" />
+    <GlowOrb color="bg-violet-500/20" size="w-40 h-40" position="top-0 left-0" />
+    <GlowOrb color="bg-cyan-500/10" size="w-32 h-32" position="bottom-1/4 right-1/4" delay={3} />
+
+    {/* Avatar column */}
     <motion.div
       initial={{ x: -30, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       transition={{ delay: 0.2, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-      className="w-[35%] flex flex-col items-center justify-center relative"
+      className="w-[35%] flex flex-col items-center justify-center relative z-10"
     >
-      {/* Glassmorphic card */}
-      <div className="absolute inset-2 rounded-2xl bg-gradient-to-br from-primary/5 to-accent/5 backdrop-blur-md border border-white/10 shadow-inner" />
+      <div className="absolute inset-2 rounded-2xl bg-gradient-to-br from-white/[0.04] to-white/[0.01] backdrop-blur-md border border-white/[0.08] shadow-inner" />
       <div className="relative z-10 flex flex-col items-center">
-        {/* Avatar circle with animated ring */}
         <div className="relative mb-3">
           <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 8, ease: 'linear' }}
-            className="absolute -inset-2 rounded-full border-2 border-dashed border-primary/20" />
-          <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-primary/30 via-accent/20 to-primary/10 border-2 border-primary/40 flex items-center justify-center shadow-xl shadow-primary/20">
-            <User className="h-10 w-10 sm:h-12 sm:w-12 text-primary/50" />
-          </div>
-          {/* Lip-sync pulse */}
+            className="absolute -inset-3 rounded-full border-2 border-dashed border-purple-400/20" />
+          {/* Outer glow ring */}
           <motion.div
-            animate={{ scale: [1, 1.3, 1], boxShadow: ['0 0 0 0 hsl(var(--accent) / 0.4)', '0 0 0 8px hsl(var(--accent) / 0)', '0 0 0 0 hsl(var(--accent) / 0)'] }}
+            animate={{ scale: [1, 1.15, 1], opacity: [0.2, 0.4, 0.2] }}
+            transition={{ repeat: Infinity, duration: 2 }}
+            className="absolute -inset-1 rounded-full bg-gradient-to-br from-purple-500/30 to-cyan-500/20 blur-md"
+          />
+          <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-purple-600 via-violet-500 to-blue-500 border-2 border-white/20 flex items-center justify-center shadow-2xl shadow-purple-500/30">
+            <User className="h-10 w-10 sm:h-12 sm:w-12 text-white/70" />
+          </div>
+          <motion.div
+            animate={{ scale: [1, 1.3, 1], boxShadow: ['0 0 0 0 rgba(168,85,247,0.5)', '0 0 0 10px rgba(168,85,247,0)', '0 0 0 0 rgba(168,85,247,0)'] }}
             transition={{ repeat: Infinity, duration: 1.5 }}
-            className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow-lg"
+            className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center shadow-lg shadow-cyan-500/30"
           >
-            <Mic className="h-3.5 w-3.5 text-accent-foreground" />
+            <Mic className="h-3.5 w-3.5 text-white" />
           </motion.div>
         </div>
-        {/* Audio waveform */}
         <AudioWaveform />
-        {/* Provider badges */}
         <div className="flex flex-col items-center gap-1 mt-2">
-          <Badge variant="outline" className="text-[8px] gap-1 border-primary/30 bg-primary/10">
+          <Badge variant="outline" className="text-[8px] gap-1 border-purple-400/30 bg-purple-500/10 text-purple-300">
             <Play className="h-2 w-2" /> AI Avatar Presenter
           </Badge>
-          <span className="text-[7px] text-muted-foreground/60 font-medium">Azure Neural TTS • Lip-Sync</span>
+          <span className="text-[7px] text-purple-300/50 font-medium">Azure Neural TTS • Lip-Sync</span>
         </div>
       </div>
     </motion.div>
 
-    {/* Content column */}
-    <div className="flex-1 flex flex-col justify-center space-y-3">
+    {/* Content */}
+    <div className="flex-1 flex flex-col justify-center space-y-3 relative z-10">
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
-        <div className="w-14 h-1 bg-gradient-to-r from-primary via-accent to-primary rounded-full mb-2" />
-        <h4 className="text-lg sm:text-xl font-bold text-foreground leading-tight">{slide.title}</h4>
+        <div className="w-14 h-1 bg-gradient-to-r from-purple-400 via-cyan-400 to-purple-400 rounded-full mb-2" />
+        <h4 className="text-lg sm:text-xl font-bold text-white leading-tight">{slide.title}</h4>
       </motion.div>
       <ul className="space-y-2">
         {slide.bullets.map((b, i) => (
           <motion.li key={i} initial={{ opacity: 0, x: 15 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.45 + i * 0.1, ease: [0.22, 1, 0.36, 1] }}
-            className="flex items-start gap-2.5 text-xs sm:text-sm text-muted-foreground">
+            className="flex items-start gap-2.5 text-xs sm:text-sm text-purple-200/70">
             <motion.span
-              animate={{ scale: [1, 1.2, 1] }}
+              animate={{ scale: [1, 1.3, 1] }}
               transition={{ repeat: Infinity, duration: 2, delay: i * 0.3 }}
-              className="mt-1.5 w-2 h-2 rounded-full bg-gradient-to-br from-accent to-primary flex-shrink-0 shadow-sm shadow-accent/30"
+              className="mt-1.5 w-2 h-2 rounded-full bg-gradient-to-br from-cyan-400 to-purple-400 flex-shrink-0 shadow-sm shadow-cyan-400/40"
             />
             <span className="leading-relaxed">{b}</span>
           </motion.li>
@@ -214,32 +254,34 @@ const ChartSlideLayout: React.FC<{ slide: GeneratedSlide; lang: string }> = ({ s
   const chartData = slide.chartData || slide.bullets.map((b) => ({ label: b.slice(0, 18), value: 30 + Math.round(Math.random() * 60) }));
   const maxVal = Math.max(...chartData.map(d => d.value));
   const CHART_COLORS = [
-    'from-blue-500 to-blue-400',
-    'from-emerald-500 to-emerald-400',
-    'from-amber-500 to-amber-400',
-    'from-rose-500 to-rose-400',
-    'from-violet-500 to-violet-400',
+    'from-cyan-400 to-blue-500',
+    'from-emerald-400 to-teal-500',
+    'from-amber-400 to-orange-500',
+    'from-rose-400 to-pink-500',
+    'from-violet-400 to-purple-500',
   ];
 
   return (
-    <div className="h-full flex flex-col p-5 sm:p-7" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mb-3 flex items-start justify-between">
+    <div className="h-full flex flex-col p-5 sm:p-7 relative" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+      <CinematicBG variant="cool" />
+      <GlowOrb color="bg-blue-500/15" size="w-40 h-40" position="top-0 right-0" />
+      <GlowOrb color="bg-teal-500/10" size="w-32 h-32" position="bottom-0 left-1/4" delay={2} />
+
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mb-3 flex items-start justify-between relative z-10">
         <div>
-          <h4 className="text-lg sm:text-xl font-bold text-foreground">{slide.title}</h4>
-          <p className="text-[9px] text-muted-foreground mt-0.5">AI-generated data visualization</p>
+          <h4 className="text-lg sm:text-xl font-bold text-white">{slide.title}</h4>
+          <p className="text-[9px] text-blue-300/50 mt-0.5">AI-generated data visualization</p>
         </div>
-        <Badge variant="outline" className="text-[8px] gap-1 border-primary/30 bg-primary/5">
+        <Badge variant="outline" className="text-[8px] gap-1 border-blue-400/30 bg-blue-500/10 text-blue-300">
           <BarChart3 className="h-2.5 w-2.5" /> Smart Chart
         </Badge>
       </motion.div>
 
-      {/* Animated bar chart with glassmorphic backdrop */}
-      <div className="flex-1 relative rounded-xl bg-muted/20 border border-border/50 p-3 pt-6">
-        {/* Grid lines */}
+      <div className="flex-1 relative rounded-xl bg-white/[0.03] border border-white/[0.06] p-3 pt-6 z-10 backdrop-blur-sm">
         {[25, 50, 75, 100].map(v => (
-          <div key={v} className="absolute left-3 right-3 border-t border-dashed border-border/30"
+          <div key={v} className="absolute left-3 right-3 border-t border-dashed border-white/[0.06]"
             style={{ bottom: `${(v / 100) * 80 + 10}%` }}>
-            <span className="absolute -left-1 -top-2 text-[7px] text-muted-foreground/40">{v}</span>
+            <span className="absolute -left-1 -top-2 text-[7px] text-blue-300/30">{v}</span>
           </div>
         ))}
 
@@ -250,58 +292,70 @@ const ChartSlideLayout: React.FC<{ slide: GeneratedSlide; lang: string }> = ({ s
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: `${(d.value / maxVal) * 85}%`, opacity: 1 }}
                 transition={{ delay: 0.3 + i * 0.15, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-                className={`w-full rounded-t-xl bg-gradient-to-t ${CHART_COLORS[i]} relative shadow-lg min-h-[12px]`}
+                className={`w-full rounded-t-xl bg-gradient-to-t ${CHART_COLORS[i]} relative shadow-lg shadow-blue-500/10 min-h-[12px]`}
               >
-                {/* Glow effect on top */}
-                <div className={`absolute top-0 left-0 right-0 h-2 rounded-t-xl bg-gradient-to-t from-transparent to-white/20`} />
+                <div className="absolute top-0 left-0 right-0 h-2 rounded-t-xl bg-gradient-to-t from-transparent to-white/20" />
+                {/* Glow on bar */}
+                <div className={`absolute inset-0 rounded-t-xl bg-gradient-to-t ${CHART_COLORS[i]} blur-md opacity-30`} />
                 <motion.div
                   initial={{ opacity: 0, y: 5 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.8 + i * 0.15 }}
                   className="absolute -top-6 left-1/2 -translate-x-1/2"
                 >
-                  <span className="text-[10px] font-black text-foreground bg-card/80 backdrop-blur-sm px-1.5 py-0.5 rounded-md border border-border/50 shadow-sm">
+                  <span className="text-[10px] font-black text-white bg-white/10 backdrop-blur-sm px-1.5 py-0.5 rounded-md border border-white/10 shadow-sm">
                     {d.value}%
                   </span>
                 </motion.div>
               </motion.div>
-              <span className="text-[7px] sm:text-[8px] text-muted-foreground text-center leading-tight line-clamp-2 font-medium mt-1">
+              <span className="text-[7px] sm:text-[8px] text-blue-200/50 text-center leading-tight line-clamp-2 font-medium mt-1">
                 {d.label}
               </span>
             </div>
           ))}
         </div>
       </div>
-      <div className="mt-2"><ProviderRibbon layout="chart" /></div>
+      <div className="mt-2 relative z-10"><ProviderRibbon layout="chart" /></div>
     </div>
   );
 };
 
 const TimelineSlideLayout: React.FC<{ slide: GeneratedSlide; lang: string }> = ({ slide, lang }) => {
   const steps = slide.timelineSteps || slide.bullets.map((b, i) => ({ step: `Step ${i + 1}`, description: b }));
-  const STEP_COLORS = ['from-blue-500 to-blue-600', 'from-emerald-500 to-emerald-600', 'from-amber-500 to-amber-600', 'from-rose-500 to-rose-600'];
+  const STEP_COLORS = ['from-cyan-400 to-blue-500', 'from-emerald-400 to-teal-500', 'from-amber-400 to-orange-500', 'from-rose-400 to-pink-500'];
+  const STEP_GLOWS = ['shadow-cyan-500/30', 'shadow-emerald-500/30', 'shadow-amber-500/30', 'shadow-rose-500/30'];
 
   return (
-    <div className="h-full flex flex-col p-5 sm:p-7" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mb-4 flex items-start justify-between">
+    <div className="h-full flex flex-col p-5 sm:p-7 relative" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+      <CinematicBG variant="aurora" />
+      <GlowOrb color="bg-teal-500/15" size="w-44 h-44" position="top-1/4 right-0" />
+      <GlowOrb color="bg-blue-500/10" size="w-32 h-32" position="bottom-0 left-1/3" delay={2} />
+
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mb-4 flex items-start justify-between relative z-10">
         <div>
-          <h4 className="text-lg sm:text-xl font-bold text-foreground">{slide.title}</h4>
-          <p className="text-[9px] text-muted-foreground mt-0.5">Patient journey workflow</p>
+          <h4 className="text-lg sm:text-xl font-bold text-white">{slide.title}</h4>
+          <p className="text-[9px] text-teal-300/50 mt-0.5">Journey workflow</p>
         </div>
-        <Badge variant="outline" className="text-[8px] gap-1 border-accent/30 bg-accent/5">
+        <Badge variant="outline" className="text-[8px] gap-1 border-teal-400/30 bg-teal-500/10 text-teal-300">
           <Footprints className="h-2.5 w-2.5" /> Journey Map
         </Badge>
       </motion.div>
 
-      {/* Rich horizontal timeline */}
-      <div className="flex-1 flex items-center relative">
-        {/* Background connector line */}
+      <div className="flex-1 flex items-center relative z-10">
         <motion.div
           initial={{ scaleX: 0 }}
           animate={{ scaleX: 1 }}
           transition={{ delay: 0.3, duration: 0.8 }}
-          className="absolute top-[40px] left-[10%] right-[10%] h-1 bg-gradient-to-r from-primary/20 via-accent/30 to-primary/20 rounded-full origin-left"
-        />
+          className="absolute top-[40px] left-[10%] right-[10%] h-[2px] origin-left overflow-hidden"
+        >
+          <div className="w-full h-full bg-gradient-to-r from-cyan-500/30 via-teal-500/40 to-cyan-500/30" />
+          {/* Animated pulse traveling along the line */}
+          <motion.div
+            animate={{ x: ['-100%', '300%'] }}
+            transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
+            className="absolute inset-0 w-1/4 bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent"
+          />
+        </motion.div>
 
         <div className="w-full flex items-start gap-1 relative z-10">
           {steps.slice(0, 4).map((s, i) => (
@@ -313,66 +367,79 @@ const TimelineSlideLayout: React.FC<{ slide: GeneratedSlide; lang: string }> = (
               className="flex-1"
             >
               <div className="flex flex-col items-center text-center">
-                {/* Step circle with pulse */}
                 <div className="relative mb-2">
                   <motion.div
-                    animate={{ scale: [1, 1.4, 1], opacity: [0.3, 0, 0.3] }}
+                    animate={{ scale: [1, 1.6, 1], opacity: [0.3, 0, 0.3] }}
                     transition={{ repeat: Infinity, duration: 2, delay: i * 0.5 }}
                     className={`absolute inset-0 rounded-full bg-gradient-to-br ${STEP_COLORS[i]}`}
                   />
-                  <div className={`relative w-10 h-10 rounded-full bg-gradient-to-br ${STEP_COLORS[i]} flex items-center justify-center text-sm font-black text-white shadow-xl`}>
+                  <div className={`relative w-10 h-10 rounded-full bg-gradient-to-br ${STEP_COLORS[i]} flex items-center justify-center text-sm font-black text-white shadow-xl ${STEP_GLOWS[i]}`}>
                     {i + 1}
                   </div>
                 </div>
-                {/* Glassmorphic card */}
-                <div className="bg-card/60 backdrop-blur-sm border border-border/50 rounded-lg p-2 w-full max-w-[110px] shadow-sm">
-                  <p className="text-[9px] sm:text-[10px] font-bold text-foreground leading-tight">{s.step}</p>
-                  <p className="text-[7px] sm:text-[8px] text-muted-foreground mt-0.5 leading-snug line-clamp-3">{s.description}</p>
+                <div className="bg-white/[0.04] backdrop-blur-sm border border-white/[0.08] rounded-lg p-2 w-full max-w-[110px] shadow-sm">
+                  <p className="text-[9px] sm:text-[10px] font-bold text-white/90 leading-tight">{s.step}</p>
+                  <p className="text-[7px] sm:text-[8px] text-white/40 mt-0.5 leading-snug line-clamp-3">{s.description}</p>
                 </div>
               </div>
             </motion.div>
           ))}
         </div>
       </div>
-      <div className="mt-1"><ProviderRibbon layout="timeline" /></div>
+      <div className="mt-1 relative z-10"><ProviderRibbon layout="timeline" /></div>
     </div>
   );
 };
 
 const ThreeDSlideLayout: React.FC<{ slide: GeneratedSlide; lang: string }> = ({ slide, lang }) => (
-  <div className="h-full flex gap-4 p-5 sm:p-7" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-    {/* 3D scene area */}
-    <div className="w-[45%] flex items-center justify-center relative">
-      {/* Glow backdrop */}
-      <div className="absolute inset-4 bg-gradient-to-br from-purple-500/10 via-primary/5 to-pink-500/10 rounded-2xl blur-xl" />
+  <div className="h-full flex gap-4 p-5 sm:p-7 relative" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+    <CinematicBG variant="neon" />
+    <GlowOrb color="bg-purple-500/20" size="w-44 h-44" position="top-0 left-1/4" />
+    <GlowOrb color="bg-pink-500/15" size="w-36 h-36" position="bottom-1/4 right-1/4" delay={2} />
+
+    {/* 3D scene */}
+    <div className="w-[45%] flex items-center justify-center relative z-10">
+      {/* Reflective floor */}
+      <div className="absolute bottom-4 left-4 right-4 h-16 bg-gradient-to-t from-purple-500/10 to-transparent rounded-b-2xl blur-sm" />
 
       <motion.div
-        animate={{ rotateY: [0, 12, -12, 0], rotateX: [0, 5, -5, 0] }}
+        animate={{ rotateY: [0, 15, -15, 0], rotateX: [0, 8, -8, 0] }}
         transition={{ repeat: Infinity, duration: 8, ease: 'easeInOut' }}
         className="relative w-36 h-36 sm:w-44 sm:h-44"
-        style={{ perspective: 1000, transformStyle: 'preserve-3d' }}
+        style={{ perspective: 1200, transformStyle: 'preserve-3d' }}
       >
+        {/* Outer glow */}
+        <motion.div
+          animate={{ scale: [1, 1.1, 1], opacity: [0.15, 0.3, 0.15] }}
+          transition={{ repeat: Infinity, duration: 3 }}
+          className="absolute -inset-4 bg-gradient-to-br from-purple-500/20 to-cyan-500/15 rounded-3xl blur-xl"
+        />
         {/* Outer shell */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-accent/10 rounded-2xl border border-primary/20 backdrop-blur-md shadow-2xl shadow-primary/10" />
-        {/* Inner floating element */}
+        <div className="absolute inset-0 bg-gradient-to-br from-white/[0.06] to-white/[0.02] rounded-2xl border border-white/[0.1] backdrop-blur-md shadow-2xl shadow-purple-500/20" />
+        {/* Inner element */}
         <motion.div
-          animate={{ y: [-6, 6, -6], rotate: [0, 5, -5, 0] }}
+          animate={{ y: [-8, 8, -8], rotate: [0, 5, -5, 0] }}
           transition={{ repeat: Infinity, duration: 4 }}
-          className="absolute inset-6 bg-gradient-to-br from-primary/15 via-accent/10 to-primary/5 rounded-xl border border-accent/30 flex flex-col items-center justify-center backdrop-blur-sm"
+          className="absolute inset-6 bg-gradient-to-br from-purple-500/20 via-cyan-500/10 to-pink-500/15 rounded-xl border border-white/10 flex flex-col items-center justify-center backdrop-blur-sm"
         >
-          <motion.div animate={{ scale: [0.95, 1.05, 0.95] }} transition={{ repeat: Infinity, duration: 3 }}>
-            <Box className="h-10 w-10 text-primary/50 mb-1" />
+          <motion.div animate={{ scale: [0.9, 1.1, 0.9], rotateZ: [0, 10, -10, 0] }} transition={{ repeat: Infinity, duration: 4, delay: 0.5 }}>
+            <Box className="h-12 w-12 text-purple-300/60 mb-1 drop-shadow-[0_0_8px_rgba(168,85,247,0.4)]" />
           </motion.div>
-          <span className="text-[8px] font-bold text-primary/60">3D Model</span>
+          <span className="text-[8px] font-bold text-purple-300/70">3D Model</span>
+          {/* Particle sparkles */}
+          {[...Array(4)].map((_, i) => (
+            <motion.div
+              key={i}
+              animate={{ y: [-20, -40], x: [-5 + i * 8, -10 + i * 10], opacity: [0, 1, 0], scale: [0.5, 1, 0.5] }}
+              transition={{ repeat: Infinity, duration: 2 + i * 0.5, delay: i * 0.4 }}
+              className="absolute w-1 h-1 rounded-full bg-purple-400/60"
+              style={{ top: '40%', left: `${30 + i * 12}%` }}
+            />
+          ))}
         </motion.div>
-        {/* Provider badge */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="absolute -bottom-2 left-0 right-0 text-center"
-        >
-          <Badge variant="outline" className="text-[7px] gap-0.5 border-purple-500/30 bg-purple-500/10 text-purple-400">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
+          className="absolute -bottom-3 left-0 right-0 text-center">
+          <Badge variant="outline" className="text-[7px] gap-0.5 border-purple-400/30 bg-purple-500/10 text-purple-300">
             <Box className="h-2 w-2" /> Meshy AI • Interactive 3D
           </Badge>
         </motion.div>
@@ -380,15 +447,15 @@ const ThreeDSlideLayout: React.FC<{ slide: GeneratedSlide; lang: string }> = ({ 
     </div>
 
     {/* Content */}
-    <div className="flex-1 flex flex-col justify-center space-y-3">
+    <div className="flex-1 flex flex-col justify-center space-y-3 relative z-10">
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-        <h4 className="text-lg sm:text-xl font-bold text-foreground">{slide.title}</h4>
+        <h4 className="text-lg sm:text-xl font-bold text-white">{slide.title}</h4>
       </motion.div>
       <ul className="space-y-2">
         {slide.bullets.map((b, i) => (
           <motion.li key={i} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 + i * 0.1 }}
-            className="flex items-start gap-2 text-xs sm:text-sm text-muted-foreground">
-            <span className="mt-1.5 w-2 h-2 rounded-sm bg-gradient-to-br from-purple-500 to-pink-500 flex-shrink-0" />
+            className="flex items-start gap-2 text-xs sm:text-sm text-purple-200/60">
+            <span className="mt-1.5 w-2 h-2 rounded-sm bg-gradient-to-br from-purple-400 to-pink-400 flex-shrink-0 shadow-sm shadow-purple-400/30" />
             <span className="leading-relaxed">{b}</span>
           </motion.li>
         ))}
@@ -399,14 +466,18 @@ const ThreeDSlideLayout: React.FC<{ slide: GeneratedSlide; lang: string }> = ({ 
 );
 
 const BulletsSlideLayout: React.FC<{ slide: GeneratedSlide; lang: string }> = ({ slide, lang }) => (
-  <div className="h-full flex flex-col p-5 sm:p-7" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-    <div className="my-auto space-y-4">
+  <div className="h-full flex flex-col p-5 sm:p-7 relative" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+    <CinematicBG variant="warm" />
+    <GlowOrb color="bg-amber-500/10" size="w-36 h-36" position="top-1/4 right-1/4" delay={1} />
+    <GlowOrb color="bg-orange-500/10" size="w-28 h-28" position="bottom-1/3 left-1/4" delay={3} />
+
+    <div className="my-auto space-y-4 relative z-10">
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.5 }}>
         <div className="flex items-center gap-2 mb-2">
-          <div className="w-14 h-1.5 bg-gradient-to-r from-primary via-accent to-primary rounded-full" />
-          <div className="w-4 h-1.5 bg-primary/30 rounded-full" />
+          <div className="w-14 h-1.5 bg-gradient-to-r from-amber-400 via-orange-400 to-amber-400 rounded-full" />
+          <div className="w-4 h-1.5 bg-amber-400/30 rounded-full" />
         </div>
-        <h4 className="text-xl sm:text-2xl font-bold text-foreground leading-tight">{slide.title}</h4>
+        <h4 className="text-xl sm:text-2xl font-bold text-white leading-tight">{slide.title}</h4>
       </motion.div>
       <ul className="space-y-3 max-w-lg">
         {slide.bullets.map((bullet, i) => (
@@ -414,11 +485,11 @@ const BulletsSlideLayout: React.FC<{ slide: GeneratedSlide; lang: string }> = ({
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 + i * 0.1, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-            className="flex items-start gap-3 text-sm text-muted-foreground group"
+            className="flex items-start gap-3 text-sm text-amber-100/60 group"
           >
             <span className="mt-1 flex-shrink-0 relative">
-              <span className="block w-3 h-3 rounded-md bg-gradient-to-br from-primary to-accent shadow-sm shadow-primary/30 group-hover:scale-110 transition-transform" />
-              <span className="absolute inset-0 w-3 h-3 rounded-md bg-primary/20 animate-ping" style={{ animationDuration: `${3 + i}s` }} />
+              <span className="block w-3 h-3 rounded-md bg-gradient-to-br from-amber-400 to-orange-500 shadow-sm shadow-amber-400/30 group-hover:scale-110 transition-transform" />
+              <span className="absolute inset-0 w-3 h-3 rounded-md bg-amber-400/20 animate-ping" style={{ animationDuration: `${3 + i}s` }} />
             </span>
             <span className="leading-relaxed">{bullet}</span>
           </motion.li>
@@ -751,54 +822,42 @@ Respond in valid JSON: { "slides": [{ "slideNumber": 1, "layoutType": "title", "
                   className="relative rounded-2xl overflow-hidden border border-border/80 shadow-2xl shadow-primary/15"
                   style={{ aspectRatio: '16/9' }}
                 >
-                  {/* Rich slide background with animated mesh */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-background via-card to-background" />
-                  <motion.div
-                    animate={{ x: [0, 20, 0], y: [0, -10, 0] }}
-                    transition={{ repeat: Infinity, duration: 15, ease: 'easeInOut' }}
-                    className="absolute top-0 right-0 w-2/3 h-2/3 bg-gradient-to-bl from-primary/8 via-accent/5 to-transparent rounded-full blur-3xl pointer-events-none"
-                  />
-                  <motion.div
-                    animate={{ x: [0, -15, 0], y: [0, 10, 0] }}
-                    transition={{ repeat: Infinity, duration: 12, ease: 'easeInOut' }}
-                    className="absolute bottom-0 left-0 w-1/2 h-1/2 bg-gradient-to-tr from-accent/6 to-transparent rounded-full blur-3xl pointer-events-none"
-                  />
-                  {/* Subtle dot pattern */}
-                  <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, hsl(var(--foreground)) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+                  {/* Dark cinematic base — each slide layout has its own CinematicBG */}
+                  <div className="absolute inset-0 bg-[#0a0118]" />
 
                   {/* Accent bar with shimmer */}
-                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-accent to-primary overflow-hidden">
+                  <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-purple-500 via-cyan-400 to-purple-500 overflow-hidden z-20">
                     <motion.div
                       animate={{ x: ['-100%', '200%'] }}
                       transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
-                      className="absolute inset-0 w-1/3 bg-gradient-to-r from-transparent via-white/40 to-transparent"
+                      className="absolute inset-0 w-1/3 bg-gradient-to-r from-transparent via-white/60 to-transparent"
                     />
                   </div>
 
                   {/* Watermark */}
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
                     <div className="rotate-[-20deg] opacity-[0.04]">
-                      <p className="text-5xl sm:text-7xl font-black text-foreground tracking-[0.3em]">PREVIEW</p>
+                      <p className="text-5xl sm:text-7xl font-black text-white tracking-[0.3em]">PREVIEW</p>
                     </div>
                   </div>
 
                   {/* Top bar */}
-                  <div className="absolute top-3 left-4 right-4 flex items-center justify-between z-[5]">
+                  <div className="absolute top-3 left-4 right-4 flex items-center justify-between z-[15]">
                     <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-md bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                        <Presentation className="h-3 w-3 text-primary-foreground" />
+                      <div className="w-6 h-6 rounded-md bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-purple-500/20">
+                        <Presentation className="h-3 w-3 text-white" />
                       </div>
-                      <span className="text-[9px] font-bold text-muted-foreground tracking-wider uppercase">Genie Deck</span>
+                      <span className="text-[9px] font-bold text-white/40 tracking-wider uppercase">Genie Deck</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <Badge variant="outline" className="text-[8px] gap-0.5 border-primary/30 bg-primary/5 h-5">
+                      <Badge variant="outline" className="text-[8px] gap-0.5 border-white/10 bg-white/5 text-white/70 h-5">
                         {LAYOUT_ICONS[slides[activeSlide].layoutType]}
                         {LAYOUT_LABELS[slides[activeSlide].layoutType]}
                       </Badge>
-                      <Badge variant="outline" className="text-[8px] gap-0.5 h-5">
+                      <Badge variant="outline" className="text-[8px] gap-0.5 border-white/10 bg-white/5 text-white/70 h-5">
                         <Globe className="h-2 w-2" /> {selectedLangName}
                       </Badge>
-                      <Badge variant="outline" className="text-[8px] h-5">
+                      <Badge variant="outline" className="text-[8px] border-white/10 bg-white/5 text-white/70 h-5">
                         {slides[activeSlide].slideNumber}/{slides.length}
                       </Badge>
                     </div>
@@ -814,10 +873,10 @@ Respond in valid JSON: { "slides": [{ "slideNumber": 1, "layoutType": "title", "
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.5 }}
-                    className="absolute bottom-0 left-0 right-0 px-5 py-2 bg-muted/80 backdrop-blur-sm border-t border-border/50 z-[5]"
+                    className="absolute bottom-0 left-0 right-0 px-5 py-2 bg-black/60 backdrop-blur-md border-t border-white/[0.06] z-[5]"
                   >
-                    <p className="text-[8px] font-bold text-muted-foreground/60 uppercase tracking-wider">Speaker Notes</p>
-                    <p className="text-[10px] text-muted-foreground/70 italic line-clamp-1">{slides[activeSlide].speakerNotes}</p>
+                    <p className="text-[8px] font-bold text-white/30 uppercase tracking-wider">Speaker Notes</p>
+                    <p className="text-[10px] text-white/40 italic line-clamp-1">{slides[activeSlide].speakerNotes}</p>
                   </motion.div>
                 </motion.div>
               </AnimatePresence>
