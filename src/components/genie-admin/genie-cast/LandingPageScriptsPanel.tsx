@@ -27,6 +27,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter,
@@ -1368,41 +1370,38 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
                   ))}
                 </div>
                 <div className="flex gap-2">
-                  <Select onValueChange={val => {
-                    if (val && !(editingScript.positioning_angles || []).includes(val)) {
-                      setEditingScript({ ...editingScript, positioning_angles: [...(editingScript.positioning_angles || []), val] });
-                    }
-                  }}>
-                    <SelectTrigger className="text-xs h-8 flex-1"><SelectValue placeholder="Add angle..." /></SelectTrigger>
-                    <SelectContent>
-                      {POSITIONING_ANGLE_OPTIONS.filter(o => !(editingScript.positioning_angles || []).includes(o)).map(o => (
-                        <SelectItem key={o} value={o} className="text-xs">{o}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" className="text-xs h-8 flex-1 justify-between">
+                        <span className="text-muted-foreground">Add angle...</span>
+                        <ChevronDown className="w-3 h-3 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-56 p-2 z-[100001]" align="start">
+                      <ScrollArea className="max-h-48">
+                        <div className="space-y-1">
+                          {POSITIONING_ANGLE_OPTIONS.map(o => {
+                            const selected = (editingScript.positioning_angles || []).includes(o);
+                            return (
+                              <label key={o} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent cursor-pointer text-xs">
+                                <Checkbox checked={selected} onCheckedChange={() => {
+                                  if (selected) {
+                                    setEditingScript({ ...editingScript, positioning_angles: editingScript.positioning_angles.filter(a => a !== o) });
+                                  } else {
+                                    setEditingScript({ ...editingScript, positioning_angles: [...(editingScript.positioning_angles || []), o] });
+                                  }
+                                }} />
+                                {o}
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </ScrollArea>
+                    </PopoverContent>
+                  </Popover>
                   <div className="flex gap-1">
-                    <Input
-                      value={customTagInput.positioning || ''}
-                      onChange={e => setCustomTagInput({ ...customTagInput, positioning: e.target.value })}
-                      placeholder="Custom..."
-                      className="text-xs h-8 w-28"
-                      onKeyDown={e => {
-                        if (e.key === 'Enter' && customTagInput.positioning?.trim()) {
-                          const v = customTagInput.positioning.trim();
-                          if (!(editingScript.positioning_angles || []).includes(v)) {
-                            setEditingScript({ ...editingScript, positioning_angles: [...(editingScript.positioning_angles || []), v] });
-                          }
-                          setCustomTagInput({ ...customTagInput, positioning: '' });
-                        }
-                      }}
-                    />
-                    <Button size="sm" variant="ghost" className="h-8 px-2" onClick={() => {
-                      const v = customTagInput.positioning?.trim();
-                      if (v && !(editingScript.positioning_angles || []).includes(v)) {
-                        setEditingScript({ ...editingScript, positioning_angles: [...(editingScript.positioning_angles || []), v] });
-                      }
-                      setCustomTagInput({ ...customTagInput, positioning: '' });
-                    }}><Plus className="w-3 h-3" /></Button>
+                    <Input value={customTagInput.positioning || ''} onChange={e => setCustomTagInput({ ...customTagInput, positioning: e.target.value })} placeholder="Custom..." className="text-xs h-8 w-28" onKeyDown={e => { if (e.key === 'Enter' && customTagInput.positioning?.trim()) { e.preventDefault(); const v = customTagInput.positioning.trim(); if (!(editingScript.positioning_angles || []).includes(v)) { setEditingScript({ ...editingScript, positioning_angles: [...(editingScript.positioning_angles || []), v] }); } setCustomTagInput({ ...customTagInput, positioning: '' }); } }} />
+                    <Button size="sm" variant="ghost" className="h-8 px-2" onClick={() => { const v = customTagInput.positioning?.trim(); if (v && !(editingScript.positioning_angles || []).includes(v)) { setEditingScript({ ...editingScript, positioning_angles: [...(editingScript.positioning_angles || []), v] }); } setCustomTagInput({ ...customTagInput, positioning: '' }); }}><Plus className="w-3 h-3" /></Button>
                   </div>
                 </div>
               </div>
@@ -1422,46 +1421,43 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
                   ))}
                 </div>
                 <div className="flex gap-2">
-                  <Select onValueChange={val => {
-                    if (val && !(editingScript.emotional_tones || []).includes(val)) {
-                      setEditingScript({ ...editingScript, emotional_tones: [...(editingScript.emotional_tones || []), val] });
-                    }
-                  }}>
-                    <SelectTrigger className="text-xs h-8 flex-1"><SelectValue placeholder="Add tone..." /></SelectTrigger>
-                    <SelectContent>
-                      {EMOTIONAL_TONE_OPTIONS.filter(o => !(editingScript.emotional_tones || []).includes(o)).map(o => (
-                        <SelectItem key={o} value={o} className="text-xs">{o}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" className="text-xs h-8 flex-1 justify-between">
+                        <span className="text-muted-foreground">Add tone...</span>
+                        <ChevronDown className="w-3 h-3 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-56 p-2 z-[100001]" align="start">
+                      <ScrollArea className="max-h-48">
+                        <div className="space-y-1">
+                          {EMOTIONAL_TONE_OPTIONS.map(o => {
+                            const selected = (editingScript.emotional_tones || []).includes(o);
+                            return (
+                              <label key={o} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent cursor-pointer text-xs">
+                                <Checkbox checked={selected} onCheckedChange={() => {
+                                  if (selected) {
+                                    setEditingScript({ ...editingScript, emotional_tones: editingScript.emotional_tones.filter(t => t !== o) });
+                                  } else {
+                                    setEditingScript({ ...editingScript, emotional_tones: [...(editingScript.emotional_tones || []), o] });
+                                  }
+                                }} />
+                                {o}
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </ScrollArea>
+                    </PopoverContent>
+                  </Popover>
                   <div className="flex gap-1">
-                    <Input
-                      value={customTagInput.tone || ''}
-                      onChange={e => setCustomTagInput({ ...customTagInput, tone: e.target.value })}
-                      placeholder="Custom..."
-                      className="text-xs h-8 w-28"
-                      onKeyDown={e => {
-                        if (e.key === 'Enter' && customTagInput.tone?.trim()) {
-                          const v = customTagInput.tone.trim();
-                          if (!(editingScript.emotional_tones || []).includes(v)) {
-                            setEditingScript({ ...editingScript, emotional_tones: [...(editingScript.emotional_tones || []), v] });
-                          }
-                          setCustomTagInput({ ...customTagInput, tone: '' });
-                        }
-                      }}
-                    />
-                    <Button size="sm" variant="ghost" className="h-8 px-2" onClick={() => {
-                      const v = customTagInput.tone?.trim();
-                      if (v && !(editingScript.emotional_tones || []).includes(v)) {
-                        setEditingScript({ ...editingScript, emotional_tones: [...(editingScript.emotional_tones || []), v] });
-                      }
-                      setCustomTagInput({ ...customTagInput, tone: '' });
-                    }}><Plus className="w-3 h-3" /></Button>
+                    <Input value={customTagInput.tone || ''} onChange={e => setCustomTagInput({ ...customTagInput, tone: e.target.value })} placeholder="Custom..." className="text-xs h-8 w-28" onKeyDown={e => { if (e.key === 'Enter' && customTagInput.tone?.trim()) { e.preventDefault(); const v = customTagInput.tone.trim(); if (!(editingScript.emotional_tones || []).includes(v)) { setEditingScript({ ...editingScript, emotional_tones: [...(editingScript.emotional_tones || []), v] }); } setCustomTagInput({ ...customTagInput, tone: '' }); } }} />
+                    <Button size="sm" variant="ghost" className="h-8 px-2" onClick={() => { const v = customTagInput.tone?.trim(); if (v && !(editingScript.emotional_tones || []).includes(v)) { setEditingScript({ ...editingScript, emotional_tones: [...(editingScript.emotional_tones || []), v] }); } setCustomTagInput({ ...customTagInput, tone: '' }); }}><Plus className="w-3 h-3" /></Button>
                   </div>
                 </div>
               </div>
 
-              {/* Multi-select: Target Personas (from marketing_audiences + custom) */}
+              {/* Multi-select: Target Personas */}
               <div className="space-y-2">
                 <Label className="text-xs">👥 Target Personas</Label>
                 <div className="flex flex-wrap gap-1.5 mb-2">
@@ -1476,41 +1472,38 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
                   ))}
                 </div>
                 <div className="flex gap-2">
-                  <Select onValueChange={val => {
-                    if (val && !(editingScript.target_personas || []).includes(val)) {
-                      setEditingScript({ ...editingScript, target_personas: [...(editingScript.target_personas || []), val] });
-                    }
-                  }}>
-                    <SelectTrigger className="text-xs h-8 flex-1"><SelectValue placeholder="Add persona..." /></SelectTrigger>
-                    <SelectContent>
-                      {audienceOptions.filter(o => !(editingScript.target_personas || []).includes(o)).map(o => (
-                        <SelectItem key={o} value={o} className="text-xs">{o}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" className="text-xs h-8 flex-1 justify-between">
+                        <span className="text-muted-foreground">Add persona...</span>
+                        <ChevronDown className="w-3 h-3 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-56 p-2 z-[100001]" align="start">
+                      <ScrollArea className="max-h-48">
+                        <div className="space-y-1">
+                          {(audienceOptions.length > 0 ? audienceOptions : ['Content Creators', 'Marketing Teams', 'Enterprise Teams', 'Educators', 'Healthcare Professionals']).map(o => {
+                            const selected = (editingScript.target_personas || []).includes(o);
+                            return (
+                              <label key={o} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent cursor-pointer text-xs">
+                                <Checkbox checked={selected} onCheckedChange={() => {
+                                  if (selected) {
+                                    setEditingScript({ ...editingScript, target_personas: editingScript.target_personas.filter(t => t !== o) });
+                                  } else {
+                                    setEditingScript({ ...editingScript, target_personas: [...(editingScript.target_personas || []), o] });
+                                  }
+                                }} />
+                                {o}
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </ScrollArea>
+                    </PopoverContent>
+                  </Popover>
                   <div className="flex gap-1">
-                    <Input
-                      value={customTagInput.persona || ''}
-                      onChange={e => setCustomTagInput({ ...customTagInput, persona: e.target.value })}
-                      placeholder="Custom..."
-                      className="text-xs h-8 w-28"
-                      onKeyDown={e => {
-                        if (e.key === 'Enter' && customTagInput.persona?.trim()) {
-                          const v = customTagInput.persona.trim();
-                          if (!(editingScript.target_personas || []).includes(v)) {
-                            setEditingScript({ ...editingScript, target_personas: [...(editingScript.target_personas || []), v] });
-                          }
-                          setCustomTagInput({ ...customTagInput, persona: '' });
-                        }
-                      }}
-                    />
-                    <Button size="sm" variant="ghost" className="h-8 px-2" onClick={() => {
-                      const v = customTagInput.persona?.trim();
-                      if (v && !(editingScript.target_personas || []).includes(v)) {
-                        setEditingScript({ ...editingScript, target_personas: [...(editingScript.target_personas || []), v] });
-                      }
-                      setCustomTagInput({ ...customTagInput, persona: '' });
-                    }}><Plus className="w-3 h-3" /></Button>
+                    <Input value={customTagInput.persona || ''} onChange={e => setCustomTagInput({ ...customTagInput, persona: e.target.value })} placeholder="Custom..." className="text-xs h-8 w-28" onKeyDown={e => { if (e.key === 'Enter' && customTagInput.persona?.trim()) { e.preventDefault(); const v = customTagInput.persona.trim(); if (!(editingScript.target_personas || []).includes(v)) { setEditingScript({ ...editingScript, target_personas: [...(editingScript.target_personas || []), v] }); } setCustomTagInput({ ...customTagInput, persona: '' }); } }} />
+                    <Button size="sm" variant="ghost" className="h-8 px-2" onClick={() => { const v = customTagInput.persona?.trim(); if (v && !(editingScript.target_personas || []).includes(v)) { setEditingScript({ ...editingScript, target_personas: [...(editingScript.target_personas || []), v] }); } setCustomTagInput({ ...customTagInput, persona: '' }); }}><Plus className="w-3 h-3" /></Button>
                   </div>
                 </div>
               </div>
