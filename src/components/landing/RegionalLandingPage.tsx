@@ -15,6 +15,7 @@ import {
   Box, Palette, Volume2, Subtitles, MonitorPlay, VolumeX, ChevronDown,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useRegionalLandingNarration } from '@/hooks/useRegionalLandingNarration';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -495,6 +496,15 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
   const [isWelcomePlaying, setIsWelcomePlaying] = React.useState(false);
   const [isSlideAudioPlaying, setIsSlideAudioPlaying] = React.useState(false);
 
+  // ── DB-driven regional narration (approved scripts + pre-generated TTS) ──
+  const { 
+    script: dbNarrationScript, 
+    ttsAudio: dbTtsAudio, 
+    playNarration: playDbNarration, 
+    stopNarration: stopDbNarration, 
+    isPlaying: isDbPlaying 
+  } = useRegionalLandingNarration(regionSlug);
+
   const heroImages = REGION_HERO_IMAGES[regionSlug] || REGION_HERO_IMAGES.nam;
 
   const slides = [
@@ -532,7 +542,8 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
     },
   ];
 
-  // ── Welcome voiceover: auto-play on first visit (decoupled from carousel) ──
+  // ── Welcome voiceover: auto-play on first visit ──
+  // Prefers pre-generated DB narration TTS, falls back to real-time generation
   const welcomePlayedRef = React.useRef(false);
   React.useEffect(() => {
     if (welcomePlayedRef.current) return;
@@ -543,23 +554,30 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
     const timer = setTimeout(() => {
       welcomePlayedRef.current = true;
       setIsWelcomePlaying(true);
-      speak(config.welcomeScript, selectedVoice.code, regionSlug, 'welcome');
+      
+      // If we have a pre-generated DB narration with TTS audio, play that
+      if (dbTtsAudio?.audio_url || dbNarrationScript?.generated_audio_url) {
+        playDbNarration();
+      } else {
+        // Fallback to real-time TTS generation
+        speak(config.welcomeScript, selectedVoice.code, regionSlug, 'welcome');
+      }
       localStorage.setItem(storageKey, Date.now().toString());
     }, 2000);
     
     return () => clearTimeout(timer);
   }, [regionSlug]);
 
-  // Track when welcome audio finishes
+  // Track when welcome audio finishes (either DB or real-time)
   React.useEffect(() => {
-    if (isWelcomePlaying && !isSpeaking) {
+    if (isWelcomePlaying && !isSpeaking && !isDbPlaying) {
       setIsWelcomePlaying(false);
     }
-  }, [isSpeaking, isWelcomePlaying]);
+  }, [isSpeaking, isDbPlaying, isWelcomePlaying]);
 
   // Track when per-slide audio finishes
   React.useEffect(() => {
-    if (isSlideAudioPlaying && !isSpeaking) {
+    if (isSlideAudioPlaying && !isSpeaking && !isDbPlaying) {
       setIsSlideAudioPlaying(false);
     }
   }, [isSpeaking, isSlideAudioPlaying]);
@@ -877,25 +895,33 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
             <ChevronDown className={`w-3 h-3 transition-transform ${showVoicePicker ? 'rotate-180' : ''}`} />
           </motion.button>
 
-          {/* Play/Stop button */}
+          {/* Play/Stop button — prefers DB narration TTS, falls back to real-time */}
           <motion.button
             className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-blue-600 text-white flex items-center justify-center shadow-[0_4px_24px_rgba(59,130,246,0.5)] border-2 border-white/20 hover:shadow-[0_8px_40px_rgba(59,130,246,0.6)] transition-shadow"
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => {
               setShowVoicePicker(false);
-              if (isSpeaking) {
+              const isAnyPlaying = isSpeaking || isDbPlaying;
+              if (isAnyPlaying) {
                 stop();
+                stopDbNarration();
                 setIsWelcomePlaying(false);
                 setIsSlideAudioPlaying(false);
               } else {
                 setIsSlideAudioPlaying(true);
-                speak(`${slide.headline.join('')}. ${slide.subtitle}. ${slide.description}`, selectedVoice.code, regionSlug, slide.id);
+                // If DB narration has pre-generated TTS audio, play it
+                if (dbTtsAudio?.audio_url || dbNarrationScript?.generated_audio_url) {
+                  playDbNarration();
+                } else {
+                  // Fallback to real-time TTS generation for slide content
+                  speak(`${slide.headline.join('')}. ${slide.subtitle}. ${slide.description}`, selectedVoice.code, regionSlug, slide.id);
+                }
               }
             }}
-            title={isSpeaking ? 'Stop voiceover' : `Listen in ${selectedVoice.label}`}
+            title={(isSpeaking || isDbPlaying) ? 'Stop voiceover' : `Listen in ${selectedVoice.label}`}
           >
-            {isSpeaking ? (
+            {(isSpeaking || isDbPlaying) ? (
               <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 1, repeat: Infinity }}>
                 <VolumeX className="w-6 h-6" />
               </motion.div>
@@ -905,6 +931,36 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
           </motion.button>
         </div>
       </div>
+
+      {/* DB Narration info badge — shows when pre-generated TTS is available */}
+      {dbNarrationScript && (dbTtsAudio?.audio_url || dbNarrationScript.generated_audio_url) && (
+        <div className="fixed bottom-44 right-6 z-50">
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="bg-black/70 backdrop-blur-xl rounded-xl border border-primary/30 px-3 py-2 max-w-[220px]"
+          >
+            <p className="text-[9px] text-primary font-bold uppercase tracking-wider mb-0.5">
+              🎙 Pre-Generated Narration
+            </p>
+            <p className="text-[10px] text-white/80 line-clamp-2">
+              {dbNarrationScript.hook?.slice(0, 80)}…
+            </p>
+            <div className="flex items-center gap-1.5 mt-1">
+              {dbTtsAudio?.tts_provider && (
+                <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary/80 border border-primary/25 font-semibold">
+                  {dbTtsAudio.tts_provider}
+                </span>
+              )}
+              {dbTtsAudio?.tts_locale && (
+                <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-white/10 text-white/60 border border-white/15 font-semibold">
+                  {dbTtsAudio.tts_locale}
+                </span>
+              )}
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       {/* Provider ribbon — continuously scrolling */}
       <div className="absolute bottom-28 left-0 right-0 z-20">
