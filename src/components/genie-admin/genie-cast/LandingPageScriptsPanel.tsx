@@ -126,6 +126,47 @@ const NOTE_TYPE_CONFIG: Record<string, { label: string; icon: React.ElementType;
   performance_insight: { label: 'Insight', icon: Lightbulb, color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' },
 };
 
+// ─── Zone-Based AI Provider Recommendations ──────────────────────────
+interface AIProviderOption {
+  id: string;
+  name: string;
+  model: string;
+  zone: string;
+  isRecommended: boolean;
+  reason: string;
+}
+
+/**
+ * Returns AI providers ranked by zone routing with the recommended one first.
+ * Follows master-provider-routing-registry: Claude Zone → claude-4, Alibaba Zone → qwen-max, Gemini Zone → gemini-3-pro
+ */
+function getZoneAIProviders(regionCode: string): AIProviderOption[] {
+  const zone = (() => {
+    const r = regionCode?.toUpperCase();
+    if (['NAM', 'EU', 'LATAM'].includes(r)) return 'western';
+    if (['CJK'].includes(r)) return 'cjk';
+    if (['MENA'].includes(r)) return 'mena';
+    if (['INDIA', 'SEA', 'AFRICA'].includes(r)) return 'india';
+    return 'western';
+  })();
+
+  const providers: AIProviderOption[] = [
+    { id: 'claude', name: 'Claude 4', model: 'claude-4', zone: 'western', isRecommended: false, reason: 'Best for Western/EU/LATAM copywriting — nuanced tone, cultural context' },
+    { id: 'alibaba', name: 'Qwen Max', model: 'qwen-max', zone: 'cjk', isRecommended: false, reason: 'Best for CJK & MENA scripts — native dialect handling, cultural adaptation' },
+    { id: 'gemini', name: 'Gemini 3 Pro', model: 'gemini-3-pro', zone: 'india', isRecommended: false, reason: 'Best for India/SEA/Africa — multilingual, strong regional context' },
+    { id: 'openai', name: 'GPT-4o', model: 'gpt-4o', zone: 'fallback', isRecommended: false, reason: 'Strong all-rounder fallback — reliable across all regions' },
+    { id: 'deepseek', name: 'DeepSeek V3', model: 'deepseek-v3', zone: 'fallback', isRecommended: false, reason: 'Cost-effective alternative — good for bulk script generation' },
+  ];
+
+  // Mark the recommended provider based on zone
+  const zoneMap: Record<string, string> = { western: 'claude', cjk: 'alibaba', mena: 'alibaba', india: 'gemini' };
+  const recommended = zoneMap[zone] || 'claude';
+  
+  return providers
+    .map(p => ({ ...p, isRecommended: p.id === recommended }))
+    .sort((a, b) => (b.isRecommended ? 1 : 0) - (a.isRecommended ? 1 : 0));
+}
+
 // ─── Main Component ──────────────────────────────────────────────────
 export const LandingPageScriptsPanel: React.FC = () => {
   const [scripts, setScripts] = useState<NarrationScript[]>([]);
@@ -146,6 +187,7 @@ export const LandingPageScriptsPanel: React.FC = () => {
 
   // AI generation state
   const [isGeneratingImproved, setIsGeneratingImproved] = useState(false);
+  const [selectedAIProvider, setSelectedAIProvider] = useState<string>('');
   const [improvedPreview, setImprovedPreview] = useState<{
     scriptId: string;
     hook: string;
@@ -467,18 +509,25 @@ INSTRUCTIONS:
 Return ONLY valid JSON with this exact structure (no markdown, no code fences):
 {"hook":"improved hook text","problem_statement":"improved problem text","solution":"improved solution text","cta":"improved cta text","changes_summary":"bullet list of what changed and why","framework_used":"primary framework applied (StoryBrand/AIDA/JTBD/PAS)"}`;
 
-      const { data: sessionData } = await supabase.auth.getSession();
+      // Determine provider: user selection → zone recommendation → fallback
+      const zoneProviders = getZoneAIProviders(script.region_code);
+      const chosenProvider = selectedAIProvider 
+        ? zoneProviders.find(p => p.id === selectedAIProvider) 
+        : zoneProviders.find(p => p.isRecommended);
+      const provider = chosenProvider || zoneProviders[0];
+
       const response = await supabase.functions.invoke('ai-universal-processor', {
         body: {
           action: 'generate_text',
-          provider: 'gemini',
-          model: 'gemini-2.5-flash',
+          provider: provider.id,
+          model: provider.model,
           prompt,
           systemPrompt: 'You are a regional marketing script optimizer. Return ONLY valid JSON, no markdown fences.',
           context: {
             region: script.region_code,
             persona: script.target_persona,
             framework: 'auto-detect',
+            selectedProvider: provider.name,
           },
         },
       });
@@ -516,7 +565,7 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
     } finally {
       setIsGeneratingImproved(false);
     }
-  }, [selectedScriptForImprovement, newNoteScriptId, scripts, notes]);
+  }, [selectedScriptForImprovement, newNoteScriptId, scripts, notes, selectedAIProvider]);
 
   // ── Accept improved version → create new version with AI content ──
   const handleAcceptImproved = useCallback(async () => {
@@ -1089,10 +1138,12 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
                   <div className="flex-1">
                     <p className="text-sm font-semibold">Generate Improved Version</p>
                     <p className="text-[10px] text-muted-foreground">
-                      AI analyzes all open feedback, A/B learnings, and performance insights to create an optimized new version using StoryBrand/AIDA/JTBD frameworks.
+                      AI analyzes all open feedback using zone-routed providers. Select a script and optionally override the recommended AI provider.
                     </p>
                   </div>
                 </div>
+
+                {/* Script Selector */}
                 <div className="flex items-center gap-2">
                   <Select value={selectedScriptForImprovement} onValueChange={setSelectedScriptForImprovement}>
                     <SelectTrigger className="h-8 text-xs flex-1">
@@ -1111,9 +1162,55 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
                       })}
                     </SelectContent>
                   </Select>
+                </div>
+
+                {/* AI Provider Selector — Zone-routed with user override */}
+                {(() => {
+                  const sid = selectedScriptForImprovement || newNoteScriptId;
+                  const script = sid ? scripts.find(s => s.id === sid) : null;
+                  const providers = getZoneAIProviders(script?.region_code || 'NAM');
+                  const recommended = providers.find(p => p.isRecommended);
+                  const currentSelection = selectedAIProvider || recommended?.id || '';
+
+                  return (
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-[10px] text-muted-foreground font-medium">AI Provider</Label>
+                        {recommended && (
+                          <Badge variant="secondary" className="text-[9px] px-1.5 py-0">
+                            ⭐ {recommended.name} recommended for {script?.region_display_name || 'this region'}
+                          </Badge>
+                        )}
+                      </div>
+                      <Select value={currentSelection} onValueChange={setSelectedAIProvider}>
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue placeholder="Auto (zone-routed)" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {providers.map(p => (
+                            <SelectItem key={p.id} value={p.id}>
+                              <div className="flex items-center gap-2">
+                                <span>{p.name}</span>
+                                {p.isRecommended && <Badge variant="default" className="text-[8px] px-1 py-0 ml-1">Recommended</Badge>}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {currentSelection && (
+                        <p className="text-[9px] text-muted-foreground italic">
+                          {providers.find(p => p.id === currentSelection)?.reason}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                {/* Generate Button */}
+                <div className="flex items-center gap-2">
                   <Button
                     size="sm"
-                    className="gap-1 text-xs"
+                    className="gap-1 text-xs flex-1"
                     disabled={isGeneratingImproved || (!selectedScriptForImprovement && !newNoteScriptId)}
                     onClick={handleGenerateImproved}
                   >
@@ -1122,7 +1219,7 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
                     ) : (
                       <Sparkles className="w-3.5 h-3.5" />
                     )}
-                    {isGeneratingImproved ? 'Generating...' : 'Generate'}
+                    {isGeneratingImproved ? 'Generating...' : 'Generate Improved Version'}
                   </Button>
                 </div>
                 {(() => {
