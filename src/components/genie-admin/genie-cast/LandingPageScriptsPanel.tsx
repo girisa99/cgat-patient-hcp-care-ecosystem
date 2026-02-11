@@ -2273,7 +2273,7 @@ INSTRUCTIONS:
                                     variant="outline"
                                     size="sm"
                                     className="gap-1 text-xs h-7"
-                                    onClick={() => {
+                                    onClick={async () => {
                                       const url = latestTTS?.audio_url || script.generated_audio_url;
                                       if (!url) return;
                                       if (playingScriptId === script.id) {
@@ -2289,20 +2289,14 @@ INSTRUCTIONS:
                                         try {
                                           if (url.startsWith('data:audio')) {
                                             const base64Data = url.split(',')[1];
-                                            console.log('[TTS Play] Converting base64 to blob, length:', base64Data?.length);
-                                            // Chunked base64 decoding to handle large strings
-                                            const chunkSize = 8192;
-                                            const byteArrays: Uint8Array[] = [];
-                                            for (let offset = 0; offset < base64Data.length; offset += chunkSize) {
-                                              const chunk = base64Data.substring(offset, Math.min(offset + chunkSize, base64Data.length));
-                                              const binaryChunk = atob(chunk);
-                                              const bytes = new Uint8Array(binaryChunk.length);
-                                              for (let i = 0; i < binaryChunk.length; i++) {
-                                                bytes[i] = binaryChunk.charCodeAt(i);
-                                              }
-                                              byteArrays.push(bytes);
+                                            if (!base64Data || base64Data.length === 0) {
+                                              toast.error('No audio data found');
+                                              return;
                                             }
-                                            const blob = new Blob(byteArrays as BlobPart[], { type: 'audio/mpeg' });
+                                            console.log('[TTS Play] Converting base64 to blob, length:', base64Data.length);
+                                            // Use fetch API to decode base64 data URI - handles any size reliably
+                                            const fetchResponse = await fetch(url);
+                                            const blob = await fetchResponse.blob();
                                             const blobUrl = URL.createObjectURL(blob);
                                             console.log('[TTS Play] Blob created, size:', blob.size, 'URL:', blobUrl);
                                             audio.src = blobUrl;
