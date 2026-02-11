@@ -19362,19 +19362,30 @@ export type Database = {
           created_by: string | null
           cta: string
           emotional_tones: string[] | null
+          english_base_script_id: string | null
           full_script: string | null
           generated_audio_url: string | null
+          generation_timestamp: string | null
           hook: string
           id: string
           impression_count: number | null
           is_default: boolean | null
+          is_english_base: boolean | null
           language_code: string
           language_display_name: string
+          llm_model: string | null
+          llm_prompt_template: string | null
+          llm_provider: string | null
+          llm_temperature: number | null
+          llm_token_count: number | null
           play_count: number | null
           positioning_angles: string[] | null
           problem_statement: string
           region_code: string
           region_display_name: string
+          routing_confidence_score: number | null
+          routing_decision: string | null
+          routing_zone: string | null
           solution: string
           status: string
           target_personas: string[] | null
@@ -19399,19 +19410,30 @@ export type Database = {
           created_by?: string | null
           cta: string
           emotional_tones?: string[] | null
+          english_base_script_id?: string | null
           full_script?: string | null
           generated_audio_url?: string | null
+          generation_timestamp?: string | null
           hook: string
           id?: string
           impression_count?: number | null
           is_default?: boolean | null
+          is_english_base?: boolean | null
           language_code?: string
           language_display_name?: string
+          llm_model?: string | null
+          llm_prompt_template?: string | null
+          llm_provider?: string | null
+          llm_temperature?: number | null
+          llm_token_count?: number | null
           play_count?: number | null
           positioning_angles?: string[] | null
           problem_statement: string
           region_code: string
           region_display_name: string
+          routing_confidence_score?: number | null
+          routing_decision?: string | null
+          routing_zone?: string | null
           solution: string
           status?: string
           target_personas?: string[] | null
@@ -19436,19 +19458,30 @@ export type Database = {
           created_by?: string | null
           cta?: string
           emotional_tones?: string[] | null
+          english_base_script_id?: string | null
           full_script?: string | null
           generated_audio_url?: string | null
+          generation_timestamp?: string | null
           hook?: string
           id?: string
           impression_count?: number | null
           is_default?: boolean | null
+          is_english_base?: boolean | null
           language_code?: string
           language_display_name?: string
+          llm_model?: string | null
+          llm_prompt_template?: string | null
+          llm_provider?: string | null
+          llm_temperature?: number | null
+          llm_token_count?: number | null
           play_count?: number | null
           positioning_angles?: string[] | null
           problem_statement?: string
           region_code?: string
           region_display_name?: string
+          routing_confidence_score?: number | null
+          routing_decision?: string | null
+          routing_zone?: string | null
           solution?: string
           status?: string
           target_personas?: string[] | null
@@ -19461,7 +19494,15 @@ export type Database = {
           variant_label?: string | null
           version?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "regional_narration_scripts_english_base_script_id_fkey"
+            columns: ["english_base_script_id"]
+            isOneToOne: false
+            referencedRelation: "regional_narration_scripts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       regional_success_stories: {
         Row: {
