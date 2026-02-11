@@ -2282,29 +2282,46 @@ INSTRUCTIONS:
                                         setPlayingScriptId(null);
                                       } else {
                                         playingAudioRef.current?.pause();
-                                        // Create audio element immediately in gesture context
                                         const audio = new Audio();
                                         audio.preload = 'auto';
-                                        // Convert base64 data URI to blob URL for large audio
-                                        if (url.startsWith('data:audio')) {
-                                          try {
-                                            const parts = url.split(',');
-                                            const byteChars = atob(parts[1]);
-                                            const byteArray = new Uint8Array(byteChars.length);
-                                            for (let i = 0; i < byteChars.length; i++) {
-                                              byteArray[i] = byteChars.charCodeAt(i);
+                                        
+                                        // Convert base64 data URI to blob URL for large audio files
+                                        try {
+                                          if (url.startsWith('data:audio')) {
+                                            const base64Data = url.split(',')[1];
+                                            console.log('[TTS Play] Converting base64 to blob, length:', base64Data?.length);
+                                            const binaryString = atob(base64Data);
+                                            const len = binaryString.length;
+                                            const bytes = new Uint8Array(len);
+                                            for (let i = 0; i < len; i++) {
+                                              bytes[i] = binaryString.charCodeAt(i);
                                             }
-                                            const blob = new Blob([byteArray], { type: 'audio/mpeg' });
-                                            audio.src = URL.createObjectURL(blob);
-                                          } catch {
+                                            const blob = new Blob([bytes], { type: 'audio/mpeg' });
+                                            const blobUrl = URL.createObjectURL(blob);
+                                            console.log('[TTS Play] Blob created, size:', blob.size, 'URL:', blobUrl);
+                                            audio.src = blobUrl;
+                                          } else {
                                             audio.src = url;
                                           }
-                                        } else {
-                                          audio.src = url;
+                                        } catch (decodeErr) {
+                                          console.error('[TTS Play] Base64 decode error:', decodeErr);
+                                          toast.error('Audio data is corrupted');
+                                          return;
                                         }
+                                        
                                         audio.onended = () => { setPlayingScriptId(null); playingAudioRef.current = null; };
-                                        audio.onerror = (e) => { console.error('[TTS Play] Error:', e); toast.error('Failed to play audio'); setPlayingScriptId(null); };
-                                        audio.play().catch((err) => { console.error('[TTS Play] Playback error:', err); toast.error('Playback failed - try clicking again'); });
+                                        audio.onerror = (e) => { console.error('[TTS Play] Audio error:', e); toast.error('Failed to play audio'); setPlayingScriptId(null); };
+                                        
+                                        // Wait for audio to be loadable before playing
+                                        audio.oncanplaythrough = () => {
+                                          console.log('[TTS Play] Audio ready, playing...');
+                                          audio.play().catch((err) => {
+                                            console.error('[TTS Play] Play error:', err);
+                                            toast.error('Playback failed');
+                                            setPlayingScriptId(null);
+                                          });
+                                        };
+                                        audio.load();
                                         playingAudioRef.current = audio;
                                         setPlayingScriptId(script.id);
                                       }
