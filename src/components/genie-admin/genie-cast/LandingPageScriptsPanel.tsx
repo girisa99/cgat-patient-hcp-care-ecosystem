@@ -302,72 +302,215 @@ function normalizeTTSProvider(displayProvider: string): string {
   return 'azure'; // safe default
 }
 
-function getSubRegionTTSProvider(regionCode: string): { provider: string; locale: string; label: string; voiceId: string; voiceName: string } {
+// Voice option with multiple choices per region
+interface VoiceOption {
+  provider: string;
+  locale: string;
+  label: string;
+  voiceId: string;
+  voiceName: string;
+  gender: 'female' | 'male';
+  isDefault?: boolean;
+}
+
+function getRegionVoiceOptions(regionCode: string): VoiceOption[] {
   const r = regionCode?.toUpperCase() || '';
-  const ttsMap: Record<string, { provider: string; locale: string; label: string; voiceId: string; voiceName: string }> = {
+  const voiceOptionsMap: Record<string, VoiceOption[]> = {
     // NAM
-    'NAM_US': { provider: 'azure', locale: 'en-US', label: 'Azure Neural (en-US)', voiceId: 'en-US-JennyNeural', voiceName: 'Jenny (US English)' },
-    'NAM_CA': { provider: 'azure', locale: 'en-CA', label: 'Azure Neural (en-CA, fr-CA)', voiceId: 'en-CA-ClaraNeural', voiceName: 'Clara (Canadian English)' },
+    'NAM_US': [
+      { provider: 'azure', locale: 'en-US', label: 'Azure Neural', voiceId: 'en-US-JennyNeural', voiceName: 'Jenny (US English)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'en-US', label: 'Azure Neural', voiceId: 'en-US-GuyNeural', voiceName: 'Guy (US English)', gender: 'male' },
+      { provider: 'azure', locale: 'en-US', label: 'Azure Neural', voiceId: 'en-US-AriaNeural', voiceName: 'Aria (US English)', gender: 'female' },
+    ],
+    'NAM_CA': [
+      { provider: 'azure', locale: 'en-CA', label: 'Azure Neural', voiceId: 'en-CA-ClaraNeural', voiceName: 'Clara (Canadian English)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'en-CA', label: 'Azure Neural', voiceId: 'en-CA-LiamNeural', voiceName: 'Liam (Canadian English)', gender: 'male' },
+      { provider: 'azure', locale: 'fr-CA', label: 'Azure Neural', voiceId: 'fr-CA-SylvieNeural', voiceName: 'Sylvie (Canadian French)', gender: 'female' },
+    ],
     // EU
-    'EU_WEST': { provider: 'azure', locale: 'en-GB', label: 'Azure Neural (en-GB)', voiceId: 'en-GB-SoniaNeural', voiceName: 'Sonia (British English)' },
-    'EU_DACH': { provider: 'azure', locale: 'de-DE', label: 'Azure Neural (de-DE/AT/CH)', voiceId: 'de-DE-KatjaNeural', voiceName: 'Katja (German)' },
-    'EU_FRANCE': { provider: 'azure', locale: 'fr-FR', label: 'Azure Neural (fr-FR/BE)', voiceId: 'fr-FR-DeniseNeural', voiceName: 'Denise (French)' },
-    'EU_IBERIA': { provider: 'azure', locale: 'es-ES', label: 'Azure Neural (es-ES, pt-PT)', voiceId: 'es-ES-ElviraNeural', voiceName: 'Elvira (Spanish)' },
-    'EU_NORDIC': { provider: 'azure', locale: 'sv-SE', label: 'Azure Neural (Nordic)', voiceId: 'sv-SE-SofieNeural', voiceName: 'Sofie (Swedish)' },
-    'EU_EAST': { provider: 'azure', locale: 'pl-PL', label: 'Azure Neural (Eastern EU)', voiceId: 'pl-PL-ZofiaNeural', voiceName: 'Zofia (Polish)' },
+    'EU_WEST': [
+      { provider: 'azure', locale: 'en-GB', label: 'Azure Neural', voiceId: 'en-GB-SoniaNeural', voiceName: 'Sonia (British English)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'en-GB', label: 'Azure Neural', voiceId: 'en-GB-RyanNeural', voiceName: 'Ryan (British English)', gender: 'male' },
+    ],
+    'EU_DACH': [
+      { provider: 'azure', locale: 'de-DE', label: 'Azure Neural', voiceId: 'de-DE-KatjaNeural', voiceName: 'Katja (German)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'de-DE', label: 'Azure Neural', voiceId: 'de-DE-ConradNeural', voiceName: 'Conrad (German)', gender: 'male' },
+      { provider: 'azure', locale: 'de-AT', label: 'Azure Neural', voiceId: 'de-AT-IngridNeural', voiceName: 'Ingrid (Austrian German)', gender: 'female' },
+    ],
+    'EU_FRANCE': [
+      { provider: 'azure', locale: 'fr-FR', label: 'Azure Neural', voiceId: 'fr-FR-DeniseNeural', voiceName: 'Denise (French)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'fr-FR', label: 'Azure Neural', voiceId: 'fr-FR-HenriNeural', voiceName: 'Henri (French)', gender: 'male' },
+    ],
+    'EU_IBERIA': [
+      { provider: 'azure', locale: 'es-ES', label: 'Azure Neural', voiceId: 'es-ES-ElviraNeural', voiceName: 'Elvira (Spanish)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'pt-PT', label: 'Azure Neural', voiceId: 'pt-PT-RaquelNeural', voiceName: 'Raquel (Portuguese)', gender: 'female' },
+    ],
+    'EU_NORDIC': [
+      { provider: 'azure', locale: 'sv-SE', label: 'Azure Neural', voiceId: 'sv-SE-SofieNeural', voiceName: 'Sofie (Swedish)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'nb-NO', label: 'Azure Neural', voiceId: 'nb-NO-PernilleNeural', voiceName: 'Pernille (Norwegian)', gender: 'female' },
+    ],
+    'EU_EAST': [
+      { provider: 'azure', locale: 'pl-PL', label: 'Azure Neural', voiceId: 'pl-PL-ZofiaNeural', voiceName: 'Zofia (Polish)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'cs-CZ', label: 'Azure Neural', voiceId: 'cs-CZ-VlastaNeural', voiceName: 'Vlasta (Czech)', gender: 'female' },
+    ],
     // LATAM
-    'LATAM_BRAZIL': { provider: 'azure', locale: 'pt-BR', label: 'Azure Neural (pt-BR)', voiceId: 'pt-BR-FranciscaNeural', voiceName: 'Francisca (Brazilian Portuguese)' },
-    'LATAM_MEXICO': { provider: 'azure', locale: 'es-MX', label: 'Azure Neural (es-MX)', voiceId: 'es-MX-DaliaNeural', voiceName: 'Dalia (Mexican Spanish)' },
-    'LATAM_ANDEAN': { provider: 'azure', locale: 'es-CO', label: 'Azure Neural (es-CO/PE)', voiceId: 'es-CO-SalomeNeural', voiceName: 'Salome (Colombian Spanish)' },
-    'LATAM_CONESUR': { provider: 'azure', locale: 'es-AR', label: 'Azure Neural (es-AR/CL)', voiceId: 'es-AR-ElenaNeural', voiceName: 'Elena (Argentine Spanish)' },
-    'LATAM_CARIB': { provider: 'azure', locale: 'es-DO', label: 'Azure Neural (es-DO/VE)', voiceId: 'es-DO-RamonaNeural', voiceName: 'Ramona (Dominican Spanish)' },
+    'LATAM_BRAZIL': [
+      { provider: 'azure', locale: 'pt-BR', label: 'Azure Neural', voiceId: 'pt-BR-FranciscaNeural', voiceName: 'Francisca (Brazilian Portuguese)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'pt-BR', label: 'Azure Neural', voiceId: 'pt-BR-AntonioNeural', voiceName: 'Antonio (Brazilian Portuguese)', gender: 'male' },
+    ],
+    'LATAM_MEXICO': [
+      { provider: 'azure', locale: 'es-MX', label: 'Azure Neural', voiceId: 'es-MX-DaliaNeural', voiceName: 'Dalia (Mexican Spanish)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'es-MX', label: 'Azure Neural', voiceId: 'es-MX-JorgeNeural', voiceName: 'Jorge (Mexican Spanish)', gender: 'male' },
+    ],
+    'LATAM_ANDEAN': [
+      { provider: 'azure', locale: 'es-CO', label: 'Azure Neural', voiceId: 'es-CO-SalomeNeural', voiceName: 'Salome (Colombian Spanish)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'es-PE', label: 'Azure Neural', voiceId: 'es-PE-CamilaNeural', voiceName: 'Camila (Peruvian Spanish)', gender: 'female' },
+    ],
+    'LATAM_CONESUR': [
+      { provider: 'azure', locale: 'es-AR', label: 'Azure Neural', voiceId: 'es-AR-ElenaNeural', voiceName: 'Elena (Argentine Spanish)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'es-CL', label: 'Azure Neural', voiceId: 'es-CL-CatalinaNeural', voiceName: 'Catalina (Chilean Spanish)', gender: 'female' },
+    ],
+    'LATAM_CARIB': [
+      { provider: 'azure', locale: 'es-DO', label: 'Azure Neural', voiceId: 'es-DO-RamonaNeural', voiceName: 'Ramona (Dominican Spanish)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'es-VE', label: 'Azure Neural', voiceId: 'es-VE-PaolaNeural', voiceName: 'Paola (Venezuelan Spanish)', gender: 'female' },
+    ],
     // MENA
-    'MENA_GULF': { provider: 'azure', locale: 'ar-SA', label: 'Azure Neural (ar-SA/AE)', voiceId: 'ar-SA-ZariyahNeural', voiceName: 'Zariyah (Saudi Arabic)' },
-    'MENA_EGYPT': { provider: 'azure', locale: 'ar-EG', label: 'Azure Neural (ar-EG)', voiceId: 'ar-EG-SalmaNeural', voiceName: 'Salma (Egyptian Arabic)' },
-    'MENA_LEVANT': { provider: 'azure', locale: 'ar-JO', label: 'Azure Neural (ar-JO/IQ)', voiceId: 'ar-JO-SanaNeural', voiceName: 'Sana (Jordanian Arabic)' },
-    'MENA_MAGHREB': { provider: 'azure', locale: 'ar-MA', label: 'Azure Neural (ar-MA, fr-MA)', voiceId: 'ar-MA-MounaNeural', voiceName: 'Mouna (Moroccan Arabic)' },
-    'MENA_MSA': { provider: 'azure', locale: 'ar-SA', label: 'Azure Neural (MSA)', voiceId: 'ar-SA-ZariyahNeural', voiceName: 'Zariyah (MSA)' },
+    'MENA_GULF': [
+      { provider: 'azure', locale: 'ar-SA', label: 'Azure Neural', voiceId: 'ar-SA-ZariyahNeural', voiceName: 'Zariyah (Saudi Arabic)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'ar-AE', label: 'Azure Neural', voiceId: 'ar-AE-FatimaNeural', voiceName: 'Fatima (UAE Arabic)', gender: 'female' },
+    ],
+    'MENA_EGYPT': [
+      { provider: 'azure', locale: 'ar-EG', label: 'Azure Neural', voiceId: 'ar-EG-SalmaNeural', voiceName: 'Salma (Egyptian Arabic)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'ar-EG', label: 'Azure Neural', voiceId: 'ar-EG-ShakirNeural', voiceName: 'Shakir (Egyptian Arabic)', gender: 'male' },
+    ],
+    'MENA_LEVANT': [
+      { provider: 'azure', locale: 'ar-JO', label: 'Azure Neural', voiceId: 'ar-JO-SanaNeural', voiceName: 'Sana (Jordanian Arabic)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'ar-SY', label: 'Azure Neural', voiceId: 'ar-SY-AmanyNeural', voiceName: 'Amany (Syrian Arabic)', gender: 'female' },
+    ],
+    'MENA_MAGHREB': [
+      { provider: 'azure', locale: 'ar-MA', label: 'Azure Neural', voiceId: 'ar-MA-MounaNeural', voiceName: 'Mouna (Moroccan Arabic)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'ar-TN', label: 'Azure Neural', voiceId: 'ar-TN-ReemNeural', voiceName: 'Reem (Tunisian Arabic)', gender: 'female' },
+    ],
+    'MENA_MSA': [
+      { provider: 'azure', locale: 'ar-SA', label: 'Azure Neural', voiceId: 'ar-SA-ZariyahNeural', voiceName: 'Zariyah (MSA)', gender: 'female', isDefault: true },
+    ],
     // Pakistan & Bangladesh
-    'PAKISTAN': { provider: 'azure', locale: 'ur-PK', label: 'Azure Neural (ur-PK)', voiceId: 'ur-PK-UzmaNeural', voiceName: 'Uzma (Urdu)' },
-    'BANGLADESH': { provider: 'azure', locale: 'bn-BD', label: 'Azure Neural (bn-BD)', voiceId: 'bn-BD-NabanitaNeural', voiceName: 'Nabanita (Bengali)' },
+    'PAKISTAN': [
+      { provider: 'azure', locale: 'ur-PK', label: 'Azure Neural', voiceId: 'ur-PK-UzmaNeural', voiceName: 'Uzma (Urdu)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'ur-PK', label: 'Azure Neural', voiceId: 'ur-PK-AsadNeural', voiceName: 'Asad (Urdu)', gender: 'male' },
+    ],
+    'BANGLADESH': [
+      { provider: 'azure', locale: 'bn-BD', label: 'Azure Neural', voiceId: 'bn-BD-NabanitaNeural', voiceName: 'Nabanita (Bengali)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'bn-BD', label: 'Azure Neural', voiceId: 'bn-BD-PradeepNeural', voiceName: 'Pradeep (Bengali)', gender: 'male' },
+    ],
     // India
-    'INDIA_NORTH': { provider: 'azure', locale: 'hi-IN', label: 'Azure Neural (hi-IN)', voiceId: 'hi-IN-SwaraNeural', voiceName: 'Swara (Hindi)' },
-    'INDIA_SOUTH': { provider: 'azure', locale: 'ta-IN', label: 'Azure Neural (ta/te-IN)', voiceId: 'ta-IN-PallaviNeural', voiceName: 'Pallavi (Tamil)' },
-    'INDIA_WEST': { provider: 'azure', locale: 'mr-IN', label: 'Azure Neural (mr/gu-IN)', voiceId: 'mr-IN-AarohiNeural', voiceName: 'Aarohi (Marathi)' },
-    'INDIA_EAST': { provider: 'azure', locale: 'bn-IN', label: 'Azure Neural (bn-IN)', voiceId: 'bn-IN-TanishaaNeural', voiceName: 'Tanishaa (Bengali India)' },
-    'INDIA_PAN': { provider: 'azure', locale: 'en-IN', label: 'Azure Neural (en-IN)', voiceId: 'en-IN-NeerjaNeural', voiceName: 'Neerja (Indian English)' },
+    'INDIA_NORTH': [
+      { provider: 'azure', locale: 'hi-IN', label: 'Azure Neural', voiceId: 'hi-IN-SwaraNeural', voiceName: 'Swara (Hindi)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'hi-IN', label: 'Azure Neural', voiceId: 'hi-IN-MadhurNeural', voiceName: 'Madhur (Hindi)', gender: 'male' },
+    ],
+    'INDIA_SOUTH': [
+      { provider: 'azure', locale: 'ta-IN', label: 'Azure Neural', voiceId: 'ta-IN-PallaviNeural', voiceName: 'Pallavi (Tamil)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'te-IN', label: 'Azure Neural', voiceId: 'te-IN-ShrutiNeural', voiceName: 'Shruti (Telugu)', gender: 'female' },
+    ],
+    'INDIA_WEST': [
+      { provider: 'azure', locale: 'mr-IN', label: 'Azure Neural', voiceId: 'mr-IN-AarohiNeural', voiceName: 'Aarohi (Marathi)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'gu-IN', label: 'Azure Neural', voiceId: 'gu-IN-DhwaniNeural', voiceName: 'Dhwani (Gujarati)', gender: 'female' },
+    ],
+    'INDIA_EAST': [
+      { provider: 'azure', locale: 'bn-IN', label: 'Azure Neural', voiceId: 'bn-IN-TanishaaNeural', voiceName: 'Tanishaa (Bengali India)', gender: 'female', isDefault: true },
+    ],
+    'INDIA_PAN': [
+      { provider: 'azure', locale: 'en-IN', label: 'Azure Neural', voiceId: 'en-IN-NeerjaNeural', voiceName: 'Neerja (Indian English)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'en-IN', label: 'Azure Neural', voiceId: 'en-IN-PrabhatNeural', voiceName: 'Prabhat (Indian English)', gender: 'male' },
+    ],
     // SEA
-    'SEA_MALAY': { provider: 'azure', locale: 'ms-MY', label: 'Azure Neural (ms-MY, id-ID)', voiceId: 'ms-MY-YasminNeural', voiceName: 'Yasmin (Malay)' },
-    'SEA_THAI': { provider: 'azure', locale: 'th-TH', label: 'Azure Neural (th-TH)', voiceId: 'th-TH-PremwadeeNeural', voiceName: 'Premwadee (Thai)' },
-    'SEA_VIET': { provider: 'azure', locale: 'vi-VN', label: 'Azure Neural (vi-VN)', voiceId: 'vi-VN-HoaiMyNeural', voiceName: 'HoaiMy (Vietnamese)' },
-    'SEA_PHIL': { provider: 'azure', locale: 'fil-PH', label: 'Azure Neural (fil-PH)', voiceId: 'fil-PH-BlessicaNeural', voiceName: 'Blessica (Filipino)' },
-    'SEA_PAN': { provider: 'azure', locale: 'en-SG', label: 'Azure Neural (en-SG)', voiceId: 'en-SG-LunaNeural', voiceName: 'Luna (Singapore English)' },
-    // CJK — Qwen3-TTS primary
-    'CJK_CN': { provider: 'qwen3', locale: 'zh-CN', label: 'Qwen3-TTS (zh-CN)', voiceId: 'longwan', voiceName: 'Longwan (Mandarin)' },
-    'CJK_TW': { provider: 'azure', locale: 'zh-TW', label: 'Azure Neural (zh-TW)', voiceId: 'zh-TW-HsiaoChenNeural', voiceName: 'HsiaoChen (Traditional Chinese)' },
-    'CJK_JP': { provider: 'qwen3', locale: 'ja-JP', label: 'Qwen3-TTS (ja-JP)', voiceId: 'longyue', voiceName: 'Longyue (Japanese)' },
-    'CJK_KR': { provider: 'azure', locale: 'ko-KR', label: 'Azure Neural (ko-KR)', voiceId: 'ko-KR-SunHiNeural', voiceName: 'SunHi (Korean)' },
-    // Africa
-    'AFRICA_WEST': { provider: 'azure', locale: 'en-NG', label: 'Azure Neural (yo/en-NG)', voiceId: 'en-NG-EzinneNeural', voiceName: 'Ezinne (Nigerian English)' },
-    'AFRICA_EAST': { provider: 'azure', locale: 'sw-KE', label: 'Azure Neural (sw-KE)', voiceId: 'sw-KE-ZuriNeural', voiceName: 'Zuri (Swahili)' },
-    'AFRICA_SOUTH': { provider: 'azure', locale: 'en-ZA', label: 'Azure Neural (zu/en-ZA)', voiceId: 'en-ZA-LeahNeural', voiceName: 'Leah (South African English)' },
-    'AFRICA_FRANCO': { provider: 'azure', locale: 'fr-SN', label: 'Azure Neural (fr-SN/CD)', voiceId: 'fr-FR-DeniseNeural', voiceName: 'Denise (French - Africa)' },
-    // Parent-level fallbacks (when scripts use parent region codes)
-    'AFRICA': { provider: 'azure', locale: 'en-NG', label: 'Azure Neural (en-NG)', voiceId: 'en-NG-EzinneNeural', voiceName: 'Ezinne (Nigerian English)' },
-    'NAM': { provider: 'azure', locale: 'en-US', label: 'Azure Neural (en-US)', voiceId: 'en-US-JennyNeural', voiceName: 'Jenny (US English)' },
-    'EU': { provider: 'azure', locale: 'en-GB', label: 'Azure Neural (en-GB)', voiceId: 'en-GB-SoniaNeural', voiceName: 'Sonia (British English)' },
-    'LATAM': { provider: 'azure', locale: 'es-MX', label: 'Azure Neural (es-MX)', voiceId: 'es-MX-DaliaNeural', voiceName: 'Dalia (Mexican Spanish)' },
-    'MENA': { provider: 'azure', locale: 'ar-SA', label: 'Azure Neural (ar-SA)', voiceId: 'ar-SA-ZariyahNeural', voiceName: 'Zariyah (Arabic)' },
-    'INDIA': { provider: 'azure', locale: 'hi-IN', label: 'Azure Neural (hi-IN)', voiceId: 'hi-IN-SwaraNeural', voiceName: 'Swara (Hindi)' },
-    'SEA': { provider: 'azure', locale: 'id-ID', label: 'Azure Neural (id-ID)', voiceId: 'id-ID-GadisNeural', voiceName: 'Gadis (Indonesian)' },
-    'CJK': { provider: 'azure', locale: 'zh-CN', label: 'Azure Neural (zh-CN)', voiceId: 'zh-CN-XiaoxiaoNeural', voiceName: 'Xiaoxiao (Chinese)' },
+    'SEA_MALAY': [
+      { provider: 'azure', locale: 'ms-MY', label: 'Azure Neural', voiceId: 'ms-MY-YasminNeural', voiceName: 'Yasmin (Malay)', gender: 'female', isDefault: true },
+    ],
+    'SEA_THAI': [
+      { provider: 'azure', locale: 'th-TH', label: 'Azure Neural', voiceId: 'th-TH-PremwadeeNeural', voiceName: 'Premwadee (Thai)', gender: 'female', isDefault: true },
+    ],
+    'SEA_VIET': [
+      { provider: 'azure', locale: 'vi-VN', label: 'Azure Neural', voiceId: 'vi-VN-HoaiMyNeural', voiceName: 'HoaiMy (Vietnamese)', gender: 'female', isDefault: true },
+    ],
+    'SEA_PHIL': [
+      { provider: 'azure', locale: 'fil-PH', label: 'Azure Neural', voiceId: 'fil-PH-BlessicaNeural', voiceName: 'Blessica (Filipino)', gender: 'female', isDefault: true },
+    ],
+    'SEA_PAN': [
+      { provider: 'azure', locale: 'en-SG', label: 'Azure Neural', voiceId: 'en-SG-LunaNeural', voiceName: 'Luna (Singapore English)', gender: 'female', isDefault: true },
+    ],
+    // CJK
+    'CJK_CN': [
+      { provider: 'qwen3', locale: 'zh-CN', label: 'Qwen3-TTS', voiceId: 'longwan', voiceName: 'Longwan (Mandarin)', gender: 'male', isDefault: true },
+      { provider: 'azure', locale: 'zh-CN', label: 'Azure Neural', voiceId: 'zh-CN-XiaoxiaoNeural', voiceName: 'Xiaoxiao (Mandarin)', gender: 'female' },
+    ],
+    'CJK_TW': [
+      { provider: 'azure', locale: 'zh-TW', label: 'Azure Neural', voiceId: 'zh-TW-HsiaoChenNeural', voiceName: 'HsiaoChen (Traditional Chinese)', gender: 'female', isDefault: true },
+    ],
+    'CJK_JP': [
+      { provider: 'qwen3', locale: 'ja-JP', label: 'Qwen3-TTS', voiceId: 'longyue', voiceName: 'Longyue (Japanese)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'ja-JP', label: 'Azure Neural', voiceId: 'ja-JP-NanamiNeural', voiceName: 'Nanami (Japanese)', gender: 'female' },
+    ],
+    'CJK_KR': [
+      { provider: 'azure', locale: 'ko-KR', label: 'Azure Neural', voiceId: 'ko-KR-SunHiNeural', voiceName: 'SunHi (Korean)', gender: 'female', isDefault: true },
+    ],
+    // Africa — multiple voice options for authentic regional voices
+    'AFRICA_WEST': [
+      { provider: 'azure', locale: 'en-NG', label: 'Azure Neural', voiceId: 'en-NG-EzinneNeural', voiceName: 'Ezinne (Nigerian English)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'en-NG', label: 'Azure Neural', voiceId: 'en-NG-AbeoNeural', voiceName: 'Abeo (Nigerian English)', gender: 'male' },
+    ],
+    'AFRICA_EAST': [
+      { provider: 'azure', locale: 'sw-KE', label: 'Azure Neural', voiceId: 'sw-KE-ZuriNeural', voiceName: 'Zuri (Swahili)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'sw-KE', label: 'Azure Neural', voiceId: 'sw-KE-RafikiNeural', voiceName: 'Rafiki (Swahili)', gender: 'male' },
+    ],
+    'AFRICA_SOUTH': [
+      { provider: 'azure', locale: 'en-ZA', label: 'Azure Neural', voiceId: 'en-ZA-LeahNeural', voiceName: 'Leah (South African English)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'en-ZA', label: 'Azure Neural', voiceId: 'en-ZA-LukeNeural', voiceName: 'Luke (South African English)', gender: 'male' },
+      { provider: 'azure', locale: 'zu-ZA', label: 'Azure Neural', voiceId: 'zu-ZA-ThandoNeural', voiceName: 'Thando (Zulu)', gender: 'female' },
+    ],
+    'AFRICA_FRANCO': [
+      { provider: 'azure', locale: 'fr-FR', label: 'Azure Neural', voiceId: 'fr-FR-DeniseNeural', voiceName: 'Denise (French - Africa)', gender: 'female', isDefault: true },
+    ],
+    // Parent-level fallbacks
+    'AFRICA': [
+      { provider: 'azure', locale: 'en-NG', label: 'Azure Neural', voiceId: 'en-NG-EzinneNeural', voiceName: 'Ezinne (Nigerian English)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'en-NG', label: 'Azure Neural', voiceId: 'en-NG-AbeoNeural', voiceName: 'Abeo (Nigerian English)', gender: 'male' },
+      { provider: 'azure', locale: 'sw-KE', label: 'Azure Neural', voiceId: 'sw-KE-ZuriNeural', voiceName: 'Zuri (Swahili)', gender: 'female' },
+      { provider: 'azure', locale: 'en-ZA', label: 'Azure Neural', voiceId: 'en-ZA-LeahNeural', voiceName: 'Leah (South African English)', gender: 'female' },
+    ],
+    'NAM': [
+      { provider: 'azure', locale: 'en-US', label: 'Azure Neural', voiceId: 'en-US-JennyNeural', voiceName: 'Jenny (US English)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'en-US', label: 'Azure Neural', voiceId: 'en-US-GuyNeural', voiceName: 'Guy (US English)', gender: 'male' },
+    ],
+    'EU': [
+      { provider: 'azure', locale: 'en-GB', label: 'Azure Neural', voiceId: 'en-GB-SoniaNeural', voiceName: 'Sonia (British English)', gender: 'female', isDefault: true },
+    ],
+    'LATAM': [
+      { provider: 'azure', locale: 'es-MX', label: 'Azure Neural', voiceId: 'es-MX-DaliaNeural', voiceName: 'Dalia (Mexican Spanish)', gender: 'female', isDefault: true },
+    ],
+    'MENA': [
+      { provider: 'azure', locale: 'ar-SA', label: 'Azure Neural', voiceId: 'ar-SA-ZariyahNeural', voiceName: 'Zariyah (Arabic)', gender: 'female', isDefault: true },
+    ],
+    'INDIA': [
+      { provider: 'azure', locale: 'hi-IN', label: 'Azure Neural', voiceId: 'hi-IN-SwaraNeural', voiceName: 'Swara (Hindi)', gender: 'female', isDefault: true },
+    ],
+    'SEA': [
+      { provider: 'azure', locale: 'id-ID', label: 'Azure Neural', voiceId: 'id-ID-GadisNeural', voiceName: 'Gadis (Indonesian)', gender: 'female', isDefault: true },
+    ],
+    'CJK': [
+      { provider: 'azure', locale: 'zh-CN', label: 'Azure Neural', voiceId: 'zh-CN-XiaoxiaoNeural', voiceName: 'Xiaoxiao (Chinese)', gender: 'female', isDefault: true },
+    ],
   };
-  // Try exact match first, then parent prefix match
-  if (ttsMap[r]) return ttsMap[r];
-  // Fallback: try matching parent region prefix
-  const parentKey = Object.keys(ttsMap).find(k => r.startsWith(k + '_') || r === k);
-  if (parentKey) return ttsMap[parentKey];
-  return { provider: 'azure', locale: 'en-US', label: 'Azure Neural (Default)', voiceId: 'en-US-JennyNeural', voiceName: 'Jenny (US English)' };
+  if (voiceOptionsMap[r]) return voiceOptionsMap[r];
+  const parentKey = Object.keys(voiceOptionsMap).find(k => r.startsWith(k + '_') || r === k);
+  if (parentKey) return voiceOptionsMap[parentKey];
+  return [{ provider: 'azure', locale: 'en-US', label: 'Azure Neural', voiceId: 'en-US-JennyNeural', voiceName: 'Jenny (US English)', gender: 'female', isDefault: true }];
+}
+
+function getSubRegionTTSProvider(regionCode: string): { provider: string; locale: string; label: string; voiceId: string; voiceName: string } {
+  const options = getRegionVoiceOptions(regionCode);
+  const defaultVoice = options.find(v => v.isDefault) || options[0];
+  return { provider: defaultVoice.provider, locale: defaultVoice.locale, label: defaultVoice.label, voiceId: defaultVoice.voiceId, voiceName: defaultVoice.voiceName };
 }
 
 function getZoneAIProviders(regionCode: string): AIProviderOption[] {
@@ -542,6 +685,9 @@ export const LandingPageScriptsPanel: React.FC = () => {
   } | null>(null);
   const [showImprovedPreview, setShowImprovedPreview] = useState(false);
   const [selectedScriptForImprovement, setSelectedScriptForImprovement] = useState<string>('');
+
+  // Voice override per script (scriptId → voiceId)
+  const [voiceOverrides, setVoiceOverrides] = useState<Record<string, string>>({});
 
   // Audience registry for persona options
   const [audienceOptions, setAudienceOptions] = useState<string[]>([]);
@@ -759,6 +905,7 @@ export const LandingPageScriptsPanel: React.FC = () => {
     setGeneratingTTSForScript(script.id);
     try {
       const ttsInfo = getSubRegionTTSProvider(script.region_code);
+      const voiceOptions = getRegionVoiceOptions(script.region_code);
       const text = script.full_script || `${script.hook}\n\n${script.problem_statement}\n\n${script.solution}\n\n${script.cta}`;
       
       if (!text.trim()) {
@@ -766,11 +913,20 @@ export const LandingPageScriptsPanel: React.FC = () => {
         return;
       }
 
-      console.log(`[TTS Generate] Script: ${script.region_code}, Provider: ${ttsInfo.provider}, Voice: ${ttsInfo.voiceId}, Locale: ${ttsInfo.locale}, Mode: ${mode}`);
+      // Check for user-selected voice override, otherwise use default routing
+      const overrideVoiceId = voiceOverrides[script.id];
+      const selectedVoice = overrideVoiceId 
+        ? voiceOptions.find(v => v.voiceId === overrideVoiceId) 
+        : null;
+      
+      const resolvedProvider = selectedVoice 
+        ? (selectedVoice.provider === 'qwen3' ? 'alibaba' : selectedVoice.provider)
+        : (ttsInfo.provider === 'qwen3' ? 'alibaba' : (ttsInfo.provider || 'azure'));
+      const resolvedVoiceId = selectedVoice?.voiceId || ttsInfo.voiceId;
+      const resolvedVoiceName = selectedVoice?.voiceName || ttsInfo.voiceName;
+      const resolvedLocale = selectedVoice?.locale || ttsInfo.locale;
 
-      // ALWAYS prioritize getSubRegionTTSProvider routing over stale script DB values
-      const resolvedProvider = ttsInfo.provider === 'Qwen3-TTS' ? 'alibaba' : (ttsInfo.provider || 'azure');
-      const resolvedVoiceId = ttsInfo.voiceId;
+      console.log(`[TTS Generate] Script: ${script.region_code}, Provider: ${resolvedProvider}, Voice: ${resolvedVoiceId}, Name: ${resolvedVoiceName}, Locale: ${resolvedLocale}, Mode: ${mode}, Override: ${!!selectedVoice}`);
 
       const { data, error } = await supabase.functions.invoke('multi-provider-tts', {
         body: {
@@ -795,17 +951,17 @@ export const LandingPageScriptsPanel: React.FC = () => {
           script_id: script.id,
           region_code: script.region_code,
           language_code: script.language_code,
-          tts_provider: data?.provider || ttsInfo.provider,
+          tts_provider: data?.provider || resolvedProvider,
           tts_voice_id: data?.voice || resolvedVoiceId,
-          tts_voice_name: data?.voiceName || ttsInfo.voiceName,
-          tts_locale: ttsInfo.locale,
+          tts_voice_name: data?.voiceName || resolvedVoiceName,
+          tts_locale: resolvedLocale,
           tts_speed: script.tts_speed || 1.0,
           audio_url: audioUrl,
           audio_duration_seconds: data?.durationSeconds,
           characters_processed: text.length,
           generation_mode: mode,
           generation_trigger: mode === 'auto' ? 'script_approval' : 'user_action',
-          routing_zone: ttsInfo.provider === 'Qwen3-TTS' ? 'cjk' : 'global',
+          routing_zone: resolvedProvider === 'alibaba' ? 'cjk' : 'global',
           fallback_used: data?.fallbackUsed || false,
           fallback_from: data?.fallbackFrom,
           status: 'completed',
@@ -822,14 +978,14 @@ export const LandingPageScriptsPanel: React.FC = () => {
           generated_audio_url: audioUrl,
           audio_duration_seconds: data?.durationSeconds,
           audio_generated_at: new Date().toISOString(),
-          tts_provider: data?.provider || ttsInfo.provider,
+          tts_provider: data?.provider || resolvedProvider,
           tts_voice_id: data?.voice || resolvedVoiceId,
-          tts_voice_name: data?.voiceName || ttsInfo.voiceName,
+          tts_voice_name: data?.voiceName || resolvedVoiceName,
           updated_at: new Date().toISOString(),
         } as any)
         .eq('id', script.id);
 
-      toast.success(`TTS generated for ${script.region_display_name} (${ttsInfo.provider})`);
+      toast.success(`TTS generated for ${script.region_display_name} — ${resolvedVoiceName} (${resolvedProvider})`);
       fetchScripts();
       fetchTTSVersions();
     } catch (err) {
@@ -854,7 +1010,7 @@ export const LandingPageScriptsPanel: React.FC = () => {
     } finally {
       setGeneratingTTSForScript(null);
     }
-  }, [fetchScripts, fetchTTSVersions]);
+  }, [fetchScripts, fetchTTSVersions, voiceOverrides]);
 
   // ── Update script status (with auto-generate TTS on approval) ──
   const handleStatusChange = useCallback(async (scriptId: string, newStatus: ScriptStatus) => {
@@ -2500,122 +2656,147 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                       <div className="divide-y">
                         {groupScripts.map(script => {
                           const ttsInfo = getSubRegionTTSProvider(script.region_code);
+                          const voiceOptions = getRegionVoiceOptions(script.region_code);
                           const regionOpt = REGION_OPTIONS.find(r => r.code === script.region_code);
                           const scriptTTSVersions = ttsVersions.filter(tv => tv.script_id === script.id);
                           const latestTTS = scriptTTSVersions[0];
                           const ttsFeedbackCount = notes.filter(n => n.script_id === script.id && n.note_type === 'tts_feedback' && (n.status === 'open' || n.status === 'accepted')).length;
                           const isGenerating = generatingTTSForScript === script.id;
+                          const currentVoiceId = voiceOverrides[script.id] || ttsInfo.voiceId;
+                          const currentVoice = voiceOptions.find(v => v.voiceId === currentVoiceId) || voiceOptions[0];
 
                           return (
-                            <div key={script.id} className="flex items-center gap-3 px-4 py-3">
-                              <div className="flex-shrink-0 text-lg">
-                                {regionOpt?.flag || group.groupFlag}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-medium truncate">
-                                  {script.region_display_name}
-                                  {script.variant_label && <span className="text-muted-foreground"> — {script.variant_label}</span>}
-                                </p>
-                                <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                                  <Badge variant="secondary" className="text-[9px] px-1.5 py-0">
-                                    v{script.version}
-                                  </Badge>
-                                  <Badge variant="outline" className="text-[9px] px-1.5 py-0">
-                                    🔊 {latestTTS?.tts_provider || script.tts_provider || ttsInfo.provider}
-                                  </Badge>
-                                  <Badge variant="outline" className="text-[9px] px-1.5 py-0">
-                                    🌐 {latestTTS?.tts_locale || ttsInfo.locale}
-                                  </Badge>
-                                  {scriptTTSVersions.length > 0 && (
+                            <div key={script.id} className="px-4 py-3 space-y-2">
+                              <div className="flex items-center gap-3">
+                                <div className="flex-shrink-0 text-lg">
+                                  {regionOpt?.flag || group.groupFlag}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs font-medium truncate">
+                                    {script.region_display_name}
+                                    {script.variant_label && <span className="text-muted-foreground"> — {script.variant_label}</span>}
+                                  </p>
+                                  <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                                     <Badge variant="secondary" className="text-[9px] px-1.5 py-0">
-                                      🎙 {scriptTTSVersions.length} TTS version{scriptTTSVersions.length !== 1 ? 's' : ''}
+                                      v{script.version}
                                     </Badge>
-                                  )}
-                                  {ttsFeedbackCount > 0 && (
-                                    <Badge variant="secondary" className="text-[9px] px-1.5 py-0">
-                                      💬 {ttsFeedbackCount} TTS note{ttsFeedbackCount !== 1 ? 's' : ''}
+                                    <Badge variant="outline" className="text-[9px] px-1.5 py-0">
+                                      🔊 {currentVoice.provider}
                                     </Badge>
+                                    <Badge variant="outline" className="text-[9px] px-1.5 py-0">
+                                      🌐 {currentVoice.locale}
+                                    </Badge>
+                                    {scriptTTSVersions.length > 0 && (
+                                      <Badge variant="secondary" className="text-[9px] px-1.5 py-0">
+                                        🎙 {scriptTTSVersions.length} TTS version{scriptTTSVersions.length !== 1 ? 's' : ''}
+                                      </Badge>
+                                    )}
+                                    {ttsFeedbackCount > 0 && (
+                                      <Badge variant="secondary" className="text-[9px] px-1.5 py-0">
+                                        💬 {ttsFeedbackCount} TTS note{ttsFeedbackCount !== 1 ? 's' : ''}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  {latestTTS && (
+                                    <p className="text-[9px] text-muted-foreground mt-0.5">
+                                      Latest: {new Date(latestTTS.generated_at).toLocaleString()} • {latestTTS.generation_mode === 'auto' ? '⚡ Auto' : '✋ Manual'}
+                                      {latestTTS.audio_duration_seconds && ` • ${Number(latestTTS.audio_duration_seconds).toFixed(1)}s`}
+                                    </p>
                                   )}
                                 </div>
-                                {latestTTS && (
-                                  <p className="text-[9px] text-muted-foreground mt-0.5">
-                                    Latest: {new Date(latestTTS.generated_at).toLocaleString()} • {latestTTS.generation_mode === 'auto' ? '⚡ Auto' : '✋ Manual'}
-                                    {latestTTS.audio_duration_seconds && ` • ${Number(latestTTS.audio_duration_seconds).toFixed(1)}s`}
-                                  </p>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-1">
-                                {/* Approve button for review scripts */}
-                                {script.status === 'review' && (
-                                  <Button
-                                    size="sm"
-                                    className="gap-1 text-xs h-7"
-                                    onClick={() => handleStatusChange(script.id, 'active')}
-                                  >
-                                    <Check className="w-3 h-3" />
-                                    Approve
-                                  </Button>
-                                )}
-                                {(latestTTS?.audio_url || script.generated_audio_url) ? (
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="gap-1 text-xs h-7"
-                                    onClick={async () => {
-                                      const url = latestTTS?.audio_url || script.generated_audio_url;
-                                      if (!url) return;
-                                      if (playingScriptId === script.id) {
-                                        playingAudioRef.current?.pause();
-                                        playingAudioRef.current = null;
-                                        setPlayingScriptId(null);
-                                      } else {
-                                        playingAudioRef.current?.pause();
-                                        const audio = new Audio();
-                                        
-                                        // Set audio source directly - browsers natively handle data URIs
-                                        audio.src = url;
-                                        
-                                        audio.onended = () => { setPlayingScriptId(null); playingAudioRef.current = null; };
-                                        audio.onerror = (e) => { 
-                                          console.error('[TTS Play] Audio error:', e); 
-                                          toast.error('Failed to play audio'); 
-                                          setPlayingScriptId(null); 
-                                        };
-                                        
-                                        playingAudioRef.current = audio;
-                                        setPlayingScriptId(script.id);
-                                        audio.play().catch((err) => {
-                                          console.error('[TTS Play] Play error:', err);
-                                          toast.error('Playback failed');
-                                          setPlayingScriptId(null);
-                                        });
-                                      }
-                                    }}
-                                  >
-                                    {playingScriptId === script.id ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
-                                    {playingScriptId === script.id ? 'Stop' : 'Play'}
-                                  </Button>
-                                ) : (
-                                  <Badge variant="outline" className="text-[10px]">
-                                    No audio yet
-                                  </Badge>
-                                )}
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="gap-1 text-xs h-7"
-                                  disabled={isGenerating || script.status !== 'active'}
-                                  onClick={() => handleGenerateTTS(script, 'manual')}
-                                  title={script.status !== 'active' ? 'Script must be approved (active) before TTS generation' : 'Generate TTS audio'}
-                                >
-                                  {isGenerating ? (
-                                    <RefreshCw className="w-3 h-3 animate-spin" />
-                                  ) : (
-                                    <Sparkles className="w-3 h-3" />
+                                <div className="flex items-center gap-1">
+                                  {script.status === 'review' && (
+                                    <Button
+                                      size="sm"
+                                      className="gap-1 text-xs h-7"
+                                      onClick={() => handleStatusChange(script.id, 'active')}
+                                    >
+                                      <Check className="w-3 h-3" />
+                                      Approve
+                                    </Button>
                                   )}
-                                  {isGenerating ? 'Generating...' : script.status !== 'active' ? 'Approve First' : 'Generate'}
-                                </Button>
+                                  {(latestTTS?.audio_url || script.generated_audio_url) ? (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="gap-1 text-xs h-7"
+                                      onClick={async () => {
+                                        const url = latestTTS?.audio_url || script.generated_audio_url;
+                                        if (!url) return;
+                                        if (playingScriptId === script.id) {
+                                          playingAudioRef.current?.pause();
+                                          playingAudioRef.current = null;
+                                          setPlayingScriptId(null);
+                                        } else {
+                                          playingAudioRef.current?.pause();
+                                          const audio = new Audio();
+                                          audio.src = url;
+                                          audio.onended = () => { setPlayingScriptId(null); playingAudioRef.current = null; };
+                                          audio.onerror = (e) => { 
+                                            console.error('[TTS Play] Audio error:', e); 
+                                            toast.error('Failed to play audio'); 
+                                            setPlayingScriptId(null); 
+                                          };
+                                          playingAudioRef.current = audio;
+                                          setPlayingScriptId(script.id);
+                                          audio.play().catch((err) => {
+                                            console.error('[TTS Play] Play error:', err);
+                                            toast.error('Playback failed');
+                                            setPlayingScriptId(null);
+                                          });
+                                        }
+                                      }}
+                                    >
+                                      {playingScriptId === script.id ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+                                      {playingScriptId === script.id ? 'Stop' : 'Play'}
+                                    </Button>
+                                  ) : (
+                                    <Badge variant="outline" className="text-[10px]">
+                                      No audio yet
+                                    </Badge>
+                                  )}
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="gap-1 text-xs h-7"
+                                    disabled={isGenerating || script.status !== 'active'}
+                                    onClick={() => handleGenerateTTS(script, 'manual')}
+                                    title={script.status !== 'active' ? 'Script must be approved (active) before TTS generation' : `Generate TTS with ${currentVoice.voiceName}`}
+                                  >
+                                    {isGenerating ? (
+                                      <RefreshCw className="w-3 h-3 animate-spin" />
+                                    ) : (
+                                      <Sparkles className="w-3 h-3" />
+                                    )}
+                                    {isGenerating ? 'Generating...' : script.status !== 'active' ? 'Approve First' : 'Generate'}
+                                  </Button>
+                                </div>
                               </div>
+                              {/* Voice Selector */}
+                              {voiceOptions.length > 1 && (
+                                <div className="flex items-center gap-2 pl-9">
+                                  <Label className="text-[10px] text-muted-foreground whitespace-nowrap">Voice:</Label>
+                                  <Select
+                                    value={currentVoiceId}
+                                    onValueChange={(val) => setVoiceOverrides(prev => ({ ...prev, [script.id]: val }))}
+                                  >
+                                    <SelectTrigger className="h-6 text-[10px] max-w-[280px]">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {voiceOptions.map(vo => (
+                                        <SelectItem key={vo.voiceId} value={vo.voiceId} className="text-xs">
+                                          <span className="flex items-center gap-1.5">
+                                            {vo.isDefault && <span className="text-[9px]">⭐</span>}
+                                            {vo.voiceName}
+                                            <span className="text-muted-foreground text-[9px]">({vo.locale} • {vo.gender})</span>
+                                          </span>
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              )}
                             </div>
                           );
                         })}
