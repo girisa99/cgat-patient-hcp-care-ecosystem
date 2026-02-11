@@ -483,6 +483,7 @@ export const LandingPageScriptsPanel: React.FC = () => {
   const [newNoteType, setNewNoteType] = useState<string>('reviewer_comment');
   const [newNoteSection, setNewNoteSection] = useState<string>('general');
   const [newNoteScriptId, setNewNoteScriptId] = useState<string>('');
+  const [feedbackCategoryFilter, setFeedbackCategoryFilter] = useState<'all' | 'script' | 'tts'>('all');
   const [newNotePriority, setNewNotePriority] = useState<string>('medium');
 
   // AI generation state
@@ -2740,15 +2741,47 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
             exit={{ opacity: 0, y: -10 }}
             className="space-y-4"
           >
+            {/* Feedback Category Tabs: Script vs TTS */}
+            <div className="flex gap-2 border-b pb-2">
+              {[
+                { id: 'all', label: '📋 All Feedback', desc: 'Show everything' },
+                { id: 'script', label: '📝 Script Feedback', desc: 'Content, messaging, transcreation' },
+                { id: 'tts', label: '🎙 TTS / Audio Feedback', desc: 'Voice, prosody, pronunciation' },
+              ].map(cat => {
+                const isActive = (feedbackCategoryFilter || 'all') === cat.id;
+                return (
+                  <Button
+                    key={cat.id}
+                    variant={isActive ? 'default' : 'outline'}
+                    size="sm"
+                    className="text-xs gap-1.5"
+                    onClick={() => setFeedbackCategoryFilter(cat.id as 'all' | 'script' | 'tts')}
+                  >
+                    {cat.label}
+                  </Button>
+                );
+              })}
+            </div>
+
             {/* Add New Feedback */}
-            <Card>
+            <Card className={cn(
+              newNoteType === 'tts_feedback' 
+                ? 'border-violet-300 dark:border-violet-700 bg-violet-50/30 dark:bg-violet-950/20' 
+                : ''
+            )}>
               <CardHeader className="py-3">
                 <CardTitle className="text-sm flex items-center gap-2">
                   <Send className="w-4 h-4 text-primary" />
-                  Add Feedback / Suggestion
+                  {newNoteType === 'tts_feedback' ? '🎙 Add TTS / Audio Feedback' : '📝 Add Script Feedback / Suggestion'}
                 </CardTitle>
+                {newNoteType === 'tts_feedback' && (
+                  <p className="text-[10px] text-violet-600 dark:text-violet-400">
+                    Voice issues (accent, pacing, tone) → TTS regeneration only. Content issues → escalate to script revision.
+                  </p>
+                )}
               </CardHeader>
               <CardContent className="space-y-3">
+                {/* Row 1: Script, Type, Region/Sub-region */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <div className="space-y-1">
                     <Label className="text-[10px] text-muted-foreground">Script</Label>
@@ -2767,33 +2800,53 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                     </Select>
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-[10px] text-muted-foreground">Type</Label>
-                    <Select value={newNoteType} onValueChange={setNewNoteType}>
+                    <Label className="text-[10px] text-muted-foreground">Feedback Type</Label>
+                    <Select value={newNoteType} onValueChange={(v) => {
+                      setNewNoteType(v);
+                      // Reset section when switching types
+                      if (v === 'tts_feedback') setNewNoteSection('voice_quality');
+                      else if (newNoteSection.startsWith('voice_') || newNoteSection === 'pronunciation' || newNoteSection === 'pacing_timing' || newNoteSection === 'tts_provider_issue') setNewNoteSection('general');
+                    }}>
                       <SelectTrigger className="h-8 text-xs">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="reviewer_comment">💬 Reviewer Comment</SelectItem>
-                        <SelectItem value="ab_learning">📊 A/B Learning</SelectItem>
-                        <SelectItem value="ai_suggestion">✨ AI Suggestion</SelectItem>
-                        <SelectItem value="performance_insight">💡 Performance Insight</SelectItem>
-                        <SelectItem value="tts_feedback">🎙 TTS Feedback</SelectItem>
+                        <SelectItem value="reviewer_comment">💬 Script: Reviewer Comment</SelectItem>
+                        <SelectItem value="ab_learning">📊 Script: A/B Learning</SelectItem>
+                        <SelectItem value="ai_suggestion">✨ Script: AI Suggestion</SelectItem>
+                        <SelectItem value="performance_insight">💡 Script: Performance Insight</SelectItem>
+                        <SelectItem value="tts_feedback">🎙 TTS: Audio/Voice Feedback</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-[10px] text-muted-foreground">Section</Label>
+                    <Label className="text-[10px] text-muted-foreground">
+                      {newNoteType === 'tts_feedback' ? 'TTS Issue Area' : 'Script Section'}
+                    </Label>
                     <Select value={newNoteSection} onValueChange={setNewNoteSection}>
                       <SelectTrigger className="h-8 text-xs">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="general">General</SelectItem>
-                        <SelectItem value="hook">🎯 Hook</SelectItem>
-                        <SelectItem value="problem_statement">😰 Problem</SelectItem>
-                        <SelectItem value="solution">✨ Solution</SelectItem>
-                        <SelectItem value="cta">📢 CTA</SelectItem>
-                        <SelectItem value="full_script">📄 Full Script</SelectItem>
+                        {newNoteType === 'tts_feedback' ? (
+                          <>
+                            <SelectItem value="voice_quality">🎤 Voice Quality / Naturalness</SelectItem>
+                            <SelectItem value="pronunciation">🗣 Pronunciation / Accent</SelectItem>
+                            <SelectItem value="pacing_timing">⏱ Pacing / Timing / Speed</SelectItem>
+                            <SelectItem value="voice_tone">🎭 Emotional Tone / Inflection</SelectItem>
+                            <SelectItem value="tts_provider_issue">⚙️ Provider-Specific Issue</SelectItem>
+                            <SelectItem value="content_mismatch">📝 Content Needs Script Change (Escalate)</SelectItem>
+                          </>
+                        ) : (
+                          <>
+                            <SelectItem value="general">General</SelectItem>
+                            <SelectItem value="hook">🎯 Hook</SelectItem>
+                            <SelectItem value="problem_statement">😰 Problem</SelectItem>
+                            <SelectItem value="solution">✨ Solution</SelectItem>
+                            <SelectItem value="cta">📢 CTA</SelectItem>
+                            <SelectItem value="full_script">📄 Full Script</SelectItem>
+                          </>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -2812,11 +2865,64 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                     </Select>
                   </div>
                 </div>
+
+                {/* Row 2: Region/Sub-region filter + TTS Provider (shown for TTS feedback) */}
+                {newNoteType === 'tts_feedback' && (() => {
+                  const selectedScript = newNoteScriptId ? scripts.find(s => s.id === newNoteScriptId) : null;
+                  const ttsInfo = selectedScript ? getSubRegionTTSProvider(selectedScript.region_code) : null;
+                  return (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-2 rounded-md bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800">
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-violet-600 dark:text-violet-400 font-medium">Region / Sub-Region</Label>
+                        <div className="text-xs font-medium flex items-center gap-1">
+                          {selectedScript ? (
+                            <>
+                              {REGION_OPTIONS.find(r => r.code === selectedScript.region_code)?.flag}{' '}
+                              {selectedScript.region_display_name}
+                              <Badge variant="outline" className="text-[9px] ml-1">{selectedScript.region_code}</Badge>
+                            </>
+                          ) : (
+                            <span className="text-muted-foreground italic">Select a script above</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-violet-600 dark:text-violet-400 font-medium">TTS Provider</Label>
+                        <div className="text-xs font-medium flex items-center gap-1">
+                          {ttsInfo ? (
+                            <>
+                              <Badge className="text-[9px] bg-violet-100 text-violet-700 dark:bg-violet-900 dark:text-violet-300">{ttsInfo.provider}</Badge>
+                              <span className="text-muted-foreground">{ttsInfo.label}</span>
+                            </>
+                          ) : (
+                            <span className="text-muted-foreground italic">—</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-violet-600 dark:text-violet-400 font-medium">Voice</Label>
+                        <div className="text-xs font-medium">
+                          {ttsInfo ? (
+                            <>
+                              {ttsInfo.voiceName}
+                              <span className="text-muted-foreground ml-1">({ttsInfo.locale})</span>
+                            </>
+                          ) : (
+                            <span className="text-muted-foreground italic">—</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 <div className="flex gap-2">
                   <Textarea
                     value={newNoteContent}
                     onChange={e => setNewNoteContent(e.target.value)}
-                    placeholder="Enter your feedback, suggestion, or A/B learning..."
+                    placeholder={newNoteType === 'tts_feedback' 
+                      ? "Describe the audio issue: accent, pacing, pronunciation, tone..." 
+                      : "Enter your feedback, suggestion, or A/B learning..."}
                     className="text-sm min-h-[60px] flex-1"
                   />
                   <Button onClick={handleAddNote} className="self-end gap-1" disabled={!newNoteContent.trim() || !newNoteScriptId}>
@@ -2842,25 +2948,57 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                   </div>
                 </div>
 
-                {/* Script Selector */}
-                <div className="flex items-center gap-2">
+                {/* Script Selector with Region/Sub-region display */}
+                <div className="space-y-2">
                   <Select value={selectedScriptForImprovement} onValueChange={setSelectedScriptForImprovement}>
                     <SelectTrigger className="h-8 text-xs flex-1">
                       <SelectValue placeholder="Select script to improve..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {scripts.map(s => {
-                        const openNotes = notes.filter(n => n.script_id === s.id && (n.status === 'open' || n.status === 'accepted'));
+                      {REGION_HIERARCHY.map(group => {
+                        const groupScripts = scripts.filter(s => {
+                          const codes = getGroupCodes(group);
+                          return codes.some(c => c.toLowerCase() === s.region_code?.toLowerCase());
+                        });
+                        if (groupScripts.length === 0) return null;
                         return (
-                          <SelectItem key={s.id} value={s.id}>
-                            {REGION_OPTIONS.find(r => r.code === s.region_code)?.flag} {s.region_display_name} v{s.version}
-                            {s.variant_label ? ` (${s.variant_label})` : ''}
-                            {openNotes.length > 0 ? ` — ${openNotes.length} notes` : ' — no notes'}
-                          </SelectItem>
+                          <React.Fragment key={group.groupCode}>
+                            <SelectItem value={`__group_${group.groupCode}`} disabled className="font-semibold text-muted-foreground">
+                              {group.groupFlag} {group.groupName}
+                            </SelectItem>
+                            {groupScripts.map(s => {
+                              const openNotes = notes.filter(n => n.script_id === s.id && (n.status === 'open' || n.status === 'accepted'));
+                              return (
+                                <SelectItem key={s.id} value={s.id}>
+                                  {'  '}{REGION_OPTIONS.find(r => r.code === s.region_code)?.flag} {s.region_display_name} v{s.version}
+                                  {s.variant_label ? ` (${s.variant_label})` : ''}
+                                  {openNotes.length > 0 ? ` — ${openNotes.length} notes` : ''}
+                                </SelectItem>
+                              );
+                            })}
+                          </React.Fragment>
                         );
                       })}
                     </SelectContent>
                   </Select>
+
+                  {/* Show region + TTS provider info for selected script */}
+                  {(() => {
+                    const sid = selectedScriptForImprovement;
+                    const script = sid ? scripts.find(s => s.id === sid) : null;
+                    if (!script) return null;
+                    const ttsInfo = getSubRegionTTSProvider(script.region_code);
+                    return (
+                      <div className="flex flex-wrap gap-2 text-[10px]">
+                        <Badge variant="outline">
+                          {REGION_OPTIONS.find(r => r.code === script.region_code)?.flag} {script.region_code}
+                        </Badge>
+                        <Badge variant="outline" className="bg-violet-50 dark:bg-violet-950 text-violet-700 dark:text-violet-300 border-violet-200">
+                          🎙 TTS: {ttsInfo.provider} — {ttsInfo.voiceName} ({ttsInfo.locale})
+                        </Badge>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* AI Provider Selector — Zone-routed with user override */}
@@ -2922,45 +3060,59 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                   </Button>
                 </div>
                 {(() => {
-                  const sid = selectedScriptForImprovement || newNoteScriptId;
-                  const count = sid ? notes.filter(n => n.script_id === sid && (n.status === 'open' || n.status === 'accepted')).length : 0;
-                  return count > 0 ? (
-                    <p className="text-[10px] text-muted-foreground">
-                      ✅ {count} open feedback note{count !== 1 ? 's' : ''} will be incorporated into the improved version.
-                    </p>
-                  ) : sid ? (
-                    <p className="text-[10px] text-destructive">
-                      ⚠️ No open feedback for this script. Add feedback above first.
-                    </p>
-                  ) : null;
-                })()}
-              </CardContent>
-            </Card>
+                   const sid = selectedScriptForImprovement || newNoteScriptId;
+                   const count = sid ? notes.filter(n => n.script_id === sid && (n.status === 'open' || n.status === 'accepted')).length : 0;
+                   return count > 0 ? (
+                     <p className="text-[10px] text-muted-foreground">
+                       ✅ {count} open feedback note{count !== 1 ? 's' : ''} will be incorporated into the improved version.
+                     </p>
+                   ) : sid ? (
+                     <p className="text-[10px] text-destructive">
+                       ⚠️ No open feedback for this script. Add feedback above first.
+                     </p>
+                   ) : null;
+                 })()}
+               </CardContent>
+             </Card>
 
-            {/* Existing Notes List */}
-            {notes.length === 0 ? (
+            {/* Existing Notes List — filtered by category */}
+            {(() => {
+              const filteredNotes = notes.filter(n => {
+                if (feedbackCategoryFilter === 'tts') return n.note_type === 'tts_feedback';
+                if (feedbackCategoryFilter === 'script') return n.note_type !== 'tts_feedback';
+                return true;
+              });
+              if (filteredNotes.length === 0) return (
               <Card className="border-dashed">
                 <CardContent className="py-12 text-center">
                   <MessageCircle className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
-                  <p className="text-sm text-muted-foreground">No feedback yet. Add your first suggestion above.</p>
+                  <p className="text-sm text-muted-foreground">
+                    {feedbackCategoryFilter === 'tts' ? 'No TTS feedback yet.' : feedbackCategoryFilter === 'script' ? 'No script feedback yet.' : 'No feedback yet.'} Add your first suggestion above.
+                  </p>
                 </CardContent>
               </Card>
-            ) : (
+              );
+              return (
               <div className="space-y-3">
-                {notes.map(note => {
+                {filteredNotes.map(note => {
                   const typeCfg = NOTE_TYPE_CONFIG[note.note_type] || NOTE_TYPE_CONFIG.reviewer_comment;
                   const TypeIcon = typeCfg.icon;
                   const scriptRef = scripts.find(s => s.id === note.script_id);
+                  const ttsInfo = scriptRef ? getSubRegionTTSProvider(scriptRef.region_code) : null;
+                  const isTTS = note.note_type === 'tts_feedback';
                   return (
-                    <Card key={note.id} className="overflow-hidden">
+                    <Card key={note.id} className={cn("overflow-hidden", isTTS && "border-violet-200 dark:border-violet-800")}>
                       <CardContent className="py-3 px-4">
                         <div className="flex items-start gap-3">
                           <div className={cn("flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center", typeCfg.color)}>
                             <TypeIcon className="w-4 h-4" />
                           </div>
-                          <div className="flex-1 min-w-0 space-y-1">
+                           <div className="flex-1 min-w-0 space-y-1">
                             <div className="flex items-center gap-2 flex-wrap">
                               <Badge className={cn("text-[10px]", typeCfg.color)}>{typeCfg.label}</Badge>
+                              {isTTS && (
+                                <Badge className="text-[9px] bg-violet-100 text-violet-700 dark:bg-violet-900 dark:text-violet-300">🎙 TTS</Badge>
+                              )}
                               {note.section_target && note.section_target !== 'general' && (
                                 <Badge variant="outline" className="text-[10px]">→ {note.section_target}</Badge>
                               )}
@@ -2973,13 +3125,20 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                               {scriptRef && (
                                 <span className="text-[10px] text-muted-foreground">
                                   {REGION_OPTIONS.find(r => r.code === scriptRef.region_code)?.flag} {scriptRef.region_display_name} v{scriptRef.version}
+                                  <Badge variant="outline" className="text-[8px] ml-1">{scriptRef.region_code}</Badge>
                                 </span>
+                              )}
+                              {isTTS && ttsInfo && (
+                                <Badge variant="outline" className="text-[9px] border-violet-300 text-violet-600 dark:text-violet-400">
+                                  {ttsInfo.provider} • {ttsInfo.voiceName}
+                                </Badge>
                               )}
                             </div>
                             <p className="text-sm">{note.content}</p>
                             <p className="text-[10px] text-muted-foreground">
                               {new Date(note.created_at).toLocaleDateString()}
                               {note.framework_tag && ` • Framework: ${note.framework_tag}`}
+                              {isTTS && ttsInfo && ` • TTS: ${ttsInfo.provider} (${ttsInfo.locale})`}
                             </p>
                           </div>
                           <div className="flex items-center gap-1 flex-shrink-0">
@@ -3005,7 +3164,7 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                               <Check className="w-3.5 h-3.5 text-primary" />
                             </Button>
                             {/* Layered Escalation: TTS feedback gets voice/content escalation buttons */}
-                            {note.note_type === 'tts_feedback' && note.status !== 'applied' && (
+                            {isTTS && note.status !== 'applied' && (
                               <>
                                 <Separator orientation="vertical" className="h-5 mx-0.5" />
                                 <Button
@@ -3033,7 +3192,8 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                   );
                 })}
               </div>
-            )}
+              );
+            })()}
           </motion.div>
         )}
 
