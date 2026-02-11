@@ -206,7 +206,7 @@ type LandingPageSubTab = 'scripts' | 'tts-preview' | 'versions' | 'feedback';
 interface ImprovementNote {
   id: string;
   script_id: string;
-  note_type: 'reviewer_comment' | 'ab_learning' | 'ai_suggestion' | 'performance_insight';
+  note_type: 'reviewer_comment' | 'ab_learning' | 'ai_suggestion' | 'performance_insight' | 'tts_feedback';
   content: string;
   section_target: string | null;
   priority: string;
@@ -226,6 +226,7 @@ const NOTE_TYPE_CONFIG: Record<string, { label: string; icon: React.ElementType;
   ab_learning: { label: 'A/B Learning', icon: TrendingUp, color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' },
   ai_suggestion: { label: 'AI Suggestion', icon: Sparkles, color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' },
   performance_insight: { label: 'Insight', icon: Lightbulb, color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' },
+  tts_feedback: { label: 'TTS Feedback', icon: Mic, color: 'bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-400' },
 };
 
 // ─── Zone-Based AI Provider Recommendations ──────────────────────────
@@ -429,6 +430,10 @@ export const LandingPageScriptsPanel: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [editingScript, setEditingScript] = useState<NarrationScript | null>(null);
   const [showEditor, setShowEditor] = useState(false);
+  const [generatingTTSForScript, setGeneratingTTSForScript] = useState<string | null>(null);
+
+  // TTS audio versions state
+  const [ttsVersions, setTtsVersions] = useState<any[]>([]);
 
   // Feedback state
   const [notes, setNotes] = useState<ImprovementNote[]>([]);
@@ -483,6 +488,22 @@ export const LandingPageScriptsPanel: React.FC = () => {
   }, []);
 
   useEffect(() => { fetchScripts(); }, [fetchScripts]);
+
+  // ── Fetch TTS audio versions ──
+  const fetchTTSVersions = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('tts_audio_versions')
+        .select('*')
+        .order('generated_at', { ascending: false });
+      if (error) throw error;
+      setTtsVersions((data || []) as any[]);
+    } catch (err) {
+      console.error('[LandingPageScripts] TTS versions fetch error:', err);
+    }
+  }, []);
+
+  useEffect(() => { fetchTTSVersions(); }, [fetchTTSVersions]);
 
   // ── Fetch improvement notes ──
   const fetchNotes = useCallback(async () => {
@@ -608,7 +629,103 @@ export const LandingPageScriptsPanel: React.FC = () => {
     }
   }, [fetchScripts]);
 
-  // ── Update script status ──
+  // ── Generate TTS for a script using sub-region routing ──
+  const handleGenerateTTS = useCallback(async (script: NarrationScript, mode: 'auto' | 'manual' = 'manual') => {
+    setGeneratingTTSForScript(script.id);
+    try {
+      const ttsInfo = getSubRegionTTSProvider(script.region_code);
+      const text = script.full_script || `${script.hook}\n\n${script.problem_statement}\n\n${script.solution}\n\n${script.cta}`;
+      
+      if (!text.trim()) {
+        toast.error('Script has no content to generate TTS');
+        return;
+      }
+
+      console.log(`[TTS Generate] Script: ${script.region_code}, Provider: ${ttsInfo.provider}, Locale: ${ttsInfo.locale}, Mode: ${mode}`);
+
+      const { data, error } = await supabase.functions.invoke('multi-provider-tts', {
+        body: {
+          text,
+          languageCode: script.language_code,
+          provider: script.tts_provider || (ttsInfo.provider === 'Qwen3-TTS' ? 'alibaba' : 'azure'),
+          voiceId: script.tts_voice_id,
+          speed: script.tts_speed || 1.0,
+          tier: 'premium',
+          regionCode: script.region_code,
+        },
+      });
+
+      if (error) throw error;
+
+      const audioUrl = data?.audioUrl || (data?.audioContent ? `data:audio/mpeg;base64,${data.audioContent}` : null);
+
+      // Store TTS version in tts_audio_versions (never overwrites — append only)
+      const { error: versionError } = await supabase
+        .from('tts_audio_versions')
+        .insert({
+          script_id: script.id,
+          region_code: script.region_code,
+          language_code: script.language_code,
+          tts_provider: data?.provider || ttsInfo.provider,
+          tts_voice_id: data?.voice || script.tts_voice_id,
+          tts_voice_name: data?.voiceName || script.tts_voice_name,
+          tts_locale: ttsInfo.locale,
+          tts_speed: script.tts_speed || 1.0,
+          audio_url: audioUrl,
+          audio_duration_seconds: data?.durationSeconds,
+          characters_processed: text.length,
+          generation_mode: mode,
+          generation_trigger: mode === 'auto' ? 'script_approval' : 'user_action',
+          routing_zone: ttsInfo.provider === 'Qwen3-TTS' ? 'cjk' : 'global',
+          fallback_used: data?.fallbackUsed || false,
+          fallback_from: data?.fallbackFrom,
+          status: 'completed',
+        } as any);
+
+      if (versionError) {
+        console.error('[TTS Version] Save error:', versionError);
+      }
+
+      // Also update the script's audio URL for quick access
+      await supabase
+        .from('regional_narration_scripts')
+        .update({
+          generated_audio_url: audioUrl,
+          audio_duration_seconds: data?.durationSeconds,
+          audio_generated_at: new Date().toISOString(),
+          tts_provider: data?.provider || ttsInfo.provider,
+          updated_at: new Date().toISOString(),
+        } as any)
+        .eq('id', script.id);
+
+      toast.success(`TTS generated for ${script.region_display_name} (${ttsInfo.provider})`);
+      fetchScripts();
+      fetchTTSVersions();
+    } catch (err) {
+      console.error('[TTS Generate] Error:', err);
+      
+      // Store failed version for audit trail
+      try {
+        await supabase.from('tts_audio_versions').insert({
+          script_id: script.id,
+          region_code: script.region_code,
+          language_code: script.language_code,
+          tts_provider: getSubRegionTTSProvider(script.region_code).provider,
+          tts_locale: getSubRegionTTSProvider(script.region_code).locale,
+          generation_mode: mode,
+          generation_trigger: mode === 'auto' ? 'script_approval' : 'user_action',
+          status: 'failed',
+          error_message: err instanceof Error ? err.message : String(err),
+        } as any);
+      } catch (_) { /* ignore audit log failures */ }
+
+      toast.error(`TTS generation failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setGeneratingTTSForScript(null);
+    }
+  }, [fetchScripts, fetchTTSVersions]);
+
+  // ── Update script status (with auto-generate TTS on approval) ──
   const handleStatusChange = useCallback(async (scriptId: string, newStatus: ScriptStatus) => {
     try {
       const updateData: any = { status: newStatus, updated_at: new Date().toISOString() };
@@ -622,11 +739,21 @@ export const LandingPageScriptsPanel: React.FC = () => {
       if (error) throw error;
       toast.success(`Status updated to ${newStatus}`);
       fetchScripts();
+
+      // Auto-generate TTS when script is set to active (approved)
+      if (newStatus === 'active') {
+        const script = scripts.find(s => s.id === scriptId);
+        if (script) {
+          toast.info(`🔊 Auto-generating TTS for ${script.region_display_name}...`);
+          // Use setTimeout to let the UI update first
+          setTimeout(() => handleGenerateTTS({ ...script, status: 'active' }, 'auto'), 500);
+        }
+      }
     } catch (err) {
       console.error('[LandingPageScripts] Status change error:', err);
       toast.error('Failed to update status');
     }
-  }, [fetchScripts]);
+  }, [fetchScripts, scripts, handleGenerateTTS]);
 
   // ── Save edited script ──
   const handleSaveScript = useCallback(async (script: NarrationScript) => {
@@ -1290,7 +1417,10 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
                         {groupScripts.map(script => {
                           const ttsInfo = getSubRegionTTSProvider(script.region_code);
                           const regionOpt = REGION_OPTIONS.find(r => r.code === script.region_code);
-                          const feedbackCount = notes.filter(n => n.script_id === script.id && (n.status === 'open' || n.status === 'accepted')).length;
+                          const scriptTTSVersions = ttsVersions.filter(tv => tv.script_id === script.id);
+                          const latestTTS = scriptTTSVersions[0];
+                          const ttsFeedbackCount = notes.filter(n => n.script_id === script.id && n.note_type === 'tts_feedback' && (n.status === 'open' || n.status === 'accepted')).length;
+                          const isGenerating = generatingTTSForScript === script.id;
 
                           return (
                             <div key={script.id} className="flex items-center gap-3 px-4 py-3">
@@ -1307,22 +1437,33 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
                                     v{script.version}
                                   </Badge>
                                   <Badge variant="outline" className="text-[9px] px-1.5 py-0">
-                                    🔊 {script.tts_provider || ttsInfo.provider}
+                                    🔊 {latestTTS?.tts_provider || script.tts_provider || ttsInfo.provider}
                                   </Badge>
                                   <Badge variant="outline" className="text-[9px] px-1.5 py-0">
-                                    🌐 {ttsInfo.locale}
+                                    🌐 {latestTTS?.tts_locale || ttsInfo.locale}
                                   </Badge>
-                                  {feedbackCount > 0 && (
+                                  {scriptTTSVersions.length > 0 && (
                                     <Badge variant="secondary" className="text-[9px] px-1.5 py-0">
-                                      💬 {feedbackCount} note{feedbackCount !== 1 ? 's' : ''}
+                                      🎙 {scriptTTSVersions.length} TTS version{scriptTTSVersions.length !== 1 ? 's' : ''}
+                                    </Badge>
+                                  )}
+                                  {ttsFeedbackCount > 0 && (
+                                    <Badge variant="secondary" className="text-[9px] px-1.5 py-0">
+                                      💬 {ttsFeedbackCount} TTS note{ttsFeedbackCount !== 1 ? 's' : ''}
                                     </Badge>
                                   )}
                                 </div>
+                                {latestTTS && (
+                                  <p className="text-[9px] text-muted-foreground mt-0.5">
+                                    Latest: {new Date(latestTTS.generated_at).toLocaleString()} • {latestTTS.generation_mode === 'auto' ? '⚡ Auto' : '✋ Manual'}
+                                    {latestTTS.audio_duration_seconds && ` • ${Number(latestTTS.audio_duration_seconds).toFixed(1)}s`}
+                                  </p>
+                                )}
                               </div>
                               <div className="flex items-center gap-1">
-                                {script.generated_audio_url ? (
+                                {(latestTTS?.audio_url || script.generated_audio_url) ? (
                                   <Button variant="outline" size="sm" className="gap-1 text-xs h-7" asChild>
-                                    <a href={script.generated_audio_url} target="_blank" rel="noopener noreferrer">
+                                    <a href={latestTTS?.audio_url || script.generated_audio_url!} target="_blank" rel="noopener noreferrer">
                                       <Play className="w-3 h-3" />
                                       Play
                                     </a>
@@ -1332,9 +1473,19 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
                                     No audio yet
                                   </Badge>
                                 )}
-                                <Button variant="ghost" size="sm" className="gap-1 text-xs h-7" disabled>
-                                  <Sparkles className="w-3 h-3" />
-                                  Generate
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="gap-1 text-xs h-7"
+                                  disabled={isGenerating}
+                                  onClick={() => handleGenerateTTS(script, 'manual')}
+                                >
+                                  {isGenerating ? (
+                                    <RefreshCw className="w-3 h-3 animate-spin" />
+                                  ) : (
+                                    <Sparkles className="w-3 h-3" />
+                                  )}
+                                  {isGenerating ? 'Generating...' : 'Generate'}
                                 </Button>
                               </div>
                             </div>
@@ -1387,59 +1538,121 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-0">
-                    <ScrollArea className="max-h-[400px]">
-                      {subRegions.map((sr, srIdx) => (
-                        <div key={sr.code}>
-                          {group.children.length > 0 && (
-                            <div className="px-4 py-1.5 bg-muted/50 border-y flex items-center gap-2">
-                              <span className="text-xs">{sr.flag}</span>
-                              <span className="text-[11px] font-medium">{sr.name}</span>
-                              <Badge variant="outline" className="text-[9px] ml-auto">{sr.scripts.length}v</Badge>
-                            </div>
-                          )}
-                          <div className="divide-y">
-                            {sr.scripts.map((script, idx) => {
-                              const statusCfg = STATUS_CONFIG[script.status as ScriptStatus] || STATUS_CONFIG.draft;
-                              const ttsInfo = getSubRegionTTSProvider(script.region_code);
-                              const feedbackCount = notes.filter(n => n.script_id === script.id && (n.status === 'open' || n.status === 'accepted')).length;
+                    <ScrollArea className="max-h-[500px]">
+                      {subRegions.map((sr) => {
+                        // Get TTS versions for this sub-region's scripts
+                        const srScriptIds = sr.scripts.map(s => s.id);
+                        const srTTSVersions = ttsVersions.filter(tv => srScriptIds.includes(tv.script_id));
 
-                              return (
-                                <div key={script.id} className="flex items-center gap-3 px-4 py-3">
-                                  <div className="flex flex-col items-center">
-                                    <div className={cn(
-                                      "w-3 h-3 rounded-full border-2",
-                                      script.status === 'active' ? 'bg-green-500 border-green-600' : 'bg-muted border-border'
-                                    )} />
-                                    {idx < sr.scripts.length - 1 && (
-                                      <div className="w-px h-8 bg-border mt-1" />
-                                    )}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                      <span className="text-xs font-semibold">v{script.version}</span>
-                                      {script.variant_label && (
-                                        <Badge variant="secondary" className="text-[10px]">{script.variant_label}</Badge>
-                                      )}
-                                      <Badge className={cn("text-[10px]", statusCfg.color)}>{statusCfg.label}</Badge>
-                                      <Badge variant="outline" className="text-[9px] px-1 py-0">
-                                        🔊 {ttsInfo.provider}
-                                      </Badge>
-                                      {feedbackCount > 0 && (
-                                        <Badge variant="secondary" className="text-[9px] px-1 py-0">
-                                          💬 {feedbackCount}
-                                        </Badge>
+                        // Build interleaved timeline: script events + TTS events
+                        type TimelineItem = 
+                          | { type: 'script'; script: NarrationScript; timestamp: string }
+                          | { type: 'tts'; ttsVersion: any; scriptRef: NarrationScript | undefined; timestamp: string };
+
+                        const timeline: TimelineItem[] = [
+                          ...sr.scripts.map(s => ({ type: 'script' as const, script: s, timestamp: s.updated_at })),
+                          ...srTTSVersions.map(tv => ({
+                            type: 'tts' as const,
+                            ttsVersion: tv,
+                            scriptRef: sr.scripts.find(s => s.id === tv.script_id),
+                            timestamp: tv.generated_at,
+                          })),
+                        ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+                        return (
+                          <div key={sr.code}>
+                            {group.children.length > 0 && (
+                              <div className="px-4 py-1.5 bg-muted/50 border-y flex items-center gap-2">
+                                <span className="text-xs">{sr.flag}</span>
+                                <span className="text-[11px] font-medium">{sr.name}</span>
+                                <Badge variant="outline" className="text-[9px] ml-auto">
+                                  {sr.scripts.length} script{sr.scripts.length !== 1 ? 's' : ''} • {srTTSVersions.length} TTS
+                                </Badge>
+                              </div>
+                            )}
+                            <div className="divide-y">
+                              {timeline.map((item, idx) => {
+                                if (item.type === 'script') {
+                                  const script = item.script;
+                                  const statusCfg = STATUS_CONFIG[script.status as ScriptStatus] || STATUS_CONFIG.draft;
+                                  const ttsInfo = getSubRegionTTSProvider(script.region_code);
+                                  const scriptFeedback = notes.filter(n => n.script_id === script.id && n.note_type !== 'tts_feedback' && (n.status === 'open' || n.status === 'accepted')).length;
+
+                                  return (
+                                    <div key={`s-${script.id}`} className="flex items-center gap-3 px-4 py-3">
+                                      <div className="flex flex-col items-center">
+                                        <div className={cn(
+                                          "w-3 h-3 rounded-full border-2",
+                                          script.status === 'active' ? 'bg-primary border-primary' : 'bg-muted border-border'
+                                        )} />
+                                        {idx < timeline.length - 1 && <div className="w-px h-8 bg-border mt-1" />}
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                          <Badge variant="outline" className="text-[9px] px-1 py-0">📝 Script</Badge>
+                                          <span className="text-xs font-semibold">v{script.version}</span>
+                                          {script.variant_label && <Badge variant="secondary" className="text-[10px]">{script.variant_label}</Badge>}
+                                          <Badge className={cn("text-[10px]", statusCfg.color)}>{statusCfg.label}</Badge>
+                                          <Badge variant="outline" className="text-[9px] px-1 py-0">🔊 {ttsInfo.provider}</Badge>
+                                          {scriptFeedback > 0 && <Badge variant="secondary" className="text-[9px] px-1 py-0">💬 {scriptFeedback}</Badge>}
+                                        </div>
+                                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                                          {new Date(script.updated_at).toLocaleString()} — {script.hook?.slice(0, 60)}...
+                                        </p>
+                                      </div>
+                                    </div>
+                                  );
+                                } else {
+                                  const tv = item.ttsVersion;
+                                  const ttsFeedback = notes.filter(n => (n as any).tts_version_id === tv.id && (n.status === 'open' || n.status === 'accepted')).length;
+
+                                  return (
+                                    <div key={`t-${tv.id}`} className="flex items-center gap-3 px-4 py-3 bg-muted/20">
+                                      <div className="flex flex-col items-center">
+                                        <div className={cn(
+                                          "w-3 h-3 rounded-full border-2",
+                                          tv.status === 'completed' ? 'bg-accent border-accent' : tv.status === 'failed' ? 'bg-destructive border-destructive' : 'bg-muted border-border'
+                                        )} />
+                                        {idx < timeline.length - 1 && <div className="w-px h-8 bg-border mt-1" />}
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                          <Badge variant="outline" className="text-[9px] px-1 py-0">🎙 TTS v{tv.version_number}</Badge>
+                                          <Badge variant="secondary" className="text-[9px] px-1 py-0">
+                                            🔊 {tv.tts_provider}
+                                          </Badge>
+                                          <Badge variant="outline" className="text-[9px] px-1 py-0">
+                                            🌐 {tv.tts_locale}
+                                          </Badge>
+                                          <Badge variant={tv.generation_mode === 'auto' ? 'default' : 'secondary'} className="text-[9px] px-1 py-0">
+                                            {tv.generation_mode === 'auto' ? '⚡ Auto' : '✋ Manual'}
+                                          </Badge>
+                                          {tv.status === 'failed' && <Badge variant="destructive" className="text-[9px] px-1 py-0">Failed</Badge>}
+                                          {tv.fallback_used && <Badge variant="outline" className="text-[9px] px-1 py-0">↩ Fallback</Badge>}
+                                          {ttsFeedback > 0 && <Badge variant="secondary" className="text-[9px] px-1 py-0">💬 {ttsFeedback}</Badge>}
+                                        </div>
+                                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                                          {new Date(tv.generated_at).toLocaleString()}
+                                          {tv.audio_duration_seconds && ` • ${Number(tv.audio_duration_seconds).toFixed(1)}s`}
+                                          {tv.characters_processed && ` • ${tv.characters_processed} chars`}
+                                          {item.scriptRef && ` • Script v${item.scriptRef.version}`}
+                                        </p>
+                                      </div>
+                                      {tv.audio_url && tv.status === 'completed' && (
+                                        <Button variant="ghost" size="sm" className="h-7" asChild>
+                                          <a href={tv.audio_url} target="_blank" rel="noopener noreferrer">
+                                            <Play className="w-3 h-3" />
+                                          </a>
+                                        </Button>
                                       )}
                                     </div>
-                                    <p className="text-[10px] text-muted-foreground mt-0.5">
-                                      {new Date(script.updated_at).toLocaleDateString()} — {script.hook?.slice(0, 60)}...
-                                    </p>
-                                  </div>
-                                </div>
-                              );
-                            })}
+                                  );
+                                }
+                              })}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </ScrollArea>
                   </CardContent>
                 </Card>
@@ -1494,6 +1707,7 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
                         <SelectItem value="ab_learning">📊 A/B Learning</SelectItem>
                         <SelectItem value="ai_suggestion">✨ AI Suggestion</SelectItem>
                         <SelectItem value="performance_insight">💡 Performance Insight</SelectItem>
+                        <SelectItem value="tts_feedback">🎙 TTS Feedback</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
