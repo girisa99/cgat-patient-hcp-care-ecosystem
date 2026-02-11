@@ -298,144 +298,294 @@ const KEY_TALKING_POINTS = [
 function generateMeetingPDF() {
   const pdf = new jsPDF('p', 'mm', 'a4');
   const pageWidth = pdf.internal.pageSize.getWidth();
-  const margin = 15;
+  const pageHeight = pdf.internal.pageSize.getHeight();
+  const margin = 18;
   const contentWidth = pageWidth - margin * 2;
-  let y = 20;
+  const bottomMargin = 20;
+  const maxY = pageHeight - bottomMargin;
+  let y = 25;
 
-  const addPageIfNeeded = (needed: number) => {
-    if (y + needed > 270) {
+  // Smart page break: checks if content fits, adds new page if not
+  const ensureSpace = (needed: number) => {
+    if (y + needed > maxY) {
       pdf.addPage();
-      y = 20;
+      y = 25;
+      // Add page header line
+      pdf.setDrawColor(220, 220, 220);
+      pdf.line(margin, 18, pageWidth - margin, 18);
+      y = 25;
     }
   };
 
-  // Title
-  pdf.setFontSize(22);
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('Alibaba Cloud Partnership Meeting', margin, y);
-  y += 10;
-  pdf.setFontSize(11);
-  pdf.setFont('helvetica', 'normal');
-  pdf.setTextColor(100, 100, 100);
-  pdf.text('Genie Suite — Mind to Media Platform', margin, y);
-  y += 6;
-  pdf.text(`Prepared: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`, margin, y);
-  y += 6;
-  pdf.text('Total Duration: ~70 minutes', margin, y);
-  y += 12;
-  pdf.setTextColor(0, 0, 0);
-
-  // Line
-  pdf.setDrawColor(200, 200, 200);
-  pdf.line(margin, y, pageWidth - margin, y);
-  y += 8;
-
-  // Sections
-  AGENDA_SECTIONS.forEach((section) => {
-    addPageIfNeeded(30);
-
-    // Section header
-    pdf.setFontSize(14);
-    pdf.setFont('helvetica', 'bold');
-    const priorityLabel = section.priority === 'critical' ? '🔴 CRITICAL' : section.priority === 'important' ? '🟡 IMPORTANT' : '🟢 NICE-TO-HAVE';
-    pdf.text(`${section.title}`, margin, y);
-    pdf.setFontSize(9);
-    pdf.setFont('helvetica', 'normal');
-    pdf.setTextColor(100, 100, 100);
-    pdf.text(`${priorityLabel} | ${section.duration}`, margin, y + 5);
-    pdf.setTextColor(0, 0, 0);
-    y += 12;
-
-    section.items.forEach((item) => {
-      addPageIfNeeded(35);
-
-      pdf.setFontSize(11);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text(`• ${item.topic}`, margin + 2, y);
-      y += 5;
-
-      pdf.setFontSize(9);
-      pdf.setFont('helvetica', 'normal');
-      
-      // Current status
-      pdf.setTextColor(80, 80, 80);
-      const statusLines = pdf.splitTextToSize(`Status: ${item.currentStatus}`, contentWidth - 10);
-      pdf.text(statusLines, margin + 5, y);
-      y += statusLines.length * 4 + 2;
-
-      // Question
-      pdf.setTextColor(0, 50, 150);
-      const questionLines = pdf.splitTextToSize(`Ask: ${item.question}`, contentWidth - 10);
-      pdf.text(questionLines, margin + 5, y);
-      y += questionLines.length * 4 + 2;
-
-      // Expected outcome
-      pdf.setTextColor(0, 120, 0);
-      const outcomeLines = pdf.splitTextToSize(`Expected: ${item.expectedOutcome}`, contentWidth - 10);
-      pdf.text(outcomeLines, margin + 5, y);
-      pdf.setTextColor(0, 0, 0);
-      y += outcomeLines.length * 4 + 4;
+  // Helper: draw wrapped text and return actual height used
+  const drawWrappedText = (text: string, x: number, currentY: number, maxWidth: number, fontSize: number, lineHeight: number): number => {
+    pdf.setFontSize(fontSize);
+    const lines = pdf.splitTextToSize(text, maxWidth);
+    const totalHeight = lines.length * lineHeight;
+    
+    // Check if this block fits on current page
+    if (currentY + totalHeight > maxY) {
+      pdf.addPage();
+      y = 25;
+      currentY = 25;
+    }
+    
+    lines.forEach((line: string, idx: number) => {
+      pdf.text(line, x, currentY + (idx * lineHeight));
     });
+    
+    return totalHeight;
+  };
 
-    y += 4;
-    pdf.setDrawColor(230, 230, 230);
-    pdf.line(margin, y, pageWidth - margin, y);
-    y += 6;
-  });
+  // ── TITLE PAGE ──
+  pdf.setFontSize(24);
+  pdf.setFont('helvetica', 'bold');
+  pdf.setTextColor(30, 30, 30);
+  pdf.text('Alibaba Cloud', margin, y);
+  y += 10;
+  pdf.text('Partnership Meeting', margin, y);
+  y += 14;
 
-  // Demo Checklist
-  addPageIfNeeded(50);
+  pdf.setFontSize(12);
+  pdf.setFont('helvetica', 'normal');
+  pdf.setTextColor(80, 80, 80);
+  pdf.text('Genie Suite  |  Mind to Media Platform', margin, y);
+  y += 7;
+  pdf.text(`Prepared: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`, margin, y);
+  y += 7;
+  pdf.text('Estimated Duration: ~70 minutes', margin, y);
+  y += 7;
+  pdf.text('Sections: 6  |  Topics: 27', margin, y);
+  y += 12;
+
+  // Divider
+  pdf.setDrawColor(180, 180, 180);
+  pdf.setLineWidth(0.5);
+  pdf.line(margin, y, pageWidth - margin, y);
+  y += 10;
+
+  // ── TABLE OF CONTENTS ──
+  pdf.setTextColor(30, 30, 30);
   pdf.setFontSize(14);
   pdf.setFont('helvetica', 'bold');
-  pdf.text('Live Demo Checklist', margin, y);
+  pdf.text('Table of Contents', margin, y);
   y += 8;
+
+  pdf.setFontSize(10);
+  pdf.setFont('helvetica', 'normal');
+  const priorityMarker = (p: string) => p === 'critical' ? '[CRITICAL]' : p === 'important' ? '[IMPORTANT]' : '[NICE-TO-HAVE]';
+  AGENDA_SECTIONS.forEach((section, idx) => {
+    pdf.setTextColor(60, 60, 60);
+    pdf.text(`${idx + 1}. ${section.title}  —  ${priorityMarker(section.priority)}  (${section.duration})`, margin + 2, y);
+    y += 6;
+  });
+  y += 4;
+  pdf.text('7. Live Demo Checklist', margin + 2, y); y += 6;
+  pdf.text('8. Key Talking Points', margin + 2, y); y += 6;
+  pdf.text('9. Post-Meeting Action Items', margin + 2, y); y += 10;
+
+  // ── AGENDA SECTIONS ──
+  AGENDA_SECTIONS.forEach((section, sectionIdx) => {
+    // Always start each major section on a new page for clarity
+    pdf.addPage();
+    y = 25;
+
+    // Section header with colored bar
+    const barColors: Record<string, [number, number, number]> = {
+      critical: [220, 50, 50],
+      important: [210, 160, 30],
+      'nice-to-have': [40, 160, 80],
+    };
+    const barColor = barColors[section.priority] || [100, 100, 100];
+    pdf.setFillColor(barColor[0], barColor[1], barColor[2]);
+    pdf.rect(margin, y - 5, 3, 10, 'F');
+
+    pdf.setFontSize(16);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(30, 30, 30);
+    pdf.text(`${sectionIdx + 1}. ${section.title}`, margin + 6, y);
+    y += 6;
+
+    pdf.setFontSize(9);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(120, 120, 120);
+    pdf.text(`Priority: ${priorityMarker(section.priority)}  |  Duration: ${section.duration}  |  Topics: ${section.items.length}`, margin + 6, y);
+    y += 10;
+
+    // Items
+    section.items.forEach((item, itemIdx) => {
+      // Estimate total height for this item (topic + 3 text blocks)
+      const estimatedHeight = 45;
+      ensureSpace(estimatedHeight);
+
+      // Topic header
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(30, 30, 30);
+      pdf.text(`${sectionIdx + 1}.${itemIdx + 1}  ${item.topic}`, margin + 2, y);
+      y += 7;
+
+      // Status
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(90, 90, 90);
+      const statusText = `Current Status: ${item.currentStatus}`;
+      const statusLines = pdf.splitTextToSize(statusText, contentWidth - 12);
+      const statusHeight = statusLines.length * 4.5;
+      ensureSpace(statusHeight + 2);
+      pdf.text(statusLines, margin + 8, y);
+      y += statusHeight + 3;
+
+      // Question (blue)
+      pdf.setTextColor(20, 60, 160);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(9);
+      const askText = `Ask: ${item.question}`;
+      const askLines = pdf.splitTextToSize(askText, contentWidth - 12);
+      const askHeight = askLines.length * 4.5;
+      ensureSpace(askHeight + 2);
+      pdf.text(askLines, margin + 8, y);
+      y += askHeight + 3;
+
+      // Expected outcome (green)
+      pdf.setTextColor(20, 130, 50);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(9);
+      const expectedText = `Expected Outcome: ${item.expectedOutcome}`;
+      const expectedLines = pdf.splitTextToSize(expectedText, contentWidth - 12);
+      const expectedHeight = expectedLines.length * 4.5;
+      ensureSpace(expectedHeight + 2);
+      pdf.text(expectedLines, margin + 8, y);
+      y += expectedHeight + 5;
+
+      // Light separator between items
+      pdf.setDrawColor(230, 230, 230);
+      pdf.setLineWidth(0.2);
+      pdf.line(margin + 8, y, pageWidth - margin, y);
+      y += 5;
+      pdf.setTextColor(0, 0, 0);
+    });
+  });
+
+  // ── DEMO CHECKLIST ──
+  pdf.addPage();
+  y = 25;
+  pdf.setFontSize(16);
+  pdf.setFont('helvetica', 'bold');
+  pdf.setTextColor(30, 30, 30);
+  pdf.text('7. Live Demo Checklist', margin, y);
+  y += 10;
+
   pdf.setFontSize(10);
   pdf.setFont('helvetica', 'normal');
   DEMO_CHECKLIST.forEach((item) => {
-    addPageIfNeeded(8);
-    pdf.text(`☐  ${item}`, margin + 2, y);
-    y += 6;
-  });
-
-  // Key Talking Points
-  y += 6;
-  addPageIfNeeded(50);
-  pdf.setFontSize(14);
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('Key Talking Points', margin, y);
-  y += 8;
-  pdf.setFontSize(10);
-  pdf.setFont('helvetica', 'normal');
-  KEY_TALKING_POINTS.forEach((point) => {
-    addPageIfNeeded(12);
-    const lines = pdf.splitTextToSize(`→ ${point}`, contentWidth - 5);
-    pdf.text(lines, margin + 2, y);
+    ensureSpace(10);
+    // Checkbox
+    pdf.setDrawColor(150, 150, 150);
+    pdf.setLineWidth(0.3);
+    pdf.rect(margin + 2, y - 3, 4, 4);
+    // Text
+    pdf.setTextColor(50, 50, 50);
+    const lines = pdf.splitTextToSize(item, contentWidth - 12);
+    pdf.text(lines, margin + 10, y);
     y += lines.length * 5 + 3;
   });
 
-  // Post-meeting action items template
-  addPageIfNeeded(60);
-  y += 6;
-  pdf.setFontSize(14);
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('Post-Meeting Action Items', margin, y);
+  // ── KEY TALKING POINTS ──
   y += 8;
+  ensureSpace(20);
+  pdf.setFontSize(16);
+  pdf.setFont('helvetica', 'bold');
+  pdf.setTextColor(30, 30, 30);
+  pdf.text('8. Key Talking Points', margin, y);
+  y += 10;
+
+  pdf.setFontSize(10);
+  pdf.setFont('helvetica', 'normal');
+  KEY_TALKING_POINTS.forEach((point, idx) => {
+    ensureSpace(16);
+    pdf.setTextColor(50, 50, 50);
+    const lines = pdf.splitTextToSize(`${idx + 1}. ${point}`, contentWidth - 8);
+    pdf.text(lines, margin + 4, y);
+    y += lines.length * 5 + 4;
+  });
+
+  // ── POST-MEETING ACTION ITEMS ──
+  pdf.addPage();
+  y = 25;
+  pdf.setFontSize(16);
+  pdf.setFont('helvetica', 'bold');
+  pdf.setTextColor(30, 30, 30);
+  pdf.text('9. Post-Meeting Action Items', margin, y);
+  y += 10;
+
   pdf.setFontSize(10);
   pdf.setFont('helvetica', 'normal');
   const actions = [
-    'Enable CosyVoice v2 in Singapore (or confirm Beijing-only) — Owner: Alibaba',
-    'Activate Batch Operations for async models (Beijing) — Owner: Alibaba',
-    'Test viseme data from CosyVoice v2 — Owner: Engineering',
-    'Full-body digital human API access — Owner: Alibaba',
-    'Volume pricing proposal — Owner: Alibaba',
-    'Transition free quota → production billing — Owner: Engineering',
-    'API key consolidation (3 → 2 keys) — Owner: Both',
+    ['Enable CosyVoice v2 in Singapore (or confirm Beijing-only)', 'Alibaba'],
+    ['Activate Batch Operations for async models (Beijing)', 'Alibaba'],
+    ['Test viseme data from CosyVoice v2', 'Engineering'],
+    ['Full-body digital human API access', 'Alibaba'],
+    ['3D generation service evaluation', 'Both'],
+    ['Volume pricing proposal', 'Alibaba'],
+    ['Transition free quota to production billing', 'Engineering'],
+    ['API key consolidation (3 to 2 keys)', 'Both'],
   ];
-  actions.forEach((action) => {
-    addPageIfNeeded(8);
-    pdf.text(`☐  ${action}`, margin + 2, y);
-    y += 6;
+
+  // Table header
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFillColor(240, 240, 240);
+  pdf.rect(margin, y - 4, contentWidth, 8, 'F');
+  pdf.setTextColor(60, 60, 60);
+  pdf.text('Action Item', margin + 4, y);
+  pdf.text('Owner', margin + contentWidth - 30, y);
+  pdf.text('Done', margin + contentWidth - 8, y);
+  y += 8;
+
+  pdf.setFont('helvetica', 'normal');
+  actions.forEach(([action, owner]) => {
+    ensureSpace(10);
+    pdf.setTextColor(50, 50, 50);
+    const lines = pdf.splitTextToSize(action, contentWidth - 50);
+    pdf.text(lines, margin + 4, y);
+    pdf.setTextColor(100, 100, 100);
+    pdf.text(owner, margin + contentWidth - 30, y);
+    // Checkbox
+    pdf.setDrawColor(150, 150, 150);
+    pdf.setLineWidth(0.3);
+    pdf.rect(margin + contentWidth - 6, y - 3, 4, 4);
+    y += lines.length * 5 + 4;
+    // Light line
+    pdf.setDrawColor(235, 235, 235);
+    pdf.line(margin, y - 2, pageWidth - margin, y - 2);
   });
+
+  // ── NOTES PAGE ──
+  pdf.addPage();
+  y = 25;
+  pdf.setFontSize(16);
+  pdf.setFont('helvetica', 'bold');
+  pdf.setTextColor(30, 30, 30);
+  pdf.text('Meeting Notes', margin, y);
+  y += 10;
+
+  // Ruled lines for notes
+  pdf.setDrawColor(220, 220, 220);
+  pdf.setLineWidth(0.2);
+  for (let i = 0; i < 25; i++) {
+    pdf.line(margin, y, pageWidth - margin, y);
+    y += 10;
+  }
+
+  // ── PAGE NUMBERS ──
+  const totalPages = pdf.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    pdf.setPage(i);
+    pdf.setFontSize(8);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(160, 160, 160);
+    pdf.text(`Genie Suite — Alibaba Meeting Prep  |  Page ${i} of ${totalPages}`, margin, pageHeight - 10);
+  }
 
   pdf.save('Alibaba_Meeting_Prep_Genie_Suite.pdf');
 }
