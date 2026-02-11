@@ -15341,6 +15341,93 @@ export type Database = {
         }
         Relationships: []
       }
+      narration_playback_events: {
+        Row: {
+          completion_percentage: number | null
+          created_at: string
+          event_type: string
+          id: string
+          landing_page_path: string | null
+          language_code: string | null
+          pipeline_category: string
+          pipeline_id: string
+          playback_duration_ms: number | null
+          referrer_url: string | null
+          region_code: string
+          script_id: string | null
+          sub_region_code: string | null
+          total_audio_duration_ms: number | null
+          tts_audio_id: string | null
+          tts_provider: string | null
+          tts_voice_id: string | null
+          visitor_browser: string | null
+          visitor_country: string | null
+          visitor_device_type: string | null
+          visitor_session_id: string | null
+        }
+        Insert: {
+          completion_percentage?: number | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          landing_page_path?: string | null
+          language_code?: string | null
+          pipeline_category?: string
+          pipeline_id?: string
+          playback_duration_ms?: number | null
+          referrer_url?: string | null
+          region_code: string
+          script_id?: string | null
+          sub_region_code?: string | null
+          total_audio_duration_ms?: number | null
+          tts_audio_id?: string | null
+          tts_provider?: string | null
+          tts_voice_id?: string | null
+          visitor_browser?: string | null
+          visitor_country?: string | null
+          visitor_device_type?: string | null
+          visitor_session_id?: string | null
+        }
+        Update: {
+          completion_percentage?: number | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          landing_page_path?: string | null
+          language_code?: string | null
+          pipeline_category?: string
+          pipeline_id?: string
+          playback_duration_ms?: number | null
+          referrer_url?: string | null
+          region_code?: string
+          script_id?: string | null
+          sub_region_code?: string | null
+          total_audio_duration_ms?: number | null
+          tts_audio_id?: string | null
+          tts_provider?: string | null
+          tts_voice_id?: string | null
+          visitor_browser?: string | null
+          visitor_country?: string | null
+          visitor_device_type?: string | null
+          visitor_session_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "narration_playback_events_script_id_fkey"
+            columns: ["script_id"]
+            isOneToOne: false
+            referencedRelation: "regional_narration_scripts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "narration_playback_events_tts_audio_id_fkey"
+            columns: ["tts_audio_id"]
+            isOneToOne: false
+            referencedRelation: "tts_audio_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       network_monitoring: {
         Row: {
           created_at: string | null
@@ -26100,6 +26187,22 @@ export type Database = {
           index_size_pretty: string | null
           schema_name: unknown
           table_name: unknown
+        }
+        Relationships: []
+      }
+      narration_playback_summary: {
+        Row: {
+          active_days: number | null
+          avg_completion_pct: number | null
+          avg_listen_ms: number | null
+          language_code: string | null
+          last_played_at: string | null
+          region_code: string | null
+          sub_region_code: string | null
+          total_completions: number | null
+          total_plays: number | null
+          tts_provider: string | null
+          unique_listeners: number | null
         }
         Relationships: []
       }
