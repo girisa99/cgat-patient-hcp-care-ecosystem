@@ -777,6 +777,7 @@ export const LandingPageScriptsPanel: React.FC = () => {
       const { data, error } = await supabase
         .from('tts_audio_versions')
         .select('*')
+        .in('status', ['completed', 'generating', 'pending'])
         .order('generated_at', { ascending: false });
       if (error) throw error;
       setTtsVersions((data || []) as any[]);
@@ -886,11 +887,22 @@ export const LandingPageScriptsPanel: React.FC = () => {
   // ── Filtered scripts — case-insensitive matching for region codes ──
   const filteredScripts = useMemo(() => {
     const lowerFilterRegions = filterRegions.map(r => r.toLowerCase());
-    return scripts.filter(s => {
-      if (filterRegions.length > 0 && !lowerFilterRegions.includes(s.region_code.toLowerCase())) return false;
-      if (filterStatus !== 'all' && s.status !== filterStatus) return false;
-      return true;
-    });
+    return scripts
+      .filter(s => {
+        // Never show archived scripts in any view
+        if (s.status === 'archived') return false;
+        if (filterRegions.length > 0 && !lowerFilterRegions.includes(s.region_code.toLowerCase())) return false;
+        if (filterStatus !== 'all' && s.status !== filterStatus) return false;
+        return true;
+      })
+      // Priority ordering: active → review → draft
+      .sort((a, b) => {
+        const statusOrder: Record<string, number> = { active: 0, review: 1, draft: 2 };
+        const orderA = statusOrder[a.status] ?? 3;
+        const orderB = statusOrder[b.status] ?? 3;
+        if (orderA !== orderB) return orderA - orderB;
+        return b.version - a.version; // Within same status, newest first
+      });
   }, [scripts, filterRegions, filterStatus]);
 
   // ── Group by region ──
@@ -3162,13 +3174,15 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                         {filteredScripts
                           .filter(s => {
                             if (newNoteType === 'tts_feedback') return s.status === 'active';
-                            return ['draft', 'review', 'active'].includes(s.status);
+                            return ['active', 'review', 'draft'].includes(s.status);
                           })
                           .map(s => (
                           <SelectItem key={s.id} value={s.id}>
                             {REGION_OPTIONS.find(r => r.code === s.region_code)?.flag} {s.region_display_name} v{s.version}
                             {s.variant_label ? ` (${s.variant_label})` : ''}
-                            <span className="text-[9px] text-muted-foreground ml-1">({s.status})</span>
+                            <span className={`text-[9px] ml-1 ${s.status === 'active' ? 'text-green-600' : s.status === 'review' ? 'text-amber-600' : 'text-muted-foreground'}`}>
+                              ({s.status === 'active' ? '✅ active' : s.status === 'review' ? '⏳ review' : '📝 draft'})
+                            </span>
                           </SelectItem>
                         ))}
                         {filteredScripts.filter(s => newNoteType === 'tts_feedback' ? s.status === 'active' : ['draft', 'review', 'active'].includes(s.status)).length === 0 && (
@@ -3394,7 +3408,7 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                         const groupScripts = filteredScripts.filter(s => {
                           const codes = getGroupCodes(group);
                           const inGroup = codes.some(c => c.toLowerCase() === s.region_code?.toLowerCase());
-                          return inGroup && ['draft', 'review', 'active'].includes(s.status);
+                          return inGroup && ['active', 'review', 'draft'].includes(s.status);
                         });
                         if (groupScripts.length === 0) return null;
                         return (
@@ -3408,7 +3422,10 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                                 <SelectItem key={s.id} value={s.id}>
                                   {'  '}{REGION_OPTIONS.find(r => r.code === s.region_code)?.flag} {s.region_display_name} v{s.version}
                                   {s.variant_label ? ` (${s.variant_label})` : ''}
-                                  {openNotes.length > 0 ? ` — ${openNotes.length} script notes` : ''}
+                                  <span className={`text-[9px] ml-1 ${s.status === 'active' ? 'text-green-600' : s.status === 'review' ? 'text-amber-600' : 'text-muted-foreground'}`}>
+                                    ({s.status === 'active' ? '✅' : s.status === 'review' ? '⏳' : '📝'})
+                                  </span>
+                                  {openNotes.length > 0 ? ` — ${openNotes.length} notes` : ''}
                                 </SelectItem>
                               );
                             })}
