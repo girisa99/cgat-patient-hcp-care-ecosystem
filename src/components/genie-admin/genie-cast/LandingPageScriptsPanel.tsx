@@ -16,7 +16,7 @@ import {
   Globe, FileText, Headphones, History, Plus, Copy, Check, X,
   Play, Pause, Volume2, Edit, Trash2, ChevronDown, Tag, Sparkles,
   ArrowUpDown, Filter, MoreHorizontal, Eye, RefreshCw, Mic, AlertTriangle,
-  MessageCircle, Lightbulb, TrendingUp, Zap, Send, ThumbsUp, ThumbsDown,
+  MessageCircle, Lightbulb, TrendingUp, Zap, Send, ThumbsUp, ThumbsDown, GitBranch,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -39,6 +39,7 @@ import {
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { ScriptProductionWorkflowDiagram } from './ScriptProductionWorkflowDiagram';
 
 // ─── Types ───────────────────────────────────────────────────────────
 interface NarrationScript {
@@ -224,7 +225,7 @@ const STATUS_CONFIG: Record<ScriptStatus, { label: string; color: string; icon: 
 };
 
 // ─── Sub-tab: Landing Page Scripts ───────────────────────────────────
-type LandingPageSubTab = 'scripts' | 'tts-preview' | 'versions' | 'feedback';
+type LandingPageSubTab = 'scripts' | 'tts-preview' | 'versions' | 'feedback' | 'workflow';
 
 // ─── Feedback types ──────────────────────────────────────────────────
 interface ImprovementNote {
@@ -1808,6 +1809,7 @@ INSTRUCTIONS:
           { id: 'tts-preview' as const, label: 'TTS Preview', icon: Headphones },
           { id: 'versions' as const, label: 'Version History', icon: History },
           { id: 'feedback' as const, label: 'Feedback & Suggestions', icon: Lightbulb },
+          { id: 'workflow' as const, label: 'Workflow', icon: GitBranch },
         ].map(tab => (
           <Button
             key={tab.id}
@@ -2146,18 +2148,18 @@ INSTRUCTIONS:
             exit={{ opacity: 0, y: -10 }}
             className="space-y-4"
           >
-            {scripts.filter(s => s.status === 'active').length === 0 ? (
+            {scripts.filter(s => s.status === 'active' || s.status === 'review').length === 0 ? (
               <Card>
                 <CardContent className="py-8">
                   <div className="text-center text-muted-foreground text-sm">
-                    No active scripts to preview. Set a script to "Active" first.
+                    No active or in-review scripts to preview. Submit a script for review or set it to "Active" first.
                   </div>
                 </CardContent>
               </Card>
             ) : (
               REGION_HIERARCHY.map(group => {
                 const groupCodes = getGroupCodes(group);
-                const groupScripts = scripts.filter(s => s.status === 'active' && groupCodes.includes(s.region_code));
+                const groupScripts = scripts.filter(s => (s.status === 'active' || s.status === 'review') && groupCodes.includes(s.region_code));
                 if (groupScripts.length === 0) return null;
 
                 return (
@@ -2168,7 +2170,7 @@ INSTRUCTIONS:
                         <span>{group.groupFlag}</span>
                         {group.groupName}
                         <Badge variant="outline" className="text-[10px] ml-auto">
-                          {groupScripts.length} active
+                          {groupScripts.length} script{groupScripts.length !== 1 ? 's' : ''}
                         </Badge>
                       </CardTitle>
                     </CardHeader>
@@ -2732,6 +2734,18 @@ INSTRUCTIONS:
                 })}
               </div>
             )}
+          </motion.div>
+        )}
+
+        {/* ─── WORKFLOW DIAGRAM TAB ─── */}
+        {subTab === 'workflow' && (
+          <motion.div
+            key="workflow"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+          >
+            <ScriptProductionWorkflowDiagram />
           </motion.div>
         )}
       </AnimatePresence>
