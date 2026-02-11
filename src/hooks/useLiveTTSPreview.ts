@@ -54,6 +54,8 @@ export interface UseLiveTTSPreviewOptions {
   onPlaybackComplete?: () => void;
   defaultLanguage?: string;
   defaultProvider?: string;
+  /** Sub-region code for routing (e.g., EU_DACH, LATAM_BRAZIL, CJK_CN) */
+  regionCode?: string;
 }
 
 export interface UseLiveTTSPreviewReturn {
@@ -97,6 +99,7 @@ export function useLiveTTSPreview(options: UseLiveTTSPreviewOptions = {}): UseLi
     onPlaybackComplete,
     defaultLanguage = 'en-US',
     defaultProvider,
+    regionCode,
   } = options;
 
   // Generation state
@@ -179,6 +182,9 @@ export function useLiveTTSPreview(options: UseLiveTTSPreviewOptions = {}): UseLi
           voiceId: scene.ttsConfig?.voiceId,
           speed: scene.ttsConfig?.speed || 1.0,
           tier: 'premium',
+          // Sub-region routing: passes regionCode so the edge function can
+          // resolve the correct provider/voice/locale automatically
+          regionCode: regionCode,
         },
       });
 

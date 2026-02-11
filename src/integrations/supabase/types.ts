@@ -19872,6 +19872,7 @@ export type Database = {
           script_id: string
           section_target: string | null
           status: string | null
+          tts_version_id: string | null
           updated_at: string
         }
         Insert: {
@@ -19889,6 +19890,7 @@ export type Database = {
           script_id: string
           section_target?: string | null
           status?: string | null
+          tts_version_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -19906,6 +19908,7 @@ export type Database = {
           script_id?: string
           section_target?: string | null
           status?: string | null
+          tts_version_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -19914,6 +19917,13 @@ export type Database = {
             columns: ["script_id"]
             isOneToOne: false
             referencedRelation: "regional_narration_scripts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "script_improvement_notes_tts_version_id_fkey"
+            columns: ["tts_version_id"]
+            isOneToOne: false
+            referencedRelation: "tts_audio_versions"
             referencedColumns: ["id"]
           },
         ]
@@ -22509,6 +22519,114 @@ export type Database = {
           text_hash?: string
         }
         Relationships: []
+      }
+      tts_audio_versions: {
+        Row: {
+          audio_duration_seconds: number | null
+          audio_format: string | null
+          audio_storage_path: string | null
+          audio_url: string | null
+          characters_processed: number | null
+          created_at: string
+          created_by: string | null
+          error_message: string | null
+          fallback_from: string | null
+          fallback_used: boolean | null
+          generated_at: string
+          generation_mode: string
+          generation_trigger: string | null
+          id: string
+          language_code: string
+          quality_score: number | null
+          region_code: string
+          routing_zone: string | null
+          script_id: string
+          script_version_id: string | null
+          status: string
+          tts_locale: string | null
+          tts_pitch: string | null
+          tts_provider: string
+          tts_speed: number | null
+          tts_voice_id: string | null
+          tts_voice_name: string | null
+          version_number: number
+        }
+        Insert: {
+          audio_duration_seconds?: number | null
+          audio_format?: string | null
+          audio_storage_path?: string | null
+          audio_url?: string | null
+          characters_processed?: number | null
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          fallback_from?: string | null
+          fallback_used?: boolean | null
+          generated_at?: string
+          generation_mode?: string
+          generation_trigger?: string | null
+          id?: string
+          language_code?: string
+          quality_score?: number | null
+          region_code: string
+          routing_zone?: string | null
+          script_id: string
+          script_version_id?: string | null
+          status?: string
+          tts_locale?: string | null
+          tts_pitch?: string | null
+          tts_provider: string
+          tts_speed?: number | null
+          tts_voice_id?: string | null
+          tts_voice_name?: string | null
+          version_number?: number
+        }
+        Update: {
+          audio_duration_seconds?: number | null
+          audio_format?: string | null
+          audio_storage_path?: string | null
+          audio_url?: string | null
+          characters_processed?: number | null
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          fallback_from?: string | null
+          fallback_used?: boolean | null
+          generated_at?: string
+          generation_mode?: string
+          generation_trigger?: string | null
+          id?: string
+          language_code?: string
+          quality_score?: number | null
+          region_code?: string
+          routing_zone?: string | null
+          script_id?: string
+          script_version_id?: string | null
+          status?: string
+          tts_locale?: string | null
+          tts_pitch?: string | null
+          tts_provider?: string
+          tts_speed?: number | null
+          tts_voice_id?: string | null
+          tts_voice_name?: string | null
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tts_audio_versions_script_id_fkey"
+            columns: ["script_id"]
+            isOneToOne: false
+            referencedRelation: "regional_narration_scripts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tts_audio_versions_script_version_id_fkey"
+            columns: ["script_version_id"]
+            isOneToOne: false
+            referencedRelation: "script_versions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tts_jobs: {
         Row: {
