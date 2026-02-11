@@ -122,7 +122,15 @@ const REGION_HIERARCHY: RegionGroup[] = [
       { code: 'SEA_PAN', name: 'Pan-SEA (Singapore)', flag: '🇸🇬' },
     ],
   },
-  { groupCode: 'CJK', groupName: 'China, Japan & Korea', groupFlag: '🌏', children: [] },
+  {
+    groupCode: 'CJK', groupName: 'China, Japan & Korea', groupFlag: '🌏',
+    children: [
+      { code: 'CJK_CN', name: 'China (Mainland, HK, Macau)', flag: '🇨🇳' },
+      { code: 'CJK_TW', name: 'Taiwan (Traditional Chinese)', flag: '🇹🇼' },
+      { code: 'CJK_JP', name: 'Japan', flag: '🇯🇵' },
+      { code: 'CJK_KR', name: 'South Korea', flag: '🇰🇷' },
+    ],
+  },
 ];
 
 // Flatten for backward compatibility
@@ -204,7 +212,7 @@ function getZoneAIProviders(regionCode: string): AIProviderOption[] {
   // Determine zone and sub-zone for fallback selection
   const zone = (() => {
     if (['NAM', 'EU', 'LATAM'].includes(r)) return 'western';
-    if (['CJK'].includes(r)) return 'cjk';
+    if (r?.startsWith('CJK')) return 'cjk';
     if (['MENA'].includes(r)) return 'mena';
     if (r?.startsWith('SEA')) return 'india';
     if (r?.startsWith('INDIA')) return 'india';
@@ -249,6 +257,11 @@ function getZoneAIProviders(regionCode: string): AIProviderOption[] {
     'SEA_VIET': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
     'SEA_PHIL': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
     'SEA_PAN': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
+    // CJK sub-regions (Qwen Max primary for all)
+    'CJK_CN': ['alibaba', 'openai', 'gemini', 'claude', 'deepseek'],
+    'CJK_JP': ['alibaba', 'openai', 'claude', 'gemini', 'deepseek'],
+    'CJK_KR': ['alibaba', 'openai', 'claude', 'gemini', 'deepseek'],
+    'CJK_TW': ['alibaba', 'claude', 'openai', 'gemini', 'deepseek'],
   };
   
   const fallbackOrder = subRegionFallbackOrder[r];
