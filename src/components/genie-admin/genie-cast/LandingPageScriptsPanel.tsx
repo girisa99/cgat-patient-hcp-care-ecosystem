@@ -2294,25 +2294,18 @@ INSTRUCTIONS:
                                               return;
                                             }
                                             console.log('[TTS Play] Converting base64 to blob, length:', base64Data.length);
-                                            // Decode base64 in 4-byte-aligned chunks to handle large strings
-                                            const chunkSize = 8192; // must be multiple of 4
-                                            const byteChunks: number[] = [];
-                                            for (let offset = 0; offset < base64Data.length; offset += chunkSize) {
-                                              const end = Math.min(offset + chunkSize, base64Data.length);
-                                              const chunk = base64Data.substring(offset, end);
-                                              // Only pad the final chunk
-                                              let paddedChunk = chunk;
-                                              if (end === base64Data.length) {
-                                                const rem = chunk.length % 4;
-                                                if (rem === 2) paddedChunk += '==';
-                                                else if (rem === 3) paddedChunk += '=';
-                                              }
-                                              const binary = atob(paddedChunk);
-                                              for (let i = 0; i < binary.length; i++) {
-                                                byteChunks.push(binary.charCodeAt(i));
+                                            // Decode full base64 string at once, then convert binary string to bytes in slices
+                                            const binaryString = atob(base64Data);
+                                            const len = binaryString.length;
+                                            const bytes = new Uint8Array(len);
+                                            // Process binary string in 64KB slices to avoid stack overflow
+                                            const sliceSize = 65536;
+                                            for (let offset = 0; offset < len; offset += sliceSize) {
+                                              const end = Math.min(offset + sliceSize, len);
+                                              for (let i = offset; i < end; i++) {
+                                                bytes[i] = binaryString.charCodeAt(i);
                                               }
                                             }
-                                            const bytes = new Uint8Array(byteChunks);
                                             const blob = new Blob([bytes], { type: 'audio/mpeg' });
                                             const blobUrl = URL.createObjectURL(blob);
                                             console.log('[TTS Play] Blob created, size:', blob.size);
