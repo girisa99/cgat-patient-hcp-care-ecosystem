@@ -670,7 +670,12 @@ export const LandingPageScriptsPanel: React.FC = () => {
   }, [fetchScripts]);
 
   // ── Generate TTS for a script using sub-region routing ──
+  // GATED: Only active/approved scripts can generate TTS
   const handleGenerateTTS = useCallback(async (script: NarrationScript, mode: 'auto' | 'manual' = 'manual') => {
+    if (script.status !== 'active') {
+      toast.error('TTS generation requires an approved (active) script. Please approve the script first.');
+      return;
+    }
     setGeneratingTTSForScript(script.id);
     try {
       const ttsInfo = getSubRegionTTSProvider(script.region_code);
@@ -2061,15 +2066,16 @@ INSTRUCTIONS:
                                   variant="ghost"
                                   size="sm"
                                   className="gap-1 text-xs h-7"
-                                  disabled={isGenerating}
+                                  disabled={isGenerating || script.status !== 'active'}
                                   onClick={() => handleGenerateTTS(script, 'manual')}
+                                  title={script.status !== 'active' ? 'Script must be approved (active) before TTS generation' : 'Generate TTS audio'}
                                 >
                                   {isGenerating ? (
                                     <RefreshCw className="w-3 h-3 animate-spin" />
                                   ) : (
                                     <Sparkles className="w-3 h-3" />
                                   )}
-                                  {isGenerating ? 'Generating...' : 'Generate'}
+                                  {isGenerating ? 'Generating...' : script.status !== 'active' ? 'Approve First' : 'Generate'}
                                 </Button>
                               </div>
                             </div>
