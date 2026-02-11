@@ -92,7 +92,16 @@ const REGION_HIERARCHY: RegionGroup[] = [
   { groupCode: 'NAM', groupName: 'North America', groupFlag: '🇺🇸', children: [] },
   { groupCode: 'EU', groupName: 'Europe', groupFlag: '🇪🇺', children: [] },
   { groupCode: 'LATAM', groupName: 'Latin America', groupFlag: '🌎', children: [] },
-  { groupCode: 'MENA', groupName: 'Middle East & North Africa', groupFlag: '🌍', children: [] },
+  {
+    groupCode: 'MENA', groupName: 'Middle East & North Africa', groupFlag: '🌍',
+    children: [
+      { code: 'MENA_GULF', name: 'Gulf (UAE, Saudi, Qatar, Kuwait)', flag: '🇦🇪' },
+      { code: 'MENA_EGYPT', name: 'Egypt (مصري)', flag: '🇪🇬' },
+      { code: 'MENA_LEVANT', name: 'Levant (Lebanon, Jordan, Iraq)', flag: '🇱🇧' },
+      { code: 'MENA_MAGHREB', name: 'Maghreb (Morocco, Algeria, Tunisia)', flag: '🇲🇦' },
+      { code: 'MENA_MSA', name: 'Pan-Arab (Modern Standard Arabic)', flag: '🕌' },
+    ],
+  },
   {
     groupCode: 'AFRICA', groupName: 'Africa', groupFlag: '🌍',
     children: [
@@ -102,6 +111,8 @@ const REGION_HIERARCHY: RegionGroup[] = [
       { code: 'AFRICA_FRANCO', name: 'Francophone Africa (Senegal, DRC)', flag: '🇸🇳' },
     ],
   },
+  { groupCode: 'PAKISTAN', groupName: 'Pakistan (Urdu)', groupFlag: '🇵🇰', children: [] },
+  { groupCode: 'BANGLADESH', groupName: 'Bangladesh (Bengali)', groupFlag: '🇧🇩', children: [] },
   {
     groupCode: 'INDIA', groupName: 'India', groupFlag: '🇮🇳',
     children: [
@@ -213,7 +224,9 @@ function getZoneAIProviders(regionCode: string): AIProviderOption[] {
   const zone = (() => {
     if (['NAM', 'EU', 'LATAM'].includes(r)) return 'western';
     if (r?.startsWith('CJK')) return 'cjk';
-    if (['MENA'].includes(r)) return 'mena';
+    if (r?.startsWith('MENA')) return 'mena';
+    if (['PAKISTAN'].includes(r)) return 'pakistan';
+    if (['BANGLADESH'].includes(r)) return 'bangladesh';
     if (r?.startsWith('SEA')) return 'india';
     if (r?.startsWith('INDIA')) return 'india';
     if (r?.startsWith('AFRICA')) return 'africa';
@@ -222,21 +235,33 @@ function getZoneAIProviders(regionCode: string): AIProviderOption[] {
 
   const providers: AIProviderOption[] = [
     { id: 'claude', name: 'Claude 4', model: 'claude-4', zone: 'western', isRecommended: false, reason: 'Best for Western/EU/LATAM copywriting — nuanced tone, cultural context' },
-    { id: 'alibaba', name: 'Qwen Max', model: 'qwen-max', zone: 'cjk', isRecommended: false, reason: 'Best for CJK & MENA scripts — native dialect handling, cultural adaptation' },
-    { id: 'gemini', name: 'Gemini 3 Pro', model: 'gemini-3-pro', zone: 'india', isRecommended: false, reason: 'Best for India/SEA/Africa — multilingual, strong regional context' },
-    { id: 'openai', name: 'GPT-4o', model: 'gpt-4o', zone: 'fallback', isRecommended: false, reason: 'Strong all-rounder fallback — reliable across all regions' },
+    { id: 'alibaba', name: 'Qwen Max', model: 'qwen-max', zone: 'cjk', isRecommended: false, reason: 'Best for CJK & formal Arabic — native dialect handling, cultural adaptation' },
+    { id: 'gemini', name: 'Gemini 3 Pro', model: 'gemini-3-pro', zone: 'india', isRecommended: false, reason: 'Best for India/SEA/Africa/Bangladesh — multilingual, strong regional context' },
+    { id: 'openai', name: 'GPT-4o', model: 'gpt-4o', zone: 'fallback', isRecommended: false, reason: 'Strong Arabic dialects (Egyptian/Levantine) — reliable all-rounder fallback' },
     { id: 'deepseek', name: 'DeepSeek V3', model: 'deepseek-v3', zone: 'fallback', isRecommended: false, reason: 'Cost-effective alternative — good for bulk script generation' },
   ];
 
-  // Zone → primary provider, with sub-region-specific fallback ordering
+  // Zone → primary provider (hybrid routing)
   const zoneMap: Record<string, string> = {
     western: 'claude',
     cjk: 'alibaba',
-    mena: 'alibaba',
+    mena: 'openai', // Default MENA — overridden per sub-region below
+    pakistan: 'openai',
+    bangladesh: 'gemini',
     india: 'gemini',
-    africa: 'gemini', // Gemini 3 Pro primary for ALL Africa sub-regions
+    africa: 'gemini',
   };
-  const recommended = zoneMap[zone] || 'claude';
+  
+  // MENA sub-region hybrid overrides
+  const menaOverrides: Record<string, string> = {
+    'MENA_GULF': 'alibaba',   // Qwen Max — strongest formal + Gulf Arabic corpus
+    'MENA_EGYPT': 'openai',   // GPT-4o — best Egyptian colloquial
+    'MENA_LEVANT': 'openai',  // GPT-4o — strong Levantine handling
+    'MENA_MAGHREB': 'claude', // Claude 4 — French-Arabic code-switching
+    'MENA_MSA': 'alibaba',    // Qwen Max — formal/literary Arabic
+  };
+  
+  const recommended = menaOverrides[r] || zoneMap[zone] || 'claude';
   
   // Sub-region fallback preferences (affects sort order after recommended)
   const subRegionFallbackOrder: Record<string, string[]> = {
@@ -245,6 +270,10 @@ function getZoneAIProviders(regionCode: string): AIProviderOption[] {
     'AFRICA_EAST': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
     'AFRICA_SOUTH': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
     'AFRICA_FRANCO': ['gemini', 'alibaba', 'openai', 'claude', 'deepseek'],
+    // Pakistan — GPT-4o primary (strong Urdu), Gemini fallback
+    'PAKISTAN': ['openai', 'gemini', 'claude', 'alibaba', 'deepseek'],
+    // Bangladesh — Gemini primary (strong Bengali), GPT-4o fallback
+    'BANGLADESH': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
     // India sub-regions
     'INDIA_NORTH': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
     'INDIA_SOUTH': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
@@ -257,11 +286,17 @@ function getZoneAIProviders(regionCode: string): AIProviderOption[] {
     'SEA_VIET': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
     'SEA_PHIL': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
     'SEA_PAN': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
-    // CJK sub-regions (Qwen Max primary for all)
+    // CJK sub-regions
     'CJK_CN': ['alibaba', 'openai', 'gemini', 'claude', 'deepseek'],
     'CJK_JP': ['alibaba', 'openai', 'claude', 'gemini', 'deepseek'],
     'CJK_KR': ['alibaba', 'openai', 'claude', 'gemini', 'deepseek'],
     'CJK_TW': ['alibaba', 'claude', 'openai', 'gemini', 'deepseek'],
+    // MENA sub-regions (hybrid routing)
+    'MENA_GULF': ['alibaba', 'openai', 'claude', 'gemini', 'deepseek'],
+    'MENA_EGYPT': ['openai', 'alibaba', 'claude', 'gemini', 'deepseek'],
+    'MENA_LEVANT': ['openai', 'alibaba', 'claude', 'gemini', 'deepseek'],
+    'MENA_MAGHREB': ['claude', 'openai', 'alibaba', 'gemini', 'deepseek'],
+    'MENA_MSA': ['alibaba', 'claude', 'openai', 'gemini', 'deepseek'],
   };
   
   const fallbackOrder = subRegionFallbackOrder[r];
