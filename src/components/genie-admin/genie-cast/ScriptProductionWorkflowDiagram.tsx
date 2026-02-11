@@ -1,6 +1,7 @@
 /**
  * Script Production Workflow Diagram
- * 5-stage lifecycle with both card view and Mermaid flow diagram
+ * 5-stage lifecycle with both card view and flow diagram
+ * All routing data verified against getSubRegionTTSProvider() and getZoneAIProviders()
  */
 
 import React, { useState } from 'react';
@@ -9,6 +10,11 @@ import { Badge } from '@/components/ui/badge';
 import { GitBranch, Brain, Mic, MessageCircle, CheckCircle2, ChevronDown, ChevronRight, LayoutList, GitGraph } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
+/**
+ * Verified against getZoneAIProviders() sub-region overrides + getSubRegionTTSProvider() ttsMap
+ * in LandingPageScriptsPanel.tsx lines 275-433
+ */
 
 const STAGES = [
   {
@@ -28,23 +34,23 @@ const STAGES = [
     title: 'Regional Transcreation (38 Sub-Regions)',
     icon: GitBranch,
     color: 'bg-purple-500',
-    description: 'English base auto-expands into 38 sub-regions using zone-routed LLMs',
+    description: 'English base auto-expands into 38 sub-regions using zone-routed LLMs with hybrid sub-region overrides',
     routing: [
-      { zone: 'Western / EU / LATAM / NAM / Maghreb', provider: 'Claude 4', fallback: 'GPT-4o → Gemini → DeepSeek' },
-      { zone: 'CJK (CN/TW/JP/KR) + Formal MENA (Gulf/MSA)', provider: 'Qwen Max', fallback: 'GPT-4o → Claude 4 → DeepSeek' },
-      { zone: 'India (5) / SEA (5) / Africa / Bangladesh', provider: 'Gemini 3 Pro', fallback: 'GPT-4o → Claude 4 → DeepSeek' },
-      { zone: 'Colloquial MENA (Egypt/Levant) / Pakistan / Nordic / Eastern EU', provider: 'GPT-4o', fallback: 'Qwen Max → Claude 4 → DeepSeek' },
+      { zone: 'NAM / EU_WEST / EU_DACH / EU_FRANCE / EU_IBERIA / LATAM_BRAZIL / LATAM_MEXICO / LATAM_CONESUR / MENA_MAGHREB', provider: 'Claude 4', fallback: 'GPT-4o → Gemini → DeepSeek' },
+      { zone: 'CJK_CN / CJK_TW / CJK_JP / CJK_KR / MENA_GULF / MENA_MSA', provider: 'Qwen Max', fallback: 'GPT-4o → Claude 4 → DeepSeek' },
+      { zone: 'INDIA (5) / SEA (5) / AFRICA (4) / BANGLADESH', provider: 'Gemini 3 Pro', fallback: 'GPT-4o → Claude 4 → DeepSeek' },
+      { zone: 'EU_NORDIC / EU_EAST / LATAM_ANDEAN / LATAM_CARIB / MENA_EGYPT / MENA_LEVANT / PAKISTAN', provider: 'GPT-4o', fallback: 'Claude 4 / Qwen Max → DeepSeek' },
     ],
     subRegions: {
-      'Europe (6)': ['EU_WEST (UK)', 'EU_DACH (DE/AT/CH)', 'EU_FRANCE', 'EU_IBERIA (ES/PT)', 'EU_NORDIC', 'EU_EAST (PL/CZ/RO/HU)'],
-      'LATAM (5)': ['LATAM_BRAZIL', 'LATAM_MEXICO', 'LATAM_ANDEAN', 'LATAM_CONESUR', 'LATAM_CARIB'],
-      'NAM (2)': ['NAM_US', 'NAM_CA (EN+FR)'],
-      'CJK (4)': ['CJK_CN (Simplified)', 'CJK_TW (Traditional)', 'CJK_JP (Keigo)', 'CJK_KR (Honorifics)'],
-      'MENA (5)': ['MENA_GULF', 'MENA_EGYPT', 'MENA_LEVANT', 'MENA_MAGHREB', 'MENA_MSA'],
-      'India (5)': ['INDIA_NORTH (Hindi)', 'INDIA_SOUTH (Dravidian)', 'INDIA_WEST (Marathi/Gujarati)', 'INDIA_EAST (Bengali/Odia)', 'INDIA_PAN (English)'],
-      'SEA (5)': ['SEA_MALAY', 'SEA_THAI', 'SEA_VIET', 'SEA_PHIL (Taglish)', 'SEA_PAN (Singlish)'],
-      'Standalone (2)': ['PAKISTAN (Urdu RTL)', 'BANGLADESH (Bengali)'],
-      'Africa (4)': ['AFRICA_EAST (Swahili)', 'AFRICA_WEST (Yoruba)', 'AFRICA_NORTH (Amharic)', 'AFRICA_SOUTH (Zulu)'],
+      'Europe (6)': ['EU_WEST → Claude 4', 'EU_DACH → Claude 4', 'EU_FRANCE → Claude 4', 'EU_IBERIA → Claude 4', 'EU_NORDIC → GPT-4o', 'EU_EAST → GPT-4o'],
+      'LATAM (5)': ['LATAM_BRAZIL → Claude 4', 'LATAM_MEXICO → Claude 4', 'LATAM_CONESUR → Claude 4', 'LATAM_ANDEAN → GPT-4o', 'LATAM_CARIB → GPT-4o'],
+      'NAM (2)': ['NAM_US → Claude 4', 'NAM_CA → Claude 4'],
+      'CJK (4)': ['CJK_CN → Qwen Max', 'CJK_TW → Qwen Max', 'CJK_JP → Qwen Max', 'CJK_KR → Qwen Max'],
+      'MENA (5)': ['MENA_GULF → Qwen Max', 'MENA_MSA → Qwen Max', 'MENA_MAGHREB → Claude 4', 'MENA_EGYPT → GPT-4o', 'MENA_LEVANT → GPT-4o'],
+      'India (5)': ['INDIA_NORTH → Gemini 3', 'INDIA_SOUTH → Gemini 3', 'INDIA_WEST → Gemini 3', 'INDIA_EAST → Gemini 3', 'INDIA_PAN → Gemini 3'],
+      'SEA (5)': ['SEA_MALAY → Gemini 3', 'SEA_THAI → Gemini 3', 'SEA_VIET → Gemini 3', 'SEA_PHIL → Gemini 3', 'SEA_PAN → Gemini 3'],
+      'Standalone (2)': ['PAKISTAN → GPT-4o', 'BANGLADESH → Gemini 3'],
+      'Africa (4)': ['AFRICA_EAST → Gemini 3', 'AFRICA_WEST → Gemini 3', 'AFRICA_SOUTH → Gemini 3', 'AFRICA_FRANCO → Gemini 3'],
     },
     outputs: ['38 regional scripts', 'Cultural adaptation + local idioms + formality registers'],
     gate: 'Each sub-region enters independent review cycle',
@@ -67,14 +73,14 @@ const STAGES = [
     title: 'Gated TTS Generation',
     icon: Mic,
     color: 'bg-green-500',
-    description: 'Auto-triggered when script status → Active, using zone-routed voices via getSubRegionTTSProvider()',
+    description: 'Auto-triggered when script status → Active, routed via getSubRegionTTSProvider()',
     routing: [
-      { zone: 'Western / EU / LATAM / NAM / MENA / India / SEA / Africa', provider: 'Azure Neural (PRIMARY)', fallback: 'Alibaba CosyVoice → Google TTS' },
-      { zone: 'CJK_CN + CJK_JP', provider: 'Alibaba Qwen3-TTS-Flash (Singapore)', fallback: 'Azure Neural → Google TTS' },
-      { zone: 'CJK_KR + CJK_TW', provider: 'Azure Neural (ko-KR, zh-TW)', fallback: 'Alibaba CosyVoice → Google TTS' },
-      { zone: 'Premium / Voice Clone', provider: 'ElevenLabs', fallback: 'Alibaba CosyVoice → Azure Custom' },
+      { zone: 'NAM / EU / LATAM / MENA / India / SEA / Africa / Pakistan / Bangladesh', provider: 'Azure Neural (34+ locales)', fallback: 'Viseme lip-sync data for all' },
+      { zone: 'CJK_CN (Mandarin) + CJK_JP (Japanese)', provider: 'Qwen3-TTS (Singapore hub)', fallback: 'longwan / longyue voices' },
+      { zone: 'CJK_KR (Korean) + CJK_TW (Traditional Chinese)', provider: 'Azure Neural', fallback: 'ko-KR-SunHiNeural / zh-TW-HsiaoChenNeural' },
+      { zone: 'Premium / Voice Clone', provider: 'ElevenLabs (never primary)', fallback: 'Qwen3-TTS → Azure Custom' },
     ],
-    outputs: ['Audio versions (append-only, never overwritten)', 'Provider + voice + locale + duration metadata', 'Auto-increment version numbering'],
+    outputs: ['Audio versions (append-only, never overwritten)', 'Provider + voice + locale + duration metadata', 'Auto-increment version numbering per script'],
     gate: 'Audio versions retained indefinitely for audit trail',
   },
   {
@@ -82,7 +88,7 @@ const STAGES = [
     title: 'Layered Feedback & Escalation',
     icon: MessageCircle,
     color: 'bg-pink-500',
-    description: 'Two-path escalation: voice issues vs. content issues, linked via tts_version_id FK',
+    description: 'Two-path escalation linked via tts_version_id FK',
     routing: [
       { zone: 'Voice / Prosody Issue', provider: 'TTS-only regeneration', fallback: 'No script change required' },
       { zone: 'Content / Cultural Issue', provider: 'Revert to Review → Re-transcreate', fallback: 'Uses same zone-routed LLM' },
@@ -106,7 +112,6 @@ const MermaidFlowDiagram: React.FC = () => {
         <CardContent className="px-4 pb-4 pt-0">
           <div className="overflow-x-auto">
             <div className="min-w-[700px]">
-              {/* Stage flow - horizontal */}
               <div className="flex items-start gap-2">
                 {/* Stage 1 */}
                 <div className="flex-1 space-y-2">
@@ -123,7 +128,6 @@ const MermaidFlowDiagram: React.FC = () => {
 
                 <div className="flex items-center pt-6 text-muted-foreground">→</div>
 
-                {/* Gate 1 */}
                 <div className="pt-3">
                   <div className="rotate-45 w-8 h-8 border-2 border-amber-500/50 bg-amber-500/10 flex items-center justify-center mx-auto">
                     <span className="text-[8px] -rotate-45 font-bold text-amber-600">✓</span>
@@ -168,7 +172,6 @@ const MermaidFlowDiagram: React.FC = () => {
 
                 <div className="flex items-center pt-6 text-muted-foreground">→</div>
 
-                {/* Gate 2 */}
                 <div className="pt-3">
                   <div className="rotate-45 w-8 h-8 border-2 border-green-500/50 bg-green-500/10 flex items-center justify-center mx-auto">
                     <span className="text-[8px] -rotate-45 font-bold text-green-600">✓</span>
@@ -226,24 +229,42 @@ const MermaidFlowDiagram: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* LLM Zone Routing Diagram */}
+      {/* LLM Zone Routing — verified against getZoneAIProviders() subRegionOverrides */}
       <Card>
         <CardHeader className="py-3 px-4">
-          <CardTitle className="text-sm">LLM Zone Routing (Stage 2 — Transcreation)</CardTitle>
+          <CardTitle className="text-sm">LLM Zone Routing — Verified Against Implementation</CardTitle>
+          <p className="text-[10px] text-muted-foreground">Source: getZoneAIProviders() with hybrid sub-region overrides</p>
         </CardHeader>
         <CardContent className="px-4 pb-4 pt-0">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
-              { llm: 'Claude 4', color: 'blue', zones: ['EU_WEST', 'EU_DACH', 'EU_FRANCE', 'EU_IBERIA', 'LATAM_BRAZIL', 'LATAM_MEXICO', 'LATAM_CONESUR', 'NAM_US', 'NAM_CA', 'MENA_MAGHREB'], count: 10 },
-              { llm: 'Qwen Max', color: 'orange', zones: ['CJK_CN', 'CJK_TW', 'CJK_JP', 'CJK_KR', 'MENA_GULF', 'MENA_MSA'], count: 6 },
-              { llm: 'Gemini 3 Pro', color: 'emerald', zones: ['INDIA × 5', 'SEA × 5', 'AFRICA × 4', 'BANGLADESH'], count: 15 },
-              { llm: 'GPT-4o', color: 'violet', zones: ['MENA_EGYPT', 'MENA_LEVANT', 'PAKISTAN', 'EU_NORDIC', 'EU_EAST', 'LATAM_ANDEAN', 'LATAM_CARIB'], count: 7 },
+              {
+                llm: 'Claude 4', emoji: '🧠', color: 'blue',
+                zones: ['NAM_US', 'NAM_CA', 'EU_WEST', 'EU_DACH', 'EU_FRANCE', 'EU_IBERIA', 'LATAM_BRAZIL', 'LATAM_MEXICO', 'LATAM_CONESUR', 'MENA_MAGHREB'],
+                count: 10, note: 'Western/EU/LATAM + Maghreb'
+              },
+              {
+                llm: 'Qwen Max', emoji: '🇨🇳', color: 'orange',
+                zones: ['CJK_CN', 'CJK_TW', 'CJK_JP', 'CJK_KR', 'MENA_GULF', 'MENA_MSA'],
+                count: 6, note: 'CJK + Formal Arabic'
+              },
+              {
+                llm: 'Gemini 3 Pro', emoji: '🌏', color: 'emerald',
+                zones: ['INDIA ×5', 'SEA ×5', 'AFRICA ×4', 'BANGLADESH'],
+                count: 15, note: 'India/SEA/Africa/Bangladesh'
+              },
+              {
+                llm: 'GPT-4o', emoji: '🔄', color: 'violet',
+                zones: ['EU_NORDIC', 'EU_EAST', 'LATAM_ANDEAN', 'LATAM_CARIB', 'MENA_EGYPT', 'MENA_LEVANT', 'PAKISTAN'],
+                count: 7, note: 'Hybrid overrides'
+              },
             ].map((zone) => (
-              <div key={zone.llm} className={`rounded-lg border p-3 bg-${zone.color}-500/5 border-${zone.color}-500/20`}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className={`text-xs font-bold text-${zone.color}-600 dark:text-${zone.color}-400`}>{zone.llm}</span>
-                  <Badge variant="outline" className="text-[9px]">{zone.count} zones</Badge>
+              <div key={zone.llm} className="rounded-lg border p-3 bg-muted/30">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-bold">{zone.emoji} {zone.llm}</span>
+                  <Badge variant="outline" className="text-[9px]">{zone.count}</Badge>
                 </div>
+                <p className="text-[9px] text-muted-foreground mb-2">{zone.note}</p>
                 <div className="flex flex-wrap gap-0.5">
                   {zone.zones.map((z) => (
                     <Badge key={z} variant="secondary" className="text-[8px] font-normal">{z}</Badge>
@@ -252,43 +273,53 @@ const MermaidFlowDiagram: React.FC = () => {
               </div>
             ))}
           </div>
+          <p className="text-[9px] text-muted-foreground mt-2 italic">
+            DeepSeek V3 available as cost-effective fallback across all zones (last in all 5-deep fallback chains)
+          </p>
         </CardContent>
       </Card>
 
-      {/* TTS Routing Diagram */}
+      {/* TTS Routing — verified against getSubRegionTTSProvider() ttsMap */}
       <Card>
         <CardHeader className="py-3 px-4">
-          <CardTitle className="text-sm">TTS Provider Routing (Stage 4)</CardTitle>
+          <CardTitle className="text-sm">TTS Provider Routing — Verified Against Implementation</CardTitle>
+          <p className="text-[10px] text-muted-foreground">Source: getSubRegionTTSProvider() ttsMap with 38 entries</p>
         </CardHeader>
         <CardContent className="px-4 pb-4 pt-0">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="rounded-lg border p-3 bg-sky-500/5 border-sky-500/20">
-              <p className="text-xs font-bold text-sky-600 dark:text-sky-400 mb-1">🔊 Azure Neural — PRIMARY</p>
-              <p className="text-[10px] text-muted-foreground mb-2">34+ locale codes · Viseme lip-sync data</p>
+            <div className="rounded-lg border p-3 bg-muted/30">
+              <p className="text-xs font-bold mb-1">🔊 Azure Neural — PRIMARY (36 sub-regions)</p>
+              <p className="text-[10px] text-muted-foreground mb-2">Viseme lip-sync data · 34+ locale codes</p>
               <div className="flex flex-wrap gap-0.5">
-                {['en-US', 'en-GB', 'de-DE', 'fr-FR', 'es-MX', 'pt-BR', 'ar-SA', 'ar-EG', 'hi-IN', 'ta-IN', 'ko-KR', 'zh-TW', 'ms-MY', 'th-TH', 'vi-VN', 'sw-KE'].map(l => (
-                  <Badge key={l} variant="outline" className="text-[8px]">{l}</Badge>
+                {['en-US', 'en-GB', 'en-CA', 'de-DE', 'fr-FR', 'es-ES', 'es-MX', 'es-AR', 'es-CO', 'es-DO', 'pt-BR', 'sv-SE', 'pl-PL', 'ar-SA', 'ar-EG', 'ar-JO', 'ar-MA', 'ur-PK', 'bn-BD', 'hi-IN', 'ta-IN', 'mr-IN', 'bn-IN', 'en-IN', 'ms-MY', 'th-TH', 'vi-VN', 'fil-PH', 'en-SG', 'zh-TW', 'ko-KR', 'sw-KE', 'en-NG', 'en-ZA', 'fr-SN'].map(l => (
+                  <Badge key={l} variant="outline" className="text-[7px]">{l}</Badge>
                 ))}
-                <Badge variant="outline" className="text-[8px]">+18 more</Badge>
               </div>
             </div>
-            <div className="rounded-lg border p-3 bg-orange-500/5 border-orange-500/20">
-              <p className="text-xs font-bold text-orange-600 dark:text-orange-400 mb-1">🎙 Qwen3-TTS-Flash — CJK Primary</p>
+            <div className="rounded-lg border p-3 bg-muted/30">
+              <p className="text-xs font-bold mb-1">🎙 Qwen3-TTS — CJK Primary (2 sub-regions)</p>
               <p className="text-[10px] text-muted-foreground mb-2">Singapore hub · Native CJK prosody</p>
-              <div className="flex flex-wrap gap-0.5">
-                {['zh-CN (Mandarin)', 'ja-JP (Keigo)'].map(l => (
-                  <Badge key={l} variant="outline" className="text-[8px]">{l}</Badge>
-                ))}
+              <div className="space-y-1">
+                <div className="flex items-center gap-1">
+                  <Badge variant="outline" className="text-[8px]">CJK_CN</Badge>
+                  <span className="text-[9px] text-muted-foreground">→ longwan (Mandarin)</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Badge variant="outline" className="text-[8px]">CJK_JP</Badge>
+                  <span className="text-[9px] text-muted-foreground">→ longyue (Japanese Keigo)</span>
+                </div>
               </div>
+              <p className="text-[9px] text-muted-foreground mt-2 italic">CJK_KR + CJK_TW → Azure Neural (better coverage)</p>
             </div>
-            <div className="rounded-lg border p-3 bg-violet-500/5 border-violet-500/20">
-              <p className="text-xs font-bold text-violet-600 dark:text-violet-400 mb-1">🎤 ElevenLabs — Clone Only</p>
-              <p className="text-[10px] text-muted-foreground mb-2">Premium tier · Never primary for utility TTS</p>
+            <div className="rounded-lg border p-3 bg-muted/30">
+              <p className="text-xs font-bold mb-1">🎤 ElevenLabs — Premium Only</p>
+              <p className="text-[10px] text-muted-foreground mb-2">Never primary for utility TTS</p>
               <div className="flex flex-wrap gap-0.5">
                 {['Voice Clone', 'Music Gen', 'SFX Gen'].map(l => (
                   <Badge key={l} variant="outline" className="text-[8px]">{l}</Badge>
                 ))}
               </div>
+              <p className="text-[9px] text-muted-foreground mt-2 italic">Fallback: Qwen3-TTS → Azure Custom</p>
             </div>
           </div>
         </CardContent>
@@ -361,7 +392,7 @@ const CardViewDiagram: React.FC = () => {
                     <Collapsible open={expandedRegions[stage.number]} onOpenChange={() => toggleRegions(stage.number)}>
                       <CollapsibleTrigger className="flex items-center gap-1 text-[10px] font-medium text-primary hover:underline cursor-pointer">
                         {expandedRegions[stage.number] ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-                        View all 38 sub-regions
+                        View all 38 sub-regions with assigned LLM
                       </CollapsibleTrigger>
                       <CollapsibleContent>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
@@ -369,7 +400,7 @@ const CardViewDiagram: React.FC = () => {
                             <div key={group} className="border rounded p-2 bg-muted/20">
                               <p className="font-medium text-[10px] mb-1">{group}</p>
                               {regions.map((r, i) => (
-                                <Badge key={i} variant="outline" className="text-[9px] mr-0.5 mb-0.5">{r}</Badge>
+                                <Badge key={i} variant="outline" className="text-[8px] mr-0.5 mb-0.5">{r}</Badge>
                               ))}
                             </div>
                           ))}
@@ -387,19 +418,18 @@ const CardViewDiagram: React.FC = () => {
       {/* Legend */}
       <Card className="bg-muted/30">
         <CardContent className="py-3 px-4 space-y-2">
-          <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wider">LLM Transcreation Zones</p>
+          <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wider">LLM Transcreation Zones (with hybrid sub-region overrides)</p>
           <div className="flex flex-wrap items-center gap-2 text-[10px]">
-            <Badge variant="outline" className="text-[10px]">🧠 Claude 4 → Western / EU / LATAM / NAM / Maghreb</Badge>
-            <Badge variant="outline" className="text-[10px]">🇨🇳 Qwen Max → CJK / Gulf MENA / MSA</Badge>
-            <Badge variant="outline" className="text-[10px]">🌏 Gemini 3 Pro → India / SEA / Africa / Bangladesh</Badge>
-            <Badge variant="outline" className="text-[10px]">🔄 GPT-4o → Egypt / Levant / Pakistan / Nordic / East EU</Badge>
+            <Badge variant="outline" className="text-[10px]">🧠 Claude 4 → 10 sub-regions (NAM/EU_W/LATAM_core/Maghreb)</Badge>
+            <Badge variant="outline" className="text-[10px]">🇨🇳 Qwen Max → 6 sub-regions (CJK/Gulf/MSA)</Badge>
+            <Badge variant="outline" className="text-[10px]">🌏 Gemini 3 Pro → 15 sub-regions (India/SEA/Africa/Bangladesh)</Badge>
+            <Badge variant="outline" className="text-[10px]">🔄 GPT-4o → 7 sub-regions (Nordic/East EU/MENA dialects/Pakistan)</Badge>
           </div>
           <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wider mt-2">TTS Provider Hierarchy</p>
           <div className="flex flex-wrap items-center gap-2 text-[10px]">
-            <Badge variant="outline" className="text-[10px]">🔊 Azure Neural → PRIMARY (34+ locales, viseme lip-sync)</Badge>
-            <Badge variant="outline" className="text-[10px]">🎙 Qwen3-TTS-Flash → CJK_CN + CJK_JP (Singapore hub)</Badge>
-            <Badge variant="outline" className="text-[10px]">🎤 ElevenLabs → Premium voice clone only (never primary)</Badge>
-            <Badge variant="outline" className="text-[10px]">☁️ Alibaba CosyVoice → Secondary fallback</Badge>
+            <Badge variant="outline" className="text-[10px]">🔊 Azure Neural → 36 sub-regions (viseme lip-sync)</Badge>
+            <Badge variant="outline" className="text-[10px]">🎙 Qwen3-TTS → CJK_CN + CJK_JP only (Singapore hub)</Badge>
+            <Badge variant="outline" className="text-[10px]">🎤 ElevenLabs → Premium clone only (never primary)</Badge>
           </div>
         </CardContent>
       </Card>
@@ -413,7 +443,7 @@ export const ScriptProductionWorkflowDiagram: React.FC = () => {
       <div className="text-center space-y-2">
         <h2 className="text-lg font-bold">Script Production Lifecycle</h2>
         <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
-          End-to-end 5-stage pipeline with zone-routed AI providers across 38 sub-regions
+          End-to-end 5-stage pipeline · Verified against getZoneAIProviders() + getSubRegionTTSProvider()
         </p>
       </div>
 
