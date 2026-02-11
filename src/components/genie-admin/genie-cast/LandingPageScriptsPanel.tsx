@@ -2782,7 +2782,17 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                     variant={isActive ? 'default' : 'outline'}
                     size="sm"
                     className="text-xs gap-1.5"
-                    onClick={() => setFeedbackCategoryFilter(cat.id as 'all' | 'script' | 'tts')}
+                    onClick={() => {
+                      setFeedbackCategoryFilter(cat.id as 'all' | 'script' | 'tts');
+                      // Auto-switch feedback type to match category
+                      if (cat.id === 'tts' && newNoteType !== 'tts_feedback') {
+                        setNewNoteType('tts_feedback');
+                        setNewNoteSection('voice_quality');
+                      } else if (cat.id === 'script' && newNoteType === 'tts_feedback') {
+                        setNewNoteType('reviewer_comment');
+                        setNewNoteSection('general');
+                      }
+                    }}
                   >
                     {cat.label}
                   </Button>
@@ -2792,18 +2802,23 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
 
             {/* Add New Feedback */}
             <Card className={cn(
+              "border-l-4",
               newNoteType === 'tts_feedback' 
-                ? 'border-violet-300 dark:border-violet-700 bg-violet-50/30 dark:bg-violet-950/20' 
-                : ''
+                ? 'border-l-violet-500 border-violet-300 dark:border-violet-700 bg-violet-50/30 dark:bg-violet-950/20' 
+                : 'border-l-blue-500 border-blue-200 dark:border-blue-800 bg-blue-50/20 dark:bg-blue-950/10'
             )}>
               <CardHeader className="py-3">
                 <CardTitle className="text-sm flex items-center gap-2">
                   <Send className="w-4 h-4 text-primary" />
                   {newNoteType === 'tts_feedback' ? '🎙 Add TTS / Audio Feedback' : '📝 Add Script Feedback / Suggestion'}
                 </CardTitle>
-                {newNoteType === 'tts_feedback' && (
+                {newNoteType === 'tts_feedback' ? (
                   <p className="text-[10px] text-violet-600 dark:text-violet-400">
-                    Voice issues (accent, pacing, tone) → TTS regeneration only. Content issues → escalate to script revision.
+                    Voice issues (accent, pacing, tone) → TTS regeneration only. Content issues → select "Content Needs Script Change" to escalate.
+                  </p>
+                ) : (
+                  <p className="text-[10px] text-blue-600 dark:text-blue-400">
+                    Script content feedback (hook, CTA, messaging) → AI will rewrite the script text. This does not affect TTS audio.
                   </p>
                 )}
               </CardHeader>
@@ -2811,15 +2826,16 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                 {/* Row 1: Script, Type, Region/Sub-region */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <div className="space-y-1">
-                    <Label className="text-[10px] text-muted-foreground">Script</Label>
+                    <Label className="text-[10px] text-muted-foreground">
+                      {newNoteType === 'tts_feedback' ? 'Approved Script' : 'Script'}
+                    </Label>
                     <Select value={newNoteScriptId} onValueChange={setNewNoteScriptId}>
                       <SelectTrigger className="h-8 text-xs">
-                        <SelectValue placeholder="Select script..." />
+                        <SelectValue placeholder={newNoteType === 'tts_feedback' ? "Select approved script..." : "Select script..."} />
                       </SelectTrigger>
                       <SelectContent>
                         {scripts
                           .filter(s => {
-                            // TTS feedback: only active (approved) scripts; Script feedback: draft/review/active
                             if (newNoteType === 'tts_feedback') return s.status === 'active';
                             return ['draft', 'review', 'active'].includes(s.status);
                           })
@@ -2840,23 +2856,44 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                   </div>
                   <div className="space-y-1">
                     <Label className="text-[10px] text-muted-foreground">Feedback Type</Label>
-                    <Select value={newNoteType} onValueChange={(v) => {
-                      setNewNoteType(v);
-                      // Reset section when switching types
-                      if (v === 'tts_feedback') setNewNoteSection('voice_quality');
-                      else if (newNoteSection.startsWith('voice_') || newNoteSection === 'pronunciation' || newNoteSection === 'pacing_timing' || newNoteSection === 'tts_provider_issue') setNewNoteSection('general');
-                    }}>
-                      <SelectTrigger className="h-8 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="reviewer_comment">💬 Script: Reviewer Comment</SelectItem>
-                        <SelectItem value="ab_learning">📊 Script: A/B Learning</SelectItem>
-                        <SelectItem value="ai_suggestion">✨ Script: AI Suggestion</SelectItem>
-                        <SelectItem value="performance_insight">💡 Script: Performance Insight</SelectItem>
-                        <SelectItem value="tts_feedback">🎙 TTS: Audio/Voice Feedback</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    {feedbackCategoryFilter === 'tts' ? (
+                      <div className="h-8 flex items-center text-xs px-3 border rounded-md bg-violet-50 dark:bg-violet-950/30 text-violet-700 dark:text-violet-300">
+                        🎙 TTS: Audio/Voice
+                      </div>
+                    ) : feedbackCategoryFilter === 'script' ? (
+                      <Select value={newNoteType} onValueChange={(v) => {
+                        setNewNoteType(v);
+                        if (v === 'tts_feedback') setNewNoteSection('voice_quality');
+                        else if (newNoteSection.startsWith('voice_') || newNoteSection === 'pronunciation' || newNoteSection === 'pacing_timing' || newNoteSection === 'tts_provider_issue') setNewNoteSection('general');
+                      }}>
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="reviewer_comment">💬 Reviewer Comment</SelectItem>
+                          <SelectItem value="ab_learning">📊 A/B Learning</SelectItem>
+                          <SelectItem value="ai_suggestion">✨ AI Suggestion</SelectItem>
+                          <SelectItem value="performance_insight">💡 Performance Insight</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Select value={newNoteType} onValueChange={(v) => {
+                        setNewNoteType(v);
+                        if (v === 'tts_feedback') setNewNoteSection('voice_quality');
+                        else if (newNoteSection.startsWith('voice_') || newNoteSection === 'pronunciation' || newNoteSection === 'pacing_timing' || newNoteSection === 'tts_provider_issue') setNewNoteSection('general');
+                      }}>
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="reviewer_comment">💬 Script: Reviewer Comment</SelectItem>
+                          <SelectItem value="ab_learning">📊 Script: A/B Learning</SelectItem>
+                          <SelectItem value="ai_suggestion">✨ Script: AI Suggestion</SelectItem>
+                          <SelectItem value="performance_insight">💡 Script: Performance Insight</SelectItem>
+                          <SelectItem value="tts_feedback">🎙 TTS: Audio/Voice Feedback</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
                   </div>
                   <div className="space-y-1">
                     <Label className="text-[10px] text-muted-foreground">
@@ -2972,17 +3009,18 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
               </CardContent>
             </Card>
 
-            {/* AI Rewrite Suggestion Card */}
-            <Card className="border-primary/20">
+            {/* === SCRIPT IMPROVEMENT CARD — only when Script or All filter === */}
+            {feedbackCategoryFilter !== 'tts' && (
+            <Card className="border-blue-200 dark:border-blue-800 bg-blue-50/20 dark:bg-blue-950/10">
               <CardContent className="py-4 space-y-3">
                 <div className="flex items-center gap-4">
-                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Zap className="w-5 h-5 text-primary" />
+                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                    <Zap className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-semibold">Generate Improved Script Version</p>
+                    <p className="text-sm font-semibold">📝 Generate Improved Script Version</p>
                     <p className="text-[10px] text-muted-foreground">
-                      AI rewrites the <strong>script text</strong> using zone-routed LLM providers (not TTS). TTS audio is regenerated separately in the TTS Preview tab.
+                      AI rewrites the <strong>script text</strong> using zone-routed LLM providers. This does <strong>NOT</strong> regenerate TTS audio — use the TTS action below or the TTS Preview tab for that.
                     </p>
                   </div>
                 </div>
@@ -3007,12 +3045,12 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                               {group.groupFlag} {group.groupName}
                             </SelectItem>
                             {groupScripts.map(s => {
-                              const openNotes = notes.filter(n => n.script_id === s.id && (n.status === 'open' || n.status === 'accepted'));
+                              const openNotes = notes.filter(n => n.script_id === s.id && n.note_type !== 'tts_feedback' && (n.status === 'open' || n.status === 'accepted'));
                               return (
                                 <SelectItem key={s.id} value={s.id}>
                                   {'  '}{REGION_OPTIONS.find(r => r.code === s.region_code)?.flag} {s.region_display_name} v{s.version}
                                   {s.variant_label ? ` (${s.variant_label})` : ''}
-                                  {openNotes.length > 0 ? ` — ${openNotes.length} notes` : ''}
+                                  {openNotes.length > 0 ? ` — ${openNotes.length} script notes` : ''}
                                 </SelectItem>
                               );
                             })}
@@ -3022,19 +3060,18 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                     </SelectContent>
                   </Select>
 
-                  {/* Show region + TTS provider info for selected script */}
+                  {/* Show region info for selected script */}
                   {(() => {
                     const sid = selectedScriptForImprovement;
                     const script = sid ? scripts.find(s => s.id === sid) : null;
                     if (!script) return null;
-                    const ttsInfo = getSubRegionTTSProvider(script.region_code);
                     return (
                       <div className="flex flex-wrap gap-2 text-[10px]">
                         <Badge variant="outline">
                           {REGION_OPTIONS.find(r => r.code === script.region_code)?.flag} {script.region_code}
                         </Badge>
-                        <Badge variant="outline" className="bg-violet-50 dark:bg-violet-950 text-violet-700 dark:text-violet-300 border-violet-200">
-                          🎙 TTS: {ttsInfo.provider} — {ttsInfo.voiceName} ({ttsInfo.locale})
+                        <Badge variant="outline" className="bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border-blue-200">
+                          📝 Script rewrite only — audio unchanged
                         </Badge>
                       </div>
                     );
@@ -3052,7 +3089,7 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                   return (
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
-                        <Label className="text-[10px] text-muted-foreground font-medium">AI Provider <span className="text-blue-600 dark:text-blue-400">(for Script Rewrite — not TTS)</span></Label>
+                        <Label className="text-[10px] text-muted-foreground font-medium">LLM Provider <span className="text-blue-600 dark:text-blue-400">(rewrites script text)</span></Label>
                         {recommended && (
                           <Badge variant="secondary" className="text-[9px] px-1.5 py-0">
                             ⭐ {recommended.name} recommended for {script?.region_display_name || 'this region'}
@@ -3096,24 +3133,118 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                     ) : (
                       <Sparkles className="w-3.5 h-3.5" />
                     )}
-                    {isGeneratingImproved ? 'Generating...' : 'Generate Improved Version'}
+                    {isGeneratingImproved ? 'Generating...' : '📝 Generate Improved Script'}
                   </Button>
                 </div>
                 {(() => {
                    const sid = selectedScriptForImprovement || newNoteScriptId;
-                   const count = sid ? notes.filter(n => n.script_id === sid && (n.status === 'open' || n.status === 'accepted')).length : 0;
+                   const count = sid ? notes.filter(n => n.script_id === sid && n.note_type !== 'tts_feedback' && (n.status === 'open' || n.status === 'accepted')).length : 0;
                    return count > 0 ? (
                      <p className="text-[10px] text-muted-foreground">
-                       ✅ {count} open feedback note{count !== 1 ? 's' : ''} will be incorporated into the improved version.
+                       ✅ {count} open script feedback note{count !== 1 ? 's' : ''} will be incorporated into the improved version.
                      </p>
                    ) : sid ? (
                      <p className="text-[10px] text-destructive">
-                       ⚠️ No open feedback for this script. Add feedback above first.
+                       ⚠️ No open script feedback for this script. Add feedback above first.
                      </p>
                    ) : null;
                  })()}
                </CardContent>
              </Card>
+            )}
+
+            {/* === TTS REGENERATION CARD — only when TTS or All filter === */}
+            {feedbackCategoryFilter !== 'script' && (
+            <Card className="border-violet-200 dark:border-violet-800 bg-violet-50/20 dark:bg-violet-950/10">
+              <CardContent className="py-4 space-y-3">
+                <div className="flex items-center gap-4">
+                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-violet-100 dark:bg-violet-900 flex items-center justify-center">
+                    <Volume2 className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold">🎙 Regenerate TTS Audio</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      Re-generates <strong>audio only</strong> using the regional TTS provider (e.g., Azure Neural, Qwen3). The script text stays the same — only voice, pacing, or pronunciation changes are applied.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Script Selector — only active scripts */}
+                <div className="space-y-2">
+                  <Select value={selectedScriptForImprovement} onValueChange={setSelectedScriptForImprovement}>
+                    <SelectTrigger className="h-8 text-xs flex-1">
+                      <SelectValue placeholder="Select approved script for TTS..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {scripts
+                        .filter(s => s.status === 'active')
+                        .map(s => {
+                          const ttsNotes = notes.filter(n => n.script_id === s.id && n.note_type === 'tts_feedback' && (n.status === 'open' || n.status === 'accepted'));
+                          return (
+                            <SelectItem key={s.id} value={s.id}>
+                              {REGION_OPTIONS.find(r => r.code === s.region_code)?.flag} {s.region_display_name} v{s.version}
+                              {ttsNotes.length > 0 ? ` — ${ttsNotes.length} TTS notes` : ''}
+                            </SelectItem>
+                          );
+                        })}
+                      {scripts.filter(s => s.status === 'active').length === 0 && (
+                        <SelectItem value="__empty" disabled className="text-muted-foreground italic">
+                          No approved (active) scripts — approve a script first
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+
+                  {/* Show TTS provider info */}
+                  {(() => {
+                    const sid = selectedScriptForImprovement;
+                    const script = sid ? scripts.find(s => s.id === sid) : null;
+                    if (!script) return null;
+                    const ttsInfo = getSubRegionTTSProvider(script.region_code);
+                    return (
+                      <div className="flex flex-wrap gap-2 text-[10px]">
+                        <Badge variant="outline">
+                          {REGION_OPTIONS.find(r => r.code === script.region_code)?.flag} {script.region_code}
+                        </Badge>
+                        <Badge variant="outline" className="bg-violet-50 dark:bg-violet-950 text-violet-700 dark:text-violet-300 border-violet-200">
+                          🎙 TTS: {ttsInfo.provider} — {ttsInfo.voiceName} ({ttsInfo.locale})
+                        </Badge>
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                {/* Regenerate Button */}
+                <Button
+                  size="sm"
+                  className="gap-1 text-xs w-full bg-violet-600 hover:bg-violet-700 text-white"
+                  disabled={!selectedScriptForImprovement || !scripts.find(s => s.id === selectedScriptForImprovement && s.status === 'active')}
+                  onClick={() => {
+                    // Navigate to TTS Preview tab for regeneration
+                    const tabEvent = new CustomEvent('genie-cast-navigate', { detail: { subTab: 'tts_preview' } });
+                    window.dispatchEvent(tabEvent);
+                  }}
+                >
+                  <Volume2 className="w-3.5 h-3.5" />
+                  🎙 Go to TTS Preview to Regenerate Audio
+                </Button>
+
+                {(() => {
+                   const sid = selectedScriptForImprovement;
+                   const count = sid ? notes.filter(n => n.script_id === sid && n.note_type === 'tts_feedback' && (n.status === 'open' || n.status === 'accepted')).length : 0;
+                   return count > 0 ? (
+                     <p className="text-[10px] text-muted-foreground">
+                       ✅ {count} open TTS feedback note{count !== 1 ? 's' : ''} — regenerate audio in TTS Preview to address these.
+                     </p>
+                   ) : sid ? (
+                     <p className="text-[10px] text-violet-500">
+                       ℹ️ No open TTS feedback. Add voice/audio feedback above before regenerating.
+                     </p>
+                   ) : null;
+                 })()}
+               </CardContent>
+             </Card>
+            )}
 
             {/* Existing Notes List — filtered by category */}
             {(() => {
