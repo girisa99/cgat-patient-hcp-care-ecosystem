@@ -190,7 +190,7 @@ const TTSSubRegionNode = ({ data }: { data: { code: string; provider: string; lo
 
 const FeedbackNode = ({ data }: { data: { label: string; action: string; color: string } }) => (
   <div
-    className="rounded-md border px-3 py-2 text-center min-w-[160px] shadow-sm"
+    className="rounded-md border px-3 py-2 text-center min-w-[170px] shadow-sm"
     style={{
       background: `hsl(${data.color} / 0.06)`,
       borderColor: `hsl(${data.color} / 0.3)`,
@@ -198,10 +198,12 @@ const FeedbackNode = ({ data }: { data: { label: string; action: string; color: 
   >
     <Handle type="target" position={Position.Top} className="!bg-muted-foreground !w-2 !h-2" />
     <Handle type="target" position={Position.Right} id="right" className="!bg-muted-foreground !w-2 !h-2" />
+    <Handle type="target" position={Position.Left} id="target-left" className="!bg-muted-foreground !w-2 !h-2" />
     <p className="text-[10px] font-semibold" style={{ color: `hsl(${data.color})` }}>{data.label}</p>
     <p className="text-[9px] text-muted-foreground">{data.action}</p>
     <Handle type="source" position={Position.Bottom} className="!bg-muted-foreground !w-2 !h-2" />
     <Handle type="source" position={Position.Left} id="left" className="!bg-muted-foreground !w-2 !h-2" />
+    <Handle type="source" position={Position.Right} id="source-right" className="!bg-muted-foreground !w-2 !h-2" />
   </div>
 );
 
@@ -290,30 +292,30 @@ function buildFlowchart(region: RegionConfig) {
   region.subRegions.forEach((sr) => {
     edges.push({ id: `e-sr-${sr.code}-s5`, source: `sr-${sr.code}`, target: 's5', ...edgeDefaults });
   });
-  y += 110;
+  y += 120;
 
   // Feedback / Approve diamond
   nodes.push({ id: 'd2', type: 'diamond', position: { x: centerX - 45, y }, data: { label: 'Review', color: '45 90% 50%' } });
   edges.push({ id: 'e-s5-d2', source: 's5', target: 'd2', ...edgeDefaults });
 
-  // Feedback path - re-transcreate — positioned far left and connected via side handles
-  const fbX = Math.min(startX - 70, centerX - 350);
-  nodes.push({ id: 'fb1', type: 'feedback', position: { x: fbX - 30, y: y + 10 }, data: { label: '6. Re-transcreate that sub-region', action: 'Same zone-routed LLM', color: '340 70% 55%' } });
+  // Feedback path - re-transcreate — positioned far left, well clear of main column
+  const fbLeftX = centerX - 380;
+  nodes.push({ id: 'fb1', type: 'feedback', position: { x: fbLeftX, y: y - 20 }, data: { label: '6. Re-transcreate sub-region', action: 'Same zone-routed LLM → back to Review', color: '340 70% 55%' } });
   edges.push({ id: 'e-d2-fb1', source: 'd2', sourceHandle: 'left', target: 'fb1', targetHandle: 'right', ...edgeDefaults, label: 'Feedback', type: 'smoothstep' });
-  // fb1 loops back to s5 via top handle to s5 left
-  edges.push({ id: 'e-fb1-s5', source: 'fb1', target: 's5', targetHandle: 'target-left', ...edgeDefaults, type: 'smoothstep' });
+  // fb1 loops back up to s5 — use left handle to avoid crossing main column
+  edges.push({ id: 'e-fb1-s5', source: 'fb1', sourceHandle: 'left', target: 's5', targetHandle: 'target-left', ...edgeDefaults, type: 'smoothstep', style: { ...edgeDefaults.style, stroke: 'hsl(340 70% 55% / 0.5)', strokeDasharray: '5 3' } });
 
-  y += 120;
+  y += 130;
 
   // Approve path
   nodes.push({ id: 's7', type: 'stage', position: { x: centerX - 100, y }, data: { label: '7. Sub-Region Script Active', subtitle: 'Approved for TTS', color: '150 60% 40%' } });
   edges.push({ id: 'e-d2-s7', source: 'd2', target: 's7', ...edgeDefaults, label: 'Approve' });
-  y += 110;
+  y += 130;
 
-  // Stage 8 - TTS per sub-region
+  // Stage 8 - TTS per sub-region — extra spacing above
   nodes.push({ id: 's8', type: 'stage', position: { x: centerX - 100, y }, data: { label: '8. TTS per sub-region', subtitle: 'Gated: only on Active status', color: '150 60% 40%' } });
   edges.push({ id: 'e-s7-s8', source: 's7', target: 's8', ...edgeDefaults });
-  y += 100;
+  y += 120;
 
   // TTS sub-region nodes
   region.subRegions.forEach((sr, i) => {
@@ -326,7 +328,7 @@ function buildFlowchart(region: RegionConfig) {
     });
     edges.push({ id: `e-s8-${id}`, source: 's8', target: id, ...edgeDefaults });
   });
-  y += 100;
+  y += 120;
 
   // Stage 9 - TTS Review
   nodes.push({ id: 's9', type: 'stage', position: { x: centerX - 100, y }, data: { label: '9. TTS Review', subtitle: 'Listen & evaluate audio', color: '270 60% 55%' } });
@@ -334,19 +336,19 @@ function buildFlowchart(region: RegionConfig) {
     edges.push({ id: `e-tts-${sr.code}-s9`, source: `tts-${sr.code}`, target: 's9', ...edgeDefaults });
   });
 
-  // Voice issue → re-gen TTS (s9 → s8) — route via far RIGHT side
-  const voiceFbX = Math.max(startX + totalWidth + 100, centerX + 250);
-  nodes.push({ id: 'fb-voice', type: 'feedback', position: { x: voiceFbX, y: y - 50 }, data: { label: 'Voice issue', action: 're-gen TTS only', color: '340 70% 55%' } });
-  edges.push({ id: 'e-s9-fbvoice', source: 's9', sourceHandle: 'source-right', target: 'fb-voice', targetHandle: 'right', ...edgeDefaults, type: 'smoothstep', style: { ...edgeDefaults.style, stroke: 'hsl(340 70% 55% / 0.6)', strokeDasharray: '5 3' } });
-  edges.push({ id: 'e-fbvoice-s8', source: 'fb-voice', target: 's8', targetHandle: 'target-right', ...edgeDefaults, type: 'smoothstep', style: { ...edgeDefaults.style, stroke: 'hsl(340 70% 55% / 0.6)', strokeDasharray: '5 3' } });
+  // Voice issue → re-gen TTS (s9 → s8) — positioned far RIGHT, clear of TTS sub-region nodes
+  const voiceFbX = startX + totalWidth + 160;
+  nodes.push({ id: 'fb-voice', type: 'feedback', position: { x: voiceFbX, y: y - 80 }, data: { label: 'Voice issue', action: 're-gen TTS only → back to 8', color: '25 90% 50%' } });
+  edges.push({ id: 'e-s9-fbvoice', source: 's9', sourceHandle: 'source-right', target: 'fb-voice', ...edgeDefaults, type: 'smoothstep', style: { ...edgeDefaults.style, stroke: 'hsl(25 90% 50% / 0.6)', strokeDasharray: '5 3' } });
+  edges.push({ id: 'e-fbvoice-s8', source: 'fb-voice', sourceHandle: 'left', target: 's8', targetHandle: 'target-right', ...edgeDefaults, type: 'smoothstep', style: { ...edgeDefaults.style, stroke: 'hsl(25 90% 50% / 0.6)', strokeDasharray: '5 3' } });
 
-  // Content issue → escalate (s9 → s5) — route via far LEFT side
-  const contentFbX = Math.min(startX - 70, centerX - 350);
-  nodes.push({ id: 'fb-content', type: 'feedback', position: { x: contentFbX - 30, y: y - 50 }, data: { label: 'Content issue', action: 'escalate to review', color: '340 70% 55%' } });
-  edges.push({ id: 'e-s9-fbcontent', source: 's9', sourceHandle: 'source-left', target: 'fb-content', targetHandle: 'right', ...edgeDefaults, type: 'smoothstep', style: { ...edgeDefaults.style, stroke: 'hsl(340 70% 55% / 0.6)', strokeDasharray: '5 3' } });
-  edges.push({ id: 'e-fbcontent-s5', source: 'fb-content', target: 's5', targetHandle: 'target-left', ...edgeDefaults, type: 'smoothstep', style: { ...edgeDefaults.style, stroke: 'hsl(340 70% 55% / 0.6)', strokeDasharray: '5 3' } });
+  // Content issue → escalate (s9 → s5) — positioned far LEFT, clear of all nodes
+  const contentFbX = centerX - 420;
+  nodes.push({ id: 'fb-content', type: 'feedback', position: { x: contentFbX, y: y - 80 }, data: { label: 'Content issue', action: 'escalate to review → back to 5', color: '340 70% 55%' } });
+  edges.push({ id: 'e-s9-fbcontent', source: 's9', sourceHandle: 'source-left', target: 'fb-content', ...edgeDefaults, type: 'smoothstep', style: { ...edgeDefaults.style, stroke: 'hsl(340 70% 55% / 0.6)', strokeDasharray: '5 3' } });
+  edges.push({ id: 'e-fbcontent-s5', source: 'fb-content', sourceHandle: 'left', target: 's5', targetHandle: 'target-left', ...edgeDefaults, type: 'smoothstep', style: { ...edgeDefaults.style, stroke: 'hsl(340 70% 55% / 0.6)', strokeDasharray: '5 3' } });
 
-  y += 110;
+  y += 130;
 
   // Stage 10 - Final
   nodes.push({ id: 's10', type: 'stage', position: { x: centerX - 100, y }, data: { label: '10. Final Audio Ready', subtitle: 'Append-only · versioned audit trail', color: '150 60% 40%' } });
