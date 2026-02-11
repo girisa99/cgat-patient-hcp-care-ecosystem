@@ -557,6 +557,22 @@ export const LandingPageScriptsPanel: React.FC = () => {
 
   useEffect(() => { fetchTTSVersions(); }, [fetchTTSVersions]);
 
+  // ── Delete TTS version ──
+  const handleDeleteTTSVersion = useCallback(async (versionId: string) => {
+    try {
+      const { error } = await supabase
+        .from('tts_audio_versions')
+        .delete()
+        .eq('id', versionId);
+      if (error) throw error;
+      toast.success('TTS version deleted');
+      fetchTTSVersions();
+    } catch (err) {
+      console.error('[TTS Version] Delete error:', err);
+      toast.error('Failed to delete TTS version');
+    }
+  }, [fetchTTSVersions]);
+
   // ── Fetch improvement notes ──
   const fetchNotes = useCallback(async () => {
     try {
@@ -2709,13 +2725,24 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                                           {item.scriptRef && ` • Script v${item.scriptRef.version}`}
                                         </p>
                                       </div>
-                                      {tv.audio_url && tv.status === 'completed' && (
-                                        <Button variant="ghost" size="sm" className="h-7" asChild>
-                                          <a href={tv.audio_url} target="_blank" rel="noopener noreferrer">
-                                            <Play className="w-3 h-3" />
-                                          </a>
+                                      <div className="flex items-center gap-1">
+                                        {tv.audio_url && tv.status === 'completed' && (
+                                          <Button variant="ghost" size="sm" className="h-7" asChild>
+                                            <a href={tv.audio_url} target="_blank" rel="noopener noreferrer">
+                                              <Play className="w-3 h-3" />
+                                            </a>
+                                          </Button>
+                                        )}
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                          onClick={() => handleDeleteTTSVersion(tv.id)}
+                                          title="Delete this TTS version"
+                                        >
+                                          <Trash2 className="w-3 h-3" />
                                         </Button>
-                                      )}
+                                      </div>
                                     </div>
                                   );
                                 }
