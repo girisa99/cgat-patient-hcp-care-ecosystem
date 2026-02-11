@@ -768,8 +768,9 @@ export const LandingPageScriptsPanel: React.FC = () => {
 
       console.log(`[TTS Generate] Script: ${script.region_code}, Provider: ${ttsInfo.provider}, Voice: ${ttsInfo.voiceId}, Locale: ${ttsInfo.locale}, Mode: ${mode}`);
 
-      const resolvedProvider = script.tts_provider || (ttsInfo.provider === 'Qwen3-TTS' ? 'alibaba' : 'azure');
-      const resolvedVoiceId = script.tts_voice_id || ttsInfo.voiceId;
+      // ALWAYS prioritize getSubRegionTTSProvider routing over stale script DB values
+      const resolvedProvider = ttsInfo.provider === 'Qwen3-TTS' ? 'alibaba' : (ttsInfo.provider || 'azure');
+      const resolvedVoiceId = ttsInfo.voiceId;
 
       const { data, error } = await supabase.functions.invoke('multi-provider-tts', {
         body: {
