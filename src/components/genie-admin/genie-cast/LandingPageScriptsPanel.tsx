@@ -2422,18 +2422,20 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
             exit={{ opacity: 0, y: -10 }}
             className="space-y-4"
           >
-            {scripts.filter(s => s.status === 'active' || s.status === 'review').length === 0 ? (
+            {filteredScripts.filter(s => s.status === 'active' || s.status === 'review').length === 0 ? (
               <Card>
                 <CardContent className="py-8">
                   <div className="text-center text-muted-foreground text-sm">
-                    No active or in-review scripts to preview. Submit a script for review or set it to "Active" first.
+                    {filterRegions.length > 0 || filterStatus !== 'all' 
+                      ? 'No matching scripts for current filters. Try adjusting the Region or Status filters above.'
+                      : 'No active or in-review scripts to preview. Submit a script for review or set it to "Active" first.'}
                   </div>
                 </CardContent>
               </Card>
             ) : (
               REGION_HIERARCHY.map(group => {
                 const groupCodes = getGroupCodes(group);
-                const groupScripts = scripts.filter(s => (s.status === 'active' || s.status === 'review') && groupCodes.includes(s.region_code));
+                const groupScripts = filteredScripts.filter(s => (s.status === 'active' || s.status === 'review') && groupCodes.includes(s.region_code));
                 if (groupScripts.length === 0) return null;
 
                 return (
@@ -2592,9 +2594,21 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
             exit={{ opacity: 0, y: -10 }}
             className="space-y-4 max-h-[calc(100vh-280px)] overflow-y-auto pr-1"
           >
+            {filteredScripts.length === 0 ? (
+              <Card className="border-dashed">
+                <CardContent className="py-12 text-center">
+                  <History className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
+                  <p className="text-sm text-muted-foreground">
+                    {filterRegions.length > 0 || filterStatus !== 'all'
+                      ? 'No version history for current filters. Adjust Region or Status filters above.'
+                      : 'No version history yet.'}
+                  </p>
+                </CardContent>
+              </Card>
+            ) : null}
             {REGION_HIERARCHY.map(group => {
               const groupCodes = getGroupCodes(group);
-              const groupScripts = scripts.filter(s => groupCodes.includes(s.region_code));
+              const groupScripts = filteredScripts.filter(s => groupCodes.includes(s.region_code));
               if (groupScripts.length === 0) return null;
 
               // Group scripts by sub-region — scripts may use parent-level codes (africa) or sub-region codes (AFRICA_WEST)
