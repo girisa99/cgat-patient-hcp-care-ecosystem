@@ -112,7 +112,16 @@ const REGION_HIERARCHY: RegionGroup[] = [
       { code: 'INDIA_PAN', name: 'Pan-India (English)', flag: '🇮🇳' },
     ],
   },
-  { groupCode: 'SEA', groupName: 'Southeast Asia', groupFlag: '🌏', children: [] },
+  {
+    groupCode: 'SEA', groupName: 'Southeast Asia', groupFlag: '🌏',
+    children: [
+      { code: 'SEA_MALAY', name: 'Malaysia & Indonesia', flag: '🇲🇾' },
+      { code: 'SEA_THAI', name: 'Thailand', flag: '🇹🇭' },
+      { code: 'SEA_VIET', name: 'Vietnam', flag: '🇻🇳' },
+      { code: 'SEA_PHIL', name: 'Philippines', flag: '🇵🇭' },
+      { code: 'SEA_PAN', name: 'Pan-SEA (Singapore)', flag: '🇸🇬' },
+    ],
+  },
   { groupCode: 'CJK', groupName: 'China, Japan & Korea', groupFlag: '🌏', children: [] },
 ];
 
@@ -197,7 +206,7 @@ function getZoneAIProviders(regionCode: string): AIProviderOption[] {
     if (['NAM', 'EU', 'LATAM'].includes(r)) return 'western';
     if (['CJK'].includes(r)) return 'cjk';
     if (['MENA'].includes(r)) return 'mena';
-    if (['SEA'].includes(r)) return 'india';
+    if (r?.startsWith('SEA')) return 'india';
     if (r?.startsWith('INDIA')) return 'india';
     if (r?.startsWith('AFRICA')) return 'africa';
     return 'western';
@@ -234,6 +243,12 @@ function getZoneAIProviders(regionCode: string): AIProviderOption[] {
     'INDIA_WEST': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
     'INDIA_EAST': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
     'INDIA_PAN': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
+    // SEA sub-regions
+    'SEA_MALAY': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
+    'SEA_THAI': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
+    'SEA_VIET': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
+    'SEA_PHIL': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
+    'SEA_PAN': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
   };
   
   const fallbackOrder = subRegionFallbackOrder[r];
