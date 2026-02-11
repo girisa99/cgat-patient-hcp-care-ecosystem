@@ -81,6 +81,7 @@ import { ABTestingPanel } from './ABTestingPanel';
 
 // Import Landing Page Scripts
 import { LandingPageScriptsPanel } from './LandingPageScriptsPanel';
+import { AlibabaMeetingPrepDoc } from './AlibabaMeetingPrepDoc';
 
 // Import sub-components from parent panel
 import { GenieCastOverview, VideoStyleCards, AIProviderShowcase, type VideoStyleType } from './index';
@@ -141,7 +142,7 @@ export type CreateSubTab = 'templates' | 'messaging' | 'production';
 export type ProduceSubTab = 'generate' | 'matrix' | 'studio' | 'review';
 export type ManageSubTab = 'library' | 'analytics' | 'flow' | 'repurpose';
 export type PublishSubTab = 'scheduler' | 'distribution' | 'seo' | 'testing';
-export type LandingSubTab = 'scripts' | 'tts-preview' | 'versions';
+export type LandingSubTab = 'scripts' | 'tts-preview' | 'versions' | 'meeting-prep';
 
 interface GenieCastConsolidatedTabsProps {
   // State from parent
@@ -227,6 +228,7 @@ const TAB_DEFINITIONS = {
       { id: 'scripts', label: 'Regional Scripts', icon: FileText, description: 'Hero narration scripts' },
       { id: 'tts-preview', label: 'TTS Preview', icon: Volume2, description: 'Audio preview & approval' },
       { id: 'versions', label: 'Versions', icon: GitBranch, description: 'Version history & variants' },
+      { id: 'meeting-prep', label: 'Meeting Prep', icon: FileText, description: 'Partner meeting documents' },
     ],
   },
 };
@@ -1395,7 +1397,11 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
         {/* LANDING PAGE TAB CONTENT */}
         {/* ═══════════════════════════════════════════════════════════════ */}
         <TabsContent value="landing" className="mt-4 space-y-6">
-          <LandingPageScriptsPanel />
+          {subTabs.landing === 'meeting-prep' ? (
+            <AlibabaMeetingPrepDoc />
+          ) : (
+            <LandingPageScriptsPanel />
+          )}
         </TabsContent>
       </Tabs>
     </div>
