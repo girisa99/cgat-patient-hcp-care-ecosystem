@@ -90,7 +90,11 @@ const REGION_OPTIONS = [
   { code: 'AFRICA_EAST', name: 'East Africa (Kenya, Tanzania)', flag: '🇰🇪' },
   { code: 'AFRICA_SOUTH', name: 'Southern Africa (South Africa)', flag: '🇿🇦' },
   { code: 'AFRICA_FRANCO', name: 'Francophone Africa (Senegal, DRC)', flag: '🇸🇳' },
-  { code: 'INDIA', name: 'India & South Asia', flag: '🇮🇳' },
+  { code: 'INDIA_NORTH', name: 'North India (Hindi Belt)', flag: '🇮🇳' },
+  { code: 'INDIA_SOUTH', name: 'South India (Dravidian)', flag: '🇮🇳' },
+  { code: 'INDIA_WEST', name: 'West India (Maharashtra, Gujarat)', flag: '🇮🇳' },
+  { code: 'INDIA_EAST', name: 'East India (Bengal, Odisha)', flag: '🇮🇳' },
+  { code: 'INDIA_PAN', name: 'Pan-India (English)', flag: '🇮🇳' },
   { code: 'SEA', name: 'Southeast Asia', flag: '🌏' },
   { code: 'CJK', name: 'China, Japan & Korea', flag: '🌏' },
 ];
@@ -165,7 +169,8 @@ function getZoneAIProviders(regionCode: string): AIProviderOption[] {
     if (['NAM', 'EU', 'LATAM'].includes(r)) return 'western';
     if (['CJK'].includes(r)) return 'cjk';
     if (['MENA'].includes(r)) return 'mena';
-    if (['INDIA', 'SEA'].includes(r)) return 'india';
+    if (['SEA'].includes(r)) return 'india';
+    if (r?.startsWith('INDIA')) return 'india';
     if (r?.startsWith('AFRICA')) return 'africa';
     return 'western';
   })();
@@ -189,14 +194,21 @@ function getZoneAIProviders(regionCode: string): AIProviderOption[] {
   const recommended = zoneMap[zone] || 'claude';
   
   // Sub-region fallback preferences (affects sort order after recommended)
-  const africaFallbackOrder: Record<string, string[]> = {
+  const subRegionFallbackOrder: Record<string, string[]> = {
+    // Africa sub-regions
     'AFRICA_WEST': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
     'AFRICA_EAST': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
     'AFRICA_SOUTH': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
     'AFRICA_FRANCO': ['gemini', 'alibaba', 'openai', 'claude', 'deepseek'],
+    // India sub-regions
+    'INDIA_NORTH': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
+    'INDIA_SOUTH': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
+    'INDIA_WEST': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
+    'INDIA_EAST': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
+    'INDIA_PAN': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
   };
   
-  const fallbackOrder = africaFallbackOrder[r];
+  const fallbackOrder = subRegionFallbackOrder[r];
   
   return providers
     .map(p => ({ ...p, isRecommended: p.id === recommended }))
