@@ -2508,34 +2508,23 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                                         const audio = new Audio();
                                         audio.preload = 'auto';
                                         
-                                        // Convert base64 data URI to blob URL for large audio files
+                                        // Play audio - use fetch to convert data URIs to blob URLs (avoids atob corruption)
                                         try {
                                           if (url.startsWith('data:audio')) {
-                                            const base64Data = url.split(',')[1];
-                                            if (!base64Data || base64Data.length === 0) {
-                                              toast.error('No audio data found');
-                                              return;
-                                            }
-                                            console.log('[TTS Play] Converting base64 to blob, length:', base64Data.length);
-                                            // Clean base64 string (remove whitespace/newlines from chunked encoding) then decode
-                                            const cleanBase64 = base64Data.replace(/[\s\r\n]+/g, '');
-                                            const binaryString = atob(cleanBase64);
-                                            const len = binaryString.length;
-                                            const bytes = new Uint8Array(len);
-                                            for (let i = 0; i < len; i++) {
-                                              bytes[i] = binaryString.charCodeAt(i);
-                                            }
-                                            const blob = new Blob([bytes], { type: 'audio/mpeg' });
+                                            console.log('[TTS Play] Converting data URI to blob via fetch, length:', url.length);
+                                            const response = await fetch(url);
+                                            const blob = await response.blob();
                                             const blobUrl = URL.createObjectURL(blob);
-                                            console.log('[TTS Play] Blob created, size:', blob.size, 'from base64 length:', base64Data.length);
+                                            console.log('[TTS Play] Blob created via fetch, size:', blob.size);
                                             audio.src = blobUrl;
                                           } else {
                                             audio.src = url;
                                           }
                                         } catch (decodeErr) {
-                                          console.error('[TTS Play] Base64 decode error:', decodeErr);
-                                          toast.error('Audio data is corrupted');
-                                          return;
+                                          console.error('[TTS Play] Audio decode error:', decodeErr);
+                                          // Fallback: try using data URI directly
+                                          console.log('[TTS Play] Falling back to direct data URI');
+                                          audio.src = url;
                                         }
                                         
                                         audio.onended = () => { setPlayingScriptId(null); playingAudioRef.current = null; };
