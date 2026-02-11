@@ -81,23 +81,51 @@ interface NarrationScript {
 
 type ScriptStatus = 'draft' | 'review' | 'active' | 'archived';
 
-const REGION_OPTIONS = [
-  { code: 'NAM', name: 'North America', flag: '🇺🇸' },
-  { code: 'EU', name: 'Europe', flag: '🇪🇺' },
-  { code: 'LATAM', name: 'Latin America', flag: '🌎' },
-  { code: 'MENA', name: 'Middle East & North Africa', flag: '🌍' },
-  { code: 'AFRICA_WEST', name: 'West Africa (Nigeria, Ghana)', flag: '🇳🇬' },
-  { code: 'AFRICA_EAST', name: 'East Africa (Kenya, Tanzania)', flag: '🇰🇪' },
-  { code: 'AFRICA_SOUTH', name: 'Southern Africa (South Africa)', flag: '🇿🇦' },
-  { code: 'AFRICA_FRANCO', name: 'Francophone Africa (Senegal, DRC)', flag: '🇸🇳' },
-  { code: 'INDIA_NORTH', name: 'North India (Hindi Belt)', flag: '🇮🇳' },
-  { code: 'INDIA_SOUTH', name: 'South India (Dravidian)', flag: '🇮🇳' },
-  { code: 'INDIA_WEST', name: 'West India (Maharashtra, Gujarat)', flag: '🇮🇳' },
-  { code: 'INDIA_EAST', name: 'East India (Bengal, Odisha)', flag: '🇮🇳' },
-  { code: 'INDIA_PAN', name: 'Pan-India (English)', flag: '🇮🇳' },
-  { code: 'SEA', name: 'Southeast Asia', flag: '🌏' },
-  { code: 'CJK', name: 'China, Japan & Korea', flag: '🌏' },
+interface RegionGroup {
+  groupCode: string;
+  groupName: string;
+  groupFlag: string;
+  children: { code: string; name: string; flag: string }[];
+}
+
+const REGION_HIERARCHY: RegionGroup[] = [
+  { groupCode: 'NAM', groupName: 'North America', groupFlag: '🇺🇸', children: [] },
+  { groupCode: 'EU', groupName: 'Europe', groupFlag: '🇪🇺', children: [] },
+  { groupCode: 'LATAM', groupName: 'Latin America', groupFlag: '🌎', children: [] },
+  { groupCode: 'MENA', groupName: 'Middle East & North Africa', groupFlag: '🌍', children: [] },
+  {
+    groupCode: 'AFRICA', groupName: 'Africa', groupFlag: '🌍',
+    children: [
+      { code: 'AFRICA_WEST', name: 'West Africa (Nigeria, Ghana)', flag: '🇳🇬' },
+      { code: 'AFRICA_EAST', name: 'East Africa (Kenya, Tanzania)', flag: '🇰🇪' },
+      { code: 'AFRICA_SOUTH', name: 'Southern Africa (South Africa)', flag: '🇿🇦' },
+      { code: 'AFRICA_FRANCO', name: 'Francophone Africa (Senegal, DRC)', flag: '🇸🇳' },
+    ],
+  },
+  {
+    groupCode: 'INDIA', groupName: 'India', groupFlag: '🇮🇳',
+    children: [
+      { code: 'INDIA_NORTH', name: 'North India (Hindi Belt)', flag: '🇮🇳' },
+      { code: 'INDIA_SOUTH', name: 'South India (Dravidian)', flag: '🇮🇳' },
+      { code: 'INDIA_WEST', name: 'West India (Maharashtra, Gujarat)', flag: '🇮🇳' },
+      { code: 'INDIA_EAST', name: 'East India (Bengal, Odisha)', flag: '🇮🇳' },
+      { code: 'INDIA_PAN', name: 'Pan-India (English)', flag: '🇮🇳' },
+    ],
+  },
+  { groupCode: 'SEA', groupName: 'Southeast Asia', groupFlag: '🌏', children: [] },
+  { groupCode: 'CJK', groupName: 'China, Japan & Korea', groupFlag: '🌏', children: [] },
 ];
+
+// Flatten for backward compatibility
+const REGION_OPTIONS = REGION_HIERARCHY.flatMap(g =>
+  g.children.length > 0
+    ? g.children
+    : [{ code: g.groupCode, name: g.groupName, flag: g.groupFlag }]
+);
+
+// Get all codes for a group (the group code itself for leaf groups, children codes for parent groups)
+const getGroupCodes = (group: RegionGroup): string[] =>
+  group.children.length > 0 ? group.children.map(c => c.code) : [group.groupCode];
 
 const POSITIONING_ANGLE_OPTIONS = [
   'Speed & Efficiency', 'Cost Savings', 'Innovation', 'Simplicity',
@@ -227,7 +255,7 @@ export const LandingPageScriptsPanel: React.FC = () => {
   const [scripts, setScripts] = useState<NarrationScript[]>([]);
   const [loading, setLoading] = useState(true);
   const [subTab, setSubTab] = useState<LandingPageSubTab>('scripts');
-  const [filterRegion, setFilterRegion] = useState<string>('all');
+  const [filterRegions, setFilterRegions] = useState<string[]>([]);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [editingScript, setEditingScript] = useState<NarrationScript | null>(null);
   const [showEditor, setShowEditor] = useState(false);
@@ -357,11 +385,11 @@ export const LandingPageScriptsPanel: React.FC = () => {
   // ── Filtered scripts ──
   const filteredScripts = useMemo(() => {
     return scripts.filter(s => {
-      if (filterRegion !== 'all' && s.region_code !== filterRegion) return false;
+      if (filterRegions.length > 0 && !filterRegions.includes(s.region_code)) return false;
       if (filterStatus !== 'all' && s.status !== filterStatus) return false;
       return true;
     });
-  }, [scripts, filterRegion, filterStatus]);
+  }, [scripts, filterRegions, filterStatus]);
 
   // ── Group by region ──
   const groupedByRegion = useMemo(() => {
@@ -749,22 +777,115 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
       </div>
 
       {/* Filters */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         <div className="flex items-center gap-2">
           <Filter className="w-3.5 h-3.5 text-muted-foreground" />
-          <Select value={filterRegion} onValueChange={setFilterRegion}>
-            <SelectTrigger className="w-[180px] h-8 text-xs">
-              <SelectValue placeholder="All Regions" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Regions</SelectItem>
-              {REGION_OPTIONS.map(r => (
-                <SelectItem key={r.code} value={r.code}>
-                  {r.flag} {r.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="h-8 text-xs min-w-[180px] justify-between">
+                <span className="truncate">
+                  {filterRegions.length === 0
+                    ? 'All Regions'
+                    : filterRegions.length === 1
+                      ? (REGION_OPTIONS.find(r => r.code === filterRegions[0])?.name ?? filterRegions[0])
+                      : `${filterRegions.length} regions`}
+                </span>
+                <ChevronDown className="ml-1 h-3.5 w-3.5 opacity-50 shrink-0" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-72 p-0" align="start">
+              <div className="p-2 border-b border-border">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-start text-xs h-7"
+                  onClick={() => setFilterRegions([])}
+                >
+                  <Globe className="w-3.5 h-3.5 mr-2" />
+                  All Regions
+                  {filterRegions.length === 0 && <Check className="w-3.5 h-3.5 ml-auto" />}
+                </Button>
+              </div>
+              <ScrollArea className="h-[320px]">
+                <div className="p-1">
+                  {REGION_HIERARCHY.map(group => {
+                    const codes = getGroupCodes(group);
+                    const allSelected = codes.every(c => filterRegions.includes(c));
+                    const someSelected = codes.some(c => filterRegions.includes(c));
+                    const hasChildren = group.children.length > 0;
+
+                    const toggleGroup = () => {
+                      if (allSelected) {
+                        setFilterRegions(prev => prev.filter(c => !codes.includes(c)));
+                      } else {
+                        setFilterRegions(prev => [...new Set([...prev, ...codes])]);
+                      }
+                    };
+
+                    const toggleChild = (code: string) => {
+                      setFilterRegions(prev =>
+                        prev.includes(code) ? prev.filter(c => c !== code) : [...prev, code]
+                      );
+                    };
+
+                    return (
+                      <div key={group.groupCode} className="mb-0.5">
+                        <div
+                          className="flex items-center gap-2 px-2 py-1.5 rounded-sm hover:bg-accent cursor-pointer text-xs"
+                          onClick={hasChildren ? toggleGroup : () => toggleChild(group.groupCode)}
+                        >
+                          <Checkbox
+                            checked={allSelected}
+                            indeterminate={someSelected && !allSelected}
+                            onCheckedChange={hasChildren ? toggleGroup : () => toggleChild(group.groupCode)}
+                            className="h-3.5 w-3.5"
+                          />
+                          <span className="mr-1">{group.groupFlag}</span>
+                          <span className="font-medium">{group.groupName}</span>
+                          {hasChildren && (
+                            <Badge variant="secondary" className="ml-auto text-[10px] h-4 px-1">
+                              {codes.filter(c => filterRegions.includes(c)).length}/{codes.length}
+                            </Badge>
+                          )}
+                        </div>
+                        {hasChildren && (
+                          <div className="ml-5 border-l border-border/50 pl-2">
+                            {group.children.map(child => (
+                              <div
+                                key={child.code}
+                                className="flex items-center gap-2 px-2 py-1 rounded-sm hover:bg-accent cursor-pointer text-xs"
+                                onClick={() => toggleChild(child.code)}
+                              >
+                                <Checkbox
+                                  checked={filterRegions.includes(child.code)}
+                                  onCheckedChange={() => toggleChild(child.code)}
+                                  className="h-3.5 w-3.5"
+                                />
+                                <span className="mr-1">{child.flag}</span>
+                                <span className="text-muted-foreground">{child.name}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
+              {filterRegions.length > 0 && (
+                <div className="p-2 border-t border-border">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full text-xs h-7 text-muted-foreground"
+                    onClick={() => setFilterRegions([])}
+                  >
+                    Clear selection
+                  </Button>
+                </div>
+              )}
+            </PopoverContent>
+          </Popover>
         </div>
         <Select value={filterStatus} onValueChange={setFilterStatus}>
           <SelectTrigger className="w-[140px] h-8 text-xs">
