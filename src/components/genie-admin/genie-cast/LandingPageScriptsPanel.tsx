@@ -50,9 +50,9 @@ interface NarrationScript {
   solution: string;
   cta: string;
   full_script: string | null;
-  positioning_angle: string | null;
-  target_persona: string | null;
-  emotional_tone: string | null;
+  positioning_angles: string[];
+  target_personas: string[];
+  emotional_tones: string[];
   tts_provider: string | null;
   tts_voice_id: string | null;
   tts_voice_name: string | null;
@@ -88,6 +88,18 @@ const REGION_OPTIONS = [
   { code: 'INDIA', name: 'India & South Asia', flag: '🇮🇳' },
   { code: 'SEA', name: 'Southeast Asia', flag: '🌏' },
   { code: 'CJK', name: 'China, Japan & Korea', flag: '🌏' },
+];
+
+const POSITIONING_ANGLE_OPTIONS = [
+  'Speed & Efficiency', 'Cost Savings', 'Innovation', 'Simplicity',
+  'Enterprise Scale', 'Security & Compliance', 'AI-Powered', 'Time-to-Market',
+  'User Experience', 'ROI & Growth', 'Cultural Relevance', 'Accessibility',
+];
+
+const EMOTIONAL_TONE_OPTIONS = [
+  'Empowering', 'Warm', 'Professional', 'Urgent', 'Inspirational',
+  'Conversational', 'Bold', 'Reassuring', 'Playful', 'Authoritative',
+  'Compassionate', 'Energetic',
 ];
 
 const STATUS_CONFIG: Record<ScriptStatus, { label: string; color: string; icon: React.ElementType }> = {
@@ -200,6 +212,15 @@ export const LandingPageScriptsPanel: React.FC = () => {
   const [showImprovedPreview, setShowImprovedPreview] = useState(false);
   const [selectedScriptForImprovement, setSelectedScriptForImprovement] = useState<string>('');
 
+  // Audience registry for persona options
+  const [audienceOptions, setAudienceOptions] = useState<string[]>([]);
+  const [customTagInput, setCustomTagInput] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    supabase.from('marketing_audiences').select('label').eq('is_active', true).order('sort_order').then(({ data }) => {
+      setAudienceOptions(data?.map((a: any) => a.label) || []);
+    });
+  }, []);
   // ── Fetch scripts ──
   const fetchScripts = useCallback(async () => {
     setLoading(true);
@@ -323,9 +344,9 @@ export const LandingPageScriptsPanel: React.FC = () => {
           problem_statement: baseScript.problem_statement,
           solution: baseScript.solution,
           cta: baseScript.cta,
-          positioning_angle: baseScript.positioning_angle,
-          target_persona: baseScript.target_persona,
-          emotional_tone: baseScript.emotional_tone,
+          positioning_angles: baseScript.positioning_angles,
+          target_personas: baseScript.target_personas,
+          emotional_tones: baseScript.emotional_tones,
           tts_provider: baseScript.tts_provider,
           tts_voice_id: baseScript.tts_voice_id,
           tts_voice_name: baseScript.tts_voice_name,
@@ -376,9 +397,9 @@ export const LandingPageScriptsPanel: React.FC = () => {
           problem_statement: script.problem_statement,
           solution: script.solution,
           cta: script.cta,
-          positioning_angle: script.positioning_angle,
-          target_persona: script.target_persona,
-          emotional_tone: script.emotional_tone,
+          positioning_angles: script.positioning_angles,
+          target_personas: script.target_personas,
+          emotional_tones: script.emotional_tones,
           updated_at: new Date().toISOString(),
         } as any)
         .eq('id', script.id);
@@ -411,9 +432,9 @@ export const LandingPageScriptsPanel: React.FC = () => {
           problem_statement: baseScript.problem_statement,
           solution: baseScript.solution,
           cta: baseScript.cta,
-          positioning_angle: baseScript.positioning_angle,
-          target_persona: baseScript.target_persona,
-          emotional_tone: baseScript.emotional_tone,
+          positioning_angles: baseScript.positioning_angles,
+          target_personas: baseScript.target_personas,
+          emotional_tones: baseScript.emotional_tones,
           tts_provider: baseScript.tts_provider,
           tts_voice_id: baseScript.tts_voice_id,
           tts_voice_name: baseScript.tts_voice_name,
@@ -480,7 +501,7 @@ export const LandingPageScriptsPanel: React.FC = () => {
 
 TASK: Improve the following regional narration script by incorporating the accumulated feedback below. Maintain the Hook → Problem → Solution → CTA structure.
 
-CURRENT SCRIPT (Region: ${script.region_display_name}, Persona: ${script.target_persona || 'General'}, Tone: ${script.emotional_tone || 'Professional'}):
+CURRENT SCRIPT (Region: ${script.region_display_name}, Personas: ${script.target_personas?.join(', ') || 'General'}, Tones: ${script.emotional_tones?.join(', ') || 'Professional'}):
 
 HOOK: ${script.hook}
 
@@ -499,9 +520,9 @@ INSTRUCTIONS:
 1. Apply ALL feedback marked as [REVIEWER] and [A/B LEARNING] directly
 2. Consider [PERFORMANCE] insights for engagement optimization  
 3. Incorporate [AI SUGGESTION] items where they improve quality
-4. Maintain the original emotional tone: ${script.emotional_tone || 'professional'}
+4. Maintain the original emotional tones: ${script.emotional_tones?.join(', ') || 'professional'}
 5. Keep the regional cultural context for ${script.region_display_name}
-6. Use ${script.positioning_angle || 'value-driven'} positioning
+6. Use ${script.positioning_angles?.join(', ') || 'value-driven'} positioning
 
 Return ONLY valid JSON with this exact structure (no markdown, no code fences):
 {"hook":"improved hook text","problem_statement":"improved problem text","solution":"improved solution text","cta":"improved cta text","changes_summary":"bullet list of what changed and why","framework_used":"primary framework applied (StoryBrand/AIDA/JTBD/PAS)"}`;
@@ -522,7 +543,7 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
           systemPrompt: 'You are a regional marketing script optimizer. Return ONLY valid JSON, no markdown fences.',
           context: {
             region: script.region_code,
-            persona: script.target_persona,
+            persona: script.target_personas?.join(', '),
             framework: 'auto-detect',
             selectedProvider: provider.name,
           },
@@ -588,9 +609,9 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
           problem_statement: improvedPreview.problem_statement,
           solution: improvedPreview.solution,
           cta: improvedPreview.cta,
-          positioning_angle: script.positioning_angle,
-          target_persona: script.target_persona,
-          emotional_tone: script.emotional_tone,
+          positioning_angles: script.positioning_angles,
+          target_personas: script.target_personas,
+          emotional_tones: script.emotional_tones,
           tts_provider: script.tts_provider,
           tts_voice_id: script.tts_voice_id,
           tts_voice_name: script.tts_voice_name,
@@ -818,9 +839,9 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
                                     <p className="text-xs text-muted-foreground line-clamp-2">
                                       {script.problem_statement}
                                     </p>
-                                    {script.positioning_angle && (
+                                    {script.positioning_angles?.length > 0 && (
                                       <p className="text-[10px] text-muted-foreground italic">
-                                        Angle: {script.positioning_angle}
+                                        Angles: {script.positioning_angles.join(', ')}
                                       </p>
                                     )}
                                   </div>
@@ -1332,26 +1353,169 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
 
           {editingScript && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-xs">Positioning Angle</Label>
-                  <Input
-                    value={editingScript.positioning_angle || ''}
-                    onChange={e => setEditingScript({ ...editingScript, positioning_angle: e.target.value })}
-                    className="text-sm"
-                    placeholder="e.g., Speed & Efficiency"
-                  />
+              {/* Multi-select: Positioning Angles */}
+              <div className="space-y-2">
+                <Label className="text-xs">📐 Positioning Angles</Label>
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  {(editingScript.positioning_angles || []).map(angle => (
+                    <Badge key={angle} variant="secondary" className="text-xs gap-1">
+                      {angle}
+                      <X className="w-3 h-3 cursor-pointer" onClick={() => setEditingScript({
+                        ...editingScript,
+                        positioning_angles: editingScript.positioning_angles.filter(a => a !== angle),
+                      })} />
+                    </Badge>
+                  ))}
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-xs">Emotional Tone</Label>
-                  <Input
-                    value={editingScript.emotional_tone || ''}
-                    onChange={e => setEditingScript({ ...editingScript, emotional_tone: e.target.value })}
-                    className="text-sm"
-                    placeholder="e.g., Empowering, Warm"
-                  />
+                <div className="flex gap-2">
+                  <Select onValueChange={val => {
+                    if (val && !(editingScript.positioning_angles || []).includes(val)) {
+                      setEditingScript({ ...editingScript, positioning_angles: [...(editingScript.positioning_angles || []), val] });
+                    }
+                  }}>
+                    <SelectTrigger className="text-xs h-8 flex-1"><SelectValue placeholder="Add angle..." /></SelectTrigger>
+                    <SelectContent>
+                      {POSITIONING_ANGLE_OPTIONS.filter(o => !(editingScript.positioning_angles || []).includes(o)).map(o => (
+                        <SelectItem key={o} value={o} className="text-xs">{o}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <div className="flex gap-1">
+                    <Input
+                      value={customTagInput.positioning || ''}
+                      onChange={e => setCustomTagInput({ ...customTagInput, positioning: e.target.value })}
+                      placeholder="Custom..."
+                      className="text-xs h-8 w-28"
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' && customTagInput.positioning?.trim()) {
+                          const v = customTagInput.positioning.trim();
+                          if (!(editingScript.positioning_angles || []).includes(v)) {
+                            setEditingScript({ ...editingScript, positioning_angles: [...(editingScript.positioning_angles || []), v] });
+                          }
+                          setCustomTagInput({ ...customTagInput, positioning: '' });
+                        }
+                      }}
+                    />
+                    <Button size="sm" variant="ghost" className="h-8 px-2" onClick={() => {
+                      const v = customTagInput.positioning?.trim();
+                      if (v && !(editingScript.positioning_angles || []).includes(v)) {
+                        setEditingScript({ ...editingScript, positioning_angles: [...(editingScript.positioning_angles || []), v] });
+                      }
+                      setCustomTagInput({ ...customTagInput, positioning: '' });
+                    }}><Plus className="w-3 h-3" /></Button>
+                  </div>
                 </div>
               </div>
+
+              {/* Multi-select: Emotional Tones */}
+              <div className="space-y-2">
+                <Label className="text-xs">🎭 Emotional Tones</Label>
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  {(editingScript.emotional_tones || []).map(tone => (
+                    <Badge key={tone} variant="secondary" className="text-xs gap-1">
+                      {tone}
+                      <X className="w-3 h-3 cursor-pointer" onClick={() => setEditingScript({
+                        ...editingScript,
+                        emotional_tones: editingScript.emotional_tones.filter(t => t !== tone),
+                      })} />
+                    </Badge>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <Select onValueChange={val => {
+                    if (val && !(editingScript.emotional_tones || []).includes(val)) {
+                      setEditingScript({ ...editingScript, emotional_tones: [...(editingScript.emotional_tones || []), val] });
+                    }
+                  }}>
+                    <SelectTrigger className="text-xs h-8 flex-1"><SelectValue placeholder="Add tone..." /></SelectTrigger>
+                    <SelectContent>
+                      {EMOTIONAL_TONE_OPTIONS.filter(o => !(editingScript.emotional_tones || []).includes(o)).map(o => (
+                        <SelectItem key={o} value={o} className="text-xs">{o}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <div className="flex gap-1">
+                    <Input
+                      value={customTagInput.tone || ''}
+                      onChange={e => setCustomTagInput({ ...customTagInput, tone: e.target.value })}
+                      placeholder="Custom..."
+                      className="text-xs h-8 w-28"
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' && customTagInput.tone?.trim()) {
+                          const v = customTagInput.tone.trim();
+                          if (!(editingScript.emotional_tones || []).includes(v)) {
+                            setEditingScript({ ...editingScript, emotional_tones: [...(editingScript.emotional_tones || []), v] });
+                          }
+                          setCustomTagInput({ ...customTagInput, tone: '' });
+                        }
+                      }}
+                    />
+                    <Button size="sm" variant="ghost" className="h-8 px-2" onClick={() => {
+                      const v = customTagInput.tone?.trim();
+                      if (v && !(editingScript.emotional_tones || []).includes(v)) {
+                        setEditingScript({ ...editingScript, emotional_tones: [...(editingScript.emotional_tones || []), v] });
+                      }
+                      setCustomTagInput({ ...customTagInput, tone: '' });
+                    }}><Plus className="w-3 h-3" /></Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Multi-select: Target Personas (from marketing_audiences + custom) */}
+              <div className="space-y-2">
+                <Label className="text-xs">👥 Target Personas</Label>
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  {(editingScript.target_personas || []).map(p => (
+                    <Badge key={p} variant="secondary" className="text-xs gap-1">
+                      {p}
+                      <X className="w-3 h-3 cursor-pointer" onClick={() => setEditingScript({
+                        ...editingScript,
+                        target_personas: editingScript.target_personas.filter(t => t !== p),
+                      })} />
+                    </Badge>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <Select onValueChange={val => {
+                    if (val && !(editingScript.target_personas || []).includes(val)) {
+                      setEditingScript({ ...editingScript, target_personas: [...(editingScript.target_personas || []), val] });
+                    }
+                  }}>
+                    <SelectTrigger className="text-xs h-8 flex-1"><SelectValue placeholder="Add persona..." /></SelectTrigger>
+                    <SelectContent>
+                      {audienceOptions.filter(o => !(editingScript.target_personas || []).includes(o)).map(o => (
+                        <SelectItem key={o} value={o} className="text-xs">{o}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <div className="flex gap-1">
+                    <Input
+                      value={customTagInput.persona || ''}
+                      onChange={e => setCustomTagInput({ ...customTagInput, persona: e.target.value })}
+                      placeholder="Custom..."
+                      className="text-xs h-8 w-28"
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' && customTagInput.persona?.trim()) {
+                          const v = customTagInput.persona.trim();
+                          if (!(editingScript.target_personas || []).includes(v)) {
+                            setEditingScript({ ...editingScript, target_personas: [...(editingScript.target_personas || []), v] });
+                          }
+                          setCustomTagInput({ ...customTagInput, persona: '' });
+                        }
+                      }}
+                    />
+                    <Button size="sm" variant="ghost" className="h-8 px-2" onClick={() => {
+                      const v = customTagInput.persona?.trim();
+                      if (v && !(editingScript.target_personas || []).includes(v)) {
+                        setEditingScript({ ...editingScript, target_personas: [...(editingScript.target_personas || []), v] });
+                      }
+                      setCustomTagInput({ ...customTagInput, persona: '' });
+                    }}><Plus className="w-3 h-3" /></Button>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
 
               <div className="space-y-2">
                 <Label className="text-xs">🎯 Hook</Label>
@@ -1386,15 +1550,6 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
                   value={editingScript.cta}
                   onChange={e => setEditingScript({ ...editingScript, cta: e.target.value })}
                   className="text-sm min-h-[40px]"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-xs">Target Persona</Label>
-                <Input
-                  value={editingScript.target_persona || ''}
-                  onChange={e => setEditingScript({ ...editingScript, target_persona: e.target.value })}
-                  className="text-sm"
                 />
               </div>
             </div>

@@ -19361,7 +19361,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           cta: string
-          emotional_tone: string | null
+          emotional_tones: string[] | null
           full_script: string | null
           generated_audio_url: string | null
           hook: string
@@ -19371,13 +19371,13 @@ export type Database = {
           language_code: string
           language_display_name: string
           play_count: number | null
-          positioning_angle: string | null
+          positioning_angles: string[] | null
           problem_statement: string
           region_code: string
           region_display_name: string
           solution: string
           status: string
-          target_persona: string | null
+          target_personas: string[] | null
           tts_pitch: string | null
           tts_provider: string | null
           tts_speed: number | null
@@ -19398,7 +19398,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           cta: string
-          emotional_tone?: string | null
+          emotional_tones?: string[] | null
           full_script?: string | null
           generated_audio_url?: string | null
           hook: string
@@ -19408,13 +19408,13 @@ export type Database = {
           language_code?: string
           language_display_name?: string
           play_count?: number | null
-          positioning_angle?: string | null
+          positioning_angles?: string[] | null
           problem_statement: string
           region_code: string
           region_display_name: string
           solution: string
           status?: string
-          target_persona?: string | null
+          target_personas?: string[] | null
           tts_pitch?: string | null
           tts_provider?: string | null
           tts_speed?: number | null
@@ -19435,7 +19435,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           cta?: string
-          emotional_tone?: string | null
+          emotional_tones?: string[] | null
           full_script?: string | null
           generated_audio_url?: string | null
           hook?: string
@@ -19445,13 +19445,13 @@ export type Database = {
           language_code?: string
           language_display_name?: string
           play_count?: number | null
-          positioning_angle?: string | null
+          positioning_angles?: string[] | null
           problem_statement?: string
           region_code?: string
           region_display_name?: string
           solution?: string
           status?: string
-          target_persona?: string | null
+          target_personas?: string[] | null
           tts_pitch?: string | null
           tts_provider?: string | null
           tts_speed?: number | null
