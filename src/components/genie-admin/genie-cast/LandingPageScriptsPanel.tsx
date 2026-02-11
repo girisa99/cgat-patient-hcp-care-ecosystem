@@ -1196,13 +1196,11 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
         </div>
       </div>
 
-      {/* Sub-tab navigation */}
+      {/* Sub-tab navigation — only Feedback (Scripts/TTS/Versions render inline below) */}
       <div className="flex items-center gap-2">
         {[
-          { id: 'scripts' as const, label: 'Regional Scripts', icon: FileText },
+          { id: 'scripts' as const, label: 'Scripts & Production', icon: FileText },
           { id: 'feedback' as const, label: 'Feedback & Suggestions', icon: Lightbulb },
-          { id: 'tts-preview' as const, label: 'TTS Preview', icon: Headphones },
-          { id: 'versions' as const, label: 'Version History', icon: History },
         ].map(tab => (
           <Button
             key={tab.id}
@@ -2136,7 +2134,7 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
                     <PopoverContent className="w-56 p-2 z-[100001] bg-popover border shadow-md" align="start" side="bottom" sideOffset={4}>
                       <ScrollArea className="h-[280px]">
                         <div className="space-y-1">
-                          {POSITIONING_ANGLE_OPTIONS.map(o => {
+                          {[...new Set([...POSITIONING_ANGLE_OPTIONS, ...(editingScript.positioning_angles || [])])].map(o => {
                             const selected = (editingScript.positioning_angles || []).includes(o);
                             return (
                               <label key={o} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent cursor-pointer text-xs">
@@ -2187,7 +2185,7 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
                     <PopoverContent className="w-56 p-2 z-[100001] bg-popover border shadow-md" align="start" side="bottom" sideOffset={4}>
                       <ScrollArea className="h-[280px]">
                         <div className="space-y-1">
-                          {EMOTIONAL_TONE_OPTIONS.map(o => {
+                          {[...new Set([...EMOTIONAL_TONE_OPTIONS, ...(editingScript.emotional_tones || [])])].map(o => {
                             const selected = (editingScript.emotional_tones || []).includes(o);
                             return (
                               <label key={o} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent cursor-pointer text-xs">
@@ -2238,7 +2236,7 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
                     <PopoverContent className="w-56 p-2 z-[100001] bg-popover border shadow-md" align="start" side="bottom" sideOffset={4}>
                       <ScrollArea className="h-[280px]">
                         <div className="space-y-1">
-                          {(audienceOptions.length > 0 ? audienceOptions : ['Content Creators', 'Marketing Teams', 'Enterprise Teams', 'Educators', 'Healthcare Professionals']).map(o => {
+                          {[...new Set([...(audienceOptions.length > 0 ? audienceOptions : ['Content Creators', 'Marketing Teams', 'Enterprise Teams', 'Educators', 'Healthcare Professionals']), ...(editingScript.target_personas || [])])].map(o => {
                             const selected = (editingScript.target_personas || []).includes(o);
                             return (
                               <label key={o} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent cursor-pointer text-xs">
