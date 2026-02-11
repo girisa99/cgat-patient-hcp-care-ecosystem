@@ -144,6 +144,20 @@ export const LandingPageScriptsPanel: React.FC = () => {
   const [newNoteScriptId, setNewNoteScriptId] = useState<string>('');
   const [newNotePriority, setNewNotePriority] = useState<string>('medium');
 
+  // AI generation state
+  const [isGeneratingImproved, setIsGeneratingImproved] = useState(false);
+  const [improvedPreview, setImprovedPreview] = useState<{
+    scriptId: string;
+    hook: string;
+    problem_statement: string;
+    solution: string;
+    cta: string;
+    changes_summary: string;
+    framework_used: string;
+  } | null>(null);
+  const [showImprovedPreview, setShowImprovedPreview] = useState(false);
+  const [selectedScriptForImprovement, setSelectedScriptForImprovement] = useState<string>('');
+
   // ── Fetch scripts ──
   const fetchScripts = useCallback(async () => {
     setLoading(true);
@@ -380,6 +394,194 @@ export const LandingPageScriptsPanel: React.FC = () => {
       toast.error('Failed to create new version');
     }
   }, [scripts, fetchScripts]);
+
+  // ── Generate Improved Version via AI ──
+  const handleGenerateImproved = useCallback(async () => {
+    const scriptId = selectedScriptForImprovement || newNoteScriptId;
+    if (!scriptId) {
+      toast.error('Select a script to improve');
+      return;
+    }
+
+    const script = scripts.find(s => s.id === scriptId);
+    if (!script) {
+      toast.error('Script not found');
+      return;
+    }
+
+    // Gather open/accepted feedback for this script
+    const relevantNotes = notes.filter(
+      n => n.script_id === scriptId && (n.status === 'open' || n.status === 'accepted')
+    );
+
+    if (relevantNotes.length === 0) {
+      toast.error('No open feedback to incorporate. Add feedback first.');
+      return;
+    }
+
+    setIsGeneratingImproved(true);
+
+    try {
+      // Build structured feedback summary
+      const feedbackBySection: Record<string, string[]> = {};
+      relevantNotes.forEach(n => {
+        const section = n.section_target || 'general';
+        if (!feedbackBySection[section]) feedbackBySection[section] = [];
+        const prefix = n.note_type === 'ab_learning' ? '[A/B LEARNING]' :
+                       n.note_type === 'performance_insight' ? '[PERFORMANCE]' :
+                       n.note_type === 'ai_suggestion' ? '[AI SUGGESTION]' : '[REVIEWER]';
+        feedbackBySection[section].push(`${prefix} (${n.priority}): ${n.content}`);
+      });
+
+      const feedbackText = Object.entries(feedbackBySection)
+        .map(([section, items]) => `### ${section.toUpperCase()} feedback:\n${items.join('\n')}`)
+        .join('\n\n');
+
+      const prompt = `You are a world-class marketing copywriter specializing in regional content localization.
+
+TASK: Improve the following regional narration script by incorporating the accumulated feedback below. Maintain the Hook → Problem → Solution → CTA structure.
+
+CURRENT SCRIPT (Region: ${script.region_display_name}, Persona: ${script.target_persona || 'General'}, Tone: ${script.emotional_tone || 'Professional'}):
+
+HOOK: ${script.hook}
+
+PROBLEM: ${script.problem_statement}
+
+SOLUTION: ${script.solution}
+
+CTA: ${script.cta}
+
+---
+ACCUMULATED FEEDBACK TO INCORPORATE:
+${feedbackText}
+
+---
+INSTRUCTIONS:
+1. Apply ALL feedback marked as [REVIEWER] and [A/B LEARNING] directly
+2. Consider [PERFORMANCE] insights for engagement optimization  
+3. Incorporate [AI SUGGESTION] items where they improve quality
+4. Maintain the original emotional tone: ${script.emotional_tone || 'professional'}
+5. Keep the regional cultural context for ${script.region_display_name}
+6. Use ${script.positioning_angle || 'value-driven'} positioning
+
+Return ONLY valid JSON with this exact structure (no markdown, no code fences):
+{"hook":"improved hook text","problem_statement":"improved problem text","solution":"improved solution text","cta":"improved cta text","changes_summary":"bullet list of what changed and why","framework_used":"primary framework applied (StoryBrand/AIDA/JTBD/PAS)"}`;
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      const response = await supabase.functions.invoke('ai-universal-processor', {
+        body: {
+          action: 'generate_text',
+          provider: 'gemini',
+          model: 'gemini-2.5-flash',
+          prompt,
+          systemPrompt: 'You are a regional marketing script optimizer. Return ONLY valid JSON, no markdown fences.',
+          context: {
+            region: script.region_code,
+            persona: script.target_persona,
+            framework: 'auto-detect',
+          },
+        },
+      });
+
+      if (response.error) throw response.error;
+
+      const content = response.data?.content || response.data?.text || '';
+      
+      // Parse the JSON from the AI response
+      let parsed;
+      try {
+        // Strip potential markdown fences
+        const cleaned = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        parsed = JSON.parse(cleaned);
+      } catch (parseErr) {
+        console.error('[LandingPageScripts] AI response parse error:', parseErr, content);
+        toast.error('AI returned invalid format. Please try again.');
+        return;
+      }
+
+      setImprovedPreview({
+        scriptId,
+        hook: parsed.hook || script.hook,
+        problem_statement: parsed.problem_statement || script.problem_statement,
+        solution: parsed.solution || script.solution,
+        cta: parsed.cta || script.cta,
+        changes_summary: parsed.changes_summary || 'No summary provided',
+        framework_used: parsed.framework_used || 'Auto',
+      });
+      setShowImprovedPreview(true);
+      toast.success('Improved version generated! Review the changes.');
+    } catch (err) {
+      console.error('[LandingPageScripts] AI generation error:', err);
+      toast.error('Failed to generate improved version');
+    } finally {
+      setIsGeneratingImproved(false);
+    }
+  }, [selectedScriptForImprovement, newNoteScriptId, scripts, notes]);
+
+  // ── Accept improved version → create new version with AI content ──
+  const handleAcceptImproved = useCallback(async () => {
+    if (!improvedPreview) return;
+
+    const script = scripts.find(s => s.id === improvedPreview.scriptId);
+    if (!script) return;
+
+    const maxVersion = scripts
+      .filter(s => s.region_code === script.region_code && s.variant_label === script.variant_label)
+      .reduce((max, s) => Math.max(max, s.version), 0);
+
+    try {
+      const fullScript = `${improvedPreview.hook} ${improvedPreview.problem_statement} ${improvedPreview.solution} ${improvedPreview.cta}`;
+
+      const { error } = await supabase
+        .from('regional_narration_scripts')
+        .insert({
+          region_code: script.region_code,
+          region_display_name: script.region_display_name,
+          language_code: script.language_code,
+          language_display_name: script.language_display_name,
+          hook: improvedPreview.hook,
+          problem_statement: improvedPreview.problem_statement,
+          solution: improvedPreview.solution,
+          cta: improvedPreview.cta,
+          full_script: fullScript,
+          positioning_angle: script.positioning_angle,
+          target_persona: script.target_persona,
+          emotional_tone: script.emotional_tone,
+          tts_provider: script.tts_provider,
+          tts_voice_id: script.tts_voice_id,
+          tts_voice_name: script.tts_voice_name,
+          tts_speed: script.tts_speed,
+          tts_pitch: script.tts_pitch,
+          version: maxVersion + 1,
+          status: 'draft',
+          variant_label: script.variant_label,
+          is_default: false,
+        } as any);
+
+      if (error) throw error;
+
+      // Mark applied notes as 'applied'
+      const relevantNoteIds = notes
+        .filter(n => n.script_id === improvedPreview.scriptId && (n.status === 'open' || n.status === 'accepted'))
+        .map(n => n.id);
+
+      if (relevantNoteIds.length > 0) {
+        await supabase
+          .from('script_improvement_notes')
+          .update({ status: 'applied', resolved_at: new Date().toISOString(), updated_at: new Date().toISOString() } as any)
+          .in('id', relevantNoteIds);
+      }
+
+      toast.success(`Improved version ${maxVersion + 1} created! ${relevantNoteIds.length} notes marked as applied.`);
+      setShowImprovedPreview(false);
+      setImprovedPreview(null);
+      fetchScripts();
+      fetchNotes();
+    } catch (err) {
+      console.error('[LandingPageScripts] Accept improved error:', err);
+      toast.error('Failed to save improved version');
+    }
+  }, [improvedPreview, scripts, notes, fetchScripts, fetchNotes]);
 
   return (
     <div className="space-y-4">
@@ -879,20 +1081,63 @@ export const LandingPageScriptsPanel: React.FC = () => {
 
             {/* AI Rewrite Suggestion Card */}
             <Card className="border-primary/20">
-              <CardContent className="py-4 flex items-center gap-4">
-                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Zap className="w-5 h-5 text-primary" />
+              <CardContent className="py-4 space-y-3">
+                <div className="flex items-center gap-4">
+                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Zap className="w-5 h-5 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold">Generate Improved Version</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      AI analyzes all open feedback, A/B learnings, and performance insights to create an optimized new version using StoryBrand/AIDA/JTBD frameworks.
+                    </p>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold">Generate Improved Version</p>
-                  <p className="text-[10px] text-muted-foreground">
-                    AI analyzes all open feedback, A/B learnings, and performance insights to create an optimized new version using StoryBrand/AIDA/JTBD frameworks.
-                  </p>
+                <div className="flex items-center gap-2">
+                  <Select value={selectedScriptForImprovement} onValueChange={setSelectedScriptForImprovement}>
+                    <SelectTrigger className="h-8 text-xs flex-1">
+                      <SelectValue placeholder="Select script to improve..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {scripts.map(s => {
+                        const openNotes = notes.filter(n => n.script_id === s.id && (n.status === 'open' || n.status === 'accepted'));
+                        return (
+                          <SelectItem key={s.id} value={s.id}>
+                            {REGION_OPTIONS.find(r => r.code === s.region_code)?.flag} {s.region_display_name} v{s.version}
+                            {s.variant_label ? ` (${s.variant_label})` : ''}
+                            {openNotes.length > 0 ? ` — ${openNotes.length} notes` : ' — no notes'}
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    size="sm"
+                    className="gap-1 text-xs"
+                    disabled={isGeneratingImproved || (!selectedScriptForImprovement && !newNoteScriptId)}
+                    onClick={handleGenerateImproved}
+                  >
+                    {isGeneratingImproved ? (
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-3.5 h-3.5" />
+                    )}
+                    {isGeneratingImproved ? 'Generating...' : 'Generate'}
+                  </Button>
                 </div>
-                <Button size="sm" variant="outline" className="gap-1 text-xs" disabled>
-                  <Sparkles className="w-3.5 h-3.5" />
-                  Coming Soon
-                </Button>
+                {(() => {
+                  const sid = selectedScriptForImprovement || newNoteScriptId;
+                  const count = sid ? notes.filter(n => n.script_id === sid && (n.status === 'open' || n.status === 'accepted')).length : 0;
+                  return count > 0 ? (
+                    <p className="text-[10px] text-muted-foreground">
+                      ✅ {count} open feedback note{count !== 1 ? 's' : ''} will be incorporated into the improved version.
+                    </p>
+                  ) : sid ? (
+                    <p className="text-[10px] text-destructive">
+                      ⚠️ No open feedback for this script. Add feedback above first.
+                    </p>
+                  ) : null;
+                })()}
               </CardContent>
             </Card>
 
@@ -1065,6 +1310,76 @@ export const LandingPageScriptsPanel: React.FC = () => {
             </Button>
             <Button onClick={() => editingScript && handleSaveScript(editingScript)}>
               Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── IMPROVED VERSION PREVIEW DIALOG ─── */}
+      <Dialog open={showImprovedPreview} onOpenChange={setShowImprovedPreview}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-primary" />
+              AI-Improved Version Preview
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              {improvedPreview?.framework_used && `Framework: ${improvedPreview.framework_used}`}
+              {' • '}Review the changes below before accepting.
+            </DialogDescription>
+          </DialogHeader>
+
+          {improvedPreview && (
+            <div className="space-y-4">
+              {/* Changes Summary */}
+              <Card className="bg-primary/5 border-primary/20">
+                <CardContent className="py-3">
+                  <p className="text-xs font-semibold mb-1 flex items-center gap-1">
+                    <Zap className="w-3 h-3" /> Changes Summary
+                  </p>
+                  <p className="text-xs text-muted-foreground whitespace-pre-wrap">{improvedPreview.changes_summary}</p>
+                </CardContent>
+              </Card>
+
+              {/* Side-by-side comparison for each section */}
+              {[
+                { label: '🎯 Hook', key: 'hook' as const },
+                { label: '😰 Problem Statement', key: 'problem_statement' as const },
+                { label: '✨ Solution', key: 'solution' as const },
+                { label: '📢 CTA', key: 'cta' as const },
+              ].map(section => {
+                const original = scripts.find(s => s.id === improvedPreview.scriptId);
+                const originalText = original ? original[section.key] : '';
+                const newText = improvedPreview[section.key];
+                const changed = originalText !== newText;
+
+                return (
+                  <div key={section.key} className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Label className="text-xs font-semibold">{section.label}</Label>
+                      {changed && <Badge className="text-[9px] bg-primary/10 text-primary">Modified</Badge>}
+                    </div>
+                    <Textarea
+                      value={newText}
+                      onChange={e => setImprovedPreview({ ...improvedPreview, [section.key]: e.target.value })}
+                      className={cn(
+                        "text-sm min-h-[60px]",
+                        changed && "border-primary/30 bg-primary/5"
+                      )}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setShowImprovedPreview(false)}>
+              Discard
+            </Button>
+            <Button onClick={handleAcceptImproved} className="gap-1">
+              <Check className="w-3.5 h-3.5" />
+              Accept & Create New Version
             </Button>
           </DialogFooter>
         </DialogContent>
