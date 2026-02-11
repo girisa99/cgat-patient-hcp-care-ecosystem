@@ -16,6 +16,7 @@ import {
   Globe, FileText, Headphones, History, Plus, Copy, Check, X,
   Play, Pause, Volume2, Edit, Trash2, ChevronDown, Tag, Sparkles,
   ArrowUpDown, Filter, MoreHorizontal, Eye, RefreshCw, Mic,
+  MessageCircle, Lightbulb, TrendingUp, Zap, Send, ThumbsUp, ThumbsDown,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -97,7 +98,33 @@ const STATUS_CONFIG: Record<ScriptStatus, { label: string; color: string; icon: 
 };
 
 // ─── Sub-tab: Landing Page Scripts ───────────────────────────────────
-type LandingPageSubTab = 'scripts' | 'tts-preview' | 'versions';
+type LandingPageSubTab = 'scripts' | 'tts-preview' | 'versions' | 'feedback';
+
+// ─── Feedback types ──────────────────────────────────────────────────
+interface ImprovementNote {
+  id: string;
+  script_id: string;
+  note_type: 'reviewer_comment' | 'ab_learning' | 'ai_suggestion' | 'performance_insight';
+  content: string;
+  section_target: string | null;
+  priority: string;
+  status: string;
+  ai_model_used: string | null;
+  framework_tag: string | null;
+  metadata: any;
+  created_by: string | null;
+  resolved_by: string | null;
+  resolved_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+const NOTE_TYPE_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string }> = {
+  reviewer_comment: { label: 'Reviewer', icon: MessageCircle, color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' },
+  ab_learning: { label: 'A/B Learning', icon: TrendingUp, color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' },
+  ai_suggestion: { label: 'AI Suggestion', icon: Sparkles, color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' },
+  performance_insight: { label: 'Insight', icon: Lightbulb, color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' },
+};
 
 // ─── Main Component ──────────────────────────────────────────────────
 export const LandingPageScriptsPanel: React.FC = () => {
@@ -108,6 +135,14 @@ export const LandingPageScriptsPanel: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [editingScript, setEditingScript] = useState<NarrationScript | null>(null);
   const [showEditor, setShowEditor] = useState(false);
+
+  // Feedback state
+  const [notes, setNotes] = useState<ImprovementNote[]>([]);
+  const [newNoteContent, setNewNoteContent] = useState('');
+  const [newNoteType, setNewNoteType] = useState<string>('reviewer_comment');
+  const [newNoteSection, setNewNoteSection] = useState<string>('general');
+  const [newNoteScriptId, setNewNoteScriptId] = useState<string>('');
+  const [newNotePriority, setNewNotePriority] = useState<string>('medium');
 
   // ── Fetch scripts ──
   const fetchScripts = useCallback(async () => {
@@ -130,6 +165,74 @@ export const LandingPageScriptsPanel: React.FC = () => {
   }, []);
 
   useEffect(() => { fetchScripts(); }, [fetchScripts]);
+
+  // ── Fetch improvement notes ──
+  const fetchNotes = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('script_improvement_notes')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setNotes((data || []) as unknown as ImprovementNote[]);
+    } catch (err) {
+      console.error('[LandingPageScripts] Notes fetch error:', err);
+    }
+  }, []);
+
+  useEffect(() => { fetchNotes(); }, [fetchNotes]);
+
+  // ── Add improvement note ──
+  const handleAddNote = useCallback(async () => {
+    if (!newNoteContent.trim() || !newNoteScriptId) {
+      toast.error('Select a script and enter your feedback');
+      return;
+    }
+    try {
+      const { error } = await supabase
+        .from('script_improvement_notes')
+        .insert({
+          script_id: newNoteScriptId,
+          note_type: newNoteType,
+          content: newNoteContent.trim(),
+          section_target: newNoteSection,
+          priority: newNotePriority,
+          status: 'open',
+        } as any);
+      if (error) throw error;
+      toast.success('Feedback added');
+      setNewNoteContent('');
+      fetchNotes();
+    } catch (err) {
+      console.error('[LandingPageScripts] Add note error:', err);
+      toast.error('Failed to add feedback');
+    }
+  }, [newNoteContent, newNoteScriptId, newNoteType, newNoteSection, newNotePriority, fetchNotes]);
+
+  // ── Update note status ──
+  const handleNoteStatus = useCallback(async (noteId: string, status: string) => {
+    try {
+      const { error } = await supabase
+        .from('script_improvement_notes')
+        .update({ status, updated_at: new Date().toISOString() } as any)
+        .eq('id', noteId);
+      if (error) throw error;
+      toast.success(`Note ${status}`);
+      fetchNotes();
+    } catch (err) {
+      toast.error('Failed to update note');
+    }
+  }, [fetchNotes]);
+
+  // ── Notes grouped by script ──
+  const notesByScript = useMemo(() => {
+    const map: Record<string, ImprovementNote[]> = {};
+    notes.forEach(n => {
+      if (!map[n.script_id]) map[n.script_id] = [];
+      map[n.script_id].push(n);
+    });
+    return map;
+  }, [notes]);
 
   // ── Filtered scripts ──
   const filteredScripts = useMemo(() => {
@@ -309,6 +412,7 @@ export const LandingPageScriptsPanel: React.FC = () => {
       <div className="flex items-center gap-2">
         {[
           { id: 'scripts' as const, label: 'Regional Scripts', icon: FileText },
+          { id: 'feedback' as const, label: 'Feedback & Suggestions', icon: Lightbulb },
           { id: 'tts-preview' as const, label: 'TTS Preview', icon: Headphones },
           { id: 'versions' as const, label: 'Version History', icon: History },
         ].map(tab => (
@@ -675,6 +779,198 @@ export const LandingPageScriptsPanel: React.FC = () => {
                 </Card>
               );
             })}
+          </motion.div>
+        )}
+
+        {/* ─── FEEDBACK & SUGGESTIONS TAB ─── */}
+        {subTab === 'feedback' && (
+          <motion.div
+            key="feedback"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="space-y-4"
+          >
+            {/* Add New Feedback */}
+            <Card>
+              <CardHeader className="py-3">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Send className="w-4 h-4 text-primary" />
+                  Add Feedback / Suggestion
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-[10px] text-muted-foreground">Script</Label>
+                    <Select value={newNoteScriptId} onValueChange={setNewNoteScriptId}>
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue placeholder="Select script..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {scripts.map(s => (
+                          <SelectItem key={s.id} value={s.id}>
+                            {REGION_OPTIONS.find(r => r.code === s.region_code)?.flag} {s.region_display_name} v{s.version}
+                            {s.variant_label ? ` (${s.variant_label})` : ''}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-[10px] text-muted-foreground">Type</Label>
+                    <Select value={newNoteType} onValueChange={setNewNoteType}>
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="reviewer_comment">💬 Reviewer Comment</SelectItem>
+                        <SelectItem value="ab_learning">📊 A/B Learning</SelectItem>
+                        <SelectItem value="ai_suggestion">✨ AI Suggestion</SelectItem>
+                        <SelectItem value="performance_insight">💡 Performance Insight</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-[10px] text-muted-foreground">Section</Label>
+                    <Select value={newNoteSection} onValueChange={setNewNoteSection}>
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="general">General</SelectItem>
+                        <SelectItem value="hook">🎯 Hook</SelectItem>
+                        <SelectItem value="problem_statement">😰 Problem</SelectItem>
+                        <SelectItem value="solution">✨ Solution</SelectItem>
+                        <SelectItem value="cta">📢 CTA</SelectItem>
+                        <SelectItem value="full_script">📄 Full Script</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-[10px] text-muted-foreground">Priority</Label>
+                    <Select value={newNotePriority} onValueChange={setNewNotePriority}>
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">Low</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="high">High</SelectItem>
+                        <SelectItem value="critical">Critical</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Textarea
+                    value={newNoteContent}
+                    onChange={e => setNewNoteContent(e.target.value)}
+                    placeholder="Enter your feedback, suggestion, or A/B learning..."
+                    className="text-sm min-h-[60px] flex-1"
+                  />
+                  <Button onClick={handleAddNote} className="self-end gap-1" disabled={!newNoteContent.trim() || !newNoteScriptId}>
+                    <Send className="w-3.5 h-3.5" />
+                    Add
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* AI Rewrite Suggestion Card */}
+            <Card className="border-primary/20">
+              <CardContent className="py-4 flex items-center gap-4">
+                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Zap className="w-5 h-5 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold">Generate Improved Version</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    AI analyzes all open feedback, A/B learnings, and performance insights to create an optimized new version using StoryBrand/AIDA/JTBD frameworks.
+                  </p>
+                </div>
+                <Button size="sm" variant="outline" className="gap-1 text-xs" disabled>
+                  <Sparkles className="w-3.5 h-3.5" />
+                  Coming Soon
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Existing Notes List */}
+            {notes.length === 0 ? (
+              <Card className="border-dashed">
+                <CardContent className="py-12 text-center">
+                  <MessageCircle className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
+                  <p className="text-sm text-muted-foreground">No feedback yet. Add your first suggestion above.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                {notes.map(note => {
+                  const typeCfg = NOTE_TYPE_CONFIG[note.note_type] || NOTE_TYPE_CONFIG.reviewer_comment;
+                  const TypeIcon = typeCfg.icon;
+                  const scriptRef = scripts.find(s => s.id === note.script_id);
+                  return (
+                    <Card key={note.id} className="overflow-hidden">
+                      <CardContent className="py-3 px-4">
+                        <div className="flex items-start gap-3">
+                          <div className={cn("flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center", typeCfg.color)}>
+                            <TypeIcon className="w-4 h-4" />
+                          </div>
+                          <div className="flex-1 min-w-0 space-y-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Badge className={cn("text-[10px]", typeCfg.color)}>{typeCfg.label}</Badge>
+                              {note.section_target && note.section_target !== 'general' && (
+                                <Badge variant="outline" className="text-[10px]">→ {note.section_target}</Badge>
+                              )}
+                              <Badge variant={note.priority === 'critical' ? 'destructive' : 'outline'} className="text-[10px]">
+                                {note.priority}
+                              </Badge>
+                              <Badge variant={note.status === 'applied' ? 'default' : 'secondary'} className="text-[10px]">
+                                {note.status}
+                              </Badge>
+                              {scriptRef && (
+                                <span className="text-[10px] text-muted-foreground">
+                                  {REGION_OPTIONS.find(r => r.code === scriptRef.region_code)?.flag} {scriptRef.region_display_name} v{scriptRef.version}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-sm">{note.content}</p>
+                            <p className="text-[10px] text-muted-foreground">
+                              {new Date(note.created_at).toLocaleDateString()}
+                              {note.framework_tag && ` • Framework: ${note.framework_tag}`}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <Button
+                              variant="ghost" size="icon" className="h-7 w-7"
+                              onClick={() => handleNoteStatus(note.id, 'accepted')}
+                              title="Accept"
+                            >
+                              <ThumbsUp className="w-3.5 h-3.5 text-green-600" />
+                            </Button>
+                            <Button
+                              variant="ghost" size="icon" className="h-7 w-7"
+                              onClick={() => handleNoteStatus(note.id, 'rejected')}
+                              title="Reject"
+                            >
+                              <ThumbsDown className="w-3.5 h-3.5 text-red-500" />
+                            </Button>
+                            <Button
+                              variant="ghost" size="icon" className="h-7 w-7"
+                              onClick={() => handleNoteStatus(note.id, 'applied')}
+                              title="Mark Applied"
+                            >
+                              <Check className="w-3.5 h-3.5 text-primary" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

@@ -19856,6 +19856,68 @@ export type Database = {
         }
         Relationships: []
       }
+      script_improvement_notes: {
+        Row: {
+          ai_model_used: string | null
+          content: string
+          created_at: string
+          created_by: string | null
+          framework_tag: string | null
+          id: string
+          metadata: Json | null
+          note_type: string
+          priority: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          script_id: string
+          section_target: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          ai_model_used?: string | null
+          content: string
+          created_at?: string
+          created_by?: string | null
+          framework_tag?: string | null
+          id?: string
+          metadata?: Json | null
+          note_type: string
+          priority?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          script_id: string
+          section_target?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ai_model_used?: string | null
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          framework_tag?: string | null
+          id?: string
+          metadata?: Json | null
+          note_type?: string
+          priority?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          script_id?: string
+          section_target?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "script_improvement_notes_script_id_fkey"
+            columns: ["script_id"]
+            isOneToOne: false
+            referencedRelation: "regional_narration_scripts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       script_versions: {
         Row: {
           analysis_results: Json | null
