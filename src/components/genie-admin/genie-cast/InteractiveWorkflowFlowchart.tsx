@@ -336,19 +336,23 @@ function buildFlowchart(region: RegionConfig) {
     edges.push({ id: `e-tts-${sr.code}-s9`, source: `tts-${sr.code}`, target: 's9', ...edgeDefaults });
   });
 
-  // Voice issue → re-gen TTS (s9 → s8) — positioned far RIGHT, clear of TTS sub-region nodes
-  const voiceFbX = startX + totalWidth + 160;
-  nodes.push({ id: 'fb-voice', type: 'feedback', position: { x: voiceFbX, y: y - 80 }, data: { label: 'Voice issue', action: 're-gen TTS only → back to 8', color: '25 90% 50%' } });
-  edges.push({ id: 'e-s9-fbvoice', source: 's9', sourceHandle: 'source-right', target: 'fb-voice', ...edgeDefaults, type: 'smoothstep', style: { ...edgeDefaults.style, stroke: 'hsl(25 90% 50% / 0.6)', strokeDasharray: '5 3' } });
-  edges.push({ id: 'e-fbvoice-s8', source: 'fb-voice', sourceHandle: 'left', target: 's8', targetHandle: 'target-right', ...edgeDefaults, type: 'smoothstep', style: { ...edgeDefaults.style, stroke: 'hsl(25 90% 50% / 0.6)', strokeDasharray: '5 3' } });
+  // Voice issue — placed BELOW s9 on the far right, routes up to s8 via right side
+  const voiceFbX = startX + totalWidth + 200;
+  nodes.push({ id: 'fb-voice', type: 'feedback', position: { x: voiceFbX, y: y + 70 }, data: { label: 'Voice issue', action: 're-gen TTS only → back to 8', color: '25 90% 50%' } });
+  // s9 right → voice issue (going down-right)
+  edges.push({ id: 'e-s9-fbvoice', source: 's9', sourceHandle: 'source-right', target: 'fb-voice', targetHandle: 'target-left', ...edgeDefaults, type: 'smoothstep', style: { ...edgeDefaults.style, stroke: 'hsl(25 90% 50% / 0.6)', strokeDasharray: '5 3' } });
+  // voice issue right → s8 right (going up along far right edge, no crossing)
+  edges.push({ id: 'e-fbvoice-s8', source: 'fb-voice', sourceHandle: 'source-right', target: 's8', targetHandle: 'target-right', ...edgeDefaults, type: 'smoothstep', style: { ...edgeDefaults.style, stroke: 'hsl(25 90% 50% / 0.6)', strokeDasharray: '5 3' } });
 
-  // Content issue → escalate (s9 → s5) — positioned far LEFT, clear of all nodes
-  const contentFbX = centerX - 420;
-  nodes.push({ id: 'fb-content', type: 'feedback', position: { x: contentFbX, y: y - 80 }, data: { label: 'Content issue', action: 'escalate to review → back to 5', color: '340 70% 55%' } });
-  edges.push({ id: 'e-s9-fbcontent', source: 's9', sourceHandle: 'source-left', target: 'fb-content', ...edgeDefaults, type: 'smoothstep', style: { ...edgeDefaults.style, stroke: 'hsl(340 70% 55% / 0.6)', strokeDasharray: '5 3' } });
+  // Content issue — placed BELOW s9 on the far left, routes up to s5 via left side
+  const contentFbX = centerX - 480;
+  nodes.push({ id: 'fb-content', type: 'feedback', position: { x: contentFbX, y: y + 70 }, data: { label: 'Content issue', action: 'escalate to review → back to 5', color: '340 70% 55%' } });
+  // s9 left → content issue (going down-left)
+  edges.push({ id: 'e-s9-fbcontent', source: 's9', sourceHandle: 'source-left', target: 'fb-content', targetHandle: 'target-left', ...edgeDefaults, type: 'smoothstep', style: { ...edgeDefaults.style, stroke: 'hsl(340 70% 55% / 0.6)', strokeDasharray: '5 3' } });
+  // content issue left → s5 left (going up along far left edge, no crossing)
   edges.push({ id: 'e-fbcontent-s5', source: 'fb-content', sourceHandle: 'left', target: 's5', targetHandle: 'target-left', ...edgeDefaults, type: 'smoothstep', style: { ...edgeDefaults.style, stroke: 'hsl(340 70% 55% / 0.6)', strokeDasharray: '5 3' } });
 
-  y += 130;
+  y += 180;
 
   // Stage 10 - Final
   nodes.push({ id: 's10', type: 'stage', position: { x: centerX - 100, y }, data: { label: '10. Final Audio Ready', subtitle: 'Append-only · versioned audit trail', color: '150 60% 40%' } });
