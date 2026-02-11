@@ -393,6 +393,7 @@ function getRegionVoiceOptions(regionCode: string): VoiceOption[] {
     ],
     'MENA_MSA': [
       { provider: 'azure', locale: 'ar-SA', label: 'Azure Neural', voiceId: 'ar-SA-ZariyahNeural', voiceName: 'Zariyah (MSA)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'ar-SA', label: 'Azure Neural', voiceId: 'ar-SA-HamedNeural', voiceName: 'Hamed (MSA - Male)', gender: 'male' },
     ],
     // Pakistan & Bangladesh
     'PAKISTAN': [
@@ -418,6 +419,7 @@ function getRegionVoiceOptions(regionCode: string): VoiceOption[] {
     ],
     'INDIA_EAST': [
       { provider: 'azure', locale: 'bn-IN', label: 'Azure Neural', voiceId: 'bn-IN-TanishaaNeural', voiceName: 'Tanishaa (Bengali India)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'bn-IN', label: 'Azure Neural', voiceId: 'bn-IN-BashkarNeural', voiceName: 'Bashkar (Bengali India - Male)', gender: 'male' },
     ],
     'INDIA_PAN': [
       { provider: 'azure', locale: 'en-IN', label: 'Azure Neural', voiceId: 'en-IN-NeerjaNeural', voiceName: 'Neerja (Indian English)', gender: 'female', isDefault: true },
@@ -426,18 +428,23 @@ function getRegionVoiceOptions(regionCode: string): VoiceOption[] {
     // SEA
     'SEA_MALAY': [
       { provider: 'azure', locale: 'ms-MY', label: 'Azure Neural', voiceId: 'ms-MY-YasminNeural', voiceName: 'Yasmin (Malay)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'ms-MY', label: 'Azure Neural', voiceId: 'ms-MY-OsmanNeural', voiceName: 'Osman (Malay - Male)', gender: 'male' },
     ],
     'SEA_THAI': [
       { provider: 'azure', locale: 'th-TH', label: 'Azure Neural', voiceId: 'th-TH-PremwadeeNeural', voiceName: 'Premwadee (Thai)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'th-TH', label: 'Azure Neural', voiceId: 'th-TH-NiwatNeural', voiceName: 'Niwat (Thai - Male)', gender: 'male' },
     ],
     'SEA_VIET': [
       { provider: 'azure', locale: 'vi-VN', label: 'Azure Neural', voiceId: 'vi-VN-HoaiMyNeural', voiceName: 'HoaiMy (Vietnamese)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'vi-VN', label: 'Azure Neural', voiceId: 'vi-VN-NamMinhNeural', voiceName: 'NamMinh (Vietnamese - Male)', gender: 'male' },
     ],
     'SEA_PHIL': [
       { provider: 'azure', locale: 'fil-PH', label: 'Azure Neural', voiceId: 'fil-PH-BlessicaNeural', voiceName: 'Blessica (Filipino)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'fil-PH', label: 'Azure Neural', voiceId: 'fil-PH-AngeloNeural', voiceName: 'Angelo (Filipino - Male)', gender: 'male' },
     ],
     'SEA_PAN': [
       { provider: 'azure', locale: 'en-SG', label: 'Azure Neural', voiceId: 'en-SG-LunaNeural', voiceName: 'Luna (Singapore English)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'en-SG', label: 'Azure Neural', voiceId: 'en-SG-WayneNeural', voiceName: 'Wayne (Singapore English - Male)', gender: 'male' },
     ],
     // CJK
     'CJK_CN': [
@@ -446,6 +453,7 @@ function getRegionVoiceOptions(regionCode: string): VoiceOption[] {
     ],
     'CJK_TW': [
       { provider: 'azure', locale: 'zh-TW', label: 'Azure Neural', voiceId: 'zh-TW-HsiaoChenNeural', voiceName: 'HsiaoChen (Traditional Chinese)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'zh-TW', label: 'Azure Neural', voiceId: 'zh-TW-YunJheNeural', voiceName: 'YunJhe (Traditional Chinese - Male)', gender: 'male' },
     ],
     'CJK_JP': [
       { provider: 'qwen3', locale: 'ja-JP', label: 'Qwen3-TTS', voiceId: 'longyue', voiceName: 'Longyue (Japanese)', gender: 'female', isDefault: true },
@@ -453,6 +461,7 @@ function getRegionVoiceOptions(regionCode: string): VoiceOption[] {
     ],
     'CJK_KR': [
       { provider: 'azure', locale: 'ko-KR', label: 'Azure Neural', voiceId: 'ko-KR-SunHiNeural', voiceName: 'SunHi (Korean)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'ko-KR', label: 'Azure Neural', voiceId: 'ko-KR-InJoonNeural', voiceName: 'InJoon (Korean - Male)', gender: 'male' },
     ],
     // Africa — multiple voice options for authentic regional voices
     'AFRICA_WEST': [
@@ -469,7 +478,10 @@ function getRegionVoiceOptions(regionCode: string): VoiceOption[] {
       { provider: 'azure', locale: 'zu-ZA', label: 'Azure Neural', voiceId: 'zu-ZA-ThandoNeural', voiceName: 'Thando (Zulu)', gender: 'female' },
     ],
     'AFRICA_FRANCO': [
-      { provider: 'azure', locale: 'fr-FR', label: 'Azure Neural', voiceId: 'fr-FR-DeniseNeural', voiceName: 'Denise (French - Africa)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'fr-FR', label: 'Azure Neural', voiceId: 'fr-FR-DeniseNeural', voiceName: 'Denise (French - Francophone Africa)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'fr-FR', label: 'Azure Neural', voiceId: 'fr-FR-HenriNeural', voiceName: 'Henri (French - Male)', gender: 'male' },
+      { provider: 'azure', locale: 'fr-FR', label: 'Azure Neural', voiceId: 'fr-FR-EloiseNeural', voiceName: 'Eloise (French - Young)', gender: 'female' },
+      { provider: 'azure', locale: 'fr-BE', label: 'Azure Neural', voiceId: 'fr-BE-CharlineNeural', voiceName: 'Charline (Belgian French)', gender: 'female' },
     ],
     // Parent-level fallbacks
     'AFRICA': [
