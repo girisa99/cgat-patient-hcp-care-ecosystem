@@ -2290,13 +2290,19 @@ INSTRUCTIONS:
                                           if (url.startsWith('data:audio')) {
                                             const base64Data = url.split(',')[1];
                                             console.log('[TTS Play] Converting base64 to blob, length:', base64Data?.length);
-                                            const binaryString = atob(base64Data);
-                                            const len = binaryString.length;
-                                            const bytes = new Uint8Array(len);
-                                            for (let i = 0; i < len; i++) {
-                                              bytes[i] = binaryString.charCodeAt(i);
+                                            // Chunked base64 decoding to handle large strings
+                                            const chunkSize = 8192;
+                                            const byteArrays: Uint8Array[] = [];
+                                            for (let offset = 0; offset < base64Data.length; offset += chunkSize) {
+                                              const chunk = base64Data.substring(offset, Math.min(offset + chunkSize, base64Data.length));
+                                              const binaryChunk = atob(chunk);
+                                              const bytes = new Uint8Array(binaryChunk.length);
+                                              for (let i = 0; i < binaryChunk.length; i++) {
+                                                bytes[i] = binaryChunk.charCodeAt(i);
+                                              }
+                                              byteArrays.push(bytes);
                                             }
-                                            const blob = new Blob([bytes], { type: 'audio/mpeg' });
+                                            const blob = new Blob(byteArrays as BlobPart[], { type: 'audio/mpeg' });
                                             const blobUrl = URL.createObjectURL(blob);
                                             console.log('[TTS Play] Blob created, size:', blob.size, 'URL:', blobUrl);
                                             audio.src = blobUrl;
