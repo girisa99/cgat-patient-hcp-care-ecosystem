@@ -7,9 +7,10 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { GitBranch, Brain, Mic, MessageCircle, CheckCircle2, ChevronDown, ChevronRight, LayoutList, GitGraph } from 'lucide-react';
+import { GitBranch, Brain, Mic, MessageCircle, CheckCircle2, ChevronDown, ChevronRight, LayoutList, GitGraph, Workflow } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { InteractiveWorkflowFlowchart } from './InteractiveWorkflowFlowchart';
 
 /**
  * Verified against getZoneAIProviders() sub-region overrides + getSubRegionTTSProvider() ttsMap
@@ -447,17 +448,25 @@ export const ScriptProductionWorkflowDiagram: React.FC = () => {
         </p>
       </div>
 
-      <Tabs defaultValue="flow" className="w-full">
-        <TabsList className="grid w-full max-w-xs mx-auto grid-cols-2">
+      <Tabs defaultValue="interactive" className="w-full">
+        <TabsList className="grid w-full max-w-md mx-auto grid-cols-3">
+          <TabsTrigger value="interactive" className="text-xs gap-1">
+            <Workflow className="w-3 h-3" />
+            Interactive Flow
+          </TabsTrigger>
           <TabsTrigger value="flow" className="text-xs gap-1">
             <GitGraph className="w-3 h-3" />
-            Flow Diagram
+            Pipeline View
           </TabsTrigger>
           <TabsTrigger value="detail" className="text-xs gap-1">
             <LayoutList className="w-3 h-3" />
             Detailed View
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="interactive" className="mt-4">
+          <InteractiveWorkflowFlowchart />
+        </TabsContent>
 
         <TabsContent value="flow" className="mt-4">
           <MermaidFlowDiagram />
