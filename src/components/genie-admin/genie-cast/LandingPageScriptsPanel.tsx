@@ -2506,42 +2506,24 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                                       } else {
                                         playingAudioRef.current?.pause();
                                         const audio = new Audio();
-                                        audio.preload = 'auto';
                                         
-                                        // Play audio - use fetch to convert data URIs to blob URLs (avoids atob corruption)
-                                        try {
-                                          if (url.startsWith('data:audio')) {
-                                            console.log('[TTS Play] Converting data URI to blob via fetch, length:', url.length);
-                                            const response = await fetch(url);
-                                            const blob = await response.blob();
-                                            const blobUrl = URL.createObjectURL(blob);
-                                            console.log('[TTS Play] Blob created via fetch, size:', blob.size);
-                                            audio.src = blobUrl;
-                                          } else {
-                                            audio.src = url;
-                                          }
-                                        } catch (decodeErr) {
-                                          console.error('[TTS Play] Audio decode error:', decodeErr);
-                                          // Fallback: try using data URI directly
-                                          console.log('[TTS Play] Falling back to direct data URI');
-                                          audio.src = url;
-                                        }
+                                        // Set audio source directly - browsers natively handle data URIs
+                                        audio.src = url;
                                         
                                         audio.onended = () => { setPlayingScriptId(null); playingAudioRef.current = null; };
-                                        audio.onerror = (e) => { console.error('[TTS Play] Audio error:', e); toast.error('Failed to play audio'); setPlayingScriptId(null); };
-                                        
-                                        // Wait for audio to be loadable before playing
-                                        audio.oncanplaythrough = () => {
-                                          console.log('[TTS Play] Audio ready, playing...');
-                                          audio.play().catch((err) => {
-                                            console.error('[TTS Play] Play error:', err);
-                                            toast.error('Playback failed');
-                                            setPlayingScriptId(null);
-                                          });
+                                        audio.onerror = (e) => { 
+                                          console.error('[TTS Play] Audio error:', e); 
+                                          toast.error('Failed to play audio'); 
+                                          setPlayingScriptId(null); 
                                         };
-                                        audio.load();
+                                        
                                         playingAudioRef.current = audio;
                                         setPlayingScriptId(script.id);
+                                        audio.play().catch((err) => {
+                                          console.error('[TTS Play] Play error:', err);
+                                          toast.error('Playback failed');
+                                          setPlayingScriptId(null);
+                                        });
                                       }
                                     }}
                                   >
