@@ -579,8 +579,7 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
       .reduce((max, s) => Math.max(max, s.version), 0);
 
     try {
-      const fullScript = `${improvedPreview.hook} ${improvedPreview.problem_statement} ${improvedPreview.solution} ${improvedPreview.cta}`;
-
+      // Note: full_script is a generated column - do NOT include it in insert
       const { error } = await supabase
         .from('regional_narration_scripts')
         .insert({
@@ -592,7 +591,6 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
           problem_statement: improvedPreview.problem_statement,
           solution: improvedPreview.solution,
           cta: improvedPreview.cta,
-          full_script: fullScript,
           positioning_angle: script.positioning_angle,
           target_persona: script.target_persona,
           emotional_tone: script.emotional_tone,
