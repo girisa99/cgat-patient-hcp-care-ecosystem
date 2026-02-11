@@ -2049,23 +2049,53 @@ INSTRUCTIONS:
                                   </div>
 
                                   {/* Script preview */}
-                                  <div className="space-y-1">
+                                  <div className="space-y-1.5">
                                     <p className="text-sm font-medium line-clamp-1">
                                       🎯 {script.hook}
                                     </p>
                                     <p className="text-xs text-muted-foreground line-clamp-2">
                                       {script.problem_statement}
                                     </p>
-                                    {script.positioning_angles?.length > 0 && (
-                                      <p className="text-[10px] text-muted-foreground italic">
-                                        Angles: {script.positioning_angles.join(', ')}
-                                      </p>
-                                    )}
+                                    <p className="text-xs text-muted-foreground line-clamp-2">
+                                      ✨ {script.solution}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground line-clamp-1">
+                                      📢 {script.cta}
+                                    </p>
+                                    {/* Tags row: Positioning, Tones, Personas */}
+                                    <div className="flex flex-wrap gap-1 mt-1">
+                                      {script.positioning_angles?.length > 0 && script.positioning_angles.map(a => (
+                                        <Badge key={`pa-${a}`} variant="outline" className="text-[9px] px-1.5 py-0 bg-blue-50 text-blue-700 border-blue-200">
+                                          📐 {a}
+                                        </Badge>
+                                      ))}
+                                      {script.emotional_tones?.length > 0 && script.emotional_tones.map(t => (
+                                        <Badge key={`et-${t}`} variant="outline" className="text-[9px] px-1.5 py-0 bg-purple-50 text-purple-700 border-purple-200">
+                                          🎭 {t}
+                                        </Badge>
+                                      ))}
+                                      {script.target_personas?.length > 0 && script.target_personas.map(p => (
+                                        <Badge key={`tp-${p}`} variant="outline" className="text-[9px] px-1.5 py-0 bg-amber-50 text-amber-700 border-amber-200">
+                                          👥 {p}
+                                        </Badge>
+                                      ))}
+                                    </div>
                                   </div>
                                 </div>
 
                                 {/* Actions */}
                                 <div className="flex items-center gap-1 flex-shrink-0">
+                                  {/* Visible Approve button for review scripts */}
+                                  {script.status === 'review' && (
+                                    <Button
+                                      size="sm"
+                                      className="text-xs h-7 gap-1"
+                                      onClick={() => handleStatusChange(script.id, 'active')}
+                                    >
+                                      <Check className="w-3 h-3" />
+                                      Approve
+                                    </Button>
+                                  )}
                                   <Button
                                     variant="ghost"
                                     size="icon"
@@ -2223,6 +2253,17 @@ INSTRUCTIONS:
                                 )}
                               </div>
                               <div className="flex items-center gap-1">
+                                {/* Approve button for review scripts */}
+                                {script.status === 'review' && (
+                                  <Button
+                                    size="sm"
+                                    className="gap-1 text-xs h-7"
+                                    onClick={() => handleStatusChange(script.id, 'active')}
+                                  >
+                                    <Check className="w-3 h-3" />
+                                    Approve
+                                  </Button>
+                                )}
                                 {(latestTTS?.audio_url || script.generated_audio_url) ? (
                                   <Button variant="outline" size="sm" className="gap-1 text-xs h-7" asChild>
                                     <a href={latestTTS?.audio_url || script.generated_audio_url!} target="_blank" rel="noopener noreferrer">
