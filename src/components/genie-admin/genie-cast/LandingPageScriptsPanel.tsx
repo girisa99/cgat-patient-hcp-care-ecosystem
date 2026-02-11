@@ -242,6 +242,64 @@ interface AIProviderOption {
  * Returns AI providers ranked by zone routing with the recommended one first.
  * Follows master-provider-routing-registry: Claude Zone → claude-4, Alibaba Zone → qwen-max, Gemini Zone → gemini-3-pro
  */
+/**
+ * Returns the recommended TTS provider + voice locale for a sub-region.
+ * Follows master routing: Azure Neural (global) / Qwen3-TTS (CJK).
+ */
+function getSubRegionTTSProvider(regionCode: string): { provider: string; locale: string; label: string } {
+  const r = regionCode?.toUpperCase() || '';
+  const ttsMap: Record<string, { provider: string; locale: string; label: string }> = {
+    // NAM
+    'NAM_US': { provider: 'Azure Neural', locale: 'en-US', label: 'Azure Neural (en-US)' },
+    'NAM_CA': { provider: 'Azure Neural', locale: 'en-CA / fr-CA', label: 'Azure Neural (en-CA, fr-CA)' },
+    // EU
+    'EU_WEST': { provider: 'Azure Neural', locale: 'en-GB', label: 'Azure Neural (en-GB)' },
+    'EU_DACH': { provider: 'Azure Neural', locale: 'de-DE / de-AT / de-CH', label: 'Azure Neural (de-DE/AT/CH)' },
+    'EU_FRANCE': { provider: 'Azure Neural', locale: 'fr-FR / fr-BE', label: 'Azure Neural (fr-FR/BE)' },
+    'EU_IBERIA': { provider: 'Azure Neural', locale: 'es-ES / pt-PT', label: 'Azure Neural (es-ES, pt-PT)' },
+    'EU_NORDIC': { provider: 'Azure Neural', locale: 'sv-SE / nb-NO / da-DK / fi-FI', label: 'Azure Neural (Nordic)' },
+    'EU_EAST': { provider: 'Azure Neural', locale: 'pl-PL / cs-CZ / ro-RO / hu-HU', label: 'Azure Neural (Eastern EU)' },
+    // LATAM
+    'LATAM_BRAZIL': { provider: 'Azure Neural', locale: 'pt-BR', label: 'Azure Neural (pt-BR)' },
+    'LATAM_MEXICO': { provider: 'Azure Neural', locale: 'es-MX', label: 'Azure Neural (es-MX)' },
+    'LATAM_ANDEAN': { provider: 'Azure Neural', locale: 'es-CO / es-PE', label: 'Azure Neural (es-CO/PE)' },
+    'LATAM_CONESUR': { provider: 'Azure Neural', locale: 'es-AR / es-CL', label: 'Azure Neural (es-AR/CL)' },
+    'LATAM_CARIB': { provider: 'Azure Neural', locale: 'es-DO / es-VE', label: 'Azure Neural (es-DO/VE)' },
+    // MENA
+    'MENA_GULF': { provider: 'Azure Neural', locale: 'ar-SA / ar-AE', label: 'Azure Neural (ar-SA/AE)' },
+    'MENA_EGYPT': { provider: 'Azure Neural', locale: 'ar-EG', label: 'Azure Neural (ar-EG)' },
+    'MENA_LEVANT': { provider: 'Azure Neural', locale: 'ar-JO / ar-IQ', label: 'Azure Neural (ar-JO/IQ)' },
+    'MENA_MAGHREB': { provider: 'Azure Neural', locale: 'ar-MA / fr-MA', label: 'Azure Neural (ar-MA, fr-MA)' },
+    'MENA_MSA': { provider: 'Azure Neural', locale: 'ar-SA', label: 'Azure Neural (MSA)' },
+    // Pakistan & Bangladesh
+    'PAKISTAN': { provider: 'Azure Neural', locale: 'ur-PK', label: 'Azure Neural (ur-PK)' },
+    'BANGLADESH': { provider: 'Azure Neural', locale: 'bn-BD', label: 'Azure Neural (bn-BD)' },
+    // India
+    'INDIA_NORTH': { provider: 'Azure Neural', locale: 'hi-IN', label: 'Azure Neural (hi-IN)' },
+    'INDIA_SOUTH': { provider: 'Azure Neural', locale: 'ta-IN / te-IN', label: 'Azure Neural (ta/te-IN)' },
+    'INDIA_WEST': { provider: 'Azure Neural', locale: 'mr-IN / gu-IN', label: 'Azure Neural (mr/gu-IN)' },
+    'INDIA_EAST': { provider: 'Azure Neural', locale: 'bn-IN', label: 'Azure Neural (bn-IN)' },
+    'INDIA_PAN': { provider: 'Azure Neural', locale: 'en-IN', label: 'Azure Neural (en-IN)' },
+    // SEA
+    'SEA_MALAY': { provider: 'Azure Neural', locale: 'ms-MY / id-ID', label: 'Azure Neural (ms-MY, id-ID)' },
+    'SEA_THAI': { provider: 'Azure Neural', locale: 'th-TH', label: 'Azure Neural (th-TH)' },
+    'SEA_VIET': { provider: 'Azure Neural', locale: 'vi-VN', label: 'Azure Neural (vi-VN)' },
+    'SEA_PHIL': { provider: 'Azure Neural', locale: 'fil-PH', label: 'Azure Neural (fil-PH)' },
+    'SEA_PAN': { provider: 'Azure Neural', locale: 'en-SG', label: 'Azure Neural (en-SG)' },
+    // CJK — Qwen3-TTS primary
+    'CJK_CN': { provider: 'Qwen3-TTS', locale: 'zh-CN', label: 'Qwen3-TTS (zh-CN)' },
+    'CJK_TW': { provider: 'Azure Neural', locale: 'zh-TW', label: 'Azure Neural (zh-TW)' },
+    'CJK_JP': { provider: 'Qwen3-TTS', locale: 'ja-JP', label: 'Qwen3-TTS (ja-JP)' },
+    'CJK_KR': { provider: 'Azure Neural', locale: 'ko-KR', label: 'Azure Neural (ko-KR)' },
+    // Africa
+    'AFRICA_WEST': { provider: 'Azure Neural', locale: 'yo-NG / en-NG', label: 'Azure Neural (yo/en-NG)' },
+    'AFRICA_EAST': { provider: 'Azure Neural', locale: 'sw-KE', label: 'Azure Neural (sw-KE)' },
+    'AFRICA_SOUTH': { provider: 'Azure Neural', locale: 'zu-ZA / en-ZA', label: 'Azure Neural (zu/en-ZA)' },
+    'AFRICA_FRANCO': { provider: 'Azure Neural', locale: 'fr-SN / fr-CD', label: 'Azure Neural (fr-SN/CD)' },
+  };
+  return ttsMap[r] || { provider: 'Azure Neural', locale: 'en-US', label: 'Azure Neural (Default)' };
+}
+
 function getZoneAIProviders(regionCode: string): AIProviderOption[] {
   const r = regionCode?.toUpperCase();
   
@@ -1199,66 +1257,98 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
+            className="space-y-4"
           >
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <Headphones className="w-4 h-4 text-primary" />
-                  TTS Audio Preview
-                </CardTitle>
-                <CardDescription className="text-xs">
-                  Preview narration audio using Azure Neural TTS (most regions) or Qwen3-TTS (CJK).
-                  Select a script to generate and listen.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {scripts.filter(s => s.status === 'active').length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground text-sm">
+            {scripts.filter(s => s.status === 'active').length === 0 ? (
+              <Card>
+                <CardContent className="py-8">
+                  <div className="text-center text-muted-foreground text-sm">
                     No active scripts to preview. Set a script to "Active" first.
                   </div>
-                ) : (
-                  <div className="space-y-3">
-                    {scripts.filter(s => s.status === 'active').map(script => (
-                      <div key={script.id} className="flex items-center gap-3 p-3 rounded-lg border bg-card">
-                        <div className="flex-shrink-0 text-lg">
-                          {REGION_OPTIONS.find(r => r.code === script.region_code)?.flag || '🌍'}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium truncate">
-                            {script.region_display_name}
-                            {script.variant_label && ` — ${script.variant_label}`}
-                          </p>
-                          <p className="text-[10px] text-muted-foreground">
-                            v{script.version} • {script.tts_provider || 'Azure Neural'} • {script.tts_voice_name || 'Default'}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          {script.generated_audio_url ? (
-                            <Button variant="outline" size="sm" className="gap-1 text-xs h-7" asChild>
-                              <a href={script.generated_audio_url} target="_blank" rel="noopener noreferrer">
-                                <Play className="w-3 h-3" />
-                                Play
-                              </a>
-                            </Button>
-                          ) : (
-                            <Badge variant="outline" className="text-[10px]">
-                              No audio yet
-                            </Badge>
-                          )}
-                          <Button variant="ghost" size="sm" className="gap-1 text-xs h-7" disabled>
-                            <Sparkles className="w-3 h-3" />
-                            Generate
-                          </Button>
-                        </div>
+                </CardContent>
+              </Card>
+            ) : (
+              REGION_HIERARCHY.map(group => {
+                const groupCodes = getGroupCodes(group);
+                const groupScripts = scripts.filter(s => s.status === 'active' && groupCodes.includes(s.region_code));
+                if (groupScripts.length === 0) return null;
+
+                return (
+                  <Card key={group.groupCode}>
+                    <CardHeader className="py-3">
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <Headphones className="w-4 h-4 text-primary" />
+                        <span>{group.groupFlag}</span>
+                        {group.groupName}
+                        <Badge variant="outline" className="text-[10px] ml-auto">
+                          {groupScripts.length} active
+                        </Badge>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <div className="divide-y">
+                        {groupScripts.map(script => {
+                          const ttsInfo = getSubRegionTTSProvider(script.region_code);
+                          const regionOpt = REGION_OPTIONS.find(r => r.code === script.region_code);
+                          const feedbackCount = notes.filter(n => n.script_id === script.id && (n.status === 'open' || n.status === 'accepted')).length;
+
+                          return (
+                            <div key={script.id} className="flex items-center gap-3 px-4 py-3">
+                              <div className="flex-shrink-0 text-lg">
+                                {regionOpt?.flag || group.groupFlag}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium truncate">
+                                  {script.region_display_name}
+                                  {script.variant_label && <span className="text-muted-foreground"> — {script.variant_label}</span>}
+                                </p>
+                                <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                  <Badge variant="secondary" className="text-[9px] px-1.5 py-0">
+                                    v{script.version}
+                                  </Badge>
+                                  <Badge variant="outline" className="text-[9px] px-1.5 py-0">
+                                    🔊 {script.tts_provider || ttsInfo.provider}
+                                  </Badge>
+                                  <Badge variant="outline" className="text-[9px] px-1.5 py-0">
+                                    🌐 {ttsInfo.locale}
+                                  </Badge>
+                                  {feedbackCount > 0 && (
+                                    <Badge variant="secondary" className="text-[9px] px-1.5 py-0">
+                                      💬 {feedbackCount} note{feedbackCount !== 1 ? 's' : ''}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                {script.generated_audio_url ? (
+                                  <Button variant="outline" size="sm" className="gap-1 text-xs h-7" asChild>
+                                    <a href={script.generated_audio_url} target="_blank" rel="noopener noreferrer">
+                                      <Play className="w-3 h-3" />
+                                      Play
+                                    </a>
+                                  </Button>
+                                ) : (
+                                  <Badge variant="outline" className="text-[10px]">
+                                    No audio yet
+                                  </Badge>
+                                )}
+                                <Button variant="ghost" size="sm" className="gap-1 text-xs h-7" disabled>
+                                  <Sparkles className="w-3 h-3" />
+                                  Generate
+                                </Button>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
-                    ))}
-                  </div>
-                )}
-                <p className="text-[10px] text-muted-foreground text-center mt-4">
-                  TTS generation uses Azure Neural for NAM, EU, LATAM, MENA, Africa, India, SEA — and Qwen3-TTS for CJK regions.
-                </p>
-              </CardContent>
-            </Card>
+                    </CardContent>
+                  </Card>
+                );
+              })
+            )}
+            <p className="text-[10px] text-muted-foreground text-center">
+              TTS routing: Azure Neural (NAM, EU, LATAM, MENA, Africa, India, SEA, CJK_TW, CJK_KR) • Qwen3-TTS (CJK_CN, CJK_JP)
+            </p>
           </motion.div>
         )}
 
@@ -1271,56 +1361,85 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
             exit={{ opacity: 0, y: -10 }}
             className="space-y-4"
           >
-            {REGION_OPTIONS.map(region => {
-              const regionScripts = scripts
-                .filter(s => s.region_code === region.code)
-                .sort((a, b) => b.version - a.version);
-              if (regionScripts.length === 0) return null;
+            {REGION_HIERARCHY.map(group => {
+              const groupCodes = getGroupCodes(group);
+              const groupScripts = scripts.filter(s => groupCodes.includes(s.region_code));
+              if (groupScripts.length === 0) return null;
+
+              // Group scripts by sub-region
+              const subRegions = group.children.length > 0
+                ? group.children.map(child => ({
+                    ...child,
+                    scripts: groupScripts.filter(s => s.region_code === child.code).sort((a, b) => b.version - a.version),
+                  })).filter(sr => sr.scripts.length > 0)
+                : [{ code: group.groupCode, name: group.groupName, flag: group.groupFlag, scripts: groupScripts.sort((a, b) => b.version - a.version) }];
 
               return (
-                <Card key={region.code}>
+                <Card key={group.groupCode}>
                   <CardHeader className="py-3">
                     <CardTitle className="text-sm flex items-center gap-2">
-                      <span>{region.flag}</span>
-                      {region.name}
+                      <History className="w-4 h-4 text-primary" />
+                      <span>{group.groupFlag}</span>
+                      {group.groupName}
                       <Badge variant="outline" className="text-[10px] ml-auto">
-                        {regionScripts.length} version{regionScripts.length > 1 ? 's' : ''}
+                        {groupScripts.length} version{groupScripts.length > 1 ? 's' : ''}
                       </Badge>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-0">
-                    <ScrollArea className="max-h-[300px]">
-                      <div className="divide-y">
-                        {regionScripts.map((script, idx) => {
-                          const statusCfg = STATUS_CONFIG[script.status as ScriptStatus] || STATUS_CONFIG.draft;
-                          return (
-                            <div key={script.id} className="flex items-center gap-3 px-4 py-3">
-                              {/* Timeline dot */}
-                              <div className="flex flex-col items-center">
-                                <div className={cn(
-                                  "w-3 h-3 rounded-full border-2",
-                                  script.status === 'active' ? 'bg-green-500 border-green-600' : 'bg-muted border-border'
-                                )} />
-                                {idx < regionScripts.length - 1 && (
-                                  <div className="w-px h-8 bg-border mt-1" />
-                                )}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs font-semibold">v{script.version}</span>
-                                  {script.variant_label && (
-                                    <Badge variant="secondary" className="text-[10px]">{script.variant_label}</Badge>
-                                  )}
-                                  <Badge className={cn("text-[10px]", statusCfg.color)}>{statusCfg.label}</Badge>
-                                </div>
-                                <p className="text-[10px] text-muted-foreground mt-0.5">
-                                  {new Date(script.updated_at).toLocaleDateString()} — {script.hook?.slice(0, 60)}...
-                                </p>
-                              </div>
+                    <ScrollArea className="max-h-[400px]">
+                      {subRegions.map((sr, srIdx) => (
+                        <div key={sr.code}>
+                          {group.children.length > 0 && (
+                            <div className="px-4 py-1.5 bg-muted/50 border-y flex items-center gap-2">
+                              <span className="text-xs">{sr.flag}</span>
+                              <span className="text-[11px] font-medium">{sr.name}</span>
+                              <Badge variant="outline" className="text-[9px] ml-auto">{sr.scripts.length}v</Badge>
                             </div>
-                          );
-                        })}
-                      </div>
+                          )}
+                          <div className="divide-y">
+                            {sr.scripts.map((script, idx) => {
+                              const statusCfg = STATUS_CONFIG[script.status as ScriptStatus] || STATUS_CONFIG.draft;
+                              const ttsInfo = getSubRegionTTSProvider(script.region_code);
+                              const feedbackCount = notes.filter(n => n.script_id === script.id && (n.status === 'open' || n.status === 'accepted')).length;
+
+                              return (
+                                <div key={script.id} className="flex items-center gap-3 px-4 py-3">
+                                  <div className="flex flex-col items-center">
+                                    <div className={cn(
+                                      "w-3 h-3 rounded-full border-2",
+                                      script.status === 'active' ? 'bg-green-500 border-green-600' : 'bg-muted border-border'
+                                    )} />
+                                    {idx < sr.scripts.length - 1 && (
+                                      <div className="w-px h-8 bg-border mt-1" />
+                                    )}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <span className="text-xs font-semibold">v{script.version}</span>
+                                      {script.variant_label && (
+                                        <Badge variant="secondary" className="text-[10px]">{script.variant_label}</Badge>
+                                      )}
+                                      <Badge className={cn("text-[10px]", statusCfg.color)}>{statusCfg.label}</Badge>
+                                      <Badge variant="outline" className="text-[9px] px-1 py-0">
+                                        🔊 {ttsInfo.provider}
+                                      </Badge>
+                                      {feedbackCount > 0 && (
+                                        <Badge variant="secondary" className="text-[9px] px-1 py-0">
+                                          💬 {feedbackCount}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                                      {new Date(script.updated_at).toLocaleDateString()} — {script.hook?.slice(0, 60)}...
+                                    </p>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
                     </ScrollArea>
                   </CardContent>
                 </Card>
