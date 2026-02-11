@@ -2517,38 +2517,17 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                                               return;
                                             }
                                             console.log('[TTS Play] Converting base64 to blob, length:', base64Data.length);
-                                            // Use fetch API to decode base64 data URI — most reliable for large files
-                                            try {
-                                              const fetchResp = await fetch(url);
-                                              const blob = await fetchResp.blob();
-                                              const blobUrl = URL.createObjectURL(blob);
-                                              console.log('[TTS Play] Blob via fetch, size:', blob.size);
-                                              audio.src = blobUrl;
-                                            } catch (fetchErr) {
-                                              console.warn('[TTS Play] fetch() failed, using manual decode:', fetchErr);
-                                              // Fallback: manual base64 decode with lookup table
-                                              const lookup = new Uint8Array(256);
-                                              const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-                                              for (let i = 0; i < chars.length; i++) lookup[chars.charCodeAt(i)] = i;
-                                              
-                                              const cleanB64 = base64Data.replace(/[^A-Za-z0-9+/]/g, '');
-                                              const outLen = (cleanB64.length * 3) >> 2;
-                                              const bytes = new Uint8Array(outLen);
-                                              let p = 0;
-                                              for (let i = 0; i < cleanB64.length; i += 4) {
-                                                const a = lookup[cleanB64.charCodeAt(i)];
-                                                const b = lookup[cleanB64.charCodeAt(i + 1)];
-                                                const c = lookup[cleanB64.charCodeAt(i + 2)];
-                                                const d = lookup[cleanB64.charCodeAt(i + 3)];
-                                                bytes[p++] = (a << 2) | (b >> 4);
-                                                if (p < outLen) bytes[p++] = ((b & 15) << 4) | (c >> 2);
-                                                if (p < outLen) bytes[p++] = ((c & 3) << 6) | d;
-                                              }
-                                              const blob = new Blob([bytes], { type: 'audio/mpeg' });
-                                              const blobUrl = URL.createObjectURL(blob);
-                                              console.log('[TTS Play] Blob via manual decode, size:', blob.size);
-                                              audio.src = blobUrl;
+                                            // Decode base64 to binary using atob + chunked Uint8Array (handles large files)
+                                            const binaryString = atob(base64Data);
+                                            const len = binaryString.length;
+                                            const bytes = new Uint8Array(len);
+                                            for (let i = 0; i < len; i++) {
+                                              bytes[i] = binaryString.charCodeAt(i);
                                             }
+                                            const blob = new Blob([bytes], { type: 'audio/mpeg' });
+                                            const blobUrl = URL.createObjectURL(blob);
+                                            console.log('[TTS Play] Blob created, size:', blob.size, 'from base64 length:', base64Data.length);
+                                            audio.src = blobUrl;
                                           } else {
                                             audio.src = url;
                                           }
