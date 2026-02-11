@@ -142,7 +142,7 @@ export type CreateSubTab = 'templates' | 'messaging' | 'production';
 export type ProduceSubTab = 'generate' | 'matrix' | 'studio' | 'review';
 export type ManageSubTab = 'library' | 'analytics' | 'flow' | 'repurpose';
 export type PublishSubTab = 'scheduler' | 'distribution' | 'seo' | 'testing';
-export type LandingSubTab = 'scripts' | 'tts-preview' | 'versions' | 'meeting-prep';
+export type LandingSubTab = 'scripts' | 'meeting-prep';
 
 interface GenieCastConsolidatedTabsProps {
   // State from parent
@@ -225,9 +225,7 @@ const TAB_DEFINITIONS = {
     activeColor: 'bg-teal-600 text-white border-teal-600',
     inactiveColor: 'border-teal-300 text-teal-700 hover:bg-teal-50',
     subTabs: [
-      { id: 'scripts', label: 'Regional Scripts', icon: FileText, description: 'Hero narration scripts' },
-      { id: 'tts-preview', label: 'TTS Preview', icon: Volume2, description: 'Audio preview & approval' },
-      { id: 'versions', label: 'Versions', icon: GitBranch, description: 'Version history & variants' },
+      { id: 'scripts', label: 'Landing Page Scripts', icon: FileText, description: 'Hero narration scripts' },
       { id: 'meeting-prep', label: 'Meeting Prep', icon: FileText, description: 'Partner meeting documents' },
     ],
   },

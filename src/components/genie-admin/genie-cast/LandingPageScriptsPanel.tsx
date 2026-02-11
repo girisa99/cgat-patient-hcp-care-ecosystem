@@ -1196,11 +1196,13 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
         </div>
       </div>
 
-      {/* Sub-tab navigation — only Feedback (Scripts/TTS/Versions render inline below) */}
+      {/* Sub-tab navigation */}
       <div className="flex items-center gap-2">
         {[
-          { id: 'scripts' as const, label: 'Scripts & Production', icon: FileText },
+          { id: 'scripts' as const, label: 'Regional Scripts', icon: FileText },
           { id: 'feedback' as const, label: 'Feedback & Suggestions', icon: Lightbulb },
+          { id: 'tts-preview' as const, label: 'TTS Preview', icon: Headphones },
+          { id: 'versions' as const, label: 'Version History', icon: History },
         ].map(tab => (
           <Button
             key={tab.id}
