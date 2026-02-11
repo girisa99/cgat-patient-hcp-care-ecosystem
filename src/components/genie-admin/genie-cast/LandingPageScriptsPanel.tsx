@@ -15,7 +15,7 @@ import { toast } from 'sonner';
 import {
   Globe, FileText, Headphones, History, Plus, Copy, Check, X,
   Play, Pause, Volume2, Edit, Trash2, ChevronDown, Tag, Sparkles,
-  ArrowUpDown, Filter, MoreHorizontal, Eye, RefreshCw, Mic,
+  ArrowUpDown, Filter, MoreHorizontal, Eye, RefreshCw, Mic, AlertTriangle,
   MessageCircle, Lightbulb, TrendingUp, Zap, Send, ThumbsUp, ThumbsDown,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -804,6 +804,171 @@ export const LandingPageScriptsPanel: React.FC = () => {
       toast.error('Failed to update status');
     }
   }, [fetchScripts, scripts, handleGenerateTTS]);
+
+  // ── Re-transcreate a single sub-region script from its English base ──
+  const handleReTranscreate = useCallback(async (script: NarrationScript) => {
+    const baseScript = script.english_base_script_id
+      ? scripts.find(s => s.id === script.english_base_script_id)
+      : scripts.find(s => s.region_code === 'ENGLISH_BASE' && s.is_english_base && s.status === 'active');
+
+    if (!baseScript) {
+      toast.error('No approved English Base Script found. Approve the English Base first.');
+      return;
+    }
+
+    toast.info(`🔄 Re-transcreating ${script.region_display_name}...`);
+
+    try {
+      const providers = getZoneAIProviders(script.region_code);
+      const provider = providers.find(p => p.isRecommended) || providers[0];
+      const ttsProvider = getSubRegionTTSProvider(script.region_code);
+
+      const prompt = `You are a world-class localization expert specializing in regional cultural adaptation.
+
+TASK: Re-transcreate the following marketing script for ${script.region_display_name}. Adapt cultural context, idioms, and emotional resonance while maintaining the Hook → Problem → Solution → CTA structure.
+
+ORIGINAL SCRIPT (English Base):
+HOOK: ${baseScript.hook}
+PROBLEM: ${baseScript.problem_statement}
+SOLUTION: ${baseScript.solution}
+CTA: ${baseScript.cta}
+
+TARGET REGION: ${script.region_display_name}
+TARGET LANGUAGE: ${script.language_code}
+POSITIONING: ${script.positioning_angles?.join(', ') || 'value-driven'}
+PERSONAS: ${script.target_personas?.join(', ') || 'general'}
+TONE: ${script.emotional_tones?.join(', ') || 'professional'}
+
+Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"...","cta":"..."}`;
+
+      const response = await supabase.functions.invoke('ai-universal-processor', {
+        body: {
+          action: 'generate_text',
+          provider: provider.id,
+          model: provider.model,
+          prompt,
+          systemPrompt: 'You are a regional script transcreation expert. Return ONLY valid JSON.',
+        },
+      });
+
+      if (response.error) throw response.error;
+
+      const content = response.data?.content || response.data?.text || '';
+      const cleaned = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      const parsed = JSON.parse(cleaned);
+
+      // Create new version with re-transcreated content
+      const maxVersion = scripts
+        .filter(s => s.region_code === script.region_code)
+        .reduce((max, s) => Math.max(max, s.version), 0);
+
+      const { error } = await supabase
+        .from('regional_narration_scripts')
+        .insert({
+          region_code: script.region_code,
+          region_display_name: script.region_display_name,
+          language_code: script.language_code,
+          language_display_name: script.language_display_name,
+          hook: parsed.hook || baseScript.hook,
+          problem_statement: parsed.problem_statement || baseScript.problem_statement,
+          solution: parsed.solution || baseScript.solution,
+          cta: parsed.cta || baseScript.cta,
+          positioning_angles: script.positioning_angles,
+          target_personas: script.target_personas,
+          emotional_tones: script.emotional_tones,
+          tts_provider: ttsProvider.provider,
+          tts_voice_id: ttsProvider.voiceId,
+          tts_voice_name: ttsProvider.voiceName,
+          tts_speed: script.tts_speed || 1.0,
+          version: maxVersion + 1,
+          status: 'review',
+          is_english_base: false,
+          english_base_script_id: baseScript.id,
+          llm_provider: provider.id,
+          llm_model: provider.model,
+          llm_temperature: 0.7,
+          llm_prompt_template: 'regional_re_transcreation_v1',
+          routing_decision: `Re-transcreation: ${provider.name} for ${script.region_display_name}`,
+          routing_confidence_score: provider.isRecommended ? 0.95 : 0.75,
+          routing_zone: script.routing_zone,
+          generation_timestamp: new Date().toISOString(),
+        } as any);
+
+      if (error) throw error;
+      toast.success(`✅ Re-transcreated ${script.region_display_name} v${maxVersion + 1} (status: review)`);
+      fetchScripts();
+    } catch (err) {
+      console.error('[ReTranscreate] Error:', err);
+      toast.error(`Failed to re-transcreate ${script.region_display_name}`);
+    }
+  }, [scripts, fetchScripts]);
+
+  // ── Layered Feedback Escalation: TTS feedback → voice-only regen OR content escalation ──
+  const handleFeedbackEscalation = useCallback(async (note: ImprovementNote, escalationType: 'voice_issue' | 'content_issue') => {
+    const script = scripts.find(s => s.id === note.script_id);
+    if (!script) {
+      toast.error('Script not found');
+      return;
+    }
+
+    if (escalationType === 'voice_issue') {
+      // Voice/prosody issue → re-generate TTS only (no script changes)
+      toast.info(`🔊 Re-generating TTS for ${script.region_display_name} (voice issue)...`);
+
+      // Force status to active so TTS gating passes (the script itself is fine)
+      if (script.status === 'active') {
+        await handleGenerateTTS(script, 'manual');
+      } else {
+        toast.error('Script must be active to regenerate TTS. Approve the script first.');
+        return;
+      }
+
+      // Mark the note as applied
+      await supabase
+        .from('script_improvement_notes')
+        .update({
+          status: 'applied',
+          resolved_at: new Date().toISOString(),
+          metadata: { escalation_type: 'voice_issue', action: 'tts_regenerated' },
+          updated_at: new Date().toISOString(),
+        } as any)
+        .eq('id', note.id);
+
+      toast.success('TTS re-generated. Voice feedback resolved.');
+      fetchNotes();
+    } else {
+      // Content issue → revert script to "review" and trigger re-transcreation
+      toast.info(`📝 Escalating content issue for ${script.region_display_name}...`);
+
+      // Revert script status to "review"
+      const { error } = await supabase
+        .from('regional_narration_scripts')
+        .update({
+          status: 'review',
+          updated_at: new Date().toISOString(),
+        } as any)
+        .eq('id', script.id);
+
+      if (error) {
+        toast.error('Failed to revert script status');
+        return;
+      }
+
+      // Update note with escalation metadata
+      await supabase
+        .from('script_improvement_notes')
+        .update({
+          status: 'accepted',
+          metadata: { escalation_type: 'content_issue', action: 'script_reverted_to_review' },
+          updated_at: new Date().toISOString(),
+        } as any)
+        .eq('id', note.id);
+
+      toast.success(`Script reverted to "review". Re-transcreation recommended for ${script.region_display_name}.`);
+      fetchScripts();
+      fetchNotes();
+    }
+  }, [scripts, handleGenerateTTS, fetchScripts, fetchNotes]);
 
   // ── Save edited script ──
   const handleSaveScript = useCallback(async (script: NarrationScript) => {
@@ -1926,6 +2091,12 @@ INSTRUCTIONS:
                                         Set Active
                                       </DropdownMenuItem>
                                       <DropdownMenuSeparator />
+                                      {!script.is_english_base && (
+                                        <DropdownMenuItem onClick={() => handleReTranscreate(script)}>
+                                          <RefreshCw className="w-3.5 h-3.5 mr-2" />
+                                          Re-transcreate from English Base
+                                        </DropdownMenuItem>
+                                      )}
                                       <DropdownMenuItem onClick={() => handleCreateVariant(script, `Variant ${String.fromCharCode(65 + regionScripts.length)}`)}>
                                         <Copy className="w-3.5 h-3.5 mr-2" />
                                         Clone as Variant
@@ -2531,6 +2702,28 @@ INSTRUCTIONS:
                             >
                               <Check className="w-3.5 h-3.5 text-primary" />
                             </Button>
+                            {/* Layered Escalation: TTS feedback gets voice/content escalation buttons */}
+                            {note.note_type === 'tts_feedback' && note.status !== 'applied' && (
+                              <>
+                                <Separator orientation="vertical" className="h-5 mx-0.5" />
+                                <Button
+                                  variant="ghost" size="sm" className="h-7 text-[10px] gap-1 px-1.5"
+                                  onClick={() => handleFeedbackEscalation(note, 'voice_issue')}
+                                  title="Voice/prosody issue → Re-generate TTS only"
+                                >
+                                  <Mic className="w-3 h-3" />
+                                  Regen TTS
+                                </Button>
+                                <Button
+                                  variant="ghost" size="sm" className="h-7 text-[10px] gap-1 px-1.5 text-amber-600"
+                                  onClick={() => handleFeedbackEscalation(note, 'content_issue')}
+                                  title="Content issue → Revert script to review for re-transcreation"
+                                >
+                                  <AlertTriangle className="w-3 h-3" />
+                                  Escalate
+                                </Button>
+                              </>
+                            )}
                           </div>
                         </div>
                       </CardContent>
