@@ -607,7 +607,10 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
           is_default: false,
         } as any);
 
-      if (error) throw error;
+      if (error) {
+        console.error('[LandingPageScripts] Supabase insert error:', JSON.stringify(error));
+        throw error;
+      }
 
       // Mark applied notes as 'applied'
       const relevantNoteIds = notes
@@ -626,9 +629,10 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
       setImprovedPreview(null);
       fetchScripts();
       fetchNotes();
-    } catch (err) {
+    } catch (err: any) {
       console.error('[LandingPageScripts] Accept improved error:', err);
-      toast.error('Failed to save improved version');
+      const msg = err?.message || err?.details || err?.hint || 'Unknown error';
+      toast.error(`Failed to save improved version: ${msg}`);
     }
   }, [improvedPreview, scripts, notes, fetchScripts, fetchNotes]);
 
