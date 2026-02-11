@@ -936,15 +936,32 @@ async function processTTSBackground(
 
     await supabase.from('tts_jobs').update({ progress: 90 }).eq('id', jobId);
 
-    // Encode to base64 - use smaller chunks to avoid memory issues
-    const base64Audio = encodeBase64Chunked(audioBuffer, 512 * 1024);
+    // Upload audio to Supabase Storage instead of storing base64 in DB
+    const fileName = `tts_${jobId}.mp3`;
+    const { error: uploadError } = await supabase.storage
+      .from('tts-audio')
+      .upload(fileName, audioBuffer, {
+        contentType: 'audio/mpeg',
+        cacheControl: '3600',
+        upsert: true,
+      });
+
+    let audioUrl: string;
+    if (uploadError) {
+      console.warn(`⚠️ Storage upload failed, falling back to base64:`, uploadError.message);
+      const base64Audio = encodeBase64Chunked(audioBuffer, 512 * 1024);
+      audioUrl = `data:audio/mpeg;base64,${base64Audio}`;
+    } else {
+      const { data: urlData } = supabase.storage.from('tts-audio').getPublicUrl(fileName);
+      audioUrl = urlData.publicUrl;
+      console.log(`📦 Audio uploaded to storage: ${audioUrl}`);
+    }
     
     // Update job as complete
     await supabase.from('tts_jobs').update({
       status: 'complete',
       progress: 100,
-      audio_content: base64Audio,
-      audio_url: `data:audio/mpeg;base64,${base64Audio}`,
+      audio_url: audioUrl,
       provider: finalProvider,
       zone: finalZone,
       quality: routing.quality,
@@ -952,7 +969,7 @@ async function processTTSBackground(
       char_count: request.text.length
     }).eq('id', jobId);
 
-    console.log(`✅ Background TTS complete: job ${jobId}, ${base64Audio.length} chars base64`);
+    console.log(`✅ Background TTS complete: job ${jobId}`);
 
   } catch (error) {
     console.error(`❌ Background TTS failed: job ${jobId}`, error);
@@ -996,7 +1013,6 @@ serve(async (req) => {
           status: job.status,
           progress: job.progress,
           ...(job.status === 'complete' && {
-            audioContent: job.audio_content,
             audioUrl: job.audio_url,
             provider: job.provider,
             zone: job.zone,
@@ -1164,15 +1180,31 @@ serve(async (req) => {
       }
     }
 
-    // Encode to base64 using chunked encoder to avoid memory spikes
-    const base64Audio = encodeBase64Chunked(audioBuffer);
+    // Upload audio to Supabase Storage instead of returning large base64
+    const fileName = `tts_${crypto.randomUUID()}.mp3`;
+    const { error: uploadError } = await supabase.storage
+      .from('tts-audio')
+      .upload(fileName, audioBuffer, {
+        contentType: 'audio/mpeg',
+        cacheControl: '3600',
+        upsert: true,
+      });
 
-    console.log(`✅ TTS generated: ${base64Audio.length} chars base64, provider: ${routing.provider}`);
+    let audioUrl: string;
+    if (uploadError) {
+      console.warn(`⚠️ Storage upload failed, falling back to base64:`, uploadError.message);
+      const base64Audio = encodeBase64Chunked(audioBuffer);
+      audioUrl = `data:audio/mpeg;base64,${base64Audio}`;
+    } else {
+      const { data: urlData } = supabase.storage.from('tts-audio').getPublicUrl(fileName);
+      audioUrl = urlData.publicUrl;
+    }
+
+    console.log(`✅ TTS generated, provider: ${routing.provider}, storage: ${!uploadError}`);
 
     return new Response(
       JSON.stringify({
-        audioContent: base64Audio,
-        audioUrl: `data:audio/mpeg;base64,${base64Audio}`,
+        audioUrl,
         provider: routing.provider,
         zone: routing.zone,
         quality: routing.quality,
