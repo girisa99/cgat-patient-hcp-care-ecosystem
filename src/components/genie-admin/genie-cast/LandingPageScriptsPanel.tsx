@@ -456,6 +456,7 @@ export const LandingPageScriptsPanel: React.FC = () => {
   const [editingScript, setEditingScript] = useState<NarrationScript | null>(null);
   const [showEditor, setShowEditor] = useState(false);
   const [generatingTTSForScript, setGeneratingTTSForScript] = useState<string | null>(null);
+  const [expandingRegion, setExpandingRegion] = useState<string | null>(null);
 
   // TTS audio versions state
   const [ttsVersions, setTtsVersions] = useState<any[]>([]);
@@ -1693,6 +1694,170 @@ INSTRUCTIONS:
     }
   }, [scripts, fetchScripts]);
 
+  // ── Expand a parent-level script to its sub-regions (manual trigger) ──
+
+  const handleExpandToSubRegions = useCallback(async (parentScript: NarrationScript) => {
+    // Find the region group for this script
+    const parentCode = parentScript.region_code.toUpperCase();
+    const group = REGION_HIERARCHY.find(g => 
+      g.groupCode === parentCode || g.groupCode.toLowerCase() === parentScript.region_code
+    );
+    
+    if (!group || group.children.length === 0) {
+      toast.error('This region has no sub-regions to expand to.');
+      return;
+    }
+
+    // Check which sub-regions already have scripts
+    const existingSubRegions = scripts
+      .filter(s => group.children.some(c => c.code === s.region_code))
+      .map(s => s.region_code);
+
+    const missingSubRegions = group.children.filter(c => !existingSubRegions.includes(c.code));
+
+    if (missingSubRegions.length === 0) {
+      toast.info(`All ${group.children.length} sub-regions already have scripts.`);
+      return;
+    }
+
+    setExpandingRegion(parentScript.region_code);
+    toast.info(`🌍 Expanding to ${missingSubRegions.length} sub-regions for ${group.groupName}...`);
+
+    try {
+      const BATCH_SIZE = 3;
+      let created = 0;
+
+      for (let i = 0; i < missingSubRegions.length; i += BATCH_SIZE) {
+        const batch = missingSubRegions.slice(i, i + BATCH_SIZE);
+        
+        await Promise.all(batch.map(async (child) => {
+          try {
+            const providers = getZoneAIProviders(child.code);
+            const provider = providers.find(p => p.isRecommended) || providers[0];
+            const ttsProvider = getSubRegionTTSProvider(child.code);
+
+            // Language mapping
+            const languageMap: Record<string, string> = {
+              'AFRICA_WEST': 'en', 'AFRICA_EAST': 'sw', 'AFRICA_SOUTH': 'en', 'AFRICA_FRANCO': 'fr',
+              'NAM_US': 'en', 'NAM_CA': 'fr',
+              'EU_WEST': 'en', 'EU_DACH': 'de', 'EU_FRANCE': 'fr', 'EU_IBERIA': 'es', 'EU_NORDIC': 'sv', 'EU_EAST': 'pl',
+              'LATAM_BRAZIL': 'pt-BR', 'LATAM_MEXICO': 'es', 'LATAM_ANDEAN': 'es', 'LATAM_CONESUR': 'es', 'LATAM_CARIB': 'es',
+              'MENA_GULF': 'ar', 'MENA_EGYPT': 'ar', 'MENA_LEVANT': 'ar', 'MENA_MAGHREB': 'ar', 'MENA_MSA': 'ar',
+              'INDIA_NORTH': 'hi', 'INDIA_SOUTH': 'ta', 'INDIA_WEST': 'gu', 'INDIA_EAST': 'bn', 'INDIA_PAN': 'en',
+              'SEA_MALAY': 'ms', 'SEA_THAI': 'th', 'SEA_VIET': 'vi', 'SEA_PHIL': 'tl', 'SEA_PAN': 'en',
+              'CJK_CN': 'zh', 'CJK_TW': 'zh', 'CJK_JP': 'ja', 'CJK_KR': 'ko',
+            };
+            const languageCode = languageMap[child.code] || 'en';
+
+            const zoneMap: Record<string, string> = {
+              'NAM': 'western', 'EU': 'western', 'LATAM': 'latam',
+              'CJK': 'cjk', 'MENA': 'mena', 'INDIA': 'india',
+              'SEA': 'sea', 'AFRICA': 'africa',
+            };
+            const parentZone = child.code.split('_')[0];
+            const routingZone = zoneMap[parentZone] || 'western';
+
+            // Transcreation prompt
+            const prompt = `You are a world-class localization expert specializing in regional cultural adaptation.
+
+TASK: Transcreate (not translate) the following marketing script for ${child.name}. Adapt cultural context, idioms, and emotional resonance while maintaining the Hook → Problem → Solution → CTA structure.
+
+ORIGINAL SCRIPT:
+HOOK: ${parentScript.hook}
+PROBLEM: ${parentScript.problem_statement}
+SOLUTION: ${parentScript.solution}
+CTA: ${parentScript.cta}
+
+TARGET REGION: ${child.name}
+TARGET LANGUAGE: ${languageCode}
+POSITIONING: ${parentScript.positioning_angles?.join(', ') || 'value-driven'}
+TONE: ${parentScript.emotional_tones?.join(', ') || 'professional'}
+
+Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"...","cta":"..."}`;
+
+            const response = await supabase.functions.invoke('ai-universal-processor', {
+              body: {
+                action: 'generate_text',
+                provider: provider.id,
+                model: provider.model,
+                prompt,
+                systemPrompt: 'You are a regional script transcreation expert. Return ONLY valid JSON.',
+              },
+            });
+
+            if (response.error) {
+              console.error(`[ExpandSub] Transcreation failed for ${child.code}:`, response.error);
+              return;
+            }
+
+            const content = response.data?.content || response.data?.text || '';
+            let transcreated;
+            try {
+              const cleaned = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+              transcreated = JSON.parse(cleaned);
+            } catch {
+              console.error(`[ExpandSub] Parse error for ${child.code}`);
+              return;
+            }
+
+            const { error: insertError } = await supabase
+              .from('regional_narration_scripts')
+              .insert({
+                region_code: child.code,
+                region_display_name: child.name,
+                language_code: languageCode,
+                language_display_name: child.name,
+                hook: transcreated.hook || parentScript.hook,
+                problem_statement: transcreated.problem_statement || parentScript.problem_statement,
+                solution: transcreated.solution || parentScript.solution,
+                cta: transcreated.cta || parentScript.cta,
+                positioning_angles: parentScript.positioning_angles,
+                target_personas: parentScript.target_personas,
+                emotional_tones: parentScript.emotional_tones,
+                tts_provider: ttsProvider.provider,
+                tts_voice_id: ttsProvider.voiceId,
+                tts_voice_name: ttsProvider.voiceName,
+                tts_speed: parentScript.tts_speed || 1.0,
+                version: 1,
+                status: 'draft',
+                is_english_base: false,
+                english_base_script_id: parentScript.id,
+                llm_provider: provider.id,
+                llm_model: provider.model,
+                llm_temperature: 0.7,
+                llm_prompt_template: 'sub_region_expansion_v1',
+                routing_decision: `Sub-region expansion: ${provider.name} for ${child.name}`,
+                routing_confidence_score: provider.isRecommended ? 0.95 : 0.75,
+                routing_zone: routingZone,
+                generation_timestamp: new Date().toISOString(),
+              } as any);
+
+            if (insertError) {
+              console.error(`[ExpandSub] Insert failed for ${child.code}:`, insertError);
+              return;
+            }
+            created++;
+            console.log(`[ExpandSub] ✅ Created ${child.code}`);
+          } catch (err) {
+            console.error(`[ExpandSub] Error for ${child.code}:`, err);
+          }
+        }));
+
+        if (i + BATCH_SIZE < missingSubRegions.length) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+
+      toast.success(`🌍 Expanded to ${created}/${missingSubRegions.length} sub-regions for ${group.groupName}!`);
+      fetchScripts();
+    } catch (err) {
+      console.error('[ExpandSub] Error:', err);
+      toast.error('Failed to expand to sub-regions');
+    } finally {
+      setExpandingRegion(null);
+    }
+  }, [scripts, fetchScripts]);
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -1982,6 +2147,16 @@ INSTRUCTIONS:
             ) : (
               Object.entries(groupedByRegion).map(([regionCode, regionScripts]) => {
                 const regionInfo = REGION_OPTIONS.find(r => r.code === regionCode);
+                // Check if this is a parent-level script that has sub-regions
+                const parentGroup = REGION_HIERARCHY.find(g => 
+                  g.groupCode === regionCode.toUpperCase() || g.groupCode.toLowerCase() === regionCode
+                );
+                const hasSubRegions = parentGroup && parentGroup.children.length > 0;
+                const existingSubRegionCount = hasSubRegions 
+                  ? parentGroup.children.filter(c => scripts.some(s => s.region_code === c.code)).length 
+                  : 0;
+                const isExpanding = expandingRegion === regionCode;
+
                 return (
                   <Card key={regionCode} className="overflow-hidden">
                     <CardHeader className="py-3 bg-muted/30">
@@ -1992,24 +2167,60 @@ INSTRUCTIONS:
                           <Badge variant="outline" className="text-[10px] ml-2">
                             {regionScripts.length} script{regionScripts.length > 1 ? 's' : ''}
                           </Badge>
+                          {hasSubRegions && (
+                            <Badge variant="secondary" className="text-[10px]">
+                              {existingSubRegionCount}/{parentGroup.children.length} sub-regions
+                            </Badge>
+                          )}
                         </CardTitle>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7">
-                              <Plus className="w-4 h-4" />
+                        <div className="flex items-center gap-1">
+                          {/* Expand to Sub-Regions button — visible for parent-level scripts */}
+                          {hasSubRegions && existingSubRegionCount < parentGroup.children.length && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-xs h-7 gap-1"
+                              disabled={isExpanding}
+                              onClick={() => handleExpandToSubRegions(regionScripts[0])}
+                            >
+                              {isExpanding ? (
+                                <RefreshCw className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <Globe className="w-3 h-3" />
+                              )}
+                              {isExpanding ? 'Expanding...' : `Expand to ${parentGroup.children.length - existingSubRegionCount} Sub-Regions`}
                             </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleCreateVariant(regionScripts[0], `Variant ${String.fromCharCode(65 + regionScripts.length)}`)}>
-                              <Tag className="w-3.5 h-3.5 mr-2" />
-                              New A/B Variant
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleNewVersion(regionScripts[0])}>
-                              <History className="w-3.5 h-3.5 mr-2" />
-                              New Version
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                          )}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-7 w-7">
+                                <Plus className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handleCreateVariant(regionScripts[0], `Variant ${String.fromCharCode(65 + regionScripts.length)}`)}>
+                                <Tag className="w-3.5 h-3.5 mr-2" />
+                                New A/B Variant
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleNewVersion(regionScripts[0])}>
+                                <History className="w-3.5 h-3.5 mr-2" />
+                                New Version
+                              </DropdownMenuItem>
+                              {hasSubRegions && existingSubRegionCount < parentGroup.children.length && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem 
+                                    onClick={() => handleExpandToSubRegions(regionScripts[0])}
+                                    disabled={isExpanding}
+                                  >
+                                    <Globe className="w-3.5 h-3.5 mr-2" />
+                                    Expand to Sub-Regions
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </div>
                     </CardHeader>
                     <CardContent className="p-0">
@@ -2294,22 +2505,38 @@ INSTRUCTIONS:
                                               return;
                                             }
                                             console.log('[TTS Play] Converting base64 to blob, length:', base64Data.length);
-                                            // Decode full base64 string at once, then convert binary string to bytes in slices
-                                            const binaryString = atob(base64Data);
-                                            const len = binaryString.length;
-                                            const bytes = new Uint8Array(len);
-                                            // Process binary string in 64KB slices to avoid stack overflow
-                                            const sliceSize = 65536;
-                                            for (let offset = 0; offset < len; offset += sliceSize) {
-                                              const end = Math.min(offset + sliceSize, len);
-                                              for (let i = offset; i < end; i++) {
-                                                bytes[i] = binaryString.charCodeAt(i);
+                                            // Use fetch API to decode base64 data URI — most reliable for large files
+                                            try {
+                                              const fetchResp = await fetch(url);
+                                              const blob = await fetchResp.blob();
+                                              const blobUrl = URL.createObjectURL(blob);
+                                              console.log('[TTS Play] Blob via fetch, size:', blob.size);
+                                              audio.src = blobUrl;
+                                            } catch (fetchErr) {
+                                              console.warn('[TTS Play] fetch() failed, using manual decode:', fetchErr);
+                                              // Fallback: manual base64 decode with lookup table
+                                              const lookup = new Uint8Array(256);
+                                              const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+                                              for (let i = 0; i < chars.length; i++) lookup[chars.charCodeAt(i)] = i;
+                                              
+                                              const cleanB64 = base64Data.replace(/[^A-Za-z0-9+/]/g, '');
+                                              const outLen = (cleanB64.length * 3) >> 2;
+                                              const bytes = new Uint8Array(outLen);
+                                              let p = 0;
+                                              for (let i = 0; i < cleanB64.length; i += 4) {
+                                                const a = lookup[cleanB64.charCodeAt(i)];
+                                                const b = lookup[cleanB64.charCodeAt(i + 1)];
+                                                const c = lookup[cleanB64.charCodeAt(i + 2)];
+                                                const d = lookup[cleanB64.charCodeAt(i + 3)];
+                                                bytes[p++] = (a << 2) | (b >> 4);
+                                                if (p < outLen) bytes[p++] = ((b & 15) << 4) | (c >> 2);
+                                                if (p < outLen) bytes[p++] = ((c & 3) << 6) | d;
                                               }
+                                              const blob = new Blob([bytes], { type: 'audio/mpeg' });
+                                              const blobUrl = URL.createObjectURL(blob);
+                                              console.log('[TTS Play] Blob via manual decode, size:', blob.size);
+                                              audio.src = blobUrl;
                                             }
-                                            const blob = new Blob([bytes], { type: 'audio/mpeg' });
-                                            const blobUrl = URL.createObjectURL(blob);
-                                            console.log('[TTS Play] Blob created, size:', blob.size);
-                                            audio.src = blobUrl;
                                           } else {
                                             audio.src = url;
                                           }
