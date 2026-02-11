@@ -2435,7 +2435,7 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                 );
                 const hasSubRegions = parentGroup && parentGroup.children.length > 0;
                 const existingSubRegionCount = hasSubRegions 
-                  ? parentGroup.children.filter(c => scripts.some(s => s.region_code === c.code)).length 
+                  ? parentGroup.children.filter(c => scripts.some(s => s.region_code === c.code && s.status !== 'archived')).length 
                   : 0;
                 const isExpanding = expandingRegion === regionCode;
 
@@ -2634,6 +2634,16 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                                         <History className="w-3.5 h-3.5 mr-2" />
                                         New Version
                                       </DropdownMenuItem>
+                                      {/* Expand to Sub-Regions — for active English base or parent-level scripts */}
+                                      {script.status === 'active' && script.is_english_base && hasSubRegions && (
+                                        <DropdownMenuItem 
+                                          onClick={() => handleExpandToSubRegions(script)}
+                                          disabled={isExpanding}
+                                        >
+                                          <Globe className="w-3.5 h-3.5 mr-2" />
+                                          Expand to Sub-Regions
+                                        </DropdownMenuItem>
+                                      )}
                                       <DropdownMenuSeparator />
                                       <DropdownMenuItem onClick={() => handleStatusChange(script.id, 'archived')} className="text-destructive">
                                         <Trash2 className="w-3.5 h-3.5 mr-2" />
