@@ -77,6 +77,18 @@ interface NarrationScript {
   approved_at: string | null;
   created_at: string;
   updated_at: string;
+  // Generation metadata
+  llm_provider: string | null;
+  llm_model: string | null;
+  llm_temperature: number | null;
+  llm_token_count: number | null;
+  llm_prompt_template: string | null;
+  routing_decision: string | null;
+  routing_confidence_score: number | null;
+  routing_zone: string | null;
+  generation_timestamp: string | null;
+  is_english_base: boolean | null;
+  english_base_script_id: string | null;
 }
 
 type ScriptStatus = 'draft' | 'review' | 'active' | 'archived';
@@ -454,6 +466,15 @@ export const LandingPageScriptsPanel: React.FC = () => {
     cta: string;
     changes_summary: string;
     framework_used: string;
+    // Generation metadata
+    llm_provider?: string;
+    llm_model?: string;
+    llm_temperature?: number;
+    llm_token_count?: number;
+    llm_prompt_template?: string;
+    routing_decision?: string;
+    routing_confidence_score?: number;
+    routing_zone?: string;
   } | null>(null);
   const [showImprovedPreview, setShowImprovedPreview] = useState(false);
   const [selectedScriptForImprovement, setSelectedScriptForImprovement] = useState<string>('');
@@ -618,6 +639,12 @@ export const LandingPageScriptsPanel: React.FC = () => {
           status: 'draft',
           variant_label: variantLabel,
           is_default: false,
+          // Carry forward generation metadata
+          llm_provider: baseScript.llm_provider,
+          llm_model: baseScript.llm_model,
+          routing_zone: baseScript.routing_zone,
+          is_english_base: baseScript.is_english_base,
+          english_base_script_id: baseScript.english_base_script_id,
         } as any);
 
       if (error) throw error;
@@ -812,6 +839,11 @@ export const LandingPageScriptsPanel: React.FC = () => {
           status: 'draft',
           variant_label: baseScript.variant_label,
           is_default: false,
+          llm_provider: baseScript.llm_provider,
+          llm_model: baseScript.llm_model,
+          routing_zone: baseScript.routing_zone,
+          is_english_base: baseScript.is_english_base,
+          english_base_script_id: baseScript.english_base_script_id,
         } as any);
 
       if (error) throw error;
@@ -934,6 +966,15 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
         return;
       }
 
+      // Determine routing zone from region code
+      const zoneMap: Record<string, string> = {
+        'NAM': 'western', 'EU': 'western', 'LATAM': 'latam',
+        'CJK': 'cjk', 'MENA': 'mena', 'INDIA': 'india',
+        'SEA': 'sea', 'AFRICA': 'africa',
+      };
+      const parentZone = script.region_code.split('_')[0];
+      const routingZone = zoneMap[parentZone] || 'western';
+
       setImprovedPreview({
         scriptId,
         hook: parsed.hook || script.hook,
@@ -942,6 +983,14 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
         cta: parsed.cta || script.cta,
         changes_summary: parsed.changes_summary || 'No summary provided',
         framework_used: parsed.framework_used || 'Auto',
+        llm_provider: provider.id,
+        llm_model: provider.model,
+        llm_temperature: 0.7,
+        llm_token_count: response.data?.usage?.totalTokens || response.data?.tokenCount || null,
+        llm_prompt_template: 'regional_script_improvement_v1',
+        routing_decision: `Zone-optimized: ${provider.name} selected for ${script.region_display_name} (${parentZone})`,
+        routing_confidence_score: provider.isRecommended ? 0.95 : 0.75,
+        routing_zone: routingZone,
       });
       setShowImprovedPreview(true);
       toast.success('Improved version generated! Review the changes.');
@@ -952,6 +1001,83 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
       setIsGeneratingImproved(false);
     }
   }, [selectedScriptForImprovement, newNoteScriptId, scripts, notes, selectedAIProvider]);
+
+  // ── Auto-generate English companion script for non-English regions ──
+  const autoGenerateEnglishCompanion = useCallback(async (
+    regionalScript: NarrationScript,
+    preview: NonNullable<typeof improvedPreview>,
+    version: number,
+    regionalScriptId: string
+  ) => {
+    try {
+      // Check if English companion already exists for this region + version
+      const { data: existing } = await supabase
+        .from('regional_narration_scripts')
+        .select('id')
+        .eq('region_code', regionalScript.region_code)
+        .eq('language_code', 'en')
+        .eq('version', version)
+        .eq('is_english_base', true)
+        .maybeSingle();
+
+      if (existing) {
+        console.log('[EnglishCompanion] Already exists for', regionalScript.region_code, 'v' + version);
+        return;
+      }
+
+      // Insert English base version (same content as source, English language)
+      const { data: englishScript } = await supabase
+        .from('regional_narration_scripts')
+        .insert({
+          region_code: regionalScript.region_code,
+          region_display_name: regionalScript.region_display_name,
+          language_code: 'en',
+          language_display_name: 'English',
+          hook: preview.hook,
+          problem_statement: preview.problem_statement,
+          solution: preview.solution,
+          cta: preview.cta,
+          positioning_angles: regionalScript.positioning_angles,
+          target_personas: regionalScript.target_personas,
+          emotional_tones: regionalScript.emotional_tones,
+          tts_provider: 'azure',
+          tts_voice_id: 'en-US-JennyNeural',
+          tts_voice_name: 'Jenny (US English)',
+          tts_speed: regionalScript.tts_speed || 1.0,
+          tts_pitch: regionalScript.tts_pitch || 'default',
+          version,
+          status: 'draft',
+          variant_label: regionalScript.variant_label,
+          is_default: false,
+          is_english_base: true,
+          llm_provider: preview.llm_provider || null,
+          llm_model: preview.llm_model || null,
+          llm_temperature: preview.llm_temperature || null,
+          llm_token_count: preview.llm_token_count || null,
+          llm_prompt_template: 'english_companion_auto',
+          routing_decision: `Auto-generated English companion for ${regionalScript.region_display_name}`,
+          routing_confidence_score: 1.0,
+          routing_zone: 'western',
+          generation_timestamp: new Date().toISOString(),
+        } as any)
+        .select('id')
+        .single();
+
+      // Link regional script to its English base
+      if (englishScript?.id) {
+        await supabase
+          .from('regional_narration_scripts')
+          .update({ english_base_script_id: englishScript.id } as any)
+          .eq('id', regionalScriptId);
+      }
+
+      console.log('[EnglishCompanion] Created for', regionalScript.region_code, 'v' + version);
+      toast.info(`🌐 English companion auto-generated for ${regionalScript.region_display_name}`);
+    } catch (err) {
+      console.error('[EnglishCompanion] Error:', err);
+      // Non-blocking — don't fail the main operation
+    }
+  }, []);
 
   // ── Accept improved version → create new version with AI content ──
   const handleAcceptImproved = useCallback(async () => {
@@ -966,7 +1092,7 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
 
     try {
       // Note: full_script is a generated column - do NOT include it in insert
-      const { error } = await supabase
+      const { data: insertedScript, error } = await supabase
         .from('regional_narration_scripts')
         .insert({
           region_code: script.region_code,
@@ -989,11 +1115,29 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
           status: 'draft',
           variant_label: script.variant_label,
           is_default: false,
-        } as any);
+          // Generation metadata
+          llm_provider: improvedPreview.llm_provider || null,
+          llm_model: improvedPreview.llm_model || null,
+          llm_temperature: improvedPreview.llm_temperature || null,
+          llm_token_count: improvedPreview.llm_token_count || null,
+          llm_prompt_template: improvedPreview.llm_prompt_template || null,
+          routing_decision: improvedPreview.routing_decision || null,
+          routing_confidence_score: improvedPreview.routing_confidence_score || null,
+          routing_zone: improvedPreview.routing_zone || null,
+          generation_timestamp: new Date().toISOString(),
+          is_english_base: script.language_code === 'en',
+        } as any)
+        .select('id')
+        .single();
 
       if (error) {
         console.error('[LandingPageScripts] Supabase insert error:', JSON.stringify(error));
         throw error;
+      }
+
+      // Auto-generate English companion if this is a non-English script
+      if (script.language_code !== 'en' && insertedScript?.id) {
+        await autoGenerateEnglishCompanion(script, improvedPreview, maxVersion + 1, insertedScript.id);
       }
 
       // Mark applied notes as 'applied'
