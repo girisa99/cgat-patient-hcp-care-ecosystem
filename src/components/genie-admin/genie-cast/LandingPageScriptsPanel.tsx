@@ -1182,6 +1182,342 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
     }
   }, [improvedPreview, scripts, notes, fetchScripts, fetchNotes]);
 
+  // ── English Base Workflow: Create source script ──
+  const englishBaseScript = useMemo(() => 
+    scripts.find(s => s.region_code === 'ENGLISH_BASE' && s.is_english_base),
+    [scripts]
+  );
+
+  const handleCreateEnglishBase = useCallback(async () => {
+    setEditingScript(null);
+    setShowEditor(false);
+    // Open new editor for English Base creation
+    setEditingScript({
+      id: `new-${Date.now()}`,
+      region_code: 'ENGLISH_BASE',
+      region_display_name: 'English (Source)',
+      language_code: 'en',
+      language_display_name: 'English',
+      hook: '',
+      problem_statement: '',
+      solution: '',
+      cta: '',
+      positioning_angles: [],
+      target_personas: [],
+      emotional_tones: [],
+      tts_provider: 'azure',
+      tts_voice_id: 'en-US-JennyNeural',
+      tts_voice_name: 'Jenny (US English)',
+      tts_speed: 1.0,
+      tts_pitch: 'default',
+      background_music_url: null,
+      background_music_volume: null,
+      generated_audio_url: null,
+      audio_duration_seconds: null,
+      audio_generated_at: null,
+      version: 1,
+      status: 'draft',
+      is_default: false,
+      variant_label: null,
+      impression_count: null,
+      play_count: null,
+      completion_rate: null,
+      created_by: null,
+      approved_by: null,
+      approved_at: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      llm_provider: null,
+      llm_model: null,
+      llm_temperature: null,
+      llm_token_count: null,
+      llm_prompt_template: null,
+      routing_decision: null,
+      routing_confidence_score: null,
+      routing_zone: null,
+      generation_timestamp: null,
+      is_english_base: true,
+      english_base_script_id: null,
+      full_script: null,
+    } as NarrationScript);
+    setShowEditor(true);
+  }, []);
+
+  const handleSaveEnglishBase = useCallback(async () => {
+    if (!editingScript) return;
+    
+    try {
+      if (editingScript.id.startsWith('new-')) {
+        // Create new English base
+        const maxVersion = scripts
+          .filter(s => s.region_code === 'ENGLISH_BASE')
+          .reduce((max, s) => Math.max(max, s.version), 0);
+
+        const { error } = await supabase
+          .from('regional_narration_scripts')
+          .insert({
+            region_code: 'ENGLISH_BASE',
+            region_display_name: 'English (Source)',
+            language_code: 'en',
+            language_display_name: 'English',
+            hook: editingScript.hook,
+            problem_statement: editingScript.problem_statement,
+            solution: editingScript.solution,
+            cta: editingScript.cta,
+            positioning_angles: editingScript.positioning_angles,
+            target_personas: editingScript.target_personas,
+            emotional_tones: editingScript.emotional_tones,
+            tts_provider: 'azure',
+            tts_voice_id: 'en-US-JennyNeural',
+            tts_voice_name: 'Jenny (US English)',
+            tts_speed: 1.0,
+            version: maxVersion + 1,
+            status: 'draft',
+            is_english_base: true,
+            llm_provider: null,
+            routing_zone: 'western',
+            generation_timestamp: new Date().toISOString(),
+          } as any);
+
+        if (error) throw error;
+        toast.success('English Base Script created (v' + (maxVersion + 1) + ')');
+      } else {
+        // Update existing English base
+        const { error } = await supabase
+          .from('regional_narration_scripts')
+          .update({
+            hook: editingScript.hook,
+            problem_statement: editingScript.problem_statement,
+            solution: editingScript.solution,
+            cta: editingScript.cta,
+            positioning_angles: editingScript.positioning_angles,
+            target_personas: editingScript.target_personas,
+            emotional_tones: editingScript.emotional_tones,
+            updated_at: new Date().toISOString(),
+          } as any)
+          .eq('id', editingScript.id);
+
+        if (error) throw error;
+        toast.success('English Base Script updated');
+      }
+
+      setShowEditor(false);
+      setEditingScript(null);
+      fetchScripts();
+    } catch (err) {
+      console.error('[EnglishBase] Save error:', err);
+      toast.error('Failed to save English Base Script');
+    }
+  }, [editingScript, scripts, fetchScripts]);
+
+  const handleApproveEnglishBase = useCallback(async () => {
+    if (!englishBaseScript) {
+      toast.error('No English Base Script found');
+      return;
+    }
+
+    try {
+      // Step 1: Update English base status to active
+      const { error: updateError } = await supabase
+        .from('regional_narration_scripts')
+        .update({
+          status: 'active',
+          approved_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        } as any)
+        .eq('id', englishBaseScript.id);
+
+      if (updateError) throw updateError;
+
+      toast.success('✅ English Base Script approved!');
+
+      // Step 2: Trigger auto-expand to all 38 sub-regions with transcreation
+      await handleAutoExpandAndTranscreate(englishBaseScript);
+
+      fetchScripts();
+    } catch (err) {
+      console.error('[EnglishBase] Approval error:', err);
+      toast.error('Failed to approve English Base Script');
+    }
+  }, [englishBaseScript, fetchScripts]);
+
+  // ── Auto-expand English base to all 38 sub-regions ──
+  const handleAutoExpandAndTranscreate = useCallback(async (baseScript: NarrationScript) => {
+    try {
+      // Collect all sub-region codes from REGION_HIERARCHY
+      const subRegionCodes: string[] = [];
+      REGION_HIERARCHY.forEach(group => {
+        if (group.children.length > 0) {
+          group.children.forEach(child => subRegionCodes.push(child.code));
+        } else {
+          // Groups without children (Pakistan, Bangladesh)
+          subRegionCodes.push(group.groupCode);
+        }
+      });
+
+      console.log(`[AutoExpand] Starting transcreation for ${subRegionCodes.length} sub-regions`);
+
+      // For each sub-region, call ai-universal-processor to transcreate the script
+      const transcreationPromises = subRegionCodes.map(async (subRegionCode) => {
+        try {
+          // Get regional info
+          const regionOption = REGION_OPTIONS.find(r => r.code === subRegionCode);
+          if (!regionOption) return;
+
+          // Determine zone and language code from region
+          const zoneMap: Record<string, string> = {
+            'NAM': 'western', 'EU': 'western', 'LATAM': 'latam',
+            'CJK': 'cjk', 'MENA': 'mena', 'INDIA': 'india',
+            'SEA': 'sea', 'AFRICA': 'africa', 'PAKISTAN': 'india', 'BANGLADESH': 'sea',
+          };
+          const parentZone = subRegionCode.split('_')[0];
+          const routingZone = zoneMap[parentZone] || 'western';
+
+          // Get AI provider for this zone
+          const providers = getZoneAIProviders(subRegionCode);
+          const provider = providers.find(p => p.isRecommended) || providers[0];
+
+          // Get language code (simplified mapping)
+          const languageMap: Record<string, string> = {
+            'NAM_US': 'en', 'NAM_CA': 'fr',
+            'EU_WEST': 'en', 'EU_DACH': 'de', 'EU_FRANCE': 'fr', 'EU_IBERIA': 'es', 'EU_NORDIC': 'sv', 'EU_EAST': 'pl',
+            'LATAM_BRAZIL': 'pt-BR', 'LATAM_MEXICO': 'es', 'LATAM_ANDEAN': 'es', 'LATAM_CONESUR': 'es', 'LATAM_CARIB': 'es',
+            'MENA_GULF': 'ar', 'MENA_EGYPT': 'ar', 'MENA_LEVANT': 'ar', 'MENA_MAGHREB': 'ar', 'MENA_MSA': 'ar',
+            'AFRICA_WEST': 'en', 'AFRICA_EAST': 'sw', 'AFRICA_SOUTH': 'en', 'AFRICA_FRANCO': 'fr',
+            'PAKISTAN': 'ur', 'BANGLADESH': 'bn',
+            'INDIA_NORTH': 'hi', 'INDIA_SOUTH': 'ta', 'INDIA_WEST': 'gu', 'INDIA_EAST': 'bn', 'INDIA_PAN': 'en',
+            'SEA_MALAY': 'ms', 'SEA_THAI': 'th', 'SEA_VIET': 'vi', 'SEA_PHIL': 'tl', 'SEA_PAN': 'en',
+            'CJK_CN': 'zh', 'CJK_TW': 'zh', 'CJK_JP': 'ja', 'CJK_KR': 'ko',
+          };
+          const languageCode = languageMap[subRegionCode] || 'en';
+
+          const maxVersion = scripts
+            .filter(s => s.region_code === subRegionCode)
+            .reduce((max, s) => Math.max(max, s.version), 0);
+
+          // Build transcreation prompt
+          const transcreationPrompt = `You are a world-class localization expert specializing in regional cultural adaptation.
+
+TASK: Transcreate (not translate) the following marketing script for ${regionOption.name}. Adapt cultural context, idioms, and emotional resonance while maintaining the Hook → Problem → Solution → CTA structure.
+
+ORIGINAL SCRIPT (English Base):
+HOOK: ${baseScript.hook}
+PROBLEM: ${baseScript.problem_statement}
+SOLUTION: ${baseScript.solution}
+CTA: ${baseScript.cta}
+
+TARGET REGION: ${regionOption.name}
+TARGET LANGUAGE: ${languageCode}
+POSITIONING: ${baseScript.positioning_angles?.join(', ') || 'value-driven'}
+PERSONAS: ${baseScript.target_personas?.join(', ') || 'general'}
+TONE: ${baseScript.emotional_tones?.join(', ') || 'professional'}
+
+INSTRUCTIONS:
+1. Adapt all cultural references to resonate with ${regionOption.name}
+2. Use local idioms and colloquialisms where appropriate
+3. Maintain the original emotional tones
+4. Keep the Hook → Problem → Solution → CTA structure
+5. Return ONLY valid JSON (no markdown):
+{"hook":"transcreated hook","problem_statement":"transcreated problem","solution":"transcreated solution","cta":"transcreated cta","cultural_adaptations":"list of key cultural changes made"}`;
+
+          // Call transcreation API
+          const response = await supabase.functions.invoke('ai-universal-processor', {
+            body: {
+              action: 'generate_text',
+              provider: provider.id,
+              model: provider.model,
+              prompt: transcreationPrompt,
+              systemPrompt: 'You are a regional script transcreation expert. Return ONLY valid JSON, no markdown fences.',
+              context: {
+                region: subRegionCode,
+                language: languageCode,
+                zone: routingZone,
+              },
+            },
+          });
+
+          if (response.error) {
+            console.error(`[AutoExpand] Transcreation failed for ${subRegionCode}:`, response.error);
+            return;
+          }
+
+          // Parse transcreated content
+          const content = response.data?.content || response.data?.text || '';
+          let transcreated;
+          try {
+            const cleaned = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+            transcreated = JSON.parse(cleaned);
+          } catch (parseErr) {
+            console.error(`[AutoExpand] Parse error for ${subRegionCode}:`, parseErr);
+            return;
+          }
+
+          // Get TTS provider for this sub-region
+          const ttsProvider = getSubRegionTTSProvider(subRegionCode);
+
+          // Insert transcreated script
+          const { error: insertError } = await supabase
+            .from('regional_narration_scripts')
+            .insert({
+              region_code: subRegionCode,
+              region_display_name: regionOption.name,
+              language_code: languageCode,
+              language_display_name: regionOption.name,
+              hook: transcreated.hook || baseScript.hook,
+              problem_statement: transcreated.problem_statement || baseScript.problem_statement,
+              solution: transcreated.solution || baseScript.solution,
+              cta: transcreated.cta || baseScript.cta,
+              positioning_angles: baseScript.positioning_angles,
+              target_personas: baseScript.target_personas,
+              emotional_tones: baseScript.emotional_tones,
+              tts_provider: ttsProvider.provider,
+              tts_voice_id: ttsProvider.voiceId,
+              tts_voice_name: ttsProvider.voiceName,
+              tts_speed: baseScript.tts_speed || 1.0,
+              tts_pitch: baseScript.tts_pitch || 'default',
+              version: maxVersion + 1,
+              status: 'draft',
+              is_english_base: false,
+              english_base_script_id: baseScript.id,
+              llm_provider: provider.id,
+              llm_model: provider.model,
+              llm_temperature: 0.7,
+              llm_token_count: response.data?.usage?.totalTokens || null,
+              llm_prompt_template: 'regional_transcreation_v1',
+              routing_decision: `Zone-optimized: ${provider.name} selected for ${regionOption.name} (${parentZone})`,
+              routing_confidence_score: provider.isRecommended ? 0.95 : 0.75,
+              routing_zone: routingZone,
+              generation_timestamp: new Date().toISOString(),
+            } as any);
+
+          if (insertError) {
+            console.error(`[AutoExpand] Insert failed for ${subRegionCode}:`, insertError);
+            return;
+          }
+
+          console.log(`[AutoExpand] ✅ Created transcreation for ${subRegionCode}`);
+        } catch (err) {
+          console.error(`[AutoExpand] Error processing ${subRegionCode}:`, err);
+        }
+      });
+
+      // Execute all transcreations in parallel (batched to avoid rate limits)
+      const BATCH_SIZE = 5;
+      for (let i = 0; i < transcreationPromises.length; i += BATCH_SIZE) {
+        const batch = transcreationPromises.slice(i, i + BATCH_SIZE);
+        await Promise.all(batch);
+        if (i + BATCH_SIZE < transcreationPromises.length) {
+          await new Promise(resolve => setTimeout(resolve, 1000)); // 1s delay between batches
+        }
+      }
+
+      toast.success(`🌍 Auto-expanded English base to ${subRegionCodes.length} sub-regions!`);
+    } catch (err) {
+      console.error('[AutoExpand] Error:', err);
+      toast.error('Failed to auto-expand to sub-regions');
+    }
+  }, [scripts, fetchScripts]);
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -1208,6 +1544,92 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
           </Button>
         </div>
       </div>
+
+      {/* ─── ENGLISH BASE WORKFLOW SECTION ─── */}
+      {englishBaseScript ? (
+        <Card className="bg-gradient-to-r from-blue-50/50 to-blue-50/30 border-primary/30">
+          <CardHeader className="py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 rounded-full bg-primary" />
+                <CardTitle className="text-sm font-semibold">
+                  English Base Script (Source of Truth)
+                </CardTitle>
+                <Badge variant="secondary" className="text-[10px]">
+                  v{englishBaseScript.version}
+                </Badge>
+                <Badge
+                  className={cn(
+                    'text-[10px]',
+                    englishBaseScript.status === 'active'
+                      ? 'bg-emerald-100 text-emerald-900'
+                      : 'bg-amber-100 text-amber-900'
+                  )}
+                >
+                  {englishBaseScript.status.toUpperCase()}
+                </Badge>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-xs h-7 gap-1"
+                  onClick={() => {
+                    setEditingScript(englishBaseScript);
+                    setShowEditor(true);
+                  }}
+                >
+                  <Edit className="w-3.5 h-3.5" />
+                  Edit
+                </Button>
+                {englishBaseScript.status !== 'active' && (
+                  <Button
+                    size="sm"
+                    className="text-xs h-7 gap-1"
+                    onClick={handleApproveEnglishBase}
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                    Approve
+                  </Button>
+                )}
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="text-sm space-y-2">
+            <div>
+              <span className="font-medium">Hook:</span> {englishBaseScript.hook}
+            </div>
+            <div>
+              <span className="font-medium">Problem:</span> {englishBaseScript.problem_statement}
+            </div>
+            <div>
+              <span className="font-medium">Solution:</span> {englishBaseScript.solution}
+            </div>
+            <div>
+              <span className="font-medium">CTA:</span> {englishBaseScript.cta}
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="border-dashed">
+          <CardContent className="py-6 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">No English Base Script</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Create the source script first. This becomes the base for all regional transcreations.
+              </p>
+            </div>
+            <Button
+              size="sm"
+              className="gap-1"
+              onClick={handleCreateEnglishBase}
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Create English Base
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Sub-tab navigation */}
       <div className="flex items-center gap-2">
