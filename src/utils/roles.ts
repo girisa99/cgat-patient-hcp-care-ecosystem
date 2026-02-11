@@ -59,13 +59,13 @@ export const hasAnyRole = (userRoles: string[] = [], required: string[] = []): b
 export const getDefaultRouteForRoles = (roles: string[] = [], isInternal?: boolean): string => {
   const r = normalizeRoles(roles);
 
-  // Internal admins go directly to Production Hub
-  if (isInternal) return '/genie-admin';
+  // Internal admins go directly to Genie Cast (standalone production hub)
+  if (isInternal) return '/genie-cast';
 
-  // Priority: superAdmin/admin → Admin Hub
-  if (r.includes('superAdmin')) return '/genie-admin';
-  if (r.includes('admin')) return '/genie-admin';
-  if (r.includes('onboardingTeam')) return '/genie-admin';
+  // Priority: superAdmin/admin → Genie Cast (primary production interface)
+  if (r.includes('superAdmin')) return '/genie-cast';
+  if (r.includes('admin')) return '/genie-cast';
+  if (r.includes('onboardingTeam')) return '/genie-cast';
 
   // Healthcare roles → Patient Management (NOT Genie Studio)
   if (r.includes('healthcareProvider')) return '/patients';
