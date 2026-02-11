@@ -1,0 +1,4 @@
+# Memory: features/genie-cast/workflow-visualization-and-provider-mapping
+Updated: just now
+
+The Script Production Workflow diagram visualizes the 5-stage pipeline (English Base → Transcreation → Review → Gated TTS → Feedback Loops) with accurate AI provider routing for all 38 sub-regions. The diagram includes toggleable Interactive Flow (default, @xyflow/react), Pipeline View, and Detailed views. Each region can be selected from a dropdown to see its specific sub-region routing. Feedback loops use dedicated side-routed nodes (Voice issue on right, Content issue on left) to avoid edge overlap with boxes. AFRICA routing verified: all 4 sub-regions use Gemini 3 Pro LLM; AFRICA_WEST = en-NG (Nigerian English, NOT French), AFRICA_EAST = sw-KE, AFRICA_SOUTH = en-ZA, AFRICA_FRANCO = fr-SN. This serves as the authoritative visual reference for the implemented architecture.

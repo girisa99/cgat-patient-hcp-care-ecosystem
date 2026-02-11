@@ -32,10 +32,10 @@ const REGION_CONFIGS: Record<string, RegionConfig> = {
   AFRICA: {
     label: 'AFRICA',
     subRegions: [
-      { code: 'AFRICA_WEST', lang: 'French', llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'fr-SN' },
+      { code: 'AFRICA_WEST', lang: 'English (Nigeria)', llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'en-NG' },
       { code: 'AFRICA_EAST', lang: 'Swahili', llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'sw-KE' },
-      { code: 'AFRICA_SOUTH', lang: 'English ZA', llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'en-ZA' },
-      { code: 'AFRICA_FRANCO', lang: 'French Maghreb', llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'fr-SN' },
+      { code: 'AFRICA_SOUTH', lang: 'English (ZA)', llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'en-ZA' },
+      { code: 'AFRICA_FRANCO', lang: 'French (Francophone)', llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'fr-SN' },
     ],
   },
   INDIA: {
@@ -237,39 +237,39 @@ function buildFlowchart(region: RegionConfig) {
 
   // Stage 1
   nodes.push({ id: 's1', type: 'stage', position: { x: centerX - 100, y }, data: { label: '1. Generate English Base Script', subtitle: 'Claude 4 (Primary)', color: '220 70% 55%' } });
-  y += 90;
+  y += 100;
 
   // Stage 2
   nodes.push({ id: 's2', type: 'stage', position: { x: centerX - 100, y }, data: { label: '2. Review and Feedback on English', subtitle: 'Human + AI Review', color: '220 70% 55%' } });
   edges.push({ id: 'e-s1-s2', source: 's1', target: 's2', ...edgeDefaults });
-  y += 90;
+  y += 100;
 
   // Approve diamond
   nodes.push({ id: 'd1', type: 'diamond', position: { x: centerX - 45, y }, data: { label: 'Approve', color: '45 90% 50%' } });
   edges.push({ id: 'e-s2-d1', source: 's2', target: 'd1', ...edgeDefaults });
-  y += 100;
+  y += 110;
 
   // Stage 3 - English active
   nodes.push({ id: 's3', type: 'stage', position: { x: centerX - 100, y }, data: { label: '3. English Base → Active', subtitle: 'Source of truth', color: '150 60% 40%' } });
   edges.push({ id: 'e-d1-s3', source: 'd1', target: 's3', ...edgeDefaults, label: 'Approve' });
 
-  // Iterate loop from diamond back to s2
+  // Iterate loop from diamond back to s2 — routed via right side
   edges.push({ id: 'e-d1-s2-loop', source: 'd1', sourceHandle: 'right', target: 's2', targetHandle: 'target-right', ...edgeDefaults, label: 'Iterate', type: 'smoothstep' });
-  y += 90;
+  y += 100;
 
   // Stage 4 - Select region
   nodes.push({ id: 's4', type: 'stage', position: { x: centerX - 100, y }, data: { label: `4. Select Target Region: ${region.label}`, subtitle: `${region.subRegions.length} sub-regions`, color: '270 60% 55%' } });
   edges.push({ id: 'e-s3-s4', source: 's3', target: 's4', ...edgeDefaults });
-  y += 90;
+  y += 100;
 
   // Auto-expand node
   nodes.push({ id: 'expand', type: 'expand', position: { x: centerX - 85, y }, data: { label: 'Auto-expand to sub-regions' } });
   edges.push({ id: 'e-s4-expand', source: 's4', target: 'expand', ...edgeDefaults });
-  y += 70;
+  y += 80;
 
   // Sub-region nodes (LLM)
   const count = region.subRegions.length;
-  const spacing = 170;
+  const spacing = 180;
   const totalWidth = (count - 1) * spacing;
   const startX = centerX - totalWidth / 2;
 
@@ -283,34 +283,37 @@ function buildFlowchart(region: RegionConfig) {
     });
     edges.push({ id: `e-expand-${id}`, source: 'expand', target: id, ...edgeDefaults });
   });
-  y += 90;
+  y += 100;
 
   // Stage 5 - Review each sub-region
   nodes.push({ id: 's5', type: 'stage', position: { x: centerX - 100, y }, data: { label: '5. Review Each Sub-Region Script', subtitle: 'Draft → Approved → Active', color: '45 90% 50%' } });
   region.subRegions.forEach((sr) => {
     edges.push({ id: `e-sr-${sr.code}-s5`, source: `sr-${sr.code}`, target: 's5', ...edgeDefaults });
   });
-  y += 100;
+  y += 110;
 
   // Feedback / Approve diamond
   nodes.push({ id: 'd2', type: 'diamond', position: { x: centerX - 45, y }, data: { label: 'Review', color: '45 90% 50%' } });
   edges.push({ id: 'e-s5-d2', source: 's5', target: 'd2', ...edgeDefaults });
-  y += 110;
 
-  // Feedback path - re-transcreate
-  nodes.push({ id: 'fb1', type: 'feedback', position: { x: centerX - 280, y: y - 30 }, data: { label: '6. Re-transcreate that sub-region', action: 'Same zone-routed LLM', color: '340 70% 55%' } });
-  edges.push({ id: 'e-d2-fb1', source: 'd2', sourceHandle: 'left', target: 'fb1', targetHandle: 'right', ...edgeDefaults, label: 'Feedback' });
-  edges.push({ id: 'e-fb1-s5', source: 'fb1', sourceHandle: 'left', target: 's5', targetHandle: 'target-left', ...edgeDefaults, type: 'smoothstep' });
+  // Feedback path - re-transcreate — positioned far left and connected via side handles
+  const fbX = Math.min(startX - 70, centerX - 350);
+  nodes.push({ id: 'fb1', type: 'feedback', position: { x: fbX - 30, y: y + 10 }, data: { label: '6. Re-transcreate that sub-region', action: 'Same zone-routed LLM', color: '340 70% 55%' } });
+  edges.push({ id: 'e-d2-fb1', source: 'd2', sourceHandle: 'left', target: 'fb1', targetHandle: 'right', ...edgeDefaults, label: 'Feedback', type: 'smoothstep' });
+  // fb1 loops back to s5 via top handle to s5 left
+  edges.push({ id: 'e-fb1-s5', source: 'fb1', target: 's5', targetHandle: 'target-left', ...edgeDefaults, type: 'smoothstep' });
+
+  y += 120;
 
   // Approve path
   nodes.push({ id: 's7', type: 'stage', position: { x: centerX - 100, y }, data: { label: '7. Sub-Region Script Active', subtitle: 'Approved for TTS', color: '150 60% 40%' } });
   edges.push({ id: 'e-d2-s7', source: 'd2', target: 's7', ...edgeDefaults, label: 'Approve' });
-  y += 90;
+  y += 110;
 
   // Stage 8 - TTS per sub-region
   nodes.push({ id: 's8', type: 'stage', position: { x: centerX - 100, y }, data: { label: '8. TTS per sub-region', subtitle: 'Gated: only on Active status', color: '150 60% 40%' } });
   edges.push({ id: 'e-s7-s8', source: 's7', target: 's8', ...edgeDefaults });
-  y += 80;
+  y += 100;
 
   // TTS sub-region nodes
   region.subRegions.forEach((sr, i) => {
@@ -323,7 +326,7 @@ function buildFlowchart(region: RegionConfig) {
     });
     edges.push({ id: `e-s8-${id}`, source: 's8', target: id, ...edgeDefaults });
   });
-  y += 90;
+  y += 100;
 
   // Stage 9 - TTS Review
   nodes.push({ id: 's9', type: 'stage', position: { x: centerX - 100, y }, data: { label: '9. TTS Review', subtitle: 'Listen & evaluate audio', color: '270 60% 55%' } });
@@ -331,13 +334,19 @@ function buildFlowchart(region: RegionConfig) {
     edges.push({ id: `e-tts-${sr.code}-s9`, source: `tts-${sr.code}`, target: 's9', ...edgeDefaults });
   });
 
-  // Voice issue → re-gen TTS (loop back to s8) — route via RIGHT side to avoid crossing boxes
-  edges.push({ id: 'e-s9-voice', source: 's9', sourceHandle: 'source-right', target: 's8', targetHandle: 'target-right', ...edgeDefaults, label: 'Voice issue → re-gen TTS', type: 'smoothstep', style: { ...edgeDefaults.style, stroke: 'hsl(340 70% 55% / 0.6)', strokeDasharray: '5 3' } });
+  // Voice issue → re-gen TTS (s9 → s8) — route via far RIGHT side
+  const voiceFbX = Math.max(startX + totalWidth + 100, centerX + 250);
+  nodes.push({ id: 'fb-voice', type: 'feedback', position: { x: voiceFbX, y: y - 50 }, data: { label: 'Voice issue', action: 're-gen TTS only', color: '340 70% 55%' } });
+  edges.push({ id: 'e-s9-fbvoice', source: 's9', sourceHandle: 'source-right', target: 'fb-voice', targetHandle: 'right', ...edgeDefaults, type: 'smoothstep', style: { ...edgeDefaults.style, stroke: 'hsl(340 70% 55% / 0.6)', strokeDasharray: '5 3' } });
+  edges.push({ id: 'e-fbvoice-s8', source: 'fb-voice', target: 's8', targetHandle: 'target-right', ...edgeDefaults, type: 'smoothstep', style: { ...edgeDefaults.style, stroke: 'hsl(340 70% 55% / 0.6)', strokeDasharray: '5 3' } });
 
-  // Content issue → escalate to s5 — route via LEFT side to avoid crossing boxes
-  edges.push({ id: 'e-s9-content', source: 's9', sourceHandle: 'source-left', target: 's5', targetHandle: 'target-left', ...edgeDefaults, label: 'Content issue → escalate', type: 'smoothstep', style: { ...edgeDefaults.style, stroke: 'hsl(340 70% 55% / 0.6)', strokeDasharray: '5 3' } });
+  // Content issue → escalate (s9 → s5) — route via far LEFT side
+  const contentFbX = Math.min(startX - 70, centerX - 350);
+  nodes.push({ id: 'fb-content', type: 'feedback', position: { x: contentFbX - 30, y: y - 50 }, data: { label: 'Content issue', action: 'escalate to review', color: '340 70% 55%' } });
+  edges.push({ id: 'e-s9-fbcontent', source: 's9', sourceHandle: 'source-left', target: 'fb-content', targetHandle: 'right', ...edgeDefaults, type: 'smoothstep', style: { ...edgeDefaults.style, stroke: 'hsl(340 70% 55% / 0.6)', strokeDasharray: '5 3' } });
+  edges.push({ id: 'e-fbcontent-s5', source: 'fb-content', target: 's5', targetHandle: 'target-left', ...edgeDefaults, type: 'smoothstep', style: { ...edgeDefaults.style, stroke: 'hsl(340 70% 55% / 0.6)', strokeDasharray: '5 3' } });
 
-  y += 90;
+  y += 110;
 
   // Stage 10 - Final
   nodes.push({ id: 's10', type: 'stage', position: { x: centerX - 100, y }, data: { label: '10. Final Audio Ready', subtitle: 'Append-only · versioned audit trail', color: '150 60% 40%' } });
