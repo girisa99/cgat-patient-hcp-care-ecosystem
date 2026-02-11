@@ -820,6 +820,12 @@ export const LandingPageScriptsPanel: React.FC = () => {
 
   useEffect(() => { fetchNotes(); }, [fetchNotes]);
 
+  // ── Reset script selections when region filter changes ──
+  useEffect(() => {
+    setNewNoteScriptId('');
+    setSelectedScriptForImprovement('');
+  }, [filterRegions]);
+
   // ── Add improvement note ──
   const handleAddNote = useCallback(async () => {
     if (!newNoteContent.trim() || !newNoteScriptId) {
@@ -904,6 +910,11 @@ export const LandingPageScriptsPanel: React.FC = () => {
         return b.version - a.version; // Within same status, newest first
       });
   }, [scripts, filterRegions, filterStatus]);
+
+  // ── Set of script IDs that pass the current region/status filter ──
+  const regionFilteredNoteIds = useMemo(() => {
+    return new Set(filteredScripts.map(s => s.id));
+  }, [filteredScripts]);
 
   // ── Group by region ──
   const groupedByRegion = useMemo(() => {
@@ -3621,11 +3632,14 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
              </Card>
             )}
 
-            {/* Existing Notes List — filtered by category */}
+            {/* Existing Notes List — filtered by category AND region */}
             {(() => {
               const filteredNotes = notes.filter(n => {
-                if (feedbackCategoryFilter === 'tts') return n.note_type === 'tts_feedback';
-                if (feedbackCategoryFilter === 'script') return n.note_type !== 'tts_feedback';
+                // Filter by category
+                if (feedbackCategoryFilter === 'tts' && n.note_type !== 'tts_feedback') return false;
+                if (feedbackCategoryFilter === 'script' && n.note_type === 'tts_feedback') return false;
+                // Filter by active region filter
+                if (filterRegions.length > 0 && !regionFilteredNoteIds.has(n.script_id)) return false;
                 return true;
               });
               if (filteredNotes.length === 0) return (
