@@ -2456,11 +2456,11 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                           )}
                         </CardTitle>
                         <div className="flex items-center gap-1">
-                          {/* Expand to Sub-Regions button — visible for parent-level scripts */}
-                          {hasSubRegions && existingSubRegionCount < parentGroup.children.length && (
+                          {/* Expand to Sub-Regions button — ALWAYS visible for parent regions */}
+                          {hasSubRegions && (
                             <Button
                               size="sm"
-                              variant="outline"
+                              variant={existingSubRegionCount < parentGroup.children.length ? "default" : "outline"}
                               className="text-xs h-7 gap-1"
                               disabled={isExpanding}
                               onClick={() => handleExpandToSubRegions(regionScripts[0])}
@@ -2470,7 +2470,12 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                               ) : (
                                 <Globe className="w-3 h-3" />
                               )}
-                              {isExpanding ? 'Expanding...' : `Expand to ${parentGroup.children.length - existingSubRegionCount} Sub-Regions`}
+                              {isExpanding 
+                                ? 'Expanding...' 
+                                : existingSubRegionCount < parentGroup.children.length
+                                  ? `Expand to ${parentGroup.children.length - existingSubRegionCount} Sub-Regions`
+                                  : `Re-expand ${parentGroup.children.length} Sub-Regions`
+                              }
                             </Button>
                           )}
                           <DropdownMenu>
@@ -2488,7 +2493,7 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                                 <History className="w-3.5 h-3.5 mr-2" />
                                 New Version
                               </DropdownMenuItem>
-                              {hasSubRegions && existingSubRegionCount < parentGroup.children.length && (
+                              {hasSubRegions && (
                                 <>
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem 
@@ -2496,7 +2501,9 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                                     disabled={isExpanding}
                                   >
                                     <Globe className="w-3.5 h-3.5 mr-2" />
-                                    Expand to Sub-Regions
+                                    {existingSubRegionCount < parentGroup.children.length
+                                      ? 'Expand to Sub-Regions'
+                                      : 'Re-expand Sub-Regions'}
                                   </DropdownMenuItem>
                                 </>
                               )}
