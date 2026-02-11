@@ -1338,8 +1338,8 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
       </AnimatePresence>
 
       {/* ─── EDITOR DIALOG ─── */}
-      <Dialog open={showEditor} onOpenChange={setShowEditor}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+      <Dialog open={showEditor} onOpenChange={setShowEditor} modal={false}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto" onInteractOutside={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Edit className="w-4 h-4" />
