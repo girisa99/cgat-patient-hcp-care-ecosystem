@@ -8,7 +8,7 @@
  * - Versions: Version history timeline per region
  */
 
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -459,6 +459,10 @@ export const LandingPageScriptsPanel: React.FC = () => {
 
   // TTS audio versions state
   const [ttsVersions, setTtsVersions] = useState<any[]>([]);
+
+  // Audio playback state
+  const [playingScriptId, setPlayingScriptId] = useState<string | null>(null);
+  const playingAudioRef = useRef<HTMLAudioElement | null>(null);
 
   // Feedback state
   const [notes, setNotes] = useState<ImprovementNote[]>([]);
@@ -2265,11 +2269,30 @@ INSTRUCTIONS:
                                   </Button>
                                 )}
                                 {(latestTTS?.audio_url || script.generated_audio_url) ? (
-                                  <Button variant="outline" size="sm" className="gap-1 text-xs h-7" asChild>
-                                    <a href={latestTTS?.audio_url || script.generated_audio_url!} target="_blank" rel="noopener noreferrer">
-                                      <Play className="w-3 h-3" />
-                                      Play
-                                    </a>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="gap-1 text-xs h-7"
+                                    onClick={() => {
+                                      const url = latestTTS?.audio_url || script.generated_audio_url;
+                                      if (!url) return;
+                                      if (playingScriptId === script.id) {
+                                        playingAudioRef.current?.pause();
+                                        playingAudioRef.current = null;
+                                        setPlayingScriptId(null);
+                                      } else {
+                                        playingAudioRef.current?.pause();
+                                        const audio = new Audio(url);
+                                        audio.onended = () => { setPlayingScriptId(null); playingAudioRef.current = null; };
+                                        audio.onerror = () => { toast.error('Failed to play audio'); setPlayingScriptId(null); };
+                                        audio.play().catch(() => toast.error('Playback failed'));
+                                        playingAudioRef.current = audio;
+                                        setPlayingScriptId(script.id);
+                                      }
+                                    }}
+                                  >
+                                    {playingScriptId === script.id ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+                                    {playingScriptId === script.id ? 'Stop' : 'Play'}
                                   </Button>
                                 ) : (
                                   <Badge variant="outline" className="text-[10px]">
