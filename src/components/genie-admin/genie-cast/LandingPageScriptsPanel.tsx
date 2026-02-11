@@ -2282,10 +2282,29 @@ INSTRUCTIONS:
                                         setPlayingScriptId(null);
                                       } else {
                                         playingAudioRef.current?.pause();
-                                        const audio = new Audio(url);
+                                        // Create audio element immediately in gesture context
+                                        const audio = new Audio();
+                                        audio.preload = 'auto';
+                                        // Convert base64 data URI to blob URL for large audio
+                                        if (url.startsWith('data:audio')) {
+                                          try {
+                                            const parts = url.split(',');
+                                            const byteChars = atob(parts[1]);
+                                            const byteArray = new Uint8Array(byteChars.length);
+                                            for (let i = 0; i < byteChars.length; i++) {
+                                              byteArray[i] = byteChars.charCodeAt(i);
+                                            }
+                                            const blob = new Blob([byteArray], { type: 'audio/mpeg' });
+                                            audio.src = URL.createObjectURL(blob);
+                                          } catch {
+                                            audio.src = url;
+                                          }
+                                        } else {
+                                          audio.src = url;
+                                        }
                                         audio.onended = () => { setPlayingScriptId(null); playingAudioRef.current = null; };
-                                        audio.onerror = () => { toast.error('Failed to play audio'); setPlayingScriptId(null); };
-                                        audio.play().catch(() => toast.error('Playback failed'));
+                                        audio.onerror = (e) => { console.error('[TTS Play] Error:', e); toast.error('Failed to play audio'); setPlayingScriptId(null); };
+                                        audio.play().catch((err) => { console.error('[TTS Play] Playback error:', err); toast.error('Playback failed - try clicking again'); });
                                         playingAudioRef.current = audio;
                                         setPlayingScriptId(script.id);
                                       }
