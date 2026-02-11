@@ -2590,7 +2590,7 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="space-y-4"
+            className="space-y-4 max-h-[calc(100vh-280px)] overflow-y-auto pr-1"
           >
             {REGION_HIERARCHY.map(group => {
               const groupCodes = getGroupCodes(group);
@@ -2625,7 +2625,7 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-0">
-                    <ScrollArea className="max-h-[500px]">
+                    <div className="max-h-[400px] overflow-y-auto">
                       {subRegions.map((sr) => {
                         // Get TTS versions for this sub-region's scripts
                         const srScriptIds = sr.scripts.map(s => s.id);
@@ -2751,7 +2751,7 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                           </div>
                         );
                       })}
-                    </ScrollArea>
+                    </div>
                   </CardContent>
                 </Card>
               );
