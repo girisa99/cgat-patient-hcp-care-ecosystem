@@ -254,7 +254,25 @@ const NOTE_TYPE_CONFIG: Record<string, { label: string; icon: React.ElementType;
   tts_feedback: { label: 'TTS Feedback', icon: Mic, color: 'bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-400' },
 };
 
-// ─── Zone-Based AI Provider Recommendations ──────────────────────────
+// ─── TTS Issue Areas with Auto-Routing Classification ────────────────
+const TTS_ISSUE_AREAS = [
+  { id: 'voice_quality', label: '🎤 Voice Quality / Naturalness', route: 'voice' as const },
+  { id: 'pronunciation', label: '🗣 Pronunciation / Accent', route: 'voice' as const },
+  { id: 'pacing_timing', label: '⏱ Pacing / Timing / Speed', route: 'voice' as const },
+  { id: 'voice_tone', label: '🎭 Emotional Tone / Inflection', route: 'voice' as const },
+  { id: 'tts_provider_issue', label: '⚙️ Provider-Specific Issue', route: 'voice' as const },
+  { id: 'content_mismatch', label: '📝 Content Needs Script Change', route: 'script' as const },
+] as const;
+
+function classifyTTSFeedbackRoute(selectedAreas: string[]): { route: 'voice_only' | 'script_escalation' | 'both'; label: string; color: string } {
+  const hasVoice = selectedAreas.some(a => TTS_ISSUE_AREAS.find(t => t.id === a)?.route === 'voice');
+  const hasScript = selectedAreas.includes('content_mismatch');
+  if (hasVoice && hasScript) return { route: 'both', label: '🔀 TTS Regen + Script Escalation', color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 border-amber-300 dark:border-amber-700' };
+  if (hasScript) return { route: 'script_escalation', label: '📝 → Script Revision Required', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border-blue-300 dark:border-blue-700' };
+  return { route: 'voice_only', label: '🎙 Voice-Only → TTS Regeneration', color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700' };
+}
+
+
 interface AIProviderOption {
   id: string;
   name: string;
@@ -482,6 +500,7 @@ export const LandingPageScriptsPanel: React.FC = () => {
   const [newNoteContent, setNewNoteContent] = useState('');
   const [newNoteType, setNewNoteType] = useState<string>('reviewer_comment');
   const [newNoteSection, setNewNoteSection] = useState<string>('general');
+  const [selectedTTSIssues, setSelectedTTSIssues] = useState<string[]>(['voice_quality']);
   const [newNoteScriptId, setNewNoteScriptId] = useState<string>('');
   const [feedbackCategoryFilter, setFeedbackCategoryFilter] = useState<'all' | 'script' | 'tts'>('all');
   const [newNotePriority, setNewNotePriority] = useState<string>('medium');
@@ -596,25 +615,37 @@ export const LandingPageScriptsPanel: React.FC = () => {
       return;
     }
     try {
+      // For TTS feedback, store multi-select areas as comma-separated + routing metadata
+      const sectionTarget = newNoteType === 'tts_feedback' 
+        ? selectedTTSIssues.join(',') 
+        : newNoteSection;
+      const routing = newNoteType === 'tts_feedback' 
+        ? classifyTTSFeedbackRoute(selectedTTSIssues) 
+        : null;
       const { error } = await supabase
         .from('script_improvement_notes')
         .insert({
           script_id: newNoteScriptId,
           note_type: newNoteType,
           content: newNoteContent.trim(),
-          section_target: newNoteSection,
+          section_target: sectionTarget,
           priority: newNotePriority,
           status: 'open',
+          metadata: routing ? { routing_decision: routing.route, issue_areas: selectedTTSIssues } : null,
         } as any);
       if (error) throw error;
-      toast.success('Feedback added');
+      const routeMsg = routing 
+        ? ` → ${routing.route === 'voice_only' ? 'TTS regeneration queued' : routing.route === 'script_escalation' ? 'Script revision escalated' : 'TTS regen + script escalation'}`
+        : '';
+      toast.success(`Feedback added${routeMsg}`);
       setNewNoteContent('');
+      setSelectedTTSIssues(['voice_quality']);
       fetchNotes();
     } catch (err) {
       console.error('[LandingPageScripts] Add note error:', err);
       toast.error('Failed to add feedback');
     }
-  }, [newNoteContent, newNoteScriptId, newNoteType, newNoteSection, newNotePriority, fetchNotes]);
+  }, [newNoteContent, newNoteScriptId, newNoteType, newNoteSection, selectedTTSIssues, newNotePriority, fetchNotes]);
 
   // ── Update note status ──
   const handleNoteStatus = useCallback(async (noteId: string, status: string) => {
@@ -2927,37 +2958,68 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                       </Select>
                     )}
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-[10px] text-muted-foreground">
-                      {newNoteType === 'tts_feedback' ? 'TTS Issue Area' : 'Script Section'}
-                    </Label>
-                    <Select value={newNoteSection} onValueChange={setNewNoteSection}>
-                      <SelectTrigger className="h-8 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {newNoteType === 'tts_feedback' ? (
-                          <>
-                            <SelectItem value="voice_quality">🎤 Voice Quality / Naturalness</SelectItem>
-                            <SelectItem value="pronunciation">🗣 Pronunciation / Accent</SelectItem>
-                            <SelectItem value="pacing_timing">⏱ Pacing / Timing / Speed</SelectItem>
-                            <SelectItem value="voice_tone">🎭 Emotional Tone / Inflection</SelectItem>
-                            <SelectItem value="tts_provider_issue">⚙️ Provider-Specific Issue</SelectItem>
-                            <SelectItem value="content_mismatch">📝 Content Needs Script Change (Escalate)</SelectItem>
-                          </>
-                        ) : (
-                          <>
-                            <SelectItem value="general">General</SelectItem>
-                            <SelectItem value="hook">🎯 Hook</SelectItem>
-                            <SelectItem value="problem_statement">😰 Problem</SelectItem>
-                            <SelectItem value="solution">✨ Solution</SelectItem>
-                            <SelectItem value="cta">📢 CTA</SelectItem>
-                            <SelectItem value="full_script">📄 Full Script</SelectItem>
-                          </>
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  {newNoteType === 'tts_feedback' ? (
+                    <div className="space-y-2 col-span-full">
+                      <Label className="text-[10px] text-muted-foreground">TTS Issue Areas (select all that apply)</Label>
+                      <div className="flex flex-wrap gap-2">
+                        {TTS_ISSUE_AREAS.map(area => {
+                          const isSelected = selectedTTSIssues.includes(area.id);
+                          return (
+                            <button
+                              key={area.id}
+                              type="button"
+                              onClick={() => {
+                                setSelectedTTSIssues(prev => 
+                                  isSelected 
+                                    ? prev.filter(a => a !== area.id).length === 0 ? [area.id] : prev.filter(a => a !== area.id)
+                                    : [...prev, area.id]
+                                );
+                              }}
+                              className={cn(
+                                'px-2.5 py-1.5 rounded-md text-[11px] font-medium border transition-all',
+                                isSelected
+                                  ? area.route === 'script' 
+                                    ? 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-700 ring-1 ring-blue-400'
+                                    : 'bg-violet-100 text-violet-800 border-violet-300 dark:bg-violet-900/40 dark:text-violet-300 dark:border-violet-700 ring-1 ring-violet-400'
+                                  : 'bg-muted/50 text-muted-foreground border-border hover:bg-muted'
+                              )}
+                            >
+                              {area.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {/* Auto-routing indicator */}
+                      {(() => {
+                        const routing = classifyTTSFeedbackRoute(selectedTTSIssues);
+                        return (
+                          <div className={cn('flex items-center gap-2 px-3 py-2 rounded-md border text-xs font-medium', routing.color)}>
+                            <span>{routing.label}</span>
+                            {routing.route === 'voice_only' && <span className="text-[10px] opacity-75">— Audio will be regenerated without script changes</span>}
+                            {routing.route === 'script_escalation' && <span className="text-[10px] opacity-75">— Script will be revised, then TTS regenerated</span>}
+                            {routing.route === 'both' && <span className="text-[10px] opacity-75">— Script revised + audio regenerated separately</span>}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      <Label className="text-[10px] text-muted-foreground">Script Section</Label>
+                      <Select value={newNoteSection} onValueChange={setNewNoteSection}>
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="general">General</SelectItem>
+                          <SelectItem value="hook">🎯 Hook</SelectItem>
+                          <SelectItem value="problem_statement">😰 Problem</SelectItem>
+                          <SelectItem value="solution">✨ Solution</SelectItem>
+                          <SelectItem value="cta">📢 CTA</SelectItem>
+                          <SelectItem value="full_script">📄 Full Script</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                   <div className="space-y-1">
                     <Label className="text-[10px] text-muted-foreground">Priority</Label>
                     <Select value={newNotePriority} onValueChange={setNewNotePriority}>
