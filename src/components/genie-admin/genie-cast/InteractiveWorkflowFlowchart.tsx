@@ -125,9 +125,13 @@ const StageNode = ({ data }: { data: { label: string; subtitle?: string; color: 
     }}
   >
     <Handle type="target" position={Position.Top} className="!bg-muted-foreground !w-2 !h-2" />
+    <Handle type="target" position={Position.Left} id="target-left" className="!bg-muted-foreground !w-2 !h-2" />
+    <Handle type="target" position={Position.Right} id="target-right" className="!bg-muted-foreground !w-2 !h-2" />
     <p className="text-xs font-semibold" style={{ color: `hsl(${data.color})` }}>{data.label}</p>
     {data.subtitle && <p className="text-[10px] text-muted-foreground mt-0.5">{data.subtitle}</p>}
     <Handle type="source" position={Position.Bottom} className="!bg-muted-foreground !w-2 !h-2" />
+    <Handle type="source" position={Position.Left} id="source-left" className="!bg-muted-foreground !w-2 !h-2" />
+    <Handle type="source" position={Position.Right} id="source-right" className="!bg-muted-foreground !w-2 !h-2" />
   </div>
 );
 
@@ -250,7 +254,7 @@ function buildFlowchart(region: RegionConfig) {
   edges.push({ id: 'e-d1-s3', source: 'd1', target: 's3', ...edgeDefaults, label: 'Approve' });
 
   // Iterate loop from diamond back to s2
-  edges.push({ id: 'e-d1-s2-loop', source: 'd1', sourceHandle: 'right', target: 's2', ...edgeDefaults, label: 'Iterate', type: 'smoothstep' });
+  edges.push({ id: 'e-d1-s2-loop', source: 'd1', sourceHandle: 'right', target: 's2', targetHandle: 'target-right', ...edgeDefaults, label: 'Iterate', type: 'smoothstep' });
   y += 90;
 
   // Stage 4 - Select region
@@ -296,7 +300,7 @@ function buildFlowchart(region: RegionConfig) {
   // Feedback path - re-transcreate
   nodes.push({ id: 'fb1', type: 'feedback', position: { x: centerX - 280, y: y - 30 }, data: { label: '6. Re-transcreate that sub-region', action: 'Same zone-routed LLM', color: '340 70% 55%' } });
   edges.push({ id: 'e-d2-fb1', source: 'd2', sourceHandle: 'left', target: 'fb1', targetHandle: 'right', ...edgeDefaults, label: 'Feedback' });
-  edges.push({ id: 'e-fb1-s5', source: 'fb1', target: 's5', ...edgeDefaults, type: 'smoothstep' });
+  edges.push({ id: 'e-fb1-s5', source: 'fb1', sourceHandle: 'left', target: 's5', targetHandle: 'target-left', ...edgeDefaults, type: 'smoothstep' });
 
   // Approve path
   nodes.push({ id: 's7', type: 'stage', position: { x: centerX - 100, y }, data: { label: '7. Sub-Region Script Active', subtitle: 'Approved for TTS', color: '150 60% 40%' } });
@@ -327,11 +331,11 @@ function buildFlowchart(region: RegionConfig) {
     edges.push({ id: `e-tts-${sr.code}-s9`, source: `tts-${sr.code}`, target: 's9', ...edgeDefaults });
   });
 
-  // Voice issue → re-gen TTS (loop back to s8)
-  edges.push({ id: 'e-s9-voice', source: 's9', target: 's8', ...edgeDefaults, label: 'Voice issue → re-gen TTS', type: 'smoothstep', style: { ...edgeDefaults.style, stroke: 'hsl(340 70% 55% / 0.6)', strokeDasharray: '5 3' } });
+  // Voice issue → re-gen TTS (loop back to s8) — route via RIGHT side to avoid crossing boxes
+  edges.push({ id: 'e-s9-voice', source: 's9', sourceHandle: 'source-right', target: 's8', targetHandle: 'target-right', ...edgeDefaults, label: 'Voice issue → re-gen TTS', type: 'smoothstep', style: { ...edgeDefaults.style, stroke: 'hsl(340 70% 55% / 0.6)', strokeDasharray: '5 3' } });
 
-  // Content issue → escalate to s5
-  edges.push({ id: 'e-s9-content', source: 's9', target: 's5', ...edgeDefaults, label: 'Content issue → escalate', type: 'smoothstep', style: { ...edgeDefaults.style, stroke: 'hsl(340 70% 55% / 0.6)', strokeDasharray: '5 3' } });
+  // Content issue → escalate to s5 — route via LEFT side to avoid crossing boxes
+  edges.push({ id: 'e-s9-content', source: 's9', sourceHandle: 'source-left', target: 's5', targetHandle: 'target-left', ...edgeDefaults, label: 'Content issue → escalate', type: 'smoothstep', style: { ...edgeDefaults.style, stroke: 'hsl(340 70% 55% / 0.6)', strokeDasharray: '5 3' } });
 
   y += 90;
 

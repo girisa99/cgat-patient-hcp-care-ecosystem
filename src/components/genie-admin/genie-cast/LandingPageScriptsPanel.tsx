@@ -450,7 +450,7 @@ function getZoneAIProviders(regionCode: string): AIProviderOption[] {
 export const LandingPageScriptsPanel: React.FC = () => {
   const [scripts, setScripts] = useState<NarrationScript[]>([]);
   const [loading, setLoading] = useState(true);
-  const [subTab, setSubTab] = useState<LandingPageSubTab>('scripts');
+  const [subTab, setSubTab] = useState<LandingPageSubTab>('workflow');
   const [filterRegions, setFilterRegions] = useState<string[]>([]);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [editingScript, setEditingScript] = useState<NarrationScript | null>(null);
@@ -1805,11 +1805,11 @@ INSTRUCTIONS:
       {/* Sub-tab navigation */}
       <div className="flex items-center gap-2">
         {[
+          { id: 'workflow' as const, label: 'Workflow', icon: GitBranch },
           { id: 'scripts' as const, label: 'Regional Scripts', icon: FileText },
           { id: 'tts-preview' as const, label: 'TTS Preview', icon: Headphones },
           { id: 'versions' as const, label: 'Version History', icon: History },
           { id: 'feedback' as const, label: 'Feedback & Suggestions', icon: Lightbulb },
-          { id: 'workflow' as const, label: 'Workflow', icon: GitBranch },
         ].map(tab => (
           <Button
             key={tab.id}
