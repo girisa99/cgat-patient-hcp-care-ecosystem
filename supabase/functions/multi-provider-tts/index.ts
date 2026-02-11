@@ -537,6 +537,11 @@ async function generateAzureTTS(text: string, languageCode?: string, voice?: str
     'en-US': 'en-US-JennyNeural',
     'en-GB': 'en-GB-SoniaNeural',
     'en-AU': 'en-AU-NatashaNeural',
+    'en-CA': 'en-CA-ClaraNeural',
+    'en-IN': 'en-IN-NeerjaNeural',
+    'en-NG': 'en-NG-EzinneNeural',        // Nigerian English
+    'en-ZA': 'en-ZA-LeahNeural',           // South African English
+    'en-SG': 'en-SG-LunaNeural',           // Singapore English
     // Arabic dialects - 7 variants
     'ar-SA': 'ar-SA-HamedNeural',
     'ar-AE': 'ar-AE-FatimaNeural',
@@ -545,35 +550,49 @@ async function generateAzureTTS(text: string, languageCode?: string, voice?: str
     'ar-KW': 'ar-KW-NouraNeural',
     'ar-MA': 'ar-MA-MounaNeural',
     'ar-QA': 'ar-QA-AmalNeural',
+    'ar-SY': 'ar-SY-AmanyNeural',
+    'ar-TN': 'ar-TN-ReemNeural',
     // European
     'de-DE': 'de-DE-KatjaNeural',
+    'de-AT': 'de-AT-IngridNeural',
     'fr-FR': 'fr-FR-DeniseNeural',
     'fr-CA': 'fr-CA-SylvieNeural',
+    'fr-BE': 'fr-BE-CharlineNeural',
     'es-ES': 'es-ES-ElviraNeural',
     'es-MX': 'es-MX-DaliaNeural',
+    'es-CO': 'es-CO-SalomeNeural',
+    'es-AR': 'es-AR-ElenaNeural',
+    'es-CL': 'es-CL-CatalinaNeural',
+    'es-PE': 'es-PE-CamilaNeural',
+    'es-DO': 'es-DO-RamonaNeural',
+    'es-VE': 'es-VE-PaolaNeural',
     'it-IT': 'it-IT-ElsaNeural',
     'pt-BR': 'pt-BR-FranciscaNeural',
     'pt-PT': 'pt-PT-RaquelNeural',
+    'nl-NL': 'nl-NL-ColetteNeural',
+    'pl-PL': 'pl-PL-ZofiaNeural',
+    'sv-SE': 'sv-SE-SofieNeural',
+    'nb-NO': 'nb-NO-PernilleNeural',
+    'cs-CZ': 'cs-CZ-VlastaNeural',
     // CJK
     'zh-CN': 'zh-CN-XiaoxiaoNeural',
     'zh-TW': 'zh-TW-HsiaoChenNeural',
     'ja-JP': 'ja-JP-NanamiNeural',
     'ko-KR': 'ko-KR-SunHiNeural',
-    // ═══════════════════════════════════════════════════════════════════════════════
-    // INDIAN LANGUAGES - Full neural voice support (22 languages)
-    // These are the NATIVE Indian voices - NOT English!
-    // ═══════════════════════════════════════════════════════════════════════════════
-    'hi-IN': 'hi-IN-SwaraNeural',      // Hindi - Swara (warm, natural)
-    'te-IN': 'te-IN-ShrutiNeural',     // Telugu - Shruti
-    'ta-IN': 'ta-IN-PallaviNeural',    // Tamil - Pallavi  
-    'bn-IN': 'bn-IN-TanishaaNeural',   // Bengali - Tanishaa
-    'mr-IN': 'mr-IN-AarohiNeural',     // Marathi - Aarohi
-    'gu-IN': 'gu-IN-DhwaniNeural',     // Gujarati - Dhwani
-    'kn-IN': 'kn-IN-SapnaNeural',      // Kannada - Sapna
-    'ml-IN': 'ml-IN-SobhanaNeural',    // Malayalam - Sobhana
-    'pa-IN': 'pa-IN-VaaniNeural',      // Punjabi - Vaani
-    'or-IN': 'or-IN-SubhasiniNeural',  // Odia - Subhasini
-    'as-IN': 'as-IN-PriyomNeural',     // Assamese - Priyom
+    // Indian Languages
+    'hi-IN': 'hi-IN-SwaraNeural',
+    'te-IN': 'te-IN-ShrutiNeural',
+    'ta-IN': 'ta-IN-PallaviNeural',
+    'bn-IN': 'bn-IN-TanishaaNeural',
+    'bn-BD': 'bn-BD-NabanitaNeural',
+    'mr-IN': 'mr-IN-AarohiNeural',
+    'gu-IN': 'gu-IN-DhwaniNeural',
+    'kn-IN': 'kn-IN-SapnaNeural',
+    'ml-IN': 'ml-IN-SobhanaNeural',
+    'pa-IN': 'pa-IN-VaaniNeural',
+    'or-IN': 'or-IN-SubhasiniNeural',
+    'as-IN': 'as-IN-PriyomNeural',
+    'ur-PK': 'ur-PK-UzmaNeural',
     // SEA languages
     'id-ID': 'id-ID-GadisNeural',
     'vi-VN': 'vi-VN-HoaiMyNeural',
@@ -581,10 +600,11 @@ async function generateAzureTTS(text: string, languageCode?: string, voice?: str
     'ms-MY': 'ms-MY-YasminNeural',
     'fil-PH': 'fil-PH-BlessicaNeural',
     // African languages
-    'sw-KE': 'sw-KE-ZuriNeural',       // Swahili (Kenya)
-    'sw-TZ': 'sw-TZ-RehemaNeural',     // Swahili (Tanzania)
-    'am-ET': 'am-ET-MekdesNeural',     // Amharic (Ethiopia)
-    'zu-ZA': 'zu-ZA-ThandoNeural',     // Zulu (South Africa)
+    'sw-KE': 'sw-KE-ZuriNeural',
+    'sw-TZ': 'sw-TZ-RehemaNeural',
+    'am-ET': 'am-ET-MekdesNeural',
+    'zu-ZA': 'zu-ZA-ThandoNeural',
+    'af-ZA': 'af-ZA-AdriNeural',
   };
   
   const selectedVoice = voice || voiceMap[normalizedLang] || voiceMap['en-US'];
