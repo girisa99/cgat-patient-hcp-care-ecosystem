@@ -272,58 +272,70 @@ interface AIProviderOption {
  * Returns the recommended TTS provider + voice locale for a sub-region.
  * Follows master routing: Azure Neural (global) / Qwen3-TTS (CJK).
  */
+/**
+ * Normalize display-friendly TTS provider names to DB-compatible values.
+ * DB constraint allows: 'azure', 'qwen3', 'elevenlabs'
+ */
+function normalizeTTSProvider(displayProvider: string): string {
+  const p = displayProvider.toLowerCase();
+  if (p.includes('azure') || p.includes('neural')) return 'azure';
+  if (p.includes('qwen')) return 'qwen3';
+  if (p.includes('eleven')) return 'elevenlabs';
+  return 'azure'; // safe default
+}
+
 function getSubRegionTTSProvider(regionCode: string): { provider: string; locale: string; label: string; voiceId: string; voiceName: string } {
   const r = regionCode?.toUpperCase() || '';
   const ttsMap: Record<string, { provider: string; locale: string; label: string; voiceId: string; voiceName: string }> = {
     // NAM
-    'NAM_US': { provider: 'Azure Neural', locale: 'en-US', label: 'Azure Neural (en-US)', voiceId: 'en-US-JennyNeural', voiceName: 'Jenny (US English)' },
-    'NAM_CA': { provider: 'Azure Neural', locale: 'en-CA', label: 'Azure Neural (en-CA, fr-CA)', voiceId: 'en-CA-ClaraNeural', voiceName: 'Clara (Canadian English)' },
+    'NAM_US': { provider: 'azure', locale: 'en-US', label: 'Azure Neural (en-US)', voiceId: 'en-US-JennyNeural', voiceName: 'Jenny (US English)' },
+    'NAM_CA': { provider: 'azure', locale: 'en-CA', label: 'Azure Neural (en-CA, fr-CA)', voiceId: 'en-CA-ClaraNeural', voiceName: 'Clara (Canadian English)' },
     // EU
-    'EU_WEST': { provider: 'Azure Neural', locale: 'en-GB', label: 'Azure Neural (en-GB)', voiceId: 'en-GB-SoniaNeural', voiceName: 'Sonia (British English)' },
-    'EU_DACH': { provider: 'Azure Neural', locale: 'de-DE', label: 'Azure Neural (de-DE/AT/CH)', voiceId: 'de-DE-KatjaNeural', voiceName: 'Katja (German)' },
-    'EU_FRANCE': { provider: 'Azure Neural', locale: 'fr-FR', label: 'Azure Neural (fr-FR/BE)', voiceId: 'fr-FR-DeniseNeural', voiceName: 'Denise (French)' },
-    'EU_IBERIA': { provider: 'Azure Neural', locale: 'es-ES', label: 'Azure Neural (es-ES, pt-PT)', voiceId: 'es-ES-ElviraNeural', voiceName: 'Elvira (Spanish)' },
-    'EU_NORDIC': { provider: 'Azure Neural', locale: 'sv-SE', label: 'Azure Neural (Nordic)', voiceId: 'sv-SE-SofieNeural', voiceName: 'Sofie (Swedish)' },
-    'EU_EAST': { provider: 'Azure Neural', locale: 'pl-PL', label: 'Azure Neural (Eastern EU)', voiceId: 'pl-PL-ZofiaNeural', voiceName: 'Zofia (Polish)' },
+    'EU_WEST': { provider: 'azure', locale: 'en-GB', label: 'Azure Neural (en-GB)', voiceId: 'en-GB-SoniaNeural', voiceName: 'Sonia (British English)' },
+    'EU_DACH': { provider: 'azure', locale: 'de-DE', label: 'Azure Neural (de-DE/AT/CH)', voiceId: 'de-DE-KatjaNeural', voiceName: 'Katja (German)' },
+    'EU_FRANCE': { provider: 'azure', locale: 'fr-FR', label: 'Azure Neural (fr-FR/BE)', voiceId: 'fr-FR-DeniseNeural', voiceName: 'Denise (French)' },
+    'EU_IBERIA': { provider: 'azure', locale: 'es-ES', label: 'Azure Neural (es-ES, pt-PT)', voiceId: 'es-ES-ElviraNeural', voiceName: 'Elvira (Spanish)' },
+    'EU_NORDIC': { provider: 'azure', locale: 'sv-SE', label: 'Azure Neural (Nordic)', voiceId: 'sv-SE-SofieNeural', voiceName: 'Sofie (Swedish)' },
+    'EU_EAST': { provider: 'azure', locale: 'pl-PL', label: 'Azure Neural (Eastern EU)', voiceId: 'pl-PL-ZofiaNeural', voiceName: 'Zofia (Polish)' },
     // LATAM
-    'LATAM_BRAZIL': { provider: 'Azure Neural', locale: 'pt-BR', label: 'Azure Neural (pt-BR)', voiceId: 'pt-BR-FranciscaNeural', voiceName: 'Francisca (Brazilian Portuguese)' },
-    'LATAM_MEXICO': { provider: 'Azure Neural', locale: 'es-MX', label: 'Azure Neural (es-MX)', voiceId: 'es-MX-DaliaNeural', voiceName: 'Dalia (Mexican Spanish)' },
-    'LATAM_ANDEAN': { provider: 'Azure Neural', locale: 'es-CO', label: 'Azure Neural (es-CO/PE)', voiceId: 'es-CO-SalomeNeural', voiceName: 'Salome (Colombian Spanish)' },
-    'LATAM_CONESUR': { provider: 'Azure Neural', locale: 'es-AR', label: 'Azure Neural (es-AR/CL)', voiceId: 'es-AR-ElenaNeural', voiceName: 'Elena (Argentine Spanish)' },
-    'LATAM_CARIB': { provider: 'Azure Neural', locale: 'es-DO', label: 'Azure Neural (es-DO/VE)', voiceId: 'es-DO-RamonaNeural', voiceName: 'Ramona (Dominican Spanish)' },
+    'LATAM_BRAZIL': { provider: 'azure', locale: 'pt-BR', label: 'Azure Neural (pt-BR)', voiceId: 'pt-BR-FranciscaNeural', voiceName: 'Francisca (Brazilian Portuguese)' },
+    'LATAM_MEXICO': { provider: 'azure', locale: 'es-MX', label: 'Azure Neural (es-MX)', voiceId: 'es-MX-DaliaNeural', voiceName: 'Dalia (Mexican Spanish)' },
+    'LATAM_ANDEAN': { provider: 'azure', locale: 'es-CO', label: 'Azure Neural (es-CO/PE)', voiceId: 'es-CO-SalomeNeural', voiceName: 'Salome (Colombian Spanish)' },
+    'LATAM_CONESUR': { provider: 'azure', locale: 'es-AR', label: 'Azure Neural (es-AR/CL)', voiceId: 'es-AR-ElenaNeural', voiceName: 'Elena (Argentine Spanish)' },
+    'LATAM_CARIB': { provider: 'azure', locale: 'es-DO', label: 'Azure Neural (es-DO/VE)', voiceId: 'es-DO-RamonaNeural', voiceName: 'Ramona (Dominican Spanish)' },
     // MENA
-    'MENA_GULF': { provider: 'Azure Neural', locale: 'ar-SA', label: 'Azure Neural (ar-SA/AE)', voiceId: 'ar-SA-ZariyahNeural', voiceName: 'Zariyah (Saudi Arabic)' },
-    'MENA_EGYPT': { provider: 'Azure Neural', locale: 'ar-EG', label: 'Azure Neural (ar-EG)', voiceId: 'ar-EG-SalmaNeural', voiceName: 'Salma (Egyptian Arabic)' },
-    'MENA_LEVANT': { provider: 'Azure Neural', locale: 'ar-JO', label: 'Azure Neural (ar-JO/IQ)', voiceId: 'ar-JO-SanaNeural', voiceName: 'Sana (Jordanian Arabic)' },
-    'MENA_MAGHREB': { provider: 'Azure Neural', locale: 'ar-MA', label: 'Azure Neural (ar-MA, fr-MA)', voiceId: 'ar-MA-MounaNeural', voiceName: 'Mouna (Moroccan Arabic)' },
-    'MENA_MSA': { provider: 'Azure Neural', locale: 'ar-SA', label: 'Azure Neural (MSA)', voiceId: 'ar-SA-ZariyahNeural', voiceName: 'Zariyah (MSA)' },
+    'MENA_GULF': { provider: 'azure', locale: 'ar-SA', label: 'Azure Neural (ar-SA/AE)', voiceId: 'ar-SA-ZariyahNeural', voiceName: 'Zariyah (Saudi Arabic)' },
+    'MENA_EGYPT': { provider: 'azure', locale: 'ar-EG', label: 'Azure Neural (ar-EG)', voiceId: 'ar-EG-SalmaNeural', voiceName: 'Salma (Egyptian Arabic)' },
+    'MENA_LEVANT': { provider: 'azure', locale: 'ar-JO', label: 'Azure Neural (ar-JO/IQ)', voiceId: 'ar-JO-SanaNeural', voiceName: 'Sana (Jordanian Arabic)' },
+    'MENA_MAGHREB': { provider: 'azure', locale: 'ar-MA', label: 'Azure Neural (ar-MA, fr-MA)', voiceId: 'ar-MA-MounaNeural', voiceName: 'Mouna (Moroccan Arabic)' },
+    'MENA_MSA': { provider: 'azure', locale: 'ar-SA', label: 'Azure Neural (MSA)', voiceId: 'ar-SA-ZariyahNeural', voiceName: 'Zariyah (MSA)' },
     // Pakistan & Bangladesh
-    'PAKISTAN': { provider: 'Azure Neural', locale: 'ur-PK', label: 'Azure Neural (ur-PK)', voiceId: 'ur-PK-UzmaNeural', voiceName: 'Uzma (Urdu)' },
-    'BANGLADESH': { provider: 'Azure Neural', locale: 'bn-BD', label: 'Azure Neural (bn-BD)', voiceId: 'bn-BD-NabanitaNeural', voiceName: 'Nabanita (Bengali)' },
+    'PAKISTAN': { provider: 'azure', locale: 'ur-PK', label: 'Azure Neural (ur-PK)', voiceId: 'ur-PK-UzmaNeural', voiceName: 'Uzma (Urdu)' },
+    'BANGLADESH': { provider: 'azure', locale: 'bn-BD', label: 'Azure Neural (bn-BD)', voiceId: 'bn-BD-NabanitaNeural', voiceName: 'Nabanita (Bengali)' },
     // India
-    'INDIA_NORTH': { provider: 'Azure Neural', locale: 'hi-IN', label: 'Azure Neural (hi-IN)', voiceId: 'hi-IN-SwaraNeural', voiceName: 'Swara (Hindi)' },
-    'INDIA_SOUTH': { provider: 'Azure Neural', locale: 'ta-IN', label: 'Azure Neural (ta/te-IN)', voiceId: 'ta-IN-PallaviNeural', voiceName: 'Pallavi (Tamil)' },
-    'INDIA_WEST': { provider: 'Azure Neural', locale: 'mr-IN', label: 'Azure Neural (mr/gu-IN)', voiceId: 'mr-IN-AarohiNeural', voiceName: 'Aarohi (Marathi)' },
-    'INDIA_EAST': { provider: 'Azure Neural', locale: 'bn-IN', label: 'Azure Neural (bn-IN)', voiceId: 'bn-IN-TanishaaNeural', voiceName: 'Tanishaa (Bengali India)' },
-    'INDIA_PAN': { provider: 'Azure Neural', locale: 'en-IN', label: 'Azure Neural (en-IN)', voiceId: 'en-IN-NeerjaNeural', voiceName: 'Neerja (Indian English)' },
+    'INDIA_NORTH': { provider: 'azure', locale: 'hi-IN', label: 'Azure Neural (hi-IN)', voiceId: 'hi-IN-SwaraNeural', voiceName: 'Swara (Hindi)' },
+    'INDIA_SOUTH': { provider: 'azure', locale: 'ta-IN', label: 'Azure Neural (ta/te-IN)', voiceId: 'ta-IN-PallaviNeural', voiceName: 'Pallavi (Tamil)' },
+    'INDIA_WEST': { provider: 'azure', locale: 'mr-IN', label: 'Azure Neural (mr/gu-IN)', voiceId: 'mr-IN-AarohiNeural', voiceName: 'Aarohi (Marathi)' },
+    'INDIA_EAST': { provider: 'azure', locale: 'bn-IN', label: 'Azure Neural (bn-IN)', voiceId: 'bn-IN-TanishaaNeural', voiceName: 'Tanishaa (Bengali India)' },
+    'INDIA_PAN': { provider: 'azure', locale: 'en-IN', label: 'Azure Neural (en-IN)', voiceId: 'en-IN-NeerjaNeural', voiceName: 'Neerja (Indian English)' },
     // SEA
-    'SEA_MALAY': { provider: 'Azure Neural', locale: 'ms-MY', label: 'Azure Neural (ms-MY, id-ID)', voiceId: 'ms-MY-YasminNeural', voiceName: 'Yasmin (Malay)' },
-    'SEA_THAI': { provider: 'Azure Neural', locale: 'th-TH', label: 'Azure Neural (th-TH)', voiceId: 'th-TH-PremwadeeNeural', voiceName: 'Premwadee (Thai)' },
-    'SEA_VIET': { provider: 'Azure Neural', locale: 'vi-VN', label: 'Azure Neural (vi-VN)', voiceId: 'vi-VN-HoaiMyNeural', voiceName: 'HoaiMy (Vietnamese)' },
-    'SEA_PHIL': { provider: 'Azure Neural', locale: 'fil-PH', label: 'Azure Neural (fil-PH)', voiceId: 'fil-PH-BlessicaNeural', voiceName: 'Blessica (Filipino)' },
-    'SEA_PAN': { provider: 'Azure Neural', locale: 'en-SG', label: 'Azure Neural (en-SG)', voiceId: 'en-SG-LunaNeural', voiceName: 'Luna (Singapore English)' },
+    'SEA_MALAY': { provider: 'azure', locale: 'ms-MY', label: 'Azure Neural (ms-MY, id-ID)', voiceId: 'ms-MY-YasminNeural', voiceName: 'Yasmin (Malay)' },
+    'SEA_THAI': { provider: 'azure', locale: 'th-TH', label: 'Azure Neural (th-TH)', voiceId: 'th-TH-PremwadeeNeural', voiceName: 'Premwadee (Thai)' },
+    'SEA_VIET': { provider: 'azure', locale: 'vi-VN', label: 'Azure Neural (vi-VN)', voiceId: 'vi-VN-HoaiMyNeural', voiceName: 'HoaiMy (Vietnamese)' },
+    'SEA_PHIL': { provider: 'azure', locale: 'fil-PH', label: 'Azure Neural (fil-PH)', voiceId: 'fil-PH-BlessicaNeural', voiceName: 'Blessica (Filipino)' },
+    'SEA_PAN': { provider: 'azure', locale: 'en-SG', label: 'Azure Neural (en-SG)', voiceId: 'en-SG-LunaNeural', voiceName: 'Luna (Singapore English)' },
     // CJK — Qwen3-TTS primary
-    'CJK_CN': { provider: 'Qwen3-TTS', locale: 'zh-CN', label: 'Qwen3-TTS (zh-CN)', voiceId: 'longwan', voiceName: 'Longwan (Mandarin)' },
-    'CJK_TW': { provider: 'Azure Neural', locale: 'zh-TW', label: 'Azure Neural (zh-TW)', voiceId: 'zh-TW-HsiaoChenNeural', voiceName: 'HsiaoChen (Traditional Chinese)' },
-    'CJK_JP': { provider: 'Qwen3-TTS', locale: 'ja-JP', label: 'Qwen3-TTS (ja-JP)', voiceId: 'longyue', voiceName: 'Longyue (Japanese)' },
-    'CJK_KR': { provider: 'Azure Neural', locale: 'ko-KR', label: 'Azure Neural (ko-KR)', voiceId: 'ko-KR-SunHiNeural', voiceName: 'SunHi (Korean)' },
+    'CJK_CN': { provider: 'qwen3', locale: 'zh-CN', label: 'Qwen3-TTS (zh-CN)', voiceId: 'longwan', voiceName: 'Longwan (Mandarin)' },
+    'CJK_TW': { provider: 'azure', locale: 'zh-TW', label: 'Azure Neural (zh-TW)', voiceId: 'zh-TW-HsiaoChenNeural', voiceName: 'HsiaoChen (Traditional Chinese)' },
+    'CJK_JP': { provider: 'qwen3', locale: 'ja-JP', label: 'Qwen3-TTS (ja-JP)', voiceId: 'longyue', voiceName: 'Longyue (Japanese)' },
+    'CJK_KR': { provider: 'azure', locale: 'ko-KR', label: 'Azure Neural (ko-KR)', voiceId: 'ko-KR-SunHiNeural', voiceName: 'SunHi (Korean)' },
     // Africa
-    'AFRICA_WEST': { provider: 'Azure Neural', locale: 'en-NG', label: 'Azure Neural (yo/en-NG)', voiceId: 'en-NG-EzinneNeural', voiceName: 'Ezinne (Nigerian English)' },
-    'AFRICA_EAST': { provider: 'Azure Neural', locale: 'sw-KE', label: 'Azure Neural (sw-KE)', voiceId: 'sw-KE-ZuriNeural', voiceName: 'Zuri (Swahili)' },
-    'AFRICA_SOUTH': { provider: 'Azure Neural', locale: 'en-ZA', label: 'Azure Neural (zu/en-ZA)', voiceId: 'en-ZA-LeahNeural', voiceName: 'Leah (South African English)' },
-    'AFRICA_FRANCO': { provider: 'Azure Neural', locale: 'fr-SN', label: 'Azure Neural (fr-SN/CD)', voiceId: 'fr-FR-DeniseNeural', voiceName: 'Denise (French - Africa)' },
+    'AFRICA_WEST': { provider: 'azure', locale: 'en-NG', label: 'Azure Neural (yo/en-NG)', voiceId: 'en-NG-EzinneNeural', voiceName: 'Ezinne (Nigerian English)' },
+    'AFRICA_EAST': { provider: 'azure', locale: 'sw-KE', label: 'Azure Neural (sw-KE)', voiceId: 'sw-KE-ZuriNeural', voiceName: 'Zuri (Swahili)' },
+    'AFRICA_SOUTH': { provider: 'azure', locale: 'en-ZA', label: 'Azure Neural (zu/en-ZA)', voiceId: 'en-ZA-LeahNeural', voiceName: 'Leah (South African English)' },
+    'AFRICA_FRANCO': { provider: 'azure', locale: 'fr-SN', label: 'Azure Neural (fr-SN/CD)', voiceId: 'fr-FR-DeniseNeural', voiceName: 'Denise (French - Africa)' },
   };
-  return ttsMap[r] || { provider: 'Azure Neural', locale: 'en-US', label: 'Azure Neural (Default)', voiceId: 'en-US-JennyNeural', voiceName: 'Jenny (US English)' };
+  return ttsMap[r] || { provider: 'azure', locale: 'en-US', label: 'Azure Neural (Default)', voiceId: 'en-US-JennyNeural', voiceName: 'Jenny (US English)' };
 }
 
 function getZoneAIProviders(regionCode: string): AIProviderOption[] {
