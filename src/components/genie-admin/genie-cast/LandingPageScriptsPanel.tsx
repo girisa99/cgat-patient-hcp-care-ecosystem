@@ -2002,9 +2002,9 @@ INSTRUCTIONS:
       return;
     }
 
-    // Check which sub-regions already have scripts
+    // Check which sub-regions already have NON-archived scripts
     const existingSubRegions = scripts
-      .filter(s => group.children.some(c => c.code === s.region_code))
+      .filter(s => s.status !== 'archived' && group.children.some(c => c.code === s.region_code))
       .map(s => s.region_code);
 
     const missingSubRegions = group.children.filter(c => !existingSubRegions.includes(c.code));
