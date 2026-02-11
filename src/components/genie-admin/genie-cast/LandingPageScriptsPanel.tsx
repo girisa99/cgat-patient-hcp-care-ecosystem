@@ -352,8 +352,22 @@ function getSubRegionTTSProvider(regionCode: string): { provider: string; locale
     'AFRICA_EAST': { provider: 'azure', locale: 'sw-KE', label: 'Azure Neural (sw-KE)', voiceId: 'sw-KE-ZuriNeural', voiceName: 'Zuri (Swahili)' },
     'AFRICA_SOUTH': { provider: 'azure', locale: 'en-ZA', label: 'Azure Neural (zu/en-ZA)', voiceId: 'en-ZA-LeahNeural', voiceName: 'Leah (South African English)' },
     'AFRICA_FRANCO': { provider: 'azure', locale: 'fr-SN', label: 'Azure Neural (fr-SN/CD)', voiceId: 'fr-FR-DeniseNeural', voiceName: 'Denise (French - Africa)' },
+    // Parent-level fallbacks (when scripts use parent region codes)
+    'AFRICA': { provider: 'azure', locale: 'en-NG', label: 'Azure Neural (en-NG)', voiceId: 'en-NG-EzinneNeural', voiceName: 'Ezinne (Nigerian English)' },
+    'NAM': { provider: 'azure', locale: 'en-US', label: 'Azure Neural (en-US)', voiceId: 'en-US-JennyNeural', voiceName: 'Jenny (US English)' },
+    'EU': { provider: 'azure', locale: 'en-GB', label: 'Azure Neural (en-GB)', voiceId: 'en-GB-SoniaNeural', voiceName: 'Sonia (British English)' },
+    'LATAM': { provider: 'azure', locale: 'es-MX', label: 'Azure Neural (es-MX)', voiceId: 'es-MX-DaliaNeural', voiceName: 'Dalia (Mexican Spanish)' },
+    'MENA': { provider: 'azure', locale: 'ar-SA', label: 'Azure Neural (ar-SA)', voiceId: 'ar-SA-ZariyahNeural', voiceName: 'Zariyah (Arabic)' },
+    'INDIA': { provider: 'azure', locale: 'hi-IN', label: 'Azure Neural (hi-IN)', voiceId: 'hi-IN-SwaraNeural', voiceName: 'Swara (Hindi)' },
+    'SEA': { provider: 'azure', locale: 'id-ID', label: 'Azure Neural (id-ID)', voiceId: 'id-ID-GadisNeural', voiceName: 'Gadis (Indonesian)' },
+    'CJK': { provider: 'azure', locale: 'zh-CN', label: 'Azure Neural (zh-CN)', voiceId: 'zh-CN-XiaoxiaoNeural', voiceName: 'Xiaoxiao (Chinese)' },
   };
-  return ttsMap[r] || { provider: 'azure', locale: 'en-US', label: 'Azure Neural (Default)', voiceId: 'en-US-JennyNeural', voiceName: 'Jenny (US English)' };
+  // Try exact match first, then parent prefix match
+  if (ttsMap[r]) return ttsMap[r];
+  // Fallback: try matching parent region prefix
+  const parentKey = Object.keys(ttsMap).find(k => r.startsWith(k + '_') || r === k);
+  if (parentKey) return ttsMap[parentKey];
+  return { provider: 'azure', locale: 'en-US', label: 'Azure Neural (Default)', voiceId: 'en-US-JennyNeural', voiceName: 'Jenny (US English)' };
 }
 
 function getZoneAIProviders(regionCode: string): AIProviderOption[] {
