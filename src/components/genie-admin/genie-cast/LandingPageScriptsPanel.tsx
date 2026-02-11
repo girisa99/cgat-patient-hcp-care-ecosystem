@@ -2817,12 +2817,24 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                         <SelectValue placeholder="Select script..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {scripts.map(s => (
+                        {scripts
+                          .filter(s => {
+                            // TTS feedback: only active (approved) scripts; Script feedback: draft/review/active
+                            if (newNoteType === 'tts_feedback') return s.status === 'active';
+                            return ['draft', 'review', 'active'].includes(s.status);
+                          })
+                          .map(s => (
                           <SelectItem key={s.id} value={s.id}>
                             {REGION_OPTIONS.find(r => r.code === s.region_code)?.flag} {s.region_display_name} v{s.version}
                             {s.variant_label ? ` (${s.variant_label})` : ''}
+                            <span className="text-[9px] text-muted-foreground ml-1">({s.status})</span>
                           </SelectItem>
                         ))}
+                        {scripts.filter(s => newNoteType === 'tts_feedback' ? s.status === 'active' : ['draft', 'review', 'active'].includes(s.status)).length === 0 && (
+                          <SelectItem value="__empty" disabled className="text-muted-foreground italic">
+                            {newNoteType === 'tts_feedback' ? 'No approved (active) scripts available' : 'No scripts in draft/review/active status'}
+                          </SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -2985,7 +2997,8 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                       {REGION_HIERARCHY.map(group => {
                         const groupScripts = scripts.filter(s => {
                           const codes = getGroupCodes(group);
-                          return codes.some(c => c.toLowerCase() === s.region_code?.toLowerCase());
+                          const inGroup = codes.some(c => c.toLowerCase() === s.region_code?.toLowerCase());
+                          return inGroup && ['draft', 'review', 'active'].includes(s.status);
                         });
                         if (groupScripts.length === 0) return null;
                         return (
