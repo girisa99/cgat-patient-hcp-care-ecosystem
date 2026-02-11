@@ -1,12 +1,12 @@
 /**
  * GENIE CAST CONSOLIDATED 4-TAB STRUCTURE
- * 
+ *
  * Consolidates 10+ scattered tabs into unified workflow:
  * - CREATE: Templates, Messaging, Production Setup (Styles + Assets + Regional)
  * - PRODUCE: Generate, Matrix, Studio Editor, Review
  * - MANAGE: Library, Analytics, Flow, Content Repurposing
  * - PUBLISH: Scheduler, Distribution, SEO, A/B Testing
- * 
+ *
  * This is the SINGLE interface for all Genie Cast functionality.
  */
 
