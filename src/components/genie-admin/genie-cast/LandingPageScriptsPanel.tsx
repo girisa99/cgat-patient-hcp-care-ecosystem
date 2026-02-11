@@ -2768,6 +2768,22 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
             exit={{ opacity: 0, y: -10 }}
             className="space-y-4"
           >
+            {/* Active filter context banner */}
+            {(filterRegions.length > 0 || filterStatus !== 'all') && (
+              <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50 border border-border text-[10px] text-muted-foreground">
+                <Filter className="w-3 h-3 shrink-0" />
+                <span>
+                  Showing scripts for: {filterRegions.length > 0 
+                    ? filterRegions.map(r => REGION_OPTIONS.find(ro => ro.code === r)?.name || r).join(', ')
+                    : 'All Regions'}
+                  {filterStatus !== 'all' && ` • Status: ${filterStatus}`}
+                </span>
+                <Button variant="ghost" size="sm" className="h-5 text-[10px] px-1.5 ml-auto" onClick={() => { setFilterRegions([]); setFilterStatus('all'); }}>
+                  Clear filters
+                </Button>
+              </div>
+            )}
+
             {/* Feedback Category Tabs: Script vs TTS */}
             <div className="flex gap-2 border-b pb-2">
               {[
@@ -2834,7 +2850,7 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                         <SelectValue placeholder={newNoteType === 'tts_feedback' ? "Select approved script..." : "Select script..."} />
                       </SelectTrigger>
                       <SelectContent>
-                        {scripts
+                        {filteredScripts
                           .filter(s => {
                             if (newNoteType === 'tts_feedback') return s.status === 'active';
                             return ['draft', 'review', 'active'].includes(s.status);
@@ -2846,9 +2862,11 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                             <span className="text-[9px] text-muted-foreground ml-1">({s.status})</span>
                           </SelectItem>
                         ))}
-                        {scripts.filter(s => newNoteType === 'tts_feedback' ? s.status === 'active' : ['draft', 'review', 'active'].includes(s.status)).length === 0 && (
+                        {filteredScripts.filter(s => newNoteType === 'tts_feedback' ? s.status === 'active' : ['draft', 'review', 'active'].includes(s.status)).length === 0 && (
                           <SelectItem value="__empty" disabled className="text-muted-foreground italic">
-                            {newNoteType === 'tts_feedback' ? 'No approved (active) scripts available' : 'No scripts in draft/review/active status'}
+                            {newNoteType === 'tts_feedback' 
+                              ? `No approved scripts${filterRegions.length > 0 ? ' in selected region(s)' : ''}` 
+                              : `No scripts in draft/review/active${filterRegions.length > 0 ? ' for selected region(s)' : ''}`}
                           </SelectItem>
                         )}
                       </SelectContent>
@@ -3033,7 +3051,7 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                     </SelectTrigger>
                     <SelectContent>
                       {REGION_HIERARCHY.map(group => {
-                        const groupScripts = scripts.filter(s => {
+                        const groupScripts = filteredScripts.filter(s => {
                           const codes = getGroupCodes(group);
                           const inGroup = codes.some(c => c.toLowerCase() === s.region_code?.toLowerCase());
                           return inGroup && ['draft', 'review', 'active'].includes(s.status);
@@ -3176,7 +3194,7 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                       <SelectValue placeholder="Select approved script for TTS..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {scripts
+                      {filteredScripts
                         .filter(s => s.status === 'active')
                         .map(s => {
                           const ttsNotes = notes.filter(n => n.script_id === s.id && n.note_type === 'tts_feedback' && (n.status === 'open' || n.status === 'accepted'));
@@ -3187,9 +3205,9 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                             </SelectItem>
                           );
                         })}
-                      {scripts.filter(s => s.status === 'active').length === 0 && (
+                      {filteredScripts.filter(s => s.status === 'active').length === 0 && (
                         <SelectItem value="__empty" disabled className="text-muted-foreground italic">
-                          No approved (active) scripts — approve a script first
+                          {filterRegions.length > 0 ? 'No approved scripts in selected region(s)' : 'No approved (active) scripts — approve a script first'}
                         </SelectItem>
                       )}
                     </SelectContent>
