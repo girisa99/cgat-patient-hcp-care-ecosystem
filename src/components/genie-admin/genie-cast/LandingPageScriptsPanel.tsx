@@ -181,16 +181,28 @@ const REGION_HIERARCHY: RegionGroup[] = [
   },
 ];
 
-// Flatten for backward compatibility
+// Flatten for backward compatibility — includes both parent-level (lowercase) and sub-region codes
 const REGION_OPTIONS = REGION_HIERARCHY.flatMap(g =>
   g.children.length > 0
-    ? g.children
-    : [{ code: g.groupCode, name: g.groupName, flag: g.groupFlag }]
+    ? [
+        // Add parent-level entry with lowercase code for DB compatibility
+        { code: g.groupCode.toLowerCase(), name: g.groupName, flag: g.groupFlag },
+        ...g.children,
+      ]
+    : [{ code: g.groupCode, name: g.groupName, flag: g.groupFlag },
+       { code: g.groupCode.toLowerCase(), name: g.groupName, flag: g.groupFlag }]
 );
 
-// Get all codes for a group (the group code itself for leaf groups, children codes for parent groups)
-const getGroupCodes = (group: RegionGroup): string[] =>
-  group.children.length > 0 ? group.children.map(c => c.code) : [group.groupCode];
+// Get all codes for a group — includes the parent groupCode (both cases) + children codes
+// DB stores lowercase parent codes (africa, cjk) while hierarchy uses uppercase sub-region codes (AFRICA_WEST)
+const getGroupCodes = (group: RegionGroup): string[] => {
+  const parentCode = group.groupCode;
+  const parentLower = parentCode.toLowerCase();
+  if (group.children.length > 0) {
+    return [parentCode, parentLower, ...group.children.map(c => c.code)];
+  }
+  return [parentCode, parentLower];
+};
 
 const POSITIONING_ANGLE_OPTIONS = [
   'Speed & Efficiency', 'Cost Savings', 'Innovation', 'Simplicity',
@@ -594,10 +606,11 @@ export const LandingPageScriptsPanel: React.FC = () => {
     return map;
   }, [notes]);
 
-  // ── Filtered scripts ──
+  // ── Filtered scripts — case-insensitive matching for region codes ──
   const filteredScripts = useMemo(() => {
+    const lowerFilterRegions = filterRegions.map(r => r.toLowerCase());
     return scripts.filter(s => {
-      if (filterRegions.length > 0 && !filterRegions.includes(s.region_code)) return false;
+      if (filterRegions.length > 0 && !lowerFilterRegions.includes(s.region_code.toLowerCase())) return false;
       if (filterStatus !== 'all' && s.status !== filterStatus) return false;
       return true;
     });
@@ -1200,9 +1213,9 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
       <div className="flex items-center gap-2">
         {[
           { id: 'scripts' as const, label: 'Regional Scripts', icon: FileText },
-          { id: 'feedback' as const, label: 'Feedback & Suggestions', icon: Lightbulb },
           { id: 'tts-preview' as const, label: 'TTS Preview', icon: Headphones },
           { id: 'versions' as const, label: 'Version History', icon: History },
+          { id: 'feedback' as const, label: 'Feedback & Suggestions', icon: Lightbulb },
         ].map(tab => (
           <Button
             key={tab.id}
@@ -1666,13 +1679,20 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
               const groupScripts = scripts.filter(s => groupCodes.includes(s.region_code));
               if (groupScripts.length === 0) return null;
 
-              // Group scripts by sub-region
-              const subRegions = group.children.length > 0
+              // Group scripts by sub-region — scripts may use parent-level codes (africa) or sub-region codes (AFRICA_WEST)
+              const matchedByChild = group.children.length > 0
                 ? group.children.map(child => ({
                     ...child,
                     scripts: groupScripts.filter(s => s.region_code === child.code).sort((a, b) => b.version - a.version),
                   })).filter(sr => sr.scripts.length > 0)
-                : [{ code: group.groupCode, name: group.groupName, flag: group.groupFlag, scripts: groupScripts.sort((a, b) => b.version - a.version) }];
+                : [];
+              // Scripts using parent-level code (e.g. 'africa') that don't match any child
+              const childCodes = group.children.map(c => c.code);
+              const parentLevelScripts = groupScripts.filter(s => !childCodes.includes(s.region_code)).sort((a, b) => b.version - a.version);
+              const subRegions = [
+                ...(parentLevelScripts.length > 0 ? [{ code: group.groupCode, name: group.groupName, flag: group.groupFlag, scripts: parentLevelScripts }] : []),
+                ...matchedByChild,
+              ];
 
               return (
                 <Card key={group.groupCode}>
